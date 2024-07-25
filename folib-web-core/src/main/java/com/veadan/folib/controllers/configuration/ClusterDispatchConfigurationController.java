@@ -12,6 +12,7 @@ import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import com.veadan.folib.ws.common.FolibWsRunManageUtil;
 import com.veadan.folib.ws.common.FolibWsRunManageV2;
+import com.veadan.folib.ws.server.DistributionService;
 import com.veadan.folib.ws.server.PromotionTaskQueue;
 import io.swagger.annotations.*;
 import org.springframework.beans.BeanUtils;
@@ -59,6 +60,8 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
     private FolibWsRunManageV2 folibWsRunManageV2;
     @Autowired
     private PromotionTaskQueue promotionTaskQueue;
+    @Autowired
+    private DistributionService distributionService;
 
 
     protected ClusterDispatchConfigurationController(ConfigurationManagementService configurationManagementService) {
@@ -137,7 +140,7 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             }
             handleWsServer(nodeDto);
             //重新注册晋级任务队列
-            reRegisterPromotionTaskQueue(existingNode, nodeDto);
+            //reRegisterPromotionTaskQueue(existingNode, nodeDto);
             return getSuccessfulResponseEntity("ok", accept);
         } catch (BusinessException e) {
             return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage(), e, accept);
@@ -201,29 +204,29 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             }
             handleWsServer(nodeDto);
             //重新注册晋级任务队列
-            reRegisterPromotionTaskQueue(existingNode, nodeDto);
+            //reRegisterPromotionTaskQueue(existingNode, nodeDto);
             return getSuccessfulResponseEntity("ok", accept);
         } catch (Exception e) {
             return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, "修改制品分发节点信息失败", e, accept);
         }
     }
 
-    public synchronized void reRegisterPromotionTaskQueue(ClusterDispatchNodeDto existingNode, ClusterDispatchNodeDto nodeDto) {
-
-        if (existingNode != null && existingNode.getClusterNodeHost().equals(nodeDto.getClusterNodeHost())) {
-            return;
-        }
-        //先注册
-        String newHostName = FolibWsRunManageUtil.getTargetHostName(nodeDto);
-        //promotionTaskQueue.registerPromotionTaskQueue(newHostName);
-        promotionTaskQueue.registerV2PromotionTaskQueue(newHostName);
-        if (existingNode != null) {
-            //清理之前的
-            String targetHostName = FolibWsRunManageUtil.getTargetHostName(existingNode);
-            //promotionTaskQueue.clearPromotionTaskQueue(targetHostName);
-            promotionTaskQueue.clearV2PromotionTaskQueue(targetHostName);
-        }
-    }
+    //public synchronized void reRegisterPromotionTaskQueue(ClusterDispatchNodeDto existingNode, ClusterDispatchNodeDto nodeDto) {
+    //
+    //    if (existingNode != null && existingNode.getClusterNodeHost().equals(nodeDto.getClusterNodeHost())) {
+    //        return;
+    //    }
+    //    //先注册
+    //    String newHostName = FolibWsRunManageUtil.getTargetHostName(nodeDto);
+    //    //promotionTaskQueue.registerPromotionTaskQueue(newHostName);
+    //    promotionTaskQueue.registerV2PromotionTaskQueue(newHostName);
+    //    if (existingNode != null) {
+    //        //清理之前的
+    //        String targetHostName = FolibWsRunManageUtil.getTargetHostName(existingNode);
+    //        //promotionTaskQueue.clearPromotionTaskQueue(targetHostName);
+    //        promotionTaskQueue.clearV2PromotionTaskQueue(targetHostName);
+    //    }
+    //}
 
 
     // 删除
@@ -255,7 +258,8 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             String targetHostName = FolibWsRunManageUtil.getTargetHostName(clusterDispatchNodeDto);
             folibWsRunManageV2.unRegisterSession(targetHostName,"node delete");
             //promotionTaskQueue.clearPromotionTaskQueue(targetHostName);
-            promotionTaskQueue.clearV2PromotionTaskQueue(targetHostName);
+            //promotionTaskQueue.clearV2PromotionTaskQueue(targetHostName);
+            distributionService.clearByNodeTaskQueue(targetHostName);
             return ResponseEntity.ok("ok");
         } catch (Exception e) {
             return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, "修改制品分发节点信息失败", e, accept);

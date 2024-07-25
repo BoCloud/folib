@@ -316,8 +316,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             PromotionNodeOptionDto uploadDto = promotionUtil.getPromotionUploadDto(promotionArtifactDto);
             uploadDto.setRetry(promotionNodeOption.isRetry());
 
-            CompletableFuture<Void> future = promotionUtil.artifactSliceUploadV3(uploadDto, targetBaseUrl, promotionNodeOption.getTargetNode(), targetStorageId, targetRepositoryId, syncNo);
-
+            //CompletableFuture<Void> future = promotionUtil.artifactSliceUploadV3(uploadDto, targetBaseUrl, promotionNodeOption.getTargetNode(), targetStorageId, targetRepositoryId, syncNo);
+            CompletableFuture<Void> future = promotionUtil.artifactSliceUploadV4(uploadDto, targetBaseUrl, promotionNodeOption.getTargetNode(), targetStorageId, targetRepositoryId, syncNo);
             return future;
         } catch (Exception e) {
             log.error("制品晋级错误 {}", ExceptionUtils.getStackTrace(e));
