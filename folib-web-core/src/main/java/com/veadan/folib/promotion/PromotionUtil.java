@@ -47,6 +47,7 @@ import com.veadan.folib.ws.common.FolibWsRunManageUtil;
 import com.veadan.folib.ws.common.FolibWsRunManageV2;
 import com.veadan.folib.ws.server.*;
 import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
+import com.veadan.folib.ws.task.DistributionTask;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -161,6 +162,9 @@ public class PromotionUtil {
     private ArtifactSyncRecordMapper artifactSyncRecordMapper;
     @Autowired
     private PromotionConfig promotionConfig;
+    @Autowired
+    private DistributionService distributionService;
+
     private static final long MAX_SLICE_BYTE_SIZE = 1024L * 1024L * 100L;//100MB
 
     @Async("asyncCopyThreadPoolTaskExecutor")
@@ -486,7 +490,8 @@ public class PromotionUtil {
                     return;
                 }
             }
-            this.artifactSliceUploadV3(uploadDto, StringUtils.chomp(dispatchNodeHost, "/"), targetNode, uploadDto.getStorageId(), uploadDto.getRepositoryId(), syncNo);
+            //this.artifactSliceUploadV3(uploadDto, StringUtils.chomp(dispatchNodeHost, "/"), targetNode, uploadDto.getStorageId(), uploadDto.getRepositoryId(), syncNo);
+            this.artifactSliceUploadV4(uploadDto, StringUtils.chomp(dispatchNodeHost, "/"), targetNode, uploadDto.getStorageId(), uploadDto.getRepositoryId(), syncNo);
             if (Boolean.TRUE.equals(recordStatus)) {
                 artifactComponent.handlerArtifactPromotion(dispatchNodeDto.getClusterEnName(), srcStorageId, srcRepositoryId, artifactPath, PromotionStatusEnum.SUCCESS.getStatus());
             }
@@ -980,6 +985,34 @@ public class PromotionUtil {
         return future;
     }
 
+    public CompletableFuture<Void> artifactSliceUploadV4(PromotionNodeOptionDto uploadDto, String targetUrl, String targetNode, String storageId, String repositoryId, String syncNo) {
+        targetUrl = StringUtils.chomp(targetUrl, "/");
+
+        String finalTargetUrl1 = targetUrl;
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        String finalTargetHostName = targetNode;
+        DistributionTask task = new DistributionTask(Priority.HIGH.getValue(), syncNo,
+                () -> {
+                    try {
+                        if(uploadDto.isRetry()){
+                            retryArtifactSliceUploadV3( uploadDto,  storageId,  repositoryId,  syncNo,  finalTargetUrl1,  finalTargetHostName);
+                        }else {
+                            doArtifactSliceUploadV3(uploadDto, storageId, repositoryId, syncNo, finalTargetUrl1, finalTargetHostName);
+                        }
+                        future.complete(null);
+                    } catch (Exception e) {
+                        log.error("doArtifactSliceUploadV3 Exception \n info:\nuploadDto:{}, storageId:{}, repositoryId:{}, syncNo:{}, finalTargetUrl1:{}, targetHostName:{}", uploadDto, storageId, repositoryId, syncNo, finalTargetUrl1, finalTargetHostName, e);
+                        artifactSyncRecordMapper.updateStatusAndFailedReasonBySyncNo(ArtifactSyncRecordStatusEnum.FAILED.getVal(), e.getMessage(), syncNo, new Date());
+                        future.completeExceptionally(e);
+                        if (e instanceof RuntimeException) {
+                            throw (RuntimeException) e;
+                        }
+                        throw new RuntimeException(e);
+                    }});
+        distributionService.addTask(task);
+        return future;
+    }
+
     private void doArtifactSliceUploadV3(PromotionNodeOptionDto uploadDto, String storageId, String repositoryId, String syncNo, String finalTargetUrl1, String targetHostName) throws Exception {
         final Map<String, Map<String, RepositoryPath>> filePathMap = uploadDto.getPathMap();
         final long sliceByteSize = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
@@ -1318,7 +1351,8 @@ public class PromotionUtil {
     }
 
     public void updateTaskQueuePriority(String targetHostName,String syncNo, Priority priority){
-        promotionTaskQueue.updateTaskQueuePriority(targetHostName,syncNo,priority);
+        //promotionTaskQueue.updateTaskQueuePriority(targetHostName,syncNo,priority);
+        distributionService.updateTaskPriority(syncNo,priority.getValue());
     }
     public void updateRecordStatus(Integer status, String syncNo, String failedReason){
         if(ArtifactSyncRecordStatusEnum.SUCCESS.getVal().equals(status)){
