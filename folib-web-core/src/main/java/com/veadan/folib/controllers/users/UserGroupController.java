@@ -60,9 +60,6 @@ public class UserGroupController
 
     public static final String NOT_FOUND_USER_GROUP = "指定的用户组不存在!";
 
-    public static final String SUCCESSFUL_GET_USERS = "已成功检索用户.";
-    public static final String SUCCESSFUL_GET_USER_GROUP = "已成功检索用户组.";
-
     public static final String SUCCESSFUL_UPDATE_USER_GROUP = "用户组更新成功.";
 
     public static final String FAILED_UPDATE_USER_GROUP = "由于提交的表单包含错误，无法更新用户组!";
@@ -70,16 +67,6 @@ public class UserGroupController
     public static final String SUCCESSFUL_DELETE_USER_GROUP = "该用户组已被删除.";
 
     public static final String FAILED_DELETE_USER_GROUP = "无法删除用户组.";
-
-    public static final String OWN_USER_DELETE_FORBIDDEN = "无法删除自己";
-
-    public static final String SUCCESSFUL_GENERATE_SECURITY_TOKEN = "安全令牌已生成.";
-
-    public static final String FAILED_GENERATE_SECURITY_TOKEN = "无法生成 SecurityToken";
-
-    public static final String SUCCESSFUL_UPDATE_ACCESS_MODEL = "自定义访问模型已更新";
-
-    public static final String FAILED_UPDATE_ACCESS_MODEL = "无法更新访问模型.";
 
     public static final String USER_GROUP_DELETE_FORBIDDEN = "禁止删除此帐户组";
 

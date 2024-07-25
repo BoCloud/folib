@@ -4,6 +4,9 @@ import com.veadan.folib.authorization.AuthorizationConfigFileManager;
 import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.constant.GlobalConstants;
+import com.veadan.folib.dto.AccessModelDTO;
+import com.veadan.folib.dto.RepositoryAccessModelDTO;
+import com.veadan.folib.dto.RoleDTO;
 import com.veadan.folib.entity.Resource;
 import com.veadan.folib.entity.RoleResourceRef;
 import com.veadan.folib.users.domain.Privileges;
@@ -25,10 +28,7 @@ import com.veadan.folib.mapper.FolibRoleMapper;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -240,7 +240,105 @@ public class FolibRoleServiceImpl implements FolibRoleService {
      * @return 是否成功
      */
     public boolean deleteById(String id){
-        int total = folibRoleMapper.deleteById(id);
-        return total > 0;
+        int update = folibRoleMapper.update(FolibRole.builder().id(id).deleted(GlobalConstants.DELETED).build());
+        return update > 0;
+    }
+
+    @Override
+    public void save(RoleDTO roleForm, String username) {
+
+        AccessModelDTO accessModel = roleForm.getAccessModel();
+        if(Objects.isNull(accessModel)){
+            throw new RuntimeException("权限配置不能为空");
+        }
+        //保存角色信息
+        FolibRole folibRole = queryById(roleForm.getName());
+        if (folibRole != null) {
+            return;
+        }
+        Date date = new Date();
+        FolibRole roleInfo = FolibRole.builder().id(roleForm.getName()).enName(roleForm.getName()).cnName(roleForm.getDescription()).description(roleForm.getDescription()).createTime(date).createBy(username).updateBy(username).updateTime(date).build();
+        insert(roleInfo);
+        String roleId = roleInfo.getId();
+        //保存权限关系
+        savePermissions(roleForm, accessModel, roleId);
+    }
+
+    private void savePermissions(RoleDTO roleForm, AccessModelDTO accessModel, String roleId) {
+        //保存权限
+        List<RoleResourceRef> roleResourceRefs = new ArrayList<>();
+        //用户权限组装
+        roleForm.getUserIds().forEach(userId -> {
+            accessModel.getApiAccess().forEach(privilege -> {
+                RoleResourceRef roleResourceRef = RoleResourceRef.builder().roleId(roleId).entityId(userId).refType(GlobalConstants.ROLE_TYPE_USER).resourceType(GlobalConstants.RESOURCE_TYPE_API).resourceId(privilege.getResourceId()).build();
+                roleResourceRefs.add(roleResourceRef);
+            });
+            accessModel.getRepositoriesAccess().forEach(repositoryAccess -> {
+                getRepositoriesAcces(repositoryAccess, roleId, userId, GlobalConstants.ROLE_TYPE_USER, roleResourceRefs);
+            });
+        });
+        //用户组权限组装
+        roleForm.getUserGroupIds().forEach(groupId -> {
+            accessModel.getApiAccess().forEach(privilege -> {
+                RoleResourceRef roleResourceRef = RoleResourceRef.builder().roleId(roleId).entityId(String.valueOf(groupId)).refType(GlobalConstants.ROLE_TYPE_USER_GROUP).resourceType(GlobalConstants.RESOURCE_TYPE_API).resourceId(privilege.getResourceId()).build();
+                roleResourceRefs.add(roleResourceRef);
+            });
+            accessModel.getRepositoriesAccess().forEach(repositoryAccess -> {
+                getRepositoriesAcces(repositoryAccess, roleId, String.valueOf(groupId), GlobalConstants.ROLE_TYPE_USER_GROUP, roleResourceRefs);
+            });
+        });
+        roleResourceRefService.saveBath(roleResourceRefs);
+    }
+
+    @Override
+    public void updateRoleInfo(RoleDTO roleDTO, String username) {
+        AccessModelDTO accessModel = roleDTO.getAccessModel();
+        if(Objects.isNull(accessModel)){
+            throw new RuntimeException("权限配置不能为空");
+        }
+        //保存角色信息
+        FolibRole folibRole = queryById(roleDTO.getName());
+        if (folibRole != null) {
+            return;
+        }
+        Date date = new Date();
+        FolibRole roleInfo = FolibRole.builder().id(roleDTO.getName()).enName(roleDTO.getName()).description(roleDTO.getDescription()).updateBy(username).updateTime(date).build();
+        update(roleInfo);
+        String roleId = roleInfo.getId();
+        roleResourceRefService.deleteByRoleId(roleId);
+        //保存权限关系
+        savePermissions(roleDTO, accessModel, roleId);
+    }
+
+    /**
+     * 获取仓库权限
+     * @param repositoryAccess 仓库权限req
+     * @param roleId 角色id
+     * @param enetityId 用户、用户组id
+     * @param roleType 角色类型
+     * @param roleResourceRefs 角色权限关联列表
+     */
+    private void getRepositoriesAcces(RepositoryAccessModelDTO repositoryAccess, String roleId, String enetityId, String roleType, List<RoleResourceRef> roleResourceRefs) {
+        String path = repositoryAccess.getPath();
+        String repositoryId = repositoryAccess.getRepositoryId();
+        String resourceType;
+        if (StringUtils.isNotEmpty(path)) {
+            resourceType = GlobalConstants.RESOURCE_TYPE_PATH;
+        } else if (StringUtils.isNoneEmpty(repositoryId)) {
+            resourceType = GlobalConstants.RESOURCE_TYPE_REPOSITORY;
+        } else {
+            resourceType = GlobalConstants.RESOURCE_TYPE_STORAGE;
+        }
+        repositoryAccess.getPrivileges().forEach(privilege -> {
+            RoleResourceRef roleResourceRef;
+            if (StringUtils.isNotEmpty(path)) {
+                roleResourceRef = RoleResourceRef.builder().roleId(roleId).entityId(enetityId).refType(roleType).resourceType(resourceType).resourceId(repositoryAccess.getResourceId()).pathPrivilege(privilege).build();
+            } else if (StringUtils.isNoneEmpty(repositoryId)) {
+                roleResourceRef = RoleResourceRef.builder().roleId(roleId).entityId(enetityId).refType(roleType).resourceType(resourceType).resourceId(repositoryAccess.getResourceId()).repositoryPrivilege(privilege).build();
+            } else {
+                roleResourceRef = RoleResourceRef.builder().roleId(roleId).entityId(enetityId).refType(roleType).resourceType(resourceType).resourceId(repositoryAccess.getResourceId()).storageProvilege(privilege).build();
+            }
+            roleResourceRefs.add(roleResourceRef);
+        });
     }
 }

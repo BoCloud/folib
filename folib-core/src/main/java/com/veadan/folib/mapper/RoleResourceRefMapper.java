@@ -2,6 +2,8 @@ package com.veadan.folib.mapper;
 import java.util.List;
 
 import com.veadan.folib.common.base.CommonMapper;
+import com.veadan.folib.dto.PermissionsDTO;
+import com.veadan.folib.dto.RoleDTO;
 import com.veadan.folib.dto.UserRoleDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -84,4 +86,8 @@ public interface RoleResourceRefMapper extends CommonMapper<RoleResourceRef> {
      int deleteByRefIds(@Param("refIds") List<String> refIds);
 
      List<UserRoleDTO> queryRolesByUserName(String userName, PageRequest pageRequest);
+
+     RoleDTO getUserByRoleId(@Param("roleId") String roleId);
+
+     List<PermissionsDTO> queryPermissions(@Param("roleId") String roleId);
  }

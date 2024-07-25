@@ -1,5 +1,7 @@
 package com.veadan.folib.users.service;
 
+import com.veadan.folib.dto.PermissionsDTO;
+import com.veadan.folib.dto.RoleDTO;
 import com.veadan.folib.dto.UserRoleDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -74,4 +76,10 @@ public interface RoleResourceRefService{
     void removeByIds(List<String> removeRefIds);
 
     List<UserRoleDTO> getRolesByUserName(String userName, PageRequest pageRequest);
+
+    RoleDTO getUserByRoleId(String roleId);
+
+    List<PermissionsDTO> queryPermissions(String roleId);
+
+    boolean deleteByRoleId(String roleId);
 }

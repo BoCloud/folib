@@ -7,11 +7,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import javax.persistence.Id;
 import java.io.Serializable;
-import java.util.List;
 
 /**
-* 权限表;
+* 用户组关联表;
 * @author : Fengmaogen
 * @date : 2024-7-17
 */
@@ -20,8 +20,13 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Accessors(chain = true)
-public class RoleResourceRefDTO implements Serializable,Cloneable {
-
+public class PermissionsDTO implements Serializable,Cloneable {
+    /**
+     * 主键
+     */
+    @Id
+    @ApiModelProperty(name = "主键", notes = "")
+    private Long id;
     /**
      * 角色id
      */
@@ -52,18 +57,37 @@ public class RoleResourceRefDTO implements Serializable,Cloneable {
      */
     @ApiModelProperty(name = "存储空间权限", notes = "")
     private String storageProvilege;
-    private List<String> storageProvileges;
     /**
      * 仓库权限
      */
     @ApiModelProperty(name = "仓库权限", notes = "")
     private String repositoryPrivilege;
-    private List<String> repositoryPrivileges;
     /**
      * 路径权限
      */
     @ApiModelProperty(name = "路径权限", notes = "")
     private String pathPrivilege;
-    private List<String> pathPrivileges;
+
+    /**
+     * api权限
+     */
+    @ApiModelProperty(name = "api权限", notes = "")
+    private String apiAuthoritie;
+    /**
+     * 存储空间id
+     */
+    @ApiModelProperty(name = "存储空间id", notes = "")
+    private String storageId;
+    /**
+     * 仓库id
+     */
+    @ApiModelProperty(name = "仓库id", notes = "")
+    private String repositoryId;
+    /**
+     * 路径
+     */
+    @ApiModelProperty(name = "路径", notes = "")
+    private String path;
+
 
 }

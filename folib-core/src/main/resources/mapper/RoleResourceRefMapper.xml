@@ -154,6 +154,39 @@
         group by fr.id
         limit #{pageable.offset}, #{pageable.pageSize}
     </select>
+    <select id="getUserByRoleId" resultType="com.veadan.folib.dto.RoleDTO">
+        select
+            fr.id as name,
+            fr.description as description,
+            group_concat(distinct CASE WHEN rrr.ref_type = 1 THEN rrr.entity_id END) as userIds,
+            group_concat(distinct CASE WHEN rrr.ref_type = 2 THEN rrr.entity_id END) as userGroupIds
+        from
+            folib_role fr
+                left join role_resource_ref rrr on
+                fr.id = rrr.role_id
+        where
+            fr.deleted = "0" and fr.id = #{roleId}
+        group by
+            fr.id;
+    </select>
+    <select id="queryPermissions" resultType="com.veadan.folib.dto.PermissionsDTO">
+        select
+            rrr.*,
+            r.api_authoritie,
+            r.storage_id ,
+            r.repository_id ,
+            r.`path`
+        from
+            folib_role fr
+                left join role_resource_ref rrr on
+                fr.id = rrr.role_id
+                left join
+            resource r on
+                rrr.resource_id = r.id
+        where
+            fr.id = #{roleId}
+          and fr.deleted = 0;
+    </select>
 
     <!--新增数据-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">

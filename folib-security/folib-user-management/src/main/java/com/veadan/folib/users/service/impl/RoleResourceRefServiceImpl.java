@@ -1,5 +1,7 @@
 package com.veadan.folib.users.service.impl;
 
+import com.veadan.folib.dto.PermissionsDTO;
+import com.veadan.folib.dto.RoleDTO;
 import com.veadan.folib.dto.UserRoleDTO;
 import com.veadan.folib.entity.RoleResourceRef;
 import com.veadan.folib.mapper.RoleResourceRefMapper;
@@ -77,6 +79,11 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         return total > 0;
     }
 
+    public boolean deleteByRoleId(String roleId){
+        int total = roleResourceRefMapper.delete(RoleResourceRef.builder().roleId(roleId).build());
+        return total > 0;
+    }
+
     @Override
     public int saveBath(List<RoleResourceRef> roleResourceRefs) {
         return roleResourceRefMapper.insertBatch(roleResourceRefs);
@@ -105,5 +112,15 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
     @Override
     public List<UserRoleDTO> getRolesByUserName(String userName, PageRequest pageRequest) {
         return roleResourceRefMapper.queryRolesByUserName(userName, pageRequest);
+    }
+
+    @Override
+    public RoleDTO getUserByRoleId(String roleId) {
+        return roleResourceRefMapper.getUserByRoleId(roleId);
+    }
+
+    @Override
+    public List<PermissionsDTO> queryPermissions(String roleId) {
+        return roleResourceRefMapper.queryPermissions(roleId);
     }
 }

@@ -1,10 +1,10 @@
 package com.veadan.folib.users.service;
 
+import com.veadan.folib.dto.RoleDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import com.veadan.folib.entity.FolibRole;
 
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -57,4 +57,8 @@ public interface FolibRoleService{
      * @return 是否成功
      */
     boolean deleteById(String id);
+
+    void save(RoleDTO roleDTO, String username);
+
+    void updateRoleInfo(RoleDTO roleDTO, String username);
 }

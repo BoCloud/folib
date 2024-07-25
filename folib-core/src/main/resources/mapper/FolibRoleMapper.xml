@@ -19,7 +19,7 @@
         select
             *
         from folib_role
-        where id = #{id}
+        where id = #{id} and deleted = '0'
     </select>
 
     <!--分页查询指定行数据-->
