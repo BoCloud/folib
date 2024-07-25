@@ -85,4 +85,14 @@
         order by fileSize desc
             limit #{limitNumber}
     </select>
+
+    <select id="searchByTargetHostName" resultType="String">
+        SELECT DISTINCT sr.sync_no
+        FROM artifact_sync_slave_record ssr
+        JOIN artifact_sync_record sr
+        ON ssr.sync_no = sr.sync_no
+        WHERE sr.status &lt; 3
+        AND ssr.target_path LIKE CONCAT('%', #{searchText}, '%')
+    </select>
+
 </mapper>
