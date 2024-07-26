@@ -651,9 +651,6 @@ public class StoragesConfigurationController
             if (repositoryForm.getArtifactMaxSize() == 0) {
                 repository.setArtifactMaxSize(107374182400L);
             }
-            if (repositoryForm.getRepositoryMaxSize() == 0) {
-                repositoryForm.setRepositoryMaxSize(1099511627776000L);
-            }
             Repository existRepository = storage.getRepository(repositoryId);
             boolean result = Objects.nonNull(existRepository) && (!repository.getLayout().equals(existRepository.getLayout()) || (Objects.nonNull(existRepository.getSubLayout()) && !existRepository.getSubLayout().equals(repository.getSubLayout())));
             if (result) {

@@ -30,8 +30,6 @@ public interface Repository {
 
     long getArtifactMaxSize();
 
-    long getRepositoryMaxSize();
-
     boolean isTrashEnabled();
 
     boolean isAllowsForceDeletion();

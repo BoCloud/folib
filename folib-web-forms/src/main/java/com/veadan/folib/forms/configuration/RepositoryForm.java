@@ -55,8 +55,6 @@ public class RepositoryForm {
 
     private long artifactMaxSize;
 
-    private long repositoryMaxSize;
-
     private boolean trashEnabled = true;
 
     private boolean allowsForceDeletion;
@@ -328,14 +326,6 @@ public class RepositoryForm {
 
     public void setAllowAnonymous(boolean allowAnonymous) {
         this.allowAnonymous = allowAnonymous;
-    }
-
-    public long getRepositoryMaxSize() {
-        return repositoryMaxSize;
-    }
-
-    public void setRepositoryMaxSize(long repositoryMaxSize) {
-        this.repositoryMaxSize = repositoryMaxSize;
     }
 
     public interface WhiteGroup

@@ -151,20 +151,20 @@ public class ArtifactOperationsValidator {
     }
 
 
-    public void checkRepositorySize(RepositoryPath repositoryPath)
+    public void checkStorageSize(RepositoryPath repositoryPath)
             throws IOException {
-        String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId();
-        Repository repository = repositoryPath.getRepository();
-        long repositoryMaxSize = repository.getRepositoryMaxSize();
-        if (repositoryMaxSize <= 0) {
+        String storageId = repositoryPath.getStorageId();
+        Storage storage = getConfiguration().getStorage(storageId);
+        long storageMaxSize = storage.getStorageMaxSize();
+        if (storageMaxSize <= 0) {
             return;
         }
-        long repositoryBytesSize = artifactRepository.artifactsBytesStatistics(Collections.singletonList(String.format("%s-%s", storageId, repositoryId)));
-        BigDecimal repositoryMaxTbSize = FileSizeConvertUtils.convertBytesWithDecimal(repositoryMaxSize, FileUnitTypeEnum.TB.getUnit());
-        BigDecimal repositoryRealTbSize = FileSizeConvertUtils.convertBytesWithDecimal(repositoryBytesSize, FileUnitTypeEnum.TB.getUnit());
-        if (repositoryRealTbSize.compareTo(repositoryMaxTbSize) >= 0) {
-            throw new ArtifactResolutionException(String.format("The size of the repository [%s] exceeds the maximum size accepted by " +
-                    "this repository (%s/%s) unit %s.", repositoryPath, repositoryRealTbSize, repositoryMaxTbSize, FileUnitTypeEnum.TB.getUnit()));
+        long storageBytesSize = artifactRepository.artifactsBytesStatisticsByStorageIds(Collections.singletonList(storageId));
+        BigDecimal storageMaxTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageMaxSize, FileUnitTypeEnum.TB.getUnit());
+        BigDecimal storageRealTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageBytesSize, FileUnitTypeEnum.TB.getUnit());
+        if (storageRealTbSize.compareTo(storageMaxTbSize) >= 0) {
+            throw new ArtifactResolutionException(String.format("The size of the storage [%s] artifact [%s] exceeds the maximum size accepted by " +
+                    "this storage (%s/%s) unit %s.", storageId, repositoryPath, storageRealTbSize, storageMaxTbSize, FileUnitTypeEnum.TB.getUnit()));
         }
     }
 

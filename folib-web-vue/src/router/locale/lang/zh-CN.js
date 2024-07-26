@@ -35,4 +35,5 @@ export default {
     'ProjectsAnalysisDetail': '制品分析详情',
     'ProjectsDetails': '制品分析',
     //bom end
+    'StorageMonitoring': '存储监控',
 }

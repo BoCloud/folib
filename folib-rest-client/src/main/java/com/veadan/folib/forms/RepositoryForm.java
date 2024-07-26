@@ -57,12 +57,6 @@ public class RepositoryForm {
     private long artifactMaxSize = 107374182400L;
 
     /**
-     * 仓库存储最大值
-     */
-    @Builder.Default
-    private long repositoryMaxSize = 1099511627776000L;
-
-    /**
      * 回收站
      */
     @Builder.Default

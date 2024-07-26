@@ -27,4 +27,5 @@ export default {
     'Transparent': '透明',
     'WhiteBackground': '白底',
     'NavigationLock': '导航锁定',
+    'StorageMonitoring': '存储监控',
 }

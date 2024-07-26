@@ -458,7 +458,7 @@ public class ArtifactManagementService
         artifactOperationsValidator.checkAllowsRedeployment(repository, coordinates);
         artifactOperationsValidator.checkAllowsDeployment(repository);
         if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
-            artifactOperationsValidator.checkRepositorySize(path);
+            artifactOperationsValidator.checkStorageSize(path);
         }
         return true;
     }
@@ -501,7 +501,7 @@ public class ArtifactManagementService
 //        artifactOperationsValidator.checkAllowsRedeployment(repository, coordinates);
 //        artifactOperationsValidator.checkAllowsDeployment(repository);
         if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
-            artifactOperationsValidator.checkRepositorySize(path);
+            artifactOperationsValidator.checkStorageSize(path);
         }
         return true;
     }

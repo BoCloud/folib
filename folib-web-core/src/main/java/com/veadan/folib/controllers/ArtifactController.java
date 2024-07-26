@@ -12,8 +12,10 @@ import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.ArtifactStatistics;
 import com.veadan.folib.domain.thirdparty.ArtifactInfo;
 import com.veadan.folib.domain.thirdparty.ArtifactQuery;
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
+import com.veadan.folib.gremlin.entity.KeyValue;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.ArtifactWebService;
@@ -387,5 +389,17 @@ public class ArtifactController extends BaseController {
         }
         mavenIndexerService.handlerMavenIndexerAndDownLoad(loginUsername(), repository, mavenIndexerPath, batch, poolSize);
         return ResponseEntity.ok("");
+    }
+
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @GetMapping(value = "/getLayouts")
+    public ResponseEntity<List<KeyValue>> getLayouts() throws Exception {
+        List<KeyValue> layouts = Lists.newArrayList();
+        KeyValue keyValue = null;
+        for (ProductTypeEnum productTypeEnum : ProductTypeEnum.values()) {
+            keyValue = new KeyValue(productTypeEnum.toString(), productTypeEnum.getSubLayout());
+            layouts.add(keyValue);
+        }
+        return ResponseEntity.ok(layouts);
     }
 }

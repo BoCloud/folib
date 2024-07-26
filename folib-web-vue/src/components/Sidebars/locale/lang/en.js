@@ -27,4 +27,5 @@ export default {
     'Transparent': 'Transparent',
     'WhiteBackground': 'White background',
     'NavigationLock': 'Navigation lock',
+    'StorageMonitoring': 'Storage monitoring',
 }

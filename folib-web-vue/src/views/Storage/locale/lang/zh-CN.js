@@ -68,6 +68,7 @@ export default {
     'DistributedRemain': '当前存储为分布式，不支持存储路径定义',
     'ItemLimit': '制品大小限制(MB)',
     'RepositorySizeLimit': '仓库存储限制(TB)',
+    'StorageSizeLimit': '存储限制(TB)',
     'ServiceStatus': '服务状态',
     'OpenService': '开放服务',
     'ShutdownService': '关闭服务',
@@ -219,6 +220,17 @@ export default {
     'GitPassword': 'git仓库密码/token',
     'GitProvider': 'Git Provider',
     'AddGitCredential': '添加git凭据',
-
-
+    'StorageOverview': '存储概览',
+    'FilesSize':'文件大小',
+    'FilesCount':'文件数量',
+    'RepositoryCount': '仓库数量',
+    'ArtifactsSize':'制品大小',
+    'ArtifactsCount':'制品数量',
+    'FoldersCount':'文件夹数量',
+    'ItemsCount':'条目数量',
+    'StorageDeviceType': '存储设备类型',
+    'StorageQuotaSize':'存储空间配额',
+    'DataUpdateTime':'数据更新时间',
+    'LastTwentyUpdates': '近20次更新存储数据视图',
+    'RepositoryList': '仓库列表',
 }

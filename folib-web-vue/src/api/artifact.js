@@ -147,3 +147,10 @@ export function conanPackageInfo (data) {
     data: data
   })
 }
+
+export function getLayouts () {
+  return axios({
+    url: '/api/artifact/getLayouts',
+    method: 'get',
+  })
+}

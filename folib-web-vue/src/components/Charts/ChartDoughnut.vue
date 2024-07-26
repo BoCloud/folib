@@ -11,32 +11,43 @@
 	Chart.register(...registerables);
 
 	export default ({
-		props: [
-		],
+		props: {
+			chartData: {
+				type: Object,
+				default: function () {
+					return {
+						labels: ['A', 'B', 'C'],
+						datasets: [
+							{
+								label: "Projects",
+								weight: 9,
+								cutout: 60,
+								tension: 0.9,
+								pointRadius: 2,
+								borderWidth: 2,
+								backgroundColor: ['#FADB14', '#B37FEB', '#52C41A'],
+								data: [15, 20, 12],
+								fill: false
+							}
+						]
+					}
+				}
+			},
+			height: {
+				type: Number,
+				default: 300,
+			},
+		},
 		data(){
 			return {
-				height: 300,
+				
 			} ;
 		},
 		mounted () { 
-    		let ctx = this.$refs.chart.getContext("2d");
-
+    	let ctx = this.$refs.chart.getContext("2d");
 			this.chart = new Chart(ctx, {
 				type: "doughnut",
-				data: {
-					labels: ['Creative Tim', 'Github', 'Bootsnipp', 'Dev.to', 'Codeinwp'],
-					datasets: [{
-						label: "Projects",
-						weight: 9,
-						cutout: 60,
-						tension: 0.9,
-						pointRadius: 2,
-						borderWidth: 2,
-						backgroundColor: ['#FADB14', '#B37FEB', '#52C41A', '#1890FF', '#F5222D'],
-						data: [15, 20, 12, 60, 20],
-						fill: false
-					}],
-				},
+				data: this.chartData,
 				options: {
 					responsive: true,
 					maintainAspectRatio: false,

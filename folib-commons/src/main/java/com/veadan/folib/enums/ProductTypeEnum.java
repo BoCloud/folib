@@ -7,19 +7,91 @@ import lombok.Getter;
 @Getter
 public enum ProductTypeEnum {
 
-    Maven(1, "maven", "Maven 2"),
-    Docker(2, "docker", "Docker"),
-    Pypi(3, "pypi", "PyPi"),
-    Npm(4, "npm", "npm"),
+    /**
+     * Maven
+     */
+    Maven(1, "maven", "Maven 2", "maven"),
+    /**
+     * Ivy
+     */
+    Ivy(2, "maven", "Maven 2", "ivy"),
+    /**
+     * SBT
+     */
+    SBT(3, "maven", "Maven 2", "sbt"),
+    /**
+     * SBT
+     */
+    Gradle(4, "maven", "Maven 2", "gradle"),
+    /**
+     * Docker
+     */
+    Docker(5, "docker", "Docker", "docker"),
+    /**
+     * Helm
+     */
+    Helm(6, "helm", "helm", "helm"),
+    /**
+     * Pypi
+     */
+    Pypi(7, "pypi", "PyPi", "pypi"),
+    /**
+     * Npm
+     */
+    Npm(8, "npm", "npm", "npm"),
+    /**
+     * Yarn
+     */
+    Yarn(9, "npm", "npm", "yarn"),
+    /**
+     * ohpm
+     */
+    Ohpm(10, "npm", "npm", "ohpm"),
     /**
      * artifactory中是generic，nexus中是raw
      */
-    Generic(5, "generic", "Raw"),
-    Conan(6, "conan", "conan");
+    Raw(11, "generic", "Raw", "raw"),
+    /**
+     * CocoaPods
+     */
+    CocoaPods(12, "cocoaPods", "cocoaPods", "cocoaPods"),
+    /**
+     * Go
+     */
+    Go(13, "go", "go", "go"),
+    /**
+     * Php
+     */
+    Php(14, "php", "php", "php"),
+    /**
+     * Conan
+     */
+    Conan(15, "conan", "conan", "conan"),
+    /**
+     * NuGet
+     */
+    NuGet(16, "nuget", "nuget", "nuget"),
+    /**
+     * Rpm
+     */
+    Rpm(17, "rpm", "rpm", "rpm"),
+    /**
+     * GitLFS
+     */
+    GitLFS(18, "gitlfs", "gitlfs", "gitlfs"),
+    /**
+     * HuggingFace
+     */
+    HuggingFace(19, "HuggingFace", "HuggingFace", "HuggingFace"),
+    /**
+     * Pub
+     */
+    Pub(20, "pub", "pub", "pub");
 
     private Integer value;
     private String name;
     private String foLibraryName;
+    private String subLayout;
 
     public static String queryFolibLibraryByName(String name) {
         String libraryName = "";

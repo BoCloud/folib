@@ -35,4 +35,5 @@ export default {
     'RepositoryAnalysisDetail': 'Repository Analysis Detail',
     'RepositoryDetails': 'Repository Analysis',
     //bom end
+    'StorageMonitoring': 'Storage monitoring',
 }

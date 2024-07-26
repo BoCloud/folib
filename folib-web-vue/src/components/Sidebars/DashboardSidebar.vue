@@ -99,6 +99,14 @@
         </router-link>
       </a-menu-item>
       <a-menu-item v-if="userInfo.roles.indexOf('ADMIN') > -1">
+        <router-link to="/storageMonitoring">
+          <span class="icon">
+            <a-icon type="appstore" theme="filled" class="m-0" />
+          </span>
+          <span class="label">{{ $t('Sidebars.StorageMonitoring') }}</span>
+        </router-link>
+      </a-menu-item>
+      <a-menu-item v-if="userInfo.roles.indexOf('ADMIN') > -1">
         <router-link to="/monitor">
           <span class="icon">
             <a-icon type="fund" theme="filled" class="m-0" />

@@ -11,15 +11,52 @@
 	Chart.register(...registerables);
 
 	export default ({
-		props: [
-		],
+		props: {
+			chartData: {
+				type: Object,
+				default: function () {
+					return {
+						labels: ["A", "B", "C"],
+						datasets: [
+							{
+								type: "bar",
+								label: "",
+								weight: 5,
+								tension: 0.4,
+								borderWidth: 0,
+								pointBackgroundColor: "#141414",
+								borderColor: "#141414",
+								backgroundColor: '#141414',
+								borderRadius: 4,
+								borderSkipped: false,
+								data: [10, 20, 30],
+								maxBarThickness: 10,
+							},
+						],
+					}
+				}
+			},
+			height: {
+				type: Number,
+				default: 300,
+			},
+		},
 		data(){
 			return {
-				height: 300,
 			} ;
 		},
+		watch: {
+			chartData: {
+				handler(newVal) {
+					if (this.chart) {
+						this.updateChart(newVal);
+					}
+				},
+				deep: true,
+			},
+		},
 		mounted () { 
-    		let ctx = this.$refs.chart.getContext("2d");
+    	let ctx = this.$refs.chart.getContext("2d");
 
 			var gradientStroke1 = ctx.createLinearGradient(0, 230, 0, 50);
 
@@ -28,37 +65,7 @@
 			gradientStroke1.addColorStop(0, 'rgba(24, 144, 255, 0)'); // Primary color
 
 			this.chart = new Chart(ctx, {
-				data: {
-					labels: ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-					datasets: [{
-						type: "bar",
-						label: "Organic Search",
-						weight: 5,
-						tension: 0.4,
-						borderWidth: 0,
-						pointBackgroundColor: "#141414",
-						borderColor: "#141414",
-						backgroundColor: '#141414',
-						borderRadius: 4,
-						borderSkipped: false,
-						data: [50, 40, 300, 220, 500, 250, 400, 230, 500],
-						maxBarThickness: 10,
-					},
-					{
-						type: "line",
-						label: "Referral",
-						tension: 0.4,
-						borderWidth: 0,
-						pointRadius: 0,
-						pointBackgroundColor: "#1890FF",
-						borderColor: "#1890FF",
-						borderWidth: 3,
-						backgroundColor: gradientStroke1,
-						data: [30, 90, 40, 140, 290, 290, 340, 230, 400],
-						fill: true,
-					}
-					],
-				},
+					data: this.chartData,
      			options: {
 					layout: {
 						padding: {
@@ -124,6 +131,12 @@
 					},
 				}
 			});
+		},
+		methods: {
+			updateChart(newData) {
+				this.chart.data = newData;
+				this.chart.update();
+			}
 		},
 		// Right before the component is destroyed,
 		// also destroy the chart.

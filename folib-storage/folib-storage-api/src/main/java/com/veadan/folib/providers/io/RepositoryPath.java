@@ -56,6 +56,8 @@ public class RepositoryPath
 
     private String artifactPath;
 
+    private Long size;
+
     public RepositoryPath(Path target,
                           LayoutFileSystem fileSystem) {
         this.target = target;
@@ -399,5 +401,13 @@ public class RepositoryPath
 
     public void setDisableRemote(Boolean disableRemote) {
         this.disableRemote = disableRemote;
+    }
+
+    public Long getSize() {
+        return size;
+    }
+
+    public void setSize(Long size) {
+        this.size = size;
     }
 }

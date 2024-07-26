@@ -200,6 +200,11 @@ public class ConfigurationManagementServiceImpl
         if (StringUtils.isBlank(storageDto.getStorageProvider()) && StringUtils.isNotBlank(storage.getStorageProvider())) {
             storageDto.setStorageProvider(storage.getStorageProvider());
         }
+        if (Objects.nonNull(storage.getStorageMaxSize()) && storage.getStorageMaxSize() > 0 ) {
+            storageDto.setStorageMaxSize(storage.getStorageMaxSize());
+        } else {
+            storageDto.setStorageMaxSize(0L);
+        }
         checkUsersContainsAdmin(storageDto);
         modifyInLock(configuration -> configuration.addStorage(storageDto));
     }
