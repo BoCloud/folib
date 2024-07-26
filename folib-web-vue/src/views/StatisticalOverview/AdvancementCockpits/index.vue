@@ -9,9 +9,8 @@
                         :precision="0"
                         class="text-success"
                     >
-                        <template #prefix></template>
                     </a-statistic>
-                    <div class="icon">
+                    <div class="icon" style="background-color: #52c41a">
                         <a-icon type="check-circle" theme="filled" two-tone-color="#52c41a"/>
                     </div>
                 </a-card>
@@ -26,7 +25,7 @@
                     >
                         <template #prefix></template>
                     </a-statistic>
-                    <div class="icon">
+                    <div class="icon" style="background-color: #f50">
                         <a-icon type="close-circle" theme="filled"/>
                     </div>
                 </a-card>
@@ -55,7 +54,7 @@
                     >
                         <template #prefix></template>
                     </a-statistic>
-                    <div class="icon">
+                    <div class="icon" style="background-color: orange">
                         <a-icon type="file" theme="filled"/>
                     </div>
                 </a-card>
@@ -74,32 +73,7 @@
                         />
                         <!--                <p>{{  }}</p>-->
                     </template>
-                    <chart-bar ref="volFolib" :height="310" :data="barChartData"></chart-bar>
-                    <!--                    <div class="card-title">-->
-                    <!--                        <h6>{{ $t('Storage.Compare') }}</h6>-->
-                    <!--                        <p>{{ $t('Storage.packagesNum') }} <span class="text-success">{{weekCompare.scanCount>0?'+'+weekCompare.scanCount:weekCompare.scanCount===0?$t('Storage.unknown'):$t('Storage.unchanged')}}</span></p>-->
-                    <!--                    </div>-->
-                    <!--                    <div class="card-content">-->
-                    <!--                        <p>{{ $t('Storage.dataCompared') }}</p>-->
-                    <!--                    </div>-->
-                    <!--                    <a-row class="card-footer" type="flex" justify="center" align="top">-->
-                    <!--                        <a-col :span="6">-->
-                    <!--                            <h6>{{weekCompare.dependencyVulnerabilitiesCount}}</h6>-->
-                    <!--                            <span>{{ $t('Storage.NewVulnerabilityPackage') }}</span>-->
-                    <!--                        </a-col>-->
-                    <!--                        <a-col :span="6">-->
-                    <!--                            <h6>{{weekCompare.dependencyCount}}</h6>-->
-                    <!--                            <span>{{ $t('Storage.ScanForNewDependencies') }}</span>-->
-                    <!--                        </a-col>-->
-                    <!--                        <a-col :span="6">-->
-                    <!--                            <h6>{{weekCompare.vulnerabilitiesCount}}</h6>-->
-                    <!--                            <span>{{ $t('Storage.NewVulnerabilityDependency') }}</span>-->
-                    <!--                        </a-col>-->
-                    <!--                        <a-col :span="6">-->
-                    <!--                            <h6>{{weekCompare.suppressedVulnerabilitiesCount}}</h6>-->
-                    <!--                            <span>{{ $t('Storage.NewSealedVulnerabilitiesNum') }}</span>-->
-                    <!--                        </a-col>-->
-                    <!--                    </a-row>-->
+                    <chart-bar ref="volFolib" className="barChartRadialGradient" :height="310" :data="barChartData"></chart-bar>
                 </a-card>
                 <!-- Active Users Card -->
 
@@ -406,6 +380,38 @@ export default {
                     maxBarThickness: 20,
                 }],
             },
+            // chartOptions: {
+            //     responsive: true,
+            //     maintainAspectRatio: false,
+            //     plugins: {
+            //         legend: {
+            //             backgroundColor: '#02f446' // 图例背景颜色
+            //         }
+            //     },
+            //     // scales: {
+            //     //     x: {
+            //     //         backgroundColor: '#ffffff', // X轴背景颜色
+            //     //         grid: {
+            //     //             backgroundColor: '#f0f0f0' // X轴网格背景颜色
+            //     //         }
+            //     //     },
+            //     //     y: {
+            //     //         beginAtZero: true,
+            //     //         backgroundColor: '#b41d1d', // Y轴背景颜色
+            //     //         grid: {
+            //     //             backgroundColor: '#b41d1d' // Y轴网格背景颜色
+            //     //         }
+            //     //     }
+            //     // },
+            //     backgroundColor: '#02f40f' // 图表整体背景颜色
+            // },
+            chartOptions: {
+                plugins: {
+                    customCanvasBackgroundColor: {
+                        color: 'lightGreen',
+                    }
+                }
+            },
         };
     },
     computed: {
@@ -479,6 +485,11 @@ export default {
         this.getCountData();
         this.getStatusTrendsData();
         this.fileSizeStatisticsByWarehouseData();
+        this.chart = new Chart(this.$refs.volFolib, {
+            type: 'bar',
+            data: this.chartData,
+            options: this.chartOptions
+        });
     },
     methods: {
         formatTimestamp,
@@ -632,4 +643,5 @@ export default {
         margin-right: 8px;
     }
 }
+
 </style>
