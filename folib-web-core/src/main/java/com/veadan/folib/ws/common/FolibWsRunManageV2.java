@@ -323,7 +323,7 @@ public class FolibWsRunManageV2 {
     }
 
 
-    private static final long _1_MB = 1024 * 1024; // 1MB
+    private static final long _1_MB = 50*1024 * 1024; // 1MB
 
     /**
      * 限速缺省值50M
