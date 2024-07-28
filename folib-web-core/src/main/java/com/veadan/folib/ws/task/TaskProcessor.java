@@ -62,12 +62,10 @@ public class TaskProcessor {
                 // 确保使用正确的调度器
                 .runOn(ioScheduler)
                 .subscribe(task -> {
-                            logger.info("====================================================================================================");
                             logger.info("开始执行任务: " + task.getTaskId());
                             task.run();
                             logger.info("任务执行完毕: " + task.getTaskId());
                             logger.info("queue size:{}", distributionService.getQueueSize());
-                            logger.info("====================================================================================================");
                             },
                         throwable -> {
                             throwable.printStackTrace();

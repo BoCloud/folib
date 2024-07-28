@@ -1,6 +1,7 @@
 package com.veadan.folib.promotion;
 
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.date.StopWatch;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.json.JSONUtil;
@@ -1009,11 +1010,14 @@ public class PromotionUtil {
                         }
                         throw new RuntimeException(e);
                     }});
-        distributionService.addTask(task);
+        distributionService. addTask(task);
         return future;
     }
 
     private void doArtifactSliceUploadV3(PromotionNodeOptionDto uploadDto, String storageId, String repositoryId, String syncNo, String finalTargetUrl1, String targetHostName) throws Exception {
+        StopWatch stopWatch = new StopWatch();
+        // 开始计时
+        stopWatch.start("doArtifactSliceUploadV3");
         final Map<String, Map<String, RepositoryPath>> filePathMap = uploadDto.getPathMap();
         final long sliceByteSize = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
         //从 filePathMap 中移除目标节点中已经存在的制品
@@ -1052,6 +1056,9 @@ public class PromotionUtil {
                 new RetryTask(promotionConfig.getRetryCount()) {
                     @Override
                     public void exec(RetryTask retryTask) throws Exception {
+                        StopWatch stopWatch2 = new StopWatch();
+                        // 开始计时
+                        stopWatch2.start("RetryTask-exec");
                         try {
                             log.info("WSMessageRequest upload slice {}/{} ,targetHostName:{} , path:{}", finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath());
                             //TODO 切片文件写到内存，没有重用，定时重试
@@ -1063,6 +1070,11 @@ public class PromotionUtil {
                         } catch (Exception e) {
                             log.error("upload exception", e);
                             throw e;
+                        }finally {
+                            // 停止计时
+                            stopWatch2.stop();
+                            // 输出耗时信息
+                            log.info(stopWatch2.prettyPrint());
                         }
                     }
                 }.call();
@@ -1073,6 +1085,11 @@ public class PromotionUtil {
                 artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), ArtifactSyncRecordStatusEnum.FAILED.getVal(), new Date(), e.getMessage());
                 updateRecordStatus( ArtifactSyncRecordStatusEnum.FAILED.getVal(), syncNo, e.getMessage());
                 throw e;
+            }finally {
+                // 停止计时
+                stopWatch.stop();
+                // 输出耗时信息
+                log.info(stopWatch.prettyPrint());
             }
         }
     }

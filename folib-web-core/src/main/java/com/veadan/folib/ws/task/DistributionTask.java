@@ -22,10 +22,8 @@ public class DistributionTask implements Runnable, Comparable<DistributionTask> 
 
     @Override
     public void run() {
-        logger.info("====================================================================================================");
         logger.info("DistributionTask run taskId:{}", taskId);
         task.run();
-        logger.info("====================================================================================================");
     }
 
     @Override

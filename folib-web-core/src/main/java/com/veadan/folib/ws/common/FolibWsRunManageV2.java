@@ -1,5 +1,6 @@
 package com.veadan.folib.ws.common;
 
+import cn.hutool.core.date.StopWatch;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.util.concurrent.RateLimiter;
 import com.veadan.folib.components.DistributedCacheComponent;
@@ -248,12 +249,23 @@ public class FolibWsRunManageV2 {
     }
 
     private void sendBinary(String targetNode, Session session, WSMessage wsMessage, long finalKbps) throws Exception {
+
+        StopWatch stopWatch = new StopWatch();
+
+        // 开始计时
+        stopWatch.start("sendBinary");
         ByteBuffer byteBuffer = ByteBuffer.wrap(KryoSerializationUtil.serialize(wsMessage));
 
         try {
             sendBinaryV2(targetNode, session, byteBuffer, finalKbps);
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }finally {
+            // 停止计时
+            stopWatch.stop();
+
+            // 输出耗时信息
+            log.info(stopWatch.prettyPrint());
         }
 
         //session.getBasicRemote().sendBinary(byteBuffer);
@@ -323,7 +335,7 @@ public class FolibWsRunManageV2 {
     }
 
 
-    private static final long _1_MB = 50*1024 * 1024; // 1MB
+    private static final long _1_MB = 1024 * 1024; // 1MB
 
     /**
      * 限速缺省值50M
@@ -355,7 +367,7 @@ public class FolibWsRunManageV2 {
         ReentrantLock reentrantLock = sessionLocks.computeIfAbsent(session, session1 -> new ReentrantLock(true));
         int sendBytesCount = 0;
         String  cacheChunkSize = distributedCacheComponent.get(PROMOTION_CHUNK_SIZE_KEY);
-        int minimumPacketSize = cacheChunkSize == null ? 1024 * 1024 : Integer.parseInt(cacheChunkSize);
+        int minimumPacketSize = cacheChunkSize == null ? 50*1024 * 1024 : Integer.parseInt(cacheChunkSize);
         //TCP通道一次只能处理一个消息，每次发送1M数据，为了解决TCP  队头阻塞，如果实际网络较小，发送过大的数据，会导致时间变长，比如发送20M，实际网络1M，则需要20S，在这个时间内会阻碍其他WS消息处理，心跳超时，会导致主动断开WS通道
         if (minimumPacketSize > finalKbps) {
             minimumPacketSize = (int) finalKbps;

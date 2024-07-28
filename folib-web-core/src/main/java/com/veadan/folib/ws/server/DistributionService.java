@@ -33,11 +33,9 @@ public class DistributionService {
      * @param task
      */
     public void addTask(DistributionTask task) {
-        log.info("====================================================================================================\n");
         log.info("addTask: " + task.getTaskId() + " priority: " + task.getPriority());
         queue.put(task, task.getTaskId());
         log.info("addTask queue size:{}: " ,queue.size());
-        log.info("====================================================================================================");
     }
 
     /**
@@ -64,17 +62,13 @@ public class DistributionService {
     public DistributionTask getNextTask() {
         DistributionTask task = null;
         try {
-            log.info("==============================================getNextTask======================================================\n");
             log.info("getNextTask: " + queue.size());
             task = queue.take();
             if(task!=null){
                 log.info("getNextTask queue size:{} ",queue.size());
             }
-            log.info("====================================================================================================");
         } catch (InterruptedException e) {
-            log.info("====================================================================================================\n");
             log.error("InterruptedException: " + e.getMessage());
-            log.info("====================================================================================================");
         }
         return task;
     }
