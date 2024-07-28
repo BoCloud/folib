@@ -1,13 +1,15 @@
 package com.veadan.folib.ws.task;
 
 import lombok.Data;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 分发任务
  */
 @Data
 public class DistributionTask implements Runnable, Comparable<DistributionTask> {
-
+    private static final Logger logger = LoggerFactory.getLogger(DistributionTask.class);
     private String taskId;
     private int priority;
     private Runnable task;
@@ -20,7 +22,10 @@ public class DistributionTask implements Runnable, Comparable<DistributionTask> 
 
     @Override
     public void run() {
+        logger.info("====================================================================================================");
+        logger.info("DistributionTask run taskId:{}", taskId);
         task.run();
+        logger.info("====================================================================================================");
     }
 
     @Override

@@ -83,8 +83,8 @@ public class OptimizedDynamicPriorityBlockingQueue<E> {
             // 如果队列为空，等待
             while (queue.isEmpty()) {
                 // 线程等待
-                //notEmpty.await();
-                return null;
+                notEmpty.await();
+               // return null;
             }
             // 取出并移除队列头部元素
             E element = queue.poll();
