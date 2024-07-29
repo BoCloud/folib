@@ -1,6 +1,5 @@
 package com.veadan.folib.ws.common;
 
-import cn.hutool.core.date.StopWatch;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.util.concurrent.RateLimiter;
 import com.veadan.folib.components.DistributedCacheComponent;
@@ -250,11 +249,6 @@ public class FolibWsRunManageV2 {
     }
 
     private void sendBinary(String targetNode, Session session, WSMessage wsMessage, long finalKbps) throws Exception {
-
-        StopWatch stopWatch = new StopWatch();
-
-        // 开始计时
-        stopWatch.start("sendBinary----");
         ByteBuffer byteBuffer = ByteBuffer.wrap(KryoSerializationUtil.serialize(wsMessage));
 
         try {
@@ -262,12 +256,6 @@ public class FolibWsRunManageV2 {
             sendBinaryV2(targetNode, session, byteBuffer, finalKbps);
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }finally {
-            // 停止计时
-            stopWatch.stop();
-
-            // 输出耗时信息
-            log.info(stopWatch.prettyPrint(TimeUnit.SECONDS));
         }
 
         //session.getBasicRemote().sendBinary(byteBuffer);
@@ -282,9 +270,7 @@ public class FolibWsRunManageV2 {
     }
 
     public WSMessageResponse sendRequest(String targetHostName, WSMessageRequest wsMessageRequest, int timeout) throws FolibWsRequestException {
-        StopWatch stopWatch2 = new StopWatch();
-        // 开始计时
-        stopWatch2.start("sendRequest-task");
+
         CompletableFuture<WSMessageResponse> future = new CompletableFuture<>();
         Session session = getSession(targetHostName);
 
@@ -308,9 +294,6 @@ public class FolibWsRunManageV2 {
         final long finalKbps = getRateKbps(targetHostName);
         Map<String, CompletableFuture<WSMessageResponse>> futureMap = REQUEST_FUTURES.computeIfAbsent(session, session1 -> new ConcurrentHashMap<>());
         futureMap.put(wsMessageRequest.getId(), future);
-        StopWatch stopWatch3 = new StopWatch();
-        // 开始计时
-        stopWatch3.start("sendRequest-sendBinary");
         try {
 
             log.info("WsMessageRequest [{}]", wsMessageRequest);
@@ -318,29 +301,14 @@ public class FolibWsRunManageV2 {
         } catch (Exception e) {
             log.error("SendBinary fail", e);
             future.completeExceptionally(e);
-        }finally {
-            // 停止计时
-            stopWatch3.stop();
-            // 输出耗时信息
-            log.info(stopWatch3.prettyPrint(TimeUnit.SECONDS));
         }
-        StopWatch stopWatch4 = new StopWatch();
-        // 开始计时
-        stopWatch4.start("sendRequest-future");
         final WSMessageResponse wsMessageResponse;
         try {//todo 出现异常将其关闭
-            wsMessageResponse = future.get(5, TimeUnit.SECONDS);
+            wsMessageResponse = future.get(timeout, TimeUnit.SECONDS);
         } catch (Exception e) {
             throw new FolibWsRequestException(e);
         } finally {
             futureMap.remove(wsMessageRequest.getId());
-            stopWatch4.stop();
-            // 输出耗时信息
-            log.info(stopWatch4.prettyPrint(TimeUnit.SECONDS));
-            // 停止计时
-            stopWatch2.stop();
-            // 输出耗时信息
-            log.info(stopWatch2.prettyPrint(TimeUnit.SECONDS));
         }
         return wsMessageResponse;
     }
@@ -406,15 +374,8 @@ public class FolibWsRunManageV2 {
         // 预先计算协议字节和消息ID字节
         byte[] protocolBytes = FOLIB_WS_PROTOCOL.getBytes();
         byte[] messageIdBytes = messageId.getBytes();
-        StopWatch stopWatch = new StopWatch();
-        AtomicInteger counter = new AtomicInteger(0);
-        // 开始计时
-        stopWatch.start("sendBinaryV2-while");
+
         while (inputStream.available() > 0) {
-            counter.getAndIncrement();
-            StopWatch stopWatch2 = new StopWatch();
-            // 开始计时
-            stopWatch2.start("sendBinaryV2-while-1");
             long lockStartTime = System.currentTimeMillis();
             reentrantLock.lock();
             //公平锁保证多线程，同一个session按照顺序发送WS消息，如果不加，并发时可能乱序处理，可能和操作系统有关，导致最开始的消息一直未发送，发送超时后，会导致WS通道断开
@@ -443,9 +404,6 @@ public class FolibWsRunManageV2 {
                 CompletableFuture<Void> completableFuture = new CompletableFuture<>();
                 RemoteEndpoint.Async asyncRemote = session.getAsyncRemote();
                 asyncRemote.setSendTimeout(5);
-                StopWatch stopWatch3 = new StopWatch();
-                // 开始计时
-                stopWatch3.start("sendBinaryV2-while-1-1");
                 asyncRemote.sendBinary(chunk, result -> {
                     if (result.isOK()) {
                         // 完成Future
@@ -459,9 +417,6 @@ public class FolibWsRunManageV2 {
                 try {
                     // 阻塞等待直到Future完成
                     completableFuture.get();
-                    stopWatch3.stop();
-                    // 输出耗时信息
-                    log.info(stopWatch3.prettyPrint(TimeUnit.SECONDS));
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
@@ -484,16 +439,8 @@ public class FolibWsRunManageV2 {
             } finally {
                 reentrantLock.unlock();
                 log.info("RateLimiter targetNode [{}] messageId [{}] sessionId [{}] lock unlock time consuming [{} ms]]...", targetNode, messageId, session.getId(), System.currentTimeMillis() - lockStartTime);
-                stopWatch2.stop();
-                // 输出耗时信息
-                log.info(stopWatch2.prettyPrint(TimeUnit.SECONDS));
             }
         }
-        stopWatch.stop();
-        log.info("while count:{}",counter.get());
-        // 输出耗时信息
-        log.info(stopWatch.prettyPrint(TimeUnit.SECONDS));
-
     }
 
     private long getRateKbps(String targetHostName) {

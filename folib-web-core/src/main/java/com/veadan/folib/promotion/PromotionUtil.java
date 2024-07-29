@@ -1,7 +1,6 @@
 package com.veadan.folib.promotion;
 
 import cn.hutool.core.collection.CollectionUtil;
-import cn.hutool.core.date.StopWatch;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.json.JSONUtil;
@@ -1054,9 +1053,6 @@ public class PromotionUtil {
                 new RetryTask(promotionConfig.getRetryCount()) {
                     @Override
                     public void exec(RetryTask retryTask) throws Exception {
-                        StopWatch stopWatch2 = new StopWatch();
-                        // 开始计时
-                        stopWatch2.start("RetryTask-exec");
                         try {
                             log.info("WSMessageRequest upload slice {}/{} ,targetHostName:{} , path:{}", finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath());
                             //TODO 切片文件写到内存，没有重用，定时重试
@@ -1068,11 +1064,6 @@ public class PromotionUtil {
                         } catch (Exception e) {
                             log.error("upload exception", e);
                             throw e;
-                        }finally {
-                            // 停止计时
-                            stopWatch2.stop();
-                            // 输出耗时信息
-                            log.info(stopWatch2.prettyPrint(TimeUnit.SECONDS));
                         }
                     }
                 }.call();
