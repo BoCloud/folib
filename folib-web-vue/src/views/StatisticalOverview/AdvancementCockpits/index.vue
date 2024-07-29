@@ -202,8 +202,12 @@
                                 <a-popconfirm :title="getProductStatusMessage()"
                                               okType="danger"
                                               :ok-text="$t('Repository.Confirm')"
-                                              :cancel-text="$t('Repository.Cancel')">
-                                    <a-button type="link" @click="clickRecord(record)" v-if="record.status === 4"
+                                              :cancel-text="$t('Repository.Cancel')"
+                                              @confirm="confirmRecord(record)"
+                                              @cancel="cancelRecord"
+                                >
+                                    <a-button type="link" v-if="record.status === 4"
+                                              @click="confirmRecord(record)"
                                               size="small">
                                         <span class="text-danger">{{ $t('Repository.Compensation') }}</span>
                                     </a-button>
@@ -212,9 +216,12 @@
                                 <a-popconfirm :title="getTitle()"
                                               okType="danger"
                                               :ok-text="$t('Repository.Confirm')"
-                                              :cancel-text="$t('Repository.Cancel')">
-                                    <a-button type="link" v-if="record.status === 1 || record.status === 2"
-                                              @click="updatePriority(record)"
+                                              :cancel-text="$t('Repository.Cancel')"
+                                              @confirm="updatePriority(record)"
+                                              @cancel="cancelRecord"
+                                >
+                                    <a-button type="link" v-if="record.status === 1"
+                                              @click="confirmRecord(record)"
                                               size="small">
                                         <span class="text-danger">{{ $t('AdvancementCockpits.SetTop') }}</span>
                                     </a-button>
@@ -231,6 +238,7 @@
 </template>
 
 <script>
+import { Chart } from 'chart.js';
 import ChartBar from '@/components/Charts/ChartBar';
 import ChartLine from '@/components/Charts/ChartLine';
 import {formatTimestamp} from "@/utils/util.js";
@@ -501,11 +509,7 @@ export default {
             }
         },
         getTitle() {
-            if (this.currentClickRecord && (this.currentClickRecord.status === 1 || this.currentClickRecord.status === 2)) {
-                this.$t('Repository.CurrentProductIsSynchronizing')
-            } else {
-                this.$t('AdvancementCockpits.SetTop');
-            }
+            return  this.$t('Repository.CurrentProductIsSynchronizing')+this.$t('AdvancementCockpits.SetTop');
         },
         fileSizeStatisticsByWarehouseData() {
             let days = 30;
@@ -571,16 +575,19 @@ export default {
             this.queryParams.pageNumber = 1
             this.getData()
         },
-        clickRecord(v) {
-            this.currentClickRecord = v
+        clickRecord(v){
+            this.currentClickRecord = v;
+        },
+        confirmRecord(v) {
+             this.currentClickRecord = v
             let sycnNo = this.currentClickRecord.syncNo;
             //1：制品晋级；2：制品分发
             let opsType = this.currentClickRecord.opsType;
             if (opsType === 1) {
                 this.vulnerabilityTableLoading = true
                 retryNodeOption(sycnNo).then(res => {
-                    this.$message.success("操作成功");
-                    this.handleChangeTable();
+                    this.$message.success("success");
+                    this.getData();
                 }).finally(() => {
                     this.vulnerabilityTableLoading = false
                 });
@@ -588,22 +595,24 @@ export default {
                 const jsonArrayString = JSON.parse(this.currentClickRecord.targetPath);
                 let type = jsonArrayString[0].artifactoryRepositoryType;
                 retryAtifactDispatch(sycnNo, type).then(res => {
-                    this.$message.success("操作成功");
-                    this.handleChangeTable();
+                    this.$message.success("success");
+                    this.getData();
                 }).finally(() => {
                     this.vulnerabilityTableLoading = false
                 });
             }
 
-            console.log("currentClickRecord:", this.currentClickRecord)
+        },
+        cancelRecord(){
+            this.$message.warning("cancel")
         },
         updatePriority(v) {
             this.currentClickRecord = v
             let sycnNo = this.currentClickRecord.syncNo;
-            this.vulnerabilityTableLoading = true
             updateTaskQueuePriority(sycnNo, 0).then(res => {
-                this.$message.success("操作成功");
-                this.handleChangeTable();
+                this.vulnerabilityTableLoading = true
+                this.$message.success("success");
+                this.getData();
             }).finally(() => {
                 this.vulnerabilityTableLoading = false
             })
