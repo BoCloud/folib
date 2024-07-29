@@ -100,6 +100,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -1015,9 +1016,6 @@ public class PromotionUtil {
     }
 
     private void doArtifactSliceUploadV3(PromotionNodeOptionDto uploadDto, String storageId, String repositoryId, String syncNo, String finalTargetUrl1, String targetHostName) throws Exception {
-        StopWatch stopWatch = new StopWatch();
-        // 开始计时
-        stopWatch.start("doArtifactSliceUploadV3");
         final Map<String, Map<String, RepositoryPath>> filePathMap = uploadDto.getPathMap();
         final long sliceByteSize = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
         //从 filePathMap 中移除目标节点中已经存在的制品
@@ -1074,7 +1072,7 @@ public class PromotionUtil {
                             // 停止计时
                             stopWatch2.stop();
                             // 输出耗时信息
-                            log.info(stopWatch2.prettyPrint());
+                            log.info(stopWatch2.prettyPrint(TimeUnit.SECONDS));
                         }
                     }
                 }.call();
@@ -1085,11 +1083,6 @@ public class PromotionUtil {
                 artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), ArtifactSyncRecordStatusEnum.FAILED.getVal(), new Date(), e.getMessage());
                 updateRecordStatus( ArtifactSyncRecordStatusEnum.FAILED.getVal(), syncNo, e.getMessage());
                 throw e;
-            }finally {
-                // 停止计时
-                stopWatch.stop();
-                // 输出耗时信息
-                log.info(stopWatch.prettyPrint());
             }
         }
     }

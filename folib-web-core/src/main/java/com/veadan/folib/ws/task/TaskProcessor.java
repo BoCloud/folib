@@ -26,6 +26,7 @@ public class TaskProcessor {
     private final DistributionService distributionService;
     private final Sinks.Many<DistributionTask> sink;
     private final Scheduler ioScheduler;
+    private final int cpuCores;
 
     /**
      * TaskProcessor 构造函数
@@ -39,13 +40,14 @@ public class TaskProcessor {
         // this.taskExecutor = taskExecutor;
         this.sink = Sinks.many().multicast().onBackpressureBuffer();
         //ThreadPoolExecutor executor = new ThreadPoolExecutor(
-        //        10, // 核心线程数
+        //        8, // 核心线程数
         //        50, // 最大线程数
-        //        60, // 线程空闲超时
+        //        10, // 线程空闲超时
         //        TimeUnit.SECONDS, // 超时单位
-        //        new java.util.concurrent.LinkedBlockingQueue<>(100) // 队列容量
+        //        new java.util.concurrent.LinkedBlockingQueue<>() // 队列容量
         //);
-
+        //ToDo cpu核心数用于并发数量，并发数量固定后要考虑网络带宽，否则会出现网络带宽不足
+        cpuCores = Runtime.getRuntime().availableProcessors();
         // 配置一个适用于 IO 密集型任务的 Scheduler
         //ioScheduler = Schedulers.fromExecutor(executor);
         ioScheduler = Schedulers.boundedElastic();
@@ -58,7 +60,7 @@ public class TaskProcessor {
     private void initializeTaskProcessing() {
         // 将 Sinks.Many 转换为 Flux，并配置并行处理和错误处理
         sink.asFlux()
-                .parallel(8)
+                .parallel(4)
                 // 确保使用正确的调度器
                 .runOn(ioScheduler)
                 .subscribe(task -> {
@@ -67,9 +69,7 @@ public class TaskProcessor {
                             logger.info("任务执行完毕: " + task.getTaskId());
                             logger.info("queue size:{}", distributionService.getQueueSize());
                             },
-                        throwable -> {
-                            throwable.printStackTrace();
-                        });
+                        Throwable::printStackTrace);
         // 启动任务轮询
         pollForTasks();
     }
@@ -83,10 +83,11 @@ public class TaskProcessor {
                 // 无任务时延迟 1000 毫秒后重试
                 .repeatWhenEmpty(repeat -> repeat.delayElements(Duration.ofMillis(1000)))
                 // 推送任务到处理流中
-                .doOnNext(task -> sink.tryEmitNext(task))
+                .doOnNext(sink::tryEmitNext)
                 // 无限次重复获取任务
                 .repeat()
-                .subscribeOn(ioScheduler) // 在独立线程池中执行
+                // 在独立线程池中执行
+                .subscribeOn(ioScheduler)
                 .subscribe();
     }
 }
