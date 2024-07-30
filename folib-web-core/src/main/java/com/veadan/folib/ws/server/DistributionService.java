@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 
 @Service
 public class DistributionService {
@@ -21,6 +22,8 @@ public class DistributionService {
 
     @Autowired
     private ArtifactSyncRecordMapper artifactSyncRecordMapper;
+
+    private static final Semaphore semaphore = new Semaphore(Runtime.getRuntime().availableProcessors());
 
     /**
      * 创建优先级队列，使用自然排序
@@ -63,6 +66,8 @@ public class DistributionService {
         DistributionTask task = null;
         try {
             log.info("getNextTask: " + queue.size());
+            // 获取信号量
+            acquire();
             task = queue.take();
             if(task!=null){
                 log.info("getNextTask queue size:{} ",queue.size());
@@ -73,10 +78,20 @@ public class DistributionService {
         return task;
     }
 
+    /**
+     * 获取队列大小
+     *
+     * @return int
+     */
     public int getQueueSize() {
         return queue.size();
     }
 
+    /**
+     * 根据节点名称清空任务队列
+     *
+     * @param targetHostName
+     */
     public void clearByNodeTaskQueue(String targetHostName) {
        List<String> syncNoList = artifactSyncRecordMapper.searchByTargetHostName(targetHostName);
        if(CollectionUtil.isNotEmpty(syncNoList)){
@@ -87,5 +102,21 @@ public class DistributionService {
              }
          });
        }
+    }
+
+    /**
+     * 获取信号量
+     *
+     * @throws InterruptedException
+     */
+    public void acquire() throws InterruptedException {
+        semaphore.acquire();
+    }
+
+    /**
+     * 释放信号量
+     */
+    public void release() {
+        semaphore.release();
     }
 }

@@ -1009,8 +1009,12 @@ public class PromotionUtil {
                             throw (RuntimeException) e;
                         }
                         throw new RuntimeException(e);
-                    }});
-        distributionService. addTask(task);
+                    }finally {
+                        //释放
+                        distributionService.release();
+                    }
+                });
+        distributionService.addTask(task);
         return future;
     }
 

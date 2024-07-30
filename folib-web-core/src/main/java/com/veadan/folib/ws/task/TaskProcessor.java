@@ -60,7 +60,8 @@ public class TaskProcessor {
     private void initializeTaskProcessing() {
         // 将 Sinks.Many 转换为 Flux，并配置并行处理和错误处理
         sink.asFlux()
-                .parallel(4)
+                //并发数量控制
+                .parallel(cpuCores)
                 // 确保使用正确的调度器
                 .runOn(ioScheduler)
                 .subscribe(task -> {

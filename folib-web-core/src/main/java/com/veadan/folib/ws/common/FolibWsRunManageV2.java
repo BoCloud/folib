@@ -252,7 +252,6 @@ public class FolibWsRunManageV2 {
         ByteBuffer byteBuffer = ByteBuffer.wrap(KryoSerializationUtil.serialize(wsMessage));
 
         try {
-            log.info("byteBuffer size:{}", byteBuffer.capacity());
             sendBinaryV2(targetNode, session, byteBuffer, finalKbps);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -352,7 +351,6 @@ public class FolibWsRunManageV2 {
         rateLimiter.setRate(finalKbps);
 
         int dataSize = data.remaining();
-        log.info("dataSize:{}",dataSize);
         long startTime = System.currentTimeMillis();
 
         log.info("About to sendBinary targetNode [{}] messageId [{}] sessionId [{}] finalKbps [{}] size [{}]", targetNode, messageId, session.getId(), finalKbps, dataSize);
