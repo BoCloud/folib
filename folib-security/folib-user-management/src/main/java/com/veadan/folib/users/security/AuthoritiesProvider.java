@@ -13,6 +13,7 @@ import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.dto.PermissionsDTO;
+import com.veadan.folib.entity.FolibRole;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.service.FolibRoleService;
 import com.veadan.folib.users.service.RoleResourceRefService;
@@ -35,14 +36,18 @@ public class AuthoritiesProvider
     @Inject
     private AuthorizationConfigFileManager authorizationConfigFileManager;
     @Inject
-    private RoleResourceRefService roleResourceRefService;
+    private FolibRoleService folibRoleService;
 
     @PostConstruct
     void init() throws IOException
     {
         final AuthorizationConfigDto config = authorizationConfigFileManager.read();
-        List<PermissionsDTO> admin = roleResourceRefService.queryPermissions("admin");
         authorizationConfigService.setAuthorizationConfig(config);
+        FolibRole anonymous = folibRoleService.queryById("ANONYMOUS");
+        if (anonymous == null){
+            //同步角色
+            folibRoleService.syncYamlAuthorizationConfig();
+        }
     }
 
     public Set<RoleData> getAssignableRoles()
@@ -55,7 +60,7 @@ public class AuthoritiesProvider
         RoleData role = authorizationConfigService.get()
                                                   .getRoles()
                                                   .stream()
-                                                  .filter(r -> r.getName().equals(name))
+                                                  .filter(r -> r.getName().equalsIgnoreCase(name))
                                                   .findFirst()
                                                   .orElseThrow(() -> new IllegalArgumentException(name));
 

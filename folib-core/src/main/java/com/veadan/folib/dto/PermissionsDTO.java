@@ -89,5 +89,5 @@ public class PermissionsDTO implements Serializable,Cloneable {
     @ApiModelProperty(name = "路径", notes = "")
     private String path;
 
-
+    private String description;
 }

@@ -1,18 +1,22 @@
 package com.veadan.folib.authorization.service.impl;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veadan.folib.authorization.domain.Client;
+import com.veadan.folib.dto.PermissionsDTO;
+import com.veadan.folib.users.dto.AccessModelDto;
+import com.veadan.folib.users.dto.RepositoryPrivilegesDto;
+import com.veadan.folib.users.dto.StoragePrivilegesDto;
+import com.veadan.folib.users.service.RoleResourceRefService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -24,6 +28,7 @@ import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 
 
@@ -48,15 +53,56 @@ public class AuthorizationConfigServiceImpl
      * and should not be exposed to the world.
      */
     private AuthorizationConfigDto authorizationConfig;
+    @Inject
+    private RoleResourceRefService roleResourceRefService;
 
     @Override
     public void setAuthorizationConfig(final AuthorizationConfigDto newConfig) throws IOException
     {
         modifyInLock(config ->
                      {
-                         AuthorizationConfigServiceImpl.this.authorizationConfig = newConfig;
+                         AuthorizationConfigServiceImpl.this.authorizationConfig = getAuthorizationConfigDto();
                      },
-                     true);
+                     false);
+    }
+
+    private @NotNull AuthorizationConfigDto getAuthorizationConfigDto() {
+        List<PermissionsDTO> permissions = roleResourceRefService.queryPermissions(null);
+        Map<String, List<PermissionsDTO>> permissionMap = permissions.stream().filter(dto -> dto.getRoleId() != null).collect(Collectors.groupingBy(PermissionsDTO::getRoleId, Collectors.toList()));
+        AuthorizationConfigDto authorizationConfig = new AuthorizationConfigDto();
+        Set<RoleDto> roles = new LinkedHashSet<>();
+
+        permissionMap.keySet().forEach(roleId -> {
+            RoleDto roleDto = new RoleDto();
+            roleDto.setName(roleId);
+            List<PermissionsDTO> permissionsDTOS = permissionMap.get(roleId);
+            roleDto.setDescription(permissionsDTOS.get(0).getDescription());
+            AccessModelDto accessModel = new AccessModelDto();
+            accessModel.setApiAuthorities(permissionsDTOS.stream().filter(dto -> dto.getApiAuthoritie() != null).map(dto -> Privileges.valueOf(dto.getApiAuthoritie())).collect(Collectors.toSet()));
+            Set<StoragePrivilegesDto> storageAuthorities = new LinkedHashSet<>();
+            Map<String, List<PermissionsDTO>> storageMap = permissionsDTOS.stream().distinct().filter(dto -> dto.getStorageId() != null).collect(Collectors.groupingBy(PermissionsDTO::getStorageId, Collectors.toList()));
+            storageMap.keySet().forEach(storageId -> {
+                StoragePrivilegesDto storagePrivileges = new StoragePrivilegesDto();
+                storagePrivileges.setStorageId(storageId);
+                storagePrivileges.setStoragePrivileges(storageMap.get(storageId).stream().filter(dto -> dto.getStorageProvilege() != null).map(dto -> Privileges.valueOf(dto.getStorageProvilege())).collect(Collectors.toSet()));
+                Set<RepositoryPrivilegesDto> repositoryPrivileges = new LinkedHashSet<>();
+                Map<String, List<PermissionsDTO>> repositoryMap = storageMap.get(storageId).stream().filter(dto -> dto.getRepositoryId() != null).collect(Collectors.groupingBy(PermissionsDTO::getRepositoryId, Collectors.toList()));
+                repositoryMap.keySet().forEach(repositoryId -> {
+                    RepositoryPrivilegesDto repositoryPrivilege = new RepositoryPrivilegesDto();
+                    repositoryPrivilege.setRepositoryId(repositoryId);
+                    repositoryPrivilege.setRepositoryPrivileges(repositoryMap.get(repositoryId).stream().filter(dto -> dto.getRepositoryPrivilege() != null).map(dto -> Privileges.valueOf(dto.getRepositoryPrivilege())).collect(Collectors.toSet()));
+                    repositoryPrivileges.add(repositoryPrivilege);
+
+                });
+                storagePrivileges.setRepositoryPrivileges(repositoryPrivileges);
+                storageAuthorities.add(storagePrivileges);
+            });
+            accessModel.setStorageAuthorities(storageAuthorities);
+            roleDto.setAccessModel(accessModel);
+            roles.add(roleDto);
+        });
+        authorizationConfig.setRoles(roles);
+        return authorizationConfig;
     }
 
     @Override
@@ -83,7 +129,7 @@ public class AuthorizationConfigServiceImpl
 
         try
         {
-            return new AuthorizationConfig(authorizationConfig);
+            return new AuthorizationConfig(getAuthorizationConfigDto());
         }
         finally
         {

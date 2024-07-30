@@ -8,11 +8,16 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.veadan.folib.users.domain.Privileges;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @author 
  * @author Veadan
  */
+@Data
+@AllArgsConstructor
 public class StoragePrivilegesDto
         implements Serializable, StoragePrivileges
 {

@@ -1,5 +1,6 @@
 package com.veadan.folib.config;
 
+import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.security.CustomAccessDeniedHandler;
 import com.veadan.folib.security.authentication.Http401AuthenticationEntryPoint;
 import com.veadan.folib.security.authentication.FolibAuthenticationFilter;
@@ -8,14 +9,14 @@ import com.veadan.folib.security.authentication.suppliers.AuthenticationSupplier
 import com.veadan.folib.security.vote.MethodAccessDecisionManager;
 import com.veadan.folib.authentication.AuthenticationConfig;
 import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.security.AuthoritiesProvider;
 
 import javax.inject.Inject;
 import javax.inject.Qualifier;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import org.apache.commons.lang.BooleanUtils;
 import org.springframework.beans.factory.InitializingBean;
@@ -175,8 +176,19 @@ public class WebSecurityConfig
     AnonymousAuthenticationFilter anonymousAuthenticationFilter()
     {
         List<GrantedAuthority> authorities = AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS");
-        authorities.addAll(authoritiesProvider.getRuntimeRole(SystemRole.ANONYMOUS.name()).getAccessModel().getApiAuthorities());
 
+        try {
+            Role role = authoritiesProvider.getRuntimeRole(SystemRole.ANONYMOUS.name());
+            authorities.addAll(role.getAccessModel().getApiAuthorities());
+        } catch (IllegalArgumentException e) {
+            Set<Privileges> privileges = EnumSet.of(
+                    Privileges.ARTIFACTS_RESOLVE,
+                    Privileges.SEARCH_ARTIFACTS,
+                    Privileges.ARTIFACTS_VIEW,
+                    Privileges.CONFIGURATION_VIEW_METADATA_CONFIGURATION
+            );
+            authorities.addAll(privileges);
+        }
         return new AnonymousAuthenticationFilter("folib-unique-key",
                                                  "anonymousUser",
                                                  authorities);

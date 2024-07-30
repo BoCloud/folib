@@ -42,17 +42,15 @@ DROP TABLE IF EXISTS `resource`;
 
 CREATE TABLE `resource` (
                             `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
-                            `api_authoritie` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'api权限',
-                            `storage_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '存储空间id',
-                            `repository_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '仓库id',
-                            `path` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '路径',
+                            `api_authoritie` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'api权限',
+                            `storage_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '存储空间id',
+                            `repository_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '仓库id',
+                            `path` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '路径',
                             `create_by` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT '' COMMENT '创建人',
                             `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
                             PRIMARY KEY (`id`),
-                            UNIQUE KEY `resource_path_IDX` (`path`) USING BTREE,
-                            UNIQUE KEY `resource_repository_id_IDX` (`repository_id`) USING BTREE,
-                            UNIQUE KEY `resource_storage_id_IDX` (`storage_id`) USING BTREE,
-                            UNIQUE KEY `resource_api_authoritie_IDX` (`api_authoritie`) USING BTREE
+                            UNIQUE KEY `resource_api_authoritie_IDX` (`api_authoritie`) USING BTREE,
+                            UNIQUE KEY `resource_storage_id_IDX` (`storage_id`,`repository_id`,`path`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=1000 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='资源表';
 
 

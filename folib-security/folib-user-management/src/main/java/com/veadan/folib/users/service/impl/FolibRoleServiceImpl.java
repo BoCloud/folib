@@ -30,6 +30,7 @@ import javax.transaction.Transactional;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * 角色信息;(folib_role)表服务实现类
@@ -67,9 +68,9 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                 List<Resource> resources = new ArrayList<>();
 
                 roles.forEach(roleDto -> {
+                    folibRoles.add(FolibRole.builder().id(roleDto.getName()).description(roleDto.getDescription())
+                            .enName(roleDto.getName()).deleted(GlobalConstants.NOT_DELETED).isDefault(GlobalConstants.NOT_DEFALUT).cnName(roleDto.getDescription()).build());
                     if(!"admin".equalsIgnoreCase(roleDto.getName())){
-                        folibRoles.add(FolibRole.builder().id(roleDto.getName()).description(roleDto.getDescription())
-                                .enName(roleDto.getName()).deleted(GlobalConstants.NOT_DELETED).isDefault(GlobalConstants.NOT_DEFALUT).cnName(roleDto.getDescription()).build());
                         AccessModelDto accessModel = roleDto.getAccessModel();
                         if(accessModel != null) {
                             accessModel.getApiAuthorities().forEach(privileges -> {
@@ -83,17 +84,19 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                                     List<RoleResourceRef> storagePrivilegeRef = storagePrivileges.stream().map(privilege ->
                                             RoleResourceRef.builder().roleId(roleDto.getName()).storageId(storagePrivilegesDto.getStorageId()).storageProvilege(String.valueOf(privilege)).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build()).collect(Collectors.toList());
                                     storagePrivilegeRoles.addAll(storagePrivilegeRef);
+                                }
 
-                                    Set<RepositoryPrivilegesDto> repositorytories = storagePrivilegesDto.getRepositoryPrivileges();
+                                Set<RepositoryPrivilegesDto> repositorytories = storagePrivilegesDto.getRepositoryPrivileges();
+                                if(CollectionUtils.isNotEmpty(repositorytories)){
                                     repositorytories.forEach(repositoryPrivilegesDto -> {
-                                        resources.add(Resource.builder().repositoryId(repositoryPrivilegesDto.getRepositoryId()).build());
+                                        resources.add(Resource.builder().storageId(storagePrivilegesDto.getStorageId()).repositoryId(repositoryPrivilegesDto.getRepositoryId()).build());
                                         Set<Privileges> repositoryPrivileges = repositoryPrivilegesDto.getRepositoryPrivileges();
                                         List<RoleResourceRef> repositoryRef = repositoryPrivileges.stream().map(privilege ->
-                                                RoleResourceRef.builder().roleId(roleDto.getName()).repositoryId(repositoryPrivilegesDto.getRepositoryId()).repositoryPrivilege(String.valueOf(privilege)).resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY).build()).collect(Collectors.toList());
+                                                RoleResourceRef.builder().roleId(roleDto.getName()).storageId(storagePrivilegesDto.getStorageId()).repositoryId(repositoryPrivilegesDto.getRepositoryId()).repositoryPrivilege(String.valueOf(privilege)).resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY).build()).collect(Collectors.toList());
                                         repositoryPrivilegeRoles.addAll(repositoryRef);
 
                                         repositoryPrivilegesDto.getPathPrivileges().forEach(pathPrivilegesDto -> {
-                                            resources.add(Resource.builder().path(pathPrivilegesDto.getPath()).build());
+                                            resources.add(Resource.builder().storageId(storagePrivilegesDto.getStorageId()).repositoryId(repositoryPrivilegesDto.getRepositoryId()).path(pathPrivilegesDto.getPath()).build());
                                             Set<Privileges> privileges = pathPrivilegesDto.getPrivileges();
                                             List<RoleResourceRef> pathRef = privileges.stream().map(privilege ->
                                                     RoleResourceRef.builder().roleId(roleDto.getName()).path(pathPrivilegesDto.getPath()).pathPrivilege(String.valueOf(privilege)).resourceType(GlobalConstants.RESOURCE_TYPE_PATH).build()).collect(Collectors.toList());
@@ -103,25 +106,24 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                                 }
                             });
                         }
-                    }else {
-                        EnumSet<Privileges> allPrivileges = Privileges.all();
-                        allPrivileges.forEach(privileges -> {
-                            apiUserPrivilegeRoles.add(RoleResourceRef.builder().roleId("ADMIN").resourceType(GlobalConstants.RESOURCE_TYPE_API).apiAuthoritie(privileges.getAuthority()).build());
-                            storagePrivilegeRoles.add(RoleResourceRef.builder().roleId("ADMIN").resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).storageProvilege(privileges.getAuthority()).build());
-                            repositoryPrivilegeRoles.add(RoleResourceRef.builder().roleId("ADMIN").resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY).repositoryPrivilege(privileges.getAuthority()).build());
-                            pathPrivilegeRoles.add(RoleResourceRef.builder().roleId("ADMIN").resourceType(GlobalConstants.RESOURCE_TYPE_PATH).pathPrivilege(privileges.getAuthority()).build());
-                        });
-
                     }
-
+                });
+                //admin权限补全
+                EnumSet<Privileges> allPrivileges = Privileges.all();
+                allPrivileges.forEach(privileges -> {
+                    resources.add(Resource.builder().apiAuthoritie(String.valueOf(privileges)).build());
+                    /*storagePrivilegeRoles.add(RoleResourceRef.builder().roleId("ADMIN").resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).storageProvilege(privileges.getAuthority()).build());
+                    repositoryPrivilegeRoles.add(RoleResourceRef.builder().roleId("ADMIN").resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY).repositoryPrivilege(privileges.getAuthority()).build());
+                    pathPrivilegeRoles.add(RoleResourceRef.builder().roleId("ADMIN").resourceType(GlobalConstants.RESOURCE_TYPE_PATH).pathPrivilege(privileges.getAuthority()).build());*/
                 });
                 //角色入库
                 if(CollectionUtils.isNotEmpty(folibRoles)){
                     folibRoleMapper.insertOrUpdateBatch(folibRoles);
                 }
                 //资源入库
-                if(CollectionUtils.isNotEmpty(resources)) {
-                    resourceService.saveBatch(resources.stream().distinct().collect(Collectors.toList()));
+                List<Resource> resourceList = filterResource(resources);
+                if(CollectionUtils.isNotEmpty(resourceList)) {
+                    resourceService.saveBatch(resourceList.stream().distinct().collect(Collectors.toList()));
 
                     Map<String, Resource> pathMap = resources.stream().filter(resource -> StringUtils.isNotEmpty(resource.getPath())).collect(Collectors.toMap(Resource::getPath, resource -> resource, (k1, k2)->k1));
                     Map<String, Resource> storageMap = resources.stream().filter(resource -> StringUtils.isNotEmpty(resource.getStorageId())).collect(Collectors.toMap(Resource::getStorageId, resource -> resource, (k1,k2)->k1));
@@ -203,22 +205,33 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                         }
                     });
 
-                    /*apiUserPrivilegeRoles.forEach(roleResourceRef -> {
-                        if (userRoles.containsKey(roleResourceRef.getRoleId())) {
-                            userRoles.get(roleResourceRef.getRoleId()).forEach(ref -> {
-                                roleResourceRef.setEntityId(ref.getEntityId());
-                                roleResourceRef.setResourceType(GlobalConstants.RESOURCE_TYPE_API);
-                                roleResourceRef.setRefType(ref.getRefType());
-                                roleResourceRef.setRoleId(ref.getRoleId());
-                                if (apiMap.containsKey(roleResourceRef.getApiAuthoritie())) {
-                                    roleResourceRef.setResourceId(apiMap.get(roleResourceRef.getApiAuthoritie()).getId());
-                                }
-                                allRefs.add(roleResourceRef);
-                            });
-                        }
-                    });*/
+                    allRefs.addAll(apiUserPrivilegeRoles);
+
                     if (CollectionUtils.isNotEmpty(allRefs)) {
-                        roleResourceRefService.saveBath(allRefs);
+                        List<Resource> allResources = resourceService.findAll();
+                        Map<String, Resource> resourceMap = allResources.stream().flatMap(resource -> Stream.of(
+                                new AbstractMap.SimpleEntry<>(resource.getApiAuthoritie(), resource),
+                                new AbstractMap.SimpleEntry<>(resource.getStorageId(), resource),
+                                new AbstractMap.SimpleEntry<>(resource.getRepositoryId(), resource),
+                                new AbstractMap.SimpleEntry<>(resource.getPath(), resource)
+                        )).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (v1, v2) -> v1));
+                        List<RoleResourceRef> collect = allRefs.parallelStream().peek(roleResourceRef -> {
+                            String apiAuthoritie = roleResourceRef.getApiAuthoritie();
+                            String path = roleResourceRef.getPath();
+                            String repositoryId = roleResourceRef.getRepositoryId();
+                            String storageId = roleResourceRef.getStorageId();
+                            if (StringUtils.isNotEmpty(apiAuthoritie)) {
+                                roleResourceRef.setResourceId(resourceMap.get(apiAuthoritie).getId());
+                            } else if (StringUtils.isNotEmpty(path)) {
+                                roleResourceRef.setResourceId(resourceMap.get(path).getId());
+                            } else if (StringUtils.isNotEmpty(repositoryId)) {
+                                roleResourceRef.setResourceId(resourceMap.get(repositoryId).getId());
+                            } else if (StringUtils.isNotEmpty(storageId)) {
+                                roleResourceRef.setResourceId(resourceMap.get(storageId).getId());
+                            }
+                        }).collect(Collectors.toList());
+
+                        roleResourceRefService.saveBath(collect);
                     }
                     //清理未关联资源的用户权限
                     List<String> removeRefIds = roleResourceRefs.stream().filter(ref -> StringUtils.isNotEmpty(ref.getResourceType())).map(RoleResourceRef::getId).collect(Collectors.toList());
@@ -230,6 +243,26 @@ public class FolibRoleServiceImpl implements FolibRoleService {
         } catch (IOException e) {
             throw new RuntimeException("获取yaml权限配置异常");
         }
+    }
+
+    private List<Resource> filterResource(List<Resource> resourceList) {
+        List<Resource> resources = resourceService.findAll();
+        List<String> storagetIds = resources.stream().filter(s -> StringUtils.isNotEmpty(s.getStorageId())).map(Resource::getStorageId).collect(Collectors.toList());
+        List<String> repositoryIds = resources.stream().filter(s -> StringUtils.isNotEmpty(s.getRepositoryId())).map(Resource::getRepositoryId).collect(Collectors.toList());
+        List<String> paths = resources.stream().filter(s -> StringUtils.isNotEmpty(s.getPath())).map(Resource::getPath).collect(Collectors.toList());
+        List<String> apis = resources.stream().filter(s -> StringUtils.isNotEmpty(s.getApiAuthoritie())).map(Resource::getApiAuthoritie).collect(Collectors.toList());
+
+        return resourceList.stream().filter(res -> {
+            String repositoryId = res.getRepositoryId();
+            String storageId1 = res.getStorageId();
+            String apiAuthoritie = res.getApiAuthoritie();
+            String path = res.getPath();
+
+            return !((repositoryId != null && repositoryIds.contains(repositoryId) && storagetIds.contains(storageId1))
+                    || (repositoryId == null && storagetIds.contains(storageId1))
+                    || (StringUtils.isNotEmpty(apiAuthoritie) && apis.contains(apiAuthoritie))
+                    || (StringUtils.isNotEmpty(path) && paths.contains(path)));
+        }).collect(Collectors.toList());
     }
 
     /** 
