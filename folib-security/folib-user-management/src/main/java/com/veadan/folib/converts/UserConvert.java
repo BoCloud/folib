@@ -48,6 +48,8 @@ public interface UserConvert {
 
     @Mappings({@Mapping(source = "roles", target = "roles")})
     List<UserEntity> UserDTOsToUserList(List<UserDTO> usrerDTOList);
+    @Mappings({@Mapping(source = "roles", target = "roles")})
+    UserEntity UserDTOToUserEntity(UserDTO usrerDTO);
 
     // 自定义映射方法
     default Set<SecurityRole> map(Set<String> roles) {

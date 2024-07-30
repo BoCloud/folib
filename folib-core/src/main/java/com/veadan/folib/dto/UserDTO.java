@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -23,6 +25,7 @@ public class UserDTO
 {
 
     private String username;
+    private String password;
 
     private boolean enabled;
 
@@ -36,4 +39,9 @@ public class UserDTO
 
     private LinkedHashSet<String> authorities;
 
+    public void setRoles(String roles) {
+        if (roles != null) {
+            this.roles = new HashSet<>(Arrays.asList(roles.split(",")));
+        }
+    }
 }

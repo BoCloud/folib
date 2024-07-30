@@ -2,6 +2,7 @@ package com.veadan.folib.users.service;
 
 import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.UserEntity;
+import com.veadan.folib.dto.UserDTO;
 import com.veadan.folib.entity.FolibUser;
 
 import java.util.List;
@@ -16,7 +17,7 @@ public interface FolibUserService {
 
     void deleteByUserName(String username);
 
-    FolibUser findByUserName(String username);
+    UserDTO findByUserName(String username);
 
     UserEntity save(UserEntity userEntity);
 

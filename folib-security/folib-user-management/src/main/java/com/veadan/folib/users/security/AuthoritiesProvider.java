@@ -1,6 +1,7 @@
 package com.veadan.folib.users.security;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 
 import javax.annotation.PostConstruct;
@@ -11,7 +12,10 @@ import com.veadan.folib.authorization.domain.RoleData;
 import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
+import com.veadan.folib.dto.PermissionsDTO;
 import com.veadan.folib.users.domain.SystemRole;
+import com.veadan.folib.users.service.FolibRoleService;
+import com.veadan.folib.users.service.RoleResourceRefService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -30,11 +34,14 @@ public class AuthoritiesProvider
 
     @Inject
     private AuthorizationConfigFileManager authorizationConfigFileManager;
+    @Inject
+    private RoleResourceRefService roleResourceRefService;
 
     @PostConstruct
     void init() throws IOException
     {
         final AuthorizationConfigDto config = authorizationConfigFileManager.read();
+        List<PermissionsDTO> admin = roleResourceRefService.queryPermissions("admin");
         authorizationConfigService.setAuthorizationConfig(config);
     }
 

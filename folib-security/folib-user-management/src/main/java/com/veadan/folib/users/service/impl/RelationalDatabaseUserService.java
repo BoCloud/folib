@@ -9,6 +9,7 @@ import com.veadan.folib.domain.PageResultResponse;
 import com.veadan.folib.domain.SecurityRole;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.UserEntity;
+import com.veadan.folib.dto.UserDTO;
 import com.veadan.folib.entity.FolibUser;
 import com.veadan.folib.entity.RoleResourceRef;
 import com.veadan.folib.entity.UserGroup;
@@ -89,8 +90,8 @@ public class RelationalDatabaseUserService implements UserService
     @Override
     public UserEntity findByUsername(String username)
     {
-        FolibUser byUserName = folibUserService.findByUserName(username);
-        return UserConvert.INSTANCE.FolibUserUserEntity(byUserName);
+        UserDTO byUserName = folibUserService.findByUserName(username);
+        return UserConvert.INSTANCE.UserDTOToUserEntity(byUserName);
     }
 
     @Override

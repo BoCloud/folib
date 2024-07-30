@@ -24,4 +24,6 @@ public interface UserGroupConvert {
 
     @Mappings({})
     UserGroup UserGroupToUserGroupForm(UserGroupForm userGroupForm);
+    @Mappings({})
+    UserGroupOutput UserGroupToOutput(UserGroup userGroup);
 }

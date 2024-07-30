@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 import org.neo4j.ogm.annotation.typeconversion.Convert;
@@ -19,6 +21,8 @@ import org.neo4j.ogm.annotation.typeconversion.Convert;
  * @author xuxinping
  *
  */
+@EqualsAndHashCode(callSuper = true)
+@Data
 @NodeEntity(USER)
 public class UserEntity extends DomainEntity implements User
 {

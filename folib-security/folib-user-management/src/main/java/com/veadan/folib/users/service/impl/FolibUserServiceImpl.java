@@ -40,9 +40,10 @@ public class FolibUserServiceImpl implements FolibUserService {
     }
 
     @Override
-    public FolibUser findByUserName(String username) {
+    public UserDTO findByUserName(String username) {
         FolibUser user = FolibUser.builder().id(username).deleted(GlobalConstants.NOT_DELETED).build();
-        return folibUserMapper.selectOne(user);
+        return folibUserMapper.queryUser(user).get(0);
+
     }
 
     @Override

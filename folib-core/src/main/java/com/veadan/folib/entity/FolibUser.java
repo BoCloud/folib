@@ -75,4 +75,6 @@ public class FolibUser implements Serializable,Cloneable{
     @ApiModelProperty(name = "更新时间",notes = "")
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
     private Date updateTime ;
+
+    private transient String refType;
 }
