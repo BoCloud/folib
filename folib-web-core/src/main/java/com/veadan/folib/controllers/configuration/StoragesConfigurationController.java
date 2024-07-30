@@ -1034,7 +1034,7 @@ public class StoragesConfigurationController
             final RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository);
             RepositoryDto repositoryDto = getMutableConfigurationClone().getStorage(storageId)
                     .getRepository(repositoryId);
-            if (Files.exists(repositoryPath) && force) {
+            if (force && Files.exists(repositoryPath)) {
                 repositoryManagementService.removeRepository(storageId, repository.getId());
                 repositoryEventListenerRegistry.dispatchRepoDelteToCronJobDeleteEvent(storageId, repositoryId);
             }

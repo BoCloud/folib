@@ -5,7 +5,7 @@
 
 <template>
 
-  <div id="settings">
+  <div id="storages">
     <a-row type="flex" :gutter="[24, 24]">
 
       <a-col :span="24" :lg="6">
@@ -105,7 +105,7 @@
           </template>
         </a-card>
 
-        <a-tabs type="card" class="card-container" default-active-key="1">
+        <a-tabs class="tabs-sliding" default-active-key="1">
           <a-tab-pane key="1" :tab="$t('Storage.RepositoryList')">
             <a-row type="flex" :gutter="24">
               <a-col :span="8" class="mb-24" v-for="(item, index) in repositories" :key="index">
@@ -2293,7 +2293,7 @@ export default {
   min-height: 203px;
 }
 
-#settings::v-deep {
+#storages::v-deep {
   .ant-list {
     width: 100%;
   }
@@ -2412,6 +2412,10 @@ export default {
     .ant-select-selection--multiple {
       padding: 8px 10px;
     }
+  }
+
+  .tabs-sliding.ant-tabs {
+      overflow: hidden;
   }
 }
 

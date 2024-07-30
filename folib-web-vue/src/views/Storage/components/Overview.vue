@@ -6,7 +6,7 @@
 		</template>
 		<a-row :gutter="[24, 24]">
 			<a-col :span="24" v-for="(item, index) in latestData" :key="index">
-				<a-card :bordered="false" class="storage-device-info">
+				<a-card :bordered="false" class="header-solid storage-device-info">
 					<a-col :span="8">
 						<a-descriptions title="" :column="1">
 							<a-descriptions-item :label="$t('Storage.RepositoryCount')">
@@ -198,12 +198,9 @@
 .storage-monitoring-overview {
 	.storage-device-info {
 		box-shadow: none;
-		background-color: #FAFAFA;
-		border: 1px solid #F5F5F5;
 	}
 	.storage-info {
 		box-shadow: none;
-		background-color: #FAFAFA;
 		border: none;
 	}
 	.storage-info img {

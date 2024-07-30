@@ -200,12 +200,9 @@
 .storage-monitoring-overview {
 	.disk-info {
 		box-shadow: none;
-		background-color: #FAFAFA;
-		border: 1px solid #F5F5F5;
 	}
 	.storage-info {
 		box-shadow: none;
-		background-color: #FAFAFA;
 		border: none;
 	}
 	.storage-info img {

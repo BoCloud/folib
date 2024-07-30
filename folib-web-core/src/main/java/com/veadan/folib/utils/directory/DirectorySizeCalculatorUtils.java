@@ -69,6 +69,7 @@ public class DirectorySizeCalculatorUtils extends RecursiveTask<Result> {
                         }
                         result.incrementFilesCount();
                         result.addToFilesSize(attrs.size());
+                        log.debug("Pre visit directory [{}] path [{}]", directory, path);
                         if (RepositoryFiles.isArtifact(repositoryPath)) {
                             result.incrementArtifactsCount();
                             result.addToArtifactsSize(attrs.size());
@@ -86,7 +87,7 @@ public class DirectorySizeCalculatorUtils extends RecursiveTask<Result> {
                             result.incrementDirectoriesCount();
                             return FileVisitResult.CONTINUE;
                         }
-                        log.info("Pre visit directory [{}] dir [{}]", directory, dir);
+                        log.debug("Pre visit directory [{}] dir [{}]", directory, dir);
                         String path = dir.toString();
                         String artifactPath = path.substring(path.indexOf(repositoryPrefix) + repositoryPrefix.length());
                         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
