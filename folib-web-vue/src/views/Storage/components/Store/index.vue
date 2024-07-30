@@ -277,6 +277,17 @@
                                      v-if="(folibRepository.layout === 'Raw' && currentTreeNode && currentTreeNode.type === 'dir') ">
                             <a-icon type="download" />{{ $t('Store.DownLoad') }}
                         </a-menu-item>
+                        <a-modal
+                            :title="$t('Store.Prompts')"
+                            :visible="downLoadVisible"
+                            :okText="$t('Store.Confirm')"
+                            :cancelText="$t('Store.Cancel')"
+                            centered
+                            @ok="handleDownLoadDir"
+                            @cancel="handleDownLoadDirCancel"
+                        >
+                            <p>{{  currentTreeNode.artifactPath+$t('Store.DirSize')+rawPathSize+" ,"+$t('Store.ConfirmDownload') }}</p>
+                        </a-modal>
 
                     </a-menu>
                   </template>
@@ -892,7 +903,7 @@ import {
     artifactUploadProgress,
     rpmArtifactUpload,
     artifactDispatch,
-    artifactUploadZip
+    artifactUploadZip, getRawPathSize
 } from '@/api/artifact'
 import { getMetadataConfiguration } from '@/api/settings'
 import { hasRole, isAdmin, isAnonymous, isLogin } from '@/utils/permission'
@@ -936,6 +947,9 @@ export default {
   },
   data () {
     return {
+      downLoadVisible: false,
+      downLoadLoading: true,
+      rawPathSize:"",
       baseUrl: '',
       folibRepository: {},
       repositoryType: null,
@@ -1862,11 +1876,20 @@ export default {
 
       } else if (active.key === '7') {
           if (this.currentTreeNode.type === 'dir') {
-              let url = this.currentTreeNode.url
-              if (url) {
-                  url = url.replace("api/browse", "storages")
-                  window.open(url)
-              }
+              this.downLoadVisible=true;
+              this.folibRepository
+              let storageId = this.folibRepository.storageId;
+              let repositoryId = this.folibRepository.id;
+              let path = this.currentTreeNode.artifactPath;
+              getRawPathSize(storageId,repositoryId,path).then(res => {
+                  this.rawPathSize = res;
+
+              })
+              // let url = this.currentTreeNode.url
+              // if (url) {
+              //     url = url.replace("api/browse", "storages")
+              //     window.open(url)
+              // }
           }else if (this.currentTreeNode.type === 'file') {
               let uri = this.currentTreeNode.url;
               const str = this.currentFileDetial.imageName;
@@ -1891,6 +1914,17 @@ export default {
           }
       }
     },
+      handleDownLoadDir(){
+          let url = this.currentTreeNode.url
+          if (url) {
+              url = url.replace("api/browse", "storages")
+              window.open(url)
+          }
+          this.downLoadVisible=false;
+      },
+      handleDownLoadDirCancel(){
+          this.downLoadVisible=false;
+      },
       handleArchitectureMessage(message){
           this.targetArchitecture = message;
       },

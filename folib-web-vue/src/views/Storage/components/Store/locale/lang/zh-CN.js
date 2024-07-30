@@ -333,5 +333,8 @@ export default {
     'ImageTag': '镜像标签',
     'InputImageTag': '请输入镜像标签',
     "ImageTagSpecification": "镜像标签规范: [PATH]/[NAME]:[TAG]",
+    "Prompts":"提示",
+    "DirSize": "目录下文件大小是 ",
+    "ConfirmDownload": "确定下载吗？",
 
 }

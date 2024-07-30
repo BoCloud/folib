@@ -168,3 +168,10 @@ export function updateTaskQueuePriority (syncNo,priority) {
     method: 'post'
   })
 }
+
+export function getRawPathSize (storageId,repositoryId,path) {
+  return axios({
+    url: '/api/artifact/rawPathSize/'+storageId+'/'+repositoryId+'/'+path,
+    method: 'get'
+  })
+}
