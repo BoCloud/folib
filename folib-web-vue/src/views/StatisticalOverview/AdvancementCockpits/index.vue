@@ -73,7 +73,7 @@
                         />
                         <!--                <p>{{  }}</p>-->
                     </template>
-                    <chart-bar ref="volFolib" className="barChartRadialGradient" :height="310" :data="barChartData"></chart-bar>
+                    <chart-bar ref="volFolib" className="barChartRadialGradient" :height="355" :data="barChartData"></chart-bar>
                 </a-card>
                 <!-- Active Users Card -->
 
