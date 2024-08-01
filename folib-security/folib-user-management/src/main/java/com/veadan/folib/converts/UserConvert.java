@@ -31,6 +31,13 @@ public interface UserConvert {
     UserConvert INSTANCE = Mappers.getMapper(UserConvert.class);
 
     @Mappings({})
+    UserDTO FolibUserToUserDTO(FolibUser folibUser);
+    @Mappings({})
+    List<User> FolibUsersToUserList(List<FolibUser> folibUsers);
+    @Mappings({@Mapping(source = "roles", target = "roles")})
+    List<User> UserDTOsToUsers(List<UserDTO> usrerDTOList);
+
+    @Mappings({})
     List<User> UserEntitysToUserList(List<UserEntity> folibUserList);
 
     @Mappings({})
@@ -39,6 +46,7 @@ public interface UserConvert {
             @Mapping(source = "updateTime", target = "lastUpdated")})
     UserEntity FolibUserUserEntity(FolibUser folibUser);
 
+    @Mappings({})
     List<FolibUser> UserEntitysToFolibuiltyList(List<UserEntity> folibUserList);
 
     @Mappings({@Mapping(source = "folibUser.username", target = "id"),

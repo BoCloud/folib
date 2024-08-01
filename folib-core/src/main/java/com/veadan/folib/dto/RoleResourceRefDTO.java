@@ -51,8 +51,8 @@ public class RoleResourceRefDTO implements Serializable,Cloneable {
      * 存储空间权限
      */
     @ApiModelProperty(name = "存储空间权限", notes = "")
-    private String storageProvilege;
-    private List<String> storageProvileges;
+    private String storagePrivilege;
+    private List<String> storagePrivileges;
     /**
      * 仓库权限
      */

@@ -1,5 +1,6 @@
 package com.veadan.folib.users.domain;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.util.*;
@@ -84,7 +85,11 @@ public enum Privileges
     EXTERNAL_NODE_VIEW,
     EXTERNAL_NODE_SAVE,
     EXTERNAL_NODE_UPDATE,
-    EXTERNAL_NODE_DELETE
+    EXTERNAL_NODE_DELETE,
+    DELETE_USER_GROUP,
+    CREATE_USER_GROUP,
+    VIEW_USER_GROUP,
+    UPDATE_USER_GROUP
     ;
 
     /**

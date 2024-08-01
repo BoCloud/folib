@@ -68,7 +68,7 @@
         select
             rrr.role_id,
             rrr.resource_type,
-            group_concat(distinct rrr.storage_provilege) as storageProvileges,
+            group_concat(distinct rrr.storage_privilege) as storagePrivileges,
             group_concat(distinct rrr.repository_privilege) as repositoryPrivilege,
             group_concat(distinct rrr.path_privilege) as pathPrivilege
         from

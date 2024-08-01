@@ -8,7 +8,7 @@
         <result property="refType" column="ref_type" />
         <result property="resourceId" column="resource_id"/>
         <result property="resourceType" column="resource_type"/>
-        <result property="storageProvilege" column="storage_provilege"/>
+        <result property="storagePrivilege" column="storage_privilege"/>
         <result property="repositoryPrivilege" column="repository_privilege"/>
         <result property="pathPrivilege" column="path_privilege"/>
         <result property="createBy" column="create_by"/>
@@ -18,7 +18,7 @@
     <!-- 通过ID查询单条数据 -->
     <select id="queryById" resultMap="RoleResourceRefMap">
         select
-            id,role_id,entity_id,ref_type,resource_id,storage_provilege,repository_privilege,path_privilege,create_by,create_time
+            id,role_id,entity_id,ref_type,resource_id,storage_privilege,repository_privilege,path_privilege,create_by,create_time
         from role_resource_ref
         where id = #{id}
     </select>
@@ -26,7 +26,7 @@
     <!--分页查询指定行数据-->
     <select id="queryAllByLimit" resultMap="RoleResourceRefMap">
         select
-        id,role_id,entity_id,ref_type,resource_id,storage_provilege,repository_privilege,path_privilege,create_by,create_time
+        id,role_id,entity_id,ref_type,resource_id,storage_privilege,repository_privilege,path_privilege,create_by,create_time
         from role_resource_ref
         <where>
             <if test="id != null and id != ''">
@@ -44,8 +44,8 @@
             <if test="resourceId != null and resourceId != ''">
                 and resource_id = #{resourceId}
             </if>
-            <if test="storageProvilege != null and storageProvilege != ''">
-                and storage_provilege = #{storageProvilege}
+            <if test="storagePrivilege != null and storagePrivilege != ''">
+                and storage_privilege = #{storagePrivilege}
             </if>
             <if test="repositoryPrivilege != null and repositoryPrivilege != ''">
                 and repository_privilege = #{repositoryPrivilege}
@@ -83,8 +83,8 @@
             <if test="resourceId != null and resourceId != ''">
                 and resource_id = #{resourceId}
             </if>
-            <if test="storageProvilege != null and storageProvilege != ''">
-                and storage_provilege = #{storageProvilege}
+            <if test="storagePrivilege != null and storagePrivilege != ''">
+                and storage_privilege = #{storagePrivilege}
             </if>
             <if test="repositoryPrivilege != null and repositoryPrivilege != ''">
                 and repository_privilege = #{repositoryPrivilege}
@@ -102,7 +102,7 @@
     </select>
     <select id="queryAllByRoleId" resultMap="RoleResourceRefMap">
         select
-        id,role_id,entity_id,ref_type,resource_id,storage_provilege,repository_privilege,path_privilege,create_by,create_time
+        id,role_id,entity_id,ref_type,resource_id,storage_privilege,repository_privilege,path_privilege,create_by,create_time
         from role_resource_ref
         where role_id in
         <foreach collection="roleIds" item="roleId" open="(" separator="," close=")">
@@ -112,7 +112,7 @@
     <select id="queryRolesByUserName" resultType="com.veadan.folib.dto.UserRoleDTO">
         select
         fr.*,
-        GROUP_CONCAT(distinct rrr.storage_provilege) AS storageProvilege,
+        GROUP_CONCAT(distinct rrr.storage_privilege) AS storagePrivilege,
         GROUP_CONCAT(distinct rrr.repository_privilege) AS repositoryPrivilege,
         GROUP_CONCAT(distinct rrr.path_privilege) AS pathPrivilege
         from
@@ -120,7 +120,7 @@
         left join
         (select
             rrr1.role_id,
-            rrr1.storage_provilege,
+            rrr1.storage_privilege,
             rrr1.repository_privilege,
             rrr1.path_privilege,
             rrr1.entity_id as user_id
@@ -131,7 +131,7 @@
         union all
         select
             rrr2.role_id,
-            rrr2.storage_provilege,
+            rrr2.storage_privilege,
             rrr2.repository_privilege,
             rrr2.path_privilege,
             ugr.user_id as user_id
@@ -207,25 +207,25 @@
 
     <!--新增数据-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
-        insert into role_resource_ref(id,role_id,entity_id,ref_type,resource_id,storage_provilege,repository_privilege,path_privilege,create_by,create_time)
-        values (#{id},#{roleId},#{entityId},#{refType},#{resourceId},#{storageProvilege},#{repositoryPrivilege},#{pathPrivilege},#{createBy},#{createTime})
+        insert into role_resource_ref(id,role_id,entity_id,ref_type,resource_id,storage_privilege,repository_privilege,path_privilege,create_by,create_time)
+        values (#{id},#{roleId},#{entityId},#{refType},#{resourceId},#{storagePrivilege},#{repositoryPrivilege},#{pathPrivilege},#{createBy},#{createTime})
     </insert>
 
     <!-- 批量新增数据 -->
     <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into role_resource_ref(id,role_id,entity_id,resource_type,ref_type,resource_id,storage_provilege,repository_privilege,path_privilege,create_by,create_time)
+        insert into role_resource_ref(id,role_id,entity_id,resource_type,ref_type,resource_id,storage_privilege,repository_privilege,path_privilege,create_by,create_time)
         values
         <foreach collection="entities" item="entity" separator=",">
-            (#{entity.id},#{entity.roleId},#{entity.entityId},#{entity.resourceType},#{entity.refType},#{entity.resourceId},#{entity.storageProvilege},#{entity.repositoryPrivilege},#{entity.pathPrivilege},#{entity.createBy},#{entity.createTime})
+            (#{entity.id},#{entity.roleId},#{entity.entityId},#{entity.resourceType},#{entity.refType},#{entity.resourceId},#{entity.storagePrivilege},#{entity.repositoryPrivilege},#{entity.pathPrivilege},#{entity.createBy},#{entity.createTime})
         </foreach>
     </insert>
 
     <!-- 批量新增或按主键更新数据 -->
     <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into role_resource_ref(id,role_id,entity_id,ref_type,resource_id,storage_provilege,repository_privilege,path_privilege,create_by,create_time)
+        insert into role_resource_ref(id,role_id,entity_id,ref_type,resource_id,storage_privilege,repository_privilege,path_privilege,create_by,create_time)
         values
         <foreach collection="entities" item="entity" separator=",">
-            (#{entity.id},#{entity.roleId},#{entity.entityId},#{entity.refType},#{entity.resourceId},#{entity.storageProvilege},#{entity.repositoryPrivilege},#{entity.pathPrivilege},#{entity.createBy},#{entity.createTime})
+            (#{entity.id},#{entity.roleId},#{entity.entityId},#{entity.refType},#{entity.resourceId},#{entity.storagePrivilege},#{entity.repositoryPrivilege},#{entity.pathPrivilege},#{entity.createBy},#{entity.createTime})
         </foreach>
         on duplicate key update
         id=values(id),
@@ -233,7 +233,7 @@
         entity_id=values(entity_id),
         ref_type=values(ref_type),
         resource_id=values(resource_id),
-        storage_provilege=values(storage_provilege),
+        storage_privilege=values(storage_privilege),
         repository_privilege=values(repository_privilege),
         path_privilege=values(path_privilege),
         create_by=values(create_by),
@@ -259,8 +259,8 @@
             <if test="resourceId != null and resourceId != ''">
                 resource_id = #{resourceId},
             </if>
-            <if test="storageProvilege != null and storageProvilege != ''">
-                storage_provilege = #{storageProvilege},
+            <if test="storagePrivilege != null and storagePrivilege != ''">
+                storage_privilege = #{storagePrivilege},
             </if>
             <if test="repositoryPrivilege != null and repositoryPrivilege != ''">
                 repository_privilege = #{repositoryPrivilege},

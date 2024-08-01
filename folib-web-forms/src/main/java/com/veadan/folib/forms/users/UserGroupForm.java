@@ -14,6 +14,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -34,7 +35,7 @@ public class UserGroupForm implements Serializable,Cloneable {
     /**
      * 主键
      */
-    @NotEmpty(groups = {ExistingUserGroup.class }, message = "userGroup id is required!")
+    @NotNull(groups = {ExistingUserGroup.class }, message = "userGroup id is required!")
     @ApiModelProperty(name = "主键", notes = "")
     private Long id;
     /**
@@ -52,17 +53,19 @@ public class UserGroupForm implements Serializable,Cloneable {
      * 新建用户是否自动加入此用户组
      */
     @ApiModelProperty(name = "新建用户是否自动加入此用户组", notes = "")
-    private String joinGroup;
+    private String joinGroup = "0";
     /**
      * 是否删除
      */
     @ApiModelProperty(name = "是否删除", notes = "")
-    private String deleted;
+    private String deleted = "0";
      /** 是否默认 */
      @ApiModelProperty(name = "是否默认", notes = "")
-     private String isDefault;
+     private String isDefault = "0";
      /** 用户id */
      private List<String> userIds;
+    /** 删除用户id */
+    private List<String> removeUserIds;
 
     public interface NewUserGroup
             extends Serializable

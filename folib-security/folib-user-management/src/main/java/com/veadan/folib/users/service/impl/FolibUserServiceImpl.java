@@ -42,9 +42,12 @@ public class FolibUserServiceImpl implements FolibUserService {
 
     @Override
     public UserDTO findByUserName(String username) {
-        FolibUser user = FolibUser.builder().id(username).deleted(GlobalConstants.NOT_DELETED).build();
-        return folibUserMapper.queryUser(user).get(0);
-
+        FolibUser user = FolibUser.builder().id(username).build();
+        List<UserDTO> folibUser = folibUserMapper.queryUser(user);
+        if (folibUser.isEmpty()) {
+            return null;
+        }
+        return folibUser.get(0);
     }
 
     @Override
@@ -65,11 +68,8 @@ public class FolibUserServiceImpl implements FolibUserService {
 
     @Override
     public Iterable<User> findAll() {
-        FolibUser folibUser = FolibUser.builder().userType("general").deleted(GlobalConstants.NOT_DELETED).build();
-        List<FolibUser> folibUsers = folibUserMapper.select(folibUser);
-        Iterable<User> userEntities = new ArrayList<>();
-        BeanUtils.copyProperties(folibUsers, userEntities);
-        return userEntities;
+        List<UserDTO> folibUsers = folibUserMapper.queryUser(null);
+        return UserConvert.INSTANCE.UserDTOsToUsers(folibUsers);
     }
 
     @Override

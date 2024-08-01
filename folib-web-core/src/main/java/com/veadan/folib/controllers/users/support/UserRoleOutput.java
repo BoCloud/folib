@@ -19,7 +19,7 @@ public class UserRoleOutput extends FolibRole
      * 存储空间权限
      */
     @ApiModelProperty(name = "存储空间权限", notes = "")
-    private String storageProvilege;
+    private String storagePrivilege;
     /**
      * 仓库权限
      */

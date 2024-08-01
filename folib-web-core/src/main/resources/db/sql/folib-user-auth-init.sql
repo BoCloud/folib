@@ -63,7 +63,7 @@ CREATE TABLE `role_resource_ref` (
                                      `entity_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '对象id',
                                      `ref_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '关联类型[用户、用户组];[1-用户id、2-用户组id]',
                                      `resource_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '资源id;[1-api、2-存储空间、3-仓库、4-路径]',
-                                     `storage_provilege` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '存储空间权限',
+                                     `storage_privilege` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '存储空间权限',
                                      `repository_privilege` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '仓库权限',
                                      `path_privilege` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '路径权限',
                                      `create_by` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '创建人',
@@ -103,3 +103,45 @@ CREATE TABLE `user_group_ref` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1000 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户组用户关联表';
 
 INSERT INTO folib_scanner.user_group (id, group_name, description, join_group, is_default, deleted, create_by, create_time, update_by, update_time) VALUES(1, 'default_group', '默认用户组', '1', '1', '0', NULL, now(), NULL, now());
+
+-- 开始事务
+START TRANSACTION;
+
+-- 插入到 resource 表
+INSERT INTO folib_scanner.resource (api_authoritie, storage_id, repository_id, `path`, create_by, create_time)
+VALUES ('DELETE_USER_GROUP', NULL, NULL, NULL, NULL, NULL);
+-- 获取刚插入的 resource 的 id
+SET @resource_id = LAST_INSERT_ID();
+-- 插入到 role_resource_ref 表
+INSERT INTO folib_scanner.role_resource_ref (role_id, entity_id, ref_type, resource_id, storage_privilege, repository_privilege, path_privilege, create_by, create_time, resource_type)
+VALUES ('USER_MANAGER', NULL, NULL, @resource_id, NULL, NULL, NULL, NULL, NULL, '1');
+
+-- 插入到 resource 表
+INSERT INTO folib_scanner.resource (api_authoritie, storage_id, repository_id, `path`, create_by, create_time)
+VALUES ('VIEW_USER_GROUP', NULL, NULL, NULL, NULL, NULL);
+-- 获取刚插入的 resource 的 id
+SET @resource_id = LAST_INSERT_ID();
+-- 插入到 role_resource_ref 表
+INSERT INTO folib_scanner.role_resource_ref (role_id, entity_id, ref_type, resource_id, storage_privilege, repository_privilege, path_privilege, create_by, create_time, resource_type)
+VALUES ('USER_MANAGER', NULL, NULL, @resource_id, NULL, NULL, NULL, NULL, NULL, '1');
+
+-- 插入到 resource 表
+INSERT INTO folib_scanner.resource (api_authoritie, storage_id, repository_id, `path`, create_by, create_time)
+VALUES ('UPDATE_USER_GROUP', NULL, NULL, NULL, NULL, NULL);
+-- 获取刚插入的 resource 的 id
+SET @resource_id = LAST_INSERT_ID();
+-- 插入到 role_resource_ref 表
+INSERT INTO folib_scanner.role_resource_ref (role_id, entity_id, ref_type, resource_id, storage_privilege, repository_privilege, path_privilege, create_by, create_time, resource_type)
+VALUES ('USER_MANAGER', NULL, NULL, @resource_id, NULL, NULL, NULL, NULL, NULL, '1');
+
+-- 插入到 resource 表
+INSERT INTO folib_scanner.resource (api_authoritie, storage_id, repository_id, `path`, create_by, create_time)
+VALUES ('CREATE_USER_GROUP', NULL, NULL, NULL, NULL, NULL);
+-- 获取刚插入的 resource 的 id
+SET @resource_id = LAST_INSERT_ID();
+-- 插入到 role_resource_ref 表
+INSERT INTO folib_scanner.role_resource_ref (role_id, entity_id, ref_type, resource_id, storage_privilege, repository_privilege, path_privilege, create_by, create_time, resource_type)
+VALUES ('USER_MANAGER', NULL, NULL, @resource_id, NULL, NULL, NULL, NULL, NULL, '1');
+-- 提交事务
+-- 提交事务
+COMMIT;

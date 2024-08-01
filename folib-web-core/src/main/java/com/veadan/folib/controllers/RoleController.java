@@ -177,7 +177,7 @@ public class RoleController extends BaseController {
                     .flatMap(per -> Stream.of(
                             per.getPathPrivilege(),
                             per.getRepositoryPrivilege(),
-                            per.getStorageProvilege()
+                            per.getStoragePrivilege()
                     ))
                     .filter(StringUtils::isNotEmpty)
                     .collect(Collectors.toList());

@@ -1,6 +1,7 @@
 package com.veadan.folib.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.veadan.folib.common.handler.StringListTypeHandler;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
@@ -8,11 +9,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+import org.springframework.util.StringUtils;
 
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -58,7 +61,24 @@ public class UserGroupDTO implements Serializable,Cloneable {
      @ApiModelProperty(name = "是否默认", notes = "")
      private String isDefault;
 
+    private String users;
+
+    public List<String> getUserIds() {
+        if (StringUtils.isEmpty(users)) {
+            return null;
+        }
+        return Arrays.asList(users.split(","));
+    }
+
+    public List<String> getRoleIds() {
+        if (StringUtils.isEmpty(roles)){
+            return null;
+        }
+        return Arrays.asList(roles.split(","));
+    }
+
     private List<String> userIds;
+    private String roles;
     private List<String> roleIds;
 
 }

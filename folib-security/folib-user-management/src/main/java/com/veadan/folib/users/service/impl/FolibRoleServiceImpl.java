@@ -82,7 +82,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                                 Set<Privileges> storagePrivileges = storagePrivilegesDto.getStoragePrivileges();
                                 if(CollectionUtils.isNotEmpty(storagePrivileges)){
                                     List<RoleResourceRef> storagePrivilegeRef = storagePrivileges.stream().map(privilege ->
-                                            RoleResourceRef.builder().roleId(roleDto.getName()).storageId(storagePrivilegesDto.getStorageId()).storageProvilege(String.valueOf(privilege)).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build()).collect(Collectors.toList());
+                                            RoleResourceRef.builder().roleId(roleDto.getName()).storageId(storagePrivilegesDto.getStorageId()).storagePrivilege(String.valueOf(privilege)).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build()).collect(Collectors.toList());
                                     storagePrivilegeRoles.addAll(storagePrivilegeRef);
                                 }
 
@@ -112,7 +112,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                 EnumSet<Privileges> allPrivileges = Privileges.all();
                 allPrivileges.forEach(privileges -> {
                     resources.add(Resource.builder().apiAuthoritie(String.valueOf(privileges)).build());
-                    /*storagePrivilegeRoles.add(RoleResourceRef.builder().roleId("ADMIN").resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).storageProvilege(privileges.getAuthority()).build());
+                    /*storagePrivilegeRoles.add(RoleResourceRef.builder().roleId("ADMIN").resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).storagePrivilege(privileges.getAuthority()).build());
                     repositoryPrivilegeRoles.add(RoleResourceRef.builder().roleId("ADMIN").resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY).repositoryPrivilege(privileges.getAuthority()).build());
                     pathPrivilegeRoles.add(RoleResourceRef.builder().roleId("ADMIN").resourceType(GlobalConstants.RESOURCE_TYPE_PATH).pathPrivilege(privileges.getAuthority()).build());*/
                 });
@@ -136,7 +136,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                     storagePrivilegeRoles.forEach(roleResourceRef -> {
                         roleResourceRef.setRoleId(roleResourceRef.getRoleId());
                         roleResourceRef.setResourceType(GlobalConstants.RESOURCE_TYPE_STORAGE);
-                        roleResourceRef.setStorageProvilege(roleResourceRef.getStorageProvilege());
+                        roleResourceRef.setStoragePrivilege(roleResourceRef.getStoragePrivilege());
                         if (storageMap.containsKey(roleResourceRef.getStorageId())) {
                             roleResourceRef.setResourceId(storageMap.get(roleResourceRef.getStorageId()).getId());
                         }
@@ -148,7 +148,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                                 roleResourceRef.setEntityId(ref.getEntityId());
                                 roleResourceRef.setRefType(ref.getRefType());
                                 roleResourceRef.setResourceType(GlobalConstants.RESOURCE_TYPE_STORAGE);
-                                roleResourceRef.setStorageProvilege(ref.getStorageProvilege());
+                                roleResourceRef.setStoragePrivilege(ref.getStoragePrivilege());
                                 if (storageMap.containsKey(roleResourceRef.getStorageId())) {
                                     roleResourceRef.setResourceId(storageMap.get(roleResourceRef.getStorageId()).getId());
                                 }
@@ -417,7 +417,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
             } else if (StringUtils.isNoneEmpty(repositoryId)) {
                 roleResourceRef = RoleResourceRef.builder().roleId(roleId).entityId(enetityId).refType(roleType).resourceType(resourceType).resourceId(repositoryAccess.getResourceId()).repositoryPrivilege(privilege).build();
             } else {
-                roleResourceRef = RoleResourceRef.builder().roleId(roleId).entityId(enetityId).refType(roleType).resourceType(resourceType).resourceId(repositoryAccess.getResourceId()).storageProvilege(privilege).build();
+                roleResourceRef = RoleResourceRef.builder().roleId(roleId).entityId(enetityId).refType(roleType).resourceType(resourceType).resourceId(repositoryAccess.getResourceId()).storagePrivilege(privilege).build();
             }
             roleResourceRefs.add(roleResourceRef);
         });

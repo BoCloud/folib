@@ -37,6 +37,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -143,7 +144,7 @@ public class UserGroupController
         }
         userGroupService.save(userGroup);
         List<String> userIds = userGroupForm.getUserIds();
-        if(!userIds.isEmpty()) {
+        if(userIds != null && !userIds.isEmpty()) {
             List<UserGroupRef> userGroupRefs = userIds.stream().map(userId -> {
                 UserGroupRef userGroupRef = new UserGroupRef();
                 userGroupRef.setUserId(userId);
@@ -177,7 +178,7 @@ public class UserGroupController
         responseEntity.setUserGroupDTO(userGroupDTO);
         //查询用户组关联的权限
         List<String> roleIds = userGroupDTO.getRoleIds();
-        if(!roleIds.isEmpty()) {
+        if(roleIds != null && !roleIds.isEmpty()) {
             RoleResourceRefDTO resourceRefDTO = userGroupRefService.queryPrivilegeByGroup(groupId, "2", roleIds);
             responseEntity.setRoleResourceRefDTO(resourceRefDTO);
         }
@@ -186,14 +187,14 @@ public class UserGroupController
     }
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_UPDATE_USER_GROUP),
             @ApiResponse(code = 400, message = FAILED_UPDATE_USER_GROUP)})
-    @PreAuthorize("hasAuthority('UPDATE_USER')")
-    @PutMapping(value = "{username}",
+    @PreAuthorize("hasAuthority('UPDATE_USER_GROUP')")
+    @PutMapping(value = "{groupId}",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     public ResponseEntity update(@ApiParam(value = "The name of the user", required = true)
-                                 @PathVariable String username,
+                                 @PathVariable Long groupId,
                                  @RequestBody @Validated(UserGroupForm.ExistingUserGroup.class) UserGroupForm userGroupToUpdate,
                                  BindingResult bindingResult,
                                  @RequestHeader(HttpHeaders.ACCEPT) String accept) {
@@ -208,7 +209,7 @@ public class UserGroupController
         }
         userGroupService.update(userGroup);
         List<String> userIds = userGroupToUpdate.getUserIds();
-        if(!userIds.isEmpty()) {
+        if(userIds != null && !userIds.isEmpty()) {
             //删除原有关联用户
             userGroupRefService.deleteByUserGroupId(userGroup.getId());
             //维护关联用户

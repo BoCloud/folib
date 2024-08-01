@@ -84,7 +84,7 @@ public class AuthorizationConfigServiceImpl
             storageMap.keySet().forEach(storageId -> {
                 StoragePrivilegesDto storagePrivileges = new StoragePrivilegesDto();
                 storagePrivileges.setStorageId(storageId);
-                storagePrivileges.setStoragePrivileges(storageMap.get(storageId).stream().filter(dto -> dto.getStorageProvilege() != null).map(dto -> Privileges.valueOf(dto.getStorageProvilege())).collect(Collectors.toSet()));
+                storagePrivileges.setStoragePrivileges(storageMap.get(storageId).stream().filter(dto -> dto.getStoragePrivilege() != null).map(dto -> Privileges.valueOf(dto.getStoragePrivilege())).collect(Collectors.toSet()));
                 Set<RepositoryPrivilegesDto> repositoryPrivileges = new LinkedHashSet<>();
                 Map<String, List<PermissionsDTO>> repositoryMap = storageMap.get(storageId).stream().filter(dto -> dto.getRepositoryId() != null).collect(Collectors.groupingBy(PermissionsDTO::getRepositoryId, Collectors.toList()));
                 repositoryMap.keySet().forEach(repositoryId -> {
