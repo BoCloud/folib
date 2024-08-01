@@ -10,6 +10,8 @@ export default {
     'CertificateStore': 'Certificate store',
     'SetupManagement': 'Setup management',
     'UserManagement': 'User management',
+    'Permissions': 'Permission management',
+    'Groups': 'Group management',
     'GlobalSettings': 'Global Settings',
     'HealthMonitoring': 'Health monitoring',
     'SeniorOperations': 'Senior Operations',
