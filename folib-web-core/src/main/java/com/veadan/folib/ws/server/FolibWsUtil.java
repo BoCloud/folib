@@ -35,8 +35,8 @@ public class FolibWsUtil {
 
     @Autowired
     private FolibWsRunManageV2 folibWsRunManageV2;
-    @Autowired
-    private PromotionTaskQueue promotionTaskQueue;
+    //@Autowired
+    //private PromotionTaskQueue promotionTaskQueue;
     @Autowired()
     private ThreadPoolTaskExecutor asyncWsCommandThreadPoolTaskExecutor;
 
@@ -55,7 +55,8 @@ public class FolibWsUtil {
             folibWsRunManageV2.unRegisterSession(targetHostName, targetHostName + " node already exists");
         }
         folibWsRunManageV2.registerSession(targetHostName, session);
-        promotionTaskQueue.registerPromotionTaskQueue(targetHostName);
+        //promotionTaskQueue.registerPromotionTaskQueue(targetHostName);
+        //promotionTaskQueue.registerV2PromotionTaskQueue(targetHostName);
     }
 
     public void onClose(String nodeId, Session session, CloseReason closeReason) {

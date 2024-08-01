@@ -9,11 +9,9 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -38,4 +36,28 @@ public class ArtifactSyncRecordController {
     public TableResultResponse<ArtifactSyncRecordPageRes> page(ArtifactSyncRecordPageReq model) throws IOException {
         return artifactSyncRecordService.page(model);
     }
+
+
+    @ApiOperation(value = "制品晋级/分发记录统计数量查询")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @GetMapping(value = "/getCount/{days}")
+    public ResponseEntity<?> getCount(@PathVariable("days") Integer days) throws IOException {
+        return  ResponseEntity.ok().body(artifactSyncRecordService.getCount(days));
+    }
+
+    @ApiOperation(value = "制品晋级/分发记录统计数量趋势查询")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @GetMapping(value = "/getStatusTrends/{days}")
+    public ResponseEntity<?> getStatusTrends(@PathVariable("days") Integer days) {
+        return  ResponseEntity.ok().body(artifactSyncRecordService.getStatusTrends(days));
+    }
+
+    @ApiOperation(value = "制品晋级/分发记录统计数量趋势查询")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @GetMapping(value = "/fileSizeStatisticsByWarehouse/{days}/{limitNumber}")
+    public ResponseEntity<?> fileSizeStatisticsByWarehouse(@PathVariable("days") Integer days,@PathVariable("limitNumber") Integer limitNumber)  {
+        return  ResponseEntity.ok().body(artifactSyncRecordService.fileSizeStatisticsByWarehouse(days,limitNumber));
+    }
+
+
 }

@@ -36,9 +36,14 @@ public class ArtifactPromotion {
     List<TargetRepositoyDto> targetRepositoyList;
 
     /**
-     * 制品uri
+     * 源制品uri
      */
     @NotBlank
     private String path;
+
+    /**
+     * 目标制品uri
+     */
+    private String targetPath;
 
 }

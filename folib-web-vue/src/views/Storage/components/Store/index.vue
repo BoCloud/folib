@@ -235,7 +235,7 @@
               <a-col :span="8" class="text-right">
                 <a-dropdown v-if="$store.state.user.token && currentTreeNode.url" class="mr-30" placement="bottomCenter">
                   <span style="font-size: 16px; cursor: pointer">
-                    {{ $t('Store.More') }}
+                    {{ $t('Store.More')  }}
                     <a-icon type="more" class="text-muted" style="font-size: 16px" />
                   </span>
                   <template #overlay>
@@ -269,9 +269,26 @@
                       </a-menu-item>
 
                       <a-menu-item key="6"
-                        v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact">
+                                   v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact">
                         <a-icon type="download" />{{ $t('Store.DownLoad') }}
                       </a-menu-item>
+
+                        <a-menu-item key="7"
+                                     v-if="(folibRepository.layout === 'Raw' && currentTreeNode && currentTreeNode.type === 'dir') ">
+                            <a-icon type="download" />{{ $t('Store.DownLoad') }}
+                        </a-menu-item>
+                        <a-modal
+                            :title="$t('Store.Prompts')"
+                            :visible="downLoadVisible"
+                            :okText="$t('Store.Confirm')"
+                            :cancelText="$t('Store.Cancel')"
+                            centered
+                            @ok="handleDownLoadDir"
+                            @cancel="handleDownLoadDirCancel"
+                        >
+                            <p>{{  currentTreeNode.artifactPath+$t('Store.DirSize')+rawPathSize+" ,"+$t('Store.ConfirmDownload') }}</p>
+                        </a-modal>
+
                     </a-menu>
                   </template>
                 </a-dropdown>
@@ -393,6 +410,12 @@
                         <a-icon type="download" />
                         {{ $t('Store.DownLoad') }}
                       </a-menu-item>
+
+                        <a-menu-item key="7"
+                                     v-if="folibRepository.layout === 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact">
+                            <a-icon type="download" />
+                            {{ $t('Store.DownLoad') }}
+                        </a-menu-item>
                     </a-menu>
                   </template>
                 </a-dropdown>
@@ -419,8 +442,8 @@
 
           <hr class="gradient-line" />
           <BaseData ref="BaseData" :currentTreeNode="currentTreeNode" :repositoryType="repositoryType"
-            :currentFileDetial="currentFileDetial" :successMsg="successMsg" :folibRepository="folibRepository"
-            @metadataEditHandler="metadataEditHandler" @metadataHandler="metadataHandler" @setCurrentFileDetial="setCurrentFileDetial"/>
+            :currentFileDetial="currentFileDetial" :successMsg="successMsg" :folibRepository="folibRepository" @messageArchitectureChild="handleArchitectureMessage"
+                    @metadataEditHandler="metadataEditHandler" @metadataHandler="metadataHandler" @setCurrentFileDetial="setCurrentFileDetial"/>
         </a-card>
       </a-col>
     </a-row>
@@ -515,7 +538,7 @@
               ]" style="width:10%;" @change="customChange">
               </a-switch>
             </a-form-item> -->
-            <a-form-item class="tags-field mb-10" v-if="!custom" :label="$t('Store.TargetDirectory')" prop="path" :colon="false">
+            <a-form-item class="tags-field mb-10" v-if="!custom" :label="$t('Store.TargetDirectory')" prop="path" :colon="false" style="display:none;">
               <a-input v-decorator="[
                 'path',
                 {
@@ -524,6 +547,15 @@
               ]" :disabled="true" :placeholder="$t('Store.TargetDirectory')">
               </a-input>
             </a-form-item>
+              <a-form-item class="tags-field mb-10" v-if="!custom" :label="$t('Store.TargetDirectory')" prop="targetPath" :colon="false" >
+                  <a-input v-decorator="[
+                'targetPath',
+                {
+                  rules: [{ required: true, message: $t('Store.TargetDirectory') }],
+                },
+              ]" :disabled="isTargetPatDisabled" :placeholder="$t('Store.TargetDirectory')" >
+                  </a-input>
+              </a-form-item>
             <a-form-item class="tags-field mb-10" v-if="custom" :label="$t('Store.TargetDirectory')" prop="path" :colon="false">
               <a-input v-decorator="[
                 'path',
@@ -580,7 +612,7 @@
     </a-modal>
     <!--   rpm 上传表单 end -->
     <!-- docker上传表单 -->
-      <a-modal v-model="showDockerUploadFormModal" :footer="null" :forceRender="true" :centered="true"
+    <a-modal v-model="showDockerUploadFormModal" :footer="null" :forceRender="true" :centered="true"
                :title="$t('Store.Upload')"
                on-ok="showDockerUploadFormModal = false">
           <a-form :form="dockerUploadForm" ref="dockerUploadForm" layout="horizontal" @submit.prevent="handleDockerUploadSubmit">
@@ -664,7 +696,7 @@
               ]" :disabled="true" :placeholder="$t('Store.InputTargetWarehouse')">
               </a-input>
             </a-form-item>
-            <a-form-item :label="$t('Store.UploadMode')" v-if="folibRepository.layout === 'Maven 2'">
+            <a-form-item :label="$t('Store.UploadMode')" v-if="folibRepository.layout === 'Maven 2'  || folibRepository.layout === 'Raw'">
               <a-radio-group v-decorator="[
                 'type',
                 {
@@ -871,7 +903,7 @@ import {
     artifactUploadProgress,
     rpmArtifactUpload,
     artifactDispatch,
-    artifactUploadZip
+    artifactUploadZip, getRawPathSize
 } from '@/api/artifact'
 import { getMetadataConfiguration } from '@/api/settings'
 import { hasRole, isAdmin, isAnonymous, isLogin } from '@/utils/permission'
@@ -915,6 +947,9 @@ export default {
   },
   data () {
     return {
+      downLoadVisible: false,
+      downLoadLoading: true,
+      rawPathSize:"",
       baseUrl: '',
       folibRepository: {},
       repositoryType: null,
@@ -942,7 +977,7 @@ export default {
       currentFileDetial: null,
       currentTreeNode: {},
       detialVisible: false,
-
+      targetArchitecture: null,
       metadataList: [],
       metadataConfigList: [],
       metadataEditorDrawerTitle: undefined,
@@ -996,6 +1031,8 @@ export default {
       searchDataCurrentSelect: {},
       searchViewCodeVisible: false,
       searchViewCodes: null,
+      //目标目录是否disabled
+      isTargetPatDisabled: true,
       columns: [
         {
           i18nKey: 'Store.OwnedWarehouse',
@@ -1198,7 +1235,6 @@ export default {
                 })
             }
         })
-        console.log("repositoryId", this.folibRepository);
         this.showDockerUploadFormModal =true;
     },
     uploadDockerFormModalClose () {
@@ -1370,7 +1406,6 @@ export default {
                     let msg = err.response.data.error
                         ? err.response.data.error
                         : err.response.data
-                    console.log('upload error：', msg)
                     let errStatusArr = [200, 500, 403, 304, 401]
                     if (!errStatusArr.includes(err.response.status))
                     {
@@ -1787,11 +1822,13 @@ export default {
     },
     handleMenuClick (active) {
       this.operationForm.resetFields()
+      this.isTargetPatDisabled =   this.folibRepository.layout !== 'Raw';
       this.$nextTick(() => {
         if (this.$refs.operationForm)
         {
           this.operationForm.setFieldsValue({
             path: this.currentTreeNode.artifactPath,
+            targetPath: this.currentTreeNode.artifactPath,
             type: 1,
           })
         }
@@ -1831,16 +1868,66 @@ export default {
      	this.operationTitle = this.$t('Store.Distribute')
         this.customTitle = this.$t('Store.DistributeCustomDirectory')
         // 下载  
-      } else if (active.key === '6')
-      {
-        let url = this.currentTreeNode.url
-        if (url)
-        {
-          window.open(url)
-        }
+      } else if (active.key === '6') {
+          let url = this.currentTreeNode.url
+          if (url) {
+              window.open(url)
+          }
 
+      } else if (active.key === '7') {
+          if (this.currentTreeNode.type === 'dir') {
+              this.downLoadVisible=true;
+              this.folibRepository
+              let storageId = this.folibRepository.storageId;
+              let repositoryId = this.folibRepository.id;
+              let path = this.currentTreeNode.artifactPath;
+              getRawPathSize(storageId,repositoryId,path).then(res => {
+                  this.rawPathSize = res;
+
+              })
+              // let url = this.currentTreeNode.url
+              // if (url) {
+              //     url = url.replace("api/browse", "storages")
+              //     window.open(url)
+              // }
+          }else if (this.currentTreeNode.type === 'file') {
+              let uri = this.currentTreeNode.url;
+              const str = this.currentFileDetial.imageName;
+
+            // 使用正则表达式匹配第三个 '/' 后的部分
+              const regex = /^([^\/]*\/){3}(.*)$/;
+              const match = str.match(regex);
+
+              const result = match ? match[2] : '';
+              if (uri) {
+                  const url = new URL(uri);
+                  // 获取协议（http: 或 https:）
+                  const protocol = url.protocol;
+                  // 获取主机名（不包括路径和查询字符串）
+                  const hostname = url.hostname;
+                  // 获取端口号，如果没有指定则默认为 80（http）或 443（https）
+                  const port = url.port ? `:${url.port}` : '';
+                  const params = this.targetArchitecture === null ? '' : '?platform=' + this.targetArchitecture;
+                  const baseUrl = `${protocol}//${hostname}${port}/storages/` + this.currentTreeNode.storageId + '/' + this.currentTreeNode.repositoryId + '/download/' + result + params;
+                  window.open(baseUrl)
+              }
+          }
       }
     },
+      handleDownLoadDir(){
+          let url = this.currentTreeNode.url
+          if (url) {
+              url = url.replace("api/browse", "storages")
+              window.open(url)
+          }
+          this.downLoadVisible=false;
+      },
+      handleDownLoadDirCancel(){
+          this.downLoadVisible=false;
+      },
+      handleArchitectureMessage(message){
+          this.targetArchitecture = message;
+      },
     getArtifactoryRepositoryType(key) {
       let artifactoryRepositoryType = ''
       this.externalNodeRepositories.forEach(node => {
@@ -1898,12 +1985,14 @@ export default {
           })
           let data = {
             path: values.path,
+            targetPath: values. targetPath,
             srcStorageId: this.folibRepository.storageId,
             srcRepositoryId: this.folibRepository.id,
             targetRepositoyList: targetRepositoyList
           }
           let dispatchData = {
             path: values.path,
+            targetPath: values. targetPath,
             srcStorageId: this.folibRepository.storageId,
             srcRepositoryId: this.folibRepository.id,
             targetDispatchRepositoryList: targetDispatchRepositoryList,

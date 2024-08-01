@@ -377,6 +377,20 @@ let routes = [
     },
     component: () => import("../views/ComponentAnalysis/Licenses/Detail.vue"),
   },
+	
+	{
+		path: "/advancementCockpits",
+		name: "advancementCockpits",
+		layout: "dashboard",
+		meta: {
+			title: 'router.AdvancementCockpits',
+			sidebarMap: ['router.StatisticalOverview', 'router.AdvancementCockpits'],
+			breadcrumbs: ['router.StatisticalOverview', 'router.AdvancementCockpits'],
+		},
+		component: () => import("../views/StatisticalOverview/AdvancementCockpits/index.vue"),
+	},
+	
+	
 	{
 		// will match sso
 		path: '/sso',
@@ -390,7 +404,7 @@ let routes = [
   //   meta: {
   //     title: "策略管理",
   //     sidebarMap: ["开源治理", "策略管理"],
-  //     breadcrumbs: ["开源治理", "策略管理"],
+  //     breadcrumbs: ["开源治理", "策略管理"],getArtifactSyncRecordStatisticsPage
   //   },
   //   component: () => import("../views/ComponentAnalysis/Policy/index.vue"),
   // },
