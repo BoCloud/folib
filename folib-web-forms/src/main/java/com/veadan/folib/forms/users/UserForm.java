@@ -97,6 +97,14 @@ public class UserForm
         this.email = email;
     }
 
+    public Set<Long> getGroupIds() {
+        return groupIds;
+    }
+
+    public void setGroupIds(Set<Long> groupIds) {
+        this.groupIds = groupIds;
+    }
+
     public interface NewUser
             extends Serializable
     {

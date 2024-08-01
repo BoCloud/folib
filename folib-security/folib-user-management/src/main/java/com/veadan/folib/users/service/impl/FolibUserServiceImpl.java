@@ -48,8 +48,7 @@ public class FolibUserServiceImpl implements FolibUserService {
 
     @Override
     public UserEntity save(UserEntity userEntity) {
-        FolibUser folibUser = new FolibUser();
-        BeanUtils.copyProperties(userEntity, folibUser);
+        FolibUser folibUser = UserConvert.INSTANCE.UserEntityToFolibUser(userEntity);
         FolibUser folibUserInfo = folibUserMapper.selectOne(folibUser);
         if (Objects.equals(folibUserInfo, null)) {
             folibUserMapper.insert(folibUser);
@@ -93,7 +92,7 @@ public class FolibUserServiceImpl implements FolibUserService {
         FolibUser folibUser = new FolibUser();
         BeanUtils.copyProperties(user, folibUser);
         PageRequest pageRequest = PageRequest.of(start, limit);
-        List<UserDTO> folibUsers = folibUserMapper.queryAllUserRoleByLimit(folibUser, null, pageRequest);
+        List<UserDTO> folibUsers = folibUserMapper.queryAllUserRoleByLimit(folibUser, pageRequest);
         List<UserEntity> userEntities = UserConvert.INSTANCE.UserDTOsToUserList(folibUsers);
         return new ArrayList<>(userEntities);
     }

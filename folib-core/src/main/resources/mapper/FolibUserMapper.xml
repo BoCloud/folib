@@ -36,7 +36,7 @@
         FROM folib_user fu
         LEFT JOIN
         (
-        <if test="refType == null or refType == '' " >
+        <if test="user.refType == null or user.refType == '' " >
             SELECT rrr1.role_id,
             rrr1.storage_provilege,
             rrr1.repository_privilege,
@@ -54,7 +54,7 @@
             ON ugr.user_group_id = rrr2.entity_id
             WHERE rrr2.ref_type = 2
         </if>
-        <if test="refType == '1' " >
+        <if test="user.refType == '1' " >
             SELECT rrr1.role_id,
             rrr1.storage_provilege,
             rrr1.repository_privilege,
@@ -63,7 +63,7 @@
             FROM role_resource_ref rrr1
             WHERE rrr1.ref_type = 1
         </if>
-        <if test="refType == '2' " >
+        <if test="user.refType == '2' " >
             SELECT rrr1.role_id,
             rrr1.storage_provilege,
             rrr1.repository_privilege,
@@ -75,47 +75,47 @@
         ) rrr
         ON fu.id = rrr.user_id
         <where>
-            <if test="id != null and id != ''">
-                and id = #{id}
+            <if test="user.id != null and user.id != ''">
+                and id = #{user.id}
             </if>
-            <if test="username != null and username != ''">
-                and username = #{username}
+            <if test="user.username != null and user.username != ''">
+                and username = #{user.username}
             </if>
-            <if test="password != null and password != ''">
-                and password = #{password}
+            <if test="user.password != null and user.password != ''">
+                and password = #{user.password}
             </if>
-            <if test="originalPassword != null and originalPassword != ''">
-                and original_password = #{originalPassword}
+            <if test="user.originalPassword != null and user.originalPassword != ''">
+                and original_password = #{user.originalPassword}
             </if>
-            <if test="avatar != null and avatar != ''">
-                and avatar = #{avatar}
+            <if test="user.avatar != null and user.avatar != ''">
+                and avatar = #{user.avatar}
             </if>
-            <if test="email != null and email != ''">
-                and email = #{email}
+            <if test="user.email != null and user.email != ''">
+                and email = #{user.email}
             </if>
-            <if test="userType != null and userType != ''">
-                and user_type = #{userType}
+            <if test="user.userType != null and user.userType != ''">
+                and user_type = #{user.userType}
             </if>
-            <if test="enabled != null and enabled != ''">
-                and enabled = #{enabled}
+            <if test="user.enabled != null and user.enabled != ''">
+                and enabled = #{user.enabled}
             </if>
-            <if test="sourceId != null and sourceId != ''">
-                and source_id = #{sourceId}
+            <if test="user.sourceId != null and user.sourceId != ''">
+                and source_id = #{user.sourceId}
             </if>
-            <if test="deleted != null and deleted != ''">
-                and deleted = #{deleted}
+            <if test="user.deleted != null and user.deleted != ''">
+                and deleted = #{user.deleted}
             </if>
-            <if test="createBy != null and createBy != ''">
-                and CREATE_BY = #{createBy}
+            <if test="user.createBy != null and user.createBy != ''">
+                and CREATE_BY = #{user.createBy}
             </if>
-            <if test="createTime != null and createTime != ''">
-                and CREATE_TIME = #{createTime}
+            <if test="user.createTime != null and user.createTime != ''">
+                and CREATE_TIME = #{user.createTime}
             </if>
-            <if test="updateBy != null and updateBy != ''">
-                and UPDATE_BY = #{updateBy}
+            <if test="user.updateBy != null and user.updateBy != ''">
+                and UPDATE_BY = #{user.updateBy}
             </if>
-            <if test="updateTime != null and updateTime != ''">
-                and UPDATE_TIME = #{updateTime}
+            <if test="user.updateTime != null and user.updateTime != ''">
+                and UPDATE_TIME = #{user.updateTime}
             </if>
         </where>
         group by fu.id

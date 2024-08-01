@@ -239,6 +239,7 @@ public class UserController
 //        }
 
         UserDto user = conversionService.convert(userToUpdate, UserDto.class);
+        user.setGroupIds(userToUpdate.getGroupIds());
         if (Objects.nonNull(user) && StringUtils.isNotBlank(user.getPassword())) {
             user.setOriginalPassword(user.getPassword());
             String password = rsaUtils.decrypt(user.getPassword());

@@ -13,10 +13,17 @@ import com.veadan.folib.domain.SecurityRoleEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * @author mtodorov
  */
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserDto
         implements Serializable, User
 {
@@ -36,6 +43,7 @@ public class UserDto
     private Boolean enabled = true;
 
     private Set<String> roles = new HashSet<>();
+
     private Set<Long> groupIds = new HashSet<>();
 
     private String securityTokenKey;
@@ -100,12 +108,6 @@ public class UserDto
                              : new HashSet<>();
     }
 
-    @Override
-    public Set<Long> getGroupIds() {
-         return groupIds != null ? new HashSet<>(groupIds)
-                             : new HashSet<>();
-    }
-
     public void setRoles(Set<SecurityRole> roles)
     {
         if (roles == null)
@@ -114,6 +116,22 @@ public class UserDto
             return;
         }
         this.roles = roles.stream().map(SecurityRole::getRoleName).collect(Collectors.toSet());
+    }
+    @Override
+    @JsonIgnore
+    public Set<Long> getGroupIds()
+    {
+        return groupIds;
+    }
+
+    public void setGroupIds(Set<Long> groupIds)
+    {
+        if (groupIds == null)
+        {
+            this.groupIds = new HashSet<>();
+            return;
+        }
+        this.groupIds = groupIds;
     }
 
     public void setRoleNames(Set<String> roles)

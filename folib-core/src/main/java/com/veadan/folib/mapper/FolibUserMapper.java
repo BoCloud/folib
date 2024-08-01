@@ -23,7 +23,7 @@ public interface FolibUserMapper extends CommonMapper<FolibUser> {
       * @param pageable 分页对象
       * @return 对象列表
       */
-     List<UserDTO> queryAllUserRoleByLimit(FolibUser folibUser, @Param("refType") String refType, @Param("pageable") Pageable pageable);
+     List<UserDTO> queryAllUserRoleByLimit(@Param("user") FolibUser folibUser,  @Param("pageable") Pageable pageable);
     /**
      * 通过ID查询单条数据 
      *

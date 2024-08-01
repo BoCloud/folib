@@ -95,4 +95,9 @@ public class UserGroupRefServiceImpl implements UserGroupRefService {
     public void deleteByUserGroupId(Long id) {
         userGroupRefMapper.delete(UserGroupRef.builder().userGroupId(id).build());
     }
+
+    @Override
+    public void deleteByUserId(String userId) {
+        userGroupRefMapper.delete(UserGroupRef.builder().userId(userId).build());
+    }
 }

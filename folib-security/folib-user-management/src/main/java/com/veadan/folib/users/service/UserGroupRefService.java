@@ -59,4 +59,5 @@ public interface UserGroupRefService{
     RoleResourceRefDTO queryPrivilegeByGroup(Long groupId, String refType, List<String> roleIds);
 
     void deleteByUserGroupId(Long id);
+    void deleteByUserId(String userId);
 }

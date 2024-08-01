@@ -1,5 +1,6 @@
 package com.veadan.folib.users.service.impl;
 
+import com.veadan.folib.domain.SecurityRole;
 import com.veadan.folib.dto.PermissionsDTO;
 import com.veadan.folib.dto.RoleDTO;
 import com.veadan.folib.dto.UserRoleDTO;
@@ -13,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * 权限表;(role_resource_ref)表服务实现类
@@ -82,6 +84,11 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
     public boolean deleteByRoleId(String roleId){
         int total = roleResourceRefMapper.delete(RoleResourceRef.builder().roleId(roleId).build());
         return total > 0;
+    }
+
+    @Override
+    public List<RoleResourceRef> queryRoleByUserId(String uuid, List<String> roles) {
+        return roleResourceRefMapper.queryRoleByUserId(uuid, roles);
     }
 
     @Override
