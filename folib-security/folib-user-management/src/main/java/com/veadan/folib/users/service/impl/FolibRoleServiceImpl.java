@@ -386,6 +386,11 @@ public class FolibRoleServiceImpl implements FolibRoleService {
         savePermissions(roleDTO, accessModel, roleId);
     }
 
+    @Override
+    public List<FolibRole> queryRoles(FolibRole build) {
+        return folibRoleMapper.select(build);
+    }
+
     /**
      * 获取仓库权限
      * @param repositoryAccess 仓库权限req

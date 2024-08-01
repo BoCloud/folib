@@ -10,10 +10,7 @@ import com.veadan.folib.domain.SecurityRole;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.UserEntity;
 import com.veadan.folib.dto.UserDTO;
-import com.veadan.folib.entity.FolibUser;
-import com.veadan.folib.entity.RoleResourceRef;
-import com.veadan.folib.entity.UserGroup;
-import com.veadan.folib.entity.UserGroupRef;
+import com.veadan.folib.entity.*;
 import com.veadan.folib.repositories.UserRepository;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.domain.Users;
@@ -73,6 +70,8 @@ public class RelationalDatabaseUserService implements UserService
     private RoleResourceRefService roleResourceRefService;
     @Inject
     protected UserRepository userRepository;
+    @Inject
+    private FolibRoleService folibRoleService;
 
     @Override
     @CacheEvict(cacheNames = CacheName.User.AUTHENTICATIONS, key = "#p0")
@@ -182,6 +181,7 @@ public class RelationalDatabaseUserService implements UserService
     public User save(User user)
     {
         LocalDateTime now = LocalDateTimeInstance.now();
+        Date date = new Date();
 
         UserEntity userEntity = Optional.ofNullable(findByUsername(user.getUsername())).orElseGet(() -> new UserEntity(user.getUsername()));
 
@@ -194,10 +194,7 @@ public class RelationalDatabaseUserService implements UserService
             userEntity.setOriginalPassword(user.getOriginalPassword());
         }
         userEntity.setEnabled(user.isEnabled());
-        List<String> showRoleNameList = Lists.newArrayList(SystemRole.ADMIN.name(), SystemRole.ARTIFACTS_MANAGER.name(), SystemRole.GENERAL.name(), SystemRole.OPEN_SOURCE_MANAGE.name());
-        //Set<SecurityRole> roles = Optional.ofNullable(userEntity.getRoles()).orElse(Sets.newLinkedHashSet()).stream().filter(item -> !showRoleNameList.contains(item.getRoleName())).collect(Collectors.toSet());
-        //roles.addAll(user.getRoles());
-        //userEntity.setRoles(roles);
+
         userEntity.setSecurityTokenKey(user.getSecurityTokenKey());
         userEntity.setEmail(user.getEmail());
         userEntity.setLastUpdated(now);
@@ -210,20 +207,23 @@ public class RelationalDatabaseUserService implements UserService
             userGroupRefService.deleteByUserId(user.getUuid());
             List<UserGroupRef> ref = new ArrayList<>();
             groupIds.forEach(item ->
-                    ref.add(UserGroupRef.builder().userGroupId(item).userId(user.getUuid()).build()));
+                    ref.add(UserGroupRef.builder().userGroupId(item).userId(user.getUuid()).createTime(date).build()));
             userGroupRefService.saveBath(ref);
         }
         //维护用户角色
         Set<SecurityRole> roles = user.getRoles();
         if (!CollectionUtils.isEmpty(roles)){
-            List<String> roleIds = roles.stream().map(SecurityRole::getRoleName).collect(Collectors.toList());
-            List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryRoleByUserId(user.getUuid(), roleIds);
-            if (!CollectionUtils.isEmpty(roleResourceRefs)) {
-                roleResourceRefService.removeByIds(roleResourceRefs.stream().map(RoleResourceRef::getId).collect(Collectors.toList()));
+            List<FolibRole> defaultRoles = folibRoleService.queryRoles(FolibRole.builder().isDefault(GlobalConstants.DEFALUT).build());
+            if(!CollectionUtils.isEmpty(defaultRoles)) {
+                List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryRoleByUserId(user.getUuid(), defaultRoles.stream().map(FolibRole::getId).collect(Collectors.toList()));
+                if (!CollectionUtils.isEmpty(roleResourceRefs)) {
+                    roleResourceRefService.removeByIds(roleResourceRefs.stream().map(RoleResourceRef::getId).collect(Collectors.toList()));
+                }
             }
+
             List<RoleResourceRef> resourceRefs = new ArrayList<>();
             roles.forEach(role -> {
-                resourceRefs.add(RoleResourceRef.builder().roleId(role.getRoleName()).refType(GlobalConstants.ROLE_TYPE_USER).entityId(user.getUuid()).build());
+                resourceRefs.add(RoleResourceRef.builder().roleId(role.getRoleName()).refType(GlobalConstants.ROLE_TYPE_USER).entityId(user.getUuid()).createTime(date).build());
             });
             roleResourceRefService.saveBath(resourceRefs);
         }

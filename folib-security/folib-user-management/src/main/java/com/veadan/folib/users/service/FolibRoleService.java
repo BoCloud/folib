@@ -61,4 +61,6 @@ public interface FolibRoleService{
     void save(RoleDTO roleDTO, String username);
 
     void updateRoleInfo(RoleDTO roleDTO, String username);
+
+    List<FolibRole> queryRoles(FolibRole build);
 }

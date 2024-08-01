@@ -67,8 +67,7 @@ public class EncodedPasswordUser implements User {
 
     @Override
     public Set<Long> getGroupIds() {
-        return groupIds != null ? new HashSet<>(groupIds)
-                : new HashSet<>();
+        return user.getGroupIds();
 
     }
 

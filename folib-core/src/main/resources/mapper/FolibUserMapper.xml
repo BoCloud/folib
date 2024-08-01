@@ -303,13 +303,13 @@
             <if test="createBy != null and createBy != ''">
                 and CREATE_BY = #{createBy}
             </if>
-            <if test="createTime != null and createTime != ''">
+            <if test="createTime != null">
                 and CREATE_TIME = #{createTime}
             </if>
             <if test="updateBy != null and updateBy != ''">
                 and UPDATE_BY = #{updateBy}
             </if>
-            <if test="updateTime != null and updateTime != ''">
+            <if test="updateTime != null">
                 and UPDATE_TIME = #{updateTime}
             </if>
         </where>
@@ -318,13 +318,13 @@
 
     <!--新增数据-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
-        insert into folib_user(id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,CREATE_BY,CREATE_TIME,UPDATE_BY,UPDATE_TIME)
+        insert into folib_user(id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,create_by,create_time,update_by,update_time)
         values (#{id},#{username},#{password},#{originalPassword},#{avatar},#{email},#{userType},#{enabled},#{sourceId},#{deleted},#{createBy},#{createTime},#{updateBy},#{updateTime})
     </insert>
 
     <!-- 批量新增数据 -->
     <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into folib_user(id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,CREATE_BY,CREATE_TIME,UPDATE_BY,UPDATE_TIME)
+        insert into folib_user(id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,create_by,create_time,update_by,update_time)
         values
         <foreach collection="entities" item="entity" separator=",">
             (#{entity.id},#{entity.username},#{entity.password},#{entity.originalPassword},#{entity.avatar},#{entity.email},#{entity.userType},#{entity.enabled},#{entity.sourceId},#{entity.deleted},#{entity.createBy},#{entity.createTime},#{entity.updateBy},#{entity.updateTime})
@@ -333,7 +333,7 @@
 
     <!-- 批量新增或按主键更新数据 -->
     <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into folib_user(id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,CREATE_BY,CREATE_TIME,UPDATE_BY,UPDATE_TIME)
+        insert into folib_user(id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,create_by,create_time,update_by,update_time)
         values
         <foreach collection="entities" item="entity" separator=",">
             (#{entity.id},#{entity.username},#{entity.password},#{entity.originalPassword},#{entity.avatar},#{entity.email},#{entity.userType},#{entity.enabled},#{entity.sourceId},#{entity.deleted},#{entity.createBy},#{entity.createTime},#{entity.updateBy},#{entity.updateTime})
@@ -392,13 +392,13 @@
             <if test="createBy != null and createBy != ''">
                 CREATE_BY = #{createBy},
             </if>
-            <if test="createTime != null and createTime != ''">
+            <if test="createTime != null">
                 CREATE_TIME = #{createTime},
             </if>
             <if test="updateBy != null and updateBy != ''">
                 UPDATE_BY = #{updateBy},
             </if>
-            <if test="updateTime != null and updateTime != ''">
+            <if test="updateTime != null">
                 UPDATE_TIME = #{updateTime},
             </if>
         </set>

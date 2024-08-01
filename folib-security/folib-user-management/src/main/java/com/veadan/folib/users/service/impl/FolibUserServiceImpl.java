@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -49,8 +50,11 @@ public class FolibUserServiceImpl implements FolibUserService {
     @Override
     public UserEntity save(UserEntity userEntity) {
         FolibUser folibUser = UserConvert.INSTANCE.UserEntityToFolibUser(userEntity);
-        FolibUser folibUserInfo = folibUserMapper.selectOne(folibUser);
+        Date date = new Date();
+        folibUser.setUpdateTime(date);
+        FolibUser folibUserInfo = folibUserMapper.selectOne(FolibUser.builder().id(folibUser.getId()).build());
         if (Objects.equals(folibUserInfo, null)) {
+            folibUser.setCreateTime(date);
             folibUserMapper.insert(folibUser);
         }else {
             folibUser.setId(folibUserInfo.getId());

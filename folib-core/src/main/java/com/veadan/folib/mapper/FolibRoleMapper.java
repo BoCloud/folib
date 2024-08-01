@@ -1,6 +1,8 @@
 package com.veadan.folib.mapper;
 
 import java.util.List;
+
+import com.veadan.folib.common.base.CommonMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.data.domain.Pageable;
@@ -12,7 +14,7 @@ import com.veadan.folib.entity.FolibRole;
  * @date : 2024-7-17
  */
 @Mapper
-public interface FolibRoleMapper{
+public interface FolibRoleMapper extends CommonMapper<FolibRole> {
     /** 
      * 通过ID查询单条数据 
      *
