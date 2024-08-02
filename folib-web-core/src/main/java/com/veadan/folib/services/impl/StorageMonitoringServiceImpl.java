@@ -47,7 +47,6 @@ import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
 
 /**
@@ -80,11 +79,10 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
         log.info("Update storage monitoring data start [{}]", DateUtil.now());
         long start = System.currentTimeMillis();
         Map<String, Storage> storageMap = getStorageMap();
-        ForkJoinPool pool = new ForkJoinPool();
         List<StorageMonitoring> storageMonitoringList = Lists.newArrayList(), trashStorageMonitoringList = Lists.newArrayList();
         List<StorageDevice> storageDeviceList = Lists.newArrayList();
         Map<String, StorageDevice> storageDeviceMap = Maps.newConcurrentMap();
-        handlerStorage(storageMap, pool, storageMonitoringList, trashStorageMonitoringList, storageDeviceList, storageDeviceMap);
+        handlerStorage(storageMap, storageMonitoringList, trashStorageMonitoringList, storageDeviceList, storageDeviceMap);
         Date date = new Date();
         storageStorageMonitoring(storageMonitoringList, date);
         platformStorageMonitoring(storageMap, storageMonitoringList, date);
@@ -252,13 +250,14 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
         return configurationManager.getConfiguration().getStorages();
     }
 
-    private void handlerStorage(Map<String, Storage> storageMap, ForkJoinPool pool, List<StorageMonitoring> storageMonitoringList, List<StorageMonitoring> trashStorageMonitoringList, List<StorageDevice> storageDeviceList, Map<String, StorageDevice> storageDeviceMap) {
+    private void handlerStorage(Map<String, Storage> storageMap, List<StorageMonitoring> storageMonitoringList, List<StorageMonitoring> trashStorageMonitoringList, List<StorageDevice> storageDeviceList, Map<String, StorageDevice> storageDeviceMap) {
         Storage storage;
         Repository repository;
         RootRepositoryPath rootRepositoryPath;
         FileStore fileStore;
         StorageDevice storageDevice;
         StorageMonitoring storageMonitoring;
+        long start;
         for (String storageId : storageMap.keySet()) {
             storage = storageMap.get(storageId);
             Map<String, ? extends Repository> repositoryMap = storage.getRepositories();
@@ -285,7 +284,9 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
                     if (!storageDeviceList.contains(storageDevice)) {
                         storageDeviceList.add(storageDevice);
                     }
-                    calculatorRepository(pool, storageMonitoringList, trashStorageMonitoringList, storageDeviceMap, storage, repository, rootRepositoryPath);
+                    start = System.currentTimeMillis();
+                    calculatorRepository(storageMonitoringList, trashStorageMonitoringList, storageDeviceMap, storage, repository, rootRepositoryPath);
+                    log.info("Calculator repository [{}] [{}] data end [{}] take time [{}] ms", storage.getId(), repository.getId(), DateUtil.now(), System.currentTimeMillis() - start);
                 } catch (Exception ex) {
                     log.error("Calculator storage monitoring data storageId [{}] repositoryId [{}] error [{}]", storageId, repositoryId, ExceptionUtils.getStackTrace(ex));
                 }
@@ -474,10 +475,10 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
         return storageMonitoringList;
     }
 
-    private void calculatorRepository(ForkJoinPool pool, List<StorageMonitoring> storageMonitoringList, List<StorageMonitoring> trashStorageMonitoringList, Map<String, StorageDevice> storageDeviceMap, Storage storage, Repository repository, RepositoryPath repositoryPath) {
+    private void calculatorRepository(List<StorageMonitoring> storageMonitoringList, List<StorageMonitoring> trashStorageMonitoringList, Map<String, StorageDevice> storageDeviceMap, Storage storage, Repository repository, RepositoryPath repositoryPath) {
         //计算目录相关信息
         DirectorySizeCalculatorUtils directorySizeCalculatorUtils = new DirectorySizeCalculatorUtils(repositoryPath);
-        Result result = pool.invoke(directorySizeCalculatorUtils);
+        Result result = directorySizeCalculatorUtils.compute();
         long itemsCount = result.getArtifactsCount() + result.getDirectoriesCount(), trashItemsCount = result.getTrashArtifactsCount() + result.getTrashDirectoriesCount(), artifactsDownloadedCount = 0;
         Date date = new Date();
         StorageDevice storageDevice = storageDeviceMap.get(storage.getId());

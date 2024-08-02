@@ -4,7 +4,6 @@ import cn.hutool.extra.spring.SpringUtil;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
-import com.veadan.folib.util.RepositoryPathUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -15,7 +14,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.concurrent.RecursiveTask;
 
 /**
  * 目录大小计算工具类
@@ -24,7 +22,7 @@ import java.util.concurrent.RecursiveTask;
  * @date 2024/7/18
  **/
 @Slf4j
-public class DirectorySizeCalculatorUtils extends RecursiveTask<Result> {
+public class DirectorySizeCalculatorUtils {
 
     /**
      * 目录
@@ -35,8 +33,7 @@ public class DirectorySizeCalculatorUtils extends RecursiveTask<Result> {
         this.directory = directory;
     }
 
-    @Override
-    protected Result compute() {
+    public Result compute() {
         final Result result = new Result();
         try {
             if (!Files.exists(directory)) {
