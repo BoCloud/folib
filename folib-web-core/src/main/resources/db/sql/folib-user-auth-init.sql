@@ -143,5 +143,46 @@ SET @resource_id = LAST_INSERT_ID();
 INSERT INTO folib_scanner.role_resource_ref (role_id, entity_id, ref_type, resource_id, storage_privilege, repository_privilege, path_privilege, create_by, create_time, resource_type)
 VALUES ('USER_MANAGER', NULL, NULL, @resource_id, NULL, NULL, NULL, NULL, NULL, '1');
 -- 提交事务
+COMMIT;
+
+
+-- 开始事务
+START TRANSACTION;
+
+-- 插入到 resource 表
+INSERT INTO folib_scanner.resource (api_authoritie, storage_id, repository_id, `path`, create_by, create_time)
+VALUES ('DELETE_ROLE', NULL, NULL, NULL, NULL, NULL);
+-- 获取刚插入的 resource 的 id
+SET @resource_id = LAST_INSERT_ID();
+-- 插入到 role_resource_ref 表
+INSERT INTO folib_scanner.role_resource_ref (role_id, entity_id, ref_type, resource_id, storage_privilege, repository_privilege, path_privilege, create_by, create_time, resource_type)
+VALUES ('USER_MANAGER', NULL, NULL, @resource_id, NULL, NULL, NULL, NULL, NULL, '1');
+
+-- 插入到 resource 表
+INSERT INTO folib_scanner.resource (api_authoritie, storage_id, repository_id, `path`, create_by, create_time)
+VALUES ('CREATE_ROLE', NULL, NULL, NULL, NULL, NULL);
+-- 获取刚插入的 resource 的 id
+SET @resource_id = LAST_INSERT_ID();
+-- 插入到 role_resource_ref 表
+INSERT INTO folib_scanner.role_resource_ref (role_id, entity_id, ref_type, resource_id, storage_privilege, repository_privilege, path_privilege, create_by, create_time, resource_type)
+VALUES ('USER_MANAGER', NULL, NULL, @resource_id, NULL, NULL, NULL, NULL, NULL, '1');
+
+-- 插入到 resource 表
+INSERT INTO folib_scanner.resource (api_authoritie, storage_id, repository_id, `path`, create_by, create_time)
+VALUES ('VIEW_ROLE', NULL, NULL, NULL, NULL, NULL);
+-- 获取刚插入的 resource 的 id
+SET @resource_id = LAST_INSERT_ID();
+-- 插入到 role_resource_ref 表
+INSERT INTO folib_scanner.role_resource_ref (role_id, entity_id, ref_type, resource_id, storage_privilege, repository_privilege, path_privilege, create_by, create_time, resource_type)
+VALUES ('USER_MANAGER', NULL, NULL, @resource_id, NULL, NULL, NULL, NULL, NULL, '1');
+
+-- 插入到 resource 表
+INSERT INTO folib_scanner.resource (api_authoritie, storage_id, repository_id, `path`, create_by, create_time)
+VALUES ('UPDATE_ROLE', NULL, NULL, NULL, NULL, NULL);
+-- 获取刚插入的 resource 的 id
+SET @resource_id = LAST_INSERT_ID();
+-- 插入到 role_resource_ref 表
+INSERT INTO folib_scanner.role_resource_ref (role_id, entity_id, ref_type, resource_id, storage_privilege, repository_privilege, path_privilege, create_by, create_time, resource_type)
+VALUES ('USER_MANAGER', NULL, NULL, @resource_id, NULL, NULL, NULL, NULL, NULL, '1');
 -- 提交事务
 COMMIT;

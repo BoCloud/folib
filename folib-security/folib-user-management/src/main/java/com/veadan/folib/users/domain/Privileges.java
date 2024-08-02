@@ -89,7 +89,11 @@ public enum Privileges
     DELETE_USER_GROUP,
     CREATE_USER_GROUP,
     VIEW_USER_GROUP,
-    UPDATE_USER_GROUP
+    UPDATE_USER_GROUP,
+    DELETE_ROLE,
+    CREATE_ROLE,
+    VIEW_ROLE,
+    UPDATE_ROLE
     ;
 
     /**

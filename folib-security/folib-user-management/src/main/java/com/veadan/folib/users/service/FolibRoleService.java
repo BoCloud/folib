@@ -63,4 +63,12 @@ public interface FolibRoleService{
     void updateRoleInfo(RoleDTO roleDTO, String username);
 
     List<FolibRole> queryRoles(FolibRole build);
+
+    /**
+     * 获取角色详情
+     * @param roleId 角色id
+     * @param folibRole 角色信息
+     * @return 权限信息
+     */
+    RoleDTO getRoleDetail(String roleId, FolibRole folibRole);
 }

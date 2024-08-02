@@ -1,6 +1,7 @@
 package com.veadan.folib.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.veadan.folib.common.handler.StringListTypeHandler;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -61,6 +62,7 @@ public class UserGroupDTO implements Serializable,Cloneable {
      @ApiModelProperty(name = "是否默认", notes = "")
      private String isDefault;
 
+     @JsonIgnore
     private String users;
 
     public List<String> getUserIds() {
@@ -78,6 +80,7 @@ public class UserGroupDTO implements Serializable,Cloneable {
     }
 
     private List<String> userIds;
+    @JsonIgnore
     private String roles;
     private List<String> roleIds;
 

@@ -4,9 +4,7 @@ import com.veadan.folib.authorization.AuthorizationConfigFileManager;
 import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.constant.GlobalConstants;
-import com.veadan.folib.dto.AccessModelDTO;
-import com.veadan.folib.dto.RepositoryAccessModelDTO;
-import com.veadan.folib.dto.RoleDTO;
+import com.veadan.folib.dto.*;
 import com.veadan.folib.entity.Resource;
 import com.veadan.folib.entity.RoleResourceRef;
 import com.veadan.folib.users.domain.Privileges;
@@ -323,9 +321,9 @@ public class FolibRoleServiceImpl implements FolibRoleService {
     @Override
     public void save(RoleDTO roleForm, String username) {
 
-        AccessModelDTO accessModel = roleForm.getAccessModel();
+         List<AccessResourcesDTO> accessModel= roleForm.getResources();
         if(Objects.isNull(accessModel)){
-            throw new RuntimeException("权限配置不能为空");
+            throw new RuntimeException("权限配置资源不能为空");
         }
         //保存角色信息
         FolibRole folibRole = queryById(roleForm.getName());
@@ -337,41 +335,60 @@ public class FolibRoleServiceImpl implements FolibRoleService {
         insert(roleInfo);
         String roleId = roleInfo.getId();
         //保存权限关系
-        savePermissions(roleForm, accessModel, roleId);
+        savePermissions(roleForm, roleId, username);
     }
 
-    private void savePermissions(RoleDTO roleForm, AccessModelDTO accessModel, String roleId) {
+    private void savePermissions(RoleDTO roleForm, String roleId, String username) {
         //保存权限
         List<RoleResourceRef> roleResourceRefs = new ArrayList<>();
+        List<AccessResourcesDTO> resources = roleForm.getResources();
+        AccessModelDTO privileges = roleForm.getPrivileges();
+        List<AccessUsersDTO> users = privileges.getUsers();
+        List<AccessUserGroupsDTO> groups = privileges.getGroups();
+        if (CollectionUtils.isEmpty(users) && CollectionUtils.isEmpty(groups)){
+            List<RoleResourceRef> roleResourceRef = resources.stream().map(accessResourcesDTO -> RoleResourceRef.builder().roleId(roleId).resourceId(accessResourcesDTO.getResourceId()).createBy(username).build()).collect(Collectors.toList());
+            roleResourceRefService.saveBath(roleResourceRef);
+            return;
+        }
         //用户权限组装
-        roleForm.getUserIds().forEach(userId -> {
-            accessModel.getApiAccess().forEach(privilege -> {
-                RoleResourceRef roleResourceRef = RoleResourceRef.builder().roleId(roleId).entityId(userId).refType(GlobalConstants.ROLE_TYPE_USER).resourceType(GlobalConstants.RESOURCE_TYPE_API).resourceId(privilege.getResourceId()).build();
-                roleResourceRefs.add(roleResourceRef);
-            });
-            accessModel.getRepositoriesAccess().forEach(repositoryAccess -> {
-                getRepositoriesAcces(repositoryAccess, roleId, userId, GlobalConstants.ROLE_TYPE_USER, roleResourceRefs);
-            });
-        });
+        if (CollectionUtils.isNotEmpty(users)){
+            resources.forEach(accessResourcesDTO -> users.forEach(user -> {
+                List<String> access = user.getAccess();
+                access.forEach(pri -> {
+                    roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER)
+                            .storagePrivilege(pri).resourceId(accessResourcesDTO.getResourceId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build());
+                    roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER)
+                            .repositoryPrivilege(pri).resourceId(accessResourcesDTO.getResourceId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY).build());
+                    roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER).pathPrivilege(pri)
+                            .resourceId(accessResourcesDTO.getResourceId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_PATH).build());
+                });
+            }));
+        }
         //用户组权限组装
-        roleForm.getUserGroupIds().forEach(groupId -> {
-            accessModel.getApiAccess().forEach(privilege -> {
-                RoleResourceRef roleResourceRef = RoleResourceRef.builder().roleId(roleId).entityId(String.valueOf(groupId)).refType(GlobalConstants.ROLE_TYPE_USER_GROUP).resourceType(GlobalConstants.RESOURCE_TYPE_API).resourceId(privilege.getResourceId()).build();
-                roleResourceRefs.add(roleResourceRef);
-            });
-            accessModel.getRepositoriesAccess().forEach(repositoryAccess -> {
-                getRepositoriesAcces(repositoryAccess, roleId, String.valueOf(groupId), GlobalConstants.ROLE_TYPE_USER_GROUP, roleResourceRefs);
-            });
-        });
+        if (CollectionUtils.isNotEmpty(groups)){
+            resources.forEach(accessResourcesDTO -> groups.forEach(groupsDTO -> {
+                List<String> access = groupsDTO.getAccess();
+                access.forEach(pri -> {
+                    roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP)
+                            .storagePrivilege(pri).resourceId(accessResourcesDTO.getResourceId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build());
+                    roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP)
+                            .repositoryPrivilege(pri).resourceId(accessResourcesDTO.getResourceId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY).build());
+                    roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP).pathPrivilege(pri)
+                            .resourceId(accessResourcesDTO.getResourceId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_PATH).build());
+                });
+            }));
+        }
+
         roleResourceRefService.saveBath(roleResourceRefs);
     }
 
     @Override
     public void updateRoleInfo(RoleDTO roleDTO, String username) {
-        AccessModelDTO accessModel = roleDTO.getAccessModel();
+        List<AccessResourcesDTO> accessModel= roleDTO.getResources();
         if(Objects.isNull(accessModel)){
-            throw new RuntimeException("权限配置不能为空");
+            throw new RuntimeException("权限配置资源不能为空");
         }
+
         //保存角色信息
         FolibRole folibRole = queryById(roleDTO.getName());
         if (folibRole != null) {
@@ -383,13 +400,50 @@ public class FolibRoleServiceImpl implements FolibRoleService {
         String roleId = roleInfo.getId();
         roleResourceRefService.deleteByRoleId(roleId);
         //保存权限关系
-        savePermissions(roleDTO, accessModel, roleId);
+        savePermissions(roleDTO, roleId, username);
     }
 
     @Override
     public List<FolibRole> queryRoles(FolibRole build) {
         return folibRoleMapper.select(build);
     }
+
+    @Override
+    public RoleDTO getRoleDetail(String roleId, FolibRole folibRole) {
+        RoleDTO roleDTO = RoleDTO.builder().description(folibRole.getDescription()).name(folibRole.getEnName()).build();
+        //查角色关联的权限
+        List<PermissionsDTO> permissions = roleResourceRefService.queryPermissions(roleId);
+        //用户权限
+        Map<String, List<PermissionsDTO>> userPermissions = permissions.stream().filter(permissionsDTO -> StringUtils.isNotEmpty(permissionsDTO.getRefType()) && GlobalConstants.ROLE_TYPE_USER.equals(permissionsDTO.getRefType())).collect(Collectors.groupingBy(PermissionsDTO::getEntityId));
+        List<AccessUsersDTO> userAccess = userPermissions.entrySet().stream().map(entry -> {
+            String userId = entry.getKey();
+            List<PermissionsDTO> permissionDTOs = entry.getValue();
+            List<String> collect = permissionDTOs.stream().flatMap(permissionDTO ->
+                    Stream.of(permissionDTO.getRepositoryPrivilege(), permissionDTO.getStoragePrivilege(), permissionDTO.getPathPrivilege())).collect(Collectors.toList());
+            return AccessUsersDTO.builder().id(userId).access(collect).build();
+        }).collect(Collectors.toList());
+
+        //用户组权限
+        Map<String, List<PermissionsDTO>> groupPermissions = permissions.stream().filter(permissionsDTO -> StringUtils.isNotEmpty(permissionsDTO.getRefType()) && GlobalConstants.ROLE_TYPE_USER_GROUP.equals(permissionsDTO.getRefType())).collect(Collectors.groupingBy(PermissionsDTO::getEntityId));
+        List<AccessUserGroupsDTO> userGroupAccess = groupPermissions.entrySet().stream().map(entry -> {
+            String userId = entry.getKey();
+            List<PermissionsDTO> permissionDTOs = entry.getValue();
+            List<String> collect = permissionDTOs.stream().flatMap(permissionDTO ->
+                    Stream.of(permissionDTO.getRepositoryPrivilege(), permissionDTO.getStoragePrivilege(), permissionDTO.getPathPrivilege())).collect(Collectors.toList());
+            return AccessUserGroupsDTO.builder().id(userId).access(collect).build();
+        }).collect(Collectors.toList());
+        roleDTO.setPrivileges(AccessModelDTO.builder().users(userAccess).groups(userGroupAccess).build());
+
+        //资源权限
+        List<PermissionsDTO> resources = permissions.stream().filter(permissionsDTO -> StringUtils.isNotEmpty(permissionsDTO.getStorageId()) || StringUtils.isNotEmpty(permissionsDTO.getRepositoryId()) || StringUtils.isNotEmpty(permissionsDTO.getPath())).collect(Collectors.toList());
+        List<AccessResourcesDTO> resourceList = resources.stream().map(resource ->
+                AccessResourcesDTO.builder().resourceId(resource.getResourceId()).storageId(resource.getStorageId())
+                        .repositoryId(resource.getRepositoryId()).path(resource.getPath()).build()
+        ).distinct().collect(Collectors.toList());
+        roleDTO.setResources(resourceList);
+        return roleDTO;
+    }
+
 
     /**
      * 获取仓库权限

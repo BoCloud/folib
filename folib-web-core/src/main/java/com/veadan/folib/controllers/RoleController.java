@@ -25,6 +25,7 @@ import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.*;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
@@ -131,7 +132,7 @@ public class RoleController extends BaseController {
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    public ResponseEntity createGroup(@RequestBody @Validated(RoleForm.NewRole.class) RoleForm roleForm,
+    public ResponseEntity create(@RequestBody @Validated(RoleForm.NewRole.class) RoleForm roleForm,
                                       BindingResult bindingResult,
                                       Authentication authentication,
                                       @RequestHeader(HttpHeaders.ACCEPT) String accept) {
@@ -163,40 +164,11 @@ public class RoleController extends BaseController {
         if (folibRole == null) {
             return getNotFoundResponseEntity(NOT_FOUND_ROLE, accept);
         }
-        RoleDTO roleDTO = roleResourceRefService.getUserByRoleId(roleId);
-        //查角色关联的权限
-        List<PermissionsDTO> permissions = roleResourceRefService.queryPermissions(roleId);
-        List<AccessModelDTO.ApiAccess> apiAccess = permissions.stream()
-                .filter(p -> GlobalConstants.RESOURCE_TYPE_PATH.equals(p.getResourceType()) && StringUtils.isNotEmpty(p.getApiAuthoritie()))
-                .map(p -> AccessModelDTO.ApiAccess.builder().resourceId(p.getResourceId()).api(p.getApiAuthoritie()).build()).collect(Collectors.toList());
-
-        Map<Long, List<PermissionsDTO>> permissionsMap = permissions.stream().filter(p -> !GlobalConstants.RESOURCE_TYPE_PATH.equals(p.getResourceType())).collect(Collectors.groupingBy(PermissionsDTO::getResourceId));
-        List<RepositoryAccessModelDTO> repositoryAccessList = new ArrayList<>();
-        permissionsMap.forEach((resourceId, permissionList) -> {
-            List<String> privileges = permissionList.stream()
-                    .flatMap(per -> Stream.of(
-                            per.getPathPrivilege(),
-                            per.getRepositoryPrivilege(),
-                            per.getStoragePrivilege()
-                    ))
-                    .filter(StringUtils::isNotEmpty)
-                    .collect(Collectors.toList());
-
-            PermissionsDTO firstPermission = permissionList.get(0);
-            RepositoryAccessModelDTO repositoryAccess = RepositoryAccessModelDTO.builder()
-                    .resourceId(resourceId)
-                    .repositoryId(firstPermission.getRepositoryId())
-                    .storageId(firstPermission.getStorageId())
-                    .path(firstPermission.getPath())
-                    .privileges(privileges)
-                    .build();
-
-            repositoryAccessList.add(repositoryAccess);
-        });
-        roleDTO.setAccessModel(AccessModelDTO.builder().apiAccess(apiAccess).repositoriesAccess(repositoryAccessList).build());
+        RoleDTO roleDTO = folibRoleService.getRoleDetail(roleId, folibRole);
 
         return ResponseEntity.ok(roleDTO);
     }
+
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_UPDATE_ROLE),
             @ApiResponse(code = 400, message = FAILED_UPDATE_ROLE)})
     @PreAuthorize("hasAuthority('UPDATE_ROLE')")

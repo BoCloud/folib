@@ -14,9 +14,6 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RoleForm
 {
-    private List<String> userIds;
-
-    private List<Long> userGroupIds;
 
     @NotEmpty(message = "A name must be specified.")
     @UniqueRoleName(message = "Role is already registered.")
@@ -24,8 +21,9 @@ public class RoleForm
 
     private String description;
 
-    private AccessModelForm accessModel;
+    private AccessModelForm privileges;
 
+    private List<AccessResources> resources;
     public interface NewRole {
 
     }

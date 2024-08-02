@@ -5,8 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 /**
  * @author veadan
  */
@@ -14,9 +12,15 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AccessModelDTO
+public class AccessResourcesDTO
 {
-    private List<AccessUserGroupsDTO> groups;
-    private List<AccessUsersDTO> users;
+    private Long resourceId;
+    private String storageId;
+
+    private String repositoryId;
+
+    private String path;
+
+    //private boolean wildcard;
 
 }

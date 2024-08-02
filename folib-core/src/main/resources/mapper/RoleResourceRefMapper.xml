@@ -213,10 +213,10 @@
 
     <!-- 批量新增数据 -->
     <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into role_resource_ref(id,role_id,entity_id,resource_type,ref_type,resource_id,storage_privilege,repository_privilege,path_privilege,create_by,create_time)
+        insert into role_resource_ref(id,role_id,entity_id,resource_type,ref_type,resource_id,storage_privilege,repository_privilege,path_privilege,create_by)
         values
         <foreach collection="entities" item="entity" separator=",">
-            (#{entity.id},#{entity.roleId},#{entity.entityId},#{entity.resourceType},#{entity.refType},#{entity.resourceId},#{entity.storagePrivilege},#{entity.repositoryPrivilege},#{entity.pathPrivilege},#{entity.createBy},#{entity.createTime})
+            (#{entity.id},#{entity.roleId},#{entity.entityId},#{entity.resourceType},#{entity.refType},#{entity.resourceId},#{entity.storagePrivilege},#{entity.repositoryPrivilege},#{entity.pathPrivilege},#{entity.createBy})
         </foreach>
     </insert>
 

@@ -2,8 +2,6 @@ package com.veadan.folib.forms.users.auth;
 
 import lombok.Data;
 
-import javax.validation.Valid;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -12,16 +10,9 @@ import java.util.List;
 @Data
 public class AccessModelForm
 {
+    private List<AccessUserGroups> groups;
+    private List<AccessUsers> users;
 
+    private List<AccessResources> resources;
 
-    private List<ApiAccess> apiAccess = new ArrayList<>();
-    
-    @Valid
-    private List<RepositoryAccessModelForm> repositoriesAccess = new ArrayList<>();
-
-    @Data
-    public static class ApiAccess {
-        String api;
-        Long resourceId;
-    }
 }
