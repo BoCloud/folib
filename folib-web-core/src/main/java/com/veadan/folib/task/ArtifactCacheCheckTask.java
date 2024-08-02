@@ -48,11 +48,9 @@ public class ArtifactCacheCheckTask {
     @Lazy
     private RepositoryPathResolver repositoryPathResolver;
 
-    @Scheduled(cron = "0 */1 * * * ?")
+    //@Scheduled(cron = "0 0 3 * * ? ")
     public void run() {
-        CountDownLatch latch = new CountDownLatch(1);
-        StopWatch stopWatch = new StopWatch();
-        stopWatch.start("ArtifactCacheCheckTask-1");
+
         int totalCount = artifactCacheRecordService.getArtifactCacheRecordCount(null);
         if (totalCount <= 0) {
             return;
@@ -90,14 +88,6 @@ public class ArtifactCacheCheckTask {
             stopWatch2.stop();
             log.info(stopWatch2.prettyPrint(TimeUnit.SECONDS));
         }
-        stopWatch.stop();
-        log.info(stopWatch.prettyPrint(TimeUnit.SECONDS));
-        try {
-            latch.await();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.error("Error waiting for processing to complete", e);
-        }
         log.info("Scheduled ArtifactCacheCheckTask end");
     }
 
@@ -108,7 +98,7 @@ public class ArtifactCacheCheckTask {
      * 每一页的数据都会被单独处理，并通过并行调度器运行
      * 最后，记录处理结束的信息
      */
-    //@Scheduled(cron = "0 */1 * * * ?")
+    @Scheduled(cron = "0 0 3 * * ? ")
     public void runV2() {
         CountDownLatch latch = new CountDownLatch(1);
         // 获取artifact缓存记录的总数
@@ -131,13 +121,7 @@ public class ArtifactCacheCheckTask {
                         .buffer()
                         .parallel()
                         .runOn(Schedulers.parallel())
-                        .doOnNext(records -> {
-                            StopWatch stopWatch = new StopWatch();
-                            stopWatch.start("ArtifactCacheCheckTaskV2-1");
-                            processArtifactCacheRecord(records);
-                            stopWatch.stop();
-                            log.info(stopWatch.prettyPrint(TimeUnit.SECONDS));
-                        })
+                        .doOnNext(this::processArtifactCacheRecord)
                         //.filter()
                         //// 对每个记录执行处理逻辑
                         //.doOnNext(this::processArtifactCacheRecord)
@@ -155,16 +139,34 @@ public class ArtifactCacheCheckTask {
         log.info("Scheduled ArtifactCacheCheckTask end");
     }
 
+    /**
+     * 检查制品缓存路径是否有效
+     * 该方法用于确定制品缓存记录是否指向一个存在的路径，如果路径不存在或缓存路径为空或不存在，则标记为无效
+     *
+     * @param record 缓存的制品记录，包含存储ID、仓库ID和制品路径等信息
+     * @return 如果制品路径或缓存路径无效，返回true；否则返回false
+     */
     private boolean isValidArtifactPath(ArtifactCacheRecord record) {
+        // 初始化删除标志为false，代表路径默认有效
         boolean delFlag = false;
         try {
+            // 解析制品的仓库路径
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(record.getStorageId(), record.getRepositoryId(), record.getArtifactPath());
+            // 检查仓库路径是否存在，或者缓存路径是否为空或存在
             delFlag = !Files.exists(repositoryPath) || StringUtils.isBlank(record.getCachePath()) || !Files.exists(Path.of(record.getCachePath()));
         } catch (Exception ex) {
+            // 日志记录检查过程中的异常情况
             log.warn("制品缓存检查，执行失败，缓存制品 [{}] [{}]", JSONObject.toJSONString(record), ExceptionUtils.getStackTrace(ex));
         }
+        // 返回路径是否无效的结果
         return delFlag;
     }
+    /**
+     * 批量处理工件缓存记录
+     * 主要目的是批量删除工件缓存记录，以确保缓存的有效性和更新
+     *
+     * @param records 待处理的工件缓存记录列表，列表中的每个元素代表一个工件缓存记录
+     */
     private void processArtifactCacheRecord(List<ArtifactCacheRecord> records) {
         artifactCacheRecordService.batchDeleteArtifactCacheRecord(records);
     }
