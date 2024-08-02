@@ -17,7 +17,21 @@ export default {
       chart: null,
     };
   },
+  watch: {
+    data: {
+      handler(newVal) {
+        if (this.chart) {
+          this.updateChart(newVal);
+        }
+      },
+      deep: true,
+    },
+  },
   methods: {
+    updateChart(newData) {
+      this.chart.data = newData;
+      this.chart.update();
+    },
     buildData() {
       let ctx = this.$refs.chart.getContext("2d");
       if (this.chart) {

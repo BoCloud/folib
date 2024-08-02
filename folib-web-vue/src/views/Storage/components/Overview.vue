@@ -42,8 +42,8 @@
 						</a-descriptions>
 					</a-col>
 					<a-col :span="16">
-						<ChartMixed :height="260" :chartData="mixedChartData"/>
-						<div class="chart-mixed-tips">{{ $t('Storage.LastTwentyUpdates') }} (GB)</div>
+						<ChartMixed :height="260" :data="mixedChartData"/>
+						<div class="chart-mixed-tips">{{ $t('Storage.LastTenUpdates') }} (GB)</div>
 					</a-col>
 				</a-card>
 			</a-col>

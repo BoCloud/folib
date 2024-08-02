@@ -225,6 +225,12 @@ public class StorageMonitoringRes implements Serializable {
     private String createDate;
 
     /**
+     * 创建时间
+     */
+    @ApiModelProperty("创建时间")
+    private String createDay;
+
+    /**
      * 更新时间
      */
     @ApiModelProperty("更新时间")

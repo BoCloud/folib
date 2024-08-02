@@ -12,7 +12,7 @@
 
 	export default ({
 		props: {
-			chartData: {
+			data: {
 				type: Object,
 				default: function () {
 					return {
@@ -47,7 +47,7 @@
     	let ctx = this.$refs.chart.getContext("2d");
 			this.chart = new Chart(ctx, {
 				type: "doughnut",
-				data: this.chartData,
+				data: this.data,
 				options: {
 					responsive: true,
 					maintainAspectRatio: false,

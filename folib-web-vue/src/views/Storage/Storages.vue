@@ -1168,7 +1168,7 @@ import store from '@/store'
 import { checkMachineCode } from "@/api/settings"
 import { hasRole, isAdmin, hasPermission, isLogin } from "@/utils/permission"
 import language from "@/store/modules/language";
-import Overview from "./components/Overview"
+import Overview from "../StorageMonitoring/components/Overview"
 import StorageInfo from "../StorageMonitoring/components/StorageInfo"
 
 export default {

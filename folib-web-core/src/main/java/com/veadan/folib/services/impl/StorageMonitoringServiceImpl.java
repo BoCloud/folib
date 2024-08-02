@@ -160,6 +160,7 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
                 StorageMonitoringRes storageMonitoringRes = StorageMonitoringRes.builder().build();
                 BeanUtils.copyProperties(item, storageMonitoringRes);
                 storageMonitoringRes.setCreateDate(DateUtil.formatDate(storageMonitoringRes.getCreateTime()));
+                storageMonitoringRes.setCreateDay(DateUtil.format(storageMonitoringRes.getCreateTime(), "MM-dd"));
                 return storageMonitoringRes;
             }).collect(Collectors.toList());
         }
@@ -177,6 +178,7 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
             storageMonitoringRes = StorageMonitoringRes.builder().build();
             BeanUtils.copyProperties(dbStorageMonitoring, storageMonitoringRes);
             storageMonitoringRes.setCreateDate(DateUtil.formatDate(storageMonitoringRes.getCreateTime()));
+            storageMonitoringRes.setCreateDay(DateUtil.format(storageMonitoringRes.getCreateTime(), "MM-dd"));
         }
         return storageMonitoringRes;
     }
@@ -239,6 +241,7 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
                 StorageMonitoringRes storageMonitoringRes = StorageMonitoringRes.builder().build();
                 BeanUtils.copyProperties(item, storageMonitoringRes);
                 storageMonitoringRes.setCreateDate(DateUtil.formatDate(storageMonitoringRes.getCreateTime()));
+                storageMonitoringRes.setCreateDay(DateUtil.format(storageMonitoringRes.getCreateTime(), "MM-dd"));
                 return storageMonitoringRes;
             }).collect(Collectors.toList());
         }

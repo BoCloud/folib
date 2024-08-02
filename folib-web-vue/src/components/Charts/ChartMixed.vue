@@ -12,7 +12,7 @@
 
 	export default ({
 		props: {
-			chartData: {
+			data: {
 				type: Object,
 				default: function () {
 					return {
@@ -46,7 +46,7 @@
 			} ;
 		},
 		watch: {
-			chartData: {
+			data: {
 				handler(newVal) {
 					if (this.chart) {
 						this.updateChart(newVal);
@@ -65,7 +65,7 @@
 			gradientStroke1.addColorStop(0, 'rgba(24, 144, 255, 0)'); // Primary color
 
 			this.chart = new Chart(ctx, {
-					data: this.chartData,
+					data: this.data,
      			options: {
 					layout: {
 						padding: {

@@ -12,7 +12,7 @@
 
 	export default ({
 		props: {
-			chartData: {
+			data: {
 				type: Object,
 				default: function () {
 					return {
@@ -39,7 +39,7 @@
 			},
 		},
 		watch: {
-			chartData: {
+			data: {
 				handler(newVal) {
 					if (this.chart) {
 						this.updateChart(newVal);
@@ -57,7 +57,7 @@
 
 			this.chart = new Chart(ctx, {
 				type: "pie",
-				data: this.chartData,
+				data: this.data,
 				options: {
 					responsive: true,
 					maintainAspectRatio: false,

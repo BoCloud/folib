@@ -2,7 +2,8 @@
 <template>
 	<div class="storage-monitoring">
     <Overview/>
-		<StorageDeviceInfo class="mt-20"/>
+		<!-- <StorageDeviceInfo class="mt-20"/> -->
+    <StorageDeviceInfo2 class="mt-20"/>
     <StorageInfo class="mt-20"/>
 	</div>
 </template>
@@ -10,6 +11,7 @@
 <script>
 import Overview from "./components/Overview"
 import StorageDeviceInfo from "./components/StorageDeviceInfo"
+import StorageDeviceInfo2 from "./components/StorageDeviceInfo2"
 import StorageInfo from "./components/StorageInfo"
 
 
@@ -17,6 +19,7 @@ export default ({
 	components: {
     Overview,
 		StorageDeviceInfo,
+    StorageDeviceInfo2,
     StorageInfo,
 	},
   created() {

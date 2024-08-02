@@ -231,6 +231,6 @@ export default {
     'StorageDeviceType': '存储设备类型',
     'StorageQuotaSize':'存储空间配额',
     'DataUpdateTime':'数据更新时间',
-    'LastTwentyUpdates': '近20次更新存储数据视图',
+    'LastTenUpdates': '近10次更新存储数据视图',
     'RepositoryList': '仓库列表',
 }

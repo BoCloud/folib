@@ -231,6 +231,6 @@ export default {
     'StorageDeviceType': 'Storage device type',
     'StorageQuotaSize':'Storage quota size',
     'DataUpdateTime': 'Latest update time of data',
-    'LastTwentyUpdates': 'Last 20 updates to the storage data view',
+    'LastTenUpdates': 'Last 10 updates to the storage data view',
     'RepositoryList': 'Repository list',
 }
