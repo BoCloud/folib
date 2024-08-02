@@ -92,7 +92,7 @@
         JOIN artifact_sync_record sr
         ON ssr.sync_no = sr.sync_no
         WHERE sr.status &lt; 3
-        AND ssr.target_path LIKE CONCAT('%', #{searchText}, '%')
+        AND ssr.target_path LIKE CONCAT('%', #{targetHostName}, '%')
     </select>
 
 </mapper>
