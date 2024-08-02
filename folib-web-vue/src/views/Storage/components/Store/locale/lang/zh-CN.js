@@ -335,4 +335,7 @@ export default {
     "ImageTagSpecification": "镜像标签规范: [PATH]/[NAME]:[TAG]",
     'Image': '镜像文件',
     'SubsidiaryFiles': '附属文件',
+    "Prompts":"提示",
+    "DirSize": "目录下文件大小是 ",
+    "ConfirmDownload": "确定下载吗？",
 }

@@ -1,6 +1,8 @@
 package com.veadan.folib.services.impl;
 
+import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
 import com.veadan.folib.entity.ArtifactSyncSlaveRecord;
+import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
 import com.veadan.folib.mapper.ArtifactSyncSlaveRecordMapper;
 import com.veadan.folib.model.request.ArtifactSyncSlaveRecordAddReq;
 import com.veadan.folib.model.request.ArtifactSyncSlaveRecordUpdateReq;
@@ -23,7 +25,8 @@ import java.util.stream.Collectors;
 public class ArtifactSyncSlaveRecordServiceImpl implements ArtifactSyncSlaveRecordService {
     @Autowired
     private ArtifactSyncSlaveRecordMapper artifactSyncSlaveRecordMapper;
-
+    @Autowired
+    private ArtifactSyncRecordMapper artifactSyncRecordMapper;
 
     @Override
     public Long add(ArtifactSyncSlaveRecordAddReq model) {
@@ -46,7 +49,11 @@ public class ArtifactSyncSlaveRecordServiceImpl implements ArtifactSyncSlaveReco
         final String failedReason = model.getFailedReason();
         final Date updateTime = model.getUpdateTime();
 ///        final String updateBy = model.getUpdateBy();
-        return artifactSyncSlaveRecordMapper.updateRecordStatus(id, status, updateTime, failedReason);
+        boolean found = artifactSyncSlaveRecordMapper.updateRecordStatus(id, status, updateTime, failedReason);
+        ArtifactSyncSlaveRecord record = artifactSyncSlaveRecordMapper.selectByPrimaryKey(id);
+        updateRecordStatus( status, record.getSyncNo(),failedReason);
+        return found;
+
     }
 
     @Override
@@ -66,5 +73,18 @@ public class ArtifactSyncSlaveRecordServiceImpl implements ArtifactSyncSlaveReco
         artifactSyncSlaveRecord.setCreateTime(model.getCreateTime());
         artifactSyncSlaveRecord.setTempId(model.getTempId());
         return artifactSyncSlaveRecord;
+    }
+
+    public void updateRecordStatus(Integer status, String syncNo, String failedReason){
+        if(ArtifactSyncRecordStatusEnum.SUCCESS.getVal().equals(status)){
+            List<ArtifactSyncSlaveRecord> artifactSyncSlaveRecords =artifactSyncSlaveRecordMapper.selectBySyncNo(syncNo);
+            long count = artifactSyncSlaveRecords.stream().filter(artifactSyncSlaveRecord -> ArtifactSyncRecordStatusEnum.SUCCESS.getVal().equals(artifactSyncSlaveRecord.getStatus())).count();
+            if(count == artifactSyncSlaveRecords.size()){
+                artifactSyncRecordMapper.updateStatusAndFailedReasonBySyncNo(status,"",syncNo,new Date());
+            }
+        }else if(ArtifactSyncRecordStatusEnum.FAILED.getVal().equals(status)){
+            artifactSyncRecordMapper.updateStatusAndFailedReasonBySyncNo(status,failedReason,syncNo,new Date());
+        }
+
     }
 }

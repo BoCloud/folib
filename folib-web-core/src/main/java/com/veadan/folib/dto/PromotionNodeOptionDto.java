@@ -18,4 +18,5 @@ public class PromotionNodeOptionDto {
     private String repositoryId;
     private Map<String, Map<String, RepositoryPath>> pathMap;
     private Map<String, Object> fileMetaDataMap;
+    private boolean isRetry;
 }

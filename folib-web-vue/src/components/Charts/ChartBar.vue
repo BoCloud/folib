@@ -1,7 +1,7 @@
 <template>
 	<div>
 		<!-- Bar chart -->
-		<canvas ref="chart" class="chart-bar" :style="{'height': height + 'px'}"></canvas>
+		<canvas ref="chart" class="chart-bar" :class=[className] :style="{'height': height + 'px'}"></canvas>
 		<!-- / Bar chart -->
 	</div>
 </template>
@@ -14,6 +14,7 @@
 		props: [
 			'data',
 			'height',
+      'className'
 		],
 		data(){
 			return {
@@ -122,4 +123,8 @@
 	canvas {
 		background-image: linear-gradient(to right, #00369E, #005CFD, #A18DFF ) ;
 	}
+  .barChartRadialGradient{
+      //background-image: radial-gradient(circle at center, #ff69b4,#f7c6c7);
+      background-image: radial-gradient(circle at center,#f39c12, #e74c3c);
+  }
 </style>

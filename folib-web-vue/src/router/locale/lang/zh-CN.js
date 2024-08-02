@@ -3,6 +3,10 @@ export default {
     'SecurityScanning': '安全扫描',
     'UserManagement': '用户管理',
     'UserList': '用户列表',
+    'Permissions': '权限管理',
+    'PermissionList': '权限列表',
+    'Groups': '组管理',
+    'GroupList': '组列表',
     'GlobalSettings': '全局设置',
     'SetupManagement': '设置管理',
     'HealthMonitoring': '健康监测',
@@ -36,4 +40,7 @@ export default {
     'ProjectsDetails': '制品分析',
     //bom end
     'StorageMonitoring': '存储监控',
+    'StatisticalOverview':'统计概览',
+    'AdvancementCockpits':'晋级驾驶舱',
+    'AdvancementCockpitsInfo':'晋级驾驶舱详情',
 }

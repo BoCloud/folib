@@ -3,6 +3,10 @@ export default {
     'SecurityScanning': 'Security scanning',
     'UserManagement': 'User management',
     'UserList': 'User list',
+    'Permissions': 'Permissions management',
+    'PermissionList': 'Permission List',
+    'Groups': 'Groups management',
+    'GroupList': 'Group List',
     'GlobalSettings': 'Global Settings',
     'SetupManagement': 'Setup management',
     'HealthMonitoring': 'Health monitoring',
@@ -36,4 +40,7 @@ export default {
     'RepositoryDetails': 'Repository Analysis',
     //bom end
     'StorageMonitoring': 'Storage monitoring',
+    'StatisticalOverview':'Statistical Overview',
+    'AdvancementCockpits':'Advancement Cockpits',
+    'AdvancementCockpitsInfo':'Advancement Cockpits Info',
 }

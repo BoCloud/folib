@@ -13,7 +13,7 @@ export default {
     'RiskScore': '风险评分',
     'PolicyViolations': '违反策略',
     'Vulnerabilities': '漏洞',
-    // Detail.vue
+    // index.vue
     'GeneralView': '总览',
     'Artifacts': '制品列表',
     'Component': '组件',

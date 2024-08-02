@@ -93,6 +93,20 @@ public class ArtifactPromotionController extends BaseArtifactController {
         return artifactPromotionService.nodeOptionAttachRecord(promotionNodeOption, request.getServerName(), response);
     }
 
+    /**
+     * 重试晋级
+     * @param syncNo 同步任务号
+     * @param request
+     * @param response
+     * @return
+     */
+    @PostMapping("/retryNodeOption/{syncNo}")
+    @PermissionCheck(resourceKey = "ARTIFACTS_PROMOTION")
+    public ResponseEntity retryNodeOption(@PathVariable("syncNo") String syncNo,
+                                     HttpServletRequest request,
+                                     HttpServletResponse response) {
+        return artifactPromotionService.retryNodeOptionAttachRecord(syncNo, request.getServerName(), response);
+    }
 
 ///    @PostMapping("/nodeOptionCallback")
 ///    @PermissionCheck(resourceKey = "ARTIFACTS_PROMOTION")
@@ -160,6 +174,20 @@ public class ArtifactPromotionController extends BaseArtifactController {
             throw new RequestBodyValidationException("请求参数错误", bindingResult);
         }
         return ResponseEntity.ok(artifactPromotionService.artifactDispatchAttachRecord(artifactDispatch, request));
+    }
+
+    /**
+     * 重试制品分发
+     *
+     * @param syncNo  syncNo
+     * @param type    type
+     * @param request request
+     * @return ResponseEntity
+     */
+    @PostMapping(value = "/retryAtifactDispatch/{syncNo}/{type}")
+    @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
+    public ResponseEntity<?> retryAtifactDispatch(@PathVariable("syncNo") String syncNo, @PathVariable("type") String type, HttpServletRequest request) {
+        return ResponseEntity.ok(artifactPromotionService.retryArtifactDispatchAttachRecord(syncNo,type, request));
     }
 
     @PostMapping("/parseArtifact")
@@ -283,4 +311,18 @@ public class ArtifactPromotionController extends BaseArtifactController {
             return Result.error(e);
         }
     }
+
+    /**
+     * 更新任务优先级
+     * @param syncNo 同步编号
+     * @param priority 优先级
+     * @return
+     */
+    @PostMapping(value = "/updateTaskQueuePriority/{syncNo}/{priority}")
+    @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
+    public ResponseEntity<?> updateTaskQueuePriority(@PathVariable("syncNo") String syncNo, @PathVariable("priority") int priority) {
+        return ResponseEntity.ok(artifactPromotionService.updateTaskQueuePriority(syncNo,priority));
+    }
+
+
 }

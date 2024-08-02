@@ -9,7 +9,7 @@ export default {
     'ProductSize': 'Product size',
     'Vulnerability': 'Vulnerability',
     'RepositorySelect': 'Please select a repository for query',
-    // Detail.vue
+    // index.vue
     'GeneralView': 'General view',
     'Component': 'Component',
     // ArtifactDashboard.vue

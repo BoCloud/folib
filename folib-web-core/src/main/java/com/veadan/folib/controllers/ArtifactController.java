@@ -30,6 +30,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
@@ -48,13 +49,18 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 /**
  * @author leipenghui
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/artifact/")
 @Api(description = "制品管理", tags = "制品管理")
@@ -83,6 +89,10 @@ public class ArtifactController extends BaseController {
     private static final String STORAGE_NOT_FOUND = "The storage was not found.";
 
     private static final String REPOSITORY_NOT_FOUND = "The repository was not found.";
+
+    private static final BigDecimal KILOBYTE = new BigDecimal(1024);
+    private static final BigDecimal MEGABYTE = KILOBYTE.multiply(KILOBYTE);
+    private static final BigDecimal GIGABYTE = MEGABYTE.multiply(KILOBYTE);
 
     @ApiOperation(value = "导出漏洞的影响范围")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
@@ -401,5 +411,35 @@ public class ArtifactController extends BaseController {
             layouts.add(keyValue);
         }
         return ResponseEntity.ok(layouts);
+    }
+    
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @GetMapping(value = "/rawPathSize/{storageId}/{repositoryId}/{path}")
+    public ResponseEntity<String> getRawPathSize(@PathVariable("storageId") String storageId,
+                                               @PathVariable("repositoryId") String repositoryId,
+                                               @PathVariable("path") String path) throws IOException {
+        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
+
+        long size = 0;
+        try (Stream<Path> stream = Files.walk((Path) repositoryPath)) {
+            size = stream
+                    .filter(Files::isRegularFile) // 只处理文件
+                    .mapToLong(item -> {
+                        try {
+                            return Files.size(item);
+                        } catch (IOException e) {
+                            log.error("Error getting size for file: " + item);
+                            return 0L;
+                        }
+                    })
+                    .sum();
+        }
+        String sizeStr = String.format("%s G", convertBytesToGB(size).toString());
+        return ResponseEntity.ok(sizeStr);
+    }
+    
+    public  BigDecimal convertBytesToGB(long fileSizeInBytes) {
+        BigDecimal fileSize = new BigDecimal(fileSizeInBytes);
+        return fileSize.divide(GIGABYTE, 3, RoundingMode.HALF_UP);
     }
 }

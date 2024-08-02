@@ -19,6 +19,12 @@
         <result property="updateBy" column="update_by"/>
         <result property="updateTime" column="update_time"/>
     </resultMap>
+
+    <resultMap id="countArtifactSyncRecord" type="com.veadan.folib.dto.ArtifactSyncRecordCountDto">
+        <result property="successCount" column="successCount"/>
+        <result property="failedCount" column="failedCount"/>
+        <result property="totalCount" column="totalCount"/>
+    </resultMap>
     
     <update id="updateStatusAndFailedReasonBySyncNo" >
         update artifact_sync_record
@@ -43,4 +49,50 @@
             and create_time &lt; #{time}
         </where>
     </select>
+
+    <select id="selectBySyncNo" resultMap="artifactSyncRecordResultMap">
+        select * from artifact_sync_record
+        <where>
+            1 = 1
+            <if test="syncNo != null and syncNo.trim() != ''">
+                and sync_no = #{syncNo}
+            </if>
+        </where>
+    </select>
+
+    <select id="countArtifactSyncRecord" resultMap="countArtifactSyncRecord">
+        select count(case when status=3 then 1 end) as successCount,
+               count(case when status=2 then 1 end) as failedCount,
+               count(case when status=3  then 1 WHEN status = 4 THEN 1 end) as totalCount
+        from artifact_sync_record  where  create_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY);
+    </select>
+
+    <select id="countByDateArtifactSyncRecord" resultMap="countArtifactSyncRecord">
+        select count(case when status=3 then 1 end) as successCount,
+               count(case when status=2 then 1 end) as failedCount,
+               count(case when status=3  then 1 WHEN status = 4 THEN 1 end) as totalCount,
+              DATE(create_time) AS date
+        from artifact_sync_record  where  create_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY)  group by  DATE(create_time);
+    </select>
+
+    <select id="fileSizeStatisticsByWarehouse" resultType="com.veadan.folib.dto.FileSizeStatisticsDto">
+        select sum(sr.file_size) as fileSize, ar.source_repository_id as repositoryId
+        from artifact_sync_slave_record as sr,
+             artifact_sync_record as ar
+        where sr.sync_no = ar.sync_no
+            and ar.create_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+        group by ar.source_repository_id
+        order by fileSize desc
+            limit #{limitNumber}
+    </select>
+
+    <select id="searchByTargetHostName" resultType="String">
+        SELECT DISTINCT sr.sync_no
+        FROM artifact_sync_slave_record ssr
+        JOIN artifact_sync_record sr
+        ON ssr.sync_no = sr.sync_no
+        WHERE sr.status &lt; 3
+        AND ssr.target_path LIKE CONCAT('%', #{searchText}, '%')
+    </select>
+
 </mapper>

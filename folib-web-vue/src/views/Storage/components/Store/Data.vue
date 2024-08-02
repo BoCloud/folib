@@ -48,6 +48,8 @@
           title=""
           :column="1"
         >
+
+
           <a-descriptions-item :label="$t('Store.OwningSpace')">
             {{ currentTreeNode.storageId }}
           </a-descriptions-item>
@@ -684,6 +686,12 @@ export default {
       if (!(typeof(this.metadataEnabled) == 'boolean')) {
         this.metadataEnabled = false
       }
+        if(this.currentFileDetial && this.currentFileDetial.manifest && this.currentFileDetial.manifest.manifests){
+            const item = this.currentFileDetial.manifest.manifests[this.selectedTag];
+            this.$emit('messageArchitectureChild', item.platform.os + '/' + item.platform.architecture + (item.platform.variant? '/' + item.platform.variant : ''));
+        }else {
+            this.$emit('messageArchitectureChild', null);
+        }
     },
     metadataHandler() {
       this.$emit("metadataHandler", 1)
@@ -865,6 +873,7 @@ export default {
         requires: {}
       }
     },
+
     clickTag(item, index) {
       this.selectedTag = 0
       getArtifact(

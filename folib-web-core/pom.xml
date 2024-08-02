@@ -718,9 +718,10 @@
             <artifactId>junrar</artifactId>
             <version>7.5.5</version>
         </dependency>
+        <!-- Project Reactor -->
         <dependency>
-            <groupId>net.java.dev.jna</groupId>
-            <artifactId>jna</artifactId>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
         </dependency>
 
     </dependencies>
