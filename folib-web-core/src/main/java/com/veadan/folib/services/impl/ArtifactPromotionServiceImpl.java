@@ -1343,11 +1343,24 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
         try {
 
+            // 记录已上传的切片状态
+            final JSONObject sliceUploadStatusJSONObj = this.getSliceUploadStatusJSONObj(artifactFileSliceUploadRootFolderPathStr);
+
+            // 检查当前切片是否已经上传，如果已上传则跳过
+            if (sliceUploadStatusJSONObj.containsKey(String.valueOf(chunkNo)) && (Boolean) sliceUploadStatusJSONObj.get(String.valueOf(chunkNo))) {
+                log.info("Chunk {} already uploaded.", chunkNo);
+                return true;
+            }
+
+            // 确保文件路径存在
             if (!FileUtil.exist(artifactFileSliceUploadFile)) {
+                // 创建空文件
                 FileUtil.touch(artifactFileSliceUploadFile);
             }
+
+            // 保存文件分片
             try (final InputStream inputStream = file.getInputStream();
-                 final FileOutputStream fileOutputStream = new FileOutputStream(artifactFileSliceUploadFilePathStr)) {
+                 final FileOutputStream fileOutputStream = new FileOutputStream(artifactFileSliceUploadFile)) {
                 IoUtil.copy(inputStream, fileOutputStream);
                 // 状态写入
                 this.writeSliceUploadStatus(artifactFileSliceUploadRootFolderPathStr, chunkNo, true);
@@ -1358,16 +1371,18 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 throw new BusinessException(BusinessCodeEnum.ARTIFACT_SLICE_UPLOAD_CHUNK_FILE_SAVE_FAILED);
             }
 
-            // 根据切片状态文件判断所有切片文件是否都已经上传完成
-            final JSONObject sliceUploadStatusJSONObj = this.getSliceUploadStatusJSONObj(artifactFileSliceUploadRootFolderPathStr);
-            // 通过判读上传完成的数量与最大切片块的数量确定是否所有切片文件都已经上传完成
-            allSliceFileUploadCompleted = chunkNoMax == sliceUploadStatusJSONObj.values().size();
+            // 检查所有切片是否都已上传完成
+            final JSONObject updatedSliceUploadStatusJSONObj = this.getSliceUploadStatusJSONObj(artifactFileSliceUploadRootFolderPathStr);
+            // 通过判断上传完成的数量与最大切片块的数量确定是否所有切片文件都已上传完成
+            allSliceFileUploadCompleted = chunkNoMax == updatedSliceUploadStatusJSONObj.size();
+
             if (allSliceFileUploadCompleted) {
-                sliceUploadStatusJSONObj.forEach((index, status) -> {
-                    if (!(Boolean) status) {
-                        throw new BusinessException(BusinessCodeEnum.ARTIFACT_SLICE_UPLOAD_CHUNK_FILE_UPLOAD_FAILED, index);
+                // 校验每个切片的上传状态
+                for (int i = 1; i <= chunkNoMax; i++) {
+                    if (!(Boolean) updatedSliceUploadStatusJSONObj.get(String.valueOf(i))) {
+                        throw new BusinessException(BusinessCodeEnum.ARTIFACT_SLICE_UPLOAD_CHUNK_FILE_UPLOAD_FAILED, String.valueOf(i));
                     }
-                });
+                }
 
                 // 进行合并操作
                 final List<String> sliceFilePathList = IntStream.range(1, chunkNoMax + 1)
