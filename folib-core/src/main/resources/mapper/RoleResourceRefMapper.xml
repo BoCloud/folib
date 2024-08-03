@@ -142,7 +142,7 @@
             ugr.user_group_id = rrr2.entity_id
         where
             rrr2.ref_type = 2 ) rrr
-        rrr on
+         on
         fu.id = rrr.user_id
         left join folib_role fr on
         fu.id = rrr.user_id

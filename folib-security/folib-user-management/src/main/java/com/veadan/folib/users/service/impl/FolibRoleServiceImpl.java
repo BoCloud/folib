@@ -67,7 +67,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
 
                 roles.forEach(roleDto -> {
                     folibRoles.add(FolibRole.builder().id(roleDto.getName()).description(roleDto.getDescription())
-                            .enName(roleDto.getName()).deleted(GlobalConstants.NOT_DELETED).isDefault(GlobalConstants.NOT_DEFALUT).cnName(roleDto.getDescription()).build());
+                            .enName(roleDto.getName()).deleted(GlobalConstants.NOT_DELETED).isDefault(GlobalConstants.NOT_DEFAULT).cnName(roleDto.getDescription()).build());
                     if(!"admin".equalsIgnoreCase(roleDto.getName())){
                         AccessModelDto accessModel = roleDto.getAccessModel();
                         if(accessModel != null) {
@@ -314,8 +314,9 @@ public class FolibRoleServiceImpl implements FolibRoleService {
      * @return 是否成功
      */
     public boolean deleteById(String id){
-        int update = folibRoleMapper.update(FolibRole.builder().id(id).deleted(GlobalConstants.DELETED).build());
-        return update > 0;
+        //int update = folibRoleMapper.update(FolibRole.builder().id(id).deleted(GlobalConstants.DELETED).build());
+        int deleteNumber = folibRoleMapper.deleteById(id);
+        return deleteNumber > 0;
     }
 
     @Override
@@ -331,7 +332,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
             return;
         }
         Date date = new Date();
-        FolibRole roleInfo = FolibRole.builder().id(roleForm.getName()).enName(roleForm.getName()).cnName(roleForm.getDescription()).description(roleForm.getDescription()).createTime(date).createBy(username).updateBy(username).updateTime(date).build();
+        FolibRole roleInfo = FolibRole.builder().deleted(GlobalConstants.NOT_DELETED).isDefault(GlobalConstants.NOT_DEFAULT).id(roleForm.getName()).enName(roleForm.getName()).cnName(roleForm.getDescription()).description(roleForm.getDescription()).createTime(date).createBy(username).updateBy(username).updateTime(date).build();
         insert(roleInfo);
         String roleId = roleInfo.getId();
         //保存权限关系
@@ -357,10 +358,15 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                 access.forEach(pri -> {
                     roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER)
                             .storagePrivilege(pri).resourceId(accessResourcesDTO.getResourceId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build());
-                    roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER)
-                            .repositoryPrivilege(pri).resourceId(accessResourcesDTO.getResourceId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY).build());
-                    roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER).pathPrivilege(pri)
-                            .resourceId(accessResourcesDTO.getResourceId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_PATH).build());
+                    if(StringUtils.isNotEmpty(accessResourcesDTO.getRepositoryId())) {
+                        roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER)
+                                .repositoryPrivilege(pri).resourceId(accessResourcesDTO.getResourceId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY).build());
+                    }
+
+                    if (StringUtils.isNotEmpty(accessResourcesDTO.getPath())) {
+                        roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER).pathPrivilege(pri)
+                                .resourceId(accessResourcesDTO.getResourceId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_PATH).build());
+                    }
                 });
             }));
         }
@@ -371,10 +377,14 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                 access.forEach(pri -> {
                     roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP)
                             .storagePrivilege(pri).resourceId(accessResourcesDTO.getResourceId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build());
-                    roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP)
-                            .repositoryPrivilege(pri).resourceId(accessResourcesDTO.getResourceId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY).build());
-                    roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP).pathPrivilege(pri)
-                            .resourceId(accessResourcesDTO.getResourceId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_PATH).build());
+                    if(StringUtils.isNotEmpty(accessResourcesDTO.getRepositoryId())) {
+                        roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP)
+                                .repositoryPrivilege(pri).resourceId(accessResourcesDTO.getResourceId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY).build());
+                    }
+                    if(StringUtils.isNotEmpty(accessResourcesDTO.getPath())) {
+                        roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP).pathPrivilege(pri)
+                                .resourceId(accessResourcesDTO.getResourceId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_PATH).build());
+                    }
                 });
             }));
         }
@@ -383,21 +393,20 @@ public class FolibRoleServiceImpl implements FolibRoleService {
     }
 
     @Override
-    public void updateRoleInfo(RoleDTO roleDTO, String username) {
+    public void updateRoleInfo(RoleDTO roleDTO, String roleId, String username) {
         List<AccessResourcesDTO> accessModel= roleDTO.getResources();
         if(Objects.isNull(accessModel)){
             throw new RuntimeException("权限配置资源不能为空");
         }
 
         //保存角色信息
-        FolibRole folibRole = queryById(roleDTO.getName());
-        if (folibRole != null) {
+        FolibRole folibRole = queryById(roleId);
+        if (folibRole == null) {
             return;
         }
         Date date = new Date();
-        FolibRole roleInfo = FolibRole.builder().id(roleDTO.getName()).enName(roleDTO.getName()).description(roleDTO.getDescription()).updateBy(username).updateTime(date).build();
+        FolibRole roleInfo = FolibRole.builder().id(roleId).enName(roleDTO.getName()).description(roleDTO.getDescription()).updateBy(username).updateTime(date).build();
         update(roleInfo);
-        String roleId = roleInfo.getId();
         roleResourceRefService.deleteByRoleId(roleId);
         //保存权限关系
         savePermissions(roleDTO, roleId, username);
@@ -419,7 +428,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
             String userId = entry.getKey();
             List<PermissionsDTO> permissionDTOs = entry.getValue();
             List<String> collect = permissionDTOs.stream().flatMap(permissionDTO ->
-                    Stream.of(permissionDTO.getRepositoryPrivilege(), permissionDTO.getStoragePrivilege(), permissionDTO.getPathPrivilege())).collect(Collectors.toList());
+                    Stream.of(permissionDTO.getRepositoryPrivilege(), permissionDTO.getStoragePrivilege(), permissionDTO.getPathPrivilege())).filter(StringUtils::isNotEmpty).distinct().collect(Collectors.toList());
             return AccessUsersDTO.builder().id(userId).access(collect).build();
         }).collect(Collectors.toList());
 
@@ -429,7 +438,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
             String userId = entry.getKey();
             List<PermissionsDTO> permissionDTOs = entry.getValue();
             List<String> collect = permissionDTOs.stream().flatMap(permissionDTO ->
-                    Stream.of(permissionDTO.getRepositoryPrivilege(), permissionDTO.getStoragePrivilege(), permissionDTO.getPathPrivilege())).collect(Collectors.toList());
+                    Stream.of(permissionDTO.getRepositoryPrivilege(), permissionDTO.getStoragePrivilege(), permissionDTO.getPathPrivilege())).filter(StringUtils::isNotEmpty).distinct().collect(Collectors.toList());
             return AccessUserGroupsDTO.builder().id(userId).access(collect).build();
         }).collect(Collectors.toList());
         roleDTO.setPrivileges(AccessModelDTO.builder().users(userAccess).groups(userGroupAccess).build());
@@ -442,6 +451,12 @@ public class FolibRoleServiceImpl implements FolibRoleService {
         ).distinct().collect(Collectors.toList());
         roleDTO.setResources(resourceList);
         return roleDTO;
+    }
+
+    @Override
+    public void deleteRole(String roleId) {
+        deleteById(roleId);
+        roleResourceRefService.deleteByRoleId(roleId);
     }
 
 

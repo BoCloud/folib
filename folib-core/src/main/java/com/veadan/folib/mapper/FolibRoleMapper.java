@@ -29,7 +29,7 @@ public interface FolibRoleMapper extends CommonMapper<FolibRole> {
      * @param pageable 分页对象
      * @return 对象列表
      */
-    List<FolibRole> queryAllByLimit(FolibRole folibRole, @Param("pageable") Pageable pageable);
+    List<FolibRole> queryAllByLimit(@Param(("role")) FolibRole folibRole, @Param("pageable") Pageable pageable);
     /** 
      * 统计总行数
      *

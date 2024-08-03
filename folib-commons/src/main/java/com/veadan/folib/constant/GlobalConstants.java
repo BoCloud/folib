@@ -178,7 +178,7 @@ public interface GlobalConstants {
     /**
      *  非默认
      */
-    String NOT_DEFALUT = "0";
+    String NOT_DEFAULT = "0";
     /**
      * 角色关联类型-用户
      */

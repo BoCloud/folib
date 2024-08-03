@@ -13,6 +13,6 @@ public class AccessModelForm
     private List<AccessUserGroups> groups;
     private List<AccessUsers> users;
 
-    private List<AccessResources> resources;
+    //private List<AccessResources> resources;
 
 }

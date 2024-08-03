@@ -86,7 +86,7 @@ public class RoleController extends BaseController {
                             @ApiResponse(code = 403, message = "Unauthenticated access or user account has been disabled"),
                             @ApiResponse(code = 404, message = UserController.NOT_FOUND_USER) })
     @PreAuthorize("hasAuthority('AUTHENTICATED_USER')")
-    @GetMapping(value = "/{userName}",
+    @GetMapping(value = "/user/{userName}",
                 produces = { MediaType.APPLICATION_JSON_VALUE })
     @ResponseBody
     public ResponseEntity getAccount(@PathVariable String userName)
@@ -119,9 +119,9 @@ public class RoleController extends BaseController {
             return getNotFoundResponseEntity(NOT_FOUND_ROLE, accept);
         }
 
-        folibRoleService.deleteById(roleId);
+        folibRoleService.deleteRole(roleId);
 
-        return getSuccessfulResponseEntity(SUCCESSFUL_DELETE_USER, accept);
+        return getSuccessfulResponseEntity(SUCCESSFUL_DELETE_ROLE, accept);
     }
 
     @ApiOperation(value = "角色创建")
@@ -193,7 +193,7 @@ public class RoleController extends BaseController {
         if(roleDTO == null) {
             return getFailedResponseEntity(HttpStatus.BAD_REQUEST, FAILED_CREATE_ROLE, accept);
         }
-        folibRoleService.updateRoleInfo(roleDTO, username);
+        folibRoleService.updateRoleInfo(roleDTO, roleId, username);
 
         return getSuccessfulResponseEntity(SUCCESSFUL_UPDATE_ROLE, accept);
     }
@@ -203,10 +203,10 @@ public class RoleController extends BaseController {
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(value = "/queryRole", produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    public ObjectRestResponse<Page<FolibRole>> queryUser(@RequestBody String roleName, Integer page, Integer limit) {
+    public ObjectRestResponse<Page<FolibRole>> queryUser(@RequestBody(required = false) String roleName, Integer page, Integer limit) {
 
         PageRequest pageRequest = PageRequest.of(page, limit);
-        FolibRole folibRole = null;
+        FolibRole folibRole = FolibRole.builder().enName(roleName).build();
         if(StringUtils.isNotEmpty(roleName)) {
             folibRole = FolibRole.builder().enName(roleName).build();
 

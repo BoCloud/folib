@@ -13,7 +13,6 @@ import com.veadan.folib.entity.FolibRole;
 import com.veadan.folib.entity.Resource;
 import com.veadan.folib.entity.RoleResourceRef;
 import com.veadan.folib.enums.StorageProviderEnum;
-import com.veadan.folib.providers.storage.StorageProvider;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.services.StorageManagementService;
@@ -22,12 +21,10 @@ import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
-import com.veadan.folib.users.dto.StoragePrivileges;
 import com.veadan.folib.users.service.FolibRoleService;
 import com.veadan.folib.users.service.ResourceService;
 import com.veadan.folib.users.service.RoleResourceRefService;
 import com.veadan.folib.users.service.UserService;
-import com.veadan.folib.users.service.impl.DatabaseUserService;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -143,7 +140,7 @@ public class StorageManagementServiceImpl implements StorageManagementService {
                             .id(roleId)
                             .cnName(String.format("存储空间%s用户", storageId))
                             .enName(String.format("STORAGE_%S_USER", storageId))
-                            .isDefault(GlobalConstants.NOT_DEFALUT).deleted(GlobalConstants.NOT_DELETED)
+                            .isDefault(GlobalConstants.NOT_DEFAULT).deleted(GlobalConstants.NOT_DELETED)
                             .description(String.format("存储空间%s下的普通用户", storageId))
                             .build();
                     folibRole = folibRoleService.insert(folibRole);

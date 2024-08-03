@@ -60,7 +60,7 @@ public interface FolibRoleService{
 
     void save(RoleDTO roleDTO, String username);
 
-    void updateRoleInfo(RoleDTO roleDTO, String username);
+    void updateRoleInfo(RoleDTO roleDTO, String roleId, String username);
 
     List<FolibRole> queryRoles(FolibRole build);
 
@@ -71,4 +71,6 @@ public interface FolibRoleService{
      * @return 权限信息
      */
     RoleDTO getRoleDetail(String roleId, FolibRole folibRole);
+
+    void deleteRole(String roleId);
 }
