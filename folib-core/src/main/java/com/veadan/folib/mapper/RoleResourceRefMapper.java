@@ -90,7 +90,7 @@ public interface RoleResourceRefMapper extends CommonMapper<RoleResourceRef> {
 
      RoleDTO getUserByRoleId(@Param("roleId") String roleId);
 
-     List<PermissionsDTO> queryPermissions(@Param("roleId") String roleId);
+     List<PermissionsDTO> queryPermissions(@Param("roleId") String roleId, @Param("username") String username);
 
      List<RoleResourceRef> queryRoleByUserId(@Param("userId")String userId,@Param("roleIds") List<String> roleIds);
  }

@@ -39,6 +39,7 @@ public class UserOutput
     private String securityTokenKey;
 
     private LinkedHashSet<String> authorities;
+    private String userGroups;
 
     public String getEmail() {
         return email;

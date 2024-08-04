@@ -143,7 +143,7 @@ public class RoleController extends BaseController {
         String username = loggedUser.getUsername();
 
         RoleDTO roleDTO = RoleConvert.INSTANCE.formToDto(roleForm);
-        if(roleDTO == null) {
+        if(roleDTO == null || roleDTO.getResources().isEmpty()) {
             return getFailedResponseEntity(HttpStatus.BAD_REQUEST, FAILED_CREATE_ROLE, accept);
         }
         folibRoleService.save(roleDTO, username);
@@ -179,7 +179,7 @@ public class RoleController extends BaseController {
     @ResponseBody
     public ResponseEntity update(@ApiParam(value = "角色id必填", required = true)
                                  @PathVariable String roleId,
-                                 @RequestBody @Validated RoleForm roleForm,
+                                 @RequestBody @Validated(RoleForm.UpdateRole.class) RoleForm roleForm,
                                  Authentication authentication,
                                  BindingResult bindingResult,
                                  @RequestHeader(HttpHeaders.ACCEPT) String accept) {
@@ -201,21 +201,24 @@ public class RoleController extends BaseController {
     @ApiOperation(value = "Used to retrieve users")
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_GET_ROLE)})
     @PreAuthorize("hasAuthority('ADMIN')")
-    @PostMapping(value = "/queryRole", produces = {MediaType.APPLICATION_JSON_VALUE})
+    @GetMapping(value = "/queryRole", produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    public ObjectRestResponse<Page<FolibRole>> queryUser(@RequestBody(required = false) String roleName, Integer page, Integer limit) {
+    public TableResultResponse<FolibRoleDTO> queryUser(@RequestParam(name = "page", required = false) Integer page,
+                                                        @RequestParam(name = "limit", required = false) Integer limit,
+                                                        @RequestParam(name = "name", required = false) String name,
+                                                        @RequestParam(name = "isDefault", required = false) String isDefault) {
 
-        PageRequest pageRequest = PageRequest.of(page, limit);
-        FolibRole folibRole = FolibRole.builder().enName(roleName).build();
-        if(StringUtils.isNotEmpty(roleName)) {
-            folibRole = FolibRole.builder().enName(roleName).build();
+        PageRequest pageRequest = PageRequest.of(page - 1, limit);
+        FolibRole folibRole = FolibRole.builder().build();
+        folibRole.setEnName(name);
+        folibRole.setIsDefault(isDefault);
 
-        }
-        Page<FolibRole> folibRoles = folibRoleService.paginQuery(folibRole, pageRequest);
+        Page<FolibRoleDTO> folibRoles = folibRoleService.paginQuery(folibRole, pageRequest);
         if (Objects.isNull(folibRoles)) {
-            return new ObjectRestResponse<>(false, null, "查询角色数据失败");
+            return new TableResultResponse<>(0, null);
         }
-        return ObjectRestResponse.ok(folibRoles);
+        return new TableResultResponse<>(folibRoles.getTotalElements(), folibRoles.getContent());
+
     }
 
 

@@ -2,6 +2,7 @@ package com.veadan.folib.users.service.impl;
 
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.dto.UserGroupDTO;
+import com.veadan.folib.dto.UserGroupListDTO;
 import com.veadan.folib.entity.UserGroup;
 import com.veadan.folib.mapper.UserGroupMapper;
 import com.veadan.folib.users.service.UserGroupService;
@@ -40,7 +41,7 @@ public class UserGroupServiceImpl implements UserGroupService {
      * @param pageRequest 分页对象
      * @return 查询结果
      */
-    public Page<UserGroup> paginQuery(UserGroup userGroup, PageRequest pageRequest){
+    public Page<UserGroupListDTO> paginQuery(UserGroup userGroup, PageRequest pageRequest){
         long total = userGroupMapper.count(userGroup);
         return new PageImpl<>(userGroupMapper.queryAllByLimit(userGroup, pageRequest), pageRequest, total);
     }

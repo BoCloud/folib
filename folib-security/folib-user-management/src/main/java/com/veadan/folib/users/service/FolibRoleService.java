@@ -1,5 +1,6 @@
 package com.veadan.folib.users.service;
 
+import com.veadan.folib.dto.FolibRoleDTO;
 import com.veadan.folib.dto.RoleDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -35,7 +36,7 @@ public interface FolibRoleService{
      * @param pageRequest 分页对象
      * @return 查询结果
      */
-    Page<FolibRole> paginQuery(FolibRole folibRole, PageRequest pageRequest);
+    Page<FolibRoleDTO> paginQuery(FolibRole folibRole, PageRequest pageRequest);
     /** 
      * 新增数据
      *
@@ -59,6 +60,8 @@ public interface FolibRoleService{
     boolean deleteById(String id);
 
     void save(RoleDTO roleDTO, String username);
+
+
 
     void updateRoleInfo(RoleDTO roleDTO, String roleId, String username);
 

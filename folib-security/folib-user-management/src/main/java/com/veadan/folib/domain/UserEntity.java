@@ -50,6 +50,7 @@ public class UserEntity extends DomainEntity implements User
 
     private String userType="general";
 
+    private String userGroups;
 
     @Override
     public String getUserType() {

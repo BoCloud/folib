@@ -36,6 +36,7 @@ public class UserDTO
     private Set<String> roles;
 
     private String securityTokenKey;
+    private String userGroups;
 
     private LinkedHashSet<String> authorities;
 

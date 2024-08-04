@@ -2,6 +2,7 @@ package com.veadan.folib.mapper;
 
 import com.veadan.folib.common.base.CommonMapper;
 import com.veadan.folib.dto.UserGroupDTO;
+import com.veadan.folib.dto.UserGroupListDTO;
 import com.veadan.folib.entity.UserGroup;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -30,7 +31,7 @@ public interface UserGroupMapper extends CommonMapper<UserGroup> {
      * @param pageable 分页对象
      * @return 对象列表
      */
-    List<UserGroup> queryAllByLimit(UserGroup userGroup, @Param("pageable") Pageable pageable);
+    List<UserGroupListDTO> queryAllByLimit(@Param("userGroup") UserGroup userGroup, @Param("pageable") Pageable pageable);
     /** 
      * 统计总行数
      *

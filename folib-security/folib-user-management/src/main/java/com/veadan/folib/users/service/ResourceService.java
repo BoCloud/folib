@@ -54,4 +54,6 @@ public interface ResourceService{
     Resource queryResource(Resource build);
     List<Resource> queryResourceList(Resource resource);
     List<Resource> findAll();
+
+    List<Resource> findResources(List<Resource> resources);
 }

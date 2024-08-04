@@ -16,7 +16,7 @@ public class RoleForm
 {
 
     @NotEmpty(message = "A name must be specified.")
-    @UniqueRoleName(message = "Role is already registered.")
+    @UniqueRoleName(groups = {NewRole.class}, message = "Role is already registered.")
     private String name;
 
     private String description;
@@ -25,6 +25,9 @@ public class RoleForm
 
     private List<AccessResources> resources;
     public interface NewRole {
+
+    }
+    public interface UpdateRole {
 
     }
 }

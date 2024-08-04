@@ -72,4 +72,6 @@ public interface ResourceMapper extends CommonMapper<Resource> {
      * @return 影响行数
      */
     int deleteById(Long id);
-}
+
+     List<Resource> findResources(@Param("resources") List<Resource> resources);
+ }

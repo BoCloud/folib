@@ -22,39 +22,36 @@
     </select>
 
     <!--分页查询指定行数据-->
-    <select id="queryAllByLimit" resultMap="UserGroupMap">
+    <select id="queryAllByLimit" resultType="com.veadan.folib.dto.UserGroupListDTO" >
         select
-        id,group_name,description,join_group,deleted,create_by,create_time,update_by,update_time
-        from user_group
+        ug.id,
+        group_name,
+        description,
+        join_group,
+        group_concat(distinct rrr.role_id) as roles
+        from
+        user_group ug
+        left join role_resource_ref rrr on
+        ug.id = rrr.entity_id
+        and rrr.ref_type = 2
         <where>
-            <if test="id != null and id != ''">
-                and id = #{id}
+            <if test="userGroup.id != null and userGroup.id != ''">
+                and id = #{userGroup.id}
             </if>
-            <if test="groupName != null and groupName != ''">
-                and group_name = #{groupName}
+            <if test="userGroup.groupName != null and userGroup.groupName != ''">
+                and group_name = #{userGroup.groupName}
             </if>
-            <if test="description != null and description != ''">
-                and description = #{description}
+            <if test="userGroup.description != null and userGroup.description != ''">
+                and description = #{userGroup.description}
             </if>
-            <if test="joinGroup != null and joinGroup != ''">
-                and join_group = #{joinGroup}
+            <if test="userGroup.joinGroup != null and userGroup.joinGroup != ''">
+                and join_group = #{userGroup.joinGroup}
             </if>
-            <if test="deleted != null and deleted != ''">
-                and deleted = #{deleted}
-            </if>
-            <if test="createBy != null and createBy != ''">
-                and create_by = #{createBy}
-            </if>
-            <if test="createTime != null and createTime != ''">
-                and create_time = #{createTime}
-            </if>
-            <if test="updateBy != null and updateBy != ''">
-                and update_by = #{updateBy}
-            </if>
-            <if test="updateTime != null and updateTime != ''">
-                and update_time = #{updateTime}
+            <if test="userGroup.deleted != null and userGroup.deleted != ''">
+                and deleted = #{userGroup.deleted}
             </if>
         </where>
+        group by ug.id
         limit #{pageable.offset}, #{pageable.pageSize}
     </select>
 

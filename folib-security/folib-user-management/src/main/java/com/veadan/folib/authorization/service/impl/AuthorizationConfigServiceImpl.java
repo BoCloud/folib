@@ -61,13 +61,13 @@ public class AuthorizationConfigServiceImpl
     {
         modifyInLock(config ->
                      {
-                         AuthorizationConfigServiceImpl.this.authorizationConfig = getAuthorizationConfigDto();
+                         AuthorizationConfigServiceImpl.this.authorizationConfig = getAuthorizationConfigDto(null);
                      },
                      false);
     }
 
-    private @NotNull AuthorizationConfigDto getAuthorizationConfigDto() {
-        List<PermissionsDTO> permissions = roleResourceRefService.queryPermissions(null);
+    private @NotNull AuthorizationConfigDto getAuthorizationConfigDto(String username) {
+        List<PermissionsDTO> permissions = roleResourceRefService.queryPermissions(null, username);
         Map<String, List<PermissionsDTO>> permissionMap = permissions.stream().filter(dto -> dto.getRoleId() != null).collect(Collectors.groupingBy(PermissionsDTO::getRoleId, Collectors.toList()));
         AuthorizationConfigDto authorizationConfig = new AuthorizationConfigDto();
         Set<RoleDto> roles = new LinkedHashSet<>();
@@ -129,7 +129,7 @@ public class AuthorizationConfigServiceImpl
 
         try
         {
-            return new AuthorizationConfig(getAuthorizationConfigDto());
+            return new AuthorizationConfig(getAuthorizationConfigDto(null));
         }
         finally
         {
@@ -137,6 +137,20 @@ public class AuthorizationConfigServiceImpl
         }
     }
 
+    public AuthorizationConfig get(String username)
+    {
+        final Lock readLock = authorizationConfigLock.readLock();
+        readLock.lock();
+
+        try
+        {
+            return new AuthorizationConfig(getAuthorizationConfigDto(username));
+        }
+        finally
+        {
+            readLock.unlock();
+        }
+    }
     @Override
     public void addRole(final RoleDto role) throws IOException
     {

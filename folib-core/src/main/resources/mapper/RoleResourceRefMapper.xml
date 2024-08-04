@@ -188,7 +188,6 @@
             <if test="roleId != null and roleId != ''">
                 and fr.id = #{roleId}
             </if>
-            ;
     </select>
     <select id="queryRoleByUserId" resultType="com.veadan.folib.entity.RoleResourceRef">
         select

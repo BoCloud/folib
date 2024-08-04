@@ -1,6 +1,7 @@
 package com.veadan.folib.mapper;
 
 import java.util.List;
+import java.util.Set;
 
 import com.veadan.folib.common.base.CommonMapper;
 import com.veadan.folib.dto.UserDTO;
@@ -89,4 +90,6 @@ public interface FolibUserMapper extends CommonMapper<FolibUser> {
       * @return 对象列表
       */
      List<UserDTO> queryUser(FolibUser folibUser);
-}
+
+     Set<UserDTO> queryRoles(String uuid);
+ }

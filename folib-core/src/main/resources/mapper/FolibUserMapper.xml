@@ -31,8 +31,10 @@
     <select id="queryAllUserRoleByLimit" resultType="com.veadan.folib.dto.UserDTO">
         SELECT
             fu.*,
-            GROUP_CONCAT(distinct rrr.role_id) AS roles,
-            GROUP_CONCAT(DISTINCT CONCAT_WS('', rrr.storage_privilege, rrr.repository_privilege, rrr.path_privilege)) AS authorities
+            GROUP_CONCAT(distinct ug.group_name) AS userGroups,
+            GROUP_CONCAT(distinct NULLIF(rrr.role_id, '')) AS roles,
+            GROUP_CONCAT(DISTINCT nullif(CONCAT_WS('', rrr.storage_privilege, rrr.repository_privilege, rrr.path_privilege), '')) AS authorities
+
         FROM folib_user fu
         LEFT JOIN
         (
@@ -74,6 +76,8 @@
         </if>
         ) rrr
         ON fu.id = rrr.user_id
+        left join user_group_ref ugr on fu.id = ugr.user_id
+        left join user_group ug on ug.id = ugr.user_group_id
         <where>
             <if test="user.id != null and user.id != ''">
                 and id = #{user.id}
@@ -101,21 +105,6 @@
             </if>
             <if test="user.sourceId != null and user.sourceId != ''">
                 and source_id = #{user.sourceId}
-            </if>
-            <if test="user.deleted != null and user.deleted != ''">
-                and deleted = #{user.deleted}
-            </if>
-            <if test="user.createBy != null and user.createBy != ''">
-                and CREATE_BY = #{user.createBy}
-            </if>
-            <if test="user.createTime != null and user.createTime != ''">
-                and CREATE_TIME = #{user.createTime}
-            </if>
-            <if test="user.updateBy != null and user.updateBy != ''">
-                and UPDATE_BY = #{user.updateBy}
-            </if>
-            <if test="user.updateTime != null and user.updateTime != ''">
-                and UPDATE_TIME = #{user.updateTime}
             </if>
         </where>
         group by fu.id

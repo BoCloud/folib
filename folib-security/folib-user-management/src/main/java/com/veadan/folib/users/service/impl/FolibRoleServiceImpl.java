@@ -46,6 +46,8 @@ public class FolibRoleServiceImpl implements FolibRoleService {
     private ResourceService resourceService;
     @Inject
     private RoleResourceRefService roleResourceRefService;
+    @Inject
+    private FolibRoleService folibRoleService;
 
     @Override
     public FolibRole queryByRoleId(List<String> roleIds) {
@@ -280,7 +282,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
      * @param pageRequest 分页对象
      * @return 查询结果
      */
-    public Page<FolibRole> paginQuery(FolibRole folibRole, PageRequest pageRequest){
+    public Page<FolibRoleDTO> paginQuery(FolibRole folibRole, PageRequest pageRequest){
         long total = folibRoleMapper.count(folibRole);
         return new PageImpl<>(folibRoleMapper.queryAllByLimit(folibRole, pageRequest), pageRequest, total);
     }
@@ -336,60 +338,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
         insert(roleInfo);
         String roleId = roleInfo.getId();
         //保存权限关系
-        savePermissions(roleForm, roleId, username);
-    }
-
-    private void savePermissions(RoleDTO roleForm, String roleId, String username) {
-        //保存权限
-        List<RoleResourceRef> roleResourceRefs = new ArrayList<>();
-        List<AccessResourcesDTO> resources = roleForm.getResources();
-        AccessModelDTO privileges = roleForm.getPrivileges();
-        List<AccessUsersDTO> users = privileges.getUsers();
-        List<AccessUserGroupsDTO> groups = privileges.getGroups();
-        if (CollectionUtils.isEmpty(users) && CollectionUtils.isEmpty(groups)){
-            List<RoleResourceRef> roleResourceRef = resources.stream().map(accessResourcesDTO -> RoleResourceRef.builder().roleId(roleId).resourceId(accessResourcesDTO.getResourceId()).createBy(username).build()).collect(Collectors.toList());
-            roleResourceRefService.saveBath(roleResourceRef);
-            return;
-        }
-        //用户权限组装
-        if (CollectionUtils.isNotEmpty(users)){
-            resources.forEach(accessResourcesDTO -> users.forEach(user -> {
-                List<String> access = user.getAccess();
-                access.forEach(pri -> {
-                    roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER)
-                            .storagePrivilege(pri).resourceId(accessResourcesDTO.getResourceId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build());
-                    if(StringUtils.isNotEmpty(accessResourcesDTO.getRepositoryId())) {
-                        roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER)
-                                .repositoryPrivilege(pri).resourceId(accessResourcesDTO.getResourceId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY).build());
-                    }
-
-                    if (StringUtils.isNotEmpty(accessResourcesDTO.getPath())) {
-                        roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER).pathPrivilege(pri)
-                                .resourceId(accessResourcesDTO.getResourceId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_PATH).build());
-                    }
-                });
-            }));
-        }
-        //用户组权限组装
-        if (CollectionUtils.isNotEmpty(groups)){
-            resources.forEach(accessResourcesDTO -> groups.forEach(groupsDTO -> {
-                List<String> access = groupsDTO.getAccess();
-                access.forEach(pri -> {
-                    roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP)
-                            .storagePrivilege(pri).resourceId(accessResourcesDTO.getResourceId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build());
-                    if(StringUtils.isNotEmpty(accessResourcesDTO.getRepositoryId())) {
-                        roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP)
-                                .repositoryPrivilege(pri).resourceId(accessResourcesDTO.getResourceId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY).build());
-                    }
-                    if(StringUtils.isNotEmpty(accessResourcesDTO.getPath())) {
-                        roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP).pathPrivilege(pri)
-                                .resourceId(accessResourcesDTO.getResourceId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_PATH).build());
-                    }
-                });
-            }));
-        }
-
-        roleResourceRefService.saveBath(roleResourceRefs);
+        roleResourceRefService.savePermissions(roleForm, roleId, username);
     }
 
     @Override
@@ -409,7 +358,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
         update(roleInfo);
         roleResourceRefService.deleteByRoleId(roleId);
         //保存权限关系
-        savePermissions(roleDTO, roleId, username);
+        roleResourceRefService.savePermissions(roleDTO, roleId, username);
     }
 
     @Override
@@ -421,7 +370,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
     public RoleDTO getRoleDetail(String roleId, FolibRole folibRole) {
         RoleDTO roleDTO = RoleDTO.builder().description(folibRole.getDescription()).name(folibRole.getEnName()).build();
         //查角色关联的权限
-        List<PermissionsDTO> permissions = roleResourceRefService.queryPermissions(roleId);
+        List<PermissionsDTO> permissions = roleResourceRefService.queryPermissions(roleId, null);
         //用户权限
         Map<String, List<PermissionsDTO>> userPermissions = permissions.stream().filter(permissionsDTO -> StringUtils.isNotEmpty(permissionsDTO.getRefType()) && GlobalConstants.ROLE_TYPE_USER.equals(permissionsDTO.getRefType())).collect(Collectors.groupingBy(PermissionsDTO::getEntityId));
         List<AccessUsersDTO> userAccess = userPermissions.entrySet().stream().map(entry -> {

@@ -1,11 +1,13 @@
 package com.veadan.folib.users.service;
 
+import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.UserEntity;
 import com.veadan.folib.dto.UserDTO;
 import com.veadan.folib.entity.FolibUser;
 
 import java.util.List;
+import java.util.Set;
 
 /**
   * @Description: 用户服务
@@ -28,4 +30,6 @@ public interface FolibUserService {
     List<User> findUsersPage(User user, int start, Integer limit);
 
     boolean saveOrUpdateBatch(List<UserEntity> userEntitys);
+
+    Set<Role> queryRoles(String uuid);
 }

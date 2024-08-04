@@ -1,6 +1,7 @@
 package com.veadan.folib.users.service;
 
 import com.veadan.folib.dto.UserGroupDTO;
+import com.veadan.folib.dto.UserGroupListDTO;
 import com.veadan.folib.entity.UserGroup;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,7 +28,7 @@ public interface UserGroupService{
      * @param pageRequest 分页对象
      * @return 查询结果
      */
-    Page<UserGroup> paginQuery(UserGroup userGroup, PageRequest pageRequest);
+    Page<UserGroupListDTO> paginQuery(UserGroup userGroup, PageRequest pageRequest);
     /** 
      * 新增数据
      *

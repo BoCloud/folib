@@ -78,6 +78,21 @@
             </if>
         </where>
     </select>
+    <select id="findResources" resultType="com.veadan.folib.entity.Resource">
+        select * from resource r
+        where
+        <foreach collection="resources" item="resource" separator="or" open="(" close=")">
+            ( <if test="resource.storageId != null and resource.storageId != ''">
+                r.storage_id = #{resource.storageId}
+            </if>
+            <if test="resource.repositoryId != null and resource.repositoryId != ''" >
+                and r.repository_id = #{resource.repositoryId}
+            </if>
+            <if test="resource.path != null and resource.path != ''">
+                and r.path = #{resource.path}
+            </if>)
+        </foreach>
+    </select>
 
     <!--新增数据-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">

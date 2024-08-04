@@ -81,9 +81,11 @@ public interface RoleResourceRefService{
 
     RoleDTO getUserByRoleId(String roleId);
 
-    List<PermissionsDTO> queryPermissions(String roleId);
+    List<PermissionsDTO> queryPermissions(String roleId,String username);
 
     boolean deleteByRoleId(String roleId);
 
     List<RoleResourceRef> queryRoleByUserId(String uuid, List<String> roles);
+
+    void savePermissions(RoleDTO roleForm, String roleId, String username);
 }

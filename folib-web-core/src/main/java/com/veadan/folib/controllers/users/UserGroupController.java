@@ -3,12 +3,16 @@ package com.veadan.folib.controllers.users;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.users.support.UserGroupResponseEntity;
 import com.veadan.folib.converters.users.UserGroupConvert;
+import com.veadan.folib.dto.FolibRoleDTO;
 import com.veadan.folib.dto.RoleResourceRefDTO;
 import com.veadan.folib.dto.UserGroupDTO;
+import com.veadan.folib.dto.UserGroupListDTO;
+import com.veadan.folib.entity.FolibRole;
 import com.veadan.folib.entity.UserGroup;
 import com.veadan.folib.entity.UserGroupRef;
 import com.veadan.folib.forms.users.UserForm;
 import com.veadan.folib.forms.users.UserGroupForm;
+import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.StorageManagementService;
 import com.veadan.folib.users.dto.UserDto;
 import com.veadan.folib.users.security.AuthoritiesProvider;
@@ -23,6 +27,8 @@ import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.*;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -43,6 +49,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.veadan.folib.controllers.users.UserController.SUCCESSFUL_DELETE_USER;
+import static com.veadan.folib.controllers.users.UserController.SUCCESSFUL_GET_USER_GROUP;
 
 /**
  * @author Veadan
@@ -225,4 +232,27 @@ public class UserGroupController
 
         return getSuccessfulResponseEntity(SUCCESSFUL_UPDATE_USER_GROUP, accept);
     }
+
+    @ApiOperation(value = "Used to retrieve users")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_GET_USER_GROUP)})
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @GetMapping(value = "/queryUserGroup", produces = {MediaType.APPLICATION_JSON_VALUE})
+    @ResponseBody
+    public TableResultResponse<UserGroupListDTO> queryUser(@RequestParam(name = "page", required = false) Integer page,
+                                                       @RequestParam(name = "limit", required = false) Integer limit,
+                                                       @RequestParam(name = "name", required = false) String name,
+                                                       @RequestParam(name = "joinGroup", required = false) String joinGroup) {
+
+        PageRequest pageRequest = PageRequest.of(page-1, limit);
+        UserGroup userGroup = UserGroup.builder().build();
+        userGroup.setGroupName(name);
+        userGroup.setJoinGroup(joinGroup);
+        Page<UserGroupListDTO> userGroupListDTOS = userGroupService.paginQuery(userGroup, pageRequest);
+        if (Objects.isNull(userGroupListDTOS)) {
+            return new TableResultResponse<>(0, null);
+        }
+        return new TableResultResponse<>(userGroupListDTOS.getTotalElements(), userGroupListDTOS.getContent());
+
+    }
+
 }

@@ -23,10 +23,18 @@
     </select>
 
     <!--分页查询指定行数据-->
-    <select id="queryAllByLimit" resultMap="FolibRoleMap">
-        select
-        id,cn_name,en_name,description,deleted,is_default,create_by,create_time,update_by,update_time
-        from folib_role
+    <select id="queryAllByLimit" resultType="com.veadan.folib.dto.FolibRoleDTO" >
+         select
+            fr.id,
+            cn_name,
+            en_name,
+            fr.description,
+            fr.is_default,
+            group_concat(distinct case when rrr.ref_type = 1 then rrr.entity_id end) as users,
+            group_concat(distinct case when rrr.ref_type = 2 then ug.group_name end) as userGroups
+        from
+            folib_role fr left join role_resource_ref rrr on fr.id = rrr.role_id
+            left join user_group ug on rrr.entity_id = ug.id
         <where>
             <if test="role.id != null and role.id != ''">
                 and id = #{role.id}
@@ -44,7 +52,7 @@
                 and deleted = #{role.deleted}
             </if>
             <if test="role.isDefault != null and role.isDefault != ''">
-                and is_default = #{role.isDefault}
+                and fr.is_default = #{role.isDefault}
             </if>
             <if test="role.createBy != null and role.createBy != ''">
                 and create_by = #{role.createBy}
@@ -59,6 +67,7 @@
                 and update_time = #{role.updateTime}
             </if>
         </where>
+        group by fr.id
         limit #{pageable.offset}, #{pageable.pageSize}
     </select>
 

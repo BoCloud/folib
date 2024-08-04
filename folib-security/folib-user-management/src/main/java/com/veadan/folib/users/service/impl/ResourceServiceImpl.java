@@ -9,6 +9,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.util.List;
 
 /**
@@ -17,6 +18,7 @@ import java.util.List;
  * @date : 2024-7-17
  */
 @Service
+@Transactional
 public class ResourceServiceImpl implements ResourceService {
     @Autowired
     private ResourceMapper resourceMapper;
@@ -95,5 +97,10 @@ public class ResourceServiceImpl implements ResourceService {
     @Override
     public List<Resource> findAll() {
         return resourceMapper.selectAll();
+    }
+
+    @Override
+    public List<Resource> findResources(List<Resource> resources) {
+        return resourceMapper.findResources(resources);
     }
 }

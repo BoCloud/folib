@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
+import javax.transaction.Transactional;
 import java.util.List;
 
 /**
@@ -18,6 +19,7 @@ import java.util.List;
  * @date : 2024-7-18
  */
 @Service
+@Transactional
 public class UserGroupRefServiceImpl implements UserGroupRefService {
     @Autowired
     private UserGroupRefMapper userGroupRefMapper;

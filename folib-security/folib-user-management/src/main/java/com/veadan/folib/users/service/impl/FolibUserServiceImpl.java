@@ -1,5 +1,6 @@
 package com.veadan.folib.users.service.impl;
 
+import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.converts.UserConvert;
 import com.veadan.folib.domain.User;
@@ -16,10 +17,7 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.transaction.Transactional;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * @Author: fengmg
@@ -106,5 +104,11 @@ public class FolibUserServiceImpl implements FolibUserService {
         List<FolibUser> folibUsers = UserConvert.INSTANCE.UserEntitysToFolibuiltyList(userEntitys);
         int i = folibUserMapper.insertOrUpdateBatch(folibUsers);
         return i == userEntitys.size();
+    }
+
+    @Override
+    public Set<Role> queryRoles(String uuid) {
+//        return folibUserMapper.queryRoles(uuid);
+        return null;
     }
 }
