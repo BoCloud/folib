@@ -49,5 +49,7 @@ export default {
     'OperateSuccess': 'Operation successful',
     'PasswordUpdateFailed': 'Password update failed',
     'PasswordUpdateSuccess': 'The password was updated successfully. Please log in again',
-
+    'UserRole':'Please select a user role',
+    'Administrators': 'Administrators',
+    'GeneralUsers': 'General users',
 }
