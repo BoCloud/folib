@@ -105,7 +105,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
     public ResponseEntity retryNodeOption(@PathVariable("syncNo") String syncNo,
                                      HttpServletRequest request,
                                      HttpServletResponse response) {
-        return artifactPromotionService.retryNodeOptionAttachRecord(syncNo, request.getServerName(), response);
+        return artifactPromotionService.retryNodeOptionAttachRecord(syncNo, response);
     }
 
 ///    @PostMapping("/nodeOptionCallback")
@@ -184,9 +184,9 @@ public class ArtifactPromotionController extends BaseArtifactController {
      * @param request request
      * @return ResponseEntity
      */
-    @PostMapping(value = "/retryAtifactDispatch/{syncNo}/{type}")
+    @PostMapping(value = "/retryArtifactDispatch/{syncNo}/{type}")
     @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
-    public ResponseEntity<?> retryAtifactDispatch(@PathVariable("syncNo") String syncNo, @PathVariable("type") String type, HttpServletRequest request) {
+    public ResponseEntity<?> retryArtifactDispatch(@PathVariable("syncNo") String syncNo, @PathVariable("type") String type, HttpServletRequest request) {
         return ResponseEntity.ok(artifactPromotionService.retryArtifactDispatchAttachRecord(syncNo,type, request));
     }
 

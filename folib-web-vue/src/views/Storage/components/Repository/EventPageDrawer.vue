@@ -94,8 +94,9 @@
                 <a-popconfirm :title="(currentClickRecord && currentClickRecord.status === 2 ? $t('Repository.CurrentProductIsSynchronizing'):'')+$t('Repository.SureMakeProductCompensation')"
                               okType="danger"
                               :ok-text="$t('Repository.Confirm')"
-                              :cancel-text="$t('Repository.Cancel')">
-                  <a-button type="link" v-if="record.status === 4" @click="clickRecord(record)"
+                              :cancel-text="$t('Repository.Cancel')"
+                              @confirm="clickRecord(record)">
+                  <a-button type="link" v-if="record.status === 4"
                             size="small">
                     <span class="text-danger">{{ $t('Repository.Compensation') }}</span>
                   </a-button>
@@ -116,7 +117,7 @@ import Permission from '../Permission/index.vue'
 import CronTask from "../Cron/index.vue"
 import UnionRepository from "../UnionRepository/index.vue"
 import {getArtifactDispatchConfig, getArtifactSyncRecordPage} from "@/api/settings";
-import {retryAtifactDispatch, retryNodeOption} from "@/api/artifact";
+import {retryArtifactDispatch, retryNodeOption} from "@/api/artifact";
 
 export default {
   props: {
@@ -296,7 +297,7 @@ export default {
             if (opsType === 1) {
                 this.vulnerabilityTableLoading = true
                 retryNodeOption(sycnNo).then(res => {
-                    this.$message.success("操作成功");
+                    this.$message.success(this.$t("Storage.OperationSuccessful"));
                     this.getArtifactSyncRecordPage();
                 }).finally(() => {
                     this.vulnerabilityTableLoading = false
@@ -304,8 +305,8 @@ export default {
             } else if (opsType === 2) {
                 const jsonArrayString = JSON.parse(this.currentClickRecord.targetPath);
                 let type = jsonArrayString[0].artifactoryRepositoryType;
-                retryAtifactDispatch(sycnNo, type).then(res => {
-                    this.$message.success("操作成功");
+                retryArtifactDispatch(sycnNo, type).then(res => {
+                    this.$message.success(this.$t("Storage.OperationSuccessful"));
                     this.getArtifactSyncRecordPage();
                 }).finally(() => {
                     this.vulnerabilityTableLoading = false

@@ -37,7 +37,7 @@ public interface ArtifactPromotionService {
 
     ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, String requestHostName, HttpServletResponse response);
 
-    ResponseEntity<?> retryNodeOptionAttachRecord(String syncNo, String requestHostName, HttpServletResponse response);
+    ResponseEntity<?> retryNodeOptionAttachRecord(String syncNo, HttpServletResponse response);
     CompletableFuture<Void> uploadArtifact(String syncNo, PromotionNodeOption promotionNodeOption, String requestHostName);
     Boolean artifactPullCallback(ArtifactPromotionNodeOptionCallbackReq model);
 

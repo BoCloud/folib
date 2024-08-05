@@ -1,6 +1,7 @@
 package com.veadan.folib.promotion;
 
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.json.JSONUtil;
@@ -235,7 +236,7 @@ public class PromotionUtil {
                 artifactSyncRecord.setCreateBy(UserUtils.getUsername());
                 artifactSyncRecord.setCreateTime(new Date());
                 artifactSyncRecord.setSyncModel(1);
-                artifactSyncRecordMapper.insert(artifactSyncRecord);
+                artifactSyncRecordMapper.insertSelective(artifactSyncRecord);
                 syncNoList.add(syncNo);
                 try {
                     handlerDispatch(map, artifactDispatch, targetDispatchRepositoryDto, syncNo,false);
@@ -243,7 +244,7 @@ public class PromotionUtil {
                     artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
                     artifactSyncRecord.setFailedReason(ex.getMessage());
                     // 更新日志结束开始时间
-                    artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
+                    artifactSyncRecordMapper.updateByPrimaryKeySelective(artifactSyncRecord
                             .setUpdateTime(new Date()));
                 }
             } catch (Exception ex) {
@@ -281,20 +282,27 @@ public class PromotionUtil {
         artifactDispatch.setLayout(repository.getLayout());
         artifactDispatch.setPolicy(repository.getPolicy());
 
-
+        ArtifactSyncRecord updateArtifactSyncRecord = null;
+        Date date;
+        Integer retryCount;
         for (TargetDispatchRepositoryDto targetDispatchRepositoryDto : targetRepositoryList) {
             try {
+                date = new Date();
+                retryCount = 0;
+                if (Objects.nonNull(artifactSyncRecord.getRetryCount())) {
+                    retryCount = artifactSyncRecord.getRetryCount();
+                }
+                updateArtifactSyncRecord = ArtifactSyncRecord.builder().id(artifactSyncRecord.getId()).retryCount(retryCount + 1).retryTime(date).updateBy(UserUtils.getUsername()).updateTime(date).build();
                 try {
-
-                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
-                    artifactSyncRecord.setCreateBy(UserUtils.getUsername());
-                    artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord);
+                    updateArtifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
+                    artifactSyncRecordMapper.updateByPrimaryKeySelective(updateArtifactSyncRecord);
                     handlerDispatch(map, artifactDispatch, targetDispatchRepositoryDto, syncNo,true);
                 } catch (Exception ex) {
-                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
-                    artifactSyncRecord.setFailedReason(ex.getMessage());
+                    log.error("Distribution target [{}] error [{}]", JSONObject.toJSONString(targetDispatchRepositoryDto), ExceptionUtils.getStackTrace(ex));
+                    updateArtifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
+                    updateArtifactSyncRecord.setFailedReason(ex.getMessage());
                     // 更新日志结束开始时间
-                    artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord.setUpdateTime(new Date()));
+                    artifactSyncRecordMapper.updateByPrimaryKeySelective(updateArtifactSyncRecord);
                 }
             } catch (Exception ex) {
                 log.error("Distribution target [{}] error [{}]", JSONObject.toJSONString(targetDispatchRepositoryDto), ExceptionUtils.getStackTrace(ex));

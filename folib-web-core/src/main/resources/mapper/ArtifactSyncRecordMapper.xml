@@ -5,15 +5,20 @@
 
     <resultMap id="artifactSyncRecordResultMap" type="com.veadan.folib.entity.ArtifactSyncRecord">
         <id property="id" column="id"/>
+        <result property="requestHostName" column="request_host_name"/>
         <result property="sourceStorageId" column="source_storage_id"/>
         <result property="sourceRepositoryId" column="source_repository_id"/>
         <result property="sourcePath" column="source_path"/>
         <result property="targetPath" column="target_path"/>
         <result property="syncNo" column="sync_no"/>
-        <result property="syncModel" column="sync_model"/>
+        <result property="opsType" column="ops_type"/>
         <result property="syncProgress" column="sync_progress"/>
+        <result property="syncModel" column="sync_model"/>
         <result property="status" column="status"/>
         <result property="failedReason" column="failed_reason"/>
+        <result property="retry" column="retry"/>
+        <result property="retryCount" column="retry_count"/>
+        <result property="retryTime" column="retry_time"/>
         <result property="createBy" column="create_by"/>
         <result property="createTime" column="create_time"/>
         <result property="updateBy" column="update_by"/>

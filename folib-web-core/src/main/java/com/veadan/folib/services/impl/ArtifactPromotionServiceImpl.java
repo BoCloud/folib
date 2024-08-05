@@ -18,14 +18,12 @@ import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.*;
 import com.veadan.folib.entity.ArtifactSyncRecord;
-import com.veadan.folib.entity.ArtifactSyncSlaveRecord;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.ArtifactSyncRecordOpsTypeEnum;
 import com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum;
 import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
 import com.veadan.folib.enums.BusinessCodeEnum;
 import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
-import com.veadan.folib.mapper.ArtifactSyncSlaveRecordMapper;
 import com.veadan.folib.model.request.ArtifactPromotionNodeOptionCallbackReq;
 import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
 import com.veadan.folib.model.request.ArtifactSliceUploadReq;
@@ -259,7 +257,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     private void singleCopy(ArtifactPromotion artifactPromotion, Repository srcRepository, String destStorageId, String destRepositoryId) {
         Repository destRepository = repositoryManagementService.getStorage(destStorageId).getRepository(destRepositoryId);
         RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, artifactPromotion.getPath());
-        RepositoryPath targetPath =  artifactPromotion.getTargetPath() == null ? null : repositoryPathResolver.resolve(destRepository,artifactPromotion.getTargetPath());
+        RepositoryPath targetPath = artifactPromotion.getTargetPath() == null ? null : repositoryPathResolver.resolve(destRepository, artifactPromotion.getTargetPath());
         promotionUtil.executeCopy(srcPath, srcRepository, targetPath, destRepository);
     }
 
@@ -346,7 +344,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 Repository destRepository = repositoryManagementService.getStorage(targetStorageId).getRepository(targetRepositoryId);
                 Repository srcRepository = repositoryManagementService.getStorage(sourceStorageId).getRepository(sourceRepositoryId);
                 RepositoryPath srcPath = repositoryPathResolver.resolve(sourceStorageId, sourceRepositoryId, sourceArtifactPath);
-                promotionUtil.executeCopy(srcPath, srcRepository, null,destRepository);
+                promotionUtil.executeCopy(srcPath, srcRepository, null, destRepository);
                 return ResponseEntity.ok("ok");
             }
             if (Objects.isNull(syncModel)) {
@@ -434,9 +432,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
-    public ResponseEntity<?> retryNodeOptionAttachRecord(String syncNo, String requestHostName, HttpServletResponse response) {
-        ArtifactSyncRecord  artifactSyncRecord = artifactSyncRecordMapper.selectBySyncNo(syncNo);
-        if(artifactSyncRecord == null){
+    public ResponseEntity<?> retryNodeOptionAttachRecord(String syncNo, HttpServletResponse response) {
+        ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectBySyncNo(syncNo);
+        if (artifactSyncRecord == null) {
             throw new RuntimeException("Synchronization record not found");
         }
         PromotionNodeOption promotionNodeOption = new PromotionNodeOption();
@@ -451,8 +449,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         promotionNodeOption.setTargetNode(targetHostName);
         promotionNodeOption.setRetry(true);
         if (selfHostName.equals(sourceHostName)) {
-            retryUploadArtifact(syncNo, promotionNodeOption, requestHostName);
-            if (response.isCommitted()) {
+            retryUploadArtifact(syncNo, promotionNodeOption);
+            if (Objects.nonNull(response) && response.isCommitted()) {
                 return null;
             }
             return ResponseEntity.ok(syncNo);
@@ -508,7 +506,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
         artifactSyncRecord.setCreateBy(userName);
         artifactSyncRecord.setCreateTime(new Date());
-        artifactSyncRecordMapper.insert(artifactSyncRecord);
+        artifactSyncRecordMapper.insertSelective(artifactSyncRecord);
         promotionNodeOption.setSyncNo(syncNo);
         try {
             return this.nodeOptionV2(promotionNodeOption);
@@ -517,7 +515,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             artifactSyncRecord.setFailedReason(e.getMessage());
 
             // 更新日志结束开始时间
-            artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
+            artifactSyncRecordMapper.updateByPrimaryKeySelective(artifactSyncRecord
                     .setUpdateTime(new Date())
                     .setUpdateBy(userName));
             if (e instanceof RuntimeException) {
@@ -528,7 +526,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         }
     }
 
-    public CompletableFuture<Void> retryUploadArtifact(String syncNo, PromotionNodeOption promotionNodeOption, String requestHostName) {
+    public CompletableFuture<Void> retryUploadArtifact(String syncNo, PromotionNodeOption promotionNodeOption) {
 
         PromotionRepositoryInfo promotionRepositoryInfo = resolvePromotionRepository(promotionNodeOption);
         if (Objects.isNull(promotionNodeOption.getSyncModel())) {
@@ -565,29 +563,22 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         final ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectBySyncNo(syncNo);
 
         // 生成日志记录
-        artifactSyncRecord.setRequestHostName(requestHostName);
-        artifactSyncRecord.setSourceStorageId(promotionRepositoryInfo.getSourceStorageId());
-        artifactSyncRecord.setSourceRepositoryId(promotionRepositoryInfo.getSourceRepositoryId());
-        artifactSyncRecord.setSourcePath(promotionNodeOption.getSourcePath());
-        artifactSyncRecord.setTargetPath(promotionNodeOption.getTargetPath());
-        artifactSyncRecord.setSyncNo(syncNo);
-        artifactSyncRecord.setOpsType(ArtifactSyncRecordOpsTypeEnum.PROMOTION.getVal());
-        artifactSyncRecord.setSyncModel(promotionNodeOption.getSyncModel());
-        artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
-        artifactSyncRecord.setCreateBy(userName);
-        artifactSyncRecord.setCreateTime(new Date());
-        artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord);
+        int retryCount = 0;
+        if (Objects.nonNull(artifactSyncRecord.getRetryCount())) {
+            retryCount = artifactSyncRecord.getRetryCount();
+        }
+        Date date = new Date();
+        ArtifactSyncRecord updateArtifactSyncRecord = ArtifactSyncRecord.builder().id(artifactSyncRecord.getId()).status(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal()).retryCount(retryCount + 1).retryTime(date).updateBy(userName).updateTime(date).build();
+        artifactSyncRecordMapper.updateByPrimaryKeySelective(updateArtifactSyncRecord);
         promotionNodeOption.setSyncNo(syncNo);
         try {
             return this.nodeOptionV2(promotionNodeOption);
         } catch (Exception e) {
-            artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
-            artifactSyncRecord.setFailedReason(e.getMessage());
+            updateArtifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
+            updateArtifactSyncRecord.setFailedReason(e.getMessage());
 
             // 更新日志结束开始时间
-            artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
-                    .setUpdateTime(new Date())
-                    .setUpdateBy(userName));
+            artifactSyncRecordMapper.updateByPrimaryKeySelective(updateArtifactSyncRecord);
             if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
             } else {
@@ -845,13 +836,13 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
-    public String retryArtifactDispatchAttachRecord(String syncNo,String type, HttpServletRequest request) {
+    public String retryArtifactDispatchAttachRecord(String syncNo, String type, HttpServletRequest request) {
         if (ArtifactoryRepositoryTypeEnum.JFROG.getType().equals(type)) {
-            this.retryArtifactDispatch(syncNo,type);
+            this.retryArtifactDispatch(syncNo, type);
 
         }
         try {
-            this.retryArtifactDispatch(syncNo,type);
+            this.retryArtifactDispatch(syncNo, type);
         } catch (Exception e) {
             log.error("retry artifactDispatch exception", e);
             if (e instanceof RejectedExecutionException) {
@@ -1494,7 +1485,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     /**
      * 更新任务队列优先级
      *
-     * @param syncNo   同步编号
+     * @param syncNo      同步编号
      * @param newPriority 优先级
      * @return
      */
@@ -1506,14 +1497,14 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectBySyncNo(syncNo);
         List<TargetDispatchRepositoryDto> targetRepositoryList = JSON.parseArray(artifactSyncRecord.getTargetPath(), TargetDispatchRepositoryDto.class);
         Priority priority = Priority.getPriority(newPriority);
-        if(priority == null){
+        if (priority == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("优先级值不合法");
         }
         for (TargetDispatchRepositoryDto targetDispatchRepositoryDto : targetRepositoryList) {
             String dispatchClusterName = targetDispatchRepositoryDto.getDispatchClusterEnName();
             ClusterDispatchNodeDto dispatchNodeDto = map.get(dispatchClusterName);
             String targetHostName = FolibWsRunManageUtil.getTargetHostName(dispatchNodeDto);
-            promotionUtil.updateTaskQueuePriority(targetHostName, syncNo,  priority);
+            promotionUtil.updateTaskQueuePriority(targetHostName, syncNo, priority);
         }
 
         return ResponseEntity.ok().build();

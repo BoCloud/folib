@@ -248,7 +248,7 @@ import {
     getStatusTrends,
     fileSizeStatisticsByWarehouse
 } from "@/api/settings";
-import {retryAtifactDispatch, retryNodeOption} from "@/api/artifact";
+import {retryArtifactDispatch, retryNodeOption} from "@/api/artifact";
 import textOver from "@/components/Tools/textOver";
 
 export default {
@@ -594,7 +594,7 @@ export default {
             } else if (opsType === 2) {
                 const jsonArrayString = JSON.parse(this.currentClickRecord.targetPath);
                 let type = jsonArrayString[0].artifactoryRepositoryType;
-                retryAtifactDispatch(sycnNo, type).then(res => {
+                retryArtifactDispatch(sycnNo, type).then(res => {
                     this.$message.success("success");
                     this.getData();
                 }).finally(() => {

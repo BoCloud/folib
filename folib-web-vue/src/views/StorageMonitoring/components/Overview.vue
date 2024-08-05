@@ -281,15 +281,27 @@ export default ({
 							previousDiff: foldersCountDiff,
 							artifactsDownloadedCount: data.artifactsDownloadedCount
 						})
-						this.latestData.push({
-							id: "6",
-							title: 'StorageMonitoring.StorageCount',
-							code: data.storageCount,
-							src: "images/folib/storageCount.svg",
-							color: '',
-							previousDiff: storageCountDiff,
-							artifactsDownloadedCount: data.artifactsDownloadedCount
-						})
+						if (!this.storageId) {
+							this.latestData.push({
+								id: "6",
+								title: 'StorageMonitoring.StorageCount',
+								code: data.storageCount,
+								src: "images/folib/storageCount.svg",
+								color: '',
+								previousDiff: storageCountDiff,
+								artifactsDownloadedCount: data.artifactsDownloadedCount
+							})
+						} else {
+							this.latestData.push({
+								id: "6",
+								title: 'StorageMonitoring.StorageCount',
+								code: 1,
+								src: "images/folib/storageCount.svg",
+								color: '',
+								previousDiff: 0,
+								artifactsDownloadedCount: data.artifactsDownloadedCount
+							})
+						}
 						this.latestData.push({
 							id: "7",
 							title: 'StorageMonitoring.RepositoryCount',

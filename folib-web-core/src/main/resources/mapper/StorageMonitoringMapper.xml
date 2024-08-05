@@ -4,7 +4,7 @@
 <mapper namespace="com.veadan.folib.mapper.StorageMonitoringMapper">
 
     <insert id="batchInsertStorageMonitoring">
-        INSERT INTO folib_scanner.storage_monitoring
+        INSERT INTO storage_monitoring
         (id, storage_id, storage_provider, repository_id, repository_type, repository_layout, repository_sub_layout, storage_path, artifacts_size, artifacts_count, files_size, files_count, used_files_size_percentage, folders_count, items_count, storage_quota_size, used_storage_quota_size_percentage, other_files_size, used_other_files_size_percentage, storage_count, repository_count, artifacts_downloaded_count, storage_device_name, storage_device_type, storage_device_size, storage_device_usable_size, used_storage_device_size, used_storage_device_size_percentage, data_type, is_latest, update_time)
         VALUES
         <foreach collection="storageMonitoringList" item="item" separator=",">

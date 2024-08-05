@@ -9,17 +9,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
-import javax.persistence.Column;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Date;
 
 
 /**
- *
  * @author xiaodong.wang
  * @email wangxiaodong@beyondcent.com
  * @date 2023/10/5 17:04
@@ -37,7 +32,7 @@ public class ArtifactSyncRecord implements Serializable {
 
 
     @Id
-    @GeneratedValue(generator = "JDBC",strategy = GenerationType.IDENTITY)
+    @GeneratedValue(generator = "JDBC", strategy = GenerationType.IDENTITY)
     @ApiModelProperty("id")
     @Column(name = "id")
     private Long id;
@@ -48,21 +43,21 @@ public class ArtifactSyncRecord implements Serializable {
     @ApiModelProperty("请求主机名称")
     @Column(name = "request_host_name")
     private String requestHostName;
-    
+
     /**
      * 源制品存储空间
      */
     @ApiModelProperty("源制品存储空间")
     @Column(name = "source_storage_id")
     private String sourceStorageId;
-    
+
     /**
      * 源制品仓库ID
      */
     @ApiModelProperty("源制品仓库ID")
     @Column(name = "source_repository_id")
     private String sourceRepositoryId;
-    
+
     /**
      * 源制品路径
      */
@@ -111,6 +106,25 @@ public class ArtifactSyncRecord implements Serializable {
     @ApiModelProperty("失败的原因")
     @Column(name = "failed_reason")
     private String failedReason;
+    /**
+     * 是否重试
+     */
+    @ApiModelProperty("是否重试")
+    @Column(name = "retry")
+    private Integer retry;
+    /**
+     * 重试次数
+     */
+    @ApiModelProperty("重试次数")
+    @Column(name = "retry_count")
+    private Integer retryCount;
+    /**
+     * 重试时间
+     */
+    @ApiModelProperty("重试时间")
+    @Column(name = "retry_time")
+    @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date retryTime;
     /**
      * 创建人
      */
