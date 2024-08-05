@@ -20,6 +20,7 @@ public interface AuthorizationConfigService
     AuthorizationConfigDto getDto();
 
     AuthorizationConfig get();
+    AuthorizationConfig get(String username);
 
     void addRole(RoleDto role) throws IOException;
 

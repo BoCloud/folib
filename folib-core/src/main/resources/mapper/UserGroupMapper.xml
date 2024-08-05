@@ -39,7 +39,7 @@
                 and id = #{userGroup.id}
             </if>
             <if test="userGroup.groupName != null and userGroup.groupName != ''">
-                and group_name = #{userGroup.groupName}
+                and group_name concat('%',#{userGroup.groupName},'%')
             </if>
             <if test="userGroup.description != null and userGroup.description != ''">
                 and description = #{userGroup.description}
@@ -101,7 +101,7 @@
                 left join role_resource_ref rrr on
                 rrr.entity_id = ug.id
                     and rrr.ref_type = 2
-        where ug.deleted = 0;
+        where ug.deleted = 0 and ug.id = #{groupId};
     </select>
 
     <!--新增数据-->

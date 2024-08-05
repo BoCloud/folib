@@ -12,10 +12,16 @@ import javax.inject.Inject;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veadan.folib.authorization.domain.Client;
+import com.veadan.folib.authorization.domain.RoleData;
+import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.dto.PermissionsDTO;
 import com.veadan.folib.users.dto.AccessModelDto;
 import com.veadan.folib.users.dto.RepositoryPrivilegesDto;
 import com.veadan.folib.users.dto.StoragePrivilegesDto;
+import com.veadan.folib.users.security.AdminAccessModel;
+import com.veadan.folib.users.security.AnonymousAccessModel;
+import com.veadan.folib.users.security.AuthenticatedAccessModel;
+import com.veadan.folib.users.security.RuntimeRole;
 import com.veadan.folib.users.service.RoleResourceRefService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.SerializationUtils;
@@ -65,8 +71,26 @@ public class AuthorizationConfigServiceImpl
                      },
                      false);
     }
+    public Role getRole(String username)
+    {
+        return null;
+        /*Set<RoleDto> roles = getAuthorizationConfigDto(username)
+                .getRoles().stream().map(role -> new RoleData(role.getName(), role.getDescription(), role.getAccessModel()));
 
-    private @NotNull AuthorizationConfigDto getAuthorizationConfigDto(String username) {
+        if (roles.contains(SystemRole.ADMIN.name()))
+        {
+            RuntimeRole adminRole = new RuntimeRole(role, (a) -> new AdminAccessModel());
+            return new RuntimeRole(adminRole, (a) -> new AuthenticatedAccessModel(a));
+        }
+        else if (SystemRole.ANONYMOUS.name().equals(name))
+        {
+            return new RuntimeRole(role, (a) -> new AnonymousAccessModel(a));
+        }
+
+        return new RuntimeRole(role, (a) -> new AuthenticatedAccessModel(a));*/
+    }
+
+    private AuthorizationConfigDto getAuthorizationConfigDto(String username) {
         List<PermissionsDTO> permissions = roleResourceRefService.queryPermissions(null, username);
         Map<String, List<PermissionsDTO>> permissionMap = permissions.stream().filter(dto -> dto.getRoleId() != null).collect(Collectors.groupingBy(PermissionsDTO::getRoleId, Collectors.toList()));
         AuthorizationConfigDto authorizationConfig = new AuthorizationConfigDto();

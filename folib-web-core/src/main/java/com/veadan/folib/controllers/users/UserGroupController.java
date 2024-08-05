@@ -1,31 +1,27 @@
 package com.veadan.folib.controllers.users;
 
+import com.veadan.folib.components.IdGenerateUtils;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.users.support.UserGroupResponseEntity;
 import com.veadan.folib.converters.users.UserGroupConvert;
-import com.veadan.folib.dto.FolibRoleDTO;
 import com.veadan.folib.dto.RoleResourceRefDTO;
 import com.veadan.folib.dto.UserGroupDTO;
 import com.veadan.folib.dto.UserGroupListDTO;
-import com.veadan.folib.entity.FolibRole;
 import com.veadan.folib.entity.UserGroup;
 import com.veadan.folib.entity.UserGroupRef;
-import com.veadan.folib.forms.users.UserForm;
 import com.veadan.folib.forms.users.UserGroupForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.StorageManagementService;
-import com.veadan.folib.users.dto.UserDto;
 import com.veadan.folib.users.security.AuthoritiesProvider;
 import com.veadan.folib.users.service.FolibRoleService;
 import com.veadan.folib.users.service.UserGroupRefService;
 import com.veadan.folib.users.service.UserGroupService;
 import com.veadan.folib.users.service.UserService;
-import com.veadan.folib.users.service.impl.EncodedPasswordUser;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.util.RSAUtils;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.*;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -43,10 +39,12 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
-import java.util.Date;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.veadan.folib.controllers.users.UserController.SUCCESSFUL_DELETE_USER;
 import static com.veadan.folib.controllers.users.UserController.SUCCESSFUL_GET_USER_GROUP;
@@ -149,6 +147,8 @@ public class UserGroupController
         if(userGroup == null) {
             return getFailedResponseEntity(HttpStatus.BAD_REQUEST, FAILED_CREATE_USER_GROUP, accept);
         }
+        //TODO 自定义id
+        //userGroup.setId(null);
         userGroupService.save(userGroup);
         List<String> userIds = userGroupForm.getUserIds();
         if(userIds != null && !userIds.isEmpty()) {
@@ -164,6 +164,8 @@ public class UserGroupController
 
         return getSuccessfulResponseEntity(SUCCESSFUL_CREATE_USER_GROUP, accept);
     }
+
+
 
     @ApiOperation(value = "用户组详情查询")
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_GET_USER),
@@ -186,8 +188,9 @@ public class UserGroupController
         //查询用户组关联的权限
         List<String> roleIds = userGroupDTO.getRoleIds();
         if(roleIds != null && !roleIds.isEmpty()) {
-            RoleResourceRefDTO resourceRefDTO = userGroupRefService.queryPrivilegeByGroup(groupId, "2", roleIds);
-            responseEntity.setRoleResourceRefDTO(resourceRefDTO);
+            List<RoleResourceRefDTO> resourceRefDTOs = userGroupRefService.queryPrivilegeByGroup(groupId, "2", roleIds);
+            responseEntity.setRoleAccess(resourceRefDTOs.stream().collect(Collectors.toMap(RoleResourceRefDTO::getRoleId, roleResourceRefDTO ->
+                    Stream.of(roleResourceRefDTO.getPathPrivileges(), roleResourceRefDTO.getRepositoryPrivileges(), roleResourceRefDTO.getStoragePrivileges()).filter(Objects::nonNull).flatMap(Collection::stream).collect(Collectors.toList()))));
         }
 
         return ResponseEntity.ok(responseEntity);
@@ -247,6 +250,7 @@ public class UserGroupController
         UserGroup userGroup = UserGroup.builder().build();
         userGroup.setGroupName(name);
         userGroup.setJoinGroup(joinGroup);
+        userGroup.setDeleted(GlobalConstants.NOT_DELETED);
         Page<UserGroupListDTO> userGroupListDTOS = userGroupService.paginQuery(userGroup, pageRequest);
         if (Objects.isNull(userGroupListDTOS)) {
             return new TableResultResponse<>(0, null);

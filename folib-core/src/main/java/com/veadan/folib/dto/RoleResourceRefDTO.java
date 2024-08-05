@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -51,19 +52,33 @@ public class RoleResourceRefDTO implements Serializable,Cloneable {
      * 存储空间权限
      */
     @ApiModelProperty(name = "存储空间权限", notes = "")
-    private String storagePrivilege;
     private List<String> storagePrivileges;
     /**
      * 仓库权限
      */
     @ApiModelProperty(name = "仓库权限", notes = "")
-    private String repositoryPrivilege;
     private List<String> repositoryPrivileges;
     /**
      * 路径权限
      */
     @ApiModelProperty(name = "路径权限", notes = "")
-    private String pathPrivilege;
     private List<String> pathPrivileges;
 
+    public void setStoragePrivileges(String storagePrivileges) {
+        if (storagePrivileges != null) {
+            this.storagePrivileges = Arrays.asList(storagePrivileges.split(","));
+        }
+    }
+
+    public void setRepositoryPrivileges(String repositoryPrivileges) {
+        if (repositoryPrivileges != null) {
+            this.repositoryPrivileges = Arrays.asList(repositoryPrivileges.split(","));
+        }
+    }
+
+    public void setPathPrivileges(String pathPrivileges) {
+        if (pathPrivileges != null) {
+            this.pathPrivileges = Arrays.asList(pathPrivileges.split(","));
+        }
+    }
 }

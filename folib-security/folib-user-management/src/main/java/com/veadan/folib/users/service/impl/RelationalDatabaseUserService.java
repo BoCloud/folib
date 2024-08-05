@@ -226,6 +226,8 @@ public class RelationalDatabaseUserService implements UserService
                 resourceRefs.add(RoleResourceRef.builder().roleId(role.getRoleName()).refType(GlobalConstants.ROLE_TYPE_USER).entityId(user.getUuid()).createTime(date).build());
             });
             roleResourceRefService.saveBath(resourceRefs);
+            //有权限变更，删除缓存
+            folibRoleService.deleteUserRoleCache(Collections.singletonList(user.getUuid()));
         }
 
         return folibUserService.save(userEntity);

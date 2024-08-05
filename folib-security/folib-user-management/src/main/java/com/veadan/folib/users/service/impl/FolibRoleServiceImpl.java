@@ -3,6 +3,7 @@ package com.veadan.folib.users.service.impl;
 import com.veadan.folib.authorization.AuthorizationConfigFileManager;
 import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.authorization.dto.RoleDto;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.dto.*;
 import com.veadan.folib.entity.Resource;
@@ -48,7 +49,8 @@ public class FolibRoleServiceImpl implements FolibRoleService {
     private RoleResourceRefService roleResourceRefService;
     @Inject
     private FolibRoleService folibRoleService;
-
+    @Inject
+    private DistributedCacheComponent distributedCacheComponent;
     @Override
     public FolibRole queryByRoleId(List<String> roleIds) {
         return null;
@@ -339,6 +341,12 @@ public class FolibRoleServiceImpl implements FolibRoleService {
         String roleId = roleInfo.getId();
         //保存权限关系
         roleResourceRefService.savePermissions(roleForm, roleId, username);
+
+        List<AccessUsersDTO> users = roleForm.getPrivileges().getUsers();
+        if (CollectionUtils.isNotEmpty(users)) {
+            List<String> userIds = users.stream().map(AccessUsersDTO::getId).collect(Collectors.toList());
+            deleteUserRoleCache(userIds);
+        }
     }
 
     @Override
@@ -359,6 +367,20 @@ public class FolibRoleServiceImpl implements FolibRoleService {
         roleResourceRefService.deleteByRoleId(roleId);
         //保存权限关系
         roleResourceRefService.savePermissions(roleDTO, roleId, username);
+
+        List<AccessUsersDTO> users = roleDTO.getPrivileges().getUsers();
+        if (CollectionUtils.isNotEmpty(users)) {
+            List<String> userIds = users.stream().map(AccessUsersDTO::getId).collect(Collectors.toList());
+            deleteUserRoleCache(userIds);
+        }
+    }
+
+    @Override
+    public void deleteUserRoleCache(List<String> userIds) {
+        userIds.parallelStream().forEach(userId -> {
+            String roleKey = String.format("user_role_%s", userId);
+            distributedCacheComponent.delete(roleKey);
+        });
     }
 
     @Override

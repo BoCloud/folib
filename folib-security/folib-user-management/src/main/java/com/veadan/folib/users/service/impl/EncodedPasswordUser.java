@@ -72,6 +72,16 @@ public class EncodedPasswordUser implements User {
     }
 
     @Override
+    public Set<String> getUserGroups() {
+        return user.getUserGroups();
+    }
+
+    @Override
+    public Set<String> getUserGroupIds() {
+        return user.getUserGroupIds();
+    }
+
+    @Override
     public String getSecurityTokenKey() {
         return user.getSecurityTokenKey();
     }

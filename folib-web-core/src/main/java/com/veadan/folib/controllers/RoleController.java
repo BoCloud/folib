@@ -1,5 +1,6 @@
 package com.veadan.folib.controllers;
 
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.users.UserController;
 import com.veadan.folib.controllers.users.support.Permissions;
@@ -80,7 +81,7 @@ public class RoleController extends BaseController {
     private RoleResourceRefService roleResourceRefService;
     @Inject
     private FolibRoleService folibRoleService;
-    
+
     @ApiOperation(value = "获取用户的关联角色")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "Returns account details"),
                             @ApiResponse(code = 403, message = "Unauthenticated access or user account has been disabled"),

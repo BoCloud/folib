@@ -1,17 +1,24 @@
 package com.veadan.folib.users.security;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.authorization.AuthorizationConfigFileManager;
 import com.veadan.folib.authorization.domain.RoleData;
 import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.authorization.dto.Role;
+import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.dto.PermissionsDTO;
 import com.veadan.folib.entity.FolibRole;
 import com.veadan.folib.users.domain.SystemRole;
@@ -37,7 +44,8 @@ public class AuthoritiesProvider
     private AuthorizationConfigFileManager authorizationConfigFileManager;
     @Inject
     private FolibRoleService folibRoleService;
-
+    @Inject
+    private DistributedCacheComponent distributedCacheComponent;
     @PostConstruct
     void init() throws IOException
     {
@@ -75,6 +83,34 @@ public class AuthoritiesProvider
         }
 
         return new RuntimeRole(role, (a) -> new AuthenticatedAccessModel(a));
+    }
+
+    public Set<Role> getRuntimeRole(String roleId, String username)
+    {
+        String roleKey = String.format("user_role_%s", username);
+        String roleStr = distributedCacheComponent.get(roleKey);
+        Set<RoleData> roles;
+        if (StrUtil.isEmpty(roleStr)) {
+            roles = authorizationConfigService.get(username)
+                    .getRoles();
+            distributedCacheComponent.put(roleKey, JSONUtil.toJsonStr(roles));
+        }else {
+            List<RoleDto> roleDtos = JSONUtil.toList(JSONUtil.parseArray(roleStr), RoleDto.class);
+            roles = roleDtos.stream().map(RoleData::new).collect(Collectors.toSet());
+        }
+
+        Set<Role> roleSet = new HashSet<>();
+        return roles.stream().map(r -> {
+            if (SystemRole.ADMIN.name().equals(r.getName())) {
+                roleSet.add(new RuntimeRole(r, (a) -> new AdminAccessModel()));
+            }else if (SystemRole.ANONYMOUS.name().equals(r.getName())) {
+                roleSet.add(new RuntimeRole(r, AnonymousAccessModel::new));
+            }else {
+                roleSet.add(new RuntimeRole(r, AuthenticatedAccessModel::new));
+            }
+            return roleSet;
+        }).flatMap(Collection::stream).collect(Collectors.toSet());
+
     }
 
 }

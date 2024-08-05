@@ -188,6 +188,12 @@
             <if test="roleId != null and roleId != ''">
                 and fr.id = #{roleId}
             </if>
+            <if test="username != null and username != ''">
+               and rrr.entity_id in (
+                select id from folib_user fu where fu.id = #{username}
+                union all
+                select id from user_group_ref ugr where ugr.user_id = #{username})
+            </if>
     </select>
     <select id="queryRoleByUserId" resultType="com.veadan.folib.entity.RoleResourceRef">
         select

@@ -65,6 +65,8 @@ public interface FolibRoleService{
 
     void updateRoleInfo(RoleDTO roleDTO, String roleId, String username);
 
+    void deleteUserRoleCache(List<String> userIds);
+
     List<FolibRole> queryRoles(FolibRole build);
 
     /**

@@ -39,7 +39,9 @@ public class UserOutput
     private String securityTokenKey;
 
     private LinkedHashSet<String> authorities;
-    private String userGroups;
+
+    private Set<String> userGroups;
+    private Set<String> userGroupIds;
 
     public String getEmail() {
         return email;
@@ -93,6 +95,8 @@ public class UserOutput
     {
         final UserOutput output = new UserOutput();
         output.setEnabled(user.isEnabled());
+        output.setUserGroups(user.getUserGroups());
+        output.setUserGroupIds(user.getUserGroupIds());
         output.setRoles(user.getRoles()
                             .stream()
                             .map(SecurityRole::getRoleName)
@@ -138,5 +142,20 @@ public class UserOutput
 
     public void setAvatar(String avatar) {
         this.avatar = avatar;
+    }
+
+    public Set<String> getUserGroups() {
+        return userGroups;
+    }
+
+    public void setUserGroups(Set<String> userGroups) {
+        this.userGroups = userGroups;
+    }
+    public Set<String> getUserGroupIds() {
+        return userGroupIds;
+    }
+
+    public void setUserGroupIds(Set<String> userGroupIds) {
+        this.userGroupIds = userGroupIds;
     }
 }

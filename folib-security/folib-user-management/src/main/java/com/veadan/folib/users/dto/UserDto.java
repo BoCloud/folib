@@ -45,6 +45,8 @@ public class UserDto
     private Set<String> roles = new HashSet<>();
 
     private Set<Long> groupIds = new HashSet<>();
+    private Set<String> userGroups = new HashSet<>();
+    private Set<String> userGroupIds = new HashSet<>();
 
     private String securityTokenKey;
 
@@ -232,6 +234,7 @@ public class UserDto
         return avatar;
     }
 
+
     public void setAvatar(String avatar) {
         this.avatar = avatar;
     }
@@ -243,5 +246,17 @@ public class UserDto
 
     public void setOriginalPassword(String originalPassword) {
         this.originalPassword = originalPassword;
+    }
+    public Set<String> getUserGroups() {
+        return userGroups;
+    }
+
+    @Override
+    public Set<String> getUserGroupIds() {
+        return userGroupIds;
+    }
+
+    public void setUserGroups(Set<String> userGroups) {
+        this.userGroups = userGroups;
     }
 }

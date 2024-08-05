@@ -33,16 +33,27 @@ public class UserDTO
 
     private String avatar;
 
+    private Set<String> userGroups;
+    private Set<String> userGroupIds;
     private Set<String> roles;
 
     private String securityTokenKey;
-    private String userGroups;
 
     private LinkedHashSet<String> authorities;
-
+    public void setUserGroups(String userGroups) {
+        if (userGroups != null) {
+            this.userGroups = new HashSet<>(Arrays.asList(userGroups.split(",")));
+        }
+    }
     public void setRoles(String roles) {
         if (roles != null) {
             this.roles = new HashSet<>(Arrays.asList(roles.split(",")));
+        }
+    }
+
+    public void setUserGroupIds(String userGroupIds) {
+        if (userGroupIds != null) {
+            this.userGroupIds = new HashSet<>(Arrays.asList(userGroupIds.split(",")));
         }
     }
 }

@@ -69,8 +69,8 @@
             rrr.role_id,
             rrr.resource_type,
             group_concat(distinct rrr.storage_privilege) as storagePrivileges,
-            group_concat(distinct rrr.repository_privilege) as repositoryPrivilege,
-            group_concat(distinct rrr.path_privilege) as pathPrivilege
+            group_concat(distinct rrr.repository_privilege) as repositoryPrivileges,
+            group_concat(distinct rrr.path_privilege) as pathPrivileges
         from
             role_resource_ref rrr
         where

@@ -215,6 +215,8 @@
     <select id="queryUser" parameterType="com.veadan.folib.entity.FolibUser" resultType="com.veadan.folib.dto.UserDTO">
         SELECT
         fu.*,
+        GROUP_CONCAT(distinct ug.id) AS userGroupIds,
+        GROUP_CONCAT(distinct ug.group_name) AS userGroups,
         GROUP_CONCAT(distinct rrr.role_id) AS roles,
         GROUP_CONCAT(DISTINCT CONCAT_WS('', rrr.storage_privilege, rrr.repository_privilege, rrr.path_privilege)) AS authorities
         FROM folib_user fu
@@ -258,9 +260,11 @@
         </if>
         ) rrr
         ON fu.id = rrr.user_id
+        left join user_group_ref ugr on fu.id = ugr.user_id
+        left join user_group ug on ug.id = ugr.user_group_id
         <where>
             <if test="id != null and id != ''">
-                and id = #{id}
+                and fu.id = #{id}
             </if>
             <if test="username != null and username != ''">
                 and username = #{username}
@@ -285,21 +289,6 @@
             </if>
             <if test="sourceId != null and sourceId != ''">
                 and source_id = #{sourceId}
-            </if>
-            <if test="deleted != null and deleted != ''">
-                and deleted = #{deleted}
-            </if>
-            <if test="createBy != null and createBy != ''">
-                and create_by = #{createBy}
-            </if>
-            <if test="createTime != null">
-                and create_time = #{createTime}
-            </if>
-            <if test="updateBy != null and updateBy != ''">
-                and update_by = #{updateBy}
-            </if>
-            <if test="updateTime != null">
-                and update_time = #{updateTime}
             </if>
         </where>
         group by fu.id

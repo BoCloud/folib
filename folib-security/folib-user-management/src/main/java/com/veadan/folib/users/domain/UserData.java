@@ -42,6 +42,8 @@ public class UserData implements Serializable, User
     private final Set<SecurityRole> roles;
 
     private Set<Long> groupIds = new HashSet<>();
+    private Set<String> userGroups = new HashSet<>();
+    private Set<String> userGroupIds = new HashSet<>();
     private final String securityTokenKey;
 
     private final LocalDateTime lastUpdate;
@@ -130,6 +132,16 @@ public class UserData implements Serializable, User
         return groupIds != null ? new HashSet<>(groupIds)
                 : new HashSet<>();
 
+    }
+
+    @Override
+    public Set<String> getUserGroups() {
+        return userGroups;
+    }
+
+    @Override
+    public Set<String> getUserGroupIds() {
+        return userGroupIds;
     }
 
     @Override

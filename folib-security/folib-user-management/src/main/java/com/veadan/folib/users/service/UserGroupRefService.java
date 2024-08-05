@@ -56,7 +56,7 @@ public interface UserGroupRefService{
      */
     int saveBath(List<UserGroupRef> entities);
 
-    RoleResourceRefDTO queryPrivilegeByGroup(Long groupId, String refType, List<String> roleIds);
+    List<RoleResourceRefDTO> queryPrivilegeByGroup(Long groupId, String refType, List<String> roleIds);
 
     void deleteByUserGroupId(Long id);
     void deleteByUserId(String userId);

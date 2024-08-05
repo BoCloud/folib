@@ -89,7 +89,7 @@ public class UserGroupRefServiceImpl implements UserGroupRefService {
     }
 
     @Override
-    public RoleResourceRefDTO queryPrivilegeByGroup(Long groupId, String refType, List<String> roleIds) {
+    public List<RoleResourceRefDTO> queryPrivilegeByGroup(Long groupId, String refType, List<String> roleIds) {
         return userGroupRefMapper.queryPrivilegeByGroup(groupId, refType, roleIds);
     }
 

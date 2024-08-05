@@ -8,6 +8,7 @@ import com.veadan.folib.data.domain.DomainEntity;
 import com.veadan.folib.gremlin.adapters.DateConverter;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -34,13 +35,15 @@ public class UserEntity extends DomainEntity implements User
     private Boolean enabled = true;
 
     private String email;
-
     private String avatar;
 
     @Relationship(type = USER_HAS_SECURITY_ROLES, direction = OUTGOING)
     private Set<SecurityRole> roles = new HashSet<>();
 
     private Set<Long> groupIds = new HashSet<>();
+
+    private Set<String> userGroups;
+    private Set<String> userGroupIds;
     private String securityTokenKey;
 
     @Convert(DateConverter.class)
@@ -49,8 +52,6 @@ public class UserEntity extends DomainEntity implements User
     private String sourceId;
 
     private String userType="general";
-
-    private String userGroups;
 
     @Override
     public String getUserType() {
@@ -188,5 +189,21 @@ public class UserEntity extends DomainEntity implements User
 
     public void setOriginalPassword(String originalPassword) {
         this.originalPassword = originalPassword;
+    }
+
+    public Set<String> getUserGroups() {
+        return userGroups;
+    }
+
+    public void setUserGroups(Set<String> userGroups) {
+        this.userGroups = userGroups;
+    }
+
+    public Set<String> getUserGroupIds() {
+        return userGroupIds;
+    }
+
+    public void setUserGroupIds(Set<String> userGroupIds) {
+        this.userGroupIds = userGroupIds;
     }
 }

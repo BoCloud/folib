@@ -144,10 +144,12 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         List<AccessResourcesDTO> formResources = roleForm.getResources();
         List<Resource> resources = ResourceConvert.INSTANCE.formToDtoS(formResources);
         List<Resource> allResource = resourceService.findResources(resources);
-        List<Resource> addResources = resources.stream().filter(resource -> allResource.stream().noneMatch(resource1 -> resource.getStorageId().equals(resource1.getStorageId()) && resource.getRepositoryId().equals(resource1.getRepositoryId()) && resource.getPath().equals(resource1.getPath()))).collect(Collectors.toList());
+        List<Resource> addResources = resources.stream().filter(resource -> allResource.stream().noneMatch(resource1 -> resource.getStorageId().equals(resource1.getStorageId()) && Objects.equals(resource.getRepositoryId(), resource1.getRepositoryId()) && Objects.equals(resource.getPath(), resource1.getPath()))).collect(Collectors.toList());
         //资源不存在则创建
-        resourceService.saveBatch(addResources);
-        allResource.addAll(addResources);
+        if (CollectionUtils.isNotEmpty(addResources)) {
+            resourceService.saveBatch(addResources);
+            allResource.addAll(addResources);
+        }
 
         Map<String, Resource> pathMap = allResource.stream().filter(resource -> !Objects.equals(resource.getPath(), null) && !resource.getPath().isEmpty()).collect(Collectors.toMap(Resource::getPath, resource -> resource, (k1, k2)->k1));
         Map<String, Resource> repositoryMap = allResource.stream().filter(resource -> Objects.equals(resource.getPath(), null) || resource.getPath().isEmpty()).filter(resource ->  !Objects.equals(resource.getRepositoryId(), null) && !resource.getRepositoryId().isEmpty()).collect(Collectors.toMap(Resource::getRepositoryId, resource -> resource));

@@ -74,5 +74,5 @@ public interface UserGroupRefMapper extends CommonMapper<UserGroupRef> {
      */
     int deleteById(Long id);
 
-     RoleResourceRefDTO queryPrivilegeByGroup(@Param("entityId")Long groupId,@Param("refType") String refType, @Param("roleIds") List<String> roleIds);
+     List<RoleResourceRefDTO> queryPrivilegeByGroup(@Param("entityId")Long groupId,@Param("refType") String refType, @Param("roleIds") List<String> roleIds);
  }
