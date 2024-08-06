@@ -50,4 +50,6 @@ export default {
     'LastTenArtifactUpdates': '近10次更新制品数据视图',
     'Each': '个',
     'RefreshImmediately':'立即刷新',
+    'DeviceTotal':'共',
+    'Device':'个设备',
 }

@@ -50,4 +50,6 @@ export default {
     'LastTenArtifactUpdates': 'Last 10 updates to the artifact data view',
     'Each': 'Each',
     'RefreshImmediately':'Refresh immediately',
+    'DeviceTotal':'Total',
+    'Device':'device',
 }

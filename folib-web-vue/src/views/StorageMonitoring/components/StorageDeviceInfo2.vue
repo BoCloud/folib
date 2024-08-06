@@ -5,8 +5,11 @@
 		<template #title>
 			<h6 class="font-semibold m-0">{{ $t('StorageMonitoring.StorageDevice') }}</h6>
 		</template>
+		<!-- <template #extra>
+			<a-pagination :total="50" show-less-items />
+		</template> -->
 		<a-list item-layout="vertical" size="large" :data-source="statsList"
-			:pagination="statsList.length === 0 ? false : { pageSize: 1, total: statsList.length, showLessItems: true }">
+			:pagination="statsList.length === 0 ? false : { pageSize: 1, total: statsList.length, showLessItems: true, showTotal:total => $t('StorageMonitoring.DeviceTotal') + ` ${total} ` + $t('StorageMonitoring.Device')}">
 			<a-list-item slot="renderItem" :key="index" slot-scope="item, index">
 				<a-row :gutter="[24, 24]">
 					<a-col :span="24" :lg="8" :xl="8" class="stat-col mb-5" v-for="(stat, i) in item" :key="i"

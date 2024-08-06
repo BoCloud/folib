@@ -181,7 +181,8 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
             Example.Criteria criteria = example.createCriteria();
             criteria.andEqualTo("nodeId", getHostname());
         }
-        example.setOrderByClause("latest_download_time asc, size desc");
+        //数据量大时，排序影响查询速度
+//        example.setOrderByClause("latest_download_time asc, size desc");
         PageHelper.startPage(page, limit);
         return artifactCacheRecordMapper.selectByExample(example);
     }

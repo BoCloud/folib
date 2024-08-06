@@ -29,8 +29,10 @@
 		<a-col :span="24">
 			<a-row :gutter="[24, 24]" type="flex" align="stretch">
 				<a-col :span="24" :lg="10" class="mb-24">
-					<CardBarChart :data="barChartData" :storageMonitoringData="storageMonitoringData"
-						:storageDeviceCount="storageDeviceCount" />
+					<CardChartMixed :data="mixedChartData" :storageMonitoringData="storageMonitoringData"
+					:storageDeviceCount="storageDeviceCount" />
+					<!-- <CardBarChart :data="barChartData" :storageMonitoringData="storageMonitoringData"
+						:storageDeviceCount="storageDeviceCount" /> -->
 				</a-col>
 				<a-col :span="24" :lg="14" class="mb-24">
 					<CardLineChart :data="lineChartData" :storageMonitoringData="storageMonitoringData" />
@@ -57,6 +59,7 @@ import ChartMixed from '@/components/Charts/ChartMixed';
 import ChartDoughnut from '@/components/Charts/ChartDoughnut';
 import ChartLine from '@/components/Charts/ChartLine';
 import CardBarChart from './CardBarChart';
+import CardChartMixed from './CardChartMixed';
 import CardLineChart from './CardLineChart';
 import WidgetCounter from '@/components/Widgets/WidgetCounter';
 
@@ -81,6 +84,7 @@ export default ({
 		WidgetCounter,
 		ChartLine,
 		CardBarChart,
+		CardChartMixed,
 		CardLineChart
 	},
 	watch: {
@@ -130,14 +134,27 @@ export default ({
 						weight: 5,
 						tension: 0.4,
 						borderWidth: 0,
-						pointBackgroundColor: "#1890FF",
-						borderColor: "#1890FF",
-						backgroundColor: '#1890FF',
+						pointBackgroundColor: "#141414",
+						borderColor: "#141414",
+						backgroundColor: '#141414',
 						borderRadius: 4,
 						borderSkipped: false,
 						data: [],
 						maxBarThickness: 10,
 					},
+					{
+						type: "line",
+						label: '',
+						tension: 0.4,
+						borderWidth: 0,
+						pointRadius: 0,
+						pointBackgroundColor: "#1890FF",
+						borderColor: "#1890FF",
+						borderWidth: 2,
+						backgroundColor: null,
+						data: [],
+						fill: true,
+					}
 				],
 			},
 			barChartData: {
@@ -347,6 +364,10 @@ export default ({
 				this.barChartData.labels = []
 				this.barChartData.datasets[0].data = []
 
+				this.mixedChartData.labels = []
+				this.mixedChartData.datasets[0].data = []
+				this.mixedChartData.datasets[1].data = []
+
 				this.lineChartData.labels = []
 				this.lineChartData.datasets[0].data = []
 				this.lineChartData.datasets[1].data = []
@@ -354,6 +375,10 @@ export default ({
 					let storage = this.storageData[index]
 					this.barChartData.labels.push(storage.createDay)
 					this.barChartData.datasets[0].data.push(this.fileSizeConverUnit(storage.filesSize))
+
+					this.mixedChartData.labels.push(storage.createDay)
+					this.mixedChartData.datasets[0].data.push(this.fileSizeConverUnit(storage.filesSize))
+					this.mixedChartData.datasets[1].data.push(this.fileSizeConverUnit(storage.artifactsSize))
 
 					this.lineChartData.labels.push(storage.createDay)
 					this.lineChartData.datasets[0].data.push(storage.filesCount)

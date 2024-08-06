@@ -16,6 +16,7 @@
 				type: Object,
 				default: function () {
 					return {
+						gradientStroke1: null,
 						labels: ["A", "B", "C"],
 						datasets: [
 							{
@@ -32,6 +33,19 @@
 								data: [10, 20, 30],
 								maxBarThickness: 10,
 							},
+							{
+								type: "line",
+								label: "Referral",
+								tension: 0.4,
+								borderWidth: 0,
+								pointRadius: 0,
+								pointBackgroundColor: "#1890FF",
+								borderColor: "#1890FF",
+								borderWidth: 3,
+								backgroundColor: this.gradientStroke1,
+								data: [10, 20, 30],
+								fill: true,
+							}
 						],
 					}
 				}
@@ -56,13 +70,16 @@
 			},
 		},
 		mounted () { 
+			
     	let ctx = this.$refs.chart.getContext("2d");
 
-			var gradientStroke1 = ctx.createLinearGradient(0, 230, 0, 50);
+			this.gradientStroke1 = ctx.createLinearGradient(0, 230, 0, 50);
 
-			gradientStroke1.addColorStop(1, 'rgba(24, 144, 255, .3)');
-			gradientStroke1.addColorStop(0.2, 'rgba(24, 144, 255, 0)');
-			gradientStroke1.addColorStop(0, 'rgba(24, 144, 255, 0)'); // Primary color
+			this.gradientStroke1.addColorStop(1, 'rgba(24, 144, 255, .3)');
+			this.gradientStroke1.addColorStop(0.2, 'rgba(24, 144, 255, 0)');
+			this.gradientStroke1.addColorStop(0, 'rgba(24, 144, 255, 0)'); // Primary color
+
+			this.data.datasets[1].backgroundColor = this.gradientStroke1
 
 			this.chart = new Chart(ctx, {
 					data: this.data,

@@ -15,6 +15,7 @@
 			<a-badge color="primary" class="badge-dot-secondary" :text="$t('StorageMonitoring.ArtifactsCount')" />
 		</template>
 		<chart-line :height="310" :data="lineChartData"></chart-line>
+		<div class="chart-tips">{{ $t('StorageMonitoring.LastTenArtifactUpdates') }}</div>
 	</a-card>
 
 </template>
@@ -64,3 +65,13 @@
 	})
 
 </script>
+
+<style lang="scss" scoped>
+.dashboard-bar-line {
+	height: 100%;
+	.chart-tips {
+		width: 100%;
+		text-align: center;
+	}
+}
+</style>
