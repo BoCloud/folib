@@ -242,7 +242,7 @@
                   <a-col :span="24" :md="8" class="ml-auto"
                          style="display: flex; align-items: center; justify-content: flex-end">
                     <!--  <span class="mr-15">{{ item.enabled ? $t('Users.TurnOn') : $t('Users.ShutDown') }}</span>-->
-                    <a-checkbox :disabled="userNotEdit" v-model="item.enabled" @change="groupChange($event, item.id, index)" />
+                    <a-checkbox :disabled="userNotEdit" v-model="item.enabled" @change="groupChange($event, item.id)" />
                   </a-col>
                 </a-row>
               </div>
@@ -392,7 +392,7 @@ export default ({
         })
         const userGroupIds = res.user.userGroupIds || []
         this.groupList.forEach(item => {
-            item.enabled = userGroupIds.indexOf(item.id) > -1;
+          this.$set(item, 'enabled', userGroupIds.indexOf(`${item.id}`) > -1)
         })
         this.currentUser = res
       })
@@ -517,8 +517,7 @@ export default ({
         })
       }
     },
-    groupChange(val, id, index) {
-      this.groupList[index].enabled = val
+    groupChange(val, id) {
       if (val && !this.currentUser.user.userGroupIds.includes(id)) {
           this.currentUser.user.userGroupIds.push(id)
       } else {
