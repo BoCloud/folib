@@ -95,4 +95,10 @@ public interface ArtifactCacheRecordService {
      * @param repositoryPath 制品
      */
     void verifySourceRepositoryPath(RepositoryPath repositoryPath);
+
+    /**
+     * 批量删除制品缓存记录
+     * @param records 制品缓存记录
+     */
+    void batchDeleteArtifactCacheRecord(List<ArtifactCacheRecord> records);
 }

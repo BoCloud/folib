@@ -1144,4 +1144,9 @@ textarea.ant-time-picker-input {
 	background-color: transparent;
 }
 
+.ant-steps-horizontal:not(.ant-steps-label-vertical) .ant-steps-item-description {
+	max-width: 240px;
+}
+
+
 // / Overriding Ant Design's default variables, such as colors, shadows and... .

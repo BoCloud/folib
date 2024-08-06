@@ -147,6 +147,28 @@ let routes = [
 		component: () => import('../views/Users/Users.vue'),
 	},
 	{
+		path: '/permissions',
+		name: 'permissions',
+		layout: "dashboard",
+		meta: {
+			title: 'router.Permissions',
+			sidebarMap: ['router.Permissions', 'router.PermissionList'],
+			breadcrumbs: ['router.Permissions', 'router.PermissionList'],
+		},
+		component: () => import('../views/Permissions/index.vue'),
+	},
+	{
+		path: '/groups',
+		name: 'groups',
+		layout: "dashboard",
+		meta: {
+			title: 'router.Groups',
+			sidebarMap: ['router.Groups', 'router.GroupList'],
+			breadcrumbs: ['router.Groups', 'router.GroupList'],
+		},
+		component: () => import('../views/Groups/index.vue'),
+	},
+	{
 		path: '/settings',
 		name: 'settings',
 		layout: "dashboard",
