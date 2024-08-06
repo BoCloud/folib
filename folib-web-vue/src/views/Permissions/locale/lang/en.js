@@ -7,6 +7,7 @@ export default {
     'Groups': 'Groups',
     'Operation': 'Operation',
     'Edit': 'Edit Permission',
+    'View': 'View Permission',
     'Create': 'New Permission',
     'Resources': 'Resources',
     'ResourcesDesc': 'Select the resource types to which the permission applies',

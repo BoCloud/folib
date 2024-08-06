@@ -1,7 +1,7 @@
 <template>
     <div>
         <p class="tip">{{ $t(`Permissions.RepositoriesDesc`) }}</p>
-        <a-radio-group v-model="radioModel">
+        <a-radio-group v-model="radioModel" :disabled="isView">
             <a-radio-button value="StorageSpace">
                 {{ $t('Permissions.StorageSpace') }}
             </a-radio-button>
@@ -25,7 +25,7 @@
         </a-steps>
         <a-table
             v-if="!step"
-            :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }"
+            :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange, getCheckboxProps: getCheckboxProps }"
             :columns="tableColumns"
             :data-source="tableData"
             size="small"
@@ -54,7 +54,7 @@
                 class="table-custom"
             >
                 <div slot="includes" slot-scope="text, record">
-                    <div class="insert-item" :class="{ 'has-error': record.isInError}">
+                    <div v-if="!isView" class="insert-item" :class="{ 'has-error': record.isInError}">
                         <a-input
                             v-model="record.currentInPattern"
                             :placeholder="$t('Permissions.NewPatterns')"
@@ -76,6 +76,7 @@
                         >
                             {{ item }}
                             <a-icon
+                                v-if="!isView"
                                 type="close"
                                 class="close-icon"
                                 @click="record.includes.splice(index, 1)"
@@ -99,6 +100,10 @@ export default {
         storageList: {
             type: Array,
             default: () => []
+        },
+        isView: {
+            type: Boolean,
+            default: false
         },
     },
     data()
@@ -215,6 +220,13 @@ export default {
         },
         onSelectChange(selectedRowKeys) {
             this.selectedRowKeys = selectedRowKeys;
+        },
+        getCheckboxProps() {
+            return {
+                props: {
+                    disabled: this.isView
+                }
+            }
         },
         handleAddRowInPattern(record) {
             if (record.currentInPattern.trim()) {

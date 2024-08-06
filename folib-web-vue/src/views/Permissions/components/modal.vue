@@ -2,7 +2,7 @@
     <a-drawer
         placement="right"
         width="65%"
-        :title="(isEdit ? $t('Permissions.Edit') : $t('Permissions.Create'))"
+        :title="(isView ? $t('Permissions.View') : isEdit ? $t('Permissions.Edit') : $t('Permissions.Create'))"
         :visible="visible"
         @close="closeModal"
     >
@@ -18,6 +18,7 @@
                     <a-input
                         v-model="form.name"
                         :placeholder="$t('Permissions.EnterTheNameCreate')"
+                        :disabled="isView"
                         :maxLength="100"
                     />
                 </a-form-model-item>
@@ -32,6 +33,7 @@
                     ref="repositories"
                     :repositoriesList="repositoriesList"
                     :storageList="storageList"
+                    :isView="isView"
                 />
             </div>
             <div v-if="step === 1" class="by-flex by-col-stretch">
@@ -39,7 +41,7 @@
                     <div class="title">{{ $t(`Permissions.SelectedUser`) }}</div>
                     <div class="by-flex by-m-t-10 by-m-b-10">
                         <a-input v-model="userSearch" :placeholder="$t('Permissions.Search')" allow-clear class="by-w-300"></a-input>
-                        <a-button type="primary" icon="edit" class="by-m-l-10" @click="openSelectModal('USER')"/>
+                        <a-button type="primary" icon="edit" class="by-m-l-10" :disabled="isView" @click="openSelectModal('USER')"/>
                     </div>
                     <div class="selected-list">
                         <div
@@ -60,8 +62,8 @@
                     <div class="permission-item">
                         <div class="title">{{ $t(`Permissions.SelectedPermissions`) }}</div>
                         <div class="by-flex">
-                            <a-checkbox-group v-model="repositoriesCheckedList" :disabled="!userSelectList.length" :options="repositoriesOptions" @change="onRepositoriesChange" />
-                            <a-checkbox :checked="repositoriesCheckAll" :disabled="!userSelectList.length" @change="onRepositoriesCheckAllChange" class="by-m-l-10">
+                            <a-checkbox-group v-model="repositoriesCheckedList" :disabled="!userSelectList.length || isView" :options="repositoriesOptions" @change="onRepositoriesChange" />
+                            <a-checkbox :checked="repositoriesCheckAll" :disabled="!userSelectList.length || isView" @change="onRepositoriesCheckAllChange" class="by-m-l-10">
                                 {{ $t(`Permissions.SelectAll`) }}
                             </a-checkbox>
                         </div>
@@ -73,7 +75,7 @@
                     <div class="title">{{ $t(`Permissions.SelectedGroups`) }}</div>
                     <div class="by-flex by-m-t-10 by-m-b-10">
                         <a-input v-model="userSearch" :placeholder="$t('Permissions.Search')" allow-clear class="by-w-300"></a-input>
-                        <a-button type="primary" icon="edit" class="by-m-l-10" @click="openSelectModal('GROUP')"/>
+                        <a-button type="primary" icon="edit" class="by-m-l-10" :disabled="isView" @click="openSelectModal('GROUP')"/>
                     </div>
                     <div class="selected-list">
                         <div
@@ -94,8 +96,8 @@
                     <div class="permission-item">
                         <div class="title">{{ $t(`Permissions.SelectedPermissions`) }}</div>
                         <div class="by-flex">
-                            <a-checkbox-group v-model="repositoriesGroupCheckedList" :disabled="!groupSelectList.length" :options="repositoriesOptions" @change="onRepositoriesGroupChange" />
-                            <a-checkbox :checked="repositoriesGroupCheckAll" :disabled="!groupSelectList.length" @change="onRepositoriesGroupCheckAllChange" class="by-m-l-10">
+                            <a-checkbox-group v-model="repositoriesGroupCheckedList" :disabled="!groupSelectList.length || isView" :options="repositoriesOptions" @change="onRepositoriesGroupChange" />
+                            <a-checkbox :checked="repositoriesGroupCheckAll" :disabled="!groupSelectList.length || isView" @change="onRepositoriesGroupCheckAllChange" class="by-m-l-10">
                                 {{ $t(`Permissions.SelectAll`) }}
                             </a-checkbox>
                         </div>
@@ -103,7 +105,7 @@
                 </div>
             </div>
         </a-spin>
-        <div class="drawer-footer">
+        <div class="drawer-footer" v-if="!isView">
             <a-button :style="{ marginRight: '8px' }" @click="closeModal">
                 {{ $t(`Permissions.Cancel`) }}
             </a-button>
@@ -136,6 +138,7 @@ export default {
     {
         return {
             visible: false,
+            isView: false,
             isEdit: false,
             spinning: false,
             step: 0,
@@ -194,10 +197,11 @@ export default {
         }
     },
     methods: {
-        async openModal(id)
+        async openModal(id, isView)
         {
             this.visible = true;
             this.spinning = true;
+            this.isView = isView;
             this.isEdit = !!id;
             this.init()
             await this.getStorageList()

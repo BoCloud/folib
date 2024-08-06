@@ -6,6 +6,7 @@ export default {
     'AutoJoin': '自动加入',
     'AddGroup': '添加用户组',
     'EnterTheNameQuery': '输入名称查询',
+    'View': '查看用户组',
     'Edit': '编辑用户组',
     'Create': '创建用户组',
     'GroupSettings': '用户组设置',

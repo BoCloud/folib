@@ -25,33 +25,50 @@
                         type="link"
                         size="small"
                         :disabled="record.isDefault === '1'"
-                        @click="userCreate(record.id)"
+                        @click="userCreate(record.id, true)"
                     >{{enName}}</a-button>
                 </div>
                 <div slot="users" slot-scope="users">
                     <div v-if="users" class="by-flex">
                         <div
-                            v-for="(item, index) in users.split(',')"
+                            v-for="(item, index) in users.split(',').splice(0, 3)"
                             :key="index"
                             class="custom-tag"
                         >
                             {{ item }}
                         </div>
+                        <span class="by-f-w-600">
+                            <span v-if="users.split(',').length > 3">...</span>
+                            <!-- <span>({{ users.split(',').length }})</span>-->
+                        </span>
                     </div>
                 </div>
                 <div slot="userGroups" slot-scope="userGroups">
                     <div v-if="userGroups" class="by-flex">
                         <div
-                            v-for="(item, index) in userGroups.split(',')"
+                            v-for="(item, index) in userGroups.split(',').splice(0, 3)"
                             :key="index"
                             class="custom-tag"
                         >
                             {{ item }}
                         </div>
+                        <span class="by-f-w-600">
+                            <span v-if="userGroups.split(',').length > 3">...</span>
+                            <!--  <span>({{ userGroups.split(',').length }})</span>-->
+                        </span>
                     </div>
                 </div>
                 <div slot="operation" slot-scope="text, record">
-                    <div class="col-action">
+                    <div class="col-action by-flex">
+                        <a-button type="link" size="small" @click="userCreate(record.id)">
+                            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path class="fill-muted"
+                                      d="M13.5858 3.58579C14.3668 2.80474 15.6332 2.80474 16.4142 3.58579C17.1953 4.36683 17.1953 5.63316 16.4142 6.41421L15.6213 7.20711L12.7929 4.37868L13.5858 3.58579Z"
+                                      fill="#111827" />
+                                <path class="fill-muted"
+                                      d="M11.3787 5.79289L3 14.1716V17H5.82842L14.2071 8.62132L11.3787 5.79289Z" fill="#111827" />
+                            </svg>
+                        </a-button>
                         <a-popconfirm :title="$t('Setting.SureDelete')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
                                       @confirm="handleDelete(record.id)">
                             <a-button v-if="record.isDefault === '0'" type="link" size="small">
@@ -133,8 +150,8 @@ export default {
         this.queryList()
     },
     methods: {
-        userCreate(id) {
-            this.$refs.modal.openModal(id)
+        userCreate(id, isView) {
+            this.$refs.modal.openModal(id, isView)
         },
         searchPermissions() {
             this.page = 1

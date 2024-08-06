@@ -8,6 +8,7 @@ export default {
     'Users': '用户',
     'Groups': '用户组',
     'Operation': '操作',
+    'View': '查看权限',
     'Edit': '编辑权限',
     'Create': '添加权限',
     'Resources': '资源',
