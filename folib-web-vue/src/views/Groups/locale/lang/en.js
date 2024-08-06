@@ -29,5 +29,6 @@ export default {
     'Download': 'Download',
     'DeployCache': 'Deploy/Cache',
     'DeleteUpdate': 'Delete/Update',
+    'PromoDistribution': 'Promotion/Distribution',
 
 }

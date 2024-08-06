@@ -11,7 +11,7 @@ export default {
     'SetupManagement': '设置管理',
     'UserManagement': '用户管理',
     'Permissions': '权限管理',
-    'Groups': '组管理',
+    'Groups': '用户组管理',
     'GlobalSettings': '全局设置',
     'HealthMonitoring': '健康监测',
     'SeniorOperations': '高级运维',

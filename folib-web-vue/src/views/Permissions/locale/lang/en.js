@@ -13,6 +13,7 @@ export default {
     'UsersDesc': 'Select the users and their actions on the selected resources',
     'GroupsDesc': 'Select the groups and their actions on the selected resources',
     'EnterTheNameCreate': 'Enter a unique name',
+    'EnterTheNamePattern': 'Please enter uppercase and lowercase letters, _ or -',
     'AddRepositories': 'Add Repositories',
     'AddBuilds': 'Add Builds',
     'AddReleaseBundles': 'Add Release Bundles',
@@ -21,9 +22,9 @@ export default {
     'EditReleaseBundles': 'Edit Release Bundles',
     'RepositoriesDesc': 'Set a repository permission target to define what a user has access to view in the repository resource.',
     'SelectRepositories': 'Select Repositories',
-    'SetPatterns': 'Set Patterns (Optional)',
+    'SetPatterns': 'Set Path (Optional)',
     'SelectRepositoriesDesc': 'Select all the repositories to which you wish to apply the permissions.',
-    'RepositoriesPatternsDesc': 'Setting patterns applies to the artifacts inside the selected repositories.',
+    'RepositoriesPatternsDesc': 'Setting path applies to the artifacts inside the selected repositories.',
     'AvailableRepositories': 'Available Repositories',
     'SelectedRepository': 'Selected Repository',
     'AllRepositories': 'All Repositories',
@@ -33,8 +34,8 @@ export default {
     'PatternsTip': 'Simple comma separated wildcard patterns for existing and future repository artifact paths (with no leading slash).\n' +
         'Ant-style path expressions are supported (*, **, ?).\n' +
         'For example: org/apache/**',
-    'ExcludePatterns': 'Exclude Patterns',
-    'NewPatterns': 'New Patterns',
+    'ExcludePatterns': 'Exclude Path',
+    'NewPatterns': 'New Path',
     'Search': 'Search',
     'BundleTip': 'Set a Release Bundle permission target to define what a user has access to view in the Release Bundle resource.',
     'SelectBundle': 'Select Release Bundles Repositories',
@@ -66,6 +67,7 @@ export default {
     'Download': 'Download',
     'DeployCache': 'Deploy/Cache',
     'DeleteUpdate': 'Delete/Update',
+    'PromoDistribution': 'Promotion/Distribution',
     'SelectAll': 'Select All',
     'SelectUsers': 'Select Users',
     'SelectedGroups': 'Selected Groups',
@@ -74,4 +76,12 @@ export default {
     'SelectedGroupRepositories': 'Selected Group Repositories',
     'SelectedGroupBuilds': 'Selected Group Builds',
     'SelectedGroupBundles': 'Selected Group Release Bundles',
+    'SelectedPermissions': 'Selected Permissions',
+    'Repositories': 'Repositories',
+    'StorageSpace': 'StorageSpace',
+    'SelectStorageSpace': 'Select StorageSpace',
+    'SelectStorageSpaceDesc': 'Select all the storage space to which you wish to apply the permissions.',
+
+
+
 }

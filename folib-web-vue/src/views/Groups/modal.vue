@@ -6,136 +6,118 @@
         :visible="visible"
         @close="closeModal"
     >
-        <a-divider orientation="left">
-            {{ $t('Groups.GroupSettings') }}
-        </a-divider>
-        <div class="by-p-l-60">
-            <a-form-model
-                ref="ruleForm"
-                layout="inline"
-                :model="form"
-                :rules="rules"
-                :label-col="labelCol"
-                :wrapper-col="wrapperCol"
-            >
-                <a-form-model-item ref="name" :label="$t('Groups.GroupName')" prop="name">
-                    <a-input
-                        v-model="form.name"
-                        @blur="() => { $refs.name.onFieldBlur() }"
-                    />
-                </a-form-model-item>
-                <a-form-model-item ref="name" :label="$t('Groups.Description')" prop="description">
-                    <a-input
-                        v-model="form.description"
-                    />
-                </a-form-model-item>
-                <a-form-model-item ref="name" :label="$t('Groups.ExternalID')" prop="externalID">
-                    <a-input
-                        v-model="form.externalID"
-                    />
-                </a-form-model-item>
-            </a-form-model>
+        <a-spin :spinning="spinning">
             <a-divider orientation="left">
-                {{ $t('Groups.Roles') }}
+                {{ $t('Groups.GroupSettings') }}
             </a-divider>
-            <a-checkbox v-model="admin">
-                {{ $t('Groups.AdministerPlatform') }}
-            </a-checkbox>
-            <a-checkbox v-model="resources" :disabled="resourcesDisabled">
-                {{ $t('Groups.ManageResources') }}
-                <a-tooltip placement="topLeft" :title="$t('Groups.ManageResourcesDesc')">
-                    <a-icon type="question-circle" />
-                </a-tooltip>
-            </a-checkbox>
+            <div class="by-p-l-60">
+                <a-form-model
+                    ref="ruleForm"
+                    layout="inline"
+                    :model="form"
+                    :rules="rules"
+                    :label-col="labelCol"
+                    :wrapper-col="wrapperCol"
+                >
+                    <a-form-model-item ref="name" :label="$t('Groups.GroupName')" prop="name">
+                        <a-input
+                            v-model="form.name"
+                            @blur="() => { $refs.name.onFieldBlur() }"
+                        />
+                    </a-form-model-item>
+                    <a-form-model-item ref="name" :label="$t('Groups.Description')" prop="description">
+                        <a-input
+                            v-model="form.description"
+                        />
+                    </a-form-model-item>
+                    <!-- <a-form-model-item ref="name" :label="$t('Groups.ExternalID')" prop="externalID">
+                        <a-input
+                            v-model="form.externalID"
+                        />
+                    </a-form-model-item>-->
+                </a-form-model>
+                <!-- <a-divider orientation="left">
+                    {{ $t('Groups.Roles') }}
+                </a-divider>
+                <a-checkbox v-model="admin">
+                    {{ $t('Groups.AdministerPlatform') }}
+                </a-checkbox>
+                <a-checkbox v-model="resources" :disabled="resourcesDisabled">
+                    {{ $t('Groups.ManageResources') }}
+                    <a-tooltip placement="topLeft" :title="$t('Groups.ManageResourcesDesc')">
+                        <a-icon type="question-circle" />
+                    </a-tooltip>
+                </a-checkbox>-->
+                <a-divider orientation="left">
+                    {{ $t('Groups.Options') }}
+                </a-divider>
+                <a-checkbox v-model="auto">
+                    {{ $t('Groups.Automatically') }}
+                </a-checkbox>
+            </div>
             <a-divider orientation="left">
-                {{ $t('Groups.Options') }}
+                {{ $t('Groups.Users') }}
             </a-divider>
-            <a-checkbox v-model="auto" :disabled="autoDisabled">
-                {{ $t('Groups.Automatically') }}
-            </a-checkbox>
-        </div>
-        <a-divider orientation="left">
-            {{ $t('Groups.Users') }}
-        </a-divider>
-        <a-transfer
-            :data-source="mockData"
-            :target-keys="targetKeys"
-            :show-search="true"
-            :filter-option="(inputValue, item) => item.title.indexOf(inputValue) !== -1"
-            :show-select-all="false"
-            @change="onChange"
-        >
-            <template
-                slot="children"
-                slot-scope="{
-                    props: { direction, filteredItems, selectedKeys, disabled: listDisabled },
-                    on: { itemSelectAll, itemSelect },
-                }"
-            >
+            <div class="by-flex by-row-right by-m-b-10">
+                <a-input-search v-model="userSearchText" size="small" :placeholder="$t('Groups.EnterTheNameQuery')" @search="handleSearch()" class="by-w-200"/>
+            </div>
+            <a-table
+                :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }"
+                :columns="tableColumns"
+                :data-source="tableData"
+                size="small"
+                :pagination="{ pageSize: limit, current: page, total: total, showLessItems: true }"
+                :loading="loading"
+                @change="handleChangeTable"
+                :scroll="{ y: 500 }"
+            />
+            <template v-if="isEdit">
+                <a-divider orientation="left">
+                    {{ $t('Groups.GroupPermissions') }}
+                </a-divider>
                 <a-table
-                    :row-selection="getRowSelection({ disabled: listDisabled, selectedKeys, itemSelectAll, itemSelect })"
-                    :columns="direction === 'left' ? leftTableColumns : rightTableColumns"
-                    :data-source="filteredItems"
-                    size="small"
+                    :columns="i18nPermissionColumns"
+                    :data-source="permissionsList"
+                    :row-key="(r, i) => i.toString()"
                     :pagination="false"
-                    :style="{ pointerEvents: listDisabled ? 'none' : null }"
-                    :custom-row="
-                        ({ key, disabled: itemDisabled }) => ({
-                            on: {
-                                click: () => {
-                                    if (itemDisabled || listDisabled) return;
-                                    itemSelect(key, !selectedKeys.includes(key));
-                                },
-                            },
-                        })
-                    "
-                />
+                    :scroll="{ y: 300 }"
+                >
+                    <div slot="customTag" slot-scope="status">
+                        <div class="join-status" v-if="status">
+                            <a-icon type="check" />
+                        </div>
+                    </div>
+                </a-table>
             </template>
-        </a-transfer>
-        <a-divider orientation="left">
-            {{ $t('Groups.GroupPermissions') }}
-        </a-divider>
-        <a-tabs v-model="tabKey">
-            <a-tab-pane key="repositories" :tab="$t('Groups.Repositories')"></a-tab-pane>
-            <a-tab-pane key="builds" :tab="`${$t('Groups.Builds')}`"></a-tab-pane>
-            <a-tab-pane key="bundles" :tab="`${$t('Groups.ReleaseBundles')}`"></a-tab-pane>
-            <div slot="tabBarExtraContent">
-                <a-input v-model="searchText" :placeholder="$t('Permissions.Search')" allow-clear size="small">
-                    <a-icon slot="prefix" type="search" />
-                </a-input>
-            </div>
-        </a-tabs>
-        <a-table
-            :columns="i18nPermissionColumns"
-            :data-source="permissionsList"
-            :row-key="(r, i) => i.toString()"
-            :pagination="{ pageSize: limit, current: page, total: total, showLessItems: true }"
-        >
-            <div slot="responseStatus" slot-scope="responseStatus">
-                <a-tag color="#f50" v-if="responseStatus != 200">
-                    {{ $t('Setting.Error') }}
-                </a-tag>
-                <a-tag color="#87d068" v-else>
-                    {{responseStatus}}
-                </a-tag>
-            </div>
-        </a-table>
+        </a-spin>
+        <div class="drawer-footer">
+            <a-button :style="{ marginRight: '8px' }" @click="closeModal">
+                {{ $t(`Permissions.Cancel`) }}
+            </a-button>
+            <a-button type="primary" :loading="confirmLoading" @click="handleConfirm">
+                {{ $t(`Permissions.Confirm`) }}
+            </a-button>
+        </div>
     </a-drawer>
 </template>
 
 <script>
-import { difference } from "lodash";
+import { queryUser } from "@/api/users";
+import { getGroupDetail, createGroup, updateGroup } from "@/api/group";
 
 export default {
     name: "modal",
     data() {
         return {
             visible: false,
+            spinning: false,
             isEdit: false,
+            loading: false,
+            confirmLoading: false,
             form: {
+                id: '',
                 name: '',
                 description: '',
-                ExternalID: '',
             },
             labelCol: { span: 24 },
             wrapperCol: { span: 24 },
@@ -144,27 +126,12 @@ export default {
             resourcesDisabled: false,
             auto: false,
             autoDisabled: false,
-            mockData: [
-                {
-                    key: '1',
-                    title: 'User 1',
-                },
-            ],
-            targetKeys: [],
-            targetData: [],
-            leftTableColumns: [
-                {
-                    dataIndex: 'title',
-                    title: 'Name',
-                },
-            ],
-            rightTableColumns: [
-                {
-                    dataIndex: 'title',
-                    title: 'Name',
-                },
-            ],
-            tabKey: 'repositories',
+            page: 1,
+            limit: 10,
+            total: 0,
+            tableData: [],
+            selectedRowKeys: [],
+            userSearchText: '',
             searchText: '',
             permissionsColumns: [
                 {
@@ -180,31 +147,31 @@ export default {
                     i18nKey: 'Groups.Download',
                     dataIndex: 'download',
                     key: 'download',
-                    scopedSlots: { customRender: 'download' },
+                    scopedSlots: { customRender: 'customTag' },
                 },
                 {
                     title: '部署/缓存',
                     i18nKey: 'Groups.DeployCache',
                     dataIndex: 'deployCache',
                     key: 'deployCache',
-                    scopedSlots: { customRender: 'deployCache' },
+                    scopedSlots: { customRender: 'customTag' },
                 },
                 {
                     title: '删除/更新',
                     i18nKey: 'Groups.DeleteUpdate',
                     dataIndex: 'deleteUpdate',
                     key: 'deleteUpdate',
-                    scopedSlots: { customRender: 'deleteUpdate' },
+                    scopedSlots: { customRender: 'customTag' },
+                },
+                {
+                    title: '晋级/分发',
+                    i18nKey: 'Groups.PromoDistribution',
+                    dataIndex: 'promoDistribution',
+                    key: 'promoDistribution',
+                    scopedSlots: { customRender: 'customTag' },
                 },
             ],
-            sourceData: [
-                {
-                    name: 'test',
-                    download: 'test',
-                    deployCache: 'test',
-                    deleteUpdate: 'test'
-                }
-            ]
+            sourceData: []
         }
     },
     computed: {
@@ -228,7 +195,10 @@ export default {
             return this.sourceData.filter(item => {
                 return item.name.indexOf(this.searchText) !== -1;
             })
-        }
+        },
+        tableColumns() {
+            return [ { dataIndex: 'title', title: this.$t('Permissions.SingleName') } ]
+        },
     },
     watch: {
         admin(val) {
@@ -244,11 +214,16 @@ export default {
         }
     },
     methods: {
-        openModal(isEdit) {
+        openModal(id) {
             this.visible = true;
-            this.isEdit = isEdit;
+            this.isEdit = !!id;
+            this.getUsers()
+            if (id) this.getDetail(id)
         },
         closeModal() {
+            this.$refs.ruleForm.resetFields()
+            this.auto = false
+            this.selectedRowKeys = []
             this.visible = false;
         },
         onChange(nextTargetKeys) {
@@ -257,24 +232,79 @@ export default {
                 item => nextTargetKeys.indexOf(item.key) !== -1
             );
         },
-        getRowSelection({ disabled, selectedKeys, itemSelectAll, itemSelect }) {
-            return {
-                getCheckboxProps: item => ({ props: { disabled: disabled || item.disabled } }),
-                onSelectAll(selected, selectedRows) {
-                    const treeSelectedKeys = selectedRows
-                        .filter(item => !item.disabled)
-                        .map(({ key }) => key);
-                    const diffKeys = selected
-                        ? difference(treeSelectedKeys, selectedKeys)
-                        : difference(selectedKeys, treeSelectedKeys);
-                    itemSelectAll(diffKeys, selected);
-                },
-                onSelect({ key }, selected) {
-                    itemSelect(key, selected);
-                },
-                selectedRowKeys: selectedKeys,
-            };
+        getDetail(id)
+        {
+            this.spinning = true
+            getGroupDetail(id).then(res => {
+                console.log(res);
+                const { roleAccess, userGroupDTO } = res
+                this.form.id = id
+                this.form.name = userGroupDTO.groupName
+                this.form.description = userGroupDTO.description
+                this.selectedRowKeys = userGroupDTO.userIds
+                this.auto = userGroupDTO.joinGroup === '1'
+                this.sourceData = []
+                for (const key in roleAccess) {
+                    this.sourceData.push({
+                        name: key,
+                        download: roleAccess[key].includes('ARTIFACTS_RESOLVE'),
+                        deployCache: roleAccess[key].includes('ARTIFACTS_DEPLOY'),
+                        promoDistribution: roleAccess[key].includes('ARTIFACTS_PROMOTION'),
+                        deleteUpdate: roleAccess[key].includes('ARTIFACTS_DELETE')
+                    })
+                }
+            }).finally(() => {
+                this.spinning = false
+            })
         },
+        handleSearch() {
+            this.page = 1
+            this.getUsers()
+        },
+        handleChangeTable(pagination) {
+            if (pagination) this.page = pagination.current
+            this.querySearch()
+        },
+        getUsers()
+        {
+            this.loading = true
+            queryUser({username: this.userSearchText}, {page: this.page, limit: this.limit}).then(res => {
+                this.tableData = res.data.rows.map((item, index) => {
+                    return {
+                        key: item.username,
+                        title: item.username,
+                    }
+                })
+                this.total = res.data.total
+            }).finally(() => {
+                this.loading = false
+            })
+        },
+        onSelectChange(selectedRowKeys) {
+            this.selectedRowKeys = selectedRowKeys;
+        },
+        handleConfirm()
+        {
+            this.$refs.ruleForm.validate(validate => {
+                if (validate) {
+                    this.confirmLoading = true
+                    const params = {
+                        id: this.form.id,
+                        groupName: this.form.name,
+                        description: this.form.description,
+                        userIds: this.selectedRowKeys,
+                        joinGroup: this.auto ? '1' : '0'
+                    }
+                    const method = this.isEdit ? updateGroup : createGroup;
+                    method(params).then(res => {
+                        this.$emit('reset')
+                        this.closeModal()
+                    }).finally(() => {
+                        this.confirmLoading = false
+                    })
+                }
+            })
+        }
     }
 }
 </script>
