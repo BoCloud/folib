@@ -1,14 +1,17 @@
 package com.veadan.folib.users.service.impl;
 
+import com.veadan.folib.components.IdGenerateUtils;
 import com.veadan.folib.entity.Resource;
 import com.veadan.folib.mapper.ResourceMapper;
 import com.veadan.folib.users.service.ResourceService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import javax.inject.Inject;
 import javax.transaction.Transactional;
 import java.util.List;
 
@@ -22,6 +25,9 @@ import java.util.List;
 public class ResourceServiceImpl implements ResourceService {
     @Autowired
     private ResourceMapper resourceMapper;
+    @Inject
+    @Lazy
+    private IdGenerateUtils idGenerateUtils;
     
     /** 
      * 通过ID查询单条数据 
@@ -52,6 +58,7 @@ public class ResourceServiceImpl implements ResourceService {
      * @return 实例对象
      */
     public Resource insert(Resource resource){
+        resource.setId(idGenerateUtils.generateId("resourceId"));
         resourceMapper.insert(resource);
         return resource;
     }
@@ -79,8 +86,9 @@ public class ResourceServiceImpl implements ResourceService {
     }
 
     @Override
-    public int saveBatch(List<Resource> collect) {
-        return resourceMapper.insertBatch(collect);
+    public int saveBatch(List<Resource> resources) {
+        resources.forEach(resource -> resource.setId(idGenerateUtils.generateId("resourceId")));
+        return resourceMapper.insertBatch(resources);
     }
 
     @Override

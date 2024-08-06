@@ -33,7 +33,6 @@ public class Resource implements Serializable,Cloneable {
       * 主键
       */
      @Id
-     @GeneratedValue(generator = "JDBC",strategy = GenerationType.IDENTITY)
      @ApiModelProperty(name = "主键", notes = "")
      private Long id;
      /**

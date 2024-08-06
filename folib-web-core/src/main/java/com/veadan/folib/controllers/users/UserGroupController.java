@@ -22,6 +22,7 @@ import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.util.RSAUtils;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.*;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -100,6 +101,7 @@ public class UserGroupController
     @Inject
     private UserGroupRefService userGroupRefService;
 
+
     @ApiOperation(value = "用户组删除")
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_DELETE_USER_GROUP),
             @ApiResponse(code = 400, message = FAILED_DELETE_USER_GROUP),
@@ -147,8 +149,7 @@ public class UserGroupController
         if(userGroup == null) {
             return getFailedResponseEntity(HttpStatus.BAD_REQUEST, FAILED_CREATE_USER_GROUP, accept);
         }
-        //TODO 自定义id
-        //userGroup.setId(null);
+
         userGroupService.save(userGroup);
         List<String> userIds = userGroupForm.getUserIds();
         if(userIds != null && !userIds.isEmpty()) {

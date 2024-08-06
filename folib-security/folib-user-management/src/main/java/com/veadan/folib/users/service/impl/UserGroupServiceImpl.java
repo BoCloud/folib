@@ -1,5 +1,6 @@
 package com.veadan.folib.users.service.impl;
 
+import com.veadan.folib.components.IdGenerateUtils;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.dto.UserGroupDTO;
 import com.veadan.folib.dto.UserGroupListDTO;
@@ -7,11 +8,13 @@ import com.veadan.folib.entity.UserGroup;
 import com.veadan.folib.mapper.UserGroupMapper;
 import com.veadan.folib.users.service.UserGroupService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
+import javax.inject.Inject;
 import java.util.List;
 
 /**
@@ -23,7 +26,10 @@ import java.util.List;
 public class UserGroupServiceImpl implements UserGroupService {
     @Autowired
     private UserGroupMapper userGroupMapper;
-    
+    @Inject
+    @Lazy
+    private IdGenerateUtils idGenerateUtils;
+
     /** 
      * 通过ID查询单条数据 
      *
@@ -53,6 +59,7 @@ public class UserGroupServiceImpl implements UserGroupService {
      * @return 实例对象
      */
     public UserGroup save(UserGroup userGroup){
+        userGroup.setId(idGenerateUtils.generateId("userGroupId"));
         userGroupMapper.insert(userGroup);
         return userGroup;
     }

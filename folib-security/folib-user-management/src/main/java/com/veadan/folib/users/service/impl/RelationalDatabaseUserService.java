@@ -202,12 +202,12 @@ public class RelationalDatabaseUserService implements UserService
         userEntity.setAvatar(user.getAvatar());
 
         //维护用户组
-        Set<Long> groupIds = user.getGroupIds();
+        Set<String> groupIds = user.getUserGroupIds();
         if (!CollectionUtils.isEmpty(groupIds)) {
             userGroupRefService.deleteByUserId(user.getUuid());
             List<UserGroupRef> ref = new ArrayList<>();
             groupIds.forEach(item ->
-                    ref.add(UserGroupRef.builder().userGroupId(item).userId(user.getUuid()).createTime(date).build()));
+                    ref.add(UserGroupRef.builder().userGroupId(Long.valueOf(item)).userId(user.getUuid()).createTime(date).build()));
             userGroupRefService.saveBath(ref);
         }
         //维护用户角色
