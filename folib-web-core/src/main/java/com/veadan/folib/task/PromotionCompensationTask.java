@@ -24,7 +24,7 @@ import java.util.Objects;
 
 /**
  * @author leipenghui
- * 制品缓存检查task
+ * 晋级、分发补偿task
  */
 @Slf4j
 @Component
@@ -57,7 +57,6 @@ public class PromotionCompensationTask {
                 Example recordExample = Example.builder(ArtifactSyncRecord.class).build();
                 recordExample.and().andEqualTo("status", ArtifactSyncRecordStatusEnum.FAILED.getVal());
                 recordExample.and().andLessThan("retryCount", 5);
-                recordExample.setOrderByClause("create_time asc");
                 int totalCount = artifactSyncRecordMapper.selectCountByExample(recordExample);
                 if (totalCount <= 0) {
                     return;
