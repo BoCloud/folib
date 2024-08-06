@@ -11,6 +11,8 @@ export default {
     'Available': '可用',
     'NotAvailable': '不可用',
     'RoleInformation': '角色信息',
+    'GroupInformation': '用户组信息',
+    'GroupEdit': '用户组编辑',
     'UserInformation': '用户信息',
     'UserEdit': '用户编辑',
     'Cancel': '取消',

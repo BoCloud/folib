@@ -56,7 +56,7 @@ export default {
     'VulnerabilityType': '漏洞类型',
     'AffectedProducts': '受影响的制品',
     'Level': '等级',
-    // Detail.vue
+    // index.vue
     'GeneralView': '总览',
     'Information': '信息',
     // VulnerabilitiesOverView.vue

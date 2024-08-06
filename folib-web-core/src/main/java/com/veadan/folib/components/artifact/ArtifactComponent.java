@@ -378,6 +378,20 @@ public class ArtifactComponent {
             } else {
                 flag = true;
             }
+        } else if (repositoryPath.getFileSystem() instanceof GitFlsFileSystem) {
+            log.debug("GitLfs布局");
+            if (Boolean.TRUE.equals(scan)) {
+                flag = false;
+            } else {
+                flag = true;
+            }
+        } else if (repositoryPath.getFileSystem() instanceof HuggingFaceFileSystem) {
+            log.debug("HuggingFaceFile布局");
+            if (Boolean.TRUE.equals(scan)) {
+                flag = false;
+            } else {
+                flag = true;
+            }
         } else if (repositoryPath.getFileSystem() instanceof PubFileSystem) {
             log.debug("pub布局");
             List<String> allSuffixList = Lists.newArrayList(".tar.gz");
@@ -441,6 +455,12 @@ public class ArtifactComponent {
                 List<String> suffixList = Collections.singletonList(".tar.gz");
                 flag = endsWith(filePath, suffixList);
                 log.debug("Cocoapods布局");
+            } else if (GitLfsLayoutProvider.ALIAS.equals(layout)) {
+                log.debug("GitLfs布局");
+                flag = true;
+            } else if (HuggingFaceLayoutProvider.ALIAS.equals(layout)) {
+                log.debug("HuggingFaceFile布局");
+                flag = true;
             } else if (PubLayoutProvider.ALIAS.equals(layout)) {
                 log.debug("pub布局");
                 List<String> suffixList = Collections.singletonList(".tar.gz");

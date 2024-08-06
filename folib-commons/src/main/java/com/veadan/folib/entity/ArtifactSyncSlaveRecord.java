@@ -114,4 +114,8 @@ public class ArtifactSyncSlaveRecord implements Serializable {
     @ApiModelProperty("临时ID，用于返回给请求端")
     @Transient
     private String tempId;
+
+    @ApiModelProperty("文件大小")
+    @Column(name = "file_size")
+    private long fileSize;
 }

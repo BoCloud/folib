@@ -8,7 +8,7 @@ export default {
     'Classifier': 'Classifier',
     'LastBOMImport': 'Last BOM Import',
     'BOMFormat': 'BOM Format',
-    // Detail.vue
+    // index.vue
     'GeneralView': 'General view',
     'Artifacts': 'Artifacts',
     'Component': 'Component',

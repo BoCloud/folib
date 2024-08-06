@@ -36,6 +36,8 @@ public interface ArtifactPromotionService {
     CompletableFuture<Void> nodeOptionV2(PromotionNodeOption promotionNodeOption);
 
     ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, String requestHostName, HttpServletResponse response);
+
+    ResponseEntity<?> retryNodeOptionAttachRecord(String syncNo, String requestHostName, HttpServletResponse response);
     CompletableFuture<Void> uploadArtifact(String syncNo, PromotionNodeOption promotionNodeOption, String requestHostName);
     Boolean artifactPullCallback(ArtifactPromotionNodeOptionCallbackReq model);
 
@@ -50,6 +52,8 @@ public interface ArtifactPromotionService {
     ResponseEntity getFileRelativePaths(ArtifactDto artifactDto);
 
     List<String> artifactDispatchAttachRecord(ArtifactDispatch artifactDispatch, HttpServletRequest request);
+
+    String retryArtifactDispatchAttachRecord(String syncNo,String type, HttpServletRequest request);
 
     List<String> artifactDispatch(ArtifactDispatch artifactDispatch);
 
@@ -155,5 +159,13 @@ public interface ArtifactPromotionService {
      * @since x.x.x
      */
     Boolean sliceUpload(ArtifactSliceUploadReq model);
+
+    /**
+     * 更新任务队列优先级
+     * @param syncNo 同步编号
+     * @param priority 优先级
+     * @return
+     */
+   ResponseEntity<?>  updateTaskQueuePriority(String syncNo,int priority);
 
 }

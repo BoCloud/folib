@@ -95,7 +95,7 @@
                               okType="danger"
                               :ok-text="$t('Repository.Confirm')"
                               :cancel-text="$t('Repository.Cancel')">
-                  <a-button type="link" v-if="record.status === 2 || record.status === 4" @click="clickRecord(record)"
+                  <a-button type="link" v-if="record.status === 4" @click="clickRecord(record)"
                             size="small">
                     <span class="text-danger">{{ $t('Repository.Compensation') }}</span>
                   </a-button>
@@ -116,6 +116,7 @@ import Permission from '../Permission/index.vue'
 import CronTask from "../Cron/index.vue"
 import UnionRepository from "../UnionRepository/index.vue"
 import {getArtifactDispatchConfig, getArtifactSyncRecordPage} from "@/api/settings";
+import {retryAtifactDispatch, retryNodeOption} from "@/api/artifact";
 
 export default {
   props: {
@@ -288,7 +289,28 @@ export default {
       this.getArtifactSyncRecordPage()
     },
     clickRecord(v) {
-      this.currentClickRecord = v
+            this.currentClickRecord = v
+            let sycnNo = this.currentClickRecord.syncNo;
+            //1：制品晋级；2：制品分发
+            let opsType = this.currentClickRecord.opsType;
+            if (opsType === 1) {
+                this.vulnerabilityTableLoading = true
+                retryNodeOption(sycnNo).then(res => {
+                    this.$message.success("操作成功");
+                    this.getArtifactSyncRecordPage();
+                }).finally(() => {
+                    this.vulnerabilityTableLoading = false
+                });
+            } else if (opsType === 2) {
+                const jsonArrayString = JSON.parse(this.currentClickRecord.targetPath);
+                let type = jsonArrayString[0].artifactoryRepositoryType;
+                retryAtifactDispatch(sycnNo, type).then(res => {
+                    this.$message.success("操作成功");
+                    this.getArtifactSyncRecordPage();
+                }).finally(() => {
+                    this.vulnerabilityTableLoading = false
+                });
+            }
     },
   },
 };

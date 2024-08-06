@@ -16,7 +16,9 @@ module.exports = {
 		port: 9528,
 		proxy: {
 			'/api': {
-				target: 'http://127.0.0.1:38080',
+				target: 'http://123.112.246.13:38080',
+				// target: 'http://10.50.8.55:38080',
+				// target: 'http://127.0.0.1:38080',
 				//target: 'http://192.168.42.128:38080',
 				// target: 'http://xpboot.cn:38080',
 				// target: 'http://10.10.33.145:38080',

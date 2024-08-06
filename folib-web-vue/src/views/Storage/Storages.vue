@@ -582,8 +582,8 @@
                     </a-col>
 
                     <a-col :span="4">
-                        <div class="checkbox-label" :class="[layoutChecked === 'GitLfs' ? 'active' : '']"
-                               @click="toggleCheckbox('GitLfs')">
+                        <div class="checkbox-label" :class="[layoutChecked === 'gitlfs' ? 'active' : '']"
+                               @click="toggleCheckbox('gitlfs')">
                               <a-avatar :size="44" shape="square"
                                         style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
                                   <img src="images/folib/gitlfs.svg" style="width: 100%;" alt="">
@@ -592,8 +592,8 @@
                         <h6>Git LFS</h6>
                     </a-col>
                     <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'HuggingFace' ? 'active' : '']"
-                      @click="toggleCheckbox('HuggingFace')">
+                      <div class="checkbox-label" :class="[layoutChecked === 'huggingface' ? 'active' : '']"
+                      @click="toggleCheckbox('huggingface')">
                         <a-avatar :size="44" shape="square"
                                   style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
                           <img src="images/folib/huggingface.svg" style="width: 100%;" alt="">

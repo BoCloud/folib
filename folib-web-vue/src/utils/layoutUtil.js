@@ -9,7 +9,7 @@ export function getLayoutType(item) {
         layoutCast = item.subLayout ? item.subLayout : 'npm'
         return layoutCast
     }
-    return layout === "NuGet" ? "nuget" : layout === "Raw" ? "raw" : layout === "PyPi" ? "pypi" : layout === "Docker" ? "docker" : layout === "Pub" ? "pub" : layout === "rpm" ? "rpm" : layout
+    return layout === "NuGet" ? "nuget" : layout === "Raw" ? "raw" : layout === "PyPi" ? "pypi" : layout === "Docker" ? "docker" : layout ==="GitLfs" ? "gitlfs" : layout ==="HuggingFace" ? "huggingface" : layout === "Pub" ? "pub" : layout === "rpm" ? "rpm" : layout
 }
 
 export function getFileImage(layout, name) {
@@ -29,7 +29,7 @@ export function getLayoutType2(layout, repository, type) {
         layoutCast = repository.subLayout ? repository.subLayout : 'npm'
         return layoutCast
     }
-    return layout === "NuGet" ? "nuget" : layout === "Raw" ? "raw" : layout === "PyPi" ? "pypi" : layout === "Docker" ? "docker" : layout === "Pub" ? "pub" : layout === "rpm" ? "rpm" : layout
+    return layout === "NuGet" ? "nuget" : layout === "Raw" ? "raw" : layout === "PyPi" ? "pypi" : layout === "Docker" ? "docker" : layout ==="GitLfs" ? "gitlfs" : layout ==="HuggingFace" ? "huggingface" : layout === "Pub" ? "pub" : layout === "rpm" ? "rpm" : layout
 }
 
 export function genLayoutType(layout) {
@@ -42,7 +42,7 @@ export function genLayoutType(layout) {
 
         return "npm"
     }
-    return layout === "nuget" ? "NuGet" : layout === "raw" ? "Raw" : layout === "pypi" ? "PyPi" : layout === "docker" ? "Docker" : layout === "rpm" ? "rpm" : layout ==="gitlfs" ? "GitLfs" :   layout ==="huggingface" ? "HuggingFace": layout === "Pub" ? "pub" : layout;
+    return layout === "nuget" ? "NuGet" : layout === "raw" ? "Raw" : layout === "pypi" ? "PyPi" : layout === "docker" ? "Docker" : layout === "rpm" ? "rpm" : layout ==="gitlfs" ? "GitLfs" : layout ==="huggingface" ? "HuggingFace" : layout === "Pub" ? "pub" : layout;
 }
 
 export function groupRepositoriesBuild(repositories) {

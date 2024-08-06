@@ -161,3 +161,24 @@ function objToUrlQuery(obj) {
   }
   return ""
 }
+
+export function getArtifactSyncRecordCount(){
+  return axios({
+    url: '/api/artifactSyncRecord/getCount/30',
+    method: 'get'
+  })
+}
+
+export function getStatusTrends(){
+  return axios({
+    url: '/api/artifactSyncRecord/getStatusTrends/30',
+    method: 'get'
+  })
+}
+
+export function fileSizeStatisticsByWarehouse(days, limitNumber){
+  return axios({
+    url: '/api/artifactSyncRecord/fileSizeStatisticsByWarehouse/'+days+'/'+limitNumber,
+    method: 'get',
+  })
+}

@@ -240,7 +240,7 @@ public class ArtifactUploadTask implements Callable<String> {
                 handlerNpmLayoutUpload(is, layout, repositoryPath);
             } else if (PubLayoutProvider.ALIAS.equals(layout)) {
                 handlerPubLayoutUpload(is, layout, repositoryPath);
-            }else if(DockerLayoutProvider.ALIAS.equals(layout)){
+            }else if(StringUtils.isNotBlank(imageTag) && DockerLayoutProvider.ALIAS.equals(layout)){
                 handlerDockerUploadProcess(this.storageId,  this.repositoryId, this.imageTag, this.file,this.baseUrl);
 
             } else {
@@ -825,6 +825,7 @@ public class ArtifactUploadTask implements Callable<String> {
                    .map(Path::toFile)
                    .forEach(File::delete);
        }catch (Exception e){
+           e.printStackTrace();
            log.error("docker upload error uuid: {} ,storageId:{} ,repositoryId:{} ,tag:{}", uuid,storageId,repositoryId,tag);
        }
 

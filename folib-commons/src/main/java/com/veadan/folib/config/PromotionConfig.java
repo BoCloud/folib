@@ -35,7 +35,7 @@ public class PromotionConfig {
     /**
      * 使用ws发送请求后等待响应的超时时间，秒单位
      */
-    private int wsRequestTimout = 10;
+    private int wsRequestTimout = 5;
     /**
      * 使用ws通道空闲超时时间，当没有数据传输时，达到这个时间会释放连接
      * 如果连接被防火墙强制打断，此时连接无法收发数据，等待60S后，主动关闭连接

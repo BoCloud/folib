@@ -1,0 +1,48 @@
+import { axios } from '@/utils/request'
+
+export function getPermissionList (params) {
+    return axios({
+        url: `/api/auth/queryRole`,
+        method: 'get',
+        params
+    })
+}
+
+export function getPermissionDetail (id) {
+    return axios({
+        url: `/api/auth/${id}`,
+        method: 'get'
+    })
+}
+
+export function createPermission (params) {
+    return axios({
+        url: `/api/auth`,
+        method: 'put',
+        data: params
+    })
+}
+
+export function updatePermission (params) {
+    return axios({
+        url: `/api/auth/${params.name}`,
+        method: 'put',
+        data: params
+    })
+}
+
+export function deletePermission (id) {
+    return axios({
+        url: `/api/auth/${id}`,
+        method: 'delete'
+    })
+}
+
+
+export function getPermissionUsers () {
+    return axios({
+        url: `/api/users`,
+        method: 'get'
+    })
+}
+

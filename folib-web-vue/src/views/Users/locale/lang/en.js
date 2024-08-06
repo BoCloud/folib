@@ -49,5 +49,6 @@ export default {
     'OperateSuccess': 'Operation successful',
     'PasswordUpdateFailed': 'Password update failed',
     'PasswordUpdateSuccess': 'The password was updated successfully. Please log in again',
-
+    'GroupInformation': 'Group Information',
+    'GroupEdit': 'Group Edit',
 }

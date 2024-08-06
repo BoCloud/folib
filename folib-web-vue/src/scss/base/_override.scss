@@ -143,6 +143,9 @@ a {
 .ant-btn-primary svg path {
 	fill: $color-white ;
 }
+.ant-transfer-operation .ant-btn-primary svg path {
+	fill: currentColor ;
+}
 .ant-btn-link {
 	color: $color-primary ;
 	box-shadow: none;
@@ -1143,5 +1146,10 @@ textarea.ant-time-picker-input {
 .ant-menu:not(.ant-menu-horizontal) .ant-menu-item-selected {
 	background-color: transparent;
 }
+
+.ant-steps-horizontal:not(.ant-steps-label-vertical) .ant-steps-item-description {
+	max-width: 240px;
+}
+
 
 // / Overriding Ant Design's default variables, such as colors, shadows and... .

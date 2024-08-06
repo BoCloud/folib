@@ -41,6 +41,11 @@ public class PromotionNodeOption {
      */
     private String targetNode;
 
+    /**
+     * 是否重试
+     */
+    private boolean isRetry;
+
     public PromotionNodeOption(String sourcePath, String targetPath) {
         this.sourcePath = sourcePath;
         this.targetPath = targetPath;
