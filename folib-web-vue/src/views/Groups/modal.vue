@@ -130,7 +130,7 @@ export default {
             admin: false,
             resources: false,
             resourcesDisabled: false,
-            auto: false,
+            auto: true,
             autoDisabled: false,
             page: 1,
             limit: 10,
@@ -229,7 +229,7 @@ export default {
         },
         closeModal() {
             this.$refs.ruleForm.resetFields()
-            this.auto = false
+            this.auto = true
             this.selectedRowKeys = []
             this.visible = false;
         },

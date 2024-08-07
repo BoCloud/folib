@@ -469,10 +469,12 @@ export default ({
       getUsersCreateFields().then(res => {
         let roles = res.formDataValues[0].values
         if (roles) {
-          let roleNameList = ['ADMIN', 'GENERAL', 'ARTIFACTS_MANAGER', 'OPEN_SOURCE_MANAGE']
-          roles = roles.filter(item => roleNameList.includes(item.name))
+          roles = roles.filter(item => this.defaultRoles.includes(item.name))
           roles.forEach((item) => { item.enabled = false })
         }
+        this.groupList.forEach(item => {
+          this.$set(item, 'enabled', false)
+        })
         this.currentUser = { user: {}, assignableRoles: roles }
         this.userNotEdit = false
         this.passwordRequired = true
