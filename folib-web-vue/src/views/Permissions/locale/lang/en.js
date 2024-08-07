@@ -82,7 +82,13 @@ export default {
     'StorageSpace': 'StorageSpace',
     'SelectStorageSpace': 'Select StorageSpace',
     'SelectStorageSpaceDesc': 'Select all the storage space to which you wish to apply the permissions.',
-
-
-
+    'AtLeastOneRepository': 'Please select at least one repository',
+    'CheckAll': 'Check All',
+    'UnselectAll': 'Unselect All',
+    'DownloadDesc': 'Download artifacts',
+    'DeployCacheDesc': 'Deploys artifacts & deploys to remote repository caches',
+    'DeleteUpdateDesc': 'Deletes or overwrites artifacts',
+    'PromoDistributionDesc': 'Artifacts promote and distribute',
+    'Enabled': 'Enabled',
+    'Disabled': 'Disabled',
 }

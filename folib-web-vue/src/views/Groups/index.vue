@@ -34,14 +34,14 @@
                 <div slot="roles" slot-scope="roles">
                     <div v-if="roles" class="by-flex">
                         <div
-                            v-for="(item, index) in roles.split(',').splice(0, 3)"
+                            v-for="(item, index) in roles.split(',').splice(0, 5)"
                             :key="index"
                             class="custom-tag"
                         >
                             {{ item }}
                         </div>
                         <span class="by-f-w-600">
-                            <span v-if="roles.split(',').length > 3">...</span>
+                            <span v-if="roles.split(',').length > 5">...</span>
                             <!-- <span>({{ roles.split(',').length }})</span>-->
                         </span>
                     </div>
@@ -112,7 +112,7 @@ export default {
                     i18nKey: 'Groups.AutoJoin',
                     dataIndex: 'joinGroup',
                     key: 'joinGroup',
-                    width: 200,
+                    width: 250,
                     scopedSlots: { customRender: 'joinGroup' },
                 },
                 {

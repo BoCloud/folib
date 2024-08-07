@@ -202,7 +202,7 @@
             <a-card :bordered="false" class="header-solid h-full" :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }"
                     v-if="currentUser">
               <template #title>
-                <h6 class="font-semibold m-0">{{ userNotEdit ? $t('Users.RoleInformation') : $t('Users.RoleEditing') }}</h6>
+                <h6 class="font-semibold m-0">{{ userNotEdit ? $t('Users.InbuiltRoleInformation') : $t('Users.RoleEditing') }}</h6>
               </template>
               <div v-for="(item, index) in currentUser.assignableRoles" :key="index">
                 <hr class="gradient-line">
@@ -229,22 +229,24 @@
               <template #title>
                 <h6 class="font-semibold m-0">{{ userNotEdit ? $t('Users.GroupInformation') : $t('Users.GroupEdit') }}</h6>
               </template>
-              <div v-for="(item, index) in groupList" :key="index">
-                <hr class="gradient-line">
-                <a-row type="flex" align="middle">
-                  <a-col>
-                    <a-avatar :size="48" src="images/folib/anonymous.svg" />
-                  </a-col>
-                  <a-col class="pl-15">
-                    <h6 class="mb-0">{{ item.groupName }}</h6>
-                    <a class="text-dark">{{ item.description }}</a>
-                  </a-col>
-                  <a-col :span="24" :md="8" class="ml-auto"
-                         style="display: flex; align-items: center; justify-content: flex-end">
-                    <!--  <span class="mr-15">{{ item.enabled ? $t('Users.TurnOn') : $t('Users.ShutDown') }}</span>-->
-                    <a-checkbox :disabled="userNotEdit" v-model="item.enabled" @change="groupChange($event, item.id)" />
-                  </a-col>
-                </a-row>
+              <div class="group-list">
+                <div v-for="(item, index) in groupList" :key="index">
+                  <hr class="gradient-line">
+                  <a-row type="flex" align="middle">
+                    <a-col>
+                      <a-avatar :size="48" src="images/folib/anonymous.svg" />
+                    </a-col>
+                    <a-col class="pl-15">
+                      <h6 class="mb-0">{{ item.groupName }}</h6>
+                      <a class="text-dark">{{ item.description }}</a>
+                    </a-col>
+                    <a-col :span="24" :md="8" class="ml-auto"
+                           style="display: flex; align-items: center; justify-content: flex-end">
+                      <span class="mr-15">{{ item.enabled ? $t('Users.TurnOn') : $t('Users.ShutDown') }}</span>
+                      <a-switch :disabled="userNotEdit" v-model="item.enabled" @change="groupChange($event, item.id)" />
+                    </a-col>
+                  </a-row>
+                </div>
               </div>
             </a-card>
           </a-col>
@@ -535,4 +537,9 @@ export default ({
 
 <style lang="scss">
 .en-number {font-size:16px;color: #141414;font-weight: 600;}
+
+.group-list {
+    max-height: 888px;
+    overflow-y: auto;
+}
 </style>

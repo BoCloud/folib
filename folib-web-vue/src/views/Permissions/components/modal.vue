@@ -18,7 +18,7 @@
                     <a-input
                         v-model="form.name"
                         :placeholder="$t('Permissions.EnterTheNameCreate')"
-                        :disabled="isView"
+                        :disabled="isView || isEdit"
                         :maxLength="100"
                     />
                 </a-form-model-item>
@@ -51,21 +51,54 @@
                             :class="{'active': currentUserIndex === item.key}"
                             @click="userClick(item)"
                         >
-                            <span class="by-m-l-10">{{ item.title }}</span>
-                            <!-- <a-tooltip placement="topLeft" :title="$t('Permissions.NoPermissionsTip')">
-                                <a-icon type="exclamation-circle" />
-                            </a-tooltip>-->
+                            <textOver
+                                :text="item.title"
+                                :max="20"
+                                class="by-m-l-10"
+                            />
+                            <div class="by-flex">
+                                <div v-for="(ele, eIndex) in logoValueMap" :key="eIndex">
+                                    <a-avatar
+                                        v-if="userAuthMap[item.key] && userAuthMap[item.key].includes(ele.value)"
+                                        :size="24"
+                                        :src="`images/small-logos/logo-${ele.logo}.svg`"
+                                        class="by-m-r-10"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="by-p-l-32 by-flex-1">
                     <div class="permission-item">
-                        <div class="title">{{ $t(`Permissions.SelectedPermissions`) }}</div>
-                        <div class="by-flex">
-                            <a-checkbox-group v-model="repositoriesCheckedList" :disabled="!userSelectList.length || isView" :options="repositoriesOptions" @change="onRepositoriesChange" />
-                            <a-checkbox :checked="repositoriesCheckAll" :disabled="!userSelectList.length || isView" @change="onRepositoriesCheckAllChange" class="by-m-l-10">
-                                {{ $t(`Permissions.SelectAll`) }}
-                            </a-checkbox>
+                        <div class="title by-flex by-row-between">
+                            <span>{{ $t(`Permissions.SelectedPermissions`) }}</span>
+                            <a-button
+                                v-if="!isView && userSelectList.length"
+                                type="primary"
+                                size="small"
+                                @click="onRepositoriesCheckAllChange"
+                            >
+                                {{ $t(`Permissions.${repositoriesCheckAll ? 'UnselectAll' : 'CheckAll'}`) }}
+                            </a-button>
+                        </div>
+                        <div>
+                            <div v-for="(item, index) in repositoriesOptions" :key="index">
+                                <hr class="gradient-line" v-if="index">
+                                <a-row type="flex" align="middle">
+                                    <a-col>
+                                        <a-avatar :size="48" :src="`images/small-logos/logo-${item.logo}.svg`" />
+                                    </a-col>
+                                    <a-col class="pl-15">
+                                        <h6 class="mb-0">{{ item.label }}</h6>
+                                        <span class="text-dark ml-1">{{ item.desc }}</span>
+                                    </a-col>
+                                    <a-col :span="24" :md="12" class="ml-auto" style="display: flex; align-items: center; justify-content: flex-end">
+                                        <span class="mr-15">{{ $t(`Permissions.${item.enabled ? 'Enabled' : 'Disabled'}`) }}</span>
+                                        <a-switch v-model="item.enabled" :disabled="!userSelectList.length || isView" @change="onRepositoriesChange"/>
+                                    </a-col>
+                                </a-row>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -85,21 +118,54 @@
                             :class="{'active': currentGroupIndex === item.key}"
                             @click="groupClick(item)"
                         >
-                            <span class="by-m-l-10">{{ item.title }}</span>
-                            <!-- <a-tooltip placement="topLeft" :title="$t('Permissions.GroupNoPermissionsTip')">
-                                <a-icon type="exclamation-circle" />
-                            </a-tooltip>-->
+                            <textOver
+                                :text="item.title"
+                                :max="20"
+                                class="by-m-l-10"
+                            />
+                            <div class="by-flex">
+                                <div v-for="(ele, eIndex) in logoValueMap" :key="eIndex" >
+                                    <a-avatar
+                                        v-if="groupAuthMap[item.key] && groupAuthMap[item.key].includes(ele.value)"
+                                        :size="24"
+                                        :src="`images/small-logos/logo-${ele.logo}.svg`"
+                                        class="by-m-r-10"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="by-p-l-32 by-flex-1">
                     <div class="permission-item">
-                        <div class="title">{{ $t(`Permissions.SelectedPermissions`) }}</div>
-                        <div class="by-flex">
-                            <a-checkbox-group v-model="repositoriesGroupCheckedList" :disabled="!groupSelectList.length || isView" :options="repositoriesOptions" @change="onRepositoriesGroupChange" />
-                            <a-checkbox :checked="repositoriesGroupCheckAll" :disabled="!groupSelectList.length || isView" @change="onRepositoriesGroupCheckAllChange" class="by-m-l-10">
-                                {{ $t(`Permissions.SelectAll`) }}
-                            </a-checkbox>
+                        <div class="title by-flex by-row-between">
+                            <span>{{ $t(`Permissions.SelectedPermissions`) }}</span>
+                            <a-button
+                                v-if="!isView && groupSelectList.length"
+                                type="primary"
+                                size="small"
+                                @click="onGroupCheckAllChange"
+                            >
+                                {{ $t(`Permissions.${groupCheckAll ? 'UnselectAll' : 'CheckAll'}`) }}
+                            </a-button>
+                        </div>
+                        <div>
+                            <div v-for="(item, index) in repositoriesOptions" :key="index">
+                                <hr class="gradient-line" v-if="index">
+                                <a-row type="flex" align="middle">
+                                    <a-col>
+                                        <a-avatar :size="48" :src="`images/small-logos/logo-${item.logo}.svg`" />
+                                    </a-col>
+                                    <a-col class="pl-15">
+                                        <h6 class="mb-0">{{ item.label }}</h6>
+                                        <span class="text-dark ml-1">{{ item.desc }}</span>
+                                    </a-col>
+                                    <a-col :span="24" :md="12" class="ml-auto" style="display: flex; align-items: center; justify-content: flex-end">
+                                        <span class="mr-15">{{ $t(`Permissions.${item.enabled ? 'Enabled' : 'Disabled'}`) }}</span>
+                                        <a-switch v-model="item.enabled" :disabled="!groupSelectList.length || isView" @change="onGroupChange"/>
+                                    </a-col>
+                                </a-row>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -127,10 +193,12 @@ import { getPermissionDetail, createPermission, getPermissionUsers, updatePermis
 import { getStorages, getStoragesAndRepositories } from "@/api/folib";
 import { getGroupList } from "@/api/group";
 import { uniq } from "lodash/array";
+import TextOver from "@/components/Tools/textOver.vue";
 
 export default {
     name: "modal",
     components: {
+        TextOver,
         repositories,
         selectUserGroup
     },
@@ -158,31 +226,11 @@ export default {
             groupSelectCopyList: [],
             groupAuthMap: {},
             currentGroupIndex: 0,
-            repositoriesGroupCheckedList: [],
-            repositoriesGroupCheckAll: false,
+            groupCheckedList: [],
+            groupCheckAll: false,
             confirmLoading: false,
-        }
-    },
-    computed: {
-        repositoriesOptions() {
-            return [
-                {
-                    label: this.$t(`Permissions.Download`),
-                    value: 'ARTIFACTS_RESOLVE'
-                },
-                {
-                    label: this.$t(`Permissions.DeployCache`),
-                    value: 'ARTIFACTS_DEPLOY'
-                },
-                {
-                    label: this.$t(`Permissions.DeleteUpdate`),
-                    value: 'ARTIFACTS_DELETE'
-                },
-                {
-                    label: this.$t(`Permissions.PromoDistribution`),
-                    value: 'ARTIFACTS_PROMOTION'
-                },
-            ]
+            repositoriesOptions: [],
+            logoValueMap: []
         }
     },
     watch: {
@@ -194,11 +242,27 @@ export default {
             this.userSelectList = this.userSelectList.filter(item => {
                 return item.title.indexOf(val) !== -1
             })
+        },
+        step(val) {
+            if (val === 1) {
+                this.currentUserIndex = this.userSelectList[0].key || 0
+                this.repositoriesCheckedList = this.userAuthMap[this.currentUserIndex]
+                this.repositoriesOptions.forEach(item => {
+                    item.enabled = this.repositoriesCheckedList.includes(item.value)
+                })
+            } else if (val === 2) {
+                this.currentGroupIndex = this.groupSelectList[0].key || 0
+                this.groupCheckedList = this.groupAuthMap[this.currentGroupIndex]
+                this.repositoriesOptions.forEach(item => {
+                    item.enabled = this.groupCheckedList.includes(item.value)
+                })
+            }
         }
     },
     methods: {
         async openModal(id, isView)
         {
+            this.initOptions()
             this.visible = true;
             this.spinning = true;
             this.isView = isView;
@@ -211,6 +275,44 @@ export default {
             } else {
                 this.spinning = false
             }
+        },
+        initOptions() {
+            this.repositoriesOptions = [
+                {
+                    label: this.$t(`Permissions.Download`),
+                    value: 'ARTIFACTS_RESOLVE',
+                    enabled: false,
+                    logo: 'slack',
+                    desc: this.$t(`Permissions.DownloadDesc`)
+                },
+                {
+                    label: this.$t(`Permissions.DeployCache`),
+                    value: 'ARTIFACTS_DEPLOY',
+                    enabled: false,
+                    logo: 'spotify',
+                    desc: this.$t(`Permissions.DeployCacheDesc`)
+                },
+                {
+                    label: this.$t(`Permissions.DeleteUpdate`),
+                    value: 'ARTIFACTS_DELETE',
+                    enabled: false,
+                    logo: 'atlassian',
+                    desc: this.$t(`Permissions.DeleteUpdateDesc`)
+                },
+                {
+                    label: this.$t(`Permissions.PromoDistribution`),
+                    value: 'ARTIFACTS_PROMOTION',
+                    enabled: false,
+                    logo: 'asana',
+                    desc: this.$t(`Permissions.PromoDistributionDesc`)
+                },
+            ]
+            this.logoValueMap = this.repositoriesOptions.map(item => {
+                return {
+                    value: item.value,
+                    logo: item.logo
+                }
+            })
         },
         closeModal()
         {
@@ -230,8 +332,8 @@ export default {
             this.groupSelectCopyList = []
             this.groupAuthMap = {}
             this.currentGroupIndex = 0
-            this.repositoriesGroupCheckedList = []
-            this.repositoriesGroupCheckAll = false
+            this.groupCheckedList = []
+            this.groupCheckAll = false
             this.$nextTick(() => {
                 this.$refs.repositories.init()
             })
@@ -270,8 +372,12 @@ export default {
                         }
                     })
                 } else {
+                    const storageIds = resources.map(item => `${item.storageId}`)
                     this.$refs.repositories.step = 0
                     this.$refs.repositories.radioModel = 'StorageSpace'
+                    this.$nextTick(() => {
+                        this.$refs.repositories.selectedRowKeys = uniq(storageIds)
+                    })
                 }
             }).finally(() => {
                 this.spinning = false;
@@ -304,35 +410,43 @@ export default {
                     }
                 })
                 this.currentGroupIndex = this.groupSelectList[0].key || 0
-                this.repositoriesGroupCheckedList = this.groupAuthMap[this.currentGroupIndex]
+                this.groupCheckedList = this.groupAuthMap[this.currentGroupIndex]
             }).finally(() => {
                 this.loading = false
             })
         },
-        onRepositoriesChange(checkedValues)
+        onRepositoriesChange()
         {
+            const checkedValues = this.repositoriesOptions.filter(item => item.enabled).map(item => item.value)
             this.repositoriesCheckedList = checkedValues;
             this.repositoriesCheckAll = checkedValues.length === 4
             this.userAuthMap[this.currentUserIndex] = checkedValues
         },
-        onRepositoriesCheckAllChange(e)
+        onRepositoriesCheckAllChange()
         {
-            this.repositoriesCheckAll = e.target.checked;
+            this.repositoriesCheckAll = !this.repositoriesCheckAll;
             this.repositoriesCheckedList = this.repositoriesCheckAll ? this.repositoriesOptions.map(item => item.value) : [];
             this.userAuthMap[this.currentUserIndex] = this.repositoriesCheckedList
+            this.repositoriesOptions.forEach(item => {
+                item.enabled = this.repositoriesCheckAll
+            })
         },
 
-        onRepositoriesGroupChange(checkedValues)
+        onGroupChange()
         {
-            this.repositoriesGroupCheckedList = checkedValues;
-            this.repositoriesGroupCheckAll = checkedValues.length === 4
+            const checkedValues = this.repositoriesOptions.filter(item => item.enabled).map(item => item.value)
+            this.groupCheckedList = checkedValues;
+            this.groupCheckAll = checkedValues.length === 4
             this.groupAuthMap[this.currentGroupIndex] = checkedValues
         },
-        onRepositoriesGroupCheckAllChange(e)
+        onGroupCheckAllChange()
         {
-            this.repositoriesGroupCheckAll = e.target.checked;
-            this.repositoriesGroupCheckedList = this.repositoriesGroupCheckAll ? this.repositoriesOptions.map(item => item.value) : [];
-            this.groupAuthMap[this.currentGroupIndex] = this.repositoriesGroupCheckedList
+            this.groupCheckAll = !this.groupCheckAll;
+            this.groupCheckedList = this.groupCheckAll ? this.repositoriesOptions.map(item => item.value) : [];
+            this.groupAuthMap[this.currentGroupIndex] = this.groupCheckedList
+            this.repositoriesOptions.forEach(item => {
+                item.enabled = this.groupCheckAll
+            })
         },
         openSelectModal(type) {
             const selectedRowKeys = type === 'USER' ? this.userSelectList.map(item => item.key) :
@@ -375,6 +489,10 @@ export default {
                     if (!userKeys.includes(key)) this.userAuthMap[key] = []
                 }
                 this.repositoriesCheckedList = this.userAuthMap[this.currentUserIndex]
+                this.repositoriesOptions.forEach(item => {
+                    item.enabled = this.repositoriesCheckedList.includes(item.value)
+                })
+                console.log(this.userSelectList);
             } else {
                 this.groupSelectList = val
                 this.groupSelectCopyList = val
@@ -383,7 +501,10 @@ export default {
                 for (const key in this.groupAuthMap) {
                     if (!groupKeys.includes(key)) this.groupAuthMap[key] = []
                 }
-                this.repositoriesGroupCheckedList = this.groupAuthMap[this.currentGroupIndex]
+                this.groupCheckedList = this.groupAuthMap[this.currentGroupIndex]
+                this.repositoriesOptions.forEach(item => {
+                    item.enabled = this.groupCheckedList.includes(item.value)
+                })
             }
         },
         userClick(item) {
@@ -395,20 +516,30 @@ export default {
                 this.repositoriesCheckedList = []
             }
             this.repositoriesCheckAll = this.repositoriesCheckedList.length === 4
+            this.repositoriesOptions.forEach(item => {
+                item.enabled = this.repositoriesCheckedList.includes(item.value)
+            })
         },
         groupClick(item) {
             this.currentGroupIndex = item.key
             if (this.groupAuthMap[item.key]) {
-                this.repositoriesGroupCheckedList = this.groupAuthMap[item.key]
+                this.groupCheckedList = this.groupAuthMap[item.key]
             } else {
                 this.groupAuthMap[item.key] = []
-                this.repositoriesGroupCheckedList = []
+                this.groupCheckedList = []
             }
-            this.repositoriesGroupCheckAll = this.repositoriesGroupCheckedList.length === 4
+            this.groupCheckAll = this.groupCheckedList.length === 4
+            this.repositoriesOptions.forEach(item => {
+                item.enabled = this.groupCheckedList.includes(item.value)
+            })
         },
         handleConfirm() {
             this.$refs.form.validate(validate => {
                 if (validate) {
+                    if (!this.$refs.repositories.getResources().length) {
+                        this.$message.error(this.$t('Permissions.AtLeastOneRepository'))
+                        return
+                    }
                     this.confirmLoading = true
                     const groups = this.groupSelectList.map(item => {
                         return {
@@ -488,7 +619,7 @@ export default {
     border-right: 1px solid #e9e9e9;
 
     .selected-list {
-        height: 250px;
+        height: calc(100vh - 360px);
         overflow-y: auto;
 
         .selected-item {

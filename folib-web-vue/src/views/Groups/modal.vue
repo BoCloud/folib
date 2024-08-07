@@ -9,7 +9,7 @@
         <a-spin :spinning="spinning">
             <div class="by-p-b-60">
                 <a-divider orientation="left">
-                    {{ $t('Groups.GroupSettings') }}
+                   <span class="by-f-w-600"> {{ $t('Groups.GroupSettings') }} </span>
                 </a-divider>
                 <div class="by-p-l-60">
                     <a-form-model
@@ -34,33 +34,16 @@
                                 :disabled="isView"
                             />
                         </a-form-model-item>
-                        <!-- <a-form-model-item ref="name" :label="$t('Groups.ExternalID')" prop="externalID">
-                            <a-input
-                                v-model="form.externalID"
-                            />
-                        </a-form-model-item>-->
                     </a-form-model>
                     <!-- <a-divider orientation="left">
-                        {{ $t('Groups.Roles') }}
-                    </a-divider>
-                    <a-checkbox v-model="admin">
-                        {{ $t('Groups.AdministerPlatform') }}
-                    </a-checkbox>
-                    <a-checkbox v-model="resources" :disabled="resourcesDisabled">
-                        {{ $t('Groups.ManageResources') }}
-                        <a-tooltip placement="topLeft" :title="$t('Groups.ManageResourcesDesc')">
-                            <a-icon type="question-circle" />
-                        </a-tooltip>
-                    </a-checkbox>-->
-                    <a-divider orientation="left">
                         {{ $t('Groups.Options') }}
-                    </a-divider>
-                    <a-checkbox v-model="auto" :disabled="isView">
+                    </a-divider>-->
+                    <a-checkbox v-model="auto" :disabled="isView" class="by-m-t-10">
                         {{ $t('Groups.Automatically') }}
                     </a-checkbox>
                 </div>
                 <a-divider orientation="left">
-                    {{ $t('Groups.Users') }}
+                    <span class="by-f-w-600">{{ $t('Groups.Users') }}</span>
                 </a-divider>
                 <div class="by-flex by-row-right by-m-b-10">
                     <a-input-search v-model="userSearchText" size="small" :placeholder="$t('Groups.EnterTheNameQuery')" @search="handleSearch()" class="by-w-200"/>
@@ -69,7 +52,6 @@
                     :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange, getCheckboxProps: getCheckboxProps }"
                     :columns="tableColumns"
                     :data-source="tableData"
-                    size="small"
                     :pagination="{ pageSize: limit, current: page, total: total, showLessItems: true }"
                     :loading="loading"
                     @change="handleChangeTable"
@@ -77,7 +59,7 @@
                 />
                 <template v-if="isEdit">
                     <a-divider orientation="left">
-                        {{ $t('Groups.GroupPermissions') }}
+                        <span class="by-f-w-600">{{ $t('Groups.GroupPermissions') }}</span>
                     </a-divider>
                     <a-table
                         :columns="i18nPermissionColumns"
@@ -243,7 +225,6 @@ export default {
         {
             this.spinning = true
             getGroupDetail(id).then(res => {
-                console.log(res);
                 const { roleAccess, userGroupDTO } = res
                 this.form.id = id
                 this.form.name = userGroupDTO.groupName

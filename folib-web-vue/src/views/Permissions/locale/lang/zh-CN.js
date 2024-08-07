@@ -85,4 +85,14 @@ export default {
     'StorageSpace': '存储空间',
     'SelectStorageSpace': '选择存储空间',
     'SelectStorageSpaceDesc': '选择要应用权限的存储空间',
+    'AtLeastOneRepository': '请至少选择一个资源',
+    'CheckAll': '全部选中',
+    'UnselectAll': '取消全选',
+    'DownloadDesc': '下载制品',
+    'DeployCacheDesc': '部署制品并部署到远程仓库缓存',
+    'DeleteUpdateDesc': '删除或覆盖制品',
+    'PromoDistributionDesc': '制品晋级并分发',
+    'Enabled': '开启',
+    'Disabled': '关闭',
+
 }

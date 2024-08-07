@@ -13,7 +13,6 @@
             :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }"
             :columns="tableColumns"
             :data-source="tableData"
-            size="small"
             :pagination="{ pageSize: limit, current: page, total: total, showLessItems: true }"
             :loading="loading"
             @change="handleChangeTable"
