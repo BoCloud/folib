@@ -472,10 +472,12 @@ export default ({
           roles = roles.filter(item => this.defaultRoles.includes(item.name))
           roles.forEach((item) => { item.enabled = false })
         }
+        const userGroupIds = []
         this.groupList.forEach(item => {
-          this.$set(item, 'enabled', false)
+          this.$set(item, 'enabled', item.joinGroup === '1')
+          if (item.joinGroup === '1') { userGroupIds.push(`${item.id}`) }
         })
-        this.currentUser = { user: {}, assignableRoles: roles }
+        this.currentUser = { user: { userGroupIds }, assignableRoles: roles }
         this.userNotEdit = false
         this.passwordRequired = true
         if (this.$refs.userForm) {
