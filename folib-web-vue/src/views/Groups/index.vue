@@ -8,27 +8,44 @@
                     </a-button>
                 </a-col>
                 <a-col :span="3" class="ml-10">
-                    <a-input-search v-model="name" :placeholder="$t('Groups.EnterTheNameQuery')" @search="searchPermissions()"/>
+                    <a-input-search v-model="name" :placeholder="$t('Groups.EnterTheNameQuery')" @search="searchGroups()"/>
                 </a-col>
             </a-row>
             <a-table
-                :columns="i18nPermissionColumns"
-                :data-source="permissionsList"
-                :row-key="(r, i) => i.toString()"
+                :columns="i18nGroupColumns"
+                :data-source="groupList"
+                row-key="id"
+                :loading="loading"
                 :pagination="{ pageSize: limit, current: page, total: total, showLessItems: true }"
+                @change="handleChangeTable"
             >
-                <div slot="responseStatus" slot-scope="responseStatus">
-                    <a-tag color="#f50" v-if="responseStatus != 200">
-                        {{ $t('Setting.Error') }}
-                    </a-tag>
-                    <a-tag color="#87d068" v-else>
-                        {{responseStatus}}
-                    </a-tag>
+                <div slot="groupName" slot-scope="groupName, record">
+                    <a-button
+                        type="link"
+                        size="small"
+                        @click="groupCreate(record.id)"
+                    >{{groupName}}</a-button>
+                </div>
+                <div slot="joinGroup" slot-scope="joinGroup">
+                    <div class="join-status" :class="{'not-join': joinGroup === '0'}">
+                        <a-icon :type="joinGroup === '1' ? 'check' : 'close'" />
+                    </div>
+                </div>
+                <div slot="roles" slot-scope="roles">
+                    <div v-if="roles" class="by-flex">
+                        <div
+                            v-for="(item, index) in roles.split(',')"
+                            :key="index"
+                            class="custom-tag"
+                        >
+                            {{ item }}
+                        </div>
+                    </div>
                 </div>
                 <div slot="operation" slot-scope="text, record">
                     <div class="col-action">
                         <a-popconfirm :title="$t('Setting.SureDelete')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
-                                      @confirm="handleDelete(record)">
+                                      @confirm="handleDelete(record.id)">
                             <a-button type="link" size="small">
                                 <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path class="fill-danger" fill-rule="evenodd" clip-rule="evenodd"
@@ -41,11 +58,12 @@
                 </div>
             </a-table>
         </a-card>
-        <modal ref="modal" @success="searchPermissions()"></modal>
+        <modal ref="modal" @reset="searchGroups()"></modal>
     </div>
 </template>
 
 <script>
+import { getGroupList, deleteGroup } from "@/api/group";
 import modal from './modal.vue'
 export default {
     name: "index",
@@ -54,55 +72,35 @@ export default {
     },
     data() {
         return {
+            loading: false,
             name: '',
             limit: 10,
             page: 1,
             total: 0,
-            permissionsList: [
-                {
-                    name: 'test',
-                    permissions: 'test',
-                    external: 'test',
-                    admin: 'test',
-                    autoJoin: 'test',
-                }
-            ],
-            permissionsColumns: [
+            groupList: [],
+            groupColumns: [
                 {
                     title: '名称',
                     i18nKey: 'Groups.Name',
-                    dataIndex: 'name',
-                    key: 'name',
+                    dataIndex: 'groupName',
+                    key: 'groupName',
                     width: 200,
-                    scopedSlots: { customRender: 'name' },
+                    scopedSlots: { customRender: 'groupName' },
                 },
                 {
                     title: '权限',
                     i18nKey: 'Groups.Permissions',
-                    dataIndex: 'permissions',
-                    key: 'permissions',
-                    scopedSlots: { customRender: 'permissions' },
-                },
-                {
-                    title: '外部',
-                    i18nKey: 'Groups.External',
-                    dataIndex: 'external',
-                    key: 'external',
-                    scopedSlots: { customRender: 'external' },
-                },
-                {
-                    title: '管理员',
-                    i18nKey: 'Groups.Admin',
-                    dataIndex: 'admin',
-                    key: 'admin',
-                    scopedSlots: { customRender: 'admin' },
+                    dataIndex: 'roles',
+                    key: 'roles',
+                    scopedSlots: { customRender: 'roles' },
                 },
                 {
                     title: '自动加入',
                     i18nKey: 'Groups.AutoJoin',
-                    dataIndex: 'autoJoin',
-                    key: 'autoJoin',
-                    scopedSlots: { customRender: 'autoJoin' },
+                    dataIndex: 'joinGroup',
+                    key: 'joinGroup',
+                    width: 200,
+                    scopedSlots: { customRender: 'joinGroup' },
                 },
                 {
                     title: '操作',
@@ -115,8 +113,8 @@ export default {
         }
     },
     computed: {
-        i18nPermissionColumns () {
-            return this.permissionsColumns.map(column => {
+        i18nGroupColumns () {
+            return this.groupColumns.map(column => {
                 if (column.i18nKey) {
                     column.title = this.$t(column.i18nKey);
                 }
@@ -124,20 +122,59 @@ export default {
             })
         }
     },
+    mounted() {
+        this.searchGroups()
+    },
     methods: {
-        groupCreate() {
-            this.$refs.modal.openModal()
+        groupCreate(id) {
+            this.$refs.modal.openModal(id)
         },
-        searchPermissions() {
-            // queryPermissions({name: this.name, page: this.page, limit: this.limit}).then(res => {
-            //     this.permissionsList = res.data.data.list;
-            //     this.total = res.data.data.total;
-            // })
-        }
+        searchGroups() {
+            this.page = 1
+            this.queryList()
+        },
+        queryList() {
+            this.loading = true
+            getGroupList({
+                page: this.page,
+                limit: this.limit,
+                name: this.name
+            }).then(res => {
+                if (res && res.data) {
+                    this.groupList = res.data.rows
+                    this.total = res.data.total
+                }
+            }).finally(() => {
+                this.loading = false
+            })
+        },
+        handleChangeTable(pagination) {
+            if (pagination) this.page = pagination.current
+            this.queryList()
+        },
+        handleDelete(id) {
+            deleteGroup(id).then(res => {
+                this.queryList()
+            })
+        },
     }
 }
 </script>
 
-<style scoped lang="scss">
+<style lang="scss">
+.join-status {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(64, 169, 255, 0.2);
+    color: #40A9FF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
+.not-join {
+    background: rgba(85, 98, 116, 0.2);
+    color: #556274;
+}
 </style>

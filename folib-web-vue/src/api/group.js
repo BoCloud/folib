@@ -1,0 +1,48 @@
+import { axios } from '@/utils/request'
+
+export function getGroupList (params) {
+    return axios({
+        url: `/api/groups/queryUserGroup`,
+        method: 'get',
+        params
+    })
+}
+
+export function createGroup (data) {
+    return axios({
+        url: `/api/groups`,
+        method: 'put',
+        data
+    })
+}
+
+export function updateGroup (data) {
+    return axios({
+        url: `/api/groups/${data.id}`,
+        method: 'put',
+        data
+    })
+}
+
+
+export function editGroup (data) {
+    return axios({
+        url: `/api/groups/${data.id}`,
+        method: 'put',
+        data
+    })
+}
+
+export function getGroupDetail (id) {
+    return axios({
+        url: `/api/groups/${id}`,
+        method: 'get'
+    })
+}
+
+export function deleteGroup (id) {
+    return axios({
+        url: `/api/groups/${id}`,
+        method: 'delete'
+    })
+}

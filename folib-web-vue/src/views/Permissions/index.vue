@@ -14,22 +14,47 @@
             <a-table
                 :columns="i18nPermissionColumns"
                 :data-source="permissionsList"
-                :row-key="(r, i) => i.toString()"
+                row-key="id"
+                :loading="loading"
                 :pagination="{ pageSize: limit, current: page, total: total, showLessItems: true }"
+                :scroll="{ x: true }"
+                @change="handleChangeTable"
             >
-                <div slot="responseStatus" slot-scope="responseStatus">
-                    <a-tag color="#f50" v-if="responseStatus != 200">
-                        {{ $t('Setting.Error') }}
-                    </a-tag>
-                    <a-tag color="#87d068" v-else>
-                        {{responseStatus}}
-                    </a-tag>
+                <div slot="enName" slot-scope="enName, record">
+                    <a-button
+                        type="link"
+                        size="small"
+                        :disabled="record.isDefault === '1'"
+                        @click="userCreate(record.id)"
+                    >{{enName}}</a-button>
+                </div>
+                <div slot="users" slot-scope="users">
+                    <div v-if="users" class="by-flex">
+                        <div
+                            v-for="(item, index) in users.split(',')"
+                            :key="index"
+                            class="custom-tag"
+                        >
+                            {{ item }}
+                        </div>
+                    </div>
+                </div>
+                <div slot="userGroups" slot-scope="userGroups">
+                    <div v-if="userGroups" class="by-flex">
+                        <div
+                            v-for="(item, index) in userGroups.split(',')"
+                            :key="index"
+                            class="custom-tag"
+                        >
+                            {{ item }}
+                        </div>
+                    </div>
                 </div>
                 <div slot="operation" slot-scope="text, record">
                     <div class="col-action">
                         <a-popconfirm :title="$t('Setting.SureDelete')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
-                                      @confirm="handleDelete(record)">
-                            <a-button type="link" size="small">
+                                      @confirm="handleDelete(record.id)">
+                            <a-button v-if="record.isDefault === '0'" type="link" size="small">
                                 <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path class="fill-danger" fill-rule="evenodd" clip-rule="evenodd"
                                           d="M9 2C8.62123 2 8.27497 2.214 8.10557 2.55279L7.38197 4H4C3.44772 4 3 4.44772 3 5C3 5.55228 3.44772 6 4 6L4 16C4 17.1046 4.89543 18 6 18H14C15.1046 18 16 17.1046 16 16V6C16.5523 6 17 5.55228 17 5C17 4.44772 16.5523 4 16 4H12.618L11.8944 2.55279C11.725 2.214 11.3788 2 11 2H9ZM7 8C7 7.44772 7.44772 7 8 7C8.55228 7 9 7.44772 9 8V14C9 14.5523 8.55228 15 8 15C7.44772 15 7 14.5523 7 14V8ZM12 7C11.4477 7 11 7.44772 11 8V14C11 14.5523 11.4477 15 12 15C12.5523 15 13 14.5523 13 14V8C13 7.44772 12.5523 7 12 7Z"
@@ -41,11 +66,13 @@
                 </div>
             </a-table>
         </a-card>
-        <CreateModal ref="modal"></CreateModal>
+        <CreateModal ref="modal" @reset="searchPermissions"></CreateModal>
     </div>
 </template>
 <script>
 import CreateModal from './components/modal.vue'
+import { getPermissionList, deletePermission } from "@/api/permissions";
+
 export default {
     name: "index",
     components: {
@@ -57,35 +84,30 @@ export default {
             limit: 10,
             page: 1,
             total: 0,
-            permissionsList: [
-                {
-                    name: 'test',
-                    user: 'test',
-                    groups: 'test',
-                }
-            ],
+            loading: false,
+            permissionsList: [],
             permissionsColumns: [
                 {
                     title: '权限名称',
                     i18nKey: 'Permissions.Name',
-                    dataIndex: 'name',
-                    key: 'name',
-                    width: 200,
-                    scopedSlots: { customRender: 'name' },
+                    dataIndex: 'enName',
+                    key: 'enName',
+                    width: 400,
+                    scopedSlots: { customRender: 'enName' },
                 },
                 {
                     title: '用户',
                     i18nKey: 'Permissions.Users',
-                    dataIndex: 'user',
-                    key: 'user',
-                    scopedSlots: { customRender: 'user' },
+                    dataIndex: 'users',
+                    key: 'users',
+                    scopedSlots: { customRender: 'users' },
                 },
                 {
                     title: '组',
                     i18nKey: 'Permissions.Groups',
-                    dataIndex: 'groups',
-                    key: 'groups',
-                    scopedSlots: { customRender: 'groups' },
+                    dataIndex: 'userGroups',
+                    key: 'userGroups',
+                    scopedSlots: { customRender: 'userGroups' },
                 },
                 {
                     title: '操作',
@@ -107,26 +129,45 @@ export default {
             })
         }
     },
+    mounted() {
+        this.queryList()
+    },
     methods: {
-        userCreate() {
-            this.$refs.modal.openModal()
+        userCreate(id) {
+            this.$refs.modal.openModal(id)
         },
         searchPermissions() {
-
+            this.page = 1
+            this.queryList()
         },
-        handleDelete(record) {
-            // deletePermission({uuid: record.uuid}).then(res => {
-            //     this.successMsg(this.$t('Setting.PermissionDeletedSuccess'))
-            //     this.queryPermissions()
-            // })
+        handleDelete(id) {
+            deletePermission(id).then(res => {
+                this.queryList()
+            })
         },
-        editInfo() {
-
-        }
+        queryList() {
+            this.loading = true
+            getPermissionList({
+                page: this.page,
+                limit: this.limit,
+                name: this.name
+            }).then(res => {
+                if (res && res.data) {
+                    this.permissionsList = res.data.rows
+                    this.total = res.data.total
+                }
+            }).finally(() => {
+                this.loading = false
+            })
+        },
+        handleChangeTable(pagination) {
+            if (pagination) this.page = pagination.current
+            this.queryList()
+        },
     }
 }
 </script>
 
-<style scoped lang="scss">
+<style lang="scss">
 
 </style>
