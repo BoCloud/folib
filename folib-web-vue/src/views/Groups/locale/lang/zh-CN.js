@@ -31,4 +31,6 @@ export default {
     'DeployCache': '部署/缓存',
     'DeleteUpdate': '删除/更新',
     'PromoDistribution': '晋级/分发',
+    'Total': '共',
+    'Items': '条',
 }
