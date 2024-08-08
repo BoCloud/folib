@@ -30,6 +30,7 @@ import java.nio.channels.WritableByteChannel;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Comparator;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -97,7 +98,7 @@ public class RawArtifactController
         logger.info("Requested /{}/{}/{}.", storageId, repositoryId, path);
 
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
-        if (Files.exists(repositoryPath) && Files.isDirectory(repositoryPath)) {
+        if (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath) && Files.isDirectory(repositoryPath)) {
             String uuid = UUID.randomUUID().toString();
             Path tempPaths = Paths.get(String.join("/", tempPath, uuid));
             Files.createDirectories(tempPaths);

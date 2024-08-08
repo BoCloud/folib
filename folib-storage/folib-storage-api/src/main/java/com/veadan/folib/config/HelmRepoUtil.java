@@ -1,12 +1,13 @@
 package com.veadan.folib.config;
 
-import com.veadan.folib.providers.io.RepositoryFileAttributeType;
-import com.veadan.folib.providers.io.RepositoryFiles;
+import cn.hutool.extra.spring.SpringUtil;
+import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -16,7 +17,6 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -60,7 +60,7 @@ public class HelmRepoUtil {
                 .append("helm repo index ")
                 .append(fileAbsolutePath)
                 .append(" --url ")
-                .append(getRepositoryHostUrl(repository));
+                .append(getRepositoryBaseUrl(repository));
         String command = helmCommand.toString();
         Process pro = runtime.exec(command);
         int status = pro.waitFor();
@@ -85,7 +85,7 @@ public class HelmRepoUtil {
                     Map chartMap = (Map) j;
                     List urlList = (ArrayList) chartMap.get("urls");
                     String url = urlList.get(0).toString();
-                    String newUrl = getRepositoryHostUrl(repositoryPath.getRepository()) + "/" + url.split("/")[url.split("/").length - 1];
+                    String newUrl = getRepositoryBaseUrl(repositoryPath.getRepository()) + "/" + url.split("/")[url.split("/").length - 1];
                     urlList.clear();
                     urlList.add(newUrl);
                 });
@@ -98,18 +98,9 @@ public class HelmRepoUtil {
         }
     }
 
-    private String getRepositoryHostUrl(Repository repository) {
-        StringBuilder urlBuilder = new StringBuilder();
-        urlBuilder.append("http://")
-                .append(System.getProperty("folib.host") != null ? System.getProperty("folib.host") : "localhost")
-                .append(":")
-                .append(System.getProperty("folib.port") != null ?
-                        Integer.parseInt(System.getProperty("folib.port")) : 38080).append("/")
-                .append(repository.getStorage().getId())
-                .append("/")
-                .append(repository.getId());
-        return urlBuilder.toString();
-
+    protected static String getRepositoryBaseUrl(Repository repository) {
+        ConfigurationManager configurationManager = SpringUtil.getBean(ConfigurationManager.class);
+        return String.format("%s/%s/%s", StringUtils.removeEnd(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
     }
 
 }

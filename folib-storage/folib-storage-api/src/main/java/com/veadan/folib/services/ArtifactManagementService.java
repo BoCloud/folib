@@ -223,7 +223,7 @@ public class ArtifactManagementService
 
         long startTime = System.currentTimeMillis();
         long totalAmountOfBytes = IOUtils.copy(is, os);
-        logger.info("IOUtils copy [{}] take time [{}] ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
+        logger.info("IOUtils copy [{}] size [{}] take time [{}] ms" , repositoryPath.toString(), totalAmountOfBytes, System.currentTimeMillis() - startTime);
 
         URI repositoryPathId = repositoryPath.toUri();
         Map<String, String> digestMap = aos.getDigestMap(repository.getLayout());
