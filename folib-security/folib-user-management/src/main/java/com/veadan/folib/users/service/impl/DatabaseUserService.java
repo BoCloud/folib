@@ -20,6 +20,7 @@ import com.google.common.collect.Sets;
 import com.veadan.folib.data.CacheName;
 import com.veadan.folib.domain.PageResultResponse;
 import com.veadan.folib.domain.SecurityRole;
+import com.veadan.folib.dto.UserAuthReq;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.domain.UserData;
@@ -74,6 +75,11 @@ public class DatabaseUserService implements UserService
     @Override
     public List<User> findUserByRoles(List<String> rolesList) {
         return userRepository.findUsersWithRoles(rolesList);
+    }
+
+    @Override
+    public void syncUserAuth(UserAuthReq date) {
+
     }
 
     @Override

@@ -32,4 +32,6 @@ public interface FolibUserService {
     boolean saveOrUpdateBatch(List<UserEntity> userEntitys);
 
     Set<Role> queryRoles(String uuid);
+
+    void saveOrUpdate(List<FolibUser> users);
 }

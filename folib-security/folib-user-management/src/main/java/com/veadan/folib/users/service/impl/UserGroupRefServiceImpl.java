@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 
 import javax.transaction.Transactional;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 用户组关联表;(user_group_ref)表服务实现类
@@ -101,5 +102,15 @@ public class UserGroupRefServiceImpl implements UserGroupRefService {
     @Override
     public void deleteByUserId(String userId) {
         userGroupRefMapper.delete(UserGroupRef.builder().userId(userId).build());
+    }
+
+    @Override
+    public void batchUpdate(List<UserGroupRef> userGroups) {
+        List<Long> groupIds = userGroups.stream().map(UserGroupRef::getUserGroupId).collect(Collectors.toList());
+        List<UserGroupRef> queryUserGroupRefs = userGroupRefMapper.queryByGroupIds(groupIds);
+        if (!queryUserGroupRefs.isEmpty()) {
+            userGroups = userGroups.stream().filter(userGroupRef -> queryUserGroupRefs.stream().noneMatch(queryUserGroupRef -> queryUserGroupRef.getUserGroupId().equals(userGroupRef.getUserGroupId()) && queryUserGroupRef.getUserId().equals(userGroupRef.getUserId()))).collect(Collectors.toList());
+        }
+        userGroupRefMapper.insertBatch(userGroups);
     }
 }

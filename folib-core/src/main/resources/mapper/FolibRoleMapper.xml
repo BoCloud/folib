@@ -126,10 +126,10 @@
 
     <!-- 批量新增或按主键更新数据 -->
     <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into folib_role(id,cn_name,en_name,description,deleted,is_default,create_by,create_time,update_by,update_time)
+        insert into folib_role(id,cn_name,en_name,description,deleted,is_default,create_by,update_by)
         values
         <foreach collection="entities" item="entity" separator=",">
-            (#{entity.id},#{entity.cnName},#{entity.enName},#{entity.description},#{entity.deleted},#{entity.isDefault},#{entity.createBy},#{entity.createTime},#{entity.updateBy},#{entity.updateTime})
+            (#{entity.id},#{entity.cnName},#{entity.enName},#{entity.description},#{entity.deleted},#{entity.isDefault},#{entity.createBy},#{entity.updateBy})
         </foreach>
         on duplicate key update
         id=values(id),
@@ -139,9 +139,7 @@
         deleted=values(deleted),
         is_default=values(is_default),
         create_by=values(create_by),
-        create_time=values(create_time),
-        update_by=values(update_by),
-        update_time=values(update_time)
+        update_by=values(update_by)
     </insert>
 
     <!-- 更新数据 -->

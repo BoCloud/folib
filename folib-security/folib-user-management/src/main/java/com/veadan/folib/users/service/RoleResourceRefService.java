@@ -90,4 +90,6 @@ public interface RoleResourceRefService{
     void savePermissions(RoleDTO roleForm, String roleId, String username);
 
     List<RoleResourceRef> queryApiAuthorities(List<String> roleIds);
+
+    void batchUpdate(List<RoleResourceRef> userRoles);
 }

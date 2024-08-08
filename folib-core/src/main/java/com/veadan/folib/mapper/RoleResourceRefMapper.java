@@ -1,6 +1,5 @@
 package com.veadan.folib.mapper;
 import java.util.List;
-import java.util.Set;
 
 import com.veadan.folib.common.base.CommonMapper;
 import com.veadan.folib.dto.PermissionsDTO;
@@ -100,4 +99,6 @@ public interface RoleResourceRefMapper extends CommonMapper<RoleResourceRef> {
       * @return
       */
      List<RoleResourceRef> queryApiAuthorities(@Param("roleIds") List<String> roleIds);
+
+     List<RoleResourceRef> queryByRoleIds(@Param("roleIds") List<String> roleIds);
  }

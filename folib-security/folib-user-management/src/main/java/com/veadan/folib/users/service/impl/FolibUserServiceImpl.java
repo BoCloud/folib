@@ -111,4 +111,10 @@ public class FolibUserServiceImpl implements FolibUserService {
 //        return folibUserMapper.queryRoles(uuid);
         return null;
     }
+
+    @Override
+    public void saveOrUpdate(List<FolibUser> users) {
+        folibUserMapper.insertOrUpdateBatch(users);
+    }
+
 }

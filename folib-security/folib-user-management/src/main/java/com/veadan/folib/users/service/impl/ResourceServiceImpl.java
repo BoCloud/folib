@@ -111,4 +111,9 @@ public class ResourceServiceImpl implements ResourceService {
     public List<Resource> findResources(List<Resource> resources) {
         return resourceMapper.findResources(resources);
     }
+
+    @Override
+    public void saveOrUpdateBatch(List<Resource> resources) {
+        resourceMapper.insertOrUpdateBatch(resources);
+    }
 }

@@ -56,4 +56,6 @@ public interface ResourceService{
     List<Resource> findAll();
 
     List<Resource> findResources(List<Resource> resources);
+
+    void saveOrUpdateBatch(List<Resource> resources);
 }

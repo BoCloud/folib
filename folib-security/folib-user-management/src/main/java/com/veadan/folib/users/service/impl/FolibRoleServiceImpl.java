@@ -430,6 +430,11 @@ public class FolibRoleServiceImpl implements FolibRoleService {
         roleResourceRefService.deleteByRoleId(roleId);
     }
 
+    @Override
+    public void saveOrUpdateBatch(List<FolibRole> roles) {
+        folibRoleMapper.insertOrUpdateBatch(roles);
+    }
+
 
     /**
      * 获取仓库权限

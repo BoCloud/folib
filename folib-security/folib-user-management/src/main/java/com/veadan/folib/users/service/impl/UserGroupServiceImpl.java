@@ -100,4 +100,9 @@ public class UserGroupServiceImpl implements UserGroupService {
     public UserGroupDTO queryGroupDetailById(Long groupId) {
         return userGroupMapper.queryGroupDetailById(groupId);
     }
+
+    @Override
+    public void saveOrUpdateBatch(List<UserGroup> groups) {
+        userGroupMapper.insertOrUpdateBatch(groups);
+    }
 }

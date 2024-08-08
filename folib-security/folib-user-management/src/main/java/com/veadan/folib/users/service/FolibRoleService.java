@@ -78,4 +78,6 @@ public interface FolibRoleService{
     RoleDTO getRoleDetail(String roleId, FolibRole folibRole);
 
     void deleteRole(String roleId);
+
+    void saveOrUpdateBatch(List<FolibRole> roles);
 }

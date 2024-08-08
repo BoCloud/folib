@@ -121,10 +121,10 @@
 
     <!-- 批量新增或按主键更新数据 -->
     <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into user_group(id,group_name,description,join_group,deleted,create_by,create_time,update_by,update_time)
+        insert into user_group(id,group_name,description,join_group,deleted,create_by,update_by)
         values
         <foreach collection="entities" item="entity" separator=",">
-            (#{entity.id},#{entity.groupName},#{entity.description},#{entity.joinGroup},#{entity.deleted},#{entity.createBy},#{entity.createTime},#{entity.updateBy},#{entity.updateTime})
+            (#{entity.id},#{entity.groupName},#{entity.description},#{entity.joinGroup},#{entity.deleted},#{entity.createBy},#{entity.updateBy})
         </foreach>
         on duplicate key update
         id=values(id),
@@ -133,9 +133,7 @@
         join_group=values(join_group),
         deleted=values(deleted),
         create_by=values(create_by),
-        create_time=values(create_time),
-        update_by=values(update_by),
-        update_time=values(update_time)
+        update_by=values(update_by)
     </insert>
 
     <!-- 更新数据 -->

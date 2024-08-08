@@ -2,7 +2,6 @@ package com.veadan.folib.users.service.impl;
 
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.converts.ResourceConvert;
-import com.veadan.folib.domain.SecurityRole;
 import com.veadan.folib.dto.*;
 import com.veadan.folib.entity.Resource;
 import com.veadan.folib.entity.RoleResourceRef;
@@ -232,5 +231,23 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
     @Override
     public List<RoleResourceRef> queryApiAuthorities(List<String> roleIds) {
         return roleResourceRefMapper.queryApiAuthorities(roleIds);
+    }
+
+    @Override
+    public void batchUpdate(List<RoleResourceRef> userRoles) {
+        List<String> roleIds = userRoles.stream().map(RoleResourceRef::getRoleId).collect(Collectors.toList());
+        List<RoleResourceRef> queryUserRoleRefs = roleResourceRefMapper.queryByRoleIds(roleIds);
+        if (!queryUserRoleRefs.isEmpty()) {
+            userRoles = userRoles.stream().filter(userRoleRef -> queryUserRoleRefs.stream().noneMatch(queryUserGroupRef ->
+                    queryUserGroupRef.getRoleId().equals(userRoleRef.getRoleId())
+                            && Objects.equals(queryUserGroupRef.getEntityId(), userRoleRef.getEntityId())
+                            && Objects.equals(queryUserGroupRef.getRefType(), userRoleRef.getRefType())
+                            && Objects.equals(queryUserGroupRef.getResourceId(), userRoleRef.getResourceId())
+                            && Objects.equals(queryUserGroupRef.getResourceType(), userRoleRef.getResourceType())
+                            && Objects.equals(queryUserGroupRef.getPathPrivilege(), userRoleRef.getPathPrivilege())
+                            && Objects.equals(queryUserGroupRef.getRepositoryPrivilege(), userRoleRef.getRepositoryPrivilege())
+                            && Objects.equals(queryUserGroupRef.getStoragePrivilege(), userRoleRef.getStoragePrivilege()))).collect(Collectors.toList());
+        }
+        roleResourceRefMapper.insertBatch(userRoles);
     }
 }

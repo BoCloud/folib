@@ -9,6 +9,7 @@ import com.veadan.folib.domain.PageResultResponse;
 import com.veadan.folib.domain.SecurityRole;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.UserEntity;
+import com.veadan.folib.dto.UserAuthReq;
 import com.veadan.folib.dto.UserDTO;
 import com.veadan.folib.entity.*;
 import com.veadan.folib.repositories.UserRepository;
@@ -72,6 +73,8 @@ public class RelationalDatabaseUserService implements UserService
     protected UserRepository userRepository;
     @Inject
     private FolibRoleService folibRoleService;
+    @Inject
+    private ResourceService resourceService;
 
     @Override
     @CacheEvict(cacheNames = CacheName.User.AUTHENTICATIONS, key = "#p0")
@@ -84,6 +87,28 @@ public class RelationalDatabaseUserService implements UserService
     public List<User> findUserByRoles(List<String> rolesList) {
         //FIXME 通过存储id、仓库id、指定权限查询关联的用户
         return null;
+    }
+
+    @Override
+    public void syncUserAuth(UserAuthReq date) {
+        //更新节点用户信息
+        List<FolibUser> users = date.getUsers();
+        folibUserService.saveOrUpdate(users);
+
+        List<UserGroup> groups = date.getGroups();
+        userGroupService.saveOrUpdateBatch(groups);
+
+        List<UserGroupRef> userGroups = date.getUserGroups();
+        userGroupRefService.batchUpdate(userGroups);
+
+        List<FolibRole> roles = date.getRoles();
+        folibRoleService.saveOrUpdateBatch(roles);
+
+        List<Resource> resources = date.getResources();
+        resourceService.saveOrUpdateBatch(resources);
+
+        List<RoleResourceRef> userRoles = date.getUserRoles();
+        roleResourceRefService.batchUpdate(userRoles);
     }
 
     @Override

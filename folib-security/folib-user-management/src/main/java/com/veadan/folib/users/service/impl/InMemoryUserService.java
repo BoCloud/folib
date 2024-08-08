@@ -16,6 +16,7 @@ import com.google.common.collect.Sets;
 import com.veadan.folib.data.CacheName;
 import com.veadan.folib.domain.PageResultResponse;
 import com.veadan.folib.domain.SecurityRole;
+import com.veadan.folib.dto.UserAuthReq;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.security.JwtAuthenticationClaimsProvider;
 import com.veadan.folib.users.security.JwtClaimsProvider;
@@ -231,6 +232,11 @@ public class InMemoryUserService implements UserService
         {
             readLock.unlock();
         }
+    }
+
+    @Override
+    public void syncUserAuth(UserAuthReq date) {
+
     }
 
     @Override

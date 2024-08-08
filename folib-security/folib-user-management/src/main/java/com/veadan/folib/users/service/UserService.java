@@ -2,6 +2,7 @@ package com.veadan.folib.users.service;
 
 import com.veadan.folib.domain.PageResultResponse;
 import com.veadan.folib.domain.User;
+import com.veadan.folib.dto.UserAuthReq;
 import com.veadan.folib.users.domain.Users;
 import org.jose4j.lang.JoseException;
 
@@ -67,4 +68,5 @@ public interface UserService {
     List<User> findUserByRoles(List<String> rolesList);
 
 
+    void syncUserAuth(UserAuthReq date);
 }
