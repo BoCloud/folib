@@ -38,6 +38,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author mtodorov
@@ -71,16 +72,21 @@ public class StorageManagementServiceImpl implements StorageManagementService {
     @Override
     public void updateStorage(StorageDto storage)
             throws IOException {
-        handlerOriginalStorageAdminRole(storage.getAdmin(), storage.getId());
+        handlerOriginalStorageAdminRoleByDB(storage.getAdmin(), storage.getId());
         configurationManagementService.updateStorage(storage);
-        handlerStorageAdminRole(storage.getAdmin(), storage.getId(), null);
+        handlerStorageAdminRoleByDB(storage.getAdmin(), storage.getId());
+        storage.getUsers().add(storage.getAdmin());
+        handlerStorageOrdinaryRoleByDB(storage.getUsers(), storage.getId());
     }
 
     @Override
     public void createStorage(StorageDto storage)
             throws IOException {
         configurationManagementService.createStorage(storage);
-        handlerStorageAdminRole(storage.getAdmin(), storage.getId(), null);
+        handlerStorageAdminRoleByDB(storage.getAdmin(), storage.getId());
+        storage.getUsers().add(storage.getAdmin());
+        handlerStorageOrdinaryRoleByDB(storage.getUsers(), storage.getId());
+
     }
 
     @Override
@@ -90,7 +96,26 @@ public class StorageManagementServiceImpl implements StorageManagementService {
         for (Repository repository : storage.getRepositories().values()) {
             repositoryManagementService.removeRepository(storageId, repository.getId());
         }
-        handlerStorageAdminRole(storage.getAdmin(), "", null);
+        deleteStorageRole(storageId);
+    }
+
+    /**
+     * 删除存储空间关联的角色和权限
+     * @param storageId
+     */
+    private void deleteStorageRole(String storageId) {
+        String adminRoleId = String.format("STORAGE_ADMIN_%S", storageId);
+        String ordinalRoleId = String.format("STORAGE_USER_%S", storageId);
+        //删除存储空间关联的角色
+        folibRoleService.deleteById(adminRoleId);
+        folibRoleService.deleteById(ordinalRoleId);
+        //删除存储空间关联的权限
+        List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryRefs(RoleResourceRef.builder().roleId(adminRoleId).build());
+        List<RoleResourceRef> ordinalRoleResourceRefs = roleResourceRefService.queryRefs(RoleResourceRef.builder().roleId(ordinalRoleId).build());
+        roleResourceRefs.addAll(ordinalRoleResourceRefs);
+        if (CollectionUtils.isNotEmpty(roleResourceRefs)) {
+            roleResourceRefService.removeByIds(roleResourceRefs.stream().map(RoleResourceRef::getId).collect(Collectors.toList()));
+        }
     }
 
     @Override
@@ -133,13 +158,13 @@ public class StorageManagementServiceImpl implements StorageManagementService {
                     resourceService.saveBatch(addResources);
                 }
                 //创建角色
-                String roleId = String.format("STORAGE_%S_USER", storageId);
+                String roleId = String.format("STORAGE_USER_%S", storageId);
                 FolibRole folibRole = folibRoleService.queryById(roleId);
                 if(Objects.isNull(folibRole)) {
                     folibRole = FolibRole.builder()
                             .id(roleId)
                             .cnName(String.format("存储空间%s用户", storageId))
-                            .enName(String.format("STORAGE_%S_USER", storageId))
+                            .enName(roleId)
                             .isDefault(GlobalConstants.NOT_DEFAULT).deleted(GlobalConstants.NOT_DELETED)
                             .description(String.format("存储空间%s下的普通用户", storageId))
                             .build();
@@ -170,6 +195,24 @@ public class StorageManagementServiceImpl implements StorageManagementService {
         }
     }
 
+    @Override
+    public void getStorageUsers(List<Storage> storages) {
+        List<String> storageIds = storages.stream().map(Storage::getId).collect(Collectors.toList());
+        List<String> roleIds = storageIds.stream().flatMap(storageId -> Stream.of(String.format("STORAGE_USER_%S", storageId), String.format("STORAGE_ADMIN_%S", storageId))).collect(Collectors.toList());
+        List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryRefsByRoleIds(roleIds);
+        Map<String, List<RoleResourceRef>> roleUserMap = roleResourceRefs.stream().filter(r -> r.getRefType().equals(GlobalConstants.ROLE_TYPE_USER)).collect(Collectors.groupingBy(RoleResourceRef::getRoleId));
+        storages.forEach(storage -> {
+            List<RoleResourceRef> userRef = roleUserMap.get(String.format("STORAGE_USER_%S", storage.getId()));
+            if (CollectionUtils.isNotEmpty(userRef)){
+                storage.setUsers(userRef.stream().map(RoleResourceRef::getEntityId).collect(Collectors.toSet()));
+            }
+            List<RoleResourceRef> adminRef = roleUserMap.get(String.format("STORAGE_ADMIN_%S", storage.getId()));
+            if (CollectionUtils.isNotEmpty(adminRef)) {
+                storage.setAdmin(adminRef.get(0).getEntityId());
+            }
+        });
+    }
+
     /**
      * 处理原有的管理员角色
      *
@@ -185,6 +228,98 @@ public class StorageManagementServiceImpl implements StorageManagementService {
             Set<String> storageIdSet = getManagerStorageIdList(originalUsername);
             storageIdSet.remove(storageId);
             handlerStorageAdminRole(originalUsername, null, storageIdSet);
+        }
+    }
+
+    /**
+     * 维护数据库中的存储空间管理员角色
+     *
+     * @param username
+     * @param storageId
+     */
+    private void handlerOriginalStorageAdminRoleByDB(String username, String storageId) {
+        String key = String.format("STORAGE_ADMIN_%S", storageId);
+        List<RoleResourceRef> roleAdminRefs = roleResourceRefService.queryRefs(RoleResourceRef.builder().roleId(key).refType(GlobalConstants.ROLE_TYPE_USER).build());
+        if (CollectionUtils.isNotEmpty(roleAdminRefs)) {
+            List<String> roleAdmins = roleAdminRefs.stream().map(RoleResourceRef::getEntityId).collect(Collectors.toList());
+            if (!roleAdmins.contains(username)) {
+                roleResourceRefService.removeByIds(roleAdminRefs.stream().map(RoleResourceRef::getId).collect(Collectors.toList()));
+            }
+        }
+    }
+
+    /**
+     * 处理存储空间管理员角色
+     *
+     * @param username         用户名
+     * @param currentStorageId 存储空间名称
+     */
+    private void handlerStorageAdminRoleByDB(String username, String currentStorageId) {
+        if (StringUtils.isNotBlank(username) && !isAdmin(username)) {
+            try {
+
+                String key = String.format("STORAGE_ADMIN_%S", currentStorageId);
+                FolibRole folibRole = folibRoleService.queryById(key);
+                if (folibRole == null) {
+                    folibRoleService.insert(FolibRole.builder().id(key).enName(key).description("存储空间管理员的专属角色").build());
+                }
+                Resource storageResource = Resource.builder().storageId(currentStorageId).build();
+                Resource resource = resourceService.queryResource(storageResource);
+                if (resource == null) {
+                    resourceService.insert(storageResource);
+                }
+                Set<String> privileges = privileges();
+                List<RoleResourceRef> roleResourceRefs = privileges.stream().map(privilege -> RoleResourceRef.builder().roleId(key).entityId(username).refType(GlobalConstants.ROLE_TYPE_USER).resourceId(resource.getId())
+                        .storagePrivilege(privilege).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build()).collect(Collectors.toList());
+                roleResourceRefService.saveBath(roleResourceRefs);
+
+            } catch (Exception ex) {
+                logger.error("handler user {} storage {} admin role error：{}", username, currentStorageId, ExceptionUtils.getStackTrace(ex));
+                throw new RuntimeException(ex.getMessage());
+            }
+        }
+    }
+
+    /**
+     * 处理存储空间普通角色
+     *
+     * @param users         用户名
+     * @param currentStorageId 存储空间名称
+     */
+    private void handlerStorageOrdinaryRoleByDB(Set<String> users, String currentStorageId) {
+        if (!users.isEmpty()) {
+            try {
+                String key = String.format("STORAGE_USER_%S", currentStorageId);
+                FolibRole folibRole = folibRoleService.queryById(key);
+                if (folibRole == null) {
+                    folibRole = FolibRole.builder()
+                            .id(key)
+                            .cnName(String.format("存储空间%s用户", currentStorageId))
+                            .enName(String.format("STORAGE_%S_USER", currentStorageId))
+                            .isDefault(GlobalConstants.NOT_DEFAULT).deleted(GlobalConstants.NOT_DELETED)
+                            .description(String.format("存储空间%s下的普通用户", currentStorageId))
+                            .build();
+                     folibRoleService.insert(folibRole);
+                }
+                Resource storageResource = Resource.builder().storageId(currentStorageId).build();
+                Resource resource = resourceService.queryResource(storageResource);
+                if (resource == null) {
+                    resourceService.insert(storageResource);
+                }
+                Set<String> privileges = privileges();
+                List<RoleResourceRef> roleResourceRefs = new ArrayList<>();
+                privileges.forEach(privilege -> users.forEach(user -> {
+                    roleResourceRefs.add(RoleResourceRef.builder().roleId(key).entityId(user).refType(GlobalConstants.ROLE_TYPE_USER).resourceId(resource.getId())
+                            .storagePrivilege(privilege).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build());
+                }));
+                if (CollectionUtils.isNotEmpty(roleResourceRefs)) {
+                    roleResourceRefService.saveBath(roleResourceRefs);
+                }
+
+            } catch (Exception ex) {
+                logger.error("handler user {} storage {} admin role error：{}", users, currentStorageId, ExceptionUtils.getStackTrace(ex));
+                throw new RuntimeException(ex.getMessage());
+            }
         }
     }
 

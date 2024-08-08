@@ -88,4 +88,6 @@ public interface RoleResourceRefService{
     List<RoleResourceRef> queryRoleByUserId(String uuid, List<String> roles);
 
     void savePermissions(RoleDTO roleForm, String roleId, String username);
+
+    List<RoleResourceRef> queryApiAuthorities(List<String> roleIds);
 }

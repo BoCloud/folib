@@ -217,9 +217,9 @@ public class StoragesConfigurationController
             // 向其他集群节点同步storage
             SyncStorageDto syncStorageDto = new SyncStorageDto(storage, storageForm.getId(), SyncStorageEnum.CREATE);
             clusterSyncService.syncStorage(syncStorageDto);
-            AuthorizationConfigDto authorizationConfigDto = authorizationConfigService.getDto();
+            /*AuthorizationConfigDto authorizationConfigDto = authorizationConfigService.getDto();
             SyncAuthorizationDto syncAuthorizationDto = new SyncAuthorizationDto(authorizationConfigDto, SyncAuthorizationEnum.UPDATE);
-            clusterSyncService.syncAuthorization(syncAuthorizationDto);
+            clusterSyncService.syncAuthorization(syncAuthorizationDto);*/
             return getSuccessfulResponseEntity(SUCCESSFUL_SAVE_STORAGE, accept);
         } catch (ConfigurationException | IOException e) {
             return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_SAVE_STORAGE_ERROR, e, accept);
@@ -257,9 +257,9 @@ public class StoragesConfigurationController
             storageManagementService.updateStorage(storage);
             SyncStorageDto syncStorageDto = new SyncStorageDto(storage, storageId, SyncStorageEnum.UPDATE);
             clusterSyncService.syncStorage(syncStorageDto);
-            AuthorizationConfigDto authorizationConfigDto = authorizationConfigService.getDto();
+            /*AuthorizationConfigDto authorizationConfigDto = authorizationConfigService.getDto();
             SyncAuthorizationDto syncAuthorizationDto = new SyncAuthorizationDto(authorizationConfigDto, SyncAuthorizationEnum.UPDATE);
-            clusterSyncService.syncAuthorization(syncAuthorizationDto);
+            clusterSyncService.syncAuthorization(syncAuthorizationDto);*/
             return getSuccessfulResponseEntity(SUCCESSFUL_UPDATE_STORAGE, accept);
         } catch (ConfigurationException | IOException e) {
             return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_UPDATE_STORAGE_ERROR, e, accept);
@@ -275,6 +275,8 @@ public class StoragesConfigurationController
         final List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
                 .getStorages()
                 .values());
+        //查询数据库中存储空间绑定的用户
+        storageManagementService.getStorageUsers(storages);
         String username = "";
         if (Objects.nonNull(authentication)) {
             final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
@@ -318,6 +320,8 @@ public class StoragesConfigurationController
         List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
                 .getStorages()
                 .values());
+        //查询数据库中存储空间绑定的用户
+        storageManagementService.getStorageUsers(storages);
         final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
         String username = loggedUser.getUsername();
         List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
@@ -379,6 +383,8 @@ public class StoragesConfigurationController
         List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
                 .getStorages()
                 .values());
+        //查询数据库中存储空间绑定的用户
+        storageManagementService.getStorageUsers(storages);
         final SpringSecurityUser loggedUser = (SpringSecurityUser) authentication.getPrincipal();
         String username = loggedUser.getUsername();
         List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
@@ -424,6 +430,8 @@ public class StoragesConfigurationController
         List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
                 .getStorages()
                 .values());
+        //查询数据库中存储空间绑定的用户
+        storageManagementService.getStorageUsers(storages);
         List<StorageTreeForm> dispatchTreeForms = Lists.newArrayList();
         List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
         StorageTreeForm dispatchTreeForm = StorageTreeForm.builder()
@@ -539,6 +547,8 @@ public class StoragesConfigurationController
                                                    @ApiParam(value = "The filter")
                                                    @RequestParam(value = "filter", required = false) Boolean filter) {
         StorageDto storage = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
+        //查询数据库中存储空间绑定的用户
+        storageManagementService.getStorageUsers(Collections.singletonList(storage));
         if (storage != null) {
             String username = loginUsername();
             boolean flag = Boolean.TRUE.equals(filter) && !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isEmpty(storage.getUsers()) || (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username)));
@@ -584,9 +594,9 @@ public class StoragesConfigurationController
                 logger.info("Removed storage {}.", storageId);
                 SyncStorageDto syncStorageDto = new SyncStorageDto(storageDto, SyncStorageEnum.DELETE, storageId, force);
                 clusterSyncService.syncStorage(syncStorageDto);
-                AuthorizationConfigDto authorizationConfigDto = authorizationConfigService.getDto();
+                /*AuthorizationConfigDto authorizationConfigDto = authorizationConfigService.getDto();
                 SyncAuthorizationDto syncAuthorizationDto = new SyncAuthorizationDto(authorizationConfigDto, SyncAuthorizationEnum.UPDATE);
-                clusterSyncService.syncAuthorization(syncAuthorizationDto);
+                clusterSyncService.syncAuthorization(syncAuthorizationDto);*/
                 return getSuccessfulResponseEntity(SUCCESSFUL_STORAGE_REMOVAL, accept);
             } catch (ConfigurationException | IOException e) {
                 return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_STORAGE_REMOVAL, e, accept);

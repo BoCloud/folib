@@ -228,4 +228,9 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
 
         saveBath(roleResourceRefs);
     }
+
+    @Override
+    public List<RoleResourceRef> queryApiAuthorities(List<String> roleIds) {
+        return roleResourceRefMapper.queryApiAuthorities(roleIds);
+    }
 }

@@ -24,4 +24,7 @@ public interface Storage
 
     String getStorageProvider();
 
+    void setUsers(Set<String> users);
+
+    void setAdmin(String username);
 }

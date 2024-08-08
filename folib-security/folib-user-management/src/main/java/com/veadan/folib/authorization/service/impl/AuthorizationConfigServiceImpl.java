@@ -10,11 +10,13 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veadan.folib.authorization.domain.Client;
 import com.veadan.folib.authorization.domain.RoleData;
 import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.dto.PermissionsDTO;
+import com.veadan.folib.entity.RoleResourceRef;
 import com.veadan.folib.users.dto.AccessModelDto;
 import com.veadan.folib.users.dto.RepositoryPrivilegesDto;
 import com.veadan.folib.users.dto.StoragePrivilegesDto;
@@ -93,6 +95,14 @@ public class AuthorizationConfigServiceImpl
     private AuthorizationConfigDto getAuthorizationConfigDto(String username) {
         List<PermissionsDTO> permissions = roleResourceRefService.queryPermissions(null, username);
         Map<String, List<PermissionsDTO>> permissionMap = permissions.stream().filter(dto -> dto.getRoleId() != null).collect(Collectors.groupingBy(PermissionsDTO::getRoleId, Collectors.toList()));
+        Map<String, List<RoleResourceRef>> apiMap;
+        if (!permissionMap.isEmpty()) {
+            List<String> roleIds = permissions.stream().map(PermissionsDTO::getRoleId).distinct().collect(Collectors.toList());
+            List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryApiAuthorities(roleIds);
+            apiMap = roleResourceRefs.stream().filter(api -> StrUtil.isNotEmpty(api.getApiAuthoritie())).collect(Collectors.groupingBy(RoleResourceRef::getRoleId));
+        } else {
+            apiMap = new HashMap<>();
+        }
         AuthorizationConfigDto authorizationConfig = new AuthorizationConfigDto();
         Set<RoleDto> roles = new LinkedHashSet<>();
 
@@ -102,7 +112,10 @@ public class AuthorizationConfigServiceImpl
             List<PermissionsDTO> permissionsDTOS = permissionMap.get(roleId);
             roleDto.setDescription(permissionsDTOS.get(0).getDescription());
             AccessModelDto accessModel = new AccessModelDto();
-            accessModel.setApiAuthorities(permissionsDTOS.stream().filter(dto -> dto.getApiAuthoritie() != null).map(dto -> Privileges.valueOf(dto.getApiAuthoritie())).collect(Collectors.toSet()));
+            List<RoleResourceRef> apiRefs = apiMap.get(roleId);
+            if(apiRefs != null) {
+                accessModel.setApiAuthorities(apiRefs.stream().filter(dto -> dto.getApiAuthoritie() != null).map(dto -> Privileges.valueOf(dto.getApiAuthoritie())).collect(Collectors.toSet()));
+            }
             Set<StoragePrivilegesDto> storageAuthorities = new LinkedHashSet<>();
             Map<String, List<PermissionsDTO>> storageMap = permissionsDTOS.stream().distinct().filter(dto -> dto.getStorageId() != null).collect(Collectors.groupingBy(PermissionsDTO::getStorageId, Collectors.toList()));
             storageMap.keySet().forEach(storageId -> {

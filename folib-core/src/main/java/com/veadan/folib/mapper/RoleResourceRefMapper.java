@@ -93,4 +93,11 @@ public interface RoleResourceRefMapper extends CommonMapper<RoleResourceRef> {
      List<PermissionsDTO> queryPermissions(@Param("roleId") String roleId, @Param("username") String username);
 
      List<RoleResourceRef> queryRoleByUserId(@Param("userId")String userId,@Param("roleIds") List<String> roleIds);
+
+     /**
+      * 通过角色id查询api权限
+      * @param roleIds
+      * @return
+      */
+     List<RoleResourceRef> queryApiAuthorities(@Param("roleIds") List<String> roleIds);
  }

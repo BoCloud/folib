@@ -111,8 +111,8 @@
 
     <!--新增数据-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
-        insert into folib_role(id,cn_name,en_name,description,deleted,is_default,create_by,create_time,update_by,update_time)
-        values (#{id},#{cnName},#{enName},#{description},#{deleted},#{isDefault},#{createBy},#{createTime},#{updateBy},#{updateTime})
+        insert into folib_role(id,cn_name,en_name,description,deleted,is_default,create_by,update_by)
+        values (#{id},#{cnName},#{enName},#{description},#{deleted},#{isDefault},#{createBy},#{updateBy})
     </insert>
 
     <!-- 批量新增数据 -->
