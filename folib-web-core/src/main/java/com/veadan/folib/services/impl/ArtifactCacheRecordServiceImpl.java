@@ -353,23 +353,23 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
         // 在弹性线程池调度器上发布，以异步方式处理数据
         // 对每个缓冲区内的记录列表，提取它们的ID，并调用artifactCacheRecordMapper的batchDelete方法进行批量删除
         // 最后，通过subscribe方法订阅这个响应式流，启动数据处理
-        StopWatch stopWatch = new StopWatch();
-        stopWatch.start("batchDeleteArtifactCacheRecord-0");
         Flux.fromIterable(records)
+                // 过滤掉不符合处理条件的记录
                 .filter(this::handlerDeleteArtifact)
+                // 将过滤后的记录收集到一个列表中
                 .buffer()
+                // 在弹性线程池调度器上异步执行操作
                 .publishOn(Schedulers.boundedElastic())
+                .parallel(2)
+                // 对收集到的每一批记录执行以下操作
                 .doOnNext(re -> {
-                    StopWatch stopWatch2 = new StopWatch();
-                    stopWatch2.start("batchDeleteArtifactCacheRecord-1");
+                    // 提取所有记录的ID
                     List<Long> ids = re.stream().map(ArtifactCacheRecord::getId).collect(Collectors.toList());
+                    // 批量删除数据库中对应ID的记录
                     artifactCacheRecordMapper.batchDelete(ids);
-                    stopWatch2.stop();
-                    log.info(stopWatch2.prettyPrint());
                 })
+                // 订阅Flux以触发操作，但不直接使用返回的Subscription对象
                 .subscribe();
-        stopWatch.stop();
-        log.info(stopWatch.prettyPrint());
     }
 
     /**
