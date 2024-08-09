@@ -3,7 +3,7 @@
     "./layouts/Dashboard.vue" .
  -->
 
-<template>
+ <template>
   <div>
 
     <a-row type="flex" :gutter="24">
@@ -105,9 +105,6 @@
                                 </a-descriptions-item>
                                 <a-descriptions-item :label="$t('Users.RoleInformation')">
                                   {{ item.roles }}
-                                </a-descriptions-item>
-                                <a-descriptions-item :label="$t('Users.GroupInformation')">
-                                  {{ item.userGroups }}
                                 </a-descriptions-item>
                               </a-descriptions>
                             </div>
@@ -223,31 +220,6 @@
               </div>
             </a-card>
           </a-col>
-          <a-col :span="24" class="mb-24">
-            <a-card :bordered="false" class="header-solid h-full" :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }"
-                    v-if="currentUser">
-              <template #title>
-                <h6 class="font-semibold m-0">{{ userNotEdit ? $t('Users.GroupInformation') : $t('Users.GroupEdit') }}</h6>
-              </template>
-              <div v-for="(item, index) in groupList" :key="index">
-                <hr class="gradient-line">
-                <a-row type="flex" align="middle">
-                  <a-col>
-                    <a-avatar :size="48" src="images/folib/anonymous.svg" />
-                  </a-col>
-                  <a-col class="pl-15">
-                    <h6 class="mb-0">{{ item.groupName }}</h6>
-                    <a class="text-dark">{{ item.description }}</a>
-                  </a-col>
-                  <a-col :span="24" :md="8" class="ml-auto"
-                         style="display: flex; align-items: center; justify-content: flex-end">
-                    <!--  <span class="mr-15">{{ item.enabled ? $t('Users.TurnOn') : $t('Users.ShutDown') }}</span>-->
-                    <a-checkbox :disabled="userNotEdit" v-model="item.enabled" @change="groupChange($event, item.id, index)" />
-                  </a-col>
-                </a-row>
-              </div>
-            </a-card>
-          </a-col>
         </a-row>
       </a-col>
     </a-row>
@@ -273,8 +245,6 @@
 import { getUsers, queryUser, getUserDetial, putUserDetial, getUsersCreateFields, delUser } from "@/api/users";
 import { encrypt } from "@/utils/jsencrypt"
 import textOver from "@/components/Tools/textOver";
-import { getPermissionList } from "@/api/permissions";
-import { getGroupList } from "@/api/group";
 
 export default ({
   inject: ["reload"],
@@ -337,18 +307,14 @@ export default ({
         username: '',
         email: ''
       },
-      userLoading: false,
-      defaultRoles: [],
-      groupList: []
+      userLoading: false
     }
   },
   created() {
     this.initData()
   },
   methods: {
-    async initData() {
-      await this.getCurrentDefaultRole()
-      await this.getCurrentGroup()
+    initData() {
       this.getUsers()
       this.queryUsers()
     },
@@ -385,48 +351,17 @@ export default ({
 
         const roles = res.user.roles
 
-        res.assignableRoles = res.assignableRoles.filter(item => this.defaultRoles.includes(item.name))
+        let roleNameList = ['ADMIN', 'GENERAL', 'ARTIFACTS_MANAGER', 'OPEN_SOURCE_MANAGE']
+        res.assignableRoles = res.assignableRoles.filter(item => roleNameList.includes(item.name))
 
         res.assignableRoles.forEach((item) => {
-          item.enabled = roles.indexOf(item.name) > -1;
-        })
-        const userGroupIds = res.user.userGroupIds || []
-        this.groupList.forEach(item => {
-            item.enabled = userGroupIds.indexOf(item.id) > -1;
+          if (roles.indexOf(item.name) > -1) {
+            item.enabled = true
+          } else {
+            item.enabled = false
+          }
         })
         this.currentUser = res
-      })
-    },
-    async getCurrentDefaultRole() {
-      await new Promise((resolve, reject) => {
-        getPermissionList({
-          page: 1,
-          limit: 10,
-          isDefault: 1
-        }).then(res => {
-          this.defaultRoles = []
-          if (res && res.data) {
-            this.defaultRoles = res.data.rows.map(item => item.id)
-          }
-          resolve()
-        }).catch(e => {
-            reject(e)
-        })
-      })
-    },
-    async getCurrentGroup() {
-      await new Promise((resolve, reject) => {
-        getGroupList({
-          page: 1,
-          limit: 999
-        }).then(res => {
-          if (res && res.data) {
-            this.groupList = res.data.rows
-          }
-          resolve()
-        }).catch(e => {
-          reject(e)
-        })
       })
     },
     userEditHandle() {
@@ -516,15 +451,7 @@ export default ({
           }
         })
       }
-    },
-    groupChange(val, id, index) {
-      this.groupList[index].enabled = val
-      if (val && !this.currentUser.user.userGroupIds.includes(id)) {
-          this.currentUser.user.userGroupIds.push(id)
-      } else {
-          this.currentUser.user.userGroupIds = this.currentUser.user.userGroupIds.filter(item => item !== id)
-      }
-    },
+    }
   }
 })
 
