@@ -234,6 +234,9 @@ export default ({
 		},
 		getStorageMonitorings() {
 			this.getStorageMonitoringPreviousData().then(() => {
+				this.storageMonitoringData = {
+					storageId : this.queryParams.storageId
+				}
 				getStorageMonitoringList({ isLatest: true, dataType: this.queryParams.dataType, storageId: this.queryParams.storageId }).then(response => {
 					this.latestData = []
 					if (response && response.length > 0) {
