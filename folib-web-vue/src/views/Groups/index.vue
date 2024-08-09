@@ -16,7 +16,13 @@
                 :data-source="groupList"
                 row-key="id"
                 :loading="loading"
-                :pagination="{ pageSize: limit, current: page, total: total, showLessItems: true }"
+                :pagination="{
+                    pageSize: limit,
+                    current: page,
+                    total: total,
+                    showLessItems: true,
+                    showTotal: total => `${$t('Groups.Total')} ${total} ${$t('Groups.Items')}`
+                }"
                 @change="handleChangeTable"
             >
                 <div slot="groupName" slot-scope="groupName, record">

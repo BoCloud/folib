@@ -160,7 +160,10 @@ export default {
     watch: {
         selectedRowKeys: {
             handler(newVal) {
-                this.perRepositoryList = newVal.map(item => {
+                this.storageRowKeys = newVal.filter(item => item.indexOf('/') === -1)
+                this.repositoriesRowKeys = newVal.filter(item => item.indexOf('/') > -1)
+
+                this.perRepositoryList = this.repositoriesRowKeys.map(item => {
                     return {
                         title: item,
                         includes: [],
@@ -168,8 +171,6 @@ export default {
                         isInError: false,
                     }
                 })
-                this.storageRowKeys = newVal.filter(item => item.indexOf('/') === -1)
-                this.repositoriesRowKeys = newVal.filter(item => item.indexOf('/') > -1)
             },
             deep: true
         },
@@ -359,20 +360,5 @@ export default {
             vertical-align: top;
         }
     }
-}
-
-.custom-badge {
-    position: absolute;
-    min-width: 20px;
-    height: 20px;
-    text-align: center;
-    top: -10px;
-    right: -20px;
-    background: rgba(24, 144, 255, 0.2);
-    border-radius: 50%;
-    font-size: 10px;
-    line-height: 20px;
-    color: #1890ff;
-    padding: 0 5px;
 }
 </style>

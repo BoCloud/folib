@@ -38,7 +38,12 @@
             </div>
             <div v-if="step === 1" class="by-flex by-col-stretch">
                 <div class="select-content">
-                    <div class="title">{{ $t(`Permissions.SelectedUser`) }}</div>
+                    <div class="title">
+                        <span class="by-rela">
+                            {{ $t(`Permissions.SelectedUser`) }}
+                            <span class="custom-badge">{{userSelectList.length}}</span>
+                        </span>
+                    </div>
                     <div class="by-flex by-m-t-10 by-m-b-10">
                         <a-input v-model="userSearch" :placeholder="$t('Permissions.Search')" allow-clear class="by-w-300"></a-input>
                         <a-button type="primary" icon="edit" class="by-m-l-10" :disabled="isView" @click="openSelectModal('USER')"/>
@@ -61,7 +66,7 @@
                                     <a-avatar
                                         v-if="userAuthMap[item.key] && userAuthMap[item.key].includes(ele.value)"
                                         :size="24"
-                                        :src="`images/small-logos/logo-${ele.logo}.svg`"
+                                        :src="`images/small-logos/${ele.logo}.svg`"
                                         class="by-m-r-10"
                                     />
                                 </div>
@@ -87,7 +92,7 @@
                                 <hr class="gradient-line" v-if="index">
                                 <a-row type="flex" align="middle">
                                     <a-col>
-                                        <a-avatar :size="48" :src="`images/small-logos/logo-${item.logo}.svg`" />
+                                        <a-avatar :size="48" :src="`images/small-logos/${item.logo}.svg`" />
                                     </a-col>
                                     <a-col class="pl-15">
                                         <h6 class="mb-0">{{ item.label }}</h6>
@@ -105,7 +110,12 @@
             </div>
             <div v-if="step === 2" class="by-flex by-col-stretch">
                 <div class="select-content">
-                    <div class="title">{{ $t(`Permissions.SelectedGroups`) }}</div>
+                    <div class="title">
+                        <span class="by-rela">
+                            {{ $t(`Permissions.SelectedGroups`) }}
+                            <span class="custom-badge">{{groupSelectList.length}}</span>
+                        </span>
+                    </div>
                     <div class="by-flex by-m-t-10 by-m-b-10">
                         <a-input v-model="userSearch" :placeholder="$t('Permissions.Search')" allow-clear class="by-w-300"></a-input>
                         <a-button type="primary" icon="edit" class="by-m-l-10" :disabled="isView" @click="openSelectModal('GROUP')"/>
@@ -128,7 +138,7 @@
                                     <a-avatar
                                         v-if="groupAuthMap[item.key] && groupAuthMap[item.key].includes(ele.value)"
                                         :size="24"
-                                        :src="`images/small-logos/logo-${ele.logo}.svg`"
+                                        :src="`images/small-logos/${ele.logo}.svg`"
                                         class="by-m-r-10"
                                     />
                                 </div>
@@ -154,7 +164,7 @@
                                 <hr class="gradient-line" v-if="index">
                                 <a-row type="flex" align="middle">
                                     <a-col>
-                                        <a-avatar :size="48" :src="`images/small-logos/logo-${item.logo}.svg`" />
+                                        <a-avatar :size="48" :src="`images/small-logos/${item.logo}.svg`" />
                                     </a-col>
                                     <a-col class="pl-15">
                                         <h6 class="mb-0">{{ item.label }}</h6>
@@ -245,14 +255,14 @@ export default {
         },
         step(val) {
             if (val === 1) {
-                this.currentUserIndex = this.userSelectList[0].key || 0
-                this.repositoriesCheckedList = this.userAuthMap[this.currentUserIndex]
+                this.currentUserIndex = this.userSelectList[0]?.key || 0
+                this.repositoriesCheckedList = this.userAuthMap[this.currentUserIndex] || []
                 this.repositoriesOptions.forEach(item => {
                     item.enabled = this.repositoriesCheckedList.includes(item.value)
                 })
             } else if (val === 2) {
-                this.currentGroupIndex = this.groupSelectList[0].key || 0
-                this.groupCheckedList = this.groupAuthMap[this.currentGroupIndex]
+                this.currentGroupIndex = this.groupSelectList[0]?.key || 0
+                this.groupCheckedList = this.groupAuthMap[this.currentGroupIndex] || []
                 this.repositoriesOptions.forEach(item => {
                     item.enabled = this.groupCheckedList.includes(item.value)
                 })
@@ -282,28 +292,28 @@ export default {
                     label: this.$t(`Permissions.Download`),
                     value: 'ARTIFACTS_RESOLVE',
                     enabled: false,
-                    logo: 'slack',
+                    logo: 'download',
                     desc: this.$t(`Permissions.DownloadDesc`)
                 },
                 {
                     label: this.$t(`Permissions.DeployCache`),
                     value: 'ARTIFACTS_DEPLOY',
                     enabled: false,
-                    logo: 'spotify',
+                    logo: 'deployCache',
                     desc: this.$t(`Permissions.DeployCacheDesc`)
                 },
                 {
                     label: this.$t(`Permissions.DeleteUpdate`),
                     value: 'ARTIFACTS_DELETE',
                     enabled: false,
-                    logo: 'atlassian',
+                    logo: 'deleteUpdate',
                     desc: this.$t(`Permissions.DeleteUpdateDesc`)
                 },
                 {
                     label: this.$t(`Permissions.PromoDistribution`),
                     value: 'ARTIFACTS_PROMOTION',
                     enabled: false,
-                    logo: 'asana',
+                    logo: 'promoDistribution',
                     desc: this.$t(`Permissions.PromoDistributionDesc`)
                 },
             ]
@@ -395,7 +405,12 @@ export default {
                     }
                 })
                 this.currentUserIndex = this.userSelectList[0].key || 0
-                this.repositoriesCheckedList = this.userAuthMap[this.currentUserIndex]
+                this.repositoriesCheckedList = this.userAuthMap[this.currentUserIndex] || []
+                if (this.step === 1) {
+                    this.repositoriesOptions.forEach(item => {
+                        item.enabled = this.repositoriesCheckedList.includes(item.value)
+                    })
+                }
             })
         },
         getGroups(groupIds)
@@ -410,7 +425,12 @@ export default {
                     }
                 })
                 this.currentGroupIndex = this.groupSelectList[0].key || 0
-                this.groupCheckedList = this.groupAuthMap[this.currentGroupIndex]
+                this.groupCheckedList = this.groupAuthMap[this.currentGroupIndex] || []
+                if (this.step === 2) {
+                    this.repositoriesOptions.forEach(item => {
+                        item.enabled = this.groupCheckedList.includes(item.value)
+                    })
+                }
             }).finally(() => {
                 this.loading = false
             })
@@ -488,11 +508,10 @@ export default {
                 for (const key in this.userAuthMap) {
                     if (!userKeys.includes(key)) this.userAuthMap[key] = []
                 }
-                this.repositoriesCheckedList = this.userAuthMap[this.currentUserIndex]
+                this.repositoriesCheckedList = this.userAuthMap[this.currentUserIndex] || []
                 this.repositoriesOptions.forEach(item => {
                     item.enabled = this.repositoriesCheckedList.includes(item.value)
                 })
-                console.log(this.userSelectList);
             } else {
                 this.groupSelectList = val
                 this.groupSelectCopyList = val
@@ -501,7 +520,7 @@ export default {
                 for (const key in this.groupAuthMap) {
                     if (!groupKeys.includes(key)) this.groupAuthMap[key] = []
                 }
-                this.groupCheckedList = this.groupAuthMap[this.currentGroupIndex]
+                this.groupCheckedList = this.groupAuthMap[this.currentGroupIndex] || []
                 this.repositoriesOptions.forEach(item => {
                     item.enabled = this.groupCheckedList.includes(item.value)
                 })
@@ -658,5 +677,10 @@ export default {
     &:last-child {
         border-bottom: none;
     }
+}
+
+.title .custom-badge {
+    top: -2px;
+    right: -36px;
 }
 </style>

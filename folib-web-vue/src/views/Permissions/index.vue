@@ -16,7 +16,7 @@
                 :data-source="permissionsList"
                 row-key="id"
                 :loading="loading"
-                :pagination="{ pageSize: limit, current: page, total: total, showLessItems: true }"
+                :pagination="{ pageSize: limit, current: page, total: total, showLessItems: true, showTotal: total => `共 ${total} 条` }"
                 :scroll="{ x: true }"
                 @change="handleChangeTable"
             >

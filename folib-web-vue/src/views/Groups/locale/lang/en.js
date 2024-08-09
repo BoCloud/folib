@@ -31,5 +31,6 @@ export default {
     'DeployCache': 'Deploy/Cache',
     'DeleteUpdate': 'Delete/Update',
     'PromoDistribution': 'Promotion/Distribution',
-
+    'Total': 'Total',
+    'Items': 'Items',
 }
