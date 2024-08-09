@@ -2,6 +2,7 @@ package com.veadan.folib.task;
 
 
 import com.github.pagehelper.PageHelper;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
 import com.veadan.folib.entity.ArtifactSyncRecord;
@@ -11,6 +12,7 @@ import com.veadan.folib.promotion.PromotionUtil;
 import com.veadan.folib.services.ArtifactPromotionService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -41,6 +43,10 @@ public class PromotionCompensationTask {
 
     @Inject
     @Lazy
+    private DistributedCacheComponent distributedCacheComponent;
+
+    @Inject
+    @Lazy
     private ArtifactPromotionService artifactPromotionService;
 
     @Inject
@@ -56,7 +62,7 @@ public class PromotionCompensationTask {
             try {
                 Example recordExample = Example.builder(ArtifactSyncRecord.class).build();
                 recordExample.and().andEqualTo("status", ArtifactSyncRecordStatusEnum.FAILED.getVal());
-                recordExample.and().andLessThan("retryCount", 5);
+                recordExample.and().andLessThan("retryCount", getMaxRetryCount());
                 int totalCount = artifactSyncRecordMapper.selectCountByExample(recordExample);
                 if (totalCount <= 0) {
                     return;
@@ -67,7 +73,7 @@ public class PromotionCompensationTask {
                 List<ArtifactSyncRecord> artifactSyncRecordList;
 
                 for (int currentPage = 1; currentPage <= totalPages; currentPage++) {
-                    log.info("TotalPages [{}] currentPage [{}] batchSize [{}]", totalPages, currentPage, batchSize);
+                    log.info("Promotion compensation task totalPages [{}] currentPage [{}] batchSize [{}]", totalPages, currentPage, batchSize);
                     PageHelper.startPage(currentPage, batchSize);
                     artifactSyncRecordList = artifactSyncRecordMapper.selectByExample(recordExample);
                     if (CollectionUtils.isEmpty(artifactSyncRecordList)) {
@@ -92,5 +98,15 @@ public class PromotionCompensationTask {
         } else {
             log.info("LockName [{}] was not get lock", lockName);
         }
+    }
+
+    private Integer getMaxRetryCount() {
+        int maxRetryCount = 5;
+        String key = "PROMOTION_COMPENSATION_TASK_MAX_RETRY_COUNT";
+        String value = distributedCacheComponent.get(key);
+        if (StringUtils.isNotBlank(value)) {
+            maxRetryCount = Integer.parseInt(value);
+        }
+        return maxRetryCount;
     }
 }
