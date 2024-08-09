@@ -100,7 +100,7 @@ public class ArtifactCacheCheckTask {
      */
     @Scheduled(cron = "0 0 3 * * ? ")
     public void runV2() {
-        CountDownLatch latch = new CountDownLatch(1);
+
         // 获取artifact缓存记录的总数
         int totalCount = artifactCacheRecordService.getArtifactCacheRecordCount(null);
         // 如果没有记录，则直接返回
@@ -113,28 +113,24 @@ public class ArtifactCacheCheckTask {
         // 计算总页数，使用向上取整确保能覆盖所有记录
         int totalPages = (int) Math.ceil((double) totalCount / batchSize);
 
-        // 使用Flux.range生成一个包含所有页码的Flux
+        // 使用Flux.range生成一个表示页面编号的Flux，从1到总页数
         Flux.range(1, totalPages)
                 // 对每一页的数据进行并行处理
                 .flatMap(page -> Flux.fromIterable(artifactCacheRecordService.getArtifactCacheRecord(null, page, batchSize))
+                        // 过滤掉无效的工件路径
                         .filter(this::isValidArtifactPath)
+                        // 将过滤后的工件缓存记录聚合成批处理
                         .buffer()
-                        .parallel()
-                        .runOn(Schedulers.parallel())
+                        //// 在boundedElastic调度器上运行，以弹性方式处理任务 Schedulers.boundedElastic(): 用于处理可能会阻塞的任务，如 I/O 操作。它具有动态扩展的线程池，能够处理大量的阻塞操作。
+                        .publishOn(Schedulers.boundedElastic())
+                        //并行处理，每次处理2个批次 控制并发的数量
+                        .parallel(2)
+                        // 处理每个工件缓存记录
                         .doOnNext(this::processArtifactCacheRecord)
-                        //.filter()
-                        //// 对每个记录执行处理逻辑
-                        //.doOnNext(this::processArtifactCacheRecord)
                         // 转换回顺序流以确保顺序执行
                         .sequential())
                 // 订阅流，触发处理逻辑
                 .subscribe();
-        try {
-            latch.await();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.error("Error waiting for processing to complete", e);
-        }
         // 记录处理结束的信息
         log.info("Scheduled ArtifactCacheCheckTask end");
     }
