@@ -482,7 +482,11 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
         long itemsCount = result.getArtifactsCount() + result.getDirectoriesCount(), trashItemsCount = result.getTrashArtifactsCount() + result.getTrashDirectoriesCount(), artifactsDownloadedCount = 0;
         Date date = new Date();
         StorageDevice storageDevice = storageDeviceMap.get(storage.getId());
-        BigDecimal artifactsSize, filesSize, trashArtifactsSize, trashFilesSize, storageQuotaSize = BigDecimal.valueOf(storage.getStorageMaxSize()), usedStorageQuotaSizePercentage = BigDecimal.ZERO, storageDeviceSize = BigDecimal.valueOf(storageDevice.getTotalSpace()), usedStorageDeviceSizePercentage = BigDecimal.ONE;
+        Long storageMaxSize = 0L;
+        if (Objects.nonNull(storage.getStorageMaxSize())) {
+            storageMaxSize = storage.getStorageMaxSize();
+        }
+        BigDecimal artifactsSize, filesSize, trashArtifactsSize, trashFilesSize, storageQuotaSize = BigDecimal.valueOf(storageMaxSize), usedStorageQuotaSizePercentage = BigDecimal.ZERO, storageDeviceSize = BigDecimal.valueOf(storageDevice.getTotalSpace()), usedStorageDeviceSizePercentage = BigDecimal.ONE;
         artifactsSize = BigDecimal.valueOf(result.getTotalArtifactsSize());
         filesSize = BigDecimal.valueOf(result.getTotalFilesSize());
         if (storageQuotaSize.compareTo(BigDecimal.ZERO) > 0) {

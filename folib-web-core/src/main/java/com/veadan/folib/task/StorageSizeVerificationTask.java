@@ -65,7 +65,10 @@ public class StorageSizeVerificationTask {
     @Autowired
     private DistributedLockComponent distributedLockComponent;
 
-    @Scheduled(cron = "0 0 0/6 * * ? ")
+    /**
+     * 每天9点
+     */
+    @Scheduled(cron = "0 0 9 * * ? ")
     public void run() {
         String lockName = "StorageSizeVerificationTask";
         long waitTime = 1L;

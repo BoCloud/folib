@@ -67,6 +67,9 @@ public class PromotionTask {
     @Lazy
     private RepositoryPathResolver repositoryPathResolver;
 
+    /**
+     * 每6分钟
+     */
     @Scheduled(cron = "0 0/6 * * * ? ")
     public void run() {
         String lockName = "PromotionTask";

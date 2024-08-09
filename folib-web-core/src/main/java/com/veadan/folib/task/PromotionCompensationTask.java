@@ -53,7 +53,10 @@ public class PromotionCompensationTask {
     @Lazy
     private ArtifactSyncRecordMapper artifactSyncRecordMapper;
 
-    @Scheduled(cron = "0 0/1 * * * ? ")
+    /**
+     * 每8分钟
+     */
+    @Scheduled(cron = "0 0/8 * * * ? ")
     public void run() {
         String lockName = "PromotionCompensationTask";
         long waitTime = 3L;
