@@ -143,6 +143,9 @@ a {
 .ant-btn-primary svg path {
 	fill: $color-white ;
 }
+.ant-transfer-operation .ant-btn-primary svg path {
+	fill: currentColor ;
+}
 .ant-btn-link {
 	color: $color-primary ;
 	box-shadow: none;

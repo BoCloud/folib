@@ -675,9 +675,16 @@ public class StoragesConfigurationController
                 clusterSyncService.syncRepository(syncRepositoryDto);
 
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
-            } catch (IOException | ConfigurationException | RepositoryManagementStrategyException e) {
+            } catch (Exception e) {
+              logger.error("Failed to save the repository {}!", repositoryId, e);
+                try {
+                    configurationManagementService.removeRepository(storageId, repositoryId);
+                } catch (Exception e1) {
+                    logger.error("Failed to remove the repository {}!", repositoryId, e1);
+                }
                 return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);
             }
+
         } else {
             return getFailedResponseEntity(HttpStatus.NOT_FOUND, STORAGE_NOT_FOUND, accept);
         }

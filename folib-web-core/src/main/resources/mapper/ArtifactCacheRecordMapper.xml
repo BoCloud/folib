@@ -20,5 +20,11 @@
         <result property="cachePath" column="cache_path" />
     </resultMap>
 
+    <delete id="batchDelete">
+        delete from artifact_cache_record where id in
+        <foreach collection="idList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
 
 </mapper>
