@@ -1420,7 +1420,11 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
     private JSONObject getSliceUploadStatusJSONObj(String artifactFileSliceUploadRootFolderPathStr) {
         final File sliceUploadStatusFile = new File(String.format("%s/sliceUploadStatus.json", artifactFileSliceUploadRootFolderPathStr));
-
+        // 检查文件是否存在
+        if (!sliceUploadStatusFile.exists()) {
+            log.warn("Slice upload status file does not exist: {}", sliceUploadStatusFile.getPath());
+            return new JSONObject(); // 返回一个空的 JSON 对象
+        }
         return Optional.ofNullable(FileUtil.readString(sliceUploadStatusFile, StandardCharsets.UTF_8))
                 .filter(StringUtils::isNotBlank)
                 .map(JSON::parseObject)
