@@ -102,15 +102,13 @@
             </a-col>
         </a-row>
         <a-row>
-            <div class="wrapper vulnerability-database">
+            <div class="wrapper advancement-cockpits">
                 <a-card :bordered="false" style="margin-top: 20px; margin-bottom: 20px">
                     <div class="mx-25 search">
-                        <a-col :span="22" class="text-right">
+                        <a-col :span="24" class="text-right">
                             <a-input-search :placeholder="$t('AdvancementCockpits.EnterVulnerabilitySourceStorageId')"
                                             class="v-search" v-model="queryParams.storageId"
                                             @search="handheTableSearch()"/>
-                        </a-col>
-                        <a-col :span="2" class="text-right">
                             <a-input-search
                                 :placeholder="$t('AdvancementCockpits.EnterVulnerabilitySourceRepositoryId')"
                                 class="v-search" v-model="queryParams.repositoryId"
@@ -631,7 +629,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.vulnerability-database::v-deep {
+.advancement-cockpits::v-deep {
     .search {
         height: 50px;
     }
