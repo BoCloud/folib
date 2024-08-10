@@ -1,7 +1,5 @@
 package com.veadan.folib.users.service.impl;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.converts.UserConvert;
 import com.veadan.folib.data.CacheName;
@@ -9,12 +7,12 @@ import com.veadan.folib.domain.PageResultResponse;
 import com.veadan.folib.domain.SecurityRole;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.UserEntity;
-import com.veadan.folib.dto.UserAuthReq;
+import com.veadan.folib.dto.RepositoryPrivilegeDTO;
 import com.veadan.folib.dto.UserDTO;
 import com.veadan.folib.entity.*;
 import com.veadan.folib.repositories.UserRepository;
-import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.domain.Users;
+import com.veadan.folib.users.dto.UserAuthDTO;
 import com.veadan.folib.users.security.JwtAuthenticationClaimsProvider;
 import com.veadan.folib.users.security.JwtClaimsProvider;
 import com.veadan.folib.users.security.SecurityTokenProvider;
@@ -25,7 +23,6 @@ import com.veadan.folib.util.LocalDateTimeInstance;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jose4j.lang.JoseException;
-import org.springframework.beans.BeanUtils;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
@@ -85,12 +82,17 @@ public class RelationalDatabaseUserService implements UserService
 
     @Override
     public List<User> findUserByRoles(List<String> rolesList) {
-        //FIXME 通过存储id、仓库id、指定权限查询关联的用户
-        return null;
+        List<RepositoryPrivilegeDTO> repositoryPrivilegeDTOList = new ArrayList<>();
+        rolesList.forEach(role -> {
+            String[] split = role.split("//|");
+            repositoryPrivilegeDTOList.add(RepositoryPrivilegeDTO.builder().storage(split[0]).repository(split[1]).privilege(split[2]).build());
+        });
+        //通过存储id、仓库id、指定权限查询关联的用户
+        return folibUserService.queryUserRoleByRepositoryAndPrivilege(repositoryPrivilegeDTOList);
     }
 
     @Override
-    public void syncUserAuth(UserAuthReq date) {
+    public void syncUserAuth(UserAuthDTO date) {
         //更新节点用户信息
         List<FolibUser> users = date.getUsers();
         folibUserService.saveOrUpdate(users);
@@ -198,7 +200,12 @@ public class RelationalDatabaseUserService implements UserService
     @Override
     public void revokeEveryone(String roleToRevoke)
     {
-        //FIXME 删除角色关联的用户、用户组
+        //删除角色关联的用户、用户组
+        List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryRefs(RoleResourceRef.builder().roleId(roleToRevoke).build());
+        if (!CollectionUtils.isEmpty(roleResourceRefs)) {
+            List<String> refIds = roleResourceRefs.stream().map(RoleResourceRef::getId).collect(Collectors.toList());
+            roleResourceRefService.removeByIds(refIds);
+        }
     }
 
     @Override

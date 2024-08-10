@@ -92,4 +92,6 @@ public interface RoleResourceRefService{
     List<RoleResourceRef> queryApiAuthorities(List<String> roleIds);
 
     void batchUpdate(List<RoleResourceRef> userRoles);
+
+    List<RoleResourceRef> queryByRoleIds(List<String> roleIds);
 }

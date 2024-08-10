@@ -62,4 +62,6 @@ public interface UserGroupRefService{
     void deleteByUserId(String userId);
 
     void batchUpdate(List<UserGroupRef> userGroups);
+
+    List<UserGroupRef> queryByGroupIds(List<Long> groupIds);
 }

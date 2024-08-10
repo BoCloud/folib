@@ -287,7 +287,7 @@
                 </a-select-option>
               </a-select>
             </a-form-item>
-            <a-form-item class="tags-field mb-10"
+<!--            <a-form-item class="tags-field mb-10"
               v-if="hasStoragePermission()" :label="$t('Storage.user')"
               :colon="false">
               <a-select v-model="currentStorage.users" mode="multiple" :defaultValue="currentStorage.users"
@@ -296,7 +296,7 @@
                   {{ tag.username }}
                 </a-select-option>
               </a-select>
-            </a-form-item>
+            </a-form-item>-->
             <a-form-item class="mb-10" :colon="false">
 
             </a-form-item>

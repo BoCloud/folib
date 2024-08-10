@@ -75,8 +75,8 @@ public class StorageManagementServiceImpl implements StorageManagementService {
         handlerOriginalStorageAdminRoleByDB(storage.getAdmin(), storage.getId());
         configurationManagementService.updateStorage(storage);
         handlerStorageAdminRoleByDB(storage.getAdmin(), storage.getId());
-        storage.getUsers().add(storage.getAdmin());
-        handlerStorageOrdinaryRoleByDB(storage.getUsers(), storage.getId());
+        /*storage.getUsers().add(storage.getAdmin());
+        handlerStorageOrdinaryRoleByDB(storage.getUsers(), storage.getId());*/
     }
 
     @Override
@@ -84,8 +84,8 @@ public class StorageManagementServiceImpl implements StorageManagementService {
             throws IOException {
         configurationManagementService.createStorage(storage);
         handlerStorageAdminRoleByDB(storage.getAdmin(), storage.getId());
-        storage.getUsers().add(storage.getAdmin());
-        handlerStorageOrdinaryRoleByDB(storage.getUsers(), storage.getId());
+        /*storage.getUsers().add(storage.getAdmin());
+        handlerStorageOrdinaryRoleByDB(storage.getUsers(), storage.getId());*/
 
     }
 
@@ -261,11 +261,11 @@ public class StorageManagementServiceImpl implements StorageManagementService {
                 String key = String.format("STORAGE_ADMIN_%S", currentStorageId);
                 FolibRole folibRole = folibRoleService.queryById(key);
                 if (folibRole == null) {
-                    folibRoleService.insert(FolibRole.builder().id(key).enName(key).description("存储空间管理员的专属角色").build());
+                    folibRoleService.insert(FolibRole.builder().id(key).enName(key).deleted(GlobalConstants.NOT_DELETED).isDefault(GlobalConstants.NOT_DEFAULT).description("存储空间管理员的专属角色").build());
                 }
-                Resource storageResource = Resource.builder().storageId(currentStorageId).build();
-                Resource resource = resourceService.queryResource(storageResource);
+                Resource resource = resourceService.queryById(currentStorageId.toUpperCase());
                 if (resource == null) {
+                    Resource storageResource = Resource.builder().id(currentStorageId.toUpperCase()).storageId(currentStorageId).build();
                     resourceService.insert(storageResource);
                 }
                 Set<String> privileges = privileges();

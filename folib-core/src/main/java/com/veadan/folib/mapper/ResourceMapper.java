@@ -21,7 +21,7 @@ public interface ResourceMapper extends CommonMapper<Resource> {
      * @param id 主键
      * @return 实例对象
      */
-    Resource queryById(Long id);
+    Resource queryById(String id);
     /** 
      * 分页查询指定行数据
      *
@@ -71,7 +71,7 @@ public interface ResourceMapper extends CommonMapper<Resource> {
      * @param id 主键
      * @return 影响行数
      */
-    int deleteById(Long id);
+    int deleteById(String id);
 
      List<Resource> findResources(@Param("resources") List<Resource> resources);
  }

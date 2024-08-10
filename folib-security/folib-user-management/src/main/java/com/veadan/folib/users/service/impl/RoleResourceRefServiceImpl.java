@@ -154,7 +154,7 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         Map<String, Resource> repositoryMap = allResource.stream().filter(resource -> Objects.equals(resource.getPath(), null) || resource.getPath().isEmpty()).filter(resource ->  !Objects.equals(resource.getRepositoryId(), null) && !resource.getRepositoryId().isEmpty()).collect(Collectors.toMap(Resource::getRepositoryId, resource -> resource));
         Map<String, Resource> storageMap = allResource.stream().filter(resource -> Objects.equals(resource.getPath(), null) || resource.getPath().isEmpty()).filter(resource ->  Objects.equals(resource.getRepositoryId(), null) || resource.getRepositoryId().isEmpty()).filter(resource -> !Objects.equals(resource.getStorageId(), null) && !resource.getStorageId().isEmpty()).collect(Collectors.toMap(Resource::getStorageId, resource -> resource));
         resources.forEach(resourceDTO -> {
-            Long resourceId = null;
+            String resourceId = null;
             // 根据 path 查找
             if (resourceDTO.getPath() != null && !resourceDTO.getPath().isEmpty()) {
                 resourceId = pathMap.get(resourceDTO.getPath()).getId();
@@ -249,5 +249,10 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
                             && Objects.equals(queryUserGroupRef.getStoragePrivilege(), userRoleRef.getStoragePrivilege()))).collect(Collectors.toList());
         }
         roleResourceRefMapper.insertBatch(userRoles);
+    }
+
+    @Override
+    public List<RoleResourceRef> queryByRoleIds(List<String> roleIds) {
+        return roleResourceRefMapper.queryByRoleIds(roleIds);
     }
 }

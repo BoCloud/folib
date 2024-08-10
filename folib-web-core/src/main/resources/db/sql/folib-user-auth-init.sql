@@ -41,7 +41,7 @@ DROP TABLE IF EXISTS `resource`;
 -- folib_scanner.resource definition
 
 CREATE TABLE `resource` (
-                            `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+                            `id` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '主键',
                             `api_authoritie` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'api权限',
                             `storage_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '存储空间id',
                             `repository_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '仓库id',

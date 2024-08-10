@@ -8,10 +8,13 @@ import com.veadan.folib.domain.UserEntity;
 import com.veadan.folib.dto.UserDTO;
 import com.veadan.folib.entity.FolibUser;
 import com.veadan.folib.mapper.FolibUserMapper;
+import com.veadan.folib.dto.RepositoryPrivilegeDTO;
 import com.veadan.folib.users.service.FolibUserService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
@@ -115,6 +118,20 @@ public class FolibUserServiceImpl implements FolibUserService {
     @Override
     public void saveOrUpdate(List<FolibUser> users) {
         folibUserMapper.insertOrUpdateBatch(users);
+    }
+
+    @Override
+    public Page<FolibUser> paginQuery(FolibUser folibUser, PageRequest pageRequest) {
+        long total = folibUserMapper.count(folibUser);
+        return new PageImpl<>(folibUserMapper.queryAllByLimit(folibUser, pageRequest), pageRequest, total);
+
+    }
+
+    @Override
+    public List<User> queryUserRoleByRepositoryAndPrivilege(List<RepositoryPrivilegeDTO> repositoryPrivilegeDTOS) {
+        List<UserDTO> users = folibUserMapper.queryUserRoleByRepositoryAndPrivilege(repositoryPrivilegeDTOS);
+        List<UserEntity> userEntities = UserConvert.INSTANCE.UserDTOsToUserList(users);
+        return new ArrayList<>(userEntities);
     }
 
 }

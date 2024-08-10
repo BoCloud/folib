@@ -113,4 +113,9 @@ public class UserGroupRefServiceImpl implements UserGroupRefService {
         }
         userGroupRefMapper.insertBatch(userGroups);
     }
+
+    @Override
+    public List<UserGroupRef> queryByGroupIds(List<Long> groupIds) {
+        return userGroupRefMapper.queryByGroupIds(groupIds);
+    }
 }

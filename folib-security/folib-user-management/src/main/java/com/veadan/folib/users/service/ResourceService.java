@@ -18,7 +18,7 @@ public interface ResourceService{
      * @param id 主键
      * @return 实例对象
      */
-    Resource queryById(Long id);
+    Resource queryById(String id);
     /** 
      * 分页查询
      *
@@ -47,7 +47,7 @@ public interface ResourceService{
      * @param id 主键
      * @return 是否成功
      */
-    boolean deleteById(Long id);
+    boolean deleteById(String id);
 
      int saveBatch(List<Resource> collect);
 

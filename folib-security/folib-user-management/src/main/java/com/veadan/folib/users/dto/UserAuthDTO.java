@@ -1,6 +1,8 @@
-package com.veadan.folib.dto;
+package com.veadan.folib.users.dto;
 
 import com.veadan.folib.entity.*;
+import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.repository.Repository;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,16 +12,15 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
-  * @Description: 用户权限同步请求参数
-  * @auther: fengmg
-  * @CreateDate: 2024/8/8 14:15
-  * @Version: 1.0
-  */
+ * @Author: fengmg
+ * @Date: 2024/8/10 08:57
+ * @Description:
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserAuthReq {
+public class UserAuthDTO{
 
     @ApiModelProperty("用户信息")
     protected List<FolibUser> users;
@@ -34,7 +35,11 @@ public class UserAuthReq {
     @ApiModelProperty("权限信息")
     protected List<RoleResourceRef> userRoles;
 
-    //TODO 存储空间、仓库
-
     protected boolean nextPage;
+
+    /**存储空间*/
+    private List<Storage> storages;
+    /**仓库*/
+    private List<Repository> repositorys;
+
 }

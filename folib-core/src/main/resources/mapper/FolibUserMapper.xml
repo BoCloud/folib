@@ -293,6 +293,54 @@
         </where>
         group by fu.id
     </select>
+    <select id="queryUserRoleByRepositoryAndPrivilege" resultType="com.veadan.folib.dto.UserDTO">
+        select
+            user.*,
+            GROUP_CONCAT(distinct user.roles) as roles,
+            GROUP_CONCAT(distinct user.authorities) as authorities
+        from (
+                 select
+                     fu.*,
+                     GROUP_CONCAT(distinct rrr.role_id) as roles,
+                     GROUP_CONCAT(distinct CONCAT_WS('', rrr.storage_privilege, rrr.repository_privilege, rrr.path_privilege)) as authorities
+                 from
+                     folib_user fu
+                         left join role_resource_ref rrr on
+                         fu.id = rrr.entity_id
+                             and rrr.ref_type = 1
+                         left join resource r on
+                         r.id = rrr.resource_id
+                 where
+                     <foreach collection="repositoryPrivilegeDTOS" item="repositoryPrivilegeDTO" open="(" separator="or" close=")">
+                        ( r.storage_id = #{repositoryPrivilegeDTO.storage}
+                         and r.repository_id = #{repositoryPrivilegeDTO.repository}
+                         and rrr.repository_privilege = #{repositoryPrivilegeDTO.privilege} )
+                     </foreach>
+                 group by
+                     fu.id
+                 union
+                 select
+                     fu.*,
+                     GROUP_CONCAT(distinct rrr.role_id) as roles,
+                     GROUP_CONCAT(distinct CONCAT_WS('', rrr.storage_privilege, rrr.repository_privilege, rrr.path_privilege)) as authorities
+                 from
+                     folib_user fu
+                         right join user_group_ref ugr on
+                         ugr.user_id = fu.id
+                         left join role_resource_ref rrr on
+                         ugr.user_group_id = rrr.entity_id
+                             and rrr.ref_type = 2
+                         left join resource r on
+                         r.id = rrr.resource_id
+                 where
+                    <foreach collection="repositoryPrivilegeDTOS" item="repositoryPrivilegeDTO" open="(" separator="or" close=")">
+                        ( r.storage_id = #{repositoryPrivilegeDTO.storage}
+                        and r.repository_id = #{repositoryPrivilegeDTO.repository}
+                        and rrr.repository_privilege = #{repositoryPrivilegeDTO.privilege} )
+                    </foreach>
+                 group by
+                     fu.id) user group by user.id
+    </select>
 
     <!--新增数据-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">

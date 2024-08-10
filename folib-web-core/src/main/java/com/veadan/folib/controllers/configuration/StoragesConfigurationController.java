@@ -1197,7 +1197,7 @@ public class StoragesConfigurationController
             List<String> excludeRoleNameList = Lists.newArrayList(SystemRole.ARTIFACTS_MANAGER.name(), SystemRole.ADMIN.name());
             Users userList = userService.getUsers();
             roleNameList.addAll(userList.getUsers().stream().filter(user -> user.getRoles().stream().noneMatch(r -> excludeRoleNameList.contains(r.getRoleName()))).map(user -> user.getUsername().toUpperCase()).collect(Collectors.toList()));
-            List<User> users = userService.findUserByRoles(roleNameList);
+            List<User> users = userService.findUserByRoles(Lists.newArrayList(repositoryDeployRoleName, repositoryDeleteRoleName));
             AuthorizationConfigDto authorizationConfigDto = authorizationConfigService.getDto();
             RepositoryPermission repositoryPermission = RepositoryPermission.builder().build();
             List<String> permissionList = Lists.newArrayList(Privileges.ARTIFACTS_DEPLOY.getAuthority(), Privileges.ARTIFACTS_DELETE.getAuthority());

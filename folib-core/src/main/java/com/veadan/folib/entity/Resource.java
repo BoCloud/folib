@@ -34,7 +34,7 @@ public class Resource implements Serializable,Cloneable {
       */
      @Id
      @ApiModelProperty(name = "主键", notes = "")
-     private Long id;
+     private String id;
      /**
       * api权限
       */

@@ -1,6 +1,6 @@
 package com.veadan.folib.ws.server;
 
-import com.veadan.folib.dto.UserAuthReq;
+import com.veadan.folib.users.dto.UserAuthDTO;
 import com.veadan.folib.scanner.common.util.SpringContextUtil;
 import com.veadan.folib.users.service.UserService;
 import org.springframework.stereotype.Component;
@@ -21,7 +21,7 @@ public class UserAuthSyncCommandProcessor extends CommandProcessor{
 
     @Override
     public String doExecute(WSMessageRequest wsMessageRequest, Session session) {
-        UserAuthReq date = (UserAuthReq) wsMessageRequest.getDate();
+        UserAuthDTO date = (UserAuthDTO) wsMessageRequest.getDate();
         SpringContextUtil.getBean(UserService.class).syncUserAuth(date);
         return "ok";
     }

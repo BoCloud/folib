@@ -17,7 +17,7 @@ import java.util.Collection;
 public class RepositoryAccessModelDTO
 {
 
-    private Long resourceId;
+    private String resourceId;
 
     private String storageId;
 

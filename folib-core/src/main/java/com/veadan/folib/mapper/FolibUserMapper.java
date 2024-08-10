@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.veadan.folib.common.base.CommonMapper;
+import com.veadan.folib.dto.RepositoryPrivilegeDTO;
 import com.veadan.folib.dto.UserDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -92,4 +93,6 @@ public interface FolibUserMapper extends CommonMapper<FolibUser> {
      List<UserDTO> queryUser(FolibUser folibUser);
 
      Set<UserDTO> queryRoles(String uuid);
+
+     List<UserDTO> queryUserRoleByRepositoryAndPrivilege(@Param("repositoryPrivilegeDTOS") List<RepositoryPrivilegeDTO> repositoryPrivilegeDTOS);
  }

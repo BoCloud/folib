@@ -3,8 +3,11 @@ package com.veadan.folib.users.service;
 import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.UserEntity;
+import com.veadan.folib.dto.RepositoryPrivilegeDTO;
 import com.veadan.folib.dto.UserDTO;
 import com.veadan.folib.entity.FolibUser;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 import java.util.Set;
@@ -34,4 +37,8 @@ public interface FolibUserService {
     Set<Role> queryRoles(String uuid);
 
     void saveOrUpdate(List<FolibUser> users);
+
+    Page<FolibUser> paginQuery(FolibUser build, PageRequest pageRequest);
+
+    List<User> queryUserRoleByRepositoryAndPrivilege(List<RepositoryPrivilegeDTO> repositoryPrivilegeDTOS);
 }

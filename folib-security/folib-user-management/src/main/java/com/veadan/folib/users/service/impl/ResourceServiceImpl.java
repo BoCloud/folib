@@ -4,6 +4,7 @@ import com.veadan.folib.components.IdGenerateUtils;
 import com.veadan.folib.entity.Resource;
 import com.veadan.folib.mapper.ResourceMapper;
 import com.veadan.folib.users.service.ResourceService;
+import org.parboiled.common.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
@@ -35,7 +36,7 @@ public class ResourceServiceImpl implements ResourceService {
      * @param id 主键
      * @return 实例对象
      */
-    public Resource queryById(Long id){
+    public Resource queryById(String id){
         return resourceMapper.queryById(id);
     }
     
@@ -58,7 +59,20 @@ public class ResourceServiceImpl implements ResourceService {
      * @return 实例对象
      */
     public Resource insert(Resource resource){
-        resource.setId(idGenerateUtils.generateId("resourceId"));
+        String resourceId = resource.getId();
+        if (StringUtils.isEmpty(resourceId)) {
+            String apiAuthoritie = resource.getApiAuthoritie();
+            if (apiAuthoritie != null) resourceId = apiAuthoritie.toUpperCase();
+
+            if (StringUtils.isEmpty(resourceId)) {
+                String path = resource.getPath();
+                String repositoryId = resource.getRepositoryId();
+                String storageId = resource.getStorageId();
+                resourceId = (storageId+repositoryId.trim()+path.trim()).toUpperCase();
+            }
+            resource.setId(resourceId);
+        }
+
         resourceMapper.insert(resource);
         return resource;
     }
@@ -80,14 +94,28 @@ public class ResourceServiceImpl implements ResourceService {
      * @param id 主键
      * @return 是否成功
      */
-    public boolean deleteById(Long id){
+    public boolean deleteById(String id){
         int total = resourceMapper.deleteById(id);
         return total > 0;
     }
 
     @Override
     public int saveBatch(List<Resource> resources) {
-        resources.forEach(resource -> resource.setId(idGenerateUtils.generateId("resourceId")));
+        resources.forEach(resource -> {
+            String resourceId = resource.getId();
+            if (StringUtils.isEmpty(resourceId)) {
+                String apiAuthoritie = resource.getApiAuthoritie();
+                if (apiAuthoritie != null) resourceId = apiAuthoritie.toUpperCase();
+
+                if (StringUtils.isNotEmpty(resourceId)) {
+                    String path = resource.getPath();
+                    String repositoryId = resource.getRepositoryId();
+                    String storageId = resource.getStorageId();
+                    resourceId = (storageId+repositoryId.trim()+path.trim()).toUpperCase();
+                }
+                resource.setId(resourceId);
+            }
+        });
         return resourceMapper.insertBatch(resources);
     }
 
