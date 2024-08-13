@@ -90,9 +90,7 @@ public class ArtifactController extends BaseController {
 
     private static final String REPOSITORY_NOT_FOUND = "The repository was not found.";
 
-    private static final BigDecimal KILOBYTE = new BigDecimal(1024);
-    private static final BigDecimal MEGABYTE = KILOBYTE.multiply(KILOBYTE);
-    private static final BigDecimal GIGABYTE = MEGABYTE.multiply(KILOBYTE);
+
 
     @ApiOperation(value = "导出漏洞的影响范围")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
@@ -414,7 +412,7 @@ public class ArtifactController extends BaseController {
     }
     
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @GetMapping(value = "/rawPathSize/{storageId}/{repositoryId}/{path}")
+    @GetMapping(value = "/rawPathSize/{storageId}/{repositoryId}/{path:.+}")
     public ResponseEntity<String> getRawPathSize(@PathVariable("storageId") String storageId,
                                                @PathVariable("repositoryId") String repositoryId,
                                                @PathVariable("path") String path) throws IOException {
@@ -434,12 +432,24 @@ public class ArtifactController extends BaseController {
                     })
                     .sum();
         }
-        String sizeStr = String.format("%s G", convertBytesToGB(size).toString());
+        String sizeStr = unitConversion(size);
         return ResponseEntity.ok(sizeStr);
     }
-    
-    public  BigDecimal convertBytesToGB(long fileSizeInBytes) {
+
+    //单位转换
+    public String unitConversion(long fileSizeInBytes) {
+        final BigDecimal KILOBYTE = new BigDecimal(1024);
+        final BigDecimal MEGABYTE = KILOBYTE.multiply(KILOBYTE);
+        final BigDecimal GIGABYTE = MEGABYTE.multiply(KILOBYTE);
         BigDecimal fileSize = new BigDecimal(fileSizeInBytes);
-        return fileSize.divide(GIGABYTE, 3, RoundingMode.HALF_UP);
+        if (fileSizeInBytes < KILOBYTE.longValue()) {
+            return fileSizeInBytes + " B";
+        } else if (fileSizeInBytes < MEGABYTE.longValue()) {
+            return fileSize.divide(KILOBYTE, 3, RoundingMode.HALF_UP).toString() + " KB";
+        } else if (fileSizeInBytes < GIGABYTE.longValue()) {
+            return fileSize.divide(MEGABYTE, 3, RoundingMode.HALF_UP).toString() + " MB";
+        } else {
+            return fileSize.divide(GIGABYTE, 3, RoundingMode.HALF_UP).toString() + " GB";
+        }
     }
 }
