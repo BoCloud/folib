@@ -1,5 +1,5 @@
 export default {
-    'StorageMonitoring': 'Storage monitoring',
+    'StorageMonitoring': 'Storage Cockpits',
     'StorageDevice': 'Storage device',
     'StorageDeviceName': 'Storage device name',
     'StorageDeviceType': 'Storage device type',

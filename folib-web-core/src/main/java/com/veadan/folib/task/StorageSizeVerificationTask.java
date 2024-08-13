@@ -134,8 +134,8 @@ public class StorageSizeVerificationTask {
 
     private ExceedsSizeStorage storageVerification(String storageId, Storage storage) {
         ExceedsSizeStorage exceedsSizeStorage = null;
-        long storageMaxSize = storage.getStorageMaxSize();
-        if (storageMaxSize <= 0) {
+        Long storageMaxSize = storage.getStorageMaxSize();
+        if (Objects.isNull(storageMaxSize) || storageMaxSize <= 0) {
             return null;
         }
         long storageBytesSize = artifactRepository.artifactsBytesStatisticsByStorageIds(Collections.singletonList(storageId));

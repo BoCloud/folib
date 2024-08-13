@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Collections;
+import java.util.Objects;
 
 /**
  * @author mtodorov
@@ -155,8 +156,8 @@ public class ArtifactOperationsValidator {
             throws IOException {
         String storageId = repositoryPath.getStorageId();
         Storage storage = getConfiguration().getStorage(storageId);
-        long storageMaxSize = storage.getStorageMaxSize();
-        if (storageMaxSize <= 0) {
+        Long storageMaxSize = storage.getStorageMaxSize();
+        if (Objects.isNull(storageMaxSize) || storageMaxSize <= 0) {
             return;
         }
         long storageBytesSize = artifactRepository.artifactsBytesStatisticsByStorageIds(Collections.singletonList(storageId));

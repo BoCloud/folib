@@ -29,7 +29,7 @@ export default {
     'Transparent': '透明',
     'WhiteBackground': '白底',
     'NavigationLock': '导航锁定',
-    'StorageMonitoring': '存储监控',
+    'StorageMonitoring': '存储驾驶舱',
     'StatisticalOverview':'统计概览',
     'AdvancementCockpits':'晋级驾驶舱',
     'AdvancementCockpitsInfo':'晋级驾驶舱详情',

@@ -1,5 +1,5 @@
 export default {
-    'StorageMonitoring': '存储监控',
+    'StorageMonitoring': '存储驾驶舱',
     'StorageDevice': '存储设备',
     'StorageDeviceName': '存储设备名称',
     'StorageDeviceType': '存储设备类型',

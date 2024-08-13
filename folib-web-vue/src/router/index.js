@@ -414,8 +414,8 @@ let routes = [
 		layout: "dashboard",
 		meta: {
 			title: 'router.StorageMonitoring',
-			sidebarMap: ['router.SetupManagement', 'router.StorageMonitoring'],
-			breadcrumbs: ['router.SetupManagement', 'router.StorageMonitoring'],
+			sidebarMap: ['router.StatisticalOverview', 'router.StorageMonitoring'],
+			breadcrumbs: ['router.StatisticalOverview', 'router.StorageMonitoring'],
 		},
 		component: () => import('../views/StorageMonitoring/index.vue'),
 	},

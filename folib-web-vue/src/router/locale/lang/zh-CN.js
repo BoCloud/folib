@@ -39,7 +39,7 @@ export default {
     'ProjectsAnalysisDetail': '制品分析详情',
     'ProjectsDetails': '制品分析',
     //bom end
-    'StorageMonitoring': '存储监控',
+    'StorageMonitoring': '存储驾驶舱',
     'StatisticalOverview':'统计概览',
     'AdvancementCockpits':'晋级驾驶舱',
     'AdvancementCockpitsInfo':'晋级驾驶舱详情',
