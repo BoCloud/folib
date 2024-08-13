@@ -1,6 +1,7 @@
 package com.veadan.folib.storage.validation.resource;
 
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.enums.FileUnitTypeEnum;
@@ -18,12 +19,15 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.FileSizeConvertUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Objects;
 
@@ -45,6 +49,15 @@ public class ArtifactOperationsValidator {
 
     @Inject
     private ArtifactRepository artifactRepository;
+
+    @Inject
+    private DistributedCacheComponent distributedCacheComponent;
+
+    private final String STORAGE_SIZE_VERIFICATION_INTERVAL_KEY = "STORAGE_SIZE_VERIFICATION_INTERVAL";
+
+    private final String STORAGE_SIZE_VERIFICATION_LAST_TIME_KEY = "STORAGE_SIZE_VERIFICATION_LAST_TIME";
+
+    private static final long MINUTES_TO_MILLIS = 60_000L;
 
     public ArtifactOperationsValidator() {
     }
@@ -160,13 +173,91 @@ public class ArtifactOperationsValidator {
         if (Objects.isNull(storageMaxSize) || storageMaxSize <= 0) {
             return;
         }
+        if (!isRefresh()) {
+            return;
+        }
         long storageBytesSize = artifactRepository.artifactsBytesStatisticsByStorageIds(Collections.singletonList(storageId));
+        log.info("The size [{}] of the storage [{}]", storageBytesSize, storageId);
         BigDecimal storageMaxTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageMaxSize, FileUnitTypeEnum.TB.getUnit());
         BigDecimal storageRealTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageBytesSize, FileUnitTypeEnum.TB.getUnit());
         if (storageRealTbSize.compareTo(storageMaxTbSize) >= 0) {
             throw new ArtifactResolutionException(String.format("The size of the storage [%s] artifact [%s] exceeds the maximum size accepted by " +
                     "this storage (%s/%s) unit %s.", storageId, repositoryPath, storageRealTbSize, storageMaxTbSize, FileUnitTypeEnum.TB.getUnit()));
         }
+    }
+
+    /**
+     * 根据给定的键从分布式缓存中获取内容刷新间隔设置
+     * 如果没有找到对应的值或者值为空，则返回默认的内容刷新间隔
+     *
+     * @param key 用于从分布式缓存中检索刷新间隔设置的键
+     * @return 刷新间隔设置，如果未找到或值为空，则返回默认值
+     */
+    public int refreshContentInterval(final String key) {
+        // 从分布式缓存中获取与给定键相关的刷新间隔设置
+        String refreshContentInterval = distributedCacheComponent.get(key);
+        // 如果获取的刷新间隔为空或仅为空白字符，则返回预设的默认刷新间隔
+        if (StringUtils.isBlank(refreshContentInterval)) {
+            return 360;
+        }
+        // 将获取的刷新间隔字符串解析为整数并返回
+        return Integer.parseInt(refreshContentInterval);
+    }
+
+    /**
+     * 设置最后一次刷新时间
+     *
+     * @param lastTime 最后一次刷新时间
+     */
+    public void setLastTime(long lastTime) {
+        distributedCacheComponent.put(STORAGE_SIZE_VERIFICATION_LAST_TIME_KEY, Long.toString(lastTime));
+    }
+
+    /**
+     * 获取最后一次刷新时间
+     *
+     * @return 最后一次刷新时间
+     */
+    public Long getLastTime() {
+        String lastTime = distributedCacheComponent.get(STORAGE_SIZE_VERIFICATION_LAST_TIME_KEY);
+        if (StringUtils.isBlank(lastTime)) {
+            return null;
+        }
+        return Long.parseLong(lastTime);
+    }
+
+    /**
+     * 判断是否需要刷新存储统计数据
+     * 该方法通过比较当前时间与上次刷新时间，来决定是否需要进行刷新
+     * 如果上次刷新时间为空，则自动设置当前时间为新的刷新时间，并返回true表示需要刷新
+     * 如果当前时间与上次刷新时间的时间差大于等于预设的刷新间隔时间，则进行刷新并更新刷新时间
+     * 否则，返回false表示不需要刷新
+     *
+     * @return true，如果需要刷新缓存统计数据；否则返回false
+     */
+    public boolean isRefresh() {
+        // 获取当前时间的瞬时值
+        Instant now = Instant.now();
+        // 获取上次刷新时间的毫秒值
+        Long pastTimeMilli = getLastTime();
+        // 如果上次刷新时间为空，则设置当前时间为新的刷新时间，并返回true表示需要刷新
+        if (pastTimeMilli == null) {
+            setLastTime(now.toEpochMilli());
+            return true;
+        }
+        // 将上次刷新时间的毫秒值转换为瞬时值
+        Instant pastTime = Instant.ofEpochMilli(pastTimeMilli);
+        // 计算当前时间与上次刷新时间之间的时间差
+        Duration duration = Duration.between(pastTime, now);
+        // 计算刷新间隔时间的毫秒值
+        long requiredMillis = refreshContentInterval(STORAGE_SIZE_VERIFICATION_INTERVAL_KEY) * MINUTES_TO_MILLIS;
+        // 如果时间差大于等于刷新间隔时间，则进行刷新并更新刷新时间
+        if (duration.compareTo(Duration.ofMillis(requiredMillis)) >= 0) {
+            setLastTime(now.toEpochMilli());
+            return true;
+        }
+        // 不需要刷新，返回false
+        return false;
     }
 
     public Configuration getConfiguration() {
