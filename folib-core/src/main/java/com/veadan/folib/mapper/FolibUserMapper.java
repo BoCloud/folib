@@ -95,4 +95,6 @@ public interface FolibUserMapper extends CommonMapper<FolibUser> {
      Set<UserDTO> queryRoles(String uuid);
 
      List<UserDTO> queryUserRoleByRepositoryAndPrivilege(@Param("repositoryPrivilegeDTOS") List<RepositoryPrivilegeDTO> repositoryPrivilegeDTOS);
+
+     List<UserDTO> queryUsersNameResource(@Param("usernames") List<String> usernames, @Param("storageId") String storageId, @Param("repositoryId") String repositoryId, @Param("path") String path);
  }

@@ -84,7 +84,7 @@ public class RelationalDatabaseUserService implements UserService
     public List<User> findUserByRoles(List<String> rolesList) {
         List<RepositoryPrivilegeDTO> repositoryPrivilegeDTOList = new ArrayList<>();
         rolesList.forEach(role -> {
-            String[] split = role.split("//|");
+            String[] split = role.split("\\|");
             repositoryPrivilegeDTOList.add(RepositoryPrivilegeDTO.builder().storage(split[0]).repository(split[1]).privilege(split[2]).build());
         });
         //通过存储id、仓库id、指定权限查询关联的用户

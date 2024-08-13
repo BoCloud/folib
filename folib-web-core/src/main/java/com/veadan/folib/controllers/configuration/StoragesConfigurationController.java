@@ -22,6 +22,7 @@ import com.veadan.folib.controllers.cluster.dto.SyncUnionRepositoryDto;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.ArtifactDispatchRepositoryDto;
+import com.veadan.folib.dto.UserDTO;
 import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
 import com.veadan.folib.enums.NotifyScopesTypeEnum;
 import com.veadan.folib.enums.RepositoryScopeEnum;
@@ -50,6 +51,7 @@ import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.domain.Users;
 import com.veadan.folib.users.dto.PathPrivilegesDto;
+import com.veadan.folib.users.service.FolibUserService;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
@@ -175,6 +177,8 @@ public class StoragesConfigurationController
 
     @Inject
     private LayoutProviderRegistry layoutProviderRegistry;
+    @Inject
+    private FolibUserService folibUserService;
 
 
     public StoragesConfigurationController(ConfigurationManagementService configurationManagementService,
@@ -1177,6 +1181,38 @@ public class StoragesConfigurationController
         }
     }
 
+    @ApiOperation(value = "get repository enable users.")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "ok."),
+            @ApiResponse(code = 404, message = "The repository ${storageId}:${repositoryId} was not found!")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @GetMapping(value = "/repositoryUsers")
+    public ResponseEntity repositoryUsers(@ApiParam(value = "The storageId", required = true) @RequestParam String storageId,
+                                          @ApiParam(value = "The repositoryId", required = true)  @RequestParam String repositoryId,
+                                          @ApiParam(value = "The user") @RequestParam(name = "username", required = false) String username,
+                                                @RequestHeader(HttpHeaders.ACCEPT) String accept) {
+        List<String> usernameList = Lists.newArrayList();
+
+        List<UserDTO> userList = folibUserService.findByUserNameResource(Lists.newArrayList(username), null, null, null);
+        userList.forEach(user -> {
+            //过滤管理员、ARTIFACTS_MANAGER角色的用户
+            boolean isAdminOrManager = user.getRoles().stream()
+                    .anyMatch(role -> role.equals(SystemRole.ADMIN.name()) || role.equals(SystemRole.ARTIFACTS_MANAGER.name()));
+
+            if (!isAdminOrManager && user.getStorageId().equals(storageId) && user.getRepositoryId().isEmpty()) {
+                boolean hasAllPrivileges = user.getStoragePrivilege().contains(Privileges.ARTIFACTS_RESOLVE.name()) &&
+                        user.getStoragePrivilege().contains(Privileges.ARTIFACTS_DELETE.name()) &&
+                        user.getStoragePrivilege().contains(Privileges.ARTIFACTS_DEPLOY.name()) &&
+                        user.getStoragePrivilege().contains(Privileges.ARTIFACTS_PROMOTION.name());
+
+                if (!hasAllPrivileges) {
+                    usernameList.add(user.getUsername());
+                }
+            }
+        });
+
+        return ResponseEntity.ok(usernameList);
+
+    }
     @ApiOperation(value = "get repository permission users.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "ok."),
             @ApiResponse(code = 404, message = "The repository ${storageId}:${repositoryId} was not found!")})

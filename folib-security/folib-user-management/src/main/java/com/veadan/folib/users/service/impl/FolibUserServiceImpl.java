@@ -52,6 +52,11 @@ public class FolibUserServiceImpl implements FolibUserService {
     }
 
     @Override
+    public List<UserDTO> findByUserNameResource(List<String> usernames, String storageId, String repositoryId, String path) {
+        return folibUserMapper.queryUsersNameResource(usernames, storageId, repositoryId, path);
+    }
+
+    @Override
     public UserEntity save(UserEntity userEntity) {
         FolibUser folibUser = UserConvert.INSTANCE.UserEntityToFolibUser(userEntity);
         Date date = new Date();

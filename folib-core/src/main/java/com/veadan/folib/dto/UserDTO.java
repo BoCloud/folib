@@ -36,7 +36,25 @@ public class UserDTO
     private Set<String> userGroups;
     private Set<String> userGroupIds;
     private Set<String> roles;
+    private String storageId;
+    private String repositoryId;
+    private String path;
 
+    public void setRepositoryPrivilege(String repositoryPrivilege) {
+        this.repositoryPrivilege =  new HashSet<>(Arrays.asList(repositoryPrivilege.split(",")));;
+    }
+
+    public void setStoragePrivilege(String storagePrivilege) {
+        this.storagePrivilege = new HashSet<>(Arrays.asList(storagePrivilege.split(",")));
+    }
+
+    public void setPathPrivilege(String pathPrivilege) {
+        this.pathPrivilege = new HashSet<>(Arrays.asList(pathPrivilege.split(",")));
+    }
+
+    private Set<String> storagePrivilege;
+    private Set<String> repositoryPrivilege;
+    private Set<String> pathPrivilege;
     private String securityTokenKey;
 
     private LinkedHashSet<String> authorities;

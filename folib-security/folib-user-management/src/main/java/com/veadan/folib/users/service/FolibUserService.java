@@ -41,4 +41,6 @@ public interface FolibUserService {
     Page<FolibUser> paginQuery(FolibUser build, PageRequest pageRequest);
 
     List<User> queryUserRoleByRepositoryAndPrivilege(List<RepositoryPrivilegeDTO> repositoryPrivilegeDTOS);
+
+    List<UserDTO> findByUserNameResource(List<String> usernames, String storageId, String repositoryId, String path);
 }
