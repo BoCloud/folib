@@ -193,7 +193,7 @@
                 select id from folib_user fu where fu.id = #{username}
                 union all
                 select id from user_group_ref ugr where ugr.user_id = #{username})
-            </if>
+            </if> and rrr.id is not null
     </select>
     <select id="queryRoleByUserId" resultType="com.veadan.folib.entity.RoleResourceRef">
         select

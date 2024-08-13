@@ -75,4 +75,8 @@ public class FolibRole implements Serializable,Cloneable {
       @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
       private Date updateTime ;
 
+      private transient String storageId;
+      private transient String repositoryId;
+      private transient String patch;
+
  }

@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AccessResourcesDTO
 {
-    private Long resourceId;
+    private String resourceId;
     private String storageId;
 
     private String repositoryId;

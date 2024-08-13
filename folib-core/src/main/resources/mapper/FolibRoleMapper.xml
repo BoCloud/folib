@@ -35,6 +35,9 @@
         from
             folib_role fr left join role_resource_ref rrr on fr.id = rrr.role_id
             left join user_group ug on rrr.entity_id = ug.id
+        <if test="(role.storageId != null and role.storageId != '') or (role.repositoryId != null and role.repositoryId != '') or (role.path != null and role.path != '')">
+            left join resource r on r.id = rrr.resource_id
+        </if>
         <where>
             <if test="role.id != null and role.id != ''">
                 and id = #{role.id}
@@ -65,6 +68,15 @@
             </if>
             <if test="role.updateTime != null and role.updateTime != ''">
                 and update_time = #{role.updateTime}
+            </if>
+            <if test="role.storageId != null and role.storageId != ''">
+                and r.storage_id = #{role.storageId}
+            </if>
+            <if test="role.repositoryId != null and role.repositoryId != ''">
+                and r.repository_id = #{role.repositoryId}
+            </if>
+            <if test="role.path != null and role.path != ''">
+                and r.path = concat('%',#{role.path},'%')
             </if>
         </where>
         group by fr.id

@@ -206,6 +206,9 @@ public class RoleController extends BaseController {
     @ResponseBody
     public TableResultResponse<FolibRoleDTO> queryUser(@RequestParam(name = "page", required = false) Integer page,
                                                         @RequestParam(name = "limit", required = false) Integer limit,
+                                                       @RequestParam(name = "storageId", required = false) String storageId,
+                                                       @RequestParam(name = "repositoryId", required = false) String repositoryId,
+                                                       @RequestParam(name = "patch", required = false) String patch,
                                                         @RequestParam(name = "name", required = false) String name,
                                                         @RequestParam(name = "isDefault", required = false) String isDefault) {
 
@@ -213,6 +216,9 @@ public class RoleController extends BaseController {
         FolibRole folibRole = FolibRole.builder().build();
         folibRole.setEnName(name);
         folibRole.setIsDefault(isDefault);
+        folibRole.setStorageId(storageId);
+        folibRole.setRepositoryId(repositoryId);
+        folibRole.setPatch(patch);
 
         Page<FolibRoleDTO> folibRoles = folibRoleService.paginQuery(folibRole, pageRequest);
         if (Objects.isNull(folibRoles)) {
