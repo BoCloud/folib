@@ -1,6 +1,5 @@
 package com.veadan.folib.services.impl;
 
-import cn.hutool.core.date.StopWatch;
 import com.github.pagehelper.PageHelper;
 import com.hazelcast.core.HazelcastInstance;
 import com.veadan.folib.components.artifact.ArtifactComponent;
@@ -34,7 +33,6 @@ import java.nio.file.Path;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -95,6 +93,7 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
         artifactCacheRecordMapper.updateByPrimaryKeySelective(artifactCacheRecord);
     }
 
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteArtifactCacheRecord(ArtifactCacheRecord artifactCacheRecord) {
         ArtifactCacheRecord dbArtifactCacheRecord = selectOneArtifactCacheRecord(artifactCacheRecord);
@@ -130,6 +129,7 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
             throw new RuntimeException(ex.getMessage());
         }
     }
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void saveOrUpdateArtifactCacheRecord(ArtifactCacheRecord artifactCacheRecord) {
@@ -153,7 +153,7 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
             criteria.andEqualTo("storageId", artifactCacheRecord.getStorageId());
             criteria.andEqualTo("repositoryId", artifactCacheRecord.getRepositoryId());
             criteria.andEqualTo("artifactPath", artifactCacheRecord.getArtifactPath());
-            example.setOrderByClause("create_time desc");
+            example.setOrderByClause("id desc");
             List<ArtifactCacheRecord> packageNameBlockList = artifactCacheRecordMapper.selectByExample(example);
             if (CollectionUtils.isNotEmpty(packageNameBlockList)) {
                 resultArtifactCacheRecord = packageNameBlockList.get(0);
@@ -184,10 +184,18 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
             Example.Criteria criteria = example.createCriteria();
             criteria.andEqualTo("nodeId", getHostname());
         }
-        //数据量大时，排序影响查询速度
-//        example.setOrderByClause("latest_download_time asc, size desc");
         PageHelper.startPage(page, limit);
-        return artifactCacheRecordMapper.selectByExample(example);
+        List<ArtifactCacheRecord> list = artifactCacheRecordMapper.selectByExample(example);
+        log.info("page {} limit {} list {}", page, limit, list.stream().map(ArtifactCacheRecord::getId).collect(Collectors.toList()).toString());
+        return list;
+    }
+
+    @Override
+    public List<ArtifactCacheRecord> getArtifactCacheRecordByCursor(Long lastId, Integer limit) {
+        if (Objects.isNull(limit)) {
+            limit = 1000;
+        }
+        return artifactCacheRecordMapper.selectArtifactCacheRecordByCursor(getHostname(), lastId, limit);
     }
 
     @Override
@@ -280,7 +288,7 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
     private boolean handlerArtifactCacheDelete(Path artifactCachePath) {
         boolean flag = true;
         String fileName = artifactCachePath.getFileName().toString();
-        if( artifactCachePath.getParent() == null){
+        if (artifactCachePath.getParent() == null) {
             return flag;
         }
         try {

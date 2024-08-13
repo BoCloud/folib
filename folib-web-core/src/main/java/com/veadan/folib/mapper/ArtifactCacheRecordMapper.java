@@ -16,8 +16,17 @@ public interface ArtifactCacheRecordMapper extends CommonMapper<ArtifactCacheRec
 
     /**
      * 批量删除
+     *
      * @param idList id列表
      */
     void batchDelete(@Param("idList") @NotNull List<Long> idList);
 
+    /**
+     * 游标列表
+     *
+     * @param nodeId    nodeId
+     * @param lastId    lastId
+     * @param batchSize batchSize
+     */
+    List<ArtifactCacheRecord> selectArtifactCacheRecordByCursor(@Param("nodeId") String nodeId, @Param("lastId") Long lastId, @Param("batchSize") int batchSize);
 }
