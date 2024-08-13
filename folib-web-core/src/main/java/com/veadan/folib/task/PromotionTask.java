@@ -148,6 +148,10 @@ public class PromotionTask {
                                                 //当前节点已成功晋级，继续下一个节点
                                                 continue;
                                             }
+                                            if (PromotionStatusEnum.FAIL.getStatus().equals(nodePromotionStatus) && ArtifactoryRepositoryTypeEnum.INNER.getType().equals(unionTargetRepository.getType())) {
+                                                //晋级失败的内部节点跳过，由PromotionCompensationTask触发重试
+                                                continue;
+                                            }
                                             artifactPath = artifact.getArtifactPath();
                                             repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
                                             ArtifactPromotionProvider artifactPromotionProvider = artifactPromotionProviderRegistry.getProvider(unionTargetRepository.getType());

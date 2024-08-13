@@ -15,7 +15,7 @@
 					<a-col :span="24" :lg="8" :xl="8" class="stat-col mb-5" v-for="(stat, i) in item" :key="i"
 						>
 						<WidgetCounter :title="$t(stat.title)" :value="stat.value" :prefix="stat.prefix" :suffix="stat.suffix && stat.suffix.indexOf('.')!== -1?$t(stat.suffix):stat.suffix"
-							:icon="stat.icon" :status="stat.status" :precision="stat.precision" :aIcon="stat.aIcon" :theme="stat.theme"
+							:icon="stat.icon" :status="stat.status" :precision="stat.precision" :aIcon="stat.aIcon" :theme="stat.theme" :tag="i==0?true:false"
 							:src="stat.src" class="storage-device-info"></WidgetCounter>
 					</a-col>
 				</a-row>
@@ -295,6 +295,9 @@ export default ({
 							if (stats.key.indexOf("Count") !== -1) {
 								stats.suffix = 'StorageMonitoring.Each'
 							}
+							if (stats.key.indexOf("storageDeviceName") !== -1) {
+								stats.suffix = 'S3'
+							}
 						}
 						this.statsList.push(s3Stats)
 						this.getS3StorageMonitoringData(index, storageDevice.storageDeviceName)
@@ -317,6 +320,9 @@ export default ({
 							}
 							if (stats.key.indexOf("Count") !== -1) {
 								stats.suffix = '个'
+							}
+							if (stats.key.indexOf("storageDeviceName") !== -1) {
+								stats.suffix = 'NAS'
 							}
 						}
 						this.statsList.push(nasStats)

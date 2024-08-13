@@ -74,7 +74,7 @@ public class PromotionCompensationTask {
                 // 计算总页数
                 int totalPages = (int) Math.ceil((double) totalCount / batchSize);
                 List<ArtifactSyncRecord> artifactSyncRecordList;
-
+                recordExample.setOrderByClause("id asc");
                 for (int currentPage = 1; currentPage <= totalPages; currentPage++) {
                     log.info("Promotion compensation task totalPages [{}] currentPage [{}] batchSize [{}]", totalPages, currentPage, batchSize);
                     PageHelper.startPage(currentPage, batchSize);

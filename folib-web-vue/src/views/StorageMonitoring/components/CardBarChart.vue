@@ -7,8 +7,8 @@
 			<p>
 				{{$t('StorageMonitoring.ThanLastUpdate')}}
 				<span v-if="storageMonitoringData.filesSizeDiff !== 0 && ! storageMonitoringData.filesSizeDiff">-</span>
-				<span v-else-if="storageMonitoringData.filesSizeDiff >= 0">+ {{ storageMonitoringData.filesSizeDiff }}</span>
-				<span v-else>- {{ storageMonitoringData.filesSizeDiff }}</span>
+				<span v-else-if="storageMonitoringData.filesSizeDiff >= 0">+ {{ fileSizeConver(storageMonitoringData.filesSizeDiff) }}</span>
+				<span v-else>- {{ fileSizeConver(storageMonitoringData.filesSizeDiff) }}</span>
 			</p>
 		</div>
 		<a-row class="card-footer" type="flex" justify="center" align="top">

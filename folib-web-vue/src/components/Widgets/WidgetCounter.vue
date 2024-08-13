@@ -11,6 +11,25 @@
 			class="text-success"
 			:class="'text-' + status"
 		>
+		<span v-if="tag" slot="formatter">
+			<span v-if="screenWidth <= 1366">
+				<a-tooltip>
+					<template slot="title">
+						{{ value }}
+					</template>
+					{{ value.substr(0, 10)  + '...'}}
+					</a-tooltip>
+			</span>
+			<span v-else-if="value.length > 20">
+				<a-tooltip>
+					<template slot="title">
+						{{ value }}
+					</template>
+					{{ value.substr(0, 20) + '...'}}
+					</a-tooltip>
+			</span>
+			<span v-else>{{ value }}</span>
+		</span>
 		</a-statistic>
 		
 		<div class="icon" v-html="icon" v-if="icon">
@@ -69,12 +88,32 @@
 			src: {
 				type: String,
 				default: "",
-			}
+			},
+			tag: {
+				type: Boolean,
+				default: false
+			},
 		},
 		data() {
 			return {
+				screenWidth:0,
 			}
 		},
+		methods: {
+			updateScreenWidth() {
+				this.screenWidth = window.innerWidth;
+			}
+		},
+		mounted() {
+			// 初始化宽度
+			this.updateScreenWidth();
+			// 监听窗口大小变化
+			window.addEventListener('resize', this.updateScreenWidth);
+		},
+		beforeDestroy() {
+			// 移除监听器
+			window.removeEventListener('resize', this.updateScreenWidth);
+		}
 	})
 
 </script>

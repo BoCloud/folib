@@ -305,6 +305,9 @@ export default {
             } else if (opsType === 2) {
                 const jsonArrayString = JSON.parse(this.currentClickRecord.targetPath);
                 let type = jsonArrayString[0].artifactoryRepositoryType;
+                if (!type) {
+                    type = 'inner'
+                }
                 retryArtifactDispatch(sycnNo, type).then(res => {
                     this.$message.success(this.$t("Storage.OperationSuccessful"));
                     this.getArtifactSyncRecordPage();

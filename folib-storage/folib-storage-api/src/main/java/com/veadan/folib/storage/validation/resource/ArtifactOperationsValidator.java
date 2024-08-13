@@ -181,6 +181,7 @@ public class ArtifactOperationsValidator {
         BigDecimal storageMaxTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageMaxSize, FileUnitTypeEnum.TB.getUnit());
         BigDecimal storageRealTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageBytesSize, FileUnitTypeEnum.TB.getUnit());
         if (storageRealTbSize.compareTo(storageMaxTbSize) >= 0) {
+            removeLastTime();
             throw new ArtifactResolutionException(String.format("The size of the storage [%s] artifact [%s] exceeds the maximum size accepted by " +
                     "this storage (%s/%s) unit %s.", storageId, repositoryPath, storageRealTbSize, storageMaxTbSize, FileUnitTypeEnum.TB.getUnit()));
         }
@@ -211,6 +212,13 @@ public class ArtifactOperationsValidator {
      */
     public void setLastTime(long lastTime) {
         distributedCacheComponent.put(STORAGE_SIZE_VERIFICATION_LAST_TIME_KEY, Long.toString(lastTime));
+    }
+
+    /**
+     * 删除最后一次刷新时间
+     */
+    public void removeLastTime() {
+        distributedCacheComponent.delete(STORAGE_SIZE_VERIFICATION_LAST_TIME_KEY);
     }
 
     /**

@@ -202,10 +202,8 @@
                                               :ok-text="$t('Repository.Confirm')"
                                               :cancel-text="$t('Repository.Cancel')"
                                               @confirm="confirmRecord(record)"
-                                              @cancel="cancelRecord"
                                 >
                                     <a-button type="link" v-if="record.status === 4"
-                                              @click="confirmRecord(record)"
                                               size="small">
                                         <span class="text-danger">{{ $t('Repository.Compensation') }}</span>
                                     </a-button>
@@ -216,7 +214,6 @@
                                               :ok-text="$t('Repository.Confirm')"
                                               :cancel-text="$t('Repository.Cancel')"
                                               @confirm="updatePriority(record)"
-                                              @cancel="cancelRecord"
                                 >
                                     <a-button type="link" v-if="record.status === 1"
                                               @click="confirmRecord(record)"
@@ -592,6 +589,9 @@ export default {
             } else if (opsType === 2) {
                 const jsonArrayString = JSON.parse(this.currentClickRecord.targetPath);
                 let type = jsonArrayString[0].artifactoryRepositoryType;
+                if (!type) {
+                    type = 'inner'
+                }
                 retryArtifactDispatch(sycnNo, type).then(res => {
                     this.$message.success("success");
                     this.getData();

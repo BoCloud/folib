@@ -49,7 +49,7 @@ public class DirectorySizeCalculatorUtils {
                     try {
                         String path = file.toString(), name = file.getFileName().toString();
                         if (exclude(name)) {
-                            log.error("Visit file path [{}] skip...", file);
+                            log.warn("Visit file path [{}] skip...", file);
                             return FileVisitResult.CONTINUE;
                         }
                         String artifactPath = path.substring(path.indexOf(repositoryPrefix) + repositoryPrefix.length());
