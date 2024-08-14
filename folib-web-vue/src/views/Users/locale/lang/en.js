@@ -29,10 +29,10 @@ export default {
     'Delete': 'Delete',
     'userNameLength': 'Between 2 and 30 characters in length',
     'EnterThePassword': 'Please enter the password',
-    'passwordLength': 'Between 8 and 16 characters in length',
+    'passwordLength': 'Between 12 and 30 characters in length',
     'PleaseSelectTheRole': 'Please select the role',
     'DeleteSuccess': 'Delete successfully',
-    'passwordFormat': 'Passwords should be letters, numbers, special symbols (~! @ # $% ^ & * () _.) , two or more combinations, a string of 8 to 16 characters, such as zs666@abc',
+    'PasswordFormat': 'Passwords should be letters, numbers, special symbols (~! @ # $% ^ & * () _.) , three or more combinations, a string of 12 to 30 characters, such as example666@abc',
     // Personal.vue
     'PersonalInformation': 'Personal information',
     'Email': 'Email',
