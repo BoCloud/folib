@@ -310,12 +310,12 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
 
         // 初始化路径列表，并过滤出有效路径
         return listPaths(path)
-                .filter(this::isValidPath)
+                //.filter(this::isValidPath)
                 .collectList()
                 .flatMapMany(contentPaths -> Flux.fromIterable(ListUtils.partition(contentPaths, 200)))
                 // 使用并行处理提高效率
-                .parallel()
-                .runOn(Schedulers.boundedElastic())
+                .publishOn(Schedulers.boundedElastic())
+                .parallel(1)
                 // 根据路径构建文件内容任务
                 .flatMap(paths -> buildFileContentTask(paths, showChecksum))
                 // 将并行处理的结果序列化
@@ -335,11 +335,14 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
      * @return 返回一个Flux实例，该实例用于异步遍历并处理目录中的文件。
      */
     private Flux<Path> listPaths(Path path) {
-        return Flux.using(
-                () -> Files.list(path), // 创建一个Callable，用于在需要时列出路径下的文件。
+        Flux<Path> pathFlux =  Flux.using(
+                //Files.list 无法保证所有文件系统中的顺序一致性,需要自定义顺序，必须显式调用 .sorted() 自然排序
+                () -> Files.list(path).filter(this::isValidPath).sorted(),
                 Flux::fromStream, // 将列出的文件转换为Flux流，以便进行反应式处理。
                 Stream::close // 指定在不再需要流时如何关闭它，确保资源的正确释放。
-        ).subscribeOn(Schedulers.boundedElastic()); // 指定在哪个线程上订阅和处理事件，这里选择使用bounded
+        ); // 指定在哪个线程上订阅和处理事件，这里选择使用bounded
+
+        return pathFlux;
     }
 
     /**
