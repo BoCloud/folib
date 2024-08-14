@@ -313,7 +313,7 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
                 //.filter(this::isValidPath)
                 .collectList()
                 .flatMapMany(contentPaths -> Flux.fromIterable(ListUtils.partition(contentPaths, 200)))
-                // 使用并行处理提高效率
+                // 使用并行处理提高效率 在多个 Flux 中使用 .publishOn(Schedulers.boundedElastic()) 时，Schedulers.boundedElastic() 是共享的，而不是为每个 Flux 创建独立的线程池。
                 .publishOn(Schedulers.boundedElastic())
                 .parallel(1)
                 // 根据路径构建文件内容任务
