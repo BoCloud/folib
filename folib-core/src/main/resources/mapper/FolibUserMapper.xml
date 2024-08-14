@@ -108,7 +108,7 @@
             </if>
         </where>
         group by fu.id
-        limit #{pageable.offset}, #{pageable.pageSize}
+        limit #{pageable.pageNumber}, #{pageable.pageSize}
     </select>
 
     <!--分页查询指定行数据-->
@@ -424,7 +424,7 @@
             <if test="path != null and path != ''">
                 and rrr.path = #{path}
             </if>
-            <if test="usernames != null and usernames.size > 0">
+            <if test="usernames != null and usernames.size() > 0">
                 and fu.username in
                 <foreach collection="usernames" item="username" open="(" separator="," close=")">
                     #{username}
@@ -436,8 +436,8 @@
 
     <!--新增数据-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
-        insert into folib_user(id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,create_by,create_time,update_by,update_time)
-        values (#{id},#{username},#{password},#{originalPassword},#{avatar},#{email},#{userType},#{enabled},#{sourceId},#{deleted},#{createBy},#{createTime},#{updateBy},#{updateTime})
+        insert into folib_user(id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,create_by,update_by)
+        values (#{id},#{username},#{password},#{originalPassword},#{avatar},#{email},#{userType},#{enabled},#{sourceId},#{deleted},#{createBy},#{updateBy})
     </insert>
 
     <!-- 批量新增数据 -->

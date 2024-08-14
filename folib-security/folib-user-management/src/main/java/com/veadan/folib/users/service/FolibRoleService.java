@@ -2,6 +2,7 @@ package com.veadan.folib.users.service;
 
 import com.veadan.folib.dto.FolibRoleDTO;
 import com.veadan.folib.dto.RoleDTO;
+import com.veadan.folib.storage.repository.RepositoryPermissionDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import com.veadan.folib.entity.FolibRole;
@@ -83,4 +84,6 @@ public interface FolibRoleService{
     void saveOrUpdateBatch(List<FolibRole> roles);
 
     List<FolibRole> queryByIds(Set<String> roles);
+
+    void updateRepostoryPermission(String storageId, String repositoryId, RepositoryPermissionDto repositoryPermissionDto);
 }

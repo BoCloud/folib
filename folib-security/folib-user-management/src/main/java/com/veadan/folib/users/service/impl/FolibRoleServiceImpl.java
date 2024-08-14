@@ -8,6 +8,7 @@ import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.dto.*;
 import com.veadan.folib.entity.Resource;
 import com.veadan.folib.entity.RoleResourceRef;
+import com.veadan.folib.storage.repository.RepositoryPermissionDto;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.dto.AccessModelDto;
 import com.veadan.folib.users.dto.RepositoryPrivilegesDto;
@@ -393,7 +394,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
     public RoleDTO getRoleDetail(String roleId, FolibRole folibRole) {
         RoleDTO roleDTO = RoleDTO.builder().description(folibRole.getDescription()).name(folibRole.getEnName()).build();
         //查角色关联的权限
-        List<PermissionsDTO> permissions = roleResourceRefService.queryPermissions(roleId, null);
+        List<PermissionsDTO> permissions = roleResourceRefService.queryPermissions(roleId, null, null, null);
         //用户权限
         Map<String, List<PermissionsDTO>> userPermissions = permissions.stream().filter(permissionsDTO -> StringUtils.isNotEmpty(permissionsDTO.getRefType()) && GlobalConstants.ROLE_TYPE_USER.equals(permissionsDTO.getRefType())).collect(Collectors.groupingBy(PermissionsDTO::getEntityId));
         List<AccessUsersDTO> userAccess = userPermissions.entrySet().stream().map(entry -> {
@@ -441,6 +442,25 @@ public class FolibRoleServiceImpl implements FolibRoleService {
         Example example = new Example(FolibRole.class);
         example.createCriteria().andIn("id", roles);
         return folibRoleMapper.selectByExample(example);
+    }
+
+    @Override
+    public void updateRepostoryPermission(String storageId, String repositoryId, RepositoryPermissionDto repositoryPermissionDto) {
+        String roleId = String.format("%S_%S", storageId, repositoryId);
+        FolibRole folibRole = folibRoleService.queryById(roleId);
+        List<AccessUsersDTO> users = new ArrayList<>();
+        repositoryPermissionDto.getUserList().forEach(user -> {
+            users.add(AccessUsersDTO.builder().id(user.getUsername()).access(user.getPermissions()).build());
+        });
+
+        AccessModelDTO privileges = AccessModelDTO.builder().users(users).build();
+        RoleDTO roleDTO = RoleDTO.builder().name(roleId).description(roleId + "仓库默认角色").privileges(privileges).resources(Collections.singletonList(AccessResourcesDTO.builder().storageId(storageId).repositoryId(repositoryId).build())).build();
+        if (folibRole == null) {
+            save(roleDTO, null);
+        }else {
+            updateRoleInfo(roleDTO, roleId, null);
+        }
+
     }
 
 

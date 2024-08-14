@@ -5,14 +5,17 @@ import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.converts.UserConvert;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.UserEntity;
+import com.veadan.folib.dto.RepositoryPrivilegeDTO;
 import com.veadan.folib.dto.UserDTO;
 import com.veadan.folib.entity.FolibUser;
 import com.veadan.folib.mapper.FolibUserMapper;
-import com.veadan.folib.dto.RepositoryPrivilegeDTO;
 import com.veadan.folib.users.service.FolibUserService;
+import com.veadan.folib.users.service.RoleResourceRefService;
+import com.veadan.folib.users.service.UserGroupRefService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -35,11 +38,19 @@ public class FolibUserServiceImpl implements FolibUserService {
 
     @Inject
     private FolibUserMapper folibUserMapper;
+    @Autowired
+    private UserGroupRefService userGroupRefService;
+    @Autowired
+    private RoleResourceRefService roleResourceRefService;
 
     @Override
     public void deleteByUserName(String username) {
-        FolibUser user = FolibUser.builder().username(username).deleted(GlobalConstants.NOT_DELETED).build();
+        FolibUser user = FolibUser.builder().username(username).deleted(GlobalConstants.DELETED).build();
         folibUserMapper.update(user);
+
+        userGroupRefService.deleteByUserId(username);
+
+        roleResourceRefService.deleteByentityId(username, GlobalConstants.ROLE_TYPE_USER);
     }
 
     @Override
@@ -54,7 +65,7 @@ public class FolibUserServiceImpl implements FolibUserService {
 
     @Override
     public List<UserDTO> findByUserNameResource(List<String> usernames, String storageId, String repositoryId, String path) {
-        return folibUserMapper.queryUsersNameResource(usernames, storageId, repositoryId, path);
+        return folibUserMapper.queryUsersNameResource(usernames, storageId, repositoryId, path, null);
     }
 
     @Override
@@ -74,8 +85,8 @@ public class FolibUserServiceImpl implements FolibUserService {
             folibUser.setCreateTime(date);
             folibUserMapper.insert(folibUser);
         }else {
-            folibUser.setId(folibUserInfo.getId());
-            folibUserMapper.update(folibUser);
+            folibUserInfo.setDeleted(GlobalConstants.NOT_DELETED);
+            folibUserMapper.update(folibUserInfo);
         }
         return userEntity;
     }

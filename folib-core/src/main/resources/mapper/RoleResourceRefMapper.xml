@@ -185,15 +185,24 @@
                 rrr.resource_id = r.id
         where
             fr.deleted = 0
-            <if test="roleId != null and roleId != ''">
-                and fr.id = #{roleId}
-            </if>
-            <if test="username != null and username != ''">
-               and rrr.entity_id in (
+        <if test="roleId != null and roleId != ''">
+            and fr.id = #{roleId}
+        </if>
+        <if test="storageId != null and storageId != ''">
+            and r.storage_id = #{storageId}
+        </if>
+        <if test="repositoryId != null and repositoryId != ''">
+            and r.repository_id = #{repositoryId}
+        </if>
+        <if test="username != null and username != ''">
+            and rrr.entity_id in (
                 select id from folib_user fu where fu.id = #{username}
                 union all
                 select id from user_group_ref ugr where ugr.user_id = #{username})
-            </if> and rrr.id is not null
+        </if>  and rrr.id is not null
+        <if test="resourceEmpty">
+            or  rrr.resource_id is null and rrr.id is not null
+        </if>
     </select>
     <select id="queryRoleByUserId" resultType="com.veadan.folib.entity.RoleResourceRef">
         select

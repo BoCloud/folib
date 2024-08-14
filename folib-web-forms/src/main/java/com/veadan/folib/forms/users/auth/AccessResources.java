@@ -10,7 +10,7 @@ import javax.validation.constraints.NotEmpty;
 @Data
 public class AccessResources
 {
-    private Long resourceId;
+    private String resourceId;
     @NotEmpty(message = "A storage id must be specified.")
     private String storageId;
 

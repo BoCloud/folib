@@ -93,7 +93,7 @@ public class AuthorizationConfigServiceImpl
     }
 
     private AuthorizationConfigDto getAuthorizationConfigDto(String username) {
-        List<PermissionsDTO> permissions = roleResourceRefService.queryPermissions(null, username);
+        List<PermissionsDTO> permissions = roleResourceRefService.queryPermissions(null, username, null, null);
         Map<String, List<PermissionsDTO>> permissionMap = permissions.stream().filter(dto -> dto.getRoleId() != null).collect(Collectors.groupingBy(PermissionsDTO::getRoleId, Collectors.toList()));
         Map<String, List<RoleResourceRef>> apiMap;
         if (!permissionMap.isEmpty()) {

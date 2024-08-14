@@ -1,32 +1,17 @@
 package com.veadan.folib.controllers;
 
-import com.veadan.folib.components.DistributedCacheComponent;
-import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.users.UserController;
-import com.veadan.folib.controllers.users.support.Permissions;
-import com.veadan.folib.controllers.users.support.UserGroupResponseEntity;
-import com.veadan.folib.controllers.users.support.UserOutput;
 import com.veadan.folib.converters.users.RoleConvert;
-import com.veadan.folib.converters.users.UserGroupConvert;
-import com.veadan.folib.domain.PageResultResponse;
-import com.veadan.folib.domain.User;
 import com.veadan.folib.dto.*;
 import com.veadan.folib.entity.FolibRole;
-import com.veadan.folib.entity.UserGroup;
-import com.veadan.folib.entity.UserGroupRef;
 import com.veadan.folib.forms.users.auth.RoleForm;
-import com.veadan.folib.forms.users.UserGroupForm;
-import com.veadan.folib.scanner.common.msg.ObjectRestResponse;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
-import com.veadan.folib.users.dto.UserDto;
 import com.veadan.folib.users.service.FolibRoleService;
 import com.veadan.folib.users.service.RoleResourceRefService;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.*;
-import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
@@ -42,10 +27,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static com.veadan.folib.controllers.users.UserController.SUCCESSFUL_DELETE_USER;
 
 /**
  * @author Fengmaogen
@@ -218,7 +199,7 @@ public class RoleController extends BaseController {
         folibRole.setIsDefault(isDefault);
         folibRole.setStorageId(storageId);
         folibRole.setRepositoryId(repositoryId);
-        folibRole.setPatch(patch);
+        folibRole.setPath(patch);
 
         Page<FolibRoleDTO> folibRoles = folibRoleService.paginQuery(folibRole, pageRequest);
         if (Objects.isNull(folibRoles)) {

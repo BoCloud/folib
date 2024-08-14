@@ -89,7 +89,17 @@ public interface RoleResourceRefMapper extends CommonMapper<RoleResourceRef> {
 
      RoleDTO getUserByRoleId(@Param("roleId") String roleId);
 
-     List<PermissionsDTO> queryPermissions(@Param("roleId") String roleId, @Param("username") String username);
+     /**
+      *
+      * @param roleId
+      * @param username
+      * @param storageId
+      * @param repositoryId
+      * @param resourceEmpty true值则查询资源为空的权限（admin角色直接和用户关联，没有关联资源）
+      * @return
+      */
+     List<PermissionsDTO> queryPermissions(@Param("roleId") String roleId, @Param("username") String username,
+                                           @Param("storageId") String storageId, @Param("repositoryId")String repositoryId, @Param("resourceEmpty") boolean resourceEmpty);
 
      List<RoleResourceRef> queryRoleByUserId(@Param("userId")String userId,@Param("roleIds") List<String> roleIds);
 

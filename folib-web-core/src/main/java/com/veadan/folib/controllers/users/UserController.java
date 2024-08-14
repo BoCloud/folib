@@ -8,6 +8,7 @@ import com.veadan.folib.converters.users.UserGroupConvert;
 import com.veadan.folib.domain.PageResultResponse;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.entity.UserGroup;
+import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
 import com.veadan.folib.forms.users.UserForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.StorageManagementService;
@@ -24,6 +25,7 @@ import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.*;
 import org.apache.commons.lang3.StringUtils;
 import org.jose4j.lang.JoseException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -101,8 +103,8 @@ public class UserController
     private FolibRoleService folibRoleService;
     @Inject
     private StorageManagementService storageManagementService;
-    @Inject
-    private UserGroupService userGroupService;
+    @Autowired
+    private PrivilegeEventListenerRegistry privilegeEventListenerRegistry;
 
     @ApiOperation(value = "sync yaml users and roles")
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_GET_USERS)})
@@ -203,7 +205,8 @@ public class UserController
             user.setPassword(password);
         }
         userService.save(new EncodedPasswordUser(user, passwordEncoder));
-
+        //同步用户信息到其他节点
+        privilegeEventListenerRegistry.dispatchUserSyncEvent(user.getUuid());
         return getSuccessfulResponseEntity(SUCCESSFUL_CREATE_USER, accept);
     }
 
@@ -246,6 +249,9 @@ public class UserController
             user.setPassword(password);
         }
         userService.save(new EncodedPasswordUser(user, passwordEncoder));
+
+        //同步用户信息到其他节点
+        privilegeEventListenerRegistry.dispatchUserSyncEvent(user.getUuid());
 
         return getSuccessfulResponseEntity(SUCCESSFUL_UPDATE_USER, accept);
     }

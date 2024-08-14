@@ -15,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import tk.mybatis.mapper.entity.Example;
 
 import javax.transaction.Transactional;
 import java.util.*;
@@ -134,8 +135,13 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
     }
 
     @Override
-    public List<PermissionsDTO> queryPermissions(String roleId, String username) {
-        return roleResourceRefMapper.queryPermissions(roleId, username);
+    public List<PermissionsDTO> queryPermissions(String roleId, String username, String storageId, String repositoryId) {
+        return roleResourceRefMapper.queryPermissions(roleId, username, storageId, repositoryId, true);
+    }
+
+    @Override
+    public List<PermissionsDTO> queryPermissions(String roleId, String username, String storageId, String repositoryId, boolean resourceEmpty) {
+        return roleResourceRefMapper.queryPermissions(roleId, username, storageId, repositoryId, resourceEmpty);
     }
 
     @Override
@@ -254,5 +260,19 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
     @Override
     public List<RoleResourceRef> queryByRoleIds(List<String> roleIds) {
         return roleResourceRefMapper.queryByRoleIds(roleIds);
+    }
+
+    @Override
+    public void deleteByentityId(String entityId, String refType) {
+        Example example = new Example(RoleResourceRef.class);
+        example.createCriteria().andEqualTo("entityId", entityId).andEqualTo("refType", refType);
+        roleResourceRefMapper.deleteByExample(example);
+    }
+
+    @Override
+    public void deleteByIds(List<Long> removeIds) {
+        Example example = new Example(RoleResourceRef.class);
+        example.createCriteria().andIn("id", removeIds);
+        roleResourceRefMapper.deleteByExample(example);
     }
 }

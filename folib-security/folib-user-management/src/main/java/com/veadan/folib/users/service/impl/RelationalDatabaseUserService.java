@@ -188,7 +188,7 @@ public class RelationalDatabaseUserService implements UserService
             limit = 5;
         }
         int start = (page - 1) * limit;
-        limit = page * limit;
+//        limit = page * limit;
         long count = folibUserService.countUsers(user);
         if (count == 0L) {
             return null;

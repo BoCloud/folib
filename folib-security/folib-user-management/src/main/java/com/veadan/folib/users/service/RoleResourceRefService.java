@@ -81,8 +81,8 @@ public interface RoleResourceRefService{
 
     RoleDTO getUserByRoleId(String roleId);
 
-    List<PermissionsDTO> queryPermissions(String roleId,String username);
-
+    List<PermissionsDTO> queryPermissions(String roleId,String username, String storageId, String repositoryId);
+    List<PermissionsDTO> queryPermissions(String roleId, String username, String storageId, String repositoryId, boolean resourceEmpty);
     boolean deleteByRoleId(String roleId);
 
     List<RoleResourceRef> queryRoleByUserId(String uuid, List<String> roles);
@@ -94,4 +94,8 @@ public interface RoleResourceRefService{
     void batchUpdate(List<RoleResourceRef> userRoles);
 
     List<RoleResourceRef> queryByRoleIds(List<String> roleIds);
+
+    void deleteByentityId(String entityId, String refType);
+
+    void deleteByIds(List<Long> removeIds);
 }

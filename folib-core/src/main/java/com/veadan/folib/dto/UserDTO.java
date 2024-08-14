@@ -1,6 +1,7 @@
 package com.veadan.folib.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -39,6 +40,15 @@ public class UserDTO
     private String storageId;
     private String repositoryId;
     private String path;
+
+    @ApiModelProperty(name = "主键",notes = "")
+    private String id ;
+    @ApiModelProperty(name = "原始密码",notes = "")
+    private String originalPassword ;
+    @ApiModelProperty(name = "用户类型",notes = "")
+    private String userType ;
+    @ApiModelProperty(name = "是否删除",notes = "")
+    private String deleted ;
 
     public void setRepositoryPrivilege(String repositoryPrivilege) {
         this.repositoryPrivilege =  new HashSet<>(Arrays.asList(repositoryPrivilege.split(",")));;
