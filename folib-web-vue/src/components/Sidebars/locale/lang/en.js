@@ -29,8 +29,7 @@ export default {
     'Transparent': 'Transparent',
     'WhiteBackground': 'White background',
     'NavigationLock': 'Navigation lock',
-    
-    
+    'StorageMonitoring': 'Storage Cockpits',
     'StatisticalOverview':'Statistical Overview',
     'AdvancementCockpits':'Advancement Cockpits',
     'AdvancementCockpitsInfo':'Advancement Cockpits Info',

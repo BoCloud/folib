@@ -27,6 +27,8 @@ public class StorageDto
 
     private String storageProvider;
 
+    private Long storageMaxSize;
+
     private Set<String> users = new LinkedHashSet<>();
 
     private Map<String, RepositoryDto> repositories = new LinkedHashMap<>();
@@ -95,6 +97,16 @@ public class StorageDto
 
     public void setStorageProvider(String storageProvider) {
         this.storageProvider = storageProvider;
+    }
+
+
+    @Override
+    public Long getStorageMaxSize() {
+        return storageMaxSize;
+    }
+
+    public void setStorageMaxSize(Long storageMaxSize) {
+        this.storageMaxSize = storageMaxSize;
     }
 
     @Override

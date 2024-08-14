@@ -4,6 +4,7 @@ import cn.hutool.core.date.StopWatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.veadan.folib.booters.PropertiesBooter;
+import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
@@ -106,7 +107,10 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
         ArtifactRoutingRulesChecker artifactRoutingRulesChecker = SpringContextUtil.getBean(ArtifactRoutingRulesChecker.class);
         List<RepositoryPath> hostedRepositoryPathList = Lists.newArrayList();
         List<RepositoryPath> proxyRepositoryPathList = Lists.newArrayList();
-        for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+        List<String> storageAndRepositoryIdList = Lists.newArrayList();
+        ConfigurationManager configurationManager = SpringContextUtil.getBean(ConfigurationManager.class);
+        configurationManager.resolveGroupRepository(repository, storageAndRepositoryIdList);
+        for (String storageAndRepositoryId : storageAndRepositoryIdList) {
             String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
             String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
             Repository subRepository = configurationManagementService.getConfiguration().getRepository(sId, rId);

@@ -34,6 +34,11 @@ public class StorageForm {
     private String storageProvider;
 
     /**
+     * 存储配额
+     */
+    private Long storageMaxSize;
+
+    /**
      * 普通用户
      */
     private Set<String> users = new LinkedHashSet<>();
@@ -87,6 +92,14 @@ public class StorageForm {
 
     public void setStorageProvider(String storageProvider) {
         this.storageProvider = storageProvider;
+    }
+
+    public Long getStorageMaxSize() {
+        return storageMaxSize;
+    }
+
+    public void setStorageMaxSize(Long storageMaxSize) {
+        this.storageMaxSize = storageMaxSize;
     }
 
     public interface NewStorage

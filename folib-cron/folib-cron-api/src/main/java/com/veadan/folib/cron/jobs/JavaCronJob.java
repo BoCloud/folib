@@ -16,5 +16,6 @@ public abstract class JavaCronJob
     public static final String COCOAPODS="COCOAPODS";
     public static final String CONAN="CONAN";
     public static final String PUB="PUB";
+    public static final String PYPI="PYPI";
 
 }

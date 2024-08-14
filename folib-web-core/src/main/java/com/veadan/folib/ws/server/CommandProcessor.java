@@ -14,6 +14,7 @@ import javax.websocket.Session;
 @Slf4j
 @Component
 public abstract class CommandProcessor {
+
     @Autowired
     private FolibWsRunManageV2 folibWsRunManageV2;
 

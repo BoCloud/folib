@@ -1,6 +1,7 @@
 package com.veadan.folib.artifact.coordinates;
 
 import java.net.URI;
+import java.nio.file.Files;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -12,6 +13,7 @@ import com.veadan.folib.artifact.coordinates.versioning.SemanticVersion;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
+import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.NpmLayoutProvider;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -49,7 +51,7 @@ public class NpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<NpmA
                                                         NPM_VERSION_REGEX + ")/" + NPM_NAME_REGEX + "(-(" +
                                                         NPM_VERSION_REGEX + "))?\\." + NPM_EXTENSION_REGEX;
 
-    private static final Pattern NPM_NAME_PATTERN = Pattern.compile(NPM_NAME_REGEX);
+    public static final Pattern NPM_NAME_PATTERN = Pattern.compile(NPM_NAME_REGEX);
 
     private static final Pattern NPM_PATH_PATTERN = Pattern.compile(NPM_PACKAGE_PATH_REGEX);
 
@@ -289,6 +291,21 @@ public class NpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<NpmA
     public static String calculatePackageId(String packageScope, String packageName)
     {
         return packageScope == null ? packageName : String.format("%s/%s", packageScope, packageName);
+    }
+
+    public static NpmArtifactCoordinates resolveName(RepositoryPath repositoryPath, String artifactPath)
+    {
+        NpmArtifactCoordinates npmArtifactCoordinates = new NpmArtifactCoordinates();
+        String[] arr = artifactPath.split(GlobalConstants.SEPARATOR);
+        if (!arr[0].startsWith(GlobalConstants.AT)) {
+            npmArtifactCoordinates.setName(arr[0]);
+        } else {
+            npmArtifactCoordinates.setScope(arr[0]);
+            if (arr.length >= 2) {
+                npmArtifactCoordinates.setName(arr[1]);
+            }
+        }
+        return npmArtifactCoordinates;
     }
 
 }

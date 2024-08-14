@@ -1,17 +1,21 @@
 package com.veadan.folib.providers.repository.proxied;
 
+import cn.hutool.core.math.MathUtil;
+import cn.hutool.core.util.StrUtil;
 import com.veadan.folib.artifact.ArtifactNotFoundException;
 import com.veadan.folib.client.CloseableRestResponse;
 import com.veadan.folib.client.RestArtifactResolver;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.client.ClientResponse;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Objects;
 
 @Slf4j
 public class RemoteArtifactStreamFetcher
@@ -30,8 +34,15 @@ public class RemoteArtifactStreamFetcher
         throws IOException
     {
         URI resource = getRestClientResourcePath(artifactPath);
-
-        return new RemoteArtifactInputStream(resource, offset);
+        RemoteArtifactInputStream remoteArtifactInputStream = new RemoteArtifactInputStream(resource, offset);
+        Response response = remoteArtifactInputStream.getConnection().getResponse();
+        if (Objects.nonNull(response)) {
+            String size = response.getHeaderString("Content-Length");
+            if (StringUtils.isNotBlank(size) && StrUtil.isNumeric(size)) {
+                artifactPath.setSize(Long.valueOf(size));
+            }
+        }
+        return remoteArtifactInputStream;
     }
 
     public String getHead(RepositoryPath repositoryPath)
@@ -75,7 +86,7 @@ public class RemoteArtifactStreamFetcher
         if (response.getStatus() != 200 || response.getEntity() == null)
         {
             terminateConnection(connection);
-            
+
             throw new IOException(String.format("Unreadable response for %s. Response status is %s",
                     response.toString(), response.getStatus()));
         }
@@ -138,18 +149,21 @@ public class RemoteArtifactStreamFetcher
             return target;
         }
 
+        @Override
         public int read()
             throws IOException
         {
             return getTarget().read();
         }
 
+        @Override
         public int read(byte[] b)
             throws IOException
         {
             return getTarget().read(b);
         }
 
+        @Override
         public int read(byte[] b,
                         int off,
                         int len)
@@ -158,29 +172,34 @@ public class RemoteArtifactStreamFetcher
             return getTarget().read(b, off, len);
         }
 
+        @Override
         public long skip(long n)
             throws IOException
         {
             return getTarget().skip(n);
         }
 
+        @Override
         public int available()
             throws IOException
         {
             return getTarget().available();
         }
 
+        @Override
         public void mark(int readlimit)
         {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public void reset()
             throws IOException
         {
             getTarget().reset();
         }
 
+        @Override
         public boolean markSupported()
         {
             return false;
@@ -223,5 +242,5 @@ public class RemoteArtifactStreamFetcher
         }
 
     }
-    
+
 }

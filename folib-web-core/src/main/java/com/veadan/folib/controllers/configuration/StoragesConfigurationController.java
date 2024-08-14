@@ -34,7 +34,6 @@ import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.providers.layout.LayoutProvider;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import com.veadan.folib.providers.storage.FileSystemStorageProvider;
-import com.veadan.folib.repository.RepositoryManagementStrategyException;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
@@ -645,26 +644,36 @@ public class StoragesConfigurationController
                 throw new RequestBodyValidationException(FAILED_SAVE_REPOSITORY, bindingResult);
             }
             RepositoryDto repository = conversionService.convert(repositoryForm, RepositoryDto.class);
+            if (Objects.isNull(repository)) {
+                return getFailedResponseEntity(HttpStatus.BAD_REQUEST, "The repository params is null", accept);
+            }
             if (repositoryForm.getArtifactMaxSize() == 0) {
-                assert repository != null;
-                repository.setArtifactMaxSize(214748364800L);
+                repository.setArtifactMaxSize(107374182400L);
             }
             Repository existRepository = storage.getRepository(repositoryId);
-            boolean result = Objects.nonNull(existRepository) && Objects.nonNull(repository) && (!repository.getLayout().equals(existRepository.getLayout()) || (Objects.nonNull(existRepository.getSubLayout()) && !existRepository.getSubLayout().equals(repository.getSubLayout())));
+            boolean result = Objects.nonNull(existRepository) && (!repository.getLayout().equals(existRepository.getLayout()) || (Objects.nonNull(existRepository.getSubLayout()) && !existRepository.getSubLayout().equals(repository.getSubLayout())));
             if (result) {
                 //判断重复
                 return getFailedResponseEntity(HttpStatus.BAD_REQUEST, "The repository id already exists", accept);
             }
             try {
                 logger.info("Creating repository {}:{}...", storageId, repositoryId);
-
                 configurationManagementService.saveRepository(storageId, repository);
                 RepositoryDto repositoryDto = getMutableConfigurationClone().getStorage(storageId)
                         .getRepository(repositoryId);
-
                 final RepositoryPath repositoryPath = repositoryPathResolver.resolve(new RepositoryData(repository));
-                if (!Files.exists(repositoryPath)) {
-                    repositoryManagementService.createRepository(storageId, repository.getId());
+                try {
+                    if (!Files.exists(repositoryPath)) {
+                        repositoryManagementService.createRepository(storageId, repositoryId);
+                    }
+                } catch (Exception ex) {
+                    logger.error("Failed to create the repository path {}!", repositoryId, ex);
+                    try {
+                        configurationManagementService.removeRepository(storageId, repositoryId);
+                    } catch (Exception e) {
+                        logger.error("Failed to remove the repository {}!", repositoryId, e);
+                    }
+                    throw new RuntimeException(ex.getMessage());
                 }
                 if (Objects.isNull(existRepository) && !RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
                     //初始化仓库数据
@@ -676,15 +685,9 @@ public class StoragesConfigurationController
 
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (Exception e) {
-              logger.error("Failed to save the repository {}!", repositoryId, e);
-                try {
-                    configurationManagementService.removeRepository(storageId, repositoryId);
-                } catch (Exception e1) {
-                    logger.error("Failed to remove the repository {}!", repositoryId, e1);
-                }
+                logger.error("Failed to save the repository {}!", repositoryId, e);
                 return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);
             }
-
         } else {
             return getFailedResponseEntity(HttpStatus.NOT_FOUND, STORAGE_NOT_FOUND, accept);
         }
@@ -1007,7 +1010,9 @@ public class StoragesConfigurationController
         if (repository.isGroupRepository()) {
             repository = configurationManagementService.getMutableConfigurationClone().getStorage(repository.getStorage().getId()).getRepository(repository.getId());
             Set<String> vulnerabilityWhites = repository.getVulnerabilityWhites(), vulnerabilityBlacks = repository.getVulnerabilityBlacks();
-            for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+            List<String> storageAndRepositoryIdList = Lists.newArrayList();
+            configurationManager.resolveGroupRepository(repository, storageAndRepositoryIdList);
+            for (String storageAndRepositoryId : storageAndRepositoryIdList) {
                 String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
                 String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
                 Repository subRepository = configurationManagementService.getMutableConfigurationClone().getStorage(sId).getRepository(rId);
@@ -1032,18 +1037,14 @@ public class StoragesConfigurationController
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
         try {
-            String storageIdAndRepositoryId = String.format("%s:%s", storageId, repositoryId);
-            List<Repository> repositoryList = Lists.newArrayList();
-            for (Map.Entry<String, Storage> entry : configurationManagementService.getConfiguration().getStorages().entrySet()) {
-                repositoryList.addAll(Optional.ofNullable(entry.getValue().getRepositories()).orElse(Collections.emptyMap()).values().stream().filter(item -> item.isGroupRepository() && item.getGroupRepositories().contains(storageIdAndRepositoryId)).collect(Collectors.toList()));
-            }
+            List<Repository> repositoryList = configurationManagementService.getConfiguration().getGroupRepositoriesContaining(storageId, repositoryId);
             if (CollectionUtils.isNotEmpty(repositoryList)) {
                 return getFailedResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, String.format(FAILED_REPOSITORY_REMOVAL_EXISTS_GROUP_REPOSITORY, repositoryList.stream().map(item -> String.format("%s:%s", item.getStorage().getId(), item.getId())).collect(Collectors.joining(","))), accept);
             }
             final RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository);
             RepositoryDto repositoryDto = getMutableConfigurationClone().getStorage(storageId)
                     .getRepository(repositoryId);
-            if (Files.exists(repositoryPath) && force) {
+            if (force && Files.exists(repositoryPath)) {
                 repositoryManagementService.removeRepository(storageId, repository.getId());
                 repositoryEventListenerRegistry.dispatchRepoDelteToCronJobDeleteEvent(storageId, repositoryId);
             }

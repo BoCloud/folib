@@ -31,6 +31,7 @@ import com.veadan.folib.storage.ArtifactStorageException;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.utils.DockerUtils;
 import com.veadan.folib.utils.TreeUtil;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.*;
@@ -217,6 +218,7 @@ public class BrowseController
                 jsonObject.put("lastModified", format);
                 jsonObject.put("size", size);
                 jsonObject.put("imageName", imageName);
+                jsonObject.put("subsidiaryFiles", DockerUtils.getDockerSubsidiaryFilePaths(repositoryPath));
                 getBom(jsonObject, versionPath);
             } catch (Exception e) {
                 throw new RuntimeException(e);

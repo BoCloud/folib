@@ -148,6 +148,13 @@ export function conanPackageInfo (data) {
   })
 }
 
+export function getLayouts () {
+  return axios({
+    url: '/api/artifact/getLayouts',
+    method: 'get',
+  })
+}
+
 export function retryNodeOption (syncNo) {
   return axios({
     url: '/api/artifact/folib/promotion/retryNodeOption/'+syncNo,
@@ -155,9 +162,9 @@ export function retryNodeOption (syncNo) {
   })
 }
 
-export function retryAtifactDispatch (syncNo,type) {
+export function retryArtifactDispatch (syncNo,type) {
   return axios({
-    url: '/api/artifact/folib/promotion/retryAtifactDispatch/'+syncNo+'/'+type,
+    url: '/api/artifact/folib/promotion/retryArtifactDispatch/'+syncNo+'/'+type,
     method: 'post'
   })
 }

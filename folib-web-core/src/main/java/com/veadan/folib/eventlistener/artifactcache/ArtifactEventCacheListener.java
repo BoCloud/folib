@@ -3,7 +3,6 @@ package com.veadan.folib.eventlistener.artifactcache;
 import com.google.common.collect.Lists;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
-import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.CacheSettings;
 import com.veadan.folib.entity.ArtifactCacheRecord;
 import com.veadan.folib.event.AsyncEventListener;
@@ -16,14 +15,12 @@ import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.util.FileSizeConvertUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -31,7 +28,6 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -54,13 +50,13 @@ public class ArtifactEventCacheListener {
     @Inject
     private DistributedCacheComponent distributedCacheComponent;
 
-    private final String REFRESH_CACHE_STATISTICS_KEY="ARTIFACT_CACHE_VERIFICATION_NTERVAL";
+    private final String REFRESH_CACHE_STATISTICS_KEY = "ARTIFACT_CACHE_VERIFICATION_INTERVAL";
 
-    private final int ARTIFACT_CACHE_VERIFICATION_NTERVAL=6;
+    private final int ARTIFACT_CACHE_VERIFICATION_INTERVAL = 360;
 
     private final String ARTIFACT_CACHE_LAST_TIME = "ARTIFACT_CACHE_VERIFICATION_LAST_TIME";
 
-    private static final long HOURS_TO_MILLIS = 3600_000L;
+    private static final long MINUTES_TO_MILLIS = 60_000L;
 
 
     @AsyncEventListener
@@ -133,8 +129,10 @@ public class ArtifactEventCacheListener {
                     return;
                 }
             }
-            if(isRefresh()){
-                try {
+
+            try {
+                if (isRefresh()) {
+                    log.info("缓存功能已开启，缓存容量 [{}] [{}] 开始校验是否需要清理缓存", cacheSettings.getSize(), cacheSettings.getSizeUnit());
                     BigDecimal oneHundred = BigDecimal.valueOf(100);
                     int clearCondition = cacheSettings.getClearCondition();
                     //long cacheDirectoryPathUseSize = FileUtils.sizeOfDirectory(new File(cacheSettings.getDirectoryPath()));
@@ -159,33 +157,32 @@ public class ArtifactEventCacheListener {
                         long deleteBytes = 0L;
                         cleanup(clearBytes, deleteBytes, cacheSettings, cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheDirectoryPathAllProportion);
                     }
-                    Files.createDirectories(targetPath.getParent());
-                    //缓存制品
-                    Files.copy(repositoryPath.getTarget(), targetPath, StandardCopyOption.REPLACE_EXISTING);
-                    if (RepositoryFiles.isArtifact(repositoryPath)) {
-                        //缓存checksum
-                        repositoryPath.getFileSystem().provider().resolveChecksumPathMap(repositoryPath).forEach((key, value) -> {
-                            try {
-                                Path checksumPath = targetPath.getParent().resolve(FilenameUtils.getName(value.toString()));
-                                Files.copy(value, checksumPath, StandardCopyOption.REPLACE_EXISTING);
-                            } catch (FileAlreadyExistsException e) {
-                                //destination file already exists
-                            } catch (Exception ex) {
-                                log.warn("缓存制品checksumPath [{}] [{}] [{}] 错误 [{}]", storageId, repositoryId, repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
-                            }
-                        });
-                    }
-                    //缓存metadata
-                    artifactComponent.storeArtifactMetadataFile(repositoryPath, targetPath);
-                    artifactComponent.handlerArtifactCacheRecord(repositoryPath, cacheSettings, targetPath);
-                    log.info("Handle artifact cache storageId [{}] repositoryId [{}] artifactPath [{}] take time [{}] ms", storageId, repositoryId, targetSubPath, System.currentTimeMillis() - startTime);
-                } catch (FileAlreadyExistsException e) {
-                    //destination file already exists
-                } catch (Exception e) {
-                    log.warn("处理制品缓存错误 [{}] 错误：[{}]", repositoryPath.toString(), ExceptionUtils.getStackTrace(e));
                 }
+                Files.createDirectories(targetPath.getParent());
+                //缓存制品
+                Files.copy(repositoryPath.getTarget(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+                if (RepositoryFiles.isArtifact(repositoryPath)) {
+                    //缓存checksum
+                    repositoryPath.getFileSystem().provider().resolveChecksumPathMap(repositoryPath).forEach((key, value) -> {
+                        try {
+                            Path checksumPath = targetPath.getParent().resolve(FilenameUtils.getName(value.toString()));
+                            Files.copy(value, checksumPath, StandardCopyOption.REPLACE_EXISTING);
+                        } catch (FileAlreadyExistsException e) {
+                            //destination file already exists
+                        } catch (Exception ex) {
+                            log.warn("缓存制品checksumPath [{}] [{}] [{}] 错误 [{}]", storageId, repositoryId, repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
+                        }
+                    });
+                }
+                //缓存metadata
+                artifactComponent.storeArtifactMetadataFile(repositoryPath, targetPath);
+                artifactComponent.handlerArtifactCacheRecord(repositoryPath, cacheSettings, targetPath);
+                log.info("Handle artifact cache storageId [{}] repositoryId [{}] artifactPath [{}] take time [{}] ms", storageId, repositoryId, targetSubPath, System.currentTimeMillis() - startTime);
+            } catch (FileAlreadyExistsException e) {
+                //destination file already exists
+            } catch (Exception e) {
+                log.warn("处理制品缓存错误 [{}] 错误：[{}]", repositoryPath.toString(), ExceptionUtils.getStackTrace(e));
             }
-
         } catch (Exception ex) {
             log.error("事件监听，处理backup，事件类型：{} repositoryPath：{} 错误：{}", source, repositoryPath, ExceptionUtils.getStackTrace(ex));
         }
@@ -216,7 +213,10 @@ public class ArtifactEventCacheListener {
         return true;
     }
 
-    private void cleanup(Long clearBytes, Long deleteBytes, CacheSettings cacheSettings, long cacheDirectoryPathUseSize, BigDecimal cacheDirectoryPathConvertSize, BigDecimal cacheDirectoryPathProportion, long cacheDirectoryPathAllSize, BigDecimal cacheDirectoryPathConvertAllSize, BigDecimal cacheDirectoryPathAllProportion) {
+    private void cleanup(Long clearBytes, Long deleteBytes, CacheSettings cacheSettings,
+                         long cacheDirectoryPathUseSize, BigDecimal cacheDirectoryPathConvertSize, BigDecimal
+                                 cacheDirectoryPathProportion, long cacheDirectoryPathAllSize, BigDecimal
+                                 cacheDirectoryPathConvertAllSize, BigDecimal cacheDirectoryPathAllProportion) {
         List<ArtifactCacheRecord> artifactCacheRecordList = artifactComponent.getArtifactCacheRecord(null, 5);
         if (CollectionUtils.isNotEmpty(artifactCacheRecordList)) {
             BigDecimal deleteProportion;
@@ -251,7 +251,7 @@ public class ArtifactEventCacheListener {
      * @return 文件夹大小
      * @throws IOException 异常
      */
-    public  long getDirectorySize(Path path) throws IOException {
+    public long getDirectorySize(Path path) throws IOException {
         final AtomicLong size = new AtomicLong(0);
         Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
             @Override
@@ -276,7 +276,7 @@ public class ArtifactEventCacheListener {
 
         // 如果获取的刷新间隔为空或仅为空白字符，则返回预设的默认刷新间隔
         if (StringUtils.isBlank(refreshContentInterval)) {
-            return ARTIFACT_CACHE_VERIFICATION_NTERVAL;
+            return ARTIFACT_CACHE_VERIFICATION_INTERVAL;
         }
 
         // 将获取的刷新间隔字符串解析为整数并返回
@@ -285,17 +285,19 @@ public class ArtifactEventCacheListener {
 
     /**
      * 设置最后一次刷新时间
+     *
      * @param lastTime 最后一次刷新时间
      */
-    public void setLastTime(long lastTime){
+    public void setLastTime(long lastTime) {
         distributedCacheComponent.put(ARTIFACT_CACHE_LAST_TIME, Long.toString(lastTime));
     }
 
     /**
      * 获取最后一次刷新时间
+     *
      * @return 最后一次刷新时间
      */
-    public Long getLastTime(){
+    public Long getLastTime() {
         String lastTime = distributedCacheComponent.get(ARTIFACT_CACHE_LAST_TIME);
         if (StringUtils.isBlank(lastTime)) {
             return null;
@@ -328,7 +330,7 @@ public class ArtifactEventCacheListener {
         // 计算当前时间与上次刷新时间之间的时间差
         Duration duration = Duration.between(pastTime, now);
         // 计算刷新间隔时间的毫秒值
-        long requiredMillis = refreshContentInterval(REFRESH_CACHE_STATISTICS_KEY) * HOURS_TO_MILLIS;
+        long requiredMillis = refreshContentInterval(REFRESH_CACHE_STATISTICS_KEY) * MINUTES_TO_MILLIS;
         // 如果时间差大于等于刷新间隔时间，则进行刷新并更新刷新时间
         if (duration.compareTo(Duration.ofMillis(requiredMillis)) >= 0) {
             setLastTime(now.toEpochMilli());

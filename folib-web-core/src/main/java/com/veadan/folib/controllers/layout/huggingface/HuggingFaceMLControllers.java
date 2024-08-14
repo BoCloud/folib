@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.Artifact;
@@ -37,6 +38,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.NonNull;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1530,8 +1532,10 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
     public String getRemoteUrl(Repository repository) {
         String remoteUrl = null;
-        if (repository.getGroupRepositories() != null && repository.getGroupRepositories().size() > 0) {
-            for (String group : repository.getGroupRepositories()) {
+        if (repository.isGroupRepository() && CollectionUtils.isNotEmpty(repository.getGroupRepositories())) {
+            List<String> storageAndRepositoryIdList = Lists.newArrayList();
+            configurationManager.resolveGroupRepository(repository, storageAndRepositoryIdList);
+            for (String group : storageAndRepositoryIdList) {
                 Repository groupRepository = configurationManager.getRepository(group);
 
                 if (groupRepository.getRemoteRepository() != null) {

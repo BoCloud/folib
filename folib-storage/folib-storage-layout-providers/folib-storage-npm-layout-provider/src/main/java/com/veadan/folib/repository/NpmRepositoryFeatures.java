@@ -519,7 +519,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
         ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(storageId, repositoryId, packageId);
         packageFeed = fetchRemotePackageFeed(storage.getId(), repository.getId(),
                 packageId);
-        final String packageSuffix = NpmSubLayout.OHNPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
+        final String packageSuffix = NpmSubLayout.OHPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
         if (Objects.nonNull(packageFeed)) {
             String separator = "/";
             String baseUrl = StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), separator);

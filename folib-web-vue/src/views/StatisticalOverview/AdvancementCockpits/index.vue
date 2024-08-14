@@ -102,15 +102,13 @@
             </a-col>
         </a-row>
         <a-row>
-            <div class="wrapper vulnerability-database">
+            <div class="wrapper advancement-cockpits">
                 <a-card :bordered="false" style="margin-top: 20px; margin-bottom: 20px">
                     <div class="mx-25 search">
-                        <a-col :span="22" class="text-right">
+                        <a-col :span="24" class="text-right">
                             <a-input-search :placeholder="$t('AdvancementCockpits.EnterVulnerabilitySourceStorageId')"
                                             class="v-search" v-model="queryParams.storageId"
                                             @search="handheTableSearch()"/>
-                        </a-col>
-                        <a-col :span="2" class="text-right">
                             <a-input-search
                                 :placeholder="$t('AdvancementCockpits.EnterVulnerabilitySourceRepositoryId')"
                                 class="v-search" v-model="queryParams.repositoryId"
@@ -204,10 +202,8 @@
                                               :ok-text="$t('Repository.Confirm')"
                                               :cancel-text="$t('Repository.Cancel')"
                                               @confirm="confirmRecord(record)"
-                                              @cancel="cancelRecord"
                                 >
                                     <a-button type="link" v-if="record.status === 4"
-                                              @click="confirmRecord(record)"
                                               size="small">
                                         <span class="text-danger">{{ $t('Repository.Compensation') }}</span>
                                     </a-button>
@@ -218,7 +214,6 @@
                                               :ok-text="$t('Repository.Confirm')"
                                               :cancel-text="$t('Repository.Cancel')"
                                               @confirm="updatePriority(record)"
-                                              @cancel="cancelRecord"
                                 >
                                     <a-button type="link" v-if="record.status === 1"
                                               @click="confirmRecord(record)"
@@ -248,7 +243,7 @@ import {
     getStatusTrends,
     fileSizeStatisticsByWarehouse
 } from "@/api/settings";
-import {retryAtifactDispatch, retryNodeOption} from "@/api/artifact";
+import {retryArtifactDispatch, retryNodeOption} from "@/api/artifact";
 import textOver from "@/components/Tools/textOver";
 
 export default {
@@ -594,7 +589,10 @@ export default {
             } else if (opsType === 2) {
                 const jsonArrayString = JSON.parse(this.currentClickRecord.targetPath);
                 let type = jsonArrayString[0].artifactoryRepositoryType;
-                retryAtifactDispatch(sycnNo, type).then(res => {
+                if (!type) {
+                    type = 'inner'
+                }
+                retryArtifactDispatch(sycnNo, type).then(res => {
                     this.$message.success("success");
                     this.getData();
                 }).finally(() => {
@@ -631,7 +629,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.vulnerability-database::v-deep {
+.advancement-cockpits::v-deep {
     .search {
         height: 50px;
     }

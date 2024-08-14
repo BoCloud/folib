@@ -44,6 +44,9 @@ public class ScannerTask {
     @Autowired
     private DistributedLockComponent distributedLockComponent;
 
+    /**
+     * 每5分钟
+     */
     @Scheduled(cron = "0 0/5 * * * ? ")
     public void run() {
         String lockName = "ScannerTask";

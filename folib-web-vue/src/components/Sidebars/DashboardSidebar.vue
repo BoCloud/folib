@@ -82,14 +82,22 @@
             <hr class="mt-5" />
             {{ $t('Sidebars.StatisticalOverview') }}
       </a-menu-item>
-        <a-menu-item v-if="this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1">
-            <router-link to="/advancementCockpits">
+      <a-menu-item v-if="this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1">
+        <router-link to="/advancementCockpits">
           <span class="icon">
               <a-icon type="experiment"  theme="filled" class="m-0"/>
           </span>
-                <span class="label">{{ $t('Sidebars.AdvancementCockpits') }}</span>
-            </router-link>
-        </a-menu-item>
+          <span class="label">{{ $t('Sidebars.AdvancementCockpits') }}</span>
+          </router-link>
+      </a-menu-item>
+      <a-menu-item v-if="userInfo.roles.indexOf('ADMIN') > -1">
+        <router-link to="/storageMonitoring">
+          <span class="icon">
+            <a-icon type="appstore" theme="filled" class="m-0" />
+          </span>
+          <span class="label">{{ $t('Sidebars.StorageMonitoring') }}</span>
+        </router-link>
+      </a-menu-item>
 
       <a-menu-item v-if="userInfo.roles.indexOf('ADMIN') > -1" class="menu-item-header">
         <hr class="mt-5" />
@@ -103,22 +111,22 @@
           <span class="label">{{ $t('Sidebars.UserManagement') }}</span>
         </router-link>
       </a-menu-item>
-      <a-menu-item v-if="userInfo.roles.indexOf('ADMIN') > -1">
+      <!-- <a-menu-item v-if="userInfo.roles.indexOf('ADMIN') > -1">
         <router-link to="/groups">
           <span class="icon">
             <a-icon type="smile" theme="filled" class="m-0" />
           </span>
           <span class="label">{{ $t('Sidebars.Groups') }}</span>
         </router-link>
-      </a-menu-item>
-      <a-menu-item v-if="userInfo.roles.indexOf('ADMIN') > -1">
+      </a-menu-item> -->
+      <!-- <a-menu-item v-if="userInfo.roles.indexOf('ADMIN') > -1">
         <router-link to="/permissions">
           <span class="icon">
             <a-icon type="smile" theme="filled" class="m-0" />
           </span>
           <span class="label">{{ $t('Sidebars.Permissions') }}</span>
         </router-link>
-      </a-menu-item>
+      </a-menu-item> -->
       <a-menu-item v-if="userInfo.roles.indexOf('ADMIN') > -1">
         <router-link to="/settings">
           <span class="icon">

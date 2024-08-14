@@ -24,4 +24,6 @@ public interface Storage
 
     String getStorageProvider();
 
+    Long getStorageMaxSize();
+
 }

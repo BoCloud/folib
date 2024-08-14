@@ -67,6 +67,9 @@ public class PromotionTask {
     @Lazy
     private RepositoryPathResolver repositoryPathResolver;
 
+    /**
+     * 每6分钟
+     */
     @Scheduled(cron = "0 0/6 * * * ? ")
     public void run() {
         String lockName = "PromotionTask";
@@ -95,7 +98,7 @@ public class PromotionTask {
                 int totalPages = (int) Math.ceil((double) totalCount / batchSize);
                 Pageable pageable;
                 for (int currentPage = 1; currentPage <= totalPages; currentPage++) {
-                    log.info("TotalPages [{}] currentPage [{}] batchSize [{}]", totalPages, currentPage, batchSize);
+                    log.info("Promotion task totalPages [{}] currentPage [{}] batchSize [{}]", totalPages, currentPage, batchSize);
                     if (currentPage == 1) {
                         pageable = PageRequest.of(currentPage, batchSize).first();
                     } else {
@@ -143,6 +146,10 @@ public class PromotionTask {
                                             nodePromotionStatus = getNodePromotionStatus(artifact.getPromotionNodes(), unionTargetRepository.getNode());
                                             if (PromotionStatusEnum.SUCCESS.getStatus().equals(nodePromotionStatus)) {
                                                 //当前节点已成功晋级，继续下一个节点
+                                                continue;
+                                            }
+                                            if (PromotionStatusEnum.FAIL.getStatus().equals(nodePromotionStatus) && ArtifactoryRepositoryTypeEnum.INNER.getType().equals(unionTargetRepository.getType())) {
+                                                //晋级失败的内部节点跳过，由PromotionCompensationTask触发重试
                                                 continue;
                                             }
                                             artifactPath = artifact.getArtifactPath();

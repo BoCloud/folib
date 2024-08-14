@@ -2,6 +2,7 @@ package com.veadan.folib.providers.io;
 
 import com.veadan.folib.artifact.ArtifactNotFoundException;
 import com.veadan.folib.io.*;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.CommonUtils;
 import org.apache.commons.io.input.CountingInputStream;
 import org.apache.commons.io.input.ProxyInputStream;
@@ -18,6 +19,7 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 
@@ -105,19 +107,25 @@ public class RepositoryStreamSupport {
             if (!ctx.isOpened()) {
                 return;
             }
+            RepositoryPath repositoryPath = (RepositoryPath) ctx.getPath();
             TransactionStatus transaction = ctx.getTransaction();
             if (transaction != null && (transaction.isRollbackOnly() || !transaction.isCompleted())) {
                 logger.warn("Rollback [{}]", getContext().getPath());
                 transactionManager.rollback(transaction);
                 logger.warn("Rolled back [{}]", getContext().getPath());
+                if (RepositoryTypeEnum.PROXY.getType().equalsIgnoreCase(repositoryPath.getRepository().getType()) && Files.exists(repositoryPath)) {
+                    logger.info("Rollback back file path [{}] size [{}] store size [{}]", getContext().getPath(), repositoryPath.getSize(), Files.size(repositoryPath));
+                    RepositoryFiles.delete(repositoryPath);
+                    logger.warn("Rolled back file path [{}]", getContext().getPath());
+                }
             }
         } finally {
             if (Objects.nonNull(ctx.getLocked())) {
                 unLock();
-                logger.debug("Unlocked [{}].", path);
+                logger.info("Unlocked [{}].", path);
             }
             clearContext();
-            logger.debug("Close [{}] take time [{}] ms", path, System.currentTimeMillis() - startTime);
+            logger.info("Close [{}] take time [{}] ms", path, System.currentTimeMillis() - startTime);
         }
     }
 

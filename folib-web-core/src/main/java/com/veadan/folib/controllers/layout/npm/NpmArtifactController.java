@@ -1,26 +1,17 @@
 package com.veadan.folib.controllers.layout.npm;
 
 import com.alibaba.fastjson.JSONObject;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
 import com.veadan.folib.authentication.api.password.PasswordAuthentication;
-import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.components.NpmComponent;
 import com.veadan.folib.config.NpmLayoutProviderConfig.NpmObjectMapper;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.data.criteria.Paginator;
-import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.domain.ArtifactEntity;
-import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.enums.NpmPacketSuffix;
 import com.veadan.folib.enums.NpmSubLayout;
 import com.veadan.folib.model.request.OhpmLoginReq;
@@ -32,7 +23,6 @@ import com.veadan.folib.npm.metadata.PackageFeed;
 import com.veadan.folib.npm.metadata.PackageVersion;
 import com.veadan.folib.npm.metadata.SearchResults;
 import com.veadan.folib.providers.ProviderImplementationException;
-import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.*;
 import com.veadan.folib.providers.repository.RepositoryProvider;
@@ -40,6 +30,7 @@ import com.veadan.folib.providers.repository.RepositoryProviderRegistry;
 import com.veadan.folib.providers.repository.RepositorySearchRequest;
 import com.veadan.folib.repository.NpmRepositoryFeatures.SearchPackagesEventListener;
 import com.veadan.folib.repository.NpmRepositoryFeatures.ViewPackageEventListener;
+import com.veadan.folib.services.NpmService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
 import com.veadan.folib.users.service.UserService;
@@ -52,15 +43,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.compress.archivers.ArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.javatuples.Pair;
@@ -76,19 +59,15 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
-import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -135,7 +114,10 @@ public class NpmArtifactController
     private NpmUnpublishService npmUnpublishService;
 
     @Inject
-    private ArtifactComponent artifactComponent;
+    private NpmService npmService;
+
+    @Inject
+    private NpmComponent npmComponent;
 
     @Inject
     protected ApplicationEventPublisher eventPublisher;
@@ -219,7 +201,12 @@ public class NpmArtifactController
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         String prefix = String.format("/storages/%s/%s", storageId, repositoryId);
         String packageId = request.getRequestURI().substring(prefix.length());
-        String binaryFeed = artifactComponent.getNpmArtifactIdGroupBinaryCache(repository, packageId);
+        String binary = "/binary/";
+        String packageName = "binary";
+        if (!packageId.endsWith(binary) && !packageId.endsWith(StringUtils.removeEnd(binary, GlobalConstants.SEPARATOR))) {
+            packageName = StringUtils.removeEnd(packageId.substring(packageId.indexOf(binary) + binary.length()), GlobalConstants.SEPARATOR);
+        }
+        String binaryFeed = npmService.binary(repository, packageName, packageId);
         if (Objects.isNull(binaryFeed)) {
             String msg = "{\"error\":\"[NOT_FOUND] %s not found\"}";
             response.setStatus(HttpStatus.NOT_FOUND.value());
@@ -244,7 +231,7 @@ public class NpmArtifactController
         final String repositoryId = repository.getId();
 
         String packageId = NpmArtifactCoordinates.calculatePackageId(packageScope, packageName);
-        final String packageSuffix = NpmSubLayout.OHNPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
+        final String packageSuffix = NpmSubLayout.OHPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
         NpmArtifactCoordinates c = NpmArtifactCoordinates.of(packageId, packageVersion, packageSuffix);
 
         NpmViewRequest npmSearchRequest = new NpmViewRequest();
@@ -277,11 +264,8 @@ public class NpmArtifactController
             throws Exception {
         long startTime = System.currentTimeMillis();
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        String subLayout = repository.getSubLayout();
-        RepositorySearchRequest predicate = createSearchPredicate(packageScope, packageName, subLayout);
         String packageId = NpmArtifactCoordinates.calculatePackageId(packageScope, packageName);
-        List<String> coordinateValues = NpmSubLayout.OHNPM.getValue().equals(subLayout) ? Lists.newArrayList("har") : Lists.newArrayList("tgz");
-        PackageFeed packageFeed = artifactComponent.getNpmArtifactIdGroupCache(repository, predicate.getArtifactId(), coordinateValues, predicate);
+        PackageFeed packageFeed = npmService.packageFeed(repository, packageId, packageId);
         if (Objects.isNull(packageFeed)) {
             String msg = "{\"error\":\"[NOT_FOUND] %s not found\"}";
             response.setStatus(HttpStatus.NOT_FOUND.value());
@@ -318,7 +302,7 @@ public class NpmArtifactController
 
     private RepositorySearchRequest createSearchPredicate(String packageScope,
                                                           String packageName, String subLayout) {
-        List<String> coordinateValues = NpmSubLayout.OHNPM.getValue().equals(subLayout) ? Lists.newArrayList("har") : Lists.newArrayList("tgz");
+        List<String> coordinateValues = NpmSubLayout.OHPM.getValue().equals(subLayout) ? Lists.newArrayList("har") : Lists.newArrayList("tgz");
         RepositorySearchRequest rootPredicate = new RepositorySearchRequest(
                 NpmArtifactCoordinates.calculatePackageId(packageScope, packageName), Lists.newArrayList(coordinateValues));
 
@@ -343,7 +327,7 @@ public class NpmArtifactController
         final String repositoryId = repository.getId();
         String packageVersion = "";
         //Example of packageNameWithVersion  core-9.0.1-next.8.tgz
-        boolean isPackage = NpmSubLayout.OHNPM.getValue().equals(repository.getSubLayout()) ? packageNameWithVersion.startsWith("oh-package") && packageExtension.endsWith("json5") : packageNameWithVersion.startsWith("package-") && packageExtension.endsWith("json");
+        boolean isPackage = NpmSubLayout.OHPM.getValue().equals(repository.getSubLayout()) ? packageNameWithVersion.startsWith("oh-package") && packageExtension.endsWith("json5") : packageNameWithVersion.startsWith("package-") && packageExtension.endsWith("json");
         String artifactPath = "";
         if (!isPackage) {
             if (!packageNameWithVersion.startsWith(packageName + "-")) {
@@ -353,7 +337,7 @@ public class NpmArtifactController
             packageVersion = getPackageVersion(packageNameWithVersion, packageName);
             NpmArtifactCoordinates coordinates;
             try {
-                final String packageSuffix = NpmSubLayout.OHNPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
+                final String packageSuffix = NpmSubLayout.OHPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
                 coordinates = NpmArtifactCoordinates.of(String.format("%s/%s", packageScope, packageName), packageVersion, packageSuffix);
                 artifactPath = coordinates.buildPath();
             } catch (IllegalArgumentException e) {
@@ -367,11 +351,11 @@ public class NpmArtifactController
             logger.debug("[{}] downloadPackageWithScope [{}] task time [{}] ms", this.getClass().getSimpleName(), repositoryPath.toString(), System.currentTimeMillis() - startTime);
         } else {
             packageVersion = getPackageJsonVersion(packageNameWithVersion, repository.getSubLayout());
-            String pgName = NpmSubLayout.OHNPM.getValue().equals(repository.getSubLayout()) ? NpmLayoutProvider.OH_PACKAGE_JSON : NpmLayoutProvider.PACKAGE_JSON;
+            String pgName = NpmSubLayout.OHPM.getValue().equals(repository.getSubLayout()) ? NpmLayoutProvider.OH_PACKAGE_JSON : NpmLayoutProvider.PACKAGE_JSON;
             artifactPath = String.format("%s/%s/%s/%s", packageScope, packageName, packageVersion, pgName);
             RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
             vulnerabilityBlock(repositoryPath);
-            String packages = artifactComponent.readRepositoryPathContent(repositoryPath);
+            String packages = npmComponent.readBinary(repositoryPath);
             GsonBuilder gsonBuilder = new GsonBuilder();
             gsonBuilder.setPrettyPrinting();
             Gson gson = gsonBuilder.create();
@@ -408,7 +392,7 @@ public class NpmArtifactController
 
             NpmArtifactCoordinates coordinates;
             try {
-                final String packageSuffix = NpmSubLayout.OHNPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
+                final String packageSuffix = NpmSubLayout.OHPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
                 coordinates = NpmArtifactCoordinates.of(packageName, packageVersion, packageSuffix);
             } catch (IllegalArgumentException e) {
                 response.setStatus(HttpStatus.BAD_REQUEST.value());
@@ -425,7 +409,7 @@ public class NpmArtifactController
             artifactPath = String.format("%s/%s/%s/%s", packageName, packageName, packageVersion, NpmLayoutProvider.PACKAGE_JSON);
             RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
             vulnerabilityBlock(repositoryPath);
-            String packages = artifactComponent.readRepositoryPathContent(repositoryPath);
+            String packages = npmComponent.readBinary(repositoryPath);
             GsonBuilder gsonBuilder = new GsonBuilder();
             gsonBuilder.setPrettyPrinting();
             Gson gson = gsonBuilder.create();
@@ -472,19 +456,18 @@ public class NpmArtifactController
         logger.info("npm publish request for {}/{}/{}", storageId, repositoryId, name);
         Pair<PackageVersion, Path> packageEntry;
         try {
-            packageEntry = extractPackage(name, request.getInputStream(), subLayout);
+            packageEntry = npmComponent.extractPackage(name, request.getInputStream(), subLayout);
         } catch (IllegalArgumentException e) {
             logger.error("Failed to extract npm package data", e);
             return ResponseEntity.badRequest().build();
         }
 
-        final String packageSuffix = NpmSubLayout.OHNPM.getValue().equals(subLayout) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
+        final String packageSuffix = NpmSubLayout.OHPM.getValue().equals(subLayout) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
         PackageVersion packageJson = packageEntry.getValue0();
         Path packageTgz = packageEntry.getValue1();
         NpmArtifactCoordinates coordinates = NpmArtifactCoordinates.of(name, packageJson.getVersion(), packageSuffix);
         storeNpmPackage(repository, coordinates, packageJson, packageTgz, repository.getSubLayout());
-        artifactComponent.updateArtifactIdGroup(new ArtifactIdGroupEntity(storageId, repositoryId, coordinates.getId()), "");
-        if (NpmSubLayout.OHNPM.getValue().equals(repository.getSubLayout())) {
+        if (NpmSubLayout.OHPM.getValue().equals(repository.getSubLayout())) {
             OhpmPublishRes res = OhpmPublishRes.builder()
                     .additionalMsg("")
                     .success(true)
@@ -712,8 +695,8 @@ public class NpmArtifactController
         try (InputStream is = new BufferedInputStream(Files.newInputStream(packageTgzTmp))) {
             artifactManagementService.validateAndStore(repositoryPath, is);
         }
-        Path packageJsonTmp = extractPackageJson(packageTgzTmp, npmSubLayout, packageDef);
-        String packageName = NpmSubLayout.OHNPM.getValue().equals(npmSubLayout) ? "oh-package.json5" : "package.json";
+        Path packageJsonTmp = npmComponent.extractPackageJson(packageTgzTmp, npmSubLayout, packageDef);
+        String packageName = NpmSubLayout.OHPM.getValue().equals(npmSubLayout) ? "oh-package.json5" : "package.json";
         RepositoryPath packageJsonPath = repositoryPathResolver.resolve(repository,
                 repositoryPath.resolveSibling(packageName));
         try (InputStream is = new BufferedInputStream(Files.newInputStream(packageJsonTmp))) {
@@ -737,196 +720,13 @@ public class NpmArtifactController
 
     }
 
-    private Pair<PackageVersion, Path> extractPackage(String packageName,
-                                                      ServletInputStream in, String subLayout)
-            throws IOException {
-        Path packageSourceTmp = Files.createTempFile("package", "source");
-        Files.copy(in, packageSourceTmp, StandardCopyOption.REPLACE_EXISTING);
-
-
-        PackageVersion packageVersion = null;
-        Path packageTgzPath = null;
-
-        JsonFactory jfactory = new JsonFactory();
-        try (InputStream tmpIn = new BufferedInputStream(Files.newInputStream(packageSourceTmp));
-             JsonParser jp = jfactory.createParser(tmpIn);) {
-            jp.setCodec(npmJacksonMapper);
-
-            Assert.isTrue(jp.nextToken() == JsonToken.START_OBJECT, "npm package source should be JSON object.");
-
-            while (jp.nextToken() != null) {
-                String fieldName = jp.getCurrentName();
-                // read value
-                if (fieldName == null) {
-                    continue;
-                }
-                switch (fieldName) {
-                    case FIELD_NAME_VERSION:
-                        jp.nextValue();
-                        JsonNode node = jp.readValueAsTree();
-                        Assert.isTrue(node.size() == 1, "npm package source should contain only one version.");
-
-                        JsonNode packageJsonNode = node.iterator().next();
-                        packageVersion = extractPackageVersion(packageName, packageJsonNode.toString());
-
-                        break;
-                    case FIELD_NAME_ATTACHMENTS:
-                        Assert.isTrue(jp.nextToken() == JsonToken.START_OBJECT,
-                                String.format(
-                                        "Failed to parse npm package source for illegal type [%s] of attachment.",
-                                        jp.currentToken().name()));
-
-                        String packageAttachmentName = jp.nextFieldName();
-                        logger.info(String.format("Found npm package attachment [%s]", packageAttachmentName));
-
-                        moveToAttachment(jp, packageAttachmentName);
-                        String ohpmVersion = NpmSubLayout.OHNPM.getValue().equals(subLayout) ? packageVersion.getOhpmVersion() : null;
-                        packageTgzPath = extractPackage(jp, subLayout, ohpmVersion);
-
-                        jp.nextToken();
-                        jp.nextToken();
-
-                        break;
-                }
-            }
-        }
-
-        Files.delete(packageSourceTmp);
-
-        if (packageVersion == null || packageTgzPath == null) {
-            throw new IllegalArgumentException(
-                    String.format("Failed to parse npm package source for [%s], attachment not found", packageName));
-        }
-
-        return Pair.with(packageVersion, packageTgzPath);
-    }
-
-    private Path extractPackage(JsonParser jp, String subLayout, String ohpmVersion)
-            throws IOException {
-        final String suffix = NpmSubLayout.NPM.getValue().equals(subLayout) ? NpmPacketSuffix.TGZ.getValue() : NpmPacketSuffix.HAR.getValue();
-        Path packageTgzTmp = Files.createTempFile("package", suffix);
-        try (OutputStream packageTgzOut = new BufferedOutputStream(Files.newOutputStream(packageTgzTmp,
-                StandardOpenOption.TRUNCATE_EXISTING))) {
-            jp.readBinaryValue(packageTgzOut);
-        }
-        if (NpmSubLayout.OHNPM.getValue().equals(subLayout)) {
-            changeHar(packageTgzTmp, ohpmVersion);
-        }
-        ;
-
-        long packageSize = Files.size(packageTgzTmp);
-
-        Assert.isTrue(FIELD_NAME_LENGTH.equals(jp.nextFieldName()), "Failed to validate package content length.");
-        jp.nextToken();
-
-        if (!NpmSubLayout.OHNPM.getValue().equals(subLayout)) {
-            Assert.isTrue(packageSize == jp.getLongValue(), "Invalid package content length.");
-        }
-        jp.nextToken();
-
-        return packageTgzTmp;
-    }
-
-    private Path extractPackageJson(Path packageTgzTmp, String npmSubLayout, PackageVersion packageDef)
-            throws IOException {
-        String packageJsonSource;
-        try (InputStream packageTgzIn = new BufferedInputStream(Files.newInputStream(packageTgzTmp))) {
-            packageJsonSource = extrectPackageJson(packageTgzIn, npmSubLayout);
-        }
-        String packageName = NpmSubLayout.OHNPM.getValue().equals(npmSubLayout) ? "oh-package.json5" : "package";
-        String suffix = NpmSubLayout.OHNPM.getValue().equals(npmSubLayout) ? "json5" : "json";
-        Path packageJsonTmp = Files.createTempFile(packageName, suffix);
-        PackageVersion packageVersion = null;
-
-        if (NpmSubLayout.OHNPM.getValue().equals(npmSubLayout)) {
-            try {
-                assert packageJsonSource != null;
-                try (InputStream inputStream = new ByteArrayInputStream(packageJsonSource.getBytes())) {
-                    packageVersion = npmJacksonMapper.readValue(inputStream, PackageVersion.class);
-                    packageVersion.setOhpmVersion(packageDef.getOhpmVersion());
-                }
-            } catch (IOException ex) {
-                logger.error("extractPackageJson  to ohpm version error [{}]", ExceptionUtils.getStackTrace(ex));
-            }
-            npmJacksonMapper.enable(SerializationFeature.INDENT_OUTPUT);
-            packageJsonSource = npmJacksonMapper.writeValueAsString(packageVersion);
-        }
-        assert packageJsonSource != null;
-        Files.write(packageJsonTmp, packageJsonSource.getBytes(StandardCharsets.UTF_8),
-                StandardOpenOption.TRUNCATE_EXISTING);
-
-        return packageJsonTmp;
-    }
-
-    private void moveToAttachment(JsonParser jp,
-                                  String packageAttachmentName)
-            throws IOException {
-        Assert.isTrue(jp.nextToken() == JsonToken.START_OBJECT,
-                String.format(
-                        "Failed to parse npm package source for [%s], illegal attachment content type [%s].",
-                        packageAttachmentName, jp.currentToken().name()));
-
-        jp.nextToken();
-        String contentType = jp.nextTextValue();
-        Assert.isTrue(MediaType.APPLICATION_OCTET_STREAM_VALUE.equals(contentType),
-                String.format("Failed to parse npm package source for [%s], unknown content type [%s]",
-                        packageAttachmentName, contentType));
-
-        String dataFieldName = jp.nextFieldName();
-        Assert.isTrue("data".equals(dataFieldName),
-                String.format("Failed to parse npm package source for [%s], data not found",
-                        packageAttachmentName));
-
-        jp.nextToken();
-    }
-
-    private PackageVersion extractPackageVersion(String packageName,
-                                                 String packageJsonSource)
-            throws IOException {
-        PackageVersion packageVersion;
-        try {
-            packageVersion = npmJacksonMapper.readValue(packageJsonSource, PackageVersion.class);
-        } catch (JsonProcessingException e) {
-            throw new IllegalArgumentException(String.format("Failed to parse package.json info for [%s]", packageName),
-                    e);
-        }
-        Assert.isTrue(packageName.equals(packageVersion.getName()),
-                String.format("Package name [%s] don't match with [%s].", packageVersion.getName(), packageName));
-
-        return packageVersion;
-    }
-
-    private String extrectPackageJson(InputStream in, String subLayout)
-            throws IOException {
-        GzipCompressorInputStream gzipIn = new GzipCompressorInputStream(in);
-        try (TarArchiveInputStream tarIn = new TarArchiveInputStream(gzipIn)) {
-            TarArchiveEntry entry;
-
-            while ((entry = (TarArchiveEntry) tarIn.getNextEntry()) != null) {
-
-                String packageJsonPath = NpmSubLayout.OHNPM.getValue().equals(subLayout) ?
-                        NpmLayoutProvider.OHPM_PACKAGE_JSON_PATH :
-                        NpmLayoutProvider.DEFAULT_PACKAGE_JSON_PATH;
-                if (!entry.getName().equals(packageJsonPath)) {
-                    continue;
-                }
-
-                StringWriter writer = new StringWriter();
-                IOUtils.copy(tarIn, writer, StandardCharsets.UTF_8);
-                return writer.toString();
-            }
-
-            return null;
-        }
-    }
-
     private String getPackageVersion(String packageNameWithVersion,
                                      String packageName) {
         return packageNameWithVersion.substring(packageName.length() + 1);
     }
 
     private String getPackageJsonVersion(String packageJsonNameWithVersion, String subLayout) {
-        if (NpmSubLayout.OHNPM.getValue().equals(subLayout)) {
+        if (NpmSubLayout.OHPM.getValue().equals(subLayout)) {
             return packageJsonNameWithVersion.substring("oh-package".length() + 1);
         }
         return packageJsonNameWithVersion.substring("package".length() + 1);
@@ -945,105 +745,5 @@ public class NpmArtifactController
             default:
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
-    }
-
-    protected Artifact provideArtifact(RepositoryPath repositoryPath) throws IOException {
-        return Optional.ofNullable(repositoryPath.getArtifactEntry())
-                .orElse(new ArtifactEntity(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(),
-                        RepositoryFiles.readCoordinates(repositoryPath)));
-    }
-
-    public static void untarGz(String tarGzFilePath, String destDirectory) throws IOException {
-        File destDir = new File(destDirectory);
-        if (!destDir.exists()) {
-            destDir.mkdirs();
-        }
-
-        try (InputStream fis = new BufferedInputStream(Files.newInputStream(Path.of(tarGzFilePath)));
-             GzipCompressorInputStream gcis = new GzipCompressorInputStream(fis);
-             TarArchiveInputStream tais = new TarArchiveInputStream(gcis)) {
-
-            TarArchiveEntry entry;
-            while ((entry = tais.getNextTarEntry()) != null) {
-                File outputFile = new File(destDir, entry.getName());
-                if (entry.isDirectory()) {
-                    if (!outputFile.exists()) {
-                        outputFile.mkdirs();
-                    }
-                } else {
-                    // Ensure parent directory exists
-                    File parent = outputFile.getParentFile();
-                    if (!parent.exists()) {
-                        parent.mkdirs();
-                    }
-                    try (OutputStream os = new FileOutputStream(outputFile)) {
-                        byte[] buffer = new byte[4096];
-                        int len;
-                        while ((len = tais.read(buffer)) != -1) {
-                            os.write(buffer, 0, len);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    public void createHar(String sourceDirectory, String harFilePath) throws IOException {
-        try (FileOutputStream fos = new FileOutputStream(harFilePath);
-             GzipCompressorOutputStream gcos = new GzipCompressorOutputStream(fos);
-             TarArchiveOutputStream tarOut = new TarArchiveOutputStream(gcos)) {
-
-            addFilesToTar(sourceDirectory, "", tarOut);
-        }
-    }
-
-    private void addFilesToTar(String sourceDir, String currentPath, TarArchiveOutputStream tarOut) throws IOException {
-        File file = new File(sourceDir, currentPath);
-        String[] files = file.list();
-        if (files != null) {
-            for (String fileName : files) {
-                File f = new File(file, fileName);
-                String entryName = currentPath + "/" + f.getName();
-                ArchiveEntry entry = tarOut.createArchiveEntry(f, entryName);
-                tarOut.putArchiveEntry(entry);
-                if (f.isDirectory()) {
-                    tarOut.closeArchiveEntry();
-                    addFilesToTar(sourceDir, entryName, tarOut);
-                } else {
-                    try (FileInputStream fis = new FileInputStream(f)) {
-                        byte[] buffer = new byte[1024];
-                        int len;
-                        while ((len = fis.read(buffer)) != -1) {
-                            tarOut.write(buffer, 0, len);
-                        }
-                    }
-                    tarOut.closeArchiveEntry();
-                }
-            }
-        }
-    }
-
-    private void changeHar(Path source, String ohpmVersion) throws IOException {
-
-
-        // 1. 解压到临时目录
-        File tempDir = Files.createTempDirectory("har-extract").toFile();
-        untarGz(source.toFile().getPath(), tempDir.getPath());
-
-        String newJsonContent = Files.readString(Path.of(tempDir.getPath(), "/package/oh-package.json5"));
-        JSONObject version = objectMapper.readValue(newJsonContent, JSONObject.class);
-        version.put("_ohpmVersion", ohpmVersion);
-        // 2. 修改文件
-        File jsonFile = new File(tempDir, "/package/oh-package.json5");
-        if (jsonFile.exists()) {
-            objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-            FileUtils.writeStringToFile(jsonFile, objectMapper.writeValueAsString(version), StandardCharsets.UTF_8);
-        }
-
-
-        // 3. 重新压缩
-        createHar(tempDir.getPath(), source.toFile().getPath());
-        FileUtils.deleteDirectory(tempDir);
-
     }
 }
