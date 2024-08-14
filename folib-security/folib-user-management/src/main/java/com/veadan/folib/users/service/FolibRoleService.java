@@ -7,6 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import com.veadan.folib.entity.FolibRole;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * 角色信息;(folib_role)表服务接口
@@ -80,4 +81,6 @@ public interface FolibRoleService{
     void deleteRole(String roleId);
 
     void saveOrUpdateBatch(List<FolibRole> roles);
+
+    List<FolibRole> queryByIds(Set<String> roles);
 }

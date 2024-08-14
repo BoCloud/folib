@@ -23,6 +23,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import com.veadan.folib.entity.FolibRole;
 import com.veadan.folib.mapper.FolibRoleMapper;
+import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
 import javax.transaction.Transactional;
@@ -433,6 +434,13 @@ public class FolibRoleServiceImpl implements FolibRoleService {
     @Override
     public void saveOrUpdateBatch(List<FolibRole> roles) {
         folibRoleMapper.insertOrUpdateBatch(roles);
+    }
+
+    @Override
+    public List<FolibRole> queryByIds(Set<String> roles) {
+        Example example = new Example(FolibRole.class);
+        example.createCriteria().andIn("id", roles);
+        return folibRoleMapper.selectByExample(example);
     }
 
 

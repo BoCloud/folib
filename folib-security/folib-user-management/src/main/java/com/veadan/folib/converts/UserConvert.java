@@ -59,6 +59,8 @@ public interface UserConvert {
     @Mappings({@Mapping(source = "roles", target = "roles")})
     UserEntity UserDTOToUserEntity(UserDTO usrerDTO);
 
+    @Mappings({@Mapping(source = "roles", target = "roles")})
+    FolibUser UserDTOToUser(UserDTO usrerDTO);
     // 自定义映射方法
     default Set<SecurityRole> map(Set<String> roles) {
         return roles.stream()

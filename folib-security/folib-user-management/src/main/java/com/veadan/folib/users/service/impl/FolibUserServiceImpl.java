@@ -17,6 +17,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
+import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
 import javax.transaction.Transactional;
@@ -54,6 +55,13 @@ public class FolibUserServiceImpl implements FolibUserService {
     @Override
     public List<UserDTO> findByUserNameResource(List<String> usernames, String storageId, String repositoryId, String path) {
         return folibUserMapper.queryUsersNameResource(usernames, storageId, repositoryId, path);
+    }
+
+    @Override
+    public List<FolibUser> queryByIds(List<String> userIds) {
+        Example example = new Example(FolibUser.class);
+        example.createCriteria().andIn("id", userIds);
+        return folibUserMapper.selectByExample(example);
     }
 
     @Override

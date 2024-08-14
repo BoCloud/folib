@@ -58,4 +58,6 @@ public interface ResourceService{
     List<Resource> findResources(List<Resource> resources);
 
     void saveOrUpdateBatch(List<Resource> resources);
+
+    List<Resource> queryByIds(List<String> resourceIds);
 }

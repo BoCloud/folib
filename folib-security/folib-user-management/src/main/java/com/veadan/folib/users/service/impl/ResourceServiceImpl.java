@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
 import javax.transaction.Transactional;
@@ -143,5 +144,12 @@ public class ResourceServiceImpl implements ResourceService {
     @Override
     public void saveOrUpdateBatch(List<Resource> resources) {
         resourceMapper.insertOrUpdateBatch(resources);
+    }
+
+    @Override
+    public List<Resource> queryByIds(List<String> resourceIds) {
+        Example example = new Example(Resource.class);
+        example.createCriteria().andIn("id", resourceIds);
+        return resourceMapper.selectByExample(example);
     }
 }

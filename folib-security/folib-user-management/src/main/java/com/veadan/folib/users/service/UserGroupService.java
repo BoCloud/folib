@@ -64,4 +64,6 @@ public interface UserGroupService{
     UserGroupDTO queryGroupDetailById(Long groupId);
 
     void saveOrUpdateBatch(List<UserGroup> groups);
+
+    List<UserGroup> queryByIds(List<Long> ids);
 }

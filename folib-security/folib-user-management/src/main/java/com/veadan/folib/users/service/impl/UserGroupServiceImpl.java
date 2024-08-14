@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -104,5 +105,12 @@ public class UserGroupServiceImpl implements UserGroupService {
     @Override
     public void saveOrUpdateBatch(List<UserGroup> groups) {
         userGroupMapper.insertOrUpdateBatch(groups);
+    }
+
+    @Override
+    public List<UserGroup> queryByIds(List<Long> ids) {
+        Example example = new Example(UserGroup.class);
+        example.createCriteria().andIn("id", ids);
+        return userGroupMapper.selectByExample(example);
     }
 }
