@@ -23,7 +23,9 @@ public class DistributionService {
     @Autowired
     private ArtifactSyncRecordMapper artifactSyncRecordMapper;
 
-    private static final Semaphore semaphore = new Semaphore(Runtime.getRuntime().availableProcessors());
+    private static final int MAX_SIZE = Runtime.getRuntime().availableProcessors();
+
+    private static final Semaphore semaphore = new Semaphore(4);
 
     /**
      * 创建优先级队列，使用自然排序

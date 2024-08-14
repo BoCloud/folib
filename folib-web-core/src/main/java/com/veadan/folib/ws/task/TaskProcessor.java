@@ -47,7 +47,8 @@ public class TaskProcessor {
         //        new java.util.concurrent.LinkedBlockingQueue<>() // 队列容量
         //);
         //ToDo cpu核心数用于并发数量，并发数量固定后要考虑网络带宽，否则会出现网络带宽不足
-        cpuCores = Runtime.getRuntime().availableProcessors();
+        //cpuCores = Runtime.getRuntime().availableProcessors();
+        cpuCores = 4;
         // 配置一个适用于 IO 密集型任务的 Scheduler
         //ioScheduler = Schedulers.fromExecutor(executor);
         ioScheduler = Schedulers.boundedElastic();
