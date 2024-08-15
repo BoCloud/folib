@@ -229,7 +229,7 @@ public class PromotionUtil {
                 artifactSyncRecord.setTargetPath(JSON.toJSONString(Collections.singletonList(targetDispatchRepositoryDto)));
                 artifactSyncRecord.setSyncNo(syncNo);
                 artifactSyncRecord.setOpsType(ArtifactSyncRecordOpsTypeEnum.DISPATCH.getVal());
-                artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
+                artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.READY.getVal());
                 artifactSyncRecord.setCreateBy(UserUtils.getUsername());
                 artifactSyncRecord.setCreateTime(new Date());
                 artifactSyncRecord.setSyncModel(1);
@@ -291,7 +291,7 @@ public class PromotionUtil {
                 }
                 updateArtifactSyncRecord = ArtifactSyncRecord.builder().id(artifactSyncRecord.getId()).retryCount(retryCount + 1).retryTime(date).updateBy(UserUtils.getUsername()).updateTime(date).build();
                 try {
-                    updateArtifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
+                    updateArtifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.READY.getVal());
                     artifactSyncRecordMapper.updateByPrimaryKeySelective(updateArtifactSyncRecord);
                     handlerDispatch(map, artifactDispatch, targetDispatchRepositoryDto, syncNo, true);
                 } catch (Exception ex) {
@@ -1095,9 +1095,6 @@ public class PromotionUtil {
                             throw (RuntimeException) e;
                         }
                         throw new RuntimeException(e);
-                    } finally {
-                        //释放
-                        distributionService.release();
                     }
                 });
         distributionService.addTask(task);
@@ -1112,7 +1109,9 @@ public class PromotionUtil {
         if (CollectionUtil.isEmpty(filePathMap)) {
             return;
         }
-
+        ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectBySyncNo(syncNo);
+        artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
+        artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord);
         final List<ArtifactSliceUploadHttpEntityBuilder> artifactSliceUploadHttpEntityList = this.getArtifactSliceUploadHttpEntityList(filePathMap, storageId, repositoryId, sliceByteSize);
 
         // 记录制品从记录
@@ -1174,6 +1173,10 @@ public class PromotionUtil {
         if (CollectionUtil.isEmpty(filePathMap)) {
             return;
         }
+
+        ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectBySyncNo(syncNo);
+        artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
+        artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord);
 
         List<ArtifactSyncSlaveRecord> artifactSyncSlaveRecords = artifactSyncSlaveRecordMapper.selectBySyncNo(syncNo);
         artifactSyncSlaveRecords = artifactSyncSlaveRecords.stream()
@@ -1374,7 +1377,7 @@ public class PromotionUtil {
                 md5 = MessageDigestUtils.calculateChecksum(sourceRepositoryPath, MessageDigestAlgorithms.MD5);
                 //md5 = FileUtils.getMD5(Files.newInputStream(sourceRepositoryPath));
             }
-            Integer ChunkIndex = getChunkIndex(chunk);
+            Integer ChunkIndex =Integer.parseInt(chunk);// getChunkIndex(chunk);
             log.info("calculated the file [{}] [{}] [{}] md5 is [{}] file size [{}] time consuming [{}] ms", storageId, repositoryId, sourceRepositoryPath.getPath(), md5, fileLength, System.currentTimeMillis() - begin);
             return new ArtifactSliceUploadHttpEntityBuilder()
                     .setStorageId(storageId)
@@ -1461,7 +1464,7 @@ public class PromotionUtil {
 
     }
 
-    public void updateTaskQueuePriority(String targetHostName, String syncNo, Priority priority) {
+    public void updateTaskQueuePriority(String syncNo, Priority priority) {
         //promotionTaskQueue.updateTaskQueuePriority(targetHostName,syncNo,priority);
         distributionService.updateTaskPriority(syncNo, priority.getValue());
     }

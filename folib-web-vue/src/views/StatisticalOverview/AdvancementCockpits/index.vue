@@ -216,7 +216,6 @@
                                               @confirm="updatePriority(record)"
                                 >
                                     <a-button type="link" v-if="record.status === 1"
-                                              @click="confirmRecord(record)"
                                               size="small">
                                         <span class="text-danger">{{ $t('AdvancementCockpits.SetTop') }}</span>
                                     </a-button>
@@ -243,7 +242,7 @@ import {
     getStatusTrends,
     fileSizeStatisticsByWarehouse
 } from "@/api/settings";
-import {retryArtifactDispatch, retryNodeOption} from "@/api/artifact";
+import {retryArtifactDispatch, retryNodeOption,updateTaskQueuePriority} from "@/api/artifact";
 import textOver from "@/components/Tools/textOver";
 
 export default {
@@ -415,6 +414,10 @@ export default {
                     }
                 }
             },
+            eventPageVisible: {
+                type: Boolean,
+                default: false,
+            },
         };
     },
     computed: {
@@ -483,11 +486,18 @@ export default {
     created() {
 
     },
+    beforeDestroy() {
+        if (this.intervalId) {
+            clearInterval(this.intervalId);
+        }
+
+    },
     mounted() {
         this.getData();
         this.getCountData();
         this.getStatusTrendsData();
         this.fileSizeStatisticsByWarehouseData();
+        this.eventPageVisible=true;
         this.chart = new Chart(this.$refs.volFolib, {
             type: 'bar',
             data: this.chartData,

@@ -37,15 +37,9 @@ public class TaskProcessor {
     @Autowired
     public TaskProcessor(DistributionService distributionService) throws NoSuchFieldException, IllegalAccessException {
         this.distributionService = distributionService;
-        // this.taskExecutor = taskExecutor;
+        //支持多个订阅者（多播），并且使用缓冲区来处理背压
         this.sink = Sinks.many().multicast().onBackpressureBuffer();
-        //ThreadPoolExecutor executor = new ThreadPoolExecutor(
-        //        8, // 核心线程数
-        //        50, // 最大线程数
-        //        10, // 线程空闲超时
-        //        TimeUnit.SECONDS, // 超时单位
-        //        new java.util.concurrent.LinkedBlockingQueue<>() // 队列容量
-        //);
+
         //ToDo cpu核心数用于并发数量，并发数量固定后要考虑网络带宽，否则会出现网络带宽不足
         //cpuCores = Runtime.getRuntime().availableProcessors();
         cpuCores = 4;
@@ -59,19 +53,28 @@ public class TaskProcessor {
      * 配置并行处理任务的逻辑，并启动任务轮询
      */
     private void initializeTaskProcessing() {
-        // 将 Sinks.Many 转换为 Flux，并配置并行处理和错误处理
         sink.asFlux()
-                //并发数量控制
+                // 并发数量控制
                 .parallel(cpuCores)
                 // 确保使用正确的调度器
                 .runOn(ioScheduler)
-                .subscribe(task -> {
-                            logger.info("开始执行任务: " + task.getTaskId());
-                            task.run();
-                            logger.info("任务执行完毕: " + task.getTaskId());
-                            logger.info("queue size:{}", distributionService.getQueueSize());
-                            },
-                        Throwable::printStackTrace);
+                // 处理每个轨道中的任务
+                .doOnNext(task -> {
+                    logger.info("开始执行任务: " + task.getTaskId());
+                    try {
+                        task.run();
+                        logger.info("任务执行完毕: " + task.getTaskId());
+                    } catch (Exception e) {
+                        logger.error("任务执行过程中发生错误: " + e.getMessage(), e);
+                    } finally {
+                        logger.info("queue size:{}", distributionService.getQueueSize());
+                        distributionService.release();
+                    }
+                })
+                // 合并轨道结果
+                .sequential()
+                // 订阅任务处理逻辑
+                .subscribe();
         // 启动任务轮询
         pollForTasks();
     }
@@ -85,11 +88,22 @@ public class TaskProcessor {
                 // 无任务时延迟 1000 毫秒后重试
                 .repeatWhenEmpty(repeat -> repeat.delayElements(Duration.ofMillis(1000)))
                 // 推送任务到处理流中
-                .doOnNext(sink::tryEmitNext)
+                //.doOnNext(sink::tryEmitNext)
+                .subscribeOn(ioScheduler)
+                // 推送任务到处理流中
+                .doOnNext(task -> {
+                    // 捕获 tryEmitNext 的返回值
+                    Sinks.EmitResult result = sink.tryEmitNext(task);
+                    // 根据结果输出日志
+                    if (result.isSuccess()) {
+                        logger.info("成功推送任务: " + task.getTaskId());
+                    } else {
+                        logger.error("推送任务失败: " + task.getTaskId() + "，原因: " + result);
+                    }
+                })
                 // 无限次重复获取任务
                 .repeat()
                 // 在独立线程池中执行
-                .subscribeOn(ioScheduler)
                 .subscribe();
     }
 }

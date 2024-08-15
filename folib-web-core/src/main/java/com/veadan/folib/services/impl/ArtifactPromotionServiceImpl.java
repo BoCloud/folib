@@ -503,7 +503,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         artifactSyncRecord.setSyncNo(syncNo);
         artifactSyncRecord.setOpsType(ArtifactSyncRecordOpsTypeEnum.PROMOTION.getVal());
         artifactSyncRecord.setSyncModel(promotionNodeOption.getSyncModel());
-        artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
+        artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.READY.getVal());
         artifactSyncRecord.setCreateBy(userName);
         artifactSyncRecord.setCreateTime(new Date());
         artifactSyncRecordMapper.insertSelective(artifactSyncRecord);
@@ -568,7 +568,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             retryCount = artifactSyncRecord.getRetryCount();
         }
         Date date = new Date();
-        ArtifactSyncRecord updateArtifactSyncRecord = ArtifactSyncRecord.builder().id(artifactSyncRecord.getId()).status(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal()).retryCount(retryCount + 1).retryTime(date).updateBy(userName).updateTime(date).build();
+        ArtifactSyncRecord updateArtifactSyncRecord = ArtifactSyncRecord.builder().id(artifactSyncRecord.getId()).status(ArtifactSyncRecordStatusEnum.READY.getVal()).retryCount(retryCount + 1).retryTime(date).updateBy(userName).updateTime(date).build();
         artifactSyncRecordMapper.updateByPrimaryKeySelective(updateArtifactSyncRecord);
         promotionNodeOption.setSyncNo(syncNo);
         try {
@@ -1499,17 +1499,14 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         Map<String, ClusterDispatchNodeDto> map = configurationManagementService.
                 getMutableConfigurationClone().getClusterDispatchNode();
         ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectBySyncNo(syncNo);
-        List<TargetDispatchRepositoryDto> targetRepositoryList = JSON.parseArray(artifactSyncRecord.getTargetPath(), TargetDispatchRepositoryDto.class);
+        if (artifactSyncRecord.getStatus() > 1) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("不是就绪状态不能置顶");
+        }
         Priority priority = Priority.getPriority(newPriority);
         if (priority == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("优先级值不合法");
         }
-        for (TargetDispatchRepositoryDto targetDispatchRepositoryDto : targetRepositoryList) {
-            String dispatchClusterName = targetDispatchRepositoryDto.getDispatchClusterEnName();
-            ClusterDispatchNodeDto dispatchNodeDto = map.get(dispatchClusterName);
-            String targetHostName = FolibWsRunManageUtil.getTargetHostName(dispatchNodeDto);
-            promotionUtil.updateTaskQueuePriority(targetHostName, syncNo, priority);
-        }
+        promotionUtil.updateTaskQueuePriority(syncNo, priority);
 
         return ResponseEntity.ok().build();
     }
