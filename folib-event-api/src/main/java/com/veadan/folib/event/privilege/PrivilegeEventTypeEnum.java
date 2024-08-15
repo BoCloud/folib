@@ -21,6 +21,7 @@ public enum PrivilegeEventTypeEnum {
      * Occurs when an artifact cache operation has need.
      */
     EVENT_RESOURCE_SYNC(4),
+    EVENT_ALL_SYNC(5),
     ;
 
 

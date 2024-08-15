@@ -26,4 +26,5 @@ public class ClusterDispatchNodeForm {
     private Integer kbps;
 
     private Boolean autoRegister ;
+    private Boolean isSyncPrivilege = false;
 }

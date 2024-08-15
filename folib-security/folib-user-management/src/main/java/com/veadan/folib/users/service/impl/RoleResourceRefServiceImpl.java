@@ -254,7 +254,9 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
                             && Objects.equals(queryUserGroupRef.getRepositoryPrivilege(), userRoleRef.getRepositoryPrivilege())
                             && Objects.equals(queryUserGroupRef.getStoragePrivilege(), userRoleRef.getStoragePrivilege()))).collect(Collectors.toList());
         }
-        roleResourceRefMapper.insertBatch(userRoles);
+        if (CollectionUtils.isNotEmpty(userRoles)) {
+            roleResourceRefMapper.insertBatch(userRoles);
+        }
     }
 
     @Override

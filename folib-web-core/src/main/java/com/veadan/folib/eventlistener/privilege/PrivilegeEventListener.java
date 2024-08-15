@@ -3,16 +3,18 @@ package com.veadan.folib.eventlistener.privilege;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.converts.UserConvert;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
+import com.veadan.folib.domain.PrivilegeDispatch;
 import com.veadan.folib.dto.UserDTO;
 import com.veadan.folib.entity.*;
 import com.veadan.folib.event.AsyncEventListener;
 import com.veadan.folib.event.privilege.PrivilegeEvent;
 import com.veadan.folib.event.privilege.PrivilegeEventTypeEnum;
 import com.veadan.folib.services.ConfigurationManagementService;
-import com.veadan.folib.storage.Storage;
-import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.StorageDto;
+import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.users.dto.UserAuthDTO;
 import com.veadan.folib.users.service.*;
+import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.ws.common.FolibWsRunManageUtil;
 import com.veadan.folib.ws.common.FolibWsRunManageV2;
 import com.veadan.folib.ws.server.Command;
@@ -25,7 +27,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -56,6 +57,8 @@ public class PrivilegeEventListener {
     private RoleResourceRefService roleResourceRefService;
     @Autowired
     private ResourceService resourceService;
+    @Autowired
+    private RelationalDatabaseUserService relationalDatabaseUserService;
 
     @AsyncEventListener
     public void handle(final PrivilegeEvent event) {
@@ -78,8 +81,9 @@ public class PrivilegeEventListener {
             map.forEach((key, value) -> {
                 Boolean isThisCluster = value.getIsThisCluster();
                 Boolean wsClientOnline = value.getWsClientOnline();
+                Boolean isSyncPrivilege = value.getIsSyncPrivilege();
 
-                if (!isThisCluster && wsClientOnline) {
+                if (!isThisCluster && wsClientOnline && isSyncPrivilege) {
                     WSMessageRequest wsMessageRequest = null;
                     WSMessageResponse messageResponse = null;
                     String clusterNodeHost = value.getClusterNodeHost();
@@ -87,29 +91,21 @@ public class PrivilegeEventListener {
                     if (StringUtils.isBlank(targetHostName)) {
                         //WS目标节点未找到，尝试转发到集群中其他节点处理
                         targetHostName = FolibWsRunManageUtil.getTargetHostName(clusterNodeHost);
-                        if (folibWsRunManageV2.forward(targetHostName)) {
+                        if (folibWsRunManageV2.dispatch(targetHostName, PrivilegeDispatch.builder().targetHostName(targetHostName).privilegeEventTypeEnum(privilegeEventTypeEnum).uuId(uuId).build())) {
                             return ;
                         }
                     }
-                    int page = 0;
-                    int size = 100;
-                    while (true) {
-                        //发送用户权限消息
-                        try {
-                            //分页查询请求参数
-                            UserAuthDTO userAuthReq = getUserAuthReq(privilegeEventTypeEnum, uuId);
-                            if (userAuthReq != null && userAuthReq.isNextPage()) {
-                                page++;
-                                size += 100;
-                            }
-                            wsMessageRequest = new WSMessageRequest(Command.USER_AUTH_SYNC, userAuthReq);
-                            messageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
-                            if(HttpStatus.OK.equals(messageResponse.getStatus())) {
-                                break;
-                            }
-                        }  catch (Exception e) {
-                            log.error("sendRequest fail,wsMessageRequest:{}", wsMessageRequest, e);
-                        }
+
+                     //发送用户权限消息
+                    try {
+                        //查询请求参数
+                        UserAuthDTO userAuthReq = getUserAuthReq(privilegeEventTypeEnum, uuId);
+                        wsMessageRequest = new WSMessageRequest(Command.USER_AUTH_SYNC, userAuthReq);
+                        messageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
+//                        relationalDatabaseUserService.syncUserAuth(userAuthReq);
+                        log.debug("sendRequest result,wsMessageRequest:{},messageResponse:{}", wsMessageRequest, messageResponse);
+                    }  catch (Exception e) {
+                        log.error("sendRequest fail,wsMessageRequest:{}", wsMessageRequest, e);
                     }
 
                 }
@@ -128,13 +124,16 @@ public class PrivilegeEventListener {
             if (Objects.nonNull(byUserName)) {
                 builder.users(Collections.singletonList(UserConvert.INSTANCE.UserDTOToUser(byUserName)));
                 Set<String> userGroupIds = byUserName.getUserGroupIds();
-                List<Long> userGroupIdLs = userGroupIds.stream().map(Long::valueOf).collect(Collectors.toList());
-                List<UserGroup> userGroups = userGroupService.queryByIds(userGroupIdLs);
-                builder.groups(userGroups);
-                if (CollectionUtils.isNotEmpty(userGroups)) {
-                    List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(userGroupIdLs);
-                    builder.userGroups(userGroupRefs);
+                if (CollectionUtils.isNotEmpty(userGroupIds)) {
+                    List<Long> userGroupIdLs = userGroupIds.stream().map(Long::valueOf).collect(Collectors.toList());
+                    List<UserGroup> userGroups = userGroupService.queryByIds(userGroupIdLs);
+                    builder.groups(userGroups);
+                    if (CollectionUtils.isNotEmpty(userGroups)) {
+                        List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(userGroupIdLs);
+                        builder.userGroups(userGroupRefs);
+                    }
                 }
+
                 Set<String> roles = byUserName.getRoles();
                 builder.roles(folibRoleService.queryByIds(roles));
                 if (CollectionUtils.isNotEmpty(roles)) {
@@ -152,6 +151,19 @@ public class PrivilegeEventListener {
             }
         }
 
+        if (PrivilegeEventTypeEnum.EVENT_USER_GROUP_SYNC.getType() == privilegeEventTypeEnum.getType() ) {
+            UserGroup userGroup = userGroupService.queryById(Long.valueOf(uuId));
+            builder.groups(Collections.singletonList(userGroup));
+            if (!Objects.equals(userGroup, null)) {
+                List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(Collections.singletonList(Long.valueOf(uuId)));
+                builder.userGroups(userGroupRefs);
+
+                List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryRefs(RoleResourceRef.builder().entityId(uuId).refType(GlobalConstants.ROLE_TYPE_USER_GROUP).build());
+                if (CollectionUtils.isNotEmpty(roleResourceRefs)) {
+                    builder.userRoles(roleResourceRefs);
+                }
+            }
+        }
 
         if (PrivilegeEventTypeEnum.EVENT_ROLE_SYNC.getType() == privilegeEventTypeEnum.getType() ) {
             List<FolibRole> folibRoles = folibRoleService.queryByIds(Collections.singleton(uuId));
@@ -163,16 +175,23 @@ public class PrivilegeEventListener {
 
                 if(CollectionUtils.isNotEmpty(roleResourceRefs)) {
                     List<String> resourceIds = roleResourceRefs.stream().map(RoleResourceRef::getResourceId).collect(Collectors.toList());
-                    resourcesList = resourceService.queryByIds(resourceIds);
-                    builder.resources(resourcesList);
+                    if (CollectionUtils.isNotEmpty(resourceIds)) {
+                        resourcesList = resourceService.queryByIds(resourceIds);
+                        builder.resources(resourcesList);
+                    }
+
 
                     List<String> userIds = roleResourceRefs.stream().filter(roleResourceRef -> StringUtils.isNotBlank(roleResourceRef.getEntityId()) && GlobalConstants.ROLE_TYPE_USER.equals(roleResourceRef.getRefType())).map(RoleResourceRef::getEntityId).collect(Collectors.toList());
-                    builder.users(folibUserService.queryByIds(userIds));
+                    if (CollectionUtils.isNotEmpty(userIds)) {
+                        builder.users(folibUserService.queryByIds(userIds));
+                    }
 
 
                     List<String> userGroupIds = roleResourceRefs.stream().filter(roleResourceRef -> StringUtils.isNotBlank(roleResourceRef.getEntityId()) && GlobalConstants.ROLE_TYPE_USER_GROUP.equals(roleResourceRef.getRefType())).map(RoleResourceRef::getEntityId).collect(Collectors.toList());
                     List<Long> userGroupIdLs = userGroupIds.stream().map(Long::valueOf).collect(Collectors.toList());
-                    builder.groups(userGroupService.queryByIds(userGroupIdLs));
+                    if (CollectionUtils.isNotEmpty(userGroupIdLs)) {
+                        builder.groups(userGroupService.queryByIds(userGroupIdLs));
+                    }
 
                     if (CollectionUtils.isNotEmpty(userGroupIdLs)) {
                         List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(userGroupIdLs);
@@ -183,16 +202,16 @@ public class PrivilegeEventListener {
         }
 
         if (CollectionUtils.isNotEmpty(resourcesList)) {
-            List<Storage> storages = new ArrayList<>();
-            List<Repository> repositorys = new ArrayList<>();
+            List<StorageDto> storages = new ArrayList<>();
+            List<RepositoryDto> repositorys = new ArrayList<>();
 
             resourcesList.forEach(resource -> {
                 String repositoryId = resource.getRepositoryId();
                 String storageId = resource.getStorageId();
                 if (StringUtils.isNotEmpty(repositoryId)) {
-                    repositorys.add(configurationManagementService.getConfiguration().getRepository(storageId, repositoryId));
+                    repositorys.add(configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId));
                 } else {
-                    storages.add(configurationManagementService.getConfiguration().getStorage(storageId));
+                    storages.add(configurationManagementService.getMutableConfigurationClone().getStorage(storageId));
                 }
             });
             if (!repositorys.isEmpty()) {

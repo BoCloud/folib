@@ -111,7 +111,9 @@ public class UserGroupRefServiceImpl implements UserGroupRefService {
         if (!queryUserGroupRefs.isEmpty()) {
             userGroups = userGroups.stream().filter(userGroupRef -> queryUserGroupRefs.stream().noneMatch(queryUserGroupRef -> queryUserGroupRef.getUserGroupId().equals(userGroupRef.getUserGroupId()) && queryUserGroupRef.getUserId().equals(userGroupRef.getUserId()))).collect(Collectors.toList());
         }
-        userGroupRefMapper.insertBatch(userGroups);
+        if (!userGroups.isEmpty()) {
+            userGroupRefMapper.insertBatch(userGroups);
+        }
     }
 
     @Override

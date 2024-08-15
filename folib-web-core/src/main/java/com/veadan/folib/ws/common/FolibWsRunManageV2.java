@@ -9,6 +9,8 @@ import com.veadan.folib.config.PromotionConfig;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.ArtifactDispatch;
+import com.veadan.folib.domain.PrivilegeDispatch;
+import com.veadan.folib.event.privilege.PrivilegeEventTypeEnum;
 import com.veadan.folib.promotion.KryoSerializationUtil;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.util.FileSizeConvertUtils;
@@ -482,6 +484,17 @@ public class FolibWsRunManageV2 {
         }
     }
 
+    public boolean dispatch(String targetNodeName, PrivilegeDispatch privilegeDispatch) {
+        try {
+            Session session = getSession(targetNodeName);
+            if (session == null || !session.isOpen()) {
+                return wsForwardComponent.dispatch(targetNodeName, privilegeDispatch);
+            }
+            return false;
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
 }
 
 class FolibWsRequestException extends Exception {

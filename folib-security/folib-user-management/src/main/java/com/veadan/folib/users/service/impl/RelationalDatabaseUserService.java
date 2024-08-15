@@ -11,6 +11,11 @@ import com.veadan.folib.dto.RepositoryPrivilegeDTO;
 import com.veadan.folib.dto.UserDTO;
 import com.veadan.folib.entity.*;
 import com.veadan.folib.repositories.UserRepository;
+import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.StorageDto;
+import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.users.domain.Users;
 import com.veadan.folib.users.dto.UserAuthDTO;
 import com.veadan.folib.users.security.JwtAuthenticationClaimsProvider;
@@ -24,6 +29,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jose4j.lang.JoseException;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService.RelationalDatabase;
@@ -31,6 +37,7 @@ import com.veadan.folib.users.service.impl.RelationalDatabaseUserService.Relatio
 import javax.inject.Inject;
 import javax.inject.Qualifier;
 import javax.transaction.Transactional;
+import java.io.IOException;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.time.Instant;
@@ -72,6 +79,9 @@ public class RelationalDatabaseUserService implements UserService
     private FolibRoleService folibRoleService;
     @Inject
     private ResourceService resourceService;
+    @Inject
+    private ConfigurationManagementService configurationManagementService;
+
 
     @Override
     @CacheEvict(cacheNames = CacheName.User.AUTHENTICATIONS, key = "#p0")
@@ -95,22 +105,63 @@ public class RelationalDatabaseUserService implements UserService
     public void syncUserAuth(UserAuthDTO date) {
         //更新节点用户信息
         List<FolibUser> users = date.getUsers();
-        folibUserService.saveOrUpdate(users);
+        if (CollectionUtils.isNotEmpty(users)) {
+            folibUserService.saveOrUpdate(users);
+        }
 
         List<UserGroup> groups = date.getGroups();
-        userGroupService.saveOrUpdateBatch(groups);
+        if (CollectionUtils.isNotEmpty(groups)) {
+            userGroupService.saveOrUpdateBatch(groups);
+        }
 
         List<UserGroupRef> userGroups = date.getUserGroups();
-        userGroupRefService.batchUpdate(userGroups);
+        if (CollectionUtils.isNotEmpty(userGroups)) {
+            userGroupRefService.batchUpdate(userGroups);
+        }
 
         List<FolibRole> roles = date.getRoles();
-        folibRoleService.saveOrUpdateBatch(roles);
+        if (CollectionUtils.isNotEmpty(roles)) {
+            folibRoleService.saveOrUpdateBatch(roles);
+        }
 
         List<Resource> resources = date.getResources();
-        resourceService.saveOrUpdateBatch(resources);
+        if (CollectionUtils.isNotEmpty(resources)) {
+            resourceService.saveOrUpdateBatch(resources);
+        }
 
         List<RoleResourceRef> userRoles = date.getUserRoles();
-        roleResourceRefService.batchUpdate(userRoles);
+        if (CollectionUtils.isNotEmpty(userRoles)) {
+            roleResourceRefService.batchUpdate(userRoles);
+        }
+
+        List<StorageDto> storages = date.getStorages();
+        if (CollectionUtils.isNotEmpty(storages)) {
+            storages.forEach(storage -> {
+                Storage storageInfo = configurationManagementService.getMutableConfigurationClone().getStorage(storage.getId());
+                if (storageInfo == null) {
+                    try {
+                        configurationManagementService.createStorage(storage);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+        }
+        List<RepositoryDto> repositorys = date.getRepositorys();
+        if (CollectionUtils.isNotEmpty(repositorys)) {
+            repositorys.forEach(repository -> {
+                String storageId = repository.getStorage().getId();
+                String repositoryId = repository.getId();
+                Repository repositoryInfo = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId);
+                if (repositoryInfo == null) {
+                    try {
+                        configurationManagementService.saveRepository(storageId, repository);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+        }
     }
 
     @Override

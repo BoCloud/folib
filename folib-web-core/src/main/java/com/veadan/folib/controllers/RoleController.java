@@ -1,17 +1,33 @@
 package com.veadan.folib.controllers;
 
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.users.UserController;
 import com.veadan.folib.converters.users.RoleConvert;
+import com.veadan.folib.converts.UserConvert;
+import com.veadan.folib.domain.PrivilegeDispatch;
 import com.veadan.folib.dto.*;
-import com.veadan.folib.entity.FolibRole;
+import com.veadan.folib.entity.*;
+import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
+import com.veadan.folib.event.privilege.PrivilegeEventTypeEnum;
 import com.veadan.folib.forms.users.auth.RoleForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
-import com.veadan.folib.users.service.FolibRoleService;
-import com.veadan.folib.users.service.RoleResourceRefService;
-import com.veadan.folib.users.service.UserService;
+import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.StorageDto;
+import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryDto;
+import com.veadan.folib.users.dto.UserAuthDTO;
+import com.veadan.folib.users.service.*;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.validation.RequestBodyValidationException;
+import com.veadan.folib.ws.common.FolibWsRunManageV2;
+import com.veadan.folib.ws.server.Command;
+import com.veadan.folib.ws.server.WSMessageRequest;
+import com.veadan.folib.ws.server.WSMessageResponse;
 import io.swagger.annotations.*;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
@@ -26,11 +42,14 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Fengmaogen
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @Api(value = "权限管理",tags = "权限管理")
@@ -57,11 +76,24 @@ public class RoleController extends BaseController {
     @Inject
     @RelationalDatabaseUserService.RelationalDatabase
     private UserService userService;
-
     @Inject
     private RoleResourceRefService roleResourceRefService;
     @Inject
     private FolibRoleService folibRoleService;
+    @Autowired
+    private FolibUserService folibUserService;
+
+    @Autowired
+    private UserGroupService userGroupService;
+    @Autowired
+    private UserGroupRefService userGroupRefService;
+
+    @Autowired
+    private ResourceService resourceService;
+    @Autowired
+    private FolibWsRunManageV2 folibWsRunManageV2;
+    @Autowired
+    private PrivilegeEventListenerRegistry privilegeEventListenerRegistry;
 
     @ApiOperation(value = "获取用户的关联角色")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "Returns account details"),
@@ -103,6 +135,9 @@ public class RoleController extends BaseController {
 
         folibRoleService.deleteRole(roleId);
 
+        //同步角色信息到其他节点
+        privilegeEventListenerRegistry.dispatchRoleSyncEvent(roleId);
+
         return getSuccessfulResponseEntity(SUCCESSFUL_DELETE_ROLE, accept);
     }
 
@@ -129,6 +164,8 @@ public class RoleController extends BaseController {
             return getFailedResponseEntity(HttpStatus.BAD_REQUEST, FAILED_CREATE_ROLE, accept);
         }
         folibRoleService.save(roleDTO, username);
+        //同步角色信息到其他节点
+        privilegeEventListenerRegistry.dispatchRoleSyncEvent(roleDTO.getName());
         return getSuccessfulResponseEntity(SUCCESSFUL_CREATE_ROLE, accept);
     }
 
@@ -177,6 +214,8 @@ public class RoleController extends BaseController {
         }
         folibRoleService.updateRoleInfo(roleDTO, roleId, username);
 
+        //同步角色信息到其他节点
+        privilegeEventListenerRegistry.dispatchRoleSyncEvent(roleId);
         return getSuccessfulResponseEntity(SUCCESSFUL_UPDATE_ROLE, accept);
     }
 
@@ -209,5 +248,130 @@ public class RoleController extends BaseController {
 
     }
 
+    @ApiOperation(value = "Used to retrieve users")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_GET_ROLE)})
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @PostMapping(value = "/privilegeDispatch", produces = {MediaType.APPLICATION_JSON_VALUE})
+    @ResponseBody
+    public ResponseEntity privilegeDispatch(@RequestBody @Validated PrivilegeDispatch dispatch, HttpServletRequest request, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            throw new RequestBodyValidationException("请求参数错误", bindingResult);
+        }
+        //发送用户权限消息
+        WSMessageRequest wsMessageRequest = null;
+        WSMessageResponse messageResponse = null;
+        try {
+            //查询请求参数
+            UserAuthDTO userAuthReq = getUserAuthReq(dispatch.getPrivilegeEventTypeEnum(), dispatch.getUuId());
+            wsMessageRequest = new WSMessageRequest(Command.USER_AUTH_SYNC, userAuthReq);
+            messageResponse = folibWsRunManageV2.sendRequest(dispatch.getTargetHostName(), wsMessageRequest);
+
+            log.debug("sendRequest result,wsMessageRequest:{},messageResponse:{}", wsMessageRequest, messageResponse);
+        }  catch (Exception e) {
+            log.error("sendRequest fail,wsMessageRequest:{}", wsMessageRequest, e);
+        }
+        return ResponseEntity.ok(messageResponse);
+    }
+
+
+    private UserAuthDTO getUserAuthReq(PrivilegeEventTypeEnum privilegeEventTypeEnum, String uuId) {
+        UserAuthDTO.UserAuthDTOBuilder builder = UserAuthDTO.builder();
+        List<Resource> resourcesList = null;
+        if (PrivilegeEventTypeEnum.EVENT_USER_SYNC.getType() == privilegeEventTypeEnum.getType() ) {
+            UserDTO byUserName = folibUserService.findByUserName(uuId);
+            if (Objects.nonNull(byUserName)) {
+                builder.users(Collections.singletonList(UserConvert.INSTANCE.UserDTOToUser(byUserName)));
+                Set<String> userGroupIds = byUserName.getUserGroupIds();
+                List<Long> userGroupIdLs = userGroupIds.stream().map(Long::valueOf).collect(Collectors.toList());
+                List<UserGroup> userGroups = userGroupService.queryByIds(userGroupIdLs);
+                builder.groups(userGroups);
+                if (CollectionUtils.isNotEmpty(userGroups)) {
+                    List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(userGroupIdLs);
+                    builder.userGroups(userGroupRefs);
+                }
+                Set<String> roles = byUserName.getRoles();
+                builder.roles(folibRoleService.queryByIds(roles));
+                if (CollectionUtils.isNotEmpty(roles)) {
+                    List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryRefsByRoleIds(new ArrayList<>(roles));
+                    builder.userRoles(roleResourceRefs);
+
+                    if(CollectionUtils.isNotEmpty(roleResourceRefs)) {
+                        List<String> resourceIds = roleResourceRefs.stream().map(RoleResourceRef::getResourceId).collect(Collectors.toList());
+                        resourcesList = resourceService.queryByIds(resourceIds);
+                        builder.resources(resourcesList);
+                    }
+                }
+
+
+            }
+        }
+
+
+        if (PrivilegeEventTypeEnum.EVENT_USER_GROUP_SYNC.getType() == privilegeEventTypeEnum.getType() ) {
+            UserGroup userGroup = userGroupService.queryById(Long.valueOf(uuId));
+            builder.groups(Collections.singletonList(userGroup));
+            if (!Objects.equals(userGroup, null)) {
+                List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(Collections.singletonList(Long.valueOf(uuId)));
+                builder.userGroups(userGroupRefs);
+
+                List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryRefs(RoleResourceRef.builder().entityId(uuId).refType(GlobalConstants.ROLE_TYPE_USER_GROUP).build());
+                if (CollectionUtils.isNotEmpty(roleResourceRefs)) {
+                    builder.userRoles(roleResourceRefs);
+                }
+            }
+        }
+        if (PrivilegeEventTypeEnum.EVENT_ROLE_SYNC.getType() == privilegeEventTypeEnum.getType() ) {
+            List<FolibRole> folibRoles = folibRoleService.queryByIds(Collections.singleton(uuId));
+            builder.roles(folibRoles);
+
+            if (CollectionUtils.isNotEmpty(folibRoles)) {
+                List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryRefsByRoleIds(Collections.singletonList(uuId));
+                builder.userRoles(roleResourceRefs);
+
+                if(CollectionUtils.isNotEmpty(roleResourceRefs)) {
+                    List<String> resourceIds = roleResourceRefs.stream().map(RoleResourceRef::getResourceId).collect(Collectors.toList());
+                    resourcesList = resourceService.queryByIds(resourceIds);
+                    builder.resources(resourcesList);
+
+                    List<String> userIds = roleResourceRefs.stream().filter(roleResourceRef -> StringUtils.isNotBlank(roleResourceRef.getEntityId()) && GlobalConstants.ROLE_TYPE_USER.equals(roleResourceRef.getRefType())).map(RoleResourceRef::getEntityId).collect(Collectors.toList());
+                    builder.users(folibUserService.queryByIds(userIds));
+
+
+                    List<String> userGroupIds = roleResourceRefs.stream().filter(roleResourceRef -> StringUtils.isNotBlank(roleResourceRef.getEntityId()) && GlobalConstants.ROLE_TYPE_USER_GROUP.equals(roleResourceRef.getRefType())).map(RoleResourceRef::getEntityId).collect(Collectors.toList());
+                    List<Long> userGroupIdLs = userGroupIds.stream().map(Long::valueOf).collect(Collectors.toList());
+                    builder.groups(userGroupService.queryByIds(userGroupIdLs));
+
+                    if (CollectionUtils.isNotEmpty(userGroupIdLs)) {
+                        List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(userGroupIdLs);
+                        builder.userGroups(userGroupRefs);
+                    }
+                }
+            }
+        }
+
+        if (CollectionUtils.isNotEmpty(resourcesList)) {
+            List<StorageDto> storages = new ArrayList<>();
+            List<RepositoryDto> repositorys = new ArrayList<>();
+
+            resourcesList.forEach(resource -> {
+                String repositoryId = resource.getRepositoryId();
+                String storageId = resource.getStorageId();
+                if (StringUtils.isNotEmpty(repositoryId)) {
+                    repositorys.add(configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId));
+                } else {
+                    storages.add(configurationManagementService.getMutableConfigurationClone().getStorage(storageId));
+                }
+            });
+            if (!repositorys.isEmpty()) {
+                builder.repositorys(repositorys);
+            }
+            if (!storages.isEmpty()) {
+                builder.storages(storages);
+            }
+        }
+
+        return builder.build();
+    }
 
 }
+

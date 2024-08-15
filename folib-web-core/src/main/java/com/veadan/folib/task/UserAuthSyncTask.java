@@ -6,7 +6,11 @@ import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.converters.users.RoleConvert;
 import com.veadan.folib.converters.users.UserGroupConvert;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
+import com.veadan.folib.domain.PrivilegeDispatch;
 import com.veadan.folib.dto.FolibRoleDTO;
+import com.veadan.folib.event.privilege.PrivilegeEventTypeEnum;
+import com.veadan.folib.storage.StorageDto;
+import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.users.dto.UserAuthDTO;
 import com.veadan.folib.dto.UserGroupListDTO;
 import com.veadan.folib.entity.*;
@@ -81,8 +85,9 @@ public class UserAuthSyncTask {
                 map.forEach((key, value) -> {
                     Boolean isThisCluster = value.getIsThisCluster();
                     Boolean wsClientOnline = value.getWsClientOnline();
+                    Boolean isSyncPrivilege = value.getIsSyncPrivilege();
 
-                    if (!isThisCluster && wsClientOnline) {
+                    if (!isThisCluster && wsClientOnline && isSyncPrivilege) {
                         WSMessageRequest wsMessageRequest = null;
                         WSMessageResponse messageResponse = null;
                         String clusterNodeHost = value.getClusterNodeHost();
@@ -90,7 +95,7 @@ public class UserAuthSyncTask {
                         if (StringUtils.isBlank(targetHostName)) {
                             //WS目标节点未找到，尝试转发到集群中其他节点处理
                             targetHostName = FolibWsRunManageUtil.getTargetHostName(clusterNodeHost);
-                            if (folibWsRunManageV2.forward(targetHostName)) {
+                            if (folibWsRunManageV2.dispatch(targetHostName, PrivilegeDispatch.builder().privilegeEventTypeEnum(PrivilegeEventTypeEnum.EVENT_ALL_SYNC).targetHostName(targetHostName).build())) {
                                 return ;
                             }
                         }
@@ -104,12 +109,14 @@ public class UserAuthSyncTask {
                                 if (userAuthReq != null && userAuthReq.isNextPage()) {
                                     page++;
                                     size += 100;
+                                }else {
+                                    break;
                                 }
                                 wsMessageRequest = new WSMessageRequest(Command.USER_AUTH_SYNC, userAuthReq);
                                 messageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
-                                if(HttpStatus.OK.equals(messageResponse.getStatus())) {
-                                    break;
-                                }
+
+                                log.debug("sendRequest result,wsMessageRequest:{},messageResponse:{}", wsMessageRequest, messageResponse);
+
                             }  catch (Exception e) {
                                 log.error("sendRequest fail,wsMessageRequest:{}", wsMessageRequest, e);
                             }
@@ -171,15 +178,15 @@ public class UserAuthSyncTask {
         }
         List<Resource> resourcesList = resources.stream().filter(resource -> StringUtils.isNotEmpty(resource.getRepositoryId()) || StringUtils.isNotEmpty(resource.getStorageId())).collect(Collectors.toList());
         //仓库信息
-        List<Storage> storages = new ArrayList<>();
-        List<Repository> repositorys = new ArrayList<>();
+        List<StorageDto> storages = new ArrayList<>();
+        List<RepositoryDto> repositorys = new ArrayList<>();
         resourcesList.forEach(resource -> {
             String repositoryId = resource.getRepositoryId();
             String storageId = resource.getStorageId();
             if (StringUtils.isNotEmpty(repositoryId)) {
-                repositorys.add(configurationManagementService.getConfiguration().getRepository(storageId, repositoryId));
+                repositorys.add(configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId));
             }else {
-                storages.add(configurationManagementService.getConfiguration().getStorage(storageId));
+                storages.add(configurationManagementService.getMutableConfigurationClone().getStorage(storageId));
             }
         });
         if (!repositorys.isEmpty()){

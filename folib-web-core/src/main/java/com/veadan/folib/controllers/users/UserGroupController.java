@@ -10,6 +10,7 @@ import com.veadan.folib.dto.UserGroupDTO;
 import com.veadan.folib.dto.UserGroupListDTO;
 import com.veadan.folib.entity.UserGroup;
 import com.veadan.folib.entity.UserGroupRef;
+import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
 import com.veadan.folib.forms.users.UserGroupForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.StorageManagementService;
@@ -22,6 +23,7 @@ import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.util.RSAUtils;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.data.domain.Page;
@@ -78,29 +80,11 @@ public class UserGroupController
     public static final String USER_GROUP_DELETE_FORBIDDEN = "禁止删除此帐户组";
 
     @Inject
-    @RelationalDatabaseUserService.RelationalDatabase
-    private UserService userService;
-
-    @Inject
-    private ConversionService conversionService;
-
-    @Inject
-    private AuthoritiesProvider authoritiesProvider;
-
-    @Inject
-    private PasswordEncoder passwordEncoder;
-
-    @Inject
-    private RSAUtils rsaUtils;
-    @Inject
-    private FolibRoleService folibRoleService;
-    @Inject
-    private StorageManagementService storageManagementService;
-    @Inject
     private UserGroupService userGroupService;
     @Inject
     private UserGroupRefService userGroupRefService;
-
+    @Autowired
+    private PrivilegeEventListenerRegistry privilegeEventListenerRegistry;
 
     @ApiOperation(value = "用户组删除")
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_DELETE_USER_GROUP),
@@ -125,6 +109,8 @@ public class UserGroupController
         }
 
         userGroupService.deleteById(groupId);
+        //同步用户组信息到其他节点
+        privilegeEventListenerRegistry.dispatchUserGroupSyncEvent(String.valueOf(userGroup.getId()));
 
         return getSuccessfulResponseEntity(SUCCESSFUL_DELETE_USER, accept);
     }
@@ -162,6 +148,8 @@ public class UserGroupController
 
             userGroupRefService.saveBath(userGroupRefs);
         }
+        //同步用户组信息到其他节点
+        privilegeEventListenerRegistry.dispatchUserGroupSyncEvent(String.valueOf(userGroup.getId()));
 
         return getSuccessfulResponseEntity(SUCCESSFUL_CREATE_USER_GROUP, accept);
     }
@@ -233,6 +221,8 @@ public class UserGroupController
 
             userGroupRefService.saveBath(userGroupRefs);
         }
+        //同步用户组信息到其他节点
+        privilegeEventListenerRegistry.dispatchUserGroupSyncEvent(String.valueOf(userGroup.getId()));
 
         return getSuccessfulResponseEntity(SUCCESSFUL_UPDATE_USER_GROUP, accept);
     }

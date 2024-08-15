@@ -6,6 +6,8 @@ import com.veadan.folib.dto.UserGroupDTO;
 import com.veadan.folib.dto.UserGroupListDTO;
 import com.veadan.folib.entity.UserGroup;
 import com.veadan.folib.mapper.UserGroupMapper;
+import com.veadan.folib.users.service.RoleResourceRefService;
+import com.veadan.folib.users.service.UserGroupRefService;
 import com.veadan.folib.users.service.UserGroupService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -30,6 +32,10 @@ public class UserGroupServiceImpl implements UserGroupService {
     @Inject
     @Lazy
     private IdGenerateUtils idGenerateUtils;
+    @Autowired
+    private UserGroupRefService userGroupRefService;
+    @Autowired
+    private RoleResourceRefService roleResourceRefService;
 
     /** 
      * 通过ID查询单条数据 
@@ -84,6 +90,10 @@ public class UserGroupServiceImpl implements UserGroupService {
      */
     public boolean deleteById(Long id){
         int update = userGroupMapper.update(UserGroup.builder().id(id).deleted(GlobalConstants.DELETED).build());
+        //删除用户组关联用户
+        userGroupRefService.deleteByUserGroupId(id);
+        //删除角色关联用户组
+        roleResourceRefService.deleteByentityId(String.valueOf(id), GlobalConstants.ROLE_TYPE_USER_GROUP);
         return update > 0;
     }
 

@@ -2,7 +2,9 @@ package com.veadan.folib.users.dto;
 
 import com.veadan.folib.entity.*;
 import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryDto;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -38,8 +40,8 @@ public class UserAuthDTO{
     protected boolean nextPage;
 
     /**存储空间*/
-    private List<Storage> storages;
+    private List<StorageDto> storages;
     /**仓库*/
-    private List<Repository> repositorys;
+    private List<RepositoryDto> repositorys;
 
 }
