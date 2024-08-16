@@ -195,18 +195,18 @@ public class ConfigurationManagementServiceImpl
     @Override
     public void updateStorage(StorageDto storage) throws IOException {
         StorageDto storageDto = configuration.getStorage(storage.getId());
-        storageDto.setUsers(storage.getUsers());
+//        storageDto.setUsers(storage.getUsers());
         storageDto.setAdmin(storage.getAdmin());
         if (StringUtils.isBlank(storageDto.getStorageProvider()) && StringUtils.isNotBlank(storage.getStorageProvider())) {
             storageDto.setStorageProvider(storage.getStorageProvider());
         }
-        checkUsersContainsAdmin(storageDto);
+//        checkUsersContainsAdmin(storageDto);
         modifyInLock(configuration -> configuration.addStorage(storageDto));
     }
 
     @Override
     public void createStorage(StorageDto storage) throws IOException {
-        checkUsersContainsAdmin(storage);
+//        checkUsersContainsAdmin(storage);
         modifyInLock(configuration -> configuration.addStorage(storage));
     }
 

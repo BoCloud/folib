@@ -75,8 +75,7 @@ public class StorageManagementServiceImpl implements StorageManagementService {
         handlerOriginalStorageAdminRoleByDB(storage.getAdmin(), storage.getId());
         configurationManagementService.updateStorage(storage);
         handlerStorageAdminRoleByDB(storage.getAdmin(), storage.getId());
-        /*storage.getUsers().add(storage.getAdmin());
-        handlerStorageOrdinaryRoleByDB(storage.getUsers(), storage.getId());*/
+
     }
 
     @Override
@@ -84,8 +83,6 @@ public class StorageManagementServiceImpl implements StorageManagementService {
             throws IOException {
         configurationManagementService.createStorage(storage);
         handlerStorageAdminRoleByDB(storage.getAdmin(), storage.getId());
-        /*storage.getUsers().add(storage.getAdmin());
-        handlerStorageOrdinaryRoleByDB(storage.getUsers(), storage.getId());*/
 
     }
 
@@ -203,11 +200,16 @@ public class StorageManagementServiceImpl implements StorageManagementService {
 
     @Override
     public void getStorageUsers(List<Storage> storages) {
+        //FIXME 根据资源查询角色关联的用户、用户组下的用户
         List<String> storageIds = storages.stream().map(Storage::getId).collect(Collectors.toList());
-        List<String> roleIds = storageIds.stream().flatMap(storageId -> Stream.of(String.format("STORAGE_ADMIN_%S", storageId))).collect(Collectors.toList());
+        List<String> roleIds = storageIds.stream().flatMap(storageId -> Stream.of(String.format("STORAGE_USER_%S", storageId), String.format("STORAGE_ADMIN_%S", storageId))).collect(Collectors.toList());
         List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryRefsByRoleIds(roleIds);
         Map<String, List<RoleResourceRef>> roleUserMap = roleResourceRefs.stream().filter(r -> Objects.nonNull(r.getRefType()) && r.getRefType().equals(GlobalConstants.ROLE_TYPE_USER)).collect(Collectors.groupingBy(RoleResourceRef::getRoleId));
         storages.forEach(storage -> {
+            List<RoleResourceRef> userRef = roleUserMap.get(String.format("STORAGE_USER_%S", storage.getId()));
+            if (CollectionUtils.isNotEmpty(userRef)){
+                storage.setUsers(userRef.stream().map(RoleResourceRef::getEntityId).collect(Collectors.toSet()));
+            }
             List<RoleResourceRef> adminRef = roleUserMap.get(String.format("STORAGE_ADMIN_%S", storage.getId()));
             if (CollectionUtils.isNotEmpty(adminRef)) {
                 storage.setAdmin(adminRef.get(0).getEntityId());
