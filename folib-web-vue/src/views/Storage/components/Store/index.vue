@@ -624,6 +624,23 @@
                       </a-form-item>
 
                   </a-col>
+                  <a-col :span="24">
+                    <a-form-item :label="$t('Store.UploadMode')">
+                      <a-radio-group v-decorator="[
+                        'type',
+                        {
+                          rules: [{ required: true, message: $t('Store.SelectUploadMode') }],
+                        },
+                      ]">
+                        <a-radio value="image">
+                          {{ $t('Store.Image') }}
+                        </a-radio>
+                        <a-radio value="subsidiary">
+                          {{ $t('Store.SubsidiaryFiles') }}
+                        </a-radio>
+                      </a-radio-group>
+                    </a-form-item>
+                  </a-col>
                   <a-col :span="24" >
 
                       <a-form-item :label="$t('Store.SelectFile')">
@@ -1233,6 +1250,9 @@ export default {
                 this.dockerUploadForm.setFieldsValue({
                     repositoryId: this.folibRepository.id
                 })
+                this.dockerUploadForm.setFieldsValue({
+                    type: 'image'
+                })
             }
         })
         this.showDockerUploadFormModal =true;
@@ -1337,6 +1357,7 @@ export default {
                   }
                   fileList.forEach(item => {
                       this.handlerDockerUploadFile(
+                          values.type,
                           values.imageTag,
                           item.name.replace(':', '/'),
                           item.originFileObj
@@ -1389,7 +1410,7 @@ export default {
         }
       })
     },
-    handlerDockerUploadFile (imageTag, fileName, file) {
+    handlerDockerUploadFile (fileType, imageTag, fileName, file) {
           file = new File([file], fileName)
           let filePathMap ={};
           filePathMap[fileName] = imageTag ? imageTag : fileName;
@@ -1398,6 +1419,7 @@ export default {
           formData.append('repostoryId', this.folibRepository.id)
           formData.append('filePathMap', JSON.stringify(filePathMap))
           formData.append('imageTag', imageTag)
+          formData.append('fileType', fileType)
           formData.append('files', file)
           let uuid = uuidv4()
           artifactUploadProgress(formData, uuid, fileName)

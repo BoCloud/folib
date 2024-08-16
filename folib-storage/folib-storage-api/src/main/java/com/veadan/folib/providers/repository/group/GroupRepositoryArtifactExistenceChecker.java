@@ -2,11 +2,13 @@ package com.veadan.folib.providers.repository.group;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
 
 import com.veadan.folib.configuration.ConfigurationManager;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.providers.io.RepositoryFiles;
@@ -45,7 +47,9 @@ public class GroupRepositoryArtifactExistenceChecker
                                                              final Map<String, MutableBoolean> repositoryArtifactExistence)
             throws IOException
     {
-        for (final String maybeStorageAndRepositoryId : groupRepository.getGroupRepositories())
+        List<String> storageAndRepositoryIdList = Lists.newArrayList();
+        configurationManager.resolveGroupRepository(groupRepository, storageAndRepositoryIdList);
+        for (final String maybeStorageAndRepositoryId : storageAndRepositoryIdList)
         {
             final String subStorageId = getStorageId(groupRepository, maybeStorageAndRepositoryId);
             final String subRepositoryId = getRepositoryId(maybeStorageAndRepositoryId);

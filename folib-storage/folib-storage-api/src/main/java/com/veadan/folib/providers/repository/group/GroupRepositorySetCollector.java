@@ -1,5 +1,6 @@
 package com.veadan.folib.providers.repository.group;
 
+import com.google.common.collect.Lists;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.storage.Storage;
@@ -8,6 +9,7 @@ import com.veadan.folib.storage.repository.Repository;
 import javax.inject.Inject;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -35,8 +37,9 @@ public class GroupRepositorySetCollector
                                    boolean traverse)
     {
         log.info("GroupRepository {}", groupRepository.getId());
-        Set<Repository> result = groupRepository.getGroupRepositories()
-                                                .stream()
+        List<String> storageAndRepositoryIdList = Lists.newArrayList();
+        configurationManager.resolveGroupRepository(groupRepository, storageAndRepositoryIdList);
+        Set<Repository> result = storageAndRepositoryIdList.stream()
                                                 .map(groupRepoId -> getRepository(groupRepository.getStorage(),
                                                                                   groupRepoId))
                                                 .collect(Collectors.toCollection(LinkedHashSet::new));

@@ -2,6 +2,7 @@ package com.veadan.folib.controllers;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.syncartifact.SyncArtifactProvider;
 import com.veadan.folib.components.syncartifact.SyncArtifactProviderRegistry;
@@ -12,8 +13,11 @@ import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.ArtifactStatistics;
 import com.veadan.folib.domain.thirdparty.ArtifactInfo;
 import com.veadan.folib.domain.thirdparty.ArtifactQuery;
+import com.veadan.folib.enums.ProductTypeEnum;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
+import com.veadan.folib.gremlin.entity.KeyValue;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.ArtifactWebService;
@@ -88,9 +92,7 @@ public class ArtifactController extends BaseController {
 
     private static final String REPOSITORY_NOT_FOUND = "The repository was not found.";
 
-    private static final BigDecimal KILOBYTE = new BigDecimal(1024);
-    private static final BigDecimal MEGABYTE = KILOBYTE.multiply(KILOBYTE);
-    private static final BigDecimal GIGABYTE = MEGABYTE.multiply(KILOBYTE);
+
 
     @ApiOperation(value = "导出漏洞的影响范围")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
@@ -104,6 +106,7 @@ public class ArtifactController extends BaseController {
 
 
     @ApiOperation(value = "全局设置添加或者更新元数据")
+    @AuditLog(value = AuditEventNameEnum.UPDATE_META,target ="#artifactMetadataForm.key" )
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_METADATA')")
     @PutMapping(value = "/globalSettingAddOrUpdateMetadata")
@@ -136,6 +139,7 @@ public class ArtifactController extends BaseController {
     }
 
     @ApiOperation(value = "新增制品元数据")
+    @AuditLog(value = AuditEventNameEnum.UPDATE_META,target ="#artifactMetadataForm.storageId + '-'+ #artifactMetadataForm.repositoryId+ '-'+ #artifactMetadataForm.key " )
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_METADATA')")
     @PutMapping(value = "/artifactMetadata")
@@ -183,6 +187,7 @@ public class ArtifactController extends BaseController {
     }
 
     @ApiOperation(value = "构建图数据库索引")
+    @AuditLog(value = AuditEventNameEnum.BUILD_GRAPH_INDEX,target ="#storageId+'-'+#repositoryId" )
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(value = "/buildGraphIndex")
@@ -381,6 +386,7 @@ public class ArtifactController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
+    @AuditLog(value = AuditEventNameEnum.BUILD_GRAPH_INDEX,target ="#storageId+'-'+#repositoryId" )
     @GetMapping(value = "/mavenIndexer/{storageId}/{repositoryId}")
     public ResponseEntity<String> mavenIndexer(@PathVariable String storageId,
                                                @PathVariable String repositoryId,
@@ -399,8 +405,20 @@ public class ArtifactController extends BaseController {
         return ResponseEntity.ok("");
     }
 
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @GetMapping(value = "/getLayouts")
+    public ResponseEntity<List<KeyValue>> getLayouts() throws Exception {
+        List<KeyValue> layouts = Lists.newArrayList();
+        KeyValue keyValue = null;
+        for (ProductTypeEnum productTypeEnum : ProductTypeEnum.values()) {
+            keyValue = new KeyValue(productTypeEnum.toString(), productTypeEnum.getSubLayout());
+            layouts.add(keyValue);
+        }
+        return ResponseEntity.ok(layouts);
+    }
+
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @GetMapping(value = "/rawPathSize/{storageId}/{repositoryId}/{path}")
+    @GetMapping(value = "/rawPathSize/{storageId}/{repositoryId}/{path:.+}")
     public ResponseEntity<String> getRawPathSize(@PathVariable("storageId") String storageId,
                                                @PathVariable("repositoryId") String repositoryId,
                                                @PathVariable("path") String path) throws IOException {
@@ -420,11 +438,24 @@ public class ArtifactController extends BaseController {
                     })
                     .sum();
         }
-        String sizeStr = String.format("%s G", convertBytesToGB(size).toString());
+        String sizeStr = unitConversion(size);
         return ResponseEntity.ok(sizeStr);
     }
-    public  BigDecimal convertBytesToGB(long fileSizeInBytes) {
+
+    //单位转换
+    public String unitConversion(long fileSizeInBytes) {
+        final BigDecimal KILOBYTE = new BigDecimal(1024);
+        final BigDecimal MEGABYTE = KILOBYTE.multiply(KILOBYTE);
+        final BigDecimal GIGABYTE = MEGABYTE.multiply(KILOBYTE);
         BigDecimal fileSize = new BigDecimal(fileSizeInBytes);
-        return fileSize.divide(GIGABYTE, 3, RoundingMode.HALF_UP);
+        if (fileSizeInBytes < KILOBYTE.longValue()) {
+            return fileSizeInBytes + " B";
+        } else if (fileSizeInBytes < MEGABYTE.longValue()) {
+            return fileSize.divide(KILOBYTE, 3, RoundingMode.HALF_UP).toString() + " KB";
+        } else if (fileSizeInBytes < GIGABYTE.longValue()) {
+            return fileSize.divide(MEGABYTE, 3, RoundingMode.HALF_UP).toString() + " MB";
+        } else {
+            return fileSize.divide(GIGABYTE, 3, RoundingMode.HALF_UP).toString() + " GB";
+        }
     }
 }

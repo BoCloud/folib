@@ -5,7 +5,7 @@
 
 <template>
 
-  <div id="settings">
+  <div id="storages">
     <a-row type="flex" :gutter="[24, 24]">
 
       <a-col :span="24" :lg="6">
@@ -105,36 +105,47 @@
           </template>
         </a-card>
 
-        <a-row type="flex" :gutter="24">
-          <a-col :span="8" class="mb-24" v-for="(item, index) in repositories" :key="index">
-            <!-- Project Card -->
-            <CardProjectFolib :title=item.id :logo="'images/folib/' + getLayoutType(item) + '.svg'"
-              :team="['images/folib/' + item.type + '.svg']" :participants="item.type" :due="item.policy"
-              :repository="item" :storageAdmin="currentStorage.admin" @handleMenuClick="handleMenuClick" @goToDetial="goToDetial(item)">
-              <a-tooltip placement="topLeft">
-                <template slot="title">
-                  {{ getRepositoryUrl(item) }}
-                </template>
-                <p>http://..../{{ item.id }} <a>
-                    <a-icon type="copy" @click="copy(getRepositoryUrl(item))" />
-                  </a></p>
-              </a-tooltip>
-            </CardProjectFolib>
-            <!-- / Project Card -->
-          </a-col>
+        <a-tabs class="tabs-sliding" default-active-key="1">
+          <a-tab-pane key="1" :tab="$t('Storage.RepositoryList')">
+            <a-row type="flex" :gutter="24">
+              <a-col :span="8" class="mb-24" v-for="(item, index) in repositories" :key="index">
+                <!-- Project Card -->
+                <CardProjectFolib :title=item.id :logo="'images/folib/' + getLayoutType(item) + '.svg'"
+                  :team="['images/folib/' + item.type + '.svg']" :participants="item.type" :due="item.policy"
+                  :repository="item" :storageAdmin="currentStorage.admin" @handleMenuClick="handleMenuClick" @goToDetial="goToDetial(item)">
+                  <a-tooltip placement="topLeft">
+                    <template slot="title">
+                      {{ getRepositoryUrl(item) }}
+                    </template>
+                    <p>http://..../{{ item.id }} <a>
+                        <a-icon type="copy" @click="copy(getRepositoryUrl(item))" />
+                      </a></p>
+                  </a-tooltip>
+                </CardProjectFolib>
+                <!-- / Project Card -->
+              </a-col>
 
-          <a-col :span="8" class="mb-24" v-if="hasStoragePermission()">
-            <a-card @click="folibVisibleShow()" class="crm-bar-line header-solid h-full xinjian"
-              :bodyStyle="{ padding: 0, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }">
-              <a class="text-center text-muted font-bold">
-                <h3 class="font-semibold text-muted mb-0">+</h3>
-                <h5 class="font-semibold text-muted">{{ $t('Storage.createModal') }}</h5>
-              </a>
-            </a-card>
+              <a-col :span="8" class="mb-24" v-if="hasStoragePermission()">
+                <a-card @click="folibVisibleShow()" class="crm-bar-line header-solid h-full xinjian"
+                  :bodyStyle="{ padding: 0, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }">
+                  <a class="text-center text-muted font-bold">
+                    <h3 class="font-semibold text-muted mb-0">+</h3>
+                    <h5 class="font-semibold text-muted">{{ $t('Storage.createModal') }}</h5>
+                  </a>
+                </a-card>
 
-          </a-col>
-        </a-row>
-
+              </a-col>
+            </a-row>
+          </a-tab-pane>
+          <a-tab-pane key="2" :tab="$t('Storage.StorageOverview')" v-if="isLogin">
+            <a-row type="flex" :gutter="24">
+              <a-col :span="24">
+                <Overview :storageId="currentStorage.id"/>
+                <StorageInfo class="mt-20" :storageId="currentStorage.id"/>
+              </a-col>
+            </a-row>
+          </a-tab-pane>
+        </a-tabs>
       </a-col>
     </a-row>
     <a-modal v-model="showsTorageFormModal" :footer="null" :forceRender="true" :title="$t('Storage.CreateStorageSpace')"
@@ -191,6 +202,10 @@
                   </a-col>
                 </a-row>
               </a-card>
+            </a-form-model-item>
+            <a-form-model-item class="mb-10" :label="$t('Storage.StorageSizeLimit')" :colon="false">
+                <a-input v-model="storageMaxSize" addon-after="TB">
+                </a-input>
             </a-form-model-item>
             <a-form-model-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN') > -1" :label="$t('Storage.Administrator')"
               :colon="false">
@@ -277,6 +292,10 @@
                   </a-col>
                 </a-row>
               </a-card>
+            </a-form-item>
+            <a-form-item class="mb-10" :label="$t('Storage.StorageSizeLimit')" :colon="false">
+                <a-input v-model="storageMaxSize" addon-after="TB">
+                </a-input>
             </a-form-item>
             <a-form-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN') > -1" :label="$t('Storage.Administrator')"
               :colon="false">
@@ -1147,8 +1166,10 @@ import FolibKanbanTask from "@/components/Kanban/FolibKanbanTask"
 import storage from 'store'
 import store from '@/store'
 import { checkMachineCode } from "@/api/settings"
-import { hasRole, isAdmin, hasPermission } from "@/utils/permission"
+import { hasRole, isAdmin, hasPermission, isLogin } from "@/utils/permission"
 import language from "@/store/modules/language";
+import Overview from "../StorageMonitoring/components/Overview"
+import StorageInfo from "../StorageMonitoring/components/StorageInfo"
 
 export default {
   inject: ["reload"],
@@ -1157,6 +1178,8 @@ export default {
     draggable,
     FolibKanbanBoard,
     FolibKanbanTask,
+    Overview,
+    StorageInfo,
   },
   props: {
     navbarFixed: {
@@ -1202,6 +1225,7 @@ export default {
         admin: undefined,
         users: [],
         storageProvider: 'local',
+        storageMaxSize: 0,
         bucket: null,
       },
       currentDefultStorage: {
@@ -1210,6 +1234,7 @@ export default {
         admin: undefined,
         users: [],
         storageProvider: 'local',
+        storageMaxSize: 0,
         bucket: null,
       },
       showsTorageFormModal: false,
@@ -1219,6 +1244,7 @@ export default {
         basedir: null,
         admin: undefined,
         storageProvider: 'local',
+        storageMaxSize: 0,
         bucket: null,
         users: []
       },
@@ -1227,6 +1253,7 @@ export default {
         basedir: null,
         admin: undefined,
         storageProvider: 'local',
+        storageMaxSize: 0,
         bucket: null,
         users: []
       },
@@ -1260,6 +1287,7 @@ export default {
       form: this.$form.createForm(this, { name: 'steps' }),
       folibRepositoryIds: "",
       artifactMaxSize: 100,
+      storageMaxSize: 0,
       folibRepositoryEditDisabled: false,
       folibRepository: {
         allowsDeletion: true,
@@ -1352,10 +1380,12 @@ export default {
     if (!this.currentStorage.id && this.storageData && this.storageData.length > 0) {
       this.currentStorage.id = this.storageData[0].id
     }
-
     this.getStorage(this.currentStorage.id)
   },
   computed: {
+    isLogin() {
+      return isLogin()
+    },
     i18nBoards() {
       return this.boards.map(column => {
         if (column.i18nKey) {
@@ -1455,6 +1485,7 @@ export default {
               });
             }, 1000);
           } else {
+            this.storageMaxSize = 0
             this.showsTorageFormModal = true
             this.storagePrefix = null
             this.customStorage = false
@@ -1559,6 +1590,9 @@ export default {
             } else {
               this.storageCreateData.basedir = this.storagePrefix ? '/' + this.storagePrefix + '/' + this.storageCreateData.id : null
             }
+            if (this.storageMaxSize) {
+              this.storageCreateData.storageMaxSize = this.storageMaxSize * 1024 * 1024 * 1024 * 1024
+            }
             createStorages(this.storageCreateData).then(response => {
               setTimeout(() => {
                 this.$notification.success({
@@ -1583,6 +1617,9 @@ export default {
     },
     handleUpdateSubmit(e) {
       if (this.currentStorage.id != null) {
+        if (this.storageMaxSize) {
+          this.currentStorage.storageMaxSize = this.storageMaxSize * 1024 * 1024 * 1024 * 1024
+        }
         updateStorages(this.currentStorage).then(response => {
           setTimeout(() => {
             this.$notification.success({
@@ -1619,6 +1656,7 @@ export default {
       this.currentStorage.basedir = item.basedir
       this.currentStorage.admin = item.admin
       this.currentStorage.storageProvider = item.storageProvider
+      this.currentStorage.storageMaxSize = item.storageMaxSize
       if (!this.currentStorage.storageProvider) {
         this.currentStorage.storageProvider = 'local'
       }
@@ -1635,6 +1673,12 @@ export default {
         getLibraryFilter(id).then(response => {
           this.currentStorage.id = response.id
           this.currentStorage.basedir = response.basedir
+          this.currentStorage.storageProvider = response.storageProvider
+          if (response.storageMaxSize) {
+            this.storageMaxSize = response.storageMaxSize / ( 1024 * 1024 * 1024 * 1024)
+          } else {
+            this.storageMaxSize = 0
+          }
           this.currentStorage.admin = response.admin
           this.currentStorage.users = response.users
           this.repositories = response.repositories
@@ -1684,7 +1728,7 @@ export default {
       this.getStoragesAndRepositories(layout, this.folibRepository.id)
     },
     getStoragesAndRepositories(layout, excludeRepositoryId) {
-      getStoragesAndRepositories({  excludeType: 'group', layout: layout, excludeRepositoryId: excludeRepositoryId }).then(res => {
+      getStoragesAndRepositories({layout: layout, excludeRepositoryId: excludeRepositoryId }).then(res => {
         let repositories = []
         let id,arr
         res.forEach(item => {
@@ -2249,7 +2293,7 @@ export default {
   min-height: 203px;
 }
 
-#settings::v-deep {
+#storages::v-deep {
   .ant-list {
     width: 100%;
   }
@@ -2368,6 +2412,10 @@ export default {
     .ant-select-selection--multiple {
       padding: 8px 10px;
     }
+  }
+
+  .tabs-sliding.ant-tabs {
+      overflow: hidden;
   }
 }
 

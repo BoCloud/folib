@@ -39,7 +39,7 @@ export default {
     'RepositoryAnalysisDetail': 'Repository Analysis Detail',
     'RepositoryDetails': 'Repository Analysis',
     //bom end
-    
+    'StorageMonitoring': 'Storage Cockpits',
     'StatisticalOverview':'Statistical Overview',
     'AdvancementCockpits':'Advancement Cockpits',
     'AdvancementCockpitsInfo':'Advancement Cockpits Info',

@@ -233,11 +233,11 @@ public class DockerArtifactController extends BaseArtifactController {
             String artifactPath = String.format("blobs/%s", digest);
             RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
             boolean exists = artifactRealExists(repositoryPath);
-            logger.debug("StorageId [{}] repositoryId [{}] name [{}] extractPath [{}] imagePath [{}] artifactPath [{}] exists [{}]", storageId, repositoryId, name, extractPath, imagePath, artifactPath, exists);
+            logger.info("StorageId [{}] repositoryId [{}] name [{}] extractPath [{}] imagePath [{}] artifactPath [{}] exists [{}]", storageId, repositoryId, name, extractPath, imagePath, artifactPath, exists);
             //200已经存在 404不存在
             if (exists) {
                 long size = Files.size(repositoryPath);
-                logger.debug("StorageId [{}] repositoryId [{}] name [{}] extractPath [{}] imagePath [{}] artifactPath [{}] size [{}]", storageId, repositoryId, name, extractPath, imagePath, artifactPath, size);
+                logger.info("StorageId [{}] repositoryId [{}] name [{}] extractPath [{}] imagePath [{}] artifactPath [{}] size [{}]", storageId, repositoryId, name, extractPath, imagePath, artifactPath, size);
                 response.addHeader(DockerHeaderEnum.CONTENT_LENGTH.key(), size + "");
                 response.addHeader(DockerHeaderEnum.STREAM_CONTENT_TYPE.key(), DockerHeaderEnum.STREAM_CONTENT_TYPE.value());
                 return new ResponseEntity<>("OK", HttpStatus.OK);

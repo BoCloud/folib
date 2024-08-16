@@ -1,5 +1,6 @@
 package com.veadan.folib.controllers.users;
 
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.users.support.TokenEntityBody;
 import com.veadan.folib.controllers.users.support.UserOutput;
@@ -9,6 +10,7 @@ import com.veadan.folib.domain.PageResultResponse;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.entity.UserGroup;
 import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.forms.users.UserForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.StorageManagementService;
@@ -62,7 +64,6 @@ public class UserController
     public static final String NOT_FOUND_USER = "指定的用户不存在!";
 
     public static final String SUCCESSFUL_GET_USERS = "已成功检索用户.";
-    public static final String SUCCESSFUL_GET_USER_GROUP = "已成功检索用户组.";
 
     public static final String SUCCESSFUL_UPDATE_USER = "用户更新成功.";
 
@@ -135,7 +136,6 @@ public class UserController
                 .map(UserOutput::fromUser)
                 .collect(Collectors.toList());
 
-
         return getJSONListResponseEntityBody("users", users);
     }
 
@@ -184,6 +184,7 @@ public class UserController
     }
 
     @ApiOperation(value = "Used to create a new user")
+    @AuditLog(value = AuditEventNameEnum.CREATE_USER,target ="#userForm.username" )
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_CREATE_USER),
             @ApiResponse(code = 400, message = FAILED_CREATE_USER)})
     @PreAuthorize("hasAuthority('CREATE_USER')")
@@ -256,6 +257,7 @@ public class UserController
     }
 
     @ApiOperation(value = "Deletes a user from a repository.")
+    @AuditLog(value = AuditEventNameEnum.DELETE_USER,target ="#username" )
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_DELETE_USER),
             @ApiResponse(code = 400, message = FAILED_DELETE_USER),
             @ApiResponse(code = 403, message = USER_DELETE_FORBIDDEN),

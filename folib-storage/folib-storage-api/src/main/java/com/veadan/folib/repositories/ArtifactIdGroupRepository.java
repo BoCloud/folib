@@ -218,6 +218,18 @@ public class ArtifactIdGroupRepository extends GremlinVertexRepository<ArtifactI
         return commonCountArtifacts(storageId, repositoryId, artifactId, useArtifactName, coordinateValues) > 0L;
     }
 
+    public static String toCaseInsensitiveRegex(String regex) {
+        StringBuilder caseInsensitiveRegex = new StringBuilder();
+        for (char c : regex.toCharArray()) {
+            if (Character.isLetter(c)) {
+                caseInsensitiveRegex.append("[").append(Character.toLowerCase(c)).append(Character.toUpperCase(c)).append("]");
+            } else {
+                caseInsensitiveRegex.append(c);
+            }
+        }
+        return caseInsensitiveRegex.toString();
+    }
+
     private EntityTraversal<Vertex, Vertex> commonFindArtifacts(String storageId,
                                                                 String repositoryId,
                                                                 String artifactId,
@@ -226,8 +238,10 @@ public class ArtifactIdGroupRepository extends GremlinVertexRepository<ArtifactI
         String storageIdAndRepositoryId = String.format("%s-%s", storageId, repositoryId);
         EntityTraversal<Vertex, Vertex> t = null;
         if (Boolean.TRUE.equals(useArtifactName)) {
+            artifactId = artifactId  + ".*";
+            artifactId = toCaseInsensitiveRegex(artifactId);
             t = g().V()
-                    .hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, storageIdAndRepositoryId).has(Properties.ARTIFACT_NAME, Text.textPrefix(artifactId));
+                    .hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, storageIdAndRepositoryId).has(Properties.ARTIFACT_NAME, Text.textRegex(artifactId));
             if (CollectionUtils.isNotEmpty(coordinateValues)) {
                 handleCoordinateValues(t, coordinateValues, true);
             }
@@ -259,9 +273,11 @@ public class ArtifactIdGroupRepository extends GremlinVertexRepository<ArtifactI
                                            Collection<String> coordinateValues) {
         String storageIdAndRepositoryId = String.format("%s-%s", storageId, repositoryId);
         if (Boolean.TRUE.equals(useArtifactName)) {
+            artifactId = artifactId  + ".*";
+            artifactId = toCaseInsensitiveRegex(artifactId);
             EntityTraversal<Vertex, Vertex> t = g().V()
                     .hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, storageIdAndRepositoryId)
-                    .has(Properties.ARTIFACT_NAME, Text.textPrefix(artifactId));
+                    .has(Properties.ARTIFACT_NAME, Text.textRegex(artifactId));
             if (CollectionUtils.isNotEmpty(coordinateValues)) {
                 handleCoordinateValues(t, coordinateValues, true);
             }

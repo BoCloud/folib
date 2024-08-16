@@ -51,4 +51,7 @@ export default {
     'PasswordUpdateSuccess': 'The password was updated successfully. Please log in again',
     'GroupInformation': 'Group Information',
     'GroupEdit': 'Group Edit',
+    'UserRole':'Please select a user role',
+    'Administrators': 'Administrators',
+    'GeneralUsers': 'General users',
 }

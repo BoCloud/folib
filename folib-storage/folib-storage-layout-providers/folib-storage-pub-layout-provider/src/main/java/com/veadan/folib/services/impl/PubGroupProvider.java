@@ -2,6 +2,7 @@ package com.veadan.folib.services.impl;
 
 import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Lists;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.domain.PubPackageVersionMetadata;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -40,7 +42,9 @@ public class PubGroupProvider implements PubProvider {
     @Override
     public PubPackageVersionMetadata inspectVersion(Repository repository, String packageName, String version, String targetUrl) {
         PubPackageVersionMetadata pubPackageVersionMetadata = null, subPubPackageVersionMetadata;
-        for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+        List<String> storageAndRepositoryIdList = Lists.newArrayList();
+        configurationManager.resolveGroupRepository(repository, storageAndRepositoryIdList);
+        for (String storageAndRepositoryId : storageAndRepositoryIdList) {
             try {
                 String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
                 String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
@@ -64,7 +68,10 @@ public class PubGroupProvider implements PubProvider {
     @Override
     public JSONObject packages(Repository repository, String packageName, String targetUrl) {
         JSONObject packageJson = null, subData;
-        for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+        PubPackageVersionMetadata pubPackageVersionMetadata = null, subPubPackageVersionMetadata;
+        List<String> storageAndRepositoryIdList = Lists.newArrayList();
+        configurationManager.resolveGroupRepository(repository, storageAndRepositoryIdList);
+        for (String storageAndRepositoryId : storageAndRepositoryIdList) {
             try {
                 String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
                 String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);

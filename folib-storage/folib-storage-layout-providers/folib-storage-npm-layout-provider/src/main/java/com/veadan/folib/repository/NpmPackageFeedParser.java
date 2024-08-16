@@ -40,7 +40,7 @@ public class NpmPackageFeedParser {
     public void parseSearchResult(Repository repository,
                                   SearchResults searchResults) {
         ArtifactTag lastVersionTag = artifactTagService.findOneOrCreate(ArtifactTagEntity.LAST_VERSION);
-        final String packageSuffix = NpmSubLayout.OHNPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
+        final String packageSuffix = NpmSubLayout.OHPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
         String repositoryId = repository.getId();
         String storageId = repository.getStorage().getId();
 
@@ -72,7 +72,7 @@ public class NpmPackageFeedParser {
         String storageId = repository.getStorage().getId();
 
         ArtifactTag lastVersionTag = artifactTagService.findOneOrCreate(ArtifactTagEntity.LAST_VERSION);
-        final String packageSuffix = NpmSubLayout.OHNPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
+        final String packageSuffix = NpmSubLayout.OHPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
         Versions versions = packageFeed.getVersions();
         if (versions == null) {
             return;

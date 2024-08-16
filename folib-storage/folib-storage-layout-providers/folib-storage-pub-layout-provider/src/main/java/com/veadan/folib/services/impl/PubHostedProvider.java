@@ -70,6 +70,9 @@ public class PubHostedProvider implements PubProvider {
         try {
             if (Objects.isNull(packageMetadataRepositoryPath) || !Files.exists(packageMetadataRepositoryPath) || RepositoryFiles.hasRefreshContent(packageMetadataRepositoryPath)) {
                 RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, packageName);
+                if (!Files.exists(repositoryPath)) {
+                    return null;
+                }
                 pubPackageMetadataIndexer.indexAsSystem(repositoryPath, PubIndexTypeEnum.REINDEX);
                 packageMetadataRepositoryPath = repositoryPathResolver.resolve(repository, packageMetadataFilePath);
                 if (Objects.isNull(packageMetadataRepositoryPath) || !Files.exists(packageMetadataRepositoryPath)) {

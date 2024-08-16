@@ -1433,6 +1433,10 @@
                   tab="Webhook">
         <Webhook :activeKey="activeKey"></Webhook>
       </a-tab-pane>
+      <a-tab-pane key="9"
+                  :tab="$t('Setting.auditConfig')">
+        <audit-config></audit-config>
+      </a-tab-pane>
 
     </a-tabs>
     <a-modal v-model="showMetadataHandler"
@@ -1786,6 +1790,7 @@ import ExternalNode from './components/ExternalNode/index.vue'
 import {upperCase} from "@antv/util";
 import PackageName from "./components/Package/index.vue"
 import AddPackageName from "./components/Package/add.vue"
+import AuditConfig from "./components/AuditConfig.vue";
 
 export default {
   props: ['navbarFixed'],
@@ -1793,7 +1798,8 @@ export default {
     Webhook,
     ExternalNode,
     PackageName,
-    AddPackageName
+    AddPackageName,
+    AuditConfig,
   },
   data() {
     const checkClusterEnName = (rule, value, callback) => {

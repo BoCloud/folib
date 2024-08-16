@@ -52,5 +52,7 @@ export default {
     'OperateSuccess': '操作成功',
     'PasswordUpdateFailed': '密码更新失败',
     'PasswordUpdateSuccess': '密码更新成功，请重新登录',
-
+    'UserRole':'请选择用户角色',
+    'Administrators': '管理员',
+    'GeneralUsers': '普通用户',
 }

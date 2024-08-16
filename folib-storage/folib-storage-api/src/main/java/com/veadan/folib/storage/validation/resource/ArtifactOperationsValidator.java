@@ -1,32 +1,42 @@
 package com.veadan.folib.storage.validation.resource;
 
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
+import com.veadan.folib.components.DistributedCacheComponent;
+import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.enums.FileUnitTypeEnum;
+import com.veadan.folib.providers.ProviderImplementationException;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.LayoutProvider;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
-import com.veadan.folib.configuration.Configuration;
-import com.veadan.folib.providers.ProviderImplementationException;
+import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.storage.ArtifactResolutionException;
 import com.veadan.folib.storage.ArtifactStorageException;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.util.FileSizeConvertUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.inject.Inject;
 import java.io.IOException;
-
-import org.springframework.stereotype.Component;
-import org.springframework.web.multipart.MultipartFile;
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.Objects;
 
 /**
  * @author mtodorov
  */
+@Slf4j
 @Component("artifactOperationsValidator")
-public class ArtifactOperationsValidator
-{
+public class ArtifactOperationsValidator {
 
     @Inject
     private ConfigurationManager configurationManager;
@@ -37,68 +47,68 @@ public class ArtifactOperationsValidator
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
 
-    public ArtifactOperationsValidator()
-    {
+    @Inject
+    private ArtifactRepository artifactRepository;
+
+    @Inject
+    private DistributedCacheComponent distributedCacheComponent;
+
+    private final String STORAGE_SIZE_VERIFICATION_INTERVAL_KEY = "STORAGE_SIZE_VERIFICATION_INTERVAL";
+
+    private final String STORAGE_SIZE_VERIFICATION_LAST_TIME_KEY = "STORAGE_SIZE_VERIFICATION_LAST_TIME";
+
+    private static final long MINUTES_TO_MILLIS = 60_000L;
+
+    public ArtifactOperationsValidator() {
     }
 
     public void validate(RepositoryPath repositoryPath)
-            throws ArtifactResolutionException
-    {
+            throws ArtifactResolutionException {
         checkArtifactPath(repositoryPath);
-        
+
         Repository repository = repositoryPath.getRepository();
         Storage storage = repository.getStorage();
-        
+
         checkStorageExists(storage.getId());
         checkRepositoryExists(storage.getId(), repository.getId());
     }
 
     public void checkStorageExists(String storageId)
-            throws ArtifactResolutionException
-    {
-        if (storageId == null)
-        {
+            throws ArtifactResolutionException {
+        if (storageId == null) {
             throw new ArtifactResolutionException("No storage specified.");
         }
 
-        if (getConfiguration().getStorage(storageId) == null)
-        {
+        if (getConfiguration().getStorage(storageId) == null) {
             throw new ArtifactResolutionException("Storage " + storageId + " does not exist.");
         }
     }
 
     public void checkRepositoryExists(String storageId,
                                       String repositoryId)
-            throws ArtifactResolutionException
-    {
-        if (repositoryId == null)
-        {
+            throws ArtifactResolutionException {
+        if (repositoryId == null) {
             throw new ArtifactResolutionException("No repository specified.");
         }
 
         if (getConfiguration().getStorage(storageId)
-                              .getRepository(repositoryId) == null)
-        {
+                .getRepository(repositoryId) == null) {
             throw new ArtifactResolutionException("Repository " + repositoryId + " does not exist.");
         }
     }
 
     public void checkArtifactPath(RepositoryPath repositoryPath)
-            throws ArtifactResolutionException
-    {
-        if (repositoryPath == null)
-        {
+            throws ArtifactResolutionException {
+        if (repositoryPath == null) {
             throw new ArtifactResolutionException("No artifact path specified.");
         }
     }
 
     public void checkAllowsDeployment(Repository repository)
-            throws ArtifactStorageException
-    {
+            throws ArtifactStorageException {
         if (!repository.isAllowsDeployment() ||
-            RepositoryTypeEnum.GROUP.getType().equals(repository.getType()) ||
-            RepositoryTypeEnum.PROXY.getType().equals(repository.getType()))
-        {
+                RepositoryTypeEnum.GROUP.getType().equals(repository.getType()) ||
+                RepositoryTypeEnum.PROXY.getType().equals(repository.getType())) {
             // It should not be possible to write artifacts to:
             // - a repository that doesn't allow the deployment of artifacts
             // - a proxy repository
@@ -110,59 +120,155 @@ public class ArtifactOperationsValidator
             //   getOutputStream(...) method, which is why this check is performed here instead.
 
             throw new ArtifactStorageException("Deployment of artifacts to " + repository.getType() +
-                                               " repositories is not allowed!");
+                    " repositories is not allowed!");
         }
     }
 
     public void checkAllowsRedeployment(Repository repository,
                                         ArtifactCoordinates coordinates)
             throws IOException,
-                   ProviderImplementationException
-    {
+            ProviderImplementationException {
         LayoutProvider layoutProvider = LayoutProviderRegistry.getLayoutProvider(repository, layoutProviderRegistry);
-        
+
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, coordinates);
-        if (RepositoryFiles.artifactExists(repositoryPath) && !repository.isAllowsRedeployment())
-        {
+        if (RepositoryFiles.artifactExists(repositoryPath) && !repository.isAllowsRedeployment()) {
             throw new ArtifactStorageException("Re-deployment of artifacts to " +
-                                               repository.getStorage().getId() + ":" + repository.getId() +
-                                               " repository is not allowed!");
+                    repository.getStorage().getId() + ":" + repository.getId() +
+                    " repository is not allowed!");
         }
     }
 
     public void checkAllowsDeletion(Repository repository)
-            throws ArtifactStorageException
-    {
-        if (!repository.isAllowsDeletion())
-        {
+            throws ArtifactStorageException {
+        if (!repository.isAllowsDeletion()) {
             throw new ArtifactStorageException("Deleting artifacts from " + repository.getType() +
-                                               " repository is not allowed!");
+                    " repository is not allowed!");
         }
     }
 
     public void checkArtifactSize(String storageId,
                                   String repositoryId,
                                   MultipartFile uploadedFile)
-            throws ArtifactResolutionException
-    {
-        if (uploadedFile.isEmpty() || uploadedFile.getSize() == 0)
-        {
+            throws ArtifactResolutionException {
+        if (uploadedFile.isEmpty() || uploadedFile.getSize() == 0) {
             throw new ArtifactResolutionException("Uploaded file is empty.");
         }
 
         Repository repository = getConfiguration().getStorage(storageId).getRepository(repositoryId);
         long artifactMaxSize = repository.getArtifactMaxSize();
 
-        if (artifactMaxSize > 0 && uploadedFile.getSize() > artifactMaxSize)
-        {
+        if (artifactMaxSize > 0 && uploadedFile.getSize() > artifactMaxSize) {
             throw new ArtifactResolutionException("The size of the artifact exceeds the maximum size accepted by " +
-                                                  "this repository (" + uploadedFile.getSize() + "/" +
-                                                  artifactMaxSize + ").");
+                    "this repository (" + uploadedFile.getSize() + "/" +
+                    artifactMaxSize + ").");
         }
     }
 
-    public Configuration getConfiguration()
-    {
+
+    public void checkStorageSize(RepositoryPath repositoryPath)
+            throws IOException {
+        String storageId = repositoryPath.getStorageId();
+        Storage storage = getConfiguration().getStorage(storageId);
+        Long storageMaxSize = storage.getStorageMaxSize();
+        if (Objects.isNull(storageMaxSize) || storageMaxSize <= 0) {
+            return;
+        }
+        if (!isRefresh()) {
+            return;
+        }
+        long storageBytesSize = artifactRepository.artifactsBytesStatisticsByStorageIds(Collections.singletonList(storageId));
+        log.info("The size [{}] of the storage [{}]", storageBytesSize, storageId);
+        BigDecimal storageMaxTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageMaxSize, FileUnitTypeEnum.TB.getUnit());
+        BigDecimal storageRealTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageBytesSize, FileUnitTypeEnum.TB.getUnit());
+        if (storageRealTbSize.compareTo(storageMaxTbSize) >= 0) {
+            removeLastTime();
+            throw new ArtifactResolutionException(String.format("The size of the storage [%s] artifact [%s] exceeds the maximum size accepted by " +
+                    "this storage (%s/%s) unit %s.", storageId, repositoryPath, storageRealTbSize, storageMaxTbSize, FileUnitTypeEnum.TB.getUnit()));
+        }
+    }
+
+    /**
+     * 根据给定的键从分布式缓存中获取内容刷新间隔设置
+     * 如果没有找到对应的值或者值为空，则返回默认的内容刷新间隔
+     *
+     * @param key 用于从分布式缓存中检索刷新间隔设置的键
+     * @return 刷新间隔设置，如果未找到或值为空，则返回默认值
+     */
+    public int refreshContentInterval(final String key) {
+        // 从分布式缓存中获取与给定键相关的刷新间隔设置
+        String refreshContentInterval = distributedCacheComponent.get(key);
+        // 如果获取的刷新间隔为空或仅为空白字符，则返回预设的默认刷新间隔
+        if (StringUtils.isBlank(refreshContentInterval)) {
+            return 360;
+        }
+        // 将获取的刷新间隔字符串解析为整数并返回
+        return Integer.parseInt(refreshContentInterval);
+    }
+
+    /**
+     * 设置最后一次刷新时间
+     *
+     * @param lastTime 最后一次刷新时间
+     */
+    public void setLastTime(long lastTime) {
+        distributedCacheComponent.put(STORAGE_SIZE_VERIFICATION_LAST_TIME_KEY, Long.toString(lastTime));
+    }
+
+    /**
+     * 删除最后一次刷新时间
+     */
+    public void removeLastTime() {
+        distributedCacheComponent.delete(STORAGE_SIZE_VERIFICATION_LAST_TIME_KEY);
+    }
+
+    /**
+     * 获取最后一次刷新时间
+     *
+     * @return 最后一次刷新时间
+     */
+    public Long getLastTime() {
+        String lastTime = distributedCacheComponent.get(STORAGE_SIZE_VERIFICATION_LAST_TIME_KEY);
+        if (StringUtils.isBlank(lastTime)) {
+            return null;
+        }
+        return Long.parseLong(lastTime);
+    }
+
+    /**
+     * 判断是否需要刷新存储统计数据
+     * 该方法通过比较当前时间与上次刷新时间，来决定是否需要进行刷新
+     * 如果上次刷新时间为空，则自动设置当前时间为新的刷新时间，并返回true表示需要刷新
+     * 如果当前时间与上次刷新时间的时间差大于等于预设的刷新间隔时间，则进行刷新并更新刷新时间
+     * 否则，返回false表示不需要刷新
+     *
+     * @return true，如果需要刷新缓存统计数据；否则返回false
+     */
+    public boolean isRefresh() {
+        // 获取当前时间的瞬时值
+        Instant now = Instant.now();
+        // 获取上次刷新时间的毫秒值
+        Long pastTimeMilli = getLastTime();
+        // 如果上次刷新时间为空，则设置当前时间为新的刷新时间，并返回true表示需要刷新
+        if (pastTimeMilli == null) {
+            setLastTime(now.toEpochMilli());
+            return true;
+        }
+        // 将上次刷新时间的毫秒值转换为瞬时值
+        Instant pastTime = Instant.ofEpochMilli(pastTimeMilli);
+        // 计算当前时间与上次刷新时间之间的时间差
+        Duration duration = Duration.between(pastTime, now);
+        // 计算刷新间隔时间的毫秒值
+        long requiredMillis = refreshContentInterval(STORAGE_SIZE_VERIFICATION_INTERVAL_KEY) * MINUTES_TO_MILLIS;
+        // 如果时间差大于等于刷新间隔时间，则进行刷新并更新刷新时间
+        if (duration.compareTo(Duration.ofMillis(requiredMillis)) >= 0) {
+            setLastTime(now.toEpochMilli());
+            return true;
+        }
+        // 不需要刷新，返回false
+        return false;
+    }
+
+    public Configuration getConfiguration() {
         return configurationManager.getConfiguration();
     }
 

@@ -163,6 +163,11 @@ public interface GlobalConstants {
     String NOT_FOUND = "NotFound";
 
     /**
+     * @
+     */
+    String AT = "@";
+
+    /**
      * 删除
      */
     String DELETED = "1";

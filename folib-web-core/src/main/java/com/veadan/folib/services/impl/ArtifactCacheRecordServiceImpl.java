@@ -1,6 +1,5 @@
 package com.veadan.folib.services.impl;
 
-import cn.hutool.core.date.StopWatch;
 import com.github.pagehelper.PageHelper;
 import com.hazelcast.core.HazelcastInstance;
 import com.veadan.folib.components.artifact.ArtifactComponent;
@@ -34,7 +33,6 @@ import java.nio.file.Path;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -95,6 +93,7 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
         artifactCacheRecordMapper.updateByPrimaryKeySelective(artifactCacheRecord);
     }
 
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteArtifactCacheRecord(ArtifactCacheRecord artifactCacheRecord) {
         ArtifactCacheRecord dbArtifactCacheRecord = selectOneArtifactCacheRecord(artifactCacheRecord);
@@ -130,6 +129,7 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
             throw new RuntimeException(ex.getMessage());
         }
     }
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void saveOrUpdateArtifactCacheRecord(ArtifactCacheRecord artifactCacheRecord) {
@@ -153,7 +153,7 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
             criteria.andEqualTo("storageId", artifactCacheRecord.getStorageId());
             criteria.andEqualTo("repositoryId", artifactCacheRecord.getRepositoryId());
             criteria.andEqualTo("artifactPath", artifactCacheRecord.getArtifactPath());
-            example.setOrderByClause("create_time desc");
+            example.setOrderByClause("id desc");
             List<ArtifactCacheRecord> packageNameBlockList = artifactCacheRecordMapper.selectByExample(example);
             if (CollectionUtils.isNotEmpty(packageNameBlockList)) {
                 resultArtifactCacheRecord = packageNameBlockList.get(0);
@@ -184,9 +184,18 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
             Example.Criteria criteria = example.createCriteria();
             criteria.andEqualTo("nodeId", getHostname());
         }
-        example.setOrderByClause("latest_download_time asc, size desc");
         PageHelper.startPage(page, limit);
-        return artifactCacheRecordMapper.selectByExample(example);
+        List<ArtifactCacheRecord> list = artifactCacheRecordMapper.selectByExample(example);
+        log.info("page {} limit {} list {}", page, limit, list.stream().map(ArtifactCacheRecord::getId).collect(Collectors.toList()).toString());
+        return list;
+    }
+
+    @Override
+    public List<ArtifactCacheRecord> getArtifactCacheRecordByCursor(Long lastId, Integer limit) {
+        if (Objects.isNull(limit)) {
+            limit = 1000;
+        }
+        return artifactCacheRecordMapper.selectArtifactCacheRecordByCursor(getHostname(), lastId, limit);
     }
 
     @Override
@@ -279,7 +288,7 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
     private boolean handlerArtifactCacheDelete(Path artifactCachePath) {
         boolean flag = true;
         String fileName = artifactCachePath.getFileName().toString();
-        if( artifactCachePath.getParent() == null){
+        if (artifactCachePath.getParent() == null) {
             return flag;
         }
         try {
@@ -352,23 +361,23 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
         // 在弹性线程池调度器上发布，以异步方式处理数据
         // 对每个缓冲区内的记录列表，提取它们的ID，并调用artifactCacheRecordMapper的batchDelete方法进行批量删除
         // 最后，通过subscribe方法订阅这个响应式流，启动数据处理
-        StopWatch stopWatch = new StopWatch();
-        stopWatch.start("batchDeleteArtifactCacheRecord-0");
         Flux.fromIterable(records)
+                // 过滤掉不符合处理条件的记录
                 .filter(this::handlerDeleteArtifact)
+                // 将过滤后的记录收集到一个列表中
                 .buffer()
+                // 在弹性线程池调度器上异步执行操作
                 .publishOn(Schedulers.boundedElastic())
+                .parallel(2)
+                // 对收集到的每一批记录执行以下操作
                 .doOnNext(re -> {
-                    StopWatch stopWatch2 = new StopWatch();
-                    stopWatch2.start("batchDeleteArtifactCacheRecord-1");
+                    // 提取所有记录的ID
                     List<Long> ids = re.stream().map(ArtifactCacheRecord::getId).collect(Collectors.toList());
+                    // 批量删除数据库中对应ID的记录
                     artifactCacheRecordMapper.batchDelete(ids);
-                    stopWatch2.stop();
-                    log.info(stopWatch2.prettyPrint());
                 })
+                // 订阅Flux以触发操作，但不直接使用返回的Subscription对象
                 .subscribe();
-        stopWatch.stop();
-        log.info(stopWatch.prettyPrint());
     }
 
     /**

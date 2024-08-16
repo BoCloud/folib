@@ -33,6 +33,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
                  "com.veadan.folib.providers",
                  "com.veadan.folib.services",
                  "com.veadan.folib.storage",
+                 "com.veadan.folib.components",
 })
 public class NpmLayoutProviderConfig
 {

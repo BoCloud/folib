@@ -408,6 +408,17 @@ let routes = [
   //   },
   //   component: () => import("../views/ComponentAnalysis/Policy/index.vue"),
   // },
+	{
+		path: '/storageMonitoring',
+		name: 'storageMonitoring',
+		layout: "dashboard",
+		meta: {
+			title: 'router.StorageMonitoring',
+			sidebarMap: ['router.StatisticalOverview', 'router.StorageMonitoring'],
+			breadcrumbs: ['router.StatisticalOverview', 'router.StorageMonitoring'],
+		},
+		component: () => import('../views/StorageMonitoring/index.vue'),
+	},
 ]
 
 // Adding layout property from each route to the meta

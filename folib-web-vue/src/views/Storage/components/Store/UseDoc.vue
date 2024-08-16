@@ -627,30 +627,36 @@
         </a-timeline-item>
       </a-timeline>
       <a-timeline v-if="repositoryType === 'pypi'">
-        <a-timeline-item color="primary">
+        <a-timeline-item color="primary" v-if="folibRepository.type !== 'hosted'">
           Pypi{{ $t('Store.Configuration') }}
           <small>Pypi{{ $t('Store.Configuration') }}</small>
-          <p>{{ $t('Store.PypiConfig') }}</p>
-
           <prism-editor
             class="my-editor height-300"
-            :value="
-              '[distutils]\n' +
-              'index-servers =' +
-              baseUrl +
+            :value=" 'pip config set global.index-url ' + baseUrl +
               'storages/' +
               folibRepository.storageId +
               '/' +
               folibRepository.id +
+              '\npip config set install.trusted-host ' + baseUrl.replace('http://', '').replace('https://','').replace('/','')
+            "
+            :highlight="highlighterHandle"
+            :line-numbers="false"
+            :readonly="true"
+          >
+          </prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary" v-if="folibRepository.type === 'hosted'">
+          {{ $t('Store.PackageUpload') }}
+          <small>{{ $t('Store.DesignatedRepository') }}</small>
+          <p>{{ $t('Store.PypiConfig') }}</p>
+
+          <prism-editor
+            class="my-editor height-300"
+            :value=" '[distutils]\n' +
+              'index-servers =' +
+              '\n    ' + folibRepository.id +
               '\n' +
-              'pypi\n' +
-              'local\n' +
-              '\n' +
-              '[pypi]\n' +
-              'username:[username]\n' +
-              'password:[password]\n' +
-              '\n' +
-              '[local]\n' +
+              '['+ folibRepository.id +']\n' +
               'repository:' +
               baseUrl +
               'storages/' +
@@ -659,26 +665,17 @@
               folibRepository.id +
               '\n' +
               'username:[username]\n' +
-              'password:[password]'
+              'password:[password]\n'
             "
             :highlight="highlighterHandle"
             :line-numbers="false"
             :readonly="true"
-          ></prism-editor>
-        </a-timeline-item>
-        <a-timeline-item color="primary">
-          {{ $t('Store.PackageUpload') }}
-          <small>{{ $t('Store.DesignatedRepository') }}</small>
+          >
+          </prism-editor>
           <p>{{ $t('Store.followingCommand') }}</p>
-
           <prism-editor
             class="my-editor height-300"
-            :value="
-              'python3 -m twine upload --username admin --password folib@v587 --repository-url ' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
+            :value="'python3 -m twine upload --repository ' +
               folibRepository.id +
               ' dist/* --verbose'
             "

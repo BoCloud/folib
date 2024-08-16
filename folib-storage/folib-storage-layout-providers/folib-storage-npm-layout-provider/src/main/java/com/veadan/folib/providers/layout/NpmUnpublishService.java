@@ -106,7 +106,7 @@ public class NpmUnpublishService
             return Result.UNPUBLISH_DISABLED;
         }
         NpmArtifactCoordinates coordinates;
-        final String packageSuffix = NpmSubLayout.OHNPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
+        final String packageSuffix = NpmSubLayout.OHPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
         if (packageScope != null)
         {
             coordinates = NpmArtifactCoordinates.of(

@@ -78,7 +78,7 @@ public class NpmPackageSupplier implements Function<Path, NpmPackageDesc> {
         npmPackageDesc.setReleaseDate(releaseDate);
 
         PackageVersion npmPackage = null;
-        String packagePath = NpmSubLayout.OHNPM.getValue().equals(repositoryPath.getRepository().getSubLayout()) ? NpmLayoutProvider.OHPM_PACKAGE_JSON_PATH : NpmLayoutProvider.DEFAULT_PACKAGE_JSON_PATH;
+        String packagePath = NpmSubLayout.OHPM.getValue().equals(repositoryPath.getRepository().getSubLayout()) ? NpmLayoutProvider.OHPM_PACKAGE_JSON_PATH : NpmLayoutProvider.DEFAULT_PACKAGE_JSON_PATH;
         byte[] packageJsonBytes = layoutProvider.getContentByFileName(repositoryPath, repositoryPath, packagePath);
 
         if (Objects.nonNull(packageJsonBytes)) {
@@ -125,9 +125,6 @@ public class NpmPackageSupplier implements Function<Path, NpmPackageDesc> {
         }
         dist.setTarball(url);
 
-        if (artifactEntry.getTagSet().contains(artifactTagService.findOneOrCreate(ArtifactTag.LAST_VERSION))) {
-            npmPackageDesc.setLastVersion(true);
-        }
         return npmPackageDesc;
     }
 

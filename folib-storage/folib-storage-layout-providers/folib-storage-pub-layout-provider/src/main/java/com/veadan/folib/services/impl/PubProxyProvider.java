@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.veadan.folib.artifact.coordinates.PubArtifactCoordinates;
-import com.veadan.folib.component.StorageClientComponent;
+import com.veadan.folib.components.StorageClientComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.constants.PubConstants;

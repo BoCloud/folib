@@ -31,6 +31,7 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileVisitResult;
@@ -217,11 +218,17 @@ public class DockerComponent {
             repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
             repositoryPath.setDisableRemote(true);
             repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
-            if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+            if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath) || RepositoryFiles.hasRefreshContent(repositoryPath)) {
                 if (RepositoryTypeEnum.HOSTED.getType().equals(rootRepositoryPath.getRepository().getType())) {
                     return null;
                 }
-                return handleManifest(rootRepositoryPath, imagePath, digestOrTag);
+                RepositoryPath manifestRepositoryPath = handleManifest(rootRepositoryPath, imagePath, digestOrTag);
+                if (Objects.nonNull(manifestRepositoryPath) && Files.exists(manifestRepositoryPath)) {
+                    return manifestRepositoryPath;
+                }
+            }
+            if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+                return null;
             }
             if (isTag) {
                 DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
@@ -234,6 +241,7 @@ public class DockerComponent {
             if (isTag) {
                 repositoryPath.setArtifactPath(RepositoryFiles.relativizePath(repositoryPath));
             }
+            repositoryPath.setDisableRemote(true);
             repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
             return repositoryPath;
         } catch (Exception e) {

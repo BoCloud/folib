@@ -38,19 +38,20 @@ public class PypiArtifactCoordinatesUtils
      */
     public static PypiArtifactCoordinates parse(String path)
     {
-        String extension = FilenameUtils.getExtension(path);
-        if (path.endsWith(PypiArtifactCoordinates.FULL_TAR_GZ_SUFFIX)) {
-            extension = PypiArtifactCoordinates.TAR_GZ_SUFFIX;
-        }
-        if (!PypiArtifactCoordinates.EXTENSION_LIST.contains(extension))
+        if (PypiArtifactCoordinates.EXTENSION_LIST.stream().noneMatch(path::endsWith))
         {
-            log.info("The artifact packaging can be only {} path [{}]", PypiArtifactCoordinates.EXTENSION_LIST, path);
-            throw new IllegalArgumentException(String.format("The artifact packaging can be only %s, [%s]", PypiArtifactCoordinates.EXTENSION_LIST, path));
+            String message = String.format("The artifact packaging can be only %s path [%s]", String.join(" or ", PypiArtifactCoordinates.EXTENSION_LIST), path);
+            log.info(message);
+            throw new IllegalArgumentException(message);
         }
+
         String fileName = FilenameUtils.getName(path);
-        return PypiArtifactCoordinates.SOURCE_EXTENSION_LIST.contains(extension) ? parseSourcePackage(fileName) :
-               parseWheelPackage(fileName);
+        PypiArtifactCoordinates pypiArtifactCoordinates = PypiArtifactCoordinates.WHEEL_EXTENSION_LIST.stream().noneMatch(path::endsWith) ? parseSourcePackage(fileName) :
+                parseWheelPackage(fileName);
+        pypiArtifactCoordinates.setPath(path);
+        return pypiArtifactCoordinates;
     }
+
 
     private static PypiArtifactCoordinates parseSourcePackage(String path)
     {
@@ -64,7 +65,7 @@ public class PypiArtifactCoordinatesUtils
             String packageNameWithoutExtension = path.substring(0, path.lastIndexOf(fullExtension));
             String distribution = packageNameWithoutExtension.substring(0,
                                                                         packageNameWithoutExtension.lastIndexOf("-"));
-            String version = packageNameWithoutExtension.substring(packageNameWithoutExtension.lastIndexOf("-") + 1);
+            String version = packageNameWithoutExtension.substring(packageNameWithoutExtension.indexOf("-") + 1);
 
             Matcher matcher = PACKAGE_VERSION_PATTERN.matcher(version);
             if (!matcher.matches())
@@ -99,7 +100,7 @@ public class PypiArtifactCoordinatesUtils
         // check for invalid file format
         if (splitArray.length != 5 && splitArray.length != 6)
         {
-            throw new IllegalArgumentException("Invalid wheel package name specified");
+            throw new IllegalArgumentException(String.format("Invalid wheel package name specified path [%s]", path));
         }
 
         String distribution = splitArray[0];

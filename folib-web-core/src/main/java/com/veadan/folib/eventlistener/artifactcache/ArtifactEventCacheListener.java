@@ -1,6 +1,7 @@
 package com.veadan.folib.eventlistener.artifactcache;
 
 import com.google.common.collect.Lists;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.domain.CacheSettings;
 import com.veadan.folib.entity.ArtifactCacheRecord;
@@ -14,20 +15,23 @@ import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.util.FileSizeConvertUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author leipenghui
@@ -42,6 +46,18 @@ public class ArtifactEventCacheListener {
 
     @Inject
     private ArtifactCacheRecordService artifactCacheRecordService;
+
+    @Inject
+    private DistributedCacheComponent distributedCacheComponent;
+
+    private final String REFRESH_CACHE_STATISTICS_KEY = "ARTIFACT_CACHE_VERIFICATION_INTERVAL";
+
+    private final int ARTIFACT_CACHE_VERIFICATION_INTERVAL = 360;
+
+    private final String ARTIFACT_CACHE_LAST_TIME = "ARTIFACT_CACHE_VERIFICATION_LAST_TIME";
+
+    private static final long MINUTES_TO_MILLIS = 60_000L;
+
 
     @AsyncEventListener
     public void handle(final ArtifactEvent<RepositoryPath> event) {
@@ -113,29 +129,34 @@ public class ArtifactEventCacheListener {
                     return;
                 }
             }
+
             try {
-                BigDecimal oneHundred = BigDecimal.valueOf(100);
-                int clearCondition = cacheSettings.getClearCondition();
-                long cacheDirectoryPathUseSize = FileUtils.sizeOfDirectory(new File(cacheSettings.getDirectoryPath()));
-                //加上当前的制品大小
-                long cacheDirectoryPathAllSize = cacheDirectoryPathUseSize + Files.size(repositoryPath);
-                BigDecimal cacheDirectoryPathConvertSize = FileSizeConvertUtils.convertBytesWithDecimal(cacheDirectoryPathUseSize, cacheSettings.getSizeUnit());
-                BigDecimal cacheDirectoryPathProportion = cacheDirectoryPathConvertSize.divide(new BigDecimal(cacheSettings.getSize()), 4, RoundingMode.HALF_UP).multiply(oneHundred);
+                if (isRefresh()) {
+                    log.info("缓存功能已开启，缓存容量 [{}] [{}] 开始校验是否需要清理缓存", cacheSettings.getSize(), cacheSettings.getSizeUnit());
+                    BigDecimal oneHundred = BigDecimal.valueOf(100);
+                    int clearCondition = cacheSettings.getClearCondition();
+                    //long cacheDirectoryPathUseSize = FileUtils.sizeOfDirectory(new File(cacheSettings.getDirectoryPath()));
+                    long cacheDirectoryPathUseSize = getDirectorySize(Path.of(cacheSettings.getDirectoryPath()));
+                    //加上当前的制品大小
+                    long cacheDirectoryPathAllSize = cacheDirectoryPathUseSize + Files.size(repositoryPath);
+                    BigDecimal cacheDirectoryPathConvertSize = FileSizeConvertUtils.convertBytesWithDecimal(cacheDirectoryPathUseSize, cacheSettings.getSizeUnit());
+                    BigDecimal cacheDirectoryPathProportion = cacheDirectoryPathConvertSize.divide(new BigDecimal(cacheSettings.getSize()), 4, RoundingMode.HALF_UP).multiply(oneHundred);
 
-                BigDecimal cacheDirectoryPathConvertAllSize = FileSizeConvertUtils.convertBytesWithDecimal(cacheDirectoryPathAllSize, cacheSettings.getSizeUnit());
-                BigDecimal cacheDirectoryPathAllProportion = cacheDirectoryPathConvertAllSize.divide(new BigDecimal(cacheSettings.getSize()), 4, RoundingMode.HALF_UP).multiply(oneHundred);
+                    BigDecimal cacheDirectoryPathConvertAllSize = FileSizeConvertUtils.convertBytesWithDecimal(cacheDirectoryPathAllSize, cacheSettings.getSizeUnit());
+                    BigDecimal cacheDirectoryPathAllProportion = cacheDirectoryPathConvertAllSize.divide(new BigDecimal(cacheSettings.getSize()), 4, RoundingMode.HALF_UP).multiply(oneHundred);
 
-                int clearProportion = cacheSettings.getClearProportion();
-                long clearBytes = FileSizeConvertUtils.convertToBytes(clearProportion, cacheSettings.getSizeUnit());
-                log.debug("缓存功能已开启，缓存容量 [{}] [{}] 当前已缓存制品 [{}] 字节，约为[{}] [{}]，占用缓存比为 [{}%]，加上当前制品后为 [{}] 字节，约为 [{}] [{}] 占用缓存比为 [{}%]", cacheSettings.getSize(), cacheSettings.getSizeUnit(), cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheSettings.getSizeUnit(), cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheSettings.getSizeUnit(), cacheDirectoryPathAllProportion);
-                if (cacheDirectoryPathAllProportion.compareTo(oneHundred) >= 0) {
-                    log.warn("缓存功能已开启，缓存容量 [{}] [{}] 当前已缓存制品 [{}] 字节，约为[{}] [{}]，占用缓存比为 [{}%]，加上当前制品后为 [{}] 字节，约为 [{}] [{}] 占用缓存比为 [{}%]，大于总容量，禁止写入", cacheSettings.getSize(), cacheSettings.getSizeUnit(), cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheSettings.getSizeUnit(), cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheSettings.getSizeUnit(), cacheDirectoryPathAllProportion);
-                    return;
-                }
-                if (cacheDirectoryPathAllProportion.compareTo(new BigDecimal(clearCondition)) >= 0) {
-                    log.debug("缓存功能已开启，缓存容量 [{}] [{}] 当前已缓存制品 [{}] 字节，约为[{}] [{}]，占用缓存比为 [{}%]，加上当前制品后为 [{}] 字节，约为 [{}] [{}] 占用缓存比为 [{}%]，已达到清理条件 [{}%]", cacheSettings.getSize(), cacheSettings.getSizeUnit(), cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheSettings.getSizeUnit(), cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheSettings.getSizeUnit(), cacheDirectoryPathAllProportion, clearCondition);
-                    long deleteBytes = 0L;
-                    cleanup(clearBytes, deleteBytes, cacheSettings, cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheDirectoryPathAllProportion);
+                    int clearProportion = cacheSettings.getClearProportion();
+                    long clearBytes = FileSizeConvertUtils.convertToBytes(clearProportion, cacheSettings.getSizeUnit());
+                    log.debug("缓存功能已开启，缓存容量 [{}] [{}] 当前已缓存制品 [{}] 字节，约为[{}] [{}]，占用缓存比为 [{}%]，加上当前制品后为 [{}] 字节，约为 [{}] [{}] 占用缓存比为 [{}%]", cacheSettings.getSize(), cacheSettings.getSizeUnit(), cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheSettings.getSizeUnit(), cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheSettings.getSizeUnit(), cacheDirectoryPathAllProportion);
+                    if (cacheDirectoryPathAllProportion.compareTo(oneHundred) >= 0) {
+                        log.warn("缓存功能已开启，缓存容量 [{}] [{}] 当前已缓存制品 [{}] 字节，约为[{}] [{}]，占用缓存比为 [{}%]，加上当前制品后为 [{}] 字节，约为 [{}] [{}] 占用缓存比为 [{}%]，大于总容量，禁止写入", cacheSettings.getSize(), cacheSettings.getSizeUnit(), cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheSettings.getSizeUnit(), cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheSettings.getSizeUnit(), cacheDirectoryPathAllProportion);
+                        return;
+                    }
+                    if (cacheDirectoryPathAllProportion.compareTo(new BigDecimal(clearCondition)) >= 0) {
+                        log.debug("缓存功能已开启，缓存容量 [{}] [{}] 当前已缓存制品 [{}] 字节，约为[{}] [{}]，占用缓存比为 [{}%]，加上当前制品后为 [{}] 字节，约为 [{}] [{}] 占用缓存比为 [{}%]，已达到清理条件 [{}%]", cacheSettings.getSize(), cacheSettings.getSizeUnit(), cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheSettings.getSizeUnit(), cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheSettings.getSizeUnit(), cacheDirectoryPathAllProportion, clearCondition);
+                        long deleteBytes = 0L;
+                        cleanup(clearBytes, deleteBytes, cacheSettings, cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheDirectoryPathAllProportion);
+                    }
                 }
                 Files.createDirectories(targetPath.getParent());
                 //缓存制品
@@ -192,7 +213,10 @@ public class ArtifactEventCacheListener {
         return true;
     }
 
-    private void cleanup(Long clearBytes, Long deleteBytes, CacheSettings cacheSettings, long cacheDirectoryPathUseSize, BigDecimal cacheDirectoryPathConvertSize, BigDecimal cacheDirectoryPathProportion, long cacheDirectoryPathAllSize, BigDecimal cacheDirectoryPathConvertAllSize, BigDecimal cacheDirectoryPathAllProportion) {
+    private void cleanup(Long clearBytes, Long deleteBytes, CacheSettings cacheSettings,
+                         long cacheDirectoryPathUseSize, BigDecimal cacheDirectoryPathConvertSize, BigDecimal
+                                 cacheDirectoryPathProportion, long cacheDirectoryPathAllSize, BigDecimal
+                                 cacheDirectoryPathConvertAllSize, BigDecimal cacheDirectoryPathAllProportion) {
         List<ArtifactCacheRecord> artifactCacheRecordList = artifactComponent.getArtifactCacheRecord(null, 5);
         if (CollectionUtils.isNotEmpty(artifactCacheRecordList)) {
             BigDecimal deleteProportion;
@@ -218,6 +242,102 @@ public class ArtifactEventCacheListener {
         } else {
             log.debug("缓存功能已开启，缓存容量 [{}] [{}] 当前已缓存制品 [{}] 字节，约为[{}] [{}]，占用缓存比为 [{}%]，加上当前制品后为 [{}] 字节，约为 [{}] [{}] 占用缓存比为 [{}%]，已达到清理条件 [{}%]，需释放 [{}] 字节 已释放总 [{}] 字节，已没有数据可以清理，清理结束", cacheSettings.getSize(), cacheSettings.getSizeUnit(), cacheDirectoryPathUseSize, cacheDirectoryPathConvertSize, cacheSettings.getSizeUnit(), cacheDirectoryPathProportion, cacheDirectoryPathAllSize, cacheDirectoryPathConvertAllSize, cacheSettings.getSizeUnit(), cacheDirectoryPathAllProportion, cacheSettings.getClearCondition(), clearBytes, deleteBytes);
         }
+    }
+
+    /**
+     * 获取文件夹大小
+     *
+     * @param path 文件夹路径
+     * @return 文件夹大小
+     * @throws IOException 异常
+     */
+    public long getDirectorySize(Path path) throws IOException {
+        final AtomicLong size = new AtomicLong(0);
+        Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                size.addAndGet(attrs.size());
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        return size.get();
+    }
+
+    /**
+     * 根据给定的键从分布式缓存中获取内容刷新间隔设置
+     * 如果没有找到对应的值或者值为空，则返回默认的内容刷新间隔
+     *
+     * @param key 用于从分布式缓存中检索刷新间隔设置的键
+     * @return 刷新间隔设置，如果未找到或值为空，则返回默认值
+     */
+    public int refreshContentInterval(final String key) {
+        // 从分布式缓存中获取与给定键相关的刷新间隔设置
+        String refreshContentInterval = distributedCacheComponent.get(key);
+
+        // 如果获取的刷新间隔为空或仅为空白字符，则返回预设的默认刷新间隔
+        if (StringUtils.isBlank(refreshContentInterval)) {
+            return ARTIFACT_CACHE_VERIFICATION_INTERVAL;
+        }
+
+        // 将获取的刷新间隔字符串解析为整数并返回
+        return Integer.parseInt(refreshContentInterval);
+    }
+
+    /**
+     * 设置最后一次刷新时间
+     *
+     * @param lastTime 最后一次刷新时间
+     */
+    public void setLastTime(long lastTime) {
+        distributedCacheComponent.put(ARTIFACT_CACHE_LAST_TIME, Long.toString(lastTime));
+    }
+
+    /**
+     * 获取最后一次刷新时间
+     *
+     * @return 最后一次刷新时间
+     */
+    public Long getLastTime() {
+        String lastTime = distributedCacheComponent.get(ARTIFACT_CACHE_LAST_TIME);
+        if (StringUtils.isBlank(lastTime)) {
+            return null;
+        }
+        return Long.parseLong(lastTime);
+    }
+
+    /**
+     * 判断是否需要刷新缓存统计数据
+     * 该方法通过比较当前时间与上次刷新时间，来决定是否需要进行刷新
+     * 如果上次刷新时间为空，则自动设置当前时间为新的刷新时间，并返回true表示需要刷新
+     * 如果当前时间与上次刷新时间的时间差大于等于预设的刷新间隔时间，则进行刷新并更新刷新时间
+     * 否则，返回false表示不需要刷新
+     *
+     * @return true，如果需要刷新缓存统计数据；否则返回false
+     */
+    public boolean isRefresh() {
+
+        // 获取当前时间的瞬时值
+        Instant now = Instant.now();
+        // 获取上次刷新时间的毫秒值
+        Long pastTimeMilli = getLastTime();
+        // 如果上次刷新时间为空，则设置当前时间为新的刷新时间，并返回true表示需要刷新
+        if (pastTimeMilli == null) {
+            setLastTime(now.toEpochMilli());
+            return true;
+        }
+        // 将上次刷新时间的毫秒值转换为瞬时值
+        Instant pastTime = Instant.ofEpochMilli(pastTimeMilli);
+        // 计算当前时间与上次刷新时间之间的时间差
+        Duration duration = Duration.between(pastTime, now);
+        // 计算刷新间隔时间的毫秒值
+        long requiredMillis = refreshContentInterval(REFRESH_CACHE_STATISTICS_KEY) * MINUTES_TO_MILLIS;
+        // 如果时间差大于等于刷新间隔时间，则进行刷新并更新刷新时间
+        if (duration.compareTo(Duration.ofMillis(requiredMillis)) >= 0) {
+            setLastTime(now.toEpochMilli());
+            return true;
+        }
+        // 不需要刷新，返回false
+        return false;
     }
 
 }

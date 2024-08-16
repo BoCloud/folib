@@ -8,9 +8,6 @@ import cn.hutool.extra.compress.extractor.Extractor;
 import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.github.junrar.Archive;
-import com.github.junrar.exception.RarException;
-import com.github.junrar.rarfile.FileHeader;
 import com.google.cloud.tools.jib.api.Containerizer;
 import com.google.cloud.tools.jib.api.Jib;
 import com.google.cloud.tools.jib.api.RegistryImage;
@@ -19,13 +16,13 @@ import com.veadan.folib.artifact.MavenArtifactUtils;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.PubArtifactCoordinates;
 import com.veadan.folib.components.artifact.ArtifactComponent;
-import com.veadan.folib.components.layout.DockerComponent;
 import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.domain.DockerManifest;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.NpmPacketSuffix;
 import com.veadan.folib.enums.NpmSubLayout;
+import com.veadan.folib.enums.UploadTypeEnum;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -40,16 +37,10 @@ import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.util.MessageDigestUtils;
-import com.veadan.folib.utils.CompressionFormatUtils;
+import com.veadan.folib.utils.DockerUtils;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.compress.archivers.ArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.artifact.ArtifactUtils;
@@ -58,8 +49,8 @@ import org.apache.maven.artifact.repository.metadata.Snapshot;
 import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.apache.maven.index.artifact.Gav;
 import org.apache.maven.model.Model;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -68,9 +59,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 @Data
 @Slf4j
@@ -96,8 +84,9 @@ public class ArtifactUploadTask implements Callable<String> {
     private ArtifactComponent artifactComponent;
     private RepositoryPath repositoryPath;
     private String imageTag;
+    private String fileType;
     private String baseUrl;
-    private String token ;
+    private String token;
 
     public ArtifactUploadTask() {
     }
@@ -181,6 +170,7 @@ public class ArtifactUploadTask implements Callable<String> {
                               String uuid,
                               String parseArtifact,
                               String imageTag,
+                              String fileType,
                               String baseUrl,
                               String token) {
         this.storageId = storageId;
@@ -201,6 +191,7 @@ public class ArtifactUploadTask implements Callable<String> {
         this.parseArtifact = parseArtifact;
         this.artifactComponent = SpringUtil.getBean(ArtifactComponent.class);
         this.imageTag = imageTag;
+        this.fileType = fileType;
         this.baseUrl = baseUrl;
         this.token = token;
     }
@@ -240,9 +231,8 @@ public class ArtifactUploadTask implements Callable<String> {
                 handlerNpmLayoutUpload(is, layout, repositoryPath);
             } else if (PubLayoutProvider.ALIAS.equals(layout)) {
                 handlerPubLayoutUpload(is, layout, repositoryPath);
-            }else if(StringUtils.isNotBlank(imageTag) && DockerLayoutProvider.ALIAS.equals(layout)){
-                handlerDockerUploadProcess(this.storageId,  this.repositoryId, this.imageTag, this.file,this.baseUrl);
-
+            } else if (DockerLayoutProvider.ALIAS.equals(layout) && StringUtils.isNotBlank(fileType)) {
+                handlerDockerUploadProcess(this.storageId, this.repositoryId, this.imageTag, fileType, this.file, this.baseUrl);
             } else {
                 promotionUtil.setMetaData(repositoryPath, metaData);
                 artifactManagementService.store(repositoryPath, is);
@@ -451,7 +441,7 @@ public class ArtifactUploadTask implements Callable<String> {
                 //包内不存在pom，需生成pom
                 pomName = String.format("%s-%s", artifactId, artifactGav.getVersion()) + ".pom";
                 pomTempFile = new File(parentTempFile.getAbsolutePath() + File.separator + pomName);
-                artifactComponent.pomGenerator(sourceGroupId, artifactId, version, pomTempFile.getAbsolutePath());
+                artifactComponent.pomGenerator(sourceGroupId, artifactId, version, pomTempFile.getAbsolutePath(), artifactGav.getExtension());
             }
             String pomPath = String.format("%s/%s/%s/%s", groupId, artifactId, version, pomName);
             log.info("maven2 layout xml path ：{}，properties：{}，artifactParse: {}, groupId：{}，artifactId：{}, version：{} gavVersion: {} artifactPath：{}", pomTempFile.getAbsolutePath(), properties, artifactParse, groupId, artifactId, version, artifactGav.getVersion(), pomPath);
@@ -574,7 +564,7 @@ public class ArtifactUploadTask implements Callable<String> {
             Path path = Path.of(artifactTempFile.getAbsolutePath());
             String ext = FileUtil.extName(artifactTempFile);
 
-            boolean isOhnpmSubLayout = NpmSubLayout.OHNPM.getValue().equals(repositoryPath.getRepository().getSubLayout());
+            boolean isOhnpmSubLayout = NpmSubLayout.OHPM.getValue().equals(repositoryPath.getRepository().getSubLayout());
             String expectedExtension = isOhnpmSubLayout ? ohpmExt : supportedExt;
             if (!expectedExtension.equals(ext)) {
                 String errorMessage = isOhnpmSubLayout ? "Only the .har suffix is supported" : "Only the .tgz suffix is supported";
@@ -583,14 +573,14 @@ public class ArtifactUploadTask implements Callable<String> {
 
             LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(layout);
             if (Objects.nonNull(layoutProvider)) {
+                RuntimeException runtimeException = new RuntimeException("package.json is not found in this file or package.json has an error");
                 String packagePath = isOhnpmSubLayout ? NpmLayoutProvider.OHPM_PACKAGE_JSON_PATH : NpmLayoutProvider.DEFAULT_PACKAGE_JSON_PATH;
                 byte[] packageJsonBytes = layoutProvider.getContentByEqualsFileName(repositoryPath, path, packagePath);
-                String packageJson = new String(packageJsonBytes, StandardCharsets.UTF_8);
-                log.info("npm package.json：{}", packageJson);
-                RuntimeException runtimeException = new RuntimeException("package.json is not found in this file or package.json has an error");
-                if (StringUtils.isBlank(packageJson)) {
+                if (Objects.isNull(packageJsonBytes)) {
                     throw runtimeException;
                 }
+                String packageJson = new String(packageJsonBytes, StandardCharsets.UTF_8);
+                log.info("npm package.json：{}", packageJson);
                 try {
                     JSONObject packageJsonObj = JSONObject.parseObject(packageJson);
                     String name = packageJsonObj.getString("name");
@@ -599,7 +589,7 @@ public class ArtifactUploadTask implements Callable<String> {
                         throw runtimeException;
                     }
 
-                    final String packagesuffix = NpmSubLayout.OHNPM.getValue().equals(repositoryPath.getRepository().getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
+                    final String packagesuffix = NpmSubLayout.OHPM.getValue().equals(repositoryPath.getRepository().getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
                     NpmArtifactCoordinates npmArtifactCoordinates = NpmArtifactCoordinates.of(name, version, packagesuffix);
                     String artifactPath = npmArtifactCoordinates.convertToPath(npmArtifactCoordinates);
                     log.info("The fileRelativePath：{} artifactPath：{}", fileRelativePath, artifactPath);
@@ -789,9 +779,37 @@ public class ArtifactUploadTask implements Callable<String> {
         }
     }
 
-    private void handlerDockerUploadProcess(final String storageId,  final String repositoryId, final String path, final MultipartFile multipartFile,String  baseUrl){
+    private void handlerDockerUploadProcess(final String storageId, final String repositoryId, final String path, final String fileType, final MultipartFile multipartFile, String baseUrl) throws Exception {
+        if (UploadTypeEnum.SUBSIDIARY.getType().equals(fileType)) {
+            handlerDockerSubsidiary(storageId, repositoryId, path, multipartFile);
+        } else {
+            handlerDockerImage(storageId, repositoryId, path, multipartFile, baseUrl);
+        }
+    }
+
+    private void handlerDockerSubsidiary(final String storageId, final String repositoryId, final String path, final MultipartFile multipartFile) throws Exception {
+        String artifactPath = path.replace(":", File.separator);
+        RepositoryPath dockerTagRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        if (!Files.exists(dockerTagRepositoryPath)) {
+            String msg = String.format("Docker tag [%s] [%s] [%s] not found", storageId, repositoryId, artifactPath);
+            throw new IllegalArgumentException(msg);
+        }
+        RepositoryPath dockerSubsidiaryRepositoryPath = DockerUtils.getDockerSubsidiaryPath(dockerTagRepositoryPath);
+        String fileOriginalName = (((CommonsMultipartFile) multipartFile).getFileItem()).getName();
+        RepositoryPath dockerSubsidiaryFileRepositoryPath = dockerSubsidiaryRepositoryPath.resolve(fileOriginalName);
+        String subsidiaryFilePath = RepositoryFiles.relativizePath(dockerSubsidiaryFileRepositoryPath);
+        log.error("Docker upload subsidiary file uuid [{}] storageId [{}] repositoryId [{}] artifactPath [{}]", uuid, storageId, repositoryId, subsidiaryFilePath);
+        try (InputStream is = multipartFile.getInputStream()) {
+            artifactManagementService.store(dockerSubsidiaryFileRepositoryPath, is);
+        } catch (Exception ex) {
+            log.error("Docker upload subsidiary file error uuid [{}] storageId [{}] repositoryId [{}] artifactPath [{}] error [{}] ", uuid, storageId, repositoryId, subsidiaryFilePath, ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException(ex.getMessage());
+        }
+    }
+
+    private void handlerDockerImage(final String storageId, final String repositoryId, final String path, final MultipartFile multipartFile, String baseUrl) {
         log.info("Requested get docker application file {}/{}/{}.", storageId, repositoryId, path);
-        String url = String.join("/", baseUrl,storageId, repositoryId, path);
+        String url = String.join("/", baseUrl, storageId, repositoryId, path);
 
         final String prefix1 = "http://";
         final String prefix2 = "https://";
@@ -801,37 +819,33 @@ public class ArtifactUploadTask implements Callable<String> {
         } else if (url.contains(prefix2)) {
             tag = url.replaceAll("^" + prefix2, "");
         }
-       try {
-           String token = this.token;//securityComponent.getSecurityToken();
-               String uuid = UUID.randomUUID().toString();
-           String TEMP_UPLOAD_DIR = String.join("/",tempPath, uuid);
-           // 将文件保存到指定目录下
-           String fileName = multipartFile.getOriginalFilename();
-           Path tempDirectory = Files.createDirectory(Path.of(TEMP_UPLOAD_DIR));
-           Path localPath = Paths.get(String.join("/", tempDirectory.toString(), fileName));
+        try {
+            String token = this.token;
+            String uuid = UUID.randomUUID().toString();
+            String TEMP_UPLOAD_DIR = String.join("/", tempPath, uuid);
+            // 将文件保存到指定目录下
+            String fileName = multipartFile.getOriginalFilename();
+            Path tempDirectory = Files.createDirectory(Path.of(TEMP_UPLOAD_DIR));
+            Path localPath = Paths.get(String.join("/", tempDirectory.toString(), fileName));
 
-           Files.copy(multipartFile.getInputStream(), localPath);
+            Files.copy(multipartFile.getInputStream(), localPath);
 
-           Path localPath2 = DockerParsePacketsUtil.parsePackets(localPath,tempDirectory);
-           Jib.from(TarImage.at(localPath2))
-                   .containerize(Containerizer.to(
-                           RegistryImage
-                                   .named(tag)
-                                   .addCredential("<token>", token)
-                   ).setAllowInsecureRegistries(true));
+            Path localPath2 = DockerParsePacketsUtil.parsePackets(localPath, tempDirectory);
+            Jib.from(TarImage.at(localPath2))
+                    .containerize(Containerizer.to(
+                            RegistryImage
+                                    .named(tag)
+                                    .addCredential("<token>", token)
+                    ).setAllowInsecureRegistries(true));
 
-           Files.walk(tempDirectory)
-                   .sorted(Comparator.reverseOrder())
-                   .map(Path::toFile)
-                   .forEach(File::delete);
-       }catch (Exception e){
-           e.printStackTrace();
-           log.error("docker upload error uuid: {} ,storageId:{} ,repositoryId:{} ,tag:{}", uuid,storageId,repositoryId,tag);
-       }
-
-
+            Files.walk(tempDirectory)
+                    .sorted(Comparator.reverseOrder())
+                    .map(Path::toFile)
+                    .forEach(File::delete);
+        } catch (Exception e) {
+            log.error("docker upload error uuid: {} ,storageId:{} ,repositoryId:{} ,tag:{} error: {}", uuid, storageId, repositoryId, tag, ExceptionUtils.getStackTrace(e));
+        }
     }
-
 
 
 }

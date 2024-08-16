@@ -4,7 +4,7 @@ public enum NpmSubLayout {
 
     NPM("npm"),
     YARN("yarn"),
-    OHNPM("ohpm");
+    OHPM("ohpm");
 
     private String value;
 

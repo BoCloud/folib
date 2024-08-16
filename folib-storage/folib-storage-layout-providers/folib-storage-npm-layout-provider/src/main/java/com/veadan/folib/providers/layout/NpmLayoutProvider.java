@@ -1,6 +1,9 @@
 package com.veadan.folib.providers.layout;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -21,6 +24,7 @@ import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -82,6 +86,10 @@ public class NpmLayoutProvider
                path.getFileName().toString().endsWith("npm-shrinkwrap.json");
     }
 
+    public boolean isNpmPackageJson(RepositoryPath path) {
+        return path.getFileName().toString().endsWith(".json");
+    }
+
     @Override
     protected Map<RepositoryFileAttributeType, Object> getRepositoryFileAttributes(RepositoryPath repositoryPath,
                                                                                    RepositoryFileAttributeType... attributeTypes)
@@ -112,6 +120,14 @@ public class NpmLayoutProvider
                         result.put(attributeType, value);
                     }
 
+                    break;
+                case REFRESH_CONTENT:
+                    final Instant halfAnHourAgo = Instant.now().minus(refreshContentInterval(repositoryPath), ChronoUnit.MINUTES);
+                    value = BooleanUtils.isTrue((Boolean) value) || (Files.exists(repositoryPath) && isNpmPackageJson(repositoryPath)
+                            &&
+                            !RepositoryFiles.wasModifiedAfter(repositoryPath,
+                                    halfAnHourAgo));
+                    result.put(attributeType, value);
                     break;
                 default:
 

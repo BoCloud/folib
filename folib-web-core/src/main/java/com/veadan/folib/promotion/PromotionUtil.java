@@ -38,6 +38,7 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.MessageDigestUtils;
 import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.util.ThreadLocalUtil;
+import com.veadan.folib.utils.DockerUtils;
 import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.utils.UserUtils;
 import com.veadan.folib.wrapper.BufferedInputStreamWrapper;
@@ -65,7 +66,6 @@ import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.InputStreamBody;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.HttpClients;
-import org.glassfish.jersey.client.ChunkParser;
 import org.glassfish.jersey.media.multipart.Boundary;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
@@ -93,13 +93,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -169,10 +168,10 @@ public class PromotionUtil {
     private static final long MAX_SLICE_BYTE_SIZE = 1024L * 1024L * 100L;//100MB
 
     @Async("asyncCopyThreadPoolTaskExecutor")
-    public void executeCopy(RepositoryPath sourcePath, Repository srcRepository, RepositoryPath targetPath,Repository targetRepository) {
+    public void executeCopy(RepositoryPath sourcePath, Repository srcRepository, RepositoryPath targetPath, Repository targetRepository) {
         try {
             //handleCopy(sourcePath, srcRepository, targetRepository);
-            handleCopy( sourcePath,  srcRepository, targetPath,  targetRepository);
+            handleCopy(sourcePath, srcRepository, targetPath, targetRepository);
             log.info("Execute copy srcRepository [{}] [{}] targetRepository [{}] [{}] path [{}] finished", srcRepository.getStorage().getId(), srcRepository.getId(), targetRepository.getStorage().getId(), targetRepository.getId(), sourcePath);
         } catch (Exception e) {
             log.info("Execute copy srcRepository [{}] [{}] targetRepository [{}] [{}] path [{}] error [{}]", srcRepository.getStorage().getId(), srcRepository.getId(), targetRepository.getStorage().getId(), targetRepository.getId(), sourcePath, ExceptionUtils.getStackTrace(e));
@@ -182,21 +181,21 @@ public class PromotionUtil {
     @Async("asyncCopyThreadPoolTaskExecutor")
     public void executePromotionCopy(String syncNo, String targetPath, RepositoryPath path, Repository srcRepository, Repository targetRepository) {
         String artifactPath = "";
-        long fileSize =0;
+        long fileSize = 0;
         try {
             artifactPath = RepositoryFiles.relativizePath(path);
             fileSize = Files.size(path);
             handleCopy(path, srcRepository, targetRepository);
             if (Files.exists(repositoryPathResolver.resolve(targetRepository.getStorage().getId(), targetRepository.getId(), artifactPath))) {
                 //插入成功从记录
-                insertArtifactSyncSlaveRecord(syncNo, artifactPath, targetPath, ArtifactSyncRecordStatusEnum.SUCCESS.getVal(),fileSize);
+                insertArtifactSyncSlaveRecord(syncNo, artifactPath, targetPath, ArtifactSyncRecordStatusEnum.SUCCESS.getVal(), fileSize);
             } else {
-                insertArtifactSyncSlaveRecord(syncNo, artifactPath, targetPath, ArtifactSyncRecordStatusEnum.FAILED.getVal(),fileSize);
+                insertArtifactSyncSlaveRecord(syncNo, artifactPath, targetPath, ArtifactSyncRecordStatusEnum.FAILED.getVal(), fileSize);
             }
             log.info("Execute copy srcRepository [{}] [{}] targetRepository [{}] [{}] path [{}] finished", srcRepository.getStorage().getId(), srcRepository.getId(), targetRepository.getStorage().getId(), targetRepository.getId(), path);
         } catch (Exception e) {
             log.info("Execute copy srcRepository [{}] [{}] targetRepository [{}] [{}] path [{}] error [{}]", srcRepository.getStorage().getId(), srcRepository.getId(), targetRepository.getStorage().getId(), targetRepository.getId(), path, ExceptionUtils.getStackTrace(e));
-            insertArtifactSyncSlaveRecord(syncNo, artifactPath, targetPath, ArtifactSyncRecordStatusEnum.FAILED.getVal(),fileSize);
+            insertArtifactSyncSlaveRecord(syncNo, artifactPath, targetPath, ArtifactSyncRecordStatusEnum.FAILED.getVal(), fileSize);
         }
     }
 
@@ -230,19 +229,19 @@ public class PromotionUtil {
                 artifactSyncRecord.setTargetPath(JSON.toJSONString(Collections.singletonList(targetDispatchRepositoryDto)));
                 artifactSyncRecord.setSyncNo(syncNo);
                 artifactSyncRecord.setOpsType(ArtifactSyncRecordOpsTypeEnum.DISPATCH.getVal());
-                artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
+                artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.READY.getVal());
                 artifactSyncRecord.setCreateBy(UserUtils.getUsername());
                 artifactSyncRecord.setCreateTime(new Date());
                 artifactSyncRecord.setSyncModel(1);
-                artifactSyncRecordMapper.insert(artifactSyncRecord);
+                artifactSyncRecordMapper.insertSelective(artifactSyncRecord);
                 syncNoList.add(syncNo);
                 try {
-                    handlerDispatch(map, artifactDispatch, targetDispatchRepositoryDto, syncNo,false);
+                    handlerDispatch(map, artifactDispatch, targetDispatchRepositoryDto, syncNo, false);
                 } catch (Exception ex) {
                     artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
                     artifactSyncRecord.setFailedReason(ex.getMessage());
                     // 更新日志结束开始时间
-                    artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord
+                    artifactSyncRecordMapper.updateByPrimaryKeySelective(artifactSyncRecord
                             .setUpdateTime(new Date()));
                 }
             } catch (Exception ex) {
@@ -280,20 +279,27 @@ public class PromotionUtil {
         artifactDispatch.setLayout(repository.getLayout());
         artifactDispatch.setPolicy(repository.getPolicy());
 
-
+        ArtifactSyncRecord updateArtifactSyncRecord = null;
+        Date date;
+        Integer retryCount;
         for (TargetDispatchRepositoryDto targetDispatchRepositoryDto : targetRepositoryList) {
             try {
+                date = new Date();
+                retryCount = 0;
+                if (Objects.nonNull(artifactSyncRecord.getRetryCount())) {
+                    retryCount = artifactSyncRecord.getRetryCount();
+                }
+                updateArtifactSyncRecord = ArtifactSyncRecord.builder().id(artifactSyncRecord.getId()).retryCount(retryCount + 1).retryTime(date).updateBy(UserUtils.getUsername()).updateTime(date).build();
                 try {
-
-                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
-                    artifactSyncRecord.setCreateBy(UserUtils.getUsername());
-                    artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord);
-                    handlerDispatch(map, artifactDispatch, targetDispatchRepositoryDto, syncNo,true);
+                    updateArtifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.READY.getVal());
+                    artifactSyncRecordMapper.updateByPrimaryKeySelective(updateArtifactSyncRecord);
+                    handlerDispatch(map, artifactDispatch, targetDispatchRepositoryDto, syncNo, true);
                 } catch (Exception ex) {
-                    artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
-                    artifactSyncRecord.setFailedReason(ex.getMessage());
+                    log.error("Distribution target [{}] error [{}]", JSONObject.toJSONString(targetDispatchRepositoryDto), ExceptionUtils.getStackTrace(ex));
+                    updateArtifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
+                    updateArtifactSyncRecord.setFailedReason(ex.getMessage());
                     // 更新日志结束开始时间
-                    artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord.setUpdateTime(new Date()));
+                    artifactSyncRecordMapper.updateByPrimaryKeySelective(updateArtifactSyncRecord);
                 }
             } catch (Exception ex) {
                 log.error("Distribution target [{}] error [{}]", JSONObject.toJSONString(targetDispatchRepositoryDto), ExceptionUtils.getStackTrace(ex));
@@ -316,12 +322,12 @@ public class PromotionUtil {
 
         if (StringUtils.isBlank(dispatchClusterName)) {
             log.error("Distribution target node not specified..");
-            return;
+            throw new RuntimeException("Distribution target node not specified..");
         }
         ClusterDispatchNodeDto dispatchNodeDto = map.get(dispatchClusterName);
         if (null == dispatchNodeDto) {
             log.error("Distribution configuration [{}] does not exist", dispatchClusterName);
-            return;
+            throw new RuntimeException(String.format("Distribution configuration [%s] does not exist", dispatchClusterName));
         }
         if (StringUtils.isBlank(targetStorageId) || StringUtils.isBlank(targetRepositoryId)) {
             Map<String, ClusterDispatchNodeDto> dispatchMap = configurationManagementService.
@@ -358,12 +364,12 @@ public class PromotionUtil {
                     }
                     for (StorageTreeForm repo : repos) {
                         String tempRepoId = repo.getName();
-                        executeDispatchV2(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, tempRepoId, dispatchNodeDto, syncNo, recordStatus,isRetry);
+                        executeDispatchV2(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, tempRepoId, dispatchNodeDto, syncNo, recordStatus, isRetry);
                     }
                 }
             }
         } else {
-            executeDispatchV2(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, targetRepositoryId, dispatchNodeDto, syncNo, recordStatus,isRetry);
+            executeDispatchV2(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, targetRepositoryId, dispatchNodeDto, syncNo, recordStatus, isRetry);
         }
     }
 
@@ -446,7 +452,7 @@ public class PromotionUtil {
         }
     }
 
-    private void executeDispatchV2(String artifactPath, String srcRepositoryId, String srcStorageId, String targetStorageId, String targetRepositoryId, ClusterDispatchNodeDto dispatchNodeDto, String syncNo, Boolean recordStatus,boolean isRetry) {
+    private void executeDispatchV2(String artifactPath, String srcRepositoryId, String srcStorageId, String targetStorageId, String targetRepositoryId, ClusterDispatchNodeDto dispatchNodeDto, String syncNo, Boolean recordStatus, boolean isRetry) {
         try {
             StringBuilder strBuilder = new StringBuilder();
             String dispatchNodeHost = dispatchNodeDto.getClusterNodeHost();
@@ -530,7 +536,7 @@ public class PromotionUtil {
             Repository targetRepository = repositoryManagementService.getStorage(targetStorageId).getRepository(targetRepositoryId);
             RepositoryPath targetPath = artifactPromotion.getTargetPath() == null ? null : repositoryPathResolver.resolve(targetRepository, artifactPromotion.getTargetPath());
             FutureTask<String> future = new FutureTask<String>(
-                    new ArtifactPromotionCopyTask(srcPath, srcRepository,targetPath, targetRepository));
+                    new ArtifactPromotionCopyTask(srcPath, srcRepository, targetPath, targetRepository));
             listTask.add(future);
             asyncCopyThreadPoolTaskExecutor.submit(future);
         });
@@ -610,6 +616,22 @@ public class PromotionUtil {
             filePathMap.put(RepositoryFiles.relativizePath(srcRepositoryPath), relativePathMap);
             // 添加跨节点的元数据同步
             fileMetaDataMap.put(RepositoryFiles.relativizePath(srcRepositoryPath), getMetaData(srcRepositoryPath));
+            if (isDocker) {
+                List<DockerSubsidiary> dockerSubsidiaries = DockerUtils.getDockerSubsidiaryFilePaths(srcRepositoryPath);
+                if (CollectionUtils.isNotEmpty(dockerSubsidiaries)) {
+                    RepositoryPath srcDockerSubsidiaryRepositoryPath;
+                    Map<String, RepositoryPath> dockerSubsidiaryPathMap;
+                    for (DockerSubsidiary dockerSubsidiary : dockerSubsidiaries) {
+                        srcDockerSubsidiaryRepositoryPath = repositoryPathResolver.resolve(srcStorageId, srcRepositoryId, dockerSubsidiary.getPath());
+                        if (Files.exists(srcDockerSubsidiaryRepositoryPath)) {
+                            log.info("Upload find subsidiary srcRepositoryPath [{}]", srcDockerSubsidiaryRepositoryPath);
+                            dockerSubsidiaryPathMap = Maps.newLinkedHashMap();
+                            dockerSubsidiaryPathMap.put(RepositoryFiles.relativizePath(srcDockerSubsidiaryRepositoryPath), srcDockerSubsidiaryRepositoryPath);
+                            filePathMap.put(RepositoryFiles.relativizePath(srcDockerSubsidiaryRepositoryPath), dockerSubsidiaryPathMap);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -633,7 +655,7 @@ public class PromotionUtil {
                         for (String layer : layerList) {
                             RepositoryPath srcBlobPath = repositoryPathResolver.resolve(srcStorageId, srcRepositoryId, DockerLayoutProvider.BLOBS + File.separator + layer);
                             RepositoryPath targetBlobPath = repositoryPathResolver.resolve(targetStorageId, targetRepositoryId, RepositoryFiles.relativizePath(srcBlobPath));
-                            if (Files.exists(targetBlobPath)) {
+                            if (Files.exists(targetBlobPath) && RepositoryFiles.validateChecksum(srcBlobPath, targetBlobPath)) {
                                 log.info("Do copy srcRepositoryPath [{}] targetRepositoryPath [{}] exists skip...", srcBlobPath.toString(), targetBlobPath.toString());
                                 continue;
                             }
@@ -648,7 +670,7 @@ public class PromotionUtil {
                         if (StringUtils.isNotBlank(manifest.getDigest())) {
                             RepositoryPath srcMainFestPath = repositoryPathResolver.resolve(srcStorageId, srcRepositoryId, DockerLayoutProvider.MANIFEST + File.separator + manifest.getDigest());
                             RepositoryPath targetManiFestPath = repositoryPathResolver.resolve(targetStorageId, targetRepositoryId, RepositoryFiles.relativizePath(srcMainFestPath));
-                            if (Files.exists(targetManiFestPath)) {
+                            if (Files.exists(targetManiFestPath) && RepositoryFiles.validateChecksum(srcMainFestPath, targetManiFestPath)) {
                                 log.info("Do copy srcRepositoryPath [{}] targetRepositoryPath [{}] exists skip...", srcMainFestPath.toString(), targetManiFestPath.toString());
                                 continue;
                             }
@@ -672,10 +694,34 @@ public class PromotionUtil {
                 log.error("Do copy srcRepositoryPath [{}] targetManiFestPath [{}] error [{}]", srcRepositoryPath, targetRepositoryPath, ExceptionUtils.getStackTrace(e));
                 throw new Exception(e.getMessage());
             }
+            if (isDocker) {
+                List<DockerSubsidiary> dockerSubsidiaries = DockerUtils.getDockerSubsidiaryFilePaths(srcRepositoryPath);
+                if (CollectionUtils.isNotEmpty(dockerSubsidiaries)) {
+                    RepositoryPath srcDockerSubsidiaryRepositoryPath, targetDockerSubsidiaryRepositoryPath = null;
+                    for (DockerSubsidiary dockerSubsidiary : dockerSubsidiaries) {
+                        srcDockerSubsidiaryRepositoryPath = repositoryPathResolver.resolve(srcStorageId, srcRepositoryId, dockerSubsidiary.getPath());
+                        if (Files.exists(srcDockerSubsidiaryRepositoryPath)) {
+                            targetDockerSubsidiaryRepositoryPath = repositoryPathResolver.resolve(targetStorageId, targetRepositoryId, dockerSubsidiary.getPath());
+                            if (Files.exists(targetDockerSubsidiaryRepositoryPath) && RepositoryFiles.validateChecksum(srcDockerSubsidiaryRepositoryPath, targetDockerSubsidiaryRepositoryPath)) {
+                                log.info("Do copy srcRepositoryPath [{}] targetRepositoryPath [{}] exists skip...", srcDockerSubsidiaryRepositoryPath.toString(), targetDockerSubsidiaryRepositoryPath.toString());
+                                continue;
+                            }
+                            log.info("Do copy srcRepositoryPath [{}] targetDockerSubsidiaryRepositoryPath [{}]", srcDockerSubsidiaryRepositoryPath, targetDockerSubsidiaryRepositoryPath);
+                            try (InputStream is = Files.newInputStream(srcDockerSubsidiaryRepositoryPath)) {
+                                //同步附属文件
+                                artifactManagementService.store(targetDockerSubsidiaryRepositoryPath, is);
+                            } catch (IOException e) {
+                                log.error("Do copy srcRepositoryPath [{}] targetDockerSubsidiaryRepositoryPath [{}] error [{}]", srcDockerSubsidiaryRepositoryPath, targetDockerSubsidiaryRepositoryPath, ExceptionUtils.getStackTrace(e));
+                                throw new Exception(e.getMessage());
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
-    public void handleCopy(RepositoryPath sourcePath, Repository srcRepository,RepositoryPath targetPath, Repository targetRepository) throws Exception {
+    public void handleCopy(RepositoryPath sourcePath, Repository srcRepository, RepositoryPath targetPath, Repository targetRepository) throws Exception {
         final String srcStorageId = srcRepository.getStorage().getId(),
                 srcRepositoryId = srcRepository.getId(),
                 targetStorageId = targetRepository.getStorage().getId(),
@@ -684,10 +730,10 @@ public class PromotionUtil {
         final boolean isDocker = DockerLayoutProvider.ALIAS.equalsIgnoreCase(srcRepository.getLayout());
         for (RepositoryPath srcRepositoryPath : list) {
 
-            RepositoryPath path  = srcRepositoryPath;
-            if(targetPath !=null){
-                String filePath = path.getPath().replace(sourcePath.getPath(),targetPath.getPath());
-                path= repositoryPathResolver.resolve(targetRepository, filePath);
+            RepositoryPath path = srcRepositoryPath;
+            if (targetPath != null) {
+                String filePath = path.getPath().replace(sourcePath.getPath(), targetPath.getPath());
+                path = repositoryPathResolver.resolve(targetRepository, filePath);
             }
 
             RepositoryPath targetRepositoryPath = repositoryPathResolver.resolve(targetStorageId, targetRepositoryId, RepositoryFiles.relativizePath(path));
@@ -743,6 +789,30 @@ public class PromotionUtil {
                 log.error("Do copy srcRepositoryPath [{}] targetManiFestPath [{}] error [{}]", srcRepositoryPath, targetRepositoryPath, ExceptionUtils.getStackTrace(e));
                 throw new Exception(e.getMessage());
             }
+            if (isDocker) {
+                List<DockerSubsidiary> dockerSubsidiaries = DockerUtils.getDockerSubsidiaryFilePaths(srcRepositoryPath);
+                if (CollectionUtils.isNotEmpty(dockerSubsidiaries)) {
+                    RepositoryPath srcDockerSubsidiaryRepositoryPath, targetDockerSubsidiaryRepositoryPath = null;
+                    for (DockerSubsidiary dockerSubsidiary : dockerSubsidiaries) {
+                        srcDockerSubsidiaryRepositoryPath = repositoryPathResolver.resolve(srcStorageId, srcRepositoryId, dockerSubsidiary.getPath());
+                        if (Files.exists(srcDockerSubsidiaryRepositoryPath)) {
+                            targetDockerSubsidiaryRepositoryPath = repositoryPathResolver.resolve(targetStorageId, targetRepositoryId, dockerSubsidiary.getPath());
+                            if (Files.exists(targetDockerSubsidiaryRepositoryPath) && RepositoryFiles.validateChecksum(srcDockerSubsidiaryRepositoryPath, targetDockerSubsidiaryRepositoryPath)) {
+                                log.info("Do copy srcRepositoryPath [{}] targetRepositoryPath [{}] exists skip...", srcDockerSubsidiaryRepositoryPath.toString(), targetDockerSubsidiaryRepositoryPath.toString());
+                                continue;
+                            }
+                            log.info("Do copy srcRepositoryPath [{}] targetDockerSubsidiaryRepositoryPath [{}]", srcDockerSubsidiaryRepositoryPath, targetDockerSubsidiaryRepositoryPath);
+                            try (InputStream is = Files.newInputStream(srcDockerSubsidiaryRepositoryPath)) {
+                                //同步附属文件
+                                artifactManagementService.store(targetDockerSubsidiaryRepositoryPath, is);
+                            } catch (IOException e) {
+                                log.error("Do copy srcRepositoryPath [{}] targetDockerSubsidiaryRepositoryPath [{}] error [{}]", srcDockerSubsidiaryRepositoryPath, targetDockerSubsidiaryRepositoryPath, ExceptionUtils.getStackTrace(e));
+                                throw new Exception(e.getMessage());
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -775,6 +845,19 @@ public class PromotionUtil {
             log.info("Pull find srcRepositoryPath [{}]", srcRepositoryPath);
             repositoryPaths.add(RepositoryFiles.relativizePath(srcRepositoryPath));
             metaData.put(RepositoryFiles.relativizePath(srcRepositoryPath), getMetaData(srcRepositoryPath));
+            if (isDocker) {
+                List<DockerSubsidiary> dockerSubsidiaries = DockerUtils.getDockerSubsidiaryFilePaths(srcRepositoryPath);
+                if (CollectionUtils.isNotEmpty(dockerSubsidiaries)) {
+                    RepositoryPath srcDockerSubsidiaryRepositoryPath;
+                    for (DockerSubsidiary dockerSubsidiary : dockerSubsidiaries) {
+                        srcDockerSubsidiaryRepositoryPath = repositoryPathResolver.resolve(srcStorageId, srcRepositoryId, dockerSubsidiary.getPath());
+                        if (Files.exists(srcDockerSubsidiaryRepositoryPath)) {
+                            log.info("Pull find subsidiary srcRepositoryPath [{}]", srcDockerSubsidiaryRepositoryPath);
+                            repositoryPaths.add(RepositoryFiles.relativizePath(srcDockerSubsidiaryRepositoryPath));
+                        }
+                    }
+                }
+            }
         }
         return new PromotionFileRelativePath(repositoryPaths, metaData);
     }
@@ -861,6 +944,9 @@ public class PromotionUtil {
     public void setMetaData(RepositoryPath repositoryPath, String metadata) {
         if (Objects.nonNull(repositoryPath) && StringUtils.isNotBlank(metadata) && JSONUtil.isJson(metadata)) {
             try {
+                if (!RepositoryFiles.isArtifact(repositoryPath)) {
+                    return;
+                }
                 Artifact artifact = Optional.ofNullable(repositoryPath.getArtifactEntry())
                         .orElse(new ArtifactEntity(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(),
                                 RepositoryFiles.readCoordinates(repositoryPath)));
@@ -896,7 +982,7 @@ public class PromotionUtil {
         String finalTargetUrl = targetUrl;
         artifactSliceUploadHttpEntityList.stream().forEach(e -> {
             String targetPath = String.format("%s/%s/%s/%s-chunk%s?startLength=%s&chunkSize=%s&mergeId=%s", finalTargetUrl, e.getStorageId(), e.getRepositoryId(), e.getPath(), e.getChunkIndex(), e.getStartLength(), e.getChunkSize(), e.getMergeId());
-            final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = insertArtifactSyncSlaveRecord(syncNo, e.getPath(), targetPath, ArtifactSyncRecordStatusEnum.IN_SYNC.getVal(),e.getChunkSize());
+            final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = insertArtifactSyncSlaveRecord(syncNo, e.getPath(), targetPath, ArtifactSyncRecordStatusEnum.IN_SYNC.getVal(), e.getChunkSize());
             e.setChunkArtifactRecordId(artifactSyncSlaveRecord.getId());
         });
 
@@ -921,10 +1007,10 @@ public class PromotionUtil {
 
             // 更新记录状态
             artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), res.getSuccess() ? ArtifactSyncRecordStatusEnum.SUCCESS.getVal() : ArtifactSyncRecordStatusEnum.FAILED.getVal(), new Date(), res.getFailedReason());
-            if(res.getSuccess()){
-                updateRecordStatus( ArtifactSyncRecordStatusEnum.SUCCESS.getVal(), syncNo,null);
-            }else {
-                updateRecordStatus( ArtifactSyncRecordStatusEnum.FAILED.getVal(), syncNo,res.getFailedReason());
+            if (res.getSuccess()) {
+                updateRecordStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal(), syncNo, null);
+            } else {
+                updateRecordStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal(), syncNo, res.getFailedReason());
             }
 
             return res;
@@ -937,7 +1023,7 @@ public class PromotionUtil {
         String targetHostName = targetNode;
         //TargetTaskQueueManager targetTaskQueueManager = promotionTaskQueue.getTaskQueueManager(targetHostName);
 
-        TargetTaskQueueV2Manager  targetV2TaskQueueManager= promotionTaskQueue.getTaskQueueV2Manager(targetHostName);
+        TargetTaskQueueV2Manager targetV2TaskQueueManager = promotionTaskQueue.getTaskQueueV2Manager(targetHostName);
         String finalTargetUrl1 = targetUrl;
         //if (targetTaskQueueManager == null) {
         //    throw new RuntimeException("not found taskQueueManager by targetHostName:" + targetHostName);
@@ -964,11 +1050,11 @@ public class PromotionUtil {
         //    }
         //
         //});
-        targetV2TaskQueueManager.getTaskQueueV2Manager().submitTask(syncNo,Priority.HIGH ,() -> {
+        targetV2TaskQueueManager.getTaskQueueV2Manager().submitTask(syncNo, Priority.HIGH, () -> {
             try {
-                if(uploadDto.isRetry()){
-                    retryArtifactSliceUploadV3( uploadDto,  storageId,  repositoryId,  syncNo,  finalTargetUrl1,  finalTargetHostName);
-                }else {
+                if (uploadDto.isRetry()) {
+                    retryArtifactSliceUploadV3(uploadDto, storageId, repositoryId, syncNo, finalTargetUrl1, finalTargetHostName);
+                } else {
                     doArtifactSliceUploadV3(uploadDto, storageId, repositoryId, syncNo, finalTargetUrl1, finalTargetHostName);
                 }
                 future.complete(null);
@@ -995,9 +1081,9 @@ public class PromotionUtil {
         DistributionTask task = new DistributionTask(Priority.HIGH.getValue(), syncNo,
                 () -> {
                     try {
-                        if(uploadDto.isRetry()){
-                            retryArtifactSliceUploadV3( uploadDto,  storageId,  repositoryId,  syncNo,  finalTargetUrl1,  finalTargetHostName);
-                        }else {
+                        if (uploadDto.isRetry()) {
+                            retryArtifactSliceUploadV3(uploadDto, storageId, repositoryId, syncNo, finalTargetUrl1, finalTargetHostName);
+                        } else {
                             doArtifactSliceUploadV3(uploadDto, storageId, repositoryId, syncNo, finalTargetUrl1, finalTargetHostName);
                         }
                         future.complete(null);
@@ -1009,9 +1095,6 @@ public class PromotionUtil {
                             throw (RuntimeException) e;
                         }
                         throw new RuntimeException(e);
-                    }finally {
-                        //释放
-                        distributionService.release();
                     }
                 });
         distributionService.addTask(task);
@@ -1026,14 +1109,16 @@ public class PromotionUtil {
         if (CollectionUtil.isEmpty(filePathMap)) {
             return;
         }
-
+        ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectBySyncNo(syncNo);
+        artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
+        artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord);
         final List<ArtifactSliceUploadHttpEntityBuilder> artifactSliceUploadHttpEntityList = this.getArtifactSliceUploadHttpEntityList(filePathMap, storageId, repositoryId, sliceByteSize);
 
         // 记录制品从记录
         String finalTargetUrl = finalTargetUrl1;
         artifactSliceUploadHttpEntityList.forEach(e -> {
             String targetPath = String.format("%s/%s/%s/%s-chunk%s?startLength=%s&chunkSize=%s&mergeId=%s", finalTargetUrl, e.getStorageId(), e.getRepositoryId(), e.getPath(), e.getChunkIndex(), e.getStartLength(), e.getChunkSize(), e.getMergeId());
-            final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = insertArtifactSyncSlaveRecord(syncNo, e.getPath(), targetPath, ArtifactSyncRecordStatusEnum.IN_SYNC.getVal(),e.getChunkSize());
+            final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = insertArtifactSyncSlaveRecord(syncNo, e.getPath(), targetPath, ArtifactSyncRecordStatusEnum.IN_SYNC.getVal(), e.getChunkSize());
             e.setChunkArtifactRecordId(artifactSyncSlaveRecord.getId());
         });
         int size = artifactSliceUploadHttpEntityList.size();
@@ -1076,7 +1161,7 @@ public class PromotionUtil {
             } catch (Exception e) {
                 // 更新记录状态
                 artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), ArtifactSyncRecordStatusEnum.FAILED.getVal(), new Date(), e.getMessage());
-                updateRecordStatus( ArtifactSyncRecordStatusEnum.FAILED.getVal(), syncNo, e.getMessage());
+                updateRecordStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal(), syncNo, e.getMessage());
                 throw e;
             }
         }
@@ -1089,8 +1174,12 @@ public class PromotionUtil {
             return;
         }
 
+        ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectBySyncNo(syncNo);
+        artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
+        artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord);
+
         List<ArtifactSyncSlaveRecord> artifactSyncSlaveRecords = artifactSyncSlaveRecordMapper.selectBySyncNo(syncNo);
-        artifactSyncSlaveRecords  = artifactSyncSlaveRecords.stream()
+        artifactSyncSlaveRecords = artifactSyncSlaveRecords.stream()
                 .filter(e -> e.getStatus().equals(ArtifactSyncRecordStatusEnum.FAILED.getVal()) || e.getStatus().equals(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal()))
                 .sorted(Comparator.comparingLong(ArtifactSyncSlaveRecord::getId))
                 .collect(Collectors.toList());
@@ -1139,6 +1228,7 @@ public class PromotionUtil {
             }
         }
     }
+
     @NotNull
     private ArtifactSyncSlaveRecord insertArtifactSyncSlaveRecord(String syncNo, String sourcePath, String targetPath, Integer status, long fileSize) {
         final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = new ArtifactSyncSlaveRecord();
@@ -1201,7 +1291,7 @@ public class PromotionUtil {
                     String targetPath = String.format("%s/%s/%s/%s", finalTargetUrl1, storageId, repositoryId, key);
                     long fileSize = Files.size(repositoryPath);
                     //插入成功从记录
-                    insertArtifactSyncSlaveRecord(syncNo, key, targetPath, ArtifactSyncRecordStatusEnum.SUCCESS.getVal(),fileSize);
+                    insertArtifactSyncSlaveRecord(syncNo, key, targetPath, ArtifactSyncRecordStatusEnum.SUCCESS.getVal(), fileSize);
                 }
             } else {
                 throw new RuntimeException(String.format("意外的异常，%s中存在超过1个value元素的Map", entry));
@@ -1224,71 +1314,90 @@ public class PromotionUtil {
         }).flatMap(Collection::stream).collect(Collectors.toList());
     }
 
-    private List<ArtifactSliceUploadHttpEntityBuilder> getArtifactSliceUploadHttpEntityList( List<ArtifactSyncSlaveRecord> artifactSyncSlaveRecords,String syncNo) {
+    private List<ArtifactSliceUploadHttpEntityBuilder> getArtifactSliceUploadHttpEntityList(List<ArtifactSyncSlaveRecord> artifactSyncSlaveRecords, String syncNo) {
         ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectBySyncNo(syncNo);
-        if(artifactSyncRecord != null){
+        if (artifactSyncRecord != null) {
             return artifactSyncSlaveRecords.stream().map(syncSlaveRecord -> {
                 return getArtifactSliceUploadHttpEntity(syncSlaveRecord, artifactSyncRecord.getSourceStorageId(), artifactSyncRecord.getSourceRepositoryId());
             }).collect(Collectors.toList());
         }
-       throw new RuntimeException("Synchronization record not found");
+        throw new RuntimeException("Synchronization record not found");
     }
 
-    public ArtifactSliceUploadHttpEntityBuilder getArtifactSliceUploadHttpEntity(@NotNull ArtifactSyncSlaveRecord artifactSyncSlaveRecord,String sourceStorageId, String sourceRepositoryId) {
+    public ArtifactSliceUploadHttpEntityBuilder getArtifactSliceUploadHttpEntity(@NotNull ArtifactSyncSlaveRecord artifactSyncSlaveRecord, String sourceStorageId, String sourceRepositoryId) {
         try {
             String url = artifactSyncSlaveRecord.getTargetPath();
-
-            // Regular expression to match the URL pattern
-            String regex = ".*/([^/]+)/([^/]+)/.*-([^?]+)\\?startLength=([^&]+)&chunkSize=([^&]+)&mergeId=([^&]+)";
-            Pattern pattern = Pattern.compile(regex);
-            Matcher matcher = pattern.matcher(url);
-
-            if (matcher.matches()) {
-                String storageId = matcher.group(1);
-                String repositoryId = matcher.group(2);
-                String chunk = matcher.group(3);
-                Long startLength = Long.valueOf(matcher.group(4));
-                Long chunkSize = Long.valueOf(matcher.group(5));
-                String mergeId = matcher.group(6);
-
-                long begin = System.currentTimeMillis();
-                RepositoryPath sourceRepositoryPath = repositoryPathResolver.resolve(sourceStorageId, sourceRepositoryId, artifactSyncSlaveRecord.getSourcePath());
-                final long fileLength = Files.size(sourceRepositoryPath);
-                log.info("Calculate the file [{}] [{}] [{}] file size [{}]", sourceStorageId, sourceRepositoryId, sourceRepositoryPath.getPath(), fileLength);
-                final int threadCount = BigDecimal.valueOf(fileLength).divide(BigDecimal.valueOf(chunkSize), 0, RoundingMode.CEILING).intValue();
-                LayoutFileSystemProvider provider = (LayoutFileSystemProvider) sourceRepositoryPath.getFileSystem().provider();
-                final RepositoryPath checksumPath = provider.getChecksumPath(sourceRepositoryPath, MessageDigestAlgorithms.MD5);
-                String md5 = "";
-                if (Objects.nonNull(checksumPath) && Files.exists(checksumPath)) {
-                    md5 = Files.readString(checksumPath);
+            URI uri = new URI(url);
+            String uriPath = uri.getPath();
+            uriPath = StringUtils.removeStart(uriPath, "/");
+            String query = uri.getQuery();
+            // 处理路径
+            String[] pathSegments = uriPath.split("/");
+            String storageId = pathSegments[0];
+            String repositoryId = pathSegments[1];
+            String filenameWithChunk = pathSegments[pathSegments.length - 1];
+            // 分离文件名和 chunk
+            String[] filenameAndChunk = filenameWithChunk.split("-chunk");
+            String chunk = filenameAndChunk[1];
+            // 处理查询参数
+            String[] queryParams = query.split("&");
+            long startLength = 0L;
+            long chunkSize = 0L;
+            String mergeId = "";
+            for (String param : queryParams) {
+                String[] keyValue = param.split("=");
+                if (keyValue.length == 2) {
+                    switch (keyValue[0]) {
+                        case "startLength":
+                            startLength = Long.parseLong(keyValue[1]);
+                            break;
+                        case "chunkSize":
+                            chunkSize = Long.parseLong(keyValue[1]);
+                            break;
+                        case "mergeId":
+                            mergeId = keyValue[1];
+                            break;
+                        default:
+                            break;
+                    }
                 }
-                if (StringUtils.isBlank(md5)) {
-                    md5 = MessageDigestUtils.calculateChecksum(sourceRepositoryPath, MessageDigestAlgorithms.MD5);
-                    //md5 = FileUtils.getMD5(Files.newInputStream(sourceRepositoryPath));
-                }
-                Integer ChunkIndex = getChunkIndex(chunk);
-                log.info("calculated the file [{}] [{}] [{}] md5 is [{}] file size [{}] time consuming [{}] ms", storageId, repositoryId, sourceRepositoryPath.getPath(), md5, fileLength, System.currentTimeMillis() - begin);
-                return new ArtifactSliceUploadHttpEntityBuilder()
-                        .setStorageId(storageId)
-                        .setChunkArtifactRecordId(artifactSyncSlaveRecord.getId())
-                        .setRepositoryId(repositoryId)
-                        .setPath(artifactSyncSlaveRecord.getSourcePath())
-                        .setMergeId(mergeId)
-                        .setChunkIndex(ChunkIndex)
-                        .setChunkIndexMax(threadCount)
-                        .setOriginFileMd5(md5)
-                        .setArtifactPath(sourceRepositoryPath)
-                        .setStartLength(startLength)
-                        .setChunkSize(chunkSize);
             }
-            throw new RuntimeException("URL does not match the expected pattern.");
+            long begin = System.currentTimeMillis();
+            RepositoryPath sourceRepositoryPath = repositoryPathResolver.resolve(sourceStorageId, sourceRepositoryId, artifactSyncSlaveRecord.getSourcePath());
+            final long fileLength = Files.size(sourceRepositoryPath);
+            log.info("Calculate the file [{}] [{}] [{}] file size [{}]", sourceStorageId, sourceRepositoryId, sourceRepositoryPath.getPath(), fileLength);
+            final int threadCount = BigDecimal.valueOf(fileLength).divide(BigDecimal.valueOf(chunkSize), 0, RoundingMode.CEILING).intValue();
+            LayoutFileSystemProvider provider = (LayoutFileSystemProvider) sourceRepositoryPath.getFileSystem().provider();
+            final RepositoryPath checksumPath = provider.getChecksumPath(sourceRepositoryPath, MessageDigestAlgorithms.MD5);
+            String md5 = "";
+            if (Objects.nonNull(checksumPath) && Files.exists(checksumPath)) {
+                md5 = Files.readString(checksumPath);
+            }
+            if (StringUtils.isBlank(md5)) {
+                md5 = MessageDigestUtils.calculateChecksum(sourceRepositoryPath, MessageDigestAlgorithms.MD5);
+                //md5 = FileUtils.getMD5(Files.newInputStream(sourceRepositoryPath));
+            }
+            Integer ChunkIndex =Integer.parseInt(chunk);// getChunkIndex(chunk);
+            log.info("calculated the file [{}] [{}] [{}] md5 is [{}] file size [{}] time consuming [{}] ms", storageId, repositoryId, sourceRepositoryPath.getPath(), md5, fileLength, System.currentTimeMillis() - begin);
+            return new ArtifactSliceUploadHttpEntityBuilder()
+                    .setStorageId(storageId)
+                    .setChunkArtifactRecordId(artifactSyncSlaveRecord.getId())
+                    .setRepositoryId(repositoryId)
+                    .setPath(artifactSyncSlaveRecord.getSourcePath())
+                    .setMergeId(mergeId)
+                    .setChunkIndex(ChunkIndex)
+                    .setChunkIndexMax(threadCount)
+                    .setOriginFileMd5(md5)
+                    .setArtifactPath(sourceRepositoryPath)
+                    .setStartLength(startLength)
+                    .setChunkSize(chunkSize);
         } catch (Exception e) {
             log.error("构建文件切片请求集合失败", e);
             return null;
         }
     }
 
-    private Integer getChunkIndex(String chunk){
+    private Integer getChunkIndex(String chunk) {
         String regex = "chunk(\\d+)";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(chunk);
@@ -1355,22 +1464,24 @@ public class PromotionUtil {
 
     }
 
-    public void updateTaskQueuePriority(String targetHostName,String syncNo, Priority priority){
+    public void updateTaskQueuePriority(String syncNo, Priority priority) {
         //promotionTaskQueue.updateTaskQueuePriority(targetHostName,syncNo,priority);
-        distributionService.updateTaskPriority(syncNo,priority.getValue());
+        distributionService.updateTaskPriority(syncNo, priority.getValue());
     }
-    public void updateRecordStatus(Integer status, String syncNo, String failedReason){
-        if(ArtifactSyncRecordStatusEnum.SUCCESS.getVal().equals(status)){
-            List<ArtifactSyncSlaveRecord> artifactSyncSlaveRecords =artifactSyncSlaveRecordMapper.selectBySyncNo(syncNo);
+
+    public void updateRecordStatus(Integer status, String syncNo, String failedReason) {
+        if (ArtifactSyncRecordStatusEnum.SUCCESS.getVal().equals(status)) {
+            List<ArtifactSyncSlaveRecord> artifactSyncSlaveRecords = artifactSyncSlaveRecordMapper.selectBySyncNo(syncNo);
             long count = artifactSyncSlaveRecords.stream().filter(artifactSyncSlaveRecord -> ArtifactSyncRecordStatusEnum.SUCCESS.getVal().equals(artifactSyncSlaveRecord.getStatus())).count();
-            if(count == artifactSyncSlaveRecords.size()){
-                artifactSyncRecordMapper.updateStatusAndFailedReasonBySyncNo(status,"",syncNo,new Date());
+            if (count == artifactSyncSlaveRecords.size()) {
+                artifactSyncRecordMapper.updateStatusAndFailedReasonBySyncNo(status, "", syncNo, new Date());
             }
-        }else if(ArtifactSyncRecordStatusEnum.FAILED.getVal().equals(status)){
-            artifactSyncRecordMapper.updateStatusAndFailedReasonBySyncNo(status,failedReason,syncNo,new Date());
+        } else if (ArtifactSyncRecordStatusEnum.FAILED.getVal().equals(status)) {
+            artifactSyncRecordMapper.updateStatusAndFailedReasonBySyncNo(status, failedReason, syncNo, new Date());
         }
 
     }
+
     @Data
     @Accessors(chain = true)
     public static class ArtifactSliceUploadHttpEntityBuilder {

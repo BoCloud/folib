@@ -37,13 +37,13 @@ public interface ArtifactPromotionService {
 
     ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, String requestHostName, HttpServletResponse response);
 
-    ResponseEntity<?> retryNodeOptionAttachRecord(String syncNo, String requestHostName, HttpServletResponse response);
+    ResponseEntity<?> retryNodeOptionAttachRecord(String syncNo, HttpServletResponse response);
     CompletableFuture<Void> uploadArtifact(String syncNo, PromotionNodeOption promotionNodeOption, String requestHostName);
     Boolean artifactPullCallback(ArtifactPromotionNodeOptionCallbackReq model);
 
     ResponseEntity artifactPromotionInfo(String syncNo);
 
-    ResponseEntity upload(MultipartFile[] files, String storageId, String repositoryId, String filePathMap, String fileMetaDataMap, String uuid, String imageTag, String baseUrl, String token);
+    ResponseEntity upload(MultipartFile[] files, String storageId, String repositoryId, String filePathMap, String fileMetaDataMap, String uuid, String imageTag, String fileType, String baseUrl, String token);
 
     ResponseEntity upload(String parseArtifact, String storageId, String repositoryId);
 

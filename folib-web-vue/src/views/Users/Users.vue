@@ -3,8 +3,8 @@
     "./layouts/Dashboard.vue" .
  -->
 
-<template>
-  <div>
+ <template>
+  <div class="users">
 
     <a-row type="flex" :gutter="24">
 
@@ -80,11 +80,30 @@
               <a-row :gutter="[24, 24]">
                 <a-col :span="24" class="ml-20">
                   <a-row :gutter="[24, 24]">
-                    <a-col :span="3" class="">
-                      <a-input-search v-model="userQuery.username" :placeholder="$t('Users.EnterTheUsernameQuery')" @search="searchUser()"/>
+                    <a-col :span="8" class="" :sm="24" :md="12" :lg="12" :xl="currentUser?8:5">
+                      <a-input-search  class="v-search" v-model="userQuery.username" :placeholder="$t('Users.EnterTheUsernameQuery')" @search="searchUser()"/>
                     </a-col>
-                    <a-col :span="3" class="ml-10">
-                      <a-input-search v-model="userQuery.email" :placeholder="$t('Users.EnterTheEmailQuery')" @search="searchUser()"/>
+                    <a-col :span="8" class="" :sm="24" :md="12" :lg="12" :xl="currentUser?8:5">
+                      <a-input-search class="v-search" v-model="userQuery.email" :placeholder="$t('Users.EnterTheEmailQuery')" @search="searchUser()"/>
+                    </a-col>
+                    <a-col :span="8" class="" :sm="24" :md="12" :lg="12" :xl="currentUser?8:5">
+                      <a-select
+                        class="v-search"
+                        v-model="userQuery.userRole"
+                        :placeholder="$t('Users.UserRole')"
+                        show-search
+                        allowClear
+                        @change="userRoleChange()"
+                        optionFilterProp="value"
+                      >
+                        <a-select-option
+                          v-for="(item) in roleList"
+                          :key="item.label"
+                          :value="item.value"
+                        >
+                          {{ $t(item.label) }}
+                        </a-select-option>
+                      </a-select>
                     </a-col>
                   </a-row>
                 </a-col>
@@ -153,8 +172,8 @@
               <template #title>
                 <h6 class="font-semibold m-0">{{ userNotEdit ? $t('Users.UserInformation') : $t('Users.UserEdit') }}</h6>
               </template>
-              <template slot="extra" class="mb-0" v-if="!userNotEdit">
-                <div class="col-action">
+              <template slot="extra">
+                <div class="col-action mb-0">
                   <a-button type="link" size="small" @click="userEditCancelHandle">
                     <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path class="fill-danger" fill-rule="evenodd" clip-rule="evenodd"
@@ -163,7 +182,7 @@
                     </svg>
                     <span class="text-danger">{{ $t('Users.Cancel') }}</span>
                   </a-button>
-                  <a-button type="link" size="small" @click="userEditSaveHandle">
+                  <a-button type="link" size="small" @click="userEditSaveHandle" v-if="!userNotEdit">
                     <a-icon type="save" theme="twoTone" />
                     <span class="text-dark">{{ $t('Users.Save') }}</span>
                   </a-button>
@@ -202,7 +221,7 @@
             <a-card :bordered="false" class="header-solid h-full" :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }"
                     v-if="currentUser">
               <template #title>
-                <h6 class="font-semibold m-0">{{ userNotEdit ? $t('Users.InbuiltRoleInformation') : $t('Users.RoleEditing') }}</h6>
+                <h6 class="font-semibold m-0">{{ userNotEdit ? $t('Users.RoleInformation') : $t('Users.RoleEditing') }}</h6>
               </template>
               <div v-for="(item, index) in currentUser.assignableRoles" :key="index">
                 <hr class="gradient-line">
@@ -295,7 +314,11 @@ export default ({
           callback()
         }
       } else if (!value) {
-        callback(new Error(this.$t('Users.EnterThePassword')))
+        if (this.passwordRequired) {
+          callback(new Error(this.$t('Users.EnterThePassword')))
+        } else {
+          callback()
+        }
       } else {
         callback()
       }
@@ -320,7 +343,7 @@ export default ({
           { required: true, trigger: 'blur', validator: checkUsername }
         ],
         password: [
-          { required: true, trigger: 'blur', validator: checkPassword }
+          { required: this.passwordRequired, trigger: 'blur', validator: checkPassword }
         ]
       },
       passwordRequired: true,
@@ -337,11 +360,23 @@ export default ({
       },
       userQuery: {
         username: '',
-        email: ''
+        email: '',
+        userRole: undefined,
+        roles: [],
       },
       userLoading: false,
       defaultRoles: [],
-      groupList: []
+      groupList: [],
+      roleList: [
+        {
+          label: "Users.Administrators",
+          value: "ADMIN",
+        },
+        {
+          label: "Users.GeneralUsers",
+          value: "GENERAL",
+        }
+      ]
     }
   },
   created() {
@@ -377,6 +412,13 @@ export default ({
           this.userTotal = res.data.total
         }
       })
+    },
+    userRoleChange() {
+      this.userQuery.roles = []
+      if(this.userQuery.userRole) {
+        this.userQuery.roles.push(this.userQuery.userRole)
+      }
+      this.searchUser()
     },
     pageChange(event) {
       this.userPage.page = event
@@ -434,6 +476,9 @@ export default ({
     userEditHandle() {
       this.userNotEdit = false
       this.passwordRequired = false
+      if (this.$refs.userForm) {
+        this.$refs.userForm.resetFields()
+      }
     },
     userEditSaveHandle() {
       this.$refs.userForm.validate(valid => {
@@ -489,6 +534,7 @@ export default ({
     },
     userEditCancelHandle() {
       this.userNotEdit = true
+      this.currentUser = null
       this.$refs.userForm.resetFields()
     },
     delUserHandle(username) {
@@ -541,5 +587,13 @@ export default ({
 .group-list {
     max-height: 888px;
     overflow-y: auto;
+}
+<style lang="scss" scoped>
+.users {
+  .en-number {font-size:16px;color: #141414;font-weight: 600;}
+
+  .v-search {
+    width: 240px;
+  }
 }
 </style>

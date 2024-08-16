@@ -1,5 +1,7 @@
 package com.veadan.folib.scanner.rest;
 
+import com.veadan.folib.annotation.AuditLog;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.scanner.biz.ScanRulesBiz;
 import com.veadan.folib.scanner.common.base.BaseController;
 import com.veadan.folib.scanner.common.msg.ObjectRestResponse;
@@ -19,6 +21,7 @@ public class ScanRulesController extends BaseController<ScanRulesBiz, ScanRules,
     private ScanRulesService scanRulesService;
 
     @PostMapping("/insertOrUpdate")
+    @AuditLog(value = AuditEventNameEnum.SCAN_ARTIfFACT,target ="#scanRules.storage + '-'+ #scanRules.repository" )
     public ObjectRestResponse insertOrUpdate(@RequestBody ScanRules scanRules) {
         scanRulesService.saveOrUpdateScanRules(scanRules);
         return new ObjectRestResponse(true, "更新成功");

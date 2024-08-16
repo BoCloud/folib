@@ -1,7 +1,7 @@
 package com.veadan.folib.services.impl;
 
 import com.alibaba.fastjson.JSONObject;
-import com.veadan.folib.component.StorageClientComponent;
+import com.veadan.folib.components.StorageClientComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.SearchResults;
