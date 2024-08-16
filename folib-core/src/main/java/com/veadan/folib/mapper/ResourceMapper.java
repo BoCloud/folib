@@ -29,7 +29,7 @@ public interface ResourceMapper extends CommonMapper<Resource> {
      * @param pageable 分页对象
      * @return 对象列表
      */
-    List<Resource> queryAllByLimit(Resource resource, @Param("pageable") Pageable pageable);
+    List<Resource> queryAllByLimit(@Param("resource")Resource resource, @Param("pageable") Pageable pageable);
     /** 
      * 统计总行数
      *

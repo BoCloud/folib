@@ -288,13 +288,13 @@ public class StoragesConfigurationController
                 .values());
         //查询数据库中存储空间绑定的用户
         storageManagementService.getStorageUsers(storages);
-        String username = "";
+       /* String username = "";
         if (Objects.nonNull(authentication)) {
             final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
             username = loggedUser.getUsername();
-        }
+        }*/
         StoragesOutput storagesOutput = new StoragesOutput(storages);
-        if (!hasAdmin()) {
+        /*if (!hasAdmin()) {
             List<Storage> list = storagesOutput.getStorages();
             String finalUsername = username;
             List<Storage> collect = list.stream().filter(s ->
@@ -302,7 +302,7 @@ public class StoragesConfigurationController
                             (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())))
             ).collect(Collectors.toList());
             storagesOutput.setStorages(collect);
-        }
+        }*/
         return ResponseEntity.ok(storagesOutput);
     }
 
@@ -1121,8 +1121,7 @@ public class StoragesConfigurationController
                 }
             }*/
             //TODO 检查用户的权限是否小于仓库权限
-
-            roleService.updateRepostoryPermission(storageId, repositoryId, repositoryPermissionDto);
+//            roleService.updateRepostoryPermission(storageId, repositoryId, repositoryPermissionDto);
 
             RepositoryDto repository = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId);
             repository.setScope(repositoryPermissionDto.getScope());

@@ -25,26 +25,23 @@
         id,api_authoritie,storage_id,repository_id,path,create_by,create_time
         from resource
         <where>
-            <if test="id != null and id != ''">
-                and id = #{id}
+            <if test="resource.id != null and resource.id != ''">
+                and resource.id = #{resource.id}
             </if>
-            <if test="apiAuthoritie != null and apiAuthoritie != ''">
-                and api_authoritie = #{apiAuthoritie}
+            <if test="resource.apiAuthoritie != null and resource.apiAuthoritie != ''">
+                and resource.api_authoritie = #{resource.apiAuthoritie}
             </if>
-            <if test="storageId != null and storageId != ''">
-                and storage_id = #{storageId}
+            <if test="resource.storageId != null and resource.storageId != ''">
+                and resource.storage_id = #{resource.storageId}
             </if>
-            <if test="repositoryId != null and repositoryId != ''">
-                and repository_id = #{repositoryId}
+            <if test="resource.repositoryId != null and resource.repositoryId != ''">
+                and resource.repository_id = #{resource.repositoryId}
             </if>
-            <if test="path != null and path != ''">
-                and path = #{path}
+            <if test="resource.path != null and resource.path != ''">
+                and resource.path = #{resource.path}
             </if>
-            <if test="createBy != null and createBy != ''">
-                and create_by = #{createBy}
-            </if>
-            <if test="createTime != null and createTime != ''">
-                and create_time = #{createTime}
+            <if test="resource.createBy != null and resource.createBy != ''">
+                and resource.create_by = #{resource.createBy}
             </if>
         </where>
         limit #{pageable.offset}, #{pageable.pageSize}

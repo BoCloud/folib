@@ -40,7 +40,7 @@ public interface FolibUserMapper extends CommonMapper<FolibUser> {
      * @param pageable 分页对象
      * @return 对象列表
      */
-    List<FolibUser> queryAllByLimit(FolibUser folibUser, @Param("pageable") Pageable pageable);
+    List<FolibUser> queryAllByLimit(@Param("user") FolibUser folibUser, @Param("pageable") Pageable pageable);
     /** 
      * 统计总行数
      *

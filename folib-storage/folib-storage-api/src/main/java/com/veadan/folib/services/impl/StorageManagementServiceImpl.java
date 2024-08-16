@@ -198,14 +198,10 @@ public class StorageManagementServiceImpl implements StorageManagementService {
     @Override
     public void getStorageUsers(List<Storage> storages) {
         List<String> storageIds = storages.stream().map(Storage::getId).collect(Collectors.toList());
-        List<String> roleIds = storageIds.stream().flatMap(storageId -> Stream.of(String.format("STORAGE_USER_%S", storageId), String.format("STORAGE_ADMIN_%S", storageId))).collect(Collectors.toList());
+        List<String> roleIds = storageIds.stream().flatMap(storageId -> Stream.of(String.format("STORAGE_ADMIN_%S", storageId))).collect(Collectors.toList());
         List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryRefsByRoleIds(roleIds);
         Map<String, List<RoleResourceRef>> roleUserMap = roleResourceRefs.stream().filter(r -> r.getRefType().equals(GlobalConstants.ROLE_TYPE_USER)).collect(Collectors.groupingBy(RoleResourceRef::getRoleId));
         storages.forEach(storage -> {
-            List<RoleResourceRef> userRef = roleUserMap.get(String.format("STORAGE_USER_%S", storage.getId()));
-            if (CollectionUtils.isNotEmpty(userRef)){
-                storage.setUsers(userRef.stream().map(RoleResourceRef::getEntityId).collect(Collectors.toSet()));
-            }
             List<RoleResourceRef> adminRef = roleUserMap.get(String.format("STORAGE_ADMIN_%S", storage.getId()));
             if (CollectionUtils.isNotEmpty(adminRef)) {
                 storage.setAdmin(adminRef.get(0).getEntityId());
@@ -255,7 +251,7 @@ public class StorageManagementServiceImpl implements StorageManagementService {
      * @param currentStorageId 存储空间名称
      */
     private void handlerStorageAdminRoleByDB(String username, String currentStorageId) {
-        if (StringUtils.isNotBlank(username) && !isAdmin(username)) {
+        if (StringUtils.isNotBlank(username)) {
             try {
 
                 String key = String.format("STORAGE_ADMIN_%S", currentStorageId);

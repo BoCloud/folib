@@ -70,7 +70,7 @@ public class UserAuthSyncTask {
     @Inject
     private ResourceService resourceService;
 
-    @Scheduled(cron = "0 0/5 * * * ? ")
+    @Scheduled(cron = "0 0/1 * * * ? ")
     public void run() {
         String lockName = "UserAuthSyncTask";
         long waitTime = 3L;
@@ -101,7 +101,8 @@ public class UserAuthSyncTask {
                         }
                         int page = 0;
                         int size = 100;
-                        while (true) {
+                        boolean flag = true;
+                        while (flag) {
                             //发送用户权限消息
                             try {
                                 //分页查询请求参数
@@ -110,7 +111,7 @@ public class UserAuthSyncTask {
                                     page++;
                                     size += 100;
                                 }else {
-                                    break;
+                                    flag = false;
                                 }
                                 wsMessageRequest = new WSMessageRequest(Command.USER_AUTH_SYNC, userAuthReq);
                                 messageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
@@ -119,6 +120,7 @@ public class UserAuthSyncTask {
 
                             }  catch (Exception e) {
                                 log.error("sendRequest fail,wsMessageRequest:{}", wsMessageRequest, e);
+                                flag = false;
                             }
                         }
 
@@ -184,9 +186,18 @@ public class UserAuthSyncTask {
             String repositoryId = resource.getRepositoryId();
             String storageId = resource.getStorageId();
             if (StringUtils.isNotEmpty(repositoryId)) {
-                repositorys.add(configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId));
-            }else {
-                storages.add(configurationManagementService.getMutableConfigurationClone().getStorage(storageId));
+                StorageDto storage = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
+                if (storage != null && storage.hasRepositories()) {
+                    RepositoryDto repository = storage.getRepository(repositoryId);
+                    if (repository != null && !repositorys.contains(repository)) {
+                        repositorys.add(repository);
+                    }
+                }
+            }else if (StringUtils.isNotEmpty(storageId)){
+                StorageDto storage = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
+                if (storage != null && !storages.contains(storage)) {
+                    storages.add(storage);
+                }
             }
         });
         if (!repositorys.isEmpty()){

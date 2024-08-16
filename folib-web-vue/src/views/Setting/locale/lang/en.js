@@ -164,6 +164,7 @@ export default {
     'distributeType': 'Distribution type',
     'SelectDistributeType': 'Please select the distribution type',
     'LocalCluster': 'Local cluster',
+    'SyncData': 'Sync Data',
     'ClientUniqueIdentifier': 'Client unique identifier',
     'ClientID': 'Client ID',
     'EnterClientID': 'Please enter the client ID',

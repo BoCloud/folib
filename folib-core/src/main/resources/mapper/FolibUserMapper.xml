@@ -117,47 +117,41 @@
         *
         from folib_user
         <where>
-            <if test="id != null and id != ''">
-                and id = #{id}
+            <if test="user.id != null and user.id != ''">
+                and user.id = #{user.id}
             </if>
-            <if test="username != null and username != ''">
-                and username = #{username}
+            <if test="user.username != null and user.username != ''">
+                and user.username = #{user.username}
             </if>
-            <if test="password != null and password != ''">
-                and password = #{password}
+            <if test="user.password != null and user.password != ''">
+                and user.password = #{user.password}
             </if>
-            <if test="originalPassword != null and originalPassword != ''">
-                and original_password = #{originalPassword}
+            <if test="user.originalPassword != null and user.originalPassword != ''">
+                and user.original_password = #{user.originalPassword}
             </if>
-            <if test="avatar != null and avatar != ''">
-                and avatar = #{avatar}
+            <if test="user.avatar != null and user.avatar != ''">
+                and user.avatar = #{user.avatar}
             </if>
-            <if test="email != null and email != ''">
-                and email = #{email}
+            <if test="user.email != null and user.email != ''">
+                and user.email = #{user.email}
             </if>
-            <if test="userType != null and userType != ''">
-                and user_type = #{userType}
+            <if test="user.userType != null and user.userType != ''">
+                and user.user_type = #{user.userType}
             </if>
-            <if test="enabled != null and enabled != ''">
-                and enabled = #{enabled}
+            <if test="user.enabled != null and user.enabled != ''">
+                and user.enabled = #{user.enabled}
             </if>
-            <if test="sourceId != null and sourceId != ''">
-                and source_id = #{sourceId}
+            <if test="user.sourceId != null and user.sourceId != ''">
+                and user.source_id = #{user.sourceId}
             </if>
-            <if test="deleted != null and deleted != ''">
-                and deleted = #{deleted}
+            <if test="user.deleted != null and user.deleted != ''">
+                and user.deleted = #{user.deleted}
             </if>
-            <if test="createBy != null and createBy != ''">
-                and CREATE_BY = #{createBy}
+            <if test="user.createBy != null and user.createBy != ''">
+                and user.create_by = #{user.createBy}
             </if>
-            <if test="createTime != null and createTime != ''">
-                and CREATE_TIME = #{createTime}
-            </if>
-            <if test="updateBy != null and updateBy != ''">
-                and UPDATE_BY = #{updateBy}
-            </if>
-            <if test="updateTime != null and updateTime != ''">
-                and UPDATE_TIME = #{updateTime}
+            <if test="user.updateBy != null and user.updateBy != ''">
+                and user.update_by = #{user.updateBy}
             </if>
         </where>
         limit #{pageable.offset}, #{pageable.pageSize}

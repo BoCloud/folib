@@ -1357,6 +1357,10 @@
                       slot-scope="text, record">
                     {{ record.isThisCluster === true ? $t('Setting.Yes') : $t('Setting.No') }}
                   </div>
+                  <div slot="isSyncPrivilege"
+                       slot-scope="text, record">
+                    {{ record.isSyncPrivilege === true ? $t('Setting.Yes') : $t('Setting.No') }}
+                  </div>
                   <div slot="wsClientOnline"
                       slot-scope="text, record">
                     <span v-if="record.wsClientOnline && record.wsClientOnline === true" class="text-success">{{ $t('Setting.Online') }}</span>
@@ -1585,6 +1589,20 @@
               <a-switch v-model="artifactDispatchForm.isThisCluster" />
             </a-form-model-item>
           </a-col>
+          <a-col :span="24">
+          <a-form-model-item class="mb-10"
+                             :label="$t('Setting.SyncData')"
+                             :colon="false" style="position: relative"
+                             prop="isSyncPrivilege">
+              <a-popover placement="topLeft">
+                <template slot="content">
+                  <p class="mb-0">{{ $t('UnionRepository.SyncData') }}</p>
+                </template>
+                <a style="position: absolute;top: -54px;right: -28px;" class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
+              </a-popover>
+            <a-switch v-model="artifactDispatchForm.isSyncPrivilege" />
+          </a-form-model-item>
+        </a-col>
         </a-row>
       </a-form-model>
     </a-modal>
@@ -1980,6 +1998,13 @@ export default {
           key: 'isThisCluster',
           width: 140,
           scopedSlots: { customRender: 'isThisCluster' }
+        },{
+          title: '同步数据',
+          i18nKey: 'Setting.SyncData',
+          dataIndex: 'isSyncPrivilege',
+          key: 'isSyncPrivilege',
+          width: 140,
+          scopedSlots: { customRender: 'isSyncPrivilege' }
         },
         {
           title: '在线状态',
