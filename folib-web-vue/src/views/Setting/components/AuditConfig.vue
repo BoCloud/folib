@@ -3,7 +3,8 @@
     <a-col :span="24" :md="6" class="mb-24">
       <a-card :bordered="false" class="header-solid h-full" :bodyStyle="{paddingTop: 0, paddingBottom: 0 }">
         <template #title>
-          <h6 class="font-semibold m-0">{{ $t('Setting.artifactRepository') }}</h6>
+          <span class="font-semibold m-0">{{ $t('Setting.artifactRepository') }}</span>
+          <span class="font-regular mr-20" style="float: right;color: darkgrey">{{repositoryUsed}}/{{repositoryTotal}}</span>
         </template>
         <ul class="list settings-list">
           <li v-for="item in repositoryEvents" :key="item.id">
@@ -16,7 +17,8 @@
     <a-col :span="24" :md="6" class="mb-24">
       <a-card :bordered="false" class="header-solid h-full" :bodyStyle="{paddingTop: 0, paddingBottom: 0 }">
         <template #title>
-          <h6 class="font-semibold m-0">{{ $t('Setting.systemSetting') }}</h6>
+          <span class="font-semibold m-0">{{ $t('Setting.systemSetting') }}</span>
+          <span class="font-regular mr-20" style="float: right;color: darkgrey">{{systemUsed}}/{{systemTotal}}</span>
         </template>
         <ul class="list settings-list">
           <li v-for="item in systemEvents" :key="item.id">
@@ -29,7 +31,8 @@
     <a-col :span="24" :md="6" class="mb-24">
       <a-card :bordered="false" class="header-solid h-full" :bodyStyle="{paddingTop: 0, paddingBottom: 0 }">
         <template #title>
-          <h6 class="font-semibold m-0">{{ $t('Setting.advanceSetting') }}</h6>
+          <span class="font-semibold m-0">{{ $t('Setting.advanceSetting') }}</span>
+          <span class="font-regular mr-20" style="float: right;color: darkgrey">{{advancedUsed}}/{{advancedTotal}}</span>
         </template>
         <ul class="list settings-list">
           <li v-for="item in advanceEvents" :key="item.id">
@@ -42,7 +45,8 @@
     <a-col :span="24" :md="6" class="mb-24">
       <a-card :bordered="false" class="header-solid h-full" :bodyStyle="{paddingTop: 0, paddingBottom: 0 }">
         <template #title>
-          <h6 class="font-semibold m-0">{{ $t('Setting.userManagement') }}</h6>
+          <span class="font-semibold m-0">{{ $t('Setting.userManagement') }}</span>
+          <span class="font-regular mr-20" style="float: right;color: darkgrey">{{userUsed}}/{{userTotal}}</span>
         </template>
         <ul class="list settings-list">
           <li v-for="item in userEvents" :key="item.id">
@@ -101,7 +105,37 @@ export default {
       });
     },
   },
-    mounted() {
+  computed: {
+
+    repositoryTotal(){
+      return this.repositoryEvents.length;
+    },
+    repositoryUsed(){
+      return this.repositoryEvents.filter(item => item.used === 1).length;
+    },
+    systemTotal(){
+      return this.systemEvents.length;
+    },
+    systemUsed(){
+      return this.systemEvents.filter(item => item.used === 1).length;
+    },
+
+    advancedTotal(){
+      return this.advanceEvents.length;
+    },
+    advancedUsed(){
+      return this.advanceEvents.filter(item => item.used === 1).length;
+    },
+    userTotal(){
+      return this.userEvents.length;
+
+    },
+    userUsed(){
+      return this.userEvents.filter(item => item.used === 1).length;
+    },
+  },
+
+  mounted() {
       this.getALlEvents();
     }
   }
