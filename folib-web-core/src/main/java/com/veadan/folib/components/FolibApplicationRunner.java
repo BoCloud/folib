@@ -68,7 +68,7 @@ public class FolibApplicationRunner implements ApplicationRunner {
                 }
             }
             log.info("The initialization of vulnerability data begins ");
-//            scanService.updateMirror();
+            scanService.updateMirror();
             log.info("The initialization of vulnerability data ends ");
         }
         String gcGraceSeconds = System.getProperty(CassandraComponent.GC_GRACE_SECONDS_KEY, CassandraComponent.DEFAULT_GC_GRACE_SECONDS.toString());

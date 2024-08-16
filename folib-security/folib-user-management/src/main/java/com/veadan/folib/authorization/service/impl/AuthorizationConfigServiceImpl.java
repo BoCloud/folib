@@ -89,24 +89,27 @@ public class AuthorizationConfigServiceImpl
     private AuthorizationConfigDto getAuthorizationConfigDto(String username) {
         List<PermissionsDTO> permissions = roleResourceRefService.queryPermissions(null, username, null, null, false);
         Map<String, List<PermissionsDTO>> permissionMap = permissions.stream().filter(dto -> dto.getRoleId() != null).collect(Collectors.groupingBy(PermissionsDTO::getRoleId, Collectors.toList()));
-        Map<String, List<RoleResourceRef>> apiMap;
+        Map<String, List<RoleResourceRef>> apiMap = new HashMap<>();
         if (!permissionMap.isEmpty()) {
             List<String> roleIds = permissions.stream().map(PermissionsDTO::getRoleId).distinct().collect(Collectors.toList());
             List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryApiAuthorities(roleIds);
-            apiMap = roleResourceRefs.stream().filter(api -> StrUtil.isNotEmpty(api.getApiAuthoritie())).collect(Collectors.groupingBy(RoleResourceRef::getRoleId));
+            if (CollectionUtils.isNotEmpty(roleResourceRefs)) {
+                apiMap = roleResourceRefs.stream().filter(api -> StrUtil.isNotEmpty(api.getApiAuthoritie())).collect(Collectors.groupingBy(RoleResourceRef::getRoleId));
+            }
         } else {
             apiMap = new HashMap<>();
         }
         AuthorizationConfigDto authorizationConfig = new AuthorizationConfigDto();
         Set<RoleDto> roles = new LinkedHashSet<>();
 
+        Map<String, List<RoleResourceRef>> finalApiMap = apiMap;
         permissionMap.keySet().forEach(roleId -> {
             RoleDto roleDto = new RoleDto();
             roleDto.setName(roleId);
             List<PermissionsDTO> permissionsDTOS = permissionMap.get(roleId);
             roleDto.setDescription(permissionsDTOS.get(0).getDescription());
             AccessModelDto accessModel = new AccessModelDto();
-            List<RoleResourceRef> apiRefs = apiMap.get(roleId);
+            List<RoleResourceRef> apiRefs = finalApiMap.get(roleId);
             if(apiRefs != null) {
                 accessModel.setApiAuthorities(apiRefs.stream().filter(dto -> dto.getApiAuthoritie() != null).map(dto -> Privileges.valueOf(dto.getApiAuthoritie())).collect(Collectors.toSet()));
             }
@@ -293,10 +296,10 @@ public class AuthorizationConfigServiceImpl
         {
             operation.accept(authorizationConfig);
 
-            if (storeInFile)
+         /*   if (storeInFile)
             {
                 authorizationConfigFileManager.store(authorizationConfig);
-            }
+            }*/
         }
         finally
         {

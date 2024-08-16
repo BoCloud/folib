@@ -180,7 +180,7 @@ public class WebSecurityConfig
         try {
             Role role = authoritiesProvider.getRuntimeRole(SystemRole.ANONYMOUS.name());
             authorities.addAll(role.getAccessModel().getApiAuthorities());
-        } catch (IllegalArgumentException e) {
+        } catch (Exception e) {
             Set<Privileges> privileges = EnumSet.of(
                     Privileges.ARTIFACTS_RESOLVE,
                     Privileges.SEARCH_ARTIFACTS,
