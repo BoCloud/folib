@@ -1,7 +1,9 @@
 package com.veadan.folib.controllers.configuration;
 
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.ResponseMessage;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.forms.configuration.SecurityPolicyConfigurationForm;
 import com.veadan.folib.services.SecurityPolicyConfigurationService;
 import io.swagger.annotations.Api;
@@ -49,12 +51,14 @@ public class SecurityPolicyConfigurationController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_SECURITY_POLICY')")
     @PutMapping(value = "/addWhite")
+    @AuditLog(value = AuditEventNameEnum.SAFE_STRATEGY,target ="添加白名单+#securityPolicyConfigurationForm.white" )
     public ResponseEntity<ResponseMessage> addWhite(@RequestBody @Validated(SecurityPolicyConfigurationForm.WhiteGroup.class) SecurityPolicyConfigurationForm securityPolicyConfigurationForm) throws IOException {
         securityPolicyConfigurationService.addVulnerabilitiesWhite(securityPolicyConfigurationForm.getWhite());
         return ResponseEntity.ok(ResponseMessage.ok());
     }
 
     @ApiOperation(value = "添加平台级别黑名单")
+    @AuditLog(value = AuditEventNameEnum.SAFE_STRATEGY,target ="添加白名单+#securityPolicyConfigurationForm.black      " )
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_SECURITY_POLICY')")
     @PutMapping(value = "/addBlack")
@@ -64,6 +68,7 @@ public class SecurityPolicyConfigurationController extends BaseController {
     }
 
     @ApiOperation(value = "删除平台级别白名单")
+    @AuditLog(value = AuditEventNameEnum.SAFE_STRATEGY,target ="删除白名单+#securityPolicyConfigurationForm.white" )
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('CONFIGURATION_DELETE_METADATA_CONFIGURATION')")
     @DeleteMapping(value = "/removeWhite")
@@ -73,6 +78,7 @@ public class SecurityPolicyConfigurationController extends BaseController {
     }
 
     @ApiOperation(value = "删除平台级别黑名单")
+    @AuditLog(value = AuditEventNameEnum.SAFE_STRATEGY,target ="删除黑名单+#securityPolicyConfigurationForm.white" )
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('CONFIGURATION_DELETE_METADATA_CONFIGURATION')")
     @DeleteMapping(value = "/removeBlack")
@@ -108,6 +114,7 @@ public class SecurityPolicyConfigurationController extends BaseController {
     }
 
     @ApiOperation(value = "新增包名阻断配置")
+    @AuditLog(value = AuditEventNameEnum.SAFE_STRATEGY,target ="新增阻断包括+#securityPolicyConfigurationForm.packageNames" )
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_SECURITY_POLICY')")
     @PutMapping(value = "/packageName")
@@ -118,6 +125,7 @@ public class SecurityPolicyConfigurationController extends BaseController {
 
     @ApiOperation(value = "删除包名阻断配置")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @AuditLog(value = AuditEventNameEnum.SAFE_STRATEGY,target ="删除阻断包括+#securityPolicyConfigurationForm.packageNames" )
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_SECURITY_POLICY')")
     @DeleteMapping(value = "/packageName")
     public ResponseEntity<ResponseMessage> deletePackageName(@RequestBody @Validated(SecurityPolicyConfigurationForm.BlockGroup.class) SecurityPolicyConfigurationForm securityPolicyConfigurationForm) throws IOException {

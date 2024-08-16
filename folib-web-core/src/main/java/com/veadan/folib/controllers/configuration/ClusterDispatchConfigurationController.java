@@ -1,9 +1,11 @@
 package com.veadan.folib.controllers.configuration;
 
 
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.cluster.SyncClusterDispatchEnum;
 import com.veadan.folib.controllers.cluster.dto.SyncClusterDispatchDto;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.forms.configuration.ClusterDispatchNodeForm;
 import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.services.ClusterDispatchManagementService;
@@ -90,6 +92,7 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
 
     // 新增
     @ApiOperation(value = "Adds a cluster dispatch config")
+    @AuditLog(value = AuditEventNameEnum.NODE_DISPATCH,target =" '新增节点:'+ #clusterDispatchNodeForm.clusterEnName" )
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The dispatch config was created successfully."),
             @ApiResponse(code = 500, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_STORAGE')")
@@ -150,6 +153,7 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
     }
 
     //更新
+    @AuditLog(value = AuditEventNameEnum.NODE_DISPATCH,target =" '更新节点:'+#clusterEnName" )
     @ApiOperation(value = "Updates a cluster dispatch config.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The dispatch config was updated successfully."),
             @ApiResponse(code = 500, message = "An error occurred.")})
@@ -233,6 +237,7 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
     @DeleteMapping(value = "/{clusterEnName}",
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
+    @AuditLog(value = AuditEventNameEnum.NODE_DISPATCH,target =" '删除节点:'+#clusterEnName" )
     @PreAuthorize("hasAuthority('CONFIGURATION_DELETE_STORAGE_CONFIGURATION')")
     public ResponseEntity deleteClusterDispatch(
             @PathVariable String clusterEnName,

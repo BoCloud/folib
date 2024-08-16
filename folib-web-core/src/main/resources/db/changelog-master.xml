@@ -28,5 +28,6 @@
     <include file="classpath:db/changelog/changelog_downgrade_dependency_check.xml"/>
     <include file="classpath:db/changelog/changelog_gitlfs_lock_init.xml"/>
     <include file="classpath:db/changelog/changelog_artifact_sync_slave_record_init_2.xml"/>
+    <include file="classpath:db/changelog/changelog_audit_log_init.xml"/>
     <!--后续增加的按照写对应的sql与changelog-->
 </databaseChangeLog>

@@ -3,10 +3,12 @@ package com.veadan.folib.controllers;
 import com.alibaba.fastjson.JSONObject;
 import com.beust.jcommander.internal.Sets;
 import com.google.common.collect.Lists;
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.components.node.NodeComponent;
 import com.veadan.folib.config.janusgraph.JanusGraphDbProfile;
 import com.veadan.folib.db.schema.util.SchemaUtils;
 import com.veadan.folib.domain.JanusGraphIndex;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.util.CommonUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -49,6 +51,7 @@ public class JanusGraphController extends BaseController {
     private NodeComponent nodeComponent;
 
     @ApiOperation(value = "删除指定实例")
+    @AuditLog(value = AuditEventNameEnum.DELETE_INSTANCE,target ="#instanceId" )
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @DeleteMapping(value = "/instance/{instanceId}")
     public void deleteInstance(@PathVariable(name = "instanceId") String instanceId) {
@@ -119,6 +122,7 @@ public class JanusGraphController extends BaseController {
     }
 
     @ApiOperation(value = "重建索引")
+    @AuditLog(value = AuditEventNameEnum.REINDEX,target ="#janusGraphIndex.indexNames" )
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PostMapping(value = "/reindex")
     public void reindex(@RequestBody JanusGraphIndex janusGraphIndex) {
@@ -132,6 +136,7 @@ public class JanusGraphController extends BaseController {
     }
 
     @ApiOperation(value = "注册索引")
+    @AuditLog(value = AuditEventNameEnum.REGISTER_INDEX,target ="#janusGraphIndex.indexNames" )
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PostMapping(value = "/registerIndex")
     public void registerIndex(@RequestBody JanusGraphIndex janusGraphIndex) {
