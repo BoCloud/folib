@@ -30,5 +30,6 @@
     <include file="classpath:db/changelog/changelog_storage_monitoring_init.xml"/>
     <include file="classpath:db/changelog/changelog_artifact_sync_slave_record_update.xml"/>
     <include file="classpath:db/changelog/changelog_artifact_cache_record_update_2.xml"/>
+    <include file="classpath:db/changelog/changelog_audit_log_init.xml"/>
     <!--后续增加的按照写对应的sql与changelog-->
 </databaseChangeLog>
