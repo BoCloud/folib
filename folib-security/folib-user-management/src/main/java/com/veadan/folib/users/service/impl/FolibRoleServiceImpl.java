@@ -239,8 +239,8 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                     }
                 }
             }
-        } catch (IOException e) {
-            throw new RuntimeException("获取yaml权限配置异常");
+        } catch (Exception e) {
+            throw new RuntimeException("获取yaml权限配置异常", e);
         }
     }
 

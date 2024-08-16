@@ -1,6 +1,5 @@
 package com.veadan.folib.controllers.users;
 
-import com.veadan.folib.components.IdGenerateUtils;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.users.support.UserGroupResponseEntity;
@@ -13,19 +12,11 @@ import com.veadan.folib.entity.UserGroupRef;
 import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
 import com.veadan.folib.forms.users.UserGroupForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
-import com.veadan.folib.services.StorageManagementService;
-import com.veadan.folib.users.security.AuthoritiesProvider;
-import com.veadan.folib.users.service.FolibRoleService;
 import com.veadan.folib.users.service.UserGroupRefService;
 import com.veadan.folib.users.service.UserGroupService;
-import com.veadan.folib.users.service.UserService;
-import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
-import com.veadan.folib.util.RSAUtils;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.core.convert.ConversionService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
@@ -35,7 +26,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
@@ -44,13 +34,10 @@ import org.springframework.web.bind.annotation.*;
 import javax.inject.Inject;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.veadan.folib.controllers.users.UserController.SUCCESSFUL_DELETE_USER;
-import static com.veadan.folib.controllers.users.UserController.SUCCESSFUL_GET_USER_GROUP;
 
 /**
  * @author Veadan
@@ -61,6 +48,8 @@ import static com.veadan.folib.controllers.users.UserController.SUCCESSFUL_GET_U
 public class UserGroupController
         extends BaseController {
 
+    public static final String SUCCESSFUL_DELETE_USER = "该用户已被删除.";
+    public static final String SUCCESSFUL_GET_USER_GROUP = "用户组查询成功.";
     public static final String SUCCESSFUL_CREATE_USER_GROUP = "用户组创建成功.";
 
     public static final String FAILED_CREATE_USER_GROUP = "无法创建用户组，因为提交的表单包含错误!";

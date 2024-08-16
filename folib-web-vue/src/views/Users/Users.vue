@@ -581,14 +581,13 @@ export default ({
 
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .en-number {font-size:16px;color: #141414;font-weight: 600;}
 
 .group-list {
     max-height: 888px;
     overflow-y: auto;
 }
-<style lang="scss" scoped>
 .users {
   .en-number {font-size:16px;color: #141414;font-weight: 600;}
 
