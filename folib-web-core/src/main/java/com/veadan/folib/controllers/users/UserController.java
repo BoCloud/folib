@@ -199,11 +199,10 @@ public class UserController
         }
 
         UserDto user = conversionService.convert(userForm, UserDto.class);
-        if (Objects.nonNull(user)) {
-            user.setOriginalPassword(user.getPassword());
-            String password = rsaUtils.decrypt(user.getPassword());
-            user.setPassword(password);
-        }
+        user.setUserGroupIds(userForm.getUserGroupIds());
+        user.setOriginalPassword(user.getPassword());
+        String password = rsaUtils.decrypt(user.getPassword());
+        user.setPassword(password);
         userService.save(new EncodedPasswordUser(user, passwordEncoder));
         //同步用户信息到其他节点
         privilegeEventListenerRegistry.dispatchUserSyncEvent(user.getUuid());
@@ -242,8 +241,8 @@ public class UserController
 //        }
 
         UserDto user = conversionService.convert(userToUpdate, UserDto.class);
-        user.setGroupIds(userToUpdate.getGroupIds());
-        if (Objects.nonNull(user) && StringUtils.isNotBlank(user.getPassword())) {
+        user.setUserGroupIds(userToUpdate.getUserGroupIds());
+        if (StringUtils.isNotBlank(user.getPassword())) {
             user.setOriginalPassword(user.getPassword());
             String password = rsaUtils.decrypt(user.getPassword());
             user.setPassword(password);

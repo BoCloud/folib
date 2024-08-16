@@ -14,6 +14,7 @@ import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.service.FolibRoleService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
  * @author veadan
  */
 @Component
+@DependsOn("liquibase")
 public class AuthoritiesProvider
 {
 
@@ -40,19 +42,12 @@ public class AuthoritiesProvider
     @Inject
     private AuthorizationConfigFileManager authorizationConfigFileManager;
     @Inject
-    private FolibRoleService folibRoleService;
-    @Inject
     private DistributedCacheComponent distributedCacheComponent;
     @PostConstruct
     void init() throws IOException
     {
         final AuthorizationConfigDto config = authorizationConfigFileManager.read();
         authorizationConfigService.setAuthorizationConfig(config);
-        FolibRole anonymous = folibRoleService.queryById("ANONYMOUS");
-        if (anonymous == null){
-            //同步角色
-            folibRoleService.syncYamlAuthorizationConfig();
-        }
     }
 
     public Set<RoleData> getAssignableRoles()
@@ -99,7 +94,8 @@ public class AuthoritiesProvider
         Set<Role> roleSet = new HashSet<>();
         return roles.stream().map(r -> {
             if (SystemRole.ADMIN.name().equals(r.getName())) {
-                roleSet.add(new RuntimeRole(r, (a) -> new AdminAccessModel()));
+                RuntimeRole adminRole = new RuntimeRole(r, (a) -> new AdminAccessModel());
+                roleSet.add(new RuntimeRole(adminRole, AuthenticatedAccessModel::new));
             }else if (SystemRole.ANONYMOUS.name().equals(r.getName())) {
                 roleSet.add(new RuntimeRole(r, AnonymousAccessModel::new));
             }else {

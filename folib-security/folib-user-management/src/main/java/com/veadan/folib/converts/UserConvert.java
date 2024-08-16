@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -63,6 +64,9 @@ public interface UserConvert {
     FolibUser UserDTOToUser(UserDTO usrerDTO);
     // 自定义映射方法
     default Set<SecurityRole> map(Set<String> roles) {
+        if (roles == null) {
+            return new HashSet<>();
+        }
         return roles.stream()
                 .map(SecurityRoleEntity::new) // 将角色名称转换为 SecurityRole 对象
                 .collect(Collectors.toSet());

@@ -131,67 +131,73 @@ public class StorageManagementServiceImpl implements StorageManagementService {
 
     @Override
     public void syncYamlStorageUsers(Collection<Storage> storages) {
-        if(CollectionUtils.isNotEmpty(storages)) {
-            Date date = new Date();
-            List<Resource> resources = resourceService.findAll();
-            List<String> storagetIds = resources.stream().filter(s -> StringUtils.isNotEmpty(s.getStorageId())).map(Resource::getStorageId).collect(Collectors.toList());
-            List<String> repositoryIds = resources.stream().filter(s -> StringUtils.isNotEmpty(s.getRepositoryId())).map(Resource::getRepositoryId).collect(Collectors.toList());
-            storages.forEach(storage -> {
-                List<Resource> resourceList = new ArrayList<>();
-                String admin = storage.getAdmin();
-                Set<String> repositories = storage.getRepositories().keySet();
+        try {
+            if (CollectionUtils.isNotEmpty(storages)) {
+                List<Resource> resources = resourceService.findAll();
+                List<String> storagetIds = resources.stream().map(Resource::getStorageId).filter(StringUtils::isNotEmpty).collect(Collectors.toList());
+                List<String> repositoryIds = resources.stream().map(Resource::getRepositoryId).filter(StringUtils::isNotEmpty).collect(Collectors.toList());
+                storages.forEach(storage -> {
+                    List<Resource> resourceList = new ArrayList<>();
 
-                Set<String> users = storage.getUsers();
-                String storageId = storage.getId();
-                resourceList.add(Resource.builder().storageId(storageId).createTime(date).build());
-                repositories.forEach(repositoryId -> {
-                    resourceList.add(Resource.builder().storageId(storageId).repositoryId(repositoryId).createTime(date).build());
-                });
-                List<Resource> addResources = resourceList.stream().filter(res -> {
-                    String repositoryId = res.getRepositoryId();
-                    String storageId1 = res.getStorageId();
-                    return (repositoryId != null && !(repositoryIds.contains(repositoryId) && storagetIds.contains(storageId1)))
-                            || (repositoryId == null && !storagetIds.contains(storageId1));
-                }).collect(Collectors.toList());
-                //添加资源
-                if(!addResources.isEmpty()) {
-                    resourceService.saveBatch(addResources);
-                }
-                //创建角色
-                String roleId = String.format("STORAGE_USER_%S", storageId);
-                FolibRole folibRole = folibRoleService.queryById(roleId);
-                if(Objects.isNull(folibRole)) {
-                    folibRole = FolibRole.builder()
-                            .id(roleId)
-                            .cnName(String.format("存储空间%s用户", storageId))
-                            .enName(roleId)
-                            .isDefault(GlobalConstants.NOT_DEFAULT).deleted(GlobalConstants.NOT_DELETED)
-                            .description(String.format("存储空间%s下的普通用户", storageId))
-                            .build();
-                    folibRole = folibRoleService.insert(folibRole);
-                }
-                //添加用户和资源绑定
-                if(CollectionUtils.isNotEmpty(users)) {
-                    List<RoleResourceRef> userRef = new ArrayList<>(users.size());
-                    FolibRole finalFolibRole = folibRole;
-                    users.forEach(user -> {
-                        addResources.forEach(res -> {
-                            String storageId1 = res.getStorageId();
-                            String repositoryId = res.getRepositoryId();
-                            if (StringUtils.isNotEmpty(repositoryId)) {
-                                userRef.add(RoleResourceRef.builder().roleId(finalFolibRole.getId()).resourceId(res.getId())
-                                        .entityId(user).refType(GlobalConstants.ROLE_TYPE_USER).resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY).build());
-                            }else {
-                                userRef.add(RoleResourceRef.builder().roleId(finalFolibRole.getId()).resourceId(res.getId())
-                                        .entityId(user).refType(GlobalConstants.ROLE_TYPE_USER).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build());
-                            }
-                        });
-                    });
-                    if (!userRef.isEmpty()){
-                        roleResourceRefService.saveBath(userRef);
+                    //添加存储空间、仓库资源
+                    Set<String> repositories = storage.getRepositories().keySet();
+                    String storageId = storage.getId();
+                    resourceList.add(Resource.builder().storageId(storageId).build());
+                    repositories.forEach(repositoryId -> resourceList.add(Resource.builder().storageId(storageId).repositoryId(repositoryId).build()));
+                    List<Resource> addResources = resourceList.stream().filter(res -> {
+                        String repositoryId = res.getRepositoryId();
+                        String storageId1 = res.getStorageId();
+                        return (repositoryId != null && !(repositoryIds.contains(repositoryId) && storagetIds.contains(storageId1)))
+                                || (repositoryId == null && !storagetIds.contains(storageId1));
+                    }).collect(Collectors.toList());
+                    //添加资源
+                    if (!addResources.isEmpty()) {
+                        resourceService.saveBatch(addResources);
                     }
-                }
-            });
+
+                    //添加存储空间管理员角色
+                    String admin = storage.getAdmin();
+                    handlerStorageAdminRoleByDB(admin, storage.getId());
+                    Set<String> users = storage.getUsers();
+    //                handlerStorageOrdinaryRoleByDB(users, storage.getId());
+
+                    //创建角色
+                    String roleId = String.format("STORAGE_USER_%S", storageId);
+                    FolibRole folibRole = folibRoleService.queryById(roleId);
+                    if (Objects.isNull(folibRole)) {
+                        folibRole = FolibRole.builder()
+                                .id(roleId)
+                                .cnName(String.format("存储空间%s用户", storageId))
+                                .enName(roleId)
+                                .isDefault(GlobalConstants.NOT_DEFAULT).deleted(GlobalConstants.NOT_DELETED)
+                                .description(String.format("存储空间%s下的普通用户", storageId))
+                                .build();
+                        folibRole = folibRoleService.insert(folibRole);
+                    }
+                    //添加用户和资源绑定
+                    if (CollectionUtils.isNotEmpty(users)) {
+                        List<RoleResourceRef> userRef = new ArrayList<>(users.size());
+                        FolibRole finalFolibRole = folibRole;
+                        users.forEach(user -> {
+                            addResources.forEach(res -> {
+                                String repositoryId = res.getRepositoryId();
+                                if (StringUtils.isNotEmpty(repositoryId)) {
+                                    userRef.add(RoleResourceRef.builder().roleId(finalFolibRole.getId()).resourceId(res.getId())
+                                            .entityId(user).refType(GlobalConstants.ROLE_TYPE_USER).resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY).build());
+                                } else {
+                                    userRef.add(RoleResourceRef.builder().roleId(finalFolibRole.getId()).resourceId(res.getId())
+                                            .entityId(user).refType(GlobalConstants.ROLE_TYPE_USER).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build());
+                                }
+                            });
+                        });
+                        if (!userRef.isEmpty()) {
+                            roleResourceRefService.saveBath(userRef);
+                        }
+                    }
+                });
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -200,7 +206,7 @@ public class StorageManagementServiceImpl implements StorageManagementService {
         List<String> storageIds = storages.stream().map(Storage::getId).collect(Collectors.toList());
         List<String> roleIds = storageIds.stream().flatMap(storageId -> Stream.of(String.format("STORAGE_ADMIN_%S", storageId))).collect(Collectors.toList());
         List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryRefsByRoleIds(roleIds);
-        Map<String, List<RoleResourceRef>> roleUserMap = roleResourceRefs.stream().filter(r -> r.getRefType().equals(GlobalConstants.ROLE_TYPE_USER)).collect(Collectors.groupingBy(RoleResourceRef::getRoleId));
+        Map<String, List<RoleResourceRef>> roleUserMap = roleResourceRefs.stream().filter(r -> Objects.nonNull(r.getRefType()) && r.getRefType().equals(GlobalConstants.ROLE_TYPE_USER)).collect(Collectors.groupingBy(RoleResourceRef::getRoleId));
         storages.forEach(storage -> {
             List<RoleResourceRef> adminRef = roleUserMap.get(String.format("STORAGE_ADMIN_%S", storage.getId()));
             if (CollectionUtils.isNotEmpty(adminRef)) {

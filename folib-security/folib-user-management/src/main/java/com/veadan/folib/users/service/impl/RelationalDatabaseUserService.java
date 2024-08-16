@@ -362,7 +362,7 @@ public class RelationalDatabaseUserService implements UserService
         List<UserEntity> userEntities = UserConvert.INSTANCE.UserListToUserEntityList(userInfos);
         //用户信息入库
         folibUserService.saveOrUpdateBatch(userEntities);
-        //FIXME 处理用户关联的角色、用户添加默认组
+        //处理用户关联的角色、用户添加默认组
         List<UserGroup> userGroups = userGroupService.queryUserGroupList(UserGroup.builder().joinGroup(GlobalConstants.DEFALUT).deleted(GlobalConstants.NOT_DELETED).build());
         if(CollectionUtils.isNotEmpty(userEntities)) {
             //用户组关系入库

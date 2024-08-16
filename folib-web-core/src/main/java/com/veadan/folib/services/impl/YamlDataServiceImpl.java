@@ -31,11 +31,12 @@ public class YamlDataServiceImpl implements YamlDataService {
 
     @Override
     public void syncYamlData() {
+        //同步角色
+        folibRoleService.syncYamlAuthorizationConfig();
         //同步存储空间用户
         storageManagementService.syncYamlStorageUsers(configurationManagementService.getConfiguration().getStorages().values());
         //同步用户
-        boolean result = ((RelationalDatabaseUserService) userService).syncUser();
-        //同步角色
-        folibRoleService.syncYamlAuthorizationConfig();
+        ((RelationalDatabaseUserService) userService).syncUser();
+;
     }
 }

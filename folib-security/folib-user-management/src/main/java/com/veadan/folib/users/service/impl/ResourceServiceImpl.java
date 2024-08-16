@@ -1,19 +1,16 @@
 package com.veadan.folib.users.service.impl;
 
-import com.veadan.folib.components.IdGenerateUtils;
 import com.veadan.folib.entity.Resource;
 import com.veadan.folib.mapper.ResourceMapper;
 import com.veadan.folib.users.service.ResourceService;
 import org.parboiled.common.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import tk.mybatis.mapper.entity.Example;
 
-import javax.inject.Inject;
 import javax.transaction.Transactional;
 import java.util.List;
 
@@ -27,10 +24,7 @@ import java.util.List;
 public class ResourceServiceImpl implements ResourceService {
     @Autowired
     private ResourceMapper resourceMapper;
-    @Inject
-    @Lazy
-    private IdGenerateUtils idGenerateUtils;
-    
+
     /** 
      * 通过ID查询单条数据 
      *
@@ -66,10 +60,15 @@ public class ResourceServiceImpl implements ResourceService {
             if (apiAuthoritie != null) resourceId = apiAuthoritie.toUpperCase();
 
             if (StringUtils.isEmpty(resourceId)) {
-                String path = resource.getPath();
-                String repositoryId = resource.getRepositoryId();
-                String storageId = resource.getStorageId();
-                resourceId = (storageId+repositoryId.trim()+path.trim()).toUpperCase();
+                 String path = resource.getPath();
+                    String repositoryId = resource.getRepositoryId();
+                    resourceId = resource.getStorageId();
+                    if (StringUtils.isNotEmpty(repositoryId)) {
+                        resourceId += "_" + repositoryId.trim();
+                    }
+                    if (StringUtils.isNotEmpty(path)) {
+                        resourceId += "_" + path.trim();
+                    }
             }
             resource.setId(resourceId);
         }
@@ -108,13 +107,18 @@ public class ResourceServiceImpl implements ResourceService {
                 String apiAuthoritie = resource.getApiAuthoritie();
                 if (apiAuthoritie != null) resourceId = apiAuthoritie.toUpperCase();
 
-                if (StringUtils.isNotEmpty(resourceId)) {
+                if (StringUtils.isEmpty(resourceId)) {
                     String path = resource.getPath();
                     String repositoryId = resource.getRepositoryId();
-                    String storageId = resource.getStorageId();
-                    resourceId = (storageId+repositoryId.trim()+path.trim()).toUpperCase();
+                    resourceId = resource.getStorageId();
+                    if (StringUtils.isNotEmpty(repositoryId)) {
+                        resourceId += "_" + repositoryId.trim();
+                    }
+                    if (StringUtils.isNotEmpty(path)) {
+                        resourceId += "_" + path.trim();
+                    }
                 }
-                resource.setId(resourceId);
+                resource.setId(resourceId.toUpperCase());
             }
         });
         return resourceMapper.insertBatch(resources);

@@ -33,6 +33,7 @@ public class UserDTO
     private String email;
 
     private String avatar;
+    private String sourceId;
 
     private Set<String> userGroups;
     private Set<String> userGroupIds;

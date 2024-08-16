@@ -1,9 +1,12 @@
 package com.veadan.folib.controllers;
 
+import cn.hutool.core.date.DateUtil;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.users.UserController;
 import com.veadan.folib.converters.users.RoleConvert;
+import com.veadan.folib.converters.users.UserGroupConvert;
 import com.veadan.folib.converts.UserConvert;
+import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.PrivilegeDispatch;
 import com.veadan.folib.dto.*;
 import com.veadan.folib.entity.*;
@@ -19,6 +22,7 @@ import com.veadan.folib.users.dto.UserAuthDTO;
 import com.veadan.folib.users.service.*;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.validation.RequestBodyValidationException;
+import com.veadan.folib.ws.common.FolibWsRunManageUtil;
 import com.veadan.folib.ws.common.FolibWsRunManageV2;
 import com.veadan.folib.ws.server.Command;
 import com.veadan.folib.ws.server.WSMessageRequest;
@@ -26,6 +30,7 @@ import com.veadan.folib.ws.server.WSMessageResponse;
 import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -228,7 +233,7 @@ public class RoleController extends BaseController {
                                                         @RequestParam(name = "limit", required = false) Integer limit,
                                                        @RequestParam(name = "storageId", required = false) String storageId,
                                                        @RequestParam(name = "repositoryId", required = false) String repositoryId,
-                                                       @RequestParam(name = "patch", required = false) String patch,
+                                                       @RequestParam(name = "path", required = false) String path,
                                                         @RequestParam(name = "name", required = false) String name,
                                                         @RequestParam(name = "isDefault", required = false) String isDefault) {
 
@@ -238,7 +243,7 @@ public class RoleController extends BaseController {
         folibRole.setIsDefault(isDefault);
         folibRole.setStorageId(storageId);
         folibRole.setRepositoryId(repositoryId);
-        folibRole.setPath(patch);
+        folibRole.setPath(path);
 
         Page<FolibRoleDTO> folibRoles = folibRoleService.paginQuery(folibRole, pageRequest);
         if (Objects.isNull(folibRoles)) {
@@ -257,22 +262,146 @@ public class RoleController extends BaseController {
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException("请求参数错误", bindingResult);
         }
-        //发送用户权限消息
-        WSMessageRequest wsMessageRequest = null;
-        WSMessageResponse messageResponse = null;
-        try {
-            //查询请求参数
-            UserAuthDTO userAuthReq = getUserAuthReq(dispatch.getPrivilegeEventTypeEnum(), dispatch.getUuId());
-            wsMessageRequest = new WSMessageRequest(Command.USER_AUTH_SYNC, userAuthReq);
-            messageResponse = folibWsRunManageV2.sendRequest(dispatch.getTargetHostName(), wsMessageRequest);
+        PrivilegeEventTypeEnum privilegeEventTypeEnum = dispatch.getPrivilegeEventTypeEnum();
+        if (PrivilegeEventTypeEnum.EVENT_ALL_SYNC.getType() == privilegeEventTypeEnum.getType()) {
+            syncAllPrivilege(dispatch.getTargetHostName());
+        }else {
+            //发送用户权限消息
+            WSMessageRequest wsMessageRequest = null;
+            WSMessageResponse messageResponse = null;
+            try {
+                //查询请求参数
+                UserAuthDTO userAuthReq = getUserAuthReq(privilegeEventTypeEnum, dispatch.getUuId());
+                wsMessageRequest = new WSMessageRequest(Command.USER_AUTH_SYNC, userAuthReq);
+                messageResponse = folibWsRunManageV2.sendRequest(dispatch.getTargetHostName(), wsMessageRequest);
 
-            log.debug("sendRequest result,wsMessageRequest:{},messageResponse:{}", wsMessageRequest, messageResponse);
-        }  catch (Exception e) {
-            log.error("sendRequest fail,wsMessageRequest:{}", wsMessageRequest, e);
+                log.debug("sendRequest result,wsMessageRequest:{},messageResponse:{}", wsMessageRequest, messageResponse);
+            }  catch (Exception e) {
+                log.error("sendRequest fail,wsMessageRequest:{}", wsMessageRequest, e);
+            }
+
         }
-        return ResponseEntity.ok(messageResponse);
+        return ResponseEntity.ok("分发处理成功");
     }
 
+    private void syncAllPrivilege(String targetHostName) {
+        Map<String, ClusterDispatchNodeDto> map = configurationManagementService.
+                getMutableConfigurationClone().getClusterDispatchNode();
+        if (MapUtils.isEmpty(map)) {
+            return;
+        }
+        map.forEach((key, value) -> {
+            Boolean isThisCluster = value.getIsThisCluster();
+            Boolean wsClientOnline = value.getWsClientOnline();
+            Boolean isSyncPrivilege = value.getIsSyncPrivilege();
+
+            if (!isThisCluster && wsClientOnline && isSyncPrivilege) {
+                WSMessageRequest wsMessageRequest = null;
+                WSMessageResponse messageResponse = null;
+
+                int page = 0;
+                int size = 100;
+                boolean flag = true;
+                while (flag) {
+                    //发送用户权限消息
+                    try {
+                        //分页查询请求参数
+                        UserAuthDTO userAuthReq = getUserAuthReq(page, size);
+                        if (userAuthReq != null && userAuthReq.isNextPage()) {
+                            page++;
+                            size += 100;
+                        }else {
+                            flag = false;
+                        }
+                        wsMessageRequest = new WSMessageRequest(Command.USER_AUTH_SYNC, userAuthReq);
+                        messageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
+
+                        log.debug("sendRequest result,wsMessageRequest:{},messageResponse:{}", wsMessageRequest, messageResponse);
+
+                    }  catch (Exception e) {
+                        log.error("sendRequest fail,wsMessageRequest:{}", wsMessageRequest, e);
+                        flag = false;
+                    }
+                }
+
+            }
+        });
+        log.info("UserAuthSyncTask thread name [{}] time [{}]", Thread.currentThread().getName(), DateUtil.now());
+    }
+    private UserAuthDTO getUserAuthReq(int page, int size) {
+
+        UserAuthDTO.UserAuthDTOBuilder builder = UserAuthDTO.builder();
+        PageRequest pageRequest = PageRequest.of(page, size);
+        //用户信息
+        Page<FolibUser> folibUserDTOS = folibUserService.paginQuery(FolibUser.builder().build(), pageRequest);
+        if (!folibUserDTOS.getContent().isEmpty()) {
+            builder.users(folibUserDTOS.getContent());
+            builder.nextPage(true);
+        }
+        //用户组及用户组关联信息
+        Page<UserGroupListDTO> userGroupPageS = userGroupService.paginQuery(UserGroup.builder().build(), pageRequest);
+        List<UserGroupListDTO> userGroupListDTOS = userGroupPageS.getContent();
+        if (!userGroupListDTOS.isEmpty()) {
+            List<UserGroup> userGroups = UserGroupConvert.INSTANCE.UserGroupDTOToEntities(userGroupListDTOS);
+            builder.groups(userGroups);
+            List<Long> groupIds = userGroups.stream().map(UserGroup::getId).collect(Collectors.toList());
+            List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(groupIds);
+            if (!userGroupRefs.isEmpty()) {
+                builder.userGroups(userGroupRefs);
+            }
+            builder.nextPage(true);
+        }
+        //角色信息及角色关联权限
+        Page<FolibRoleDTO> folibRoleDTOS = folibRoleService.paginQuery(FolibRole.builder().build(), pageRequest);
+        List<FolibRoleDTO> roleDTOS = folibRoleDTOS.getContent();
+        if (!roleDTOS.isEmpty()) {
+            List<FolibRole> folibRoles = RoleConvert.INSTANCE.roleDTOSToEntities(roleDTOS);
+            builder.roles(folibRoles);
+            List<String> roleIds = folibRoles.stream().map(FolibRole::getId).collect(Collectors.toList());
+            if (!roleIds.isEmpty()) {
+                List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryByRoleIds(roleIds);
+                if (!roleResourceRefs.isEmpty()) {
+                    builder.userRoles(roleResourceRefs);
+                }
+            }
+            builder.nextPage(true);
+        }
+        //资源信息
+        Page<Resource> resources = resourceService.paginQuery(Resource.builder().build(), pageRequest);
+        if (!resources.getContent().isEmpty()) {
+            builder.resources(resources.getContent());
+        }
+        List<Resource> resourcesList = resources.stream().filter(resource -> StringUtils.isNotEmpty(resource.getRepositoryId()) || StringUtils.isNotEmpty(resource.getStorageId())).collect(Collectors.toList());
+        //仓库信息
+        List<StorageDto> storages = new ArrayList<>();
+        List<RepositoryDto> repositorys = new ArrayList<>();
+        resourcesList.forEach(resource -> {
+            String repositoryId = resource.getRepositoryId();
+            String storageId = resource.getStorageId();
+            if (StringUtils.isNotEmpty(repositoryId)) {
+                StorageDto storage = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
+                if (storage != null && storage.hasRepositories()) {
+                    RepositoryDto repository = storage.getRepository(repositoryId);
+                    if (repository != null && !repositorys.contains(repository)) {
+                        repositorys.add(repository);
+                    }
+                }
+            }else if (StringUtils.isNotEmpty(storageId)){
+                StorageDto storage = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
+                if (storage != null && !storages.contains(storage)) {
+                    storages.add(storage);
+                }
+            }
+        });
+        if (!repositorys.isEmpty()){
+            builder.repositorys(repositorys);
+        }
+        if (!storages.isEmpty()) {
+            builder.storages(storages);
+        }
+
+        return builder.build();
+    }
 
     private UserAuthDTO getUserAuthReq(PrivilegeEventTypeEnum privilegeEventTypeEnum, String uuId) {
         UserAuthDTO.UserAuthDTOBuilder builder = UserAuthDTO.builder();

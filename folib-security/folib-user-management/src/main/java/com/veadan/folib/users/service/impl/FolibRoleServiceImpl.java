@@ -77,10 +77,8 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                     if(!"admin".equalsIgnoreCase(roleDto.getName())){
                         AccessModelDto accessModel = roleDto.getAccessModel();
                         if(accessModel != null) {
-                            accessModel.getApiAuthorities().forEach(privileges -> {
-                                //resources.add(Resource.builder().apiAuthoritie(privileges.getAuthority()).build());
-                                apiUserPrivilegeRoles.add(RoleResourceRef.builder().roleId(roleDto.getName()).resourceType(GlobalConstants.RESOURCE_TYPE_API).apiAuthoritie(privileges.getAuthority()).build());
-                            });
+                            accessModel.getApiAuthorities().forEach(privileges -> apiUserPrivilegeRoles.add(RoleResourceRef.builder().roleId(roleDto.getName()).resourceType(GlobalConstants.RESOURCE_TYPE_API).apiAuthoritie(privileges.getAuthority()).build()));
+
                             accessModel.getStorageAuthorities().forEach(storagePrivilegesDto -> {
                                 resources.add(Resource.builder().storageId(storagePrivilegesDto.getStorageId()).build());
                                 Set<Privileges> storagePrivileges = storagePrivilegesDto.getStoragePrivileges();
@@ -113,13 +111,10 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                     }
                 });
                 //admin权限补全
-                EnumSet<Privileges> allPrivileges = Privileges.all();
-                allPrivileges.forEach(privileges -> {
-                    resources.add(Resource.builder().apiAuthoritie(String.valueOf(privileges)).build());
-                    /*storagePrivilegeRoles.add(RoleResourceRef.builder().roleId("ADMIN").resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).storagePrivilege(privileges.getAuthority()).build());
-                    repositoryPrivilegeRoles.add(RoleResourceRef.builder().roleId("ADMIN").resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY).repositoryPrivilege(privileges.getAuthority()).build());
-                    pathPrivilegeRoles.add(RoleResourceRef.builder().roleId("ADMIN").resourceType(GlobalConstants.RESOURCE_TYPE_PATH).pathPrivilege(privileges.getAuthority()).build());*/
-                });
+                for (Privileges value : Privileges.values()) {
+                    resources.add(Resource.builder().apiAuthoritie(value.getAuthority()).build());
+                }
+
                 //角色入库
                 if(CollectionUtils.isNotEmpty(folibRoles)){
                     folibRoleMapper.insertOrUpdateBatch(folibRoles);
@@ -251,8 +246,8 @@ public class FolibRoleServiceImpl implements FolibRoleService {
 
     private List<Resource> filterResource(List<Resource> resourceList) {
         List<Resource> resources = resourceService.findAll();
-        List<String> storagetIds = resources.stream().filter(s -> StringUtils.isNotEmpty(s.getStorageId())).map(Resource::getStorageId).collect(Collectors.toList());
-        List<String> repositoryIds = resources.stream().filter(s -> StringUtils.isNotEmpty(s.getRepositoryId())).map(Resource::getRepositoryId).collect(Collectors.toList());
+        List<String> storagetIds = resources.stream().map(Resource::getStorageId).filter(StringUtils::isNotEmpty).collect(Collectors.toList());
+        List<String> repositoryIds = resources.stream().map(Resource::getRepositoryId).filter(StringUtils::isNotEmpty).collect(Collectors.toList());
         List<String> paths = resources.stream().filter(s -> StringUtils.isNotEmpty(s.getPath())).map(Resource::getPath).collect(Collectors.toList());
         List<String> apis = resources.stream().filter(s -> StringUtils.isNotEmpty(s.getApiAuthoritie())).map(Resource::getApiAuthoritie).collect(Collectors.toList());
 

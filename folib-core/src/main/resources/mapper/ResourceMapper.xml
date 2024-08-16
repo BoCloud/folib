@@ -99,10 +99,10 @@
 
     <!-- 批量新增数据 -->
     <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into resource(id,api_authoritie,storage_id,repository_id,path,create_by,create_time)
+        insert into resource(id,api_authoritie,storage_id,repository_id,path,create_by)
         values
         <foreach collection="entities" item="entity" separator=",">
-            (#{entity.id},#{entity.apiAuthoritie},#{entity.storageId},#{entity.repositoryId},#{entity.path},#{entity.createBy},#{entity.createTime})
+            (#{entity.id},#{entity.apiAuthoritie},#{entity.storageId},#{entity.repositoryId},#{entity.path},#{entity.createBy})
         </foreach>
     </insert>
 
