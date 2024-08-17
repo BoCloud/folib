@@ -14,11 +14,13 @@ import com.veadan.folib.entity.RoleResourceRef;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.dto.AccessModelDto;
+import com.veadan.folib.users.dto.PathPrivilegesDto;
 import com.veadan.folib.users.dto.RepositoryPrivilegesDto;
 import com.veadan.folib.users.dto.StoragePrivilegesDto;
 import com.veadan.folib.users.service.RoleResourceRefService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
@@ -124,9 +126,17 @@ public class AuthorizationConfigServiceImpl
                 repositoryMap.keySet().forEach(repositoryId -> {
                     RepositoryPrivilegesDto repositoryPrivilege = new RepositoryPrivilegesDto();
                     repositoryPrivilege.setRepositoryId(repositoryId);
-                    repositoryPrivilege.setRepositoryPrivileges(repositoryMap.get(repositoryId).stream().filter(dto -> dto.getRepositoryPrivilege() != null).map(dto -> Privileges.valueOf(dto.getRepositoryPrivilege())).collect(Collectors.toSet()));
+                    List<PermissionsDTO> repositorys = repositoryMap.get(repositoryId);
+                    Set<Privileges> repositoryPrivilegeList = repositorys.stream().filter(dto -> dto.getRepositoryPrivilege() != null).map(dto -> Privileges.valueOf(dto.getRepositoryPrivilege())).collect(Collectors.toSet());
+                    repositoryPrivilege.setRepositoryPrivileges(repositoryPrivilegeList);
                     repositoryPrivileges.add(repositoryPrivilege);
 
+                    Map<String, Set<PermissionsDTO>> pathMap = repositorys.stream().filter(dto -> StringUtils.isNotEmpty(dto.getPath())).collect(Collectors.groupingBy(PermissionsDTO::getPath, Collectors.toSet()));
+                    if (!pathMap.isEmpty()) {
+                        Set<PathPrivilegesDto> pathPrivilegesDtos = new HashSet<>();
+                        pathMap.forEach((path, pathPrivileges) -> pathPrivilegesDtos.add(PathPrivilegesDto.builder().path(path).privileges(pathPrivileges.stream().map(dto -> Privileges.valueOf(dto.getPathPrivilege())).collect(Collectors.toSet())).build()));
+                        repositoryPrivilege.setPathPrivileges(pathPrivilegesDtos);
+                    }
                 });
                 storagePrivileges.setRepositoryPrivileges(repositoryPrivileges);
                 storageAuthorities.add(storagePrivileges);
