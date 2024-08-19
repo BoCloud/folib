@@ -10,6 +10,7 @@ import com.veadan.folib.entity.Resource;
 import com.veadan.folib.entity.RoleResourceRef;
 import com.veadan.folib.storage.repository.RepositoryPermissionDto;
 import com.veadan.folib.users.domain.Privileges;
+import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.dto.AccessModelDto;
 import com.veadan.folib.users.dto.RepositoryPrivilegesDto;
 import com.veadan.folib.users.service.FolibRoleService;
@@ -72,8 +73,12 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                 List<Resource> resources = new ArrayList<>();
 
                 roles.forEach(roleDto -> {
+                    String isDefault = GlobalConstants.NOT_DEFAULT;
+                    if (SystemRole.ADMIN.name().equalsIgnoreCase(roleDto.getName()) || SystemRole.OPEN_SOURCE_MANAGE.name().equalsIgnoreCase(roleDto.getName())) {
+                        isDefault = GlobalConstants.DEFALUT;
+                    }
                     folibRoles.add(FolibRole.builder().id(roleDto.getName()).description(roleDto.getDescription())
-                            .enName(roleDto.getName()).deleted(GlobalConstants.NOT_DELETED).isDefault(GlobalConstants.NOT_DEFAULT).cnName(roleDto.getDescription()).build());
+                            .enName(roleDto.getName()).deleted(GlobalConstants.NOT_DELETED).isDefault(isDefault).cnName(roleDto.getDescription()).build());
                     if(!"admin".equalsIgnoreCase(roleDto.getName())){
                         AccessModelDto accessModel = roleDto.getAccessModel();
                         if(accessModel != null) {

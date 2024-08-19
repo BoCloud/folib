@@ -67,7 +67,7 @@ CREATE TABLE `role_resource_ref` (
                                      `repository_privilege` varchar(255)  DEFAULT NULL COMMENT '仓库权限',
                                      `path_privilege` varchar(255)  DEFAULT NULL COMMENT '路径权限',
                                      `create_by` varchar(32)  DEFAULT NULL COMMENT '创建人',
-                                     `create_time` timestamp NULL DEFAULT NULL COMMENT '创建时间',
+                                     `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
                                      `resource_type` varchar(10)  DEFAULT NULL COMMENT '资源id;[1-api、2-存储空间、3-仓库、4-路径]',
                                      PRIMARY KEY (`id`),
                                      KEY `role_resource_ref_role_id_IDX` (`role_id`,`entity_id`,`ref_type`) USING BTREE
@@ -103,6 +103,7 @@ CREATE TABLE `user_group_ref` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1000 DEFAULT CHARSET=utf8mb4  COMMENT='用户组用户关联表';
 
 INSERT INTO user_group (id, group_name, description, join_group, is_default, deleted, create_by, create_time, update_by, update_time) VALUES(1, 'default_group', '默认用户组', '1', '1', '0', NULL, now(), NULL, now());
+INSERT INTO folib_scanner.role_resource_ref (role_id, entity_id, ref_type, resource_id, storage_privilege, repository_privilege, path_privilege, create_by, create_time, resource_type) VALUES('GENERAL', '1', '2', NULL, NULL, NULL, NULL, NULL, now(), NULL);
 
 
 

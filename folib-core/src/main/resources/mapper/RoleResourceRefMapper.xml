@@ -242,8 +242,8 @@
 
     <!--新增数据-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
-        insert into role_resource_ref(id,role_id,entity_id,ref_type,resource_id,storage_privilege,repository_privilege,path_privilege,create_by,create_time)
-        values (#{id},#{roleId},#{entityId},#{refType},#{resourceId},#{storagePrivilege},#{repositoryPrivilege},#{pathPrivilege},#{createBy},#{createTime})
+        insert into role_resource_ref(id,role_id,entity_id,ref_type,resource_id,storage_privilege,repository_privilege,path_privilege,create_by)
+        values (#{id},#{roleId},#{entityId},#{refType},#{resourceId},#{storagePrivilege},#{repositoryPrivilege},#{pathPrivilege},#{createBy})
     </insert>
 
     <!-- 批量新增数据 -->
