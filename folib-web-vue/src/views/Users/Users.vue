@@ -485,13 +485,19 @@ export default ({
         if (valid) {
           this.currentUser.user.accessModel = { repositoriesAccess: [] }
           this.currentUser.user.authorities = []
+          this.currentUser.user.userGroupIds = []
           let roles = []
           this.currentUser.assignableRoles.forEach((item) => {
             if (item.enabled) {
               roles.push(item.name)
             }
           })
-          if (!roles || roles.length === 0) {
+          this.groupList.forEach((item) => {
+            if (item.enabled) {
+              this.currentUser.user.userGroupIds.push(`${item.id}`)
+            }
+          })
+          if (!roles.length && !this.currentUser.user.userGroupIds.length ) {
             this.$notification.warning({
               message: this.$t('Users.PleaseSelectTheRole'),
               description: ""
