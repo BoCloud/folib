@@ -337,8 +337,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
         if (folibRole != null) {
             return;
         }
-        Date date = new Date();
-        FolibRole roleInfo = FolibRole.builder().deleted(GlobalConstants.NOT_DELETED).isDefault(GlobalConstants.NOT_DEFAULT).id(roleForm.getName()).enName(roleForm.getName()).cnName(roleForm.getDescription()).description(roleForm.getDescription()).createTime(date).createBy(username).updateBy(username).updateTime(date).build();
+        FolibRole roleInfo = FolibRole.builder().deleted(GlobalConstants.NOT_DELETED).isDefault(GlobalConstants.NOT_DEFAULT).id(roleForm.getName()).enName(roleForm.getName()).cnName(roleForm.getDescription()).description(roleForm.getDescription()).createBy(username).updateBy(username).build();
         insert(roleInfo);
         String roleId = roleInfo.getId();
         //保存权限关系
@@ -363,8 +362,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
         if (folibRole == null) {
             return;
         }
-        Date date = new Date();
-        FolibRole roleInfo = FolibRole.builder().id(roleId).enName(roleDTO.getName()).description(roleDTO.getDescription()).updateBy(username).updateTime(date).build();
+        FolibRole roleInfo = FolibRole.builder().id(roleId).enName(roleDTO.getName()).description(roleDTO.getDescription()).updateBy(username).build();
         update(roleInfo);
         roleResourceRefService.deleteByRoleId(roleId);
         //保存权限关系
@@ -394,7 +392,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
     public RoleDTO getRoleDetail(String roleId, FolibRole folibRole) {
         RoleDTO roleDTO = RoleDTO.builder().description(folibRole.getDescription()).name(folibRole.getEnName()).build();
         //查角色关联的权限
-        List<PermissionsDTO> permissions = roleResourceRefService.queryPermissions(roleId, null, null, null);
+        List<PermissionsDTO> permissions = roleResourceRefService.queryPermissions(roleId, null, null, null,false);
         //用户权限
         Map<String, List<PermissionsDTO>> userPermissions = permissions.stream().filter(permissionsDTO -> StringUtils.isNotEmpty(permissionsDTO.getRefType()) && GlobalConstants.ROLE_TYPE_USER.equals(permissionsDTO.getRefType())).collect(Collectors.groupingBy(PermissionsDTO::getEntityId));
         List<AccessUsersDTO> userAccess = userPermissions.entrySet().stream().map(entry -> {

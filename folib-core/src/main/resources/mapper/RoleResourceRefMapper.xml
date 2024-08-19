@@ -194,6 +194,12 @@
         <if test="repositoryId != null and repositoryId != ''">
             and r.repository_id = #{repositoryId}
         </if>
+        <if test="resourceIds != null and resourceIds.size() > 0">
+            and r.id in
+            <foreach collection="resourceIds"  item="resourceId" open="(" separator="," close=")">
+                #{resourceId}
+            </foreach>
+        </if>
         <if test="username != null and username != ''">
             and rrr.entity_id in (
                 select id from folib_user fu where fu.id = #{username}

@@ -7,6 +7,7 @@ import com.veadan.folib.common.base.CommonMapper;
 import com.veadan.folib.configuration.MutableConfiguration;
 import com.veadan.folib.security.authentication.JwtTokenFetcher;
 import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.services.StorageManagementService;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.users.security.SecurityTokenProvider;
 import org.apache.commons.collections4.CollectionUtils;
@@ -31,6 +32,8 @@ public abstract class BusinessBiz<M extends CommonMapper<T>, T> extends BaseBiz<
 
     @Inject
     private SecurityTokenProvider securityTokenProvider;
+    @Inject
+    private StorageManagementService storageManagementService;
 
     @Override
     public void insertSelective(T entity) {
@@ -94,10 +97,13 @@ public abstract class BusinessBiz<M extends CommonMapper<T>, T> extends BaseBiz<
             return storageIdList;
         }
         for (Map.Entry<String, StorageDto> entry : mutableConfiguration().getStorages().entrySet()) {
-            Set<String> userSet = entry.getValue().getUsers();
+            //查询数据库中存储空间绑定的用户
+            String storageId = entry.getKey();
+            Map<String, Set<String>> storageUser = storageManagementService.getStorageUser(Collections.singleton(storageId));
+            Set<String> userSet = storageUser.get(storageId);
             if (CollectionUtils.isNotEmpty(userSet)) {
                 if (userSet.contains(username)) {
-                    storageIdList.add(entry.getKey());
+                    storageIdList.add(storageId);
                 }
             }
         }

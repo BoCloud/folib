@@ -83,6 +83,8 @@ public interface RoleResourceRefService{
 
     List<PermissionsDTO> queryPermissions(String roleId,String username, String storageId, String repositoryId);
     List<PermissionsDTO> queryPermissions(String roleId, String username, String storageId, String repositoryId, boolean resourceEmpty);
+
+    List<PermissionsDTO> queryPermissionsByResourceIds(List<String> resourceIds);
     boolean deleteByRoleId(String roleId);
 
     List<RoleResourceRef> queryRoleByUserId(String uuid, List<String> roles);

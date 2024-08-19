@@ -136,46 +136,55 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
 
     @Override
     public List<PermissionsDTO> queryPermissions(String roleId, String username, String storageId, String repositoryId) {
-        return roleResourceRefMapper.queryPermissions(roleId, username, storageId, repositoryId, true);
+        return roleResourceRefMapper.queryPermissions(roleId, username, storageId, repositoryId, null, true);
     }
 
     @Override
     public List<PermissionsDTO> queryPermissions(String roleId, String username, String storageId, String repositoryId, boolean resourceEmpty) {
-        return roleResourceRefMapper.queryPermissions(roleId, username, storageId, repositoryId, resourceEmpty);
+        return roleResourceRefMapper.queryPermissions(roleId, username, storageId, repositoryId, null, resourceEmpty);
+    }
+
+    @Override
+    public List<PermissionsDTO> queryPermissionsByResourceIds(List<String> resourceIds) {
+        return roleResourceRefMapper.queryPermissions(null, null, null, null, resourceIds, false);
     }
 
     @Override
     public void savePermissions(RoleDTO roleForm, String roleId, String username) {
         List<AccessResourcesDTO> formResources = roleForm.getResources();
         List<Resource> resources = ResourceConvert.INSTANCE.formToDtoS(formResources);
-        List<Resource> allResource = resourceService.findResources(resources);
-        List<Resource> addResources = resources.stream().filter(resource -> allResource.stream().noneMatch(resource1 -> resource.getStorageId().equals(resource1.getStorageId()) && Objects.equals(resource.getRepositoryId(), resource1.getRepositoryId()) && Objects.equals(resource.getPath(), resource1.getPath()))).collect(Collectors.toList());
-        //资源不存在则创建
-        if (CollectionUtils.isNotEmpty(addResources)) {
-            resourceService.saveBatch(addResources);
-            allResource.addAll(addResources);
+        if (CollectionUtils.isNotEmpty(resources)) {
+            List<Resource> allResource = resourceService.findResources(resources);
+            List<Resource> addResources = resources.stream().filter(resource -> allResource.stream().noneMatch(resource1 -> resource.getStorageId().equals(resource1.getStorageId()) && Objects.equals(resource.getRepositoryId(), resource1.getRepositoryId()) && Objects.equals(resource.getPath(), resource1.getPath()))).collect(Collectors.toList());
+            //资源不存在则创建
+            if (CollectionUtils.isNotEmpty(addResources)) {
+                resourceService.saveBatch(addResources);
+                allResource.addAll(addResources);
+            }
+
+            Map<String, Resource> pathMap = allResource.stream().filter(resource -> !Objects.equals(resource.getPath(), null) && !resource.getPath().isEmpty()).collect(Collectors.toMap(Resource::getPath, resource -> resource, (k1, k2)->k1));
+            Map<String, Resource> repositoryMap = allResource.stream().filter(resource -> Objects.equals(resource.getPath(), null) || resource.getPath().isEmpty()).filter(resource ->  !Objects.equals(resource.getRepositoryId(), null) && !resource.getRepositoryId().isEmpty()).collect(Collectors.toMap(Resource::getRepositoryId, resource -> resource));
+            Map<String, Resource> storageMap = allResource.stream().filter(resource -> Objects.equals(resource.getPath(), null) || resource.getPath().isEmpty()).filter(resource ->  Objects.equals(resource.getRepositoryId(), null) || resource.getRepositoryId().isEmpty()).filter(resource -> !Objects.equals(resource.getStorageId(), null) && !resource.getStorageId().isEmpty()).collect(Collectors.toMap(Resource::getStorageId, resource -> resource));
+
+            resources.forEach(resourceDTO -> {
+                String resourceId = null;
+                // 根据 path 查找
+                if (resourceDTO.getPath() != null && !resourceDTO.getPath().isEmpty()) {
+                    resourceId = pathMap.get(resourceDTO.getPath()).getId();
+                }
+                // 根据 repositoryId 查找
+                if (resourceId == null && resourceDTO.getRepositoryId() != null) {
+                    resourceId = repositoryMap.get(resourceDTO.getRepositoryId()).getId();
+                }
+                // 根据 storageId 查找
+                if (resourceId == null && resourceDTO.getStorageId() != null) {
+                    resourceId = storageMap.get(resourceDTO.getStorageId()).getId();
+                }
+                // 将 resourceId 赋值回 resourceDTO
+                resourceDTO.setId(resourceId);
+            });
         }
 
-        Map<String, Resource> pathMap = allResource.stream().filter(resource -> !Objects.equals(resource.getPath(), null) && !resource.getPath().isEmpty()).collect(Collectors.toMap(Resource::getPath, resource -> resource, (k1, k2)->k1));
-        Map<String, Resource> repositoryMap = allResource.stream().filter(resource -> Objects.equals(resource.getPath(), null) || resource.getPath().isEmpty()).filter(resource ->  !Objects.equals(resource.getRepositoryId(), null) && !resource.getRepositoryId().isEmpty()).collect(Collectors.toMap(Resource::getRepositoryId, resource -> resource));
-        Map<String, Resource> storageMap = allResource.stream().filter(resource -> Objects.equals(resource.getPath(), null) || resource.getPath().isEmpty()).filter(resource ->  Objects.equals(resource.getRepositoryId(), null) || resource.getRepositoryId().isEmpty()).filter(resource -> !Objects.equals(resource.getStorageId(), null) && !resource.getStorageId().isEmpty()).collect(Collectors.toMap(Resource::getStorageId, resource -> resource));
-        resources.forEach(resourceDTO -> {
-            String resourceId = null;
-            // 根据 path 查找
-            if (resourceDTO.getPath() != null && !resourceDTO.getPath().isEmpty()) {
-                resourceId = pathMap.get(resourceDTO.getPath()).getId();
-            }
-            // 根据 repositoryId 查找
-            if (resourceId == null && resourceDTO.getRepositoryId() != null) {
-                resourceId = repositoryMap.get(resourceDTO.getRepositoryId()).getId();
-            }
-            // 根据 storageId 查找
-            if (resourceId == null && resourceDTO.getStorageId() != null) {
-                resourceId = storageMap.get(resourceDTO.getStorageId()).getId();
-            }
-            // 将 resourceId 赋值回 resourceDTO
-            resourceDTO.setId(resourceId);
-        });
 
         //保存权限
         List<RoleResourceRef> roleResourceRefs = new ArrayList<>();
@@ -183,52 +192,67 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         List<AccessUsersDTO> users = privileges.getUsers();
         List<AccessUserGroupsDTO> groups = privileges.getGroups();
         if (CollectionUtils.isEmpty(users) && CollectionUtils.isEmpty(groups)){
-            List<RoleResourceRef> roleResourceRef = resources.stream().map(accessResourcesDTO -> RoleResourceRef.builder().roleId(roleId).resourceId(accessResourcesDTO.getId()).createBy(username).build()).collect(Collectors.toList());
-            saveBath(roleResourceRef);
+            if (CollectionUtils.isNotEmpty(resources)) {
+                List<RoleResourceRef> roleResourceRef = resources.stream().map(accessResourcesDTO -> RoleResourceRef.builder().roleId(roleId).resourceId(accessResourcesDTO.getId()).createBy(username).build()).collect(Collectors.toList());
+                saveBath(roleResourceRef);
+            }
             return;
         }
         //用户权限组装
         if (CollectionUtils.isNotEmpty(users)){
-            resources.forEach(accessResourcesDTO -> users.forEach(user -> {
-                List<String> access = user.getAccess();
-                access.forEach(pri -> {
-                    if(StringUtils.isEmpty(accessResourcesDTO.getRepositoryId()) && StringUtils.isEmpty(accessResourcesDTO.getPath())) {
-                        roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER)
-                                .storagePrivilege(pri).resourceId(accessResourcesDTO.getId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build());
-                    }
+             users.forEach(user -> {
+                 if (CollectionUtils.isNotEmpty(resources)) {
+                     resources.forEach(accessResourcesDTO -> {
+                         List<String> access = user.getAccess();
+                         access.forEach(pri -> {
+                             if(StringUtils.isEmpty(accessResourcesDTO.getRepositoryId()) && StringUtils.isEmpty(accessResourcesDTO.getPath())) {
+                                 roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER)
+                                         .storagePrivilege(pri).resourceId(accessResourcesDTO.getId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build());
+                             }
 
-                    if(StringUtils.isNotEmpty(accessResourcesDTO.getRepositoryId()) && StringUtils.isEmpty(accessResourcesDTO.getPath())) {
-                        roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER)
-                                .repositoryPrivilege(pri).resourceId(accessResourcesDTO.getId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY).build());
-                    }
+                             if(StringUtils.isNotEmpty(accessResourcesDTO.getRepositoryId()) && StringUtils.isEmpty(accessResourcesDTO.getPath())) {
+                                 roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER)
+                                         .repositoryPrivilege(pri).resourceId(accessResourcesDTO.getId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY).build());
+                             }
 
-                    if (StringUtils.isNotEmpty(accessResourcesDTO.getPath())) {
-                        roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER).pathPrivilege(pri)
-                                .resourceId(accessResourcesDTO.getId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_PATH).build());
-                    }
-                });
-            }));
+                             if (StringUtils.isNotEmpty(accessResourcesDTO.getPath())) {
+                                 roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER).pathPrivilege(pri)
+                                         .resourceId(accessResourcesDTO.getId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_PATH).build());
+                             }
+                         });
+                     });
+                 }else {
+                     roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_PATH).build());
+                 }
+             });
+
         }
         //用户组权限组装
         if (CollectionUtils.isNotEmpty(groups)){
-            resources.forEach(accessResourcesDTO -> groups.forEach(groupsDTO -> {
-                List<String> access = groupsDTO.getAccess();
-                access.forEach(pri -> {
-                    if(StringUtils.isEmpty(accessResourcesDTO.getRepositoryId()) && StringUtils.isEmpty(accessResourcesDTO.getPath())) {
-                        roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP)
-                                .storagePrivilege(pri).resourceId(accessResourcesDTO.getId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build());
-                    }
+             groups.forEach(groupsDTO -> {
+                 if (CollectionUtils.isNotEmpty(resources)) {
+                     resources.forEach(accessResourcesDTO ->{
+                         List<String> access = groupsDTO.getAccess();
+                         access.forEach(pri -> {
+                             if(StringUtils.isEmpty(accessResourcesDTO.getRepositoryId()) && StringUtils.isEmpty(accessResourcesDTO.getPath())) {
+                                 roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP)
+                                         .storagePrivilege(pri).resourceId(accessResourcesDTO.getId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build());
+                             }
 
-                    if(StringUtils.isNotEmpty(accessResourcesDTO.getRepositoryId()) && StringUtils.isEmpty(accessResourcesDTO.getPath())) {
-                        roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP)
-                                .repositoryPrivilege(pri).resourceId(accessResourcesDTO.getId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY).build());
-                    }
-                    if(StringUtils.isNotEmpty(accessResourcesDTO.getPath())) {
-                        roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP).pathPrivilege(pri)
-                                .resourceId(accessResourcesDTO.getId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_PATH).build());
-                    }
-                });
-            }));
+                             if(StringUtils.isNotEmpty(accessResourcesDTO.getRepositoryId()) && StringUtils.isEmpty(accessResourcesDTO.getPath())) {
+                                 roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP)
+                                         .repositoryPrivilege(pri).resourceId(accessResourcesDTO.getId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY).build());
+                             }
+                             if(StringUtils.isNotEmpty(accessResourcesDTO.getPath())) {
+                                 roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP).pathPrivilege(pri)
+                                         .resourceId(accessResourcesDTO.getId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_PATH).build());
+                             }
+                         });
+                     });
+                 }else {
+                     roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP).createBy(username).build());
+                 }
+             });
         }
 
         saveBath(roleResourceRefs);

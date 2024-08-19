@@ -7,6 +7,7 @@ import com.veadan.folib.domain.PageResultResponse;
 import com.veadan.folib.domain.SecurityRole;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.UserEntity;
+import com.veadan.folib.dto.PermissionsDTO;
 import com.veadan.folib.dto.RepositoryPrivilegeDTO;
 import com.veadan.folib.dto.UserDTO;
 import com.veadan.folib.entity.*;
@@ -16,6 +17,7 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryDto;
+import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.domain.Users;
 import com.veadan.folib.users.dto.UserAuthDTO;
 import com.veadan.folib.users.security.JwtAuthenticationClaimsProvider;
@@ -292,6 +294,8 @@ public class RelationalDatabaseUserService implements UserService
             groupIds.forEach(item ->
                     ref.add(UserGroupRef.builder().userGroupId(Long.valueOf(item)).userId(user.getUuid()).createTime(date).build()));
             userGroupRefService.saveBath(ref);
+        }else {
+            userGroupRefService.deleteByUserId(user.getUuid());
         }
         //维护用户角色
         Set<SecurityRole> roles = user.getRoles();
@@ -311,6 +315,12 @@ public class RelationalDatabaseUserService implements UserService
             roleResourceRefService.saveBath(resourceRefs);
             //有权限变更，删除缓存
             folibRoleService.deleteUserRoleCache(Collections.singletonList(user.getUuid()));
+        }else {
+            List<PermissionsDTO> permissions = roleResourceRefService.queryPermissions(null, user.getUuid(), GlobalConstants.ROLE_TYPE_USER, null, false);
+            List<Long> refIds = permissions.stream().filter(item -> SystemRole.ADMIN.name().equals(item.getRoleId()) || SystemRole.OPEN_SOURCE_MANAGE.name().equals(item.getRoleId())).map(PermissionsDTO::getId).collect(Collectors.toList());
+            if (!CollectionUtils.isEmpty(refIds)) {
+                roleResourceRefService.deleteByIds(refIds);
+            }
         }
 
         return folibUserService.save(userEntity);

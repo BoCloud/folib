@@ -9,9 +9,11 @@ import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.converters.RoleModelToRoleConverter;
 import com.veadan.folib.domain.*;
+import com.veadan.folib.dto.PermissionsDTO;
 import com.veadan.folib.entity.FolibRole;
 import com.veadan.folib.entity.Resource;
 import com.veadan.folib.entity.RoleResourceRef;
+import com.veadan.folib.entity.UserGroupRef;
 import com.veadan.folib.enums.StorageProviderEnum;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.RepositoryManagementService;
@@ -21,10 +23,7 @@ import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
-import com.veadan.folib.users.service.FolibRoleService;
-import com.veadan.folib.users.service.ResourceService;
-import com.veadan.folib.users.service.RoleResourceRefService;
-import com.veadan.folib.users.service.UserService;
+import com.veadan.folib.users.service.*;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -68,6 +67,8 @@ public class StorageManagementServiceImpl implements StorageManagementService {
     private ResourceService resourceService;
     @Inject
     private RoleResourceRefService roleResourceRefService;
+    @Inject
+    private UserGroupRefService userGroupRefService;
 
     @Override
     public void updateStorage(StorageDto storage)
@@ -198,23 +199,55 @@ public class StorageManagementServiceImpl implements StorageManagementService {
         }
     }
 
+
     @Override
     public void getStorageUsers(List<Storage> storages) {
+        Set<String> storageIds = storages.stream().map(Storage::getId).collect(Collectors.toSet());
+        Map<String, Set<String>> userMap = getStorageUser(storageIds);
+
         //FIXME 根据资源查询角色关联的用户、用户组下的用户
-        List<String> storageIds = storages.stream().map(Storage::getId).collect(Collectors.toList());
-        List<String> roleIds = storageIds.stream().flatMap(storageId -> Stream.of(String.format("STORAGE_USER_%S", storageId), String.format("STORAGE_ADMIN_%S", storageId))).collect(Collectors.toList());
+        List<String> roleIds = storageIds.stream().flatMap(storageId -> Stream.of(String.format("STORAGE_ADMIN_%S", storageId))).collect(Collectors.toList());
         List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryRefsByRoleIds(roleIds);
         Map<String, List<RoleResourceRef>> roleUserMap = roleResourceRefs.stream().filter(r -> Objects.nonNull(r.getRefType()) && r.getRefType().equals(GlobalConstants.ROLE_TYPE_USER)).collect(Collectors.groupingBy(RoleResourceRef::getRoleId));
         storages.forEach(storage -> {
-            List<RoleResourceRef> userRef = roleUserMap.get(String.format("STORAGE_USER_%S", storage.getId()));
-            if (CollectionUtils.isNotEmpty(userRef)){
-                storage.setUsers(userRef.stream().map(RoleResourceRef::getEntityId).collect(Collectors.toSet()));
+            Set<String> storageUsers = userMap.get(storage.getId());
+            if (CollectionUtils.isNotEmpty(storageUsers)) {
+                storage.setUsers(storageUsers);
             }
             List<RoleResourceRef> adminRef = roleUserMap.get(String.format("STORAGE_ADMIN_%S", storage.getId()));
             if (CollectionUtils.isNotEmpty(adminRef)) {
                 storage.setAdmin(adminRef.get(0).getEntityId());
             }
         });
+    }
+
+    /**
+     *
+     * 方法描述:  根据存储空间id查询id关联的用户，查询存储空间id关联的用户组下的用户
+     *
+     * @param: storageIds 存储空间id集合
+     * @return:  Map<String, Set<String>> 存储空间id为key的用户集合
+     */
+    @Override
+    public Map<String, Set<String>> getStorageUser(Set<String> storageIds) {
+        List<PermissionsDTO> permissions = roleResourceRefService.queryPermissionsByResourceIds(new ArrayList<>(storageIds));
+        Map<String, Set<String>> userMap = permissions.stream().filter(p -> GlobalConstants.ROLE_TYPE_USER.equals(p.getRefType())).collect(Collectors.groupingBy(PermissionsDTO::getResourceId,
+                Collectors.mapping(PermissionsDTO::getEntityId, Collectors.toSet())));
+        //查询用户组关联的用户
+        Map<String, Set<String>> groupMap = permissions.stream().filter(p -> GlobalConstants.ROLE_TYPE_USER_GROUP.equals(p.getRefType())).collect(Collectors.groupingBy(PermissionsDTO::getResourceId, Collectors.mapping(PermissionsDTO::getEntityId, Collectors.toSet())));
+        List<Long> groupIds = groupMap.values().stream().flatMap(Set::stream).map(Long::valueOf).collect(Collectors.toList());
+        List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(groupIds);
+        Map<Long, Set<String>> groupUserMap = userGroupRefs.stream().collect(Collectors.groupingBy(UserGroupRef::getUserGroupId, Collectors.mapping(UserGroupRef::getUserId, Collectors.toSet())));
+        if (!groupUserMap.isEmpty()){
+            groupUserMap.forEach((groupId, users) -> {
+                if (userMap.containsKey(groupId.toString())){
+                    userMap.get(groupId.toString()).addAll(users);
+                }else {
+                    userMap.put(groupId.toString(), users);
+                }
+            });
+        }
+        return userMap;
     }
 
     /**
