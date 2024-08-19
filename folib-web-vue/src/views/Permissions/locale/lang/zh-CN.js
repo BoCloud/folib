@@ -1,5 +1,8 @@
 export default {
     'AddPermission': '添加权限',
+    'EnterTheStorageQuery': '选择存储空间查询',
+    'EnterTheRepositoryQuery': '选择仓库查询',
+    'EnterThePathQuery': '输入路径查询',
     'EnterTheNameQuery': '输入名称查询',
     'Name': '权限名称',
     'Confirm': '确认',
@@ -86,6 +89,9 @@ export default {
     'SelectStorageSpace': '选择存储空间',
     'SelectStorageSpaceDesc': '选择要应用权限的存储空间',
     'AtLeastOneRepository': '请至少选择一个资源',
+    'UserNoneSelectAuth': '用户至少选择一个权限',
+    'UserSelected': '当前仓库已设置管理员，确认重新选择？',
+    'GroupNoneSelectAuth': '用户组至少选择一个权限',
     'CheckAll': '全部选中',
     'UnselectAll': '取消全选',
     'DownloadDesc': '下载制品',

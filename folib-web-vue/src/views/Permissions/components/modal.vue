@@ -23,8 +23,8 @@
                     />
                 </a-form-model-item>
             </a-form-model>
-            <a-steps v-model="step" size="small" class="step">
-                <a-step :title="$t('Permissions.Resources')" :status="step === 0 ? 'process' : 'wait'" :description="$t('Permissions.ResourcesDesc')"/>
+            <a-steps v-if="!isStorageAdmin" v-model="step" size="small" class="step">
+                <a-step :title="$t('Permissions.Resources')" :status="step === 0 ? 'process' : 'wait'" :disabled="isAdmin" :description="$t('Permissions.ResourcesDesc')"/>
                 <a-step :title="$t('Permissions.Users')" :status="step === 1 ? 'process' : 'wait'" :description="$t('Permissions.UsersDesc')"/>
                 <a-step :title="$t('Permissions.Groups')" :status="step === 2 ? 'process' : 'wait'" :description="$t('Permissions.GroupsDesc')"/>
             </a-steps>
@@ -46,7 +46,15 @@
                     </div>
                     <div class="by-flex by-m-t-10 by-m-b-10">
                         <a-input v-model="userSearch" :placeholder="$t('Permissions.Search')" allow-clear class="by-w-300"></a-input>
-                        <a-button type="primary" icon="edit" class="by-m-l-10" :disabled="isView" @click="openSelectModal('USER')"/>
+                        <a-popconfirm
+                            :title="$t('Permissions.UserSelected')"
+                            :visible="confirmVisible"
+                            placement="top"
+                            @visibleChange="handleVisibleChange"
+                            @confirm="openSelectModal('USER')"
+                        >
+                            <a-button type="primary" icon="edit" class="by-m-l-10" :disabled="isView"/>
+                        </a-popconfirm>
                     </div>
                     <div class="selected-list">
                         <div
@@ -79,7 +87,7 @@
                         <div class="title by-flex by-row-between">
                             <span>{{ $t(`Permissions.SelectedPermissions`) }}</span>
                             <a-button
-                                v-if="!isView && userSelectList.length"
+                                v-if="!isView && userSelectList.length && !isAdmin"
                                 type="primary"
                                 size="small"
                                 @click="onRepositoriesCheckAllChange"
@@ -100,7 +108,7 @@
                                     </a-col>
                                     <a-col :span="24" :md="12" class="ml-auto" style="display: flex; align-items: center; justify-content: flex-end">
                                         <span class="mr-15">{{ $t(`Permissions.${item.enabled ? 'Enabled' : 'Disabled'}`) }}</span>
-                                        <a-switch v-model="item.enabled" :disabled="!userSelectList.length || isView" @change="onRepositoriesChange"/>
+                                        <a-switch v-model="item.enabled" :disabled="!userSelectList.length || isView || isAdmin" @change="onRepositoriesChange"/>
                                     </a-col>
                                 </a-row>
                             </div>
@@ -151,7 +159,7 @@
                         <div class="title by-flex by-row-between">
                             <span>{{ $t(`Permissions.SelectedPermissions`) }}</span>
                             <a-button
-                                v-if="!isView && groupSelectList.length"
+                                v-if="!isView && groupSelectList.length && !isAdmin"
                                 type="primary"
                                 size="small"
                                 @click="onGroupCheckAllChange"
@@ -172,7 +180,7 @@
                                     </a-col>
                                     <a-col :span="24" :md="12" class="ml-auto" style="display: flex; align-items: center; justify-content: flex-end">
                                         <span class="mr-15">{{ $t(`Permissions.${item.enabled ? 'Enabled' : 'Disabled'}`) }}</span>
-                                        <a-switch v-model="item.enabled" :disabled="!groupSelectList.length || isView" @change="onGroupChange"/>
+                                        <a-switch v-model="item.enabled" :disabled="!groupSelectList.length || isView || isAdmin" @change="onGroupChange"/>
                                     </a-col>
                                 </a-row>
                             </div>
@@ -218,6 +226,9 @@ export default {
             visible: false,
             isView: false,
             isEdit: false,
+            isAdmin: false,
+            isStorageAdmin: false,
+            confirmVisible: false,
             spinning: false,
             step: 0,
             form: {
@@ -270,17 +281,19 @@ export default {
         }
     },
     methods: {
-        async openModal(id, isView)
+        async openModal(id, isView, isAdmin)
         {
             this.initOptions()
             this.visible = true;
             this.spinning = true;
             this.isView = isView;
+            this.isAdmin = isAdmin;
             this.isEdit = !!id;
             this.init()
             await this.getStorageList()
             await this.getRepositoriesList()
             if (id) {
+                if (isAdmin) this.step = 1
                 this.getDetail(id);
             } else {
                 this.spinning = false
@@ -353,6 +366,8 @@ export default {
             this.spinning = true;
             getPermissionDetail(id).then(res => {
                 const { name, privileges, resources } = res
+                this.isStorageAdmin = name.startsWith('STORAGE_ADMIN_')
+                if (this.isStorageAdmin) this.step = 1
                 this.form.name = name;
                 this.userAuthMap = {}
                 privileges.users.forEach(item => {
@@ -555,11 +570,11 @@ export default {
         handleConfirm() {
             this.$refs.form.validate(validate => {
                 if (validate) {
-                    if (!this.$refs.repositories.getResources().length) {
+                    const resources = this.$refs.repositories.getResources()
+                    if (!resources.length && !this.isAdmin) {
                         this.$message.error(this.$t('Permissions.AtLeastOneRepository'))
                         return
                     }
-                    this.confirmLoading = true
                     const groups = this.groupSelectList.map(item => {
                         return {
                             id: item.key,
@@ -572,13 +587,24 @@ export default {
                             access: this.userAuthMap[item.key] || []
                         }
                     })
+                    if (resources.length) {
+                        if (users.some(item => !item.access.length)) {
+                            this.$message.error(this.$t('Permissions.UserNoneSelectAuth'))
+                            return
+                        }
+                        if (groups.some(item => !item.access.length) && !this.isStorageAdmin) {
+                            this.$message.error(this.$t('Permissions.GroupNoneSelectAuth'))
+                            return
+                        }
+                    }
+                    this.confirmLoading = true
                     const params = {
                         name: this.form.name,
                         privileges: {
                             groups,
                             users,
                         },
-                        resources: this.$refs.repositories.getResources()
+                        resources
                     }
                     const method = this.isEdit ? updatePermission : createPermission;
                     method(params).then(res => {
@@ -589,7 +615,19 @@ export default {
                     })
                 }
             })
-        }
+        },
+        handleVisibleChange(visible) {
+            if (!visible || this.isView) {
+                this.confirmVisible = false;
+                return;
+            }
+            if (this.isStorageAdmin && this.userSelectList.length){
+                this.confirmVisible = true
+            } else {
+                this.confirmVisible = false;
+                this.openSelectModal('USER')
+            }
+        },
     }
 
 }

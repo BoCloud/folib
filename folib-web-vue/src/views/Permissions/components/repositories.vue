@@ -226,12 +226,11 @@ export default {
         },
         onSelectChange(selectedRowKeys) {
             this.selectedRowKeys = selectedRowKeys;
-            console.log(selectedRowKeys);
-            if (this.radioModel === 'StorageSpace') {
-
-            } else {
-
-            }
+            // if (this.radioModel === 'StorageSpace') {
+            //
+            // } else {
+            //
+            // }
         },
         getCheckboxProps() {
             return {
