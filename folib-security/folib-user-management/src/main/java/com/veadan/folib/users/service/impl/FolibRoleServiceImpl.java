@@ -6,8 +6,11 @@ import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.dto.*;
+import com.veadan.folib.entity.FolibRole;
 import com.veadan.folib.entity.Resource;
 import com.veadan.folib.entity.RoleResourceRef;
+import com.veadan.folib.entity.UserGroupRef;
+import com.veadan.folib.mapper.FolibRoleMapper;
 import com.veadan.folib.storage.repository.RepositoryPermissionDto;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
@@ -16,20 +19,19 @@ import com.veadan.folib.users.dto.RepositoryPrivilegesDto;
 import com.veadan.folib.users.service.FolibRoleService;
 import com.veadan.folib.users.service.ResourceService;
 import com.veadan.folib.users.service.RoleResourceRefService;
+import com.veadan.folib.users.service.UserGroupRefService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import com.veadan.folib.entity.FolibRole;
-import com.veadan.folib.mapper.FolibRoleMapper;
+import org.springframework.stereotype.Service;
 import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
 import javax.transaction.Transactional;
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -54,6 +56,8 @@ public class FolibRoleServiceImpl implements FolibRoleService {
     private FolibRoleService folibRoleService;
     @Inject
     private DistributedCacheComponent distributedCacheComponent;
+    @Inject
+    private UserGroupRefService userGroupRefService;
     @Override
     public FolibRole queryByRoleId(List<String> roleIds) {
         return null;
@@ -364,15 +368,36 @@ public class FolibRoleServiceImpl implements FolibRoleService {
         }
         FolibRole roleInfo = FolibRole.builder().id(roleId).enName(roleDTO.getName()).description(roleDTO.getDescription()).updateBy(username).build();
         update(roleInfo);
+        Set<String> userIds = getUserIdsByRoleId(roleId);
         roleResourceRefService.deleteByRoleId(roleId);
         //保存权限关系
         roleResourceRefService.savePermissions(roleDTO, roleId, username);
 
         List<AccessUsersDTO> users = roleDTO.getPrivileges().getUsers();
         if (CollectionUtils.isNotEmpty(users)) {
-            List<String> userIds = users.stream().map(AccessUsersDTO::getId).collect(Collectors.toList());
-            deleteUserRoleCache(userIds);
+            userIds.addAll(users.stream().map(AccessUsersDTO::getId).collect(Collectors.toSet()));
         }
+        if (CollectionUtils.isNotEmpty(userIds)) {
+            deleteUserRoleCache(new ArrayList<>(userIds));
+        }
+    }
+
+    private Set<String> getUserIdsByRoleId(String roleId) {
+        //清理权限缓存
+        List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryByRoleIds(Collections.singletonList(roleId));
+        Set<String> userIds = new HashSet<>();
+        if (CollectionUtils.isNotEmpty(roleResourceRefs)) {
+            userIds = roleResourceRefs.stream().filter(r -> GlobalConstants.ROLE_TYPE_USER.equals(r.getRefType())).map(RoleResourceRef::getEntityId).collect(Collectors.toSet());
+            List<Long> groupIds = roleResourceRefs.stream().filter(r -> GlobalConstants.ROLE_TYPE_USER_GROUP.equals(r.getRefType())).map(RoleResourceRef::getEntityId).map(Long::valueOf).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(groupIds)) {
+                List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(groupIds);
+                if (CollectionUtils.isNotEmpty(userGroupRefs)) {
+                    userIds.addAll(userGroupRefs.stream().map(UserGroupRef::getUserId).collect(Collectors.toSet()));
+                }
+            }
+
+        }
+        return userIds;
     }
 
     @Override
@@ -427,6 +452,10 @@ public class FolibRoleServiceImpl implements FolibRoleService {
     @Override
     public void deleteRole(String roleId) {
         deleteById(roleId);
+        //删除角色关联的用户缓存
+        Set<String> userIds = getUserIdsByRoleId(roleId);
+        deleteUserRoleCache(new ArrayList<>(userIds));
+        //删除角色关联的资源权限
         roleResourceRefService.deleteByRoleId(roleId);
     }
 

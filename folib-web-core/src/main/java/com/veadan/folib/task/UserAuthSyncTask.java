@@ -87,7 +87,7 @@ public class UserAuthSyncTask {
                     Boolean wsClientOnline = value.getWsClientOnline();
                     Boolean isSyncPrivilege = value.getIsSyncPrivilege();
 
-                    if (!isThisCluster && wsClientOnline && isSyncPrivilege) {
+                    if (!isThisCluster && wsClientOnline && isSyncPrivilege != null && isSyncPrivilege) {
                         WSMessageRequest wsMessageRequest = null;
                         WSMessageResponse messageResponse = null;
                         String clusterNodeHost = value.getClusterNodeHost();

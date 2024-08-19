@@ -316,7 +316,7 @@ public class RelationalDatabaseUserService implements UserService
             //有权限变更，删除缓存
             folibRoleService.deleteUserRoleCache(Collections.singletonList(user.getUuid()));
         }else {
-            List<PermissionsDTO> permissions = roleResourceRefService.queryPermissions(null, user.getUuid(), GlobalConstants.ROLE_TYPE_USER, null, false);
+            List<PermissionsDTO> permissions = roleResourceRefService.queryPermissions(null, user.getUuid(), null, null, false);
             List<Long> refIds = permissions.stream().filter(item -> SystemRole.ADMIN.name().equals(item.getRoleId()) || SystemRole.OPEN_SOURCE_MANAGE.name().equals(item.getRoleId())).map(PermissionsDTO::getId).collect(Collectors.toList());
             if (!CollectionUtils.isEmpty(refIds)) {
                 roleResourceRefService.deleteByIds(refIds);

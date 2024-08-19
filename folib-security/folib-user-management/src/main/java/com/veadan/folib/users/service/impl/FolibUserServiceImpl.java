@@ -82,11 +82,10 @@ public class FolibUserServiceImpl implements FolibUserService {
         folibUser.setUpdateTime(date);
         FolibUser folibUserInfo = folibUserMapper.selectOne(FolibUser.builder().id(folibUser.getId()).build());
         if (Objects.equals(folibUserInfo, null)) {
-            folibUser.setCreateTime(date);
             folibUserMapper.insert(folibUser);
         }else {
-            folibUserInfo.setDeleted(GlobalConstants.NOT_DELETED);
-            folibUserMapper.update(folibUserInfo);
+            folibUser.setDeleted(GlobalConstants.NOT_DELETED);
+            folibUserMapper.update(folibUser);
         }
         return userEntity;
     }

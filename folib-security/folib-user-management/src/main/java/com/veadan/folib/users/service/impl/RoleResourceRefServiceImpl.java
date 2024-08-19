@@ -90,7 +90,7 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
     }
 
     public boolean deleteByRoleId(String roleId){
-        int total = roleResourceRefMapper.delete(RoleResourceRef.builder().roleId(roleId).build());
+        int total = roleResourceRefMapper.deleteByRoleId(roleId);
         return total > 0;
     }
 

@@ -204,7 +204,7 @@
             and rrr.entity_id in (
                 select id from folib_user fu where fu.id = #{username}
                 union all
-                select id from user_group_ref ugr where ugr.user_id = #{username})
+                select ugr.user_group_id  as id from user_group_ref ugr where ugr.user_id = #{username})
         </if>  and rrr.id is not null
         <if test="resourceEmpty">
             or  rrr.resource_id is null and rrr.id is not null
@@ -329,5 +329,8 @@
         <foreach collection="refIds" item="refId" open="(" separator="," close=")">
             #{refId}
         </foreach>
+    </delete>
+    <delete id="deleteByRoleId">
+        delete from role_resource_ref where role_id = #{roleId} and entity_id is not null
     </delete>
 </mapper>

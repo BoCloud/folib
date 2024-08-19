@@ -112,4 +112,6 @@ public interface RoleResourceRefMapper extends CommonMapper<RoleResourceRef> {
      List<RoleResourceRef> queryApiAuthorities(@Param("roleIds") List<String> roleIds);
 
      List<RoleResourceRef> queryByRoleIds(@Param("roleIds") List<String> roleIds);
+
+     int deleteByRoleId(@Param("roleId") String roleId);
  }
