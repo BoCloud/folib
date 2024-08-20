@@ -293,7 +293,7 @@ export default ({
     }
     const checkUsername = (rule, value, callback) => {
       if (value) {
-        if (value.length < 2 || value.length > 30) {
+        if (value.length < 2 || value.length > 36) {
           callback(new Error(this.$t('Users.userNameLength')))
         } else {
           callback()

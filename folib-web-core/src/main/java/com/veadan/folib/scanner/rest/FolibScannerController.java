@@ -33,11 +33,11 @@ public class FolibScannerController extends BaseController<FolibScannerBiz, Foli
     private ScanService scanService;
 
     @GetMapping("/update")
-    @PreAuthorize("authenticated")
-    public ObjectRestResponse updateDb() {
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ObjectRestResponse updateDb(String cron) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
-        scanService.updateDB(userDetails.getUsername());
+        scanService.vulnerabilityRefreshData(userDetails.getUsername(), cron);
         return new ObjectRestResponse(true, "更新中");
     }
 

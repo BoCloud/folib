@@ -297,7 +297,26 @@ public class CronTaskController
         return ResponseEntity.ok(config);
     }
 
+    @ApiOperation(value = "依据类名称获取设置的定时任务")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_GET_CONFIGURATIONS),
+            @ApiResponse(code = 404, message = NOT_FOUND_CONFIGURATIONS) })
+    @GetMapping(value = "/getByClass",produces = { MediaType.APPLICATION_JSON_VALUE,
+            com.veadan.folib.net.MediaType.APPLICATION_YAML_VALUE })
+    public ResponseEntity getConfigurationByClass(@RequestHeader(HttpHeaders.ACCEPT) String acceptHeader,
+                                                        @RequestParam("className") String className)
 
+    {
+
+        CronTasksConfigurationDto config = cronTaskConfigurationService.getTasksConfigurationDto();
+        config.setCronTaskConfigurations(config.getCronTaskConfigurations().stream().filter(cron -> className.equals(cron.getJobClass())).collect(Collectors.toSet()));
+
+        if (CollectionUtils.isEmpty(config.getCronTaskConfigurations()))
+        {
+            return ResponseEntity.ok(config);
+        }
+
+        return ResponseEntity.ok(config);
+    }
 
     @ApiOperation(value = "Used to upload groovy script for groovy cron task")
     @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_UPLOAD_GROOVY_SCRIPT),

@@ -29,7 +29,7 @@ export default {
     'SureDeleteUser1': '你确定要删除',
     'SureDeleteUser2': '这个用户么？',
     'Delete': '删除',
-    'userNameLength': '长度在 2 到 30 个字符',
+    'userNameLength': '长度在 2 到 36 个字符',
     'EnterThePassword': '请输入密码',
     'passwordLength': '长度在 12 到 30 个字符',
     'PleaseSelectTheRole': '请选择角色',

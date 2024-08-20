@@ -389,6 +389,7 @@ export default ({
           title: '操作',
           i18nKey: 'Storage.Operation',
           dataIndex: 'operation',
+          width: 280,
           scopedSlots: { customRender: 'operation' },
         },
       ],

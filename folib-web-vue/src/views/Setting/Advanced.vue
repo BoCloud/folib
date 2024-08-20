@@ -112,51 +112,112 @@
             </a-card>
           </a-tab-pane>
           <a-tab-pane :key="3" :tab="$t('Setting.BugUpdate')">
-            <a-card :bordered="false" class="header-solid">
-              <template #title>
-                <h6>{{ $t('Setting.UpdateVulnerabilityData') }}</h6>
-                <p>{{ $t('Setting.updateDataToLibrary') }}
-                </p>
-              </template>
-              <a-descriptions :title="$t('Setting.TheLastUpdate')" :column="1" class="mb-20">
-                <a-descriptions-item :label="$t('Setting.User')">
-                  {{ singleDict.dictKey }}
-                </a-descriptions-item>
-                <a-descriptions-item :label="$t('Setting.Time')">
-                  {{ singleDict.createTime }}
-                </a-descriptions-item>
-                <a-descriptions-item :label="$t('Setting.Status')">
-                  <a-tag v-if="singleDict.comment"
-                    :color="singleDict.comment.indexOf('完成') !== -1 ? 'green' : singleDict.comment.indexOf('错误') !== -1 ? 'red' : 'orange'">
-                    {{ singleDict.comment }}
-                    <a-popconfirm :title="$t('Setting.sureChangeState')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
-                      @confirm="updateSingleDict(3, singleDict.id, $t('Setting.ManualClosing'))">
-                      <a-icon type="unlock" theme="filled" v-if="singleDict.comment.indexOf('中') !== -1" />
-                    </a-popconfirm>
-                  </a-tag>
-                  <span v-else>--</span>
-                </a-descriptions-item>
-              </a-descriptions>
-              <a-form-model layout="horizontal" ref="vulnerabilitiesForm" :model="vulnerabilitiesForm"
-                :hideRequiredMark="true">
-                <a-row :gutter="[24]">
-                  <a-col :span="24">
-                    <a-row :gutter="[24]">
-                      <a-col :span="12">
-                        <a-form-model-item>
-                          <a-popconfirm :title="$t('Setting.sureUpdateTheVulnerabilityData')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
-                            @confirm="vulnerabilitiesFormSubmit" :disabled="singleDict.comment.indexOf('中') > -1">
-                            <a-button type="danger" :disabled="singleDict.comment.indexOf('中') > -1">
-                              {{ $t('Setting.Update') }}
-                            </a-button>
-                          </a-popconfirm>
-                        </a-form-model-item>
-                      </a-col>
-                    </a-row>
-                  </a-col>
-                </a-row>
-              </a-form-model>
-            </a-card>
+            <a-row :gutter="[24]">
+              <a-col :span="12">
+                <a-card :bordered="false" class="header-solid">
+                  <template #title>
+                    <h6>{{ $t('Setting.UpdateVulnerabilityData') }}</h6>
+                    <p>{{ $t('Setting.updateDataToLibrary') }}
+                    </p>
+                  </template>
+                  <a-descriptions :title="$t('Setting.TheLastUpdate')" :column="1" class="mb-20">
+                    <a-descriptions-item :label="$t('Setting.User')">
+                      {{ singleDict.dictKey }}
+                    </a-descriptions-item>
+                    <a-descriptions-item :label="$t('Setting.Time')">
+                      {{ singleDict.createTime }}
+                    </a-descriptions-item>
+                    <a-descriptions-item :label="$t('Setting.Status')">
+                      <a-tag v-if="singleDict.comment"
+                        :color="singleDict.comment.indexOf('完成') !== -1 ? 'green' : singleDict.comment.indexOf('错误') !== -1 ? 'red' : 'orange'">
+                        {{ singleDict.comment }}
+                        <a-popconfirm :title="$t('Setting.sureChangeState')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
+                          @confirm="updateSingleDict(3, singleDict.id, $t('Setting.ManualClosing'))">
+                          <a-icon type="unlock" theme="filled" v-if="singleDict.comment.indexOf('中') !== -1" />
+                        </a-popconfirm>
+                      </a-tag>
+                      <span v-else>--</span>
+                    </a-descriptions-item>
+                    <a-descriptions-item :label="$t('Setting.Timing')">
+                      <a-input size="small"
+                        :placeholder="$t('Setting.VulnerabilityCron')" v-model="vulnerabilityCron.cronExpression">
+                        <a-icon slot="suffix" type="clock-circle"/>
+                      </a-input>
+                    </a-descriptions-item>
+                  </a-descriptions>
+                  <a-popconfirm :title="$t('Setting.SureUpdateTheVulnerabilityData')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
+                    @confirm="vulnerabilitiesSubmit(1)" :disabled="singleDict.comment.indexOf('中') > -1">
+                    <a-button :disabled="singleDict.comment.indexOf('中') > -1" class="mr-20">
+                      {{ $t('Setting.ManualUpdate') }}
+                    </a-button>
+                  </a-popconfirm>
+                  <a-popconfirm :title="$t('Setting.SureUpdateTheVulnerabilityDataCron')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
+                    @confirm="vulnerabilitiesSubmit(2)" :disabled="singleDict.comment.indexOf('中') > -1">
+                    <a-button type="primary" :disabled="singleDict.comment.indexOf('中') > -1" class="mr-20">
+                      {{ $t('Setting.RegularUpdate') }}
+                    </a-button>
+                  </a-popconfirm>
+                  <a-popconfirm :title="$t('Setting.SureDeleteTheVulnerabilityDataCron')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
+                    @confirm="delCronOne" :disabled="singleDict.comment.indexOf('中') > -1">
+                    <a-button type="danger" :disabled="singleDict.comment.indexOf('中') > -1">
+                      {{ $t('Setting.DeleteRegularUpdate') }}
+                    </a-button>
+                  </a-popconfirm>
+                </a-card>
+              </a-col>
+              <a-col :span="12">
+                <a-card :bordered="false" class="header-solid">
+                  <template #title>
+                    <h6>{{ $t('扫描设置') }}</h6>
+                    <p>{{ $t('全量制品扫描设置，作用于已开启扫描的仓库') }}
+                    </p>
+                  </template>
+                  <a-descriptions :title="$t('Setting.TheLastUpdate')" :column="1" class="mb-20">
+                    <a-descriptions-item :label="$t('Setting.User')">
+                      {{ singleDict.dictKey }}
+                    </a-descriptions-item>
+                    <a-descriptions-item :label="$t('Setting.Time')">
+                      {{ singleDict.createTime }}
+                    </a-descriptions-item>
+                    <a-descriptions-item :label="$t('Setting.Status')">
+                      <a-tag v-if="singleDict.comment"
+                        :color="singleDict.comment.indexOf('完成') !== -1 ? 'green' : singleDict.comment.indexOf('错误') !== -1 ? 'red' : 'orange'">
+                        {{ singleDict.comment }}
+                        <a-popconfirm :title="$t('Setting.sureChangeState')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
+                          @confirm="updateSingleDict(3, singleDict.id, $t('Setting.ManualClosing'))">
+                          <a-icon type="unlock" theme="filled" v-if="singleDict.comment.indexOf('中') !== -1" />
+                        </a-popconfirm>
+                      </a-tag>
+                      <span v-else>--</span>
+                    </a-descriptions-item>
+                    <a-descriptions-item :label="$t('Setting.Timing')">
+                      <a-input size="small"
+                        :placeholder="$t('Setting.VulnerabilityCron')" v-model="vulnerabilityCron.cronExpression">
+                        <a-icon slot="suffix" type="clock-circle"/>
+                      </a-input>
+                    </a-descriptions-item>
+                  </a-descriptions>
+                  <a-popconfirm :title="$t('Setting.SureUpdateTheVulnerabilityData')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
+                    @confirm="vulnerabilitiesSubmit(1)" :disabled="singleDict.comment.indexOf('中') > -1">
+                    <a-button :disabled="singleDict.comment.indexOf('中') > -1" class="mr-20">
+                      {{ $t('立即扫描') }}
+                    </a-button>
+                  </a-popconfirm>
+                  <a-popconfirm :title="$t('Setting.SureUpdateTheVulnerabilityDataCron')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
+                    @confirm="vulnerabilitiesSubmit(2)" :disabled="singleDict.comment.indexOf('中') > -1">
+                    <a-button type="primary" :disabled="singleDict.comment.indexOf('中') > -1" class="mr-20">
+                      {{ $t('定时扫描') }}
+                    </a-button>
+                  </a-popconfirm>
+                  <a-popconfirm :title="$t('Setting.SureDeleteTheVulnerabilityDataCron')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
+                    @confirm="delCronOne" :disabled="singleDict.comment.indexOf('中') > -1">
+                    <a-button type="danger" :disabled="singleDict.comment.indexOf('中') > -1">
+                      {{ $t('Setting.DeleteRegularUpdate') }}
+                    </a-button>
+                  </a-popconfirm>
+                </a-card>
+              </a-col>
+            </a-row>
           </a-tab-pane>
           <a-tab-pane :key="4" :tab="$t('Setting.BackupStrategy')">
             <a-card :bordered="false" class="header-solid">
@@ -281,14 +342,17 @@ import "prismjs/themes/prism-tomorrow.css"
 import DataMigration from "./components/DataMigration.vue"
 import ArtifactsBackup from "./components/ArtifactsBackup.vue";
 import ArtifactsCache from "./components/Cache/index.vue";
+
 import {
-  getStoragesAndRepositories
+  getStoragesAndRepositories,
+  delCronOne
 } from "@/api/folib"
 import {
   buildGraphIndex
 } from "@/api/artifact"
 import {
-  vulnerabilitiesDataUpdate
+  vulnerabilitiesDataUpdate,
+  getCrontaskByClass
 } from "@/api/settings"
 import {
   janusGraph,
@@ -318,9 +382,6 @@ export default {
         metadata: false,
         path: ''
       },
-      vulnerabilitiesForm: {
-
-      },
       janusGraphInfo: {
         openInstances: [],
         exceptionalIndexSet: [],
@@ -342,13 +403,17 @@ export default {
         dictValue: '--',
         comment: ''
       },
+      vulnerabilityCron: {
+        cronExpression: undefined,
+        uuid: undefined,
+      },
     }
   },
   components: {
     PrismEditor,
     DataMigration,
     ArtifactsBackup,
-    ArtifactsCache
+    ArtifactsCache,
   },
   computed: {
 
@@ -425,20 +490,29 @@ export default {
       this.$refs.buildGraphIndexForm.resetFields()
       this.initData()
     },
-    vulnerabilitiesFormSubmit() {
-      this.$refs.vulnerabilitiesForm.validate(valid => {
-        if (valid) {
-          vulnerabilitiesDataUpdate().then(res => {
-            setTimeout(() => {
-              this.getSingleDict('vulnerability_update')
-            }, 100)
-            this.message("success", this.$t('Setting.vulnerabilityUpdateTaskStarted'))
-          }).catch((err) => {
-            this.message("error", this.$t('Setting.updateFailExecute'))
-          }).finally(() => {
-
-          })
+    vulnerabilitiesSubmit(type) {
+      let params = {}
+      if (type === 2 && !this.vulnerabilityCron.cronExpression) {
+        this.message("warning", this.$t('Setting.VulnerabilityCron'))
+        return false
+      }
+      if (type === 2) {
+        params.cron = this.vulnerabilityCron.cronExpression
+      }
+      vulnerabilitiesDataUpdate(params).then(res => {
+        setTimeout(() => {
+          this.getSingleDict('vulnerability_update')
+        }, 100)
+        if (type === 2) {
+          this.message("success", this.$t('Setting.VulnerabilityUpdateCronTask'))
+          this.getCrontaskByClass()
+        } else {
+          this.message("success", this.$t('Setting.vulnerabilityUpdateTaskStarted'))
         }
+      }).catch((err) => {
+        this.message("error", this.$t('Setting.updateFailExecute'))
+      }).finally(() => {
+
       })
     },
     getJanusGraphInfo() {
@@ -495,6 +569,7 @@ export default {
         this.buildGraphIndexResetForm()
       } else if (activeTab === 2) {
       } else if (activeTab === 3) {
+        this.getCrontaskByClass()
         this.getSingleDict('vulnerability_update')
       } else if (activeTab === 6) {
         this.getJanusGraphInfo()
@@ -527,7 +602,27 @@ export default {
         this.tabChange(type)
         this.message("success", this.$t('Setting.updateStatusSuccessful'))
       })
-    }
+    },
+    getCrontaskByClass() {
+      getCrontaskByClass({ className: 'com.veadan.folib.cron.jobs.VulnerabilityRefreshCronJob' }).then(res => {
+        if (res && res.cronTaskConfigurations && res.cronTaskConfigurations.length > 0) {
+          this.vulnerabilityCron.uuid = res.cronTaskConfigurations[0].uuid
+          this.vulnerabilityCron.cronExpression = res.cronTaskConfigurations[0].cronExpression
+        }
+      })
+    },
+    delCronOne() {
+      if (!this.vulnerabilityCron.uuid) {
+         return false
+      }
+      delCronOne(this.vulnerabilityCron.uuid).then(res => {
+        this.vulnerabilityCron = {
+          uuid: undefined,
+          cronExpression: undefined,
+        }
+        this.message("success", this.$t('Setting.OperationSuccessful'))
+      })
+    },
   }
 }
 </script>

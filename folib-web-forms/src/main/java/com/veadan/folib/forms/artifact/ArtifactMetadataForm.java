@@ -46,6 +46,10 @@ public class ArtifactMetadataForm {
     @NotBlank(message = "请填写元数据值", groups = {AddOrUpdateGroup.class})
     private String value;
     /**
+     * 展示位置
+     */
+    private String location;
+    /**
      * 存储空间名称
      */
     @NotBlank(message = "存储空间名称不能为空", groups = {AddOrUpdateGroup.class, DeleteGroup.class})

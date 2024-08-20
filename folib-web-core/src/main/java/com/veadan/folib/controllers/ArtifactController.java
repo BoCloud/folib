@@ -91,7 +91,6 @@ public class ArtifactController extends BaseController {
     private static final String REPOSITORY_NOT_FOUND = "The repository was not found.";
 
 
-
     @ApiOperation(value = "导出漏洞的影响范围")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
@@ -102,6 +101,16 @@ public class ArtifactController extends BaseController {
         artifactWebService.exportExcel(vulnerabilityUuid, storageId, repositoryId, response);
     }
 
+    @ApiOperation(value = "查询漏洞的影响范围")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @GetMapping(value = "/getArtifacts")
+    public TableResultResponse<com.veadan.folib.domain.ArtifactInfo> getArtifacts(@RequestParam(name = "page") Integer page, @RequestParam(name = "limit") Integer limit,
+                                                                                  @RequestParam(name = "vulnerabilityUuid") String vulnerabilityUuid,
+                                                                                  @RequestParam(name = "storageId", required = false) String storageId,
+                                                                                  @RequestParam(name = "repositoryId", required = false) String repositoryId, @RequestParam(name = "artifactName", required = false) String artifactName) {
+        return artifactWebService.getArtifacts(page, limit, vulnerabilityUuid, storageId, repositoryId, artifactName);
+    }
 
     @ApiOperation(value = "全局设置添加或者更新元数据")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
@@ -410,12 +419,12 @@ public class ArtifactController extends BaseController {
         }
         return ResponseEntity.ok(layouts);
     }
-    
+
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = "/rawPathSize/{storageId}/{repositoryId}/{path:.+}")
     public ResponseEntity<String> getRawPathSize(@PathVariable("storageId") String storageId,
-                                               @PathVariable("repositoryId") String repositoryId,
-                                               @PathVariable("path") String path) throws IOException {
+                                                 @PathVariable("repositoryId") String repositoryId,
+                                                 @PathVariable("path") String path) throws IOException {
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
 
         long size = 0;

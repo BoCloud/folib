@@ -150,7 +150,7 @@ export default {
           callback()
         }
       } else if (!value) {
-        callback(new Error(this.$t('Users.EnterNewPassword')))
+        callback()
       } else {
         callback()
       }
@@ -163,7 +163,7 @@ export default {
           callback()
         }
       } if (!value) {
-        callback(new Error(this.$('EnterNewPasswordAgain')))
+        callback()
       } else{
         callback()
       }
@@ -174,7 +174,7 @@ export default {
       } else if (this.passwordForm.password != this.passwordForm.againPassword){
         callback(new Error(this.$t('Users.TwoDifferentPasswordInputs')))
       } else if (!value) {
-        callback(new Error(this.$('EnterNewPasswordAgain')))
+        callback()
       } else{
         callback()
       }
@@ -269,7 +269,7 @@ export default {
             username: this.personalForm.username,
             email: this.personalForm.email,
             avatar: this.personalForm.avatar,
-            password: encrypt(this.personalForm.password)
+            password: this.personalForm.password?encrypt(this.personalForm.password): null
           }
           updateUser(user).then(res => {
             if (user.password) {

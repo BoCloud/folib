@@ -5,15 +5,21 @@ import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.json.JSONUtil;
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.beust.jcommander.internal.Sets;
+import com.google.common.collect.Lists;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.cluster.SyncCornJobEnum;
+import com.veadan.folib.components.DistributedCacheComponent;
+import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.license.LicenseComponent;
 import com.veadan.folib.components.scan.ScanComponent;
+import com.veadan.folib.controllers.cluster.dto.SyncCronJobDto;
+import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
+import com.veadan.folib.cron.jobs.VulnerabilityRefreshCronJob;
+import com.veadan.folib.cron.services.CronTaskConfigurationService;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.Component;
 import com.veadan.folib.domain.ComponentEntity;
@@ -30,24 +36,23 @@ import com.veadan.folib.forms.scanner.ScannerReportForm;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerFileSystem;
+import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repositories.ComponentRepository;
 import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.scanner.common.util.DateUtils;
 import com.veadan.folib.scanner.config.ScanConfig;
+import com.veadan.folib.scanner.entity.ScanRules;
 import com.veadan.folib.scanner.entity.ScannerReport;
 import com.veadan.folib.scanner.enums.SeverityTypeEnum;
 import com.veadan.folib.scanner.mapper.ScanRulesMapper;
-import com.veadan.folib.services.ArtifactService;
-import com.veadan.folib.services.DictService;
-import com.veadan.folib.services.VulnerabilityService;
-import com.veadan.folib.services.VulnerabilityWebService;
+import com.veadan.folib.services.*;
 import com.veadan.folib.util.FileSizeConvertUtils;
 import com.veadan.folib.util.LocalDateTimeInstance;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.tinkerpop.gremlin.process.traversal.Order;
 import org.owasp.dependencycheck.data.update.exception.UpdateException;
 import org.owasp.dependencycheck.dependency.*;
 import org.owasp.dependencycheck.dependency.naming.Identifier;
@@ -57,8 +62,12 @@ import org.owasp.dependencycheck.utils.Settings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -115,6 +124,21 @@ public class ScanService {
 
     @Inject
     private ScanComponent scanComponent;
+
+    @Inject
+    private CronTaskConfigurationService cronTaskConfigurationService;
+
+    @Inject
+    private ClusterSyncService clusterSyncService;
+
+    @Inject
+    private ArtifactRepository artifactRepository;
+
+    @Inject
+    private DistributedLockComponent distributedLockComponent;
+
+    @Inject
+    private DistributedCacheComponent distributedCacheComponent;
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -586,7 +610,15 @@ public class ScanService {
     }
 
     @Async("asyncThreadPoolTaskExecutor")
-    public void updateDB(String username) {
+    public void vulnerabilityRefreshData(String username, String cron) {
+        if (StringUtils.isNotBlank(cron)) {
+            createVulnerabilityRefreshCronTask(cron);
+        } else {
+            vulnerabilityRefresh(username);
+        }
+    }
+
+    public void vulnerabilityRefresh(String username) {
         Dict existsDict = dictService.selectLatestOneDict(Dict.builder().dictType(DictTypeEnum.VULNERABILITY_UPDATE.getType()).build());
         String comment = "更新中";
         if (Objects.nonNull(existsDict) && comment.equals(existsDict.getComment())) {
@@ -599,11 +631,54 @@ public class ScanService {
             settings.setBoolean(Settings.KEYS.UPDATE_NVDCVE_ENABLED, true);
             settings.setBoolean(Settings.KEYS.AUTO_UPDATE, true);
             XpEngine engine = new XpEngine(settings);
-            engine.doUpdates();
-            dictService.updateDict(DictForm.builder().id(dict.getId()).comment("更新完成").build());
+            boolean result = engine.doUpdates();
+            if (!result) {
+                dictService.updateDict(DictForm.builder().id(dict.getId()).comment("漏洞数据没有任何更新").build());
+                log.info("漏洞数据实际没有进行任何更新");
+            } else {
+                try {
+                    dictService.updateDict(DictForm.builder().id(dict.getId()).comment("更新完成").build());
+                } catch (Exception ex) {
+                    log.warn(ExceptionUtils.getStackTrace(ex));
+                }
+                log.info("漏洞数据更新完成，开始触发全量制品扫描");
+                String key = "VULNERABILITY_UPDATE_FULL_ARTIFACT_SCAN";
+                String value = distributedCacheComponent.get(key);
+                if (StringUtils.isNotBlank(value) && Boolean.TRUE.equals(Boolean.valueOf(value))) {
+                    //触发全量制品扫描
+                    artifactsFullScan(LocalDateTime.now());
+                }
+            }
         } catch (UpdateException e) {
             dictService.updateDict(DictForm.builder().id(dict.getId()).comment("更新错误").build());
             throw new BusinessException("更新出错");
+        }
+    }
+
+    private void createVulnerabilityRefreshCronTask(String cron)
+            throws RuntimeException {
+        String cronName = "Vulnerability refresh";
+        CronTaskConfigurationDto cronTaskConfiguration = new CronTaskConfigurationDto();
+        cronTaskConfiguration.setName(cronName);
+        cronTaskConfiguration.setJobClass(VulnerabilityRefreshCronJob.class.getName());
+        cronTaskConfiguration.setCronExpression(cron);
+        cronTaskConfiguration.setOneTimeExecution(false);
+        cronTaskConfiguration.setImmediateExecution(false);
+        try {
+            Optional<CronTaskConfigurationDto> cronTaskConfigurationOptional = cronTaskConfigurationService.getTasksConfigurationDto().getCronTaskConfigurations().stream().filter(item -> item.getJobClass().equals(VulnerabilityRefreshCronJob.class.getName())).findFirst();
+            if (cronTaskConfigurationOptional.isPresent()) {
+                CronTaskConfigurationDto cronTaskConfigurationDto = cronTaskConfigurationOptional.get();
+                cronTaskConfigurationService.deleteConfiguration(cronTaskConfigurationDto.getUuid());
+                SyncCronJobDto syncCronJobDto = new SyncCronJobDto(cronTaskConfiguration, SyncCornJobEnum.DELETE);
+                clusterSyncService.syncCronJob(syncCronJobDto);
+            }
+            UUID uuid = cronTaskConfigurationService.saveConfiguration(cronTaskConfiguration);
+            cronTaskConfiguration.setUuid(uuid);
+            SyncCronJobDto syncCronJobDto = new SyncCronJobDto(cronTaskConfiguration, SyncCornJobEnum.ADD_OR_UPDATE);
+            clusterSyncService.syncCronJob(syncCronJobDto);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 
@@ -626,6 +701,83 @@ public class ScanService {
      */
     public int countProperties() {
         return scanRulesMapper.countProperties();
+    }
+
+    /**
+     * 全量制品扫描
+     *
+     * @param vulnerabilityRefreshTime 漏洞数据更新时间
+     */
+    private void artifactsFullScan(LocalDateTime vulnerabilityRefreshTime) {
+        List<String> storageIdAndRepositoryIdList = getScanStorageIdAndRepositoryIdList();
+        List<String> safeLevels = Lists.newArrayList(SafeLevelEnum.INIT.getLevel(), SafeLevelEnum.SCANNING.getLevel(), SafeLevelEnum.SCAN_FAIL.getLevel(), SafeLevelEnum.UN_SCAN.getLevel(), SafeLevelEnum.SCAN_COMPLETE.getLevel());
+        long totalCount = artifactRepository.findMatchingCountBySafeLevels(storageIdAndRepositoryIdList, safeLevels);
+        if (totalCount <= 0) {
+            return;
+        }
+        int batchSize = 50;
+        // 计算总页数
+        int totalPages = (int) Math.ceil((double) totalCount / batchSize);
+        Pageable pageable;
+        Page<Artifact> page;
+        List<Artifact> artifactList;
+        for (int currentPage = 1; currentPage <= totalPages; currentPage++) {
+            log.info("Scan totalPages [{}] currentPage [{}] batchSize [{}]", totalPages, currentPage, batchSize);
+            if (currentPage == 1) {
+                pageable = PageRequest.of(currentPage, batchSize).first();
+            } else {
+                pageable = PageRequest.of(currentPage, batchSize).previous();
+            }
+            page = artifactRepository.findMatchingPageBySafeLevels(pageable, storageIdAndRepositoryIdList, safeLevels, Order.asc.name());
+            if (CollectionUtils.isNotEmpty(page.getContent())) {
+                artifactList = page.getContent();
+                //过滤扫描时间为空或者扫描时间在漏洞库更新时间之前的制品
+                artifactList = artifactList.stream().filter(item -> Objects.isNull(item.getScanDateTime()) || (Objects.nonNull(vulnerabilityRefreshTime) && item.getScanDateTime().isBefore(vulnerabilityRefreshTime))).collect(Collectors.toList());
+                syncScan(artifactList);
+            }
+        }
+        Checksum.clearCache();
+    }
+
+    public void artifactsScan() {
+        List<String> safeLevels = Lists.newArrayList(SafeLevelEnum.INIT.getLevel(), SafeLevelEnum.SCANNING.getLevel(), SafeLevelEnum.SCAN_FAIL.getLevel(), SafeLevelEnum.UN_SCAN.getLevel());
+        artifactsScan(safeLevels, Order.desc.name());
+    }
+
+    public void artifactsScan(List<String> safeLevels, String order) {
+        String lockName = "ScannerTask";
+        long waitTime = 3L;
+        log.info("Wait for the lock [{}]", lockName);
+        if (distributedLockComponent.lock(lockName, waitTime)) {
+            try {
+                log.info("Locked for [{}]", lockName);
+                List<String> storageIdAndRepositoryIdList = getScanStorageIdAndRepositoryIdList();
+                List<Artifact> artifactList = artifactRepository.findMatchingBySafeLevels(storageIdAndRepositoryIdList, safeLevels, order);
+                if (CollectionUtils.isNotEmpty(artifactList)) {
+                    int size = 50;
+                    List<List<Artifact>> lists = Lists.partition(artifactList, size);
+                    for (List<Artifact> itemList : lists) {
+                        asyncScan(itemList);
+                    }
+                }
+                Checksum.clearCache();
+                log.info("Scan thread name [{}] time [{}]", Thread.currentThread().getName(), DateUtil.now());
+            } finally {
+                distributedLockComponent.unLock(lockName, 3500L);
+            }
+        } else {
+            log.info("LockName [{}] was not get lock", lockName);
+        }
+    }
+
+    private List<String> getScanStorageIdAndRepositoryIdList() {
+        Example example = new Example(ScanRules.class);
+        example.createCriteria().andEqualTo("onScan", 1);
+        List<ScanRules> scanRulesList = scanRulesMapper.selectByExample(example);
+        if (CollectionUtils.isEmpty(scanRulesList)) {
+            return null;
+        }
+        return scanRulesList.stream().map(item -> String.format("%s-%s", item.getStorage(), item.getRepository())).collect(Collectors.toList());
     }
 
 }

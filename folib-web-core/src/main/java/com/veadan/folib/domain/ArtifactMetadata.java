@@ -33,4 +33,9 @@ public class ArtifactMetadata {
      */
     @JSONField(ordinal = 3)
     private Integer viewShow;
+    /**
+     * 展示位置
+     */
+    @JSONField(ordinal = 4)
+    private String location;
 }

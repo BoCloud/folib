@@ -24,6 +24,7 @@ import {
 import Storages from "./Storages.vue"
 import SearchBox from "@/components/Tools/SearchBox"
 import Search from "./components/Search/index.vue"
+import { isLogin } from "@/utils/permission"
 
 export default {
   data() {
@@ -111,10 +112,16 @@ export default {
         this.$refs.search.search(value, searchType, type)
       })
     },
+    isLogin() {
+      return isLogin()
+    },
     getAllowAnonymous() {
       getAllowAnonymous().then(res => {
         this.allowAnonymous = res
-        if(!this.allowAnonymous) {
+        let login = isLogin()
+        console.log("isLogin: " + login)
+        if(!login &&!this.allowAnonymous) {
+          console.log("allowAnonymous: " + this.allowAnonymous + " to /login")
           this.$router.push('/login')
         }
       })

@@ -50,6 +50,7 @@ class CronTaskConfigurationServiceImpl
         logger.info("---定时任务已全部启动---");
     }
 
+    @Override
     public UUID saveConfiguration(CronTaskConfigurationDto configuration) throws IOException {
         logger.info("CronTaskConfigurationService.saveConfiguration()");
 
@@ -61,6 +62,7 @@ class CronTaskConfigurationServiceImpl
         return configurationId;
     }
 
+    @Override
     public void deleteConfiguration(UUID cronTaskConfigurationUuid) throws IOException {
         logger.info("Deleting cron task configuration {}", cronTaskConfigurationUuid);
 
@@ -75,6 +77,7 @@ class CronTaskConfigurationServiceImpl
         return cronTaskDataService.getTaskConfigurationDto(uuid);
     }
 
+    @Override
     public CronTasksConfigurationDto getTasksConfigurationDto() {
         return cronTaskDataService.getTasksConfigurationDto();
     }

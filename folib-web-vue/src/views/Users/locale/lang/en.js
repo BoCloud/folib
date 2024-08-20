@@ -27,7 +27,7 @@ export default {
     'SureDeleteUser1': 'Are you sure you want to delete user ',
     'SureDeleteUser2': '?',
     'Delete': 'Delete',
-    'userNameLength': 'Between 2 and 30 characters in length',
+    'userNameLength': 'Between 2 and 36 characters in length',
     'EnterThePassword': 'Please enter the password',
     'passwordLength': 'Between 12 and 30 characters in length',
     'PleaseSelectTheRole': 'Please select the role',

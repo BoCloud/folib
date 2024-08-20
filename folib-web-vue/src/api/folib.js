@@ -482,7 +482,13 @@ export function getFoEyesEnable () {
   })
 }
 
-
+export function getArtifactsPage (query) {
+  return axios({
+    url: '/api/artifact/getArtifacts',
+    method: 'get',
+    params: query
+  })
+}
 
 
 

@@ -70,4 +70,6 @@ export default {
     'StorageSpace': '存储空间',
     'OwnedWarehouse': '所属仓库',
     'ProductPath': '制品路径',
+    'BugArtifacts': '漏洞制品列表',
+    'DownloadCount': '下载次数',
 }
