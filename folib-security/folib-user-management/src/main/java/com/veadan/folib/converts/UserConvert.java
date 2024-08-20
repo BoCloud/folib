@@ -31,7 +31,7 @@ public interface UserConvert {
 
     UserConvert INSTANCE = Mappers.getMapper(UserConvert.class);
 
-    @Mappings({})
+    @Mappings({@Mapping(target = "roles", ignore = true)})
     UserDTO FolibUserToUserDTO(FolibUser folibUser);
     @Mappings({})
     List<User> FolibUsersToUserList(List<FolibUser> folibUsers);
@@ -52,7 +52,8 @@ public interface UserConvert {
 
     @Mappings({@Mapping(source = "folibUser.username", target = "id"),
             @Mapping(source = "lastUpdated", target = "updateTime"),
-            @Mapping(target = "deleted", expression = "java(folibUser.isEnabled()?\"0\":\"1\")")})
+            @Mapping(target = "deleted", expression = "java(folibUser.isEnabled()?\"0\":\"1\")"),
+            @Mapping(target = "roles", ignore = true)})
     FolibUser UserEntityToFolibUser(UserEntity folibUser);
 
     @Mappings({@Mapping(source = "roles", target = "roles")})
