@@ -42,10 +42,10 @@ DROP TABLE IF EXISTS `resource`;
 
 CREATE TABLE `resource` (
                             `id` varchar(100)  NOT NULL COMMENT '主键',
-                            `api_authoritie` varchar(50)  DEFAULT NULL COMMENT 'api权限',
+                            `api_authoritie` varchar(100)  DEFAULT NULL COMMENT 'api权限',
                             `storage_id` varchar(255)  DEFAULT NULL COMMENT '存储空间id',
                             `repository_id` varchar(255)  DEFAULT NULL COMMENT '仓库id',
-                            `path` varchar(50)  DEFAULT NULL COMMENT '路径',
+                            `path` varchar(255)  DEFAULT NULL COMMENT '路径',
                             `create_by` varchar(255)   DEFAULT '' COMMENT '创建人',
                             `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
                             PRIMARY KEY (`id`),
@@ -96,13 +96,16 @@ DROP TABLE IF EXISTS `user_group_ref`;
 CREATE TABLE `user_group_ref` (
                                   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
                                   `user_group_id` bigint DEFAULT NULL COMMENT '用户组id',
+                                  `user_group_name` varchar(255) DEFAULT NULL COMMENT '用户组名称',
                                   `user_id` varchar(100)  DEFAULT NULL COMMENT '角色id',
                                   `create_by` varchar(32)  DEFAULT NULL COMMENT '创建人',
                                   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-                                  PRIMARY KEY (`id`)
+                                  PRIMARY KEY (`id`),
+                                  KEY `idx_user_group_id` (`user_group_id`) USING BTREE,
+                                  KEY `idx_user_id` (`user_id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=1000 DEFAULT CHARSET=utf8mb4  COMMENT='用户组用户关联表';
 
-INSERT INTO user_group (id, group_name, description, join_group, is_default, deleted, create_by, create_time, update_by, update_time) VALUES(1, 'default_group', '默认用户组', '1', '1', '0', NULL, now(), NULL, now());
+INSERT INTO user_group (id, group_name, description, join_group, is_default, deleted, create_by, create_time, update_by, update_time) VALUES(1, 'GENERAL_GROUP', '默认普通用户组', '1', '1', '0', NULL, now(), NULL, now());
 INSERT INTO role_resource_ref (role_id, entity_id, ref_type, resource_id, storage_privilege, repository_privilege, path_privilege, create_by, create_time, resource_type) VALUES('GENERAL', '1', '2', NULL, NULL, NULL, NULL, NULL, now(), NULL);
 
 

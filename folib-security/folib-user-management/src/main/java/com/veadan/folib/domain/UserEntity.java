@@ -191,6 +191,7 @@ public class UserEntity extends DomainEntity implements User
         this.originalPassword = originalPassword;
     }
 
+    @Override
     public Set<String> getUserGroups() {
         return userGroups;
     }
@@ -199,6 +200,7 @@ public class UserEntity extends DomainEntity implements User
         this.userGroups = userGroups;
     }
 
+    @Override
     public Set<String> getUserGroupIds() {
         return userGroupIds;
     }

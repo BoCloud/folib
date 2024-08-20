@@ -247,6 +247,7 @@ public class UserDto
     public void setOriginalPassword(String originalPassword) {
         this.originalPassword = originalPassword;
     }
+    @Override
     public Set<String> getUserGroups() {
         return userGroups;
     }
