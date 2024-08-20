@@ -1,5 +1,5 @@
 DROP TABLE IF EXISTS `folib_role`;
--- folib_scanner.folib_role definition
+-- folib_role definition
 
 CREATE TABLE `folib_role` (
                               `id` varchar(100)  NOT NULL COMMENT '主键',
@@ -16,7 +16,7 @@ CREATE TABLE `folib_role` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4  COMMENT='角色信息';
 
 DROP TABLE IF EXISTS `folib_user`;
--- folib_scanner.folib_user definition
+-- folib_user definition
 
 CREATE TABLE `folib_user` (
                               `id` varchar(100)  NOT NULL COMMENT '主键',
@@ -38,7 +38,7 @@ CREATE TABLE `folib_user` (
 
 
 DROP TABLE IF EXISTS `resource`;
--- folib_scanner.resource definition
+-- resource definition
 
 CREATE TABLE `resource` (
                             `id` varchar(100)  NOT NULL COMMENT '主键',
@@ -55,7 +55,7 @@ CREATE TABLE `resource` (
 
 
 DROP TABLE IF EXISTS `role_resource_ref`;
--- folib_scanner.role_resource_ref definition
+-- role_resource_ref definition
 
 CREATE TABLE `role_resource_ref` (
                                      `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
@@ -74,7 +74,7 @@ CREATE TABLE `role_resource_ref` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1000 DEFAULT CHARSET=utf8mb4  COMMENT='权限表';
 
 DROP TABLE IF EXISTS `user_group`;
--- folib_scanner.user_group definition
+-- user_group definition
 
 CREATE TABLE `user_group` (
                               `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
@@ -91,7 +91,7 @@ CREATE TABLE `user_group` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1000 DEFAULT CHARSET=utf8mb4  COMMENT='用户组';
 
 DROP TABLE IF EXISTS `user_group_ref`;
--- folib_scanner.user_group_ref definition
+-- user_group_ref definition
 
 CREATE TABLE `user_group_ref` (
                                   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
@@ -103,7 +103,7 @@ CREATE TABLE `user_group_ref` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1000 DEFAULT CHARSET=utf8mb4  COMMENT='用户组用户关联表';
 
 INSERT INTO user_group (id, group_name, description, join_group, is_default, deleted, create_by, create_time, update_by, update_time) VALUES(1, 'default_group', '默认用户组', '1', '1', '0', NULL, now(), NULL, now());
-INSERT INTO folib_scanner.role_resource_ref (role_id, entity_id, ref_type, resource_id, storage_privilege, repository_privilege, path_privilege, create_by, create_time, resource_type) VALUES('GENERAL', '1', '2', NULL, NULL, NULL, NULL, NULL, now(), NULL);
+INSERT INTO role_resource_ref (role_id, entity_id, ref_type, resource_id, storage_privilege, repository_privilege, path_privilege, create_by, create_time, resource_type) VALUES('GENERAL', '1', '2', NULL, NULL, NULL, NULL, NULL, now(), NULL);
 
 
 
