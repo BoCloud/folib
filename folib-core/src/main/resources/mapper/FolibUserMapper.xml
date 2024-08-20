@@ -108,6 +108,12 @@
             </if>
         </where>
         group by fu.id
+        <if test="user.roles != null and user.roles.size() > 0">
+            having
+            <foreach collection="user.roles" item="role" separator="or" >
+                find_in_set(#{role}, roles)
+            </foreach>
+        </if>
         limit #{pageable.pageNumber}, #{pageable.pageSize}
     </select>
 

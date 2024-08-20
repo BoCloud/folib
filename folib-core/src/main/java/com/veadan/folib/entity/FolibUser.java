@@ -15,8 +15,10 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import java.io.Serializable;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
- /**
+/**
  * 用户信息;
  * @author : fengmaogen
  * @date : 2024-7-9
@@ -77,4 +79,5 @@ public class FolibUser implements Serializable,Cloneable{
     private Date updateTime ;
 
     private transient String refType;
+    private transient Set<String> roles = new HashSet<>();
 }

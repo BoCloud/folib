@@ -3,6 +3,7 @@ package com.veadan.folib.users.service.impl;
 import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.converts.UserConvert;
+import com.veadan.folib.domain.SecurityRole;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.UserEntity;
 import com.veadan.folib.dto.RepositoryPrivilegeDTO;
@@ -13,6 +14,7 @@ import com.veadan.folib.users.service.FolibUserService;
 import com.veadan.folib.users.service.RoleResourceRefService;
 import com.veadan.folib.users.service.UserGroupRefService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +27,7 @@ import tk.mybatis.mapper.entity.Example;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @Author: fengmg
@@ -119,6 +122,9 @@ public class FolibUserServiceImpl implements FolibUserService {
         }
         FolibUser folibUser = new FolibUser();
         BeanUtils.copyProperties(user, folibUser);
+        if (CollectionUtils.isNotEmpty(user.getRoles())) {
+            folibUser.setRoles(user.getRoles().stream().map(SecurityRole::getRoleName).collect(Collectors.toSet()));
+        }
         PageRequest pageRequest = PageRequest.of(start, limit);
         List<UserDTO> folibUsers = folibUserMapper.queryAllUserRoleByLimit(folibUser, pageRequest);
         List<UserEntity> userEntities = UserConvert.INSTANCE.UserDTOsToUserList(folibUsers);
