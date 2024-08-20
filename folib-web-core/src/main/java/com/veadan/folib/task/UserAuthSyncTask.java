@@ -39,6 +39,7 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -83,13 +84,14 @@ public class UserAuthSyncTask {
                     return;
                 }
                 map.forEach((key, value) -> {
+                    log.debug("key:{},value:{}", key, value);
                     Boolean isThisCluster = value.getIsThisCluster();
                     Boolean wsClientOnline = value.getWsClientOnline();
                     Boolean isSyncPrivilege = value.getIsSyncPrivilege();
 
                     if (!isThisCluster
-                            && wsClientOnline
-                            && isSyncPrivilege) {
+                            && !Objects.equals(wsClientOnline, null) && wsClientOnline
+                            && !Objects.equals(isSyncPrivilege, null) && isSyncPrivilege) {
                         WSMessageRequest wsMessageRequest = null;
                         WSMessageResponse messageResponse = null;
                         String clusterNodeHost = value.getClusterNodeHost();

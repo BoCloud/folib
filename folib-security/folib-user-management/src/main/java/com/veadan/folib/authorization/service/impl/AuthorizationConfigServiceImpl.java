@@ -134,8 +134,22 @@ public class AuthorizationConfigServiceImpl
                     Map<String, Set<PermissionsDTO>> pathMap = repositorys.stream().filter(dto -> StringUtils.isNotEmpty(dto.getPath())).collect(Collectors.groupingBy(PermissionsDTO::getPath, Collectors.toSet()));
                     if (!pathMap.isEmpty()) {
                         Set<PathPrivilegesDto> pathPrivilegesDtos = new HashSet<>();
-                        pathMap.forEach((path, pathPrivileges) -> pathPrivilegesDtos.add(PathPrivilegesDto.builder().path(path).privileges(pathPrivileges.stream().map(dto -> Privileges.valueOf(dto.getPathPrivilege())).collect(Collectors.toSet())).build()));
-                        repositoryPrivilege.setPathPrivileges(pathPrivilegesDtos);
+                        pathMap.forEach((path, pathPrivileges) -> {
+                            if (pathPrivileges != null) {
+                                Set<Privileges> privilegesSet = pathPrivileges.stream()
+                                        .filter(dto -> dto.getPathPrivilege() != null)
+                                        .map(dto -> Privileges.valueOf(dto.getPathPrivilege()))
+                                        .collect(Collectors.toSet());
+
+                                PathPrivilegesDto pathPrivilegesDto = PathPrivilegesDto.builder()
+                                        .path(path)
+                                        .privileges(privilegesSet)
+                                        .build();
+
+                                pathPrivilegesDtos.add(pathPrivilegesDto);
+                            }
+                        });
+
                     }
                 });
                 storagePrivileges.setRepositoryPrivileges(repositoryPrivileges);

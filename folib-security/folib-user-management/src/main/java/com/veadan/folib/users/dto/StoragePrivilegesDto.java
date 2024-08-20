@@ -17,6 +17,7 @@ import lombok.NoArgsConstructor;
  * @author Veadan
  */
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
 public class StoragePrivilegesDto
         implements Serializable, StoragePrivileges
@@ -29,9 +30,6 @@ public class StoragePrivilegesDto
 
     private Set<Privileges> storagePrivileges = new LinkedHashSet<>();
 
-    public StoragePrivilegesDto()
-    {
-    }
 
     @JsonCreator
     public StoragePrivilegesDto(@JsonProperty(value = "storageId", required = true) String storageId,@JsonProperty(value = "storagePrivileges", required = false) Set<Privileges> storagePrivileges)

@@ -2,6 +2,9 @@ package com.veadan.folib.users.security;
 
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
+import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veadan.folib.authorization.AuthorizationConfigFileManager;
 import com.veadan.folib.authorization.domain.RoleData;
 import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
@@ -82,13 +85,19 @@ public class AuthoritiesProvider
         String roleKey = String.format("user_role_%s", username);
         String roleStr = distributedCacheComponent.get(roleKey);
         Set<RoleData> roles;
-        if (StrUtil.isEmpty(roleStr)) {
-            roles = authorizationConfigService.get(username)
-                    .getRoles();
-            distributedCacheComponent.put(roleKey, JSONUtil.toJsonStr(roles));
-        }else {
-            List<RoleDto> roleDtos = JSONUtil.toList(JSONUtil.parseArray(roleStr), RoleDto.class);
-            roles = roleDtos.stream().map(RoleData::new).collect(Collectors.toSet());
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            if (StrUtil.isEmpty(roleStr)) {
+                roles = authorizationConfigService.get(username)
+                        .getRoles();
+
+                distributedCacheComponent.put(roleKey, objectMapper.writeValueAsString(roles));
+            } else {
+                List<RoleDto> roleDtos = objectMapper.readValue(roleStr, objectMapper.getTypeFactory().constructCollectionType(List.class, RoleDto.class));
+                roles = roleDtos.stream().map(RoleData::new).collect(Collectors.toSet());
+            }
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
         }
 
         Set<Role> roleSet = new HashSet<>();

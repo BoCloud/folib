@@ -205,19 +205,23 @@ public class StorageManagementServiceImpl implements StorageManagementService {
         Set<String> storageIds = storages.stream().map(Storage::getId).collect(Collectors.toSet());
         Map<String, Set<String>> userMap = getStorageUser(storageIds);
 
-        //FIXME 根据资源查询角色关联的用户、用户组下的用户
+        // 根据资源查询角色关联的用户、用户组下的用户
         List<String> roleIds = storageIds.stream().flatMap(storageId -> Stream.of(String.format("STORAGE_ADMIN_%S", storageId))).collect(Collectors.toList());
         List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryRefsByRoleIds(roleIds);
         Map<String, List<RoleResourceRef>> roleUserMap = roleResourceRefs.stream().filter(r -> Objects.nonNull(r.getRefType()) && r.getRefType().equals(GlobalConstants.ROLE_TYPE_USER)).collect(Collectors.groupingBy(RoleResourceRef::getRoleId));
         storages.forEach(storage -> {
-            Set<String> storageUsers = userMap.get(storage.getId());
-            if (CollectionUtils.isNotEmpty(storageUsers)) {
-                storage.setUsers(storageUsers);
-            }
             List<RoleResourceRef> adminRef = roleUserMap.get(String.format("STORAGE_ADMIN_%S", storage.getId()));
             if (CollectionUtils.isNotEmpty(adminRef)) {
-                storage.setAdmin(adminRef.get(0).getEntityId());
+                String adminUser = adminRef.get(0).getEntityId();
+                storage.setAdmin(adminUser);
+                storage.setUsers(Collections.singleton(adminUser));
             }
+            Set<String> storageUsers = userMap.get(storage.getId());
+            if (CollectionUtils.isNotEmpty(storageUsers)) {
+                storageUsers.addAll(storage.getUsers());
+                storage.setUsers(storageUsers);
+            }
+
         });
     }
 
@@ -231,10 +235,10 @@ public class StorageManagementServiceImpl implements StorageManagementService {
     @Override
     public Map<String, Set<String>> getStorageUser(Set<String> storageIds) {
         List<PermissionsDTO> permissions = roleResourceRefService.queryPermissionsByResourceIds(new ArrayList<>(storageIds));
-        Map<String, Set<String>> userMap = permissions.stream().filter(p -> GlobalConstants.ROLE_TYPE_USER.equals(p.getRefType())).collect(Collectors.groupingBy(PermissionsDTO::getResourceId,
+        Map<String, Set<String>> userMap = permissions.stream().filter(p -> GlobalConstants.ROLE_TYPE_USER.equals(p.getRefType())).collect(Collectors.groupingBy(PermissionsDTO::getStorageId,
                 Collectors.mapping(PermissionsDTO::getEntityId, Collectors.toSet())));
         //查询用户组关联的用户
-        Map<String, Set<String>> groupMap = permissions.stream().filter(p -> GlobalConstants.ROLE_TYPE_USER_GROUP.equals(p.getRefType())).collect(Collectors.groupingBy(PermissionsDTO::getResourceId, Collectors.mapping(PermissionsDTO::getEntityId, Collectors.toSet())));
+        Map<String, Set<String>> groupMap = permissions.stream().filter(p -> GlobalConstants.ROLE_TYPE_USER_GROUP.equals(p.getRefType())).collect(Collectors.groupingBy(PermissionsDTO::getStorageId, Collectors.mapping(PermissionsDTO::getEntityId, Collectors.toSet())));
         List<Long> groupIds = groupMap.values().stream().flatMap(Set::stream).map(Long::valueOf).collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(groupIds)) {
             List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(groupIds);
@@ -303,19 +307,20 @@ public class StorageManagementServiceImpl implements StorageManagementService {
                 if (folibRole == null) {
                     folibRoleService.insert(FolibRole.builder().id(key).enName(key).deleted(GlobalConstants.NOT_DELETED).isDefault(GlobalConstants.NOT_DEFAULT).description("存储空间管理员的专属角色").build());
                 }
+                String resourceId = currentStorageId.toUpperCase();
                 Resource resource = resourceService.queryById(currentStorageId.toUpperCase());
                 if (resource == null) {
                     Resource storageResource = Resource.builder().id(currentStorageId.toUpperCase()).storageId(currentStorageId).build();
                     resourceService.insert(storageResource);
                 }
                 Set<String> privileges = privileges();
-                List<RoleResourceRef> roleResourceRefs = privileges.stream().map(privilege -> RoleResourceRef.builder().roleId(key).entityId(username).refType(GlobalConstants.ROLE_TYPE_USER).resourceId(resource.getId())
+                List<RoleResourceRef> roleResourceRefs = privileges.stream().map(privilege -> RoleResourceRef.builder().roleId(key).entityId(username).refType(GlobalConstants.ROLE_TYPE_USER).resourceId(resourceId)
                         .storagePrivilege(privilege).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build()).collect(Collectors.toList());
                 roleResourceRefService.saveBath(roleResourceRefs);
 
             } catch (Exception ex) {
                 logger.error("handler user {} storage {} admin role error：{}", username, currentStorageId, ExceptionUtils.getStackTrace(ex));
-                throw new RuntimeException(ex.getMessage());
+                throw new RuntimeException(ex);
             }
         }
     }
