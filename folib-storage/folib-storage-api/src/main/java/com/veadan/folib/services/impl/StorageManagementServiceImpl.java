@@ -236,17 +236,20 @@ public class StorageManagementServiceImpl implements StorageManagementService {
         //查询用户组关联的用户
         Map<String, Set<String>> groupMap = permissions.stream().filter(p -> GlobalConstants.ROLE_TYPE_USER_GROUP.equals(p.getRefType())).collect(Collectors.groupingBy(PermissionsDTO::getResourceId, Collectors.mapping(PermissionsDTO::getEntityId, Collectors.toSet())));
         List<Long> groupIds = groupMap.values().stream().flatMap(Set::stream).map(Long::valueOf).collect(Collectors.toList());
-        List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(groupIds);
-        Map<Long, Set<String>> groupUserMap = userGroupRefs.stream().collect(Collectors.groupingBy(UserGroupRef::getUserGroupId, Collectors.mapping(UserGroupRef::getUserId, Collectors.toSet())));
-        if (!groupUserMap.isEmpty()){
-            groupUserMap.forEach((groupId, users) -> {
-                if (userMap.containsKey(groupId.toString())){
-                    userMap.get(groupId.toString()).addAll(users);
-                }else {
-                    userMap.put(groupId.toString(), users);
-                }
-            });
+        if (CollectionUtils.isNotEmpty(groupIds)) {
+            List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(groupIds);
+            Map<Long, Set<String>> groupUserMap = userGroupRefs.stream().collect(Collectors.groupingBy(UserGroupRef::getUserGroupId, Collectors.mapping(UserGroupRef::getUserId, Collectors.toSet())));
+            if (!groupUserMap.isEmpty()){
+                groupUserMap.forEach((groupId, users) -> {
+                    if (userMap.containsKey(groupId.toString())){
+                        userMap.get(groupId.toString()).addAll(users);
+                    }else {
+                        userMap.put(groupId.toString(), users);
+                    }
+                });
+            }
         }
+
         return userMap;
     }
 
