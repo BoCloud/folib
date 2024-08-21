@@ -13,8 +13,8 @@
         <SearchBox @mouse="searchBoxMouseStatus" @search="search"/>
       </a-row>
     </div>
-    <Storages v-if="!searchVisible && allowAnonymous" :anonymous="true" class="mt-15"/>
-    <Search ref="search" class="mt-20" v-if="searchVisible && allowAnonymous" :columns="columns"/>
+    <Storages v-if="!searchVisible && (allowAnonymous || isLogin())" :anonymous="true" class="mt-15"/>
+    <Search ref="search" class="mt-20" v-if="searchVisible && (allowAnonymous || isLogin())" :columns="columns"/>
   </div>
 </template>
 <script>
