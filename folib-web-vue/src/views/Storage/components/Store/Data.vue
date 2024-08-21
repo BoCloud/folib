@@ -29,6 +29,9 @@
           <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.LastUsedTime')">
             {{ currentFileDetial.lastUsedTime }}
           </a-descriptions-item>
+          <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.ScanTime')">
+            {{ currentFileDetial.scanTime }}
+          </a-descriptions-item>
           <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.DownloadTimes')">
             {{ currentFileDetial.downloadCount }}
           </a-descriptions-item>
@@ -70,6 +73,9 @@
           </a-descriptions-item>
           <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.ModifyTheTime')">
             {{ currentFileDetial.lastModified }}
+          </a-descriptions-item>
+          <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.ScanTime')">
+            {{ currentFileDetial.scanTime }}
           </a-descriptions-item>
           <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifest.layers" :label="$t('Store.NumberOfFloors')">
             {{ currentFileDetial.manifest.layers.length }}

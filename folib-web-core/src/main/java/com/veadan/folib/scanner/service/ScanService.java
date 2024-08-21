@@ -18,6 +18,7 @@ import com.veadan.folib.components.license.LicenseComponent;
 import com.veadan.folib.components.scan.ScanComponent;
 import com.veadan.folib.controllers.cluster.dto.SyncCronJobDto;
 import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
+import com.veadan.folib.cron.jobs.ArtifactScanCronJob;
 import com.veadan.folib.cron.jobs.VulnerabilityRefreshCronJob;
 import com.veadan.folib.cron.services.CronTaskConfigurationService;
 import com.veadan.folib.domain.Artifact;
@@ -612,7 +613,8 @@ public class ScanService {
     @Async("asyncThreadPoolTaskExecutor")
     public void vulnerabilityRefreshData(String username, String cron) {
         if (StringUtils.isNotBlank(cron)) {
-            createVulnerabilityRefreshCronTask(cron);
+            String cronName = "Vulnerability refresh";
+            configCronTask(cronName, VulnerabilityRefreshCronJob.class.getName(), cron);
         } else {
             vulnerabilityRefresh(username);
         }
@@ -641,13 +643,7 @@ public class ScanService {
                 } catch (Exception ex) {
                     log.warn(ExceptionUtils.getStackTrace(ex));
                 }
-                log.info("漏洞数据更新完成，开始触发全量制品扫描");
-                String key = "VULNERABILITY_UPDATE_FULL_ARTIFACT_SCAN";
-                String value = distributedCacheComponent.get(key);
-                if (StringUtils.isNotBlank(value) && Boolean.TRUE.equals(Boolean.valueOf(value))) {
-                    //触发全量制品扫描
-                    artifactsFullScan(LocalDateTime.now());
-                }
+                log.info("漏洞数据更新完成");
             }
         } catch (UpdateException e) {
             dictService.updateDict(DictForm.builder().id(dict.getId()).comment("更新错误").build());
@@ -655,17 +651,36 @@ public class ScanService {
         }
     }
 
-    private void createVulnerabilityRefreshCronTask(String cron)
-            throws RuntimeException {
-        String cronName = "Vulnerability refresh";
+    @Async("asyncThreadPoolTaskExecutor")
+    public void artifactScan(String username, String cron) {
+        if (StringUtils.isNotBlank(cron)) {
+            String cronName = "Artifact full scan";
+            configCronTask(cronName, ArtifactScanCronJob.class.getName(), cron);
+        } else {
+            artifactScan(username);
+        }
+    }
+
+    public void artifactScan(String username) {
+        Dict dict = Dict.builder().dictType(DictTypeEnum.ARTIFACT_FULL_SCAN.getType()).dictKey(username).createTime(new Date()).build();
+        dictService.saveDict(dict);
+        try {
+            //触发全量制品扫描
+            artifactsFullScan(LocalDateTime.now());
+        } catch (Exception e) {
+            log.error("Artifact scan error [{}]", ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    private void configCronTask(String cronName, String className, String cron) {
         CronTaskConfigurationDto cronTaskConfiguration = new CronTaskConfigurationDto();
         cronTaskConfiguration.setName(cronName);
-        cronTaskConfiguration.setJobClass(VulnerabilityRefreshCronJob.class.getName());
+        cronTaskConfiguration.setJobClass(className);
         cronTaskConfiguration.setCronExpression(cron);
         cronTaskConfiguration.setOneTimeExecution(false);
         cronTaskConfiguration.setImmediateExecution(false);
         try {
-            Optional<CronTaskConfigurationDto> cronTaskConfigurationOptional = cronTaskConfigurationService.getTasksConfigurationDto().getCronTaskConfigurations().stream().filter(item -> item.getJobClass().equals(VulnerabilityRefreshCronJob.class.getName())).findFirst();
+            Optional<CronTaskConfigurationDto> cronTaskConfigurationOptional = cronTaskConfigurationService.getTasksConfigurationDto().getCronTaskConfigurations().stream().filter(item -> item.getJobClass().equals(className)).findFirst();
             if (cronTaskConfigurationOptional.isPresent()) {
                 CronTaskConfigurationDto cronTaskConfigurationDto = cronTaskConfigurationOptional.get();
                 cronTaskConfigurationService.deleteConfiguration(cronTaskConfigurationDto.getUuid());

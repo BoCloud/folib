@@ -22,6 +22,9 @@
         <a-descriptions-item :label="$t('Artifacts.ServiceTime')">
           {{ artifactData.lastUsedTime }}
         </a-descriptions-item>
+        <a-descriptions-item :label="$t('Artifacts.ScanTime')">
+          {{ artifactData.scanTime }}
+        </a-descriptions-item>
         <a-descriptions-item :label="$t('Artifacts.DownloadTimes')">
           {{ artifactData.downloadCount }}
         </a-descriptions-item>
@@ -56,6 +59,9 @@
         </a-descriptions-item>
         <a-descriptions-item :label="$t('Artifacts.ModifyTheTime')">
           {{ artifactData.lastModified }}
+        </a-descriptions-item>
+        <a-descriptions-item :label="$t('Artifacts.ScanTime')">
+          {{ artifactData.scanTime }}
         </a-descriptions-item>
         <a-descriptions-item :label="$t('Artifacts.NumberOfFloors')">
           {{ artifactData.manifest.layers.length }}

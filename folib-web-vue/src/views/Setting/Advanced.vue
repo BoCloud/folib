@@ -140,7 +140,7 @@
                     </a-descriptions-item>
                     <a-descriptions-item :label="$t('Setting.Timing')">
                       <a-input size="small"
-                        :placeholder="$t('Setting.VulnerabilityCron')" v-model="vulnerabilityCron.cronExpression">
+                        :placeholder="$t('Setting.CronRules')" v-model="vulnerabilityCron.cronExpression">
                         <a-icon slot="suffix" type="clock-circle"/>
                       </a-input>
                     </a-descriptions-item>
@@ -168,50 +168,47 @@
               <a-col :span="12">
                 <a-card :bordered="false" class="header-solid">
                   <template #title>
-                    <h6>{{ $t('扫描设置') }}</h6>
-                    <p>{{ $t('全量制品扫描设置，作用于已开启扫描的仓库') }}
+                    <h6>{{ $t('Setting.ScanSettings') }}</h6>
+                    <p>{{ $t('Setting.ArtifactScanTips') }}
                     </p>
                   </template>
-                  <a-descriptions :title="$t('Setting.TheLastUpdate')" :column="1" class="mb-20">
+                  <a-descriptions :title="$t('Setting.TheLastScan')" :column="1" class="mb-20">
                     <a-descriptions-item :label="$t('Setting.User')">
-                      {{ singleDict.dictKey }}
+                      {{ artifactScanDict.dictKey }}
                     </a-descriptions-item>
                     <a-descriptions-item :label="$t('Setting.Time')">
-                      {{ singleDict.createTime }}
+                      {{ artifactScanDict.createTime }}
                     </a-descriptions-item>
-                    <a-descriptions-item :label="$t('Setting.Status')">
-                      <a-tag v-if="singleDict.comment"
-                        :color="singleDict.comment.indexOf('完成') !== -1 ? 'green' : singleDict.comment.indexOf('错误') !== -1 ? 'red' : 'orange'">
-                        {{ singleDict.comment }}
-                        <a-popconfirm :title="$t('Setting.sureChangeState')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
-                          @confirm="updateSingleDict(3, singleDict.id, $t('Setting.ManualClosing'))">
-                          <a-icon type="unlock" theme="filled" v-if="singleDict.comment.indexOf('中') !== -1" />
-                        </a-popconfirm>
-                      </a-tag>
-                      <span v-else>--</span>
+                    <a-descriptions-item :label="$t('Setting.ArtifactScanType')">
+                      <span v-if="artifactScanDict.dictKey !== '--'">
+                        {{ artifactScanDict.dictKey === 'Cron Job' ? $t('Setting.ScheduledScan') : $t('Setting.ManualScanning') }}
+                      </span>
+                      <span v-else>
+                        --
+                      </span>
                     </a-descriptions-item>
                     <a-descriptions-item :label="$t('Setting.Timing')">
                       <a-input size="small"
-                        :placeholder="$t('Setting.VulnerabilityCron')" v-model="vulnerabilityCron.cronExpression">
+                        :placeholder="$t('Setting.CronRules')" v-model="artifactScanCron.cronExpression">
                         <a-icon slot="suffix" type="clock-circle"/>
                       </a-input>
                     </a-descriptions-item>
                   </a-descriptions>
-                  <a-popconfirm :title="$t('Setting.SureUpdateTheVulnerabilityData')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
-                    @confirm="vulnerabilitiesSubmit(1)" :disabled="singleDict.comment.indexOf('中') > -1">
-                    <a-button :disabled="singleDict.comment.indexOf('中') > -1" class="mr-20">
-                      {{ $t('立即扫描') }}
+                  <a-popconfirm :title="$t('Setting.ArtifactScanNow')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
+                    @confirm="artifactScanSubmit(1)">
+                    <a-button class="mr-20">
+                      {{ $t('Setting.ScanImmediately') }}
                     </a-button>
                   </a-popconfirm>
-                  <a-popconfirm :title="$t('Setting.SureUpdateTheVulnerabilityDataCron')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
-                    @confirm="vulnerabilitiesSubmit(2)" :disabled="singleDict.comment.indexOf('中') > -1">
-                    <a-button type="primary" :disabled="singleDict.comment.indexOf('中') > -1" class="mr-20">
-                      {{ $t('定时扫描') }}
+                  <a-popconfirm :title="$t('Setting.SureUpdateTheArtifactScanCron')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
+                    @confirm="artifactScanSubmit(2)">
+                    <a-button type="primary" class="mr-20">
+                      {{ $t('Setting.ScheduledScan') }}
                     </a-button>
                   </a-popconfirm>
-                  <a-popconfirm :title="$t('Setting.SureDeleteTheVulnerabilityDataCron')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
-                    @confirm="delCronOne" :disabled="singleDict.comment.indexOf('中') > -1">
-                    <a-button type="danger" :disabled="singleDict.comment.indexOf('中') > -1">
+                  <a-popconfirm :title="$t('Setting.SureDeleteTheArtifactScanCron')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
+                    @confirm="delArtifactCronOne">
+                    <a-button type="danger">
                       {{ $t('Setting.DeleteRegularUpdate') }}
                     </a-button>
                   </a-popconfirm>
@@ -352,6 +349,7 @@ import {
 } from "@/api/artifact"
 import {
   vulnerabilitiesDataUpdate,
+  artifactScan,
   getCrontaskByClass
 } from "@/api/settings"
 import {
@@ -403,7 +401,17 @@ export default {
         dictValue: '--',
         comment: ''
       },
+      artifactScanDict: {
+        createTime: '--',
+        dictKey: '--',
+        dictValue: '--',
+        comment: ''
+      },
       vulnerabilityCron: {
+        cronExpression: undefined,
+        uuid: undefined,
+      },
+      artifactScanCron: {
         cronExpression: undefined,
         uuid: undefined,
       },
@@ -493,7 +501,7 @@ export default {
     vulnerabilitiesSubmit(type) {
       let params = {}
       if (type === 2 && !this.vulnerabilityCron.cronExpression) {
-        this.message("warning", this.$t('Setting.VulnerabilityCron'))
+        this.message("warning", this.$t('Setting.CronRules'))
         return false
       }
       if (type === 2) {
@@ -571,6 +579,7 @@ export default {
       } else if (activeTab === 3) {
         this.getCrontaskByClass()
         this.getSingleDict('vulnerability_update')
+        this.getArtifactScanDict()
       } else if (activeTab === 6) {
         this.getJanusGraphInfo()
       }
@@ -597,6 +606,19 @@ export default {
         }
       })
     },
+    getArtifactScanDict() {
+      this.artifactScanDict = {
+        createTime: '--',
+        dictKey: '--',
+        dictValue: '--',
+        comment: ''
+      }
+      getSingleDict({ dictType: 'artifact_full_scan' }).then(res => {
+        if (res) {
+          this.artifactScanDict = res
+        }
+      })
+    },
     updateSingleDict(type, id, comment) {
       updateSingleDict({ id: id, comment: comment }).then(res => {
         this.tabChange(type)
@@ -610,6 +632,12 @@ export default {
           this.vulnerabilityCron.cronExpression = res.cronTaskConfigurations[0].cronExpression
         }
       })
+      getCrontaskByClass({ className: 'com.veadan.folib.cron.jobs.ArtifactScanCronJob' }).then(res => {
+        if (res && res.cronTaskConfigurations && res.cronTaskConfigurations.length > 0) {
+          this.artifactScanCron.uuid = res.cronTaskConfigurations[0].uuid
+          this.artifactScanCron.cronExpression = res.cronTaskConfigurations[0].cronExpression
+        }
+      })
     },
     delCronOne() {
       if (!this.vulnerabilityCron.uuid) {
@@ -617,6 +645,43 @@ export default {
       }
       delCronOne(this.vulnerabilityCron.uuid).then(res => {
         this.vulnerabilityCron = {
+          uuid: undefined,
+          cronExpression: undefined,
+        }
+        this.message("success", this.$t('Setting.OperationSuccessful'))
+      })
+    },
+    artifactScanSubmit(type) {
+      let params = {}
+      if (type === 2 && !this.artifactScanCron.cronExpression) {
+        this.message("warning", this.$t('Setting.CronRules'))
+        return false
+      }
+      if (type === 2) {
+        params.cron = this.artifactScanCron.cronExpression
+      }
+      artifactScan(params).then(res => {
+        setTimeout(() => {
+          this.getArtifactScanDict()
+        }, 100)
+        if (type === 2) {
+          this.message("success", this.$t('Setting.ArtifactScanCronTask'))
+          this.getCrontaskByClass()
+        } else {
+          this.message("success", this.$t('Setting.OperationSuccessful'))
+        }
+      }).catch((err) => {
+        this.message("error", this.$t('Setting.updateFailExecute'))
+      }).finally(() => {
+
+      })
+    },
+    delArtifactCronOne() {
+      if (!this.artifactScanCron.uuid) {
+         return false
+      }
+      delCronOne(this.artifactScanCron.uuid).then(res => {
+        this.artifactScanCron = {
           uuid: undefined,
           cronExpression: undefined,
         }

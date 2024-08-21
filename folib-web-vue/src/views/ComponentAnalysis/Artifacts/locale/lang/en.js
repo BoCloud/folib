@@ -54,4 +54,5 @@ export default {
     'RiskComponents': 'Risk components',
     'ComponentInformation': 'Component information',
     'ComponentOverview': 'Component Overview',
+    'ScanTime': 'Scan time',
 }

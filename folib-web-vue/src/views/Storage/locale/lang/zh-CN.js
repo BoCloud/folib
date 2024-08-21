@@ -233,4 +233,5 @@ export default {
     'DataUpdateTime':'数据更新时间',
     'LastTenUpdates': '近10次更新存储数据视图',
     'RepositoryList': '仓库列表',
+    'ScanTime': '扫描时间',
 }

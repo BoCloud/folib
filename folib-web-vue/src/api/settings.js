@@ -124,6 +124,13 @@ export function vulnerabilitiesDataUpdate(params) {
   })
 }
 
+export function artifactScan(params) {
+  return axios({
+    url: '/api/folibScanner/scan',
+    method: 'get',
+    params: params
+  })
+}
 
 export function getDataIndexDump(param) {
   return axios({
