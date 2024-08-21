@@ -247,7 +247,7 @@ public class RelationalDatabaseUserService implements UserService
             return null;
         }
         List<User> userList = folibUserService.findUsersPage(user, start, limit);
-        return new PageResultResponse<User>(count, userList);
+        return new PageResultResponse<>(count, userList);
     }
 
     @Override
@@ -256,7 +256,7 @@ public class RelationalDatabaseUserService implements UserService
         //删除角色关联的用户、用户组
         List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryRefs(RoleResourceRef.builder().roleId(roleToRevoke).build());
         if (!CollectionUtils.isEmpty(roleResourceRefs)) {
-            List<String> refIds = roleResourceRefs.stream().map(RoleResourceRef::getId).collect(Collectors.toList());
+            List<Long> refIds = roleResourceRefs.stream().map(RoleResourceRef::getId).collect(Collectors.toList());
             roleResourceRefService.removeByIds(refIds);
         }
     }
@@ -396,6 +396,20 @@ public class RelationalDatabaseUserService implements UserService
                 }
             });
             roleResourceRefService.saveBath(roleResourceRefs);
+        }
+        //有admin权限，断开存储空间角色和用户关系
+        List<String> userIds = userInfos.stream().map(user -> {
+            if (user.getRoles().stream().map(SecurityRole::getRoleName).collect(Collectors.toSet()).contains(SystemRole.ADMIN.name())) {
+                return user.getUuid();
+            }
+            return null;
+        }).filter(Objects::nonNull).collect(Collectors.toList());
+        if (!CollectionUtils.isEmpty(userIds)) {
+            List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryByUserIds(userIds);
+            List<Long> refIds = roleResourceRefs.stream().filter(ref -> ref.getRoleId().startsWith("STORAGE_ADMIN_") || ref.getRoleId().startsWith("STORAGE_USER_")).map(RoleResourceRef::getId).collect(Collectors.toList());
+            if (!CollectionUtils.isEmpty(refIds)) {
+                roleResourceRefService.deleteByIds(refIds);
+            }
         }
 
         return true;

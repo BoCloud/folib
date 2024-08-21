@@ -5,19 +5,16 @@ import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.users.support.TokenEntityBody;
 import com.veadan.folib.controllers.users.support.UserOutput;
 import com.veadan.folib.controllers.users.support.UserResponseEntity;
-import com.veadan.folib.converters.users.UserGroupConvert;
 import com.veadan.folib.domain.PageResultResponse;
 import com.veadan.folib.domain.User;
-import com.veadan.folib.entity.UserGroup;
-import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
 import com.veadan.folib.enums.AuditEventNameEnum;
+import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
 import com.veadan.folib.forms.users.UserForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.StorageManagementService;
 import com.veadan.folib.users.dto.UserDto;
 import com.veadan.folib.users.security.AuthoritiesProvider;
 import com.veadan.folib.users.service.FolibRoleService;
-import com.veadan.folib.users.service.UserGroupService;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.EncodedPasswordUser;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
@@ -78,10 +75,6 @@ public class UserController
     public static final String SUCCESSFUL_GENERATE_SECURITY_TOKEN = "安全令牌已生成.";
 
     public static final String FAILED_GENERATE_SECURITY_TOKEN = "无法生成 SecurityToken";
-
-    public static final String SUCCESSFUL_UPDATE_ACCESS_MODEL = "自定义访问模型已更新";
-
-    public static final String FAILED_UPDATE_ACCESS_MODEL = "无法更新访问模型.";
 
     public static final String USER_DELETE_FORBIDDEN = "禁止删除此帐户";
 
@@ -147,11 +140,11 @@ public class UserController
     public TableResultResponse<UserOutput> queryUser(@RequestBody UserDto user, Integer page, Integer limit) {
         PageResultResponse<User> pageResultResponse =  userService.queryUser(user, page, limit);
         if (Objects.isNull(pageResultResponse)) {
-            return new TableResultResponse<UserOutput>(0, Collections.emptyList());
+            return new TableResultResponse<>(0, Collections.emptyList());
         }
         List<User> userList = pageResultResponse.getData().getRows();
         List<UserOutput> userOutputList = Optional.ofNullable(userList).orElse(Collections.emptyList()).stream().map(UserOutput::fromUser).collect(Collectors.toList());
-        return new TableResultResponse<UserOutput>(pageResultResponse.getData().getTotal(), userOutputList);
+        return new TableResultResponse<>(pageResultResponse.getData().getTotal(), userOutputList);
     }
 
     @ApiOperation(value = "Used to retrieve a user")

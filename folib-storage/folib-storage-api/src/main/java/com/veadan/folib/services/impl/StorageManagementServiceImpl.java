@@ -351,7 +351,7 @@ public class StorageManagementServiceImpl implements StorageManagementService {
                 if (resource == null) {
                     resourceService.insert(storageResource);
                 }
-                Set<String> privileges = privileges();
+                /*Set<String> privileges = privileges();
                 List<RoleResourceRef> roleResourceRefs = new ArrayList<>();
                 privileges.forEach(privilege -> users.forEach(user -> {
                     roleResourceRefs.add(RoleResourceRef.builder().roleId(key).entityId(user).refType(GlobalConstants.ROLE_TYPE_USER).resourceId(resource.getId())
@@ -359,7 +359,7 @@ public class StorageManagementServiceImpl implements StorageManagementService {
                 }));
                 if (CollectionUtils.isNotEmpty(roleResourceRefs)) {
                     roleResourceRefService.saveBath(roleResourceRefs);
-                }
+                }*/
 
             } catch (Exception ex) {
                 logger.error("handler user {} storage {} admin role error：{}", users, currentStorageId, ExceptionUtils.getStackTrace(ex));
@@ -484,14 +484,8 @@ public class StorageManagementServiceImpl implements StorageManagementService {
      * @return 权限信息
      */
     private Set<String> privileges() {
-        Set<RoleData> roleDataSet = authorizationConfigService.get().getRoles();
-        List<String> roleNameList = Lists.newArrayList("GLOBAL_CONFIGURATION_MANAGER", "REPOSITORY_MANAGER", "ARTIFACTS_MANAGER");
-        Set<String> privileges = Sets.newHashSet();
-        for (RoleData roleData : roleDataSet) {
-            if (roleNameList.contains(roleData.getName()) && Objects.nonNull(roleData.getAccessModel()) && CollectionUtils.isNotEmpty(roleData.getAccessModel().getApiAuthorities())) {
-                privileges.addAll(roleData.getAccessModel().getApiAuthorities().stream().map(Privileges::getAuthority).collect(Collectors.toSet()));
-            }
-        }
+        EnumSet<Privileges> storagePrivileges = Privileges.storageAll();
+        Set<String> privileges = storagePrivileges.stream().map(Privileges::getAuthority).collect(Collectors.toSet());
         logger.info("storage admin privileges：{}", privileges);
         return privileges;
     }

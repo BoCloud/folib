@@ -9,6 +9,7 @@ import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.dto.PermissionsDTO;
 import com.veadan.folib.entity.RoleResourceRef;
 import com.veadan.folib.users.domain.Privileges;
@@ -65,31 +66,17 @@ public class AuthorizationConfigServiceImpl
     {
         modifyInLock(config ->
                      {
-                         AuthorizationConfigServiceImpl.this.authorizationConfig = getAuthorizationConfigDto(null);
+                         AuthorizationConfigServiceImpl.this.authorizationConfig = getAuthorizationConfigDto(null,null);
                      },
                      false);
     }
-    public Role getRole(String username)
+    public AuthorizationConfig getRole(String roleId)
     {
-        return null;
-        /*Set<RoleDto> roles = getAuthorizationConfigDto(username)
-                .getRoles().stream().map(role -> new RoleData(role.getName(), role.getDescription(), role.getAccessModel()));
-
-        if (roles.contains(SystemRole.ADMIN.name()))
-        {
-            RuntimeRole adminRole = new RuntimeRole(role, (a) -> new AdminAccessModel());
-            return new RuntimeRole(adminRole, (a) -> new AuthenticatedAccessModel(a));
-        }
-        else if (SystemRole.ANONYMOUS.name().equals(name))
-        {
-            return new RuntimeRole(role, (a) -> new AnonymousAccessModel(a));
-        }
-
-        return new RuntimeRole(role, (a) -> new AuthenticatedAccessModel(a));*/
+        return new AuthorizationConfig(getAuthorizationConfigDto(roleId, null));
     }
 
-    private AuthorizationConfigDto getAuthorizationConfigDto(String username) {
-        List<PermissionsDTO> permissions = roleResourceRefService.queryPermissions(null, username, null, null, false);
+    private AuthorizationConfigDto getAuthorizationConfigDto(String roleName, String username) {
+        List<PermissionsDTO> permissions = roleResourceRefService.queryPermissions(roleName, username, null, null, false);
         Map<String, List<PermissionsDTO>> permissionMap = permissions.stream().filter(dto -> dto.getRoleId() != null).collect(Collectors.groupingBy(PermissionsDTO::getRoleId, Collectors.toList()));
         Map<String, List<RoleResourceRef>> apiMap = new HashMap<>();
         if (!permissionMap.isEmpty()) {
@@ -189,7 +176,7 @@ public class AuthorizationConfigServiceImpl
 
         try
         {
-            return new AuthorizationConfig(getAuthorizationConfigDto(null));
+            return new AuthorizationConfig(getAuthorizationConfigDto(null, null));
         }
         finally
         {
@@ -204,7 +191,7 @@ public class AuthorizationConfigServiceImpl
 
         try
         {
-            return new AuthorizationConfig(getAuthorizationConfigDto(username));
+            return new AuthorizationConfig(getAuthorizationConfigDto(null, username));
         }
         finally
         {
@@ -266,16 +253,14 @@ public class AuthorizationConfigServiceImpl
     @Override
     public void addPrivilegesToAnonymous(final List<Privileges> privilegeList) throws IOException
     {
-        modifyInLock(config ->
-                     {
-                         Set<RoleDto> roles = config.getRoles();
-                         roles.stream()
-                              .filter(r -> r.getName()
-                                            .equalsIgnoreCase(SystemRole.ANONYMOUS.name()))
-                              .findFirst()
-                              .ifPresent(r -> privilegeList.stream()
-                                                           .forEach(p -> r.addPrivilege(p)));
-                     });
+        if (CollectionUtils.isNotEmpty(privilegeList)) {
+            List<RoleResourceRef> anonymousPrivileges = privilegeList.stream().map(privileges ->
+                    RoleResourceRef.builder().roleId(SystemRole.ANONYMOUS.name()).resourceId(privileges.name().toUpperCase()).resourceType(GlobalConstants.RESOURCE_TYPE_API).build()
+            ).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(anonymousPrivileges)) {
+                roleResourceRefService.saveBath(anonymousPrivileges);
+            }
+        }
     }
 
     @Override
@@ -294,15 +279,7 @@ public class AuthorizationConfigServiceImpl
     
     @Override
     public void clearPrivilegesAnonymous() throws IOException {
-        modifyInLock(config ->
-        {
-            Set<RoleDto> roles = config.getRoles();
-            roles.stream()
-                    .filter(r -> r.getName()
-                            .equalsIgnoreCase(SystemRole.ANONYMOUS.name()))
-                    .findFirst()
-                    .ifPresent(r -> r.getAccessModel().getApiAuthorities().clear());
-        });
+        roleResourceRefService.deleteByRoleId(SystemRole.ANONYMOUS.name());
     }
 
     private void modifyInLock(final Consumer<AuthorizationConfigDto> operation) throws IOException

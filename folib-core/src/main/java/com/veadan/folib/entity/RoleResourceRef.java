@@ -36,7 +36,7 @@ public class RoleResourceRef implements Serializable,Cloneable {
      @Id
      @GeneratedValue(generator = "JDBC",strategy = GenerationType.IDENTITY)
      @ApiModelProperty(name = "主键", notes = "")
-     private String id;
+     private Long id;
      /**
       * 角色id
       */

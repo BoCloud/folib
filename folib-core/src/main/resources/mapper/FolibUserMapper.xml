@@ -31,53 +31,16 @@
     <select id="queryAllUserRoleByLimit" resultType="com.veadan.folib.dto.UserDTO">
         SELECT
             fu.*,
-            GROUP_CONCAT(distinct ug.group_name) AS userGroups,
-            GROUP_CONCAT(distinct NULLIF(rrr.role_id, '')) AS roles,
-            GROUP_CONCAT(DISTINCT nullif(CONCAT_WS('', rrr.storage_privilege, rrr.repository_privilege, rrr.path_privilege), '')) AS authorities
-
+            GROUP_CONCAT(distinct ugr.user_group_name) AS userGroups,
+            GROUP_CONCAT(distinct ugr.user_group_id) AS userGroupIds,
+            GROUP_CONCAT(distinct NULLIF(rrr.role_id, '')) AS roles
         FROM folib_user fu
-        LEFT JOIN
-        (
-        <if test="user.refType == null or user.refType == '' " >
-            SELECT rrr1.role_id,
-            rrr1.storage_privilege,
-            rrr1.repository_privilege,
-            rrr1.path_privilege,
-            rrr1.entity_id AS user_id
-            FROM role_resource_ref rrr1 WHERE rrr1.ref_type = 1
-            UNION
-            all SELECT rrr2.role_id,
-            rrr2.storage_privilege,
-            rrr2.repository_privilege,
-            rrr2.path_privilege,
-            ugr.user_id AS user_id
-            FROM user_group_ref ugr
-            JOIN role_resource_ref rrr2
-            ON ugr.user_group_id = rrr2.entity_id
-            WHERE rrr2.ref_type = 2
-        </if>
-        <if test="user.refType == '1' " >
-            SELECT rrr1.role_id,
-            rrr1.storage_privilege,
-            rrr1.repository_privilege,
-            rrr1.path_privilege,
-            rrr1.entity_id AS user_id
-            FROM role_resource_ref rrr1
-            WHERE rrr1.ref_type = 1
-        </if>
-        <if test="user.refType == '2' " >
-            SELECT rrr1.role_id,
-            rrr1.storage_privilege,
-            rrr1.repository_privilege,
-            rrr1.path_privilege,
-            rrr1.entity_id AS user_id
-            FROM role_resource_ref rrr1
-            WHERE rrr1.ref_type = 1
-        </if>
-        ) rrr
-        ON fu.id = rrr.user_id
         left join user_group_ref ugr on fu.id = ugr.user_id
-        left join user_group ug on ug.id = ugr.user_group_id
+        left join role_resource_ref rrr on
+        ((rrr.ref_type = 1
+            and rrr.entity_id = fu.id)
+        or (rrr.ref_type = 2
+            and rrr.entity_id = ugr.user_group_id))
         <where>
             <if test="user.id != null and user.id != ''">
                 and id = #{user.id}

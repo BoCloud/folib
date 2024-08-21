@@ -36,4 +36,5 @@ public interface AuthorizationConfigService
     void handlerRole(String roleInfo);
 
     void clearPrivilegesAnonymous() throws IOException;
+    AuthorizationConfig getRole(String roleId);
 }

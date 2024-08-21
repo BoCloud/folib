@@ -67,6 +67,12 @@ public class FolibRoleServiceImpl implements FolibRoleService {
         try {
             AuthorizationConfigDto read = authorizationConfigFileManager.read();
             Set<RoleDto> roles = read.getRoles();
+            roles = roles.stream().filter(roleDto -> !roleDto.getName().equalsIgnoreCase("CUSTOM_ROLE")
+                    && !roleDto.getName().equalsIgnoreCase("GLOBAL_CONFIGURATION_MANAGER")
+                    && !roleDto.getName().equalsIgnoreCase("USER_MANAGER")
+                    && !roleDto.getName().equalsIgnoreCase("REPOSITORY_MANAGER") && !roleDto.getName().equalsIgnoreCase("TOKEN_MANAGER")
+                    && !roleDto.getName().equalsIgnoreCase("LOGS_MANAGER") && !roleDto.getName().equalsIgnoreCase("UI_MANAGER")
+            ).collect(Collectors.toSet());
             if(CollectionUtils.isNotEmpty(roles)) {
                 List<FolibRole> folibRoles = new ArrayList<>(roles.size());
                 List<RoleResourceRef> pathPrivilegeRoles = new ArrayList<>();
@@ -242,7 +248,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                         roleResourceRefService.saveBath(collect);
                     }
                     //清理未关联资源的用户权限
-                    List<String> removeRefIds = roleResourceRefs.stream().filter(ref -> StringUtils.isNotEmpty(ref.getResourceType())).map(RoleResourceRef::getId).collect(Collectors.toList());
+                    List<Long> removeRefIds = roleResourceRefs.stream().filter(ref -> StringUtils.isNotEmpty(ref.getResourceType())).map(RoleResourceRef::getId).collect(Collectors.toList());
                     if(CollectionUtils.isNotEmpty(removeRefIds)) {
                         roleResourceRefService.removeByIds(removeRefIds);
                     }

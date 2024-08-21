@@ -9,6 +9,7 @@ import com.veadan.folib.domain.UserEntity;
 import com.veadan.folib.dto.RepositoryPrivilegeDTO;
 import com.veadan.folib.dto.UserDTO;
 import com.veadan.folib.entity.FolibUser;
+import com.veadan.folib.entity.RoleResourceRef;
 import com.veadan.folib.mapper.FolibUserMapper;
 import com.veadan.folib.users.service.FolibUserService;
 import com.veadan.folib.users.service.RoleResourceRefService;
@@ -28,6 +29,7 @@ import javax.inject.Inject;
 import javax.transaction.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @Author: fengmg
@@ -127,8 +129,52 @@ public class FolibUserServiceImpl implements FolibUserService {
         }
         PageRequest pageRequest = PageRequest.of(start, limit);
         List<UserDTO> folibUsers = folibUserMapper.queryAllUserRoleByLimit(folibUser, pageRequest);
+        //获取用户权限
+        getUserAuthorities(folibUsers);
         List<UserEntity> userEntities = UserConvert.INSTANCE.UserDTOsToUserList(folibUsers);
         return new ArrayList<>(userEntities);
+    }
+
+    /**
+     * 获取用户权限
+     * @param folibUsers
+     */
+    private void getUserAuthorities(List<UserDTO> folibUsers) {
+        if (CollectionUtils.isNotEmpty(folibUsers)) {
+            List<String> roleIds = folibUsers.stream().flatMap(userDTO -> userDTO.getRoles().stream()).distinct().collect(Collectors.toList());
+            List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryPermissionsByRoleIds(roleIds);
+            Map<String, Map<String, Set<String>>> roleMap = roleResourceRefs.stream().collect(Collectors.groupingBy(RoleResourceRef::getRoleId,
+                    Collectors.toMap(ref -> ref.getEntityId() + "_" + ref.getRefType(),
+                            ref -> Stream.of(ref.getPathPrivilege(), ref.getRepositoryPrivilege(), ref.getStoragePrivilege()).
+                                    filter(StringUtils::isNotBlank).map(String::trim).collect(Collectors.toSet()),
+                            (a, b) -> {
+                                a.addAll(b);
+                                return a;
+                            }
+                    )));
+            folibUsers.forEach(userDTO -> {
+                Set<String> roles = userDTO.getRoles();
+                if (CollectionUtils.isNotEmpty(roles)) {
+                    roles.forEach(role -> {
+                        Map<String, Set<String>> userMap = roleMap.get(role);
+                        Set<String> userAuthorities = userMap.get(userDTO.getId() + "_" + GlobalConstants.ROLE_TYPE_USER);
+                        userDTO.setAuthorities(userAuthorities);
+                        Set<String> userGroupIds = userDTO.getUserGroupIds();
+                        if (CollectionUtils.isNotEmpty(userGroupIds)) {
+                            Set<String> userGroupAuthorities = userGroupIds.stream().map(userGroupId -> roleMap.get(userGroupId + "_" + GlobalConstants.ROLE_TYPE_USER_GROUP))
+                                    .filter(Objects::nonNull)
+                                    .flatMap(map -> map.values().stream())
+                                    .flatMap(Set::stream)
+                                    .filter(StringUtils::isNotBlank)
+                                    .collect(Collectors.toSet());
+                                    if(CollectionUtils.isNotEmpty(userGroupAuthorities)) userAuthorities.addAll(userGroupAuthorities);
+                        }
+
+                        userDTO.setAuthorities(userAuthorities);
+                    });
+                }
+            });
+        }
     }
 
     @Override

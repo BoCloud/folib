@@ -23,7 +23,7 @@ public interface RoleResourceRefService{
      * @param id 主键
      * @return 实例对象
      */
-    RoleResourceRef queryById(String id);
+    RoleResourceRef queryById(Long id);
     /** 
      * 分页查询
      *
@@ -52,7 +52,7 @@ public interface RoleResourceRefService{
      * @param id 主键
      * @return 是否成功
      */
-    boolean deleteById(String id);
+    boolean deleteById(Long id);
 
     /**
      * 批量保存用户权限
@@ -75,7 +75,7 @@ public interface RoleResourceRefService{
      */
     List<RoleResourceRef> queryRefsByRoleIds(List<String> roleIds);
 
-    void removeByIds(List<String> removeRefIds);
+    void removeByIds(List<Long> removeRefIds);
 
     List<UserRoleDTO> getRolesByUserName(String userName, PageRequest pageRequest);
 
@@ -100,4 +100,7 @@ public interface RoleResourceRefService{
     void deleteByentityId(String entityId, String refType);
 
     void deleteByIds(List<Long> removeIds);
+
+    List<RoleResourceRef> queryPermissionsByRoleIds(List<String> roleIds);
+    List<RoleResourceRef> queryByUserIds(List<String> userIds);
 }

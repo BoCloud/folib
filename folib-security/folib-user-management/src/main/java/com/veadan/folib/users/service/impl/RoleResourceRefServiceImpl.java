@@ -40,7 +40,7 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
      * @param id 主键
      * @return 实例对象
      */
-    public RoleResourceRef queryById(String id){
+    public RoleResourceRef queryById(Long id){
         return roleResourceRefMapper.queryById(id);
     }
     
@@ -84,7 +84,7 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
      * @param id 主键
      * @return 是否成功
      */
-    public boolean deleteById(String id){
+    public boolean deleteById(Long id){
         int total = roleResourceRefMapper.deleteById(id);
         return total > 0;
     }
@@ -115,7 +115,7 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
     }
 
     @Override
-    public void removeByIds(List<String> removeRefIds) {
+    public void removeByIds(List<Long> removeRefIds) {
         roleResourceRefMapper.deleteByRefIds(removeRefIds);
     }
 
@@ -300,5 +300,21 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         Example example = new Example(RoleResourceRef.class);
         example.createCriteria().andIn("id", removeIds);
         roleResourceRefMapper.deleteByExample(example);
+    }
+
+    @Override
+    public List<RoleResourceRef> queryPermissionsByRoleIds(List<String> roleIds) {
+        Example example = Example.builder(RoleResourceRef.class).build();
+        example.createCriteria().andIn("roleId", roleIds);
+        return roleResourceRefMapper.selectByExample(example);
+    }
+
+    @Override
+    public List<RoleResourceRef> queryByUserIds(List<String> userIds) {
+        Example example = Example.builder(RoleResourceRef.class).build();
+        Example.Criteria criteria = example.createCriteria();
+        criteria.andIn("entityId", userIds).andEqualTo("refType", GlobalConstants.ROLE_TYPE_USER);
+        return roleResourceRefMapper.selectByExample(example);
+
     }
 }

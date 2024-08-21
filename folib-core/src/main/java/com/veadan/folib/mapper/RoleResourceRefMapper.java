@@ -24,7 +24,7 @@ public interface RoleResourceRefMapper extends CommonMapper<RoleResourceRef> {
      * @param id 主键
      * @return 实例对象
      */
-    RoleResourceRef queryById(String id);
+    RoleResourceRef queryById(Long id);
     /** 
      * 分页查询指定行数据
      *
@@ -74,7 +74,7 @@ public interface RoleResourceRefMapper extends CommonMapper<RoleResourceRef> {
      * @param id 主键
      * @return 影响行数
      */
-    int deleteById(String id);
+    int deleteById(Long id);
 
      List<RoleResourceRef> queryAllByRoleId(@Param("roleIds") List<String> roleIds);
      /**
@@ -83,7 +83,7 @@ public interface RoleResourceRefMapper extends CommonMapper<RoleResourceRef> {
       * @param refIds 主键
       * @return 影响行数
       */
-     int deleteByRefIds(@Param("refIds") List<String> refIds);
+     int deleteByRefIds(@Param("refIds") List<Long> refIds);
 
      List<UserRoleDTO> queryRolesByUserName(@Param("username") String userName,@Param("pageable") PageRequest pageRequest);
 

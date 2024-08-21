@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
@@ -37,6 +38,7 @@ public class UserDTO
 
     private Set<String> userGroups;
     private Set<String> userGroupIds;
+
     private Set<String> roles;
     private String storageId;
     private String repositoryId;
@@ -68,7 +70,7 @@ public class UserDTO
     private Set<String> pathPrivilege;
     private String securityTokenKey;
 
-    private LinkedHashSet<String> authorities;
+    private Set<String> authorities;
     public void setUserGroups(String userGroups) {
         if (userGroups != null) {
             this.userGroups = new HashSet<>(Arrays.asList(userGroups.split(",")));

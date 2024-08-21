@@ -1,8 +1,6 @@
 package com.veadan.folib.users.security;
 
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONUtil;
-import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veadan.folib.authorization.AuthorizationConfigFileManager;
@@ -12,9 +10,8 @@ import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.components.DistributedCacheComponent;
-import com.veadan.folib.entity.FolibRole;
 import com.veadan.folib.users.domain.SystemRole;
-import com.veadan.folib.users.service.FolibRoleService;
+import com.veadan.folib.users.dto.AccessModelDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.DependsOn;
@@ -60,24 +57,21 @@ public class AuthoritiesProvider
     
     public Role getRuntimeRole(String name)
     {
-        RoleData role = authorizationConfigService.get()
-                                                  .getRoles()
-                                                  .stream()
-                                                  .filter(r -> r.getName().equalsIgnoreCase(name))
-                                                  .findFirst()
-                                                  .orElseThrow(() -> new IllegalArgumentException(name));
+
+        RoleData role = authorizationConfigService.getRole(name).getRoles().stream()
+                                                  .findFirst().orElseThrow(() -> new IllegalArgumentException(name));
 
         if (SystemRole.ADMIN.name().equals(name))
         {
             RuntimeRole adminRole = new RuntimeRole(role, (a) -> new AdminAccessModel());
-            return new RuntimeRole(adminRole, (a) -> new AuthenticatedAccessModel(a));
+            return new RuntimeRole(adminRole, AuthenticatedAccessModel::new);
         }
         else if (SystemRole.ANONYMOUS.name().equals(name))
         {
-            return new RuntimeRole(role, (a) -> new AnonymousAccessModel(a));
+            return new RuntimeRole(role, AnonymousAccessModel::new);
         }
 
-        return new RuntimeRole(role, (a) -> new AuthenticatedAccessModel(a));
+        return new RuntimeRole(role, AuthenticatedAccessModel::new);
     }
 
     public Set<Role> getRuntimeRole(String roleId, String username)
