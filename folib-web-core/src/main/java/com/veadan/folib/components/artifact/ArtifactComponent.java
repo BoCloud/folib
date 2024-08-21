@@ -3,7 +3,6 @@ package com.veadan.folib.components.artifact;
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,15 +10,16 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.archive.JarArchiveListingFunction;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
-import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.components.PypiBrowsePackageHtmlResponseBuilder;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.config.NpmLayoutProviderConfig;
-import com.veadan.folib.configuration.*;
+import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.configuration.SecurityPolicyConfiguration;
+import com.veadan.folib.configuration.UnionRepositoryConfiguration;
+import com.veadan.folib.configuration.UnionTargetRepositoryConfiguration;
 import com.veadan.folib.constant.GlobalConstants;
-import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.entity.ArtifactCacheRecord;
 import com.veadan.folib.entity.Dict;
@@ -27,17 +27,13 @@ import com.veadan.folib.entity.PackageNameBlock;
 import com.veadan.folib.enums.*;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
-import com.veadan.folib.npm.metadata.*;
+import com.veadan.folib.npm.metadata.PackageVersion;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
 import com.veadan.folib.providers.layout.*;
-import com.veadan.folib.providers.repository.RepositoryProvider;
 import com.veadan.folib.providers.repository.RepositoryProviderRegistry;
-import com.veadan.folib.providers.repository.RepositorySearchRequest;
-import com.veadan.folib.pypi.PypiSearchRequest;
-import com.veadan.folib.pypi.PypiSearchResult;
 import com.veadan.folib.repositories.ArtifactIdGroupRepository;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repository.NpmRepositoryFeatures;
@@ -46,15 +42,12 @@ import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationServic
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.util.FileSizeConvertUtils;
 import com.veadan.folib.util.LocalDateTimeInstance;
-import com.veadan.folib.utils.PypiPackageNameConverter;
 import com.veadan.folib.utils.VersionUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -378,6 +371,14 @@ public class ArtifactComponent {
             } else {
                 flag = true;
             }
+        } else if (repositoryPath.getFileSystem() instanceof GoFileSystem) {
+            log.debug("Go布局");
+            if (Boolean.TRUE.equals(scan)) {
+                List<String> allSuffixList = Lists.newArrayList(".mod", ".zip");
+                flag = endsWith(repositoryPath.getFileName().toString(), allSuffixList);
+            } else {
+                flag = true;
+            }
         } else if (repositoryPath.getFileSystem() instanceof GitFlsFileSystem) {
             log.debug("GitLfs布局");
             if (Boolean.TRUE.equals(scan)) {
@@ -455,6 +456,10 @@ public class ArtifactComponent {
                 List<String> suffixList = Collections.singletonList(".tar.gz");
                 flag = endsWith(filePath, suffixList);
                 log.debug("Cocoapods布局");
+            } else if (GoLayoutProvider.ALIAS.equals(layout)) {
+                List<String> suffixList = Lists.newArrayList(".info", ".mod", ".zip");
+                flag = endsWith(filePath, suffixList);
+                log.debug("Go布局");
             } else if (GitLfsLayoutProvider.ALIAS.equals(layout)) {
                 log.debug("GitLfs布局");
                 flag = true;
@@ -529,7 +534,7 @@ public class ArtifactComponent {
      * @param artifactId artifactId
      * @param version    version
      * @param pomPath    pomPath
-     * @param packaging packaging
+     * @param packaging  packaging
      */
     public void pomGenerator(String groupId, String artifactId, String version, String pomPath, String packaging) {
         FileWriter fileWriter = null;
