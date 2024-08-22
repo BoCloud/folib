@@ -819,7 +819,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
             entityTraversal = entityTraversal.has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList));
         }
         if (StringUtils.isNotBlank(artifactName)) {
-            entityTraversal = entityTraversal.has(Properties.ARTIFACT_NAME, Text.textPrefix(artifactName));
+            entityTraversal = entityTraversal.has(Properties.ARTIFACT_PATH, Text.textRegex(String.format(".*%s.*", artifactName)));
         }
         return entityTraversal;
     }

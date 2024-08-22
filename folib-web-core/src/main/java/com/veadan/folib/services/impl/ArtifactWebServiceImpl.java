@@ -278,6 +278,18 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             artifactInfoList = artifactPage.getContent().stream().map(artifact -> {
                 com.veadan.folib.domain.ArtifactInfo artifactInfo = new com.veadan.folib.domain.ArtifactInfo();
                 BeanUtils.copyProperties(artifact, artifactInfo);
+                try {
+                    RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifact.getStorageId(),
+                            artifact.getRepositoryId(),
+                            artifact.getArtifactPath());
+                    Repository repository = repositoryPath.getRepository();
+                    if (DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout())) {
+                        DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) artifact.getArtifactCoordinates();
+                        artifactInfo.setArtifactPath(dockerArtifactCoordinates.getIMAGE_NAME().replace(":", "/"));
+                    }
+                } catch (Exception ex) {
+                    log.warn(ExceptionUtils.getStackTrace(ex));
+                }
                 if (StringUtils.isBlank(artifactInfo.getMetadata()) || !JSONUtil.isJson(artifactInfo.getMetadata())) {
                     return artifactInfo;
                 }
