@@ -128,11 +128,10 @@ public class HelmArtifactController extends BaseArtifactController {
             // 创建刷新索引
             RepositoryPath repoPath = repositoryPathResolver.resolve(repository, "");
             String absolutePath = repoPath.toAbsolutePath().toString();
-            //todo
-            helmRepoUtil.createIndex(absolutePath, repository);
-            //HelmMetadataIndexer indexer = new HelmMetadataIndexer(storageId, repositoryId,
-            //        getBaseUrl()+"/"+ storageId + "/" + repositoryId + "/", artifactManagementService, repositoryPathResolver);
-            //indexer.reindexAsSystem();
+            //helmRepoUtil.createIndex(absolutePath, repository);
+            HelmMetadataIndexer indexer = new HelmMetadataIndexer(storageId, repositoryId,
+                    getBaseUrl()+"/"+ storageId + "/" + repositoryId + "/", artifactManagementService, repositoryPathResolver);
+            indexer.reindexAsSystem();
             return ResponseEntity.status(HttpStatus.CREATED).build();
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
