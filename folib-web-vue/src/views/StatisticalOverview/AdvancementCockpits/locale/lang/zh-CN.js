@@ -31,6 +31,7 @@ export default {
     '30daysData': '近30天数据',
     '30DaysPromotionRanking': '30内晋级排名前10仓库',
     'TrendsInPromotionStatusWithin30':'30内晋级状态趋势统计',
+    'Remove':'删除',
 
 
 

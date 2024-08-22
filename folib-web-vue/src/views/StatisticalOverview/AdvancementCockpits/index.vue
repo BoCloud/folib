@@ -197,29 +197,102 @@
                         <div slot="operation"
                              slot-scope="text, record">
                             <div class="col-action">
-                                <a-popconfirm :title="getProductStatusMessage()"
-                                              okType="danger"
-                                              :ok-text="$t('Repository.Confirm')"
-                                              :cancel-text="$t('Repository.Cancel')"
-                                              @confirm="confirmRecord(record)"
-                                >
-                                    <a-button type="link" v-if="record.status === 4"
-                                              size="small">
-                                        <span class="text-danger">{{ $t('Repository.Compensation') }}</span>
-                                    </a-button>
+<!--                                <a-button-group>-->
+<!--                                    <a-popconfirm :title="getProductStatusMessage()"-->
+<!--                                                  okType="danger"-->
+<!--                                                  :ok-text="$t('Repository.Confirm')"-->
+<!--                                                  :cancel-text="$t('Repository.Cancel')"-->
+<!--                                                  @confirm="confirmRecord(record)"-->
+<!--                                    >-->
+<!--                                        <a-button type="link"-->
+<!--                                                  size="small"-->
+<!--                                                  :disabled="retryDisableButton(record)"-->
+<!--                                        >-->
+<!--                                            <span class="text-danger">{{ $t('Repository.Compensation') }}</span>-->
+<!--                                        </a-button>-->
 
-                                </a-popconfirm>
-                                <a-popconfirm :title="getTitle()"
-                                              okType="danger"
-                                              :ok-text="$t('Repository.Confirm')"
-                                              :cancel-text="$t('Repository.Cancel')"
-                                              @confirm="updatePriority(record)"
-                                >
-                                    <a-button type="link" v-if="record.status === 1"
-                                              size="small">
-                                        <span class="text-danger">{{ $t('AdvancementCockpits.SetTop') }}</span>
-                                    </a-button>
-                                </a-popconfirm>
+<!--                                    </a-popconfirm>-->
+<!--                                    <a-popconfirm :title="getTitle()"-->
+<!--                                                  okType="danger"-->
+<!--                                                  :ok-text="$t('Repository.Confirm')"-->
+<!--                                                  :cancel-text="$t('Repository.Cancel')"-->
+<!--                                                  @confirm="updatePriority(record)"-->
+<!--                                    >-->
+<!--                                        <a-button type="link"-->
+
+<!--                                                  size="small"-->
+<!--                                                  :disabled="setTopDisableButton(record)"-->
+<!--                                        >-->
+<!--                                            <span class="text-danger">{{ $t('AdvancementCockpits.SetTop') }}</span>-->
+<!--                                        </a-button>-->
+<!--                                    </a-popconfirm>-->
+
+<!--                                    <a-popconfirm :title="getTitle()"-->
+<!--                                                  okType="danger"-->
+<!--                                                  :ok-text="$t('Repository.Confirm')"-->
+<!--                                                  :cancel-text="$t('Repository.Cancel')"-->
+<!--                                                  @confirm="updatePriority(record)"-->
+<!--                                    >-->
+<!--                                        <a-button type="link"-->
+
+<!--                                                  size="small"-->
+<!--                                                  :disabled="removeDisableButton(record)"-->
+<!--                                        >-->
+<!--                                            <span class="text-danger">{{ $t('AdvancementCockpits.Remove') }}</span>-->
+<!--                                        </a-button>-->
+<!--                                    </a-popconfirm>-->
+<!--                                </a-button-group>-->
+                                <a-dropdown>
+                                    <a class="ant-dropdown-link" @click="e => e.preventDefault()">
+                                        更多 <a-icon type="ellipsis" />
+                                    </a>
+                                    <a-menu slot="overlay" >
+                                        <a-menu-item key="1" :disabled="setTopDisableButton(record)" @click="handleStopClick()">
+                                            <span><a-icon type="vertical-align-top"/>   {{$t('AdvancementCockpits.SetTop')}}</span>
+                                            <a-modal v-model="stopVisible"
+                                                     :title="$t('Repository.Compensation')"
+                                                     :ok-text="$t('Repository.Confirm')"
+                                                     :cancel-text="$t('Repository.Cancel')"
+                                                     @close="handleStopClose"
+                                                     @ok="updatePriority(record)"
+                                            >
+                                                <p>{{
+                                                        $t('Repository.CurrentProductIsSynchronizing')+ $t('Repository.Confirm')+$t('AdvancementCockpits.SetTop')+'?'
+                                                    }}</p>
+                                            </a-modal>
+                                        </a-menu-item>
+                                        <a-menu-item key="2" :disabled="removeDisableButton(record)" @click="handleRemoveClick()">
+                                            <span><a-icon type="delete"/> {{$t('AdvancementCockpits.Remove')}}</span>
+                                            <a-modal v-model="removeVisible"
+                                                     :title="$t('Repository.Compensation')"
+                                                     :ok-text="$t('Repository.Confirm')"
+                                                     :cancel-text="$t('Repository.Cancel')"
+                                                     @close="handleRemoveClose()"
+                                                     @ok="removeTask(record)"
+                                            >
+                                                <p>{{
+                                                        (record != null && record.status < 3) ? $t('Repository.CurrentProductIsSynchronizing')+ $t('Repository.Confirm')+$t('AdvancementCockpits.Remove')+'?' : $t('Repository.Confirm')+$t('AdvancementCockpits.Remove')+'?'
+                                                    }}</p>
+                                            </a-modal>
+                                        </a-menu-item>
+                                        <a-menu-item key="3" @click="handleRetryClick()" :disabled="retryDisableButton(record)">
+
+                                            <span><a-icon type="reload"/>  {{ $t('Repository.Compensation') }}</span>
+                                            <a-modal v-model="retryVisible"
+                                                     :title="$t('Repository.Compensation')"
+                                                     :ok-text="$t('Repository.Confirm')"
+                                                     :cancel-text="$t('Repository.Cancel')"
+                                                     @close="handleRetryClose"
+                                                     @ok="confirmRecord(record)"
+                                            >
+                                                <p>{{
+                                                        (record != null && record.status === 4) ? $t('Repository.CurrentProductIsSynchronizing') + $t('Repository.SureMakeProductCompensation') : $t('Repository.SureMakeProductCompensation')
+                                                    }}</p>
+                                            </a-modal>
+                                        </a-menu-item>
+                                    </a-menu>
+
+                                </a-dropdown>
                             </div>
                         </div>
                     </a-table>
@@ -242,7 +315,7 @@ import {
     getStatusTrends,
     fileSizeStatisticsByWarehouse
 } from "@/api/settings";
-import {retryArtifactDispatch, retryNodeOption,updateTaskQueuePriority} from "@/api/artifact";
+import {retryArtifactDispatch, retryNodeOption,updateTaskQueuePriority,deleteTask} from "@/api/artifact";
 import textOver from "@/components/Tools/textOver";
 
 export default {
@@ -418,6 +491,9 @@ export default {
                 type: Boolean,
                 default: false,
             },
+            retryVisible: false,
+            stopVisible: false,
+            removeVisible: false,
         };
     },
     computed: {
@@ -594,7 +670,8 @@ export default {
                     this.$message.success("success");
                     this.getData();
                 }).finally(() => {
-                    this.vulnerabilityTableLoading = false
+                    this.vulnerabilityTableLoading = false;
+                    this.retryVisible = false;
                 });
             } else if (opsType === 2) {
                 const jsonArrayString = JSON.parse(this.currentClickRecord.targetPath);
@@ -607,6 +684,7 @@ export default {
                     this.getData();
                 }).finally(() => {
                     this.vulnerabilityTableLoading = false
+                    this.retryVisible = false;
                 });
             }
 
@@ -623,6 +701,7 @@ export default {
                 this.getData();
             }).finally(() => {
                 this.vulnerabilityTableLoading = false
+                this.stopVisible = false;
             })
 
         },
@@ -633,7 +712,46 @@ export default {
             }).finally(() => {
                 console.log("artifactSyncRecordCountData", this.artifactSyncRecordCountData)
             })
-        }
+        },
+        removeTask(v){
+            this.currentClickRecord = v
+            let sycnNo = this.currentClickRecord.syncNo;
+            deleteTask(sycnNo, 0).then(res => {
+                this.$message.success("success");
+                this.getData();
+            }).finally(() => {
+                this.vulnerabilityTableLoading = false
+                this.removeVisible = false;
+            })
+        },
+        setTopDisableButton(item){
+            return item.status !== 1;
+        },
+        retryDisableButton(item){
+            return item.status !== 4;
+        },
+        removeDisableButton(item){
+            return false; //item.status >= 3;
+        },
+        handleRetryClick(){
+          this.retryVisible = true;
+        },
+        handleRetryClose(){
+            this.retryVisible = false;
+        },
+        handleStopClick(){
+            this.stopVisible = true;
+        },
+        handleStopClose(){
+            this.stopVisible = false;
+        },
+        handleRemoveClick(){
+            this.removeVisible = true;
+        },
+        handleRemoveClose(){
+            this.removeVisible = false;
+        },
+
     },
 };
 </script>

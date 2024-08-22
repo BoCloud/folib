@@ -60,6 +60,14 @@ public class DistributionService {
         throw new RuntimeException("Task not found taskId:"+taskId);
     }
 
+    public void deleteTask(String taskId){
+        DistributionTask taskToAdjust = queue.getElementById(taskId);
+        if (taskToAdjust != null) {
+            log.info("deleteTask: " + taskToAdjust.getTaskId() + " priority: " + taskToAdjust.getPriority());
+            queue.remove(taskToAdjust);
+        }
+    }
+
     /**
      * 获取下一个任务
      *

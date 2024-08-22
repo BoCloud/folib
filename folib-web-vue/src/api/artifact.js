@@ -182,3 +182,9 @@ export function getRawPathSize (storageId,repositoryId,path) {
     method: 'get'
   })
 }
+export function deleteTask (syncNo,priority) {
+  return axios({
+    url: '/api/artifact/folib/promotion/deleteTask/'+syncNo,
+    method: 'delete'
+  })
+}

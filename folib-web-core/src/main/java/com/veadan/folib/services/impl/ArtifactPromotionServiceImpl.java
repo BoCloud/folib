@@ -24,6 +24,7 @@ import com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum;
 import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
 import com.veadan.folib.enums.BusinessCodeEnum;
 import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
+import com.veadan.folib.mapper.ArtifactSyncSlaveRecordMapper;
 import com.veadan.folib.model.request.ArtifactPromotionNodeOptionCallbackReq;
 import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
 import com.veadan.folib.model.request.ArtifactSliceUploadReq;
@@ -181,6 +182,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     private IdGenerateUtils idGenerateUtils;
     @Inject
     private FolibWsRunManageV2 folibWsRunManageV2;
+    @Inject
+    private ArtifactSyncSlaveRecordMapper artifactSyncSlaveRecordMapper;
 
     @Override
     public ResponseEntity copy(ArtifactPromotion artifactPromotion) {
@@ -1508,6 +1511,23 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         }
         promotionUtil.updateTaskQueuePriority(syncNo, priority);
 
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 删除任务
+     *
+     * @param syncNo
+     */
+    @Override
+    public ResponseEntity<?> deleteTask(String syncNo) {
+        ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectBySyncNo(syncNo);
+        if (artifactSyncRecord.getStatus() >= 3) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("任务已经结束不能删除");
+        }
+        promotionUtil.deleteTask(syncNo);
+        artifactSyncSlaveRecordMapper.deleteBySyncNo(syncNo);
+        artifactSyncRecordMapper.delete(artifactSyncRecord);
         return ResponseEntity.ok().build();
     }
 }
