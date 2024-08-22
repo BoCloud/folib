@@ -1675,7 +1675,7 @@ export default {
           this.currentStorage.basedir = response.basedir
           this.currentStorage.storageProvider = response.storageProvider
           if (response.storageMaxSize) {
-            this.storageMaxSize = response.storageMaxSize / ( 1024 * 1024 * 1024 * 1024)
+            this.storageMaxSize = (response.storageMaxSize / ( 1024 * 1024 * 1024 * 1024)).toFixed(3)
           } else {
             this.storageMaxSize = 0
           }
@@ -1698,12 +1698,8 @@ export default {
         }
       }
       if (this.currentStorage.id) {
-
         this.currentStorage.basedir = this.storageData.filter(f => f.id === this.currentStorage.id)[0].basedir
-
       }
-
-
     },
     getLayoutType(item) {
       return getLayoutType(item)
