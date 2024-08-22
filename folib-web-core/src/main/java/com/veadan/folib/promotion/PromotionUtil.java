@@ -66,6 +66,7 @@ import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.InputStreamBody;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.HttpClients;
+import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.media.multipart.Boundary;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
@@ -895,6 +896,8 @@ public class PromotionUtil {
             part.field("fileMetaDataMap", JSON.toJSONString(uploadDto.getFileMetaDataMap()));
             part.field("promotion", "true");
             Client client = clientPool.getRestClient();
+            //连接建立超时时间
+            client.property(ClientProperties.CONNECT_TIMEOUT, 10000);
             WebTarget resource = client.register(MultiPartWriter.class).target(url);
             Invocation.Builder builder = resource.request(MediaType.APPLICATION_JSON);
             securityComponent.securityTokenHeader(builder);
