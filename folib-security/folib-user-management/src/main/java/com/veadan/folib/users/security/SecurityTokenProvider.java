@@ -1,15 +1,8 @@
 package com.veadan.folib.users.security;
 
-import com.veadan.folib.security.exceptions.InvalidTokenException;
 import com.veadan.folib.security.exceptions.ExpiredTokenException;
-
-import javax.inject.Inject;
-import java.io.UnsupportedEncodingException;
-import java.security.Key;
-import java.util.Calendar;
-import java.util.Locale;
-import java.util.Map;
-
+import com.veadan.folib.security.exceptions.InvalidTokenException;
+import com.veadan.folib.users.service.AccessTokenFinder;
 import org.jose4j.jws.AlgorithmIdentifiers;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.jwt.JwtClaims;
@@ -22,6 +15,14 @@ import org.jose4j.keys.HmacKey;
 import org.jose4j.lang.JoseException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.Resource;
+import javax.inject.Inject;
+import java.io.UnsupportedEncodingException;
+import java.security.Key;
+import java.util.Calendar;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * Used to get and verify security tokens. <br>
@@ -40,6 +41,9 @@ public class SecurityTokenProvider
      * All previous tokens will be invalid, if it changed.
      */
     private Key key;
+
+    @Resource
+    private AccessTokenFinder accessTokenFinder;
 
     /**
      * Creates {@link Key} instance using Secret string from application configuration.
@@ -165,9 +169,11 @@ public class SecurityTokenProvider
     {
         JwtClaims jwtClaims = getClaims(token, true);
         String subject;
+        String jwtId;
         try
         {
             subject = jwtClaims.getSubject();
+            jwtId=jwtClaims.getJwtId();
         }
         catch (MalformedClaimException e)
         {
@@ -195,6 +201,38 @@ public class SecurityTokenProvider
         {
             throw new InvalidTokenException(String.format(MESSAGE_INVALID_JWT, token));
         }
+        if("1".equals(jwtClaims.getClaimValue("pac"))){
+            if(!accessTokenFinder.getByJwtId(jwtId)){
+                throw new InvalidTokenException(String.format(MESSAGE_INVALID_JWT, token));
+            }
+        }
+    }
+
+
+    public String getAccessToken(String subject,
+                                 Map<String, String> claimMap,
+                                 Long end,String jid)
+            throws JoseException {
+        JwtClaims claims = new JwtClaims();
+        claims.setIssuer("Folib");
+        claims.setJwtId(jid);
+        claims.setSubject(subject);
+        claimMap.entrySet().forEach((e) ->
+        {
+            claims.setClaim(e.getKey(), e.getValue());
+        });
+
+        long start = System.currentTimeMillis();
+        claims.setIssuedAt(NumericDate.fromMilliseconds(start));
+        NumericDate expireTime=end==null?null:NumericDate.fromMilliseconds(end);
+        claims.setExpirationTime(expireTime);
+        JsonWebSignature jws = new JsonWebSignature();
+        jws.setPayload(claims.toJson());
+        jws.setKey(key);
+        jws.setDoKeyValidation(false);
+        jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.HMAC_SHA256);
+
+        return jws.getCompactSerialization();
     }
 
 }

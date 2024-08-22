@@ -158,6 +158,17 @@ let routes = [
 		component: () => import('../views/Permissions/index.vue'),
 	},
 	{
+		path: '/accessToken',
+		name: 'accessToken',
+		layout: "dashboard",
+		meta: {
+			title: 'router.AccessToken',
+			sidebarMap: ['router.AccessToken', 'router.TokenList'],
+			breadcrumbs: ['router.AccessToken', 'router.TokenList'],
+		},
+		component: () => import('../views/AccessToken/index.vue'),
+	},
+	{
 		path: '/groups',
 		name: 'groups',
 		layout: "dashboard",

@@ -12,6 +12,8 @@ export default {
     'UserManagement': '用户管理',
     'Permissions': '权限管理',
     'Groups': '用户组管理',
+    'AccessToken':'访问令牌',
+    'TokenList':'令牌列表',
     'GlobalSettings': '全局设置',
     'HealthMonitoring': '健康监测',
     'SeniorOperations': '高级运维',
