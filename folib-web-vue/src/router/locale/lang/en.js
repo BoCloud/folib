@@ -7,6 +7,8 @@ export default {
     'PermissionList': 'Permission List',
     'Groups': 'Groups management',
     'GroupList': 'Group List',
+    'AccessToken':'Access Token',
+    'TokenList':'Token List',
     'GlobalSettings': 'Global Settings',
     'SetupManagement': 'Setup management',
     'HealthMonitoring': 'Health monitoring',

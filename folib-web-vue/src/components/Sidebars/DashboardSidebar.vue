@@ -127,6 +127,15 @@
           <span class="label">{{ $t('Sidebars.Permissions') }}</span>
         </router-link>
       </a-menu-item>
+
+      <a-menu-item v-if="userInfo.roles.indexOf('ADMIN') > -1">
+        <router-link to="/accessToken">
+          <span class="icon">
+            <a-icon type="smile" theme="filled" class="m-0" />
+          </span>
+          <span class="label">{{ $t('Sidebars.AccessToken') }}</span>
+        </router-link>
+      </a-menu-item>
       <a-menu-item v-if="userInfo.roles.indexOf('ADMIN') > -1">
         <router-link to="/settings">
           <span class="icon">
