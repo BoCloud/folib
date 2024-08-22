@@ -131,7 +131,7 @@
       <a-menu-item v-if="userInfo.roles.indexOf('ADMIN') > -1">
         <router-link to="/accessToken">
           <span class="icon">
-            <a-icon type="smile" theme="filled" class="m-0" />
+            <a-icon type="lock" theme="filled" class="m-0" />
           </span>
           <span class="label">{{ $t('Sidebars.AccessToken') }}</span>
         </router-link>
