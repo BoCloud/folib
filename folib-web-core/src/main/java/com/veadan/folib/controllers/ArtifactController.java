@@ -105,7 +105,8 @@ public class ArtifactController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping(value = "/getArtifacts")
-    public TableResultResponse<com.veadan.folib.domain.ArtifactInfo> getArtifacts(@RequestParam(name = "page") Integer page, @RequestParam(name = "limit") Integer limit,
+    public TableResultResponse<com.veadan.folib.domain.ArtifactInfo> getArtifacts(@RequestParam(name = "page", required = false) Integer page,
+                                                                                  @RequestParam(name = "limit", required = false) Integer limit,
                                                                                   @RequestParam(name = "vulnerabilityUuid") String vulnerabilityUuid,
                                                                                   @RequestParam(name = "storageId", required = false) String storageId,
                                                                                   @RequestParam(name = "repositoryId", required = false) String repositoryId, @RequestParam(name = "artifactName", required = false) String artifactName) {

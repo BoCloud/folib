@@ -319,7 +319,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                             if (StringUtils.isBlank(value) || !JSONUtil.isJson(value)) {
                                 return artifactInfo;
                             }
-                            itemJson = jsonArray.getJSONObject(0);
+                            itemJson = jsonArray.getJSONObject(i);
                             itemData.add(itemJson);
                         }
                         columnInfos.add(itemColumnInfos);
@@ -351,7 +351,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                                 if (StringUtils.isBlank(value) || !JSONUtil.isJson(value)) {
                                     return artifactInfo;
                                 }
-                                itemJson = jsonArray.getJSONObject(0);
+                                itemJson = jsonArray.getJSONObject(i);
                                 itemData.add(itemJson);
                             }
                             columnInfos.add(itemColumnInfos);
