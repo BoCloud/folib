@@ -40,6 +40,7 @@ public class RemoteArtifactStreamFetcher
             String size = response.getHeaderString("Content-Length");
             if (StringUtils.isNotBlank(size) && StrUtil.isNumeric(size)) {
                 artifactPath.setSize(Long.valueOf(size));
+                log.info("RepositoryPath [{}] Content-Length [{}]", artifactPath.toString(), size);
             }
         }
         return remoteArtifactInputStream;
