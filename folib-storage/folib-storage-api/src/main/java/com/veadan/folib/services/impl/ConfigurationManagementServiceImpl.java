@@ -200,7 +200,7 @@ public class ConfigurationManagementServiceImpl
         if (StringUtils.isBlank(storageDto.getStorageProvider()) && StringUtils.isNotBlank(storage.getStorageProvider())) {
             storageDto.setStorageProvider(storage.getStorageProvider());
         }
-        if (Objects.nonNull(storage.getStorageMaxSize()) && storage.getStorageMaxSize() > 0 ) {
+        if (Objects.nonNull(storage.getStorageMaxSize()) && storage.getStorageMaxSize() > 0) {
             storageDto.setStorageMaxSize(storage.getStorageMaxSize());
         } else {
             storageDto.setStorageMaxSize(0L);
@@ -241,6 +241,11 @@ public class ConfigurationManagementServiceImpl
         modifyInLock(configuration ->
         {
             final StorageDto storage = configuration.getStorage(storageId);
+            Repository oldRepository = storage.getRepository(repository.getId());
+            if (Objects.nonNull(oldRepository)) {
+                repository.setBasedir(oldRepository.getBasedir());
+                repository.setStorageProvider(oldRepository.getStorageProvider());
+            }
             repository.setStorage(storage);
             LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(
                     repository.getLayout());
