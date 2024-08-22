@@ -1380,7 +1380,7 @@ public class PromotionUtil {
                 md5 = MessageDigestUtils.calculateChecksum(sourceRepositoryPath, MessageDigestAlgorithms.MD5);
                 //md5 = FileUtils.getMD5(Files.newInputStream(sourceRepositoryPath));
             }
-            Integer ChunkIndex =Integer.parseInt(chunk);// getChunkIndex(chunk);
+            Integer chunkIndex =Integer.parseInt(chunk);// getChunkIndex(chunk);
             log.info("calculated the file [{}] [{}] [{}] md5 is [{}] file size [{}] time consuming [{}] ms", storageId, repositoryId, sourceRepositoryPath.getPath(), md5, fileLength, System.currentTimeMillis() - begin);
             return new ArtifactSliceUploadHttpEntityBuilder()
                     .setStorageId(storageId)
@@ -1388,7 +1388,7 @@ public class PromotionUtil {
                     .setRepositoryId(repositoryId)
                     .setPath(artifactSyncSlaveRecord.getSourcePath())
                     .setMergeId(mergeId)
-                    .setChunkIndex(ChunkIndex)
+                    .setChunkIndex(chunkIndex)
                     .setChunkIndexMax(threadCount)
                     .setOriginFileMd5(md5)
                     .setArtifactPath(sourceRepositoryPath)
