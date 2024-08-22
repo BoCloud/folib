@@ -401,7 +401,7 @@ public class FolibWsRunManageV2 {
 
                 CompletableFuture<Void> completableFuture = new CompletableFuture<>();
                 RemoteEndpoint.Async asyncRemote = session.getAsyncRemote();
-                asyncRemote.setSendTimeout(5);
+                asyncRemote.setSendTimeout(3);
                 asyncRemote.sendBinary(chunk, result -> {
                     if (result.isOK()) {
                         // 完成Future

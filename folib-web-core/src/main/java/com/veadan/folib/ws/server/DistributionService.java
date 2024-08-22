@@ -23,7 +23,9 @@ public class DistributionService {
     @Autowired
     private ArtifactSyncRecordMapper artifactSyncRecordMapper;
 
-    private static final Semaphore semaphore = new Semaphore(Runtime.getRuntime().availableProcessors());
+    private static final int MAX_SIZE = Runtime.getRuntime().availableProcessors();
+
+    public static final Semaphore semaphore = new Semaphore(4);
 
     /**
      * 创建优先级队列，使用自然排序
@@ -37,6 +39,7 @@ public class DistributionService {
      */
     public void addTask(DistributionTask task) {
         log.info("addTask: " + task.getTaskId() + " priority: " + task.getPriority());
+        log.info("当前的可用许可数量: " + semaphore.availablePermits());
         queue.put(task, task.getTaskId());
         log.info("addTask queue size:{}: " ,queue.size());
     }
@@ -111,6 +114,7 @@ public class DistributionService {
      */
     public void acquire() throws InterruptedException {
         semaphore.acquire();
+        log.info("当前的可用许可数量: " + semaphore.availablePermits());
     }
 
     /**
@@ -118,5 +122,6 @@ public class DistributionService {
      */
     public void release() {
         semaphore.release();
+        log.info("当前的可用许可数量: " + semaphore.availablePermits());
     }
 }
