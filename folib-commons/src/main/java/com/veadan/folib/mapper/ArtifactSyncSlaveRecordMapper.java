@@ -1,6 +1,7 @@
 package com.veadan.folib.mapper;
 
 import com.veadan.folib.entity.ArtifactSyncSlaveRecord;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
@@ -36,4 +37,7 @@ public interface ArtifactSyncSlaveRecordMapper extends SelectByIdsMapper<Artifac
 
     @Select("select sum(file_size) from artifact_sync_slave_record where update_time > date_sub(now(), interval #{days} day)")
     Long  statisticsFileSize(@Param("days") Integer days);
+
+    @Delete("delete from artifact_sync_slave_record where sync_no = #{syncNo}")
+    Long deleteBySyncNo(@Param("syncNo") String syncNo);
 }

@@ -321,8 +321,12 @@ public class ArtifactPromotionController extends BaseArtifactController {
     @PostMapping(value = "/updateTaskQueuePriority/{syncNo}/{priority}")
     @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
     public ResponseEntity<?> updateTaskQueuePriority(@PathVariable("syncNo") String syncNo, @PathVariable("priority") int priority) {
-        return ResponseEntity.ok(artifactPromotionService.updateTaskQueuePriority(syncNo,priority));
+        return artifactPromotionService.updateTaskQueuePriority(syncNo,priority);
     }
+    @DeleteMapping(value = "/deleteTask/{syncNo}")
+    @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
+    public ResponseEntity<?> deleteTask(@PathVariable("syncNo") String syncNo) {
 
-
+        return  artifactPromotionService.deleteTask(syncNo);
+    }
 }
