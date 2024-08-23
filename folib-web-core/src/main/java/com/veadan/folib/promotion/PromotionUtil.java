@@ -467,9 +467,6 @@ public class PromotionUtil {
             strBuilder.append("/").append(targetRepositoryId).append("/").append(artifactPath);
             String dispatchType = dispatchNodeDto.getDispatchType();
 
-            log.info("分发 [{}] 开始", dispatchType);
-
-
             Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepositoryId);
             RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, artifactPath);
             //  遍历所有制品文件后逐步上传
@@ -503,14 +500,11 @@ public class PromotionUtil {
             if (Boolean.TRUE.equals(recordStatus)) {
                 artifactComponent.handlerArtifactPromotion(dispatchNodeDto.getClusterEnName(), srcStorageId, srcRepositoryId, artifactPath, PromotionStatusEnum.SUCCESS.getStatus());
             }
-
-            log.info("分发 [{} {} {} {} {}] 成功 ", dispatchType, dispatchNodeDto.getClusterEnName(),
-                    targetStorageId, targetRepositoryId, artifactPath);
         } catch (Exception e) {
             if (Boolean.TRUE.equals(recordStatus)) {
                 artifactComponent.handlerArtifactPromotion(dispatchNodeDto.getClusterEnName(), srcStorageId, srcRepositoryId, artifactPath, PromotionStatusEnum.FAIL.getStatus());
             }
-            log.error("分发 [{} {} {} {} {}] 失败 {} ",
+            log.error("分发 [{} {} {} {} {}] 失败 [{}] ",
                     dispatchNodeDto.getDispatchType(), dispatchNodeDto.getClusterEnName(),
                     targetStorageId, targetRepositoryId, artifactPath, ExceptionUtils.getStackTrace(e));
             if (e instanceof RuntimeException) {
@@ -1062,7 +1056,7 @@ public class PromotionUtil {
                 }
                 future.complete(null);
             } catch (Exception e) {
-                log.error("doArtifactSliceUploadV3 Exception \n info:\nuploadDto:{}, storageId:{}, repositoryId:{}, syncNo:{}, finalTargetUrl1:{}, targetHostName:{}", uploadDto, storageId, repositoryId, syncNo, finalTargetUrl1, finalTargetHostName, e);
+                log.error("晋级编号 [{}] 源存储空间 [{}] 源仓库 [{}] 目标节点 [{}] 错误 [{}]", syncNo, storageId, repositoryId, finalTargetHostName, ExceptionUtils.getStackTrace(e));
                 artifactSyncRecordMapper.updateStatusAndFailedReasonBySyncNo(ArtifactSyncRecordStatusEnum.FAILED.getVal(), e.getMessage(), syncNo, new Date());
                 future.completeExceptionally(e);
                 if (e instanceof RuntimeException) {
@@ -1091,7 +1085,7 @@ public class PromotionUtil {
                         }
                         future.complete(null);
                     } catch (Exception e) {
-                        log.error("doArtifactSliceUploadV3 Exception \n info:\nuploadDto:{}, storageId:{}, repositoryId:{}, syncNo:{}, finalTargetUrl1:{}, targetHostName:{}", uploadDto, storageId, repositoryId, syncNo, finalTargetUrl1, finalTargetHostName, e);
+                        log.error("晋级编号 [{}] 源存储空间 [{}] 源仓库 [{}] 目标节点 [{}] 错误 [{}]", syncNo, storageId, repositoryId, finalTargetHostName, ExceptionUtils.getStackTrace(e));
                         artifactSyncRecordMapper.updateStatusAndFailedReasonBySyncNo(ArtifactSyncRecordStatusEnum.FAILED.getVal(), e.getMessage(), syncNo, new Date());
                         future.completeExceptionally(e);
                         if (e instanceof RuntimeException) {
@@ -1116,7 +1110,8 @@ public class PromotionUtil {
         artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
         artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord);
         final List<ArtifactSliceUploadHttpEntityBuilder> artifactSliceUploadHttpEntityList = this.getArtifactSliceUploadHttpEntityList(filePathMap, storageId, repositoryId, sliceByteSize);
-
+        int size = artifactSliceUploadHttpEntityList.size();
+        log.info("晋级编号 [{}] 共 [{}] 个分片", syncNo, size);
         // 记录制品从记录
         String finalTargetUrl = finalTargetUrl1;
         artifactSliceUploadHttpEntityList.forEach(e -> {
@@ -1124,7 +1119,6 @@ public class PromotionUtil {
             final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = insertArtifactSyncSlaveRecord(syncNo, e.getPath(), targetPath, ArtifactSyncRecordStatusEnum.IN_SYNC.getVal(), e.getChunkSize());
             e.setChunkArtifactRecordId(artifactSyncSlaveRecord.getId());
         });
-        int size = artifactSliceUploadHttpEntityList.size();
         //分片上传
         for (int i = 0; i < size; i++) {
             ArtifactSliceUploadHttpEntityBuilder builder = artifactSliceUploadHttpEntityList.get(i);
@@ -1139,22 +1133,20 @@ public class PromotionUtil {
 //                String md5 = FileUtils.getMD5(inputStream);
 //                artifactSliceUploadReq.setSliceMd5(md5);
 //            }
-            log.info("artifactSliceUploadReq:{}", artifactSliceUploadReq);
             int finalI = i;
             try {
                 new RetryTask(promotionConfig.getRetryCount()) {
                     @Override
                     public void exec(RetryTask retryTask) throws Exception {
                         try {
-                            log.info("WSMessageRequest upload slice {}/{} ,targetHostName:{} , path:{}", finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath());
-                            //TODO 切片文件写到内存，没有重用，定时重试
+                            log.debug("晋级编号 [{}] 当前第 [{}] 个分片，共 [{}] 个分片，目标节点 [{}] 路径 [{}]", syncNo, finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath());
                             WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), promotionConfig.getWsRequestTimoutOfArtifactUpload());
-                            log.info("wsMessageResponse:{}", wsMessageResponse.toString());
+                            log.debug("晋级编号 [{}] 当前第 [{}] 个分片，共 [{}] 个分片，目标节点 [{}] 路径 [{}] 返回结果 [{}]", syncNo, finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath(), wsMessageResponse.toString());
                             if (!HttpStatus.OK.equals(wsMessageResponse.getStatus())) {
                                 throw new RuntimeException(String.valueOf(wsMessageResponse.getDate()));
                             }
                         } catch (Exception e) {
-                            log.error("upload exception", e);
+                            log.error("晋级编号 [{}] 当前第 [{}] 个分片，共 [{}] 个分片，目标节点 [{}] 路径 [{}] 错误 [{}]", syncNo, finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath(), ExceptionUtils.getStackTrace(e));
                             throw e;
                         }
                     }
@@ -1172,7 +1164,6 @@ public class PromotionUtil {
 
     private void retryArtifactSliceUploadV3(PromotionNodeOptionDto uploadDto, String storageId, String repositoryId, String syncNo, String finalTargetUrl1, String targetHostName) throws Exception {
         final Map<String, Map<String, RepositoryPath>> filePathMap = uploadDto.getPathMap();
-        final long sliceByteSize = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
         if (CollectionUtil.isEmpty(filePathMap)) {
             return;
         }
@@ -1189,8 +1180,8 @@ public class PromotionUtil {
 
 
         final List<ArtifactSliceUploadHttpEntityBuilder> artifactSliceUploadHttpEntityList = this.getArtifactSliceUploadHttpEntityList(artifactSyncSlaveRecords, syncNo);
-
         int size = artifactSliceUploadHttpEntityList.size();
+        log.info("晋级编号 [{}] 共 [{}] 个分片", syncNo, size);
         //分片上传
         for (int i = 0; i < size; i++) {
             ArtifactSliceUploadHttpEntityBuilder builder = artifactSliceUploadHttpEntityList.get(i);
@@ -1201,22 +1192,20 @@ public class PromotionUtil {
             if (Objects.nonNull(metadata) && StringUtils.isNotBlank(metadata.toString()) && JSONUtil.isJson(metadata.toString())) {
                 artifactSliceUploadReq.setMetaData(JSONObject.parseObject((String) metadata, Map.class));
             }
-            log.info("artifactSliceUploadReq:{}", artifactSliceUploadReq);
             int finalI = i;
             try {
                 new RetryTask(promotionConfig.getRetryCount()) {
                     @Override
                     public void exec(RetryTask retryTask) throws Exception {
                         try {
-                            log.info("WSMessageRequest upload slice {}/{} ,targetHostName:{} , path:{}", finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath());
-                            //TODO 切片文件写到内存，没有重用，定时重试
+                            log.debug("晋级编号 [{}] 当前第 [{}] 个分片，共 [{}] 个分片，目标节点 [{}] 路径 [{}]", syncNo, finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath());
                             WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), promotionConfig.getWsRequestTimoutOfArtifactUpload());
-                            log.info("wsMessageResponse:{}", wsMessageResponse.toString());
+                            log.debug("晋级编号 [{}] 当前第 [{}] 个分片，共 [{}] 个分片，目标节点 [{}] 路径 [{}] 返回结果 [{}]", syncNo, finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath(), wsMessageResponse.toString());
                             if (!HttpStatus.OK.equals(wsMessageResponse.getStatus())) {
                                 throw new RuntimeException(String.valueOf(wsMessageResponse.getDate()));
                             }
                         } catch (Exception e) {
-                            log.error("upload exception", e);
+                            log.error("晋级编号 [{}] 当前第 [{}] 个分片，共 [{}] 个分片，目标节点 [{}] 路径 [{}] 异常 [{}]", syncNo, finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath(), ExceptionUtils.getStackTrace(e));
                             throw e;
                         }
                     }
@@ -1380,8 +1369,8 @@ public class PromotionUtil {
                 md5 = MessageDigestUtils.calculateChecksum(sourceRepositoryPath, MessageDigestAlgorithms.MD5);
                 //md5 = FileUtils.getMD5(Files.newInputStream(sourceRepositoryPath));
             }
-            Integer chunkIndex =Integer.parseInt(chunk);// getChunkIndex(chunk);
-            log.info("calculated the file [{}] [{}] [{}] md5 is [{}] file size [{}] time consuming [{}] ms", storageId, repositoryId, sourceRepositoryPath.getPath(), md5, fileLength, System.currentTimeMillis() - begin);
+            Integer chunkIndex = Integer.parseInt(chunk);// getChunkIndex(chunk);
+            log.info("Calculate the file [{}] [{}] [{}] md5 is [{}] file size [{}] time consuming [{}] ms", storageId, repositoryId, sourceRepositoryPath.getPath(), md5, fileLength, System.currentTimeMillis() - begin);
             return new ArtifactSliceUploadHttpEntityBuilder()
                     .setStorageId(storageId)
                     .setChunkArtifactRecordId(artifactSyncSlaveRecord.getId())
@@ -1396,7 +1385,7 @@ public class PromotionUtil {
                     .setChunkSize(chunkSize);
         } catch (Exception e) {
             log.error("构建文件切片请求集合失败", e);
-            return null;
+            throw new RuntimeException(e);
         }
     }
 
@@ -1431,7 +1420,7 @@ public class PromotionUtil {
                 //md5 = FileUtils.getMD5(Files.newInputStream(sourceRepositoryPath));
             }
 
-            log.info("calculated the file [{}] [{}] [{}] md5 is [{}] file size [{}] time consuming [{}] ms", sourceStorageId, sourceRepositoryId, sourceArtifactPath, md5, fileLength, System.currentTimeMillis() - begin);
+            log.info("Calculated the file [{}] [{}] [{}] md5 is [{}] file size [{}] time consuming [{}] ms", sourceStorageId, sourceRepositoryId, sourceArtifactPath, md5, fileLength, System.currentTimeMillis() - begin);
             final String mergeId = UUID.randomUUID().toString(true);
 
             String finalMd5 = md5;
@@ -1456,15 +1445,14 @@ public class PromotionUtil {
                             .setStartLength(startLength)
                             .setChunkSize(currentChunkSize);
                 } catch (Exception e) {
-                    log.error("构建文件切片HttpEntity请求失败", e);
-                    return null;
+                    log.error("构建文件切片请求对象失败", e);
+                    throw new RuntimeException(e);
                 }
             }).collect(Collectors.toList());
         } catch (Exception e) {
             log.error("构建文件切片请求集合失败", e);
-            return Collections.emptyList();
+            throw new RuntimeException(e);
         }
-
     }
 
     public void updateTaskQueuePriority(String syncNo, Priority priority) {
@@ -1477,9 +1465,11 @@ public class PromotionUtil {
             List<ArtifactSyncSlaveRecord> artifactSyncSlaveRecords = artifactSyncSlaveRecordMapper.selectBySyncNo(syncNo);
             long count = artifactSyncSlaveRecords.stream().filter(artifactSyncSlaveRecord -> ArtifactSyncRecordStatusEnum.SUCCESS.getVal().equals(artifactSyncSlaveRecord.getStatus())).count();
             if (count == artifactSyncSlaveRecords.size()) {
+                log.info("晋级编号 [{}] 晋级成功", syncNo);
                 artifactSyncRecordMapper.updateStatusAndFailedReasonBySyncNo(status, "", syncNo, new Date());
             }
         } else if (ArtifactSyncRecordStatusEnum.FAILED.getVal().equals(status)) {
+            log.error("晋级编号 [{}] 晋级失败，原因 [{}]", syncNo, failedReason);
             artifactSyncRecordMapper.updateStatusAndFailedReasonBySyncNo(status, failedReason, syncNo, new Date());
         }
 

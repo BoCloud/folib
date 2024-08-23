@@ -93,10 +93,11 @@ public class PromotionTask {
                     safeLevelList.add(SafeLevelEnum.SCAN_FAIL.getLevel());
                 }
                 long totalCount = artifactRepository.countPromotionMatchingByIndex(safeLevelList, promotionStatusList);
+                log.info("Promotion task find total [{}] artifact", totalCount);
                 if (totalCount <= 0) {
                     return;
                 }
-                int batchSize = 100;
+                int batchSize = 10;
                 // 计算总页数
                 int totalPages = (int) Math.ceil((double) totalCount / batchSize);
                 Pageable pageable;
