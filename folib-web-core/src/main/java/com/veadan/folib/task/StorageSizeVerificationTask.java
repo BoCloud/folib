@@ -66,9 +66,9 @@ public class StorageSizeVerificationTask {
     private DistributedLockComponent distributedLockComponent;
 
     /**
-     * 每天9点
+     * 每天8点
      */
-    @Scheduled(cron = "0 0 9 * * ? ")
+    @Scheduled(cron = "0 0 8 * * ? ")
     public void run() {
         String lockName = "StorageSizeVerificationTask";
         long waitTime = 1L;
@@ -139,8 +139,8 @@ public class StorageSizeVerificationTask {
             return null;
         }
         long storageBytesSize = artifactRepository.artifactsBytesStatisticsByStorageIds(Collections.singletonList(storageId));
-        BigDecimal storageMaxTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageMaxSize, FileUnitTypeEnum.MB.getUnit());
-        BigDecimal storageRealTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageBytesSize, FileUnitTypeEnum.MB.getUnit());
+        BigDecimal storageMaxTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageMaxSize, FileUnitTypeEnum.TB.getUnit());
+        BigDecimal storageRealTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageBytesSize, FileUnitTypeEnum.TB.getUnit());
         BigDecimal useStorageProportion = storageRealTbSize.divide(storageMaxTbSize, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
         //占比大于95的
         if (useStorageProportion.compareTo(BigDecimal.valueOf(95)) >= 0) {
