@@ -85,7 +85,7 @@ public interface RoleResourceRefMapper extends CommonMapper<RoleResourceRef> {
       */
      int deleteByRefIds(@Param("refIds") List<Long> refIds);
 
-     List<UserRoleDTO> queryRolesByUserName(@Param("username") String userName,@Param("pageable") PageRequest pageRequest);
+     List<UserRoleDTO> queryPrivileges(@Param("roleIds") List<String> roleIds);
 
      RoleDTO getUserByRoleId(@Param("roleId") String roleId);
 

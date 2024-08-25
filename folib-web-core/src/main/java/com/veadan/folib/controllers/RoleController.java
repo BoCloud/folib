@@ -111,7 +111,7 @@ public class RoleController extends BaseController {
     public ResponseEntity getAccount(@PathVariable String userName)
     {
         PageRequest pageRequest = PageRequest.of(0, 100);
-        List<UserRoleDTO> rolesByUserName = roleResourceRefService.getRolesByUserName(userName, pageRequest);
+        List<UserRoleDTO> rolesByUserName = roleResourceRefService.getRolesByUserName(userName);
 
         return ResponseEntity.ok(rolesByUserName);
     }

@@ -90,10 +90,12 @@ public interface FolibUserMapper extends CommonMapper<FolibUser> {
       * @param folibUser 查询条件
       * @return 对象列表
       */
+     @Deprecated
      List<UserDTO> queryUser(FolibUser folibUser);
 
      Set<UserDTO> queryRoles(String uuid);
 
+     @Deprecated
      List<UserDTO> queryUserRoleByRepositoryAndPrivilege(@Param("repositoryPrivilegeDTOS") List<RepositoryPrivilegeDTO> repositoryPrivilegeDTOS);
 
      List<UserDTO> queryUsersNameResource(@Param("usernames") List<String> usernames, @Param("storageId") String storageId,

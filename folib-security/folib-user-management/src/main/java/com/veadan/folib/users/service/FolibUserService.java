@@ -45,4 +45,6 @@ public interface FolibUserService {
     List<UserDTO> findByUserNameResource(List<String> usernames, String storageId, String repositoryId, String path);
 
     List<FolibUser> queryByIds(List<String> userIds);
+
+    List<UserDTO> getUsers(User user, int start, Integer limit);
 }

@@ -20,6 +20,7 @@ import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.domain.Users;
 import com.veadan.folib.users.dto.UserAuthDTO;
+import com.veadan.folib.users.dto.UserDto;
 import com.veadan.folib.users.security.JwtAuthenticationClaimsProvider;
 import com.veadan.folib.users.security.JwtClaimsProvider;
 import com.veadan.folib.users.security.SecurityTokenProvider;
@@ -169,8 +170,12 @@ public class RelationalDatabaseUserService implements UserService
     @Override
     public UserEntity findByUsername(String username)
     {
-        UserDTO byUserName = folibUserService.findByUserName(username);
-        return UserConvert.INSTANCE.UserDTOToUserEntity(byUserName);
+        List<UserDTO> folibUsers = folibUserService.getUsers(UserDto.builder().username(username).build(), 0, 1);
+        List<UserEntity> userEntities = UserConvert.INSTANCE.UserDTOsToUserList(folibUsers);
+        if (CollectionUtils.isNotEmpty(userEntities)) {
+            return userEntities.get(0);
+        }
+        return null;
     }
 
     @Override

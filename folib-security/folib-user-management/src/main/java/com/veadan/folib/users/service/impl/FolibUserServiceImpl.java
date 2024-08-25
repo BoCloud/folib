@@ -11,6 +11,7 @@ import com.veadan.folib.dto.UserDTO;
 import com.veadan.folib.entity.FolibUser;
 import com.veadan.folib.entity.RoleResourceRef;
 import com.veadan.folib.mapper.FolibUserMapper;
+import com.veadan.folib.users.dto.UserDto;
 import com.veadan.folib.users.service.FolibUserService;
 import com.veadan.folib.users.service.RoleResourceRefService;
 import com.veadan.folib.users.service.UserGroupRefService;
@@ -60,15 +61,17 @@ public class FolibUserServiceImpl implements FolibUserService {
 
     @Override
     public UserDTO findByUserName(String username) {
-        FolibUser user = FolibUser.builder().id(username).build();
-        List<UserDTO> folibUser = folibUserMapper.queryUser(user);
-        if (folibUser.isEmpty()) {
-            return null;
+        List<UserDTO> folibUsers = getUsers(UserDto.builder().username(username).build(), 0, 1);
+        List<UserEntity> userEntities = UserConvert.INSTANCE.UserDTOsToUserList(folibUsers);
+        if (CollectionUtils.isNotEmpty(userEntities)) {
+            return UserConvert.INSTANCE.UserEntityToUserDTO(userEntities.get(0));
         }
-        return folibUser.get(0);
+        return null;
+
     }
 
     @Override
+    @Deprecated
     public List<UserDTO> findByUserNameResource(List<String> usernames, String storageId, String repositoryId, String path) {
         return folibUserMapper.queryUsersNameResource(usernames, storageId, repositoryId, path, null);
     }
@@ -97,8 +100,9 @@ public class FolibUserServiceImpl implements FolibUserService {
 
     @Override
     public Iterable<User> findAll() {
-        List<UserDTO> folibUsers = folibUserMapper.queryUser(null);
-        return UserConvert.INSTANCE.UserDTOsToUsers(folibUsers);
+        List<UserDTO> folibUsers = getUsers(UserDto.builder().build(), 0, null);
+        List<UserEntity> userEntities = UserConvert.INSTANCE.UserDTOsToUserList(folibUsers);
+        return new ArrayList<>(userEntities);
     }
 
     @Override
@@ -119,8 +123,19 @@ public class FolibUserServiceImpl implements FolibUserService {
 
     @Override
     public List<User> findUsersPage(User user, int start, Integer limit) {
+        List<UserDTO> folibUsers = getUsers(user, start, limit);
+        List<UserEntity> userEntities = UserConvert.INSTANCE.UserDTOsToUserList(folibUsers);
+        return new ArrayList<>(userEntities);
+    }
+
+    @Override
+    public List<UserDTO> getUsers(User user, int start, Integer limit) {
         if (Objects.isNull(limit)) {
-            limit = 10;
+            long count = countUsers(user);
+            if (count == 0L) {
+                return null;
+            }
+            limit = Math.toIntExact(count);
         }
         FolibUser folibUser = new FolibUser();
         BeanUtils.copyProperties(user, folibUser);
@@ -131,8 +146,7 @@ public class FolibUserServiceImpl implements FolibUserService {
         List<UserDTO> folibUsers = folibUserMapper.queryAllUserRoleByLimit(folibUser, pageRequest);
         //获取用户权限
         getUserAuthorities(folibUsers);
-        List<UserEntity> userEntities = UserConvert.INSTANCE.UserDTOsToUserList(folibUsers);
-        return new ArrayList<>(userEntities);
+        return folibUsers;
     }
 
     /**

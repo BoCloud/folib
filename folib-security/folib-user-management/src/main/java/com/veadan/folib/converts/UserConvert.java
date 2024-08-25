@@ -8,25 +8,26 @@ import com.veadan.folib.dto.UserDTO;
 import com.veadan.folib.entity.FolibUser;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
 import org.mapstruct.Mappings;
+import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.toSet;
+
 /**
  * @Author: fengmaogen
  * @Date: 2024/7/16 19:23
  * @Description: UserConvert
  */
-@Mapper
+@Mapper(componentModel = "spring")
 public interface UserConvert {
 
     UserConvert INSTANCE = Mappers.getMapper(UserConvert.class);
@@ -61,8 +62,24 @@ public interface UserConvert {
     @Mappings({@Mapping(source = "roles", target = "roles")})
     UserEntity UserDTOToUserEntity(UserDTO usrerDTO);
 
+    @Mappings({/*@Mapping(target = "roles", expression = "java(mapRolesToStrings(userEntity.getRoles()))"),*/
+            @Mapping(target = "roles",qualifiedByName = "mapRolesToStrings"),
+            @Mapping(target = "userGroups", expression = "java(String.join(\",\", userEntity.getUserGroups()))"),
+            @Mapping(target = "userGroupIds", expression = "java(String.join(\",\", userEntity.getUserGroupIds()))")})
+    UserDTO UserEntityToUserDTO(UserEntity userEntity);
+
     @Mappings({})
     FolibUser UserDTOToUser(UserDTO usrerDTO);
+    @Named("mapRolesToStrings")
+    default String mapRolesToStrings(Set<SecurityRole> roles) {
+        if (roles == null) {
+            return null;
+        }
+        return String.join(",", roles.stream()
+                .map(SecurityRole::getRoleName)
+                .collect(Collectors.toSet()));
+    }
+
     // 自定义映射方法
     default Set<SecurityRole> map(Set<String> roles) {
         if (roles == null) {
@@ -70,7 +87,7 @@ public interface UserConvert {
         }
         return roles.stream()
                 .map(SecurityRoleEntity::new) // 将角色名称转换为 SecurityRole 对象
-                .collect(Collectors.toSet());
+                .collect(toSet());
     }
     // 自定义方法将 Date 转换为 LocalDateTime
     default LocalDateTime map(Date updateTime) {

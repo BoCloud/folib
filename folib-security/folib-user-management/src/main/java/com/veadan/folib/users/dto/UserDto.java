@@ -13,15 +13,13 @@ import com.veadan.folib.domain.SecurityRoleEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 /**
  * @author mtodorov
  */
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserDto

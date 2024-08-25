@@ -109,51 +109,6 @@
             #{roleId}
         </foreach>
     </select>
-    <select id="queryRolesByUserName" resultType="com.veadan.folib.dto.UserRoleDTO">
-        select
-        fr.*,
-        GROUP_CONCAT(distinct rrr.storage_privilege) AS storagePrivilege,
-        GROUP_CONCAT(distinct rrr.repository_privilege) AS repositoryPrivilege,
-        GROUP_CONCAT(distinct rrr.path_privilege) AS pathPrivilege
-        from
-        folib_user fu
-        left join
-        (select
-            rrr1.role_id,
-            rrr1.storage_privilege,
-            rrr1.repository_privilege,
-            rrr1.path_privilege,
-            rrr1.entity_id as user_id
-        from
-            role_resource_ref rrr1
-        where
-            rrr1.ref_type = 1
-        union all
-        select
-            rrr2.role_id,
-            rrr2.storage_privilege,
-            rrr2.repository_privilege,
-            rrr2.path_privilege,
-            ugr.user_id as user_id
-        from
-            user_group_ref ugr
-        join role_resource_ref rrr2
-                on
-            ugr.user_group_id = rrr2.entity_id
-        where
-            rrr2.ref_type = 2 ) rrr
-         on
-        fu.id = rrr.user_id
-        left join folib_role fr on
-        fu.id = rrr.user_id
-        and fr.id = rrr.role_id
-        where fr.deleted = "0"
-        <if test="username != null and username != ''">
-            and fu.id = #{username}
-        </if>
-        group by fr.id
-        limit #{pageable.offset}, #{pageable.pageSize}
-    </select>
     <select id="getUserByRoleId" resultType="com.veadan.folib.dto.RoleDTO">
         select
             fr.id as name,
@@ -244,6 +199,25 @@
             <foreach collection="roleIds" item="roleId" open="(" separator="," close=")">
                 #{roleId}
             </foreach>
+    </select>
+    <select id="queryPrivileges" resultType="com.veadan.folib.dto.UserRoleDTO">
+        select
+            fr.*,
+            GROUP_CONCAT(distinct rrr.storage_privilege) as storagePrivilege,
+            GROUP_CONCAT(distinct rrr.repository_privilege) as repositoryPrivilege,
+            GROUP_CONCAT(distinct rrr.path_privilege) as pathPrivilege
+        from
+            folib_role fr
+                left join role_resource_ref rrr on
+                fr.id = rrr.role_id
+        where
+            fr.deleted = "0"
+          and rrr.role_id in
+        <foreach collection="roleIds" item="roleId" open="(" separator="," close=")">
+            #{roleId}
+        </foreach>
+        group by
+            fr.id
     </select>
 
     <!--新增数据-->

@@ -5,11 +5,14 @@ import com.veadan.folib.converts.ResourceConvert;
 import com.veadan.folib.dto.*;
 import com.veadan.folib.entity.Resource;
 import com.veadan.folib.entity.RoleResourceRef;
+import com.veadan.folib.entity.UserGroupRef;
 import com.veadan.folib.mapper.RoleResourceRefMapper;
 import com.veadan.folib.users.service.ResourceService;
 import com.veadan.folib.users.service.RoleResourceRefService;
+import com.veadan.folib.users.service.UserGroupRefService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -33,6 +36,8 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
     private RoleResourceRefMapper roleResourceRefMapper;
     @Autowired
     private ResourceService resourceService;
+    @Autowired
+    private UserGroupRefService userGroupRefService;
     
     /** 
      * 通过ID查询单条数据 
@@ -122,11 +127,37 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
     /**
      * 根据用户id查询关联的角色权限
      * @param userName 用户名
-     * @param pageRequest 分页参数
      */
     @Override
-    public List<UserRoleDTO> getRolesByUserName(String userName, PageRequest pageRequest) {
-        return roleResourceRefMapper.queryRolesByUserName(userName, pageRequest);
+    public List<UserRoleDTO> getRolesByUserName(String userName) {
+        List<String> roleIdsList = getRoleListByUserName(userName);
+        if (CollectionUtils.isEmpty(roleIdsList)) {
+            return null;
+        }
+        return roleResourceRefMapper.queryPrivileges(roleIdsList);
+    }
+
+    /**
+     * 根据用户名查询角色id
+     * @param userName
+     * @return 角色关联列表
+     */
+    private List<String> getRoleListByUserName(String userName) {
+        if (StringUtils.isEmpty(userName)) {
+            return null;
+        }
+        List<UserGroupRef> userGroupRefs = userGroupRefService.queryByUserId(userName);
+        Set<Long> groupIds = null;
+        if (CollectionUtils.isNotEmpty(userGroupRefs)) {
+            groupIds = userGroupRefs.stream().map(UserGroupRef::getUserGroupId).collect(Collectors.toSet());
+        }
+        Example example = Example.builder(RoleResourceRef.class).build();
+        example.createCriteria().andEqualTo("refType", GlobalConstants.ROLE_TYPE_USER).andEqualTo("entityId", userName);
+        if (CollectionUtils.isNotEmpty(groupIds)) {
+            example.or().andEqualTo("refType", GlobalConstants.ROLE_TYPE_USER_GROUP).andEqualTo("entityId", groupIds);
+        }
+        List<RoleResourceRef> roleResourceRefs = roleResourceRefMapper.selectByExample(example);
+        return roleResourceRefs.stream().map(RoleResourceRef::getRoleId).distinct().collect(Collectors.toList());
     }
 
     @Override

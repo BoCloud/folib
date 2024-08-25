@@ -185,7 +185,6 @@
         FROM folib_user fu
         LEFT JOIN
         (
-        <if test="refType == null or refType == '' " >
             SELECT rrr1.role_id,
             rrr1.storage_privilege,
             rrr1.repository_privilege,
@@ -202,25 +201,6 @@
             JOIN role_resource_ref rrr2
             ON ugr.user_group_id = rrr2.entity_id
             WHERE rrr2.ref_type = 2
-        </if>
-        <if test="refType == '1' " >
-            SELECT rrr1.role_id,
-            rrr1.storage_privilege,
-            rrr1.repository_privilege,
-            rrr1.path_privilege,
-            rrr1.entity_id AS user_id
-            FROM role_resource_ref rrr1
-            WHERE rrr1.ref_type = 1
-        </if>
-        <if test="refType == '2' " >
-            SELECT rrr1.role_id,
-            rrr1.storage_privilege,
-            rrr1.repository_privilege,
-            rrr1.path_privilege,
-            rrr1.entity_id AS user_id
-            FROM role_resource_ref rrr1
-            WHERE rrr1.ref_type = 1
-        </if>
         ) rrr
         ON fu.id = rrr.user_id
         left join user_group_ref ugr on fu.id = ugr.user_id
@@ -321,7 +301,6 @@
         FROM folib_user fu
         LEFT JOIN
         (
-        <if test="refType == null or refType == '' " >
             SELECT rrr1.role_id,
             rrr1.storage_privilege,
             rrr1.repository_privilege,
@@ -346,33 +325,6 @@
             JOIN role_resource_ref rrr2
             ON ugr.user_group_id = rrr2.entity_id left join resource r on r.id = rrr2.resource_id
             WHERE rrr2.ref_type = 2
-        </if>
-        <if test="refType == '1' " >
-            SELECT rrr1.role_id,
-            rrr1.storage_privilege,
-            rrr1.repository_privilege,
-            rrr1.path_privilege,
-            rrr1.entity_id AS user_id,
-            r.id ,
-            r.storage_id,
-            r.repository_id,
-            r.`path`
-            FROM role_resource_ref rrr1 join resource r on r.id = rrr1.resource_id
-            WHERE rrr1.ref_type = 1
-        </if>
-        <if test="refType == '2' " >
-            SELECT rrr1.role_id,
-            rrr1.storage_privilege,
-            rrr1.repository_privilege,
-            rrr1.path_privilege,
-            rrr1.entity_id AS user_id,
-            r.id ,
-            r.storage_id,
-            r.repository_id,
-            r.`path`
-            FROM role_resource_ref rrr1 join resource r on r.id = rrr1.resource_id
-            WHERE rrr1.ref_type = 1
-        </if>
         ) rrr
         ON fu.id = rrr.user_id
         left join user_group_ref ugr on fu.id = ugr.user_id

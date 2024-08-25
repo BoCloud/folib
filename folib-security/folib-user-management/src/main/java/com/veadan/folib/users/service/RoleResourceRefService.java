@@ -77,7 +77,7 @@ public interface RoleResourceRefService{
 
     void removeByIds(List<Long> removeRefIds);
 
-    List<UserRoleDTO> getRolesByUserName(String userName, PageRequest pageRequest);
+    List<UserRoleDTO> getRolesByUserName(String userName);
 
     RoleDTO getUserByRoleId(String roleId);
 

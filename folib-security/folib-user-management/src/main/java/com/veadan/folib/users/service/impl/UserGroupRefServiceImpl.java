@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import tk.mybatis.mapper.entity.Example;
 
 import javax.transaction.Transactional;
 import java.util.List;
@@ -120,4 +121,13 @@ public class UserGroupRefServiceImpl implements UserGroupRefService {
     public List<UserGroupRef> queryByGroupIds(List<Long> groupIds) {
         return userGroupRefMapper.queryByGroupIds(groupIds);
     }
+
+    @Override
+    public List<UserGroupRef> queryByUserId(String userId) {
+        Example example = Example.builder(UserGroupRef.class).build();
+        example.createCriteria().andEqualTo("userId", userId);
+        return userGroupRefMapper.selectByExample(example);
+    }
+
+
 }
