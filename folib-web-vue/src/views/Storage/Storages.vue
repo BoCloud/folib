@@ -216,7 +216,7 @@
                 </a-select-option>
               </a-select>
             </a-form-model-item>
-            <a-form-model-item class="tags-field mb-10"
+<!--            <a-form-model-item class="tags-field mb-10"
               v-if="hasStoragePermission()" :label="$t('Storage.user')"
               show-search :colon="false">
               <a-select v-model="storageCreateData.users" mode="multiple" :defaultValue="storageCreateData.users"
@@ -225,7 +225,7 @@
                   {{ tag.username }}
                 </a-select-option>
               </a-select>
-            </a-form-model-item>
+            </a-form-model-item>-->
             <a-form-model-item class="mb-10" :colon="false">
 
             </a-form-model-item>

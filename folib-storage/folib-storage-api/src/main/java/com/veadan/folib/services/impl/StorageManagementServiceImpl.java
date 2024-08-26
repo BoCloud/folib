@@ -84,7 +84,7 @@ public class StorageManagementServiceImpl implements StorageManagementService {
             throws IOException {
         configurationManagementService.createStorage(storage);
         handlerStorageAdminRoleByDB(storage.getAdmin(), storage.getId());
-
+        handlerStorageOrdinaryRoleByDB(null, storage.getId());
     }
 
     @Override
@@ -332,34 +332,31 @@ public class StorageManagementServiceImpl implements StorageManagementService {
      * @param currentStorageId 存储空间名称
      */
     private void handlerStorageOrdinaryRoleByDB(Set<String> users, String currentStorageId) {
-        if (!users.isEmpty()) {
+        String key = String.format("STORAGE_USER_%S", currentStorageId);
+        FolibRole folibRole = folibRoleService.queryById(key);
+        if (folibRole == null) {
+            folibRole = FolibRole.builder()
+                    .id(key)
+                    .cnName(String.format("存储空间%s用户", currentStorageId))
+                    .enName(String.format("STORAGE_%S_USER", currentStorageId))
+                    .isDefault(GlobalConstants.NOT_DEFAULT).deleted(GlobalConstants.NOT_DELETED)
+                    .description(String.format("存储空间%s下的普通用户", currentStorageId))
+                    .build();
+            folibRoleService.insert(folibRole);
+        }
+
+        if (CollectionUtils.isNotEmpty(users)) {
             try {
-                String key = String.format("STORAGE_USER_%S", currentStorageId);
-                FolibRole folibRole = folibRoleService.queryById(key);
-                if (folibRole == null) {
-                    folibRole = FolibRole.builder()
-                            .id(key)
-                            .cnName(String.format("存储空间%s用户", currentStorageId))
-                            .enName(String.format("STORAGE_%S_USER", currentStorageId))
-                            .isDefault(GlobalConstants.NOT_DEFAULT).deleted(GlobalConstants.NOT_DELETED)
-                            .description(String.format("存储空间%s下的普通用户", currentStorageId))
-                            .build();
-                     folibRoleService.insert(folibRole);
-                }
-                Resource storageResource = Resource.builder().storageId(currentStorageId).build();
+                Resource storageResource = Resource.builder().id(currentStorageId.toUpperCase()).storageId(currentStorageId).build();
                 Resource resource = resourceService.queryResource(storageResource);
                 if (resource == null) {
                     resourceService.insert(storageResource);
                 }
-                /*Set<String> privileges = privileges();
                 List<RoleResourceRef> roleResourceRefs = new ArrayList<>();
-                privileges.forEach(privilege -> users.forEach(user -> {
-                    roleResourceRefs.add(RoleResourceRef.builder().roleId(key).entityId(user).refType(GlobalConstants.ROLE_TYPE_USER).resourceId(resource.getId())
-                            .storagePrivilege(privilege).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build());
-                }));
+                users.forEach(user -> roleResourceRefs.add(RoleResourceRef.builder().roleId(key).entityId(user).refType(GlobalConstants.ROLE_TYPE_USER).resourceId(resource.getId()).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build()));
                 if (CollectionUtils.isNotEmpty(roleResourceRefs)) {
                     roleResourceRefService.saveBath(roleResourceRefs);
-                }*/
+                }
 
             } catch (Exception ex) {
                 logger.error("handler user {} storage {} admin role error：{}", users, currentStorageId, ExceptionUtils.getStackTrace(ex));
