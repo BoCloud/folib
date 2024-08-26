@@ -1,11 +1,9 @@
 package com.veadan.folib.converts;
 
-import com.veadan.folib.domain.SecurityRole;
-import com.veadan.folib.domain.SecurityRoleEntity;
-import com.veadan.folib.domain.User;
-import com.veadan.folib.domain.UserEntity;
+import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.UserDTO;
 import com.veadan.folib.entity.FolibUser;
+import com.veadan.folib.users.dto.UserPermissionDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
@@ -27,10 +25,16 @@ import static java.util.stream.Collectors.toSet;
  * @Date: 2024/7/16 19:23
  * @Description: UserConvert
  */
-@Mapper(componentModel = "spring")
+@Mapper
 public interface UserConvert {
 
     UserConvert INSTANCE = Mappers.getMapper(UserConvert.class);
+    @Mappings({
+           /* @Mapping(source = "userId", target = "userId"),
+            @Mapping(source = "privileges", target = "privileges"),
+            @Mapping(source = "roleIds", target = "roleIds")*/
+    })
+    UserPermissionDTO UserPermissionFormToUserPermissionDTO(UserPermissionForm userPermissionForm);
 
     @Mappings({@Mapping(target = "roles", ignore = true)})
     UserDTO FolibUserToUserDTO(FolibUser folibUser);
@@ -96,5 +100,6 @@ public interface UserConvert {
     default Date map(LocalDateTime lastUpdated) {
         return lastUpdated != null ? Date.from(lastUpdated.atZone(ZoneId.systemDefault()).toInstant()) : null;
     }
+
 
 }

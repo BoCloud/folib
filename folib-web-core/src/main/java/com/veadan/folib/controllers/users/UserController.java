@@ -5,16 +5,20 @@ import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.users.support.TokenEntityBody;
 import com.veadan.folib.controllers.users.support.UserOutput;
 import com.veadan.folib.controllers.users.support.UserResponseEntity;
+import com.veadan.folib.converts.UserConvert;
 import com.veadan.folib.domain.PageResultResponse;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
+import com.veadan.folib.domain.UserPermissionForm;
 import com.veadan.folib.forms.users.UserForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.StorageManagementService;
 import com.veadan.folib.users.dto.UserDto;
+import com.veadan.folib.users.dto.UserPermissionDTO;
 import com.veadan.folib.users.security.AuthoritiesProvider;
 import com.veadan.folib.users.service.FolibRoleService;
+import com.veadan.folib.users.service.RoleResourceRefService;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.EncodedPasswordUser;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
@@ -99,6 +103,8 @@ public class UserController
     private StorageManagementService storageManagementService;
     @Autowired
     private PrivilegeEventListenerRegistry privilegeEventListenerRegistry;
+    @Autowired
+    private RoleResourceRefService roleResourceRefService;
 
     @ApiOperation(value = "sync yaml users and roles")
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_GET_USERS)})
@@ -116,6 +122,28 @@ public class UserController
          return ResponseEntity.ok(result);
     }
 
+    @ApiOperation(value = "user update ")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_UPDATE_USER),
+            @ApiResponse(code = 400, message = FAILED_UPDATE_USER)})
+    @PreAuthorize("hasAuthority('UPDATE_USER')")
+    @PutMapping(value = "/userPermission", consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = {MediaType.TEXT_PLAIN_VALUE,
+                    MediaType.APPLICATION_JSON_VALUE})
+    @ResponseBody
+    public ResponseEntity updateUserPermission(@RequestBody @Validated UserPermissionForm userPermissionForm,
+                                 BindingResult bindingResult,
+                                 @RequestHeader(HttpHeaders.ACCEPT) String accept) {
+        if (bindingResult.hasErrors()) {
+            throw new RequestBodyValidationException(FAILED_CREATE_USER, bindingResult);
+        }
+
+        UserPermissionDTO userPermission = UserConvert.INSTANCE.UserPermissionFormToUserPermissionDTO(userPermissionForm);
+        roleResourceRefService.updateUserPermission(Collections.singleton(userPermission));
+
+        //同步用户信息到其他节点
+        privilegeEventListenerRegistry.dispatchUserSyncEvent(userPermission.getUserId());
+        return getSuccessfulResponseEntity(SUCCESSFUL_UPDATE_USER, accept);
+    }
     @ApiOperation(value = "Used to retrieve all users")
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_GET_USERS)})
     @PreAuthorize("hasAuthority('VIEW_USER')")
@@ -370,5 +398,4 @@ public class UserController
             return token;
         }
     }
-
 }

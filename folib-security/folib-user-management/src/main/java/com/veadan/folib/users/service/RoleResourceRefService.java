@@ -4,6 +4,7 @@ import com.veadan.folib.domain.SecurityRole;
 import com.veadan.folib.dto.PermissionsDTO;
 import com.veadan.folib.dto.RoleDTO;
 import com.veadan.folib.dto.UserRoleDTO;
+import com.veadan.folib.users.dto.UserPermissionDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import com.veadan.folib.entity.RoleResourceRef;
@@ -103,4 +104,6 @@ public interface RoleResourceRefService{
 
     List<RoleResourceRef> queryPermissionsByRoleIds(List<String> roleIds);
     List<RoleResourceRef> queryByUserIds(List<String> userIds);
+
+    void updateUserPermission(Set<UserPermissionDTO> userPermissions);
 }

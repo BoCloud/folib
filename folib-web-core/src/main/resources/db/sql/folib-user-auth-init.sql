@@ -97,7 +97,7 @@ CREATE TABLE `user_group_ref` (
                                   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
                                   `user_group_id` bigint DEFAULT NULL COMMENT '用户组id',
                                   `user_group_name` varchar(255) DEFAULT NULL COMMENT '用户组名称',
-                                  `user_id` varchar(100)  DEFAULT NULL COMMENT '角色id',
+                                  `user_id` varchar(100)  DEFAULT NULL COMMENT '用户id',
                                   `create_by` varchar(32)  DEFAULT NULL COMMENT '创建人',
                                   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
                                   PRIMARY KEY (`id`),

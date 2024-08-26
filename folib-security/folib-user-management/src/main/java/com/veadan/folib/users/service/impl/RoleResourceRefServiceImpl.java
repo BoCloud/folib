@@ -7,6 +7,7 @@ import com.veadan.folib.entity.Resource;
 import com.veadan.folib.entity.RoleResourceRef;
 import com.veadan.folib.entity.UserGroupRef;
 import com.veadan.folib.mapper.RoleResourceRefMapper;
+import com.veadan.folib.users.dto.UserPermissionDTO;
 import com.veadan.folib.users.service.ResourceService;
 import com.veadan.folib.users.service.RoleResourceRefService;
 import com.veadan.folib.users.service.UserGroupRefService;
@@ -357,5 +358,57 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         criteria.andIn("entityId", userIds).andEqualTo("refType", GlobalConstants.ROLE_TYPE_USER);
         return roleResourceRefMapper.selectByExample(example);
 
+    }
+
+    @Override
+    public void updateUserPermission(Set<UserPermissionDTO> userPermissions) {
+        if (CollectionUtils.isEmpty(userPermissions)) {
+            return;
+        }
+        Set<String> roleIds = userPermissions.stream().map(UserPermissionDTO::getRoleIds).flatMap(Collection::stream).collect(Collectors.toSet());
+        Set<String> userIds = userPermissions.stream().map(UserPermissionDTO::getUserId).collect(Collectors.toSet());
+        List<RoleResourceRef> roleResourceRefs = queryByRoleIds(new ArrayList<>(roleIds));
+        if (CollectionUtils.isEmpty(roleResourceRefs)) {
+            return;
+        }
+        //清理用户已关联的角色
+        List<Long> removeRefIds = roleResourceRefs.stream().filter(ref -> GlobalConstants.ROLE_TYPE_USER.equals(ref.getRefType()) && userIds.contains(ref.getEntityId())).map(RoleResourceRef::getId).collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(removeRefIds)) {
+            deleteByIds(removeRefIds);
+        }
+
+        //保存关联权限
+        Map<String, List<RoleResourceRef>> roleMap = roleResourceRefs.stream().map(ref -> RoleResourceRef.builder().roleId(ref.getRoleId()).resourceId(ref.getResourceId()).resourceType(ref.getResourceType())
+                .storagePrivilege(ref.getStoragePrivilege()).repositoryPrivilege(ref.getRepositoryPrivilege()).pathPrivilege(ref.getPathPrivilege()).build()).distinct().collect(Collectors.groupingBy(RoleResourceRef::getRoleId));
+        List<RoleResourceRef> updateRefs = new ArrayList<>();
+        userPermissions.forEach(userPermission -> {
+            String userId = userPermission.getUserId();
+            Collection<String> userRoleIds = userPermission.getRoleIds();
+            Collection<String> privileges = userPermission.getPrivileges();
+            userRoleIds.forEach(roleId -> {
+                List<RoleResourceRef> resourceRefs = roleMap.get(roleId);
+                if (CollectionUtils.isNotEmpty(resourceRefs)) {
+                    resourceRefs.forEach(resourceRef -> privileges.forEach(privilege -> {
+                        RoleResourceRef.RoleResourceRefBuilder builder = RoleResourceRef.builder();
+                        switch(resourceRef.getResourceType()){
+                            case GlobalConstants.RESOURCE_TYPE_STORAGE:
+                                builder.storagePrivilege(privilege).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE);
+                                break;
+                            case GlobalConstants.RESOURCE_TYPE_REPOSITORY:
+                                builder.repositoryPrivilege(privilege).resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY);
+                                break;
+                            case GlobalConstants.RESOURCE_TYPE_PATH:
+                                builder.pathPrivilege(privilege).resourceType(GlobalConstants.RESOURCE_TYPE_PATH);
+                                break;
+                        }
+                        builder.entityId(userId).refType(GlobalConstants.ROLE_TYPE_USER).roleId(roleId).resourceId(resourceRef.getResourceId());
+                        updateRefs.add(builder.build());
+                    }));
+                }
+            });
+        });
+        if (CollectionUtils.isNotEmpty(updateRefs)) {
+            saveBath(updateRefs.stream().distinct().collect(Collectors.toList()));
+        }
     }
 }

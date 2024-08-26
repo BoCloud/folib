@@ -1,9 +1,12 @@
 package com.veadan.folib.users.service.impl;
 
 import com.veadan.folib.dto.RoleResourceRefDTO;
+import com.veadan.folib.entity.UserGroup;
 import com.veadan.folib.entity.UserGroupRef;
 import com.veadan.folib.mapper.UserGroupRefMapper;
 import com.veadan.folib.users.service.UserGroupRefService;
+import com.veadan.folib.users.service.UserGroupService;
+import org.parboiled.common.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
@@ -12,7 +15,9 @@ import org.springframework.data.domain.PageRequest;
 import tk.mybatis.mapper.entity.Example;
 
 import javax.transaction.Transactional;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -25,6 +30,8 @@ import java.util.stream.Collectors;
 public class UserGroupRefServiceImpl implements UserGroupRefService {
     @Autowired
     private UserGroupRefMapper userGroupRefMapper;
+    @Autowired
+    private UserGroupService userGroupService;
     
     /** 
      * 通过ID查询单条数据 
@@ -55,6 +62,7 @@ public class UserGroupRefServiceImpl implements UserGroupRefService {
      * @return 实例对象
      */
     public UserGroupRef insert(UserGroupRef userGroupRef){
+        updateGroupName(Collections.singletonList(userGroupRef));
         userGroupRefMapper.insert(userGroupRef);
         return userGroupRef;
     }
@@ -66,6 +74,7 @@ public class UserGroupRefServiceImpl implements UserGroupRefService {
      * @return 实例对象
      */
     public UserGroupRef update(UserGroupRef userGroupRef){
+        updateGroupName(Collections.singletonList(userGroupRef));
         userGroupRefMapper.update(userGroupRef);
         return queryById(userGroupRef.getId());
     }
@@ -87,7 +96,21 @@ public class UserGroupRefServiceImpl implements UserGroupRefService {
      * @return
      */
     public int saveBath(List<UserGroupRef> entities) {
+        updateGroupName(entities);
         return userGroupRefMapper.insertBatch(entities);
+    }
+
+    private void updateGroupName(List<UserGroupRef> entities) {
+        List<Long> groupIds = entities.stream().filter(userGroupRef -> userGroupRef.getUserGroupName() == null).map(UserGroupRef::getUserGroupId).collect(Collectors.toList());
+        if (!groupIds.isEmpty()) {
+            List<UserGroup> userGroups = userGroupService.queryByIds(groupIds);
+            Map<Long, String> nameMap = userGroups.stream().collect(Collectors.toMap(UserGroup::getId, UserGroup::getGroupName));
+            entities.forEach(userGroupRef -> {
+                    if (StringUtils.isEmpty(userGroupRef.getUserGroupName())) {
+                        userGroupRef.setUserGroupName(nameMap.get(userGroupRef.getUserGroupId()));
+                    }
+            });
+        }
     }
 
     @Override

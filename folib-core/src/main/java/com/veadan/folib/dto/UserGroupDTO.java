@@ -17,6 +17,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -67,14 +68,14 @@ public class UserGroupDTO implements Serializable,Cloneable {
 
     public List<String> getUserIds() {
         if (StringUtils.isEmpty(users)) {
-            return null;
+            return Collections.emptyList();
         }
         return Arrays.asList(users.split(","));
     }
 
     public List<String> getRoleIds() {
         if (StringUtils.isEmpty(roles)){
-            return null;
+           return Collections.emptyList();
         }
         return Arrays.asList(roles.split(","));
     }

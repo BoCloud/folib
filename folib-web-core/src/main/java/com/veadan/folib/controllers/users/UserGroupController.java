@@ -131,6 +131,7 @@ public class UserGroupController
             List<UserGroupRef> userGroupRefs = userIds.stream().map(userId -> {
                 UserGroupRef userGroupRef = new UserGroupRef();
                 userGroupRef.setUserId(userId);
+                userGroupRef.setUserGroupName(userGroup.getGroupName());
                 userGroupRef.setUserGroupId(userGroup.getId());
                 return userGroupRef;
             }).collect(Collectors.toList());

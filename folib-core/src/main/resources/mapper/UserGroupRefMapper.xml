@@ -4,6 +4,7 @@
     <resultMap type="com.veadan.folib.entity.UserGroupRef" id="UserGroupRefMap">
         <result property="id" column="id"/>
         <result property="userGroupId" column="user_group_id"/>
+        <result property="userGroupName" column="user_group_name"/>
         <result property="userId" column="user_id"/>
         <result property="createBy" column="create_by"/>
         <result property="createTime" column="create_time"/>
@@ -12,7 +13,7 @@
     <!-- 通过ID查询单条数据 -->
     <select id="queryById" resultMap="UserGroupRefMap">
         select
-            id,user_group_id,user_id,create_by,create_time
+            id,user_group_id,user_group_name,user_id,create_by,create_time
         from user_group_ref
         where id = #{id}
     </select>
@@ -20,7 +21,7 @@
     <!--分页查询指定行数据-->
     <select id="queryAllByLimit" resultMap="UserGroupRefMap">
         select
-        id,user_group_id,user_id,create_by,create_time
+        id,user_group_id,user_group_name,user_id,create_by,create_time
         from user_group_ref
         <where>
             <if test="id != null and id != ''">
@@ -28,6 +29,9 @@
             </if>
             <if test="userGroupId != null and userGroupId != ''">
                 and user_group_id = #{userGroupId}
+            </if>
+            <if test="userGroupName != null and userGroupName != ''">
+                and user_group_name = #{userGroupName}
             </if>
             <if test="userId != null and userId != ''">
                 and user_id = #{userId}
@@ -52,6 +56,9 @@
             </if>
             <if test="userGroupId != null and userGroupId != ''">
                 and user_group_id = #{userGroupId}
+            </if>
+            <if test="userGroupName != null and userGroupName != ''">
+                and user_group_name = #{userGroupName}
             </if>
             <if test="userId != null and userId != ''">
                 and user_id = #{userId}
@@ -92,29 +99,31 @@
 
     <!--新增数据-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
-        insert into user_group_ref(id,user_group_id,user_id,create_by,create_time)
-        values (#{id},#{userGroupId},#{userId},#{createBy},#{createTime})
+        insert into user_group_ref(id,user_group_id,user_group_name,user_id,create_by,create_time)
+        values (#{id},#{userGroupId},#{userGroupName},#{userId},#{createBy},#{createTime})
     </insert>
+
 
     <!-- 批量新增数据 -->
     <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into user_group_ref(id,user_group_id,user_id,create_by,create_time)
+        insert into user_group_ref(id,user_group_id,user_group_name,user_id,create_by)
         values
         <foreach collection="entities" item="entity" separator=",">
-            (#{entity.id},#{entity.userGroupId},#{entity.userId},#{entity.createBy},#{entity.createTime})
+            (#{entity.id},#{entity.userGroupId},#{entity.userGroupName},#{entity.userId},#{entity.createBy})
         </foreach>
     </insert>
 
     <!-- 批量新增或按主键更新数据 -->
     <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into user_group_ref(id,user_group_id,user_id,create_by,create_time)
+        insert into user_group_ref(id,user_group_id,user_group_name,user_id,create_by)
         values
         <foreach collection="entities" item="entity" separator=",">
-            (#{entity.id},#{entity.userGroupId},#{entity.userId},#{entity.createBy},#{entity.createTime})
+            (#{entity.id},#{entity.userGroupId},#{entity.userGroupName},#{entity.userId},#{entity.createBy})
         </foreach>
         on duplicate key update
         id=values(id),
         user_group_id=values(user_group_id),
+        user_group_name=values(user_group_name),
         user_id=values(user_id),
         create_by=values(create_by),
         create_time=values(create_time)
@@ -129,6 +138,9 @@
             </if>
             <if test="userGroupId != null and userGroupId != ''">
                 user_group_id = #{userGroupId},
+            </if>
+            <if test="userGroupName != null and userGroupName != ''">
+                and user_group_name = #{userGroupName}
             </if>
             <if test="userId != null and userId != ''">
                 user_id = #{userId},
