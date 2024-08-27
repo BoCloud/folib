@@ -338,20 +338,19 @@ public class StorageManagementServiceImpl implements StorageManagementService {
             folibRole = FolibRole.builder()
                     .id(key)
                     .cnName(String.format("存储空间%s用户", currentStorageId))
-                    .enName(String.format("STORAGE_%S_USER", currentStorageId))
+                    .enName(String.format("STORAGE_USER_%S", currentStorageId))
                     .isDefault(GlobalConstants.NOT_DEFAULT).deleted(GlobalConstants.NOT_DELETED)
                     .description(String.format("存储空间%s下的普通用户", currentStorageId))
                     .build();
             folibRoleService.insert(folibRole);
         }
-
+        Resource storageResource = Resource.builder().id(currentStorageId.toUpperCase()).storageId(currentStorageId).build();
+        Resource resource = resourceService.queryResource(storageResource);
+        if (resource == null) {
+            resourceService.insert(storageResource);
+        }
         if (CollectionUtils.isNotEmpty(users)) {
             try {
-                Resource storageResource = Resource.builder().id(currentStorageId.toUpperCase()).storageId(currentStorageId).build();
-                Resource resource = resourceService.queryResource(storageResource);
-                if (resource == null) {
-                    resourceService.insert(storageResource);
-                }
                 List<RoleResourceRef> roleResourceRefs = new ArrayList<>();
                 users.forEach(user -> roleResourceRefs.add(RoleResourceRef.builder().roleId(key).entityId(user).refType(GlobalConstants.ROLE_TYPE_USER).resourceId(resource.getId()).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build()));
                 if (CollectionUtils.isNotEmpty(roleResourceRefs)) {
@@ -362,6 +361,8 @@ public class StorageManagementServiceImpl implements StorageManagementService {
                 logger.error("handler user {} storage {} admin role error：{}", users, currentStorageId, ExceptionUtils.getStackTrace(ex));
                 throw new RuntimeException(ex.getMessage());
             }
+        }else {
+            roleResourceRefService.insert(RoleResourceRef.builder().roleId(key).resourceId(storageResource.getId()).build());
         }
     }
 

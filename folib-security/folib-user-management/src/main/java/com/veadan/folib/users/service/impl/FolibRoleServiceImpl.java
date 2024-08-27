@@ -376,8 +376,18 @@ public class FolibRoleServiceImpl implements FolibRoleService {
         update(roleInfo);
         Set<String> userIds = getUserIdsByRoleId(roleId);
         roleResourceRefService.deleteByRoleId(roleId);
-        //保存权限关系
-        roleResourceRefService.savePermissions(roleDTO, roleId, username);
+        if (roleId.toUpperCase().startsWith("STORAGE_ADMIN_")) {
+            //保存存储空间管理员权限
+            EnumSet<Privileges> storagePrivileges = Privileges.storageAll();
+            Set<String> privileges = storagePrivileges.stream().map(Privileges::getAuthority).collect(Collectors.toSet());
+            List<RoleResourceRef> roleResourceRefs = privileges.stream().map(privilege -> RoleResourceRef.builder().roleId(roleId).entityId(username).refType(GlobalConstants.ROLE_TYPE_USER).resourceId(accessModel.get(0).getStorageId())
+                    .storagePrivilege(privilege).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build()).collect(Collectors.toList());
+            roleResourceRefService.saveBath(roleResourceRefs);
+        }else{
+
+            //保存权限关系
+            roleResourceRefService.savePermissions(roleDTO, roleId, username);
+        }
 
         List<AccessUsersDTO> users = roleDTO.getPrivileges().getUsers();
         if (CollectionUtils.isNotEmpty(users)) {
