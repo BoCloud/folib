@@ -111,6 +111,7 @@ public class PrivilegeEventListener {
                         UserAuthDTO userAuthReq = getUserAuthReq(privilegeEventTypeEnum, uuId);
                         wsMessageRequest = new WSMessageRequest(Command.USER_AUTH_SYNC, userAuthReq);
                         messageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
+//                        SpringContextUtil.getBeanWithAnnotation(RelationalDatabaseUserService.RelationalDatabase.class, RelationalDatabaseUserService.class).syncUserAuth(userAuthReq);
                         log.debug("sendRequest result,wsMessageRequest:{},messageResponse:{}", wsMessageRequest, messageResponse);
                     }  catch (Exception e) {
                         log.error("sendRequest fail,wsMessageRequest:{}", wsMessageRequest, e);

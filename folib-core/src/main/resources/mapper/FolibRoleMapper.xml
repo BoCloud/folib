@@ -29,6 +29,7 @@
             cn_name,
             en_name,
             fr.description,
+            fr.deleted,
             fr.is_default,
             group_concat(distinct case when rrr.ref_type = 1 then rrr.entity_id end) as users,
             group_concat(distinct case when rrr.ref_type = 2 then ug.group_name end) as userGroups
