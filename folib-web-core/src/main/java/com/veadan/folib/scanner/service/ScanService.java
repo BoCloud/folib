@@ -16,6 +16,7 @@ import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.license.LicenseComponent;
 import com.veadan.folib.components.scan.ScanComponent;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.cluster.dto.SyncCronJobDto;
 import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
 import com.veadan.folib.cron.jobs.ArtifactScanCronJob;
@@ -27,11 +28,13 @@ import com.veadan.folib.domain.ComponentEntity;
 import com.veadan.folib.domain.VulnerabilityEntity;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.entity.License;
+import com.veadan.folib.enums.ArtifactMetadataEnum;
 import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.enums.VulnerabilityPlatformEnum;
 import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
 import com.veadan.folib.eventlistener.scanner.ArtifactEventScannerListener;
+import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.forms.scanner.ScannerReportForm;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -98,6 +101,10 @@ public class ScanService {
 
     @Inject
     private ArtifactService artifactService;
+
+    @Inject
+    @Lazy
+    private ArtifactWebService artifactWebService;
 
     @Inject
     private ScanRulesMapper scanRulesMapper;
@@ -167,7 +174,7 @@ public class ScanService {
         try {
             if (artifact.getSizeInBytes() > 0 && !checkSize(artifact.getSizeInBytes())) {
                 log.warn("Artifact size exceeds scan limit [{}]", artifact.getUuid());
-                //文件大于3GB，放弃扫描
+                //文件大于扫描限制，放弃扫描
                 artifact.setSafeLevel(SafeLevelEnum.UNWANTED_SCAN.getLevel());
                 artifactService.saveOrUpdateArtifact(artifact);
                 return;
@@ -200,18 +207,48 @@ public class ScanService {
         } catch (Exception e) {
             artifact.setSafeLevel(SafeLevelEnum.SCAN_FAIL.getLevel());
             artifactService.saveOrUpdateArtifact(artifact);
-            log.error("执行扫描失败：{}", ExceptionUtils.getStackTrace(e));
+            log.error("执行扫描失败 [{}]", ExceptionUtils.getStackTrace(e));
+            handleRetryCount(artifact);
         }
         artifact.setReport("");
     }
 
     private boolean checkSize(long sizeInBytes) {
-        BigDecimal maxSize = new BigDecimal(3);
+        Integer maxSize = GlobalConstants.SCAN_MAX_SIZE;
+        String cacheKey = distributedCacheComponent.get(GlobalConstants.SCAN_MAX_SIZE_KEY);
+        if (StringUtils.isNotBlank(cacheKey)) {
+            maxSize = Integer.parseInt(cacheKey);
+        }
         BigDecimal convertSize = FileSizeConvertUtils.convertBytesWithDecimal(sizeInBytes, "GB");
-        if (convertSize.compareTo(maxSize) > 0) {
+        if (convertSize.compareTo(new BigDecimal(maxSize)) > 0) {
             return false;
         }
         return true;
+    }
+
+    private void handleRetryCount(Artifact artifact) {
+        try {
+            String metadata = artifact.getMetadata();
+            String retryKey = getRetryKey();
+            int retryCount = 0;
+            boolean save = true;
+            ArtifactMetadataForm artifactMetadata = ArtifactMetadataForm.builder().type(ArtifactMetadataEnum.NUMERICAL.toString()).viewShow(0).storageId(artifact.getStorageId()).repositoryId(artifact.getRepositoryId()).artifactPath(artifact.getArtifactPath()).key(retryKey).value(Integer.toString(retryCount)).build();
+            if (StringUtils.isNotBlank(metadata) && JSONUtil.isJson(metadata) && JSONObject.parseObject(metadata).containsKey(retryKey)) {
+                Object obj = JSONObject.parseObject(metadata).getJSONObject(retryKey).getInteger("value");
+                if (Objects.nonNull(obj) && StringUtils.isNumeric(obj.toString())) {
+                    retryCount = Integer.parseInt(obj.toString()) + 1;
+                    artifactMetadata.setValue(Integer.toString(retryCount));
+                    save = false;
+                }
+            }
+            if (save) {
+                artifactWebService.saveArtifactMetadata(artifactMetadata);
+            } else {
+                artifactWebService.updateArtifactMetadata(artifactMetadata);
+            }
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
     }
 
     @Async("asyncScanThreadPoolTaskExecutor")
@@ -737,18 +774,22 @@ public class ScanService {
         Page<Artifact> page;
         List<Artifact> artifactList;
         for (int currentPage = 1; currentPage <= totalPages; currentPage++) {
-            log.info("Scan totalPages [{}] currentPage [{}] batchSize [{}]", totalPages, currentPage, batchSize);
-            if (currentPage == 1) {
-                pageable = PageRequest.of(currentPage, batchSize).first();
-            } else {
-                pageable = PageRequest.of(currentPage, batchSize).previous();
-            }
-            page = artifactRepository.findMatchingPageBySafeLevels(pageable, storageIdAndRepositoryIdList, safeLevels, Order.asc.name());
-            if (CollectionUtils.isNotEmpty(page.getContent())) {
-                artifactList = page.getContent();
-                //过滤扫描时间为空或者扫描时间在漏洞库更新时间之前的制品
-                artifactList = artifactList.stream().filter(item -> Objects.isNull(item.getScanDateTime()) || (Objects.nonNull(vulnerabilityRefreshTime) && item.getScanDateTime().isBefore(vulnerabilityRefreshTime))).collect(Collectors.toList());
-                syncScan(artifactList);
+            try {
+                log.info("Scan totalPages [{}] currentPage [{}] batchSize [{}]", totalPages, currentPage, batchSize);
+                if (currentPage == 1) {
+                    pageable = PageRequest.of(currentPage, batchSize).first();
+                } else {
+                    pageable = PageRequest.of(currentPage, batchSize).previous();
+                }
+                page = artifactRepository.findMatchingPageBySafeLevels(pageable, storageIdAndRepositoryIdList, safeLevels, Order.asc.name());
+                if (CollectionUtils.isNotEmpty(page.getContent())) {
+                    artifactList = page.getContent();
+                    //过滤扫描时间为空或者扫描时间在漏洞库更新时间之前的制品
+                    artifactList = artifactList.stream().filter(item -> Objects.isNull(item.getScanDateTime()) || (Objects.nonNull(vulnerabilityRefreshTime) && item.getScanDateTime().isBefore(vulnerabilityRefreshTime))).collect(Collectors.toList());
+                    syncScan(artifactList);
+                }
+            } catch (Exception ex) {
+                log.error("Scan totalPages [{}] currentPage [{}] batchSize [{}] scan error [{}]", totalPages, currentPage, batchSize, ExceptionUtils.getStackTrace(ex));
             }
         }
         Checksum.clearCache();
@@ -767,7 +808,7 @@ public class ScanService {
             try {
                 log.info("Locked for [{}]", lockName);
                 List<String> storageIdAndRepositoryIdList = getScanStorageIdAndRepositoryIdList();
-                List<Artifact> artifactList = artifactRepository.findMatchingBySafeLevels(storageIdAndRepositoryIdList, safeLevels, order);
+                List<Artifact> artifactList = artifactRepository.findMatchingBySafeLevels(storageIdAndRepositoryIdList, safeLevels, getRetryKey(), getRetryCount(), order);
                 if (CollectionUtils.isNotEmpty(artifactList)) {
                     int size = 50;
                     List<List<Artifact>> lists = Lists.partition(artifactList, size);
@@ -793,6 +834,24 @@ public class ScanService {
             return null;
         }
         return scanRulesList.stream().map(item -> String.format("%s-%s", item.getStorage(), item.getRepository())).collect(Collectors.toList());
+    }
+
+    private String getRetryKey() {
+        String retryKey = GlobalConstants.SCAN_RETRY;
+        String cacheKey = distributedCacheComponent.get(GlobalConstants.SCAN_RETRY_KEY);
+        if (StringUtils.isNotBlank(cacheKey)) {
+            retryKey = cacheKey;
+        }
+        return retryKey;
+    }
+
+    private Integer getRetryCount() {
+        Integer retryCount = GlobalConstants.SCAN_RETRY_COUNT;
+        String cacheKey = distributedCacheComponent.get(GlobalConstants.SCAN_RETRY_COUNT_KEY);
+        if (StringUtils.isNotBlank(cacheKey)) {
+            retryCount = Integer.parseInt(cacheKey);
+        }
+        return retryCount;
     }
 
 }

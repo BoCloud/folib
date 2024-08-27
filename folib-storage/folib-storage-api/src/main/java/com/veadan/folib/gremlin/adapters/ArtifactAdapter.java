@@ -283,7 +283,8 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 "updatedBy",
                 "artifactName",
                 "artifactPath",
-                "scanDateTime")
+                "scanDateTime",
+                "metadata")
                 .by(__.id())
                 .by(__.enrichPropertyValue("uuid"))
                 .by(__.enrichPropertyValue("storageId"))
@@ -312,6 +313,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 .by(__.enrichPropertyValue("artifactName"))
                 .by(__.enrichPropertyValue("artifactPath"))
                 .by(__.enrichPropertyValue("scanDateTime"))
+                .by(__.enrichPropertyValue("metadata"))
                 .map(this::map);
     }
 
