@@ -8,15 +8,13 @@ import com.veadan.folib.converters.users.UserGroupConvert;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.PrivilegeDispatch;
 import com.veadan.folib.dto.FolibRoleDTO;
+import com.veadan.folib.dto.UserGroupListDTO;
+import com.veadan.folib.entity.*;
 import com.veadan.folib.event.privilege.PrivilegeEventTypeEnum;
+import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.users.dto.UserAuthDTO;
-import com.veadan.folib.dto.UserGroupListDTO;
-import com.veadan.folib.entity.*;
-import com.veadan.folib.services.ConfigurationManagementService;
-import com.veadan.folib.storage.Storage;
-import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.users.service.*;
 import com.veadan.folib.ws.common.FolibWsRunManageUtil;
 import com.veadan.folib.ws.common.FolibWsRunManageV2;
@@ -30,16 +28,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import javax.websocket.Session;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -71,7 +66,7 @@ public class UserAuthSyncTask {
     @Inject
     private ResourceService resourceService;
 
-    @Scheduled(cron = "0 0/1 * * * ? ")
+    @Scheduled(cron = "0 0/5 * * * ? ")
     public void run() {
         String lockName = "UserAuthSyncTask";
         long waitTime = 3L;
@@ -83,6 +78,12 @@ public class UserAuthSyncTask {
                 if (MapUtils.isEmpty(map)) {
                     return;
                 }
+                final Collection<ClusterDispatchNodeDto> values = map.values();
+                values.forEach(nodeDto -> {
+                    String targetHostName = FolibWsRunManageUtil.getSimpleTargetHostName(nodeDto);
+                    Session session = folibWsRunManageV2.getSession(targetHostName);
+                    nodeDto.setWsClientOnline(session != null && session.isOpen());
+                });
                 map.forEach((key, value) -> {
                     log.debug("key:{},value:{}", key, value);
                     Boolean isThisCluster = value.getIsThisCluster();
@@ -146,7 +147,7 @@ public class UserAuthSyncTask {
         //用户信息
         Page<FolibUser> folibUserDTOS = folibUserService.paginQuery(FolibUser.builder().build(), pageRequest);
         if (!folibUserDTOS.getContent().isEmpty()) {
-            builder.users(folibUserDTOS.getContent());
+            builder.users(new ArrayList<>(folibUserDTOS.getContent()));
             builder.nextPage(true);
         }
         //用户组及用户组关联信息
@@ -180,7 +181,7 @@ public class UserAuthSyncTask {
         //资源信息
         Page<Resource> resources = resourceService.paginQuery(Resource.builder().build(), pageRequest);
         if (!resources.getContent().isEmpty()) {
-            builder.resources(resources.getContent());
+            builder.resources(new ArrayList<>(resources.getContent()));
         }
         List<Resource> resourcesList = resources.stream().filter(resource -> StringUtils.isNotEmpty(resource.getRepositoryId()) || StringUtils.isNotEmpty(resource.getStorageId())).collect(Collectors.toList());
         //仓库信息

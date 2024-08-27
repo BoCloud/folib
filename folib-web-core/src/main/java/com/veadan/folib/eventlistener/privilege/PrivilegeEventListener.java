@@ -9,6 +9,7 @@ import com.veadan.folib.entity.*;
 import com.veadan.folib.event.AsyncEventListener;
 import com.veadan.folib.event.privilege.PrivilegeEvent;
 import com.veadan.folib.event.privilege.PrivilegeEventTypeEnum;
+import com.veadan.folib.scanner.common.util.SpringContextUtil;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.RepositoryDto;
@@ -29,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
+import javax.websocket.Session;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -57,8 +59,6 @@ public class PrivilegeEventListener {
     private RoleResourceRefService roleResourceRefService;
     @Autowired
     private ResourceService resourceService;
-    @Autowired
-    private RelationalDatabaseUserService relationalDatabaseUserService;
 
     @AsyncEventListener
     public void handle(final PrivilegeEvent event) {
@@ -78,6 +78,13 @@ public class PrivilegeEventListener {
             if (MapUtils.isEmpty(map)) {
                 return;
             }
+            final Collection<ClusterDispatchNodeDto> values = map.values();
+            values.forEach(nodeDto -> {
+                String targetHostName = FolibWsRunManageUtil.getSimpleTargetHostName(nodeDto);
+                Session session = folibWsRunManageV2.getSession(targetHostName);
+                nodeDto.setWsClientOnline(session != null && session.isOpen());
+            });
+
             map.forEach((key, value) -> {
                 Boolean isThisCluster = value.getIsThisCluster();
                 Boolean wsClientOnline = value.getWsClientOnline();
@@ -104,7 +111,6 @@ public class PrivilegeEventListener {
                         UserAuthDTO userAuthReq = getUserAuthReq(privilegeEventTypeEnum, uuId);
                         wsMessageRequest = new WSMessageRequest(Command.USER_AUTH_SYNC, userAuthReq);
                         messageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
-//                        relationalDatabaseUserService.syncUserAuth(userAuthReq);
                         log.debug("sendRequest result,wsMessageRequest:{},messageResponse:{}", wsMessageRequest, messageResponse);
                     }  catch (Exception e) {
                         log.error("sendRequest fail,wsMessageRequest:{}", wsMessageRequest, e);

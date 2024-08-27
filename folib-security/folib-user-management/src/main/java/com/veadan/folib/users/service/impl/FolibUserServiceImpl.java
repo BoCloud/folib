@@ -155,7 +155,7 @@ public class FolibUserServiceImpl implements FolibUserService {
      */
     private void getUserAuthorities(List<UserDTO> folibUsers) {
         if (CollectionUtils.isNotEmpty(folibUsers)) {
-            List<String> roleIds = folibUsers.stream().flatMap(userDTO -> userDTO.getRoles().stream()).distinct().collect(Collectors.toList());
+            List<String> roleIds = folibUsers.stream().filter(userDTO -> CollectionUtils.isNotEmpty(userDTO.getRoles())).flatMap(userDTO -> userDTO.getRoles().stream()).distinct().collect(Collectors.toList());
             List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryPermissionsByRoleIds(roleIds);
             Map<String, Map<String, Set<String>>> roleMap = roleResourceRefs.stream().collect(Collectors.groupingBy(RoleResourceRef::getRoleId,
                     Collectors.toMap(ref -> ref.getEntityId() + "_" + ref.getRefType(),

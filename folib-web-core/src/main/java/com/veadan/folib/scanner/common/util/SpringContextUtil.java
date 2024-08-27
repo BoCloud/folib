@@ -8,11 +8,13 @@ package com.veadan.folib.scanner.common.util;
 
 
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -88,6 +90,14 @@ public class SpringContextUtil implements ApplicationContextAware{
         return getApplicationContext().getBean(name, clazz);
     }
 
-
+    public static <T> T getBeanWithAnnotation(Class<? extends Annotation> annotationType, Class<T> beanType) {
+        Map<String, Object> beans = getApplicationContext().getBeansWithAnnotation(annotationType);
+        for (Object bean : beans.values()) {
+            if (beanType.isInstance(bean)) {
+                return (T) bean;
+            }
+        }
+        throw new NoUniqueBeanDefinitionException(beanType, beans.size(), "Found " + beans.size() + " beans with annotation " + annotationType.getName());
+    }
 
 }

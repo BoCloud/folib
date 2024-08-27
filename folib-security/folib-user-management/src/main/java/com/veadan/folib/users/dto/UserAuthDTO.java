@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.List;
 
@@ -44,4 +45,17 @@ public class UserAuthDTO{
     /**仓库*/
     private List<RepositoryDto> repositorys;
 
+    public List<UserGroupRef> getUserGroups() {
+        if (CollectionUtils.isNotEmpty(userGroups)) {
+            userGroups.forEach(userRole -> userRole.setId(null));
+        }
+        return userGroups;
+    }
+
+    public List<RoleResourceRef> getUserRoles() {
+        if (CollectionUtils.isNotEmpty(userRoles)) {
+            userRoles.forEach(userRole -> userRole.setId(null));
+        }
+        return userRoles;
+    }
 }

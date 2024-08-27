@@ -105,6 +105,7 @@ public class RelationalDatabaseUserService implements UserService
     }
 
     @Override
+    @Transactional
     public void syncUserAuth(UserAuthDTO date) {
         //更新节点用户信息
         List<FolibUser> users = date.getUsers();
