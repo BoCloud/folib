@@ -3,8 +3,6 @@
         v-model="visible"
         :title="$t(`Permissions.${type === 'USER' ? 'SelectUsers' : 'SelectGroups'}`)"
         width="50vw"
-        @close="closeModal"
-        @ok="handleConfirm"
     >
         <div class="by-flex by-row-right by-m-b-10">
             <a-input-search v-model="searchText" size="small" :placeholder="$t('Groups.EnterTheNameQuery')" @search="handleSearch()" class="by-w-200"/>
@@ -17,6 +15,14 @@
             :loading="loading"
             @change="handleChangeTable"
         />
+        <template slot="footer">
+            <a-button :style="{ marginRight: '8px' }" @click="closeModal">
+                {{ $t(`Permissions.Cancel`) }}
+            </a-button>
+            <a-button type="primary" :disabled="isStorageAdmin && selectedRowKeys.length > 1" @click="handleConfirm">
+                {{ $t(`Permissions.Confirm`) }}
+            </a-button>
+        </template>
     </a-modal>
 </template>
 
@@ -31,6 +37,7 @@ export default {
         return {
             visible: false,
             loading: false,
+            isStorageAdmin: false,
             type: '',
             page: 1,
             limit: 10,
@@ -46,7 +53,7 @@ export default {
         },
     },
     methods: {
-        openModal(type = 'USER', selectedRowKeys = [])
+        openModal(type = 'USER', selectedRowKeys = [], isStorageAdmin = false)
         {
             this.tableData = []
             this.type = type
@@ -56,6 +63,7 @@ export default {
             this.limit = 10
             this.searchText = ''
             this.querySearch()
+            this.isStorageAdmin = isStorageAdmin
         },
         closeModal()
         {

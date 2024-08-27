@@ -23,7 +23,7 @@
                     />
                 </a-form-model-item>
             </a-form-model>
-            <a-steps v-if="!isStorageAdmin" v-model="step" size="small" class="step">
+            <a-steps v-model="step" size="small" class="step">
                 <a-step :title="$t('Permissions.Resources')" :status="step === 0 ? 'process' : 'wait'" :disabled="isAdmin" :description="$t('Permissions.ResourcesDesc')"/>
                 <a-step :title="$t('Permissions.Users')" :status="step === 1 ? 'process' : 'wait'" :description="$t('Permissions.UsersDesc')"/>
                 <a-step :title="$t('Permissions.Groups')" :status="step === 2 ? 'process' : 'wait'" :description="$t('Permissions.GroupsDesc')"/>
@@ -33,7 +33,7 @@
                     ref="repositories"
                     :repositoriesList="repositoriesList"
                     :storageList="storageList"
-                    :isView="isView"
+                    :isView="isView || isStorageUser || isStorageAdmin"
                 />
             </div>
             <div v-if="step === 1" class="by-flex by-col-stretch">
@@ -87,7 +87,7 @@
                         <div class="title by-flex by-row-between">
                             <span>{{ $t(`Permissions.SelectedPermissions`) }}</span>
                             <a-button
-                                v-if="!isView && userSelectList.length && !isAdmin"
+                                v-if="!isView && userSelectList.length && !isAdmin && !isStorageAdmin"
                                 type="primary"
                                 size="small"
                                 @click="onRepositoriesCheckAllChange"
@@ -108,7 +108,7 @@
                                     </a-col>
                                     <a-col :span="24" :md="12" class="ml-auto" style="display: flex; align-items: center; justify-content: flex-end">
                                         <span class="mr-15">{{ $t(`Permissions.${item.enabled ? 'Enabled' : 'Disabled'}`) }}</span>
-                                        <a-switch v-model="item.enabled" :disabled="!userSelectList.length || isView || isAdmin" @change="onRepositoriesChange"/>
+                                        <a-switch v-model="item.enabled" :disabled="!userSelectList.length || isView || isAdmin || isStorageAdmin" @change="onRepositoriesChange"/>
                                     </a-col>
                                 </a-row>
                             </div>
@@ -126,7 +126,7 @@
                     </div>
                     <div class="by-flex by-m-t-10 by-m-b-10">
                         <a-input v-model="userSearch" :placeholder="$t('Permissions.Search')" allow-clear class="by-w-300"></a-input>
-                        <a-button type="primary" icon="edit" class="by-m-l-10" :disabled="isView" @click="openSelectModal('GROUP')"/>
+                        <a-button type="primary" icon="edit" class="by-m-l-10" :disabled="isView || isStorageAdmin" @click="openSelectModal('GROUP')"/>
                     </div>
                     <div class="selected-list">
                         <div
@@ -159,7 +159,7 @@
                         <div class="title by-flex by-row-between">
                             <span>{{ $t(`Permissions.SelectedPermissions`) }}</span>
                             <a-button
-                                v-if="!isView && groupSelectList.length && !isAdmin"
+                                v-if="!isView && groupSelectList.length && !isAdmin && !isStorageAdmin"
                                 type="primary"
                                 size="small"
                                 @click="onGroupCheckAllChange"
@@ -180,7 +180,7 @@
                                     </a-col>
                                     <a-col :span="24" :md="12" class="ml-auto" style="display: flex; align-items: center; justify-content: flex-end">
                                         <span class="mr-15">{{ $t(`Permissions.${item.enabled ? 'Enabled' : 'Disabled'}`) }}</span>
-                                        <a-switch v-model="item.enabled" :disabled="!groupSelectList.length || isView || isAdmin" @change="onGroupChange"/>
+                                        <a-switch v-model="item.enabled" :disabled="!groupSelectList.length || isView || isAdmin || isStorageAdmin" @change="onGroupChange"/>
                                     </a-col>
                                 </a-row>
                             </div>
@@ -228,6 +228,7 @@ export default {
             isEdit: false,
             isAdmin: false,
             isStorageAdmin: false,
+            isStorageUser: false,
             confirmVisible: false,
             spinning: false,
             step: 0,
@@ -284,15 +285,18 @@ export default {
         async openModal(id, isView, isAdmin)
         {
             this.initOptions()
-            this.visible = true;
-            this.spinning = true;
-            this.isView = isView;
-            this.isAdmin = isAdmin;
-            this.isEdit = !!id;
+            this.visible = true
+            this.spinning = true
+            this.isView = isView
+            this.isAdmin = isAdmin
+            this.isStorageAdmin = id?.startsWith('STORAGE_ADMIN_')
+            this.isStorageUser = id?.startsWith('STORAGE_USER_')
+            this.isEdit = !!id
             this.init()
             await this.getStorageList()
             await this.getRepositoriesList()
             if (id) {
+                if (this.isStorageAdmin) this.step = 1
                 if (isAdmin) this.step = 1
                 this.getDetail(id);
             } else {
@@ -366,8 +370,6 @@ export default {
             this.spinning = true;
             getPermissionDetail(id).then(res => {
                 const { name, privileges, resources } = res
-                this.isStorageAdmin = name.startsWith('STORAGE_ADMIN_')
-                if (this.isStorageAdmin) this.step = 1
                 this.form.name = name;
                 this.userAuthMap = {}
                 privileges.users.forEach(item => {
@@ -486,7 +488,7 @@ export default {
         openSelectModal(type) {
             const selectedRowKeys = type === 'USER' ? this.userSelectList.map(item => item.key) :
             this.groupSelectList.map(item => item.key)
-            this.$refs.selectUserGroup.openModal(type, selectedRowKeys);
+            this.$refs.selectUserGroup.openModal(type, selectedRowKeys, this.isStorageAdmin);
         },
         async getStorageList() {
             await new Promise((resolve, reject) => {
@@ -588,11 +590,11 @@ export default {
                         }
                     })
                     if (resources.length) {
-                        if (users.some(item => !item.access.length)) {
+                        if (users.some(item => !item.access.length) && !this.isStorageAdmin && !this.isStorageUser) {
                             this.$message.error(this.$t('Permissions.UserNoneSelectAuth'))
                             return
                         }
-                        if (groups.some(item => !item.access.length) && !this.isStorageAdmin) {
+                        if (groups.some(item => !item.access.length) && !this.isStorageAdmin && !this.isStorageUser) {
                             this.$message.error(this.$t('Permissions.GroupNoneSelectAuth'))
                             return
                         }
