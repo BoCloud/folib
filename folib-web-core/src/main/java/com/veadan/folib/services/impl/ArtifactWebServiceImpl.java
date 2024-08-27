@@ -10,7 +10,9 @@ import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.write.metadata.WriteSheet;
 import com.alibaba.excel.write.metadata.fill.FillConfig;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.parser.Feature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
@@ -198,7 +200,14 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     @Override
     public void exportExcel(String vulnerabilityUuid, String storageId, String repositoryId, HttpServletResponse response) throws IOException {
         List<String> storageIdAndRepositoryIdList = getStorageIdAndRepositoryId(storageId, repositoryId);
-        List<Artifact> artifactList = artifactRepository.findMatchingByVulnerabilityUuid(vulnerabilityUuid, null, storageIdAndRepositoryIdList);
+        List<Artifact> artifactList = null;
+        long count = artifactRepository.countByVulnerabilityUuid(vulnerabilityUuid, null, storageIdAndRepositoryIdList, "");
+        if (count > 0) {
+            Page<Artifact> artifactPage = artifactRepository.findMatchingByVulnerabilityUuid(PageRequest.of(1, (int) count).first(), vulnerabilityUuid, null, storageIdAndRepositoryIdList, "");
+            if (Objects.isNull(artifactPage) || CollectionUtils.isEmpty(artifactPage.getContent())) {
+                artifactList = artifactPage.getContent();
+            }
+        }
         InputStream template = this.getClass().getResourceAsStream("/template/vulnerabilityTemplate.xlsx");
         try (ExcelWriter excelWriter = EasyExcel.write(response.getOutputStream()).withTemplate(template).build()) {
             WriteSheet writeSheet = EasyExcel.writerSheet().build();
@@ -245,6 +254,132 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
             excelWriter.finish();
         }
+    }
+
+    @Override
+    public TableResultResponse<com.veadan.folib.domain.ArtifactInfo> getArtifacts(Integer pageNumber, Integer pageSize, String vulnerabilityUuid, String storageId, String repositoryId, String artifactName) {
+        Pageable pageable;
+        Integer page = pageNumber, limit = pageSize;
+        if (Objects.isNull(page)) {
+            page = 1;
+        }
+        if (Objects.isNull(limit)) {
+            limit = 10;
+        }
+        if (page == 1) {
+            pageable = PageRequest.of(page, limit).first();
+        } else {
+            pageable = PageRequest.of(page, limit).previous();
+        }
+        List<String> storageIdAndRepositoryIdList = getStorageIdAndRepositoryId(storageId, repositoryId);
+        List<com.veadan.folib.domain.ArtifactInfo> artifactInfoList = null;
+        TableResultResponse<com.veadan.folib.domain.ArtifactInfo> tableResultResponse = new TableResultResponse<>(0, null);
+        Page<Artifact> artifactPage = artifactRepository.findMatchingByVulnerabilityUuid(pageable, vulnerabilityUuid, null, storageIdAndRepositoryIdList, artifactName);
+        if (Objects.nonNull(artifactPage) && CollectionUtils.isNotEmpty(artifactPage.getContent())) {
+            String locationKey = "location", tableKey = "table", valueKey = "value";
+            artifactInfoList = artifactPage.getContent().stream().map(artifact -> {
+                com.veadan.folib.domain.ArtifactInfo artifactInfo = new com.veadan.folib.domain.ArtifactInfo();
+                BeanUtils.copyProperties(artifact, artifactInfo);
+                try {
+                    RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifact.getStorageId(),
+                            artifact.getRepositoryId(),
+                            artifact.getArtifactPath());
+                    Repository repository = repositoryPath.getRepository();
+                    if (DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout())) {
+                        DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) artifact.getArtifactCoordinates();
+                        artifactInfo.setArtifactPath(dockerArtifactCoordinates.getIMAGE_NAME().replace(":", "/"));
+                    }
+                } catch (Exception ex) {
+                    log.warn(ExceptionUtils.getStackTrace(ex));
+                }
+                if (StringUtils.isBlank(artifactInfo.getMetadata()) || !JSONUtil.isJson(artifactInfo.getMetadata())) {
+                    return artifactInfo;
+                }
+                JSONObject metadataJson = JSONObject.parseObject(artifactInfo.getMetadata()), metadataValueJson = null;
+                String value = "";
+                List<List<ColumnInfo>> columnInfos = Lists.newArrayList();
+                List<List<JSONObject>> data = Lists.newArrayList();
+                for (String metadataKey : metadataJson.keySet()) {
+                    value = metadataJson.getString(metadataKey);
+                    if (StringUtils.isBlank(value) || !JSONUtil.isJson(value)) {
+                        continue;
+                    }
+                    metadataValueJson = metadataJson.getJSONObject(metadataKey);
+                    if (!metadataValueJson.containsKey(valueKey) || !metadataValueJson.containsKey(locationKey) || !tableKey.equalsIgnoreCase(metadataValueJson.getString(locationKey))) {
+                        return artifactInfo;
+                    }
+                    value = metadataValueJson.getString(valueKey);
+                    if (StringUtils.isBlank(value) || !JSONUtil.isJson(value)) {
+                        return artifactInfo;
+                    }
+                    if (JSONUtil.isJsonArray(value)) {
+                        JSONArray jsonArray = JSONObject.parseArray(value);
+                        if (Objects.isNull(jsonArray) || jsonArray.isEmpty()) {
+                            continue;
+                        }
+                        JSONObject itemJson = null;
+                        List<ColumnInfo> itemColumnInfos = Lists.newArrayList();
+                        List<JSONObject> itemData = Lists.newArrayList();
+                        if (CollectionUtils.isEmpty(itemColumnInfos)) {
+                            value = jsonArray.getString(0);
+                            if (StringUtils.isBlank(value) || !JSONUtil.isJson(value)) {
+                                return artifactInfo;
+                            }
+                            itemJson = jsonArray.getJSONObject(0);
+                            itemColumnInfos = itemJson.keySet().stream().map(item -> ColumnInfo.builder().dataIndex(item).key(item).title(item).build()).collect(Collectors.toList());
+                        }
+                        for (int i = 0; i < jsonArray.size(); i++) {
+                            value = jsonArray.getString(i);
+                            if (StringUtils.isBlank(value) || !JSONUtil.isJson(value)) {
+                                return artifactInfo;
+                            }
+                            itemJson = jsonArray.getJSONObject(i);
+                            itemData.add(itemJson);
+                        }
+                        columnInfos.add(itemColumnInfos);
+                        data.add(itemData);
+                    } else {
+                        JSONObject valueJson = JSONObject.parseObject(metadataValueJson.getString(valueKey), Feature.OrderedField), itemJson = null;
+                        JSONArray jsonArray = null;
+                        for (String key : valueJson.keySet()) {
+                            value = valueJson.getString(key);
+                            if (StringUtils.isBlank(value) || !JSONUtil.isJsonArray(value)) {
+                                continue;
+                            }
+                            jsonArray = valueJson.getJSONArray(key);
+                            if (Objects.isNull(jsonArray) || jsonArray.isEmpty()) {
+                                continue;
+                            }
+                            List<ColumnInfo> itemColumnInfos = Lists.newArrayList();
+                            List<JSONObject> itemData = Lists.newArrayList();
+                            if (CollectionUtils.isEmpty(itemColumnInfos)) {
+                                value = jsonArray.getString(0);
+                                if (StringUtils.isBlank(value) || !JSONUtil.isJson(value)) {
+                                    return artifactInfo;
+                                }
+                                itemJson = jsonArray.getJSONObject(0);
+                                itemColumnInfos = itemJson.keySet().stream().map(item -> ColumnInfo.builder().dataIndex(item).key(item).title(item).build()).collect(Collectors.toList());
+                            }
+                            for (int i = 0; i < jsonArray.size(); i++) {
+                                value = jsonArray.getString(i);
+                                if (StringUtils.isBlank(value) || !JSONUtil.isJson(value)) {
+                                    return artifactInfo;
+                                }
+                                itemJson = jsonArray.getJSONObject(i);
+                                itemData.add(itemJson);
+                            }
+                            columnInfos.add(itemColumnInfos);
+                            data.add(itemData);
+                        }
+                    }
+                }
+                artifactInfo.setColumns(columnInfos);
+                artifactInfo.setData(data);
+                return artifactInfo;
+            }).collect(Collectors.toList());
+            tableResultResponse = new TableResultResponse<>(artifactPage.getTotalElements(), artifactInfoList);
+        }
+        return tableResultResponse;
     }
 
     @Override

@@ -2,9 +2,13 @@ package com.veadan.folib.controllers;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.veadan.folib.data.CacheName;
+import com.veadan.folib.entity.Dict;
+import com.veadan.folib.enums.DictTypeEnum;
+import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.licence.ActivateVo;
 import com.veadan.folib.licence.MacUtil;
 import com.veadan.folib.services.CodeActivateService;
+import com.veadan.folib.services.DictService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -20,6 +24,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
+import java.util.Date;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -43,6 +48,9 @@ public class PingController
 
     @Inject
     private CodeActivateService codeActivateService;
+
+    @Inject
+    private DictService dictService;
 
     static final String READY_STREAM_VALUE = "event:ready\ndata: \n\n";
 
@@ -139,6 +147,21 @@ public class PingController
     public ResponseEntity getTest(@PathVariable String name){
         String value = retrieveMap().get(name);
         return ResponseEntity.ok().body(value);
+    }
+
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "Successful machineCode") })
+    @GetMapping("/testConnect/{time}")
+    public ResponseEntity<Object> testConnect(@PathVariable Long time){
+        Dict dict = Dict.builder().dictType("test").dictKey("abc").createTime(new Date()).comment("comment").build();
+        dictService.saveDict(dict);
+        try {
+            Thread.sleep(time);
+        } catch (Exception ignore) {
+
+        }
+        DictForm dictForm = DictForm.builder().id(dict.getId()).dictKey("def").build();
+        dictService.updateDict(dictForm);
+        return ResponseEntity.ok().build();
     }
 
 

@@ -23,8 +23,8 @@ public class UserForm
     @UniqueUsername(groups = NewUser.class, message = "Username is already taken.")
     private String username;
 
-    @Password(groups = { NewUser.class }, min = 8)
-    @Password(groups = { ExistingUser.class }, allowNull = true, min = 8)
+    @Password(groups = { NewUser.class }, min = 12)
+    @Password(groups = { ExistingUser.class }, allowNull = true, min = 12)
     private String password;
 
     private String email;

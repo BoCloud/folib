@@ -14,6 +14,7 @@ import com.veadan.folib.scanner.entity.FolibScannerDockerTableVO;
 import com.veadan.folib.scanner.entity.SeverityVO;
 import com.veadan.folib.scanner.service.ScanService;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import com.veadan.folib.utils.UserUtils;
 import io.swagger.annotations.Api;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -36,13 +37,18 @@ public class FolibScannerController extends BaseController<FolibScannerBiz, Foli
 
 
     @GetMapping("/update")
-    @PreAuthorize("authenticated")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @AuditLog(value = AuditEventNameEnum.BUG_UPDATE,target ="" )
-    public ObjectRestResponse updateDb() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
-        scanService.updateDB(userDetails.getUsername());
+    public ObjectRestResponse updateDb(String cron) {
+        scanService.vulnerabilityRefreshData(UserUtils.getUsername(), cron);
         return new ObjectRestResponse(true, "更新中");
+    }
+
+    @GetMapping("/scan")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ObjectRestResponse scan(String cron) {
+        scanService.artifactScan(UserUtils.getUsername(), cron);
+        return new ObjectRestResponse(true, "");
     }
 
     @GetMapping("/getCount")

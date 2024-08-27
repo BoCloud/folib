@@ -359,7 +359,7 @@ export default {
           i18nKey: "Storage.Operation",
           dataIndex: "operation",
           scopedSlots: { customRender: "operation" },
-          width: 240,
+          width: 280,
         },
       ],
       tabActiveKey: 1,

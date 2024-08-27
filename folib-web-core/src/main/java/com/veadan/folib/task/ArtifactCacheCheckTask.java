@@ -3,10 +3,13 @@ package com.veadan.folib.task;
 
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.components.DistributedLockComponent;
+import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.entity.ArtifactCacheRecord;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ArtifactCacheRecordService;
+import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -20,6 +23,7 @@ import javax.inject.Inject;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -43,6 +47,10 @@ public class ArtifactCacheCheckTask {
     @Lazy
     private RepositoryPathResolver repositoryPathResolver;
 
+    @Inject
+    @Lazy
+    private ConfigurationManager configurationManager;
+
     /**
      * runV2
      */
@@ -56,6 +64,7 @@ public class ArtifactCacheCheckTask {
             log.info("Scheduled ArtifactCacheCheckTask end");
             return;
         }
+        log.info("Scheduled ArtifactCacheCheckTask totalCount [{}]", totalCount);
         processRecordsByCursor(null);
         log.info("Scheduled ArtifactCacheCheckTask end");
     }
@@ -95,8 +104,19 @@ public class ArtifactCacheCheckTask {
         // 初始化删除标志为false，代表路径默认有效
         boolean delFlag = false;
         try {
+            String storageId = record.getStorageId(), repositoryId = record.getRepositoryId();
+            Storage storage = configurationManager.getConfiguration().getStorage(record.getStorageId());
+            if (Objects.isNull(storage)) {
+                log.warn("Storage [{}] not found", storageId);
+                return true;
+            }
+            Repository repository = storage.getRepository(repositoryId);
+            if (Objects.isNull(repository)) {
+                log.warn("Repository [{}] [{}] not found", storageId, repositoryId);
+                return true;
+            }
             // 解析制品的仓库路径
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(record.getStorageId(), record.getRepositoryId(), record.getArtifactPath());
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, record.getArtifactPath());
             // 检查仓库路径是否存在，或者缓存路径是否为空或存在
             delFlag = !Files.exists(repositoryPath) || StringUtils.isBlank(record.getCachePath()) || !Files.exists(Path.of(record.getCachePath()));
         } catch (Exception ex) {

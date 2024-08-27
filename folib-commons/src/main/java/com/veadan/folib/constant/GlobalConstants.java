@@ -51,7 +51,6 @@ public interface GlobalConstants {
     String DISTRIBUTED_LOCK_NAME = "distributedLock";
 
     /**
-     *
      * 分布式缓存名称
      */
     String DISTRIBUTED_CACHE_NAME = "distributedCache";
@@ -92,7 +91,6 @@ public interface GlobalConstants {
     long WAIT_LOCK_TIME = 60L;
 
     /**
-	 *
      * LONG_WAIT_LOCK_TIME
      */
     long LONG_WAIT_LOCK_TIME = 120L;
@@ -131,7 +129,7 @@ public interface GlobalConstants {
      * docker level single
      */
     String DOCKER_LEVEL_SINGLE = "single";
-    
+
     /**
      * latest
      */
@@ -146,8 +144,8 @@ public interface GlobalConstants {
      * download
      */
     String DOWNLOAD = "download";
-    
-   /**
+
+    /**
      * drop
      */
     String DROP = "drop";
@@ -217,4 +215,34 @@ public interface GlobalConstants {
      * 用户禁用
      */
     String USER_NOT_ENABL = "false";
+    
+    /**
+     * 扫描重试
+     */
+    String SCAN_RETRY = "ScanRetryCount";
+
+    /**
+     * 扫描重试
+     */
+    String SCAN_RETRY_KEY = "SCAN_RETRY";
+
+    /**
+     * 扫描重试次数
+     */
+    String SCAN_RETRY_COUNT_KEY = "SCAN_RETRY_COUNT";
+
+    /**
+     * 扫描重试次数
+     */
+    Integer SCAN_RETRY_COUNT = 3;
+
+    /**
+     * 扫描单文件最大限制
+     */
+    String SCAN_MAX_SIZE_KEY = "SCAN_MAX_SIZE";
+
+    /**
+     * 扫描单文件最大限制GB
+     */
+    Integer SCAN_MAX_SIZE = 3;
 }

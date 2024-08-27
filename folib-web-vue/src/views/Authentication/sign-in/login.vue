@@ -112,6 +112,7 @@ import {
 import {
   getConfig,
 } from '@/api/foEyes'
+import {checkMachineCode,getServerName} from "@/api/settings"
 import  Clients  from "../../../components/loginClients/clients";
 export default {
   components:{
@@ -154,6 +155,10 @@ export default {
 							})
 							getConfig().then((res) => {
 								localStorage.setItem("FOEYES_CONFIG", JSON.stringify(res))
+							})
+							sessionStorage.setItem("identityLevel",'basic')
+							checkMachineCode().then(res=>{
+								sessionStorage.setItem("identityLevel",res.level)
 							})
 						}
 						// 延迟显示欢迎信息

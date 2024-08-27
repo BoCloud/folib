@@ -149,6 +149,11 @@ public class BrowseController
                     jsonObject.put("lastModified", lastModified);
                 }
 
+                if (artifact.getScanDateTime() != null) {
+                    String lastModified = DateUtil.format(Date.from(artifact.getScanDateTime().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
+                    jsonObject.put("scanTime", lastModified);
+                }
+
                 Set<String> fileNames = artifact.getArtifactArchiveListing().getFilenames();
 
                 if (fileNames != null && fileNames.size() > 0) {
@@ -218,6 +223,10 @@ public class BrowseController
                 dateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
                 String format = dateFormat.format(fileContent.getLastModified());
                 jsonObject.put("lastModified", format);
+                if (artifact.getScanDateTime() != null) {
+                    String lastModified = DateUtil.format(Date.from(artifact.getScanDateTime().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), dateFormat);
+                    jsonObject.put("scanTime", lastModified);
+                }
                 jsonObject.put("size", size);
                 jsonObject.put("imageName", imageName);
                 jsonObject.put("subsidiaryFiles", DockerUtils.getDockerSubsidiaryFilePaths(repositoryPath));
