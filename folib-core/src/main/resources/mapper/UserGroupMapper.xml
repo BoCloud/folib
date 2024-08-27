@@ -7,6 +7,7 @@
         <result property="description" column="description"/>
         <result property="joinGroup" column="join_group"/>
         <result property="deleted" column="deleted"/>
+        <result property="isDefault" column="is_default"/>
         <result property="createBy" column="create_by"/>
         <result property="createTime" column="create_time"/>
         <result property="updateBy" column="update_by"/>
@@ -16,7 +17,7 @@
     <!-- 通过ID查询单条数据 -->
     <select id="queryById" resultMap="UserGroupMap">
         select
-            id,group_name,description,join_group,deleted,create_by,create_time,update_by,update_time
+            id,group_name,description,join_group,deleted,is_default,create_by,create_time,update_by,update_time
         from user_group
         where id = #{id} and deleted = '0'
     </select>
@@ -25,6 +26,8 @@
     <select id="queryAllByLimit" resultType="com.veadan.folib.dto.UserGroupListDTO" >
         select
         ug.id,
+        ug.deleted,
+        ug.is_default,
         group_name,
         description,
         join_group,
@@ -112,19 +115,19 @@
 
     <!-- 批量新增数据 -->
     <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into user_group(id,group_name,description,join_group,deleted,create_by,create_time,update_by,update_time)
+        insert into user_group(id,group_name,description,join_group,deleted,is_default,create_by,update_by)
         values
         <foreach collection="entities" item="entity" separator=",">
-            (#{entity.id},#{entity.groupName},#{entity.description},#{entity.joinGroup},#{entity.deleted},#{entity.createBy},#{entity.createTime},#{entity.updateBy},#{entity.updateTime})
+            (#{entity.id},#{entity.groupName},#{entity.description},#{entity.joinGroup},#{entity.deleted,#{entity.isDefault},#{entity.createBy},#{entity.updateBy})
         </foreach>
     </insert>
 
     <!-- 批量新增或按主键更新数据 -->
     <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into user_group(id,group_name,description,join_group,deleted,create_by,update_by)
+        insert into user_group(id,group_name,description,join_group,deleted,is_default,create_by,update_by)
         values
         <foreach collection="entities" item="entity" separator=",">
-            (#{entity.id},#{entity.groupName},#{entity.description},#{entity.joinGroup},#{entity.deleted},#{entity.createBy},#{entity.updateBy})
+            (#{entity.id},#{entity.groupName},#{entity.description},#{entity.joinGroup},#{entity.deleted},#{entity.isDefault},#{entity.createBy},#{entity.updateBy})
         </foreach>
         on duplicate key update
         id=values(id),
@@ -132,6 +135,7 @@
         description=values(description),
         join_group=values(join_group),
         deleted=values(deleted),
+        is_default=values(is_default),
         create_by=values(create_by),
         update_by=values(update_by)
     </insert>
@@ -148,6 +152,9 @@
             </if>
             <if test="deleted != null and deleted != ''">
                 deleted = #{deleted},
+            </if>
+            <if test="isDefault != null and isDefault != ''">
+                is_default = #{isDefault},
             </if>
             <if test="createBy != null and createBy != ''">
                 create_by = #{createBy},

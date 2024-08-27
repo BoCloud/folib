@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -52,9 +53,11 @@ public class UserGroup implements Serializable,Cloneable {
       * 是否删除
       */
      @ApiModelProperty(name = "是否删除", notes = "")
+     @Column(name = "deleted")
      private String deleted;
       /** 是否默认 */
       @ApiModelProperty(name = "是否默认", notes = "")
+      @Column(name = "is_default")
       private String isDefault;
      /** 创建人 */
      @ApiModelProperty(name = "创建人",notes = "")

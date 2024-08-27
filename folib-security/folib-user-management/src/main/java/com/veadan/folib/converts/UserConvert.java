@@ -72,7 +72,7 @@ public interface UserConvert {
             @Mapping(target = "userGroupIds", expression = "java(String.join(\",\", userEntity.getUserGroupIds()))")})
     UserDTO UserEntityToUserDTO(UserEntity userEntity);
 
-    @Mappings({})
+    @Mappings({@Mapping(source = "username", target = "id")})
     FolibUser UserDTOToUser(UserDTO usrerDTO);
     @Named("mapRolesToStrings")
     default String mapRolesToStrings(Set<SecurityRole> roles) {
