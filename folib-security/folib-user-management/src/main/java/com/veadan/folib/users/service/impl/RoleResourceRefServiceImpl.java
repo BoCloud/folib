@@ -3,25 +3,26 @@ package com.veadan.folib.users.service.impl;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.converts.ResourceConvert;
 import com.veadan.folib.dto.*;
+import com.veadan.folib.entity.FolibUser;
 import com.veadan.folib.entity.Resource;
 import com.veadan.folib.entity.RoleResourceRef;
 import com.veadan.folib.entity.UserGroupRef;
 import com.veadan.folib.mapper.RoleResourceRefMapper;
 import com.veadan.folib.users.dto.UserPermissionDTO;
+import com.veadan.folib.users.service.FolibUserService;
 import com.veadan.folib.users.service.ResourceService;
 import com.veadan.folib.users.service.RoleResourceRefService;
 import com.veadan.folib.users.service.UserGroupRefService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import tk.mybatis.mapper.entity.Example;
 
-import javax.transaction.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -39,6 +40,8 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
     private ResourceService resourceService;
     @Autowired
     private UserGroupRefService userGroupRefService;
+    @Autowired
+    private FolibUserService folibUserService;
     
     /** 
      * 通过ID查询单条数据 
@@ -328,6 +331,22 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
     @Override
     public List<RoleResourceRef> queryByRoleIds(List<String> roleIds) {
         return roleResourceRefMapper.queryByRoleIds(roleIds);
+    }
+
+    @Override
+    public List<FolibUser> queryUserByRoleIds(String roleId) {
+        List<RoleResourceRef> roleResourceRefs = roleResourceRefMapper.queryByRoleIds(Collections.singletonList(roleId));
+        List<String> userIds = roleResourceRefs.stream().filter(roleResourceRef -> GlobalConstants.ROLE_TYPE_USER.equals(roleResourceRef.getRefType())).map(RoleResourceRef::getEntityId).collect(Collectors.toList());
+
+        List<Long> groupIds = roleResourceRefs.stream().filter(roleResourceRef -> GlobalConstants.ROLE_TYPE_USER_GROUP.equals(roleResourceRef.getRefType())).map(RoleResourceRef::getEntityId).map(Long::valueOf).collect(Collectors.toList());
+        if(CollectionUtils.isNotEmpty(groupIds)) {
+            List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(groupIds);
+            if (CollectionUtils.isNotEmpty(userGroupRefs)){
+                userIds.addAll(userGroupRefs.stream().map(UserGroupRef::getUserId).collect(Collectors.toList()));
+            }
+        }
+
+        return folibUserService.queryByIds(userIds);
     }
 
     @Override

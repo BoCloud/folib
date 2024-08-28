@@ -24,10 +24,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
-import javax.transaction.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -61,7 +61,7 @@ public class FolibUserServiceImpl implements FolibUserService {
 
     @Override
     public UserDTO findByUserName(String username) {
-        List<UserDTO> folibUsers = getUsers(UserDto.builder().username(username).build(), 0, 1);
+        List<UserDTO> folibUsers = getUsers(UserDto.builder().id(username).build(), 0, 1);
         List<UserEntity> userEntities = UserConvert.INSTANCE.UserDTOsToUserList(folibUsers);
         if (CollectionUtils.isNotEmpty(userEntities)) {
             return UserConvert.INSTANCE.UserEntityToUserDTO(userEntities.get(0));

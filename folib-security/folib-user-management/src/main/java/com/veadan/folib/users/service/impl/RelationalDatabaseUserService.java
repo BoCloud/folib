@@ -25,6 +25,7 @@ import com.veadan.folib.users.security.JwtAuthenticationClaimsProvider;
 import com.veadan.folib.users.security.JwtClaimsProvider;
 import com.veadan.folib.users.security.SecurityTokenProvider;
 import com.veadan.folib.users.service.*;
+import com.veadan.folib.users.service.impl.RelationalDatabaseUserService.RelationalDatabase;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.users.userdetails.UserDetailsMapper;
 import com.veadan.folib.util.LocalDateTimeInstance;
@@ -32,14 +33,12 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jose4j.lang.JoseException;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.core.convert.ConversionService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
-import com.veadan.folib.users.service.impl.RelationalDatabaseUserService.RelationalDatabase;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
 import javax.inject.Qualifier;
-import javax.transaction.Transactional;
 import java.io.IOException;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -57,7 +56,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  */
 @Component
 @RelationalDatabase
-@Transactional
+@Transactional(rollbackFor = Exception.class)
 public class RelationalDatabaseUserService implements UserService
 {
 
@@ -171,7 +170,7 @@ public class RelationalDatabaseUserService implements UserService
     @Override
     public UserEntity findByUsername(String username)
     {
-        List<UserDTO> folibUsers = folibUserService.getUsers(UserDto.builder().username(username).build(), 0, 1);
+        List<UserDTO> folibUsers = folibUserService.getUsers(UserDto.builder().id(username).build(), 0, 1);
         List<UserEntity> userEntities = UserConvert.INSTANCE.UserDTOsToUserList(folibUsers);
         if (CollectionUtils.isNotEmpty(userEntities)) {
             return userEntities.get(0);
@@ -269,6 +268,7 @@ public class RelationalDatabaseUserService implements UserService
 
     @Override
     @CacheEvict(cacheNames = CacheName.User.AUTHENTICATIONS, key = "#p0.username")
+    @Transactional(rollbackFor = Exception.class)
     public User save(User user)
     {
         LocalDateTime now = LocalDateTimeInstance.now();

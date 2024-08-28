@@ -4,6 +4,7 @@ import com.veadan.folib.domain.SecurityRole;
 import com.veadan.folib.dto.PermissionsDTO;
 import com.veadan.folib.dto.RoleDTO;
 import com.veadan.folib.dto.UserRoleDTO;
+import com.veadan.folib.entity.FolibUser;
 import com.veadan.folib.users.dto.UserPermissionDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -106,4 +107,12 @@ public interface RoleResourceRefService{
     List<RoleResourceRef> queryByUserIds(List<String> userIds);
 
     void updateUserPermission(Set<UserPermissionDTO> userPermissions);
+    /**
+     *
+     * 方法描述: 根据角色id查询关联的用户列表
+     *
+     * @param: 角色id
+     * @return: 用户详情集合
+     */
+    List<FolibUser> queryUserByRoleIds(String roleId);
 }
