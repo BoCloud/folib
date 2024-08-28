@@ -11,10 +11,11 @@ import com.veadan.folib.users.service.UserGroupRefService;
 import com.veadan.folib.users.service.UserGroupService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
@@ -26,6 +27,7 @@ import java.util.List;
  * @date : 2024-7-17
  */
 @Service
+@Transactional
 public class UserGroupServiceImpl implements UserGroupService {
     @Autowired
     private UserGroupMapper userGroupMapper;

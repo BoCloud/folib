@@ -175,67 +175,6 @@
             </if>
         </where>
     </select>
-    <select id="queryUser" parameterType="com.veadan.folib.entity.FolibUser" resultType="com.veadan.folib.dto.UserDTO">
-        SELECT
-        fu.*,
-        GROUP_CONCAT(distinct ug.id) AS userGroupIds,
-        GROUP_CONCAT(distinct ug.group_name) AS userGroups,
-        GROUP_CONCAT(distinct rrr.role_id) AS roles,
-        GROUP_CONCAT(DISTINCT CONCAT_WS('', rrr.storage_privilege, rrr.repository_privilege, rrr.path_privilege)) AS authorities
-        FROM folib_user fu
-        LEFT JOIN
-        (
-            SELECT rrr1.role_id,
-            rrr1.storage_privilege,
-            rrr1.repository_privilege,
-            rrr1.path_privilege,
-            rrr1.entity_id AS user_id
-            FROM role_resource_ref rrr1 WHERE rrr1.ref_type = 1
-            UNION
-            all SELECT rrr2.role_id,
-            rrr2.storage_privilege,
-            rrr2.repository_privilege,
-            rrr2.path_privilege,
-            ugr.user_id AS user_id
-            FROM user_group_ref ugr
-            JOIN role_resource_ref rrr2
-            ON ugr.user_group_id = rrr2.entity_id
-            WHERE rrr2.ref_type = 2
-        ) rrr
-        ON fu.id = rrr.user_id
-        left join user_group_ref ugr on fu.id = ugr.user_id
-        left join user_group ug on ug.id = ugr.user_group_id
-        <where>
-            <if test="id != null and id != ''">
-                and fu.id = #{id}
-            </if>
-            <if test="username != null and username != ''">
-                and username concat('%', #{username}, '%')
-            </if>
-            <if test="password != null and password != ''">
-                and password = #{password}
-            </if>
-            <if test="originalPassword != null and originalPassword != ''">
-                and original_password = #{originalPassword}
-            </if>
-            <if test="avatar != null and avatar != ''">
-                and avatar = #{avatar}
-            </if>
-            <if test="email != null and email != ''">
-                and email = #{email}
-            </if>
-            <if test="userType != null and userType != ''">
-                and user_type = #{userType}
-            </if>
-            <if test="enabled != null and enabled != ''">
-                and enabled = #{enabled}
-            </if>
-            <if test="sourceId != null and sourceId != ''">
-                and source_id = #{sourceId}
-            </if>
-        </where>
-        group by fu.id
-    </select>
     <select id="queryUserRoleByRepositoryAndPrivilege" resultType="com.veadan.folib.dto.UserDTO">
         select
             user.*,

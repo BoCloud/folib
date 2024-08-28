@@ -84,17 +84,6 @@ public interface FolibUserMapper extends CommonMapper<FolibUser> {
      */
     int deleteById(Long id);
 
-     /**
-      * 分页查询指定行数据
-      *
-      * @param folibUser 查询条件
-      * @return 对象列表
-      */
-     @Deprecated
-     List<UserDTO> queryUser(FolibUser folibUser);
-
-     Set<UserDTO> queryRoles(String uuid);
-
      @Deprecated
      List<UserDTO> queryUserRoleByRepositoryAndPrivilege(@Param("repositoryPrivilegeDTOS") List<RepositoryPrivilegeDTO> repositoryPrivilegeDTOS);
 
