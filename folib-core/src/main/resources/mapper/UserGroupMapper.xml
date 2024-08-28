@@ -37,7 +37,7 @@
         left join role_resource_ref rrr on
         ug.id = rrr.entity_id
         and rrr.ref_type = 2
-        <where>
+        where ug.deleted = '0'
             <if test="userGroup.id != null and userGroup.id != ''">
                 and id = #{userGroup.id}
             </if>
@@ -53,7 +53,6 @@
             <if test="userGroup.deleted != null and userGroup.deleted != ''">
                 and deleted = #{userGroup.deleted}
             </if>
-        </where>
         group by ug.id
         limit #{pageable.offset}, #{pageable.pageSize}
     </select>
@@ -62,7 +61,7 @@
     <select id="count" resultType="java.lang.Long">
         select count(1)
         from user_group
-        <where>
+        where ug.deleted = '0'
             <if test="id != null and id != ''">
                 and id = #{id}
             </if>
@@ -90,7 +89,6 @@
             <if test="updateTime != null and updateTime != ''">
                 and update_time = #{updateTime}
             </if>
-        </where>
     </select>
     <select id="queryGroupDetailById" resultType="com.veadan.folib.dto.UserGroupDTO">
         select
