@@ -14,11 +14,11 @@ import com.veadan.folib.components.email.MailRequest;
 import com.veadan.folib.components.email.SendMail;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.domain.ExceedsSizeStorage;
-import com.veadan.folib.domain.User;
+import com.veadan.folib.dto.UserDTO;
 import com.veadan.folib.enums.FileUnitTypeEnum;
 import com.veadan.folib.repositories.ArtifactRepository;
-import com.veadan.folib.repositories.UserRepository;
 import com.veadan.folib.storage.Storage;
+import com.veadan.folib.users.service.FolibUserService;
 import com.veadan.folib.util.FileSizeConvertUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -26,6 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -54,7 +55,8 @@ public class StorageSizeVerificationTask {
     private ArtifactRepository artifactRepository;
 
     @Inject
-    private UserRepository userRepository;
+    @Lazy
+    private FolibUserService folibUserService;
 
     @Inject
     private SendMail sendMail;
@@ -111,20 +113,18 @@ public class StorageSizeVerificationTask {
                 }
             }
         }
-        Optional<User> userOptional;
-        User user;
+        UserDTO userDTO = null;
         for (String admin : exceedsSizeStorageMap.keySet()) {
-            userOptional = userRepository.findById(admin);
-            if (userOptional.isEmpty()) {
+            userDTO = folibUserService.findByUserName(admin);
+            if (Objects.isNull(userDTO)) {
                 continue;
             }
-            user = userOptional.get();
-            if (StringUtils.isBlank(user.getEmail())) {
+            if (StringUtils.isBlank(userDTO.getEmail())) {
                 continue;
             }
             exceedsSizeStorageList = exceedsSizeStorageMap.get(admin);
             //发送邮件
-            handlerDataAndSendEmail(user.getEmail(), exceedsSizeStorageList);
+            handlerDataAndSendEmail(userDTO.getEmail(), exceedsSizeStorageList);
         }
     }
 
