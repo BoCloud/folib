@@ -39,7 +39,7 @@
         <if test="(role.storageId != null and role.storageId != '') or (role.repositoryId != null and role.repositoryId != '') or (role.path != null and role.path != '')">
             left join resource r on r.id = rrr.resource_id
         </if>
-        <where>
+        where fr.deleted = '0'
             <if test="role.id != null and role.id != ''">
                 and id = #{role.id}
             </if>
@@ -79,7 +79,6 @@
             <if test="role.path != null and role.path != ''">
                 and r.path = concat('%',#{role.path},'%')
             </if>
-        </where>
         group by fr.id
         limit #{pageable.offset}, #{pageable.pageSize}
     </select>
@@ -87,8 +86,7 @@
     <!--统计总行数-->
     <select id="count" resultType="java.lang.Long">
         select count(1)
-        from folib_role
-        <where>
+        from folib_role where deleted = '0'
             <if test="id != null and id != ''">
                 and id = #{id}
             </if>
@@ -119,7 +117,6 @@
             <if test="updateTime != null and updateTime != ''">
                 and update_time = #{updateTime}
             </if>
-        </where>
     </select>
 
     <!--新增数据-->
