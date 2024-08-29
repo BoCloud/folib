@@ -305,13 +305,13 @@ export default {
         },
         initOptions() {
             this.repositoriesOptions = [
-                {
-                    label: this.$t(`Permissions.Download`),
-                    value: 'ARTIFACTS_RESOLVE',
-                    enabled: false,
-                    logo: 'download',
-                    desc: this.$t(`Permissions.DownloadDesc`)
-                },
+                // {
+                //     label: this.$t(`Permissions.Download`),
+                //     value: 'ARTIFACTS_RESOLVE',
+                //     enabled: false,
+                //     logo: 'download',
+                //     desc: this.$t(`Permissions.DownloadDesc`)
+                // },
                 {
                     label: this.$t(`Permissions.DeployCache`),
                     value: 'ARTIFACTS_DEPLOY',
@@ -326,13 +326,13 @@ export default {
                     logo: 'deleteUpdate',
                     desc: this.$t(`Permissions.DeleteUpdateDesc`)
                 },
-                {
-                    label: this.$t(`Permissions.PromoDistribution`),
-                    value: 'ARTIFACTS_PROMOTION',
-                    enabled: false,
-                    logo: 'promoDistribution',
-                    desc: this.$t(`Permissions.PromoDistributionDesc`)
-                },
+                // {
+                //     label: this.$t(`Permissions.PromoDistribution`),
+                //     value: 'ARTIFACTS_PROMOTION',
+                //     enabled: false,
+                //     logo: 'promoDistribution',
+                //     desc: this.$t(`Permissions.PromoDistributionDesc`)
+                // },
             ]
             this.logoValueMap = this.repositoriesOptions.map(item => {
                 return {
