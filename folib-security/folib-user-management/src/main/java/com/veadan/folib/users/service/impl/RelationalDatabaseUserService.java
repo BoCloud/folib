@@ -298,38 +298,44 @@ public class RelationalDatabaseUserService implements UserService
 
         //维护用户组
         Set<String> groupIds = user.getUserGroupIds();
-        userGroupRefService.deleteByUserId(user.getUuid());
         if (!CollectionUtils.isEmpty(groupIds)) {
-            List<UserGroupRef> ref = new ArrayList<>();
-            groupIds.forEach(item ->
-                    ref.add(UserGroupRef.builder().userGroupId(Long.valueOf(item)).userId(user.getUuid()).createTime(date).build()));
-            userGroupRefService.saveBath(ref);
+            List<UserGroupRef> userGroupRefs = userGroupRefService.queryByUserId(user.getUuid());
+            List<Long> removeGroupRefIds = userGroupRefs.stream().filter(item -> !groupIds.contains(item.getUserGroupId().toString())).map(UserGroupRef::getId).collect(Collectors.toList());
+            if (!CollectionUtils.isEmpty(removeGroupRefIds)) {
+                userGroupRefService.deleteByIds(removeGroupRefIds);
+            }
+            List<String> userGroupIds = userGroupRefs.stream().map(UserGroupRef::getUserGroupId).map(String::valueOf).collect(Collectors.toList());
+            userGroupIds.forEach(groupIds::remove);
+            if (!CollectionUtils.isEmpty(groupIds)) {
+                List<UserGroupRef> ref = new ArrayList<>();
+                groupIds.forEach(item ->
+                        ref.add(UserGroupRef.builder().userGroupId(Long.valueOf(item)).userId(user.getUuid()).createTime(date).build()));
+                userGroupRefService.saveBath(ref);
+            }
         }
+
+
         //维护用户角色
         Set<SecurityRole> roles = user.getRoles();
         if (!CollectionUtils.isEmpty(roles)){
-            String key = "ConanIndex_" + user.getUuid();
-            if (distributedLockComponent.lock(key, GlobalConstants.WAIT_LOCK_TIME)) {
-                try {
-                    List<FolibRole> defaultRoles = folibRoleService.queryRoles(FolibRole.builder().isDefault(GlobalConstants.DEFALUT).build());
-                    if(!CollectionUtils.isEmpty(defaultRoles)) {
-                        List<String> defaultRoleIds = defaultRoles.stream().map(FolibRole::getId).collect(Collectors.toList());
-                        List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryRoleByUserId(user.getUuid(),defaultRoleIds);
-                        if (!CollectionUtils.isEmpty(roleResourceRefs)) {
-                            roleResourceRefService.deleteByIds(roleResourceRefs.stream().map(RoleResourceRef::getId).collect(Collectors.toList()));
-                        }
-
-                        List<RoleResourceRef> resourceRefs = new ArrayList<>();
-                        List<SecurityRole> roleInfos = roles.stream().filter(role -> defaultRoleIds.contains(role.getUuid())).collect(Collectors.toList());
-                        if (!CollectionUtils.isEmpty(roleInfos)) {
-                            roleInfos.forEach(role -> resourceRefs.add(RoleResourceRef.builder().roleId(role.getRoleName()).refType(GlobalConstants.ROLE_TYPE_USER).entityId(user.getUuid()).build()));
-                            roleResourceRefService.saveBath(resourceRefs);
-                        }
+             List<FolibRole> defaultRoles = folibRoleService.queryRoles(FolibRole.builder().isDefault(GlobalConstants.DEFALUT).build());
+                if(!CollectionUtils.isEmpty(defaultRoles)) {
+                    List<String> defaultRoleIds = defaultRoles.stream().map(FolibRole::getId).collect(Collectors.toList());
+                    List<String> roleIds = roles.stream().filter(role -> defaultRoleIds.contains(role.getUuid())).map(SecurityRole::getRoleName).collect(Collectors.toList());
+                    List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryRoleByUserId(user.getUuid(),defaultRoleIds);
+                    List<Long> removeRoleResourceRefIds = roleResourceRefs.stream().filter(ref -> defaultRoleIds.contains(ref.getRoleId()) && !roleIds.contains(ref.getRoleId())).map(RoleResourceRef::getId).collect(Collectors.toList());
+                    if (!CollectionUtils.isEmpty(removeRoleResourceRefIds)) {
+                        roleResourceRefService.deleteByIds(removeRoleResourceRefIds);
                     }
-                } finally {
-                    distributedLockComponent.unLock(key);
+                    List<String> userRoleIds = roleResourceRefs.stream().map(RoleResourceRef::getRoleId).collect(Collectors.toList());
+                    List<String> addRoleIds = roleIds.stream().filter(roleId -> !userRoleIds.contains(roleId)).collect(Collectors.toList());
+                    if (!CollectionUtils.isEmpty(addRoleIds)) {
+                        List<RoleResourceRef> resourceRefs = new ArrayList<>();
+                        addRoleIds.forEach(roleId -> resourceRefs.add(RoleResourceRef.builder().roleId(roleId).refType(GlobalConstants.ROLE_TYPE_USER).entityId(user.getUuid()).build()));
+                        roleResourceRefService.saveBath(resourceRefs);
+                    }
+
                 }
-            }
         }else {
             List<PermissionsDTO> permissions = roleResourceRefService.queryPermissions(null, user.getUuid(), null, null, false);
             List<Long> refIds = permissions.stream().filter(item -> SystemRole.ADMIN.name().equals(item.getRoleId()) || SystemRole.OPEN_SOURCE_MANAGE.name().equals(item.getRoleId())).map(PermissionsDTO::getId).collect(Collectors.toList());

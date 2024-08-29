@@ -65,4 +65,6 @@ public interface UserGroupRefService{
 
     List<UserGroupRef> queryByGroupIds(List<Long> groupIds);
     List<UserGroupRef> queryByUserId(String userId);
+
+    void deleteByIds(List<Long> refIds);
 }
