@@ -82,7 +82,7 @@ public interface FolibUserMapper extends CommonMapper<FolibUser> {
      * @param id 主键
      * @return 影响行数
      */
-    int deleteById(Long id);
+    int deleteById(String id);
 
      @Deprecated
      List<UserDTO> queryUserRoleByRepositoryAndPrivilege(@Param("repositoryPrivilegeDTOS") List<RepositoryPrivilegeDTO> repositoryPrivilegeDTOS);

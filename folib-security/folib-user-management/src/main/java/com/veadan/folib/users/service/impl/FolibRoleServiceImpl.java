@@ -83,7 +83,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
 
                 roles.forEach(roleDto -> {
                     String isDefault = GlobalConstants.NOT_DEFAULT;
-                    if (SystemRole.ADMIN.name().equalsIgnoreCase(roleDto.getName()) || SystemRole.OPEN_SOURCE_MANAGE.name().equalsIgnoreCase(roleDto.getName())) {
+                    if (SystemRole.ADMIN.name().equalsIgnoreCase(roleDto.getName()) || SystemRole.OPEN_SOURCE_MANAGE.name().equalsIgnoreCase(roleDto.getName()) || SystemRole.GENERAL.name().equalsIgnoreCase(roleDto.getName())) {
                         isDefault = GlobalConstants.DEFALUT;
                     }
                     folibRoles.add(FolibRole.builder().id(roleDto.getName()).description(roleDto.getDescription())

@@ -30,11 +30,13 @@ import com.veadan.folib.users.service.impl.RelationalDatabaseUserService.Relatio
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.users.userdetails.UserDetailsMapper;
 import com.veadan.folib.util.LocalDateTimeInstance;
+import com.veadan.folib.util.RSAUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jose4j.lang.JoseException;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -87,6 +89,10 @@ public class RelationalDatabaseUserService implements UserService
 
     @Inject
     private DistributedLockComponent distributedLockComponent;
+    @Inject
+    private RSAUtils rsaUtils;
+    @Inject
+    private PasswordEncoder passwordEncoder;
 
 
     @Override
@@ -312,8 +318,9 @@ public class RelationalDatabaseUserService implements UserService
                         ref.add(UserGroupRef.builder().userGroupId(Long.valueOf(item)).userId(user.getUuid()).createTime(date).build()));
                 userGroupRefService.saveBath(ref);
             }
+        }else {
+            userGroupRefService.deleteByUserId(user.getUuid());
         }
-
 
         //维护用户角色
         Set<SecurityRole> roles = user.getRoles();
@@ -323,12 +330,17 @@ public class RelationalDatabaseUserService implements UserService
                     List<String> defaultRoleIds = defaultRoles.stream().map(FolibRole::getId).collect(Collectors.toList());
                     List<String> roleIds = roles.stream().filter(role -> defaultRoleIds.contains(role.getUuid())).map(SecurityRole::getRoleName).collect(Collectors.toList());
                     List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryRoleByUserId(user.getUuid(),defaultRoleIds);
-                    List<Long> removeRoleResourceRefIds = roleResourceRefs.stream().filter(ref -> defaultRoleIds.contains(ref.getRoleId()) && !roleIds.contains(ref.getRoleId())).map(RoleResourceRef::getId).collect(Collectors.toList());
-                    if (!CollectionUtils.isEmpty(removeRoleResourceRefIds)) {
-                        roleResourceRefService.deleteByIds(removeRoleResourceRefIds);
+                    List<String> userRoleIds = new ArrayList<>();
+                    if (!CollectionUtils.isEmpty(roleResourceRefs)) {
+                        List<Long> removeRoleResourceRefIds = roleResourceRefs.stream().filter(ref -> defaultRoleIds.contains(ref.getRoleId()) && !roleIds.contains(ref.getRoleId())).map(RoleResourceRef::getId).collect(Collectors.toList());
+                        if (!CollectionUtils.isEmpty(removeRoleResourceRefIds)) {
+                            roleResourceRefService.deleteByIds(removeRoleResourceRefIds);
+                        }
+                        userRoleIds = roleResourceRefs.stream().map(RoleResourceRef::getRoleId).collect(Collectors.toList());
                     }
-                    List<String> userRoleIds = roleResourceRefs.stream().map(RoleResourceRef::getRoleId).collect(Collectors.toList());
-                    List<String> addRoleIds = roleIds.stream().filter(roleId -> !userRoleIds.contains(roleId)).collect(Collectors.toList());
+
+                    List<String> finalUserRoleIds = userRoleIds;
+                    List<String> addRoleIds = roleIds.stream().filter(roleId -> !finalUserRoleIds.contains(roleId)).collect(Collectors.toList());
                     if (!CollectionUtils.isEmpty(addRoleIds)) {
                         List<RoleResourceRef> resourceRefs = new ArrayList<>();
                         addRoleIds.forEach(roleId -> resourceRefs.add(RoleResourceRef.builder().roleId(roleId).refType(GlobalConstants.ROLE_TYPE_USER).entityId(user.getUuid()).build()));
@@ -390,6 +402,16 @@ public class RelationalDatabaseUserService implements UserService
 
     public boolean syncUser() {
         Iterable<User> users = userRepository.findAll();
+        if (CollectionUtils.isEmpty((Collection<?>) users)) {
+
+            UserDto user = UserDto.builder().username("admin").password("folib@v587").userType("general").enabled(true).roles(Collections.singleton(SystemRole.ADMIN.name())).build();
+
+            String password = rsaUtils.encrypt(user.getPassword());
+            user.setOriginalPassword(password);
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+            save(user);
+            return true;
+        }
         List<User> userInfos = StreamSupport.stream(users.spliterator(), false).collect(Collectors.toList());
 
         List<UserEntity> userEntities = UserConvert.INSTANCE.UserListToUserEntityList(userInfos);
