@@ -152,5 +152,12 @@ public class UserGroupRefServiceImpl implements UserGroupRefService {
         return userGroupRefMapper.selectByExample(example);
     }
 
+    @Override
+    public void deleteByIds(List<Long> refIds) {
+        Example example = Example.builder(UserGroupRef.class).build();
+        example.createCriteria().andIn("id", refIds);
+        userGroupRefMapper.deleteByExample(example);
+    }
+
 
 }
