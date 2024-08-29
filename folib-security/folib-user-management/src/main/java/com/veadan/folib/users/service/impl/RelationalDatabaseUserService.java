@@ -410,6 +410,9 @@ public class RelationalDatabaseUserService implements UserService
             user.setOriginalPassword(password);
             user.setPassword(passwordEncoder.encode(user.getPassword()));
             save(user);
+
+            //清理管理员用户其他角色
+            removeAdminUserOtherRoles(Collections.singletonList(user.getUsername()));
             return true;
         }
         List<User> userInfos = StreamSupport.stream(users.spliterator(), false).collect(Collectors.toList());
@@ -454,15 +457,20 @@ public class RelationalDatabaseUserService implements UserService
             }
             return null;
         }).filter(Objects::nonNull).collect(Collectors.toList());
+        //清理管理员用户其他角色
+        removeAdminUserOtherRoles(userIds);
+
+        return true;
+    }
+
+    private void removeAdminUserOtherRoles(List<String> userIds) {
         if (!CollectionUtils.isEmpty(userIds)) {
             List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryByUserIds(userIds);
-            List<Long> refIds = roleResourceRefs.stream().filter(ref -> ref.getRoleId().startsWith("STORAGE_ADMIN_") || ref.getRoleId().startsWith("STORAGE_USER_")).map(RoleResourceRef::getId).collect(Collectors.toList());
+            List<Long> refIds = roleResourceRefs.stream().filter(ref -> !SystemRole.ADMIN.name().equalsIgnoreCase(ref.getRoleId())).map(RoleResourceRef::getId).collect(Collectors.toList());
             if (!CollectionUtils.isEmpty(refIds)) {
                 roleResourceRefService.deleteByIds(refIds);
             }
         }
-
-        return true;
     }
 
 }
