@@ -91,15 +91,15 @@ public class DatabaseExternalUsersCacheManager extends RelationalDatabaseUserSer
             userEntry.setLastUpdated(LocalDateTimeInstance.now());
             userEntry.setSourceId(sourceId);
 
-            UserEntity result = folibUserService.save(userEntry);
+            save(userEntry);
             logger.debug("Cache external user: username=[{}], id=[{}], uuid=[{}], sourceId=[{}], lastUpdated=[{}], UserDetails=[{}]",
-                    result.getUsername(),
-                    result.getNativeId(),
-                    result.getUuid(),
-                    result.getSourceId(),
-                    result.getLastUpdated(),
+                    userEntry.getUsername(),
+                    userEntry.getNativeId(),
+                    userEntry.getUuid(),
+                    userEntry.getSourceId(),
+                    userEntry.getLastUpdated(),
                     springUser.getClass().getSimpleName());
-            return result;
+            return userEntry;
         } catch (SchemaViolationException e) {
             throw new UserAlreadyExistsException(String.format("Failed to cache external user from [%s], duplicate [%s] already exists.", sourceId,
                     user.getUsername()),

@@ -43,7 +43,7 @@
             and rrr.entity_id = ugr.user_group_id))
         where fu.deleted = 0
             <if test="user.id != null and user.id != ''">
-                and id = #{user.id}
+                and fu.id = #{user.id}
             </if>
             <if test="user.username != null and user.username != ''">
                 and username like concat('%',#{user.username},'%')

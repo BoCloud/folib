@@ -39,10 +39,10 @@
         and rrr.ref_type = 2
         where ug.deleted = '0'
             <if test="userGroup.id != null and userGroup.id != ''">
-                and id = #{userGroup.id}
+                and ug.id = #{userGroup.id}
             </if>
             <if test="userGroup.groupName != null and userGroup.groupName != ''">
-                and group_name concat('%',#{userGroup.groupName},'%')
+                and ug.group_name concat('%',#{userGroup.groupName},'%')
             </if>
             <if test="userGroup.description != null and userGroup.description != ''">
                 and description = #{userGroup.description}
@@ -51,7 +51,7 @@
                 and join_group = #{userGroup.joinGroup}
             </if>
             <if test="userGroup.deleted != null and userGroup.deleted != ''">
-                and deleted = #{userGroup.deleted}
+                and ug.deleted = #{userGroup.deleted}
             </if>
         group by ug.id
         limit #{pageable.offset}, #{pageable.pageSize}
@@ -61,7 +61,7 @@
     <select id="count" resultType="java.lang.Long">
         select count(1)
         from user_group
-        where ug.deleted = '0'
+        where deleted = '0'
             <if test="id != null and id != ''">
                 and id = #{id}
             </if>

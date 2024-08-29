@@ -1,5 +1,6 @@
 package com.veadan.folib.users.service.impl;
 
+import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.converts.UserConvert;
 import com.veadan.folib.data.CacheName;
@@ -83,6 +84,9 @@ public class RelationalDatabaseUserService implements UserService
     private ResourceService resourceService;
     @Inject
     private ConfigurationManagementService configurationManagementService;
+
+    @Inject
+    private DistributedLockComponent distributedLockComponent;
 
 
     @Override
@@ -294,33 +298,38 @@ public class RelationalDatabaseUserService implements UserService
 
         //维护用户组
         Set<String> groupIds = user.getUserGroupIds();
+        userGroupRefService.deleteByUserId(user.getUuid());
         if (!CollectionUtils.isEmpty(groupIds)) {
-            userGroupRefService.deleteByUserId(user.getUuid());
             List<UserGroupRef> ref = new ArrayList<>();
             groupIds.forEach(item ->
                     ref.add(UserGroupRef.builder().userGroupId(Long.valueOf(item)).userId(user.getUuid()).createTime(date).build()));
             userGroupRefService.saveBath(ref);
-        }else {
-            userGroupRefService.deleteByUserId(user.getUuid());
         }
         //维护用户角色
         Set<SecurityRole> roles = user.getRoles();
         if (!CollectionUtils.isEmpty(roles)){
-            List<FolibRole> defaultRoles = folibRoleService.queryRoles(FolibRole.builder().isDefault(GlobalConstants.DEFALUT).build());
-            if(!CollectionUtils.isEmpty(defaultRoles)) {
-                List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryRoleByUserId(user.getUuid(), defaultRoles.stream().map(FolibRole::getId).collect(Collectors.toList()));
-                if (!CollectionUtils.isEmpty(roleResourceRefs)) {
-                    roleResourceRefService.removeByIds(roleResourceRefs.stream().map(RoleResourceRef::getId).collect(Collectors.toList()));
+            String key = "ConanIndex_" + user.getUuid();
+            if (distributedLockComponent.lock(key, GlobalConstants.WAIT_LOCK_TIME)) {
+                try {
+                    List<FolibRole> defaultRoles = folibRoleService.queryRoles(FolibRole.builder().isDefault(GlobalConstants.DEFALUT).build());
+                    if(!CollectionUtils.isEmpty(defaultRoles)) {
+                        List<String> defaultRoleIds = defaultRoles.stream().map(FolibRole::getId).collect(Collectors.toList());
+                        List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryRoleByUserId(user.getUuid(),defaultRoleIds);
+                        if (!CollectionUtils.isEmpty(roleResourceRefs)) {
+                            roleResourceRefService.deleteByIds(roleResourceRefs.stream().map(RoleResourceRef::getId).collect(Collectors.toList()));
+                        }
+
+                        List<RoleResourceRef> resourceRefs = new ArrayList<>();
+                        List<SecurityRole> roleInfos = roles.stream().filter(role -> defaultRoleIds.contains(role.getUuid())).collect(Collectors.toList());
+                        if (!CollectionUtils.isEmpty(roleInfos)) {
+                            roleInfos.forEach(role -> resourceRefs.add(RoleResourceRef.builder().roleId(role.getRoleName()).refType(GlobalConstants.ROLE_TYPE_USER).entityId(user.getUuid()).build()));
+                            roleResourceRefService.saveBath(resourceRefs);
+                        }
+                    }
+                } finally {
+                    distributedLockComponent.unLock(key);
                 }
             }
-
-            List<RoleResourceRef> resourceRefs = new ArrayList<>();
-            roles.forEach(role -> {
-                resourceRefs.add(RoleResourceRef.builder().roleId(role.getRoleName()).refType(GlobalConstants.ROLE_TYPE_USER).entityId(user.getUuid()).createTime(date).build());
-            });
-            roleResourceRefService.saveBath(resourceRefs);
-            //有权限变更，删除缓存
-            folibRoleService.deleteUserRoleCache(Collections.singletonList(user.getUuid()));
         }else {
             List<PermissionsDTO> permissions = roleResourceRefService.queryPermissions(null, user.getUuid(), null, null, false);
             List<Long> refIds = permissions.stream().filter(item -> SystemRole.ADMIN.name().equals(item.getRoleId()) || SystemRole.OPEN_SOURCE_MANAGE.name().equals(item.getRoleId())).map(PermissionsDTO::getId).collect(Collectors.toList());
@@ -328,6 +337,8 @@ public class RelationalDatabaseUserService implements UserService
                 roleResourceRefService.deleteByIds(refIds);
             }
         }
+        //有权限变更，删除缓存
+        folibRoleService.deleteUserRoleCache(Collections.singletonList(user.getUuid()));
 
         return folibUserService.save(userEntity);
     }
@@ -376,7 +387,12 @@ public class RelationalDatabaseUserService implements UserService
         List<User> userInfos = StreamSupport.stream(users.spliterator(), false).collect(Collectors.toList());
 
         List<UserEntity> userEntities = UserConvert.INSTANCE.UserListToUserEntityList(userInfos);
-        //用户信息入库
+        //用户信息入库dataBaseUserDetailService
+        userEntities.forEach(userEntity -> {
+             if (StringUtils.isBlank(userEntity.getSourceId()) || !"ldapUserDetailsService".equals(userEntity.getSourceId())) {
+                userEntity.setSourceId("dataBaseUserDetailService");
+            }
+        });
         folibUserService.saveOrUpdateBatch(userEntities);
         //处理用户关联的角色、用户添加默认组
         List<UserGroup> userGroups = userGroupService.queryUserGroupList(UserGroup.builder().joinGroup(GlobalConstants.DEFALUT).deleted(GlobalConstants.NOT_DELETED).build());
