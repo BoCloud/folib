@@ -172,8 +172,7 @@ public class ConfigurableProviderManager extends ProviderManager implements User
                 .orElse(LocalDateTime.MIN);
         LocalDateTime userExpireDate = userLastUpdate.plusSeconds(timeout);
         LocalDateTime nowDate = LocalDateTimeInstance.now();
-
-        return false;
+        return StringUtils.isBlank(user.getSourceId()) || nowDate.isBefore(userExpireDate);
     }
 
     @Override
