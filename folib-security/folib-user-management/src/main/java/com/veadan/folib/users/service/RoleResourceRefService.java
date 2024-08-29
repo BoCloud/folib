@@ -115,4 +115,6 @@ public interface RoleResourceRefService{
      * @return: 用户详情集合
      */
     List<FolibUser> queryUserByRoleIds(String roleId);
+
+    void deleteAllByRoleId(String roleId);
 }
