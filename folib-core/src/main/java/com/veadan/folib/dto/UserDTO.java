@@ -4,13 +4,12 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -53,6 +52,8 @@ public class UserDTO
     @ApiModelProperty(name = "是否删除",notes = "")
     private String deleted ;
 
+    private Date updateTime;
+
     public void setRepositoryPrivilege(String repositoryPrivilege) {
         this.repositoryPrivilege =  new HashSet<>(Arrays.asList(repositoryPrivilege.split(",")));;
     }
@@ -87,4 +88,5 @@ public class UserDTO
             this.userGroupIds = new HashSet<>(Arrays.asList(userGroupIds.split(",")));
         }
     }
+
 }

@@ -63,7 +63,10 @@ public interface UserConvert {
 
     @Mappings({@Mapping(source = "roles", target = "roles")})
     List<UserEntity> UserDTOsToUserList(List<UserDTO> usrerDTOList);
-    @Mappings({@Mapping(source = "roles", target = "roles")})
+
+    @Mappings({@Mapping(source = "roles", target = "roles"),
+            @Mapping(source = "updateTime", target = "lastUpdated")
+    })
     UserEntity UserDTOToUserEntity(UserDTO usrerDTO);
 
     @Mappings({/*@Mapping(target = "roles", expression = "java(mapRolesToStrings(userEntity.getRoles()))"),*/

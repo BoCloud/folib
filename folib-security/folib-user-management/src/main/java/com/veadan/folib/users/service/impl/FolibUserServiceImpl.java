@@ -86,10 +86,11 @@ public class FolibUserServiceImpl implements FolibUserService {
     @Override
     public UserEntity save(UserEntity userEntity) {
         FolibUser folibUser = UserConvert.INSTANCE.UserEntityToFolibUser(userEntity);
-        Date date = new Date();
-        folibUser.setUpdateTime(date);
         FolibUser folibUserInfo = folibUserMapper.selectOne(FolibUser.builder().id(folibUser.getId()).build());
         if (Objects.equals(folibUserInfo, null)) {
+            if (StringUtils.isBlank(folibUser.getSourceId())) {
+                folibUser.setSourceId("dataBaseUserDetailService");
+            }
             folibUserMapper.insert(folibUser);
         }else {
             folibUser.setDeleted(GlobalConstants.NOT_DELETED);
