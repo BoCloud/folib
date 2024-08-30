@@ -141,16 +141,16 @@ export default {
   data() {
     const checkPassword = (rule, value, callback) => {
       if (value && value.length > 0) {
-        var reg = /(?!^(\d+|[a-zA-Z]+|[~!@#$%^&*()_.]+)$)^[\w~!@#$%^&*()_.]{8,16}$/
+        var reg = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[~!@#$%^&*()_.])[A-Za-z\d~!@#$%^&*()_.]{12,30}$|^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.{12,30}$)|^(?=.*[a-z])(?=.*[A-Z])(?=.*[~!@#$%^&*()_.])(?=.{12,30}$)|^(?=.*[a-z])(?=.*\d)(?=.*[~!@#$%^&*()_.])(?=.{12,30}$)|^(?=.*[A-Z])(?=.*\d)(?=.*[~!@#$%^&*()_.])(?=.{12,30}$)/
         if (reg.test(value) === false) {
-          callback(new Error(this.$t('Users.passwordFormat')))
-        } else if (value.length < 8 || value.length > 16) {
-          callback(new Error(this.$('passwordLength')))
+          callback(new Error(this.$t('Users.PasswordFormat')))
+        } else if (value.length < 12 || value.length > 30) {
+          callback(new Error(this.$('PasswordLength')))
         } else {
           callback()
         }
       } else if (!value) {
-        callback(new Error(this.$t('Users.EnterNewPassword')))
+        callback()
       } else {
         callback()
       }
@@ -163,7 +163,7 @@ export default {
           callback()
         }
       } if (!value) {
-        callback(new Error(this.$('EnterNewPasswordAgain')))
+        callback()
       } else{
         callback()
       }
@@ -174,7 +174,7 @@ export default {
       } else if (this.passwordForm.password != this.passwordForm.againPassword){
         callback(new Error(this.$t('Users.TwoDifferentPasswordInputs')))
       } else if (!value) {
-        callback(new Error(this.$('EnterNewPasswordAgain')))
+        callback()
       } else{
         callback()
       }
@@ -269,7 +269,7 @@ export default {
             username: this.personalForm.username,
             email: this.personalForm.email,
             avatar: this.personalForm.avatar,
-            password: encrypt(this.personalForm.password)
+            password: this.personalForm.password?encrypt(this.personalForm.password): null
           }
           updateUser(user).then(res => {
             if (user.password) {

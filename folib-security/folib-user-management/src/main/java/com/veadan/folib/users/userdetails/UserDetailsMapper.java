@@ -1,14 +1,18 @@
 package com.veadan.folib.users.userdetails;
 
+import com.veadan.folib.authorization.dto.Role;
+import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.users.security.AuthoritiesProvider;
 
 import javax.inject.Inject;
 
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.SecurityRole;
 
+import com.veadan.folib.users.service.FolibUserService;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -17,6 +21,10 @@ public class UserDetailsMapper implements FolibUserToUserDetails
 
     @Inject
     private AuthoritiesProvider authoritiesProvider;
+    @Inject
+    private FolibUserService folibUserService;
+    @Inject
+    private AuthorizationConfigService authorizationConfigService;
 
     @Override
     public SpringSecurityUser apply(User user)
@@ -28,11 +36,12 @@ public class UserDetailsMapper implements FolibUserToUserDetails
         springUser.setUserType("general");
         springUser.setPassword(getPasswordWithEncodingAlgorithm(user.getPassword()));
         springUser.setUsername(user.getUsername());
-        springUser.setRoles(user.getRoles()
+        /*springUser.setRoles(user.getRoles()
                                 .stream()
                                 .map(SecurityRole::getRoleName)
                                 .map(authoritiesProvider::getRuntimeRole)
-                                .collect(Collectors.toSet()));
+                                .collect(Collectors.toSet()));*/
+        springUser.setRoles(authoritiesProvider.getRuntimeRole(null, user.getUsername()));
         springUser.setSecurityKey(user.getSecurityTokenKey());
         springUser.setSourceId(user.getSourceId());
 

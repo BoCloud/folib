@@ -16,6 +16,7 @@ module.exports = {
 		port: 9528,
 		proxy: {
 			'/api': {
+				// target: 'http://f18811435520.e2.luyouxia.net:20626',
 				// target: 'http://10.50.8.55:38080',
 				target: 'http://127.0.0.1:38080',
 				//target: 'http://192.168.42.128:38080',

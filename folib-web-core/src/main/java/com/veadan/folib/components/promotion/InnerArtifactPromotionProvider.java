@@ -56,7 +56,7 @@ public class InnerArtifactPromotionProvider implements ArtifactPromotionProvider
                 .srcRepositoryId(repositoryId)
                 .path(artifactPath)
                 .targetDispatchRepositoryList(Collections.singletonList(targetDispatchRepository))
-                .recordStatus(true).build();
+                .recordStatus(false).build();
         log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标存储空间：{} 目标仓库：{} 满足晋级条件，开始晋级", storageId, repositoryId, artifactPath, unionTargetRepositoryConfiguration.getNode(), unionTargetRepositoryConfiguration.getType(), unionTargetRepositoryConfiguration.getStorageId(), unionTargetRepositoryConfiguration.getRepositoryId());
         return promotionUtil.executeHandleDispatch(artifactDispatch);
     }

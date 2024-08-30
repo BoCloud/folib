@@ -1,4 +1,4 @@
-package com.veadan.folib.scanner.common.base;
+package com.veadan.folib.common.base;
 
 import tk.mybatis.mapper.common.Mapper;
 import tk.mybatis.mapper.common.ids.DeleteByIdsMapper;

@@ -41,7 +41,7 @@
               </a-radio>
             </a-radio-group>
           </a-card>
-          <a-card :bordered="false" class="header-solid" v-if="this.folibRepository.type !== 'group'">
+<!--          <a-card :bordered="false" class="header-solid" v-if="this.folibRepository.type !== 'group'">
             <template #title>
               <h6>{{ $t('Permission.PublicPermissionDefinition') }}</h6>
               <p>{{ $t('Permission.SpecificAuthority') }}</p>
@@ -113,7 +113,7 @@
                   </a-popconfirm>
               </template>
             </a-table>
-          </a-card>
+          </a-card>-->
           <a-form-model-item :wrapper-col="{ span: 14, offset: 4 }">
             <a-button type="primary" @click="permissionFormSubmit">
               {{ $t('Permission.Save') }}
@@ -344,7 +344,7 @@ export default {
             })
             return false
           }
-          let userData = this.permissionForm.userList
+          /*let userData = this.permissionForm.userList
           for (let item of userData) {
             if (this.permissionForm.scope === 1 && !this.storageUsers.includes(item.username)) {
               this.$notification.warning({
@@ -366,11 +366,11 @@ export default {
             if (item.paths) {
               item.paths = item.paths.split(",")
             }
-          }
+          }*/
           let data = {
             scope: this.permissionForm.scope,
             allowAnonymous: this.permissionForm.allowAnonymous,
-            userList: userData
+           /* userList: userData*/
           }
           repositoryPermission(this.folibRepository.storageId, this.folibRepository.id, data).then(res => {
             this.successMsg(this.$t('Permission.OperationSuccessful'))

@@ -40,5 +40,6 @@ export default {
     'MetadataKeyRulesTips': '元数据KEY长度在1到100个字符',
     'MetadataValueRulesTips': '元数据值长度在1到200个字符',
     'OperateSuccess': '操作成功',
+    'SyncData': '同步用户、同步角色权限、同步用户组、仓库信息到其他集群',
 }
 

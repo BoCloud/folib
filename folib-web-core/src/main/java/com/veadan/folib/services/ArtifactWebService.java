@@ -36,6 +36,21 @@ public interface ArtifactWebService {
                      String repositoryId, HttpServletResponse response) throws IOException;
 
     /**
+     * 查询受漏洞影响的制品信息
+     *
+     * @param pageNumber        页码
+     * @param pageSize          每页数量
+     * @param vulnerabilityUuid 漏洞id
+     * @param storageId         存储空间id
+     * @param repositoryId      仓库id
+     * @param artifactName      artifactName
+     * @return 制品列表
+     */
+    TableResultResponse<com.veadan.folib.domain.ArtifactInfo> getArtifacts(Integer pageNumber, Integer pageSize, String vulnerabilityUuid,
+                                                                           String storageId,
+                                                                           String repositoryId, String artifactName);
+
+    /**
      * 全局设置添加或者更新元数据
      *
      * @param artifactMetadataForm 参数
@@ -223,6 +238,7 @@ public interface ArtifactWebService {
 
     /**
      * foeyes是否可用
+     *
      * @return true 可用 false 不可用
      */
     boolean foEyesEnable();
@@ -239,6 +255,7 @@ public interface ArtifactWebService {
 
     /**
      * docker完整性校验
+     *
      * @param storageId    存储空间
      * @param repositoryId 仓库名称
      * @throws Exception 异常

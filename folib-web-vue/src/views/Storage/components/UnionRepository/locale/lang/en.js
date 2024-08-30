@@ -40,4 +40,5 @@ export default {
     'MetadataKeyRulesTips': 'The metadata key length is between 1 and 100 characters',
     'MetadataValueRulesTips': 'The metadata value is between 1 and 200 characters in length',
     'OperateSuccess': 'Operate Success',
+    'SyncData': 'Synchronize users, role permissions, user groups, and repositories to other clusters',
 }

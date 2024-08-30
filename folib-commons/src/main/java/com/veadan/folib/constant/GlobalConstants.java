@@ -51,7 +51,6 @@ public interface GlobalConstants {
     String DISTRIBUTED_LOCK_NAME = "distributedLock";
 
     /**
-     *
      * 分布式缓存名称
      */
     String DISTRIBUTED_CACHE_NAME = "distributedCache";
@@ -92,7 +91,6 @@ public interface GlobalConstants {
     long WAIT_LOCK_TIME = 60L;
 
     /**
-	 *
      * LONG_WAIT_LOCK_TIME
      */
     long LONG_WAIT_LOCK_TIME = 120L;
@@ -131,7 +129,7 @@ public interface GlobalConstants {
      * docker level single
      */
     String DOCKER_LEVEL_SINGLE = "single";
-    
+
     /**
      * latest
      */
@@ -146,8 +144,8 @@ public interface GlobalConstants {
      * download
      */
     String DOWNLOAD = "download";
-    
-   /**
+
+    /**
      * drop
      */
     String DROP = "drop";
@@ -166,4 +164,85 @@ public interface GlobalConstants {
      * @
      */
     String AT = "@";
+
+    /**
+     * 删除
+     */
+    String DELETED = "1";
+    /**
+     * 未删除
+     */
+    String NOT_DELETED = "0";
+
+    /**
+     * 默认
+     */
+    String DEFALUT = "1";
+    /**
+     *  非默认
+     */
+    String NOT_DEFAULT = "0";
+    /**
+     * 角色关联类型-用户
+     */
+    String ROLE_TYPE_USER = "1";
+    /**
+     * 角色关联类型-用户组
+     */
+    String ROLE_TYPE_USER_GROUP = "2";
+    /**
+     * 资源类型-api
+     */
+    String RESOURCE_TYPE_API = "1";
+    /**
+     * 资源类型-存储空间
+     */
+    String RESOURCE_TYPE_STORAGE = "2";
+    /**
+     * 资源类型-仓库
+     */
+    String RESOURCE_TYPE_REPOSITORY = "3";
+    /**
+     * 资源类型-路径
+     */
+    String RESOURCE_TYPE_PATH = "4";
+
+    /**
+     * 用户启用
+     */
+    String USER_ENABLE = "true";
+    /**
+     * 用户禁用
+     */
+    String USER_NOT_ENABL = "false";
+    
+    /**
+     * 扫描重试
+     */
+    String SCAN_RETRY = "ScanRetryCount";
+
+    /**
+     * 扫描重试
+     */
+    String SCAN_RETRY_KEY = "SCAN_RETRY";
+
+    /**
+     * 扫描重试次数
+     */
+    String SCAN_RETRY_COUNT_KEY = "SCAN_RETRY_COUNT";
+
+    /**
+     * 扫描重试次数
+     */
+    Integer SCAN_RETRY_COUNT = 3;
+
+    /**
+     * 扫描单文件最大限制
+     */
+    String SCAN_MAX_SIZE_KEY = "SCAN_MAX_SIZE";
+
+    /**
+     * 扫描单文件最大限制GB
+     */
+    Integer SCAN_MAX_SIZE = 3;
 }

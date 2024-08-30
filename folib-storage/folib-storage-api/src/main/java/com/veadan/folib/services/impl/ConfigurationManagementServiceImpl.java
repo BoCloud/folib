@@ -195,23 +195,23 @@ public class ConfigurationManagementServiceImpl
     @Override
     public void updateStorage(StorageDto storage) throws IOException {
         StorageDto storageDto = configuration.getStorage(storage.getId());
-        storageDto.setUsers(storage.getUsers());
+//        storageDto.setUsers(storage.getUsers());
         storageDto.setAdmin(storage.getAdmin());
         if (StringUtils.isBlank(storageDto.getStorageProvider()) && StringUtils.isNotBlank(storage.getStorageProvider())) {
             storageDto.setStorageProvider(storage.getStorageProvider());
         }
-        if (Objects.nonNull(storage.getStorageMaxSize()) && storage.getStorageMaxSize() > 0 ) {
+        if (Objects.nonNull(storage.getStorageMaxSize()) && storage.getStorageMaxSize() > 0) {
             storageDto.setStorageMaxSize(storage.getStorageMaxSize());
         } else {
             storageDto.setStorageMaxSize(0L);
         }
-        checkUsersContainsAdmin(storageDto);
+//        checkUsersContainsAdmin(storageDto);
         modifyInLock(configuration -> configuration.addStorage(storageDto));
     }
 
     @Override
     public void createStorage(StorageDto storage) throws IOException {
-        checkUsersContainsAdmin(storage);
+//        checkUsersContainsAdmin(storage);
         modifyInLock(configuration -> configuration.addStorage(storage));
     }
 
@@ -241,6 +241,11 @@ public class ConfigurationManagementServiceImpl
         modifyInLock(configuration ->
         {
             final StorageDto storage = configuration.getStorage(storageId);
+            Repository oldRepository = storage.getRepository(repository.getId());
+            if (Objects.nonNull(oldRepository)) {
+                repository.setBasedir(oldRepository.getBasedir());
+                repository.setStorageProvider(oldRepository.getStorageProvider());
+            }
             repository.setStorage(storage);
             LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(
                     repository.getLayout());

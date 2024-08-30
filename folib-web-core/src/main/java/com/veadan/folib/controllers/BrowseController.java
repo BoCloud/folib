@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.booters.PropertiesBooter;
 import com.veadan.folib.components.artifact.ArtifactComponent;
@@ -17,6 +18,7 @@ import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
 import com.veadan.folib.domain.bom.Bom;
 import com.veadan.folib.domain.bom.FoEyes;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
@@ -147,6 +149,11 @@ public class BrowseController
                     jsonObject.put("lastModified", lastModified);
                 }
 
+                if (artifact.getScanDateTime() != null) {
+                    String lastModified = DateUtil.format(Date.from(artifact.getScanDateTime().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
+                    jsonObject.put("scanTime", lastModified);
+                }
+
                 Set<String> fileNames = artifact.getArtifactArchiveListing().getFilenames();
 
                 if (fileNames != null && fileNames.size() > 0) {
@@ -216,6 +223,10 @@ public class BrowseController
                 dateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
                 String format = dateFormat.format(fileContent.getLastModified());
                 jsonObject.put("lastModified", format);
+                if (artifact.getScanDateTime() != null) {
+                    String lastModified = DateUtil.format(Date.from(artifact.getScanDateTime().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), dateFormat);
+                    jsonObject.put("scanTime", lastModified);
+                }
                 jsonObject.put("size", size);
                 jsonObject.put("imageName", imageName);
                 jsonObject.put("subsidiaryFiles", DockerUtils.getDockerSubsidiaryFilePaths(repositoryPath));
@@ -360,6 +371,7 @@ public class BrowseController
     }
 
     @ApiOperation(value = "Deletes a path from a repository.")
+    @AuditLog(value = AuditEventNameEnum.DELETE_ARTIfFACT,target ="#artifactPath" )
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deleted."),
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 404, message = "The specified storageId/repositoryId/path does not exist!")})

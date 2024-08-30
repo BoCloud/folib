@@ -116,13 +116,21 @@ export function globalSettingDelArtifactDispatchConfig(clusterEnName) {
   })
 }
 
-export function vulnerabilitiesDataUpdate() {
+export function vulnerabilitiesDataUpdate(params) {
   return axios({
     url: '/api/folibScanner/update',
-    method: 'get'
+    method: 'get',
+    params: params
   })
 }
 
+export function artifactScan(params) {
+  return axios({
+    url: '/api/folibScanner/scan',
+    method: 'get',
+    params: params
+  })
+}
 
 export function getDataIndexDump(param) {
   return axios({
@@ -180,5 +188,13 @@ export function fileSizeStatisticsByWarehouse(days, limitNumber){
   return axios({
     url: '/api/artifactSyncRecord/fileSizeStatisticsByWarehouse/'+days+'/'+limitNumber,
     method: 'get',
+  })
+}
+
+export function getCrontaskByClass(params) {
+  return axios({
+    url: '/api/configuration/crontasks/getByClass',
+    method: 'get',
+    params: params
   })
 }

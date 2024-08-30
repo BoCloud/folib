@@ -89,6 +89,16 @@ public class StorageData implements Storage {
     }
 
     @Override
+    public void setUsers(Set<String> users) {
+        this.users = users;
+    }
+
+    @Override
+    public void setAdmin(String username) {
+        this.admin = username;
+    }
+
+    @Override
     public String getId() {
         return id;
     }

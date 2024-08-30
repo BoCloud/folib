@@ -67,10 +67,11 @@ public class PromotionCompensationTask {
                 recordExample.and().andEqualTo("status", ArtifactSyncRecordStatusEnum.FAILED.getVal());
                 recordExample.and().andLessThan("retryCount", getMaxRetryCount());
                 int totalCount = artifactSyncRecordMapper.selectCountByExample(recordExample);
+                log.info("Promotion compensation task find total [{}] artifact", totalCount);
                 if (totalCount <= 0) {
                     return;
                 }
-                int batchSize = 2;
+                int batchSize = 10;
                 // 计算总页数
                 int totalPages = (int) Math.ceil((double) totalCount / batchSize);
                 List<ArtifactSyncRecord> artifactSyncRecordList;

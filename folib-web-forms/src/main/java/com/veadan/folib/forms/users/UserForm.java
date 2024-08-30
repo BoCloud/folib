@@ -23,8 +23,8 @@ public class UserForm
     @UniqueUsername(groups = NewUser.class, message = "Username is already taken.")
     private String username;
 
-    @Password(groups = { NewUser.class }, min = 8)
-    @Password(groups = { ExistingUser.class }, allowNull = true, min = 8)
+    @Password(groups = { NewUser.class }, min = 12)
+    @Password(groups = { ExistingUser.class }, allowNull = true, min = 12)
     private String password;
 
     private String email;
@@ -34,6 +34,7 @@ public class UserForm
     private boolean enabled;
 
     private Set<String> roles;
+    private Set<String> userGroupIds;
 
     private String securityTokenKey;
 
@@ -94,6 +95,14 @@ public class UserForm
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public Set<String> getUserGroupIds() {
+        return userGroupIds;
+    }
+
+    public void setUserGroupIds(Set<String> userGroupIds) {
+        this.userGroupIds = userGroupIds;
     }
 
     public interface NewUser

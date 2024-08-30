@@ -42,6 +42,7 @@ public class JWTAuthenticationSupplier
         try {
             username = securityTokenProvider.getSubject(token);
         } catch (InvalidTokenException e) {
+            logger.error("token失效", e);
             throw new BadCredentialsException("invalid.token");
         }
         if (GlobalConstants.ANONYMOUS_TOKEN_KEY.equals(username)) {

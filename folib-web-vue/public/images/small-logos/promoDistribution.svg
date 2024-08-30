@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="46px" height="46px" viewBox="0 0 46 46" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>icon/晋级分发</title>
+    <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="编组-3备份" transform="translate(-1104.000000, -518.000000)">
+            <g id="编组" transform="translate(1104.000000, 518.000000)">
+                <rect id="矩形" fill="#F1A539" x="0" y="0" width="46" height="46" rx="6"></rect>
+                <g transform="translate(11.000000, 9.000000)" stroke="#FFFFFF" stroke-width="1.71428571">
+                    <ellipse id="椭圆形" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="13.7931034" rx="11.1428571" ry="11.2068966"></ellipse>
+                    <ellipse id="椭圆形" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="13.7931034" rx="3.42857143" ry="3.44827586"></ellipse>
+                    <ellipse id="椭圆形" fill="#F1A539" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="2.5862069" rx="2.57142857" ry="2.5862069"></ellipse>
+                    <ellipse id="椭圆形备份" fill="#F1A539" stroke-linecap="round" stroke-linejoin="round" cx="2.57142857" cy="19.8275862" rx="2.57142857" ry="2.5862069"></ellipse>
+                    <ellipse id="椭圆形备份-2" fill="#F1A539" stroke-linecap="round" stroke-linejoin="round" cx="21.4285714" cy="19.8275862" rx="2.57142857" ry="2.5862069"></ellipse>
+                    <line x1="12" y1="5.17241379" x2="12" y2="10.3448276" id="路径-4"></line>
+                    <line x1="4.71428571" y1="18.5344828" x2="9" y2="15.9482759" id="路径-4备份"></line>
+                    <line x1="15" y1="15.9482759" x2="19.2857143" y2="18.5344828" id="路径-4备份-2"></line>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

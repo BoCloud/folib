@@ -61,6 +61,10 @@ public enum DictTypeEnum {
      * 页面上传制品大小限制
      */
     UI_UPLOAD_MAX_SIZE("ui_upload_max_size"),
+    /**
+     * 全量制品扫描
+     */
+    ARTIFACT_FULL_SCAN("artifact_full_scan"),
     ;
 
     private String type;

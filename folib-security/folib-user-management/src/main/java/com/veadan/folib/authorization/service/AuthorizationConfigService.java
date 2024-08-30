@@ -20,6 +20,7 @@ public interface AuthorizationConfigService
     AuthorizationConfigDto getDto();
 
     AuthorizationConfig get();
+    AuthorizationConfig get(String username);
 
     void addRole(RoleDto role) throws IOException;
 
@@ -35,4 +36,5 @@ public interface AuthorizationConfigService
     void handlerRole(String roleInfo);
 
     void clearPrivilegesAnonymous() throws IOException;
+    AuthorizationConfig getRole(String roleId);
 }

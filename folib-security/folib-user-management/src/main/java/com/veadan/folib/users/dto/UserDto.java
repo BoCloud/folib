@@ -13,14 +13,20 @@ import com.veadan.folib.domain.SecurityRoleEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.*;
 
 /**
  * @author mtodorov
  */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserDto
         implements Serializable, User
 {
 
+    private String id;
     private String username;
 
     private String password;
@@ -36,6 +42,10 @@ public class UserDto
     private Boolean enabled = true;
 
     private Set<String> roles = new HashSet<>();
+
+    private Set<Long> groupIds = new HashSet<>();
+    private Set<String> userGroups = new HashSet<>();
+    private Set<String> userGroupIds = new HashSet<>();
 
     private String securityTokenKey;
 
@@ -107,6 +117,22 @@ public class UserDto
             return;
         }
         this.roles = roles.stream().map(SecurityRole::getRoleName).collect(Collectors.toSet());
+    }
+    @Override
+    @JsonIgnore
+    public Set<Long> getGroupIds()
+    {
+        return groupIds;
+    }
+
+    public void setGroupIds(Set<Long> groupIds)
+    {
+        if (groupIds == null)
+        {
+            this.groupIds = new HashSet<>();
+            return;
+        }
+        this.groupIds = groupIds;
     }
 
     public void setRoleNames(Set<String> roles)
@@ -207,6 +233,7 @@ public class UserDto
         return avatar;
     }
 
+
     public void setAvatar(String avatar) {
         this.avatar = avatar;
     }
@@ -218,5 +245,18 @@ public class UserDto
 
     public void setOriginalPassword(String originalPassword) {
         this.originalPassword = originalPassword;
+    }
+    @Override
+    public Set<String> getUserGroups() {
+        return userGroups;
+    }
+
+    @Override
+    public Set<String> getUserGroupIds() {
+        return userGroupIds;
+    }
+
+    public void setUserGroups(Set<String> userGroups) {
+        this.userGroups = userGroups;
     }
 }

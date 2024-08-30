@@ -357,21 +357,6 @@ public class AsyncPoolConfig {
                 asyncDeleteArtifactAwaitTerminationSeconds);
     }
 
-    @PreDestroy
-    public void shutdown() {
-        asyncThreadPoolTaskExecutor().shutdown();
-        asyncEventListenerExecutor().shutdown();
-        asyncConfigThreadPoolExecutor().shutdown();
-        asyncFetchRemotePackageThreadPoolTaskExecutor().shutdown();
-        asyncScanThreadPoolTaskExecutor().shutdown();
-        asyncWsCommandThreadPoolTaskExecutor().shutdown();
-        asyncCopyThreadPoolTaskExecutor().shutdown();
-        asyncEventLogThreadPoolTaskExecutor().shutdown();
-        asyncWsHeartbeatThreadPoolTaskExecutor().shutdown();
-        asyncPromotionPoolTaskExecutor().shutdown();
-        asyncDeleteArtifactTaskExecutor().shutdown();
-    }
-
     /**
      * build ThreadPoolTaskExecutor
      *

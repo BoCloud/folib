@@ -1,7 +1,7 @@
 package com.veadan.folib.mapper;
 
 import com.veadan.folib.entity.WebhookLog;
-import com.veadan.folib.scanner.common.base.CommonMapper;
+import com.veadan.folib.common.base.CommonMapper;
 import org.springframework.stereotype.Component;
 
 /**

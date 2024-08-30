@@ -1,8 +1,7 @@
 package com.veadan.folib.mapper;
 
-import com.veadan.folib.entity.ArtifactCacheRecord;
 import com.veadan.folib.entity.GitLfsLockEntity;
-import com.veadan.folib.scanner.common.base.CommonMapper;
+import com.veadan.folib.common.base.CommonMapper;
 import org.springframework.stereotype.Component;
 import org.apache.ibatis.annotations.Param;
 import java.util.List;

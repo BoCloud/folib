@@ -5,6 +5,8 @@ import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.ArtifactDispatch;
+import com.veadan.folib.domain.PrivilegeDispatch;
+import com.veadan.folib.event.privilege.PrivilegeEventTypeEnum;
 import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.utils.UrlUtils;
@@ -63,6 +65,8 @@ public class WSForwardComponent {
     private RestTemplate restTemplate;
 
     private final String DISPATCH_API_ENDPOINT = "/api/artifact/folib/promotion/artifactDispatch";
+
+    private final String AUTH_DISPATCH_API_ENDPOINT = "/api/auth/privilegeDispatch";
 
     /**
      * WS请求转发
@@ -243,5 +247,47 @@ public class WSForwardComponent {
             }
         }
         return params.toString();
+    }
+
+    public boolean dispatch(String targetNodeName, PrivilegeDispatch privilegeDispatch) {
+        String key = GlobalConstants.WS_NODE_KEY;
+        String wsNodes = distributedCacheComponent.get(key);
+        String nodeName = folibWsRunManageV2.getSimpleTargetHostName(targetNodeName);
+        if (StringUtils.isBlank(wsNodes)) {
+            throw new RuntimeException("Not found session with targetHostName:" + nodeName);
+        }
+        String currentHost = folibLockProperties.getFolibLockIp();
+        List<String> wsNodeList = Arrays.asList(wsNodes.split(","));
+        log.info("Current wsNodeList {} targetNode [{}]", wsNodeList, nodeName);
+        Optional<String> nodeUrlOptional = wsNodeList.stream().filter(item -> item.startsWith(nodeName) && !currentHost.equals(UrlUtils.getHost(item.split("_")[1]))).findFirst();
+        if (nodeUrlOptional.isEmpty()) {
+            throw new RuntimeException("Not found session with targetHostName:" + nodeName);
+        }
+        String nodeUrl = nodeUrlOptional.get();
+        if (StringUtils.isBlank(nodeUrl)) {
+            throw new RuntimeException("Not found session with targetHostName:" + nodeName);
+        }
+        nodeUrl = nodeUrl.split("_")[1];
+        String host = UrlUtils.getHost(nodeUrl);
+        if (currentHost.equals(host)) {
+            //代理目标为本机，跳过
+            throw new RuntimeException("Not found session with targetHostName:" + nodeName);
+        }
+        log.info("接收到分发请求，目标[{}]...", nodeUrl);
+        Client client = proxyRepositoryConnectionPoolConfigurationService.getRestClient();
+        //连接建立超时时间
+        client.property(ClientProperties.CONNECT_TIMEOUT, 10000);
+        String targetUrl = StringUtils.removeEnd(nodeUrl, GlobalConstants.SEPARATOR) + AUTH_DISPATCH_API_ENDPOINT;
+        WebTarget target = client.target(targetUrl);
+        Invocation.Builder builder = target.request(javax.ws.rs.core.MediaType.APPLICATION_JSON);
+        securityComponent.securityTokenHeader(builder);
+        Response response = builder.post(Entity.entity(privilegeDispatch, javax.ws.rs.core.MediaType.APPLICATION_JSON));
+        String responseBody = response.readEntity(String.class);
+        if (org.apache.http.HttpStatus.SC_OK != response.getStatus()) {
+            log.error("Url response error [{}] [{}] [{}]", targetUrl, response.getStatus(), responseBody);
+            throw new RuntimeException(String.format("Url response error [%s] [%s]", response.getStatus(), responseBody));
+        }
+        log.info("转发分发请求成功 目标[{}]...", nodeUrl);
+        return true;
     }
 }

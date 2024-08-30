@@ -70,4 +70,6 @@ export default {
     'StorageSpace': 'storage space',
     'OwnedWarehouse': 'Owned warehouse',
     'ProductPath': 'Product path',
+    'BugArtifacts': 'Bug Artifacts List',
+    'DownloadCount': 'Download count',
 }

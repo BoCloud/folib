@@ -52,10 +52,11 @@ spring:
     password: ${folib.redis.password:123456}
 mybatis:
   mapper-locations: "classpath*:mapper/*.xml"
-#  configuration:
-#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  configuration:
+    map-underscore-to-camelcase: true
+    #log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 mapper:
-  mappers: com.veadan.folib.scanner.common.base.CommonMapper
+  mappers: com.veadan.folib.common.base.CommonMapper
   identity: MYSQL
 
 scan:

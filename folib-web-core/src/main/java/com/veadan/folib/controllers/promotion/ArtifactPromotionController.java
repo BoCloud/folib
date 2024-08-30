@@ -1,6 +1,7 @@
 package com.veadan.folib.controllers.promotion;
 
 import com.alibaba.fastjson.JSONObject;
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.config.PermissionCheck;
 import com.veadan.folib.controllers.BaseArtifactController;
@@ -10,6 +11,7 @@ import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
 import com.veadan.folib.entity.Dict;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
 import com.veadan.folib.model.request.ArtifactSliceUploadReq;
 import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
@@ -138,6 +140,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
     }
 
     @PostMapping(value = "/upload")
+    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT,target ="#storageId + '-'+ #repositoryId+'-'+ #parseArtifact.replaceAll('.*\\\"filePath\\\":\\\"([^\\\"]*)', '$1').replaceAll('^.*/', '').replaceAll('\\\".*', '')" )
     @ApiOperation(value = "文件上传", notes = "文件上传")
     @PermissionCheck(resourceKey = "ARTIFACTS_DEPLOY", storageKey = "storageId", repositoryKey = "repositoryId")
     public ResponseEntity upload(

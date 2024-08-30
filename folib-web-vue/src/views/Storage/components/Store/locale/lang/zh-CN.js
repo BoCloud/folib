@@ -338,4 +338,5 @@ export default {
     "Prompts":"提示",
     "DirSize": "目录下文件大小是 ",
     "ConfirmDownload": "确定下载吗？",
+    'ScanTime': '扫描时间',
 }

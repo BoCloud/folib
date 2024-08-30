@@ -1,20 +1,20 @@
 <template>
   <div class="anonymous-home">
      <!-- Header Background Image -->
-     <div class="profile-nav-bg">
-        <div
-          :class="[mouseEnter ? 'mouse-enter nested' : 'nested']"
-          style="
+     <div class="profile-nav-bg" style="
             background: url(images/banner.jpg) center/cover;
             transition: all 0.3s;
-          "
-        ></div>
+          ">
+<!--        <div-->
+<!--          :class="[mouseEnter ? 'mouse-enter nested' : 'nested']"-->
+
+<!--        ></div>-->
       <a-row type="flex" :md="8" :xs="4">
         <SearchBox @mouse="searchBoxMouseStatus" @search="search"/>
       </a-row>
     </div>
-    <Storages v-if="!searchVisible && allowAnonymous" :anonymous="true" class="mt-15"/>
-    <Search ref="search" class="mt-20" v-if="searchVisible && allowAnonymous" :columns="columns"/>
+    <Storages v-if="!searchVisible && (allowAnonymous || isLogin())" :anonymous="true" class="mt-15"/>
+    <Search ref="search" class="mt-20" v-if="searchVisible && (allowAnonymous || isLogin())" :columns="columns"/>
   </div>
 </template>
 <script>
@@ -24,6 +24,7 @@ import {
 import Storages from "./Storages.vue"
 import SearchBox from "@/components/Tools/SearchBox"
 import Search from "./components/Search/index.vue"
+import { isLogin } from "@/utils/permission"
 
 export default {
   data() {
@@ -111,10 +112,16 @@ export default {
         this.$refs.search.search(value, searchType, type)
       })
     },
+    isLogin() {
+      return isLogin()
+    },
     getAllowAnonymous() {
       getAllowAnonymous().then(res => {
         this.allowAnonymous = res
-        if(!this.allowAnonymous) {
+        let login = isLogin()
+        console.log("isLogin: " + login)
+        if(!login &&!this.allowAnonymous) {
+          console.log("allowAnonymous: " + this.allowAnonymous + " to /login")
           this.$router.push('/login')
         }
       })
@@ -130,7 +137,7 @@ export default {
     justify-content: center;
     align-items: center;
     color: #fafafa;
-    position: relative;
+    //position: relative;
     overflow: hidden;
     width: 100%;
   }

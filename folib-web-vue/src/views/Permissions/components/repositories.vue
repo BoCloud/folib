@@ -1,13 +1,15 @@
 <template>
     <div>
         <p class="tip">{{ $t(`Permissions.RepositoriesDesc`) }}</p>
-        <a-radio-group v-model="radioModel">
-            <a-radio-button value="StorageSpace">
+        <a-radio-group v-model="radioModel" :disabled="isView" class="by-m-t-10">
+            <a-radio value="StorageSpace" class="by-f-w-600 by-rela">
                 {{ $t('Permissions.StorageSpace') }}
-            </a-radio-button>
-            <a-radio-button value="Repositories">
+                <div class="custom-badge" v-if="radioModel === 'StorageSpace'">{{ storageRowKeys.length > 99 ? '99+' : storageRowKeys.length }}</div>
+            </a-radio>
+            <a-radio value="Repositories" class="by-m-l-20 by-f-w-600 by-rela">
                 {{ $t('Permissions.Repositories') }}
-            </a-radio-button>
+                <div class="custom-badge" v-if="radioModel === 'Repositories'">{{ repositoriesRowKeys.length > 99 ? '99+' : repositoriesRowKeys.length }}</div>
+            </a-radio>
         </a-radio-group>
         <a-steps v-model="step" type="navigation" size="small" class="step" :style="{width: radioModel === 'StorageSpace' ? '49.5%' : '100%'}">
             <a-step
@@ -25,10 +27,9 @@
         </a-steps>
         <a-table
             v-if="!step"
-            :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }"
+            :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange, getCheckboxProps: getCheckboxProps }"
             :columns="tableColumns"
             :data-source="tableData"
-            size="small"
             :pagination="false"
             :scroll="{ y: 500 }"
         />
@@ -54,7 +55,7 @@
                 class="table-custom"
             >
                 <div slot="includes" slot-scope="text, record">
-                    <div class="insert-item" :class="{ 'has-error': record.isInError}">
+                    <div v-if="!isView" class="insert-item" :class="{ 'has-error': record.isInError}">
                         <a-input
                             v-model="record.currentInPattern"
                             :placeholder="$t('Permissions.NewPatterns')"
@@ -76,6 +77,7 @@
                         >
                             {{ item }}
                             <a-icon
+                                v-if="!isView"
                                 type="close"
                                 class="close-icon"
                                 @click="record.includes.splice(index, 1)"
@@ -100,6 +102,10 @@ export default {
             type: Array,
             default: () => []
         },
+        isView: {
+            type: Boolean,
+            default: false
+        },
     },
     data()
     {
@@ -107,6 +113,8 @@ export default {
             step: 0,
             tableData: [],
             selectedRowKeys: [],
+            storageRowKeys: [],
+            repositoriesRowKeys: [],
             radioModel: 'StorageSpace',
             currentInPattern: '',
             form: this.$form.createForm(this, { name: 'repositories' }),
@@ -152,7 +160,10 @@ export default {
     watch: {
         selectedRowKeys: {
             handler(newVal) {
-                this.perRepositoryList = newVal.map(item => {
+                this.storageRowKeys = newVal.filter(item => item.indexOf('/') === -1)
+                this.repositoriesRowKeys = newVal.filter(item => item.indexOf('/') > -1)
+
+                this.perRepositoryList = this.repositoriesRowKeys.map(item => {
                     return {
                         title: item,
                         includes: [],
@@ -204,7 +215,7 @@ export default {
                 })
             }
             this.step = 0
-            this.selectedRowKeys = []
+            // this.selectedRowKeys = []
         }
     },
     methods: {
@@ -215,6 +226,18 @@ export default {
         },
         onSelectChange(selectedRowKeys) {
             this.selectedRowKeys = selectedRowKeys;
+            // if (this.radioModel === 'StorageSpace') {
+            //
+            // } else {
+            //
+            // }
+        },
+        getCheckboxProps() {
+            return {
+                props: {
+                    disabled: this.isView
+                }
+            }
         },
         handleAddRowInPattern(record) {
             if (record.currentInPattern.trim()) {
@@ -238,7 +261,7 @@ export default {
         },
         getResources() {
             if (this.radioModel === 'StorageSpace') {
-                return this.selectedRowKeys.map(item => {
+                return this.storageRowKeys.map(item => {
                     return {
                         storageId: item
                     }
@@ -264,7 +287,7 @@ export default {
                 })
                 return list
             }
-            return this.selectedRowKeys.map(item => {
+            return this.repositoriesRowKeys.map(item => {
                 return {
                     storageId: item.split('/')[0],
                     repositoryId: item.split('/')[1],

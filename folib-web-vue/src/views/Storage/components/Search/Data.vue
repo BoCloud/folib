@@ -29,6 +29,9 @@
           <a-descriptions-item :label="$t('Store.LastUsedTime')">
             {{ currentArtifact.lastUsedTime }}
           </a-descriptions-item>
+          <a-descriptions-item :label="$t('Store.ScanTime')">
+            {{ currentArtifact.scanTime }}
+          </a-descriptions-item>
           <a-descriptions-item :label="$t('Store.DownloadTimes')">
             {{ artifact.downloadCount }}
           </a-descriptions-item>
@@ -68,6 +71,9 @@
           </a-descriptions-item>
           <a-descriptions-item v-if="artifact" :label="$t('Store.ModifyTheTime')">
             {{ currentArtifact.lastModified }}
+          </a-descriptions-item>
+          <a-descriptions-item v-if="artifact" :label="$t('Store.ScanTime')">
+            {{ currentArtifact.scanTime }}
           </a-descriptions-item>
           <a-descriptions-item v-if="currentArtifact && currentArtifact.manifest.layers" :label="$t('Store.NumberOfFloors')">
             {{ currentArtifact.manifest.layers.length }}

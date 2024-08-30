@@ -233,4 +233,5 @@ export default {
     'DataUpdateTime': 'Latest update time of data',
     'LastTenUpdates': 'Last 10 updates to the storage data view',
     'RepositoryList': 'Repository list',
+    'ScanTime': 'Scan time',
 }
