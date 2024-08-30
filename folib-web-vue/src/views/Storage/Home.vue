@@ -1,14 +1,14 @@
 <template>
   <div class="anonymous-home">
      <!-- Header Background Image -->
-     <div class="profile-nav-bg">
-        <div
-          :class="[mouseEnter ? 'mouse-enter nested' : 'nested']"
-          style="
+     <div class="profile-nav-bg" style="
             background: url(images/banner.jpg) center/cover;
             transition: all 0.3s;
-          "
-        ></div>
+          ">
+<!--        <div-->
+<!--          :class="[mouseEnter ? 'mouse-enter nested' : 'nested']"-->
+
+<!--        ></div>-->
       <a-row type="flex" :md="8" :xs="4">
         <SearchBox @mouse="searchBoxMouseStatus" @search="search"/>
       </a-row>
@@ -137,7 +137,7 @@ export default {
     justify-content: center;
     align-items: center;
     color: #fafafa;
-    position: relative;
+    //position: relative;
     overflow: hidden;
     width: 100%;
   }
