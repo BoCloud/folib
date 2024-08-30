@@ -53,7 +53,7 @@ public class RpmLayoutProvider extends AbstractLayoutProvider<RpmArtifactCoordin
     @PostConstruct
     public void register()
     {
-        headerMappingRegistry.register(ALIAS, USER_AGENT_PREFIX);
+       // headerMappingRegistry.register(ALIAS, USER_AGENT_PREFIX);
         logger.info("Registered layout provider '{}' with alias '{}'.", getClass().getCanonicalName(), ALIAS);
     }
 
@@ -65,15 +65,12 @@ public class RpmLayoutProvider extends AbstractLayoutProvider<RpmArtifactCoordin
 
 
     @Override
-    public boolean isArtifactMetadata(RepositoryPath path)
-    {
-        return false;
-    }
+    public boolean isArtifactMetadata(RepositoryPath path) {return false;}
 
     public boolean isRpmMetadata(RepositoryPath path)
     {
-//        return !path.getFileName().toString().endsWith(".rpm");
-        return true;
+        return !path.getFileName().toString().endsWith(".rpm");
+       // return true;
     }
 
     @Override

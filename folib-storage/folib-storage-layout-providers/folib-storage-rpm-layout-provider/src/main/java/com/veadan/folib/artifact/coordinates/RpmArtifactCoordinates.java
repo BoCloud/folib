@@ -36,8 +36,7 @@ import org.neo4j.ogm.annotation.NodeEntity;
 @XmlRootElement(name = "RpmArtifactCoordinates")
 @XmlAccessorType(XmlAccessType.NONE)
 @ArtifactCoordinatesLayout(name = RpmArtifactCoordinates.LAYOUT_NAME, alias = RpmArtifactCoordinates.LAYOUT_ALIAS)
-public class RpmArtifactCoordinates
-        extends LayoutArtifactCoordinatesEntity<RpmArtifactCoordinates, SemanticVersion>
+public class RpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<RpmArtifactCoordinates, RpmArtifactCoordinates>
 {
     public static final String LAYOUT_NAME = "rpm";
 
@@ -101,6 +100,11 @@ public class RpmArtifactCoordinates
         return getCoordinate(BASE_NAME);
     }
 
+    @Override
+    public RpmArtifactCoordinates getNativeVersion() {
+        return null;
+    }
+
     public void setId(String id)
     {
         setCoordinate(BASE_NAME, id);
@@ -148,15 +152,15 @@ public class RpmArtifactCoordinates
     }
 
 
-    @Override
-    public SemanticVersion getNativeVersion()
-    {
-        String version = getVersion();
-
-        return version == null || version.isEmpty()
-                ? null
-                : SemanticVersion.parse(version);
-    }
+    //@Override
+    //public SemanticVersion getNativeVersion()
+    //{
+    //    String version = getVersion();
+    //
+    //    return version == null || version.isEmpty()
+    //            ? null
+    //            : SemanticVersion.parse(version);
+    //}
 
     @Override
     public String convertToPath(RpmArtifactCoordinates c)
