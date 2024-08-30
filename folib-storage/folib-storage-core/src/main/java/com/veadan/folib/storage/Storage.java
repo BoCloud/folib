@@ -26,4 +26,7 @@ public interface Storage
 
     Long getStorageMaxSize();
 
+    void setUsers(Set<String> users);
+
+    void setAdmin(String username);
 }

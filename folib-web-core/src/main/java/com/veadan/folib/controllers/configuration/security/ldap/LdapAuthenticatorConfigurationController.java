@@ -2,6 +2,7 @@ package com.veadan.folib.controllers.configuration.security.ldap;
 
 import javax.inject.Inject;
 
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.authentication.api.ldap.LdapAuthenticationConfigurationManager;
 import com.veadan.folib.authentication.api.ldap.LdapConfiguration;
 import com.veadan.folib.cluster.SyncLdapEnum;
@@ -9,6 +10,7 @@ import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.cluster.dto.SyncLdapDto;
 import com.veadan.folib.controllers.cluster.dto.SyncServerSettingsDto;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.forms.configuration.security.ldap.LdapConfigurationTestForm;
 import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.validation.RequestBodyValidationException;
@@ -100,7 +102,9 @@ public class LdapAuthenticatorConfigurationController
         return getSuccessfulResponseEntity(LDAP_TEST_PASSED, acceptHeader);
     }
 
+
     @ApiOperation(value = "更新 LDAP 配置设置")
+    @AuditLog(value = AuditEventNameEnum.LDAP_SETTING,target ="#configuration.managerDn" )
     @ApiResponses(value = { @ApiResponse(code = 200, message = "LDAP 配置更新成功。") })
     @PutMapping(produces = { MediaType.APPLICATION_JSON_VALUE })
     public ResponseEntity putLdapConfiguration(@RequestBody @Validated LdapConfiguration configuration,

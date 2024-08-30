@@ -1,5 +1,8 @@
 export default {
     'AddPermission': 'New Permission',
+    'EnterTheStorageQuery': 'Select The Storage Query',
+    'EnterTheRepositoryQuery': 'Select The Repository Query',
+    'EnterThePathQuery': 'Enter The Path Query',
     'EnterTheNameQuery': 'Enter The Name Query',
     'Name': 'Permission Name',
     'SingleName': 'Name',
@@ -7,6 +10,7 @@ export default {
     'Groups': 'Groups',
     'Operation': 'Operation',
     'Edit': 'Edit Permission',
+    'View': 'View Permission',
     'Create': 'New Permission',
     'Resources': 'Resources',
     'ResourcesDesc': 'Select the resource types to which the permission applies',
@@ -81,7 +85,16 @@ export default {
     'StorageSpace': 'StorageSpace',
     'SelectStorageSpace': 'Select StorageSpace',
     'SelectStorageSpaceDesc': 'Select all the storage space to which you wish to apply the permissions.',
-
-
-
+    'AtLeastOneRepository': 'Please select at least one repository',
+    'UserNoneSelectAuth': 'Select at least one permission for the user',
+    'UserSelected': 'The current repository has set up an administrator, confirm reselect?',
+    'GroupNoneSelectAuth': 'Select at least one permission for the user group',
+    'CheckAll': 'Check All',
+    'UnselectAll': 'Unselect All',
+    'DownloadDesc': 'Download artifacts',
+    'DeployCacheDesc': 'Deploys artifacts & deploys to remote repository caches',
+    'DeleteUpdateDesc': 'Deletes or overwrites artifacts',
+    'PromoDistributionDesc': 'Artifacts promote and distribute',
+    'Enabled': 'Enabled',
+    'Disabled': 'Disabled',
 }

@@ -1,5 +1,6 @@
 package com.veadan.folib.controllers.cron;
 
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.booters.PropertiesBooter;
 import com.veadan.folib.cluster.SyncCornJobEnum;
 import com.veadan.folib.controllers.BaseController;
@@ -12,6 +13,7 @@ import com.veadan.folib.cron.jobs.CronJobsDefinitionsRegistry;
 import com.veadan.folib.cron.jobs.GroovyCronJob;
 import com.veadan.folib.cron.services.CronJobSchedulerService;
 import com.veadan.folib.cron.services.CronTaskConfigurationService;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.forms.cron.CronTaskConfigurationForm;
 import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.validation.RequestBodyValidationException;
@@ -101,9 +103,11 @@ public class CronTaskController
     private ClusterSyncService clusterSyncService;
 
 
+
     @ApiOperation(value = "Used to save a new cron task job")
-    @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_SAVE_CONFIGURATION),
-            @ApiResponse(code = 400, message = FAILED_SAVE_CONFIGURATION)})
+    @AuditLog(value = AuditEventNameEnum.CRON_REPOSITORY,target ="#cronTaskConfigurationForm.jobClass" )
+    @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_SAVE_CONFIGURATION),
+                            @ApiResponse(code = 400, message = FAILED_SAVE_CONFIGURATION) })
     @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})

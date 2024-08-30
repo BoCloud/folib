@@ -30,7 +30,8 @@ export default {
     'FileSizeCount': 'Total file size (G)',
     '30daysData': 'Data in the last 30 days',
     '30DaysPromotionRanking': 'Top 10 Warehouses within 30 Advancement Rankings',
-    'TrendsInPromotionStatusWithin30':'Trends in promotion status within 30'
+    'TrendsInPromotionStatusWithin30':'Trends in promotion status within 30',
+    'Remove':'Remove',
    
     
 }

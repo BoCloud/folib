@@ -34,6 +34,7 @@ public class UserForm
     private boolean enabled;
 
     private Set<String> roles;
+    private Set<String> userGroupIds;
 
     private String securityTokenKey;
 
@@ -94,6 +95,14 @@ public class UserForm
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public Set<String> getUserGroupIds() {
+        return userGroupIds;
+    }
+
+    public void setUserGroupIds(Set<String> userGroupIds) {
+        this.userGroupIds = userGroupIds;
     }
 
     public interface NewUser

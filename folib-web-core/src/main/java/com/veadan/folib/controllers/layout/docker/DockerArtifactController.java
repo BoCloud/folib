@@ -22,6 +22,7 @@ import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.services.DirectoryListingService;
+import com.veadan.folib.services.StorageManagementService;
 import com.veadan.folib.storage.ArtifactStorageException;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
@@ -110,6 +111,8 @@ public class DockerArtifactController extends BaseArtifactController {
 
     @Inject
     private AuthenticationManager authenticationManager;
+    @Inject
+    private StorageManagementService storageManagementService;
 
     /**
      * 文件进度
@@ -976,6 +979,8 @@ public class DockerArtifactController extends BaseArtifactController {
             String link = "", next = "";
             List<String> resultList = Collections.emptyList(), dataList = Lists.newArrayList();
             if (CollectionUtil.isNotEmpty(storageList)) {
+                //查询数据库中存储空间绑定的用户
+                storageManagementService.getStorageUsers(storageList);
                 boolean filterByUser = !hasAdmin();
                 String finalUsername = username;
                 storageList = storageList.stream()

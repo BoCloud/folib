@@ -1357,6 +1357,10 @@
                       slot-scope="text, record">
                     {{ record.isThisCluster === true ? $t('Setting.Yes') : $t('Setting.No') }}
                   </div>
+                  <div slot="isSyncPrivilege"
+                       slot-scope="text, record">
+                    {{ record.isSyncPrivilege === true ? $t('Setting.Yes') : $t('Setting.No') }}
+                  </div>
                   <div slot="wsClientOnline"
                       slot-scope="text, record">
                     <span v-if="record.wsClientOnline && record.wsClientOnline === true" class="text-success">{{ $t('Setting.Online') }}</span>
@@ -1428,6 +1432,10 @@
       <a-tab-pane key="7"
                   tab="Webhook">
         <Webhook :activeKey="activeKey"></Webhook>
+      </a-tab-pane>
+      <a-tab-pane key="9"
+                  :tab="$t('Setting.auditConfig')">
+        <audit-config></audit-config>
       </a-tab-pane>
 
     </a-tabs>
@@ -1585,6 +1593,20 @@
               <a-switch v-model="artifactDispatchForm.isThisCluster" />
             </a-form-model-item>
           </a-col>
+          <a-col :span="24">
+          <a-form-model-item class="mb-10"
+                             :label="$t('Setting.SyncData')"
+                             :colon="false" style="position: relative"
+                             prop="isSyncPrivilege">
+              <a-popover placement="topLeft">
+                <template slot="content">
+                  <p class="mb-0">{{ $t('UnionRepository.SyncData') }}</p>
+                </template>
+                <a style="position: absolute;top: -54px;right: -28px;" class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
+              </a-popover>
+            <a-switch v-model="artifactDispatchForm.isSyncPrivilege" />
+          </a-form-model-item>
+        </a-col>
         </a-row>
       </a-form-model>
     </a-modal>
@@ -1768,6 +1790,7 @@ import ExternalNode from './components/ExternalNode/index.vue'
 import {upperCase} from "@antv/util";
 import PackageName from "./components/Package/index.vue"
 import AddPackageName from "./components/Package/add.vue"
+import AuditConfig from "./components/AuditConfig.vue";
 
 export default {
   props: ['navbarFixed'],
@@ -1775,7 +1798,8 @@ export default {
     Webhook,
     ExternalNode,
     PackageName,
-    AddPackageName
+    AddPackageName,
+    AuditConfig,
   },
   data() {
     const checkClusterEnName = (rule, value, callback) => {
@@ -1980,6 +2004,13 @@ export default {
           key: 'isThisCluster',
           width: 140,
           scopedSlots: { customRender: 'isThisCluster' }
+        },{
+          title: '同步数据',
+          i18nKey: 'Setting.SyncData',
+          dataIndex: 'isSyncPrivilege',
+          key: 'isSyncPrivilege',
+          width: 140,
+          scopedSlots: { customRender: 'isSyncPrivilege' }
         },
         {
           title: '在线状态',

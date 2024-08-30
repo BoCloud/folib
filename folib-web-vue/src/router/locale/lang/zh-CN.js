@@ -7,6 +7,8 @@ export default {
     'PermissionList': '权限列表',
     'Groups': '用户组管理',
     'GroupList': '用户组列表',
+    'AccessToken':'访问令牌',
+    'TokenList':'令牌列表',
     'GlobalSettings': '全局设置',
     'SetupManagement': '设置管理',
     'HealthMonitoring': '健康监测',

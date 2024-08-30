@@ -68,4 +68,8 @@ public class ClusterDispatchNodeDto implements Serializable {
      */
     private Integer kbps;
 
+    /**
+     * 是否同步权限
+     */
+    private Boolean isSyncPrivilege;
 }

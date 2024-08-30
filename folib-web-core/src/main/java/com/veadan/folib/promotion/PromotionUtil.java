@@ -1475,6 +1475,14 @@ public class PromotionUtil {
 
     }
 
+    /**
+     * 删除任务
+     * @param syncNo
+     */
+    public void deleteTask(String syncNo){
+        distributionService.deleteTask(syncNo);
+    }
+
     @Data
     @Accessors(chain = true)
     public static class ArtifactSliceUploadHttpEntityBuilder {

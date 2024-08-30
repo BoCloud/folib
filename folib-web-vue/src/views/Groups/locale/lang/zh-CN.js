@@ -6,6 +6,7 @@ export default {
     'AutoJoin': '自动加入',
     'AddGroup': '添加用户组',
     'EnterTheNameQuery': '输入名称查询',
+    'View': '查看用户组',
     'Edit': '编辑用户组',
     'Create': '创建用户组',
     'GroupSettings': '用户组设置',
@@ -30,4 +31,6 @@ export default {
     'DeployCache': '部署/缓存',
     'DeleteUpdate': '删除/更新',
     'PromoDistribution': '晋级/分发',
+    'Total': '共',
+    'Items': '条',
 }

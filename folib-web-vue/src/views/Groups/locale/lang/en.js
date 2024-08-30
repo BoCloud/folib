@@ -6,6 +6,7 @@ export default {
     'AutoJoin': 'Auto Join',
     'AddGroup': 'Add Group',
     'EnterTheNameQuery': 'Search',
+    'View': 'View Group',
     'Edit': 'Edit Group',
     'Create': 'Add Group',
     'GroupSettings': 'Group Settings',
@@ -30,5 +31,6 @@ export default {
     'DeployCache': 'Deploy/Cache',
     'DeleteUpdate': 'Delete/Update',
     'PromoDistribution': 'Promotion/Distribution',
-
+    'Total': 'Total',
+    'Items': 'Items',
 }

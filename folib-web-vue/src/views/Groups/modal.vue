@@ -2,95 +2,82 @@
     <a-drawer
         placement="right"
         width="65%"
-        :title="(isEdit ? $t('Groups.Edit') : $t('Groups.Create'))"
+        :title="(isView ? $t('Groups.View') : isEdit ? $t('Groups.Edit') : $t('Groups.Create'))"
         :visible="visible"
         @close="closeModal"
     >
         <a-spin :spinning="spinning">
-            <a-divider orientation="left">
-                {{ $t('Groups.GroupSettings') }}
-            </a-divider>
-            <div class="by-p-l-60">
-                <a-form-model
-                    ref="ruleForm"
-                    layout="inline"
-                    :model="form"
-                    :rules="rules"
-                    :label-col="labelCol"
-                    :wrapper-col="wrapperCol"
-                >
-                    <a-form-model-item ref="name" :label="$t('Groups.GroupName')" prop="name">
-                        <a-input
-                            v-model="form.name"
-                            @blur="() => { $refs.name.onFieldBlur() }"
-                        />
-                    </a-form-model-item>
-                    <a-form-model-item ref="name" :label="$t('Groups.Description')" prop="description">
-                        <a-input
-                            v-model="form.description"
-                        />
-                    </a-form-model-item>
-                    <!-- <a-form-model-item ref="name" :label="$t('Groups.ExternalID')" prop="externalID">
-                        <a-input
-                            v-model="form.externalID"
-                        />
-                    </a-form-model-item>-->
-                </a-form-model>
-                <!-- <a-divider orientation="left">
-                    {{ $t('Groups.Roles') }}
-                </a-divider>
-                <a-checkbox v-model="admin">
-                    {{ $t('Groups.AdministerPlatform') }}
-                </a-checkbox>
-                <a-checkbox v-model="resources" :disabled="resourcesDisabled">
-                    {{ $t('Groups.ManageResources') }}
-                    <a-tooltip placement="topLeft" :title="$t('Groups.ManageResourcesDesc')">
-                        <a-icon type="question-circle" />
-                    </a-tooltip>
-                </a-checkbox>-->
+            <div class="by-p-b-60">
                 <a-divider orientation="left">
-                    {{ $t('Groups.Options') }}
+                   <span class="by-f-w-600"> {{ $t('Groups.GroupSettings') }} </span>
                 </a-divider>
-                <a-checkbox v-model="auto">
-                    {{ $t('Groups.Automatically') }}
-                </a-checkbox>
-            </div>
-            <a-divider orientation="left">
-                {{ $t('Groups.Users') }}
-            </a-divider>
-            <div class="by-flex by-row-right by-m-b-10">
-                <a-input-search v-model="userSearchText" size="small" :placeholder="$t('Groups.EnterTheNameQuery')" @search="handleSearch()" class="by-w-200"/>
-            </div>
-            <a-table
-                :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }"
-                :columns="tableColumns"
-                :data-source="tableData"
-                size="small"
-                :pagination="{ pageSize: limit, current: page, total: total, showLessItems: true }"
-                :loading="loading"
-                @change="handleChangeTable"
-                :scroll="{ y: 500 }"
-            />
-            <template v-if="isEdit">
+                <div class="by-p-l-60">
+                    <a-form-model
+                        ref="ruleForm"
+                        layout="inline"
+                        :model="form"
+                        :rules="rules"
+                        :label-col="labelCol"
+                        :wrapper-col="wrapperCol"
+
+                    >
+                        <a-form-model-item ref="name" :label="$t('Groups.GroupName')" prop="name">
+                            <a-input
+                                v-model="form.name"
+                                :disabled="isView"
+                                @blur="() => { $refs.name.onFieldBlur() }"
+                            />
+                        </a-form-model-item>
+                        <a-form-model-item ref="name" :label="$t('Groups.Description')" prop="description">
+                            <a-input
+                                v-model="form.description"
+                                :disabled="isView"
+                            />
+                        </a-form-model-item>
+                    </a-form-model>
+                    <!-- <a-divider orientation="left">
+                        {{ $t('Groups.Options') }}
+                    </a-divider>-->
+                    <a-checkbox v-model="auto" :disabled="isView" class="by-m-t-10">
+                        {{ $t('Groups.Automatically') }}
+                    </a-checkbox>
+                </div>
                 <a-divider orientation="left">
-                    {{ $t('Groups.GroupPermissions') }}
+                    <span class="by-f-w-600">{{ $t('Groups.Users') }}</span>
                 </a-divider>
+                <div class="by-flex by-row-right by-m-b-10">
+                    <a-input-search v-model="userSearchText" size="small" :placeholder="$t('Groups.EnterTheNameQuery')" @search="handleSearch()" class="by-w-200"/>
+                </div>
                 <a-table
-                    :columns="i18nPermissionColumns"
-                    :data-source="permissionsList"
-                    :row-key="(r, i) => i.toString()"
-                    :pagination="false"
-                    :scroll="{ y: 300 }"
-                >
-                    <div slot="customTag" slot-scope="status">
-                        <div class="join-status" v-if="status">
-                            <a-icon type="check" />
+                    :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange, getCheckboxProps: getCheckboxProps }"
+                    :columns="tableColumns"
+                    :data-source="tableData"
+                    :pagination="{ pageSize: limit, current: page, total: total, showLessItems: true }"
+                    :loading="loading"
+                    @change="handleChangeTable"
+                    :scroll="{ y: 500 }"
+                />
+                <template v-if="isEdit">
+                    <a-divider orientation="left">
+                        <span class="by-f-w-600">{{ $t('Groups.GroupPermissions') }}</span>
+                    </a-divider>
+                    <a-table
+                        :columns="i18nPermissionColumns"
+                        :data-source="permissionsList"
+                        :row-key="(r, i) => i.toString()"
+                        :pagination="false"
+                        :scroll="{ y: 300 }"
+                    >
+                        <div slot="customTag" slot-scope="status">
+                            <div class="join-status" v-if="status">
+                                <a-icon type="check" />
+                            </div>
                         </div>
-                    </div>
-                </a-table>
-            </template>
+                    </a-table>
+                </template>
+            </div>
         </a-spin>
-        <div class="drawer-footer">
+        <div v-if="!isView" class="drawer-footer">
             <a-button :style="{ marginRight: '8px' }" @click="closeModal">
                 {{ $t(`Permissions.Cancel`) }}
             </a-button>
@@ -111,6 +98,7 @@ export default {
         return {
             visible: false,
             spinning: false,
+            isView: false,
             isEdit: false,
             loading: false,
             confirmLoading: false,
@@ -124,7 +112,7 @@ export default {
             admin: false,
             resources: false,
             resourcesDisabled: false,
-            auto: false,
+            auto: true,
             autoDisabled: false,
             page: 1,
             limit: 10,
@@ -214,15 +202,16 @@ export default {
         }
     },
     methods: {
-        openModal(id) {
+        openModal(id, isView) {
             this.visible = true;
+            this.isView = isView;
             this.isEdit = !!id;
             this.getUsers()
             if (id) this.getDetail(id)
         },
         closeModal() {
             this.$refs.ruleForm.resetFields()
-            this.auto = false
+            this.auto = true
             this.selectedRowKeys = []
             this.visible = false;
         },
@@ -236,7 +225,6 @@ export default {
         {
             this.spinning = true
             getGroupDetail(id).then(res => {
-                console.log(res);
                 const { roleAccess, userGroupDTO } = res
                 this.form.id = id
                 this.form.name = userGroupDTO.groupName
@@ -282,6 +270,13 @@ export default {
         },
         onSelectChange(selectedRowKeys) {
             this.selectedRowKeys = selectedRowKeys;
+        },
+        getCheckboxProps() {
+            return {
+                props: {
+                    disabled: this.isView
+                }
+            }
         },
         handleConfirm()
         {

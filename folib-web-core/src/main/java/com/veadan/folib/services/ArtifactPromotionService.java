@@ -168,4 +168,10 @@ public interface ArtifactPromotionService {
      */
    ResponseEntity<?>  updateTaskQueuePriority(String syncNo,int priority);
 
+   /**
+    * 删除任务
+    * @param syncNo
+    */
+   ResponseEntity<?> deleteTask(String syncNo);
+
 }

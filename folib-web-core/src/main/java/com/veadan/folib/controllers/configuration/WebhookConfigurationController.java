@@ -1,8 +1,10 @@
 package com.veadan.folib.controllers.configuration;
 
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.ResponseMessage;
 import com.veadan.folib.entity.WebhookLog;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.forms.configuration.WebhookConfigurationForm;
 import com.veadan.folib.services.WebhookService;
 import io.swagger.annotations.Api;
@@ -32,6 +34,7 @@ public class WebhookConfigurationController extends BaseController {
 
     @ApiOperation(value = "新增webhook")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @AuditLog(value = AuditEventNameEnum.WEB_HOOK,target =" '新增webhook url:'+#webhookConfigurationForm.url" )
     @PutMapping
     public ResponseEntity<ResponseMessage> addWebhookConfiguration(@RequestBody @Validated(WebhookConfigurationForm.AddGroup.class) WebhookConfigurationForm webhookConfigurationForm) throws IOException {
         webhookService.addWebhookConfiguration(webhookConfigurationForm);
@@ -39,6 +42,7 @@ public class WebhookConfigurationController extends BaseController {
     }
 
     @ApiOperation(value = "更新webhook")
+    @AuditLog(value = AuditEventNameEnum.WEB_HOOK,target =" '更新webhook:'+#webhookConfigurationForm.uuid" )
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PostMapping
     public ResponseEntity<ResponseMessage> updateWebhookConfiguration(@RequestBody @Validated(WebhookConfigurationForm.UpdateGroup.class) WebhookConfigurationForm webhookConfigurationForm) throws IOException {
@@ -47,6 +51,7 @@ public class WebhookConfigurationController extends BaseController {
     }
 
     @ApiOperation(value = "删除webhook")
+    @AuditLog(value = AuditEventNameEnum.WEB_HOOK,target ="'删除webhook:'+#webhookConfigurationForm.uuid" )
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @DeleteMapping
     public ResponseEntity<ResponseMessage> deleteWebhookConfiguration(@RequestBody @Validated(WebhookConfigurationForm.DeleteGroup.class) WebhookConfigurationForm webhookConfigurationForm) throws IOException {

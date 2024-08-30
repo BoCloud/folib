@@ -8,9 +8,12 @@ import com.veadan.folib.data.domain.DomainEntity;
 import com.veadan.folib.gremlin.adapters.DateConverter;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 import org.neo4j.ogm.annotation.typeconversion.Convert;
@@ -19,6 +22,8 @@ import org.neo4j.ogm.annotation.typeconversion.Convert;
  * @author xuxinping
  *
  */
+@EqualsAndHashCode(callSuper = true)
+@Data
 @NodeEntity(USER)
 public class UserEntity extends DomainEntity implements User
 {
@@ -30,12 +35,15 @@ public class UserEntity extends DomainEntity implements User
     private Boolean enabled = true;
 
     private String email;
-
     private String avatar;
 
     @Relationship(type = USER_HAS_SECURITY_ROLES, direction = OUTGOING)
     private Set<SecurityRole> roles = new HashSet<>();
 
+    private Set<Long> groupIds = new HashSet<>();
+
+    private Set<String> userGroups;
+    private Set<String> userGroupIds;
     private String securityTokenKey;
 
     @Convert(DateConverter.class)
@@ -44,7 +52,6 @@ public class UserEntity extends DomainEntity implements User
     private String sourceId;
 
     private String userType="general";
-
 
     @Override
     public String getUserType() {
@@ -88,6 +95,13 @@ public class UserEntity extends DomainEntity implements User
     public Set<SecurityRole> getRoles()
     {
         return roles;
+    }
+
+    @Override
+    public Set<Long> getGroupIds() {
+        return groupIds != null ? new HashSet<>(groupIds)
+                : new HashSet<>();
+
     }
 
     public void setRoles(Set<SecurityRole> roles)
@@ -175,5 +189,23 @@ public class UserEntity extends DomainEntity implements User
 
     public void setOriginalPassword(String originalPassword) {
         this.originalPassword = originalPassword;
+    }
+
+    @Override
+    public Set<String> getUserGroups() {
+        return userGroups;
+    }
+
+    public void setUserGroups(Set<String> userGroups) {
+        this.userGroups = userGroups;
+    }
+
+    @Override
+    public Set<String> getUserGroupIds() {
+        return userGroupIds;
+    }
+
+    public void setUserGroupIds(Set<String> userGroupIds) {
+        this.userGroupIds = userGroupIds;
     }
 }

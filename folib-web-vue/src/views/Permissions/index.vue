@@ -8,6 +8,46 @@
                     </a-button>
                 </a-col>
                 <a-col :span="3" class="ml-10">
+                    <a-select
+                        v-model="storageId"
+                        :placeholder="$t('Permissions.EnterTheStorageQuery')"
+                        showSearch
+                        allowClear
+                        style="width: 100%"
+                        @change="searchPermissions()"
+                        optionFilterProp="value"
+                    >
+                        <a-select-option
+                            v-for="(item, index) in storageList"
+                            :key="`${index}`"
+                            :value="item.id"
+                        >
+                            {{ item.id }}
+                        </a-select-option>
+                    </a-select>
+                </a-col>
+                <a-col :span="3" class="ml-10">
+                    <a-select
+                        v-model="repositoryId"
+                        :placeholder="$t('Permissions.EnterTheRepositoryQuery')"
+                        show-search
+                        allowClear
+                        @change="searchPermissions()"
+                        style="width: 100%"
+                    >
+                        <a-select-option
+                            v-for="item in repositoryList"
+                            :key="item.key"
+                            :value="item.key"
+                        >
+                            {{item.id}}
+                        </a-select-option>
+                    </a-select>
+                </a-col>
+                <a-col :span="3" class="ml-10">
+                    <a-input-search v-model="path" :placeholder="$t('Permissions.EnterThePathQuery')" @search="searchPermissions()"/>
+                </a-col>
+                <a-col :span="3" class="ml-10">
                     <a-input-search v-model="name" :placeholder="$t('Permissions.EnterTheNameQuery')" @search="searchPermissions()"/>
                 </a-col>
             </a-row>
@@ -16,7 +56,7 @@
                 :data-source="permissionsList"
                 row-key="id"
                 :loading="loading"
-                :pagination="{ pageSize: limit, current: page, total: total, showLessItems: true }"
+                :pagination="{ pageSize: limit, current: page, total: total, showLessItems: true, showTotal: total => `共 ${total} 条` }"
                 :scroll="{ x: true }"
                 @change="handleChangeTable"
             >
@@ -25,33 +65,50 @@
                         type="link"
                         size="small"
                         :disabled="record.isDefault === '1'"
-                        @click="userCreate(record.id)"
+                        @click="userCreate(record.id, true)"
                     >{{enName}}</a-button>
                 </div>
                 <div slot="users" slot-scope="users">
                     <div v-if="users" class="by-flex">
                         <div
-                            v-for="(item, index) in users.split(',')"
+                            v-for="(item, index) in users.split(',').splice(0, 3)"
                             :key="index"
                             class="custom-tag"
                         >
                             {{ item }}
                         </div>
+                        <span class="by-f-w-600">
+                            <span v-if="users.split(',').length > 3">...</span>
+                            <!-- <span>({{ users.split(',').length }})</span>-->
+                        </span>
                     </div>
                 </div>
                 <div slot="userGroups" slot-scope="userGroups">
                     <div v-if="userGroups" class="by-flex">
                         <div
-                            v-for="(item, index) in userGroups.split(',')"
+                            v-for="(item, index) in userGroups.split(',').splice(0, 3)"
                             :key="index"
                             class="custom-tag"
                         >
                             {{ item }}
                         </div>
+                        <span class="by-f-w-600">
+                            <span v-if="userGroups.split(',').length > 3">...</span>
+                            <!--  <span>({{ userGroups.split(',').length }})</span>-->
+                        </span>
                     </div>
                 </div>
                 <div slot="operation" slot-scope="text, record">
-                    <div class="col-action">
+                    <div class="col-action by-flex">
+                        <a-button type="link" size="small" @click="userCreate(record.id, false, record.isDefault === '1')">
+                            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path class="fill-muted"
+                                      d="M13.5858 3.58579C14.3668 2.80474 15.6332 2.80474 16.4142 3.58579C17.1953 4.36683 17.1953 5.63316 16.4142 6.41421L15.6213 7.20711L12.7929 4.37868L13.5858 3.58579Z"
+                                      fill="#111827" />
+                                <path class="fill-muted"
+                                      d="M11.3787 5.79289L3 14.1716V17H5.82842L14.2071 8.62132L11.3787 5.79289Z" fill="#111827" />
+                            </svg>
+                        </a-button>
                         <a-popconfirm :title="$t('Setting.SureDelete')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
                                       @confirm="handleDelete(record.id)">
                             <a-button v-if="record.isDefault === '0'" type="link" size="small">
@@ -72,6 +129,7 @@
 <script>
 import CreateModal from './components/modal.vue'
 import { getPermissionList, deletePermission } from "@/api/permissions";
+import { getStorages, getStoragesAndRepositories } from "@/api/folib";
 
 export default {
     name: "index",
@@ -80,6 +138,11 @@ export default {
     },
     data() {
         return {
+            storageId: undefined,
+            storageList: [],
+            repositoryList: [],
+            repositoryId: undefined,
+            path: '',
             name: '',
             limit: 10,
             page: 1,
@@ -131,10 +194,12 @@ export default {
     },
     mounted() {
         this.queryList()
+        this.getStorageList()
+        this.getRepositoryList()
     },
     methods: {
-        userCreate(id) {
-            this.$refs.modal.openModal(id)
+        userCreate(id, isView, isAdmin) {
+            this.$refs.modal.openModal(id, isView, isAdmin)
         },
         searchPermissions() {
             this.page = 1
@@ -150,7 +215,10 @@ export default {
             getPermissionList({
                 page: this.page,
                 limit: this.limit,
-                name: this.name
+                name: this.name,
+                storageId: this.storageId || '',
+                repositoryId: this.repositoryId ? this.repositoryId.split('/')[1] : '',
+                path: this.path
             }).then(res => {
                 if (res && res.data) {
                     this.permissionsList = res.data.rows
@@ -163,6 +231,22 @@ export default {
         handleChangeTable(pagination) {
             if (pagination) this.page = pagination.current
             this.queryList()
+        },
+        getStorageList() {
+            getStorages().then(res => {
+                this.storageList = res.storages;
+            })
+        },
+        getRepositoryList() {
+            getStoragesAndRepositories().then(res => {
+                this.repositoryList = []
+                res.forEach(item => {
+                    item.children.forEach(ele => {
+                        ele.key = ele.key.replace(',','/');
+                    })
+                    this.repositoryList.push(...item.children)
+                })
+            })
         },
     }
 }

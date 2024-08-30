@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
@@ -16,7 +17,7 @@ public class EncodedPasswordUser implements User {
 
     private final User user;
     private final PasswordEncoder passwordEncoder;
-
+    private Set<Long> groupIds = new HashSet<>();
     public EncodedPasswordUser(User user,
                                PasswordEncoder passwordEncoder) {
         this.user = user;
@@ -62,6 +63,22 @@ public class EncodedPasswordUser implements User {
     @Override
     public Set<SecurityRole> getRoles() {
         return user.getRoles();
+    }
+
+    @Override
+    public Set<Long> getGroupIds() {
+        return user.getGroupIds();
+
+    }
+
+    @Override
+    public Set<String> getUserGroups() {
+        return user.getUserGroups();
+    }
+
+    @Override
+    public Set<String> getUserGroupIds() {
+        return user.getUserGroupIds();
     }
 
     @Override

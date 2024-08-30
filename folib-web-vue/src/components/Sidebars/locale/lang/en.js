@@ -14,6 +14,8 @@ export default {
     'Groups': 'Group management',
     'GlobalSettings': 'Global Settings',
     'HealthMonitoring': 'Health monitoring',
+    'AccessToken':'Access Token',
+    'TokenList':'Token List',
     'SeniorOperations': 'Senior Operations',
     'DoNotKnowHowToUseIt': "Don't know how?",
     'CheckTheHelpDocumentation': 'Check the help documentation',

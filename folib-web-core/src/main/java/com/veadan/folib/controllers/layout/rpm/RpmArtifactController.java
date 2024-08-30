@@ -4,6 +4,7 @@ package com.veadan.folib.controllers.layout.rpm;
 import com.veadan.folib.config.RepodataUtil;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.entity.Dict;
+import com.veadan.folib.metadata.indexer.RpmRepoIndexer;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.RpmLayoutProvider;
 import com.veadan.folib.services.DictService;
@@ -15,6 +16,7 @@ import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -44,6 +46,9 @@ public class RpmArtifactController extends BaseArtifactController {
 
     @Inject
     private RepositoryManagementService repositoryManagementService;
+
+    @Value("${folib.temp}")
+    private  String tempPath;
 
     private final Object lock = new Object();
 
@@ -84,8 +89,10 @@ public class RpmArtifactController extends BaseArtifactController {
             // 刷新索引
             RepositoryPath repoPath = repositoryPathResolver.resolve(repository, "");
             String absolutePath = repoPath.toAbsolutePath().toString();
-            repodataUtil.updateIndex(absolutePath);
-        } catch (IOException | InterruptedException e) {
+            //repodataUtil.updateIndex(absolutePath);
+            RpmRepoIndexer rpmRepoIndexer = new RpmRepoIndexer(repositoryPathResolver,artifactManagementService,tempPath);
+            rpmRepoIndexer.indexWriter(repository);
+        } catch (Exception e) {
             logger.error(e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(e.getMessage());
@@ -117,17 +124,20 @@ public class RpmArtifactController extends BaseArtifactController {
             }
 
             RepositoryPath repoPath = repositoryPathResolver.resolve(repository, "repodata");
+            RpmRepoIndexer rpmRepoIndexer = new RpmRepoIndexer(repositoryPathResolver,artifactManagementService,tempPath);
             if (!Files.exists(repoPath)) {
                 synchronized (lock) {
                     RepositoryPath reposPath = repositoryPathResolver.resolve(repository, "");
                     String absolutePath = reposPath.toAbsolutePath().toString();
-                    repodataUtil.createRepo(absolutePath);
+                   // repodataUtil.createRepo(absolutePath);
+                    rpmRepoIndexer.indexWriter(repository);
                 }
             } else {
                 // 刷新索引
                 RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, "");
                 String absolutePath = repositoryPath.toAbsolutePath().toString();
-                repodataUtil.updateIndex(absolutePath);
+                //repodataUtil.updateIndex(absolutePath);
+                rpmRepoIndexer.indexWriter(repository);
             }
             return ResponseEntity.ok("The artifact was deployed successfully.");
         } catch (Exception e) {
@@ -150,10 +160,12 @@ public class RpmArtifactController extends BaseArtifactController {
     @GetMapping(value = {"{storageId}/{repositoryId}/buildIndex"})
     public ResponseEntity buildIndex(@RepositoryMapping Repository repository) {
         try {
+            RpmRepoIndexer rpmRepoIndexer = new RpmRepoIndexer(repositoryPathResolver,artifactManagementService,tempPath);
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, "");
             String absolutePath = repositoryPath.toAbsolutePath().toString();
             repodataUtil.deleteRepo(absolutePath + "/repodata");
-            repodataUtil.createRepo(absolutePath);
+            //repodataUtil.createRepo(absolutePath);
+            rpmRepoIndexer.indexWriter(repository);
             return ResponseEntity.ok("The rpm repository was build index successfully.");
         } catch (Exception e) {
             log.error("Build index err {}", e.getMessage());

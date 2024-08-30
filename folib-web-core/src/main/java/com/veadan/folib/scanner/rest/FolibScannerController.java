@@ -3,6 +3,8 @@ package com.veadan.folib.scanner.rest;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.veadan.folib.annotation.AuditLog;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.scanner.biz.FolibScannerBiz;
 import com.veadan.folib.scanner.common.base.BaseController;
 import com.veadan.folib.scanner.common.msg.ObjectRestResponse;
@@ -33,8 +35,10 @@ public class FolibScannerController extends BaseController<FolibScannerBiz, Foli
     @Autowired
     private ScanService scanService;
 
+
     @GetMapping("/update")
     @PreAuthorize("hasAuthority('ADMIN')")
+    @AuditLog(value = AuditEventNameEnum.BUG_UPDATE,target ="" )
     public ObjectRestResponse updateDb(String cron) {
         scanService.vulnerabilityRefreshData(UserUtils.getUsername(), cron);
         return new ObjectRestResponse(true, "更新中");

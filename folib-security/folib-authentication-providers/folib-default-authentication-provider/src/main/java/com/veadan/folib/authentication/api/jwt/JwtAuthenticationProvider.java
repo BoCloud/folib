@@ -63,6 +63,7 @@ public class JwtAuthenticationProvider extends AbstractUserDetailsAuthentication
         }
         catch (InvalidTokenException e)
         {
+            logger.error(e.getMessage(), e);
             throw new BadCredentialsException("invalid.token");
         }
 

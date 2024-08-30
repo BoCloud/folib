@@ -194,6 +194,8 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
 
     @Value("${folib.temp}")
     private String tempPath;
+    @Inject
+    private StorageManagementService storageManagementService;
 
     @Override
     public void exportExcel(String vulnerabilityUuid, String storageId, String repositoryId, HttpServletResponse response) throws IOException {
@@ -1855,7 +1857,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             return storageIdList;
         }
         for (Map.Entry<String, Storage> entry : configurationManagementService.getConfiguration().getStorages().entrySet()) {
-            Set<String> userSet = entry.getValue().getUsers();
+            //查询数据库中存储空间绑定的用户
+            String storageId = entry.getKey();
+            Map<String, Set<String>> storageUser = storageManagementService.getStorageUser(Collections.singleton(storageId));
+            Set<String> userSet = storageUser.get(storageId);
             if (CollectionUtils.isNotEmpty(userSet)) {
                 if (userSet.contains(username)) {
                     storageIdList.add(entry.getKey());
@@ -2098,6 +2103,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             return storageIdAndRepositoryIdList;
         }
         List<Storage> storageList = configurationManagementService.getConfiguration().getStorages().values().stream().filter(item -> storageIdList.contains(item.getId())).collect(Collectors.toList());
+        //查询数据库中存储空间绑定的用户
+        storageManagementService.getStorageUsers(storageList);
+
         for (Storage storage : storageList) {
             Set<String> userSet = storage.getUsers();
             if (CollectionUtils.isNotEmpty(userSet) && userSet.contains(loginUsername())) {
