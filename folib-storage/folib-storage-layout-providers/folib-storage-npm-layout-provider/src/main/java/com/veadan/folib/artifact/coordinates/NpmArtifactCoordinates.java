@@ -48,7 +48,7 @@ public class NpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<NpmA
             NPM_VERSION_REGEX + ")/" + NPM_NAME_REGEX + "(-(" +
             NPM_VERSION_REGEX + "))?\\." + NPM_EXTENSION_REGEX;
 
-    private static final Pattern NPM_NAME_PATTERN = Pattern.compile(NPM_NAME_REGEX);
+    public static final Pattern NPM_NAME_PATTERN = Pattern.compile(NPM_NAME_REGEX);
 
     private static final Pattern NPM_PATH_PATTERN = Pattern.compile(NPM_PACKAGE_PATH_REGEX);
 
