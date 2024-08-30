@@ -308,14 +308,14 @@ public class RpmRepoIndexer {
             Element primaryRootElement = docPrimary.createElement("metadata");
             primaryRootElement.setAttribute("xmlns", "http://linux.duke.edu/metadata/common");
             primaryRootElement.setAttribute("xmlns:rpm", "http://linux.duke.edu/metadata/rpm");
-            primaryRootElement.setAttribute("packages", "1");
+            primaryRootElement.setAttribute("packages", Integer.toString(paths.size()));
             docPrimary.appendChild(primaryRootElement);
 
             Document docOther = dbBuilder.newDocument();
 
             Element otherRootElement = docOther.createElement("otherdata");
             otherRootElement.setAttribute("xmlns", "http://linux.duke.edu/metadata/other");
-            otherRootElement.setAttribute("packages", "1");
+            otherRootElement.setAttribute("packages", Integer.toString(paths.size()));
             docOther.appendChild(otherRootElement);
 
             for (Path path : paths) {
@@ -410,7 +410,7 @@ public class RpmRepoIndexer {
 
         // Location
         Element locationElement = doc.createElement("location");
-        locationElement.setAttribute("href", metadata.getHref());
+        locationElement.setAttribute("href", String.format("%s.rpm",metadata.getHref()));
         packageElement.appendChild(locationElement);
 
         // Checksum
@@ -597,7 +597,7 @@ public class RpmRepoIndexer {
             rootElement.appendChild(otherDataElement);
 
             Element otherLocationElement = doc.createElement("location");
-            otherLocationElement.setAttribute("href", String.format("%s.rpm",repomdMetadata.getOther().getHref()));
+            otherLocationElement.setAttribute("href", repomdMetadata.getOther().getHref());
             otherDataElement.appendChild(otherLocationElement);
 
             Element otherChecksumElement = doc.createElement("checksum");
