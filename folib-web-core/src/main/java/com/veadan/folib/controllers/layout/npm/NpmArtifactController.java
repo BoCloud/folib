@@ -262,6 +262,10 @@ public class NpmArtifactController
                                          HttpServletResponse response,
                                          @RequestHeader HttpHeaders httpHeaders)
             throws Exception {
+        if (StringUtils.isNotBlank(packageScope) && !packageScope.startsWith("@")) {
+            viewPackageWithScope(repository, null, packageScope, packageName, response);
+            return;
+        }
         long startTime = System.currentTimeMillis();
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         String packageId = NpmArtifactCoordinates.calculatePackageId(packageScope, packageName);
