@@ -404,7 +404,7 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         }
 
         //保存关联权限
-        Map<String, List<RoleResourceRef>> roleMap = roleResourceRefs.stream().map(ref -> RoleResourceRef.builder().roleId(ref.getRoleId()).resourceId(ref.getResourceId()).resourceType(ref.getResourceType())
+        Map<String, List<RoleResourceRef>> roleMap = roleResourceRefs.stream().filter(ref -> StringUtils.isNotEmpty(ref.getResourceType())).map(ref -> RoleResourceRef.builder().roleId(ref.getRoleId()).resourceId(ref.getResourceId()).resourceType(ref.getResourceType())
                 .storagePrivilege(ref.getStoragePrivilege()).repositoryPrivilege(ref.getRepositoryPrivilege()).pathPrivilege(ref.getPathPrivilege()).build()).distinct().collect(Collectors.groupingBy(RoleResourceRef::getRoleId));
         List<RoleResourceRef> updateRefs = new ArrayList<>();
         userPermissions.forEach(userPermission -> {
