@@ -210,6 +210,7 @@ public class StorageManagementServiceImpl implements StorageManagementService {
         List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryRefsByRoleIds(roleIds);
         Map<String, List<RoleResourceRef>> roleUserMap = roleResourceRefs.stream().filter(r -> Objects.nonNull(r.getRefType()) && r.getRefType().equals(GlobalConstants.ROLE_TYPE_USER)).collect(Collectors.groupingBy(RoleResourceRef::getRoleId));
         storages.forEach(storage -> {
+            storage.setUsers(new HashSet<>());
             List<RoleResourceRef> adminRef = roleUserMap.get(String.format("STORAGE_ADMIN_%S", storage.getId()));
             if (CollectionUtils.isNotEmpty(adminRef)) {
                 String adminUser = adminRef.get(0).getEntityId();

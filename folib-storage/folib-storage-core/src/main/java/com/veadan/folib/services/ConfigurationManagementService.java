@@ -289,4 +289,11 @@ public interface ConfigurationManagementService {
     void setUnionRepositoryConfiguration(String storageId,
                                          String repositoryId,
                                          MutableUnionRepositoryConfiguration mutableUnionRepositoryConfiguration) throws IOException;
+
+    /**
+     * 新增或者更新仓库
+     * @param storageId     存储空间
+     * @param repository    仓库
+     */
+    void addOrUpdateRepository(String storageId, RepositoryDto repository);
 }

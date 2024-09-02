@@ -167,11 +167,7 @@ public class RelationalDatabaseUserService implements UserService
                 String repositoryId = repository.getId();
                 Repository repositoryInfo = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId);
                 if (repositoryInfo == null) {
-                    try {
-                        configurationManagementService.saveRepository(storageId, repository);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
+                    configurationManagementService.addOrUpdateRepository(storageId, repository);
                 }
             });
         }

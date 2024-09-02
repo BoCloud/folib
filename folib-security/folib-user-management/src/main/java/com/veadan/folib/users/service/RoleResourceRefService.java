@@ -117,4 +117,10 @@ public interface RoleResourceRefService{
     List<FolibUser> queryUserByRoleIds(String roleId);
 
     void deleteAllByRoleId(String roleId);
+
+    /**
+     *  更新存储空间关联用户
+     * @param userPermission 用户权限
+     */
+    void updateStorageUser(UserPermissionDTO userPermission);
 }
