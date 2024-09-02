@@ -90,8 +90,8 @@ public class PrivilegeEventListener {
                 Boolean wsClientOnline = value.getWsClientOnline();
                 Boolean isSyncPrivilege = value.getIsSyncPrivilege();
 
-                if (!isThisCluster &&
-                        !Objects.equals(wsClientOnline, null) && wsClientOnline
+                if (!isThisCluster && value.getAutoRegister()
+                        && !Objects.equals(wsClientOnline, null) && wsClientOnline
                         && !Objects.equals(isSyncPrivilege, null) && isSyncPrivilege) {
                     WSMessageRequest wsMessageRequest = null;
                     WSMessageResponse messageResponse = null;
