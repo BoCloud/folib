@@ -40,6 +40,7 @@ import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.providers.layout.LayoutProvider;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import com.veadan.folib.providers.storage.FileSystemStorageProvider;
+import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
@@ -275,6 +276,50 @@ public class StoragesConfigurationController
         }
     }
 
+
+    @JsonView(Views.ShortStorage.class)
+    @ApiOperation(value = "Retrieve the basic info about storages.")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public TableResultResponse<Storage> getStorages(Authentication authentication,
+                                                    @RequestParam(name = "page") Integer page,
+                                                    @RequestParam(name = "limit") Integer limit,
+                                                    @RequestParam(name = "storageId", required = false) String storageId) {
+
+        List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
+                .getStorages()
+                .values());
+        if (StringUtils.isNotEmpty(storageId)) {
+            storages = storages.stream().filter(storage -> storage.getId().contains(storageId)).collect(Collectors.toList());
+        }
+        List<Storage> pageStorages = storages.stream().skip((long) (page - 1) * limit).limit(limit).collect(Collectors.toList());
+
+        //查询数据库中存储空间绑定的用户
+        storageManagementService.getStorageUsers(pageStorages);
+        String username = "";
+        if (Objects.nonNull(authentication)) {
+            final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
+            username = loggedUser.getUsername();
+        }
+        StoragesOutput storagesOutput = new StoragesOutput(pageStorages);
+        if (!hasAdmin()) {
+            List<Storage> list = storagesOutput.getStorages();
+            String finalUsername = username;
+            List<Storage> collect = list.stream().filter(s ->
+                    (CollectionUtil.isNotEmpty(s.getUsers()) && s.getUsers().contains(finalUsername)) ||
+                            (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())))
+            ).collect(Collectors.toList());
+            storagesOutput.setStorages(collect);
+        }
+        if (Objects.isNull(storagesOutput.getStorages())) {
+            return new TableResultResponse<>(0, null);
+        }
+        return new TableResultResponse<>(storagesOutput.getStorages().size(), storagesOutput.getStorages());
+
+    }
+
     @JsonView(Views.ShortStorage.class)
     @ApiOperation(value = "Retrieve the basic info about storages.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "")})
@@ -303,7 +348,80 @@ public class StoragesConfigurationController
         }
         return ResponseEntity.ok(storagesOutput);
     }
+    @ApiOperation(value = "Retrieve the basic info about storages and repositories.")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @GetMapping(value = "/getStoragesAndRepositories", produces = MediaType.APPLICATION_JSON_VALUE)
+    public TableResultResponse<StorageTreeForm> getStoragesAndRepositories(@ApiParam(value = "Search for repository names in a specific storageId")
+                                                     @RequestParam(value = "storageId", required = false)
+                                                     String storageId,
+                                                     @ApiParam(value = "Filter repository names by type (i.e. hosted, group, proxy)")
+                                                     @RequestParam(value = "type", required = false)
+                                                     String type,
+                                                     @ApiParam(value = "Filter exclude repository names by type (i.e. hosted, group, proxy)")
+                                                     @RequestParam(value = "excludeType", required = false)
+                                                     String excludeType,
+                                                     @ApiParam(value = "Search for exclude repository names")
+                                                     @RequestParam(value = "excludeRepositoryId", required = false)
+                                                     String excludeRepositoryId,
+                                                     @ApiParam(value = "Filter repository names by repository layout")
+                                                     @RequestParam(value = "layout", required = false)
+                                                     String layout,
+                                                     @ApiParam(value = "Filter repository names by repository policy")
+                                                     @RequestParam(value = "policy", required = false)
+                                                     String policy, Authentication authentication,
+                                                     @RequestParam(name = "page") Integer page,
+                                                     @RequestParam(name = "limit") Integer limit) {
+        List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
+                .getStorages()
+                .values());
+        //查询数据库中存储空间绑定的用户
+        storageManagementService.getStorageUsers(storages);
+        final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
+        String username = loggedUser.getUsername();
+        List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
+        if (CollectionUtil.isNotEmpty(storages)) {
+            boolean filterByUser = !hasAdmin();
+            boolean filterByStorageId = StringUtils.isNotBlank(storageId);
+            boolean filterByType = StringUtils.isNotBlank(type);
+            boolean filterByLayout = StringUtils.isNotBlank(layout);
+            boolean filterByExcludeRepositoryId = StringUtils.isNotBlank(excludeRepositoryId);
+            boolean filterByExcludeType = StringUtils.isNotBlank(excludeType);
+            boolean filterByPolicy = StringUtils.isNotBlank(policy);
+            storages = storages.stream()
+                    .distinct()
+                    .filter(s -> !filterByUser || (CollectionUtil.isNotEmpty(s.getUsers()) && s.getUsers().contains(loggedUser.getUsername())) ||
+                            (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope()))))
+                    .filter(s -> !filterByStorageId || s.getId().equalsIgnoreCase(storageId))
+                    .collect(Collectors.toCollection(LinkedList::new));
+            StorageTreeForm storageTreeForm;
+            List<Repository> repositories;
+            for (Storage storage : storages) {
+                boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username));
+                storageTreeForm = StorageTreeForm.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
+                repositories = new LinkedList<Repository>(storage.getRepositories().values());
+                repositories = repositories.stream().distinct()
+                        .filter(r -> !filterByType || r.getType().equalsIgnoreCase(type))
+                        .filter(r -> !filterByLayout || r.getLayout().equalsIgnoreCase(layout))
+                        .filter(r -> !filterByPolicy || r.getPolicy().equalsIgnoreCase(policy))
+                        .filter(r -> !filterByExcludeRepositoryId || !r.getId().equalsIgnoreCase(excludeRepositoryId))
+                        .filter(r -> !filterByExcludeType || !r.getType().equalsIgnoreCase(excludeType))
+                        .collect(Collectors.toCollection(LinkedList::new));
+                if (flag) {
+                    repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()))).collect(Collectors.toList());
+                }
+                storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeForm.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout())
+                        .scope(repository.getScope()).build()).collect(Collectors.toList()));
+                storageTreeForms.add(storageTreeForm);
+            }
+        }
+        storageTreeForms = storageTreeForms.stream().skip((page-limit)*limit).limit(limit).collect(Collectors.toList());
 
+        if (Objects.isNull(storageTreeForms)) {
+            return new TableResultResponse<>(0, null);
+        }
+        return new TableResultResponse<>(storageTreeForms.size(), storageTreeForms);
+    }
     @ApiOperation(value = "Retrieve the basic info about storages and repositories.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "")})
     @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
