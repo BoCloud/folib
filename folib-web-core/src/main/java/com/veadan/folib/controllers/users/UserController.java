@@ -312,6 +312,9 @@ public class UserController
 
         userService.deleteByUsername(user.getUsername());
 
+        //同步用户信息到其他节点
+        privilegeEventListenerRegistry.dispatchDeleteUserSyncEvent(username);
+
         return getSuccessfulResponseEntity(SUCCESSFUL_DELETE_USER, accept);
     }
 

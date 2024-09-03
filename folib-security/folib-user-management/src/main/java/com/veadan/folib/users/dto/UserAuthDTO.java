@@ -45,6 +45,15 @@ public class UserAuthDTO{
     /**仓库*/
     private List<RepositoryDto> repositorys;
 
+    @ApiModelProperty("删除用户信息")
+    protected List<String> removeUserIds;
+    @ApiModelProperty("删除角色信息")
+    protected List<String> removeRoleIds;
+    @ApiModelProperty("删除用户组")
+    protected List<Long> removeGroupIds;
+    @ApiModelProperty("删除资源")
+    protected List<String> removeResourceIds;
+
     public List<UserGroupRef> getUserGroups() {
         if (CollectionUtils.isNotEmpty(userGroups)) {
             userGroups.forEach(userRole -> userRole.setId(null));

@@ -68,5 +68,4 @@ public interface UserService {
     List<User> findUserByRoles(List<String> rolesList);
 
 
-    void syncUserAuth(UserAuthDTO date);
 }

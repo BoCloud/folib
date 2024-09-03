@@ -1,6 +1,5 @@
 package com.veadan.folib.users.service;
 
-import com.veadan.folib.domain.SecurityRole;
 import com.veadan.folib.dto.PermissionsDTO;
 import com.veadan.folib.dto.RoleDTO;
 import com.veadan.folib.dto.UserRoleDTO;
@@ -123,4 +122,8 @@ public interface RoleResourceRefService{
      * @param userPermission 用户权限
      */
     void updateStorageUser(UserPermissionDTO userPermission);
+
+    void deleteByResourceIds(List<String> resourceId);
+
+    List<RoleResourceRef> queryByResourceIds(List<String> resourceIds);
 }

@@ -399,6 +399,20 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
     }
 
     @Override
+    public void deleteByResourceIds(List<String> resourceIds) {
+        Example example = Example.builder(RoleResourceRef.class).build();
+        example.createCriteria().andIn("resourceId", resourceIds);
+        roleResourceRefMapper.deleteByExample(example);
+    }
+
+    @Override
+    public List<RoleResourceRef> queryByResourceIds(List<String> resourceIds) {
+        Example example = Example.builder(RoleResourceRef.class).build();
+        example.createCriteria().andIn("resourceId", resourceIds);
+        return roleResourceRefMapper.selectByExample(example);
+    }
+
+    @Override
     public void deleteByentityId(String entityId, String refType) {
         Example example = new Example(RoleResourceRef.class);
         example.createCriteria().andEqualTo("entityId", entityId).andEqualTo("refType", refType);
