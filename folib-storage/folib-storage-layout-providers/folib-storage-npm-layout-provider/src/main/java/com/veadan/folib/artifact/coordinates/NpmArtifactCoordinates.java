@@ -48,8 +48,8 @@ public class NpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<NpmA
     public static final String NPM_EXTENSION_REGEX = "(tgz|json|har|json5)";
 
     public static final String NPM_PACKAGE_PATH_REGEX = "(@?" + NPM_NAME_REGEX + ")/(" + NPM_NAME_REGEX + ")/(" +
-                                                        NPM_VERSION_REGEX + ")/" + NPM_NAME_REGEX + "(-(" +
-                                                        NPM_VERSION_REGEX + "))?\\." + NPM_EXTENSION_REGEX;
+            NPM_VERSION_REGEX + ")/" + NPM_NAME_REGEX + "(-(" +
+            NPM_VERSION_REGEX + "))?\\." + NPM_EXTENSION_REGEX;
 
     public static final Pattern NPM_NAME_PATTERN = Pattern.compile(NPM_NAME_REGEX);
 
@@ -127,9 +127,9 @@ public class NpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<NpmA
     {
         Matcher matcher = NPM_NAME_PATTERN.matcher(name);
         Assert.isTrue(matcher.matches(),
-                      String.format("The artifact's name [%s] should follow the NPM specification " +
-                                    "(https://docs.npmjs.com/files/package.json#name).",
-                                    name));
+                String.format("The artifact's name [%s] should follow the NPM specification " +
+                                "(https://docs.npmjs.com/files/package.json#name).",
+                        name));
 
         setCoordinate(NAME, name);
     }
@@ -258,9 +258,9 @@ public class NpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<NpmA
         Matcher matcher = NPM_PATH_PATTERN.matcher(path);
 
         Assert.isTrue(matcher.matches(),
-                      String.format("Illegal artifact path [%s], NPM artifact path should be in the form of " +
-                                    "'{artifactGroup}/{artifactName}/{artifactVersion}/{artifactFile}'.",
-                                    path));
+                String.format("Illegal artifact path [%s], NPM artifact path should be in the form of " +
+                                "'{artifactGroup}/{artifactName}/{artifactVersion}/{artifactFile}'.",
+                        path));
 
         String group = matcher.group(1);
         String name = matcher.group(2);

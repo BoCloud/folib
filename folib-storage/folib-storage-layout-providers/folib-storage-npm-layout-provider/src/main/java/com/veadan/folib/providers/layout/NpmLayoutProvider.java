@@ -77,7 +77,7 @@ public class NpmLayoutProvider
     @Override
     public boolean isArtifactMetadata(RepositoryPath path)
     {
-        return path.getFileName().toString().endsWith(PACKAGE_JSON);
+        return path.getFileName().toString().endsWith(PACKAGE_JSON) || path.getFileName().toString().endsWith(OH_PACKAGE_JSON);
     }
 
     public boolean isNpmMetadata(RepositoryPath path)
