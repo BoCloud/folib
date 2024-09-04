@@ -142,7 +142,10 @@ public class ArtifactSyncRecordServiceImpl implements ArtifactSyncRecordService 
         return dtoList.stream().map(dto -> dtoToRes.apply(dto)).collect(Collectors.toList());
     }
 
-    public  BigDecimal convertBytesToGB(long fileSizeInBytes) {
+    public  BigDecimal convertBytesToGB(Long fileSizeInBytes) {
+        if (Objects.isNull(fileSizeInBytes)) {
+            return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        }
         BigDecimal fileSize = new BigDecimal(fileSizeInBytes);
         return fileSize.divide(GIGABYTE, 2, RoundingMode.HALF_UP);
     }
