@@ -37,13 +37,11 @@ public class RpmArtifactCoordinatesUtils
      */
     public static RpmArtifactCoordinates parse(@NotEmpty String path)
     {
-        String fileName = FilenameUtils.getName(path);
-        if (!fileName.endsWith(".rpm"))
+        String rpmFileName = FilenameUtils.getName(path);
+        if (!rpmFileName.endsWith(".rpm"))
         {
             throw new IllegalArgumentException("The artifact packaging can be only '.rpm'");
         }
-
-        String rpmFileName = "rpmfusion-free-release-5-1.noarch.rpm";
 
         // 正则表达式分为四部分：baseName, version, release, packageType
         String regex = "^(.*?)-([^-]+)-([^-]+)\\.([^.]+)\\.rpm$";
@@ -59,12 +57,12 @@ public class RpmArtifactCoordinatesUtils
             RpmArtifactCoordinates artifactCoordinates;
             if (RpmPackageType.SOURCE.equals(type))
             {
-                artifactCoordinates = new RpmArtifactCoordinates(baseName, version, release, RpmPackageType.SOURCE);
+                artifactCoordinates = new RpmArtifactCoordinates(baseName, version, release,path,RpmPackageType.SOURCE);
             }
             else
             {
-                RpmPackageArch arch = parseArch(fileName);
-                artifactCoordinates = new RpmArtifactCoordinates(baseName, version, release, RpmPackageType.SOURCE, arch);
+                RpmPackageArch arch = parseArch(rpmFileName);
+                artifactCoordinates = new RpmArtifactCoordinates(baseName, version, release, RpmPackageType.valueOf(type.toUpperCase()), arch, path);
             }
 
             return artifactCoordinates;

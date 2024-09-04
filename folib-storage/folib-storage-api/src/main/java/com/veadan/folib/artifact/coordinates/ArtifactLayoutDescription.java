@@ -120,6 +120,7 @@ public class ArtifactLayoutDescription
     private static String parseProperty(PropertyDescriptor p)
     {
         String propertyName = p.getName();
+        System.out.println(propertyName);
         Method propertyReadMethod = p.getReadMethod();
         Class<?> propertyOwnerClass = propertyReadMethod.getDeclaringClass();
         Field propertyField;

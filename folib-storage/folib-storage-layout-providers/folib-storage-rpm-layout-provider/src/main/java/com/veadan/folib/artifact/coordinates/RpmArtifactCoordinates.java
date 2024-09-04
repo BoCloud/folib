@@ -1,18 +1,28 @@
 package com.veadan.folib.artifact.coordinates;
 
+import javax.annotation.Nonnull;
 import javax.validation.constraints.NotBlank;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import com.veadan.folib.artifact.coordinates.versioning.SemanticVersion;
+import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
 import com.veadan.folib.domain.RpmPackageArch;
 import com.veadan.folib.domain.RpmPackageType;
+import com.veadan.folib.providers.io.RepositoryFiles;
+import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.util.RpmArtifactCoordinatesUtils;
 import org.codehaus.commons.nullanalysis.NotNull;
 import org.neo4j.ogm.annotation.NodeEntity;
+import org.springframework.util.Assert;
+
+import java.io.IOException;
+import java.net.URI;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * This class is an {@link ArtifactCoordinates} implementation for RPM-packages.
@@ -56,33 +66,37 @@ public class RpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<RpmA
 
     public static final String DEFAULT_EXTENSION = "rpm";
 
+    public static final String NAME = "name";
+
+    public String path;
+
 
     public RpmArtifactCoordinates(@NotBlank String baseName,
                                   @NotBlank String version,
                                   @NotBlank String release,
                                   @NotNull RpmPackageType packageType,
-                                  @NotNull RpmPackageArch arch)
+                                  @NotNull RpmPackageArch arch,
+                                  @NotBlank String path)
     {
         this();
-        setId(baseName);
+        setId(path);
+        setBaseName(baseName);
         setVersion(version);
         setRelease(release);
         setPackageType(packageType);
-
-        if (packageType == RpmPackageType.BINARY)
-        {
-            setArchitecture(arch);
-        }
+        setArchitecture(arch);
         setExtension();
     }
 
     public RpmArtifactCoordinates(@NotBlank String baseName,
                                   @NotBlank String version,
                                   @NotBlank String release,
+                                  @NotBlank String path,
                                   @NotNull RpmPackageType packageType)
     {
         this();
-        setId(baseName);
+        setId(path);
+        setBaseName(baseName);
         setVersion(version);
         setRelease(release);
         setPackageType(packageType);
@@ -97,7 +111,7 @@ public class RpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<RpmA
     @Override
     public String getId()
     {
-        return getCoordinate(BASE_NAME);
+        return getCoordinate(NAME);
     }
 
     @Override
@@ -105,9 +119,40 @@ public class RpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<RpmA
         return null;
     }
 
+    public String getPath(@NotBlank String baseName,
+                          @NotBlank String version,
+                          @NotBlank String release,
+                          @NotNull RpmPackageType packageType,
+                          RpmPackageArch arch) {
+        String path;
+        if (RpmPackageType.SOURCE.getPostfix().equals(packageType.getPostfix())) {
+            path = String.format("Packages/%s-%s-%s.%s.%s",
+                    baseName,
+                    version,
+                    release,
+                    packageType.getPostfix(),
+                    DEFAULT_EXTENSION);
+        } else {
+            path = String.format("Packages/%s-%s-%s.%s.%s",
+                    baseName,
+                    version,
+                    release,
+                    arch.getName(),
+                    DEFAULT_EXTENSION);
+        }
+        return path;
+    }
+
     public void setId(String id)
     {
-        setCoordinate(BASE_NAME, id);
+
+        setCoordinate(NAME, id);
+    }
+    public void setBaseName(String baseName) {
+        setCoordinate(BASE_NAME, baseName);
+    }
+    public String getBaseName() {
+        return getCoordinate(BASE_NAME);
     }
 
     public String getRelease()
@@ -151,6 +196,9 @@ public class RpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<RpmA
         return getCoordinate(EXTENSION);
     }
 
+    public void setVersion(String version){
+        super.setVersion(version);
+    }
 
     //@Override
     //public SemanticVersion getNativeVersion()
@@ -163,26 +211,36 @@ public class RpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<RpmA
     //}
 
     @Override
-    public String convertToPath(RpmArtifactCoordinates c)
-    {
+    public String convertToPath(RpmArtifactCoordinates c) {
         String path;
-        if (RpmPackageType.SOURCE.getPostfix().equals(c.getPackageType()))
-        {
-            path = String.format("%s-%s-%s.%s.%s",
-                                 c.getId(),
-                                 c.getVersion(),
-                                 c.getRelease(),
-                                 c.getPackageType(),
-                                 c.getExtension());
+        //前缀
+        String prefix = "";
+
+        String regex = "^(.*?)-([^-]+)-([^-]+)\\.([^.]+)\\.rpm$";
+
+        Pattern pattern = Pattern.compile(regex);
+        if (c.getId().contains("Packages/")) {
+            if (pattern.matcher(c.getId().replace("Packages/", "")).matches()) {
+                return c.getId();
+            }
+            prefix = "";
         }
-        else
-        {
-            path = String.format("%s-%s-%s.%s.%s",
-                                 c.getId(),
-                                 c.getVersion(),
-                                 c.getRelease(),
-                                 c.getArchitecture(),
-                                 c.getExtension());
+        if (RpmPackageType.SOURCE.getPostfix().equals(c.getPackageType())) {
+            path = String.format("%s%s-%s-%s.%s.%s",
+                    prefix,
+                    c.getId(),
+                    c.getVersion(),
+                    c.getRelease(),
+                    c.getPackageType(),
+                    c.getExtension());
+        } else {
+            path = String.format("%s%s-%s-%s.%s.%s",
+                    prefix,
+                    c.getId(),
+                    c.getVersion(),
+                    c.getRelease(),
+                    c.getArchitecture(),
+                    c.getExtension());
         }
 
         return path;
@@ -201,17 +259,29 @@ public class RpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<RpmA
         return packageScope == null ? packageName : String.format("%s/%s", packageScope, packageName);
     }
 
-    public static RpmArtifactCoordinates of(String packageId,
-                                            String version)
+    //public static RpmArtifactCoordinates of(String packageId,
+    //                                        String version)
+    //{
+    //    if (packageId.contains("/"))
+    //    {
+    //        String[] nameSplit = packageId.split("/");
+    //
+    //        return new RpmArtifactCoordinates(nameSplit[0], nameSplit[1], version, RpmPackageType.SOURCE);
+    //    }
+    //
+    //    return new RpmArtifactCoordinates(null, packageId, version, RpmPackageType.BINARY);
+    //}
+
+    public static RpmArtifactCoordinates of(String packageId)
     {
-        if (packageId.contains("/"))
-        {
-            String[] nameSplit = packageId.split("/");
+        //if (packageId.contains("/"))
+        //{
+        //    String[] nameSplit = packageId.split("/");
+        //
+        //    return RpmArtifactCoordinatesUtils.parse(packageId);
+        //}
 
-            return new RpmArtifactCoordinates(nameSplit[0], nameSplit[1], version, RpmPackageType.SOURCE);
-        }
-
-        return new RpmArtifactCoordinates(null, packageId, version, RpmPackageType.BINARY);
+        return RpmArtifactCoordinatesUtils.parse(packageId);
     }
 
     public String getName() {
@@ -221,5 +291,14 @@ public class RpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<RpmA
 
     public String getScope() {
         return "dev";
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    @Override
+    public String getPath() {
+        return path;
     }
 }
