@@ -3,6 +3,7 @@ package com.veadan.folib.users.service.impl;
 import com.veadan.folib.entity.Resource;
 import com.veadan.folib.mapper.ResourceMapper;
 import com.veadan.folib.users.service.ResourceService;
+import com.veadan.folib.users.service.RoleResourceRefService;
 import org.parboiled.common.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tk.mybatis.mapper.entity.Example;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -24,6 +26,8 @@ import java.util.List;
 public class ResourceServiceImpl implements ResourceService {
     @Autowired
     private ResourceMapper resourceMapper;
+    @Autowired
+    private RoleResourceRefService roleResourceRefService;
 
     /** 
      * 通过ID查询单条数据 
@@ -96,6 +100,8 @@ public class ResourceServiceImpl implements ResourceService {
      */
     public boolean deleteById(String id){
         int total = resourceMapper.deleteById(id);
+        //删除资源关联的权限信息
+        roleResourceRefService.deleteByResourceIds(Collections.singletonList(id));
         return total > 0;
     }
 
@@ -155,5 +161,21 @@ public class ResourceServiceImpl implements ResourceService {
         Example example = new Example(Resource.class);
         example.createCriteria().andIn("id", resourceIds);
         return resourceMapper.selectByExample(example);
+    }
+
+    @Override
+    public List<Resource> queryByStorageId(String storageId) {
+        Example example = new Example(Resource.class);
+        example.createCriteria().andEqualTo("storageId", storageId);
+        return resourceMapper.selectByExample(example);
+    }
+
+    @Override
+    public void deleteByIds(List<String> resourceIds) {
+        Example example = new Example(Resource.class);
+        example.createCriteria().andIn("Id", resourceIds);
+        resourceMapper.selectByExample(example);
+        //删除资源关联的权限信息
+        roleResourceRefService.deleteByResourceIds(resourceIds);
     }
 }

@@ -46,5 +46,37 @@ public class PrivilegeEventListenerRegistry extends AbstractEventListenerRegistr
 
         dispatchEvent(event);
     }
+    public void dispatchDeleteUserSyncEvent(String uuId) {
+        PrivilegeEvent event = new PrivilegeEvent(uuId,
+                PrivilegeEventTypeEnum.EVENT_DELETE_USER_SYNC.getType());
 
+        logger.info("Dispatching PrivilegeEventTypeEnum.EVENT_DELETE_USER_SYNC event for {}...", uuId);
+
+        dispatchEvent(event);
+    }
+
+    public void dispatchDeleteUserGroupSyncEvent(String uuId) {
+        PrivilegeEvent event = new PrivilegeEvent(uuId,
+                PrivilegeEventTypeEnum.EVENT_DELETE_USER_GROUP_SYNC.getType());
+
+        logger.info("Dispatching PrivilegeEventTypeEnum.EVENT_DELETE_USER_GROUP_SYNC event for {}...", uuId);
+
+        dispatchEvent(event);
+    }
+    public void dispatchDeleteRoleSyncEvent(String uuId) {
+        PrivilegeEvent event = new PrivilegeEvent(uuId,
+                PrivilegeEventTypeEnum.EVENT_DELETE_ROLE_SYNC.getType());
+
+        logger.info("Dispatching PrivilegeEventTypeEnum.EVENT_DELETE_ROLE_SYNC event for {}...", uuId);
+
+        dispatchEvent(event);
+    }
+    public void dispatchDeleteResourceSyncEvent(String uuId) {
+        PrivilegeEvent event = new PrivilegeEvent(uuId,
+                PrivilegeEventTypeEnum.EVENT_DELETE_RESOURCE_SYNC.getType());
+
+        logger.info("Dispatching PrivilegeEventTypeEnum.EVENT_DELETE_RESOURCE_SYNC event for {}...", uuId);
+
+        dispatchEvent(event);
+    }
 }

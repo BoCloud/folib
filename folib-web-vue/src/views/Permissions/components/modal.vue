@@ -31,8 +31,12 @@
             <div v-show="!step">
                 <repositories
                     ref="repositories"
+                    @getStorageList="getStorageList"
+                    @getRepositoriesList="getRepositoriesList"
                     :repositoriesList="repositoriesList"
                     :storageList="storageList"
+                    :storageTotal="storageTotal"
+                    :repositoriesTotal="repositoriesTotal"
                     :isView="isView || isStorageUser || isStorageAdmin"
                 />
             </div>
@@ -208,7 +212,7 @@
 import repositories from "./repositories.vue";
 import selectUserGroup from "./selectUserGroup.vue";
 import { getPermissionDetail, createPermission, getPermissionUsers, updatePermission } from "@/api/permissions";
-import { getStorages, getStoragesAndRepositories } from "@/api/folib";
+import { queryStorages, queryRepositories } from "@/api/folib";
 import { getGroupList } from "@/api/group";
 import { uniq } from "lodash/array";
 import TextOver from "@/components/Tools/textOver.vue";
@@ -252,7 +256,9 @@ export default {
             groupCheckAll: false,
             confirmLoading: false,
             repositoriesOptions: [],
-            logoValueMap: []
+            logoValueMap: [],
+            repositoriesTotal:0,
+            storageTotal:0
         }
     },
     watch: {
@@ -490,29 +496,37 @@ export default {
             this.groupSelectList.map(item => item.key)
             this.$refs.selectUserGroup.openModal(type, selectedRowKeys, this.isStorageAdmin);
         },
-        async getStorageList() {
+        async getStorageList(page = 1) {
             await new Promise((resolve, reject) => {
-                getStorages().then(res => {
-                    this.storageList = res.storages;
+                queryStorages({
+                  page,
+                  limit:20
+                }).then(res => {
+                    this.storageList = res.data.rows;
+                    this.storageTotal = res.data.total
                     resolve()
                 }).catch(e => {
                     reject(e)
                 })
             })
         },
-        async getRepositoriesList() {
+        async getRepositoriesList(page = 1) {
             await new Promise((resolve, reject) => {
-                getStoragesAndRepositories().then(res => {
+                queryRepositories({
+                    page,
+                    limit:20
+              }).then(res => {
+                    this.spinning = false
                     this.repositoriesList = []
-                    res.forEach(item => {
-                        item.children.forEach(ele => {
-                            ele.key = ele.key.replace(',','/');
-                        })
-                        this.repositoriesList.push(...item.children)
+                    res.data.rows.forEach(item => {
+                        item.key = `${item.storageId}/${item.id}`
+                        this.repositoriesList.push({...item})
                     })
+                    this.repositoriesTotal = res.data.total
                     resolve()
                 }).catch(e => {
                     reject(e)
+                    this.spinning = false
                 })
             })
         },

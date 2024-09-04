@@ -357,6 +357,62 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
     }
 
     @Override
+    public void updateStorageUser(UserPermissionDTO userPermission) {
+        if (CollectionUtils.isEmpty(userPermission.getRoleIds())) {
+            return;
+        }
+        List<String> privileges = new ArrayList<>(userPermission.getPrivileges());
+        List<String> roleIds = new ArrayList<>(userPermission.getRoleIds());
+        String userId = userPermission.getUserId();
+        List<RoleResourceRef> roleResourceRefs = queryByRoleIds(roleIds);
+        if (CollectionUtils.isEmpty(roleResourceRefs)) {
+            return;
+        }
+        //清理用户已关联的角色
+        List<Long> removeRefIds = roleResourceRefs.stream().filter(ref -> GlobalConstants.ROLE_TYPE_USER.equals(ref.getRefType()) &&
+                Objects.equals(userId, ref.getEntityId()) && !privileges.contains(ref.getPathPrivilege())).map(RoleResourceRef::getId).collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(removeRefIds)) {
+            deleteByIds(removeRefIds);
+        }
+        List<String> refRoleIds = roleResourceRefs.stream().filter(ref -> GlobalConstants.ROLE_TYPE_USER.equals(ref.getRefType()) &&
+                Objects.equals(userId, ref.getEntityId()) && privileges.contains(ref.getPathPrivilege())).map(RoleResourceRef::getRoleId).collect(Collectors.toList());
+        roleIds.removeAll(refRoleIds);
+
+        //保存关联权限
+        if(CollectionUtils.isNotEmpty(roleIds)) {
+            List<RoleResourceRef> updateRefs = new ArrayList<>();
+            roleIds.forEach(roleId -> {
+                if (CollectionUtils.isNotEmpty(privileges)) {
+                    privileges.forEach(privilege -> {
+                        updateRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(userId).refType(GlobalConstants.ROLE_TYPE_USER).pathPrivilege(privilege).resourceId(roleId.replaceFirst("STORAGE_USER_", "")).build());
+                    });
+                }else {
+                    updateRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(userId).refType(GlobalConstants.ROLE_TYPE_USER)
+                            .resourceId(roleId.replaceFirst("STORAGE_USER_", "")).build());
+                }
+            });
+            if (CollectionUtils.isNotEmpty(updateRefs)) {
+                saveBath(updateRefs.stream().distinct().collect(Collectors.toList()));
+            }
+        }
+
+    }
+
+    @Override
+    public void deleteByResourceIds(List<String> resourceIds) {
+        Example example = Example.builder(RoleResourceRef.class).build();
+        example.createCriteria().andIn("resourceId", resourceIds);
+        roleResourceRefMapper.deleteByExample(example);
+    }
+
+    @Override
+    public List<RoleResourceRef> queryByResourceIds(List<String> resourceIds) {
+        Example example = Example.builder(RoleResourceRef.class).build();
+        example.createCriteria().andIn("resourceId", resourceIds);
+        return roleResourceRefMapper.selectByExample(example);
+    }
+
+    @Override
     public void deleteByentityId(String entityId, String refType) {
         Example example = new Example(RoleResourceRef.class);
         example.createCriteria().andEqualTo("entityId", entityId).andEqualTo("refType", refType);
@@ -404,7 +460,7 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         }
 
         //保存关联权限
-        Map<String, List<RoleResourceRef>> roleMap = roleResourceRefs.stream().map(ref -> RoleResourceRef.builder().roleId(ref.getRoleId()).resourceId(ref.getResourceId()).resourceType(ref.getResourceType())
+        Map<String, List<RoleResourceRef>> roleMap = roleResourceRefs.stream().filter(ref -> StringUtils.isNotEmpty(ref.getResourceType())).map(ref -> RoleResourceRef.builder().roleId(ref.getRoleId()).resourceId(ref.getResourceId()).resourceType(ref.getResourceType())
                 .storagePrivilege(ref.getStoragePrivilege()).repositoryPrivilege(ref.getRepositoryPrivilege()).pathPrivilege(ref.getPathPrivilege()).build()).distinct().collect(Collectors.groupingBy(RoleResourceRef::getRoleId));
         List<RoleResourceRef> updateRefs = new ArrayList<>();
         userPermissions.forEach(userPermission -> {

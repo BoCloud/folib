@@ -60,4 +60,8 @@ public interface ResourceService{
     void saveOrUpdateBatch(List<Resource> resources);
 
     List<Resource> queryByIds(List<String> resourceIds);
+
+    List<Resource> queryByStorageId(String storageId);
+
+    void deleteByIds(List<String> resourceIds);
 }

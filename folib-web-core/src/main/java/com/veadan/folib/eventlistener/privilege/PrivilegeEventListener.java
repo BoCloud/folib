@@ -9,13 +9,11 @@ import com.veadan.folib.entity.*;
 import com.veadan.folib.event.AsyncEventListener;
 import com.veadan.folib.event.privilege.PrivilegeEvent;
 import com.veadan.folib.event.privilege.PrivilegeEventTypeEnum;
-import com.veadan.folib.scanner.common.util.SpringContextUtil;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.users.dto.UserAuthDTO;
 import com.veadan.folib.users.service.*;
-import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.ws.common.FolibWsRunManageUtil;
 import com.veadan.folib.ws.common.FolibWsRunManageV2;
 import com.veadan.folib.ws.server.Command;
@@ -90,8 +88,8 @@ public class PrivilegeEventListener {
                 Boolean wsClientOnline = value.getWsClientOnline();
                 Boolean isSyncPrivilege = value.getIsSyncPrivilege();
 
-                if (!isThisCluster &&
-                        !Objects.equals(wsClientOnline, null) && wsClientOnline
+                if (!isThisCluster && !value.getAutoRegister()
+                        && !Objects.equals(wsClientOnline, null) && wsClientOnline
                         && !Objects.equals(isSyncPrivilege, null) && isSyncPrivilege) {
                     WSMessageRequest wsMessageRequest = null;
                     WSMessageResponse messageResponse = null;
@@ -127,7 +125,7 @@ public class PrivilegeEventListener {
 
     private UserAuthDTO getUserAuthReq(PrivilegeEventTypeEnum privilegeEventTypeEnum, String uuId) {
         UserAuthDTO.UserAuthDTOBuilder builder = UserAuthDTO.builder();
-        List<Resource> resourcesList = null;
+        List<Resource> resourcesList = new ArrayList<>();
         if (PrivilegeEventTypeEnum.EVENT_USER_SYNC.getType() == privilegeEventTypeEnum.getType() ) {
             UserDTO byUserName = folibUserService.findByUserName(uuId);
             if (Objects.nonNull(byUserName)) {
@@ -208,6 +206,42 @@ public class PrivilegeEventListener {
                     }
                 }
             }
+        }
+
+        if (PrivilegeEventTypeEnum.EVENT_RESOURCE_SYNC.getType() == privilegeEventTypeEnum.getType()) {
+            Resource resource = resourceService.queryById(uuId.toUpperCase());
+            if (resource != null) {
+                resourcesList.add(resource);
+                if (StringUtils.isNotEmpty(resource.getRepositoryId())) {
+                    resourcesList.add(Resource.builder().storageId(resource.getStorageId()).id(resource.getStorageId().toUpperCase()).build());
+                }
+                builder.resources(resourcesList);
+
+                List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryByResourceIds(Collections.singletonList(uuId));
+                if (CollectionUtils.isNotEmpty(roleResourceRefs)) {
+                    builder.userRoles(roleResourceRefs);
+
+                    Set<String> roleIds = roleResourceRefs.stream().map(RoleResourceRef::getRoleId).distinct().collect(Collectors.toSet());
+                    roleIds.addAll(Set.of(String.format("STORAGE_ADMIN_%S", uuId), String.format("STORAGE_USER_%S", uuId)));
+                    List<FolibRole> folibRoles = folibRoleService.queryByIds(roleIds);
+                    if (CollectionUtils.isNotEmpty(folibRoles)) {
+                        builder.roles(folibRoles);
+                    }
+                }
+            }
+        }
+
+        if (PrivilegeEventTypeEnum.EVENT_DELETE_USER_SYNC.getType() == privilegeEventTypeEnum.getType()) {
+            builder.removeUserIds(Collections.singletonList(uuId));
+        }
+        if (PrivilegeEventTypeEnum.EVENT_DELETE_ROLE_SYNC.getType() == privilegeEventTypeEnum.getType()) {
+            builder.removeRoleIds(Collections.singletonList(uuId));
+        }
+        if (PrivilegeEventTypeEnum.EVENT_DELETE_USER_GROUP_SYNC.getType() == privilegeEventTypeEnum.getType()) {
+            builder.removeGroupIds(Collections.singletonList(Long.valueOf(uuId)));
+        }
+        if (PrivilegeEventTypeEnum.EVENT_DELETE_RESOURCE_SYNC.getType() == privilegeEventTypeEnum.getType()) {
+            builder.removeResourceIds(Collections.singletonList(uuId));
         }
 
         if (CollectionUtils.isNotEmpty(resourcesList)) {

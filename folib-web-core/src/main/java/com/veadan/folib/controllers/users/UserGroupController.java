@@ -99,7 +99,7 @@ public class UserGroupController
 
         userGroupService.deleteById(groupId);
         //同步用户组信息到其他节点
-        privilegeEventListenerRegistry.dispatchUserGroupSyncEvent(String.valueOf(userGroup.getId()));
+        privilegeEventListenerRegistry.dispatchDeleteUserGroupSyncEvent(String.valueOf(userGroup.getId()));
 
         return getSuccessfulResponseEntity(SUCCESSFUL_DELETE_USER, accept);
     }

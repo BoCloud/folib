@@ -141,7 +141,7 @@ public class RoleController extends BaseController {
         folibRoleService.deleteRole(roleId);
 
         //同步角色信息到其他节点
-        privilegeEventListenerRegistry.dispatchRoleSyncEvent(roleId);
+        privilegeEventListenerRegistry.dispatchDeleteRoleSyncEvent(roleId);
 
         return getSuccessfulResponseEntity(SUCCESSFUL_DELETE_ROLE, accept);
     }
@@ -477,6 +477,19 @@ public class RoleController extends BaseController {
                 }
             }
         }
+        if (PrivilegeEventTypeEnum.EVENT_DELETE_USER_SYNC.getType() == privilegeEventTypeEnum.getType()) {
+            builder.removeUserIds(Collections.singletonList(uuId));
+        }
+        if (PrivilegeEventTypeEnum.EVENT_DELETE_ROLE_SYNC.getType() == privilegeEventTypeEnum.getType()) {
+            builder.removeRoleIds(Collections.singletonList(uuId));
+        }
+        if (PrivilegeEventTypeEnum.EVENT_DELETE_USER_GROUP_SYNC.getType() == privilegeEventTypeEnum.getType()) {
+            builder.removeGroupIds(Collections.singletonList(Long.valueOf(uuId)));
+        }
+        if (PrivilegeEventTypeEnum.EVENT_DELETE_RESOURCE_SYNC.getType() == privilegeEventTypeEnum.getType()) {
+            builder.removeResourceIds(Collections.singletonList(uuId));
+        }
+
 
         if (CollectionUtils.isNotEmpty(resourcesList)) {
             List<StorageDto> storages = new ArrayList<>();

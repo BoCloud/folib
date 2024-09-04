@@ -30,8 +30,15 @@
             :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange, getCheckboxProps: getCheckboxProps }"
             :columns="tableColumns"
             :data-source="tableData"
-            :pagination="false"
-            :scroll="{ y: 500 }"
+            :pagination="{
+                  pageSize: limit,
+                  current: page,
+                  total: total,
+                  showLessItems: true,
+                  showTotal: total => `${$t('Groups.Total')} ${total} ${$t('Groups.Items')}`
+              }"
+            @change="handleChangeTable"
+            :scroll="{ y: 350 }"
         />
         <div v-else>
             <div class="by-flex by-row-right by-m-b-10">
@@ -106,10 +113,21 @@ export default {
             type: Boolean,
             default: false
         },
+        repositoriesTotal: {
+            type: Number,
+            default: 0
+        },
+        storageTotal: {
+            type: Number,
+            default: 0
+        },
     },
     data()
     {
         return {
+            total: 0,
+            limit: 20,
+            page: 1,
             step: 0,
             tableData: [],
             selectedRowKeys: [],
@@ -183,6 +201,7 @@ export default {
                         title: item.id,
                     }
                 })
+                this.total = this.storageTotal
             },
             deep: true
         },
@@ -195,6 +214,7 @@ export default {
                         title: item.key,
                     }
                 })
+                this.total = this.repositoriesTotal
             },
             deep: true
         },
@@ -206,6 +226,7 @@ export default {
                         title: item.id,
                     }
                 })
+                this.total = this.storageTotal
             } else {
                 this.tableData = this.repositoriesList.map(item => {
                     return {
@@ -213,12 +234,21 @@ export default {
                         title: item.key,
                     }
                 })
+                this.total = this.repositoriesTotal
             }
             this.step = 0
             // this.selectedRowKeys = []
         }
     },
     methods: {
+      handleChangeTable(pagination) {
+        if (pagination) this.page = pagination.current
+        if (this.radioModel === 'StorageSpace') {
+          this.$emit('getStorageList', this.page)
+        } else {
+          this.$emit('getRepositoriesList', this.page)
+        }
+      },
         init() {
             this.step = 0
             this.radioModel = 'StorageSpace'

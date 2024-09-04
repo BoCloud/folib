@@ -23,23 +23,24 @@ import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
 import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
 import com.veadan.folib.controllers.cluster.dto.SyncUnionRepositoryDto;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
-import com.veadan.folib.domain.*;
+import com.veadan.folib.domain.DispatchStorageTree;
+import com.veadan.folib.domain.RepositoryPermission;
+import com.veadan.folib.domain.RepositoryUser;
+import com.veadan.folib.domain.User;
 import com.veadan.folib.dto.ArtifactDispatchRepositoryDto;
 import com.veadan.folib.dto.PermissionsDTO;
 import com.veadan.folib.dto.UserDTO;
-import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
-import com.veadan.folib.enums.AuditEventNameEnum;
-import com.veadan.folib.enums.NotifyScopesTypeEnum;
-import com.veadan.folib.enums.RepositoryScopeEnum;
-import com.veadan.folib.enums.StorageProviderEnum;
+import com.veadan.folib.entity.Resource;
+import com.veadan.folib.enums.*;
+import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
 import com.veadan.folib.forms.common.StorageTreeForm;
 import com.veadan.folib.forms.configuration.*;
 import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.providers.layout.LayoutProvider;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import com.veadan.folib.providers.storage.FileSystemStorageProvider;
+import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
@@ -54,9 +55,8 @@ import com.veadan.folib.storage.repository.*;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.domain.Users;
-import com.veadan.folib.users.dto.PathPrivilegesDto;
-import com.veadan.folib.users.service.FolibRoleService;
 import com.veadan.folib.users.service.FolibUserService;
+import com.veadan.folib.users.service.ResourceService;
 import com.veadan.folib.users.service.RoleResourceRefService;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
@@ -100,8 +100,6 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static org.codehaus.groovy.runtime.DefaultGroovyMethods.collect;
 
 /**
  * @author Veadan
@@ -171,10 +169,6 @@ public class StoragesConfigurationController
 
     @Autowired
     private AuthorizationConfigService authorizationConfigService;
-
-    @Autowired
-    private SecurityComponent securityComponent;
-
     @Autowired
     private CommonComponent commonComponent;
     @Autowired
@@ -185,8 +179,10 @@ public class StoragesConfigurationController
     private FolibUserService folibUserService;
     @Inject
     private RoleResourceRefService roleResourceRefService;
-    @Inject
-    private FolibRoleService roleService;
+    @Autowired
+    private PrivilegeEventListenerRegistry privilegeEventListenerRegistry;
+    @Autowired
+    private ResourceService resourceService;
 
 
     public StoragesConfigurationController(ConfigurationManagementService configurationManagementService,
@@ -231,6 +227,9 @@ public class StoragesConfigurationController
             SyncStorageDto syncStorageDto = new SyncStorageDto(storage, storageForm.getId(), SyncStorageEnum.CREATE);
             clusterSyncService.syncStorage(syncStorageDto);
 
+            //同步资源信息到其他节点
+            privilegeEventListenerRegistry.dispatchResourceSyncEvent(storage.getId());
+
             return getSuccessfulResponseEntity(SUCCESSFUL_SAVE_STORAGE, accept);
         } catch (ConfigurationException | IOException e) {
             return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_SAVE_STORAGE_ERROR, e, accept);
@@ -268,11 +267,59 @@ public class StoragesConfigurationController
             storageManagementService.updateStorage(storage);
             SyncStorageDto syncStorageDto = new SyncStorageDto(storage, storageId, SyncStorageEnum.UPDATE);
             clusterSyncService.syncStorage(syncStorageDto);
-
+            //同步资源信息到其他节点
+            privilegeEventListenerRegistry.dispatchResourceSyncEvent(storage.getId());
             return getSuccessfulResponseEntity(SUCCESSFUL_UPDATE_STORAGE, accept);
         } catch (ConfigurationException | IOException e) {
             return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_UPDATE_STORAGE_ERROR, e, accept);
         }
+    }
+
+
+    @JsonView(Views.ShortStorage.class)
+    @ApiOperation(value = "Retrieve the basic info about storages.")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @GetMapping(value = "/queryStorages", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public TableResultResponse<Storage> getStorages(Authentication authentication,
+                                                    @RequestParam(name = "page") Integer page,
+                                                    @RequestParam(name = "limit") Integer limit,
+                                                    @RequestParam(name = "storageId", required = false) String storageId) {
+
+        List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
+                .getStorages()
+                .values());
+        if (StringUtils.isNotEmpty(storageId)) {
+            storages = storages.stream().filter(storage -> storage.getId().contains(storageId)).collect(Collectors.toList());
+        }
+        List<Storage> pageStorages = storages.stream().skip((long) (page - 1) * limit).limit(limit).collect(Collectors.toList());
+
+        if(CollectionUtils.isEmpty(pageStorages)) {
+            return new TableResultResponse<>(0, new ArrayList<>());
+        }
+        //查询数据库中存储空间绑定的用户
+        storageManagementService.getStorageUsers(pageStorages);
+        String username = "";
+        if (Objects.nonNull(authentication)) {
+            final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
+            username = loggedUser.getUsername();
+        }
+        StoragesOutput storagesOutput = new StoragesOutput(pageStorages);
+        if (!hasAdmin()) {
+            List<Storage> list = storagesOutput.getStorages();
+            String finalUsername = username;
+            List<Storage> collect = list.stream().filter(s ->
+                    (CollectionUtil.isNotEmpty(s.getUsers()) && s.getUsers().contains(finalUsername)) ||
+                            (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())))
+            ).collect(Collectors.toList());
+            storagesOutput.setStorages(collect);
+        }
+        if (Objects.isNull(storagesOutput.getStorages())) {
+            return new TableResultResponse<>(0, new ArrayList<>());
+        }
+        return new TableResultResponse<>(storagesOutput.getStorages().size(), storagesOutput.getStorages());
+
     }
 
     @JsonView(Views.ShortStorage.class)
@@ -303,7 +350,82 @@ public class StoragesConfigurationController
         }
         return ResponseEntity.ok(storagesOutput);
     }
+    @ApiOperation(value = "Retrieve the basic info about storages and repositories.")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @GetMapping(value = "/queryStoragesAndRepositories", produces = MediaType.APPLICATION_JSON_VALUE)
+    public TableResultResponse<Repository> getStoragesAndRepositories(@ApiParam(value = "Search for repository names in a specific storageId")
+                                                     @RequestParam(value = "storageId", required = false)
+                                                     String storageId,
+                                                     @ApiParam(value = "Filter repository names by type (i.e. hosted, group, proxy)")
+                                                     @RequestParam(value = "type", required = false)
+                                                     String type,
+                                                     @ApiParam(value = "Filter exclude repository names by type (i.e. hosted, group, proxy)")
+                                                     @RequestParam(value = "excludeType", required = false)
+                                                     String excludeType,
+                                                     @ApiParam(value = "Search for exclude repository names")
+                                                     @RequestParam(value = "excludeRepositoryId", required = false)
+                                                     String excludeRepositoryId,
+                                                     @ApiParam(value = "Filter repository names by repository layout")
+                                                     @RequestParam(value = "layout", required = false)
+                                                     String layout,
+                                                     @ApiParam(value = "Filter repository names by repository policy")
+                                                     @RequestParam(value = "policy", required = false)
+                                                     String policy, Authentication authentication,
+                                                     @RequestParam(name = "page") Integer page,
+                                                     @RequestParam(name = "limit") Integer limit) {
+        List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
+                .getStorages()
+                .values());
+        final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
+        String username = loggedUser.getUsername();
+        List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
+        List<Repository> repositorieList = new ArrayList<>();
+        if (CollectionUtil.isNotEmpty(storages)) {
+            //查询数据库中存储空间绑定的用户
+            storageManagementService.getStorageUsers(storages);
+            boolean filterByUser = !hasAdmin();
+            boolean filterByStorageId = StringUtils.isNotBlank(storageId);
+            boolean filterByType = StringUtils.isNotBlank(type);
+            boolean filterByLayout = StringUtils.isNotBlank(layout);
+            boolean filterByExcludeRepositoryId = StringUtils.isNotBlank(excludeRepositoryId);
+            boolean filterByExcludeType = StringUtils.isNotBlank(excludeType);
+            boolean filterByPolicy = StringUtils.isNotBlank(policy);
+            storages = storages.stream()
+                    .distinct()
+                    .filter(s -> !filterByUser || (CollectionUtil.isNotEmpty(s.getUsers()) && s.getUsers().contains(loggedUser.getUsername())) ||
+                            (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope()))))
+                    .filter(s -> !filterByStorageId || s.getId().equalsIgnoreCase(storageId))
+                    .collect(Collectors.toCollection(LinkedList::new));
+            StorageTreeForm storageTreeForm;
+            List<Repository> repositories;
+            for (Storage storage : storages) {
+                boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username));
+                storageTreeForm = StorageTreeForm.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
+                repositories = new LinkedList<Repository>(storage.getRepositories().values());
+                repositorieList.addAll(repositories);
+                repositories = repositories.stream().distinct()
+                        .filter(r -> !filterByType || r.getType().equalsIgnoreCase(type))
+                        .filter(r -> !filterByLayout || r.getLayout().equalsIgnoreCase(layout))
+                        .filter(r -> !filterByPolicy || r.getPolicy().equalsIgnoreCase(policy))
+                        .filter(r -> !filterByExcludeRepositoryId || !r.getId().equalsIgnoreCase(excludeRepositoryId))
+                        .filter(r -> !filterByExcludeType || !r.getType().equalsIgnoreCase(excludeType))
+                        .collect(Collectors.toCollection(LinkedList::new));
+                if (flag) {
+                    repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()))).collect(Collectors.toList());
+                }
+                storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeForm.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout())
+                        .scope(repository.getScope()).build()).collect(Collectors.toList()));
+                storageTreeForms.add(storageTreeForm);
+            }
+        }
+        List<Repository> pageRepository = repositorieList.stream().skip((long) (page - 1) * limit).limit(limit).collect(Collectors.toList());
 
+        if (CollectionUtils.isEmpty(repositorieList)) {
+            return new TableResultResponse<>(0, new ArrayList<>());
+        }
+        return new TableResultResponse<>(repositorieList.size(), pageRepository);
+    }
     @ApiOperation(value = "Retrieve the basic info about storages and repositories.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "")})
     @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
@@ -604,6 +726,8 @@ public class StoragesConfigurationController
                 logger.info("Removed storage {}.", storageId);
                 SyncStorageDto syncStorageDto = new SyncStorageDto(storageDto, SyncStorageEnum.DELETE, storageId, force);
                 clusterSyncService.syncStorage(syncStorageDto);
+                //同步资源信息到其他节点
+                privilegeEventListenerRegistry.dispatchDeleteResourceSyncEvent(storageId);
                 /*AuthorizationConfigDto authorizationConfigDto = authorizationConfigService.getDto();
                 SyncAuthorizationDto syncAuthorizationDto = new SyncAuthorizationDto(authorizationConfigDto, SyncAuthorizationEnum.UPDATE);
                 clusterSyncService.syncAuthorization(syncAuthorizationDto);*/
@@ -704,8 +828,20 @@ public class StoragesConfigurationController
                     LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(repositoryDto.getLayout());
                     layoutProvider.initData(storageId, repositoryId);
                 }
+                String resourceId = storageId + "_" +repositoryId;
+                Resource resource = resourceService.queryById(resourceId);
+                if(Objects.equals(null, resource)) {
+                    resourceService.insert(Resource.builder()
+                            .id(resourceId.toUpperCase())
+                            .storageId(storageId)
+                            .repositoryId(repositoryId)
+                            .build());
+                }
+
                 SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repositoryDto, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
                 clusterSyncService.syncRepository(syncRepositoryDto);
+                //同步资源信息到其他节点
+                privilegeEventListenerRegistry.dispatchResourceSyncEvent(storageId + "_" +repositoryId);
 
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (Exception e) {
@@ -809,6 +945,8 @@ public class StoragesConfigurationController
                         .getRepository(repositoryId);
                 SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
                 clusterSyncService.syncRepository(syncRepositoryDto);
+                //同步资源信息到其他节点
+                privilegeEventListenerRegistry.dispatchResourceSyncEvent(storageId + "_" +repositoryId);
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (IOException | ConfigurationException e) {
                 return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);
@@ -893,6 +1031,8 @@ public class StoragesConfigurationController
                         .getRepository(repositoryId);
                 SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
                 clusterSyncService.syncRepository(syncRepositoryDto);
+                //同步资源信息到其他节点
+                privilegeEventListenerRegistry.dispatchResourceSyncEvent(storageId + "_" +repositoryId);
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (IOException | ConfigurationException e) {
                 return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);
@@ -935,6 +1075,8 @@ public class StoragesConfigurationController
                         .getRepository(repositoryId);
                 SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
                 clusterSyncService.syncRepository(syncRepositoryDto);
+                //同步资源信息到其他节点
+                privilegeEventListenerRegistry.dispatchResourceSyncEvent(storageId + "_" +repositoryId);
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (IOException | ConfigurationException e) {
                 return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);
@@ -975,6 +1117,8 @@ public class StoragesConfigurationController
                         .getRepository(repositoryId);
                 SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
                 clusterSyncService.syncRepository(syncRepositoryDto);
+                //同步资源信息到其他节点
+                privilegeEventListenerRegistry.dispatchResourceSyncEvent(storageId + "_" +repositoryId);
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (IOException | ConfigurationException e) {
                 return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);
@@ -1015,6 +1159,8 @@ public class StoragesConfigurationController
                         .getRepository(repositoryId);
                 SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
                 clusterSyncService.syncRepository(syncRepositoryDto);
+                //同步资源信息到其他节点
+                privilegeEventListenerRegistry.dispatchResourceSyncEvent(storageId + "_" +repositoryId);
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (IOException | ConfigurationException e) {
                 return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);
@@ -1080,6 +1226,9 @@ public class StoragesConfigurationController
             clusterSyncService.syncRepository(syncRepositoryDto);
 
             logger.info("Removed repository {}:{}.", storageId, repositoryId);
+
+            //同步资源信息到其他节点
+            privilegeEventListenerRegistry.dispatchDeleteResourceSyncEvent(repositoryId);
 
             return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_REMOVAL, accept);
         } catch (IOException | ConfigurationException e) {

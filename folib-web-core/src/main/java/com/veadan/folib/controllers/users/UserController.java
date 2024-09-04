@@ -126,11 +126,11 @@ public class UserController
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_UPDATE_USER),
             @ApiResponse(code = 400, message = FAILED_UPDATE_USER)})
     @PreAuthorize("hasAuthority('UPDATE_USER')")
-    @PutMapping(value = "/userPermission", consumes = MediaType.APPLICATION_JSON_VALUE,
+    @PutMapping(value = "/storageUser", consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    public ResponseEntity updateUserPermission(@RequestBody @Validated UserPermissionForm userPermissionForm,
+    public ResponseEntity updateStorageUser(@RequestBody @Validated UserPermissionForm userPermissionForm,
                                  BindingResult bindingResult,
                                  @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (bindingResult.hasErrors()) {
@@ -138,7 +138,7 @@ public class UserController
         }
 
         UserPermissionDTO userPermission = UserConvert.INSTANCE.UserPermissionFormToUserPermissionDTO(userPermissionForm);
-        roleResourceRefService.updateUserPermission(Collections.singleton(userPermission));
+        roleResourceRefService.updateStorageUser(userPermission);
 
         //同步用户信息到其他节点
         privilegeEventListenerRegistry.dispatchUserSyncEvent(userPermission.getUserId());
@@ -311,6 +311,9 @@ public class UserController
         }
 
         userService.deleteByUsername(user.getUsername());
+
+        //同步用户信息到其他节点
+        privilegeEventListenerRegistry.dispatchDeleteUserSyncEvent(username);
 
         return getSuccessfulResponseEntity(SUCCESSFUL_DELETE_USER, accept);
     }

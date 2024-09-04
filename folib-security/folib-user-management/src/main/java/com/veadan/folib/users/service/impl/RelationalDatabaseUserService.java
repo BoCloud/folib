@@ -11,16 +11,14 @@ import com.veadan.folib.domain.UserEntity;
 import com.veadan.folib.dto.PermissionsDTO;
 import com.veadan.folib.dto.RepositoryPrivilegeDTO;
 import com.veadan.folib.dto.UserDTO;
-import com.veadan.folib.entity.*;
+import com.veadan.folib.entity.FolibRole;
+import com.veadan.folib.entity.RoleResourceRef;
+import com.veadan.folib.entity.UserGroup;
+import com.veadan.folib.entity.UserGroupRef;
 import com.veadan.folib.repositories.UserRepository;
 import com.veadan.folib.services.ConfigurationManagementService;
-import com.veadan.folib.storage.Storage;
-import com.veadan.folib.storage.StorageDto;
-import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.domain.Users;
-import com.veadan.folib.users.dto.UserAuthDTO;
 import com.veadan.folib.users.dto.UserDto;
 import com.veadan.folib.users.security.JwtAuthenticationClaimsProvider;
 import com.veadan.folib.users.security.JwtClaimsProvider;
@@ -31,6 +29,7 @@ import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.users.userdetails.UserDetailsMapper;
 import com.veadan.folib.util.LocalDateTimeInstance;
 import com.veadan.folib.util.RSAUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jose4j.lang.JoseException;
@@ -42,7 +41,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
 import javax.inject.Qualifier;
-import java.io.IOException;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.time.Instant;
@@ -57,6 +55,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 /**
  * @author xuxinping
  */
+@Slf4j
 @Component
 @RelationalDatabase
 @Transactional(rollbackFor = Exception.class)
@@ -113,69 +112,6 @@ public class RelationalDatabaseUserService implements UserService
         return folibUserService.queryUserRoleByRepositoryAndPrivilege(repositoryPrivilegeDTOList);
     }
 
-    @Override
-    @Transactional
-    public void syncUserAuth(UserAuthDTO date) {
-        //更新节点用户信息
-        List<FolibUser> users = date.getUsers();
-        if (CollectionUtils.isNotEmpty(users)) {
-            folibUserService.saveOrUpdate(users);
-        }
-
-        List<UserGroup> groups = date.getGroups();
-        if (CollectionUtils.isNotEmpty(groups)) {
-            userGroupService.saveOrUpdateBatch(groups);
-        }
-
-        List<UserGroupRef> userGroups = date.getUserGroups();
-        if (CollectionUtils.isNotEmpty(userGroups)) {
-            userGroupRefService.batchUpdate(userGroups);
-        }
-
-        List<FolibRole> roles = date.getRoles();
-        if (CollectionUtils.isNotEmpty(roles)) {
-            folibRoleService.saveOrUpdateBatch(roles);
-        }
-
-        List<Resource> resources = date.getResources();
-        if (CollectionUtils.isNotEmpty(resources)) {
-            resourceService.saveOrUpdateBatch(resources);
-        }
-
-        List<RoleResourceRef> userRoles = date.getUserRoles();
-        if (CollectionUtils.isNotEmpty(userRoles)) {
-            roleResourceRefService.batchUpdate(userRoles);
-        }
-
-        List<StorageDto> storages = date.getStorages();
-        if (CollectionUtils.isNotEmpty(storages)) {
-            storages.forEach(storage -> {
-                Storage storageInfo = configurationManagementService.getMutableConfigurationClone().getStorage(storage.getId());
-                if (storageInfo == null) {
-                    try {
-                        configurationManagementService.createStorage(storage);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            });
-        }
-        List<RepositoryDto> repositorys = date.getRepositorys();
-        if (CollectionUtils.isNotEmpty(repositorys)) {
-            repositorys.forEach(repository -> {
-                String storageId = repository.getStorage().getId();
-                String repositoryId = repository.getId();
-                Repository repositoryInfo = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId);
-                if (repositoryInfo == null) {
-                    try {
-                        configurationManagementService.saveRepository(storageId, repository);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            });
-        }
-    }
 
     @Override
     public UserEntity findByUsername(String username)

@@ -75,10 +75,6 @@ public class DatabaseUserService implements UserService
         return userRepository.findUsersWithRoles(rolesList);
     }
 
-    @Override
-    public void syncUserAuth(UserAuthDTO date) {
-
-    }
 
     @Override
     public UserEntity findByUsername(String username)
