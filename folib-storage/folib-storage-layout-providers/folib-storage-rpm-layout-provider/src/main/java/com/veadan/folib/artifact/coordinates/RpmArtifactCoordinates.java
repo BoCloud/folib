@@ -256,6 +256,7 @@ public class RpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<RpmA
     }
     public static String calculatePackageId(String packageScope, String packageName)
     {
+        //TODO 待实现
         return packageScope == null ? packageName : String.format("%s/%s", packageScope, packageName);
     }
 
@@ -274,6 +275,7 @@ public class RpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<RpmA
 
     public static RpmArtifactCoordinates of(String packageId)
     {
+        // TODO 待实现
         //if (packageId.contains("/"))
         //{
         //    String[] nameSplit = packageId.split("/");
