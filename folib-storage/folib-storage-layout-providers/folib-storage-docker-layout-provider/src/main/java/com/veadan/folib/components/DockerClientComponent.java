@@ -71,7 +71,7 @@ public class DockerClientComponent {
             //连接建立超时时间
             client.property(ClientProperties.CONNECT_TIMEOUT, 10000);
             //读取内容超时时间
-            client.property(ClientProperties.READ_TIMEOUT, 30000);
+            client.property(ClientProperties.READ_TIMEOUT, 60000);
             WebTarget target = client.target(targetUrl);
             if (basicAuth) {
                 final HttpAuthenticationFeature authenticationFeature = (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) ? HttpAuthenticationFeature.basic(username, password) : null;
