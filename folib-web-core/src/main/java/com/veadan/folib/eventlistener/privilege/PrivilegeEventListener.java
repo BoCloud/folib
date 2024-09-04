@@ -88,7 +88,7 @@ public class PrivilegeEventListener {
                 Boolean wsClientOnline = value.getWsClientOnline();
                 Boolean isSyncPrivilege = value.getIsSyncPrivilege();
 
-                if (!isThisCluster && value.getAutoRegister()
+                if (!isThisCluster && !value.getAutoRegister()
                         && !Objects.equals(wsClientOnline, null) && wsClientOnline
                         && !Objects.equals(isSyncPrivilege, null) && isSyncPrivilege) {
                     WSMessageRequest wsMessageRequest = null;
@@ -209,20 +209,24 @@ public class PrivilegeEventListener {
         }
 
         if (PrivilegeEventTypeEnum.EVENT_RESOURCE_SYNC.getType() == privilegeEventTypeEnum.getType()) {
-            Resource resource = resourceService.queryById(uuId);
+            Resource resource = resourceService.queryById(uuId.toUpperCase());
             if (resource != null) {
                 resourcesList.add(resource);
                 if (StringUtils.isNotEmpty(resource.getRepositoryId())) {
                     resourcesList.add(Resource.builder().storageId(resource.getStorageId()).id(resource.getStorageId().toUpperCase()).build());
                 }
+                builder.resources(resourcesList);
 
-                List<FolibRole> folibRoles = folibRoleService.queryByIds(Set.of(String.format("STORAGE_ADMIN_%S", uuId), String.format("STORAGE_USER_%S", uuId)));
-                if (CollectionUtils.isNotEmpty(folibRoles)) {
-                    builder.roles(folibRoles);
-                }
                 List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryByResourceIds(Collections.singletonList(uuId));
                 if (CollectionUtils.isNotEmpty(roleResourceRefs)) {
                     builder.userRoles(roleResourceRefs);
+
+                    Set<String> roleIds = roleResourceRefs.stream().map(RoleResourceRef::getRoleId).distinct().collect(Collectors.toSet());
+                    roleIds.addAll(Set.of(String.format("STORAGE_ADMIN_%S", uuId), String.format("STORAGE_USER_%S", uuId)));
+                    List<FolibRole> folibRoles = folibRoleService.queryByIds(roleIds);
+                    if (CollectionUtils.isNotEmpty(folibRoles)) {
+                        builder.roles(folibRoles);
+                    }
                 }
             }
         }

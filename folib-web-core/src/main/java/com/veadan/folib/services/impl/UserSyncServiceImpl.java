@@ -126,10 +126,20 @@ public class UserSyncServiceImpl implements UserSyncService
             repositorys.forEach(repository -> {
                 String storageId = repository.getStorage().getId();
                 String repositoryId = repository.getId();
-                Repository repositoryInfo = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId);
-                if (repositoryInfo == null) {
-                    configurationManagementService.addOrUpdateRepository(storageId, repository);
+                StorageDto storageDto = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
+                if (storageDto == null) {
+                    try {
+                        configurationManagementService.createStorage(storageDto);
+                        SyncStorageDto syncStorageDto = new SyncStorageDto(storageDto, storageDto.getId(), SyncStorageEnum.CREATE);
+                        clusterSyncService.syncStorage(syncStorageDto);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
+//                Repository repositoryInfo = storageDto.getRepository(repositoryId);
+                configurationManagementService.addOrUpdateRepository(storageId, repository);
+                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
+                clusterSyncService.syncRepository(syncRepositoryDto);
             });
         }
         //清理已删除的用户权限信息

@@ -107,6 +107,7 @@ public class UserAuthSyncTask {
                         int page = 0;
                         int size = 100;
                         boolean flag = true;
+
                         while (flag) {
                             //发送用户权限消息
                             try {

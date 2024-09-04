@@ -30,6 +30,7 @@ import com.veadan.folib.domain.User;
 import com.veadan.folib.dto.ArtifactDispatchRepositoryDto;
 import com.veadan.folib.dto.PermissionsDTO;
 import com.veadan.folib.dto.UserDTO;
+import com.veadan.folib.entity.Resource;
 import com.veadan.folib.enums.*;
 import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
@@ -55,6 +56,7 @@ import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.domain.Users;
 import com.veadan.folib.users.service.FolibUserService;
+import com.veadan.folib.users.service.ResourceService;
 import com.veadan.folib.users.service.RoleResourceRefService;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
@@ -179,6 +181,8 @@ public class StoragesConfigurationController
     private RoleResourceRefService roleResourceRefService;
     @Autowired
     private PrivilegeEventListenerRegistry privilegeEventListenerRegistry;
+    @Autowired
+    private ResourceService resourceService;
 
 
     public StoragesConfigurationController(ConfigurationManagementService configurationManagementService,
@@ -263,7 +267,8 @@ public class StoragesConfigurationController
             storageManagementService.updateStorage(storage);
             SyncStorageDto syncStorageDto = new SyncStorageDto(storage, storageId, SyncStorageEnum.UPDATE);
             clusterSyncService.syncStorage(syncStorageDto);
-
+            //同步资源信息到其他节点
+            privilegeEventListenerRegistry.dispatchResourceSyncEvent(storage.getId());
             return getSuccessfulResponseEntity(SUCCESSFUL_UPDATE_STORAGE, accept);
         } catch (ConfigurationException | IOException e) {
             return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_UPDATE_STORAGE_ERROR, e, accept);
@@ -823,10 +828,20 @@ public class StoragesConfigurationController
                     LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(repositoryDto.getLayout());
                     layoutProvider.initData(storageId, repositoryId);
                 }
+                String resourceId = storageId + "_" +repositoryId;
+                Resource resource = resourceService.queryById(resourceId);
+                if(Objects.equals(null, resource)) {
+                    resourceService.insert(Resource.builder()
+                            .id(resourceId.toUpperCase())
+                            .storageId(storageId)
+                            .repositoryId(repositoryId)
+                            .build());
+                }
+
                 SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repositoryDto, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
                 clusterSyncService.syncRepository(syncRepositoryDto);
                 //同步资源信息到其他节点
-                privilegeEventListenerRegistry.dispatchResourceSyncEvent(repositoryId);
+                privilegeEventListenerRegistry.dispatchResourceSyncEvent(storageId + "_" +repositoryId);
 
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (Exception e) {
@@ -930,6 +945,8 @@ public class StoragesConfigurationController
                         .getRepository(repositoryId);
                 SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
                 clusterSyncService.syncRepository(syncRepositoryDto);
+                //同步资源信息到其他节点
+                privilegeEventListenerRegistry.dispatchResourceSyncEvent(storageId + "_" +repositoryId);
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (IOException | ConfigurationException e) {
                 return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);
@@ -1014,6 +1031,8 @@ public class StoragesConfigurationController
                         .getRepository(repositoryId);
                 SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
                 clusterSyncService.syncRepository(syncRepositoryDto);
+                //同步资源信息到其他节点
+                privilegeEventListenerRegistry.dispatchResourceSyncEvent(storageId + "_" +repositoryId);
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (IOException | ConfigurationException e) {
                 return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);
@@ -1056,6 +1075,8 @@ public class StoragesConfigurationController
                         .getRepository(repositoryId);
                 SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
                 clusterSyncService.syncRepository(syncRepositoryDto);
+                //同步资源信息到其他节点
+                privilegeEventListenerRegistry.dispatchResourceSyncEvent(storageId + "_" +repositoryId);
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (IOException | ConfigurationException e) {
                 return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);
@@ -1096,6 +1117,8 @@ public class StoragesConfigurationController
                         .getRepository(repositoryId);
                 SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
                 clusterSyncService.syncRepository(syncRepositoryDto);
+                //同步资源信息到其他节点
+                privilegeEventListenerRegistry.dispatchResourceSyncEvent(storageId + "_" +repositoryId);
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (IOException | ConfigurationException e) {
                 return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);
@@ -1136,6 +1159,8 @@ public class StoragesConfigurationController
                         .getRepository(repositoryId);
                 SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
                 clusterSyncService.syncRepository(syncRepositoryDto);
+                //同步资源信息到其他节点
+                privilegeEventListenerRegistry.dispatchResourceSyncEvent(storageId + "_" +repositoryId);
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
             } catch (IOException | ConfigurationException e) {
                 return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);
