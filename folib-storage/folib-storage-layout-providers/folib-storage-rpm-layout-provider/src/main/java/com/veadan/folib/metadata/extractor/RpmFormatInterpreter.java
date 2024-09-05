@@ -341,7 +341,6 @@ public class RpmFormatInterpreter {
         return null;
     }
     private  String[] getStringArrayHeader(Format format, Header.HeaderTag tag) {
-        log.info("tag:"+tag);
         if (format.getHeader().getEntry(tag) != null) {
             String[] values = (String[]) format.getHeader().getEntry(tag).getValues();
             return values != null && values.length >= 1 ? values : new String[0];
@@ -366,7 +365,6 @@ public class RpmFormatInterpreter {
 
 
     private int[] getIntArrayHeader(Format rpmFormat, Signature.SignatureTag tag) {
-        log.info("tag:"+tag);
         // 获取 HeaderTag 对应的整型值
         if (rpmFormat.getHeader().getEntry(tag) != null) {
             int[] values = (int[]) rpmFormat.getHeader().getEntry(tag).getValues();
@@ -376,7 +374,6 @@ public class RpmFormatInterpreter {
     }
 
     private int[] getIntArrayHeader(Signature signature, Signature.SignatureTag tag) {
-        log.info("tag:"+tag);
         // 获取 HeaderTag 对应的整型值
         if (signature.getEntry(tag) != null) {
             int[] values = (int[]) signature.getEntry(tag).getValues();
