@@ -57,9 +57,11 @@ public class AuthoritiesProvider
     
     public Role getRuntimeRole(String name)
     {
-
-        RoleData role = authorizationConfigService.getRole(name).getRoles().stream()
-                                                  .findFirst().orElseThrow(() -> new IllegalArgumentException(name));
+        RoleData role = null;
+        Set<RoleData> roles = authorizationConfigService.getRole(name).getRoles();
+        if (!SystemRole.ANONYMOUS.name().equals(name)) {
+            role = roles.stream().findFirst().orElseThrow(() -> new IllegalArgumentException(name));
+        }
 
         if (SystemRole.ADMIN.name().equals(name))
         {
