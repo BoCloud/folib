@@ -57,9 +57,9 @@ public class FolibApplicationRunner implements ApplicationRunner {
     private void initData() {
         initSystemPropertiesData();
         int total = scanService.countProperties();
-        boolean isFirst = total <= 1;
+        boolean isInit = total <= 1;
         log.info("Table properties data total is [{}]", total);
-        if (isFirst) {
+        if (isInit) {
             if (JanusGraphDbProfile.PROFILE_EMBEDDED.equals(System.getProperty(JanusGraphDbProfile.PROPERTY_PROFILE))) {
                 String clusterNodeTotal = System.getProperty("CLUSTER_NODE_TOTAL");
                 if (StringUtils.isNotBlank(clusterNodeTotal)) {
@@ -67,13 +67,16 @@ public class FolibApplicationRunner implements ApplicationRunner {
                     nodeService.modifyReplicationFactor(Integer.parseInt(clusterNodeTotal));
                 }
             }
-            log.info("The initialization of vulnerability data begins ");
-            scanService.updateMirror();
-            log.info("The initialization of vulnerability data ends ");
         }
         String gcGraceSeconds = System.getProperty(CassandraComponent.GC_GRACE_SECONDS_KEY, CassandraComponent.DEFAULT_GC_GRACE_SECONDS.toString());
         nodeService.modifyGcGraceSeconds(Integer.parseInt(gcGraceSeconds));
         handlerUnExecutedTask();
+        if (isInit) {
+            //初始化漏洞库，耗时长，放到最后
+            log.info("The initialization of vulnerability data begins ");
+            scanService.updateMirror();
+            log.info("The initialization of vulnerability data ends ");
+        }
     }
 
     /**

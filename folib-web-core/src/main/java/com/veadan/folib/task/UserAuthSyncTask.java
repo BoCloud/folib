@@ -66,7 +66,7 @@ public class UserAuthSyncTask {
     @Inject
     private ResourceService resourceService;
 
-    @Scheduled(cron = "0 0/5 * * * ? ")
+    @Scheduled(cron = "0 0/10 * * * ? ")
     public void run() {
         String lockName = "UserAuthSyncTask";
         long waitTime = 3L;
@@ -90,7 +90,7 @@ public class UserAuthSyncTask {
                     Boolean wsClientOnline = value.getWsClientOnline();
                     Boolean isSyncPrivilege = value.getIsSyncPrivilege();
 
-                    if (!isThisCluster
+                    if (!isThisCluster && !value.getAutoRegister()
                             && !Objects.equals(wsClientOnline, null) && wsClientOnline
                             && !Objects.equals(isSyncPrivilege, null) && isSyncPrivilege) {
                         WSMessageRequest wsMessageRequest = null;
@@ -107,6 +107,7 @@ public class UserAuthSyncTask {
                         int page = 0;
                         int size = 100;
                         boolean flag = true;
+
                         while (flag) {
                             //发送用户权限消息
                             try {

@@ -8,6 +8,13 @@ export function getStorages () {
   })
 }
 
+export function queryStorages (dataQuery) {
+  return axios({
+    url: `/api/configuration/folib/storages/queryStorages?page=${dataQuery.page}&limit=${dataQuery.limit}`,
+    method: 'get'
+  })
+}
+
 export function getLibrary (libId) {
   return axios({
     url: '/api/configuration/folib/storages/'+libId,
@@ -52,6 +59,12 @@ export function getStoragesAndRepositories (dataQuery) {
   })
 }
 
+export function queryRepositories (dataQuery) {
+  return axios({
+    url: `/api/configuration/folib/storages/queryStoragesAndRepositories?page=${dataQuery.page}&limit=${dataQuery.limit}`,
+    method: 'get'
+  })
+}
 export function getPermissionStoragesAndRepositories (dataQuery) {
   return axios({
     url: '/api/configuration/folib/storages/getPermissionStoragesAndRepositories',
@@ -489,6 +502,3 @@ export function getArtifactsPage (query) {
     params: query
   })
 }
-
-
-

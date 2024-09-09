@@ -331,6 +331,8 @@ public class FolibRoleServiceImpl implements FolibRoleService {
     public boolean deleteById(String id){
         //int update = folibRoleMapper.update(FolibRole.builder().id(id).deleted(GlobalConstants.DELETED).build());
         int deleteNumber = folibRoleMapper.deleteById(id);
+
+        roleResourceRefService.deleteByRoleId(id);
         return deleteNumber > 0;
     }
 

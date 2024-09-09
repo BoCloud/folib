@@ -233,12 +233,6 @@ public class InMemoryUserService implements UserService
             readLock.unlock();
         }
     }
-
-    @Override
-    public void syncUserAuth(UserAuthDTO date) {
-
-    }
-
     @Override
     public void updateAccountDetailsByUsername(User userToUpdate)
     {

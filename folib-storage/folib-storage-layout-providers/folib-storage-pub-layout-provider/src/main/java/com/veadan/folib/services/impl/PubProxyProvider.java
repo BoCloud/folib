@@ -18,6 +18,8 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.PubProvider;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.remote.RemoteRepository;
+import com.veadan.folib.storage.repository.remote.heartbeat.RemoteRepositoryAlivenessService;
 import com.veadan.folib.utils.PubUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -50,6 +52,9 @@ public class PubProxyProvider implements PubProvider {
 
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
+
+    @Inject
+    private RemoteRepositoryAlivenessService remoteRepositoryAlivenessCacheManager;
 
     @PostConstruct
     @Override
@@ -135,7 +140,12 @@ public class PubProxyProvider implements PubProvider {
 
     private JSONObject commonUrlJSONData(Repository repository, String url) {
         JSONObject data = null;
-        String prefixUrl = repository.getRemoteRepository().getUrl();
+        RemoteRepository remoteRepository = repository.getRemoteRepository();
+        if (!remoteRepositoryAlivenessCacheManager.isAlive(remoteRepository)) {
+            log.warn("Remote storageId [{}] repositoryId [{}] url [{}] is down.", repository.getStorage().getId(), repository.getId(), remoteRepository.getUrl());
+            return null;
+        }
+        String prefixUrl = remoteRepository.getUrl();
         String suffixUrl = url;
         if (!suffixUrl.startsWith(GlobalConstants.SEPARATOR)) {
             suffixUrl = GlobalConstants.SEPARATOR + suffixUrl;

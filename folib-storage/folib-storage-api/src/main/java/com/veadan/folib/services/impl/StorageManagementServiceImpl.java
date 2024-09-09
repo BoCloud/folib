@@ -173,8 +173,8 @@ public class StorageManagementServiceImpl implements StorageManagementService {
                         folibRole = folibRoleService.insert(folibRole);
                     }
                     //添加用户和资源绑定
+                    List<RoleResourceRef> userRef = new ArrayList<>(users.size());
                     if (CollectionUtils.isNotEmpty(users)) {
-                        List<RoleResourceRef> userRef = new ArrayList<>(users.size());
                         FolibRole finalFolibRole = folibRole;
                         users.forEach(user -> {
                             addResources.forEach(res -> {
@@ -188,10 +188,9 @@ public class StorageManagementServiceImpl implements StorageManagementService {
                                 }
                             });
                         });
-                        if (!userRef.isEmpty()) {
-                            roleResourceRefService.saveBath(userRef);
-                        }
                     }
+                    userRef.add(RoleResourceRef.builder().roleId(roleId).resourceId(storageId).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build());
+                    roleResourceRefService.saveBath(userRef);
                 });
             }
         } catch (Exception e) {
@@ -210,6 +209,7 @@ public class StorageManagementServiceImpl implements StorageManagementService {
         List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryRefsByRoleIds(roleIds);
         Map<String, List<RoleResourceRef>> roleUserMap = roleResourceRefs.stream().filter(r -> Objects.nonNull(r.getRefType()) && r.getRefType().equals(GlobalConstants.ROLE_TYPE_USER)).collect(Collectors.groupingBy(RoleResourceRef::getRoleId));
         storages.forEach(storage -> {
+            storage.setUsers(new HashSet<>());
             List<RoleResourceRef> adminRef = roleUserMap.get(String.format("STORAGE_ADMIN_%S", storage.getId()));
             if (CollectionUtils.isNotEmpty(adminRef)) {
                 String adminUser = adminRef.get(0).getEntityId();
@@ -316,6 +316,7 @@ public class StorageManagementServiceImpl implements StorageManagementService {
                 Set<String> privileges = privileges();
                 List<RoleResourceRef> roleResourceRefs = privileges.stream().map(privilege -> RoleResourceRef.builder().roleId(key).entityId(username).refType(GlobalConstants.ROLE_TYPE_USER).resourceId(resourceId)
                         .storagePrivilege(privilege).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build()).collect(Collectors.toList());
+                roleResourceRefs.add(RoleResourceRef.builder().roleId(key).resourceId(resourceId).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build());
                 roleResourceRefService.saveBath(roleResourceRefs);
 
             } catch (Exception ex) {

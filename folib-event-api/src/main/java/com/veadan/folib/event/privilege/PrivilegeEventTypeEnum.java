@@ -22,6 +22,10 @@ public enum PrivilegeEventTypeEnum {
      */
     EVENT_RESOURCE_SYNC(4),
     EVENT_ALL_SYNC(5),
+    EVENT_DELETE_USER_SYNC(6),
+    EVENT_DELETE_USER_GROUP_SYNC(7),
+    EVENT_DELETE_ROLE_SYNC(8),
+    EVENT_DELETE_RESOURCE_SYNC(9),
     ;
 
 

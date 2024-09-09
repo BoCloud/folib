@@ -1,6 +1,7 @@
 package com.veadan.folib.ws.server;
 
 import com.veadan.folib.scanner.common.util.SpringContextUtil;
+import com.veadan.folib.services.UserSyncService;
 import com.veadan.folib.users.dto.UserAuthDTO;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import org.springframework.stereotype.Component;
@@ -22,7 +23,7 @@ public class UserAuthSyncCommandProcessor extends CommandProcessor{
     @Override
     public String doExecute(WSMessageRequest wsMessageRequest, Session session) {
         UserAuthDTO date = (UserAuthDTO) wsMessageRequest.getDate();
-        SpringContextUtil.getBeanWithAnnotation(RelationalDatabaseUserService.RelationalDatabase.class, RelationalDatabaseUserService.class).syncUserAuth(date);
+        SpringContextUtil.getBean(UserSyncService.class).syncUserAuth(date);
         return "ok";
     }
 }

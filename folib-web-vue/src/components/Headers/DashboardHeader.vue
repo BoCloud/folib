@@ -5,6 +5,25 @@
     <a-layout-header>
       <a-row type="flex">
         <!-- Header Breadcrumbs & Title Column -->
+        <a-col :span="4" :md="1" class="sidebar-toggler-col">
+          <!-- / Header Page Title -->
+          <a-button
+            type="link"
+            class="sidebar-toggler"
+            @click="$emit('minimizeSidebar'), resizeEventHandler()"
+          >
+            <svg
+              width="20"
+              height="20"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 448 512"
+            >
+              <path
+                d="M16 132h416c8.837 0 16-7.163 16-16V76c0-8.837-7.163-16-16-16H16C7.163 60 0 67.163 0 76v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16z"
+              />
+            </svg>
+          </a-button>
+        </a-col>
         <a-col :span="8" :md="language === 'zh' ? 6 : 10">
           <!-- Header Breadcrumbs -->
           <a-breadcrumb>
@@ -32,25 +51,7 @@
         <!-- / Header Breadcrumbs & Title Column -->
 
         <!-- Header Breadcrumbs & Title Column -->
-        <a-col :span="4" :md="1" class="sidebar-toggler-col">
-          <!-- / Header Page Title -->
-          <a-button
-            type="link"
-            class="sidebar-toggler"
-            @click="$emit('minimizeSidebar'), resizeEventHandler()"
-          >
-            <svg
-              width="20"
-              height="20"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 448 512"
-            >
-              <path
-                d="M16 132h416c8.837 0 16-7.163 16-16V76c0-8.837-7.163-16-16-16H16C7.163 60 0 67.163 0 76v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16z"
-              />
-            </svg>
-          </a-button>
-        </a-col>
+       
         <!-- / Header Breadcrumbs & Title Column -->
 
         <!-- Header Control Column -->
