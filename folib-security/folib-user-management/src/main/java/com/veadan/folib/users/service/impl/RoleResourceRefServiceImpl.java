@@ -9,10 +9,7 @@ import com.veadan.folib.entity.RoleResourceRef;
 import com.veadan.folib.entity.UserGroupRef;
 import com.veadan.folib.mapper.RoleResourceRefMapper;
 import com.veadan.folib.users.dto.UserPermissionDTO;
-import com.veadan.folib.users.service.FolibUserService;
-import com.veadan.folib.users.service.ResourceService;
-import com.veadan.folib.users.service.RoleResourceRefService;
-import com.veadan.folib.users.service.UserGroupRefService;
+import com.veadan.folib.users.service.*;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +39,9 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
     private UserGroupRefService userGroupRefService;
     @Autowired
     private FolibUserService folibUserService;
-    
+    @Autowired
+    private FolibRoleService folibRoleService;
+
     /** 
      * 通过ID查询单条数据 
      *
@@ -73,6 +72,15 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
      */
     public RoleResourceRef insert(RoleResourceRef roleResourceRef){
         roleResourceRefMapper.insert(roleResourceRef);
+        String entityId = roleResourceRef.getEntityId();
+        if (GlobalConstants.ROLE_TYPE_USER.equals(roleResourceRef.getRefType())){
+            folibRoleService.deleteUserRoleCache(Collections.singletonList(entityId));
+        }else if (GlobalConstants.ROLE_TYPE_USER_GROUP.equals(roleResourceRef.getRefType())){
+            List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(Collections.singletonList(Long.valueOf(entityId)));
+            if (CollectionUtils.isNotEmpty(userGroupRefs)) {
+                folibRoleService.deleteUserRoleCache(userGroupRefs.stream().map(UserGroupRef::getUserId).collect(Collectors.toList()));
+            }
+        }
         return roleResourceRef;
     }
     
@@ -84,6 +92,15 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
      */
     public RoleResourceRef update(RoleResourceRef roleResourceRef){
         roleResourceRefMapper.update(roleResourceRef);
+        String entityId = roleResourceRef.getEntityId();
+        if (GlobalConstants.ROLE_TYPE_USER.equals(roleResourceRef.getRefType())){
+            folibRoleService.deleteUserRoleCache(Collections.singletonList(entityId));
+        }else if (GlobalConstants.ROLE_TYPE_USER_GROUP.equals(roleResourceRef.getRefType())){
+            List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(Collections.singletonList(Long.valueOf(entityId)));
+            if (CollectionUtils.isNotEmpty(userGroupRefs)) {
+                folibRoleService.deleteUserRoleCache(userGroupRefs.stream().map(UserGroupRef::getUserId).collect(Collectors.toList()));
+            }
+        }
         return queryById(roleResourceRef.getId());
     }
     
@@ -94,11 +111,37 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
      * @return 是否成功
      */
     public boolean deleteById(Long id){
+        RoleResourceRef roleResourceRef = queryById(id);
+        if (roleResourceRef == null) {
+            return true;
+        }
+        String entityId = roleResourceRef.getEntityId();
+        if (GlobalConstants.ROLE_TYPE_USER.equals(roleResourceRef.getRefType())){
+            folibRoleService.deleteUserRoleCache(Collections.singletonList(entityId));
+        }else if (GlobalConstants.ROLE_TYPE_USER_GROUP.equals(roleResourceRef.getRefType())){
+            List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(Collections.singletonList(Long.valueOf(entityId)));
+            if (CollectionUtils.isNotEmpty(userGroupRefs)) {
+                folibRoleService.deleteUserRoleCache(userGroupRefs.stream().map(UserGroupRef::getUserId).collect(Collectors.toList()));
+            }
+        }
         int total = roleResourceRefMapper.deleteById(id);
         return total > 0;
     }
 
     public boolean deleteByRoleId(String roleId){
+        List<RoleResourceRef> roleResourceRefs = queryByRoleIds(Collections.singletonList(roleId));
+        if (CollectionUtils.isNotEmpty(roleResourceRefs)) {
+            List<String> userIds = roleResourceRefs.stream().filter(r -> GlobalConstants.ROLE_TYPE_USER.equals(r.getRefType())).map(RoleResourceRef::getEntityId).collect(Collectors.toList());
+            List<Long> groupIds = roleResourceRefs.stream().filter(r -> GlobalConstants.ROLE_TYPE_USER_GROUP.equals(r.getRefType())).map(r -> Long.valueOf(r.getEntityId())).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(groupIds)){
+                List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(groupIds);
+                if (CollectionUtils.isNotEmpty(userGroupRefs)) {
+                    userIds.addAll(userGroupRefs.stream().map(UserGroupRef::getUserId).distinct().collect(Collectors.toList()));
+                }
+            }
+            folibRoleService.deleteUserRoleCache(userIds);
+        }
+
         int total = roleResourceRefMapper.deleteByRoleId(roleId);
         return total > 0;
     }
@@ -110,7 +153,18 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
 
     @Override
     public int saveBath(List<RoleResourceRef> roleResourceRefs) {
-        return roleResourceRefMapper.insertBatch(roleResourceRefs);
+        int number = roleResourceRefMapper.insertBatch(roleResourceRefs);
+        List<String> userIds = roleResourceRefs.stream().filter(r -> GlobalConstants.ROLE_TYPE_USER.equals(r.getRefType())).map(RoleResourceRef::getEntityId).collect(Collectors.toList());
+
+        List<Long> groupIds = roleResourceRefs.stream().filter(r -> GlobalConstants.ROLE_TYPE_USER_GROUP.equals(r.getRefType())).map(r -> Long.valueOf(r.getEntityId())).collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(groupIds)){
+            List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(groupIds);
+            if (CollectionUtils.isNotEmpty(userGroupRefs)) {
+                userIds.addAll(userGroupRefs.stream().map(UserGroupRef::getUserId).distinct().collect(Collectors.toList()));
+            }
+        }
+        folibRoleService.deleteUserRoleCache(userIds);
+        return number;
     }
 
     @Override
@@ -125,7 +179,7 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
 
     @Override
     public void removeByIds(List<Long> removeRefIds) {
-        roleResourceRefMapper.deleteByRefIds(removeRefIds);
+        deleteByIds(removeRefIds);
     }
 
     /**
@@ -325,6 +379,15 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         }
         if (CollectionUtils.isNotEmpty(userRoles)) {
             roleResourceRefMapper.insertBatch(userRoles);
+            List<String> userIds = userRoles.stream().filter(r -> GlobalConstants.ROLE_TYPE_USER.equals(r.getRefType())).map(RoleResourceRef::getEntityId).collect(Collectors.toList());
+            List<Long> groupIds = userRoles.stream().filter(r -> GlobalConstants.ROLE_TYPE_USER_GROUP.equals(r.getRefType())).map(r -> Long.valueOf(r.getEntityId())).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(groupIds)){
+                List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(groupIds);
+                if (CollectionUtils.isNotEmpty(userGroupRefs)) {
+                    userIds.addAll(userGroupRefs.stream().map(UserGroupRef::getUserId).distinct().collect(Collectors.toList()));
+                }
+            }
+            folibRoleService.deleteUserRoleCache(userIds);
         }
     }
 
@@ -351,6 +414,19 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
 
     @Override
     public void deleteAllByRoleId(String roleId) {
+        List<RoleResourceRef> roleResourceRefs = queryByRoleIds(Collections.singletonList(roleId));
+        if (CollectionUtils.isNotEmpty(roleResourceRefs)){
+            List<String> userIds = roleResourceRefs.stream().filter(r -> GlobalConstants.ROLE_TYPE_USER.equals(r.getRefType())).map(RoleResourceRef::getEntityId).collect(Collectors.toList());
+            List<Long> groupIds = roleResourceRefs.stream().filter(r -> GlobalConstants.ROLE_TYPE_USER_GROUP.equals(r.getRefType())).map(r -> Long.valueOf(r.getEntityId())).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(groupIds)){
+                List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(groupIds);
+                if (CollectionUtils.isNotEmpty(userGroupRefs)) {
+                    userIds.addAll(userGroupRefs.stream().map(UserGroupRef::getUserId).distinct().collect(Collectors.toList()));
+                }
+            }
+            folibRoleService.deleteUserRoleCache(userIds);
+        }
+
         Example example = new Example(RoleResourceRef.class);
         example.createCriteria().andEqualTo("roleId", roleId).andIsNull("entityId");
         roleResourceRefMapper.deleteByExample(example);
@@ -392,7 +468,19 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
                 }
             });
             if (CollectionUtils.isNotEmpty(updateRefs)) {
-                saveBath(updateRefs.stream().distinct().collect(Collectors.toList()));
+                List<RoleResourceRef> roleResourceRefList = updateRefs.stream().distinct().collect(Collectors.toList());
+                saveBath(roleResourceRefList);
+
+                List<String> userIds = roleResourceRefList.stream().filter(r -> GlobalConstants.ROLE_TYPE_USER.equals(r.getRefType())).map(RoleResourceRef::getEntityId).collect(Collectors.toList());
+                List<Long> groupIds = roleResourceRefList.stream().filter(r -> GlobalConstants.ROLE_TYPE_USER_GROUP.equals(r.getRefType())).map(r -> Long.valueOf(r.getEntityId())).collect(Collectors.toList());
+                if (CollectionUtils.isNotEmpty(groupIds)){
+                    List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(groupIds);
+                    if (CollectionUtils.isNotEmpty(userGroupRefs)) {
+                        userIds.addAll(userGroupRefs.stream().map(UserGroupRef::getUserId).distinct().collect(Collectors.toList()));
+                    }
+                }
+                folibRoleService.deleteUserRoleCache(userIds);
+
             }
         }
 
@@ -417,6 +505,14 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         Example example = new Example(RoleResourceRef.class);
         example.createCriteria().andEqualTo("entityId", entityId).andEqualTo("refType", refType);
         roleResourceRefMapper.deleteByExample(example);
+
+        if (GlobalConstants.ROLE_TYPE_USER.equals(refType)) {
+            folibRoleService.deleteUserRoleCache(Collections.singletonList(entityId));
+        }else if (GlobalConstants.ROLE_TYPE_USER_GROUP.equals(refType)) {
+            List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(Collections.singletonList(Long.valueOf(entityId)));
+            List<String> userIds = userGroupRefs.stream().map(UserGroupRef::getUserId).distinct().collect(Collectors.toList());
+            folibRoleService.deleteUserRoleCache(userIds);
+        }
     }
 
     @Override
@@ -424,6 +520,12 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         Example example = new Example(RoleResourceRef.class);
         example.createCriteria().andIn("id", removeIds);
         roleResourceRefMapper.deleteByExample(example);
+
+        List<RoleResourceRef> roleResourceRefs = queryByIds(removeIds);
+        if (CollectionUtils.isNotEmpty(roleResourceRefs)) {
+            List<String> userIds = roleResourceRefs.stream().filter(r -> GlobalConstants.ROLE_TYPE_USER.equals(r.getRefType())).map(RoleResourceRef::getEntityId).collect(Collectors.toList());
+            folibRoleService.deleteUserRoleCache(userIds);
+        }
     }
 
     @Override
@@ -492,5 +594,12 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         if (CollectionUtils.isNotEmpty(updateRefs)) {
             saveBath(updateRefs.stream().distinct().collect(Collectors.toList()));
         }
+    }
+
+    @Override
+    public List<RoleResourceRef> queryByIds(List<Long> ids) {
+        Example example = new Example(RoleResourceRef.class);
+        example.createCriteria().andIn("id", ids);
+        return roleResourceRefMapper.selectByExample(example);
     }
 }

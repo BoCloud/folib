@@ -26,9 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -76,25 +74,45 @@ public class UserSyncServiceImpl implements UserSyncService
         }
         //更新用户组信息
         List<UserGroup> groups = date.getGroups();
-        if (CollectionUtils.isNotEmpty(groups)) {
-            userGroupService.saveOrUpdateBatch(groups);
-        }
-        //更新用户组关联信息
         List<UserGroupRef> userGroups = date.getUserGroups();
-        if (CollectionUtils.isNotEmpty(userGroups)) {
-            List<String> groupNames = userGroups.stream().map(UserGroupRef::getUserGroupName).collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(groups) || CollectionUtils.isNotEmpty(userGroups)) {
+            List<String> groupNames = groups.stream().map(UserGroup::getGroupName).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(userGroups)) {
+                groupNames.addAll(userGroups.stream().map(UserGroupRef::getUserGroupName).collect(Collectors.toList()));
+            }
             List<UserGroup> userGroupList = userGroupService.queryByGroupNames(groupNames);
+            Map<String, Long> userGroupMap = new HashMap<>();
             if (CollectionUtils.isNotEmpty(userGroupList)) {
-                Map<String, Long> userGroupMap = userGroupList.stream().collect(Collectors.toMap(UserGroup::getGroupName, UserGroup::getId));
-                userGroups.forEach(userGroupRef -> {
-                    Long groupId = userGroupMap.get(userGroupRef.getUserGroupName());
-                    if (groupId != null) {
-                        userGroupRef.setUserGroupId(groupId);
+                userGroupMap = userGroupList.stream().collect(Collectors.toMap(UserGroup::getGroupName, UserGroup::getId));
+            }
+
+            if (CollectionUtils.isNotEmpty(groups)) {
+                Map<String, Long> finalUserGroupMap = userGroupMap;
+                List<UserGroup> addGroups = new ArrayList<>();
+                groups.forEach(userGroup -> {
+                    Long groupId = finalUserGroupMap.get(userGroup.getGroupName());
+                    if (groupId == null) {
+                        addGroups.add(userGroup);
                     }
                 });
+                if (CollectionUtils.isNotEmpty(addGroups)) {
+                    userGroupService.saveOrUpdateBatch(addGroups);
+                }
             }
-            userGroupRefService.batchUpdate(userGroups);
+            //更新用户组关联信息
+            if (CollectionUtils.isNotEmpty(userGroups)) {
+                Map<String, Long> finalUserGroupMap1 = userGroupMap;
+                userGroups.forEach(userGroupRef -> {
+                        Long groupId = finalUserGroupMap1.get(userGroupRef.getUserGroupName());
+                        if (groupId != null) {
+                            userGroupRef.setUserGroupId(groupId);
+                        }
+                    });
+                userGroupRefService.batchUpdate(userGroups);
+            }
         }
+
+
         //更新角色信息
         List<FolibRole> roles = date.getRoles();
         if (CollectionUtils.isNotEmpty(roles)) {
@@ -121,7 +139,7 @@ public class UserSyncServiceImpl implements UserSyncService
                         SyncStorageDto syncStorageDto = new SyncStorageDto(storage, storage.getId(), SyncStorageEnum.CREATE);
                         clusterSyncService.syncStorage(syncStorageDto);
                     } catch (IOException e) {
-                        throw new RuntimeException(e);
+                        log.error("创建存储失败", e);
                     }
                 }else {
                     try {
@@ -129,7 +147,7 @@ public class UserSyncServiceImpl implements UserSyncService
                         SyncStorageDto syncStorageDto = new SyncStorageDto(storage, storage.getId(), SyncStorageEnum.UPDATE);
                         clusterSyncService.syncStorage(syncStorageDto);
                     } catch (IOException e) {
-                        throw new RuntimeException(e);
+                        log.error("更新存储失败", e);
                     }
                 }
             });
@@ -146,16 +164,20 @@ public class UserSyncServiceImpl implements UserSyncService
                         SyncStorageDto syncStorageDto = new SyncStorageDto(storageDto, storageDto.getId(), SyncStorageEnum.CREATE);
                         clusterSyncService.syncStorage(syncStorageDto);
                     } catch (IOException e) {
-                        throw new RuntimeException(e);
+                        log.error("创建仓库关联的存储失败", e);
                     }
                 }
                 Repository existRepository = storageDto.getRepository(repositoryId);
                 boolean result = Objects.nonNull(existRepository) && (!repository.getLayout().equals(existRepository.getLayout()) || (Objects.nonNull(existRepository.getSubLayout()) && !existRepository.getSubLayout().equals(repository.getSubLayout())));
                 if (!result) {
-                    //判断重复
-                    configurationManagementService.addOrUpdateRepository(storageId, repository);
-                    SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
-                    clusterSyncService.syncRepository(syncRepositoryDto);
+                    try {
+                        //判断重复
+                        configurationManagementService.addOrUpdateRepository(storageId, repository);
+                        SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
+                        clusterSyncService.syncRepository(syncRepositoryDto);
+                    } catch (Exception e) {
+                        log.error("新增、更新仓库失败", e);
+                    }
                 }
             });
         }
@@ -219,7 +241,6 @@ public class UserSyncServiceImpl implements UserSyncService
                         clusterSyncService.syncRepository(syncRepositoryDto);
                     } catch (IOException e) {
                         log.error("删除仓库[{}]失败！", repositoryId, e);
-                        throw new RuntimeException(e);
                     }
 
                 }else {
@@ -239,7 +260,6 @@ public class UserSyncServiceImpl implements UserSyncService
                         clusterSyncService.syncStorage(syncStorageDto);
                     } catch (IOException e) {
                         log.error("删除存储空间[{}]失败！", storageId, e);
-                        throw new RuntimeException(e);
                     }
                 }
 

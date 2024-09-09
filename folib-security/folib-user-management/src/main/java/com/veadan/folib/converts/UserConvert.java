@@ -61,11 +61,14 @@ public interface UserConvert {
             @Mapping(target = "roles", ignore = true)})
     FolibUser UserEntityToFolibUser(UserEntity folibUser);
 
-    @Mappings({@Mapping(source = "roles", target = "roles")})
+    @Mappings({@Mapping(source = "roles", target = "roles"),
+            @Mapping(source = "username", target = "username")})
     List<UserEntity> UserDTOsToUserList(List<UserDTO> usrerDTOList);
 
     @Mappings({@Mapping(source = "roles", target = "roles"),
-            @Mapping(source = "updateTime", target = "lastUpdated")
+            @Mapping(source = "updateTime", target = "lastUpdated"),
+            @Mapping(source = "username", target = "username"),
+            @Mapping(source = "username", target = "uuid")
     })
     UserEntity UserDTOToUserEntity(UserDTO usrerDTO);
 

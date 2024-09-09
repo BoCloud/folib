@@ -57,7 +57,7 @@ public class AuthoritiesProvider
     
     public Role getRuntimeRole(String name)
     {
-        RoleData role = null;
+        RoleData role = new RoleData(new RoleDto(name, "", new AccessModelDto()));
         Set<RoleData> roles = authorizationConfigService.getRole(name).getRoles();
         if (!SystemRole.ANONYMOUS.name().equals(name)) {
             role = roles.stream().findFirst().orElseThrow(() -> new IllegalArgumentException(name));

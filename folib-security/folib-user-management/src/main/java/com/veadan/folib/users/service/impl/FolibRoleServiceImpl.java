@@ -419,10 +419,14 @@ public class FolibRoleServiceImpl implements FolibRoleService {
 
     @Override
     public void deleteUserRoleCache(List<String> userIds) {
-        userIds.parallelStream().forEach(userId -> {
-            String roleKey = String.format("user_role_%s", userId);
-            distributedCacheComponent.delete(roleKey);
-        });
+        if (CollectionUtils.isNotEmpty(userIds)){
+            userIds.parallelStream().forEach(userId -> {
+                String roleKey = String.format("user_role_%s", userId);
+                distributedCacheComponent.delete(roleKey);
+                String userKey = String.format("user_%s", userId);
+                distributedCacheComponent.delete(userKey);
+            });
+        }
     }
 
     @Override
