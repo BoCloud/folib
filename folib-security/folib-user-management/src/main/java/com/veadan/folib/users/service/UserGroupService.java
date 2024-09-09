@@ -66,4 +66,6 @@ public interface UserGroupService{
     void saveOrUpdateBatch(List<UserGroup> groups);
 
     List<UserGroup> queryByIds(List<Long> ids);
+
+    List<UserGroup> queryByGroupNames(List<String> groupNames);
 }

@@ -27,6 +27,8 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -80,6 +82,17 @@ public class UserSyncServiceImpl implements UserSyncService
         //更新用户组关联信息
         List<UserGroupRef> userGroups = date.getUserGroups();
         if (CollectionUtils.isNotEmpty(userGroups)) {
+            List<String> groupNames = userGroups.stream().map(UserGroupRef::getUserGroupName).collect(Collectors.toList());
+            List<UserGroup> userGroupList = userGroupService.queryByGroupNames(groupNames);
+            if (CollectionUtils.isNotEmpty(userGroupList)) {
+                Map<String, Long> userGroupMap = userGroupList.stream().collect(Collectors.toMap(UserGroup::getGroupName, UserGroup::getId));
+                userGroups.forEach(userGroupRef -> {
+                    Long groupId = userGroupMap.get(userGroupRef.getUserGroupName());
+                    if (groupId != null) {
+                        userGroupRef.setUserGroupId(groupId);
+                    }
+                });
+            }
             userGroupRefService.batchUpdate(userGroups);
         }
         //更新角色信息
@@ -136,10 +149,14 @@ public class UserSyncServiceImpl implements UserSyncService
                         throw new RuntimeException(e);
                     }
                 }
-//                Repository repositoryInfo = storageDto.getRepository(repositoryId);
-                configurationManagementService.addOrUpdateRepository(storageId, repository);
-                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
-                clusterSyncService.syncRepository(syncRepositoryDto);
+                Repository existRepository = storageDto.getRepository(repositoryId);
+                boolean result = Objects.nonNull(existRepository) && (!repository.getLayout().equals(existRepository.getLayout()) || (Objects.nonNull(existRepository.getSubLayout()) && !existRepository.getSubLayout().equals(repository.getSubLayout())));
+                if (!result) {
+                    //判断重复
+                    configurationManagementService.addOrUpdateRepository(storageId, repository);
+                    SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
+                    clusterSyncService.syncRepository(syncRepositoryDto);
+                }
             });
         }
         //清理已删除的用户权限信息

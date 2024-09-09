@@ -9,6 +9,7 @@ import com.veadan.folib.mapper.UserGroupMapper;
 import com.veadan.folib.users.service.RoleResourceRefService;
 import com.veadan.folib.users.service.UserGroupRefService;
 import com.veadan.folib.users.service.UserGroupService;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -68,6 +70,11 @@ public class UserGroupServiceImpl implements UserGroupService {
      * @return 实例对象
      */
     public UserGroup save(UserGroup userGroup){
+        String groupName = userGroup.getGroupName();
+        List<UserGroup> userGroups = queryByGroupNames(Collections.singletonList(groupName));
+        if (CollectionUtils.isNotEmpty(userGroups) && userGroups.get(0).getGroupName().equals(groupName)) {
+            throw new RuntimeException("UserGroupName is already");
+        }
         userGroup.setId(idGenerateUtils.generateId("userGroupId"));
         userGroupMapper.insert(userGroup);
         return userGroup;
@@ -80,6 +87,13 @@ public class UserGroupServiceImpl implements UserGroupService {
      * @return 实例对象
      */
     public UserGroup update(UserGroup userGroup){
+        String groupName = userGroup.getGroupName();
+        List<UserGroup> userGroups = queryByGroupNames(Collections.singletonList(groupName));
+        if (CollectionUtils.isNotEmpty(userGroups)
+                && userGroups.get(0).getGroupName().equals(groupName)
+                && !userGroups.get(0).getId().equals(userGroup.getId())) {
+            throw new RuntimeException("UserGroupName is already");
+        }
         userGroupMapper.update(userGroup);
         return queryById(userGroup.getId());
     }
@@ -123,6 +137,13 @@ public class UserGroupServiceImpl implements UserGroupService {
     public List<UserGroup> queryByIds(List<Long> ids) {
         Example example = new Example(UserGroup.class);
         example.createCriteria().andIn("id", ids);
+        return userGroupMapper.selectByExample(example);
+    }
+
+    @Override
+    public List<UserGroup> queryByGroupNames(List<String> groupNames) {
+        Example example = new Example(UserGroup.class);
+        example.createCriteria().andIn("groupName", groupNames);
         return userGroupMapper.selectByExample(example);
     }
 }
