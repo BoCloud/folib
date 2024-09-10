@@ -210,6 +210,7 @@ export default {
             if (id) this.getDetail(id)
         },
         closeModal() {
+            this.page=1
             this.$refs.ruleForm.resetFields()
             this.auto = true
             this.selectedRowKeys = []
@@ -251,7 +252,7 @@ export default {
         },
         handleChangeTable(pagination) {
             if (pagination) this.page = pagination.current
-            this.querySearch()
+            this.getUsers()
         },
         getUsers()
         {
