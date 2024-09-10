@@ -55,7 +55,7 @@ public interface UserConvert {
     @Mappings({})
     List<FolibUser> UserEntitysToFolibuiltyList(List<UserEntity> folibUserList);
 
-    @Mappings({@Mapping(source = "folibUser.username", target = "id"),
+    @Mappings({@Mapping(source = "folibUser.uuid", target = "id"),
             @Mapping(source = "lastUpdated", target = "updateTime"),
             @Mapping(target = "deleted", expression = "java(folibUser.isEnabled()?\"0\":\"1\")"),
             @Mapping(target = "roles", ignore = true)})

@@ -32,7 +32,7 @@ public interface FolibUserMapper extends CommonMapper<FolibUser> {
      * @param id 主键
      * @return 实例对象
      */
-    FolibUser queryById(Long id);
+    FolibUser queryById(String id);
     /** 
      * 分页查询指定行数据
      *
