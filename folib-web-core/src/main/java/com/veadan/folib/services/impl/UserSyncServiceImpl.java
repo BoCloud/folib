@@ -273,31 +273,31 @@ public class UserSyncServiceImpl implements UserSyncService
     }
 
     private void isLicenseActive() {
-        log.debug("[{}] License切面，License校验 ]", this.getClass().getSimpleName());
+        log.debug("[{}] 同步用户信息，License校验 ]", this.getClass().getSimpleName());
         ActivateVo activateVo = null;
         try {
             activateVo = codeActivateService.isNotActivate();
         } catch (Exception ex) {
-            log.error("[{}] License切面，获取License错误 [{}]", this.getClass().getSimpleName(), ExceptionUtils.getStackTrace(ex));
+            log.error("[{}] 同步用户信息，获取License错误 [{}]", this.getClass().getSimpleName(), ExceptionUtils.getStackTrace(ex));
             throw new RuntimeException("获取License错误");
         }
         if (Objects.isNull(activateVo)) {
-            log.warn("[{}] License切面，License不存在", this.getClass().getSimpleName());
+            log.warn("[{}] 同步用户信息，License不存在", this.getClass().getSimpleName());
             throw new RuntimeException("请检查License是否存在");
         }
         if (StringUtils.isBlank(activateVo.getMac())) {
-            log.warn("[{}] License切面，获取mac错误", this.getClass().getSimpleName());
+            log.warn("[{}] 同步用户信息，获取mac错误", this.getClass().getSimpleName());
             throw new RuntimeException("获取机器码错误");
         }
         if (activateVo.isHaveError()) {
-            log.warn("[{}] License切面，License不存在 mac [{}]", this.getClass().getSimpleName(), activateVo.getMac());
+            log.warn("[{}] 同步用户信息，License不存在 mac [{}]", this.getClass().getSimpleName(), activateVo.getMac());
             throw new RuntimeException("请检查License是否存在");
         }
         if (activateVo.isDalyOut()) {
-            log.warn("[{}] License切面，License已过期 mac [{}]", this.getClass().getSimpleName(), activateVo.getMac());
-            throw new RuntimeException("请续期后再添加制品存储空间、仓库");
+            log.warn("[{}] 同步用户信息，License已过期 mac [{}]", this.getClass().getSimpleName(), activateVo.getMac());
+            throw new RuntimeException("请续期后再添加同步制品存储空间、仓库及用户信息");
         }
-        log.debug("[{}] License切面，License校验通过 mac [{}]", this.getClass().getSimpleName(), activateVo.getMac());
+        log.debug("[{}] 同步用户信息，License校验通过 mac [{}]", this.getClass().getSimpleName(), activateVo.getMac());
     }
 
 }
