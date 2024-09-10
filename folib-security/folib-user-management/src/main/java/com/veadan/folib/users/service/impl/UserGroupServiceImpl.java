@@ -5,6 +5,7 @@ import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.dto.UserGroupDTO;
 import com.veadan.folib.dto.UserGroupListDTO;
 import com.veadan.folib.entity.UserGroup;
+import com.veadan.folib.entity.UserGroupRef;
 import com.veadan.folib.mapper.UserGroupMapper;
 import com.veadan.folib.users.service.RoleResourceRefService;
 import com.veadan.folib.users.service.UserGroupRefService;
@@ -22,6 +23,9 @@ import tk.mybatis.mapper.entity.Example;
 import javax.inject.Inject;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * 用户组;(user_group)表服务实现类
@@ -95,9 +99,29 @@ public class UserGroupServiceImpl implements UserGroupService {
             throw new RuntimeException("UserGroupName is already");
         }
         userGroupMapper.update(userGroup);
+        //批量更新用户组关联用户表中的用户组名称冗余字段
+        batchUpdateRefGroupName(Collections.singletonList(userGroup.getId()));
         return queryById(userGroup.getId());
     }
-    
+
+    /**
+     * 批量更新用户组名称
+     * @param groupIds 用户组id
+     */
+    private void batchUpdateRefGroupName(List<Long> groupIds) {
+        List<UserGroup> userGroups = queryByIds(groupIds);
+        if (CollectionUtils.isNotEmpty(userGroups)) {
+            Map<Long, String> groupNameMap = userGroups.stream().collect(Collectors.toMap(UserGroup::getId, UserGroup::getGroupName));
+            List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(groupIds);
+            if (CollectionUtils.isNotEmpty(userGroupRefs)) {
+                List<UserGroupRef> updateRefs = userGroupRefs.stream().filter(userGroupRef -> !Objects.equals(groupNameMap.get(userGroupRef.getUserGroupId()), userGroupRef.getUserGroupName())).collect(Collectors.toList());
+                if (CollectionUtils.isNotEmpty(updateRefs)) {
+                    userGroupRefService.batchUpdate(updateRefs);
+                }
+            }
+        }
+    }
+
     /** 
      * 通过主键删除数据
      *
@@ -131,6 +155,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     @Override
     public void saveOrUpdateBatch(List<UserGroup> groups) {
         userGroupMapper.insertOrUpdateBatch(groups);
+        batchUpdateRefGroupName(groups.stream().map(UserGroup::getId).collect(Collectors.toList()));
     }
 
     @Override

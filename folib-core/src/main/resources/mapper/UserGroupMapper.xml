@@ -145,6 +145,9 @@
             <if test="description != null and description != ''">
                 description = #{description},
             </if>
+            <if test="groupName != null and groupName != ''">
+                group_name = #{groupName},
+            </if>
             <if test="joinGroup != null and joinGroup != ''">
                 join_group = #{joinGroup},
             </if>
