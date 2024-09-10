@@ -111,7 +111,7 @@ public class RpmPackageFeedParser {
                                         String repositoryId,
                                         PackageVersion packageVersion)
     {
-        RpmArtifactCoordinates c = RpmArtifactCoordinates.of(packageVersion.getName(), packageVersion.getVersion());
+        RpmArtifactCoordinates c = RpmArtifactCoordinates.of(packageVersion.getName());
 
         LocalDateTime now = LocalDateTimeInstance.now();
 
@@ -142,7 +142,7 @@ public class RpmPackageFeedParser {
         String packageId = RpmArtifactCoordinates.calculatePackageId("unscoped".equals(scope) ? null : scope,
                 packageEntry.getName());
 
-        RpmArtifactCoordinates c = RpmArtifactCoordinates.of(packageId, packageEntry.getVersion());
+        RpmArtifactCoordinates c = RpmArtifactCoordinates.of(packageId);
 
         Artifact artifact = artifactRepository.findOneArtifact(storageId, repositoryId, c.buildPath());
         ArtifactEntity remoteArtifactEntry = null;

@@ -1013,7 +1013,7 @@
                 <draggable :list="i18nBoards" :animation="200" class="kanban-boards" ghost-class="ghost-card"
                   group="i18nBoards">
                   <FolibKanbanBoard v-for="(board) in i18nBoards" :key="board.id" :board="board">
-                    <draggable :list="board.tasks" :animation="200" ghost-class="ghost-card" group="tasks" ref="draggable" :style="{minHeight: draggableHeight}">
+                    <draggable :list="board.tasks" :animation="200" ghost-class="ghost-card" group="tasks" ref="draggable" :style="{height: draggableHeight, overflowY: 'auto'}">
                       <FolibKanbanTask v-for="(task) in board.tasks" :key="task.id" :task="task" :boardId="board.id">
                       </FolibKanbanTask>
 
@@ -2417,9 +2417,5 @@ export default {
   .tabs-sliding.ant-tabs {
       overflow: hidden;
   }
-}
-
-.repository-draggable {
-  min-height: 100vh;
 }
 </style>

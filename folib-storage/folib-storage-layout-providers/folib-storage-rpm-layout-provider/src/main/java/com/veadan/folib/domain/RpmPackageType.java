@@ -1,9 +1,35 @@
 package com.veadan.folib.domain;
 
+import org.tukaani.xz.simple.ARM;
+import org.tukaani.xz.simple.IA64;
+import org.tukaani.xz.simple.SPARC;
+
 public enum RpmPackageType
 {
     SOURCE("src"),
-    BINARY("");
+    BINARY(""),
+    NOARCH("noarch"),
+    I386("i386"),
+    ALPHA("alpha"),
+    SPARC("SPARC"),
+    MIPS("mips"),
+    PPC("ppc"),
+    M68K("m68k"),
+    IP("ip"),
+    RS6000("rs6000"),
+    IA64("ia64"),
+    SPARC64("sparc64"),
+    MIPSEL("mipsel"),
+    ARM("arm"),
+    MK68KMINT("mk68kmint"),
+    S390("s390"),
+    S390X("s390x"),
+    PPC64("ppc64"),
+    SH("sh"),
+    XTENSA("xtensa"),
+    X86_64("x86_64"),
+    PPC64LE("ppc64le"),
+    AARCH64("aarch64");
 
     private String postfix;
 

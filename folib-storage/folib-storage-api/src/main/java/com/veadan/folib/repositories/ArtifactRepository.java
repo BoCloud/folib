@@ -2,6 +2,7 @@ package com.veadan.folib.repositories;
 
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutDescription;
@@ -25,7 +26,6 @@ import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.CommonUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.tinkerpop.gremlin.process.traversal.Order;
@@ -391,6 +391,10 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     private EntityTraversal<Vertex, Vertex> commonBuildEntityTraversal(List<String> storageIdAndRepositoryIdList, String date, Long startDate, Long endDate) {
+        return commonBuildEntityTraversal(storageIdAndRepositoryIdList, date, startDate, endDate, null);
+    }
+
+    private EntityTraversal<Vertex, Vertex> commonBuildEntityTraversal(List<String> storageIdAndRepositoryIdList, String date, Long startDate, Long endDate, List<String> safeLevelList) {
         EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList));
         if (StringUtils.isNotBlank(date)) {
             entityTraversal = entityTraversal.has(Properties.SCAN_DATE, date);
@@ -398,7 +402,10 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         if (Objects.nonNull(startDate) && Objects.nonNull(endDate)) {
             entityTraversal = entityTraversal.has(Properties.SCAN_DATE_TIME, P.between(startDate, endDate));
         }
-        return entityTraversal.has(Properties.SAFE_LEVEL, SafeLevelEnum.SCAN_COMPLETE.getLevel());
+        if (CollectionUtils.isEmpty(safeLevelList)) {
+            safeLevelList = Lists.newArrayList(SafeLevelEnum.SCAN_COMPLETE.getLevel());
+        }
+        return entityTraversal.has(Properties.SAFE_LEVEL, P.within(safeLevelList));
     }
 
     private Long sumDependencyCountByStorageIdsAndRepositoryIds(List<String> storageIdAndRepositoryIdList, String date, Long startDate, Long endDate) {
@@ -422,7 +429,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     private Long scanCountByStorageIdsAndRepositoryIds(List<String> storageIdAndRepositoryIdList, String date, Long startDate, Long endDate) {
-        EntityTraversal<Vertex, Vertex> entityTraversal = commonBuildEntityTraversal(storageIdAndRepositoryIdList, date, startDate, endDate);
+        EntityTraversal<Vertex, Vertex> entityTraversal = commonBuildEntityTraversal(storageIdAndRepositoryIdList, date, startDate, endDate, Lists.newArrayList(SafeLevelEnum.SCAN_COMPLETE.getLevel(), SafeLevelEnum.SCAN_FAIL.getLevel()));
         return entityTraversal.count().tryNext().orElse(0L);
     }
 

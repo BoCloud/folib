@@ -99,12 +99,11 @@ public enum Result
         RpmArtifactCoordinates coordinates;
         if (packageScope != null)
         {
-            coordinates = RpmArtifactCoordinates.of(
-                    String.format("%s/%s", packageScope, packageName), version);
+            coordinates = RpmArtifactCoordinates.of(packageName);
         }
         else
         {
-            coordinates = RpmArtifactCoordinates.of(packageName, version);
+            coordinates = RpmArtifactCoordinates.of(packageName);
         }
         String repositoryId = repository.getId(), storageId = repository.getStorage().getId();
         RepositoryPath path = null;

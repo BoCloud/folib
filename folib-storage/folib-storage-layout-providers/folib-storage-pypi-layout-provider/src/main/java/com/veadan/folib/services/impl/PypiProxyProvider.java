@@ -16,6 +16,7 @@ import com.veadan.folib.pypi.PypiSearchResult;
 import com.veadan.folib.services.PypiProvider;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
+import com.veadan.folib.storage.repository.remote.heartbeat.RemoteRepositoryAlivenessService;
 import com.veadan.folib.util.PypiUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -55,6 +56,9 @@ public class PypiProxyProvider implements PypiProvider {
     @Inject
     @Lazy
     private PypiBrowsePackageHtmlResponseBuilder pypiBrowsePackageHtmlResponseBuilder;
+
+    @Inject
+    private RemoteRepositoryAlivenessService remoteRepositoryAlivenessCacheManager;
 
     @PostConstruct
     @Override
@@ -134,7 +138,12 @@ public class PypiProxyProvider implements PypiProvider {
 
     private String commonUrlJSONData(Repository repository, String url) {
         String data = null;
-        String prefixUrl = repository.getRemoteRepository().getUrl();
+        RemoteRepository remoteRepository = repository.getRemoteRepository();
+        if (!remoteRepositoryAlivenessCacheManager.isAlive(remoteRepository)) {
+            log.warn("Remote storageId [{}] repositoryId [{}] url [{}] is down.", repository.getStorage().getId(), repository.getId(), remoteRepository.getUrl());
+            return null;
+        }
+        String prefixUrl = remoteRepository.getUrl();
         String suffixUrl = url;
         if (!suffixUrl.startsWith(GlobalConstants.SEPARATOR)) {
             suffixUrl = GlobalConstants.SEPARATOR + suffixUrl;

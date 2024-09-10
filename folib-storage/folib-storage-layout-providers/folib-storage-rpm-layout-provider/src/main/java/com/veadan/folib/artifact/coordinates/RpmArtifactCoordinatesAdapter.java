@@ -6,7 +6,7 @@ import com.veadan.folib.gremlin.adapters.LayoutArtifactCoordinatesAdapter;
 import org.springframework.stereotype.Component;
 
 @Component
-public class RpmArtifactCoordinatesAdapter extends LayoutArtifactCoordinatesAdapter<RpmArtifactCoordinates, SemanticVersion>
+public class RpmArtifactCoordinatesAdapter extends LayoutArtifactCoordinatesAdapter<RpmArtifactCoordinates, RpmArtifactCoordinates>
 {
     public RpmArtifactCoordinatesAdapter()
     {

@@ -82,19 +82,6 @@ public class RpmRepoIndexer {
         RootRepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
         String temp = String.join("/", tempPath, UUID.randomUUID().toString());
         Files.createDirectories(Path.of(temp));
-//        listPaths(repositoryPath)
-//                //.filter(this::isValidPath)
-//                .collectList()
-//                .flatMapMany(contentPaths -> Flux.fromIterable(ListUtils.partition(contentPaths, 200)))
-//                // 使用并行处理提高效率
-//                .publishOn(Schedulers.boundedElastic())
-//                .parallel(1)
-//                // 根据路径构建文件内容任务
-//                .doOnNext(paths -> generatePrimaryXml(paths, temp))
-//                .doOnNext(paths -> generateOtherXml(paths, temp))
-//                // 将并行处理的结果序列化
-//                .sequential();
-
         List<Path> paths = listPaths(repositoryPath);
         if(CollectionUtil.isEmpty(paths)){
             if(Files.isDirectory(Path.of(String.join("/", repositoryPath.getTarget().toString(),"repodata")))){
@@ -179,16 +166,6 @@ public class RpmRepoIndexer {
     public  List<Path> listPaths(Path path) throws IOException {
        return Files.walk(path).filter(this::isFileExist).collect(Collectors.toList());
     }
-//    private Flux<Path> listPaths(Path path) {
-//        Flux<Path> pathFlux = Flux.using(
-//                //Files.list 无法保证所有文件系统中的顺序一致性,需要自定义顺序，必须显式调用 .sorted() 自然排序
-//                () -> Files.walk(path).filter(this::isFileExist).sorted(),
-//                Flux::fromStream, // 将列出的文件转换为Flux流，以便进行反应式处理。
-//                Stream::close // 指定在不再需要流时如何关闭它，确保资源的正确释放。
-//        ); // 指定在哪个线程上订阅和处理事件，这里选择使用bounded
-//
-//        return pathFlux;
-//    }
 
     //校验是否有效文件
     public boolean isFileExist(Path path) {
@@ -308,14 +285,14 @@ public class RpmRepoIndexer {
             Element primaryRootElement = docPrimary.createElement("metadata");
             primaryRootElement.setAttribute("xmlns", "http://linux.duke.edu/metadata/common");
             primaryRootElement.setAttribute("xmlns:rpm", "http://linux.duke.edu/metadata/rpm");
-            primaryRootElement.setAttribute("packages", "1");
+            primaryRootElement.setAttribute("packages", Integer.toString(paths.size()));
             docPrimary.appendChild(primaryRootElement);
 
             Document docOther = dbBuilder.newDocument();
 
             Element otherRootElement = docOther.createElement("otherdata");
             otherRootElement.setAttribute("xmlns", "http://linux.duke.edu/metadata/other");
-            otherRootElement.setAttribute("packages", "1");
+            otherRootElement.setAttribute("packages", Integer.toString(paths.size()));
             docOther.appendChild(otherRootElement);
 
             for (Path path : paths) {
@@ -410,7 +387,7 @@ public class RpmRepoIndexer {
 
         // Location
         Element locationElement = doc.createElement("location");
-        locationElement.setAttribute("href", metadata.getHref());
+        locationElement.setAttribute("href", String.format("Packages/%s.rpm",metadata.getHref()));
         packageElement.appendChild(locationElement);
 
         // Checksum
@@ -597,7 +574,7 @@ public class RpmRepoIndexer {
             rootElement.appendChild(otherDataElement);
 
             Element otherLocationElement = doc.createElement("location");
-            otherLocationElement.setAttribute("href", String.format("%s.rpm",repomdMetadata.getOther().getHref()));
+            otherLocationElement.setAttribute("href", repomdMetadata.getOther().getHref());
             otherDataElement.appendChild(otherLocationElement);
 
             Element otherChecksumElement = doc.createElement("checksum");

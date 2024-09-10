@@ -30,7 +30,7 @@
 								]" :placeholder="$t('Authentication.EnterYourUsername')" />
 							</a-form-item>
 							<a-form-item class="mb-5" :label="$t('Authentication.Password')" :colon="false">
-								<a-input v-decorator="[
+								<a-input-password v-decorator="[
 									'password',
 									{ rules: [{ required: true, message: $t('Authentication.EnterThePassword')}] },
 								]" type="password" :placeholder="$t('Authentication.EnterThePassword')" />
