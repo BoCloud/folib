@@ -6,6 +6,7 @@ import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
 import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
 import com.veadan.folib.entity.*;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
+import com.veadan.folib.licence.ActivateVo;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.*;
@@ -19,6 +20,7 @@ import com.veadan.folib.users.service.impl.RelationalDatabaseUserService.Relatio
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -63,10 +65,13 @@ public class UserSyncServiceImpl implements UserSyncService
     protected RepositoryPathResolver repositoryPathResolver;
     @Autowired
     private RepositoryManagementService repositoryManagementService;
+    @Autowired
+    private CodeActivateService codeActivateService;
 
     @Override
     @Transactional
     public void syncUserAuth(UserAuthDTO date) {
+        isLicenseActive();
         //更新节点用户信息
         List<FolibUser> users = date.getUsers();
         if (CollectionUtils.isNotEmpty(users)) {
@@ -74,14 +79,45 @@ public class UserSyncServiceImpl implements UserSyncService
         }
         //更新用户组信息
         List<UserGroup> groups = date.getGroups();
-        if (CollectionUtils.isNotEmpty(groups)) {
-            userGroupService.saveOrUpdateBatch(groups);
-        }
-        //更新用户组关联信息
         List<UserGroupRef> userGroups = date.getUserGroups();
-        if (CollectionUtils.isNotEmpty(userGroups)) {
-            userGroupRefService.batchUpdate(userGroups);
+        if (CollectionUtils.isNotEmpty(groups) || CollectionUtils.isNotEmpty(userGroups)) {
+            List<String> groupNames = groups.stream().map(UserGroup::getGroupName).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(userGroups)) {
+                groupNames.addAll(userGroups.stream().map(UserGroupRef::getUserGroupName).collect(Collectors.toList()));
+            }
+            List<UserGroup> userGroupList = userGroupService.queryByGroupNames(groupNames);
+            Map<String, Long> userGroupMap = new HashMap<>();
+            if (CollectionUtils.isNotEmpty(userGroupList)) {
+                userGroupMap = userGroupList.stream().collect(Collectors.toMap(UserGroup::getGroupName, UserGroup::getId));
+            }
+
+            if (CollectionUtils.isNotEmpty(groups)) {
+                Map<String, Long> finalUserGroupMap = userGroupMap;
+                List<UserGroup> addGroups = new ArrayList<>();
+                groups.forEach(userGroup -> {
+                    Long groupId = finalUserGroupMap.get(userGroup.getGroupName());
+                    if (groupId == null) {
+                        addGroups.add(userGroup);
+                    }
+                });
+                if (CollectionUtils.isNotEmpty(addGroups)) {
+                    userGroupService.saveOrUpdateBatch(addGroups);
+                }
+            }
+            //更新用户组关联信息
+            if (CollectionUtils.isNotEmpty(userGroups)) {
+                Map<String, Long> finalUserGroupMap1 = userGroupMap;
+                userGroups.forEach(userGroupRef -> {
+                        Long groupId = finalUserGroupMap1.get(userGroupRef.getUserGroupName());
+                        if (groupId != null) {
+                            userGroupRef.setUserGroupId(groupId);
+                        }
+                    });
+                userGroupRefService.batchUpdate(userGroups);
+            }
         }
+
+
         //更新角色信息
         List<FolibRole> roles = date.getRoles();
         if (CollectionUtils.isNotEmpty(roles)) {
@@ -108,7 +144,7 @@ public class UserSyncServiceImpl implements UserSyncService
                         SyncStorageDto syncStorageDto = new SyncStorageDto(storage, storage.getId(), SyncStorageEnum.CREATE);
                         clusterSyncService.syncStorage(syncStorageDto);
                     } catch (IOException e) {
-                        throw new RuntimeException(e);
+                        log.error("创建存储失败", e);
                     }
                 }else {
                     try {
@@ -116,7 +152,7 @@ public class UserSyncServiceImpl implements UserSyncService
                         SyncStorageDto syncStorageDto = new SyncStorageDto(storage, storage.getId(), SyncStorageEnum.UPDATE);
                         clusterSyncService.syncStorage(syncStorageDto);
                     } catch (IOException e) {
-                        throw new RuntimeException(e);
+                        log.error("更新存储失败", e);
                     }
                 }
             });
@@ -133,13 +169,21 @@ public class UserSyncServiceImpl implements UserSyncService
                         SyncStorageDto syncStorageDto = new SyncStorageDto(storageDto, storageDto.getId(), SyncStorageEnum.CREATE);
                         clusterSyncService.syncStorage(syncStorageDto);
                     } catch (IOException e) {
-                        throw new RuntimeException(e);
+                        log.error("创建仓库关联的存储失败", e);
                     }
                 }
-//                Repository repositoryInfo = storageDto.getRepository(repositoryId);
-                configurationManagementService.addOrUpdateRepository(storageId, repository);
-                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
-                clusterSyncService.syncRepository(syncRepositoryDto);
+                Repository existRepository = storageDto.getRepository(repositoryId);
+                boolean result = Objects.nonNull(existRepository) && (!repository.getLayout().equals(existRepository.getLayout()) || (Objects.nonNull(existRepository.getSubLayout()) && !existRepository.getSubLayout().equals(repository.getSubLayout())));
+                if (!result) {
+                    try {
+                        //判断重复
+                        configurationManagementService.addOrUpdateRepository(storageId, repository);
+                        SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
+                        clusterSyncService.syncRepository(syncRepositoryDto);
+                    } catch (Exception e) {
+                        log.error("新增、更新仓库失败", e);
+                    }
+                }
             });
         }
         //清理已删除的用户权限信息
@@ -202,7 +246,6 @@ public class UserSyncServiceImpl implements UserSyncService
                         clusterSyncService.syncRepository(syncRepositoryDto);
                     } catch (IOException e) {
                         log.error("删除仓库[{}]失败！", repositoryId, e);
-                        throw new RuntimeException(e);
                     }
 
                 }else {
@@ -222,12 +265,39 @@ public class UserSyncServiceImpl implements UserSyncService
                         clusterSyncService.syncStorage(syncStorageDto);
                     } catch (IOException e) {
                         log.error("删除存储空间[{}]失败！", storageId, e);
-                        throw new RuntimeException(e);
                     }
                 }
 
             }
         }
+    }
+
+    private void isLicenseActive() {
+        log.debug("[{}] 同步用户信息，License校验 ]", this.getClass().getSimpleName());
+        ActivateVo activateVo = null;
+        try {
+            activateVo = codeActivateService.isNotActivate();
+        } catch (Exception ex) {
+            log.error("[{}] 同步用户信息，获取License错误 [{}]", this.getClass().getSimpleName(), ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException("获取License错误");
+        }
+        if (Objects.isNull(activateVo)) {
+            log.warn("[{}] 同步用户信息，License不存在", this.getClass().getSimpleName());
+            throw new RuntimeException("请检查License是否存在");
+        }
+        if (StringUtils.isBlank(activateVo.getMac())) {
+            log.warn("[{}] 同步用户信息，获取mac错误", this.getClass().getSimpleName());
+            throw new RuntimeException("获取机器码错误");
+        }
+        if (activateVo.isHaveError()) {
+            log.warn("[{}] 同步用户信息，License不存在 mac [{}]", this.getClass().getSimpleName(), activateVo.getMac());
+            throw new RuntimeException("请检查License是否存在");
+        }
+        if (activateVo.isDalyOut()) {
+            log.warn("[{}] 同步用户信息，License已过期 mac [{}]", this.getClass().getSimpleName(), activateVo.getMac());
+            throw new RuntimeException("请续期后再添加同步制品存储空间、仓库及用户信息");
+        }
+        log.debug("[{}] 同步用户信息，License校验通过 mac [{}]", this.getClass().getSimpleName(), activateVo.getMac());
     }
 
 }

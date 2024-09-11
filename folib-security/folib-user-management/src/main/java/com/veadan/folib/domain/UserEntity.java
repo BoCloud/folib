@@ -4,6 +4,8 @@ import static com.veadan.folib.db.schema.Vertices.USER;
 import static org.neo4j.ogm.annotation.Relationship.OUTGOING;
 import static com.veadan.folib.db.schema.Edges.USER_HAS_SECURITY_ROLES;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.veadan.folib.data.domain.DomainEntity;
 import com.veadan.folib.gremlin.adapters.DateConverter;
 
@@ -23,19 +25,42 @@ import org.neo4j.ogm.annotation.typeconversion.Convert;
  *
  */
 @EqualsAndHashCode(callSuper = true)
-@Data
 @NodeEntity(USER)
 public class UserEntity extends DomainEntity implements User
 {
+
+    public UserEntity(String name)
+    {
+        setUuid(name);
+    }
 
     private String password;
 
     private String originalPassword;
 
+    public void setGroupIds(Set<Long> groupIds) {
+        this.groupIds = groupIds;
+    }
+
+    @Override
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public Boolean getEnabled() {
+        return enabled;
+    }
+
     private Boolean enabled = true;
 
     private String email;
     private String avatar;
+
+    private String username;
 
     @Relationship(type = USER_HAS_SECURITY_ROLES, direction = OUTGOING)
     private Set<SecurityRole> roles = new HashSet<>();
@@ -47,6 +72,7 @@ public class UserEntity extends DomainEntity implements User
     private String securityTokenKey;
 
     @Convert(DateConverter.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime lastUpdated;
 
     private String sourceId;
@@ -64,11 +90,6 @@ public class UserEntity extends DomainEntity implements User
 
     UserEntity()
     {
-    }
-
-    public UserEntity(String username)
-    {
-        setUuid(username);
     }
 
     @Override

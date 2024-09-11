@@ -1,14 +1,11 @@
 package com.veadan.folib.authentication;
 
 
-import com.google.common.collect.Sets;
 import com.veadan.folib.data.CacheName;
-import com.veadan.folib.domain.SecurityRole;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.UserEntity;
 import com.veadan.folib.users.domain.UserData;
 import com.veadan.folib.users.service.UserAlreadyExistsException;
-import com.veadan.folib.users.service.impl.DatabaseUserService;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.users.userdetails.FolibExternalUsersCacheManager;
 import com.veadan.folib.users.userdetails.FolibUserDetails;
@@ -24,7 +21,6 @@ import org.springframework.stereotype.Component;
 
 import javax.transaction.Transactional;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * @author xuxinping

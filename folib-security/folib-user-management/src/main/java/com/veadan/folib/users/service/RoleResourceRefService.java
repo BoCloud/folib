@@ -126,4 +126,5 @@ public interface RoleResourceRefService{
     void deleteByResourceIds(List<String> resourceId);
 
     List<RoleResourceRef> queryByResourceIds(List<String> resourceIds);
+    List<RoleResourceRef> queryByIds(List<Long> ids);
 }

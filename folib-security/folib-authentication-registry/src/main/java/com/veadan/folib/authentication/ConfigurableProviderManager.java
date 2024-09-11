@@ -1,13 +1,17 @@
 package com.veadan.folib.authentication;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veadan.folib.authentication.api.AuthenticationItem;
 import com.veadan.folib.authentication.api.AuthenticationItemConfigurationManager;
 import com.veadan.folib.authentication.api.AuthenticationItems;
 import com.veadan.folib.authentication.api.CustomAuthenticationItemMapper;
 import com.veadan.folib.authentication.registry.AuthenticationProvidersRegistry;
 import com.veadan.folib.authentication.support.AuthenticationConfigurationContext;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.domain.User;
+import com.veadan.folib.domain.UserEntity;
 import com.veadan.folib.entity.FolibUser;
 import com.veadan.folib.enums.LoginTypeEnum;
 import com.veadan.folib.mapper.FolibUserMapper;
@@ -16,6 +20,7 @@ import com.veadan.folib.users.userdetails.FolibExternalUsersCacheManager;
 import com.veadan.folib.users.userdetails.UserDetailsMapper;
 import com.veadan.folib.util.LocalDateTimeInstance;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -68,6 +73,8 @@ public class ConfigurableProviderManager extends ProviderManager implements User
 
     @Inject
     private FolibUserMapper folibUserMapper;
+    @Inject
+    private DistributedCacheComponent distributedCacheComponent;
 
     private final Map<String, AuthenticationProvider> authenticationProviderMap = new HashMap<>();
 
@@ -108,15 +115,38 @@ public class ConfigurableProviderManager extends ProviderManager implements User
     }
 
     private Optional<User> loadUserDetails(String username) {
-        Optional<User> optionalUser = Optional.ofNullable(folibExternalUsersCacheManager.findByUsername(username)).filter(this::isInternalOrValidExternalUser);
-        if (optionalUser.isPresent()) {
-            return optionalUser;
+        String userKey = String.format("user_%s", username);
+        String userInfo = distributedCacheComponent.get(userKey);
+        ObjectMapper objectMapper = new ObjectMapper();
+        if (Strings.isNotEmpty(userInfo)) {
+            User folibUser;
+            try {
+                folibUser = objectMapper.readValue(userInfo, UserEntity.class);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+            Optional<User> optionalUser = Optional.ofNullable(folibUser).filter(this::isInternalOrValidExternalUser);
+            if (optionalUser.isPresent()) {
+                return optionalUser;
+            }
+        }else {
+            Optional<User> optionalUser = Optional.ofNullable(folibExternalUsersCacheManager.findByUsername(username)).filter(this::isInternalOrValidExternalUser);
+            if (optionalUser.isPresent()) {
+                try {
+                    distributedCacheComponent.put(userKey, objectMapper.writeValueAsString(optionalUser.get()));
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
+                return optionalUser;
+            }
         }
 
         return loadExternalUserDetails(username);
     }
 
     protected Optional<User> loadExternalUserDetails(String username) {
+        String userKey = String.format("user_%s", username);
+        ObjectMapper objectMapper = new ObjectMapper();
         FolibUser folibUser = folibUserMapper.selectByPrimaryKey(username);
         if (Objects.nonNull(folibUser) && StringUtils.isNotBlank(folibUser.getSourceId())) {
             String sourceId = folibUser.getSourceId();
@@ -128,7 +158,13 @@ public class ConfigurableProviderManager extends ProviderManager implements User
                 logger.info("User [{}] not found from [{}]", username, sourceId);
             }
             try {
-                return Optional.of(folibExternalUsersCacheManager.cacheExternalUserDetails(sourceId, externalUser));
+                User user = folibExternalUsersCacheManager.cacheExternalUserDetails(sourceId, externalUser);
+                try {
+                    distributedCacheComponent.put(userKey, objectMapper.writeValueAsString(user));
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
+                return Optional.of(user);
             } catch (UserAlreadyExistsException e) {
                 logger.info(String.format("Retry to load user [%s] from [%s] by reason [%s]",
                         username, sourceId, e.getMessage()));
@@ -153,7 +189,14 @@ public class ConfigurableProviderManager extends ProviderManager implements User
                     continue;
                 }
                 try {
-                    return Optional.of(folibExternalUsersCacheManager.cacheExternalUserDetails(sourceId, externalUser));
+                    User user = folibExternalUsersCacheManager.cacheExternalUserDetails(sourceId, externalUser);
+                    try {
+                        distributedCacheComponent.put(userKey, objectMapper.writeValueAsString(user));
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+                    return Optional.of(user);
+
                 } catch (UserAlreadyExistsException e) {
                     logger.info(String.format("Retry to load user [%s] from [%s] by reason [%s]",
                             username, sourceId, e.getMessage()));

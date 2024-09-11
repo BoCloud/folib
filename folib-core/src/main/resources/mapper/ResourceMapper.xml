@@ -93,8 +93,8 @@
 
     <!--新增数据-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
-        insert into resource(id,api_authoritie,storage_id,repository_id,path,create_by,create_time)
-        values (#{id},#{apiAuthoritie},#{storageId},#{repositoryId},#{path},#{createBy},#{createTime})
+        insert into resource(id,api_authoritie,storage_id,repository_id,path,create_by)
+        values (#{id},#{apiAuthoritie},#{storageId},#{repositoryId},#{path},#{createBy})
     </insert>
 
     <!-- 批量新增数据 -->
@@ -108,10 +108,10 @@
 
     <!-- 批量新增或按主键更新数据 -->
     <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into resource(id,api_authoritie,storage_id,repository_id,path,create_by,create_time)
+        insert into resource(id,api_authoritie,storage_id,repository_id,path,create_by)
         values
         <foreach collection="entities" item="entity" separator=",">
-            (#{entity.id},#{entity.apiAuthoritie},#{entity.storageId},#{entity.repositoryId},#{entity.path},#{entity.createBy},#{entity.createTime})
+            (#{entity.id},#{entity.apiAuthoritie},#{entity.storageId},#{entity.repositoryId},#{entity.path},#{entity.createBy})
         </foreach>
         on duplicate key update
         id=values(id),

@@ -236,6 +236,8 @@ public class RelationalDatabaseUserService implements UserService
         }
         userEntity.setEnabled(user.isEnabled());
 
+        userEntity.setUsername(user.getUsername());
+        userEntity.setUuid(user.getUsername());
         userEntity.setSecurityTokenKey(user.getSecurityTokenKey());
         userEntity.setEmail(user.getEmail());
         userEntity.setLastUpdated(now);

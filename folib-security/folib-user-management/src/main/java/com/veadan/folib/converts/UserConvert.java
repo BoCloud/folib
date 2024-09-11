@@ -55,17 +55,20 @@ public interface UserConvert {
     @Mappings({})
     List<FolibUser> UserEntitysToFolibuiltyList(List<UserEntity> folibUserList);
 
-    @Mappings({@Mapping(source = "folibUser.username", target = "id"),
+    @Mappings({@Mapping(source = "folibUser.uuid", target = "id"),
             @Mapping(source = "lastUpdated", target = "updateTime"),
             @Mapping(target = "deleted", expression = "java(folibUser.isEnabled()?\"0\":\"1\")"),
             @Mapping(target = "roles", ignore = true)})
     FolibUser UserEntityToFolibUser(UserEntity folibUser);
 
-    @Mappings({@Mapping(source = "roles", target = "roles")})
+    @Mappings({@Mapping(source = "roles", target = "roles"),
+            @Mapping(source = "username", target = "username")})
     List<UserEntity> UserDTOsToUserList(List<UserDTO> usrerDTOList);
 
     @Mappings({@Mapping(source = "roles", target = "roles"),
-            @Mapping(source = "updateTime", target = "lastUpdated")
+            @Mapping(source = "updateTime", target = "lastUpdated"),
+            @Mapping(source = "username", target = "username"),
+            @Mapping(source = "username", target = "uuid")
     })
     UserEntity UserDTOToUserEntity(UserDTO usrerDTO);
 
