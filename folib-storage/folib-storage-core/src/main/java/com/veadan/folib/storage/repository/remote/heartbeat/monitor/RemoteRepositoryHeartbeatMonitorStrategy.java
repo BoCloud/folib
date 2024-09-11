@@ -7,5 +7,5 @@ package com.veadan.folib.storage.repository.remote.heartbeat.monitor;
 public interface RemoteRepositoryHeartbeatMonitorStrategy
 {
 
-    boolean isAlive(String remoteRepositoryUrl);
+    boolean isAlive(String storageId, String repositoryId, String remoteRepositoryUrl);
 }

@@ -105,7 +105,8 @@ public class PypiProxyProvider implements PypiProvider {
                     String finalPrefix = prefix;
                     Matcher matcher = PypiConstants.PACKAGE_NAME_PATTERN.matcher(htmlData);
                     String finalPackageTargetUrl = packageTargetUrl;
-                    List<PypiSearchResult> pypiSearchResultList = matcher.results().map(matchResult -> handleVersion(storageId, repositoryId, finalPackageTargetUrl, finalPrefix, matchResult)).collect(Collectors.toList());
+                    List<PypiSearchResult> pypiSearchResultList = matcher.results().map(matchResult -> handleVersion(storageId, repositoryId, finalPackageTargetUrl, finalPrefix, matchResult))
+                            .filter(Objects::nonNull).collect(Collectors.toList());
                     Files.createDirectories(packageHtmlRepositoryPath.getParent());
                     Files.writeString(packageHtmlRepositoryPath, pypiBrowsePackageHtmlResponseBuilder.getProxyHtmlResponse(pypiSearchResultList));
                 } catch (Exception ex) {
@@ -131,9 +132,10 @@ public class PypiProxyProvider implements PypiProvider {
             artifactUrl = PypiUtils.resolveUrl(packageTargetUrl, artifactUrl);
             return PypiSearchResult.builder().artifactName(artifactName).artifactPath(artifactPath).artifactUrl(artifactUrl).storageId(storageId).repositoryId(repositoryId).groupName(PypiArtifactCoordinates.parse(artifactName).getId()).build();
         } catch (Exception ex) {
-            log.warn("Pypi storageId [{}] repositoryId [{}] packageName [{}] parse error [{}]", storageId, repositoryId, artifactName, ExceptionUtils.getStackTrace(ex));
-            throw new RuntimeException(ex.getMessage());
+            log.error("Pypi storageId [{}] repositoryId [{}] packageName [{}] parse error [{}]", storageId, repositoryId, artifactName, ExceptionUtils.getStackTrace(ex));
+//            throw new RuntimeException(ex.getMessage());
         }
+        return null;
     }
 
     private String commonUrlJSONData(Repository repository, String url) {
