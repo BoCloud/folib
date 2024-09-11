@@ -5,6 +5,7 @@ import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.constant.GlobalConstants;
+import com.veadan.folib.domain.SecurityRole;
 import com.veadan.folib.dto.*;
 import com.veadan.folib.entity.FolibRole;
 import com.veadan.folib.entity.Resource;
@@ -83,7 +84,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
 
                 roles.forEach(roleDto -> {
                     String isDefault = GlobalConstants.NOT_DEFAULT;
-                    if (SystemRole.ADMIN.name().equalsIgnoreCase(roleDto.getName()) || SystemRole.OPEN_SOURCE_MANAGE.name().equalsIgnoreCase(roleDto.getName()) || SystemRole.GENERAL.name().equalsIgnoreCase(roleDto.getName())) {
+                    if (SystemRole.ADMIN.name().equalsIgnoreCase(roleDto.getName()) || SystemRole.OPEN_SOURCE_MANAGE.name().equalsIgnoreCase(roleDto.getName()) || SystemRole.GENERAL.name().equalsIgnoreCase(roleDto.getName()) || SystemRole.ANONYMOUS.name().equalsIgnoreCase(roleDto.getName())) {
                         isDefault = GlobalConstants.DEFALUT;
                     }
                     folibRoles.add(FolibRole.builder().id(roleDto.getName()).description(roleDto.getDescription())
@@ -228,7 +229,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                                 new AbstractMap.SimpleEntry<>(resource.getRepositoryId(), resource),
                                 new AbstractMap.SimpleEntry<>(resource.getPath(), resource)
                         )).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (v1, v2) -> v1));
-                        List<RoleResourceRef> collect = allRefs.parallelStream().peek(roleResourceRef -> {
+                        List<RoleResourceRef> collect = allRefs.stream().peek(roleResourceRef -> {
                             String apiAuthoritie = roleResourceRef.getApiAuthoritie();
                             String path = roleResourceRef.getPath();
                             String repositoryId = roleResourceRef.getRepositoryId();
@@ -329,7 +330,11 @@ public class FolibRoleServiceImpl implements FolibRoleService {
      * @return 是否成功
      */
     public boolean deleteById(String id){
-        //int update = folibRoleMapper.update(FolibRole.builder().id(id).deleted(GlobalConstants.DELETED).build());
+
+        if (SystemRole.ADMIN.name().equalsIgnoreCase(id)) {
+            throw new RuntimeException("Cannot delete the admin role");
+        }
+
         int deleteNumber = folibRoleMapper.deleteById(id);
 
         roleResourceRefService.deleteByRoleId(id);
@@ -368,7 +373,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
             throw new RuntimeException("权限配置资源不能为空");
         }
 
-        //保存角色信息
+        //角色信息
         FolibRole folibRole = queryById(roleId);
         if (folibRole == null) {
             return;
@@ -393,6 +398,10 @@ public class FolibRoleServiceImpl implements FolibRoleService {
         List<AccessUsersDTO> users = roleDTO.getPrivileges().getUsers();
         if (CollectionUtils.isNotEmpty(users)) {
             userIds.addAll(users.stream().map(AccessUsersDTO::getId).collect(Collectors.toSet()));
+        }
+
+        if (SystemRole.ADMIN.name().equalsIgnoreCase(roleId) && !users.stream().map(AccessUsersDTO::getId).collect(Collectors.toList()).contains("admin")) {
+            throw new IllegalArgumentException("admin user must have admin role");
         }
         if (CollectionUtils.isNotEmpty(userIds)) {
             deleteUserRoleCache(new ArrayList<>(userIds));
@@ -420,7 +429,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
     @Override
     public void deleteUserRoleCache(List<String> userIds) {
         if (CollectionUtils.isNotEmpty(userIds)){
-            userIds.parallelStream().forEach(userId -> {
+            userIds.forEach(userId -> {
                 String roleKey = String.format("user_role_%s", userId);
                 distributedCacheComponent.delete(roleKey);
                 String userKey = String.format("user_%s", userId);
@@ -472,6 +481,9 @@ public class FolibRoleServiceImpl implements FolibRoleService {
 
     @Override
     public void deleteRole(String roleId) {
+        if (SystemRole.ADMIN.name().equalsIgnoreCase(roleId)) {
+            throw new RuntimeException("Cannot delete the admin role");
+        }
         deleteById(roleId);
         //删除角色关联的用户缓存
         Set<String> userIds = getUserIdsByRoleId(roleId);

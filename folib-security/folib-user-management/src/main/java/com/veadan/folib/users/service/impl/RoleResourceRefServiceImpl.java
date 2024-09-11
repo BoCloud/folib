@@ -8,6 +8,7 @@ import com.veadan.folib.entity.Resource;
 import com.veadan.folib.entity.RoleResourceRef;
 import com.veadan.folib.entity.UserGroupRef;
 import com.veadan.folib.mapper.RoleResourceRefMapper;
+import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.dto.UserPermissionDTO;
 import com.veadan.folib.users.service.*;
 import org.apache.commons.collections4.CollectionUtils;
@@ -115,8 +116,14 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         if (roleResourceRef == null) {
             return true;
         }
+
         String entityId = roleResourceRef.getEntityId();
         if (GlobalConstants.ROLE_TYPE_USER.equals(roleResourceRef.getRefType())){
+            String roleId = roleResourceRef.getRoleId();
+            if (SystemRole.ADMIN.name().equalsIgnoreCase(roleId) &&  "admin".equalsIgnoreCase(entityId)) {
+                throw new RuntimeException("Cannot delete the admin role");
+            }
+
             folibRoleService.deleteUserRoleCache(Collections.singletonList(entityId));
         }else if (GlobalConstants.ROLE_TYPE_USER_GROUP.equals(roleResourceRef.getRefType())){
             List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(Collections.singletonList(Long.valueOf(entityId)));
@@ -130,6 +137,7 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
 
     public boolean deleteByRoleId(String roleId){
         List<RoleResourceRef> roleResourceRefs = queryByRoleIds(Collections.singletonList(roleId));
+        roleResourceRefs = roleResourceRefs.stream().filter(r ->!"admin".equalsIgnoreCase(r.getRoleId()) && GlobalConstants.ROLE_TYPE_USER.equals(r.getRefType()) && !"admin".equalsIgnoreCase(r.getEntityId())).collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(roleResourceRefs)) {
             List<String> userIds = roleResourceRefs.stream().filter(r -> GlobalConstants.ROLE_TYPE_USER.equals(r.getRefType())).map(RoleResourceRef::getEntityId).collect(Collectors.toList());
             List<Long> groupIds = roleResourceRefs.stream().filter(r -> GlobalConstants.ROLE_TYPE_USER_GROUP.equals(r.getRefType())).map(r -> Long.valueOf(r.getEntityId())).collect(Collectors.toList());
@@ -523,6 +531,7 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
 
         List<RoleResourceRef> roleResourceRefs = queryByIds(removeIds);
         if (CollectionUtils.isNotEmpty(roleResourceRefs)) {
+            roleResourceRefs = roleResourceRefs.stream().filter(r -> !"admin".equalsIgnoreCase(r.getRoleId()) && GlobalConstants.ROLE_TYPE_USER.equals(r.getRefType()) && !"admin".equalsIgnoreCase(r.getEntityId())).collect(Collectors.toList());
             List<String> userIds = roleResourceRefs.stream().filter(r -> GlobalConstants.ROLE_TYPE_USER.equals(r.getRefType())).map(RoleResourceRef::getEntityId).collect(Collectors.toList());
             folibRoleService.deleteUserRoleCache(userIds);
         }
