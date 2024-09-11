@@ -18,6 +18,7 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryDto;
+import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.dto.UserAuthDTO;
 import com.veadan.folib.users.service.*;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
@@ -132,6 +133,9 @@ public class RoleController extends BaseController {
         if (!(authentication.getPrincipal() instanceof UserDetails)) {
             String message = "Unsupported logged user principal type: " + authentication.getPrincipal().getClass();
             return getFailedResponseEntity(HttpStatus.BAD_REQUEST, message, accept);
+        }
+        if (SystemRole.ADMIN.name().equalsIgnoreCase(roleId)) {
+            throw new RuntimeException("Cannot delete the admin role");
         }
         FolibRole folibRole = folibRoleService.queryById(roleId);
         if (folibRole == null) {

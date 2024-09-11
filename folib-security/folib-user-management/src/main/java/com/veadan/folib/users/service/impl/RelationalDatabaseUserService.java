@@ -244,6 +244,12 @@ public class RelationalDatabaseUserService implements UserService
         userEntity.setUserType("general");
         userEntity.setAvatar(user.getAvatar());
 
+        Set<SecurityRole> rolesList = user.getRoles();
+        if ("admin".equalsIgnoreCase(user.getUuid()) && (!rolesList.stream().map(SecurityRole::getRoleName).collect(Collectors.toList()).contains(SystemRole.ADMIN.name())
+        && !rolesList.stream().map(SecurityRole::getRoleName).collect(Collectors.toList()).contains(SystemRole.ADMIN.name().toLowerCase()))) {
+            throw new IllegalArgumentException("admin user must have admin role");
+        }
+
         //维护用户组
         Set<String> groupIds = user.getUserGroupIds();
         if (!CollectionUtils.isEmpty(groupIds)) {
@@ -261,11 +267,13 @@ public class RelationalDatabaseUserService implements UserService
                 userGroupRefService.saveBath(ref);
             }
         }else {
-            userGroupRefService.deleteByUserId(user.getUuid());
+            if (!"admin".equalsIgnoreCase(user.getUuid())) {
+                userGroupRefService.deleteByUserId(user.getUuid());
+            }
         }
 
         //维护用户角色
-        Set<SecurityRole> roles = user.getRoles();
+        Set<SecurityRole> roles = rolesList;
         if (!CollectionUtils.isEmpty(roles)){
              List<FolibRole> defaultRoles = folibRoleService.queryRoles(FolibRole.builder().isDefault(GlobalConstants.DEFALUT).build());
                 if(!CollectionUtils.isEmpty(defaultRoles)) {
