@@ -427,7 +427,7 @@ export default {
                         })
                     }
                 })
-                this.currentUserIndex = this.userSelectList[0].key || 0
+                this.currentUserIndex = this.userSelectList[0]?.key || 0
                 this.repositoriesCheckedList = this.userAuthMap[this.currentUserIndex] || []
                 if (this.step === 1) {
                     this.repositoriesOptions.forEach(item => {
@@ -447,7 +447,7 @@ export default {
                         })
                     }
                 })
-                this.currentGroupIndex = this.groupSelectList[0].key || 0
+                this.currentGroupIndex = this.groupSelectList[0]?.key || 0
                 this.groupCheckedList = this.groupAuthMap[this.currentGroupIndex] || []
                 if (this.step === 2) {
                     this.repositoriesOptions.forEach(item => {
@@ -492,9 +492,8 @@ export default {
             })
         },
         openSelectModal(type) {
-            const selectedRowKeys = type === 'USER' ? this.userSelectList.map(item => item.key) :
-            this.groupSelectList.map(item => item.key)
-            this.$refs.selectUserGroup.openModal(type, selectedRowKeys, this.isStorageAdmin);
+            const selectedRows = type === 'USER' ? this.userSelectList : this.groupSelectList
+            this.$refs.selectUserGroup.openModal(type, selectedRows, this.isStorageAdmin);
         },
         async getStorageList(page = 1) {
             await new Promise((resolve, reject) => {
@@ -534,7 +533,7 @@ export default {
             if (type === 'USER') {
                 this.userSelectList = val
                 this.userSelectCopyList = val
-                this.currentUserIndex = val[0].key || 0
+                this.currentUserIndex = val[0]?.key || 0
                 const userKeys = val.map(item => `${item.key}`)
                 for (const key in this.userAuthMap) {
                     if (!userKeys.includes(key)) this.userAuthMap[key] = []
@@ -546,7 +545,7 @@ export default {
             } else {
                 this.groupSelectList = val
                 this.groupSelectCopyList = val
-                this.currentGroupIndex = val[0].key || 0
+                this.currentGroupIndex = val[0]?.key || 0
                 const groupKeys = val.map(item => `${item.key}`)
                 for (const key in this.groupAuthMap) {
                     if (!groupKeys.includes(key)) this.groupAuthMap[key] = []
