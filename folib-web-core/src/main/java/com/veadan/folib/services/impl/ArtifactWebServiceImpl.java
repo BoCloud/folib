@@ -299,57 +299,26 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 String value = "";
                 List<List<ColumnInfo>> columnInfos = Lists.newArrayList();
                 List<List<JSONObject>> data = Lists.newArrayList();
-                for (String metadataKey : metadataJson.keySet()) {
-                    value = metadataJson.getString(metadataKey);
-                    if (StringUtils.isBlank(value) || !JSONUtil.isJson(value)) {
-                        continue;
-                    }
-                    metadataValueJson = metadataJson.getJSONObject(metadataKey);
-                    if (!metadataValueJson.containsKey(valueKey) || !metadataValueJson.containsKey(locationKey) || !tableKey.equalsIgnoreCase(metadataValueJson.getString(locationKey))) {
-                        return artifactInfo;
-                    }
-                    value = metadataValueJson.getString(valueKey);
-                    if (StringUtils.isBlank(value) || !JSONUtil.isJson(value)) {
-                        return artifactInfo;
-                    }
-                    if (JSONUtil.isJsonArray(value)) {
-                        JSONArray jsonArray = JSONObject.parseArray(value);
-                        if (Objects.isNull(jsonArray) || jsonArray.isEmpty()) {
+                try {
+                    for (String metadataKey : metadataJson.keySet()) {
+                        value = metadataJson.getString(metadataKey);
+                        if (StringUtils.isBlank(value) || !JSONUtil.isJson(value)) {
                             continue;
                         }
-                        JSONObject itemJson = null;
-                        List<ColumnInfo> itemColumnInfos = Lists.newArrayList();
-                        List<JSONObject> itemData = Lists.newArrayList();
-                        if (CollectionUtils.isEmpty(itemColumnInfos)) {
-                            value = jsonArray.getString(0);
-                            if (StringUtils.isBlank(value) || !JSONUtil.isJson(value)) {
-                                return artifactInfo;
-                            }
-                            itemJson = jsonArray.getJSONObject(0);
-                            itemColumnInfos = itemJson.keySet().stream().map(item -> ColumnInfo.builder().dataIndex(item).key(item).title(item).build()).collect(Collectors.toList());
+                        metadataValueJson = metadataJson.getJSONObject(metadataKey);
+                        if (!metadataValueJson.containsKey(valueKey) || !metadataValueJson.containsKey(locationKey) || !tableKey.equalsIgnoreCase(metadataValueJson.getString(locationKey))) {
+                            return artifactInfo;
                         }
-                        for (int i = 0; i < jsonArray.size(); i++) {
-                            value = jsonArray.getString(i);
-                            if (StringUtils.isBlank(value) || !JSONUtil.isJson(value)) {
-                                return artifactInfo;
-                            }
-                            itemJson = jsonArray.getJSONObject(i);
-                            itemData.add(itemJson);
+                        value = metadataValueJson.getString(valueKey);
+                        if (StringUtils.isBlank(value) || !JSONUtil.isJson(value)) {
+                            return artifactInfo;
                         }
-                        columnInfos.add(itemColumnInfos);
-                        data.add(itemData);
-                    } else {
-                        JSONObject valueJson = JSONObject.parseObject(metadataValueJson.getString(valueKey), Feature.OrderedField), itemJson = null;
-                        JSONArray jsonArray = null;
-                        for (String key : valueJson.keySet()) {
-                            value = valueJson.getString(key);
-                            if (StringUtils.isBlank(value) || !JSONUtil.isJsonArray(value)) {
-                                continue;
-                            }
-                            jsonArray = valueJson.getJSONArray(key);
+                        if (JSONUtil.isJsonArray(value)) {
+                            JSONArray jsonArray = (JSONArray) JSONArray.parse(value, Feature.OrderedField);
                             if (Objects.isNull(jsonArray) || jsonArray.isEmpty()) {
                                 continue;
                             }
+                            JSONObject itemJson = null;
                             List<ColumnInfo> itemColumnInfos = Lists.newArrayList();
                             List<JSONObject> itemData = Lists.newArrayList();
                             if (CollectionUtils.isEmpty(itemColumnInfos)) {
@@ -370,8 +339,43 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                             }
                             columnInfos.add(itemColumnInfos);
                             data.add(itemData);
+                        } else {
+                            JSONObject valueJson = JSONObject.parseObject(metadataValueJson.getString(valueKey), Feature.OrderedField), itemJson = null;
+                            JSONArray jsonArray = null;
+                            for (String key : valueJson.keySet()) {
+                                value = valueJson.getString(key);
+                                if (StringUtils.isBlank(value) || !JSONUtil.isJsonArray(value)) {
+                                    continue;
+                                }
+                                jsonArray = valueJson.getJSONArray(key);
+                                if (Objects.isNull(jsonArray) || jsonArray.isEmpty()) {
+                                    continue;
+                                }
+                                List<ColumnInfo> itemColumnInfos = Lists.newArrayList();
+                                List<JSONObject> itemData = Lists.newArrayList();
+                                if (CollectionUtils.isEmpty(itemColumnInfos)) {
+                                    value = jsonArray.getString(0);
+                                    if (StringUtils.isBlank(value) || !JSONUtil.isJson(value)) {
+                                        return artifactInfo;
+                                    }
+                                    itemJson = jsonArray.getJSONObject(0);
+                                    itemColumnInfos = itemJson.keySet().stream().map(item -> ColumnInfo.builder().dataIndex(item).key(item).title(item).build()).collect(Collectors.toList());
+                                }
+                                for (int i = 0; i < jsonArray.size(); i++) {
+                                    value = jsonArray.getString(i);
+                                    if (StringUtils.isBlank(value) || !JSONUtil.isJson(value)) {
+                                        return artifactInfo;
+                                    }
+                                    itemJson = jsonArray.getJSONObject(i);
+                                    itemData.add(itemJson);
+                                }
+                                columnInfos.add(itemColumnInfos);
+                                data.add(itemData);
+                            }
                         }
                     }
+                } catch (Exception ex) {
+                    log.warn(ExceptionUtils.getStackTrace(ex));
                 }
                 artifactInfo.setColumns(columnInfos);
                 artifactInfo.setData(data);
