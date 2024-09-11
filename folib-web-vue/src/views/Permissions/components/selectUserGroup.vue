@@ -44,6 +44,7 @@ export default {
             total: 0,
             searchText: '',
             tableData: [],
+            pageTableData: {},
             selectedRowKeys: [],
         }
     },
@@ -53,12 +54,13 @@ export default {
         },
     },
     methods: {
-        openModal(type = 'USER', selectedRowKeys = [], isStorageAdmin = false)
+        openModal(type = 'USER', selectedRows = [], isStorageAdmin = false)
         {
             this.tableData = []
+            this.pageTableData = selectedRows.length ? { 0 : selectedRows } : {}
             this.type = type
             this.visible = true
-            this.selectedRowKeys = selectedRowKeys
+            this.selectedRowKeys = selectedRows.map(item => item.key)
             this.page = 1
             this.limit = 10
             this.searchText = ''
@@ -93,6 +95,7 @@ export default {
                         title: item.username,
                     }
                 })
+                this.pageTableData[this.page] = this.tableData
                 this.total = res.data.total
             }).finally(() => {
                 this.loading = false
@@ -107,6 +110,7 @@ export default {
                         title: item.groupName,
                     }
                 })
+                this.pageTableData[this.page] = this.tableData
                 this.total = res.data.total
             }).finally(() => {
                 this.loading = false
@@ -118,9 +122,15 @@ export default {
         },
         handleConfirm()
         {
-            const selected = this.tableData.filter(item => {
-                return this.selectedRowKeys.includes(item.key)
-            })
+            const selected = []
+            const selectedIds = []
+            for (const key in this.pageTableData) {
+                const currentData = this.pageTableData[key].filter(item => {
+                    return this.selectedRowKeys.includes(item.key) && !selectedIds.includes(item.key)
+                })
+                selectedIds.push(...currentData.map(item => item.key))
+                selected.push(...currentData)
+            }
             this.$emit('confirm', selected, this.type)
             this.closeModal()
         }
