@@ -5,7 +5,6 @@ import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.constant.GlobalConstants;
-import com.veadan.folib.domain.SecurityRole;
 import com.veadan.folib.dto.*;
 import com.veadan.folib.entity.FolibRole;
 import com.veadan.folib.entity.Resource;
@@ -21,6 +20,7 @@ import com.veadan.folib.users.service.FolibRoleService;
 import com.veadan.folib.users.service.ResourceService;
 import com.veadan.folib.users.service.RoleResourceRefService;
 import com.veadan.folib.users.service.UserGroupRefService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +41,7 @@ import java.util.stream.Stream;
  * @author : Fengmaogen
  * @date : 2024-7-17
  */
+@Slf4j
 @Service
 @Transactional
 public class FolibRoleServiceImpl implements FolibRoleService {
@@ -380,7 +381,14 @@ public class FolibRoleServiceImpl implements FolibRoleService {
         }
         FolibRole roleInfo = FolibRole.builder().id(roleId).enName(roleDTO.getName()).description(roleDTO.getDescription()).updateBy(username).build();
         update(roleInfo);
-        Set<String> userIds = getUserIdsByRoleId(roleId);
+
+        Set<String> userIds;
+        try {
+            userIds = getUserIdsByRoleId(roleId);
+        } catch (Exception e) {
+            log.error("获取角色用户列表异常", e);
+            throw new RuntimeException("Failed to update role permissions and clear user cache !");
+        }
         roleResourceRefService.deleteByRoleId(roleId);
         if (roleId.toUpperCase().startsWith("STORAGE_ADMIN_")) {
             //保存存储空间管理员权限
@@ -390,7 +398,6 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                     .storagePrivilege(privilege).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build()).collect(Collectors.toList());
             roleResourceRefService.saveBath(roleResourceRefs);
         }else{
-
             //保存权限关系
             roleResourceRefService.savePermissions(roleDTO, roleId, username);
         }
@@ -486,7 +493,13 @@ public class FolibRoleServiceImpl implements FolibRoleService {
         }
         deleteById(roleId);
         //删除角色关联的用户缓存
-        Set<String> userIds = getUserIdsByRoleId(roleId);
+        Set<String> userIds;
+        try {
+            userIds = getUserIdsByRoleId(roleId);
+        } catch (Exception e) {
+            log.error("获取角色用户列表异常", e);
+            throw new RuntimeException(e);
+        }
         deleteUserRoleCache(new ArrayList<>(userIds));
         //删除角色关联的资源权限
         roleResourceRefService.deleteByRoleId(roleId);
