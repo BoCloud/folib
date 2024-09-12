@@ -107,18 +107,12 @@ public class FolibUserServiceImpl implements FolibUserService {
 
     @Override
     public Long countUsers(User user) {
-        FolibUser.FolibUserBuilder builder = FolibUser.builder();
-        if (Objects.equals(user, null)) {
-            if(StringUtils.isNoneBlank(user.getUsername())) {
-                builder.username(user.getUsername());
-            }
-            if(StringUtils.isNoneBlank(user.getEmail())) {
-                builder.email(user.getEmail());
-            }
+        FolibUser folibUser = new FolibUser();
+        BeanUtils.copyProperties(user, folibUser);
+        if (CollectionUtils.isNotEmpty(user.getRoles())) {
+            folibUser.setRoles(user.getRoles().stream().map(SecurityRole::getRoleName).collect(Collectors.toSet()));
         }
-        builder.deleted(GlobalConstants.NOT_DELETED);
-        FolibUser folibUser = builder.build();
-        return folibUserMapper.count(folibUser);
+        return folibUserMapper.countUserRole(folibUser);
     }
 
     @Override
@@ -183,7 +177,9 @@ public class FolibUserServiceImpl implements FolibUserService {
                                         .flatMap(Set::stream)
                                         .filter(StringUtils::isNotBlank)
                                         .collect(Collectors.toSet());
-                                if(CollectionUtils.isNotEmpty(userGroupAuthorities)) userAuthorities.addAll(userGroupAuthorities);
+                                if(CollectionUtils.isNotEmpty(userGroupAuthorities)) {
+                                    userAuthorities.addAll(userGroupAuthorities);
+                                }
                             }
 
                             userDTO.setAuthorities(userAuthorities);

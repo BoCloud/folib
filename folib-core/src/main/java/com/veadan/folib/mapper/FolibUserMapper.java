@@ -19,6 +19,13 @@ import com.veadan.folib.entity.FolibUser;
 @Mapper
 public interface FolibUserMapper extends CommonMapper<FolibUser> {
      /**
+      * 查询总数
+      *
+      * @param folibUser 查询条件
+      * @return 总数
+      */
+     long countUserRole(@Param("user") FolibUser folibUser);
+     /**
       * 分页查询指定行数据
       *
       * @param folibUser 查询条件
