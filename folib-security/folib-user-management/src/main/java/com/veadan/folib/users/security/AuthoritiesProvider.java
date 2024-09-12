@@ -12,6 +12,7 @@ import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.dto.AccessModelDto;
+import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.DependsOn;
@@ -59,7 +60,7 @@ public class AuthoritiesProvider
     {
         RoleData role = new RoleData(new RoleDto(name, "", new AccessModelDto()));
         Set<RoleData> roles = authorizationConfigService.getRole(name).getRoles();
-        if (!SystemRole.ANONYMOUS.name().equals(name)) {
+        if (CollectionUtils.isNotEmpty(roles)) {
             role = roles.stream().findFirst().orElseThrow(() -> new IllegalArgumentException(name));
         }
 
