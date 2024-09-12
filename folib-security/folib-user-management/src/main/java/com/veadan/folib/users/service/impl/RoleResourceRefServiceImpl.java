@@ -298,33 +298,35 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         //用户权限组装
         if (CollectionUtils.isNotEmpty(users)){
              users.forEach(user -> {
-                 if (CollectionUtils.isNotEmpty(resources)) {
-                     resources.forEach(accessResourcesDTO -> {
-                         List<String> access = user.getAccess();
-                         if (CollectionUtils.isNotEmpty(access)) {
-                             access.forEach(pri -> {
-                                 if(StringUtils.isEmpty(accessResourcesDTO.getRepositoryId()) && StringUtils.isEmpty(accessResourcesDTO.getPath())) {
-                                     roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER)
-                                             .storagePrivilege(pri).resourceId(accessResourcesDTO.getId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build());
-                                 }
+                 if (StringUtils.isNotEmpty(user.getId())) {
+                     if (CollectionUtils.isNotEmpty(resources)) {
+                         resources.forEach(accessResourcesDTO -> {
+                             List<String> access = user.getAccess();
+                             if (CollectionUtils.isNotEmpty(access)) {
+                                 access.forEach(pri -> {
+                                     if(StringUtils.isEmpty(accessResourcesDTO.getRepositoryId()) && StringUtils.isEmpty(accessResourcesDTO.getPath())) {
+                                         roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER)
+                                                 .storagePrivilege(pri).resourceId(accessResourcesDTO.getId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build());
+                                     }
 
-                                 if(StringUtils.isNotEmpty(accessResourcesDTO.getRepositoryId()) && StringUtils.isEmpty(accessResourcesDTO.getPath())) {
-                                     roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER)
-                                             .repositoryPrivilege(pri).resourceId(accessResourcesDTO.getId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY).build());
-                                 }
+                                     if(StringUtils.isNotEmpty(accessResourcesDTO.getRepositoryId()) && StringUtils.isEmpty(accessResourcesDTO.getPath())) {
+                                         roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER)
+                                                 .repositoryPrivilege(pri).resourceId(accessResourcesDTO.getId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY).build());
+                                     }
 
-                                 if (StringUtils.isNotEmpty(accessResourcesDTO.getPath())) {
-                                     roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER).pathPrivilege(pri)
-                                             .resourceId(accessResourcesDTO.getId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_PATH).build());
-                                 }
-                             });
-                         }else {
-                             roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER)
-                                     .resourceId(accessResourcesDTO.getId()).createBy(username).build());
-                         }
-                     });
-                 }else {
-                     roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_PATH).build());
+                                     if (StringUtils.isNotEmpty(accessResourcesDTO.getPath())) {
+                                         roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER).pathPrivilege(pri)
+                                                 .resourceId(accessResourcesDTO.getId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_PATH).build());
+                                     }
+                                 });
+                             }else {
+                                 roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER)
+                                         .resourceId(accessResourcesDTO.getId()).createBy(username).build());
+                             }
+                         });
+                     }else {
+                         roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_PATH).build());
+                     }
                  }
              });
 
@@ -332,32 +334,34 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         //用户组权限组装
         if (CollectionUtils.isNotEmpty(groups)){
              groups.forEach(groupsDTO -> {
-                 if (CollectionUtils.isNotEmpty(resources)) {
-                     resources.forEach(accessResourcesDTO ->{
-                         List<String> access = groupsDTO.getAccess();
-                         if (CollectionUtils.isNotEmpty(access)) {
-                             access.forEach(pri -> {
-                                 if(StringUtils.isEmpty(accessResourcesDTO.getRepositoryId()) && StringUtils.isEmpty(accessResourcesDTO.getPath())) {
-                                     roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP)
-                                             .storagePrivilege(pri).resourceId(accessResourcesDTO.getId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build());
-                                 }
+                 if ( StringUtils.isNotEmpty(groupsDTO.getId())) {
+                     if (CollectionUtils.isNotEmpty(resources)) {
+                         resources.forEach(accessResourcesDTO ->{
+                             List<String> access = groupsDTO.getAccess();
+                             if (CollectionUtils.isNotEmpty(access)) {
+                                 access.forEach(pri -> {
+                                     if(StringUtils.isEmpty(accessResourcesDTO.getRepositoryId()) && StringUtils.isEmpty(accessResourcesDTO.getPath())) {
+                                         roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP)
+                                                 .storagePrivilege(pri).resourceId(accessResourcesDTO.getId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build());
+                                     }
 
-                                 if(StringUtils.isNotEmpty(accessResourcesDTO.getRepositoryId()) && StringUtils.isEmpty(accessResourcesDTO.getPath())) {
-                                     roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP)
-                                             .repositoryPrivilege(pri).resourceId(accessResourcesDTO.getId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY).build());
-                                 }
-                                 if(StringUtils.isNotEmpty(accessResourcesDTO.getPath())) {
-                                     roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP).pathPrivilege(pri)
-                                             .resourceId(accessResourcesDTO.getId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_PATH).build());
-                                 }
-                             });
-                         }else {
-                             roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP)
-                                     .resourceId(accessResourcesDTO.getId()).createBy(username).build());
-                         }
-                     });
-                 }else {
-                     roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP).createBy(username).build());
+                                     if(StringUtils.isNotEmpty(accessResourcesDTO.getRepositoryId()) && StringUtils.isEmpty(accessResourcesDTO.getPath())) {
+                                         roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP)
+                                                 .repositoryPrivilege(pri).resourceId(accessResourcesDTO.getId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_REPOSITORY).build());
+                                     }
+                                     if(StringUtils.isNotEmpty(accessResourcesDTO.getPath())) {
+                                         roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP).pathPrivilege(pri)
+                                                 .resourceId(accessResourcesDTO.getId()).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_PATH).build());
+                                     }
+                                 });
+                             }else {
+                                 roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP)
+                                         .resourceId(accessResourcesDTO.getId()).createBy(username).build());
+                             }
+                         });
+                     }else {
+                         roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(groupsDTO.getId()).refType(GlobalConstants.ROLE_TYPE_USER_GROUP).createBy(username).build());
+                     }
                  }
              });
         }
