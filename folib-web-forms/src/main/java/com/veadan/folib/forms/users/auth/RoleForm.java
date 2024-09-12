@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.veadan.folib.validation.UniqueRoleName;
 import lombok.Data;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import java.util.List;
 
@@ -15,12 +17,13 @@ import java.util.List;
 public class RoleForm
 {
 
-    @NotEmpty(message = "A name must be specified.")
+    @NotBlank(groups = {NewRole.class, UpdateRole.class}, message = "A name must be specified.")
     @UniqueRoleName(groups = {NewRole.class}, message = "Role is already registered.")
     private String name;
 
     private String description;
 
+    @Valid
     private AccessModelForm privileges;
 
     private List<AccessResources> resources;
