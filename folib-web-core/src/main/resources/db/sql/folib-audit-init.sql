@@ -49,7 +49,7 @@ INSERT INTO audit_event (module_value, module_name, event_value,event_name,used)
 INSERT INTO audit_event (module_value, module_name, event_value,event_name,used) VALUES ('USER_MANAGEMENT', '用户管理', 'USER_GROUP','用户组',1);
 INSERT INTO audit_event (module_value, module_name, event_value,event_name,used) VALUES ('USER_MANAGEMENT', '用户管理', 'USER_MANAGEMENT','用户权限',1);
 INSERT INTO audit_event (module_value, module_name, event_value,event_name,used) VALUES ('USER_MANAGEMENT', '用户管理', 'WEB_LOGIN','web登录',1);
-INSERT INTO audit_event (module_value, module_name, event_value,event_name,used) VALUES ('USER_MANAGEMENT', '用户管理', 'OSS_LOGIN','oss登录',1);
+INSERT INTO audit_event (module_value, module_name, event_value,event_name,used) VALUES ('USER_MANAGEMENT', '用户管理', 'SSO_LOGIN','sso登录',1);
 
 
 INSERT INTO audit_event (module_value, module_name, event_value,event_name,used) VALUES ('SYSTEM_SETTING', '系统设置', 'BASE_SETTING','基础信息配置',1);

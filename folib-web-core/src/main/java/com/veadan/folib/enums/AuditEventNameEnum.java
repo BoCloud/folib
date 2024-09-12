@@ -43,7 +43,7 @@ public enum AuditEventNameEnum {
     USER_PERMISSION(USER_MANAGEMENT, "用户权限"),
 
     WEB_LOGIN(USER_MANAGEMENT, "web登录"),
-    OSS_LOGIN(USER_MANAGEMENT, "oss登录"),
+    SSO_LOGIN(USER_MANAGEMENT, "sso登录"),
 
     BASE_SETTING(SYSTEM_SETTING, "基础信息配置"),
     SAFE_STRATEGY(SYSTEM_SETTING, "安全策略"),

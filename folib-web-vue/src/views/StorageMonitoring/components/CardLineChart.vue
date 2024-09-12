@@ -7,7 +7,7 @@
 				{{$t('StorageMonitoring.ThanLastUpdate')}}
 				<span v-if="storageMonitoringData.artifactsCountDiff !== 0 && ! storageMonitoringData.artifactsCountDiff">-</span>
 				<span v-else-if="storageMonitoringData.artifactsCountDiff >= 0">+ {{ storageMonitoringData.artifactsCountDiff }}</span>
-				<span v-else>- {{ storageMonitoringData.artifactsCountDiff }}</span>
+				<span v-else> {{ storageMonitoringData.artifactsCountDiff }}</span>
 			</p>
 		</template>
 		<template #extra>
