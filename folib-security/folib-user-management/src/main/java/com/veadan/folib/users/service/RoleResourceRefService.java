@@ -127,4 +127,6 @@ public interface RoleResourceRefService{
 
     List<RoleResourceRef> queryByResourceIds(List<String> resourceIds);
     List<RoleResourceRef> queryByIds(List<Long> ids);
+
+    List<RoleResourceRef> queryResourcesByRoleIds(List<String> roleIds);
 }

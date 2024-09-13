@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.veadan.folib.authentication.api.ldap.LdapAuthenticationConfigurationManager;
 import com.veadan.folib.authentication.api.ldap.LdapConfiguration;
 import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
+import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.cluster.FolibLockProperties;
 import com.veadan.folib.cluster.SyncAuthorizationEnum;
@@ -20,6 +21,7 @@ import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
+import com.veadan.folib.users.security.AuthoritiesProvider;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -27,11 +29,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.glassfish.jersey.apache.connector.ApacheClientProperties;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -75,7 +79,10 @@ public class CommonComponent {
 
     @Inject
     private FolibLockProperties folibLockProperties;
-
+    @Inject
+    private AuthoritiesProvider authoritiesProvider;
+    @Inject
+    private AnonymousAuthenticationFilter anonymousAuthenticationFilter;
     /**
      * Client WebTarget 构建认证信息
      *
@@ -125,10 +132,20 @@ public class CommonComponent {
             configurationManagementService.setAdvancedConfiguration(serverSettingsForm.getAdvancedConfigurationForm().getMutableProxyConfiguration());
             if (Boolean.FALSE.equals(serverSettingsForm.getAdvancedConfigurationForm().getAllowAnonymous())) {
                 authorizationConfigService.clearPrivilegesAnonymous();
+                updateAnonymous();
             } else if (Boolean.TRUE.equals(serverSettingsForm.getAdvancedConfigurationForm().getAllowAnonymous())) {
                 authorizationConfigService.addPrivilegesToAnonymous(Lists.newArrayList(Privileges.ARTIFACTS_RESOLVE, Privileges.SEARCH_ARTIFACTS, Privileges.ARTIFACTS_VIEW, Privileges.CONFIGURATION_VIEW_METADATA_CONFIGURATION));
+                updateAnonymous();
             }
         }
+    }
+
+    private void updateAnonymous() {
+        List<GrantedAuthority> authorities = AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS");
+        Role role = authoritiesProvider.getRuntimeRole(SystemRole.ANONYMOUS.name());
+        authorities.addAll(role.getAccessModel().getApiAuthorities());
+        anonymousAuthenticationFilter.getAuthorities().clear();
+        anonymousAuthenticationFilter.getAuthorities().addAll(authorities);
     }
 
     /**

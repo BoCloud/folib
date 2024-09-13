@@ -177,18 +177,8 @@ public class WebSecurityConfig
     {
         List<GrantedAuthority> authorities = AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS");
 
-        try {
-            Role role = authoritiesProvider.getRuntimeRole(SystemRole.ANONYMOUS.name());
-            authorities.addAll(role.getAccessModel().getApiAuthorities());
-        } catch (Exception e) {
-            Set<Privileges> privileges = EnumSet.of(
-                    Privileges.ARTIFACTS_RESOLVE,
-                    Privileges.SEARCH_ARTIFACTS,
-                    Privileges.ARTIFACTS_VIEW,
-                    Privileges.CONFIGURATION_VIEW_METADATA_CONFIGURATION
-            );
-            authorities.addAll(privileges);
-        }
+        Role role = authoritiesProvider.getRuntimeRole(SystemRole.ANONYMOUS.name());
+        authorities.addAll(role.getAccessModel().getApiAuthorities());
         return new AnonymousAuthenticationFilter("folib-unique-key",
                                                  "anonymousUser",
                                                  authorities);
