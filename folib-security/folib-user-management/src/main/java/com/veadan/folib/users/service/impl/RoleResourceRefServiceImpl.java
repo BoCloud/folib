@@ -468,12 +468,12 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         }
         //清理用户已关联的角色
         List<Long> removeRefIds = roleResourceRefs.stream().filter(ref -> GlobalConstants.ROLE_TYPE_USER.equals(ref.getRefType()) &&
-                Objects.equals(userId, ref.getEntityId()) && !privileges.contains(ref.getPathPrivilege())).map(RoleResourceRef::getId).collect(Collectors.toList());
+                Objects.equals(userId, ref.getEntityId()) && !privileges.contains(ref.getStoragePrivilege())).map(RoleResourceRef::getId).collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(removeRefIds)) {
             deleteByIds(removeRefIds);
         }
         List<String> refRoleIds = roleResourceRefs.stream().filter(ref -> GlobalConstants.ROLE_TYPE_USER.equals(ref.getRefType()) &&
-                Objects.equals(userId, ref.getEntityId()) && privileges.contains(ref.getPathPrivilege())).map(RoleResourceRef::getRoleId).collect(Collectors.toList());
+                Objects.equals(userId, ref.getEntityId()) && privileges.contains(ref.getStoragePrivilege())).map(RoleResourceRef::getRoleId).collect(Collectors.toList());
         roleIds.removeAll(refRoleIds);
 
         //保存关联权限
@@ -482,7 +482,7 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
             roleIds.forEach(roleId -> {
                 if (CollectionUtils.isNotEmpty(privileges)) {
                     privileges.forEach(privilege -> {
-                        updateRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(userId).refType(GlobalConstants.ROLE_TYPE_USER).pathPrivilege(privilege).resourceId(roleId.replaceFirst("STORAGE_USER_", "")).build());
+                        updateRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(userId).refType(GlobalConstants.ROLE_TYPE_USER).storagePrivilege(privilege).resourceId(roleId.replaceFirst("STORAGE_USER_", "")).build());
                     });
                 }else {
                     updateRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(userId).refType(GlobalConstants.ROLE_TYPE_USER)

@@ -1,5 +1,6 @@
 package com.veadan.folib.users.service;
 
+import com.github.pagehelper.PageInfo;
 import com.veadan.folib.dto.UserGroupDTO;
 import com.veadan.folib.dto.UserGroupListDTO;
 import com.veadan.folib.entity.UserGroup;
@@ -28,7 +29,7 @@ public interface UserGroupService{
      * @param pageRequest 分页对象
      * @return 查询结果
      */
-    Page<UserGroupListDTO> paginQuery(UserGroup userGroup, PageRequest pageRequest);
+    PageInfo<UserGroupListDTO> paginQuery(UserGroup userGroup, PageRequest pageRequest);
     /** 
      * 新增数据
      *

@@ -1,5 +1,7 @@
 package com.veadan.folib.users.service.impl;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.converts.UserConvert;
@@ -20,8 +22,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,8 +60,8 @@ public class FolibUserServiceImpl implements FolibUserService {
 
     @Override
     public UserDTO findByUserName(String username) {
-        List<UserDTO> folibUsers = getUsers(UserDto.builder().id(username).build(), 0, 1);
-        List<UserEntity> userEntities = UserConvert.INSTANCE.UserDTOsToUserList(folibUsers);
+        PageInfo<UserDTO> folibUsers = getUsers(UserDto.builder().id(username).build(), 0, 1);
+        List<UserEntity> userEntities = UserConvert.INSTANCE.UserDTOsToUserList(folibUsers.getList());
         if (CollectionUtils.isNotEmpty(userEntities)) {
             return UserConvert.INSTANCE.UserEntityToUserDTO(userEntities.get(0));
         }
@@ -100,8 +100,13 @@ public class FolibUserServiceImpl implements FolibUserService {
 
     @Override
     public Iterable<User> findAll() {
-        List<UserDTO> folibUsers = getUsers(UserDto.builder().build(), 0, null);
-        List<UserEntity> userEntities = UserConvert.INSTANCE.UserDTOsToUserList(folibUsers);
+        long count = countUsers(UserDto.builder().build());
+        if (count == 0L) {
+            return null;
+        }
+        int limit = Math.toIntExact(count);
+        PageInfo<UserDTO> folibUsers = getUsers(UserDto.builder().build(), 1, limit);
+        List<UserEntity> userEntities = UserConvert.INSTANCE.UserDTOsToUserList(folibUsers.getList());
         return new ArrayList<>(userEntities);
     }
 
@@ -116,31 +121,31 @@ public class FolibUserServiceImpl implements FolibUserService {
     }
 
     @Override
-    public List<User> findUsersPage(User user, int start, Integer limit) {
-        List<UserDTO> folibUsers = getUsers(user, start, limit);
-        List<UserEntity> userEntities = UserConvert.INSTANCE.UserDTOsToUserList(folibUsers);
-        return new ArrayList<>(userEntities);
+    public PageInfo<User> findUsersPage(User user, int start, Integer limit) {
+        PageInfo<UserDTO> folibUsers = getUsers(user, start, limit);
+        List<UserEntity> userEntities = UserConvert.INSTANCE.UserDTOsToUserList(folibUsers.getList());
+        PageInfo<User> pageUser = new PageInfo<>(new ArrayList<>(userEntities));
+        BeanUtils.copyProperties(folibUsers, pageUser, "list");
+        return pageUser;
     }
 
     @Override
-    public List<UserDTO> getUsers(User user, int start, Integer limit) {
-        if (Objects.isNull(limit)) {
-            long count = countUsers(user);
-            if (count == 0L) {
-                return null;
-            }
-            limit = Math.toIntExact(count);
-        }
+    public PageInfo<UserDTO> getUsers(User user, int start, Integer limit) {
+
         FolibUser folibUser = new FolibUser();
         BeanUtils.copyProperties(user, folibUser);
         if (CollectionUtils.isNotEmpty(user.getRoles())) {
             folibUser.setRoles(user.getRoles().stream().map(SecurityRole::getRoleName).collect(Collectors.toSet()));
         }
-        PageRequest pageRequest = PageRequest.of(start, limit);
-        List<UserDTO> folibUsers = folibUserMapper.queryAllUserRoleByLimit(folibUser, pageRequest);
+        PageHelper.startPage(start, limit);
+        List<UserDTO> folibUsers = folibUserMapper.queryAllUserRoleByLimit(folibUser);
+        PageInfo<UserDTO> pageUser = new PageInfo<>(folibUsers);
         //获取用户权限
-        getUserAuthorities(folibUsers);
-        return folibUsers;
+        List<UserDTO> content = pageUser.getList();
+        if (CollectionUtils.isNotEmpty(content)) {
+            getUserAuthorities(content);
+        }
+        return pageUser;
     }
 
     /**
@@ -210,9 +215,10 @@ public class FolibUserServiceImpl implements FolibUserService {
     }
 
     @Override
-    public Page<FolibUser> paginQuery(FolibUser folibUser, PageRequest pageRequest) {
-        long total = folibUserMapper.count(folibUser);
-        return new PageImpl<>(folibUserMapper.queryAllByLimit(folibUser, pageRequest), pageRequest, total);
+    public PageInfo<FolibUser> paginQuery(FolibUser folibUser, PageRequest pageRequest) {
+        PageHelper.startPage(pageRequest.getPageNumber(), pageRequest.getPageSize());
+        List<FolibUser> folibUsers = folibUserMapper.queryAllByLimit(folibUser);
+        return new PageInfo<>(folibUsers);
 
     }
 

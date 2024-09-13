@@ -28,12 +28,16 @@ public class UserDto
 
     private String id;
     private String username;
+    /**模糊匹配用户名**/
+    private String matchUsername;
 
     private String password;
 
     private String originalPassword;
 
     private String email;
+    /**模糊匹配用户名**/
+    private String matchEmail;
 
     private String avatar;
 

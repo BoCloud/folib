@@ -39,6 +39,7 @@ public class FolibUser implements Serializable,Cloneable{
     /** 用户名 */
     @ApiModelProperty(name = "用户名",notes = "")
     private String username ;
+    private transient String matchUsername;
     /** 密码 */
     @ApiModelProperty(name = "密码",notes = "")
     private String password ;
@@ -51,6 +52,7 @@ public class FolibUser implements Serializable,Cloneable{
     /** 邮件 */
     @ApiModelProperty(name = "邮件",notes = "")
     private String email ;
+    private transient String matchEmail;
     /** 用户类型 */
     @ApiModelProperty(name = "用户类型",notes = "")
     private String userType ;

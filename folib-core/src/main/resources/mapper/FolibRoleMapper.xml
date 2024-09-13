@@ -47,7 +47,10 @@
                 and cn_name like concat('%',#{role.cnName},'%')
             </if>
             <if test="role.enName != null and role.enName != ''">
-                and en_name like concat('%',#{role.enName},'%')
+                and en_name = #{role.enName}
+            </if>
+            <if test="role.matchEnName != null and role.matchEnName != ''">
+                and en_name like concat('%',#{role.matchEnName},'%')
             </if>
             <if test="role.description != null and role.description != ''">
                 and description = #{role.description}
@@ -74,7 +77,6 @@
                 and r.path = concat('%',#{role.path},'%')
             </if>
         group by fr.id
-        limit #{pageable.offset}, #{pageable.pageSize}
     </select>
 
     <!--统计总行数-->

@@ -1,13 +1,13 @@
 package com.veadan.folib.users.service.impl;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.veadan.folib.entity.Resource;
 import com.veadan.folib.mapper.ResourceMapper;
 import com.veadan.folib.users.service.ResourceService;
 import com.veadan.folib.users.service.RoleResourceRefService;
 import org.parboiled.common.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,9 +46,10 @@ public class ResourceServiceImpl implements ResourceService {
      * @param pageRequest 分页对象
      * @return 查询结果
      */
-    public Page<Resource> paginQuery(Resource resource, PageRequest pageRequest){
-        long total = resourceMapper.count(resource);
-        return new PageImpl<>(resourceMapper.queryAllByLimit(resource, pageRequest), pageRequest, total);
+    public PageInfo<Resource> paginQuery(Resource resource, PageRequest pageRequest){
+        PageHelper.startPage(pageRequest.getPageNumber(), pageRequest.getPageSize());
+        List<Resource> resources = resourceMapper.queryAllByLimit(resource);
+        return new PageInfo<>(resources);
     }
     
     /** 

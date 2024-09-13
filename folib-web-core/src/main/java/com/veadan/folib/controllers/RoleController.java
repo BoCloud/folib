@@ -1,6 +1,7 @@
 package com.veadan.folib.controllers;
 
 import cn.hutool.core.date.DateUtil;
+import com.github.pagehelper.PageInfo;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.users.UserController;
 import com.veadan.folib.converters.users.RoleConvert;
@@ -239,27 +240,29 @@ public class RoleController extends BaseController {
                                                        @RequestParam(name = "repositoryId", required = false) String repositoryId,
                                                        @RequestParam(name = "path", required = false) String path,
                                                         @RequestParam(name = "name", required = false) String name,
+                                                       @RequestParam(name = "matchRoleName", required = false) String matchName,
                                                         @RequestParam(name = "isDefault", required = false) String isDefault) {
-        if (Objects.isNull(page)) {
+        if (Objects.isNull(page) || page < 1) {
             page = 1;
         }
         if (Objects.isNull(limit)) {
             limit = 10;
         }
 
-        PageRequest pageRequest = PageRequest.of(page - 1, limit);
+        PageRequest pageRequest = PageRequest.of(page, limit);
         FolibRole folibRole = FolibRole.builder().build();
         folibRole.setEnName(name);
+        folibRole.setMatchEnName(matchName);
         folibRole.setIsDefault(isDefault);
         folibRole.setStorageId(storageId);
         folibRole.setRepositoryId(repositoryId);
         folibRole.setPath(path);
 
-        Page<FolibRoleDTO> folibRoles = folibRoleService.paginQuery(folibRole, pageRequest);
-        if (Objects.isNull(folibRoles)) {
+        PageInfo<FolibRoleDTO> folibRoles = folibRoleService.paginQuery(folibRole, pageRequest);
+        if (Objects.isNull(folibRoles) || Objects.isNull(folibRoles.getList())) {
             return new TableResultResponse<>(0, null);
         }
-        return new TableResultResponse<>(folibRoles.getTotalElements(), folibRoles.getContent());
+        return new TableResultResponse<>(folibRoles.getTotal(), folibRoles.getList());
 
     }
 
@@ -309,7 +312,7 @@ public class RoleController extends BaseController {
                 WSMessageRequest wsMessageRequest = null;
                 WSMessageResponse messageResponse = null;
 
-                int page = 0;
+                int page = 1;
                 int size = 100;
                 boolean flag = true;
                 while (flag) {
@@ -343,14 +346,15 @@ public class RoleController extends BaseController {
         UserAuthDTO.UserAuthDTOBuilder builder = UserAuthDTO.builder();
         PageRequest pageRequest = PageRequest.of(page, size);
         //用户信息
-        Page<FolibUser> folibUserDTOS = folibUserService.paginQuery(FolibUser.builder().build(), pageRequest);
-        if (!folibUserDTOS.getContent().isEmpty()) {
-            builder.users(folibUserDTOS.getContent());
+        PageInfo<FolibUser> folibUserDTOS = folibUserService.paginQuery(FolibUser.builder().build(), pageRequest);
+        List<FolibUser> userList = folibUserDTOS.getList();
+        if (CollectionUtils.isNotEmpty(userList)) {
+            builder.users(userList);
             builder.nextPage(true);
         }
         //用户组及用户组关联信息
-        Page<UserGroupListDTO> userGroupPageS = userGroupService.paginQuery(UserGroup.builder().build(), pageRequest);
-        List<UserGroupListDTO> userGroupListDTOS = userGroupPageS.getContent();
+        PageInfo<UserGroupListDTO> userGroupPageS = userGroupService.paginQuery(UserGroup.builder().build(), pageRequest);
+        List<UserGroupListDTO> userGroupListDTOS = userGroupPageS.getList();
         if (!userGroupListDTOS.isEmpty()) {
             List<UserGroup> userGroups = UserGroupConvert.INSTANCE.UserGroupDTOToEntities(userGroupListDTOS);
             builder.groups(userGroups);
@@ -362,8 +366,8 @@ public class RoleController extends BaseController {
             builder.nextPage(true);
         }
         //角色信息及角色关联权限
-        Page<FolibRoleDTO> folibRoleDTOS = folibRoleService.paginQuery(FolibRole.builder().build(), pageRequest);
-        List<FolibRoleDTO> roleDTOS = folibRoleDTOS.getContent();
+        PageInfo<FolibRoleDTO> folibRoleDTOS = folibRoleService.paginQuery(FolibRole.builder().build(), pageRequest);
+        List<FolibRoleDTO> roleDTOS = folibRoleDTOS.getList();
         if (!roleDTOS.isEmpty()) {
             List<FolibRole> folibRoles = RoleConvert.INSTANCE.roleDTOSToEntities(roleDTOS);
             builder.roles(folibRoles);
@@ -377,9 +381,11 @@ public class RoleController extends BaseController {
             builder.nextPage(true);
         }
         //资源信息
-        Page<Resource> resources = resourceService.paginQuery(Resource.builder().build(), pageRequest);
-        if (!resources.getContent().isEmpty()) {
-            builder.resources(resources.getContent());
+        PageInfo<Resource> pageResource = resourceService.paginQuery(Resource.builder().build(), pageRequest);
+        List<Resource> resources = pageResource.getList();
+        if (CollectionUtils.isNotEmpty(resources)) {
+            builder.resources(resources);
+            builder.nextPage(true);
         }
         List<Resource> resourcesList = resources.stream().filter(resource -> StringUtils.isNotEmpty(resource.getRepositoryId()) || StringUtils.isNotEmpty(resource.getStorageId())).collect(Collectors.toList());
         //仓库信息

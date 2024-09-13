@@ -44,6 +44,8 @@ public class FolibRole implements Serializable,Cloneable {
       */
      @ApiModelProperty(name = "英文名称", notes = "")
      private String enName;
+     /**模糊匹配角色英文名称*/
+     private transient String matchEnName;
      /**
       * 角色描述
       */

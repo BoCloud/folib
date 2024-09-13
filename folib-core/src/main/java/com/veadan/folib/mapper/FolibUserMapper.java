@@ -29,10 +29,9 @@ public interface FolibUserMapper extends CommonMapper<FolibUser> {
       * 分页查询指定行数据
       *
       * @param folibUser 查询条件
-      * @param pageable 分页对象
       * @return 对象列表
       */
-     List<UserDTO> queryAllUserRoleByLimit(@Param("user") FolibUser folibUser,  @Param("pageable") Pageable pageable);
+     List<UserDTO> queryAllUserRoleByLimit(@Param("user") FolibUser folibUser);
     /**
      * 通过ID查询单条数据 
      *
@@ -44,10 +43,9 @@ public interface FolibUserMapper extends CommonMapper<FolibUser> {
      * 分页查询指定行数据
      *
      * @param folibUser 查询条件
-     * @param pageable 分页对象
      * @return 对象列表
      */
-    List<FolibUser> queryAllByLimit(@Param("user") FolibUser folibUser, @Param("pageable") Pageable pageable);
+    List<FolibUser> queryAllByLimit(@Param("user") FolibUser folibUser);
     /** 
      * 统计总行数
      *
