@@ -360,7 +360,7 @@ export default {
     initData() {
       this.instanceName = sessionStorage.getItem("instanceName")
       this.repositoryInfo()
-      this.getTargetRepositories(this.folibRepository.type, this.folibRepository.layout, this.folibRepository.id, this.folibRepository.policy)
+      this.getTargetRepositories(this.folibRepository.type, this.folibRepository.layout, this.folibRepository.policy)
       this.getExternalNodeRepositories({type: this.folibRepository.layout})
       this.selectTargetRepositories = []
     },
@@ -406,11 +406,10 @@ export default {
         this.$refs.unionRepositoryForm.clearValidate('artifactPaths')
       }
     },
-    getTargetRepositories(type, layout, excludeRepositoryId, policy) {
+    getTargetRepositories(type, layout, policy) {
       getArtifactDispatchStoragesAndRepositories({
         type: type,
         layout: layout,
-        excludeRepositoryId: excludeRepositoryId,
         policy: policy,
       }).then((res) => {
         this.targetRepositories = []

@@ -47,7 +47,7 @@ class HttpGetRemoteRepositoryCheckStrategy
             client.property(ClientProperties.READ_TIMEOUT, 10000);
             WebTarget target = client.target(remoteRepositoryUrl);
             Invocation.Builder builder = target.request();
-            Response response = builder.get();
+            Response response = builder.head();
             int statusCode = response.getStatus();
             logger.info("The remote storageId [{}] repository [{}] url [{}] allow access [{}] response status [{}]", storageId, repositoryId, remoteRepositoryUrl, allowAccessList.stream().map(String::valueOf).collect(Collectors.joining(",")), statusCode);
             flag = allowAccessList.contains(statusCode) || String.valueOf(statusCode).startsWith("2");

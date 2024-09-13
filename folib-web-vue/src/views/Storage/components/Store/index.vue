@@ -1865,7 +1865,7 @@ export default {
         this.queryPermissionStoragesAndRepositories(
           this.folibRepository.type,
           this.folibRepository.layout,
-          this.folibRepository.id,
+          this.folibRepository.storageId + ':' + this.folibRepository.id,
           this.folibRepository.policy
         )
         this.operationTitle =
@@ -1883,7 +1883,6 @@ export default {
         this.getArtifactDispatchStoragesAndRepositories(
           this.folibRepository.type,
           this.folibRepository.layout,
-          this.folibRepository.id,
           this.folibRepository.policy
         )
         this.getExternalNodeRepositories({type: this.folibRepository.layout})
@@ -2078,13 +2077,11 @@ export default {
     getArtifactDispatchStoragesAndRepositories (
       type,
       layout,
-      excludeRepositoryId,
       policy
     ) {
       getArtifactDispatchStoragesAndRepositories({
         type: type,
         layout: layout,
-        excludeRepositoryId: excludeRepositoryId,
         policy: policy
       }).then(res => {
         this.repositories = []
