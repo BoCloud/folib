@@ -91,7 +91,10 @@
                 and fu.id = #{user.id}
             </if>
             <if test="user.username != null and user.username != ''">
-                and username like concat('%',#{user.username},'%')
+                and username = #{user.username}
+            </if>
+            <if test="user.matchUsername != null and user.matchUsername != ''">
+                and username like concat('%',#{user.matchUsername},'%')
             </if>
             <if test="user.password != null and user.password != ''">
                 and password = #{user.password}
@@ -103,7 +106,10 @@
                 and avatar = #{user.avatar}
             </if>
             <if test="user.email != null and user.email != ''">
-                and email like concat('%',#{user.email},'%')
+                and email = #{user.email}
+            </if>
+            <if test="user.matchEmail != null and user.matchEmail != ''">
+                and email like concat('%',#{user.matchEmail},'%')
             </if>
             <if test="user.userType != null and user.userType != ''">
                 and user_type = #{user.userType}
@@ -121,7 +127,6 @@
                 find_in_set(#{role}, roles)
             </foreach>
         </if>
-        limit #{pageable.pageNumber}, #{pageable.pageSize}
     </select>
 
     <!--分页查询指定行数据-->
@@ -136,6 +141,9 @@
             <if test="user.username != null and user.username != ''">
                 and user.username = #{user.username}
             </if>
+            <if test="user.matchUsername != null and user.matchUsername != ''">
+                and user.username like concat('%',#{user.matchUsername},'%')
+            </if>
             <if test="user.password != null and user.password != ''">
                 and user.password = #{user.password}
             </if>
@@ -147,6 +155,9 @@
             </if>
             <if test="user.email != null and user.email != ''">
                 and user.email = #{user.email}
+            </if>
+            <if test="user.matchEmail != null and user.matchEmail != ''">
+                and user.email like concat('%',#{user.matchEmail},'%')
             </if>
             <if test="user.userType != null and user.userType != ''">
                 and user.user_type = #{user.userType}
@@ -167,7 +178,6 @@
                 and user.update_by = #{user.updateBy}
             </if>
         </where>
-        limit #{pageable.offset}, #{pageable.pageSize}
     </select>
 
     <!--统计总行数-->

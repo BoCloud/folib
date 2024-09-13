@@ -1,5 +1,6 @@
 package com.veadan.folib.controllers.users;
 
+import com.github.pagehelper.PageInfo;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.users.support.UserGroupResponseEntity;
@@ -17,7 +18,6 @@ import com.veadan.folib.users.service.UserGroupService;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -223,26 +223,28 @@ public class UserGroupController
     @GetMapping(value = "/queryUserGroup", produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     public TableResultResponse<UserGroupListDTO> queryUser(@RequestParam(name = "page", required = false) Integer page,
-                                                       @RequestParam(name = "limit", required = false) Integer limit,
-                                                       @RequestParam(name = "name", required = false) String name,
-                                                       @RequestParam(name = "joinGroup", required = false) String joinGroup) {
+                                                           @RequestParam(name = "limit", required = false) Integer limit,
+                                                           @RequestParam(name = "name", required = false) String name,
+                                                           @RequestParam(name = "matchGroupName", required = false) String matchGroupName,
+                                                           @RequestParam(name = "joinGroup", required = false) String joinGroup) {
 
-        if (Objects.isNull(page)) {
+        if (Objects.isNull(page) || page <1) {
             page = 1;
         }
         if (Objects.isNull(limit)) {
             limit = 10;
         }
-        PageRequest pageRequest = PageRequest.of(page-1, limit);
+        PageRequest pageRequest = PageRequest.of(page, limit);
         UserGroup userGroup = UserGroup.builder().build();
         userGroup.setGroupName(name);
+        userGroup.setMatchGroupName(matchGroupName);
         userGroup.setJoinGroup(joinGroup);
         userGroup.setDeleted(GlobalConstants.NOT_DELETED);
-        Page<UserGroupListDTO> userGroupListDTOS = userGroupService.paginQuery(userGroup, pageRequest);
+        PageInfo<UserGroupListDTO> userGroupListDTOS = userGroupService.paginQuery(userGroup, pageRequest);
         if (Objects.isNull(userGroupListDTOS)) {
             return new TableResultResponse<>(0, null);
         }
-        return new TableResultResponse<>(userGroupListDTOS.getTotalElements(), userGroupListDTOS.getContent());
+        return new TableResultResponse<>(userGroupListDTOS.getTotal(), userGroupListDTOS.getList());
 
     }
 

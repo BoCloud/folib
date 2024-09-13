@@ -1,5 +1,7 @@
 package com.veadan.folib.users.service.impl;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.veadan.folib.authorization.AuthorizationConfigFileManager;
 import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.authorization.dto.RoleDto;
@@ -24,8 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -297,9 +297,10 @@ public class FolibRoleServiceImpl implements FolibRoleService {
      * @param pageRequest 分页对象
      * @return 查询结果
      */
-    public Page<FolibRoleDTO> paginQuery(FolibRole folibRole, PageRequest pageRequest){
-        long total = folibRoleMapper.count(folibRole);
-        return new PageImpl<>(folibRoleMapper.queryAllByLimit(folibRole, pageRequest), pageRequest, total);
+    public PageInfo<FolibRoleDTO> paginQuery(FolibRole folibRole, PageRequest pageRequest){
+        PageHelper.startPage(pageRequest.getPageNumber(), pageRequest.getPageSize());
+        List<FolibRoleDTO> folibRoleDTOS = folibRoleMapper.queryAllByLimit(folibRole);
+        return new PageInfo<>(folibRoleDTOS);
     }
     
     /** 

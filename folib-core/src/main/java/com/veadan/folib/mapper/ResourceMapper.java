@@ -26,10 +26,9 @@ public interface ResourceMapper extends CommonMapper<Resource> {
      * 分页查询指定行数据
      *
      * @param resource 查询条件
-     * @param pageable 分页对象
      * @return 对象列表
      */
-    List<Resource> queryAllByLimit(@Param("resource")Resource resource, @Param("pageable") Pageable pageable);
+    List<Resource> queryAllByLimit(@Param("resource")Resource resource);
     /** 
      * 统计总行数
      *

@@ -1,12 +1,12 @@
 package com.veadan.folib.users.service;
 
+import com.github.pagehelper.PageInfo;
 import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.UserEntity;
 import com.veadan.folib.dto.RepositoryPrivilegeDTO;
 import com.veadan.folib.dto.UserDTO;
 import com.veadan.folib.entity.FolibUser;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
@@ -30,7 +30,7 @@ public interface FolibUserService {
 
     Long countUsers(User user);
 
-    List<User> findUsersPage(User user, int start, Integer limit);
+    PageInfo<User> findUsersPage(User user, int start, Integer limit);
 
     boolean saveOrUpdateBatch(List<UserEntity> userEntitys);
 
@@ -38,7 +38,7 @@ public interface FolibUserService {
 
     void saveOrUpdate(List<FolibUser> users);
 
-    Page<FolibUser> paginQuery(FolibUser build, PageRequest pageRequest);
+    PageInfo<FolibUser> paginQuery(FolibUser build, PageRequest pageRequest);
 
     List<User> queryUserRoleByRepositoryAndPrivilege(List<RepositoryPrivilegeDTO> repositoryPrivilegeDTOS);
 
@@ -46,5 +46,5 @@ public interface FolibUserService {
 
     List<FolibUser> queryByIds(List<String> userIds);
 
-    List<UserDTO> getUsers(User user, int start, Integer limit);
+    PageInfo<UserDTO> getUsers(User user, int start, Integer limit);
 }

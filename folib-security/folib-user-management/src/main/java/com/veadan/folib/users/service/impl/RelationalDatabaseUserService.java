@@ -1,5 +1,6 @@
 package com.veadan.folib.users.service.impl;
 
+import com.github.pagehelper.PageInfo;
 import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.converts.UserConvert;
@@ -116,8 +117,8 @@ public class RelationalDatabaseUserService implements UserService
     @Override
     public UserEntity findByUsername(String username)
     {
-        List<UserDTO> folibUsers = folibUserService.getUsers(UserDto.builder().id(username).build(), 0, 1);
-        List<UserEntity> userEntities = UserConvert.INSTANCE.UserDTOsToUserList(folibUsers);
+        PageInfo<UserDTO> folibUsers = folibUserService.getUsers(UserDto.builder().id(username).build(), 1, 1);
+        List<UserEntity> userEntities = UserConvert.INSTANCE.UserDTOsToUserList(folibUsers.getList());
         if (CollectionUtils.isNotEmpty(userEntities)) {
             return userEntities.get(0);
         }
@@ -185,20 +186,14 @@ public class RelationalDatabaseUserService implements UserService
 
     @Override
     public PageResultResponse<User> queryUser(User user, Integer page, Integer limit) {
-        if (Objects.isNull(page)) {
+        if (Objects.isNull(page) || page < 1) {
             page = 1;
         }
         if (Objects.isNull(limit)) {
             limit = 10;
         }
-        int start = (page - 1) * limit;
-//        limit = page * limit;
-        long count = folibUserService.countUsers(user);
-        if (count == 0L) {
-            return null;
-        }
-        List<User> userList = folibUserService.findUsersPage(user, start, limit);
-        return new PageResultResponse<>(count, userList);
+        PageInfo<User> usersPage = folibUserService.findUsersPage(user, page, limit);
+        return new PageResultResponse<>(usersPage.getTotal(), usersPage.getList());
     }
 
     @Override

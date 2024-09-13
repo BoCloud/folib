@@ -1,8 +1,8 @@
 package com.veadan.folib.users.service;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import com.github.pagehelper.PageInfo;
 import com.veadan.folib.entity.Resource;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 
@@ -26,7 +26,7 @@ public interface ResourceService{
      * @param pageRequest 分页对象
      * @return 查询结果
      */
-    Page<Resource> paginQuery(Resource resource, PageRequest pageRequest);
+    PageInfo<Resource> paginQuery(Resource resource, PageRequest pageRequest);
     /** 
      * 新增数据
      *

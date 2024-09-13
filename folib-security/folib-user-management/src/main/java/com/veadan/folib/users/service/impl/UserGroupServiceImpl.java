@@ -1,5 +1,7 @@
 package com.veadan.folib.users.service.impl;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.veadan.folib.components.IdGenerateUtils;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.dto.UserGroupDTO;
@@ -51,6 +53,7 @@ public class UserGroupServiceImpl implements UserGroupService {
      * @param id 主键
      * @return 实例对象
      */
+    @Override
     public UserGroup queryById(Long id){
         return userGroupMapper.queryById(id);
     }
@@ -62,9 +65,10 @@ public class UserGroupServiceImpl implements UserGroupService {
      * @param pageRequest 分页对象
      * @return 查询结果
      */
-    public Page<UserGroupListDTO> paginQuery(UserGroup userGroup, PageRequest pageRequest){
-        long total = userGroupMapper.count(userGroup);
-        return new PageImpl<>(userGroupMapper.queryAllByLimit(userGroup, pageRequest), pageRequest, total);
+    public PageInfo<UserGroupListDTO> paginQuery(UserGroup userGroup, PageRequest pageRequest){
+        PageHelper.startPage(pageRequest.getPageNumber(), pageRequest.getPageSize());
+        List<UserGroupListDTO> userGroupListDTOS = userGroupMapper.queryAllByLimit(userGroup);
+        return new PageInfo<>(userGroupListDTOS);
     }
     
     /** 

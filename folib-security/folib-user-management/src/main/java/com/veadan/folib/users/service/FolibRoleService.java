@@ -1,11 +1,11 @@
 package com.veadan.folib.users.service;
 
+import com.github.pagehelper.PageInfo;
 import com.veadan.folib.dto.FolibRoleDTO;
 import com.veadan.folib.dto.RoleDTO;
-import com.veadan.folib.storage.repository.RepositoryPermissionDto;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import com.veadan.folib.entity.FolibRole;
+import com.veadan.folib.storage.repository.RepositoryPermissionDto;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 import java.util.Set;
@@ -38,7 +38,7 @@ public interface FolibRoleService{
      * @param pageRequest 分页对象
      * @return 查询结果
      */
-    Page<FolibRoleDTO> paginQuery(FolibRole folibRole, PageRequest pageRequest);
+    PageInfo<FolibRoleDTO> paginQuery(FolibRole folibRole, PageRequest pageRequest);
     /** 
      * 新增数据
      *

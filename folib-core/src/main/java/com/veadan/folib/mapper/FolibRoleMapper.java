@@ -27,10 +27,9 @@ public interface FolibRoleMapper extends CommonMapper<FolibRole> {
      * 分页查询指定行数据
      *
      * @param folibRole 查询条件
-     * @param pageable 分页对象
      * @return 对象列表
      */
-    List<FolibRoleDTO> queryAllByLimit(@Param(("role")) FolibRole folibRole, @Param("pageable") Pageable pageable);
+    List<FolibRoleDTO> queryAllByLimit(@Param(("role")) FolibRole folibRole);
     /** 
      * 统计总行数
      *

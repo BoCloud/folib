@@ -28,10 +28,9 @@ public interface UserGroupMapper extends CommonMapper<UserGroup> {
      * 分页查询指定行数据
      *
      * @param userGroup 查询条件
-     * @param pageable 分页对象
      * @return 对象列表
      */
-    List<UserGroupListDTO> queryAllByLimit(@Param("userGroup") UserGroup userGroup, @Param("pageable") Pageable pageable);
+    List<UserGroupListDTO> queryAllByLimit(@Param("userGroup") UserGroup userGroup);
     /** 
      * 统计总行数
      *

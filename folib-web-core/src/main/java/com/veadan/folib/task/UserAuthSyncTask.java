@@ -2,6 +2,7 @@ package com.veadan.folib.task;
 
 
 import cn.hutool.core.date.DateUtil;
+import com.github.pagehelper.PageInfo;
 import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.converters.users.RoleConvert;
 import com.veadan.folib.converters.users.UserGroupConvert;
@@ -22,6 +23,7 @@ import com.veadan.folib.ws.server.Command;
 import com.veadan.folib.ws.server.WSMessageRequest;
 import com.veadan.folib.ws.server.WSMessageResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -104,7 +106,7 @@ public class UserAuthSyncTask {
                                 return ;
                             }
                         }
-                        int page = 0;
+                        int page = 1;
                         int size = 100;
                         boolean flag = true;
 
@@ -146,14 +148,15 @@ public class UserAuthSyncTask {
         UserAuthDTO.UserAuthDTOBuilder builder = UserAuthDTO.builder();
         PageRequest pageRequest = PageRequest.of(page, size);
         //用户信息
-        Page<FolibUser> folibUserDTOS = folibUserService.paginQuery(FolibUser.builder().build(), pageRequest);
-        if (!folibUserDTOS.getContent().isEmpty()) {
-            builder.users(new ArrayList<>(folibUserDTOS.getContent()));
+        PageInfo<FolibUser> folibUserDTOS = folibUserService.paginQuery(FolibUser.builder().build(), pageRequest);
+        List<FolibUser> userList = folibUserDTOS.getList();
+        if (CollectionUtils.isNotEmpty(userList)) {
+            builder.users(userList);
             builder.nextPage(true);
         }
         //用户组及用户组关联信息
-        Page<UserGroupListDTO> userGroupPageS = userGroupService.paginQuery(UserGroup.builder().build(), pageRequest);
-        List<UserGroupListDTO> userGroupListDTOS = userGroupPageS.getContent();
+        PageInfo<UserGroupListDTO> userGroupPageS = userGroupService.paginQuery(UserGroup.builder().build(), pageRequest);
+        List<UserGroupListDTO> userGroupListDTOS = userGroupPageS.getList();
         if (!userGroupListDTOS.isEmpty()) {
             List<UserGroup> userGroups = UserGroupConvert.INSTANCE.UserGroupDTOToEntities(userGroupListDTOS);
             builder.groups(userGroups);
@@ -165,8 +168,8 @@ public class UserAuthSyncTask {
             builder.nextPage(true);
         }
         //角色信息及角色关联权限
-        Page<FolibRoleDTO> folibRoleDTOS = folibRoleService.paginQuery(FolibRole.builder().build(), pageRequest);
-        List<FolibRoleDTO> roleDTOS = folibRoleDTOS.getContent();
+        PageInfo<FolibRoleDTO> folibRoleDTOS = folibRoleService.paginQuery(FolibRole.builder().build(), pageRequest);
+        List<FolibRoleDTO> roleDTOS = folibRoleDTOS.getList();
         if (!roleDTOS.isEmpty()) {
             List<FolibRole> folibRoles = RoleConvert.INSTANCE.roleDTOSToEntities(roleDTOS);
             builder.roles(folibRoles);
@@ -180,9 +183,11 @@ public class UserAuthSyncTask {
             builder.nextPage(true);
         }
         //资源信息
-        Page<Resource> resources = resourceService.paginQuery(Resource.builder().build(), pageRequest);
-        if (!resources.getContent().isEmpty()) {
-            builder.resources(new ArrayList<>(resources.getContent()));
+        PageInfo<Resource> pageResource = resourceService.paginQuery(Resource.builder().build(), pageRequest);
+        List<Resource> resources = pageResource.getList();
+        if (CollectionUtils.isNotEmpty(resources)) {
+            builder.resources(resources);
+            builder.nextPage(true);
         }
         List<Resource> resourcesList = resources.stream().filter(resource -> StringUtils.isNotEmpty(resource.getRepositoryId()) || StringUtils.isNotEmpty(resource.getStorageId())).collect(Collectors.toList());
         //仓库信息
