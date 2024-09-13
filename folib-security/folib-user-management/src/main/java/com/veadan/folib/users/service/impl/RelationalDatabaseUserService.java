@@ -189,7 +189,7 @@ public class RelationalDatabaseUserService implements UserService
             page = 1;
         }
         if (Objects.isNull(limit)) {
-            limit = 5;
+            limit = 10;
         }
         int start = (page - 1) * limit;
 //        limit = page * limit;

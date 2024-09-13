@@ -240,6 +240,12 @@ public class RoleController extends BaseController {
                                                        @RequestParam(name = "path", required = false) String path,
                                                         @RequestParam(name = "name", required = false) String name,
                                                         @RequestParam(name = "isDefault", required = false) String isDefault) {
+        if (Objects.isNull(page)) {
+            page = 1;
+        }
+        if (Objects.isNull(limit)) {
+            limit = 10;
+        }
 
         PageRequest pageRequest = PageRequest.of(page - 1, limit);
         FolibRole folibRole = FolibRole.builder().build();

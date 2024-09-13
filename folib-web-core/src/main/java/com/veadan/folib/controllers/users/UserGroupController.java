@@ -227,6 +227,12 @@ public class UserGroupController
                                                        @RequestParam(name = "name", required = false) String name,
                                                        @RequestParam(name = "joinGroup", required = false) String joinGroup) {
 
+        if (Objects.isNull(page)) {
+            page = 1;
+        }
+        if (Objects.isNull(limit)) {
+            limit = 10;
+        }
         PageRequest pageRequest = PageRequest.of(page-1, limit);
         UserGroup userGroup = UserGroup.builder().build();
         userGroup.setGroupName(name);
