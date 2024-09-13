@@ -49,6 +49,7 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
      * @param id 主键
      * @return 实例对象
      */
+    @Override
     public RoleResourceRef queryById(Long id){
         return roleResourceRefMapper.queryById(id);
     }
@@ -60,6 +61,7 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
      * @param pageRequest 分页对象
      * @return 查询结果
      */
+    @Override
     public Page<RoleResourceRef> paginQuery(RoleResourceRef roleResourceRef, PageRequest pageRequest){
         long total = roleResourceRefMapper.count(roleResourceRef);
         return new PageImpl<>(roleResourceRefMapper.queryAllByLimit(roleResourceRef, pageRequest), pageRequest, total);
@@ -71,6 +73,7 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
      * @param roleResourceRef 实例对象
      * @return 实例对象
      */
+    @Override
     public RoleResourceRef insert(RoleResourceRef roleResourceRef){
         roleResourceRefMapper.insert(roleResourceRef);
         String entityId = roleResourceRef.getEntityId();
@@ -91,6 +94,7 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
      * @param roleResourceRef 实例对象
      * @return 实例对象
      */
+    @Override
     public RoleResourceRef update(RoleResourceRef roleResourceRef){
         roleResourceRefMapper.update(roleResourceRef);
         String entityId = roleResourceRef.getEntityId();
@@ -111,6 +115,7 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
      * @param id 主键
      * @return 是否成功
      */
+    @Override
     public boolean deleteById(Long id){
         RoleResourceRef roleResourceRef = queryById(id);
         if (roleResourceRef == null) {
@@ -135,6 +140,7 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         return total > 0;
     }
 
+    @Override
     public boolean deleteByRoleId(String roleId){
         List<RoleResourceRef> roleResourceRefs = queryByRoleIds(Collections.singletonList(roleId));
         roleResourceRefs = roleResourceRefs.stream().filter(r ->!"admin".equalsIgnoreCase(r.getRoleId()) && GlobalConstants.ROLE_TYPE_USER.equals(r.getRefType()) && !"admin".equalsIgnoreCase(r.getEntityId())).collect(Collectors.toList());
@@ -286,8 +292,12 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         //保存权限
         List<RoleResourceRef> roleResourceRefs = new ArrayList<>();
         AccessModelDTO privileges = roleForm.getPrivileges();
-        List<AccessUsersDTO> users = privileges.getUsers();
-        List<AccessUserGroupsDTO> groups = privileges.getGroups();
+        List<AccessUsersDTO> users = null;
+        List<AccessUserGroupsDTO> groups = null;
+        if (Objects.nonNull(privileges)) {
+            users = privileges.getUsers();
+            groups = privileges.getGroups();
+        }
         if (CollectionUtils.isEmpty(users) && CollectionUtils.isEmpty(groups)){
             if (CollectionUtils.isNotEmpty(resources)) {
                 List<RoleResourceRef> roleResourceRef = resources.stream().map(accessResourcesDTO -> RoleResourceRef.builder().roleId(roleId).resourceId(accessResourcesDTO.getId()).createBy(username).build()).collect(Collectors.toList());

@@ -79,6 +79,7 @@ export function getFileType(name) {
 }
 
 export function fileSizeConver(limit) {
+    limit = Math.abs(limit)
     var size = "";
     if (limit === 0) {
         size = limit.toFixed(2) + "B";
@@ -106,6 +107,7 @@ export function fileSizeConver(limit) {
 }
 
 export function fileSizeConverUnit(limit, unit) {
+    limit = Math.abs(limit)
     var size = "";
     switch (unit) {
         case "B":

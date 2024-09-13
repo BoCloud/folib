@@ -58,7 +58,7 @@ class RemoteRepositoryHeartbeatMonitor
             if (Objects.isNull(remoteRepository)) {
                 return;
             }
-            isAlive = monitorStrategy.isAlive(remoteRepository.getUrl());
+            isAlive = monitorStrategy.isAlive(repository.getStorage().getId(), repository.getId(), remoteRepository.getUrl());
         }
         catch (Exception ex)
         {

@@ -360,7 +360,10 @@ public class FolibRoleServiceImpl implements FolibRoleService {
         //保存权限关系
         roleResourceRefService.savePermissions(roleForm, roleId, username);
 
-        List<AccessUsersDTO> users = roleForm.getPrivileges().getUsers();
+        List<AccessUsersDTO> users = null;
+        if (Objects.nonNull(roleForm.getPrivileges())) {
+            users = roleForm.getPrivileges().getUsers();
+        }
         if (CollectionUtils.isNotEmpty(users)) {
             List<String> userIds = users.stream().map(AccessUsersDTO::getId).collect(Collectors.toList());
             deleteUserRoleCache(userIds);
@@ -402,7 +405,10 @@ public class FolibRoleServiceImpl implements FolibRoleService {
             roleResourceRefService.savePermissions(roleDTO, roleId, username);
         }
 
-        List<AccessUsersDTO> users = roleDTO.getPrivileges().getUsers();
+        List<AccessUsersDTO> users = null;
+        if (Objects.nonNull(roleDTO.getPrivileges())) {
+            users = roleDTO.getPrivileges().getUsers();
+        }
         if (CollectionUtils.isNotEmpty(users)) {
             userIds.addAll(users.stream().map(AccessUsersDTO::getId).collect(Collectors.toSet()));
         }

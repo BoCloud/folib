@@ -64,6 +64,10 @@ public class PypiArtifactCoordinates
 
     public static final String PATH = "path";
 
+    public static final String WHL = "whl";
+
+    public static final String EGG = ".egg";
+
     public PypiArtifactCoordinates() {
         resetCoordinates(DISTRIBUTION,
                 VERSION,
@@ -110,7 +114,7 @@ public class PypiArtifactCoordinates
             }
         }
 
-        if (WHEEL_EXTENSION_LIST.contains(packaging)) {
+        if (WHL.equalsIgnoreCase(packaging)) {
             if (StringUtils.isBlank(distribution) || StringUtils.isBlank(version) || StringUtils.isBlank(platform)
                     || StringUtils.isBlank(languageImplementationVersion) || StringUtils.isBlank(abi)) {
                 throw new IllegalArgumentException("The distribution, version, languageImplementationVersion, abi, and " +
@@ -286,25 +290,40 @@ public class PypiArtifactCoordinates
 
     public String buildWheelPackageFileName() {
         String path;
-
-        if (StringUtils.isBlank(getBuild())) {
-            path = String.format("%s-%s-%s-%s-%s.%s",
-                    getId(),
-                    getVersion(),
-                    getLanguageImplementationVersion(),
-                    getAbi(),
-                    getPlatform(), getPackaging());
+        boolean isWhl = WHL.equalsIgnoreCase(getPackaging());
+        if (isWhl) {
+            if (StringUtils.isBlank(getBuild())) {
+                path = String.format("%s-%s-%s-%s-%s.%s",
+                        getId(),
+                        getVersion(),
+                        getLanguageImplementationVersion(),
+                        getAbi(),
+                        getPlatform(), getPackaging());
+            } else {
+                path = String.format("%s-%s-%s-%s-%s-%s.%s",
+                        getId(),
+                        getVersion(),
+                        getBuild(),
+                        getLanguageImplementationVersion(),
+                        getAbi(),
+                        getPlatform(),
+                        getPackaging());
+            }
         } else {
-            path = String.format("%s-%s-%s-%s-%s-%s.%s",
-                    getId(),
-                    getVersion(),
-                    getBuild(),
-                    getLanguageImplementationVersion(),
-                    getAbi(),
-                    getPlatform(),
-                    getPackaging());
+            if (StringUtils.isNotBlank(getPlatform())) {
+                path = String.format("%s-%s-%s-%s.%s",
+                        getId(),
+                        getVersion(),
+                        getLanguageImplementationVersion(),
+                        getPlatform(), getPackaging());
+            } else {
+                path = String.format("%s-%s-%s.%s",
+                        getId(),
+                        getVersion(),
+                        getLanguageImplementationVersion(),
+                        getPackaging());
+            }
         }
-
         return path;
     }
 

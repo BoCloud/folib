@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +21,7 @@ import java.util.List;
 @AllArgsConstructor
 public class AccessUserGroups {
     /**用户组id*/
+    @NotBlank(groups = {RoleForm.NewRole.class, RoleForm.UpdateRole.class}, message = "A name id be specified.")
     private String id;
 
     private List<String> access = new ArrayList<>();

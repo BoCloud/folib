@@ -102,8 +102,8 @@
 		},
 		methods: {
 			fileSizeConver(size) {
-				if (size >= 0) {
-					return fileSizeConver(size)
+				if (size != null && size != undefined) {
+				  return fileSizeConver(size)
 				}
 			},
 		}

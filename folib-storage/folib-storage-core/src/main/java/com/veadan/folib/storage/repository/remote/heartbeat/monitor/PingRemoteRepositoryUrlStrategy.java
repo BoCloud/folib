@@ -12,7 +12,7 @@ enum PingRemoteRepositoryUrlStrategy
     INSTANCE;
 
     @Override
-    public boolean isAlive(String remoteRepositoryUrl)
+    public boolean isAlive(String storageId, String repositoryId, String remoteRepositoryUrl)
     {
         return pingHost(remoteRepositoryUrl, 5000);
     }

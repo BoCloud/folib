@@ -5,15 +5,16 @@ import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
+import org.glassfish.jersey.client.ClientProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.Invocation;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,30 +35,28 @@ class HttpGetRemoteRepositoryCheckStrategy
     private DistributedCacheComponent distributedCacheComponent;
 
     @Override
-    public boolean isAlive(String remoteRepositoryUrl) {
-        boolean response = false;
+    public boolean isAlive(String storageId, String repositoryId, String remoteRepositoryUrl) {
+        boolean flag;
         long startTime = System.currentTimeMillis();
         try {
             List<Integer> allowAccessList = getAllowAccessList();
-            try (final CloseableHttpClient httpClient = proxyRepositoryConnectionPoolConfigurationService.getHttpClient()) {
-                RequestConfig requestConfig = RequestConfig.custom()
-                        .setConnectTimeout(10000)
-                        .build();
-                HttpGet httpGet = new HttpGet(remoteRepositoryUrl);
-                httpGet.setConfig(requestConfig);
-                try (final CloseableHttpResponse httpResponse = httpClient.execute(httpGet)) {
-
-                    int statusCode = httpResponse.getStatusLine().getStatusCode();
-                    logger.info("The remote repository url [{}] allow access [{}] response status [{}]", remoteRepositoryUrl, allowAccessList.stream().map(String::valueOf).collect(Collectors.joining(",")), statusCode);
-                    response = allowAccessList.contains(statusCode) || String.valueOf(statusCode).startsWith("2");
-                }
-            }
+            Client client = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
+            //连接建立超时时间
+            client.property(ClientProperties.CONNECT_TIMEOUT, 10000);
+            //读取内容超时时间
+            client.property(ClientProperties.READ_TIMEOUT, 10000);
+            WebTarget target = client.target(remoteRepositoryUrl);
+            Invocation.Builder builder = target.request();
+            Response response = builder.get();
+            int statusCode = response.getStatus();
+            logger.info("The remote storageId [{}] repository [{}] url [{}] allow access [{}] response status [{}]", storageId, repositoryId, remoteRepositoryUrl, allowAccessList.stream().map(String::valueOf).collect(Collectors.joining(",")), statusCode);
+            flag = allowAccessList.contains(statusCode) || String.valueOf(statusCode).startsWith("2");
         } catch (Exception e) {
-            logger.error("Problem executing HTTP GET request to {}", remoteRepositoryUrl, e);
-            response = false;
+            logger.error("Problem executing HTTP GET request to storageId [{}] repository [{}] url {}", storageId, repositoryId, remoteRepositoryUrl, e);
+            flag = false;
         }
-        logger.info("The remote repository url [{}] take time [{}] ms", remoteRepositoryUrl, System.currentTimeMillis() - startTime);
-        return response;
+        logger.info("The remote storageId [{}] repository [{}] url [{}] take time [{}] ms", storageId, repositoryId, remoteRepositoryUrl, System.currentTimeMillis() - startTime);
+        return flag;
     }
 
     private List<Integer> getAllowAccessList() {

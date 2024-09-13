@@ -139,7 +139,7 @@ public class SSOController {
      * @throws Exception 异常
      */
 
-    @AuditLog(value = AuditEventNameEnum.OSS_LOGIN,target ="#clientId" )
+    @AuditLog(value = AuditEventNameEnum.SSO_LOGIN,target ="#clientId" )
     @GetMapping(value = "/login/{clientId}")
     public RedirectView login(@RequestParam(name = "code") String code, @RequestParam(name = "state", required = false) String state, @PathVariable("clientId") String clientId) throws Exception {
         log.info("Params code [{}] state [{}] clientId [{}]", code, state, clientId);
