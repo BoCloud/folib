@@ -204,7 +204,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         long count = artifactRepository.countByVulnerabilityUuid(vulnerabilityUuid, null, storageIdAndRepositoryIdList, "");
         if (count > 0) {
             Page<Artifact> artifactPage = artifactRepository.findMatchingByVulnerabilityUuid(PageRequest.of(1, (int) count).first(), vulnerabilityUuid, null, storageIdAndRepositoryIdList, "");
-            if (Objects.isNull(artifactPage) || CollectionUtils.isEmpty(artifactPage.getContent())) {
+            if (Objects.nonNull(artifactPage) && CollectionUtils.isNotEmpty(artifactPage.getContent())) {
                 artifactList = artifactPage.getContent();
             }
         }

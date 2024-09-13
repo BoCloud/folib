@@ -61,7 +61,11 @@ public class ConfigurationManager implements StoragesConfigurationManager {
 
     public List<String> resolveGroupRepository(Repository repository, List<String> storageAndRepositoryIdList) {
         if (CollectionUtils.isNotEmpty(repository.getGroupRepositories())) {
+            String rootStorageAndRepositoryId = ConfigurationUtils.getStorageIdAndRepositoryId(repository.getStorage().getId(), repository.getId());
             for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+                if (storageAndRepositoryId.equalsIgnoreCase(rootStorageAndRepositoryId)) {
+                    continue;
+                }
                 String sId = ConfigurationUtils.getStorageId(storageAndRepositoryId, storageAndRepositoryId);
                 String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
                 try {

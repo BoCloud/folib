@@ -1725,7 +1725,11 @@ export default {
         // this.boards[0].tasks = tasksObj.enableSelect
         // this.boards[1].tasks = tasksObj.isSelect
       //})
-      this.getStoragesAndRepositories(layout, this.folibRepository.id)
+      let rId = this.folibRepository.id
+      if (!rId && this.folibRepositoryIds) {
+        rId = this.folibRepositoryIds
+      }
+      this.getStoragesAndRepositories(layout, this.currentStorage.id + ":" + rId)
     },
     getStoragesAndRepositories(layout, excludeRepositoryId) {
       getStoragesAndRepositories({layout: layout, excludeRepositoryId: excludeRepositoryId }).then(res => {
