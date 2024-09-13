@@ -156,40 +156,35 @@ public class FolibUserServiceImpl implements FolibUserService {
         if (CollectionUtils.isNotEmpty(folibUsers)) {
             List<String> roleIds = folibUsers.stream().filter(userDTO -> CollectionUtils.isNotEmpty(userDTO.getRoles())).flatMap(userDTO -> userDTO.getRoles().stream()).distinct().collect(Collectors.toList());
             if (CollectionUtils.isNotEmpty(roleIds)) {
-                List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryPermissionsByRoleIds(roleIds);
-                Map<String, Map<String, Set<String>>> roleMap = roleResourceRefs.stream().collect(Collectors.groupingBy(RoleResourceRef::getRoleId,
-                        Collectors.toMap(ref -> ref.getEntityId() + "_" + ref.getRefType(),
-                                ref -> Stream.of(ref.getPathPrivilege(), ref.getRepositoryPrivilege(), ref.getStoragePrivilege()).
-                                        filter(StringUtils::isNotBlank).map(String::trim).collect(Collectors.toSet()),
-                                (a, b) -> {
-                                    a.addAll(b);
-                                    return a;
-                                }
-                        )));
+                //获取角色关联的api权限
+                List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryResourcesByRoleIds(roleIds);
+                Map<String, Set<String>> resourceMap = roleResourceRefs.stream()
+                        .filter(r ->  GlobalConstants.RESOURCE_TYPE_API.equals(r.getResourceType()) && StringUtils.isNotEmpty(r.getApiAuthoritie())).collect(Collectors.groupingBy(RoleResourceRef::getRoleId, Collectors.mapping(RoleResourceRef::getApiAuthoritie, Collectors.toSet())));
+                //获取角色关联的用户
+                List<RoleResourceRef> refList = roleResourceRefService.queryPermissionsByRoleIds(roleIds);
+                Map<String, String> entityMap = refList.stream()
+                        .filter(r ->  GlobalConstants.RESOURCE_TYPE_API.equals(r.getResourceType()) && StringUtils.isNotEmpty(r.getApiAuthoritie())).collect(Collectors.toMap(RoleResourceRef::getRoleId, ref -> ref.getEntityId() + "_" + ref.getRefType()));
 
                 folibUsers.forEach(userDTO -> {
+                    Set<String> userApiAuthorities = new HashSet<>();
                     Set<String> roles = userDTO.getRoles();
                     if (CollectionUtils.isNotEmpty(roles)) {
-                        roles.forEach(role -> {
-                            Map<String, Set<String>> userMap = roleMap.get(role);
-                            Set<String> userAuthorities = userMap.get(userDTO.getId() + "_" + GlobalConstants.ROLE_TYPE_USER);
-                            userDTO.setAuthorities(userAuthorities);
-                            Set<String> userGroupIds = userDTO.getUserGroupIds();
-                            if (CollectionUtils.isNotEmpty(userGroupIds)) {
-                                Set<String> userGroupAuthorities = userGroupIds.stream().map(userGroupId -> roleMap.get(userGroupId + "_" + GlobalConstants.ROLE_TYPE_USER_GROUP))
-                                        .filter(Objects::nonNull)
-                                        .flatMap(map -> map.values().stream())
-                                        .flatMap(Set::stream)
-                                        .filter(StringUtils::isNotBlank)
-                                        .collect(Collectors.toSet());
-                                if(CollectionUtils.isNotEmpty(userGroupAuthorities)) {
-                                    userAuthorities.addAll(userGroupAuthorities);
-                                }
-                            }
-
-                            userDTO.setAuthorities(userAuthorities);
+                        roles.forEach(roleId -> {
+                            Set<String> userAuthorities = Optional.ofNullable(resourceMap.get(roleId)).orElse(new HashSet<>());
+                            userApiAuthorities.addAll(userAuthorities);
                         });
                     }
+                    Set<String> userGroupIds = userDTO.getUserGroupIds();
+                    if (CollectionUtils.isNotEmpty(userGroupIds)) {
+                        Set<String> groupRoleIds = userGroupIds.stream().map(userGroupId -> entityMap.get(userGroupId + "_" + GlobalConstants.ROLE_TYPE_USER_GROUP))
+                                .filter(StringUtils::isNotBlank)
+                                .collect(Collectors.toSet());
+                        Set<String> userGroupAuthorities = Optional.of(groupRoleIds).orElse(new HashSet<>()).stream().map(resourceMap::get).flatMap(Collection::stream).collect(Collectors.toSet());
+                        if(CollectionUtils.isNotEmpty(userGroupAuthorities)) {
+                            userApiAuthorities.addAll(userGroupAuthorities);
+                        }
+                    }
+                    userDTO.setAuthorities(userApiAuthorities);
                 });
             }
 

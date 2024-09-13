@@ -625,4 +625,9 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         example.createCriteria().andIn("id", ids);
         return roleResourceRefMapper.selectByExample(example);
     }
+
+    @Override
+    public List<RoleResourceRef> queryResourcesByRoleIds(List<String> roleIds) {
+        return roleResourceRefMapper.queryResourcesByRoleIds(roleIds);
+    }
 }

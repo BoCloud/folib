@@ -74,8 +74,8 @@ public interface UserConvert {
 
     @Mappings({/*@Mapping(target = "roles", expression = "java(mapRolesToStrings(userEntity.getRoles()))"),*/
             @Mapping(target = "roles",qualifiedByName = "mapRolesToStrings"),
-            @Mapping(target = "userGroups", expression = "java(String.join(\",\", userEntity.getUserGroups()))"),
-            @Mapping(target = "userGroupIds", expression = "java(String.join(\",\", userEntity.getUserGroupIds()))")})
+            @Mapping(target = "userGroups", expression = "java(userEntity.getUserGroups() != null && !userEntity.getUserGroups().isEmpty() ? String.join(\",\", userEntity.getUserGroups()) : \"\")"),
+            @Mapping(target = "userGroupIds", expression = "java(userEntity.getUserGroupIds() != null && !userEntity.getUserGroupIds().isEmpty() ? String.join(\",\", userEntity.getUserGroupIds()) : \"\")")})
     UserDTO UserEntityToUserDTO(UserEntity userEntity);
 
     @Mappings({@Mapping(source = "username", target = "id")})
