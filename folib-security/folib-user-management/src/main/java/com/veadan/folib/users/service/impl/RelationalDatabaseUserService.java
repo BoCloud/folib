@@ -397,11 +397,12 @@ public class RelationalDatabaseUserService implements UserService
         }
         //有admin权限，断开存储空间角色和用户关系
         List<String> userIds = userInfos.stream().map(user -> {
-            if (user.getRoles().stream().map(SecurityRole::getRoleName).collect(Collectors.toSet()).contains(SystemRole.ADMIN.name())) {
+            if (user.getRoles().stream().map(SecurityRole::getUuid).collect(Collectors.toSet()).contains(SystemRole.ADMIN.name())) {
                 return user.getUuid();
             }
             return null;
         }).filter(Objects::nonNull).collect(Collectors.toList());
+        log.info("remove admin user other roles, userIds: {}", userIds);
         //清理管理员用户其他角色
         removeAdminUserOtherRoles(userIds);
 
@@ -412,6 +413,7 @@ public class RelationalDatabaseUserService implements UserService
         if (!CollectionUtils.isEmpty(userIds)) {
             List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryByUserIds(userIds);
             List<Long> refIds = roleResourceRefs.stream().filter(ref -> !SystemRole.ADMIN.name().equalsIgnoreCase(ref.getRoleId())).map(RoleResourceRef::getId).collect(Collectors.toList());
+            log.info("remove admin user other roles, refIds: {}", refIds);
             if (!CollectionUtils.isEmpty(refIds)) {
                 roleResourceRefService.deleteByIds(refIds);
             }

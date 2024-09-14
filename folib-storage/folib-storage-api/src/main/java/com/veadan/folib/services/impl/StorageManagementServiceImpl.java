@@ -305,7 +305,7 @@ public class StorageManagementServiceImpl implements StorageManagementService {
                 String key = String.format("STORAGE_ADMIN_%S", currentStorageId);
                 FolibRole folibRole = folibRoleService.queryById(key);
                 if (folibRole == null) {
-                    folibRoleService.insert(FolibRole.builder().id(key).enName(key).deleted(GlobalConstants.NOT_DELETED).isDefault(GlobalConstants.NOT_DEFAULT).description("存储空间管理员的专属角色").build());
+                    folibRoleService.insert(FolibRole.builder().id(key).cnName(String.format("存储空间%s管理员", currentStorageId)).enName(key).deleted(GlobalConstants.NOT_DELETED).isDefault(GlobalConstants.NOT_DEFAULT).description("存储空间管理员的专属角色").build());
                 }
                 String resourceId = currentStorageId.toUpperCase();
                 Resource resource = resourceService.queryById(currentStorageId.toUpperCase());

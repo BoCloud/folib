@@ -46,8 +46,12 @@ public interface UserConvert {
     @Mappings({})
     List<User> UserEntitysToUserList(List<UserEntity> folibUserList);
 
-    @Mappings({})
+    @Mappings({@Mapping(source = "uuid", target = "username")})
+    UserEntity UserToUserEntity(User user);
+
+    @Mappings({@Mapping(source = "uuid", target = "username")})
     List<UserEntity> UserListToUserEntityList(List<User> users);
+
     @Mappings({@Mapping(source = "id", target = "uuid"),
             @Mapping(source = "updateTime", target = "lastUpdated")})
     UserEntity FolibUserUserEntity(FolibUser folibUser);
