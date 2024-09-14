@@ -391,8 +391,11 @@ public class StoragesConfigurationController
             boolean filterByExcludeRepositoryId = StringUtils.isNotBlank(excludeRepositoryId);
             boolean filterByExcludeType = StringUtils.isNotBlank(excludeType);
             boolean filterByPolicy = StringUtils.isNotBlank(policy);
-            String excludedStorageId = ConfigurationUtils.getStorageId(storageId, excludeRepositoryId);
-            String excludedRepositoryId = ConfigurationUtils.getRepositoryId(excludeRepositoryId);
+            String excludedStorageId = "", excludedRepositoryId = "";
+            if (filterByExcludeRepositoryId) {
+                excludedStorageId = ConfigurationUtils.getStorageId(storageId, excludeRepositoryId);
+                excludedRepositoryId = ConfigurationUtils.getRepositoryId(excludeRepositoryId);
+            }
             String excludedStorageIdAndRepositoryId = ConfigurationUtils.getStorageIdAndRepositoryId(excludedStorageId, excludedRepositoryId);
             storages = storages.stream()
                     .distinct()
@@ -468,8 +471,11 @@ public class StoragesConfigurationController
             boolean filterByExcludeRepositoryId = StringUtils.isNotBlank(excludeRepositoryId);
             boolean filterByExcludeType = StringUtils.isNotBlank(excludeType);
             boolean filterByPolicy = StringUtils.isNotBlank(policy);
-            String excludedStorageId = ConfigurationUtils.getStorageId(storageId, excludeRepositoryId);
-            String excludedRepositoryId = ConfigurationUtils.getRepositoryId(excludeRepositoryId);
+            String excludedStorageId = "", excludedRepositoryId = "";
+            if (filterByExcludeRepositoryId) {
+                excludedStorageId = ConfigurationUtils.getStorageId(storageId, excludeRepositoryId);
+                excludedRepositoryId = ConfigurationUtils.getRepositoryId(excludeRepositoryId);
+            }
             String excludedStorageIdAndRepositoryId = ConfigurationUtils.getStorageIdAndRepositoryId(excludedStorageId, excludedRepositoryId);
             storages = storages.stream()
                     .distinct()
@@ -532,8 +538,11 @@ public class StoragesConfigurationController
             boolean filterByLayout = StringUtils.isNotBlank(layout);
             boolean filterByExcludeRepositoryId = StringUtils.isNotBlank(excludeRepositoryId);
             boolean filterByPolicy = StringUtils.isNotBlank(policy);
-            String excludedStorageId = ConfigurationUtils.getStorageId("", excludeRepositoryId);
-            String excludedRepositoryId = ConfigurationUtils.getRepositoryId(excludeRepositoryId);
+            String excludedStorageId = "", excludedRepositoryId = "";
+            if (filterByExcludeRepositoryId) {
+                excludedStorageId = ConfigurationUtils.getStorageId("", excludeRepositoryId);
+                excludedRepositoryId = ConfigurationUtils.getRepositoryId(excludeRepositoryId);
+            }
             String excludedStorageIdAndRepositoryId = ConfigurationUtils.getStorageIdAndRepositoryId(excludedStorageId, excludedRepositoryId);
             storages = storages.stream()
                     .distinct()
