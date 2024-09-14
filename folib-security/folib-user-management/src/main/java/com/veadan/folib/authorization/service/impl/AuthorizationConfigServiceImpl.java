@@ -116,7 +116,6 @@ public class AuthorizationConfigServiceImpl
                     List<PermissionsDTO> repositorys = repositoryMap.get(repositoryId);
                     Set<Privileges> repositoryPrivilegeList = repositorys.stream().filter(dto -> dto.getRepositoryPrivilege() != null).map(dto -> Privileges.valueOf(dto.getRepositoryPrivilege())).collect(Collectors.toSet());
                     repositoryPrivilege.setRepositoryPrivileges(repositoryPrivilegeList);
-                    repositoryPrivileges.add(repositoryPrivilege);
 
                     Map<String, Set<PermissionsDTO>> pathMap = repositorys.stream().filter(dto -> StringUtils.isNotEmpty(dto.getPath())).collect(Collectors.groupingBy(PermissionsDTO::getPath, Collectors.toSet()));
                     if (!pathMap.isEmpty()) {
@@ -136,16 +135,15 @@ public class AuthorizationConfigServiceImpl
                                 pathPrivilegesDtos.add(pathPrivilegesDto);
                             }
                         });
-
+                        repositoryPrivilege.setPathPrivileges(pathPrivilegesDtos);
                     }
+                    repositoryPrivileges.add(repositoryPrivilege);
                 });
                 storagePrivileges.setRepositoryPrivileges(repositoryPrivileges);
                 storageAuthorities.add(storagePrivileges);
             });
             accessModel.setStorageAuthorities(storageAuthorities);
-            if(CollectionUtils.isNotEmpty(accessModel.getApiAuthorities()) || CollectionUtils.isNotEmpty(accessModel.getStorageAuthorities())) {
-                roleDto.setAccessModel(accessModel);
-            }
+            roleDto.setAccessModel(accessModel);
             roles.add(roleDto);
         });
         authorizationConfig.setRoles(roles);
