@@ -40,7 +40,7 @@ public class UserGroup implements Serializable,Cloneable {
      @ApiModelProperty(name = "组名称", notes = "")
      private String groupName;
      /**模糊匹配用户组名称**/
-     private String matchGroupName;
+     private transient String matchGroupName;
      /**
       * 描述
       */
