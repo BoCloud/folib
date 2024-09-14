@@ -482,10 +482,10 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
             roleIds.forEach(roleId -> {
                 if (CollectionUtils.isNotEmpty(privileges)) {
                     privileges.forEach(privilege -> {
-                        updateRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(userId).refType(GlobalConstants.ROLE_TYPE_USER).storagePrivilege(privilege).resourceId(roleId.replaceFirst("STORAGE_USER_", "")).build());
+                        updateRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(userId).refType(GlobalConstants.ROLE_TYPE_USER).storagePrivilege(privilege).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).resourceId(roleId.replaceFirst("STORAGE_USER_", "")).build());
                     });
                 }else {
-                    updateRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(userId).refType(GlobalConstants.ROLE_TYPE_USER)
+                    updateRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(userId).refType(GlobalConstants.ROLE_TYPE_USER).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE)
                             .resourceId(roleId.replaceFirst("STORAGE_USER_", "")).build());
                 }
             });
