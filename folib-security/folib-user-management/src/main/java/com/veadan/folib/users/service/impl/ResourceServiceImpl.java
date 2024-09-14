@@ -6,6 +6,7 @@ import com.veadan.folib.entity.Resource;
 import com.veadan.folib.mapper.ResourceMapper;
 import com.veadan.folib.users.service.ResourceService;
 import com.veadan.folib.users.service.RoleResourceRefService;
+import lombok.extern.slf4j.Slf4j;
 import org.parboiled.common.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tk.mybatis.mapper.entity.Example;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -21,6 +23,7 @@ import java.util.List;
  * @author : Fengmaogen
  * @date : 2024-7-17
  */
+@Slf4j
 @Service
 @Transactional
 public class ResourceServiceImpl implements ResourceService {
@@ -108,27 +111,41 @@ public class ResourceServiceImpl implements ResourceService {
 
     @Override
     public int saveBatch(List<Resource> resources) {
-        resources.forEach(resource -> {
-            String resourceId = resource.getId();
-            if (StringUtils.isEmpty(resourceId)) {
-                String apiAuthoritie = resource.getApiAuthoritie();
-                if (apiAuthoritie != null) resourceId = apiAuthoritie.toUpperCase();
-
+        List<Resource> resourceList = new ArrayList<>();
+        try {
+           resources.forEach(resource -> {
+                String resourceId = resource.getId();
                 if (StringUtils.isEmpty(resourceId)) {
-                    String path = resource.getPath();
-                    String repositoryId = resource.getRepositoryId();
-                    resourceId = resource.getStorageId();
-                    if (StringUtils.isNotEmpty(repositoryId)) {
-                        resourceId += "_" + repositoryId.trim();
+                    String apiAuthoritie = resource.getApiAuthoritie();
+                    if (apiAuthoritie != null) resourceId = apiAuthoritie.toUpperCase();
+
+                    if (StringUtils.isEmpty(resourceId)) {
+                        String path = resource.getPath();
+                        String repositoryId = resource.getRepositoryId();
+                        resourceId = resource.getStorageId();
+                        if (StringUtils.isNotEmpty(repositoryId)) {
+                            resourceId += "_" + repositoryId.trim();
+                        }
+                        if (StringUtils.isNotEmpty(path)) {
+                            resourceId += "_" + path.trim();
+                        }
                     }
-                    if (StringUtils.isNotEmpty(path)) {
-                        resourceId += "_" + path.trim();
-                    }
+                    resource.setId(resourceId.toUpperCase());
                 }
-                resource.setId(resourceId.toUpperCase());
+            });
+            resourceList.addAll(resources);
+            return resourceMapper.insertBatch(resources);
+        } catch (Exception e) {
+            String sqlStr = "insert into resource(id,api_authoritie,storage_id,repository_id,path,create_by)\n" +
+                    "        values ";
+            StringBuilder body = new StringBuilder(sqlStr);
+            for (Resource resource : resourceList) {
+                body.append("('").append(resource.getId()).append("',").append("'").append(resource.getApiAuthoritie()).append("',").append("'").append(resource.getStorageId()).append("',").append("'").append(resource.getRepositoryId()).append("',").append("'").append(resource.getPath()).append("',").append("'").append(resource.getCreateBy()).append("'),");
             }
-        });
-        return resourceMapper.insertBatch(resources);
+            body.append(");");
+            log.error("添加资源失败------------>{}", body);
+        }
+        return 0;
     }
 
     @Override
