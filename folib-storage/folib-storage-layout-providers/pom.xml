@@ -47,6 +47,7 @@
         <module>folib-storage-gitlfs-layout-provider</module>
         <module>folib-storage-huggingface-layout-provider</module>
         <module>folib-storage-pub-layout-provider</module>
+        <module>folib-storage-debian-layout-provider</module>
     </modules>
 
     <dependencies>

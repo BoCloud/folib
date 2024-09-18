@@ -322,6 +322,8 @@ public class WebConfig
 
     @Bean(name = "multipartResolver")
     public MultipartResolver multipartResolver() {
-        return new CustomMultipartResolver();
+        CustomMultipartResolver resolver = new CustomMultipartResolver();
+        resolver.setMaxInMemorySize(1024*1024*10);
+        return resolver;
     }
 }

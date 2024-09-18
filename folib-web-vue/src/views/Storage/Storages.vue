@@ -631,16 +631,12 @@
                       <h6>Pub</h6>
                     </a-col>
                     <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'debian' ? 'active' : '']">
-                        <a-tooltip>
-                          <template slot="title">
-                            {{ $t('Storage.NextVersion') }}🤝
-                          </template>
+                      <div class="checkbox-label" :class="[layoutChecked === 'debian' ? 'active' : '']"
+                      @click="toggleCheckbox('debian')">
                         <a-avatar :size="44" shape="square"
                                   style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
                           <img src="images/folib/debian.svg" style="width: 100%;" alt="">
                         </a-avatar>
-                        </a-tooltip>
                       </div>
                       <h6>Debian</h6>
                     </a-col>
