@@ -98,6 +98,7 @@
 </template>
 
 <script>
+import { cloneDeep } from "lodash";
 export default {
     name: "repositories",
     props: {
@@ -180,7 +181,7 @@ export default {
             handler(newVal) {
                 this.storageRowKeys = newVal.filter(item => item.indexOf('/') === -1)
                 this.repositoriesRowKeys = newVal.filter(item => item.indexOf('/') > -1)
-
+                const copyPerList = cloneDeep(this.perRepositoryList)
                 this.perRepositoryList = this.repositoriesRowKeys.map(item => {
                     return {
                         title: item,
@@ -188,6 +189,13 @@ export default {
                         currentInPattern: '',
                         isInError: false,
                     }
+                })
+                this.perRepositoryList.forEach(item => {
+                    copyPerList.forEach(perItem => {
+                        if (item.title === perItem.title) {
+                            item.includes = perItem.includes
+                        }
+                    })
                 })
             },
             deep: true
