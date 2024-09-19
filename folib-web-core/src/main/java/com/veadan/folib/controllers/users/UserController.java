@@ -8,9 +8,9 @@ import com.veadan.folib.controllers.users.support.UserResponseEntity;
 import com.veadan.folib.converts.UserConvert;
 import com.veadan.folib.domain.PageResultResponse;
 import com.veadan.folib.domain.User;
+import com.veadan.folib.domain.UserPermissionForm;
 import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
-import com.veadan.folib.domain.UserPermissionForm;
 import com.veadan.folib.forms.users.UserForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.StorageManagementService;
@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
  */
 @Controller
 @RequestMapping("/api/users")
-@Api(description = "用户管理",tags = "用户管理")
+@Api(description = "用户管理", tags = "用户管理")
 public class UserController
         extends BaseController {
 
@@ -81,6 +81,10 @@ public class UserController
     public static final String FAILED_GENERATE_SECURITY_TOKEN = "无法生成 SecurityToken";
 
     public static final String USER_DELETE_FORBIDDEN = "禁止删除此帐户";
+
+    public static final String PASSWORD_FIELD_IS_REQUIRED = "请传入密码字段(password)或者(originalPassword)";
+
+    public static final String PASSWORD_PARSE_ERROR = "密码解析错误，请检查密码字段";
 
     @Inject
     @RelationalDatabaseUserService.RelationalDatabase
@@ -119,7 +123,7 @@ public class UserController
         //同步角色
         folibRoleService.syncYamlAuthorizationConfig();
 
-         return ResponseEntity.ok(result);
+        return ResponseEntity.ok(result);
     }
 
     @ApiOperation(value = "user update ")
@@ -131,8 +135,8 @@ public class UserController
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     public ResponseEntity updateStorageUser(@RequestBody @Validated UserPermissionForm userPermissionForm,
-                                 BindingResult bindingResult,
-                                 @RequestHeader(HttpHeaders.ACCEPT) String accept) {
+                                            BindingResult bindingResult,
+                                            @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException(FAILED_CREATE_USER, bindingResult);
         }
@@ -144,6 +148,7 @@ public class UserController
         privilegeEventListenerRegistry.dispatchUserSyncEvent(userPermission.getUserId());
         return getSuccessfulResponseEntity(SUCCESSFUL_UPDATE_USER, accept);
     }
+
     @ApiOperation(value = "Used to retrieve all users")
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_GET_USERS)})
     @PreAuthorize("hasAuthority('VIEW_USER')")
@@ -166,7 +171,7 @@ public class UserController
     @PostMapping(value = "/queryUser", produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     public TableResultResponse<UserOutput> queryUser(@RequestBody UserDto user, Integer page, Integer limit) {
-        PageResultResponse<User> pageResultResponse =  userService.queryUser(user, page, limit);
+        PageResultResponse<User> pageResultResponse = userService.queryUser(user, page, limit);
         if (Objects.isNull(pageResultResponse)) {
             return new TableResultResponse<>(0, Collections.emptyList());
         }
@@ -205,7 +210,7 @@ public class UserController
     }
 
     @ApiOperation(value = "Used to create a new user")
-    @AuditLog(value = AuditEventNameEnum.CREATE_USER,target ="#userForm.username" )
+    @AuditLog(value = AuditEventNameEnum.CREATE_USER, target = "#userForm.username")
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_CREATE_USER),
             @ApiResponse(code = 400, message = FAILED_CREATE_USER)})
     @PreAuthorize("hasAuthority('CREATE_USER')")
@@ -219,12 +224,23 @@ public class UserController
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException(FAILED_CREATE_USER, bindingResult);
         }
-
+        if (StringUtils.isBlank(userForm.getPassword()) && StringUtils.isBlank(userForm.getOriginalPassword())) {
+            return getBadRequestResponseEntity(PASSWORD_FIELD_IS_REQUIRED, accept);
+        }
         UserDto user = conversionService.convert(userForm, UserDto.class);
         user.setUserGroupIds(userForm.getUserGroupIds());
-        user.setOriginalPassword(user.getPassword());
-        String password = rsaUtils.decrypt(user.getPassword());
-        user.setPassword(password);
+        if (StringUtils.isNotBlank(user.getPassword())) {
+            user.setOriginalPassword(user.getPassword());
+            String password = rsaUtils.decrypt(user.getPassword());
+            if (StringUtils.isBlank(password)) {
+                return getBadRequestResponseEntity(PASSWORD_PARSE_ERROR, accept);
+            }
+            user.setPassword(password);
+        } else if (StringUtils.isNotBlank(user.getOriginalPassword())) {
+            String password = user.getOriginalPassword();
+            user.setPassword(password);
+            user.setOriginalPassword(rsaUtils.encrypt(password));
+        }
         userService.save(new EncodedPasswordUser(user, passwordEncoder));
         //同步用户信息到其他节点
         privilegeEventListenerRegistry.dispatchUserSyncEvent(user.getUuid());
@@ -256,18 +272,25 @@ public class UserController
             return getFailedResponseEntity(HttpStatus.BAD_REQUEST, message, accept);
         }
 
-//        final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
-//        if (StringUtils.equals(loggedUser.getUsername(), username))
-//        {
-//            return getFailedResponseEntity(HttpStatus.FORBIDDEN, OWN_USER_DELETE_FORBIDDEN, accept);
-//        }
+        final User existsUser = userService.findByUsername(username);
+        if (Objects.isNull(existsUser))
+        {
+            return getFailedResponseEntity(HttpStatus.NOT_FOUND, NOT_FOUND_USER, accept);
+        }
 
         UserDto user = conversionService.convert(userToUpdate, UserDto.class);
         user.setUserGroupIds(userToUpdate.getUserGroupIds());
         if (StringUtils.isNotBlank(user.getPassword())) {
             user.setOriginalPassword(user.getPassword());
             String password = rsaUtils.decrypt(user.getPassword());
+            if (StringUtils.isBlank(password)) {
+                return getBadRequestResponseEntity(PASSWORD_PARSE_ERROR, accept);
+            }
             user.setPassword(password);
+        } else if (StringUtils.isNotBlank(user.getOriginalPassword())) {
+            String password = user.getOriginalPassword();
+            user.setPassword(password);
+            user.setOriginalPassword(rsaUtils.encrypt(password));
         }
         userService.save(new EncodedPasswordUser(user, passwordEncoder));
 
@@ -278,7 +301,7 @@ public class UserController
     }
 
     @ApiOperation(value = "Deletes a user from a repository.")
-    @AuditLog(value = AuditEventNameEnum.DELETE_USER,target ="#username" )
+    @AuditLog(value = AuditEventNameEnum.DELETE_USER, target = "#username")
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_DELETE_USER),
             @ApiResponse(code = 400, message = FAILED_DELETE_USER),
             @ApiResponse(code = 403, message = USER_DELETE_FORBIDDEN),
@@ -355,7 +378,7 @@ public class UserController
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity generateCurrentSecurityToken(@ApiParam(value = "Token effective seconds") @RequestParam(required = false) Integer expireSeconds,
-                                                @RequestHeader(HttpHeaders.ACCEPT) String accept)
+                                                       @RequestHeader(HttpHeaders.ACCEPT) String accept)
             throws JoseException {
         String username = UserUtils.getUsername();
         if (StringUtils.isBlank(username)) {
@@ -385,7 +408,7 @@ public class UserController
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity get(@ApiParam(value = "The name of the user") @PathVariable String username,
-                                                @RequestHeader(HttpHeaders.ACCEPT) String accept) {
+                              @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         User user = userService.findByUsername(username);
         if (user == null) {
             return getNotFoundResponseEntity(NOT_FOUND_USER, accept);

@@ -61,6 +61,8 @@ public class ArtifactSearchController extends JFrogBaseController {
 
     private static final String DOCKER_MANIFEST_NOT_FOUND_MESSAGE = "Unable to find Docker manifest under '%s'.";
 
+    private static final String INCLUDE_CANNOT_BE_EMPTY = "Include cannot be empty.";
+
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
 
@@ -159,9 +161,16 @@ public class ArtifactSearchController extends JFrogBaseController {
         Matcher includeMatcher = includePattern.matcher(query);
         if (includeMatcher.find()) {
             String includeText = includeMatcher.group(1);
+            if (StringUtils.isBlank(includeText)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(handlerErrors(HttpStatus.BAD_REQUEST.value(), INCLUDE_CANNOT_BE_EMPTY));
+            }
+            String none = "\"\"";
             String[] includeFieldArray = includeText.split(",");
             List<String> unIncludeList = Lists.newArrayList("\"*\"");
             for (String includeField : includeFieldArray) {
+                if (StringUtils.isBlank(includeField) || none.equals(includeField)) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(handlerErrors(HttpStatus.BAD_REQUEST.value(), INCLUDE_CANNOT_BE_EMPTY));
+                }
                 if (unIncludeList.stream().anyMatch(includeField::equals)) {
                     continue;
                 }
