@@ -1,5 +1,6 @@
 package com.veadan.folib.providers.layout;
 
+import cn.hutool.crypto.digest.SM3;
 import com.veadan.folib.artifact.coordinates.DebianArtifactCoordinates;
 import com.veadan.folib.constant.DebianConstant;
 import com.veadan.folib.providers.io.RepositoryFileAttributeType;
@@ -113,7 +114,7 @@ public class DebianLayoutProvider extends AbstractLayoutProvider<DebianArtifactC
 
     @Override
     public Set<String> getDigestAlgorithmSet() {
-        return Stream.of(MessageDigestAlgorithms.MD5, MessageDigestAlgorithms.SHA_1, MessageDigestAlgorithms.SHA_256, MessageDigestAlgorithms.SHA_512)
+        return Stream.of(MessageDigestAlgorithms.MD5, MessageDigestAlgorithms.SHA_1, MessageDigestAlgorithms.SHA_256, MessageDigestAlgorithms.SHA_512, SM3.ALGORITHM_NAME)
                 .collect(Collectors.toSet());
     }
 

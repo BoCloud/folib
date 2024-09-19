@@ -1,6 +1,6 @@
 <template>
   <div>
-    <a-modal v-model="visible" :title="$t('Store.Upload')" :maskClosable="false" centered :footer="null">
+    <a-modal v-model="visible" :title="$t('Store.Upload')" :maskClosable="false" centered :footer="null" @cancel="close">
       <a-form-model layout="horizontal" ref="uploadForm" :model="uploadForm" :rules="uploadRules" :hideRequiredMark="true"
         @submit.prevent="upload">
         <a-row :gutter="[24]">

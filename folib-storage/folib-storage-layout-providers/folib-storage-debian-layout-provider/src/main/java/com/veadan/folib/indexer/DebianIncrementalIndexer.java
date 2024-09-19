@@ -159,8 +159,8 @@ public class DebianIncrementalIndexer {
                 this.createIndexEventsForExistingArchitectures(componentArtifacts, componentEvent, result);
             });
             this.createIndexEventsForForcedArchitectures(forcedArchitectures, componentEvents, result);
-        } catch (Exception var8) {
-            log.warn("Failed to resolve extra required incremental index events for component {}: {}", distribution + "/" + component, var8.getMessage());
+        } catch (Exception e) {
+            log.warn("Failed to resolve extra required incremental index events for component {}: {}", distribution + "/" + component, e.getMessage());
         }
     }
 

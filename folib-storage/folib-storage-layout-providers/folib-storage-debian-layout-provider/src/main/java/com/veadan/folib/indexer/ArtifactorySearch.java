@@ -35,7 +35,8 @@ public class ArtifactorySearch extends GremlinVertexRepository<Artifact> {
     public List<Artifact> findReleaseByDistribution(String distribution, Repository repo) {
         List<Artifact> artifacts = g().V().hasLabel(Vertices.ARTIFACT)
                 .has(Properties.REPOSITORY_ID, repo.getId())
-                .has(Properties.STORAGE_ID, repo.getStorage().getId()).map(artifactAdapter.fold()).toList();
+                .has(Properties.STORAGE_ID, repo.getStorage().getId())
+                .map(artifactAdapter.fold()).toList();
         return artifacts.stream()
                 .filter(e -> e.getArtifactCoordinates().getCoordinates().get("extension").equals(DebianConstant.PACKAGE_EXTENSION))
                 .filter(e -> e.getArtifactCoordinates().getCoordinates().get(DebianConstant.DISTRIBUTION).equals(distribution))
@@ -51,14 +52,16 @@ public class ArtifactorySearch extends GremlinVertexRepository<Artifact> {
         return artifacts.stream()
                 .filter(e -> e.getArtifactCoordinates().getCoordinates().get(DebianConstant.DISTRIBUTION).equals(distribution))
                 .filter(e -> e.getArtifactCoordinates().getCoordinates().get(DebianConstant.COMPONENT).equals(component))
+                .filter(e -> e.getArtifactCoordinates().getCoordinates().get(DebianConstant.NAME).equals("Packages"))
                 .collect(Collectors.toList());
     }
 
     public List<Artifact> findAllPackage(Repository repo) {
-        List<Artifact> artifacts = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.REPOSITORY_ID, repo.getId())
-                .has(Properties.STORAGE_ID, repo.getStorage().getId()).map(artifactAdapter.fold()).toList();
+        List<Artifact> artifacts = g().V().hasLabel(Vertices.ARTIFACT)
+                .has(Properties.REPOSITORY_ID, repo.getId())
+                .has(Properties.STORAGE_ID, repo.getStorage().getId())
+                .map(artifactAdapter.fold()).toList();
         return artifacts.stream()
-                .filter(e -> e.getArtifactCoordinates().getCoordinates().get(DebianConstant.EXTENSION).equals(DebianConstant.PACKAGE_EXTENSION))
                 .filter(e -> e.getArtifactCoordinates().getCoordinates().get(DebianConstant.NAME).equals("Packages"))
                 .collect(Collectors.toList());
     }
