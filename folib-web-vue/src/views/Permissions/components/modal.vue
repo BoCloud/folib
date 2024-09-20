@@ -311,13 +311,13 @@ export default {
         },
         initOptions() {
             this.repositoriesOptions = [
-                // {
-                //     label: this.$t(`Permissions.Download`),
-                //     value: 'ARTIFACTS_RESOLVE',
-                //     enabled: false,
-                //     logo: 'download',
-                //     desc: this.$t(`Permissions.DownloadDesc`)
-                // },
+                {
+                    label: this.$t(`Permissions.Download`),
+                    value: 'ARTIFACTS_RESOLVE',
+                    enabled: false,
+                    logo: 'download',
+                    desc: this.$t(`Permissions.DownloadDesc`)
+                },
                 {
                     label: this.$t(`Permissions.DeployCache`),
                     value: 'ARTIFACTS_DEPLOY',

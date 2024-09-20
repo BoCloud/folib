@@ -328,6 +328,6 @@
         </foreach>
     </delete>
     <delete id="deleteByRoleId">
-        delete from role_resource_ref where role_id = #{roleId} and entity_id is not null
+        delete from role_resource_ref where role_id = #{roleId} /*and entity_id is not null*/
     </delete>
 </mapper>
