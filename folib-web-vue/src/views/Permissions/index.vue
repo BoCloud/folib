@@ -215,7 +215,7 @@ export default {
             getPermissionList({
                 page: this.page,
                 limit: this.limit,
-                name: this.name,
+                matchRoleName: this.name,
                 storageId: this.storageId || '',
                 repositoryId: this.repositoryId ? this.repositoryId.split('/')[1] : '',
                 path: this.path

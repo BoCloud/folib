@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -27,6 +28,7 @@ public class RoleDTO
 
     private List<AccessResourcesDTO> resources;
 
+    private List<String> access = new ArrayList<>();
     public interface NewRole {
 
     }

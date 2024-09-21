@@ -7,6 +7,7 @@ import lombok.Data;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -27,6 +28,8 @@ public class RoleForm
     private AccessModelForm privileges;
 
     private List<AccessResources> resources;
+
+    private List<String> access = new ArrayList<>();
     public interface NewRole {
 
     }

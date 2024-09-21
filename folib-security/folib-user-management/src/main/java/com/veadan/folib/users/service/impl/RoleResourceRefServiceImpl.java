@@ -3,10 +3,7 @@ package com.veadan.folib.users.service.impl;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.converts.ResourceConvert;
 import com.veadan.folib.dto.*;
-import com.veadan.folib.entity.FolibUser;
-import com.veadan.folib.entity.Resource;
-import com.veadan.folib.entity.RoleResourceRef;
-import com.veadan.folib.entity.UserGroupRef;
+import com.veadan.folib.entity.*;
 import com.veadan.folib.mapper.RoleResourceRefMapper;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.dto.UserPermissionDTO;
@@ -42,6 +39,8 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
     private FolibUserService folibUserService;
     @Autowired
     private FolibRoleService folibRoleService;
+    @Autowired
+    private UserGroupService userGroupService;
 
     /** 
      * 通过ID查询单条数据 
@@ -292,6 +291,7 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         //保存权限
         List<RoleResourceRef> roleResourceRefs = new ArrayList<>();
         AccessModelDTO privileges = roleForm.getPrivileges();
+        List<String> resourceAccess = roleForm.getAccess();
         List<AccessUsersDTO> users = null;
         List<AccessUserGroupsDTO> groups = null;
         if (Objects.nonNull(privileges)) {
@@ -305,6 +305,22 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
             }
             return;
         }
+
+        if (CollectionUtils.isNotEmpty(resourceAccess)) {
+            List<RoleResourceRef> roleResourceRef = resources.stream().flatMap(accessResourcesDTO -> resourceAccess.stream().map(access -> {
+                if (StringUtils.isNotBlank(accessResourcesDTO.getPath())) {
+                    return RoleResourceRef.builder().roleId(roleId).resourceId(accessResourcesDTO.getId()).pathPrivilege(access).createBy(username).build();
+                } else if (StringUtils.isNotBlank(accessResourcesDTO.getRepositoryId())) {
+                    return RoleResourceRef.builder().roleId(roleId).resourceId(accessResourcesDTO.getId()).repositoryPrivilege(access).createBy(username).build();
+                }else {
+                    return RoleResourceRef.builder().roleId(roleId).resourceId(accessResourcesDTO.getId()).storagePrivilege(access).createBy(username).build();
+                }
+            })).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(resources)){
+                saveBath(roleResourceRef);
+            }
+        }
+
         //用户权限组装
         if (CollectionUtils.isNotEmpty(users)){
              users.forEach(user -> {
@@ -343,8 +359,14 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         }
         //用户组权限组装
         if (CollectionUtils.isNotEmpty(groups)){
-             groups.forEach(groupsDTO -> {
-                 if ( StringUtils.isNotEmpty(groupsDTO.getId())) {
+            List<String> groupNames = groups.stream().map(AccessUserGroupsDTO::getName).filter(StringUtils::isNotEmpty).distinct().collect(Collectors.toList());
+            List<UserGroup> userGroups = userGroupService.queryByGroupNames(groupNames);
+            Map<String, Long> groupMap = Optional.ofNullable(userGroups).orElse(Collections.emptyList()).stream().collect(Collectors.toMap(UserGroup::getGroupName, UserGroup::getId));
+            groups.forEach(groupsDTO -> {
+                 if ( StringUtils.isNotEmpty(groupsDTO.getId()) || StringUtils.isNotEmpty(groupsDTO.getName())) {
+                     if (StringUtils.isEmpty(groupsDTO.getId())) {
+                         groupsDTO.setId(Optional.ofNullable(groupMap.get(groupsDTO.getName())).map(String::valueOf).orElse(null));
+                     }
                      if (CollectionUtils.isNotEmpty(resources)) {
                          resources.forEach(accessResourcesDTO ->{
                              List<String> access = groupsDTO.getAccess();

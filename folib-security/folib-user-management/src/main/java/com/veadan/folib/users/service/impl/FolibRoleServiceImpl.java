@@ -490,6 +490,10 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                         .repositoryId(resource.getRepositoryId()).path(resource.getPath()).build()
         ).distinct().collect(Collectors.toList());
         roleDTO.setResources(resourceList);
+
+        List<PermissionsDTO> resourcePermissions = permissions.stream().filter(permissionsDTO -> StringUtils.isEmpty(permissionsDTO.getRefType())).collect(Collectors.toList());
+        List<String> resourceAccess = Optional.of(resourcePermissions).orElse(new ArrayList<>()).stream().flatMap(resource -> Stream.of(resource.getRepositoryPrivilege(), resource.getStoragePrivilege(), resource.getPathPrivilege())).filter(StringUtils::isNotEmpty).distinct().collect(Collectors.toList());
+        roleDTO.setAccess(resourceAccess);
         return roleDTO;
     }
 

@@ -171,6 +171,9 @@ public class UserGroupServiceImpl implements UserGroupService {
 
     @Override
     public List<UserGroup> queryByGroupNames(List<String> groupNames) {
+        if (CollectionUtils.isEmpty(groupNames)) {
+            return Collections.emptyList();
+        }
         Example example = new Example(UserGroup.class);
         example.createCriteria().andIn("groupName", groupNames);
         return userGroupMapper.selectByExample(example);
