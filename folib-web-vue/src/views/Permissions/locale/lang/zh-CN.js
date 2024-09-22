@@ -100,5 +100,7 @@ export default {
     'PromoDistributionDesc': '制品晋级并分发',
     'Enabled': '开启',
     'Disabled': '关闭',
+    'Permissions': '权限',
+    'PermissionsDesc': '选择资源对应权限',
 
 }

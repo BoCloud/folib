@@ -97,4 +97,6 @@ export default {
     'PromoDistributionDesc': 'Artifacts promote and distribute',
     'Enabled': 'Enabled',
     'Disabled': 'Disabled',
+    'Permissions': 'Permissions',
+    'PermissionsDesc': 'Select the permissions that correspond to the resource',
 }
