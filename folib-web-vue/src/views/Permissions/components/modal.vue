@@ -616,7 +616,6 @@ export default {
                             return
                         }
                     }
-                    const access = this.repositoriesOptions.filter(item => item.enabled).map(item => item.value)
                     this.confirmLoading = true
                     const params = {
                         name: this.form.name,
@@ -625,8 +624,10 @@ export default {
                             users,
                         },
                         resources,
-                        access
+                        access: []
                     }
+                    if (this.isAnonymous)
+                        params.access = this.repositoriesOptions.filter(item => item.enabled).map(item => item.value)
                     const method = this.isEdit ? updatePermission : createPermission;
                     method(params).then(res => {
                         this.visible = false;
