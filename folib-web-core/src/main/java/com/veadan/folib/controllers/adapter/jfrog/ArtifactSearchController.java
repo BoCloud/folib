@@ -200,6 +200,9 @@ public class ArtifactSearchController extends JFrogBaseController {
         String path = "";
         if (StringUtils.isNotBlank(content) && JSONUtil.isJson(content)) {
             json = JSONObject.parseObject(content);
+        } else if (StringUtils.isNotBlank(content) && !JSONUtil.isJson(content)) {
+            json = new JSONObject();
+            json.put("$eq", content);
         }
         if (Objects.isNull(json) || json.isEmpty()) {
             return path;
