@@ -94,16 +94,18 @@ public class ArtifactSearchController extends JFrogBaseController {
             return ResponseEntity.ok(artifactSearchResult);
         }
         List<String> includeFields = Lists.newArrayList();
-        String repoKey = "repo", pathKey = "path", typeKey = "type";
+        String repoKey = "repo", pathKey = "path", typeKey = "type", storageId = "";
         String repositoryId = findJson.getString(repoKey);
-        // 提取 "repo", "path" 和 "include" 字段
-        String storageId = getDefaultStorageId(repositoryId);
-        Storage storage = getStorage(storageId);
-        if (Objects.isNull(storage)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, STORAGE_NOT_FOUND_MESSAGE));
-        }
-        if (Objects.isNull(storage.getRepository(repositoryId))) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, REPOSITORY_NOT_FOUND_MESSAGE));
+        if (StringUtils.isNotBlank(repositoryId)) {
+            // 提取 "repo", "path" 和 "include" 字段
+            storageId = getDefaultStorageId(repositoryId);
+            Storage storage = getStorage(storageId);
+            if (Objects.isNull(storage)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, STORAGE_NOT_FOUND_MESSAGE));
+            }
+            if (Objects.isNull(storage.getRepository(repositoryId))) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, REPOSITORY_NOT_FOUND_MESSAGE));
+            }
         }
         List<ArtifactConditionGroup> artifactConditionGroups = Lists.newArrayList();
         ArtifactConditionGroup orArtifactConditionGroup = ArtifactConditionGroup.builder().artifactSearchConditionTypeEnum(ArtifactSearchConditionTypeEnum.OR)
