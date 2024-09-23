@@ -142,10 +142,10 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
     @Override
     public boolean deleteByRoleId(String roleId){
         List<RoleResourceRef> roleResourceRefs = queryByRoleIds(Collections.singletonList(roleId));
-        roleResourceRefs = roleResourceRefs.stream().filter(r ->!"admin".equalsIgnoreCase(r.getRoleId()) && GlobalConstants.ROLE_TYPE_USER.equals(r.getRefType()) && !"admin".equalsIgnoreCase(r.getEntityId())).collect(Collectors.toList());
-        if (CollectionUtils.isNotEmpty(roleResourceRefs)) {
-            List<String> userIds = roleResourceRefs.stream().filter(r -> GlobalConstants.ROLE_TYPE_USER.equals(r.getRefType())).map(RoleResourceRef::getEntityId).collect(Collectors.toList());
-            List<Long> groupIds = roleResourceRefs.stream().filter(r -> GlobalConstants.ROLE_TYPE_USER_GROUP.equals(r.getRefType())).map(r -> Long.valueOf(r.getEntityId())).collect(Collectors.toList());
+        List<RoleResourceRef> roleResourceRefs1 = roleResourceRefs.stream().filter(r -> StringUtils.isNotEmpty(r.getRefType())).collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(roleResourceRefs1)) {
+            List<String> userIds = roleResourceRefs1.stream().filter(r -> GlobalConstants.ROLE_TYPE_USER.equals(r.getRefType())).map(RoleResourceRef::getEntityId).collect(Collectors.toList());
+            List<Long> groupIds = roleResourceRefs1.stream().filter(r -> GlobalConstants.ROLE_TYPE_USER_GROUP.equals(r.getRefType())).map(r -> Long.valueOf(r.getEntityId())).collect(Collectors.toList());
             if (CollectionUtils.isNotEmpty(groupIds)){
                 List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(groupIds);
                 if (CollectionUtils.isNotEmpty(userGroupRefs)) {
@@ -155,8 +155,17 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
             folibRoleService.deleteUserRoleCache(userIds);
         }
 
-        int total = roleResourceRefMapper.deleteByRoleId(roleId);
-        return total > 0;
+        List<Long> refIds;
+        if (SystemRole.READERS.name().equalsIgnoreCase(roleId)){
+            refIds = roleResourceRefs.stream().filter(r -> StringUtils.isNotEmpty(r.getRefType())).map(RoleResourceRef::getId).collect(Collectors.toList());
+        }else {
+            refIds = roleResourceRefs.stream().map(RoleResourceRef::getId).collect(Collectors.toList());
+        }
+        if  (CollectionUtils.isNotEmpty(refIds)) {
+            int total = roleResourceRefMapper.deleteByRefIds(refIds);
+            return total > 0;
+        }
+        return true;
     }
 
     @Override
@@ -298,14 +307,6 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
             users = privileges.getUsers();
             groups = privileges.getGroups();
         }
-        if (CollectionUtils.isEmpty(users) && CollectionUtils.isEmpty(groups)){
-            if (CollectionUtils.isNotEmpty(resources)) {
-                List<RoleResourceRef> roleResourceRef = resources.stream().map(accessResourcesDTO -> RoleResourceRef.builder().roleId(roleId).resourceId(accessResourcesDTO.getId()).createBy(username).build()).collect(Collectors.toList());
-                saveBath(roleResourceRef);
-            }
-            return;
-        }
-
         if (CollectionUtils.isNotEmpty(resourceAccess)) {
             List<RoleResourceRef> roleResourceRef = resources.stream().flatMap(accessResourcesDTO -> resourceAccess.stream().map(access -> {
                 if (StringUtils.isNotBlank(accessResourcesDTO.getPath())) {
@@ -319,6 +320,13 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
             if (CollectionUtils.isNotEmpty(resources)){
                 saveBath(roleResourceRef);
             }
+        }
+        if (CollectionUtils.isEmpty(users) && CollectionUtils.isEmpty(groups)){
+            if (CollectionUtils.isNotEmpty(resources)) {
+                List<RoleResourceRef> roleResourceRef = resources.stream().map(accessResourcesDTO -> RoleResourceRef.builder().roleId(roleId).resourceId(accessResourcesDTO.getId()).createBy(username).build()).collect(Collectors.toList());
+                saveBath(roleResourceRef);
+            }
+            return;
         }
 
         //用户权限组装
@@ -351,7 +359,7 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
                              }
                          });
                      }else {
-                         roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER).createBy(username).resourceType(GlobalConstants.RESOURCE_TYPE_PATH).build());
+                         roleResourceRefs.add(RoleResourceRef.builder().roleId(roleId).entityId(user.getId()).refType(GlobalConstants.ROLE_TYPE_USER).createBy(username).build());
                      }
                  }
              });

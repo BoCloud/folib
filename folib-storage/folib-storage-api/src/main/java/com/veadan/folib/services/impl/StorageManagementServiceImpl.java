@@ -1,8 +1,6 @@
 package com.veadan.folib.services.impl;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import com.veadan.folib.authorization.domain.RoleData;
 import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
@@ -235,10 +233,12 @@ public class StorageManagementServiceImpl implements StorageManagementService {
     @Override
     public Map<String, Set<String>> getStorageUser(Set<String> storageIds) {
         List<PermissionsDTO> permissions = roleResourceRefService.queryPermissionsByResourceIds(new ArrayList<>(storageIds));
-        Map<String, Set<String>> userMap = permissions.stream().filter(p -> GlobalConstants.ROLE_TYPE_USER.equals(p.getRefType())).collect(Collectors.groupingBy(PermissionsDTO::getStorageId,
+        Map<String, Set<String>> userMap = permissions.stream().filter(p -> GlobalConstants.ROLE_TYPE_USER.equals(p.getRefType()) && Privileges.ARTIFACTS_RESOLVE.name().equalsIgnoreCase(p.getStoragePrivilege())).collect(Collectors.groupingBy(PermissionsDTO::getStorageId,
                 Collectors.mapping(PermissionsDTO::getEntityId, Collectors.toSet())));
         //查询用户组关联的用户
-        Map<String, Set<String>> groupMap = permissions.stream().filter(p -> GlobalConstants.ROLE_TYPE_USER_GROUP.equals(p.getRefType())).collect(Collectors.groupingBy(PermissionsDTO::getStorageId, Collectors.mapping(PermissionsDTO::getEntityId, Collectors.toSet())));
+        Map<String, Set<String>> groupMap = permissions.stream().filter(p -> GlobalConstants.ROLE_TYPE_USER_GROUP.equals(p.getRefType())  && Privileges.
+                ARTIFACTS_RESOLVE.name().equalsIgnoreCase(p.getStoragePrivilege())).collect(Collectors.groupingBy(PermissionsDTO::getStorageId,
+                Collectors.mapping(PermissionsDTO::getEntityId, Collectors.toSet())));
         List<Long> groupIds = groupMap.values().stream().flatMap(Set::stream).map(Long::valueOf).collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(groupIds)) {
             List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(groupIds);
@@ -252,6 +252,30 @@ public class StorageManagementServiceImpl implements StorageManagementService {
                     }
                 });
             }
+        }
+
+        //查询关联下载权限的角色
+        List<String> roleIds = Arrays.asList(SystemRole.ADMIN.name(), SystemRole.READERS.name(), SystemRole.ANONYMOUS.name());
+        List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryByRoleIds(roleIds);
+        //查询下载权限角色关联的用户
+        List<String> resolveUserIds = Optional.ofNullable(roleResourceRefs).orElse(Collections.emptyList()).stream().filter(r -> StringUtils.isNotEmpty(r.getRefType()) && GlobalConstants.ROLE_TYPE_USER.equals(r.getRefType())).map(RoleResourceRef::getEntityId).distinct().collect(Collectors.toList());
+
+        //查询下载权限角色关联的用户组
+        List<Long> resolveGroupIds = Optional.ofNullable(roleResourceRefs).orElse(Collections.emptyList()).stream().filter(r -> StringUtils.isNotEmpty(r.getRefType()) && GlobalConstants.ROLE_TYPE_USER_GROUP.equals(r.getRefType())).map(RoleResourceRef::getEntityId).distinct().map(Long::valueOf).collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(resolveGroupIds)) {
+            List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(resolveGroupIds);
+            Set<String> collect = Optional.ofNullable(userGroupRefs).orElse(Collections.emptyList()).stream().map(UserGroupRef::getUserId).collect(Collectors.toSet());
+            resolveUserIds.addAll(collect);
+        }
+
+        if (CollectionUtils.isNotEmpty(resolveUserIds)){
+            storageIds.forEach(storageId -> {
+                if (userMap.containsKey(storageId)) {
+                    userMap.get(storageId).addAll(resolveUserIds);
+                } else {
+                    userMap.put(storageId, new HashSet<>(resolveUserIds));
+                }
+            });
         }
 
         return userMap;
