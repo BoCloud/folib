@@ -305,4 +305,24 @@ public class CommonComponent {
             log.info("Cache WS node [{}]", value);
         }
     }
+
+    public Integer getConnectTimeout() {
+        int connectTimeout = GlobalConstants.DEFAULT_CONTENT_TIME;
+        String key = "REMOTE_REPOSITORY_CONNECT_TIMEOUT";
+        String value = distributedCacheComponent.get(key);
+        if (StringUtils.isNotBlank(value)) {
+            connectTimeout = Integer.parseInt(value);
+        }
+        return connectTimeout * 1000;
+    }
+
+    public Integer getReadTimeout() {
+        int readTimeout = GlobalConstants.DEFAULT_CONTENT_TIME;
+        String key = "REMOTE_REPOSITORY_READ_TIMEOUT";
+        String value = distributedCacheComponent.get(key);
+        if (StringUtils.isNotBlank(value)) {
+            readTimeout = Integer.parseInt(value);
+        }
+        return readTimeout * 1000;
+    }
 }

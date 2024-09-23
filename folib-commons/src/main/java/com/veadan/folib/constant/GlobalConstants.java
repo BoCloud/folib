@@ -245,4 +245,9 @@ public interface GlobalConstants {
      * 扫描单文件最大限制GB
      */
     Integer SCAN_MAX_SIZE = 3;
+
+    /**
+     * DEFAULT_CONTENT_TIME
+     */
+    int DEFAULT_CONTENT_TIME = 60;
 }
