@@ -218,8 +218,8 @@ public class DockerStorageController extends BaseArtifactController {
         RepositoryPath repositoryPath = dockerComponent.resolveManifest(storageId, repositoryId, repository, tag);
         if (Files.exists(repositoryPath)) {
             ObjectMapper mapper = new ObjectMapper();
-            File file = new File(repositoryPath.toString());
-            return mapper.readTree(file);
+            return mapper.readTree(Files.readString(repositoryPath));
+
         } else {
             //docker 镜像不存在
             throw new RuntimeException("the docker image does not exist ");
@@ -243,8 +243,7 @@ public class DockerStorageController extends BaseArtifactController {
         RepositoryPath repositoryPath = dockerComponent.resolveManifest(storageId, repositoryId, repository, digest);
         if (Files.exists(repositoryPath)) {
             ObjectMapper mapper = new ObjectMapper();
-            File file = new File(repositoryPath.toString());
-            return mapper.readTree(file);
+            return mapper.readTree(Files.readString(repositoryPath));
         } else {
             //docker 镜像不存在
             throw new RuntimeException("the docker image does not exist ");

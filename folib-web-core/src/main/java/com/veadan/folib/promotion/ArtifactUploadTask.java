@@ -807,7 +807,7 @@ public class ArtifactUploadTask implements Callable<String> {
         }
     }
 
-    private void handlerDockerImage(final String storageId, final String repositoryId, final String path, final MultipartFile multipartFile, String baseUrl) {
+    private void handlerDockerImage(final String storageId, final String repositoryId, final String path, final MultipartFile multipartFile, String baseUrl) throws IOException {
         log.info("Requested get docker application file {}/{}/{}.", storageId, repositoryId, path);
         String url = String.join("/", baseUrl, storageId, repositoryId, path);
 
@@ -819,13 +819,14 @@ public class ArtifactUploadTask implements Callable<String> {
         } else if (url.contains(prefix2)) {
             tag = url.replaceAll("^" + prefix2, "");
         }
+        Path tempDirectory =null;
         try {
             String token = this.token;
             String uuid = UUID.randomUUID().toString();
             String TEMP_UPLOAD_DIR = String.join("/", tempPath, uuid);
             // 将文件保存到指定目录下
             String fileName = multipartFile.getOriginalFilename();
-            Path tempDirectory = Files.createDirectory(Path.of(TEMP_UPLOAD_DIR));
+            tempDirectory = Files.createDirectory(Path.of(TEMP_UPLOAD_DIR));
             Path localPath = Paths.get(String.join("/", tempDirectory.toString(), fileName));
 
             Files.copy(multipartFile.getInputStream(), localPath);
@@ -838,12 +839,16 @@ public class ArtifactUploadTask implements Callable<String> {
                                     .addCredential("<token>", token)
                     ).setAllowInsecureRegistries(true));
 
-            Files.walk(tempDirectory)
-                    .sorted(Comparator.reverseOrder())
-                    .map(Path::toFile)
-                    .forEach(File::delete);
+
         } catch (Exception e) {
             log.error("docker upload error uuid: {} ,storageId:{} ,repositoryId:{} ,tag:{} error: {}", uuid, storageId, repositoryId, tag, ExceptionUtils.getStackTrace(e));
+        }finally {
+            if(tempDirectory!=null){
+                Files.walk(tempDirectory)
+                        .sorted(Comparator.reverseOrder())
+                        .map(Path::toFile)
+                        .forEach(File::delete);
+            }
         }
     }
 
