@@ -1401,7 +1401,7 @@ public class StoragesConfigurationController
     @ApiOperation(value = "get repository permission users.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "ok."),
             @ApiResponse(code = 404, message = "The repository ${storageId}:${repositoryId} was not found!")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = "/repositoryPermission")
     public ResponseEntity repositoryPermission(@ApiParam(value = "The storageId", required = true)
                                                @RequestParam String storageId,
@@ -1449,7 +1449,7 @@ public class StoragesConfigurationController
     @ApiOperation(value = "delete users repository permission.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "ok."),
             @ApiResponse(code = 404, message = "The repository ${storageId}:${repositoryId} was not found!")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @DeleteMapping(value = "/repositoryPermission")
     public ResponseEntity deletePermission(@ApiParam(value = "The storageId", required = true)
                                            @RequestParam String storageId,

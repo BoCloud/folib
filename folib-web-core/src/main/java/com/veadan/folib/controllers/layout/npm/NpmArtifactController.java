@@ -497,7 +497,7 @@ public class NpmArtifactController
         return false;
     }
 
-    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @PutMapping(path = "{storageId}/{repositoryId}/-/user/org.couchdb.user:{username}",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)

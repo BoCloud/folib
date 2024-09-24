@@ -213,7 +213,7 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "name", value = "制品名", required = true),
             @ApiImplicitParam(name = "digest", value = "digest", required = true)
     })
-    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/{digest}", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/{digest}"}, method = {RequestMethod.HEAD}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity existingLayers(@RequestHeader HttpHeaders httpHeaders,
                                          HttpServletRequest request,
@@ -477,7 +477,7 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "name", value = "制品名", required = true),
             @ApiImplicitParam(name = "reference", value = "reference", required = true)
     })
-    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/manifests/{reference}", "/v2/{storageId}/{repositoryId}/{name}/**/manifests/{reference}"}, method = {RequestMethod.PUT})
     public ResponseEntity pushingAnImageManifest(@RequestHeader HttpHeaders httpHeaders,
                                                  Authentication authentication,
@@ -670,7 +670,7 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "name", value = "制品名", required = true),
             @ApiImplicitParam(name = "tag", value = "tag", required = true)
     })
-    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/manifests/{reference}", "/v2/{storageId}/{repositoryId}/{name}/**/manifests/{reference}"}, method = {RequestMethod.HEAD}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity existingManifests(@RequestHeader HttpHeaders httpHeaders,
                                             HttpServletRequest request,
