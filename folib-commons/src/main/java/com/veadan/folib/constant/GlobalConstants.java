@@ -249,5 +249,10 @@ public interface GlobalConstants {
     /**
      * DEFAULT_CONTENT_TIME
      */
-    int DEFAULT_CONTENT_TIME = 60;
+    int DEFAULT_CONTENT_TIME = 10;
+
+    /**
+     * DEFAULT_READ_TIME
+     */
+    int DEFAULT_READ_TIME = 60;
 }

@@ -317,7 +317,7 @@ public class CommonComponent {
     }
 
     public Integer getReadTimeout() {
-        int readTimeout = GlobalConstants.DEFAULT_CONTENT_TIME;
+        int readTimeout = GlobalConstants.DEFAULT_READ_TIME;
         String key = "REMOTE_REPOSITORY_READ_TIMEOUT";
         String value = distributedCacheComponent.get(key);
         if (StringUtils.isNotBlank(value)) {
