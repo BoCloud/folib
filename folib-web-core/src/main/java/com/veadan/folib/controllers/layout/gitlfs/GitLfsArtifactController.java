@@ -149,7 +149,7 @@ public class GitLfsArtifactController extends BaseArtifactController {
     @ApiOperation(value = "Used to retrieve an artifact")
     @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
             @ApiResponse(code = 400, message = "An error occurred.")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @PostMapping(value = {"{storageId}/{repositoryId}/locks/verify"}, produces = "application/vnd.git-lfs+json", consumes = {"application/vnd.git-lfs+json", "application/json"})
     public ResponseEntity<?> verify(@RepositoryMapping Repository repository,
                                     @RequestHeader HttpHeaders httpHeaders,
@@ -172,7 +172,7 @@ public class GitLfsArtifactController extends BaseArtifactController {
     @ApiOperation(value = "The client sends the following to create a lock by sending a POST to /locks (appended to the LFS server url, as described above). Servers should ensure that users have push access to the repository, and that files are locked exclusively to one user.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
             @ApiResponse(code = 400, message = "An error occurred.")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @PostMapping(value = "{storageId}/{repositoryId}/locks", produces = "application/vnd.git-lfs+json", consumes = {"application/vnd.git-lfs+json", "application/json"})
     public ResponseEntity<?> createLock(@RepositoryMapping Repository repository,
                                         @RequestHeader HttpHeaders httpHeaders,
@@ -197,7 +197,7 @@ public class GitLfsArtifactController extends BaseArtifactController {
     @ApiOperation(value = "List Locks for Verification")
     @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
             @ApiResponse(code = 400, message = "An error occurred.")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @GetMapping(value = "{storageId}/{repositoryId}/locks", produces = "application/vnd.git-lfs+json")
     public ResponseEntity<?> getLocks(@RepositoryMapping Repository repository,
                                       HttpServletRequest request,
@@ -215,7 +215,7 @@ public class GitLfsArtifactController extends BaseArtifactController {
     @ApiOperation(value = "Delete Lock")
     @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
             @ApiResponse(code = 400, message = "An error occurred.")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @PostMapping(value = "{storageId}/{repositoryId}/locks/{lockId}/unlock", produces = "application/vnd.git-lfs+json", consumes = {"application/vnd.git-lfs+json", "application/json"})
     public ResponseEntity<?> deleteLock(@RepositoryMapping Repository repository,
                                         @RequestHeader HttpHeaders httpHeaders,

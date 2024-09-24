@@ -156,7 +156,7 @@ public class RpmArtifactController extends BaseArtifactController {
     @ApiOperation(value = "Used to build rpm local repository atficat index")
     @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
             @ApiResponse(code = 400, message = "An error occurred.")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @GetMapping(value = {"{storageId}/{repositoryId}/buildIndex"})
     public ResponseEntity buildIndex(@RepositoryMapping Repository repository) {
         try {

@@ -303,7 +303,7 @@ public class BrowseController
     @ApiOperation(value = "List configured storages.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The list was returned."),
             @ApiResponse(code = 500, message = "An error occurred.")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping(produces = {MediaType.TEXT_PLAIN_VALUE,
             MediaType.TEXT_HTML_VALUE,
             MediaType.APPLICATION_JSON_VALUE})
@@ -336,7 +336,7 @@ public class BrowseController
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The list was returned."),
             @ApiResponse(code = 404, message = "The requested storage was not found."),
             @ApiResponse(code = 500, message = "An error occurred.")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping(value = "/{storageId}",
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.TEXT_HTML_VALUE,

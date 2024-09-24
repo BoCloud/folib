@@ -306,7 +306,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     }
 
     @ApiOperation(value = "上传组织名称参数的 LFS", nickname = "UploadLFSWithOrganizationNameParam")
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @RequestMapping(path = "{storageId}/{repositoryId}/api/complete_multipart/{organization}/{modelName}/{oid}",
             method = RequestMethod.PUT
     )
@@ -330,7 +330,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     }
 
     @ApiOperation(value = "上传没有组织名称参数的 LFS", nickname = "UploadLFSWithoutOrganizationNameParam")
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @RequestMapping(path = "{storageId}/{repositoryId}/api/complete_multipart/{modelName}/{oid}",
             method = RequestMethod.PUT
     )
@@ -351,7 +351,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
 
     @ApiOperation(value = "处理有组织名称的 LFS 对象", nickname = "PreUploadLFSWithOrganizationNameParam")
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @RequestMapping(path = "{storageId}/{repositoryId}/{organization}/{modelName}.git/info/lfs/objects/batch",
             method = RequestMethod.POST,
             consumes = {"application/vnd.git-lfs+json"},
@@ -375,7 +375,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
 
     @ApiOperation(value = "处理没有组织名称的 LFS 对象", nickname = "PreUploadLFSWithoutOrganizationNameParam")
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @RequestMapping(path = "{storageId}/{repositoryId}/{modelName}.git/info/lfs/objects/batch",
             method = RequestMethod.POST,
             consumes = {"application/vnd.git-lfs+json"},
@@ -398,7 +398,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
 
     @ApiOperation(value = "获取 preUpload 响应，以管理具有组织名称的每个文件的上传类型", nickname = "PreUploadModelWithOrganizationNameParam")
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @RequestMapping(path = "{storageId}/{repositoryId}/api/models/{organization}/{modelName}/preupload/{revision}",
             method = RequestMethod.POST,
             consumes = {"application/json"},
@@ -427,7 +427,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
 
     @ApiOperation(value = "获取 preUpload 响应，以管理每个文件的上传类型，而无需组织名称", nickname = "PreUploadModelWithoutOrganizationNameParam")
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @RequestMapping(path = "{storageId}/{repositoryId}/api/models/{modelName}/preupload/{revision}",
             method = RequestMethod.POST,
             consumes = {"application/json"},
@@ -453,7 +453,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
 
     @ApiOperation(value = "将模型上传为具有组织名称的新修订版本", nickname = "UploadModelWithOrganizationNameParam")
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @RequestMapping(path = "{storageId}/{repositoryId}/api/models/{organization}/{modelName}/commit/{revision}",
             method = RequestMethod.POST,
             consumes = {"application/x-ndjson"},
@@ -491,7 +491,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
 
     @ApiOperation(value = "将模型作为新修订版本上传，不带组织名称", nickname = "UploadModelWithoutOrganizationNameParam")
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @RequestMapping(path = "{storageId}/{repositoryId}/api/models/{modelName}/commit/{revision}",
             method = RequestMethod.POST,
             consumes = {"application/x-ndjson"},
