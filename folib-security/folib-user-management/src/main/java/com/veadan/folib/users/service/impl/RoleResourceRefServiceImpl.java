@@ -454,6 +454,25 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         roleResourceRefMapper.deleteByExample(example);
     }
 
+    public void deleteAllByRoleIdAndEntityNotNull(String roleId){
+        List<RoleResourceRef> roleResourceRefs = queryByRoleIds(Collections.singletonList(roleId));
+        if (CollectionUtils.isNotEmpty(roleResourceRefs)){
+            List<String> userIds = roleResourceRefs.stream().filter(r -> GlobalConstants.ROLE_TYPE_USER.equals(r.getRefType())).map(RoleResourceRef::getEntityId).collect(Collectors.toList());
+            List<Long> groupIds = roleResourceRefs.stream().filter(r -> GlobalConstants.ROLE_TYPE_USER_GROUP.equals(r.getRefType())).map(r -> Long.valueOf(r.getEntityId())).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(groupIds)){
+                List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(groupIds);
+                if (CollectionUtils.isNotEmpty(userGroupRefs)) {
+                    userIds.addAll(userGroupRefs.stream().map(UserGroupRef::getUserId).distinct().collect(Collectors.toList()));
+                }
+            }
+            folibRoleService.deleteUserRoleCache(userIds);
+        }
+        Example example = new Example(RoleResourceRef.class);
+        example.createCriteria().andEqualTo("roleId", roleId);
+        roleResourceRefMapper.deleteByExample(example);
+
+    }
+
     @Override
     public void updateStorageUser(UserPermissionDTO userPermission) {
         if (CollectionUtils.isEmpty(userPermission.getRoleIds())) {

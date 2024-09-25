@@ -76,7 +76,6 @@ public class StorageManagementServiceImpl implements StorageManagementService {
         handlerOriginalStorageAdminRoleByDB(storage.getAdmin(), storage.getId());
         configurationManagementService.updateStorage(storage);
         handlerStorageAdminRoleByDB(storage.getAdmin(), storage.getId());
-
     }
 
     @Override
@@ -84,7 +83,7 @@ public class StorageManagementServiceImpl implements StorageManagementService {
             throws IOException {
         configurationManagementService.createStorage(storage);
         handlerStorageAdminRoleByDB(storage.getAdmin(), storage.getId());
-        handlerStorageOrdinaryRoleByDB(null, storage.getId());
+        handlerStorageOrdinaryRoleByDB(storage.getUsers(), storage.getId());
     }
 
     @Override
@@ -350,16 +349,25 @@ public class StorageManagementServiceImpl implements StorageManagementService {
         if (resource == null) {
             resourceService.insert(storageResource);
         }
+        String resourceId = currentStorageId.toUpperCase();
         if (CollectionUtils.isNotEmpty(users)) {
             try {
-                List<RoleResourceRef> roleResourceRefs = new ArrayList<>();
-                users.forEach(user -> roleResourceRefs.add(RoleResourceRef.builder().roleId(key).entityId(user).refType(GlobalConstants.ROLE_TYPE_USER).resourceId(resource.getId()).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build()));
-                if (CollectionUtils.isNotEmpty(roleResourceRefs)) {
+                EnumSet<Privileges> storagePrivileges = Privileges.storageUser();
+                Set<String> privileges = storagePrivileges.stream().map(Privileges::getAuthority).collect(Collectors.toSet());
+                for (String username : users) {
+                    List<RoleResourceRef> roleResourceRefs = privileges.stream().map(privilege -> RoleResourceRef.builder().roleId(key).entityId(username).refType(GlobalConstants.ROLE_TYPE_USER).resourceId(resourceId)
+                            .storagePrivilege(privilege).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build()).collect(Collectors.toList());
+                    roleResourceRefs.add(RoleResourceRef.builder().roleId(key).resourceId(resourceId).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build());
                     roleResourceRefService.saveBath(roleResourceRefs);
                 }
 
+//                users.forEach(user -> roleResourceRefs.add(RoleResourceRef.builder().roleId(key).entityId(user).refType(GlobalConstants.ROLE_TYPE_USER).resourceId(resource.getId()).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build()));
+//                if (CollectionUtils.isNotEmpty(roleResourceRefs)) {
+//                    roleResourceRefService.saveBath(roleResourceRefs);
+//                }
+
             } catch (Exception ex) {
-                logger.error("handler user {} storage {} admin role error：{}", users, currentStorageId, ExceptionUtils.getStackTrace(ex));
+                logger.error("handler user {} storage {} user role error：{}", users, currentStorageId, ExceptionUtils.getStackTrace(ex));
                 throw new RuntimeException(ex.getMessage());
             }
         }else {

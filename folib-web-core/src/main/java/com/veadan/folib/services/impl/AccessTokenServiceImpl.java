@@ -132,7 +132,7 @@ public class AccessTokenServiceImpl implements AccessTokenService, AccessTokenFi
 
     @Override
     public boolean getByJwtId(String jwtId) {
-        if (CACHE_KEY.equals(distributedCacheComponent.get(jwtId))) {
+        if (CACHE_KEY.equals(distributedCacheComponent.get(CACHE_KEY+jwtId))) {
             return true;
         } else {
             Example example = Example.builder(AccessToken.class).build();

@@ -25,6 +25,7 @@ import Storages from "./Storages.vue"
 import SearchBox from "@/components/Tools/SearchBox"
 import Search from "./components/Search/index.vue"
 import { isLogin } from "@/utils/permission"
+import store from '@/store'
 
 export default {
   data() {
@@ -96,12 +97,14 @@ export default {
     Search,
   },
   created() {
-    this.getAllowAnonymous()
+    this.getAccount();
   },
 	watch: {
     
   },
-  mounted() {},
+  mounted() {
+    this.getAllowAnonymous();
+  },
   methods: {
     searchBoxMouseStatus(bool) {
       this.mouseEnter = bool
@@ -125,6 +128,22 @@ export default {
           this.$router.push('/login')
         }
       })
+    },
+
+    getAccount(){
+      let token=this.getCookie("token");
+      if(token!=null){
+        console.log(token);
+        store.dispatch("Token", token)
+      }
+      store.dispatch("GetInfo").then((res) => {});
+    },
+
+    getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+      return null;
     },
   }
 }

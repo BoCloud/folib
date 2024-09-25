@@ -156,6 +156,12 @@ public enum Privileges
         return privileges;
     }
 
+    public static EnumSet<Privileges> storageUser(){
+        EnumSet<Privileges> privileges = repoAll();
+        privileges.addAll(artifactsAll());
+        return privileges;
+    }
+
     public static Set<String> anonymous() {
         Set<String> set = new HashSet<>();
         set.add(ARTIFACTS_RESOLVE.name());

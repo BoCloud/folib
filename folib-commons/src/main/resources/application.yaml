@@ -285,3 +285,10 @@ thirdParty:
     accessKey: ${folib.thirdParty.foeyes.accessKey:racdvMVzV9Wnqu8NAfQkyrsD0a2N0fNE}
     username: ""
     password: ""
+custom:
+  unicom:
+    appCode: ""
+    appSecret: ""
+    appName: ""
+    verifyUrl: ""
+    userDetailUrl: ""

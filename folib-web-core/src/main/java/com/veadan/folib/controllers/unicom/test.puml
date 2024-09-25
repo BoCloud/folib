@@ -1,0 +1,19 @@
+@startuml
+title 管理员应用创建-自动创建folib仓库
+actor admin
+participant "数字化研发平台" as A
+participant "folib制品库" as B
+
+autonumber
+admin -> A : 创建应用
+activate A
+A -> B : 调用folib接口创建仓库
+activate B
+B -> A : 根据应用信息获取应用用户
+activate A
+A -> B : 返回用户信息
+deactivate A
+B -> A : 创建应用对应仓库，设置仓库用户，返回仓库地址
+deactivate B
+deactivate A
+@enduml
