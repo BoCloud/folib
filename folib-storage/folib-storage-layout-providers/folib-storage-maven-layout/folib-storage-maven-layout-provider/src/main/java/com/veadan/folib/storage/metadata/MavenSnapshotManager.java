@@ -229,14 +229,14 @@ public class MavenSnapshotManager {
             return removeVersionList;
         }
         logger.info("SnapshotBasePath [{}] snapshots [{}]", basePath.toString(), JSONObject.toJSONString(snapshots));
-        if (numberToKeep != 0 && snapshots.size() > 1 && snapshots.size() > numberToKeep) {
+        if (numberToKeep > 0 && snapshots.size() > 1 && snapshots.size() > numberToKeep) {
             snapshots.forEach(v -> {
                 if (removeVersionList.size() < snapshots.size() - numberToKeep) {
                     logger.info("SnapshotBasePath [{}] removeVersionList add [{}]", basePath.toString(), v.getVersion());
                     removeVersionList.add(v.getVersion());
                 }
             });
-        } else if (numberToKeep == 0 && keepPeriod != 0) {
+        } else if (numberToKeep == 0 && keepPeriod > 0) {
             snapshots.forEach(v -> {
                 try {
                     Date snapshotVersionDate = DateUtil.parse(v.getTimestamp(), DatePattern.createFormatter(TIMESTAMP_FORMAT));
