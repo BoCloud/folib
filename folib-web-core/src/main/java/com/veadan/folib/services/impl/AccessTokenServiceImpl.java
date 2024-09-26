@@ -6,7 +6,6 @@ import com.veadan.folib.entity.AccessToken;
 import com.veadan.folib.forms.accesstoken.AccessTokenForm;
 import com.veadan.folib.forms.accesstoken.AccessTokenResponse;
 import com.veadan.folib.mapper.AccessTokenMapper;
-import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.scanner.common.util.UUIDUtils;
 import com.veadan.folib.services.AccessTokenService;
 import com.veadan.folib.users.security.JwtClaimsProvider;
@@ -92,8 +91,8 @@ public class AccessTokenServiceImpl implements AccessTokenService, AccessTokenFi
     @Override
     public void delete(Long id, String tokenId) {
         AccessToken accessToken = accessTokenMapper.selectByPrimaryKey(id);
-        Assert.notNull(accessToken,"访问令牌不存在");
-        Assert.isTrue(tokenId.equals(accessToken.getTokenId()),"无效的访问令牌");
+        Assert.notNull(accessToken, "访问令牌不存在");
+        Assert.isTrue(tokenId.equals(accessToken.getTokenId()), "无效的访问令牌");
         accessTokenMapper.deleteByPrimaryKey(id);
         distributedCacheComponent.delete(CACHE_KEY + tokenId);
     }
@@ -103,9 +102,9 @@ public class AccessTokenServiceImpl implements AccessTokenService, AccessTokenFi
 
         Example example = Example.builder(AccessToken.class).build();
         Example.Criteria where = example.createCriteria();
-        if(StringUtils.hasText(tokenId)){
-            where.andEqualTo("tokenId",tokenId);
-        }else {
+        if (StringUtils.hasText(tokenId)) {
+            where.andEqualTo("tokenId", tokenId);
+        } else {
             PageHelper.startPage(pageNum, pageSize);
         }
         example.setOrderByClause("create_time DESC");
@@ -132,7 +131,7 @@ public class AccessTokenServiceImpl implements AccessTokenService, AccessTokenFi
 
     @Override
     public boolean getByJwtId(String jwtId) {
-        if (CACHE_KEY.equals(distributedCacheComponent.get(CACHE_KEY+jwtId))) {
+        if (CACHE_KEY.equals(distributedCacheComponent.get(CACHE_KEY + jwtId))) {
             return true;
         } else {
             Example example = Example.builder(AccessToken.class).build();
