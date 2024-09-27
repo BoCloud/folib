@@ -820,7 +820,7 @@ public class ArtifactUploadTask implements Callable<String> {
             tag = url.replaceAll("^" + prefix2, "");
         }
         Path tempDirectory =null;
-        try {
+        try (InputStream inputStream = multipartFile.getInputStream()) {
             String token = this.token;
             String uuid = UUID.randomUUID().toString();
             String TEMP_UPLOAD_DIR = String.join("/", tempPath, uuid);
@@ -829,7 +829,7 @@ public class ArtifactUploadTask implements Callable<String> {
             tempDirectory = Files.createDirectory(Path.of(TEMP_UPLOAD_DIR));
             Path localPath = Paths.get(String.join("/", tempDirectory.toString(), fileName));
 
-            Files.copy(multipartFile.getInputStream(), localPath);
+            Files.copy(inputStream, localPath);
 
             Path localPath2 = DockerParsePacketsUtil.parsePackets(localPath, tempDirectory);
             Jib.from(TarImage.at(localPath2))
@@ -842,8 +842,8 @@ public class ArtifactUploadTask implements Callable<String> {
 
         } catch (Exception e) {
             log.error("docker upload error uuid: {} ,storageId:{} ,repositoryId:{} ,tag:{} error: {}", uuid, storageId, repositoryId, tag, ExceptionUtils.getStackTrace(e));
-        }finally {
-            if(tempDirectory!=null){
+        } finally {
+            if (tempDirectory != null) {
                 Files.walk(tempDirectory)
                         .sorted(Comparator.reverseOrder())
                         .map(Path::toFile)

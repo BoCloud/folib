@@ -42,9 +42,7 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -163,22 +161,27 @@ public class PubArtifactController
                                  @PathVariable(name = "repositoryId") String repositoryId,
                                  HttpServletRequest request,
                                  @RequestParam("file") MultipartFile file,
-                                 HttpServletResponse response) throws Exception {
+                                 HttpServletResponse response) {
         PubMetadataExtractor extractor = new PubMetadataExtractor();
-        Pair<Pubspec, Path> pubspecPathPair = extractor.extractPubSpec(file.getInputStream());
-        try (InputStream bufferedInputStream = new BufferedInputStream(Files.newInputStream(pubspecPathPair.getValue1()))) {
-            Pubspec pubspec = pubspecPathPair.getValue0();
-            PubArtifactCoordinates pubArtifactCoordinates = PubArtifactCoordinates.of(pubspec.getName(), pubspec.getVersion(), PubArtifactCoordinates.PUB_EXTENSION);
-            String artifactPath = pubArtifactCoordinates.convertToPath(pubArtifactCoordinates);
-            logger.info("Pub upload storageId [{}] repositoryId [{}] artifactPath [{}]", storageId, repositoryId, artifactPath);
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-            artifactManagementService.validateAndStore(repositoryPath, bufferedInputStream);
-            pubPackageMetadataIndexer.indexAsSystem(repositoryPath, PubIndexTypeEnum.ADD);
-        } catch (Exception e) {
+        try (InputStream fileInputStream = file.getInputStream()) {
+            Pair<Pubspec, Path> pubspecPathPair = extractor.extractPubSpec(fileInputStream);
+            try (InputStream bufferedInputStream = new BufferedInputStream(Files.newInputStream(extractor.extractPubSpec(file.getInputStream()).getValue1()))) {
+                Pubspec pubspec = pubspecPathPair.getValue0();
+                PubArtifactCoordinates pubArtifactCoordinates = PubArtifactCoordinates.of(pubspec.getName(), pubspec.getVersion(), PubArtifactCoordinates.PUB_EXTENSION);
+                String artifactPath = pubArtifactCoordinates.convertToPath(pubArtifactCoordinates);
+                logger.info("Pub upload storageId [{}] repositoryId [{}] artifactPath [{}]", storageId, repositoryId, artifactPath);
+                RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+                artifactManagementService.validateAndStore(repositoryPath, bufferedInputStream);
+                pubPackageMetadataIndexer.indexAsSystem(repositoryPath, PubIndexTypeEnum.ADD);
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+            } finally {
+                Files.deleteIfExists(pubspecPathPair.getValue1());
+            }
+        } catch (IOException e) {
             logger.error(e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        } finally {
-            Files.deleteIfExists(pubspecPathPair.getValue1());
         }
         response.setHeader("Location", getRepositoryBaseUrl(repository) + "/finalizeDeployment");
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();

@@ -36,6 +36,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.HashMap;
@@ -290,7 +291,13 @@ public class PypiArtifactController extends BaseArtifactController {
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId,
                 repositoryId,
                 coordinates.buildPath());
-        artifactManagementService.validateAndStore(repositoryPath, file.getInputStream());
+        try( InputStream is =  file.getInputStream()) {
+            artifactManagementService.validateAndStore(repositoryPath, is);
+        }catch (IOException e){
+            logger.error(e.getMessage(), e);
+            throw new IOException(e);
+        }
+
 
         return ResponseEntity.status(HttpStatus.OK).body("The artifact was deployed successfully.");
     }

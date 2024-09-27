@@ -66,10 +66,9 @@ public class RawArtifactController
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
 
-        try
-        {
+        try (InputStream inputStream = request.getInputStream()){
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
-            artifactManagementService.validateAndStore(repositoryPath, request.getInputStream());
+            artifactManagementService.validateAndStore(repositoryPath, inputStream);
 
             return ResponseEntity.ok("The artifact was deployed successfully.");
         }

@@ -712,8 +712,10 @@ public class NpmArtifactController
 
         String packageFileName = repositoryPath.getFileName().toString();
         RepositoryPath checksumPath = repositoryPath.resolveSibling(packageFileName + ".sha1");
-        artifactManagementService.validateAndStore(checksumPath,
-                new ByteArrayInputStream(shasum.getBytes(StandardCharsets.UTF_8)));
+        try ( ByteArrayInputStream is = new ByteArrayInputStream(shasum.getBytes(StandardCharsets.UTF_8))){
+            artifactManagementService.validateAndStore(checksumPath,is);
+        }
+
 
         Files.delete(packageTgzTmp);
         Files.delete(packageJsonTmp);

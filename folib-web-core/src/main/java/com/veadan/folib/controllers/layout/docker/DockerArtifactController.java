@@ -420,6 +420,7 @@ public class DockerArtifactController extends BaseArtifactController {
         }
         ResponseEntity result = new ResponseEntity<>(HttpStatus.CREATED);
         String imagePath = "";
+        InputStream inputStream = null;
         try {
             String extractPath = getExtractPath(request);
             if (StringUtils.isNotBlank(extractPath)) {
@@ -427,7 +428,7 @@ public class DockerArtifactController extends BaseArtifactController {
             }
             imagePath = resolveImagePath(name, extractPath);
             int totalBytes = request.getContentLength();
-            InputStream inputStream = request.getInputStream();
+            inputStream = request.getInputStream();
             if (totalBytes <= 0 || inputStream.available() == 0) {
                 totalBytes = getRanges().getOrDefault(uuid, 1L).intValue();
                 updateData(digest, uuid);
@@ -437,6 +438,7 @@ public class DockerArtifactController extends BaseArtifactController {
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
             logger.info("StorageId [{}] repositoryId [{}] name [{}] imagePath [{}] digest [{}] uuid [{}] artifactPath [{}]", storageId, repositoryId, name, imagePath, digest, uuid, artifactPath);
             artifactManagementService.validateAndStore(repositoryPath, inputStream);
+
             String url = request.getRequestURI();
             url = url.replace("uploads/", "").replace(uuid, digest);
             response.reset();
@@ -454,6 +456,13 @@ public class DockerArtifactController extends BaseArtifactController {
             }
             result = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         } finally {
+            try {
+                if(inputStream!=null){
+                    inputStream.close();
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
             deleteLayers(storageId, repositoryId, imagePath, digest, uuid);
         }
         return result;
