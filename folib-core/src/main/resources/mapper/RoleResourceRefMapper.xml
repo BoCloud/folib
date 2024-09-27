@@ -150,9 +150,15 @@
             and r.repository_id = #{repositoryId}
         </if>
         <if test="resourceIds != null and resourceIds.size() > 0">
-            and r.storage_id in
+            and rrr.resource_id in
             <foreach collection="resourceIds"  item="resourceId" open="(" separator="," close=")">
                 #{resourceId}
+            </foreach>
+        </if>
+        <if test="storageIds != null and storageIds.size() > 0">
+            and r.storage_id in
+            <foreach collection="storageIds"  item="storageId" open="(" separator="," close=")">
+                #{storageId}
             </foreach>
         </if>
         <if test="username != null and username != ''">

@@ -100,6 +100,7 @@ public interface RoleResourceRefMapper extends CommonMapper<RoleResourceRef> {
       */
      List<PermissionsDTO> queryPermissions(@Param("roleId") String roleId, @Param("username") String username,
                                            @Param("storageId") String storageId, @Param("repositoryId")String repositoryId,
+                                           @Param("storageIds") List<String> storageIds,
                                            @Param("resourceIds") List<String> resourceIds, @Param("resourceEmpty") boolean resourceEmpty);
 
      List<RoleResourceRef> queryRoleByUserId(@Param("userId")String userId,@Param("roleIds") List<String> roleIds);

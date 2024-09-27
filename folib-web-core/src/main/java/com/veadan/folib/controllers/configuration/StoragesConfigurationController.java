@@ -292,32 +292,27 @@ public class StoragesConfigurationController
         if (StringUtils.isNotEmpty(storageId)) {
             storages = storages.stream().filter(storage -> storage.getId().contains(storageId)).collect(Collectors.toList());
         }
-        List<Storage> pageStorages = storages.stream().skip((long) (page - 1) * limit).limit(limit).collect(Collectors.toList());
 
-        if (CollectionUtils.isEmpty(pageStorages)) {
+        if (CollectionUtils.isEmpty(storages)) {
             return new TableResultResponse<>(0, new ArrayList<>());
         }
         //查询数据库中存储空间绑定的用户
-        storageManagementService.getStorageUsers(pageStorages);
+        storageManagementService.getStorageUsers(storages);
         String username = "";
         if (Objects.nonNull(authentication)) {
             final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
             username = loggedUser.getUsername();
         }
-        StoragesOutput storagesOutput = new StoragesOutput(pageStorages);
+        List<Storage> storagesList = storages;
         if (!hasAdmin()) {
-            List<Storage> list = storagesOutput.getStorages();
             String finalUsername = username;
-            List<Storage> collect = list.stream().filter(s ->
+            storagesList = storages.stream().filter(s ->
                     (CollectionUtil.isNotEmpty(s.getUsers()) && s.getUsers().contains(finalUsername)) ||
                             (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())))
             ).collect(Collectors.toList());
-            storagesOutput.setStorages(collect);
         }
-        if (Objects.isNull(storagesOutput.getStorages())) {
-            return new TableResultResponse<>(0, new ArrayList<>());
-        }
-        return new TableResultResponse<>(storagesOutput.getStorages().size(), storagesOutput.getStorages());
+        List<Storage> pageStorages = storagesList.stream().skip((long) (page - 1) * limit).limit(limit).collect(Collectors.toList());
+        return new TableResultResponse<>(pageStorages.size(), pageStorages);
 
     }
 
@@ -406,7 +401,7 @@ public class StoragesConfigurationController
             StorageTreeForm storageTreeForm;
             List<Repository> repositories;
             for (Storage storage : storages) {
-                boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username));
+                boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username) || storage.getRepositoryUsers().contains(username));
                 storageTreeForm = StorageTreeForm.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
                 repositories = new LinkedList<Repository>(storage.getRepositories().values());
                 repositorieList.addAll(repositories);
@@ -418,7 +413,7 @@ public class StoragesConfigurationController
                         .filter(r -> !filterByExcludeType || !r.getType().equalsIgnoreCase(excludeType))
                         .collect(Collectors.toCollection(LinkedList::new));
                 if (flag) {
-                    repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()))).collect(Collectors.toList());
+                    repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || hasRepositoryResolve(item))).collect(Collectors.toList());
                 }
                 storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeForm.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout())
                         .scope(repository.getScope()).build()).collect(Collectors.toList()));
@@ -486,7 +481,8 @@ public class StoragesConfigurationController
             StorageTreeForm storageTreeForm;
             List<Repository> repositories;
             for (Storage storage : storages) {
-                boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username));
+                boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username)
+                || storage.getRepositoryUsers().contains(username));
                 storageTreeForm = StorageTreeForm.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
                 repositories = new LinkedList<Repository>(storage.getRepositories().values());
                 repositories = repositories.stream().distinct()
@@ -497,7 +493,7 @@ public class StoragesConfigurationController
                         .filter(r -> !filterByExcludeType || !r.getType().equalsIgnoreCase(excludeType))
                         .collect(Collectors.toCollection(LinkedList::new));
                 if (flag) {
-                    repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()))).collect(Collectors.toList());
+                    repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || hasRepositoryResolve(item))).collect(Collectors.toList());
                 }
                 storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeForm.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout())
                         .scope(repository.getScope()).build()).collect(Collectors.toList()));
@@ -551,7 +547,8 @@ public class StoragesConfigurationController
             StorageTreeForm storageTreeForm;
             List<Repository> repositories;
             for (Storage storage : storages) {
-                boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username));
+                boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username)
+                || storage.getRepositoryUsers().contains(username));
                 storageTreeForm = StorageTreeForm.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
                 repositories = new LinkedList<Repository>(storage.getRepositories().values());
                 repositories = repositories.stream().distinct()
@@ -561,7 +558,7 @@ public class StoragesConfigurationController
                         .filter(r -> !filterByExcludeRepositoryId || (!r.getStorageIdAndRepositoryId().equalsIgnoreCase(excludedStorageIdAndRepositoryId)))
                         .collect(Collectors.toCollection(LinkedList::new));
                 if (flag) {
-                    repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()))).collect(Collectors.toList());
+                    repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || hasRepositoryResolve(item))).collect(Collectors.toList());
                 }
                 storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeForm.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout()).build()).collect(Collectors.toList()));
                 storageTreeForms.add(storageTreeForm);
@@ -698,11 +695,11 @@ public class StoragesConfigurationController
         storageManagementService.getStorageUsers(Collections.singletonList(storage));
         if (storage != null) {
             String username = loginUsername();
-            boolean flag = Boolean.TRUE.equals(filter) && !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isEmpty(storage.getUsers()) || (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username)));
+            boolean flag = Boolean.TRUE.equals(filter) && !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isEmpty(storage.getUsers()) || (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username)) || storage.getRepositoryUsers().contains(username));
             if (flag) {
                 Map<String, ? extends Repository> repositoryMap = storage.getRepositories();
                 if (Objects.nonNull(repositoryMap) && CollectionUtils.isNotEmpty(repositoryMap.values())) {
-                    repositoryMap = repositoryMap.values().stream().filter(item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope())).collect(Collectors.toMap(Repository::getId, Function.identity()));
+                    repositoryMap = repositoryMap.values().stream().filter(item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || hasRepositoryResolve(item)).collect(Collectors.toMap(Repository::getId, Function.identity()));
                     storage.setRepositories((Map<String, RepositoryDto>) repositoryMap);
                 }
             }

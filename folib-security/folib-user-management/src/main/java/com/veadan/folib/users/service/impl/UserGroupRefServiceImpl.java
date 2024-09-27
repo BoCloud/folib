@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import tk.mybatis.mapper.entity.Example;
 
 import java.util.Collections;
@@ -142,6 +143,9 @@ public class UserGroupRefServiceImpl implements UserGroupRefService {
 
     @Override
     public List<UserGroupRef> queryByGroupIds(List<Long> groupIds) {
+        if (CollectionUtils.isEmpty(groupIds)) {
+            return Collections.emptyList();
+        }
         return userGroupRefMapper.queryByGroupIds(groupIds);
     }
 

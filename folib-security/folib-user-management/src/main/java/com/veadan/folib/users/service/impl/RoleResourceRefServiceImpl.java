@@ -247,17 +247,22 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
 
     @Override
     public List<PermissionsDTO> queryPermissions(String roleId, String username, String storageId, String repositoryId) {
-        return roleResourceRefMapper.queryPermissions(roleId, username, storageId, repositoryId, null, true);
+        return roleResourceRefMapper.queryPermissions(roleId, username, storageId, repositoryId, null,null, true);
     }
 
     @Override
     public List<PermissionsDTO> queryPermissions(String roleId, String username, String storageId, String repositoryId, boolean resourceEmpty) {
-        return roleResourceRefMapper.queryPermissions(roleId, username, storageId, repositoryId, null, resourceEmpty);
+        return roleResourceRefMapper.queryPermissions(roleId, username, storageId, repositoryId, null, null, resourceEmpty);
     }
 
     @Override
     public List<PermissionsDTO> queryPermissionsByResourceIds(List<String> resourceIds) {
-        return roleResourceRefMapper.queryPermissions(null, null, null, null, resourceIds, false);
+        return roleResourceRefMapper.queryPermissions(null, null, null, null, null, resourceIds, false);
+    }
+
+    @Override
+    public List<PermissionsDTO> queryPermissionsByStorageIds(List<String> storageIds) {
+        return roleResourceRefMapper.queryPermissions(null, null, null, null, storageIds, null, false);
     }
 
     @Override

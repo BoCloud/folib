@@ -346,6 +346,10 @@ public abstract class BaseController {
         return userDetails.getRoles().stream().anyMatch(item -> SystemRole.ADMIN.name().equals(item.getName()));
     }
 
+    public boolean hasRepositoryResolve(Repository repository) {
+       return validatePathPrivileges(repository.getStorage().getId(), repository.getId(), null, Privileges.ARTIFACTS_RESOLVE.name());
+    }
+
     public SpringSecurityUser loginUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (Objects.isNull(authentication)) {

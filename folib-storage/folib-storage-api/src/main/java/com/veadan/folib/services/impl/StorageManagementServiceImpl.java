@@ -8,10 +8,7 @@ import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.converters.RoleModelToRoleConverter;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.PermissionsDTO;
-import com.veadan.folib.entity.FolibRole;
-import com.veadan.folib.entity.Resource;
-import com.veadan.folib.entity.RoleResourceRef;
-import com.veadan.folib.entity.UserGroupRef;
+import com.veadan.folib.entity.*;
 import com.veadan.folib.enums.StorageProviderEnum;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.RepositoryManagementService;
@@ -26,6 +23,7 @@ import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
@@ -202,6 +200,8 @@ public class StorageManagementServiceImpl implements StorageManagementService {
         Set<String> storageIds = storages.stream().map(Storage::getId).collect(Collectors.toSet());
         Map<String, Set<String>> userMap = getStorageUser(storageIds);
 
+        Map<String, List<PermissionsDTO>> repResolveMap = getRepositoryResolves(storages);
+
         // 根据资源查询角色关联的用户、用户组下的用户
         List<String> roleIds = storageIds.stream().flatMap(storageId -> Stream.of(String.format("STORAGE_ADMIN_%S", storageId))).collect(Collectors.toList());
         List<RoleResourceRef> roleResourceRefs = roleResourceRefService.queryRefsByRoleIds(roleIds);
@@ -219,8 +219,46 @@ public class StorageManagementServiceImpl implements StorageManagementService {
                 storageUsers.addAll(storage.getUsers());
                 storage.setUsers(storageUsers);
             }
-
+            //判断存储空间下仓库有没有下载权限
+            List<PermissionsDTO> permissionsDTOS = repResolveMap.get(storage.getId());
+            if(CollectionUtils.isNotEmpty(permissionsDTOS)) {
+                List<String> userIds = getUserIds(permissionsDTOS);
+                userIds.removeAll(storage.getUsers());
+                if (CollectionUtils.isNotEmpty(userIds)) {
+                    storage.setRepositoryUsers((new HashSet<>(userIds)));
+                    storage.getUsers().addAll(userIds);
+                }
+            }
         });
+    }
+
+    private Map<String, List<PermissionsDTO>> getRepositoryResolves(List<Storage> storages) {
+        List<String> repResourceIds = new ArrayList<>();
+        storages.forEach(storage -> {
+            String storageId = storage.getId();
+            Collection<? extends Repository> values = storage.getRepositories().values();
+            values.forEach(
+                    repository -> {
+                        String repositoryId = repository.getId();
+                        repResourceIds.add((storageId + "_" + repositoryId).toUpperCase());
+                    }
+            );
+        });
+        List<PermissionsDTO> permissions = roleResourceRefService.queryPermissionsByResourceIds(repResourceIds);
+        List<PermissionsDTO> repResolveList = permissions.stream().filter(permission -> Privileges.ARTIFACTS_RESOLVE.name().equals(permission.getRepositoryPrivilege())).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(repResolveList)) {
+            return Collections.emptyMap();
+        }
+        return repResolveList.stream().filter(permission -> StringUtils.isNotEmpty(permission.getStorageId())).collect(Collectors.groupingBy(PermissionsDTO::getStorageId));
+    }
+
+    private List<String> getUserIds(List<PermissionsDTO> permissionsDTOS) {
+        List<String> userIds = permissionsDTOS.stream().filter(permission -> GlobalConstants.ROLE_TYPE_USER.equals(permission.getRefType())).map(PermissionsDTO::getEntityId).distinct().collect(Collectors.toList());
+        List<Long> groupIds = permissionsDTOS.stream().filter(permission -> GlobalConstants.ROLE_TYPE_USER_GROUP.equals(permission.getRefType())).map(p -> Long.valueOf(p.getEntityId())).distinct().collect(Collectors.toList());
+        List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(groupIds);
+        List<String> userIdList = userGroupRefs.stream().map(UserGroupRef::getUserId).collect(Collectors.toList());
+        userIds.addAll(userIdList);
+        return userIds;
     }
 
     /**
@@ -232,7 +270,7 @@ public class StorageManagementServiceImpl implements StorageManagementService {
      */
     @Override
     public Map<String, Set<String>> getStorageUser(Set<String> storageIds) {
-        List<PermissionsDTO> permissions = roleResourceRefService.queryPermissionsByResourceIds(new ArrayList<>(storageIds));
+        List<PermissionsDTO> permissions = roleResourceRefService.queryPermissionsByStorageIds(new ArrayList<>(storageIds));
         Map<String, Set<String>> userMap = permissions.stream().filter(p -> GlobalConstants.ROLE_TYPE_USER.equals(p.getRefType()) && Privileges.ARTIFACTS_RESOLVE.name().equalsIgnoreCase(p.getStoragePrivilege())).collect(Collectors.groupingBy(PermissionsDTO::getStorageId,
                 Collectors.mapping(PermissionsDTO::getEntityId, Collectors.toSet())));
         //查询用户组关联的用户

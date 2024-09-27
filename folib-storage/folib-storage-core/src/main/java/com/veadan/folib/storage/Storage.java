@@ -29,4 +29,8 @@ public interface Storage
     void setUsers(Set<String> users);
 
     void setAdmin(String username);
+
+    Set<String> getRepositoryUsers();
+
+    void setRepositoryUsers(Set<String> repositoryUsers);
 }
