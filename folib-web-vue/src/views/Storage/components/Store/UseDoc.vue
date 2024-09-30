@@ -1082,6 +1082,8 @@ go 1.20' :readonly="true">
               '#'+this.$t('Store.SetPublishingId')+'\n'+
               'ohpm config set publish_id {your_publish_id}  \n'+
               '#'+this.$t('Store.PublishIdTip')+'\n'+
+              '#'+this.$t('Store.SetPublishingIdPlus')+'\n'+
+              ''+baseUrl.replace('http:','').replace('https:','')+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'/:_auth={token}\n'+
               '#'+this.$t('Store.SetRepository')+'\n'+
               'ohpm config set registry '+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'+
               '#'+this.$t('Store.SetPublishingRepository')+'\n'+
