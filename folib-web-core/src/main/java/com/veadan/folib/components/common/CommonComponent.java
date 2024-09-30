@@ -10,15 +10,18 @@ import com.veadan.folib.cluster.FolibLockProperties;
 import com.veadan.folib.cluster.SyncAuthorizationEnum;
 import com.veadan.folib.cluster.SyncStorageEnum;
 import com.veadan.folib.components.DistributedCacheComponent;
+import com.veadan.folib.configuration.AdvancedConfiguration;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.cluster.dto.SyncAuthorizationDto;
 import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
+import com.veadan.folib.enums.StorageProviderEnum;
 import com.veadan.folib.forms.configuration.ServerSettingsForm;
 import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.StorageManagementService;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.security.AuthoritiesProvider;
@@ -26,6 +29,7 @@ import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.glassfish.jersey.apache.connector.ApacheClientProperties;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
@@ -79,10 +83,13 @@ public class CommonComponent {
 
     @Inject
     private FolibLockProperties folibLockProperties;
+
     @Inject
     private AuthoritiesProvider authoritiesProvider;
+
     @Inject
     private AnonymousAuthenticationFilter anonymousAuthenticationFilter;
+
     /**
      * Client WebTarget 构建认证信息
      *
@@ -136,6 +143,56 @@ public class CommonComponent {
             } else if (Boolean.TRUE.equals(serverSettingsForm.getAdvancedConfigurationForm().getAllowAnonymous())) {
                 authorizationConfigService.addPrivilegesToAnonymous(Lists.newArrayList(Privileges.ARTIFACTS_RESOLVE, Privileges.SEARCH_ARTIFACTS, Privileges.ARTIFACTS_VIEW, Privileges.CONFIGURATION_VIEW_METADATA_CONFIGURATION));
                 updateAnonymous();
+            }
+        }
+    }
+
+    public void resolveS3Bucket() {
+        AdvancedConfiguration advancedConfiguration = configurationManagementService.getConfiguration().getAdvancedConfiguration();
+        if (Objects.isNull(advancedConfiguration)) {
+            return;
+        }
+        String globalS3Bucket = advancedConfiguration.getGlobalS3Bucket();
+        if (StringUtils.isBlank(globalS3Bucket)) {
+            return;
+        }
+        globalS3Bucket = GlobalConstants.SEPARATOR + globalS3Bucket;
+        for (Map.Entry<String, StorageDto> entry : configurationManagementService.getMutableConfigurationClone().getStorages().entrySet()) {
+            try {
+                StorageDto storage = entry.getValue();
+                if (!StorageProviderEnum.S3.getType().equals(storage.getStorageProvider())) {
+                    continue;
+                }
+                String storageId = storage.getId();
+                String sourceStorageBasedir = storage.getBasedir();
+                String storageBasedir = storage.getBasedir();
+                if (StringUtils.isBlank(storageBasedir)) {
+                    log.warn("Storage [{}] basedir is null", storageId);
+                    continue;
+                }
+                if (storageBasedir.startsWith(globalS3Bucket)) {
+                    storageBasedir = storageBasedir.replace(globalS3Bucket, "");
+                    storage.setBasedir(storageBasedir);
+                    //更新存储空间basedir
+                    configurationManagementService.updateStorageBasedir(storage);
+                    log.info("Storage [{}] basedir [{}] change to [{}]", storageId, sourceStorageBasedir, storageBasedir);
+                }
+                final Map<String, ? extends Repository> repositories = storage.getRepositories();
+                for (Repository repository : repositories.values()) {
+                    RepositoryDto repositoryDto = (RepositoryDto) repository;
+                    String repositoryId = repositoryDto.getId();
+                    String sourceRepositoryBasedir = repositoryDto.getBasedir();
+                    String repositoryBasedir = repositoryDto.getBasedir();
+                    if (repositoryBasedir.startsWith(globalS3Bucket)) {
+                        repositoryBasedir = repositoryBasedir.replace(globalS3Bucket, "");
+                        repositoryDto.setBasedir(repositoryBasedir);
+                        //更新仓库basedir
+                        configurationManagementService.setRepositoryBasedir(storage.getId(), repositoryDto);
+                        log.info("Storage [{}] repository [{}] basedir [{}] change to [{}]", storageId, repositoryId, sourceRepositoryBasedir, repositoryBasedir);
+                    }
+                }
+            } catch (Exception ex) {
+                log.error("Storage [{}] resolveS3Bucket error [{}]", entry.getKey(), ExceptionUtils.getStackTrace(ex));
             }
         }
     }

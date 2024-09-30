@@ -28,8 +28,11 @@ public class AdvancedConfiguration implements Serializable {
 
     private boolean showChecksum;
 
+    private String globalS3Bucket;
+
     public AdvancedConfiguration(final MutableAdvancedConfiguration delegate) {
         this.allowAnonymous = delegate.isAllowAnonymous();
         this.showChecksum = delegate.isShowChecksum();
+        this.globalS3Bucket = delegate.getGlobalS3Bucket();
     }
 }

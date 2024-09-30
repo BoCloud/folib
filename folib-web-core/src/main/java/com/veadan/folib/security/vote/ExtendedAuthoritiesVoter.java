@@ -101,6 +101,9 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
             Collection<? extends GrantedAuthority> apiAuthorities = authentication.getAuthorities();
             logger.debug("Privileges for [{}] are [{}]", principal, apiAuthorities);
             if (!authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
+                if (!configurationManagementService.getConfiguration().getAdvancedConfiguration().isAllowAnonymous()) {
+                    return Collections.emptySet();
+                }
                 if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
                     if (Boolean.FALSE.equals(getRepositoryAllowAnonymousFromCacheOrLoad(storageId, repositoryId))) {
                         return Collections.emptySet();

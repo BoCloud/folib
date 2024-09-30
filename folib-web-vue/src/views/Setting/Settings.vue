@@ -371,10 +371,21 @@
                     </a-form-item>
                   </a-col>
                 </a-row>
+                <a-row :gutter="[24]">
+                  <a-col :span="24"
+                         :lg="10">
+                    <a-form-item class="mb-10"
+                                 :label="$t('Setting.GlobalS3Bucket')"
+                                 :colon="false">
+                      <a-input v-model="serverSettings.advancedConfigurationForm.globalS3Bucket" :disabled="globalS3BucketDisabled" />
+                    </a-form-item>
+                  </a-col>
+                </a-row>
                 <p>{{ $t('Setting.Note') }}</p>
                 <ul class="pl-15 text-muted">
                   <li>{{ $t('Setting.OpenAllowsAnonymousAccess') }}</li>
                   <li>{{ $t('Setting.OpenDisplayVerificationFile') }}</li>
+                  <li>{{ $t('Setting.GlobalS3BucketTip') }}</li>
                 </ul>
               </a-form>
             </a-card>
@@ -1860,6 +1871,7 @@ export default {
         advancedConfigurationForm: {
           allowAnonymous: true,
           showChecksum: true,
+          globalS3Bucket: undefined,
         },
         corsConfigurationForm: { allowedOrigins: ['*'], corsAllowAll: false },
         smtpConfigurationForm: {
@@ -2201,7 +2213,8 @@ export default {
       ssoActionName: '',
       ssoDialogShow: false,
       ssoObj: {},
-      ssoList: []
+      ssoList: [],
+      globalS3BucketDisabled: false,
     }
   },
   computed: {
@@ -2287,10 +2300,16 @@ export default {
         } else {
           this.serverSettings.corsConfigurationForm.corsAllowAll = false
         }
+        if (this.serverSettings.advancedConfigurationForm.globalS3Bucket) {
+          this.globalS3BucketDisabled = true
+        }
       })
     },
     saveServerSettings() {
       postServerSettings(this.serverSettings).then(res => {
+        if (this.serverSettings.advancedConfigurationForm.globalS3Bucket) {
+          this.globalS3BucketDisabled = true
+        }
         setTimeout(() => {
           this.$notification.success({
             message: this.$t('Setting.SavedSuccess')
