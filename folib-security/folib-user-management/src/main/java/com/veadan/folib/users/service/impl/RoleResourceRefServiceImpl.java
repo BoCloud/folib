@@ -1,10 +1,12 @@
 package com.veadan.folib.users.service.impl;
 
+import com.google.common.collect.Lists;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.converts.ResourceConvert;
 import com.veadan.folib.dto.*;
 import com.veadan.folib.entity.*;
 import com.veadan.folib.mapper.RoleResourceRefMapper;
+import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.dto.UserPermissionDTO;
 import com.veadan.folib.users.service.*;
@@ -158,7 +160,10 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         List<Long> refIds;
         if (SystemRole.READERS.name().equalsIgnoreCase(roleId)){
             refIds = roleResourceRefs.stream().filter(r -> StringUtils.isNotEmpty(r.getRefType())).map(RoleResourceRef::getId).collect(Collectors.toList());
-        }else {
+        } else if (SystemRole.ANONYMOUS.name().equalsIgnoreCase(roleId)) {
+            ArrayList<String> privileges = Lists.newArrayList(Privileges.ARTIFACTS_RESOLVE.name(), Privileges.SEARCH_ARTIFACTS.name(), Privileges.ARTIFACTS_VIEW.name(), Privileges.CONFIGURATION_VIEW_METADATA_CONFIGURATION.name());
+            refIds = roleResourceRefs.stream().filter(ref -> !privileges.contains(ref.getResourceId())).map(RoleResourceRef::getId).collect(Collectors.toList());
+        } else {
             refIds = roleResourceRefs.stream().map(RoleResourceRef::getId).collect(Collectors.toList());
         }
         if  (CollectionUtils.isNotEmpty(refIds)) {
@@ -278,19 +283,19 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
                 allResource.addAll(addResources);
             }
 
-            Map<String, Resource> pathMap = allResource.stream().filter(resource -> !Objects.equals(resource.getPath(), null) && !resource.getPath().isEmpty()).collect(Collectors.toMap(Resource::getPath, resource -> resource, (k1, k2)->k1));
-            Map<String, Resource> repositoryMap = allResource.stream().filter(resource -> Objects.equals(resource.getPath(), null) || resource.getPath().isEmpty()).filter(resource ->  !Objects.equals(resource.getRepositoryId(), null) && !resource.getRepositoryId().isEmpty()).collect(Collectors.toMap(Resource::getRepositoryId, resource -> resource));
+            Map<String, Resource> pathMap = allResource.stream().filter(resource -> !Objects.equals(resource.getPath(), null) && !resource.getPath().isEmpty()).collect(Collectors.toMap(resource -> resource.getStorageId() + "_" + resource.getRepositoryId() + "_" + resource.getPath(), resource -> resource, (k1, k2)->k1));
+            Map<String, Resource> repositoryMap = allResource.stream().filter(resource -> Objects.equals(resource.getPath(), null) || resource.getPath().isEmpty()).filter(resource ->  !Objects.equals(resource.getRepositoryId(), null) && !resource.getRepositoryId().isEmpty()).collect(Collectors.toMap(resource -> resource.getStorageId() + "_" + resource.getRepositoryId(), resource -> resource));
             Map<String, Resource> storageMap = allResource.stream().filter(resource -> Objects.equals(resource.getPath(), null) || resource.getPath().isEmpty()).filter(resource ->  Objects.equals(resource.getRepositoryId(), null) || resource.getRepositoryId().isEmpty()).filter(resource -> !Objects.equals(resource.getStorageId(), null) && !resource.getStorageId().isEmpty()).collect(Collectors.toMap(Resource::getStorageId, resource -> resource));
 
             resources.forEach(resourceDTO -> {
                 String resourceId = null;
                 // 根据 path 查找
                 if (resourceDTO.getPath() != null && !resourceDTO.getPath().isEmpty()) {
-                    resourceId = pathMap.get(resourceDTO.getPath()).getId();
+                    resourceId = pathMap.get(resourceDTO.getStorageId() + "_" + resourceDTO.getRepositoryId() + "_" + resourceDTO.getPath()).getId();
                 }
                 // 根据 repositoryId 查找
                 if (resourceId == null && resourceDTO.getRepositoryId() != null) {
-                    resourceId = repositoryMap.get(resourceDTO.getRepositoryId()).getId();
+                    resourceId = repositoryMap.get(resourceDTO.getStorageId() + "_" + resourceDTO.getRepositoryId()).getId();
                 }
                 // 根据 storageId 查找
                 if (resourceId == null && resourceDTO.getStorageId() != null) {
@@ -487,6 +492,27 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         Example example = new Example(RoleResourceRef.class);
         example.createCriteria().andEqualTo("roleId", roleId).andIsNull("entityId");
         roleResourceRefMapper.deleteByExample(example);
+    }
+    @Override
+    public void deleteAnonymousRole(String roleId) {
+        List<RoleResourceRef> roleResourceRefs = queryByRoleIds(Collections.singletonList(roleId));
+        if (CollectionUtils.isNotEmpty(roleResourceRefs)){
+            List<String> userIds = roleResourceRefs.stream().filter(r -> GlobalConstants.ROLE_TYPE_USER.equals(r.getRefType())).map(RoleResourceRef::getEntityId).collect(Collectors.toList());
+            List<Long> groupIds = roleResourceRefs.stream().filter(r -> GlobalConstants.ROLE_TYPE_USER_GROUP.equals(r.getRefType())).map(r -> Long.valueOf(r.getEntityId())).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(groupIds)){
+                List<UserGroupRef> userGroupRefs = userGroupRefService.queryByGroupIds(groupIds);
+                if (CollectionUtils.isNotEmpty(userGroupRefs)) {
+                    userIds.addAll(userGroupRefs.stream().map(UserGroupRef::getUserId).distinct().collect(Collectors.toList()));
+                }
+            }
+            folibRoleService.deleteUserRoleCache(userIds);
+        }
+
+        ArrayList<String> privileges = Lists.newArrayList(Privileges.ARTIFACTS_RESOLVE.name(), Privileges.SEARCH_ARTIFACTS.name(), Privileges.ARTIFACTS_VIEW.name(), Privileges.CONFIGURATION_VIEW_METADATA_CONFIGURATION.name());
+        List<Long> refIds = roleResourceRefs.stream().filter(ref -> privileges.contains(ref.getResourceId())).map(RoleResourceRef::getId).collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(refIds)) {
+            roleResourceRefMapper.deleteByRefIds(refIds);
+        }
     }
 
     @Override
