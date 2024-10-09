@@ -186,7 +186,9 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
         LocalDateTime now = LocalDateTimeInstance.now();
 
         ArtifactCoordinates coordinates = RepositoryFiles.readCoordinates(repositoryPath);
-        artifactEntry.setArtifactCoordinates(coordinates);
+        if(artifactEntry.getArtifactCoordinates()==null||!"debian".equals(repositoryPath.getRepository().getLayout())){
+            artifactEntry.setArtifactCoordinates(coordinates);
+        }
         artifactEntry.setCreated(now);
         artifactEntry.setLastUpdated(now);
         artifactEntry.setLastUsed(now);

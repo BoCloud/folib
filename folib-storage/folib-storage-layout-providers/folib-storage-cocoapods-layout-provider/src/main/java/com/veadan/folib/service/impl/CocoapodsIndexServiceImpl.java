@@ -76,12 +76,16 @@ public class CocoapodsIndexServiceImpl implements CocoapodsIndexService
         final String baseUrl = StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/");
         final String username = remoteRepository.getUsername();
         final String password = remoteRepository.getPassword();
+        String url2 = String.format("%s/archive/refs/heads/master.tar.gz", url);
         url = String.format("%s/archive/refs/heads/master.zip", url);
+
         final String specIndexZipTempUri = ".specs/temp/master.zip";
         final String specIndexTarGzTempUri = ".specs/master.tar.gz";
         final String indexTempFolderPath = String.format("%s%s%s%s", tempPath, File.separator, UUID.randomUUID(), File.separator);
         RepositoryPath specIndexZipTempPath = null;
         String ziFilePath = null;
+
+        String URL_PATTERN = "^(http|https)://(?:[a-zA-Z0-9.-]+|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})(?::\\d+)?/storages/[^/]+/[^/]+$";
 
         try 
         {
@@ -94,10 +98,18 @@ public class CocoapodsIndexServiceImpl implements CocoapodsIndexService
             }
             catch (Exception e)
             { logger.error("删除旧的索引文件失败", e); }
-            // 下载代理索引zip
-            specIndexZipTempPath = artifactResolutionService.resolvePath(storageId, repositoryId, url, specIndexZipTempUri);
-            if (!Files.exists(specIndexZipTempPath))
-            { throw new RuntimeException("下载Cocoapods远程仓库索引Zip失败"); }
+            if(url.contains("github.com")){
+                // 下载代理索引zip
+                specIndexZipTempPath = artifactResolutionService.resolvePath(storageId, repositoryId, url, specIndexZipTempUri);
+                if (!Files.exists(specIndexZipTempPath)) {
+                    throw new RuntimeException("下载Cocoapods远程仓库索引Zip失败");
+                }
+            }else if(url.matches(URL_PATTERN)) {
+                specIndexZipTempPath = artifactResolutionService.resolvePath(storageId, repositoryId, url2, specIndexTarGzTempUri);
+            }else {
+                throw new RuntimeException("Cocoapods 不支持代理库："+url);
+            }
+
 
             ziFilePath = specIndexZipTempPath.getTarget().toString();
             String tarGzFilePath = specIndexZipTempPath.getTarget().getParent().getParent().toString()+"/master.tar.gz";
