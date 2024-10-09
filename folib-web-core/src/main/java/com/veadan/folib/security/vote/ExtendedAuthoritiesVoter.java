@@ -119,15 +119,17 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
                     return anonymousApiAuthorities;
                 }
                 Set<Privileges> storageAuthorities = anonymousRole.getAccessModel().getPathAuthorities(requestUri);
+                List<GrantedAuthority> authorities = new ArrayList<>(anonymousApiAuthorities);
                 if (storageAuthorities.isEmpty()) {
                     return anonymousApiAuthorities;
+                }else {
+                    authorities.remove(Privileges.ARTIFACTS_RESOLVE);
                 }
                 if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
                     if (Boolean.FALSE.equals(getRepositoryAllowAnonymousFromCacheOrLoad(storageId, repositoryId))) {
                         return Collections.emptySet();
                     }
                 }
-                List<GrantedAuthority> authorities = new ArrayList<>(anonymousApiAuthorities);
                 authorities.addAll(storageAuthorities);
                 return authorities;
             } else if (!(principal instanceof SpringSecurityUser)) {
