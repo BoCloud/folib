@@ -88,7 +88,7 @@ public class UserSyncServiceImpl implements UserSyncService
             List<UserGroup> userGroupList = userGroupService.queryByGroupNames(groupNames);
             Map<String, Long> userGroupMap = new HashMap<>();
             if (CollectionUtils.isNotEmpty(userGroupList)) {
-                userGroupMap = userGroupList.stream().collect(Collectors.toMap(UserGroup::getGroupName, UserGroup::getId));
+                userGroupMap = userGroupList.stream().collect(Collectors.toMap(UserGroup::getGroupName, UserGroup::getId, (existing, replacement) -> existing));
             }
 
             if (CollectionUtils.isNotEmpty(groups)) {

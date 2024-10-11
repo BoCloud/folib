@@ -165,6 +165,8 @@ export default {
     'SelectDistributeType': 'Please select the distribution type',
     'LocalCluster': 'Local cluster',
     'SyncData': 'Sync Data',
+    'syncStrategy': 'sync auth data strategy',
+    'SelectSyncStrategy': 'Please select the sync auth data strategy',
     'ClientUniqueIdentifier': 'Client unique identifier',
     'ClientID': 'Client ID',
     'EnterClientID': 'Please enter the client ID',

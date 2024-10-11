@@ -165,6 +165,8 @@ export default {
     'SelectDistributeType': '请选择分发类型',
     'LocalCluster': '本集群',
     'SyncData': '同步数据',
+    'syncStrategy': '权限同步策略',
+    'SelectSyncStrategy': '请选择同步策略',
     'ClientUniqueIdentifier': '客户端唯一标识',
     'ClientID': '客户端ID',
     'EnterClientID': '请输入客户端ID',

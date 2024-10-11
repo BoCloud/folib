@@ -27,4 +27,8 @@ public class ClusterDispatchNodeForm {
 
     private Boolean autoRegister ;
     private Boolean isSyncPrivilege = false;
+    /**
+     * 同步策略
+     */
+    private String syncStrategy;
 }

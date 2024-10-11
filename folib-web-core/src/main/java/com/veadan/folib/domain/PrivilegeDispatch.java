@@ -19,7 +19,6 @@ import javax.validation.constraints.NotEmpty;
 @Builder
 public class PrivilegeDispatch {
 
-    @NotEmpty
     private PrivilegeEventTypeEnum privilegeEventTypeEnum;
 //    @NotEmpty
     private String uuId;
