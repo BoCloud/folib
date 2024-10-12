@@ -240,7 +240,7 @@ public class UserGroupController
         userGroup.setMatchGroupName(matchGroupName);
         userGroup.setJoinGroup(joinGroup);
         userGroup.setDeleted(GlobalConstants.NOT_DELETED);
-        PageInfo<UserGroupListDTO> userGroupListDTOS = userGroupService.paginQuery(userGroup, pageRequest);
+        PageInfo<UserGroupListDTO> userGroupListDTOS = userGroupService.pageQueryAndUserNumber(userGroup, pageRequest);
         if (Objects.isNull(userGroupListDTOS)) {
             return new TableResultResponse<>(0, null);
         }

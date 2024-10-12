@@ -99,4 +99,18 @@ export default {
     'Disabled': 'Disabled',
     'Permissions': 'Permissions',
     'PermissionsDesc': 'Select the permissions that correspond to the resource',
+    'Description': 'Description',
+    'SelectResources': 'Select Resources',
+    'ResourceName': 'Resource Name',
+    'Type': 'Type',
+    'Path': 'Path',
+    'EnterTheDescription': 'Enter the description',
+    'NoPermissionsTooltip': 'No permissions selected.',
+    'Repository': 'Repository',
+    'StorageSpaceTooltip': 'Select a storage space to apply permissions to all repositories in the storage space',
+    'RepositoryTooltip': 'Select a repository to apply permissions to all artifacts in the repository',
+    'IncludeTooltip': 'Specify the path that the repository permission includes',
+    'Group': 'Group',
+    'User': 'User',
+    
 }

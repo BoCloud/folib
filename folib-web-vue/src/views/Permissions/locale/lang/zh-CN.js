@@ -102,5 +102,18 @@ export default {
     'Disabled': '关闭',
     'Permissions': '权限',
     'PermissionsDesc': '选择资源对应权限',
+    'Description': '权限描述',
+    'SelectResources': '选择资源',
+    'ResourceName': '资源名称',
+    'Type': '资源类型',
+    'Path': '路径',
+    'EnterTheDescription': '请输入描述',
+    'NoPermissionsTooltip': '未选择任何权限.',
+    'Repository': '仓库',
+    'StorageSpaceTooltip': '选择存储空间，将应用权限到该存储空间下的所有仓库',
+    'RepositoryTooltip': '选择仓库，将应用权限到该仓库所有制品',
+    'IncludeTooltip': '指定仓库权限包含的路径',
+    'Group': '用户组',
+    'User': '用户',
 
 }

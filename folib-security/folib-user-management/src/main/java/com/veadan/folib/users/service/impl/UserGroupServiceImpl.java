@@ -70,7 +70,14 @@ public class UserGroupServiceImpl implements UserGroupService {
         List<UserGroupListDTO> userGroupListDTOS = userGroupMapper.queryAllByLimit(userGroup);
         return new PageInfo<>(userGroupListDTOS);
     }
-    
+
+    @Override
+    public PageInfo<UserGroupListDTO> pageQueryAndUserNumber(UserGroup userGroup, PageRequest pageRequest) {
+        PageHelper.startPage(pageRequest.getPageNumber(), pageRequest.getPageSize());
+        List<UserGroupListDTO> userGroupListDTOS = userGroupMapper.queryAllByUser(userGroup);
+        return new PageInfo<>(userGroupListDTOS);
+    }
+
     /** 
      * 新增数据
      *

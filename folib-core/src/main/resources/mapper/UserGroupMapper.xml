@@ -31,6 +31,7 @@
         group_name,
         description,
         join_group,
+        ug.create_by,
         group_concat(distinct rrr.role_id) as roles
         from
         user_group ug
@@ -179,4 +180,42 @@
     <delete id="deleteById">
         delete from user_group where id = #{id}
     </delete>
+
+    <select id="queryAllByUser" resultType="com.veadan.folib.dto.UserGroupListDTO" >
+        select
+            ug.id,
+            ug.deleted,
+            ug.is_default,
+            ug.group_name,
+            ug.`description`,
+            ug.join_group,
+            ug.create_by,
+            COUNT(ugr.id) AS user_count
+        from
+            user_group  ug
+        left join user_group_ref  ugr on ug.id = ugr.user_group_id
+        where ug.deleted = '0'
+        <if test="userGroup.id != null and userGroup.id != ''">
+            and ug.id = #{userGroup.id}
+        </if>
+        <if test="userGroup.groupName != null and userGroup.groupName != ''">
+            and ug.group_name  = #{userGroup.groupName}
+        </if>
+        <if test="userGroup.matchGroupName != null and userGroup.matchGroupName != ''">
+            and ug.group_name like concat('%',#{userGroup.matchGroupName},'%')
+        </if>
+        <if test="userGroup.description != null and userGroup.description != ''">
+            and ug.`description` = #{userGroup.description}
+        </if>
+        <if test="userGroup.joinGroup != null and userGroup.joinGroup != ''">
+            and ug.join_group = #{userGroup.joinGroup}
+        </if>
+        <if test="userGroup.deleted != null and userGroup.deleted != ''">
+            and ug.deleted = #{userGroup.deleted}
+        </if>
+        group by ug.id
+        order by ug.create_time  DESC
+    </select>
+
+
 </mapper>

@@ -87,7 +87,7 @@
               <foreach collection="roleIds" item="roleId" open="(" separator="," close=")" >
                 #{roleId}
               </foreach>
-        group by role_id;
+        group by role_id,resource_type;
     </select>
     <select id="queryByGroupIds" resultType="com.veadan.folib.entity.UserGroupRef">
         select * from user_group_ref where

@@ -27,18 +27,19 @@
             >
                 <div slot="groupName" slot-scope="groupName, record">
                     <a-button
+                        class="p-0"
                         type="link"
                         size="small"
                         @click="groupCreate(record.id, true)"
                     >{{groupName}}</a-button>
                 </div>
-                <div slot="joinGroup" slot-scope="joinGroup">
-                    <div class="join-status" :class="{'not-join': joinGroup === '0'}">
-                        <a-icon :type="joinGroup === '1' ? 'check' : 'close'" />
+                <template slot="joinGroup" slot-scope="joinGroup, record">
+                    <div style="display: flex; justify-content: center;">
+                        <span>{{ joinGroup === '1' ? $t('Groups.Yes') : $t('Groups.No') }}</span>
                     </div>
-                </div>
+                </template>
                 <div slot="roles" slot-scope="roles">
-                    <div v-if="roles" class="by-flex">
+                    <div v-if="roles" class="by-flex" style="justify-content: center;">
                         <div
                             v-for="(item, index) in roles.split(',').splice(0, 5)"
                             :key="index"
@@ -53,7 +54,7 @@
                     </div>
                 </div>
                 <div slot="operation" slot-scope="text, record">
-                    <div class="col-action by-flex">
+                    <div class="col-action by-flex-custom">
                         <a-button type="link" size="small" @click="groupCreate(record.id)">
                             <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path class="fill-muted"
@@ -75,6 +76,9 @@
                         </a-popconfirm>
                     </div>
                 </div>
+                <template slot="userNumber" slot-scope="userNumber">
+                    {{ userNumber || 0 }}
+                </template>
             </a-table>
         </a-card>
         <modal ref="modal" @reset="searchGroups()"></modal>
@@ -103,29 +107,57 @@ export default {
                     i18nKey: 'Groups.Name',
                     dataIndex: 'groupName',
                     key: 'groupName',
-                    width: 200,
+                    width: 200, 
                     scopedSlots: { customRender: 'groupName' },
                 },
                 {
-                    title: '权限',
-                    i18nKey: 'Groups.Permissions',
-                    dataIndex: 'roles',
-                    key: 'roles',
-                    scopedSlots: { customRender: 'roles' },
+                    title: '描述',
+                    i18nKey: 'Groups.Description',
+                    dataIndex: 'description',
+                    key: 'description',
+                    width: 200,
+                    scopedSlots: { customRender: 'description' },
                 },
+                {
+                    title: '用户数',
+                    i18nKey: 'Groups.UserNumber',
+                    dataIndex: 'userCount',
+                    key: 'userCount',
+                    width: 100,
+                    scopedSlots: { customRender: 'userCount' },
+                },
+                {
+                    title: '创建人',
+                    i18nKey: 'Groups.CreateBy',
+                    dataIndex: 'createBy',
+                    key: 'createBy',
+                    width: 150, 
+                    scopedSlots: { customRender: 'createBy' },
+                },
+                // {
+                //     title: '权限',
+                //     i18nKey: 'Groups.Permissions',
+                //     dataIndex: 'roles',
+                //     key: 'roles',
+                //     width: 400,
+                //     align: 'center', 
+                //     scopedSlots: { customRender: 'roles' },
+                // },
                 {
                     title: '自动加入',
                     i18nKey: 'Groups.AutoJoin',
                     dataIndex: 'joinGroup',
                     key: 'joinGroup',
-                    width: 250,
+                    width: 100, // 将宽度从 250 减少到 100
+                    align:'center',
                     scopedSlots: { customRender: 'joinGroup' },
-                },
+                },  
                 {
                     title: '操作',
                     i18nKey: 'Setting.Operation',
                     dataIndex: 'operation',
-                    width: 120,
+                    width: 150,
+                    align:'center',
                     scopedSlots: { customRender: 'operation' },
                 },
             ]
@@ -160,7 +192,11 @@ export default {
                 name: this.name
             }).then(res => {
                 if (res && res.data) {
-                    this.groupList = res.data.rows
+                    // 为每个组添加默认为零的计数字段
+                    this.groupList = res.data.rows.map(group => ({
+                        ...group,
+                        userCount: group.userCount || 0  // 如果 userNumber 不存在，则默认为 0
+                    }));
                     this.total = res.data.total
                 }
             }).finally(() => {
@@ -175,6 +211,19 @@ export default {
             deleteGroup(id).then(res => {
                 this.queryList()
             })
+        },
+        handleJoinGroupChange(checked, record) {
+            const newJoinGroup = checked ? '1' : '0';
+            record.joinGroup=newJoinGroup;
+        //     updateGroup(record.id, { joinGroup: newJoinGroup })
+        //         .then(() => {
+        //             this.$message.success(this.$t('Groups.UpdateSuccess'));
+        //             this.queryList(); // 刷新列表
+        //         })
+        //         .catch(error => {
+        //             this.$message.error(this.$t('Groups.UpdateFailed'));
+        //             console.error('Failed to update join group status:', error);
+        //         });
         },
     }
 }
@@ -195,5 +244,10 @@ export default {
 .not-join {
     background: rgba(85, 98, 116, 0.2);
     color: #556274;
+}
+
+.by-flex-custom {
+    display: flex;
+    justify-content: center;
 }
 </style>

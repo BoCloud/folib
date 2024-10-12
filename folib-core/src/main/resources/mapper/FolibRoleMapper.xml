@@ -77,7 +77,9 @@
                 and r.path = concat('%',#{role.path},'%')
             </if>
         group by fr.id
+        order by fr.create_time
     </select>
+
 
     <!--统计总行数-->
     <select id="count" resultType="java.lang.Long">

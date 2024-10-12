@@ -9,7 +9,7 @@ export default {
     'View': '查看用户组',
     'Edit': '编辑用户组',
     'Create': '创建用户组',
-    'GroupSettings': '用户组设置',
+    'GroupSettings': '用户组基础设置',
     'GroupName': '用户组名',
     'NameRequired': '请输入用户组名',
     'Description': '描述',
@@ -33,4 +33,19 @@ export default {
     'PromoDistribution': '晋级/分发',
     'Total': '共',
     'Items': '条',
+    'UserNumber': '用户数',
+    'CreateBy': '创建人',
+    'GroupUser':'用户组成员设置',
+    'Yes': '是',
+    'No': '否',
+    'transfer': {
+        titles: ['可选择用户', '已选择用户'],
+        groupTitles: ['可选择用户组', '已选择用户组'],
+        searchPlaceholder: '请输入搜索用户名称',
+        itemUnit: '项',
+        itemsUnit: '项',
+        groupItemUnit: '组',
+        groupItemsUnit: '组',
+        dragHint: '拖动或双击项目进行转移',
+    }
 }
