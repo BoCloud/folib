@@ -98,6 +98,7 @@
 </template>
 
 <script>
+import { cloneDeep } from "lodash";
 export default {
     name: "repositories",
     props: {
@@ -180,7 +181,7 @@ export default {
             handler(newVal) {
                 this.storageRowKeys = newVal.filter(item => item.indexOf('/') === -1)
                 this.repositoriesRowKeys = newVal.filter(item => item.indexOf('/') > -1)
-
+                const copyPerList = cloneDeep(this.perRepositoryList)
                 this.perRepositoryList = this.repositoriesRowKeys.map(item => {
                     return {
                         title: item,
@@ -188,6 +189,13 @@ export default {
                         currentInPattern: '',
                         isInError: false,
                     }
+                })
+                this.perRepositoryList.forEach(item => {
+                    copyPerList.forEach(perItem => {
+                        if (item.title === perItem.title) {
+                            item.includes = perItem.includes
+                        }
+                    })
                 })
             },
             deep: true
@@ -241,14 +249,14 @@ export default {
         }
     },
     methods: {
-      handleChangeTable(pagination) {
-        if (pagination) this.page = pagination.current
-        if (this.radioModel === 'StorageSpace') {
-          this.$emit('getStorageList', this.page)
-        } else {
-          this.$emit('getRepositoriesList', this.page)
-        }
-      },
+        handleChangeTable(pagination) {
+            if (pagination) this.page = pagination.current
+            if (this.radioModel === 'StorageSpace') {
+                this.$emit('getStorageList', this.page)
+            } else {
+                this.$emit('getRepositoriesList', this.page)
+            }
+        },
         init() {
             this.step = 0
             this.radioModel = 'StorageSpace'
@@ -283,7 +291,7 @@ export default {
             this.step = 1
             this.perRepositoryList.forEach(item => {
                 res.forEach(ele => {
-                    if (item.title === `${ele.storageId}/${ele.repositoryId}`) {
+                    if (item.title === `${ele.storageId}/${ele.repositoryId}` && ele.path) {
                         item.includes.push(ele.path)
                     }
                 })
@@ -302,6 +310,7 @@ export default {
                  this.perRepositoryList.forEach(item => {
                      if (item.includes.length) {
                          item.includes.forEach(ele => {
+                             if (item.includes.length > 1 && !ele) return
                              list.push({
                                  storageId: item.title.split('/')[0],
                                  repositoryId: item.title.split('/')[1],

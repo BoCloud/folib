@@ -30,6 +30,7 @@ public class StorageDto
     private Long storageMaxSize;
 
     private Set<String> users = new LinkedHashSet<>();
+    private Set<String> repositoryUsers = new LinkedHashSet<>();
 
     private Map<String, RepositoryDto> repositories = new LinkedHashMap<>();
 
@@ -153,5 +154,12 @@ public class StorageDto
         sb.append('}');
         return sb.toString();
     }
-    
+
+    public Set<String> getRepositoryUsers() {
+        return repositoryUsers;
+    }
+
+    public void setRepositoryUsers(Set<String> repositoryUsers) {
+        this.repositoryUsers = repositoryUsers;
+    }
 }

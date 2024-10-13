@@ -139,7 +139,7 @@ public class PubArtifactController
 
     @GetMapping(path = "{storageId}/{repositoryId}/api/packages/versions/new")
     @ApiOperation(value = "Start deploy process by retrieving the url for deployment.", nickname = "getUrlDeployment", response = PubUpload.class)
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     public ResponseEntity getUrlDeployment(@RepositoryMapping Repository repository,
                                            @PathVariable(name = "storageId") String storageId,
                                            @PathVariable(name = "repositoryId") String repositoryId,
@@ -189,7 +189,7 @@ public class PubArtifactController
 
     @GetMapping(path = "{storageId}/{repositoryId}/finalizeDeployment")
     @ApiOperation(value = "Finalize the deploy process.", nickname = "finalizeDeployment")
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     public ResponseEntity finalizeDeployment(@PathVariable(name = "storageId") String storageId,
                                              @PathVariable(name = "repositoryId") String repositoryId, HttpServletResponse response) {
         response.setHeader("Content-Type", PubConstants.CONTENT_TYPE);

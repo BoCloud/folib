@@ -115,7 +115,18 @@
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
-                  <a v-if="uploadEnabled && folibRepository.layout !== 'rpm'&& folibRepository.layout !== 'GitLfs' && folibRepository.subLayout !== 'ohpm' && folibRepository.subLayout !== 'go'"><small style="padding-right: 20px" @click="handleUpload">
+                  <a v-if="uploadEnabled && folibRepository.layout === 'debian'"><small style="padding-right: 20px"
+                      @click="handleDebianUpload">
+                    {{ $t('Store.Upload') }}
+                      <a-icon type="cloud-upload" />
+                    </small>
+                  </a>
+                  <a v-if="uploadEnabled && folibRepository.layout !== 'rpm' &&  folibRepository.layout !== 'GitLfs' && folibRepository.layout !== 'GitLfs' && folibRepository.subLayout !== 'ohpm' && folibRepository.subLayout !== 'go' && folibRepository.layout !== 'debian'"><small style="padding-right: 20px" @click="handleUpload">
+                      {{ $t('Store.BatchUpload') }}
+                      <a-icon type="cloud-upload" />
+                    </small>
+                  </a>
+                  <a v-if="uploadEnabled && folibRepository.layout === 'debian'"><small style="padding-right: 20px" @click="handleDebianBatchUpload">
                       {{ $t('Store.BatchUpload') }}
                       <a-icon type="cloud-upload" />
                     </small>
@@ -882,6 +893,8 @@
 
     <MavenUpload v-if="mavenUploadVisible" :modelVisible="mavenUploadVisible" :folibRepository="this.folibRepository"
       @mavenUploadClose="mavenUploadClose" />
+    <DebianUpload  ref="debianmodal" :folibRepository="folibRepository"/>
+    <DebianBatchUpload  ref="debianBatchModal" :folibRepository="folibRepository"/>
   </div>
 </template>
 
@@ -938,6 +951,8 @@ import BaseData from './Data.vue'
 import UseDoc from './UseDoc.vue'
 import AddMetadata from './AddMetadata.vue'
 import MavenUpload from '../MavenUpload/index.vue'
+import DebianUpload from '../Debian/DebianUpload.vue'
+import DebianBatchUpload from '../Debian/DebianBatchUpload.vue'
 import Search from '../Search/index.vue'
 import { PrismEditor } from 'vue-prism-editor'
 import 'vue-prism-editor/dist/prismeditor.min.css' // import the styles somewhere
@@ -967,6 +982,8 @@ export default {
     AddMetadata,
     MavenUpload,
     Search,
+    DebianUpload,
+    DebianBatchUpload,
     CircleProgress
   },
   data () {
@@ -1121,7 +1138,7 @@ export default {
       showOperationDispatchFormModal: false,
       repositories: [],
       custom: false,
-      enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm', 'go','GitLfs', 'pub'],
+      enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm', 'go','GitLfs', 'pub','debian'],
       targetDirectoryExcludeLayout: ['Maven 2', 'npm', 'pub'],
       storageAdmin: '',
       permissions: [],
@@ -2578,7 +2595,12 @@ export default {
         targetRepositories: [],
       })
     },
-
+    handleDebianUpload() {
+      this.$refs.debianmodal.openModal();
+    },
+    handleDebianBatchUpload() {
+      this.$refs.debianBatchModal.openModal();
+    },
     onFileChange(event) {
         console.log('onFileChange', event)
         this.selectedFiles = Array.from(event.fileList.map(file => file.originFileObj)); // 将文件存储为数组

@@ -8,20 +8,14 @@ import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.dto.*;
-import com.veadan.folib.entity.FolibRole;
-import com.veadan.folib.entity.Resource;
-import com.veadan.folib.entity.RoleResourceRef;
-import com.veadan.folib.entity.UserGroupRef;
+import com.veadan.folib.entity.*;
 import com.veadan.folib.mapper.FolibRoleMapper;
 import com.veadan.folib.storage.repository.RepositoryPermissionDto;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.dto.AccessModelDto;
 import com.veadan.folib.users.dto.RepositoryPrivilegesDto;
-import com.veadan.folib.users.service.FolibRoleService;
-import com.veadan.folib.users.service.ResourceService;
-import com.veadan.folib.users.service.RoleResourceRefService;
-import com.veadan.folib.users.service.UserGroupRefService;
+import com.veadan.folib.users.service.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -59,6 +53,8 @@ public class FolibRoleServiceImpl implements FolibRoleService {
     private DistributedCacheComponent distributedCacheComponent;
     @Inject
     private UserGroupRefService userGroupRefService;
+    @Inject
+    private UserGroupService userGroupService;
     @Override
     public FolibRole queryByRoleId(List<String> roleIds) {
         return null;
@@ -474,12 +470,15 @@ public class FolibRoleServiceImpl implements FolibRoleService {
 
         //用户组权限
         Map<String, List<PermissionsDTO>> groupPermissions = permissions.stream().filter(permissionsDTO -> StringUtils.isNotEmpty(permissionsDTO.getRefType()) && GlobalConstants.ROLE_TYPE_USER_GROUP.equals(permissionsDTO.getRefType())).collect(Collectors.groupingBy(PermissionsDTO::getEntityId));
+        List<Long> userGroupIds = Optional.ofNullable(groupPermissions).orElse(Collections.emptyMap()).keySet().stream().map(Long::valueOf).collect(Collectors.toList());
+        List<UserGroup> userGroups = userGroupService.queryByIds(userGroupIds);
+        Map<Long, String> groupMap = userGroups.stream().collect(Collectors.toMap(UserGroup::getId, UserGroup::getGroupName, (v1,v2) -> v1));
         List<AccessUserGroupsDTO> userGroupAccess = groupPermissions.entrySet().stream().map(entry -> {
-            String userId = entry.getKey();
+            String groupId = entry.getKey();
             List<PermissionsDTO> permissionDTOs = entry.getValue();
             List<String> collect = permissionDTOs.stream().flatMap(permissionDTO ->
                     Stream.of(permissionDTO.getRepositoryPrivilege(), permissionDTO.getStoragePrivilege(), permissionDTO.getPathPrivilege())).filter(StringUtils::isNotEmpty).distinct().collect(Collectors.toList());
-            return AccessUserGroupsDTO.builder().id(userId).access(collect).build();
+            return AccessUserGroupsDTO.builder().id(groupId).name(groupMap.get(Long.valueOf(groupId))).access(collect).build();
         }).collect(Collectors.toList());
         roleDTO.setPrivileges(AccessModelDTO.builder().users(userAccess).groups(userGroupAccess).build());
 
@@ -490,6 +489,10 @@ public class FolibRoleServiceImpl implements FolibRoleService {
                         .repositoryId(resource.getRepositoryId()).path(resource.getPath()).build()
         ).distinct().collect(Collectors.toList());
         roleDTO.setResources(resourceList);
+
+        List<PermissionsDTO> resourcePermissions = permissions.stream().filter(permissionsDTO -> StringUtils.isEmpty(permissionsDTO.getRefType())).collect(Collectors.toList());
+        List<String> resourceAccess = Optional.of(resourcePermissions).orElse(new ArrayList<>()).stream().flatMap(resource -> Stream.of(resource.getRepositoryPrivilege(), resource.getStoragePrivilege(), resource.getPathPrivilege())).filter(StringUtils::isNotEmpty).distinct().collect(Collectors.toList());
+        roleDTO.setAccess(resourceAccess);
         return roleDTO;
     }
 

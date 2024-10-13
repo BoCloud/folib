@@ -1,0 +1,5 @@
+INSERT INTO folib_role (id, cn_name, en_name, description, deleted, is_default, create_by, create_time, update_by, update_time) VALUES('READERS', '全局只读角色', 'READERS', '全局只读角色，可查看平台所有仓库', '0', '1', NULL, now(), NULL, now());
+INSERT INTO role_resource_ref (role_id, entity_id, ref_type, resource_id, storage_privilege, repository_privilege, path_privilege, create_by, create_time, resource_type) VALUES('READERS', NULL, NULL, 'ARTIFACTS_VIEW', NULL, NULL, NULL, NULL, now(), '1');
+INSERT INTO role_resource_ref (role_id, entity_id, ref_type, resource_id, storage_privilege, repository_privilege, path_privilege, create_by, create_time, resource_type) VALUES('READERS', NULL, NULL, 'ARTIFACTS_RESOLVE', NULL, NULL, NULL, NULL, now(), '1');
+
+delete from role_resource_ref where role_id = 'GENERAL' and resource_id in ('ARTIFACTS_RESOLVE');

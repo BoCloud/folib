@@ -82,6 +82,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
@@ -292,33 +293,60 @@ public class StoragesConfigurationController
         if (StringUtils.isNotEmpty(storageId)) {
             storages = storages.stream().filter(storage -> storage.getId().contains(storageId)).collect(Collectors.toList());
         }
-        List<Storage> pageStorages = storages.stream().skip((long) (page - 1) * limit).limit(limit).collect(Collectors.toList());
 
-        if (CollectionUtils.isEmpty(pageStorages)) {
+        if (CollectionUtils.isEmpty(storages)) {
             return new TableResultResponse<>(0, new ArrayList<>());
         }
+
+        if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
+            List<Storage> collect = getAnonymousStorages(storages, null);
+            List<Storage> pageStorages = collect.stream().skip((long) (page - 1) * limit).limit(limit).collect(Collectors.toList());
+            return new TableResultResponse<>(pageStorages.size(), pageStorages);
+        }
+
         //查询数据库中存储空间绑定的用户
-        storageManagementService.getStorageUsers(pageStorages);
+        storageManagementService.getStorageUsers(storages);
         String username = "";
         if (Objects.nonNull(authentication)) {
             final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
             username = loggedUser.getUsername();
         }
-        StoragesOutput storagesOutput = new StoragesOutput(pageStorages);
+        List<Storage> storagesList = storages;
         if (!hasAdmin()) {
-            List<Storage> list = storagesOutput.getStorages();
             String finalUsername = username;
-            List<Storage> collect = list.stream().filter(s ->
+            storagesList = storages.stream().filter(s ->
                     (CollectionUtil.isNotEmpty(s.getUsers()) && s.getUsers().contains(finalUsername)) ||
                             (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())))
             ).collect(Collectors.toList());
-            storagesOutput.setStorages(collect);
         }
-        if (Objects.isNull(storagesOutput.getStorages())) {
-            return new TableResultResponse<>(0, new ArrayList<>());
-        }
-        return new TableResultResponse<>(storagesOutput.getStorages().size(), storagesOutput.getStorages());
+        List<Storage> pageStorages = storagesList.stream().skip((long) (page - 1) * limit).limit(limit).collect(Collectors.toList());
+        return new TableResultResponse<>(pageStorages.size(), pageStorages);
 
+    }
+
+    private List<Storage> getAnonymousStorages(List<Storage> storages, Map<String, List<String>> storageRepositorieMap) {
+        List<PermissionsDTO> permissions = roleResourceRefService.queryPermissions(SystemRole.ANONYMOUS.name(), null, null, null);
+
+        List<PermissionsDTO> anonymous = Optional.ofNullable(permissions).orElse(List.of()).stream().filter(p -> Privileges.ARTIFACTS_RESOLVE.name().equals(p.getResourceId())).collect(Collectors.toList());
+
+        List<String> roleStorageIds = Optional.ofNullable(permissions).orElse(List.of()).stream().filter(p -> Privileges.ARTIFACTS_RESOLVE.name().equals(p.getStoragePrivilege()) &&
+                StringUtils.isNotEmpty(p.getStorageId())).map(PermissionsDTO::getStorageId).distinct().collect(Collectors.toList());
+
+        Map<String, List<String>> storageRepMap = Optional.ofNullable(permissions).orElse(List.of()).stream().filter(p -> Privileges.ARTIFACTS_RESOLVE.name().equals(p.getRepositoryPrivilege()) &&
+                StringUtils.isNotEmpty(p.getRepositoryId())).distinct().collect(Collectors.groupingBy(PermissionsDTO::getStorageId,
+                Collectors.mapping(PermissionsDTO::getRepositoryId, Collectors.toList())));
+        if (CollectionUtils.isNotEmpty(anonymous) && CollectionUtils.isEmpty(roleStorageIds) && storageRepMap.isEmpty()) {
+            return storages.stream().filter(s -> (CollectionUtils.isNotEmpty(s.getRepositories().values())
+                    && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())))
+            ).collect(Collectors.toList());
+        }
+        if(storageRepositorieMap != null) {
+            storageRepositorieMap.putAll(storageRepMap);
+        }
+        return storages.stream().filter(s -> (CollectionUtils.isNotEmpty(s.getRepositories().values())
+                && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())))
+                || roleStorageIds.contains(s.getId()) || storageRepMap.containsKey(s.getId())
+        ).collect(Collectors.toList());
     }
 
     @JsonView(Views.ShortStorage.class)
@@ -330,6 +358,13 @@ public class StoragesConfigurationController
         final List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
                 .getStorages()
                 .values());
+
+        if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
+            List<Storage> collect = getAnonymousStorages(storages, null);
+            StoragesOutput storagesOutput = new StoragesOutput(collect);
+            return ResponseEntity.ok(storagesOutput);
+        }
+
         //查询数据库中存储空间绑定的用户
         storageManagementService.getStorageUsers(storages);
         String username = "";
@@ -377,10 +412,26 @@ public class StoragesConfigurationController
         List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
                 .getStorages()
                 .values());
+        List<Repository> repositorieList = new ArrayList<>();
+        List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
+
+        if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
+            Map<String, List<String>> storageRepMap = new HashMap<>();
+            //获取匿名角色关联的存储空间
+            List<Storage> collect = getAnonymousStorages(storages, storageRepMap);
+            //获取匿名角色关联的仓库
+            getAnonyRepositories(storageId, type, excludeType, excludeRepositoryId, layout, policy, collect, storageRepMap, repositorieList, storageTreeForms);
+
+            List<Repository> pageRepository = repositorieList.stream().skip((long) (page - 1) * limit).limit(limit).collect(Collectors.toList());
+
+            if (CollectionUtils.isEmpty(repositorieList)) {
+                return new TableResultResponse<>(0, new ArrayList<>());
+            }
+            return new TableResultResponse<>(repositorieList.size(), pageRepository);
+        }
+
         final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
         String username = loggedUser.getUsername();
-        List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
-        List<Repository> repositorieList = new ArrayList<>();
         if (CollectionUtil.isNotEmpty(storages)) {
             //查询数据库中存储空间绑定的用户
             storageManagementService.getStorageUsers(storages);
@@ -406,10 +457,9 @@ public class StoragesConfigurationController
             StorageTreeForm storageTreeForm;
             List<Repository> repositories;
             for (Storage storage : storages) {
-                boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username));
+                boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username) || storage.getRepositoryUsers().contains(username));
                 storageTreeForm = StorageTreeForm.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
                 repositories = new LinkedList<Repository>(storage.getRepositories().values());
-                repositorieList.addAll(repositories);
                 repositories = repositories.stream().distinct()
                         .filter(r -> !filterByType || r.getType().equalsIgnoreCase(type))
                         .filter(r -> !filterByLayout || r.getLayout().equalsIgnoreCase(layout))
@@ -418,8 +468,9 @@ public class StoragesConfigurationController
                         .filter(r -> !filterByExcludeType || !r.getType().equalsIgnoreCase(excludeType))
                         .collect(Collectors.toCollection(LinkedList::new));
                 if (flag) {
-                    repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()))).collect(Collectors.toList());
+                    repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || hasRepositoryResolve(item))).collect(Collectors.toList());
                 }
+                repositorieList.addAll(repositories);
                 storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeForm.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout())
                         .scope(repository.getScope()).build()).collect(Collectors.toList()));
                 storageTreeForms.add(storageTreeForm);
@@ -431,6 +482,47 @@ public class StoragesConfigurationController
             return new TableResultResponse<>(0, new ArrayList<>());
         }
         return new TableResultResponse<>(repositorieList.size(), pageRepository);
+    }
+
+    private  void getAnonyRepositories(String storageId, String type, String excludeType, String excludeRepositoryId, String layout, String policy, List<Storage> collect, Map<String, List<String>> storageRepMap, List<Repository> repositorieList, List<StorageTreeForm> storageTreeForms) {
+        boolean filterByStorageId = StringUtils.isNotBlank(storageId);
+        boolean filterByType = StringUtils.isNotBlank(type);
+        boolean filterByLayout = StringUtils.isNotBlank(layout);
+        boolean filterByExcludeRepositoryId = StringUtils.isNotBlank(excludeRepositoryId);
+        boolean filterByExcludeType = StringUtils.isNotBlank(excludeType);
+        boolean filterByPolicy = StringUtils.isNotBlank(policy);
+        String excludedStorageId = "", excludedRepositoryId = "";
+        if (filterByExcludeRepositoryId) {
+            excludedStorageId = ConfigurationUtils.getStorageId(storageId, excludeRepositoryId);
+            excludedRepositoryId = ConfigurationUtils.getRepositoryId(excludeRepositoryId);
+        }
+        String excludedStorageIdAndRepositoryId = ConfigurationUtils.getStorageIdAndRepositoryId(excludedStorageId, excludedRepositoryId);
+
+        collect = collect.stream()
+                .distinct()
+                .filter(s -> !filterByStorageId || s.getId().equalsIgnoreCase(storageId))
+                .collect(Collectors.toCollection(LinkedList::new));
+        StorageTreeForm storageTreeForm;
+        for (Storage storage : collect) {
+            List<Repository> repositories;
+            storageTreeForm = StorageTreeForm.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
+            repositories = new LinkedList<>(storage.getRepositories().values());
+            repositories = repositories.stream().distinct()
+                    .filter(r -> !filterByType || r.getType().equalsIgnoreCase(type))
+                    .filter(r -> !filterByLayout || r.getLayout().equalsIgnoreCase(layout))
+                    .filter(r -> !filterByPolicy || r.getPolicy().equalsIgnoreCase(policy))
+                    .filter(r -> !filterByExcludeRepositoryId || (!r.getStorageIdAndRepositoryId().equalsIgnoreCase(excludedStorageIdAndRepositoryId)))
+                    .filter(r -> !filterByExcludeType || !r.getType().equalsIgnoreCase(excludeType))
+                    .collect(Collectors.toCollection(LinkedList::new));
+            List<String> anonymousRepositories = storageRepMap.get(storage.getId());
+            repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope())
+                    || (CollectionUtils.isNotEmpty(anonymousRepositories) && anonymousRepositories.contains(item.getId()))))
+                    .collect(Collectors.toList());
+            repositorieList.addAll(repositories);
+            storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeForm.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout())
+                    .scope(repository.getScope()).build()).collect(Collectors.toList()));
+            storageTreeForms.add(storageTreeForm);
+        }
     }
 
     @ApiOperation(value = "Retrieve the basic info about storages and repositories.")
@@ -458,11 +550,23 @@ public class StoragesConfigurationController
         List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
                 .getStorages()
                 .values());
+        List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
+        List<Repository> repositorieList = new ArrayList<>();
+
+        if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
+            Map<String, List<String>> storageRepMap = new HashMap<>();
+            //获取匿名角色关联的存储空间
+            List<Storage> collect = getAnonymousStorages(storages, storageRepMap);
+            //获取匿名角色关联的仓库
+            getAnonyRepositories(storageId, type, excludeType, excludeRepositoryId, layout, policy, collect, storageRepMap, repositorieList, storageTreeForms);
+
+            return ResponseEntity.ok(storageTreeForms);
+        }
+
         //查询数据库中存储空间绑定的用户
         storageManagementService.getStorageUsers(storages);
         final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
         String username = loggedUser.getUsername();
-        List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
         if (CollectionUtil.isNotEmpty(storages)) {
             boolean filterByUser = !hasAdmin();
             boolean filterByStorageId = StringUtils.isNotBlank(storageId);
@@ -486,7 +590,8 @@ public class StoragesConfigurationController
             StorageTreeForm storageTreeForm;
             List<Repository> repositories;
             for (Storage storage : storages) {
-                boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username));
+                boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username)
+                || storage.getRepositoryUsers().contains(username));
                 storageTreeForm = StorageTreeForm.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
                 repositories = new LinkedList<Repository>(storage.getRepositories().values());
                 repositories = repositories.stream().distinct()
@@ -497,7 +602,7 @@ public class StoragesConfigurationController
                         .filter(r -> !filterByExcludeType || !r.getType().equalsIgnoreCase(excludeType))
                         .collect(Collectors.toCollection(LinkedList::new));
                 if (flag) {
-                    repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()))).collect(Collectors.toList());
+                    repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || hasRepositoryResolve(item))).collect(Collectors.toList());
                 }
                 storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeForm.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout())
                         .scope(repository.getScope()).build()).collect(Collectors.toList()));
@@ -527,11 +632,22 @@ public class StoragesConfigurationController
         List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
                 .getStorages()
                 .values());
+        List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
+        List<Repository> repositorieList = new ArrayList<>();
+
+        if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
+            Map<String, List<String>> storageRepMap = new HashMap<>();
+            //获取匿名角色关联的存储空间
+            List<Storage> collect = getAnonymousStorages(storages, storageRepMap);
+            //获取匿名角色关联的仓库
+            getAnonyRepositories(null, type, null, excludeRepositoryId, layout, policy, collect, storageRepMap, repositorieList, storageTreeForms);
+
+            return ResponseEntity.ok(storageTreeForms);
+        }
         //查询数据库中存储空间绑定的用户
         storageManagementService.getStorageUsers(storages);
         final SpringSecurityUser loggedUser = (SpringSecurityUser) authentication.getPrincipal();
         String username = loggedUser.getUsername();
-        List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
         if (CollectionUtil.isNotEmpty(storages)) {
             boolean filterByUser = !hasAdmin() && loggedUser.getRoles().stream().noneMatch(role -> SystemRole.ARTIFACTS_MANAGER.name().equals(role.getName()));
             boolean filterByType = StringUtils.isNotBlank(type);
@@ -551,7 +667,8 @@ public class StoragesConfigurationController
             StorageTreeForm storageTreeForm;
             List<Repository> repositories;
             for (Storage storage : storages) {
-                boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username));
+                boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username)
+                || storage.getRepositoryUsers().contains(username));
                 storageTreeForm = StorageTreeForm.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
                 repositories = new LinkedList<Repository>(storage.getRepositories().values());
                 repositories = repositories.stream().distinct()
@@ -561,7 +678,7 @@ public class StoragesConfigurationController
                         .filter(r -> !filterByExcludeRepositoryId || (!r.getStorageIdAndRepositoryId().equalsIgnoreCase(excludedStorageIdAndRepositoryId)))
                         .collect(Collectors.toCollection(LinkedList::new));
                 if (flag) {
-                    repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()))).collect(Collectors.toList());
+                    repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || hasRepositoryResolve(item))).collect(Collectors.toList());
                 }
                 storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeForm.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout()).build()).collect(Collectors.toList()));
                 storageTreeForms.add(storageTreeForm);
@@ -692,17 +809,35 @@ public class StoragesConfigurationController
     public ResponseEntity getStorageResponseEntity(@ApiParam(value = "The storageId", required = true)
                                                    @PathVariable final String storageId,
                                                    @ApiParam(value = "The filter")
-                                                   @RequestParam(value = "filter", required = false) Boolean filter) {
+                                                   @RequestParam(value = "filter", required = false) Boolean filter,
+                                                   Authentication authentication) {
         StorageDto storage = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
+        if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
+            Map<String, List<String>> storageRepMap = new HashMap<>();
+            //获取匿名角色关联的存储空间
+            List<Storage> collect = getAnonymousStorages(Collections.singletonList(storage), storageRepMap);
+            //获取匿名角色关联的仓库
+            if (CollectionUtils.isNotEmpty(collect)) {
+                Map<String, ? extends Repository> repositoryMap = storage.getRepositories();
+                if (Objects.nonNull(repositoryMap) && CollectionUtils.isNotEmpty(repositoryMap.values())) {
+                    List<String> anonymousRepositories = storageRepMap.get(storage.getId());
+                    repositoryMap = repositoryMap.values().stream().filter(item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || (CollectionUtils.isNotEmpty(anonymousRepositories) && anonymousRepositories.contains(item.getId()))).collect(Collectors.toMap(Repository::getId, Function.identity()));
+                    storage.setRepositories((Map<String, RepositoryDto>) repositoryMap);
+                }
+            }
+
+            StorageData storageData = new StorageData(storage);
+            return ResponseEntity.ok(storageData);
+        }
         //查询数据库中存储空间绑定的用户
         storageManagementService.getStorageUsers(Collections.singletonList(storage));
         if (storage != null) {
             String username = loginUsername();
-            boolean flag = Boolean.TRUE.equals(filter) && !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isEmpty(storage.getUsers()) || (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username)));
+            boolean flag = Boolean.TRUE.equals(filter) && !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isEmpty(storage.getUsers()) || (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username)) || storage.getRepositoryUsers().contains(username));
             if (flag) {
                 Map<String, ? extends Repository> repositoryMap = storage.getRepositories();
                 if (Objects.nonNull(repositoryMap) && CollectionUtils.isNotEmpty(repositoryMap.values())) {
-                    repositoryMap = repositoryMap.values().stream().filter(item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope())).collect(Collectors.toMap(Repository::getId, Function.identity()));
+                    repositoryMap = repositoryMap.values().stream().filter(item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || hasRepositoryResolve(item)).collect(Collectors.toMap(Repository::getId, Function.identity()));
                     storage.setRepositories((Map<String, RepositoryDto>) repositoryMap);
                 }
             }
@@ -1401,7 +1536,7 @@ public class StoragesConfigurationController
     @ApiOperation(value = "get repository permission users.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "ok."),
             @ApiResponse(code = 404, message = "The repository ${storageId}:${repositoryId} was not found!")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = "/repositoryPermission")
     public ResponseEntity repositoryPermission(@ApiParam(value = "The storageId", required = true)
                                                @RequestParam String storageId,
@@ -1449,7 +1584,7 @@ public class StoragesConfigurationController
     @ApiOperation(value = "delete users repository permission.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "ok."),
             @ApiResponse(code = 404, message = "The repository ${storageId}:${repositoryId} was not found!")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @DeleteMapping(value = "/repositoryPermission")
     public ResponseEntity deletePermission(@ApiParam(value = "The storageId", required = true)
                                            @RequestParam String storageId,

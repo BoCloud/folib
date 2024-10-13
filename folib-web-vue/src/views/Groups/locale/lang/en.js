@@ -33,4 +33,19 @@ export default {
     'PromoDistribution': 'Promotion/Distribution',
     'Total': 'Total',
     'Items': 'Items',
+    'UserNumber': 'User Number',
+    'CreateBy': 'Create By',
+    'GroupUser':'Group User',
+    'Yes': 'Yes',
+    'No': 'No',
+    transfer: {
+        titles: ['Selectable Users', 'Selected Users'],
+        groupTitles: ['Selectable Groups', 'Selected Groups'],
+        searchPlaceholder: 'Search User Name',
+        itemUnit: 'item',
+        itemsUnit: 'items',
+        groupItemUnit: 'group',
+        groupItemsUnit: 'groups',
+        dragHint: 'Drag or double-click items to transfer',
+    }
 }

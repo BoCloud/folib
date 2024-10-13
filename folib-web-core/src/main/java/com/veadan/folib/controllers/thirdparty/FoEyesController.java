@@ -31,7 +31,7 @@ public class FoEyesController {
     @Autowired
     private RepositoryPathResolver repositoryPathResolver;
 
-    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = "/{storageId}/{repositoryId}/{artifactPath:.+}")
     public ResponseEntity<ProjectInfo> queryProject(@PathVariable String artifactPath,
                                                     @PathVariable String storageId,

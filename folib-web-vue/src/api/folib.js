@@ -502,3 +502,11 @@ export function getArtifactsPage (query) {
     params: query
   })
 }
+
+export function queryRepositoriesByStorage (dataQuery) {
+  return axios({
+    url: '/api/configuration/folib/storages/queryStoragesAndRepositories',
+    params: dataQuery,
+    method: 'get'
+  })
+}
