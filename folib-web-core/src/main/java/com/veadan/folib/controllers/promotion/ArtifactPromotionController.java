@@ -366,7 +366,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
     }
 
 
-    @PostMapping(value = "/slice/upload-web3",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/slice/upload-web",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
     public ResponseEntity<?> sliceUploadWeb3(MultipartHttpServletRequest request,
                                              @RequestParam("storageId") String storageId,
