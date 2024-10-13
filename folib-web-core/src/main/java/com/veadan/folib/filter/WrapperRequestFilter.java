@@ -18,6 +18,8 @@ public class WrapperRequestFilter implements Filter {
 
     private static final Set<String> FILTER_PATHS = Collections.unmodifiableSet(Sets.newHashSet("/api/artifact/folib/promotion/"));
 
+    private static final Set<String> SLICE_PATH = Collections.unmodifiableSet(Sets.newHashSet("/api/artifact/folib/promotion/slice/upload-web"));
+
     private static final Set<String> ALLOWED_PATHS = Collections.unmodifiableSet(Sets.newHashSet("/api/artifact/folib/promotion/upload-files", "/api/artifact/folib/promotion/parseArtifact"
             , "/api/artifact/folib/promotion/slice/upload"
             , "/api/artifact/folib/promotion/header/slice/upload"
@@ -36,7 +38,11 @@ public class WrapperRequestFilter implements Filter {
         if (allowedPath) {
             filterChain.doFilter(servletRequest, servletResponse);
             return;
-        } else if (FILTER_PATHS.stream().anyMatch(path::startsWith)){
+        }else if(SLICE_PATH.stream().anyMatch(path::equals)){
+            filterChain.doFilter(servletRequest, servletResponse);
+            return;
+        }
+        else if (FILTER_PATHS.stream().anyMatch(path::startsWith)){
             ServletRequest requestWrapper = new RequestWrapper((HttpServletRequest) servletRequest);
             // 将请求封装并传递下去
             filterChain.doFilter(requestWrapper, servletResponse);

@@ -1,5 +1,7 @@
 package com.veadan.folib.controllers.promotion;
 
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.components.security.SecurityComponent;
@@ -14,6 +16,7 @@ import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
 import com.veadan.folib.model.request.ArtifactSliceUploadReq;
+import com.veadan.folib.model.request.ArtifactSliceUploadWebReq;
 import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
 import com.veadan.folib.model.response.ArtifactSliceUploadInfoRes;
 import com.veadan.folib.model.response.Result;
@@ -24,7 +27,10 @@ import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,12 +38,15 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.List;
-import java.util.UUID;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+
+import java.util.*;
 
 /**
  * 制品晋级控制层
@@ -55,6 +64,9 @@ public class ArtifactPromotionController extends BaseArtifactController {
 
     @Inject
     private SecurityComponent securityComponent;
+
+    @Value("${folib.temp}")
+    private String tempPath;
 
     @PostMapping("/copy")
     @PermissionCheck(resourceKey = "ARTIFACTS_COPY", storageKey = "srcStorageId", repositoryKey = "srcRepositoryId")
@@ -331,5 +343,84 @@ public class ArtifactPromotionController extends BaseArtifactController {
     public ResponseEntity<?> deleteTask(@PathVariable("syncNo") String syncNo) {
 
         return  artifactPromotionService.deleteTask(syncNo);
+    }
+
+
+
+    private Map<String, String> parseMetadata(String metadataHeader) {
+        Map<String, String> metadata = new HashMap<>();
+
+        if (metadataHeader != null && !metadataHeader.isEmpty()) {
+            String[] entries = metadataHeader.split(",");
+            for (String entry : entries) {
+                String[] keyValue = entry.split(" ");
+                if (keyValue.length == 2) {
+                    String key = keyValue[0];
+                    String value = new String(Base64.getDecoder().decode(keyValue[1]), StandardCharsets.UTF_8);
+                    metadata.put(key, value);
+                }
+            }
+        }
+
+        return metadata;
+    }
+
+
+    @PostMapping(value = "/slice/upload-web3",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
+    public ResponseEntity<?> sliceUploadWeb3(MultipartHttpServletRequest request,
+                                             @RequestParam("storageId") String storageId,
+                                             @RequestParam("repositoryId") String repositoryId,
+                                             @RequestParam("fileId") String fileId,
+                                             @RequestParam("currentChunk") int currentChunk,
+                                             @RequestParam("path") String path,
+                                             @RequestParam("fileName") String fileName,
+                                             @RequestParam("totalChunks") int totalChunks,
+                                             @RequestParam("fileMd5") String fileMd5,
+                                             @RequestParam("currentChunkSize") long currentChunkSize,
+                                             @RequestParam("chunkSize") long chunkSize,
+                                             @RequestParam("chunkMD5") String chunkMD5,
+                                             @RequestParam("file") MultipartFile file,
+                                             @RequestParam("isUnzip") boolean isUnzip,
+                                             @RequestParam(name = "fileMetaDataMap", required = false) String fileMetaDataMap,
+                                             @RequestParam(name = "imageTag", required = false) String imageTag,
+                                             @RequestParam(name = "fileType", required = false) String fileType,
+                                             @RequestParam(name = "originalFilename", required = false) String originalFilename
+    ) {
+
+        try {
+            synchronized (fileMd5){
+                String baseUrl = getBaseUrl();
+                String token = securityComponent.getSecurityToken();
+                if (currentChunkSize != chunkSize) {
+                    // 记录异常日志或抛出异常
+                    throw new IllegalArgumentException("Chunk size does not match!");
+                }
+                final MockMultipartFile mockMultipartFile = new MockMultipartFile(UUID.randomUUID().toString(), file.getInputStream());
+                final ArtifactSliceUploadWebReq model = new ArtifactSliceUploadWebReq();
+                model.setStorageId(storageId);
+                model.setRepositoryId(repositoryId);
+                model.setFileName(fileName);
+                model.setBaseUrl(baseUrl);
+                model.setToken(token);
+                model.setFileType(fileType);
+                model.setImageTag(imageTag);
+                if(fileMetaDataMap!=null && !StrUtil.isBlankOrUndefined(fileMetaDataMap)){
+                    model.setMetaData(JSONUtil.parseObj(fileMetaDataMap));
+                }
+                model.setMergeId(fileMd5);
+                model.setOriginalFilename(originalFilename==null?fileName:originalFilename);
+                model.setChunkIndex(currentChunk);
+                model.setChunkIndexMax(totalChunks);
+                model.setOriginFileMd5(fileMd5);
+                model.setFile(mockMultipartFile);
+                model.setUnzip(isUnzip);
+                return ResponseEntity.ok(Result.success(artifactPromotionService.webSliceUpload(model)));
+            }
+
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+            return ResponseEntity.status(500).body("Failed to upload chunk: " + e.getMessage());
+        }
     }
 }
