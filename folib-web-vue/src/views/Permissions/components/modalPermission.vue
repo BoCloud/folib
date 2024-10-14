@@ -44,7 +44,7 @@
                         <a-col :span="12">
                             <a-form-model-item prop="name" :label="$t('Permissions.Name')" :rules="[
                                 { required: true, message: $t('Permissions.EnterTheNameCreate'), trigger: 'blur' },
-                                { pattern: /^[0-9A-Za-z_-]+$/, message: $t('Permissions.EnterTheNamePattern') }]">
+                                { pattern: /^[0-9A-Za-z_|-]+$/, message: $t('Permissions.EnterTheNamePattern') }]">
                                 <a-input v-model="form.name" :placeholder="$t('Permissions.EnterTheNameCreate')"
                                     :disabled="isView || isEdit" :maxLength="100" />
                             </a-form-model-item>

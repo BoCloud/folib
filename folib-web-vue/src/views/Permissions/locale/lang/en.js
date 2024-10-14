@@ -17,7 +17,7 @@ export default {
     'UsersDesc': 'Select the users and their actions on the selected resources',
     'GroupsDesc': 'Select the groups and their actions on the selected resources',
     'EnterTheNameCreate': 'Enter a unique name',
-    'EnterTheNamePattern': 'Please enter uppercase and lowercase letters, _ or -',
+    'EnterTheNamePattern': 'Please enter uppercase and lowercase letters, _,| or -',
     'AddRepositories': 'Add Repositories',
     'AddBuilds': 'Add Builds',
     'AddReleaseBundles': 'Add Release Bundles',
