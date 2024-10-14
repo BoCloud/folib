@@ -198,3 +198,12 @@ export function getCrontaskByClass(params) {
     params: params
   })
 }
+
+export function uploadLicenseFile(data){
+  return axios({
+    url: '/api/ping/offlineActivate',
+    method: 'post',
+    headers: {"Content-type": "multipart/form-data",},
+    data: data
+  })
+}

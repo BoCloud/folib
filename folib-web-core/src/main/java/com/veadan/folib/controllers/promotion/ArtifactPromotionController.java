@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.config.PermissionCheck;
+import com.veadan.folib.configuration.Configuration;
+import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.ArtifactDispatch;
 import com.veadan.folib.domain.ArtifactParse;
@@ -136,6 +138,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
                                  @RequestParam(name = "fileType", required = false) String fileType) {
         String baseUrl = getBaseUrl();
         String token = securityComponent.getSecurityToken();
+
         return artifactPromotionService.upload(files, storageId, repositoryId, filePathMap, fileMetaDataMap, uuid, imageTag, fileType, baseUrl, token);
     }
 

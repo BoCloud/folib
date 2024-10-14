@@ -13,6 +13,7 @@ import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.DictService;
 import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.utils.ArtifactControllerHelper;
 import org.apache.commons.io.FilenameUtils;
@@ -264,5 +265,25 @@ public abstract class BaseArtifactController
         String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
         String bestMatchPattern = (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
         return new AntPathMatcher().extractPathWithinPattern(bestMatchPattern, path);
+    }
+
+    /**
+     * 用户制品上传过程
+     * 获取仓库id方法 如果是组合库且配置了默认库 获取的是配置的默认id 否则获取的为仓库id
+     * @param repository 仓库对象
+     * @return 仓库id
+     */
+    protected String ifIsGroupAndStoreToDefault(Repository repository){
+        if(RepositoryTypeEnum.GROUP.getType().equals(repository.getType())&&StringUtils.isNotBlank(repository.getGroupDefaultRepository())){
+            String defaultRepository = repository.getGroupDefaultRepository();
+            String[] split = defaultRepository.split(":");
+            if(split.length==2){
+                return split[1];
+            }else {
+                return repository.getId();
+            }
+        }else {
+            return repository.getId();
+        }
     }
 }

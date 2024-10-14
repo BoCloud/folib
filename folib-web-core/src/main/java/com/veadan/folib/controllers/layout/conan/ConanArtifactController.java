@@ -270,6 +270,7 @@ public class ConanArtifactController extends BaseArtifactController {
                                         @PathVariable("revisionId") String revisionId,
                                         @PathVariable("filePath") String filePath) throws IOException {
         String artifactPath = String.format("%s/%s/%s/%s/%s/export/%s", user, name, version, channel, revisionId, filePath);
+        repositoryId=ifIsGroupAndStoreToDefault(repository);
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
         InputStream inputStream = request.getInputStream();
         if (inputStream == null || inputStream.available() == 0) {
@@ -311,6 +312,7 @@ public class ConanArtifactController extends BaseArtifactController {
                                          @PathVariable("packageRevisionId") String packageRevisionId,
                                          @PathVariable("filePath") String filePath) throws IOException {
         String artifactPath = String.format("%s/%s/%s/%s/%s/package/%s/%s/%s", user, name, version, channel, revisionId, packageId, packageRevisionId, filePath);
+        repositoryId=ifIsGroupAndStoreToDefault(repository);
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
         InputStream inputStream = request.getInputStream();
         if (inputStream == null || inputStream.available() == 0) {
@@ -584,6 +586,7 @@ public class ConanArtifactController extends BaseArtifactController {
             @PathVariable("channel") String channel,
             @PathVariable("revisionId") String revisionId,
             @PathVariable("filePath") String filePath, HttpServletRequest request) throws Exception {
+        repositoryId=ifIsGroupAndStoreToDefault(repository);
         String artifactPath = String.format("%s/%s/%s/%s/%s/export/%s", user, name, version, channel, revisionId, filePath);
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
         InputStream inputStream = request.getInputStream();
@@ -624,6 +627,7 @@ public class ConanArtifactController extends BaseArtifactController {
             @PathVariable("packageId") String packageId,
             @PathVariable("packageRevisionId") String packageRevisionId,
             @PathVariable("filePath") String filePath, HttpServletRequest request) throws Exception {
+        repositoryId=ifIsGroupAndStoreToDefault(repository);
         String artifactPath = String.format("%s/%s/%s/%s/%s/package/%s/%s/%s", user, name, version, channel, revisionId, packageId, packageRevisionId, filePath);
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
         InputStream inputStream = request.getInputStream();

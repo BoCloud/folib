@@ -103,10 +103,10 @@ public class PypiArtifactController extends BaseArtifactController {
             @RequestParam(name = "author_email", required = false) String authorEmail,
             @RequestParam(name = "content", required = true) MultipartFile file,
             HttpServletRequest request) {
-
+        String repositoryId=ifIsGroupAndStoreToDefault(repository);
         logger.info("python package upload request for storageId -> [{}] , repositoryId -> [{}]",
                 repository.getStorage().getId(),
-                repository.getId());
+                repositoryId);
 
         try {
             if (!isValidAction(action)) {
@@ -133,7 +133,7 @@ public class PypiArtifactController extends BaseArtifactController {
                     .withVersion(version);
 
             return validateAndUploadPackage(pypiArtifactMetadata, file, repository.getStorage().getId(),
-                    repository.getId());
+                    repositoryId);
         } catch (Exception e) {
             logger.error("Failed to process pypi upload request for storageId -> [{}] , repositoryId -> [{}]",
                     repository.getStorage().getId(), repository.getId(), e);

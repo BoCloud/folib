@@ -58,6 +58,7 @@ export default {
     'Next': 'Next',
     'FillInInformation': 'OK, then fill in the basic information',
     'DockerType': 'You have selected the Docker repository type',
+    'LayoutType': 'You have selected the {layout} repository type',
     'DifferentProcess': 'The process for configuring different warehouse policies is different',
     'KeywordPrompt': 'Do not appear warehouse type keywords',
     'Strategy': 'Strategy',
