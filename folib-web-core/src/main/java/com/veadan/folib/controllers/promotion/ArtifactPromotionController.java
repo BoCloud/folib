@@ -408,6 +408,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
                 if(fileMetaDataMap!=null && !StrUtil.isBlankOrUndefined(fileMetaDataMap)){
                     model.setMetaData(JSONUtil.parseObj(fileMetaDataMap));
                 }
+                model.setPath(path);
                 model.setMergeId(fileMd5);
                 model.setOriginalFilename(originalFilename==null?fileName:originalFilename);
                 model.setChunkIndex(currentChunk);
