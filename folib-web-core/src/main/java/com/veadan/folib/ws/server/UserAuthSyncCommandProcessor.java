@@ -26,7 +26,6 @@ public class UserAuthSyncCommandProcessor extends CommandProcessor{
     @Override
     public String doExecute(WSMessageRequest wsMessageRequest, Session session) {
         UserAuthDTO date = (UserAuthDTO) wsMessageRequest.getDate();
-        log.debug("syncUserAuth date:{}", JSONObject.toJSON(date));
         SpringContextUtil.getBean(UserSyncService.class).syncUserAuth(date);
         return "ok";
     }

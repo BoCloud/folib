@@ -73,7 +73,6 @@ public class UserSyncServiceImpl implements UserSyncService
     @Transactional
     public void syncUserAuth(UserAuthDTO date) {
         isLicenseActive();
-        log.debug("syncUserAuth date:{}", JSONObject.toJSON(date));
         //更新节点用户信息
         List<FolibUser> users = date.getUsers();
         if (CollectionUtils.isNotEmpty(users)) {
