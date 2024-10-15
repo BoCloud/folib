@@ -1407,6 +1407,7 @@
                         </a-button>
                       </a-popconfirm>
                       <a-button type="link"
+                                v-if="!record.autoRegister"
                                 size="small"
                                 @click="artifactDispatchHandler(2, record)">
                         <svg width="16"
