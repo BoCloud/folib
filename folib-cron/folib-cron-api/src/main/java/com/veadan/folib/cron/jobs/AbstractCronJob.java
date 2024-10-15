@@ -78,7 +78,7 @@ public abstract class AbstractCronJob
 
 
         String lockName = jobKeyUuid.toString();
-        long waitTime = 3L, releaseTime = 8L;
+        long waitTime = 1L, releaseTime = 8L;
         logger.info("Wait for the lock [{}]", lockName);
         if (distributedLockComponent.lock(lockName, waitTime, TimeUnit.SECONDS, releaseTime, TimeUnit.HOURS)) {
             try {

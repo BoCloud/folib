@@ -58,6 +58,7 @@ export default {
     'DisplayValidationFile': 'Display the validation file',
     'OpenAllowsAnonymousAccess': 'Open allows anonymous access, anonymous users can access public libraries and structures, closed anonymous users must login to normal use.',
     'OpenDisplayVerificationFile': 'Open display verification file, the warehouse details page will show the verification file, closed the warehouse details page will not show the verification file.',
+    'GlobalS3BucketTip': 'Global S3 bucket, when the same S3 bucket is used globally, this parameter can be configured. Once set successfully, modification is prohibited.',
     'SaveOperation': 'Save operation',
     'saveButton': 'This save button will save the above modifications uniformly.',
     'Cancel1': 'Cancel',
@@ -446,4 +447,5 @@ export default {
     'ScheduledScan': 'Scheduled scanning',
     'TheLastScan': 'Last scan',
     'ArtifactScanType': 'Type',
+    'GlobalS3Bucket': 'Global S3 bucket',
 }

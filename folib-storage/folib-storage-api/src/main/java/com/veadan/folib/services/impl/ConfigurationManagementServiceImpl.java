@@ -2,7 +2,6 @@ package com.veadan.folib.services.impl;
 
 import com.beust.jcommander.internal.Sets;
 import com.veadan.folib.client.MutableRemoteRepositoryRetryArtifactDownloadConfiguration;
-import com.veadan.folib.cluster.SyncRepositoryEnum;
 import com.veadan.folib.configuration.*;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
@@ -30,7 +29,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -183,6 +181,10 @@ public class ConfigurationManagementServiceImpl
     public void setAdvancedConfiguration(MutableAdvancedConfiguration advancedConfiguration) throws IOException {
         modifyInLock(configuration ->
         {
+            String globalS3Bucket = configuration.getAdvancedConfiguration().getGlobalS3Bucket();
+            if (StringUtils.isNotBlank(globalS3Bucket)) {
+                advancedConfiguration.setGlobalS3Bucket(globalS3Bucket);
+            }
             configuration.setAdvancedConfiguration(advancedConfiguration);
         });
     }
@@ -218,6 +220,15 @@ public class ConfigurationManagementServiceImpl
         }
 //        checkUsersContainsAdmin(storageDto);
         modifyInLock(configuration -> configuration.addStorage(storageDto));
+    }
+
+    @Override
+    public void updateStorageBasedir(StorageDto storage) throws IOException {
+        StorageDto storageDto = configuration.getStorage(storage.getId());
+        if (StringUtils.isNotBlank(storage.getBasedir())) {
+            storageDto.setBasedir(storage.getBasedir());
+            modifyInLock(configuration -> configuration.addStorage(storageDto));
+        }
     }
 
     @Override
@@ -274,6 +285,20 @@ public class ConfigurationManagementServiceImpl
                         repository.getHttpConnectionPool().getAllocatedConnections());
             }
             clearCacheRepository(storageId, repository.getId());
+        });
+    }
+
+    @Override
+    public void setRepositoryBasedir(String storageId, RepositoryDto repository) throws IOException {
+        modifyInLock(configuration ->
+        {
+            final StorageDto storage = configuration.getStorage(storageId);
+            RepositoryDto repositoryDto = storage.getRepository(repository.getId());
+            if (StringUtils.isNotBlank(repository.getBasedir())) {
+                repositoryDto.setBasedir(repository.getBasedir());
+                storage.addRepository(repositoryDto);
+                clearCacheRepository(storageId, repositoryDto.getId());
+            }
         });
     }
 
@@ -865,7 +890,7 @@ public class ConfigurationManagementServiceImpl
             } catch (Exception e) {
                 log.error("Failed to save the repository {}!", repositoryId, e);
             }
-        }else {
+        } else {
             throw new IllegalArgumentException(String.format("storage %s not exist", storageId));
         }
     }

@@ -31,6 +31,15 @@ export function putUserDetial (user) {
     data: user
   })
 }
+
+export function saveUser (user) {
+  return axios({
+    url: '/api/users',
+    method: 'put',
+    data: user
+  })
+}
+
 export function getUsersCreateFields () {
   return axios({
     url: '/api/formData/userFields',

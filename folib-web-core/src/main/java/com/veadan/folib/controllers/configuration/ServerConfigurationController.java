@@ -258,6 +258,13 @@ public class ServerConfigurationController
         return getSuccessfulResponseEntity(SUCCESSFUL_SAVE_SERVER_SETTINGS, acceptHeader);
     }
 
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @GetMapping(value = "/resolveS3Bucket")
+    public ResponseEntity resolveS3Bucket() {
+        commonComponent.resolveS3Bucket();
+        return ResponseEntity.ok("success");
+    }
+
     private void validateServerSettingsForm(ServerSettingsForm form,
                                             BindingResult bindingResult) {
         if (!isProxyConfigurationFormEmpty(form.getProxyConfigurationForm())) {
