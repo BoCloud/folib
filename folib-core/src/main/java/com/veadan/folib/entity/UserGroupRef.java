@@ -42,7 +42,7 @@ public class UserGroupRef implements Serializable,Cloneable {
      @ApiModelProperty(name = "用户组id", notes = "")
      private Long userGroupId;
      @ApiModelProperty(name = "组名称", notes = "")
-     private transient String userGroupName;
+     private String userGroupName;
      /**
       * 角色id
       */
