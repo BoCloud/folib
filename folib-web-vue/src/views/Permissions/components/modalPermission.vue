@@ -552,7 +552,7 @@ export default {
         closeModal() {
             this.visible = false;
             this.selectedResources = [],
-                this.resetData;
+            this.resetData;
             this.form = {};
             this.selectedUserKeys = [];
             this.selectedGroupKeys = [];
@@ -561,6 +561,12 @@ export default {
             this.groupPermissions = {};
             this.selectedRepositoryKeys = [];
             this.selectedStorageKeys = [];
+            this.groupIndeterminate = false;
+            this.groupCheckAll = false;
+            this.selectedGroupPermissions = [];
+            this.indeterminate = false;
+            this.checkAll = false;
+            this.selectedUserPermissions = [];
             this.resetGroupData;
             this.activeTab = "1";
         },
