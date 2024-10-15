@@ -85,30 +85,26 @@ public class PrivilegeEventListener {
                 nodeDto.setWsClientOnline(session != null && session.isOpen());
             });
 
-            map.forEach((key, value) -> {
-                log.debug("key:{},value:{}", key, value);
-                Boolean isThisCluster = value.getIsThisCluster();
-                Boolean wsClientOnline = value.getWsClientOnline();
-                Boolean isSyncPrivilege = value.getIsSyncPrivilege();
-                String syncStrategy = value.getSyncStrategy();
-                String clusterNodeHost = value.getClusterNodeHost();
+            map.forEach((key, dispatchNodeDto) -> {
+                log.debug("key:{},dispatchNodeDto:{}", key, dispatchNodeDto);
+                Boolean isThisCluster = dispatchNodeDto.getIsThisCluster();
+                Boolean wsClientOnline = dispatchNodeDto.getWsClientOnline();
+                Boolean isSyncPrivilege = dispatchNodeDto.getIsSyncPrivilege();
+                String syncStrategy = dispatchNodeDto.getSyncStrategy();
+                String clusterNodeHost = dispatchNodeDto.getClusterNodeHost();
+                Boolean autoRegister = dispatchNodeDto.getAutoRegister();
 
                 log.info("isThisCluster:{},wsClientOnline:{},isSyncPrivilege:{},syncStrategy:{},clusterNodeHost:{}", isThisCluster, wsClientOnline, isSyncPrivilege, syncStrategy, clusterNodeHost);
 
                 if (!isThisCluster
                         && !Objects.equals(wsClientOnline, null) && wsClientOnline
                         && !Objects.equals(isSyncPrivilege, null) && isSyncPrivilege){
-                    if (SyncStrategyEnum.TARGET_TO_SOURCE.getValue().equalsIgnoreCase(syncStrategy)){
-                        //目标同步到源
-                        syncAuthTargetToSource(clusterNodeHost, privilegeEventTypeEnum, uuId);
-                    }  else if (SyncStrategyEnum.TWO_WAY_SYNC.getValue().equalsIgnoreCase(syncStrategy)){
-                        //目标同步到源
-                        syncAuthTargetToSource(clusterNodeHost, privilegeEventTypeEnum, uuId);
-                        //源同步到目标
-                        syncAuthSourceToTarget(value, privilegeEventTypeEnum, uuId);
+                    if (SyncStrategyEnum.TARGET_TO_SOURCE.getValue().equalsIgnoreCase(syncStrategy) && autoRegister){
+                        syncAuthSourceToTarget(dispatchNodeDto, privilegeEventTypeEnum, uuId);
+                    }  else if (SyncStrategyEnum.SOURCE_TO_TARGET.getValue().equalsIgnoreCase(syncStrategy) && !autoRegister){
+                        syncAuthSourceToTarget(dispatchNodeDto, privilegeEventTypeEnum, uuId);
                     } else {
-                        //源同步到目标
-                        syncAuthSourceToTarget(value, privilegeEventTypeEnum, uuId);
+                        syncAuthSourceToTarget(dispatchNodeDto, privilegeEventTypeEnum, uuId);
                     }
                 }
             });
