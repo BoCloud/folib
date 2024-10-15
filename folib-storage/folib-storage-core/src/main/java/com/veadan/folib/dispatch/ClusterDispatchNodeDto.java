@@ -72,4 +72,6 @@ public class ClusterDispatchNodeDto implements Serializable {
      * 是否同步权限
      */
     private Boolean isSyncPrivilege;
+
+    private String syncStrategy;
 }

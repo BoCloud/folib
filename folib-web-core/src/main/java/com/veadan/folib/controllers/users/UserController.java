@@ -112,14 +112,14 @@ public class UserController
     @GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, path = "/syncYamlData")
     @ResponseBody
     public ResponseEntity syncYamlData() {
+        //同步角色
+        folibRoleService.syncYamlAuthorizationConfig();
         //同步存储空间用户
         storageManagementService.syncYamlStorageUsers(configurationManagementService.getConfiguration().getStorages().values());
         //同步用户
         boolean result = ((RelationalDatabaseUserService) userService).syncUser();
-        //同步角色
-        folibRoleService.syncYamlAuthorizationConfig();
 
-         return ResponseEntity.ok(result);
+        return ResponseEntity.ok(result);
     }
 
     @ApiOperation(value = "user update ")
