@@ -1030,15 +1030,7 @@ export default {
             record.includes.splice(i, 1);
         },
 
-        // 用户
-        handleSearch() {
-            this.page = 1
-            this.getUsers()
-        },
-        handleChangeTable(pagination) {
-            if (pagination) this.page = pagination.current
-            this.getUsers()
-        },
+    
 
         handleUserTransferChange(nextTargetKeys, direction, moveKeys) {
             if (direction === 'right') {
@@ -1182,6 +1174,10 @@ export default {
                         this.allUsers.push({ key, title: key });
                     }
                 });
+                if(this.allUsers.length===this.selectedUserKeys.length&&this.userHasMore){
+                    this.userLoading = false;
+                    this.getUsers(true);
+                }
             }).catch(error => {
                 console.error('Error fetching users:', error);
             }).finally(() => {
@@ -1205,10 +1201,6 @@ export default {
         },
         handleFilter(inputValue, item) {
             return item.title.toLowerCase().indexOf(inputValue.toLowerCase()) !== -1;
-        },
-        handleLeftSearch(e) {
-            this.leftSearchValue = e.target.value;
-            this.getUsers();
         },
         onSelectChange(selectedRowKeys) {
             this.selectedRowKeys = selectedRowKeys;
@@ -1248,6 +1240,10 @@ export default {
                         this.allGroups.push({ key, title: key });
                     }
                 });
+                if(this.allGroups.length===this.selectedGroupKeys.length&&this.groupHasMore){
+                    this.groupLoading = false;
+                    this.getGroups(true);
+                }
             }).catch(error => {
                 console.error('Error fetching groups:', error);
             }).finally(() => {
