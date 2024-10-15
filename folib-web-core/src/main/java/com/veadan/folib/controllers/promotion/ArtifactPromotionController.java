@@ -183,7 +183,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
     }
 
     @PostMapping(value = "/artifactDispatch")
-    @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
+    @PermissionCheck(resourceKey = "ADMIN")
     public ResponseEntity artifactDispatch(@RequestBody @Validated ArtifactDispatch artifactDispatch, HttpServletRequest request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException("请求参数错误", bindingResult);

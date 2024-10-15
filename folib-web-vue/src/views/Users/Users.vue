@@ -291,7 +291,7 @@
 
 <script>
 
-import { getUsers, queryUser, getUserDetial, putUserDetial, getUsersCreateFields, delUser } from "@/api/users";
+import { getUsers, queryUser, getUserDetial, putUserDetial, saveUser, getUsersCreateFields, delUser } from "@/api/users";
 import { encrypt } from "@/utils/jsencrypt"
 import textOver from "@/components/Tools/textOver";
 import { getPermissionList } from "@/api/permissions";
@@ -352,6 +352,7 @@ export default ({
       userTotal: 0,
       currentUser: null,
       userNotEdit: true,
+      type: null,
       deleteVisible: false,
       willDelUserName: null,
       userPage: {
@@ -479,6 +480,7 @@ export default ({
       if (this.$refs.userForm) {
         this.$refs.userForm.resetFields()
       }
+      this.type = 2
     },
     userEditSaveHandle() {
       this.$refs.userForm.validate(valid => {
@@ -509,10 +511,35 @@ export default ({
           if (user.password) {
             user.password = encrypt(user.password)
           }
-          putUserDetial(user).then(res => {
-            this.userNotEdit = true
-            this.reload()
-          })
+          if (this.type == 1) {
+            saveUser(user).then(res => {
+              this.userNotEdit = true
+              this.type = null
+              this.reload()
+            }).catch((err) => {
+              let msg = err.response.data.message ? err.response.data.message : err.response.data
+              let errStatusArr = [200, 500, 403, 304, 401]
+              if (!errStatusArr.includes(err.response.status)) {
+                this.$notification.error({
+                  message: msg,
+                })
+              }
+            })
+          } else {
+            putUserDetial(user).then(res => {
+              this.userNotEdit = true
+              this.type = null
+              this.reload()
+            }).catch((err) => {
+              let msg = err.response.data.message ? err.response.data.message : err.response.data
+              let errStatusArr = [200, 500, 403, 304, 401]
+              if (!errStatusArr.includes(err.response.status)) {
+                this.$notification.error({
+                  message: msg,
+                })
+              }
+            })
+          }
         } else {
           return false
         }
@@ -537,6 +564,7 @@ export default ({
           this.$refs.userForm.resetFields()
         }
       })
+      this.type = 1
     },
     userEditCancelHandle() {
       this.userNotEdit = true

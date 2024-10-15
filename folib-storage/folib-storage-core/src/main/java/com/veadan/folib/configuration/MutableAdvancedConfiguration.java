@@ -20,4 +20,6 @@ public class MutableAdvancedConfiguration implements Serializable {
     private boolean allowAnonymous = true;
 
     private boolean showChecksum = false;
+
+    private String globalS3Bucket;
 }

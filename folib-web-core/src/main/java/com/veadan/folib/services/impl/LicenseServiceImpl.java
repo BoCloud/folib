@@ -79,7 +79,7 @@ public class LicenseServiceImpl implements LicenseService {
             }
         }
         example.selectProperties("id", "licenseId", "licenseUrl");
-        example.setOrderByClause("create_time");
+        example.setOrderByClause("id");
         return licenseMapper.selectByExample(example);
     }
 
@@ -191,7 +191,7 @@ public class LicenseServiceImpl implements LicenseService {
             searchKeyword = "%" + searchKeyword + "%";
             criteria.andLike("licenseName", searchKeyword);
         }
-        example.setOrderByClause("create_time");
+        example.setOrderByClause("id");
         Page<Object> result = PageHelper.startPage(page, limit);
         List<License> licenseList = licenseMapper.selectByExample(example);
         return new TableResultResponse<LicenseTableForm>(result.getTotal(), Optional.ofNullable(licenseList).orElse(Collections.emptyList()).stream().map(license -> {

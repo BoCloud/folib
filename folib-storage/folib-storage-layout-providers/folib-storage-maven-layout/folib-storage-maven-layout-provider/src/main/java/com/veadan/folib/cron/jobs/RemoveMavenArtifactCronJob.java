@@ -8,7 +8,6 @@ import com.veadan.folib.providers.layout.Maven2LayoutProvider;
 import com.veadan.folib.repository.MavenRepositoryFeatures;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.storage.repository.RepositoryPolicyEnum;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 
 import javax.inject.Inject;
@@ -20,7 +19,7 @@ import java.util.Set;
 /**
  * @author Kate Novik.
  */
-public class RemoveTimestampedMavenSnapshotCronJob
+public class RemoveMavenArtifactCronJob
         extends JavaCronJob {
 
     private static final String PROPERTY_STORAGE_ID = "storageId";
@@ -41,9 +40,7 @@ public class RemoveTimestampedMavenSnapshotCronJob
             new CronJobStringTypeField(
                     new CronJobOptionalField(new CronJobAliasNamedField(new CronJobNamedField(PROPERTY_BASE_PATH), "基础路径"))),
             new CronJobIntegerTypeField(
-                    new CronJobOptionalField(new CronJobAliasNamedField(new CronJobNamedField(PROPERTY_NUMBER_TO_KEEP), "保留个数"))),
-            new CronJobIntegerTypeField(
-                    new CronJobOptionalField(new CronJobAliasNamedField(new CronJobNamedField(PROPERTY_KEEP_PERIOD), "保留天数"))));
+                    new CronJobOptionalField(new CronJobAliasNamedField(new CronJobNamedField(PROPERTY_NUMBER_TO_KEEP), "保留版本"))));
 
     @Inject
     private MavenRepositoryFeatures mavenRepositoryFeatures;
@@ -71,12 +68,12 @@ public class RemoveTimestampedMavenSnapshotCronJob
         if (storageId == null) {
             Map<String, Storage> storages = getStorages();
             for (String storage : storages.keySet()) {
-                removeTimestampedSnapshotArtifacts(storage, numberToKeep, keepPeriod);
+                removeMavenArtifacts(storage, numberToKeep, keepPeriod);
             }
         } else if (repositoryId == null) {
-            removeTimestampedSnapshotArtifacts(storageId, numberToKeep, keepPeriod);
+            removeMavenArtifacts(storageId, numberToKeep, keepPeriod);
         } else {
-            mavenRepositoryFeatures.removeTimestampedSnapshots(storageId,
+            mavenRepositoryFeatures.removeMavenArtifact(storageId,
                     repositoryId,
                     basePath,
                     numberToKeep,
@@ -87,15 +84,15 @@ public class RemoveTimestampedMavenSnapshotCronJob
     @Override
     public CronJobDefinition getCronJobDefinition() {
         return CronJobDefinition.newBuilder()
-                .jobClass(RemoveTimestampedMavenSnapshotCronJob.class.getName())
-                .name("定时删除SNAPSHOT的Maven制品").scope(MAVEN)
-                .description("定时删除SNAPSHOT，带有时间日期快照的制品包")
+                .jobClass(RemoveMavenArtifactCronJob.class.getName())
+                .name("定时删除Maven制品任务").scope(MAVEN)
+                .description("该任务用于按照版本数量清理Maven制品包")
                 .fields(FIELDS)
                 .build();
     }
 
     /**
-     * To remove timestamped snapshot artifacts in repositories
+     * To remove maven artifacts in repositories
      *
      * @param storageId    path of storage
      * @param numberToKeep the number of artifacts to keep
@@ -104,9 +101,9 @@ public class RemoveTimestampedMavenSnapshotCronJob
      * @throws XmlPullParserException
      * @throws IOException
      */
-    private void removeTimestampedSnapshotArtifacts(String storageId,
-                                                    int numberToKeep,
-                                                    int keepPeriod)
+    private void removeMavenArtifacts(String storageId,
+                                      int numberToKeep,
+                                      int keepPeriod)
             throws NoSuchAlgorithmException,
             XmlPullParserException,
             IOException {
@@ -114,9 +111,9 @@ public class RemoveTimestampedMavenSnapshotCronJob
 
         repositories.forEach((repositoryId, repository) ->
         {
-            if (Maven2LayoutProvider.ALIAS.equals(repository.getLayout()) && repository.getPolicy().equals(RepositoryPolicyEnum.SNAPSHOT.getPolicy()) || repository.getPolicy().equals(RepositoryPolicyEnum.MIXED.getPolicy())) {
+            if (Maven2LayoutProvider.ALIAS.equals(repository.getLayout())) {
                 try {
-                    mavenRepositoryFeatures.removeTimestampedSnapshots(storageId,
+                    mavenRepositoryFeatures.removeMavenArtifact(storageId,
                             repositoryId,
                             null,
                             numberToKeep,

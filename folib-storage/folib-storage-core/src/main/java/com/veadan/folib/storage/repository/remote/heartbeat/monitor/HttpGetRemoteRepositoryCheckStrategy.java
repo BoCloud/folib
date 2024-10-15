@@ -2,6 +2,7 @@ package com.veadan.folib.storage.repository.remote.heartbeat.monitor;
 
 import com.google.common.collect.Lists;
 import com.veadan.folib.components.DistributedCacheComponent;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
@@ -42,9 +43,9 @@ class HttpGetRemoteRepositoryCheckStrategy
             List<Integer> allowAccessList = getAllowAccessList();
             Client client = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
             //连接建立超时时间
-            client.property(ClientProperties.CONNECT_TIMEOUT, 10000);
+            client.property(ClientProperties.CONNECT_TIMEOUT, getConnectTimeout());
             //读取内容超时时间
-            client.property(ClientProperties.READ_TIMEOUT, 10000);
+            client.property(ClientProperties.READ_TIMEOUT, getReadTimeout());
             WebTarget target = client.target(remoteRepositoryUrl);
             Invocation.Builder builder = target.request();
             Response response = builder.head();
@@ -73,4 +74,25 @@ class HttpGetRemoteRepositoryCheckStrategy
         }
         return allowAccessList;
     }
+
+    private Integer getConnectTimeout() {
+        int connectTimeout = GlobalConstants.DEFAULT_CONTENT_TIME;
+        String key = "REMOTE_REPOSITORY_CONNECT_TIMEOUT";
+        String value = distributedCacheComponent.get(key);
+        if (StringUtils.isNotBlank(value)) {
+            connectTimeout = Integer.parseInt(value);
+        }
+        return connectTimeout * 1000;
+    }
+
+    private Integer getReadTimeout() {
+        int readTimeout = GlobalConstants.DEFAULT_READ_TIME;
+        String key = "REMOTE_REPOSITORY_READ_TIMEOUT";
+        String value = distributedCacheComponent.get(key);
+        if (StringUtils.isNotBlank(value)) {
+            readTimeout = Integer.parseInt(value);
+        }
+        return readTimeout * 1000;
+    }
+
 }
