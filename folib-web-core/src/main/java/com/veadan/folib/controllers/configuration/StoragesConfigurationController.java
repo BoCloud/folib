@@ -320,7 +320,7 @@ public class StoragesConfigurationController
             ).collect(Collectors.toList());
         }
         List<Storage> pageStorages = storagesList.stream().skip((long) (page - 1) * limit).limit(limit).collect(Collectors.toList());
-        return new TableResultResponse<>(pageStorages.size(), pageStorages);
+        return new TableResultResponse<>(storagesList.size(), pageStorages);
 
     }
 

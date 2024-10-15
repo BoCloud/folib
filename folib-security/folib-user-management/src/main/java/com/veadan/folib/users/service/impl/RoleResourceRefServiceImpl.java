@@ -416,7 +416,9 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
              });
         }
 
-        saveBath(roleResourceRefs);
+        if (CollectionUtils.isNotEmpty(roleResourceRefs)) {
+            saveBath(roleResourceRefs);
+        }
     }
 
     @Override

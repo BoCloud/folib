@@ -23,6 +23,7 @@ import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.NpmPacketSuffix;
 import com.veadan.folib.enums.NpmSubLayout;
 import com.veadan.folib.enums.UploadTypeEnum;
+import com.veadan.folib.metadata.indexer.RpmRepoIndexer;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -34,7 +35,9 @@ import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ArtifactMetadataService;
 import com.veadan.folib.services.DictService;
 import com.veadan.folib.services.RepositoryManagementService;
+import com.veadan.folib.services.impl.FileStreamMultipartFile;
 import com.veadan.folib.storage.metadata.MetadataHelper;
+import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.util.MessageDigestUtils;
 import com.veadan.folib.utils.DockerUtils;
@@ -49,6 +52,8 @@ import org.apache.maven.artifact.repository.metadata.Snapshot;
 import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.apache.maven.index.artifact.Gav;
 import org.apache.maven.model.Model;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
@@ -233,6 +238,8 @@ public class ArtifactUploadTask implements Callable<String> {
                 handlerPubLayoutUpload(is, layout, repositoryPath);
             } else if (DockerLayoutProvider.ALIAS.equals(layout) && StringUtils.isNotBlank(fileType)) {
                 handlerDockerUploadProcess(this.storageId, this.repositoryId, this.imageTag, fileType, this.file, this.baseUrl);
+            }else if(RpmLayoutProvider.ALIAS.equals(layout)){
+                handlerRpmLayoutUpload(this.storageId, this.repositoryId,this.file);
             } else {
                 promotionUtil.setMetaData(repositoryPath, metaData);
                 artifactManagementService.store(repositoryPath, is);
@@ -795,7 +802,12 @@ public class ArtifactUploadTask implements Callable<String> {
             throw new IllegalArgumentException(msg);
         }
         RepositoryPath dockerSubsidiaryRepositoryPath = DockerUtils.getDockerSubsidiaryPath(dockerTagRepositoryPath);
-        String fileOriginalName = (((CommonsMultipartFile) multipartFile).getFileItem()).getName();
+        String fileOriginalName = null;
+        if(multipartFile instanceof FileStreamMultipartFile){
+            fileOriginalName = ((FileStreamMultipartFile) multipartFile).getOriginalFilename();
+        }else {
+             fileOriginalName = (((CommonsMultipartFile) multipartFile).getFileItem()).getName();
+        }
         RepositoryPath dockerSubsidiaryFileRepositoryPath = dockerSubsidiaryRepositoryPath.resolve(fileOriginalName);
         String subsidiaryFilePath = RepositoryFiles.relativizePath(dockerSubsidiaryFileRepositoryPath);
         log.error("Docker upload subsidiary file uuid [{}] storageId [{}] repositoryId [{}] artifactPath [{}]", uuid, storageId, repositoryId, subsidiaryFilePath);
@@ -820,7 +832,7 @@ public class ArtifactUploadTask implements Callable<String> {
             tag = url.replaceAll("^" + prefix2, "");
         }
         Path tempDirectory =null;
-        try {
+        try (InputStream inputStream = multipartFile.getInputStream()) {
             String token = this.token;
             String uuid = UUID.randomUUID().toString();
             String TEMP_UPLOAD_DIR = String.join("/", tempPath, uuid);
@@ -829,7 +841,7 @@ public class ArtifactUploadTask implements Callable<String> {
             tempDirectory = Files.createDirectory(Path.of(TEMP_UPLOAD_DIR));
             Path localPath = Paths.get(String.join("/", tempDirectory.toString(), fileName));
 
-            Files.copy(multipartFile.getInputStream(), localPath);
+            Files.copy(inputStream, localPath);
 
             Path localPath2 = DockerParsePacketsUtil.parsePackets(localPath, tempDirectory);
             Jib.from(TarImage.at(localPath2))
@@ -842,13 +854,34 @@ public class ArtifactUploadTask implements Callable<String> {
 
         } catch (Exception e) {
             log.error("docker upload error uuid: {} ,storageId:{} ,repositoryId:{} ,tag:{} error: {}", uuid, storageId, repositoryId, tag, ExceptionUtils.getStackTrace(e));
-        }finally {
-            if(tempDirectory!=null){
+        } finally {
+            if (tempDirectory != null) {
                 Files.walk(tempDirectory)
                         .sorted(Comparator.reverseOrder())
                         .map(Path::toFile)
                         .forEach(File::delete);
             }
+        }
+    }
+
+    private void handlerRpmLayoutUpload(final String storageId, final String repositoryId,final MultipartFile multipartFile){
+
+        try {
+            String filename = multipartFile.getOriginalFilename();
+            String rpmPath = "Packages/" + filename;
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, rpmPath);
+            try (InputStream is = multipartFile.getInputStream()) {
+                artifactManagementService.store(repositoryPath, is);
+            }
+            RepositoryPath repoPath = repositoryPathResolver.resolve(storageId, repositoryId, "repodata");
+            RpmRepoIndexer rpmRepoIndexer = new RpmRepoIndexer(repositoryPathResolver, artifactManagementService, tempPath);
+            if (!Files.exists(repoPath)) {
+                rpmRepoIndexer.indexWriter(storageId, repositoryId);
+            } else {
+                rpmRepoIndexer.indexWriter(storageId, repositoryId);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
         }
     }
 

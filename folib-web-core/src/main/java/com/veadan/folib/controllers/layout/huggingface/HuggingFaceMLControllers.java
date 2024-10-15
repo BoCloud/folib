@@ -1429,7 +1429,10 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
         if (!attributes.isEmpty()) {
             log.debug("Setting attributes {} for repo {} model {} revision {} organization {}", attributes, repositoryId, modelName, revision, organization);
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, leadFilePath);
-            artifactManagementService.validateAndStore(repositoryPath, new ByteArrayInputStream(MlModelUtils.createObjectMapper().enable(SerializationFeature.INDENT_OUTPUT).writeValueAsString(dataToSerialize).getBytes()));
+            try (ByteArrayInputStream is = new ByteArrayInputStream(MlModelUtils.createObjectMapper().enable(SerializationFeature.INDENT_OUTPUT).writeValueAsString(dataToSerialize).getBytes())) {
+                artifactManagementService.validateAndStore(repositoryPath, is);
+            }
+
         }
     }
 

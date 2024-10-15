@@ -12,7 +12,7 @@
                     prop="name"
                     :rules="[
                         { required: true, message: $t('Permissions.EnterTheNameCreate'), trigger: 'blur' },
-                        { pattern: /^[0-9A-Za-z_-]+$/, message: $t('Permissions.EnterTheNamePattern') }
+                        { pattern: /^[0-9A-Za-z_|-]+$/, message: $t('Permissions.EnterTheNamePattern') }
                     ]"
                 >
                     <a-input

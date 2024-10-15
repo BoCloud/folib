@@ -79,6 +79,10 @@ public class RpmRepoIndexer {
     public void indexWriter(Repository repository) throws Exception {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
+        indexWriter( storageId,  repositoryId);
+    }
+    public void indexWriter(final String storageId, final String repositoryId) throws Exception {
+
         RootRepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
         String temp = String.join("/", tempPath, UUID.randomUUID().toString());
         Files.createDirectories(Path.of(temp));
@@ -153,11 +157,11 @@ public class RpmRepoIndexer {
         //RepositoryPath primaryPath = repositoryPathResolver.resolve(repository, String.join("/", "repodata", primaryXmlGzPath.getFileName().toString()));
         //RepositoryPath otherPath = repositoryPathResolver.resolve(repository, String.join("/", "repodata", otherXmlGzPath.getFileName().toString()));
 
-        RepositoryPath primaryPath = repositoryPathResolver.resolve(repository,String.join("/", "repodata", String.join("-", primaryXmlSha, primaryXmlGz)));
-        RepositoryPath otherPath = repositoryPathResolver.resolve(repository, String.join("/", "repodata", String.join("-", otherXmlSha, otherXmlGz)));
+        RepositoryPath primaryPath = repositoryPathResolver.resolve(storageId,  repositoryId,String.join("/", "repodata", String.join("-", primaryXmlSha, primaryXmlGz)));
+        RepositoryPath otherPath = repositoryPathResolver.resolve(storageId,  repositoryId, String.join("/", "repodata", String.join("-", otherXmlSha, otherXmlGz)));
 
 
-        RepositoryPath repomdPath = repositoryPathResolver.resolve(repository, String.join("/", "repodata", repomdXml));
+        RepositoryPath repomdPath = repositoryPathResolver.resolve(storageId,  repositoryId, String.join("/", "repodata", repomdXml));
         artifactManagementService.validateAndStore(primaryPath, primaryXmlGzPath);
         artifactManagementService.validateAndStore(otherPath, otherXmlGzPath);
         artifactManagementService.validateAndStore(repomdPath, repomdXmlPath);

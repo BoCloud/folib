@@ -1,8 +1,10 @@
 package com.veadan.folib.services.impl;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.IORuntimeException;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.lang.UUID;
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
@@ -14,20 +16,19 @@ import com.veadan.folib.components.promotion.ArtifactPromotionProviderRegistry;
 import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
 import com.veadan.folib.constant.GlobalConstants;
+import com.veadan.folib.controllers.promotion.ArtifactPromotionController;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.*;
 import com.veadan.folib.entity.ArtifactSyncRecord;
 import com.veadan.folib.entity.Dict;
-import com.veadan.folib.enums.ArtifactSyncRecordOpsTypeEnum;
-import com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum;
-import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
-import com.veadan.folib.enums.BusinessCodeEnum;
+import com.veadan.folib.enums.*;
 import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
 import com.veadan.folib.mapper.ArtifactSyncSlaveRecordMapper;
 import com.veadan.folib.model.request.ArtifactPromotionNodeOptionCallbackReq;
 import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
 import com.veadan.folib.model.request.ArtifactSliceUploadReq;
+import com.veadan.folib.model.request.ArtifactSliceUploadWebReq;
 import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
 import com.veadan.folib.model.response.ArtifactSliceUploadInfoRes;
 import com.veadan.folib.promotion.ArtifactUploadTask;
@@ -42,6 +43,7 @@ import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationServic
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.MessageDigestUtils;
 import com.veadan.folib.utils.FileUtils;
 import com.veadan.folib.utils.PropertiesUtils;
@@ -59,6 +61,7 @@ import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -74,6 +77,8 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
@@ -96,6 +101,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static com.veadan.folib.utils.UrlUtils.parsePath;
 
@@ -184,6 +190,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     private FolibWsRunManageV2 folibWsRunManageV2;
     @Inject
     private ArtifactSyncSlaveRecordMapper artifactSyncSlaveRecordMapper;
+
+    @Inject
+    private ArtifactWebService artifactWebService;
 
     @Override
     public ResponseEntity copy(ArtifactPromotion artifactPromotion) {
@@ -1529,5 +1538,133 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         artifactSyncSlaveRecordMapper.deleteBySyncNo(syncNo);
         artifactSyncRecordMapper.delete(artifactSyncRecord);
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * web切片上传
+     *
+     * @param model
+     * @return
+     */
+    @Override
+    public Boolean webSliceUpload(ArtifactSliceUploadWebReq model) {
+        final String storageId = model.getStorageId();
+        final String repositoryId = model.getRepositoryId();
+        final String path = model.getPath();
+        final MultipartFile file = model.getFile();
+        final String mergeId = model.getMergeId();
+        final Integer chunkNo = model.getChunkIndex();
+        final Integer chunkNoMax = model.getChunkIndexMax();
+        final String originFileMd5 = model.getOriginFileMd5();
+        final String sliceMd5 = model.getSliceMd5();
+        final Map<String, Object> metaData = Optional.ofNullable(model.getMetaData()).orElse(Collections.emptyMap());
+        final String metaDataJsonStr = JSON.toJSONString(metaData);
+
+        // 临时存储目录
+        final String artifactFileSliceUploadRootFolderPathStr = String.format("%s/artifactSliceUpload/%s/%s/%s", StringUtils.chomp(tempPath, "/"), storageId, repositoryId, mergeId);
+        final String artifactFileSliceUploadFilePathStr = String.format("%s/chunkFile_%s", artifactFileSliceUploadRootFolderPathStr, chunkNo);
+        final File artifactFileSliceUploadFile = new File(artifactFileSliceUploadFilePathStr);
+        boolean allSliceFileUploadCompleted = false;
+
+        try {
+
+            // 记录已上传的切片状态
+            final JSONObject sliceUploadStatusJSONObj = this.getSliceUploadStatusJSONObj(artifactFileSliceUploadRootFolderPathStr);
+
+            // 检查当前切片是否已经上传，如果已上传则跳过
+            if (sliceUploadStatusJSONObj.containsKey(String.valueOf(chunkNo)) && (Boolean) sliceUploadStatusJSONObj.get(String.valueOf(chunkNo))) {
+                log.info("Chunk {} already uploaded.", chunkNo);
+                return true;
+            }
+
+            // 确保文件路径存在
+            if (!FileUtil.exist(artifactFileSliceUploadFile)) {
+                // 创建空文件
+                FileUtil.touch(artifactFileSliceUploadFile);
+            }
+
+            // 保存文件分片
+            try (final InputStream inputStream = file.getInputStream();
+                 final FileOutputStream fileOutputStream = new FileOutputStream(artifactFileSliceUploadFile)) {
+                IoUtil.copy(inputStream, fileOutputStream);
+                // 状态写入
+                this.writeSliceUploadStatus(artifactFileSliceUploadRootFolderPathStr, chunkNo, true);
+            } catch (IOException e) {
+                log.info("切片文件转存失败", e);
+                // 状态写入
+                this.writeSliceUploadStatus(artifactFileSliceUploadRootFolderPathStr, chunkNo, false);
+                throw new BusinessException(BusinessCodeEnum.ARTIFACT_SLICE_UPLOAD_CHUNK_FILE_SAVE_FAILED);
+            }
+
+            // 检查所有切片是否都已上传完成
+            final JSONObject updatedSliceUploadStatusJSONObj = this.getSliceUploadStatusJSONObj(artifactFileSliceUploadRootFolderPathStr);
+            // 通过判断上传完成的数量与最大切片块的数量确定是否所有切片文件都已上传完成
+            allSliceFileUploadCompleted = chunkNoMax == updatedSliceUploadStatusJSONObj.size();
+
+            if (allSliceFileUploadCompleted) {
+                // 校验每个切片的上传状态
+                for (int i = 1; i <= chunkNoMax; i++) {
+                    if (!(Boolean) updatedSliceUploadStatusJSONObj.get(String.valueOf(i))) {
+                        throw new BusinessException(BusinessCodeEnum.ARTIFACT_SLICE_UPLOAD_CHUNK_FILE_UPLOAD_FAILED, String.valueOf(i));
+                    }
+                }
+
+                // 进行合并操作
+                final List<String> sliceFilePathList = IntStream.range(1, chunkNoMax + 1)
+                        .mapToObj(i -> String.format("%s/chunkFile_%s", artifactFileSliceUploadRootFolderPathStr, i))
+                        .map(p -> new File(p).getPath())
+                        .collect(Collectors.toList());
+
+                final String fileName = model.getFileName();
+                final String mergeFilePath = String.format("%s/merge/%s", artifactFileSliceUploadRootFolderPathStr, fileName);
+
+                final boolean mergeResult = FileUtils.mergeFiles(mergeFilePath, sliceFilePathList);
+                if (!mergeResult) {
+                    throw new BusinessException(BusinessCodeEnum.ARTIFACT_SLICE_UPLOAD_CHUNK_FILE_MERGE_FAILED);
+                }
+                final String uploadArtifactFileMd5 = MessageDigestUtils.calculateChecksum(new File(mergeFilePath).toPath(), MessageDigestAlgorithms.MD5);
+                // 校验MD5
+                if (!originFileMd5.equals(uploadArtifactFileMd5)) {
+                    throw new BusinessException(String.format("%s , originFileMd5:%s , uploadArtifactFileMd5:%s", BusinessCodeEnum.ARTIFACT_SLICE_UPLOAD_MD5_CHECK_FAILED.getMessage(), originFileMd5, uploadArtifactFileMd5));
+                }
+
+                // 转存合并文件到Folib
+///                artifactManagementService.store(artifactFilePath, Files.newInputStream(Path.of(mergeFilePath)));
+
+                FileStreamMultipartFile fileStreamMultipartFile = new FileStreamMultipartFile(new File(mergeFilePath), fileName, model.getOriginalFilename(), null);
+
+                if (model.isUnzip()) {
+                    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                    SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
+                    String filePath =  StrUtil.isBlankOrUndefined(path) ? "" : path;
+                    // 调用处理文件上传的方法
+                    artifactWebService.store(userDetails.getUsername(), storageId, repositoryId, filePath, UUID.randomUUID().toString(), fileStreamMultipartFile);
+                } else {
+                    String filePath =  StrUtil.isBlankOrUndefined(path) ? fileName : path.endsWith("/") ? String.join("", path, fileName) : String.join("/", path, fileName);
+                    // 兼容原来上传逻辑
+                    final ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repositoryId, fileStreamMultipartFile,
+                            repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, layoutProviderRegistry, artifactMetadataService,
+                            artifactRepository, mavenRepositoryFeatures, tempPath, filePath, metaDataJsonStr, null, null, model.getImageTag(), model.getFileType(), model.getBaseUrl(), model.getToken());
+                    final String result = artifactUploadTask.call();
+                    if (StringUtils.isNotBlank(result)) {
+                        throw new BusinessException(result);
+                    }
+                }
+
+            }
+        } catch (Exception e) {
+            log.error("切片上传失败", e);
+            throw new BusinessException(e.getMessage());
+        } finally {
+            if (allSliceFileUploadCompleted) {
+                try {
+                    FileUtil.del(new File(artifactFileSliceUploadRootFolderPathStr));
+                } catch (IORuntimeException e) {
+                   log.error("删除临时文件 [{}] 失败 [{}]", artifactFileSliceUploadRootFolderPathStr, ExceptionUtils.getStackTrace(e));
+                }
+            }
+        }
+
+        return true;
     }
 }

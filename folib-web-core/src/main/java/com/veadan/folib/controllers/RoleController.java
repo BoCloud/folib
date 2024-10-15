@@ -236,21 +236,14 @@ public class RoleController extends BaseController {
     @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping(value = "/queryRole", produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    public TableResultResponse<FolibRoleDTO> queryUser(@RequestParam(name = "page", required = false) Integer page,
-                                                        @RequestParam(name = "limit", required = false) Integer limit,
+    public TableResultResponse<FolibRoleDTO> queryUser(@RequestParam(name = "page", required = false ,defaultValue ="1") Integer page,
+                                                        @RequestParam(name = "limit", required = false,defaultValue = "10") Integer limit,
                                                        @RequestParam(name = "storageId", required = false) String storageId,
                                                        @RequestParam(name = "repositoryId", required = false) String repositoryId,
                                                        @RequestParam(name = "path", required = false) String path,
                                                         @RequestParam(name = "name", required = false) String name,
                                                        @RequestParam(name = "matchRoleName", required = false) String matchName,
                                                         @RequestParam(name = "isDefault", required = false) String isDefault) {
-        if (Objects.isNull(page) || page < 1) {
-            page = 1;
-        }
-        if (Objects.isNull(limit)) {
-            limit = 10;
-        }
-
         PageRequest pageRequest = PageRequest.of(page, limit);
         FolibRole folibRole = FolibRole.builder().build();
         folibRole.setEnName(name);

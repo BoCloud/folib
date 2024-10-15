@@ -144,15 +144,23 @@ public class FileUtils {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                     throws IOException {
-                Files.delete(file);
-                return super.visitFile(file, attrs);
+                try {
+                    Files.delete(file);
+                } catch (IOException e) {
+                    logger.error("Failed to delete file: " + file + " - " + e.getMessage());
+                }
+                return FileVisitResult.CONTINUE;
             }
 
             @Override
             public FileVisitResult postVisitDirectory(Path dir, IOException exc)
                     throws IOException {
-                Files.delete(dir);
-                return super.postVisitDirectory(dir, exc);
+                try {
+                    Files.delete(dir);
+                } catch (IOException e) {
+                    logger.error("Failed to delete directory: " + dir + " - " + e.getMessage());
+                }
+                return FileVisitResult.CONTINUE;
             }
         });
     }

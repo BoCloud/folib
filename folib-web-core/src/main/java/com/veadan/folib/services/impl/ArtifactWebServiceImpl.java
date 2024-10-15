@@ -877,7 +877,13 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         File parentFile = new File(parentPath);
         StatusInfo statusInfo = StatusInfo.builder().total(0).success(0).fail(0).build();
         try (InputStream inputStream = file.getInputStream()) {
-            String fileOriginalName = ((CommonsMultipartFile) file).getFileItem().getName();
+            String fileOriginalName =null;
+            if(file instanceof FileStreamMultipartFile){
+                fileOriginalName = ((FileStreamMultipartFile) file).getOriginalFilename();
+            }else if(file instanceof CommonsMultipartFile){
+                fileOriginalName = ((CommonsMultipartFile) file).getFileItem().getName();
+            }
+
             String tempPath = parentPath + File.separator + fileOriginalName;
             File tempFile = new File(tempPath);
             FileUtil.writeFromStream(inputStream, tempFile);

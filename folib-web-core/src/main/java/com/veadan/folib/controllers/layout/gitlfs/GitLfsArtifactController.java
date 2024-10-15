@@ -34,6 +34,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -114,9 +115,9 @@ public class GitLfsArtifactController extends BaseArtifactController {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
 
-        try {
+        try (InputStream is =  request.getInputStream()){
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
-            artifactManagementService.validateAndStore(repositoryPath, request.getInputStream());
+            artifactManagementService.validateAndStore(repositoryPath, is);
 
             return ResponseEntity.ok("The artifact was deployed successfully.");
         } catch (Exception e) {
