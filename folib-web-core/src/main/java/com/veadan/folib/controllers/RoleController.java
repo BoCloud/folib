@@ -318,10 +318,9 @@ public class RoleController extends BaseController {
                         syncAuthSourceToTarget(dispatchNodeDto);
                     }  else if (SyncStrategyEnum.SOURCE_TO_TARGET.getValue().equalsIgnoreCase(syncStrategy) && !autoRegister){
                         syncAuthSourceToTarget(dispatchNodeDto);
-                    } else {
+                    } else if (SyncStrategyEnum.TWO_WAY_SYNC.getValue().equalsIgnoreCase(syncStrategy)){
                         syncAuthSourceToTarget(dispatchNodeDto);
                     }
-                    syncAuthSourceToTarget(dispatchNodeDto);
                 }
             }
         });
