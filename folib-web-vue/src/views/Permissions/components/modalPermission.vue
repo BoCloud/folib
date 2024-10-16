@@ -123,10 +123,10 @@
                                 <div class="permissions-checkbox-container">
                                     <div class="permission-title">
                                         <a-checkbox :indeterminate="indeterminate" :checked="checkAll"
-                                            :disabled="isView || isAdmin" @change="onCheckAllChange">
+                                            :disabled="isView || isAdmin ||isStorageAdmin" @change="onCheckAllChange">
                                             {{ $t('Permissions.SelectedPermissions') }}
                                         </a-checkbox>
-                                    </div>
+                                 </div>
                                     <a-checkbox-group v-model="selectedUserPermissions" @change="handleUserPermissionChange"
                                         style="display: flex; flex-direction: column;">
                                         <a-checkbox v-for="option in permissionOptions" :key="option.value"
@@ -138,7 +138,7 @@
                             </a-col>
                         </a-row>
                     </a-tab-pane>
-                    <a-tab-pane key="3" :tab="$t('Permissions.Groups')" :disabled="isAnonymous">
+                    <a-tab-pane key="3" :tab="$t('Permissions.Groups')" :disabled="isAnonymous||isStorageAdmin">
                         <a-row>
                             <a-col :span="17">
                                 <a-transfer :data-source="allGroups" :target-keys="selectedGroupKeys"
@@ -216,7 +216,7 @@
                 selectedRowKeys: selectedStorageKeys,
                 onChange: onStorageSelectChange,
                 type: 'checkbox'
-            }" :pagination="{ pageSize: 10, total: storageTotal }" @change="handleTableChange"
+            }" :pagination="{ pageSize: 10, total: storageTotal,current:storagePage}" @change="handleTableChange"
                 :expandedRowKeys="expandedRowKeys" @expand="onExpand" :rowKey="(record) => record.id"
                 :expandRowByClick="true">
                 <template slot="expandIcon" slot-scope="props">
@@ -482,7 +482,7 @@ export default {
             selectedGroupPermissions: [],
             currentSelectedGroup: null,
             groupIndeterminate: false,
-            groupCheckAll: false,
+            storagePage:1,
         }
     },
     created() {
@@ -567,6 +567,13 @@ export default {
             this.indeterminate = false;
             this.checkAll = false;
             this.selectedUserPermissions = [];
+            this.allGroups=[],
+            this.allUsers=[],
+            this.storageList=[],
+            this.storagePage=1,
+            this.storageTotal=0,
+            this.repositoriesList=[],
+            this.repositoriesTotal=0,
             this.resetGroupData;
             this.activeTab = "1";
         },
@@ -716,13 +723,12 @@ export default {
             this.groupCheckAll = checkedValues.length === 4
             this.groupAuthMap[this.currentGroupIndex] = checkedValues
         },
-        onGroupCheckAllChange() {
-            this.groupCheckAll = !this.groupCheckAll;
-            this.groupCheckedList = this.groupCheckAll ? this.repositoriesOptions.map(item => item.value) : [];
-            this.groupAuthMap[this.currentGroupIndex] = this.groupCheckedList
-            this.repositoriesOptions.forEach(item => {
-                item.enabled = this.groupCheckAll
-            })
+        onGroupCheckAllChange(e) {
+            const checkedValue = e.target.checked;
+            this.selectedGroupPermissions = checkedValue ? this.permissionOptions.map(option => option.value) : [];
+            this.groupIndeterminate = false;
+            this.groupCheckAll = checkedValue;
+            this.handleGroupPermissionChange(this.selectedGroupPermissions);
         },
         openSelectModal(type) {
             const selectedRows = type === 'USER' ? this.userSelectList : this.groupSelectList
@@ -732,7 +738,7 @@ export default {
             await new Promise((resolve, reject) => {
                 queryStorages({
                     page,
-                    limit: 20
+                    limit: 10
                 }).then(res => {
                     this.storageList = res.data.rows;
                     this.storageTotal = res.data.total
@@ -792,6 +798,7 @@ export default {
         },
         handleTableChange(pagination) {
             this.getList(pagination.current);
+            this.storagePage=pagination.current;
         },
         selectUserGroupChange(val, type) {
             if (type === 'USER') {
@@ -1351,13 +1358,7 @@ export default {
             }
         },
 
-        onGroupCheckAllChange(e) {
-            const checkedValue = e.target.checked;
-            this.selectedGroupPermissions = checkedValue ? this.permissionOptions.map(option => option.value) : [];
-            this.groupIndeterminate = false;
-            this.groupCheckAll = checkedValue;
-            this.handleGroupPermissionChange(this.selectedGroupPermissions);
-        },
+        
 
         updateSelectedGroupPermissions() {
             if (this.selectedGroupKeys.length === 1) {
@@ -1423,9 +1424,9 @@ export default {
         },
         showResourceModal() {
             this.resourceModalVisible = true;
-            if (this.storageList.length === 0) {
-                this.getStorageList();
-            }
+            this.storagePage=1;
+            this.getStorageList();
+            
         },
         handleResourceModalOk() {
             this.resourceModalVisible = false;
@@ -1461,9 +1462,11 @@ export default {
                     this.selectedResources.push(item);
                 })
             })
+            this.expandedRowKeys=[];
         },
         handleResourceModalCancel() {
             this.resourceModalVisible = false;
+            this.expandedRowKeys=[];
         },
         removeUser(item) {
             const index = this.selectedUserKeys.indexOf(item.key);
