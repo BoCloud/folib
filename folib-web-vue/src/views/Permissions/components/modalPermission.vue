@@ -110,7 +110,7 @@
                                             size="small" class="custom-right-table">
                                             <template slot="permissions" slot-scope="text, record, i">
                                                 <template
-                                                    v-if="(!userPermissions[record.title] || userPermissions[record.title].length === 0) && !isAdmin">
+                                                    v-if="(!userPermissions[record.title] || userPermissions[record.title].length === 0) && !isAdmin&&!isStorageAdmin">
                                                     <a-tooltip :title="$t('Permissions.NoPermissionsTooltip')">
                                                         <a-icon type="question-circle" />
                                                     </a-tooltip>
@@ -523,7 +523,31 @@ export default {
             } else if (newValue === "3" && this.allGroups.length === 0) {
                 this.getGroups();
             }
+        },
+        selectedUserKeys(newValue){
+            if(this.isStorageAdmin&&newValue.length===1){
+                this.allUsers.forEach(item=>{
+                    if(item.key!=newValue[0]){
+                        item.disabled=true;
+                    }
+                })
+            }
+            if(this.isStorageAdmin&&newValue.length==0){
+                this.allUsers.forEach(item=>{
+                    item.disabled=false;
+                })
+            }
+        },
+        allUsers(){
+            if(this.isStorageAdmin&&this.selectedUserKeys.length===1){
+                this.allUsers.forEach(item=>{
+                    if(item.key!=this.selectedUserKeys[0]){
+                        item.disabled=true;
+                    }
+                })
+            }
         }
+        
     },
 
     methods: {
@@ -1071,6 +1095,14 @@ export default {
         },
 
         handleUserSelectChange(sourceSelectedKeys, targetSelectedKeys) {
+            
+            if(this.isStorageAdmin&&sourceSelectedKeys.length===1){
+                this.allUsers.forEach(item=>{
+                    if(item.key!=sourceSelectedKeys[0]){
+                        item.disabled=true;
+                    }
+                })
+            }
             this.selectedUserItems = targetSelectedKeys;
             if (targetSelectedKeys.length === 1) {
                 // 单选情况
