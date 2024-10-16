@@ -320,7 +320,7 @@ public class StoragesConfigurationController
             ).collect(Collectors.toList());
         }
         List<Storage> pageStorages = storagesList.stream().skip((long) (page - 1) * limit).limit(limit).collect(Collectors.toList());
-        return new TableResultResponse<>(pageStorages.size(), pageStorages);
+        return new TableResultResponse<>(storagesList.size(), pageStorages);
 
     }
 
@@ -1038,9 +1038,9 @@ public class StoragesConfigurationController
                     }
                     Client client = clientPool.getRestClient(repositoryProxyConfigParam);
                     //连接建立超时时间
-                    client.property(ClientProperties.CONNECT_TIMEOUT, 10000);
+                    client.property(ClientProperties.CONNECT_TIMEOUT, commonComponent.getConnectTimeout());
                     //读取内容超时时间
-                    client.property(ClientProperties.READ_TIMEOUT, 10000);
+                    client.property(ClientProperties.READ_TIMEOUT, commonComponent.getReadTimeout());
                     WebTarget target = client.target(repository.getRemoteRepository().getUrl());
                     commonComponent.authentication(target, repository.getRemoteRepository().getUsername(), repository.getRemoteRepository().getPassword());
                     response = target.request().head();

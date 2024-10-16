@@ -307,11 +307,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         }
                         metadataValueJson = metadataJson.getJSONObject(metadataKey);
                         if (!metadataValueJson.containsKey(valueKey) || !metadataValueJson.containsKey(locationKey) || !tableKey.equalsIgnoreCase(metadataValueJson.getString(locationKey))) {
-                            return artifactInfo;
+                            continue;
                         }
                         value = metadataValueJson.getString(valueKey);
                         if (StringUtils.isBlank(value) || !JSONUtil.isJson(value)) {
-                            return artifactInfo;
+                            continue;
                         }
                         if (JSONUtil.isJsonArray(value)) {
                             JSONArray jsonArray = (JSONArray) JSONArray.parse(value, Feature.OrderedField);
@@ -324,7 +324,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                             if (CollectionUtils.isEmpty(itemColumnInfos)) {
                                 value = jsonArray.getString(0);
                                 if (StringUtils.isBlank(value) || !JSONUtil.isJson(value)) {
-                                    return artifactInfo;
+                                    continue;
                                 }
                                 itemJson = jsonArray.getJSONObject(0);
                                 itemColumnInfos = itemJson.keySet().stream().map(item -> ColumnInfo.builder().dataIndex(item).key(item).title(item).build()).collect(Collectors.toList());
@@ -332,7 +332,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                             for (int i = 0; i < jsonArray.size(); i++) {
                                 value = jsonArray.getString(i);
                                 if (StringUtils.isBlank(value) || !JSONUtil.isJson(value)) {
-                                    return artifactInfo;
+                                    continue;
                                 }
                                 itemJson = jsonArray.getJSONObject(i);
                                 itemData.add(itemJson);
@@ -356,7 +356,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                                 if (CollectionUtils.isEmpty(itemColumnInfos)) {
                                     value = jsonArray.getString(0);
                                     if (StringUtils.isBlank(value) || !JSONUtil.isJson(value)) {
-                                        return artifactInfo;
+                                        continue;
                                     }
                                     itemJson = jsonArray.getJSONObject(0);
                                     itemColumnInfos = itemJson.keySet().stream().map(item -> ColumnInfo.builder().dataIndex(item).key(item).title(item).build()).collect(Collectors.toList());
@@ -364,7 +364,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                                 for (int i = 0; i < jsonArray.size(); i++) {
                                     value = jsonArray.getString(i);
                                     if (StringUtils.isBlank(value) || !JSONUtil.isJson(value)) {
-                                        return artifactInfo;
+                                        continue;
                                     }
                                     itemJson = jsonArray.getJSONObject(i);
                                     itemData.add(itemJson);

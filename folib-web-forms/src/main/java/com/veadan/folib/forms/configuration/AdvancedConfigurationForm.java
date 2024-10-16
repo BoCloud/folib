@@ -30,15 +30,18 @@ public class AdvancedConfigurationForm {
     @JsonProperty
     private Boolean showChecksum;
 
+    @JsonProperty
+    private String globalS3Bucket;
+
     @JsonIgnore()
     public static AdvancedConfigurationForm fromConfiguration(AdvancedConfiguration source) {
         AdvancedConfiguration configuration = Optional.ofNullable(source).orElse(new AdvancedConfiguration(new MutableAdvancedConfiguration()));
         return new AdvancedConfigurationForm(configuration.isAllowAnonymous(),
-                configuration.isShowChecksum());
+                configuration.isShowChecksum(), configuration.getGlobalS3Bucket());
     }
 
     @JsonIgnore()
     public MutableAdvancedConfiguration getMutableProxyConfiguration() {
-        return new MutableAdvancedConfiguration(this.allowAnonymous, this.showChecksum);
+        return new MutableAdvancedConfiguration(this.allowAnonymous, this.showChecksum,  this.globalS3Bucket);
     }
 }

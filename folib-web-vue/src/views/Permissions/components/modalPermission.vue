@@ -44,7 +44,7 @@
                         <a-col :span="12">
                             <a-form-model-item prop="name" :label="$t('Permissions.Name')" :rules="[
                                 { required: true, message: $t('Permissions.EnterTheNameCreate'), trigger: 'blur' },
-                                { pattern: /^[0-9A-Za-z_-]+$/, message: $t('Permissions.EnterTheNamePattern') }]">
+                                { pattern: /^[0-9A-Za-z_|-]+$/, message: $t('Permissions.EnterTheNamePattern') }]">
                                 <a-input v-model="form.name" :placeholder="$t('Permissions.EnterTheNameCreate')"
                                     :disabled="isView || isEdit" :maxLength="100" />
                             </a-form-model-item>
@@ -552,7 +552,7 @@ export default {
         closeModal() {
             this.visible = false;
             this.selectedResources = [],
-                this.resetData;
+            this.resetData;
             this.form = {};
             this.selectedUserKeys = [];
             this.selectedGroupKeys = [];
@@ -561,6 +561,12 @@ export default {
             this.groupPermissions = {};
             this.selectedRepositoryKeys = [];
             this.selectedStorageKeys = [];
+            this.groupIndeterminate = false;
+            this.groupCheckAll = false;
+            this.selectedGroupPermissions = [];
+            this.indeterminate = false;
+            this.checkAll = false;
+            this.selectedUserPermissions = [];
             this.resetGroupData;
             this.activeTab = "1";
         },
@@ -1024,15 +1030,7 @@ export default {
             record.includes.splice(i, 1);
         },
 
-        // 用户
-        handleSearch() {
-            this.page = 1
-            this.getUsers()
-        },
-        handleChangeTable(pagination) {
-            if (pagination) this.page = pagination.current
-            this.getUsers()
-        },
+    
 
         handleUserTransferChange(nextTargetKeys, direction, moveKeys) {
             if (direction === 'right') {
@@ -1176,6 +1174,10 @@ export default {
                         this.allUsers.push({ key, title: key });
                     }
                 });
+                if(this.allUsers.length===this.selectedUserKeys.length&&this.userHasMore){
+                    this.userLoading = false;
+                    this.getUsers(true);
+                }
             }).catch(error => {
                 console.error('Error fetching users:', error);
             }).finally(() => {
@@ -1199,10 +1201,6 @@ export default {
         },
         handleFilter(inputValue, item) {
             return item.title.toLowerCase().indexOf(inputValue.toLowerCase()) !== -1;
-        },
-        handleLeftSearch(e) {
-            this.leftSearchValue = e.target.value;
-            this.getUsers();
         },
         onSelectChange(selectedRowKeys) {
             this.selectedRowKeys = selectedRowKeys;
@@ -1242,6 +1240,10 @@ export default {
                         this.allGroups.push({ key, title: key });
                     }
                 });
+                if(this.allGroups.length===this.selectedGroupKeys.length&&this.groupHasMore){
+                    this.groupLoading = false;
+                    this.getGroups(true);
+                }
             }).catch(error => {
                 console.error('Error fetching groups:', error);
             }).finally(() => {

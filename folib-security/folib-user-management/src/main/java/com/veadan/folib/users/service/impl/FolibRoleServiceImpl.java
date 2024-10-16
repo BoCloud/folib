@@ -81,7 +81,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
 
                 roles.forEach(roleDto -> {
                     String isDefault = GlobalConstants.NOT_DEFAULT;
-                    if (SystemRole.ADMIN.name().equalsIgnoreCase(roleDto.getName()) || SystemRole.OPEN_SOURCE_MANAGE.name().equalsIgnoreCase(roleDto.getName()) || SystemRole.GENERAL.name().equalsIgnoreCase(roleDto.getName()) || SystemRole.ANONYMOUS.name().equalsIgnoreCase(roleDto.getName())) {
+                    if (SystemRole.ADMIN.name().equalsIgnoreCase(roleDto.getName()) || SystemRole.OPEN_SOURCE_MANAGE.name().equalsIgnoreCase(roleDto.getName()) || SystemRole.GENERAL.name().equalsIgnoreCase(roleDto.getName()) ) {
                         isDefault = GlobalConstants.DEFALUT;
                     }
                     folibRoles.add(FolibRole.builder().id(roleDto.getName()).description(roleDto.getDescription())
@@ -390,11 +390,19 @@ public class FolibRoleServiceImpl implements FolibRoleService {
             throw new RuntimeException("Failed to update role permissions and clear user cache !");
         }
         roleResourceRefService.deleteByRoleId(roleId);
+        List<AccessUsersDTO> users = null;
+        if (Objects.nonNull(roleDTO.getPrivileges())) {
+            users = roleDTO.getPrivileges().getUsers();
+        }
         if (roleId.toUpperCase().startsWith("STORAGE_ADMIN_")) {
             //保存存储空间管理员权限
+            if(Objects.isNull(users)){
+                throw new RuntimeException("存储空间管理员用户不能为空");
+            }
+            String userId = users.get(0).getId();
             EnumSet<Privileges> storagePrivileges = Privileges.storageAll();
             Set<String> privileges = storagePrivileges.stream().map(Privileges::getAuthority).collect(Collectors.toSet());
-            List<RoleResourceRef> roleResourceRefs = privileges.stream().map(privilege -> RoleResourceRef.builder().roleId(roleId).entityId(username).refType(GlobalConstants.ROLE_TYPE_USER).resourceId(accessModel.get(0).getStorageId())
+            List<RoleResourceRef> roleResourceRefs = privileges.stream().map(privilege -> RoleResourceRef.builder().roleId(roleId).entityId(userId).refType(GlobalConstants.ROLE_TYPE_USER).resourceId(accessModel.get(0).getStorageId())
                     .storagePrivilege(privilege).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build()).collect(Collectors.toList());
             roleResourceRefService.saveBath(roleResourceRefs);
         }else{
@@ -402,10 +410,6 @@ public class FolibRoleServiceImpl implements FolibRoleService {
             roleResourceRefService.savePermissions(roleDTO, roleId, username);
         }
 
-        List<AccessUsersDTO> users = null;
-        if (Objects.nonNull(roleDTO.getPrivileges())) {
-            users = roleDTO.getPrivileges().getUsers();
-        }
         if (CollectionUtils.isNotEmpty(users)) {
             userIds.addAll(users.stream().map(AccessUsersDTO::getId).collect(Collectors.toSet()));
         }

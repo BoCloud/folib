@@ -252,6 +252,7 @@ public class WSForwardComponent {
     public boolean dispatch(String targetNodeName, PrivilegeDispatch privilegeDispatch) {
         String key = GlobalConstants.WS_NODE_KEY;
         String wsNodes = distributedCacheComponent.get(key);
+        log.info("Current wsNodes {}", wsNodes);
         String nodeName = folibWsRunManageV2.getSimpleTargetHostName(targetNodeName);
         if (StringUtils.isBlank(wsNodes)) {
             throw new RuntimeException("Not found session with targetHostName:" + nodeName);
@@ -259,7 +260,7 @@ public class WSForwardComponent {
         String currentHost = folibLockProperties.getFolibLockIp();
         List<String> wsNodeList = Arrays.asList(wsNodes.split(","));
         log.info("Current wsNodeList {} targetNode [{}]", wsNodeList, nodeName);
-        Optional<String> nodeUrlOptional = wsNodeList.stream().filter(item -> item.startsWith(nodeName) && !currentHost.equals(UrlUtils.getHost(item.split("_")[1]))).findFirst();
+        Optional<String> nodeUrlOptional = wsNodeList.stream().filter(item -> item.startsWith(nodeName) && !currentHost.equals(UrlUtils.getHost(item.split("_")[0]))).findFirst();
         if (nodeUrlOptional.isEmpty()) {
             throw new RuntimeException("Not found session with targetHostName:" + nodeName);
         }
@@ -267,7 +268,7 @@ public class WSForwardComponent {
         if (StringUtils.isBlank(nodeUrl)) {
             throw new RuntimeException("Not found session with targetHostName:" + nodeName);
         }
-        nodeUrl = nodeUrl.split("_")[1];
+        nodeUrl = nodeUrl.split("_")[0];
         String host = UrlUtils.getHost(nodeUrl);
         if (currentHost.equals(host)) {
             //代理目标为本机，跳过
@@ -288,6 +289,25 @@ public class WSForwardComponent {
             throw new RuntimeException(String.format("Url response error [%s] [%s]", response.getStatus(), responseBody));
         }
         log.info("转发分发请求成功 目标[{}]...", nodeUrl);
+        return true;
+    }
+
+    public boolean dispatchTargetNode(String targetNodeName, PrivilegeDispatch privilegeDispatch) {
+        log.info("接收到分发请求，目标[{}]...", targetNodeName);
+        Client client = proxyRepositoryConnectionPoolConfigurationService.getRestClient();
+        //连接建立超时时间
+        client.property(ClientProperties.CONNECT_TIMEOUT, 10000);
+        String targetUrl = StringUtils.removeEnd(targetNodeName, GlobalConstants.SEPARATOR) + AUTH_DISPATCH_API_ENDPOINT;
+        WebTarget target = client.target(targetUrl);
+        Invocation.Builder builder = target.request(javax.ws.rs.core.MediaType.APPLICATION_JSON);
+        securityComponent.securityTokenHeader(builder);
+        Response response = builder.post(Entity.entity(privilegeDispatch, javax.ws.rs.core.MediaType.APPLICATION_JSON));
+        String responseBody = response.readEntity(String.class);
+        if (org.apache.http.HttpStatus.SC_OK != response.getStatus()) {
+            log.error("Url response error [{}] [{}] [{}]", targetUrl, response.getStatus(), responseBody);
+            throw new RuntimeException(String.format("Url response error [%s] [%s]", response.getStatus(), responseBody));
+        }
+        log.info("转发分发请求成功 目标[{}]...", targetNodeName);
         return true;
     }
 }

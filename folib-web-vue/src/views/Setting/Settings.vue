@@ -371,10 +371,21 @@
                     </a-form-item>
                   </a-col>
                 </a-row>
+                <a-row :gutter="[24]">
+                  <a-col :span="24"
+                         :lg="10">
+                    <a-form-item class="mb-10"
+                                 :label="$t('Setting.GlobalS3Bucket')"
+                                 :colon="false">
+                      <a-input v-model="serverSettings.advancedConfigurationForm.globalS3Bucket" :disabled="globalS3BucketDisabled" />
+                    </a-form-item>
+                  </a-col>
+                </a-row>
                 <p>{{ $t('Setting.Note') }}</p>
                 <ul class="pl-15 text-muted">
                   <li>{{ $t('Setting.OpenAllowsAnonymousAccess') }}</li>
                   <li>{{ $t('Setting.OpenDisplayVerificationFile') }}</li>
+                  <li>{{ $t('Setting.GlobalS3BucketTip') }}</li>
                 </ul>
               </a-form>
             </a-card>
@@ -1375,7 +1386,12 @@
                       slot-scope="text, record">
                     {{ record.kbps && record.kbps > 0 ? record.kbps+' KB/s' : $t('Setting.NoSpeedLimit') }}
                   </div>
-
+                  <template slot="syncStrategy" slot-scope="syncStrategy">
+                    <span v-if="syncStrategy === 'sourceToTarget'"> {{ $t('StorageMonitoring.SourceToTarget') }}</span>
+                    <span v-else-if="syncStrategy === 'targetToSource'">{{ $t('StorageMonitoring.TargetToSource') }}</span>
+                    <span v-else-if="syncStrategy === 'twoWaySync'">{{ $t('StorageMonitoring.TwoWaySync') }}</span>
+                    <span v-else>N/A</span>
+                  </template>
                   <div slot="operation"
                       slot-scope="text, record">
 <!--                    <div class="col-action" v-if="!record.autoRegister">-->
@@ -1402,6 +1418,7 @@
                         </a-button>
                       </a-popconfirm>
                       <a-button type="link"
+                                v-if="!record.autoRegister"
                                 size="small"
                                 @click="artifactDispatchHandler(2, record)">
                         <svg width="16"
@@ -1605,6 +1622,24 @@
                 <a style="position: absolute;top: -54px;right: -28px;" class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
               </a-popover>
             <a-switch v-model="artifactDispatchForm.isSyncPrivilege" />
+          </a-form-model-item>
+        </a-col>
+        <a-col v-if="artifactDispatchForm.isSyncPrivilege" :span="24">
+          <a-form-model-item class="mb-10"
+                             :label="$t('Setting.SelectSyncStrategy')"
+                             :colon="false"
+                             prop="syncStrategy">
+            <a-select v-model="artifactDispatchForm.syncStrategy"
+                      :placeholder="$t('Setting.SelectSyncStrategy')"
+                      show-search
+                      optionFilterProp="label">
+              <a-select-option v-for="(item, index) in syncStrategySelects"
+                               :label="item.label"
+                               :key="index"
+                               :value="item.value">
+                {{ item.label }}
+              </a-select-option>
+            </a-select>
           </a-form-model-item>
         </a-col>
         </a-row>
@@ -1860,6 +1895,7 @@ export default {
         advancedConfigurationForm: {
           allowAnonymous: true,
           showChecksum: true,
+          globalS3Bucket: undefined,
         },
         corsConfigurationForm: { allowedOrigins: ['*'], corsAllowAll: false },
         smtpConfigurationForm: {
@@ -2011,6 +2047,13 @@ export default {
           key: 'isSyncPrivilege',
           width: 140,
           scopedSlots: { customRender: 'isSyncPrivilege' }
+        },{
+          title: '权限同步策略',
+          i18nKey: 'Setting.syncStrategy',
+          dataIndex: 'syncStrategy',
+          key: 'syncStrategy',
+          width: 140,
+          scopedSlots: { customRender: 'syncStrategy' }
         },
         {
           title: '在线状态',
@@ -2080,6 +2123,7 @@ export default {
         clusterNodeHost: undefined,
         dispatchType: undefined,
         isThisCluster: undefined,
+        syncStrategy: undefined,
         kbps: 0
       },
       metadataForm: {
@@ -2114,6 +2158,20 @@ export default {
         {
           label: 'pull',
           value: 'pull'
+        }
+      ],
+      syncStrategySelects: [
+        {
+          label: '源同步到目标',
+          value: 'sourceToTarget'
+        },
+        {
+          label: '目标同步到源',
+          value: 'targetToSource'
+        },
+        {
+          label: '双向同步',
+          value: 'twoWaySync'
         }
       ],
       metadataTypes: [
@@ -2201,7 +2259,8 @@ export default {
       ssoActionName: '',
       ssoDialogShow: false,
       ssoObj: {},
-      ssoList: []
+      ssoList: [],
+      globalS3BucketDisabled: false,
     }
   },
   computed: {
@@ -2246,9 +2305,22 @@ export default {
     this.getVulnerabilities()
     this.getArtifactDispatchConfig()
     this.getSsoList()
+    this.getSyncStrategyDefaultValue()
   },
   methods: {
     upperCase,
+    getSyncStrategyLabel(value) {
+      const strategy = this.syncStrategySelects.find(item => item.value === value);
+      return strategy ? strategy.label : '';
+    },
+    getSyncStrategyDefaultValue(){
+      console.log('=================' + this.artifactDispatchForm.syncStrategy)
+      console.log('=================' + this.syncStrategySelects[0].value)
+      if (this.artifactDispatchForm.syncStrategy === undefined) {
+        this.$set(this.artifactDispatchForm, 'syncStrategy', this.syncStrategySelects[0].value);
+        console.log('=================' + this.artifactDispatchForm.syncStrategy)
+      }
+    },
     getSsoList(){
       getSsoList().then(res=>{
         this.ssoList=res
@@ -2287,10 +2359,16 @@ export default {
         } else {
           this.serverSettings.corsConfigurationForm.corsAllowAll = false
         }
+        if (this.serverSettings.advancedConfigurationForm.globalS3Bucket) {
+          this.globalS3BucketDisabled = true
+        }
       })
     },
     saveServerSettings() {
       postServerSettings(this.serverSettings).then(res => {
+        if (this.serverSettings.advancedConfigurationForm.globalS3Bucket) {
+          this.globalS3BucketDisabled = true
+        }
         setTimeout(() => {
           this.$notification.success({
             message: this.$t('Setting.SavedSuccess')

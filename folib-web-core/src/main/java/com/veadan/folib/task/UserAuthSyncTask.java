@@ -11,12 +11,14 @@ import com.veadan.folib.domain.PrivilegeDispatch;
 import com.veadan.folib.dto.FolibRoleDTO;
 import com.veadan.folib.dto.UserGroupListDTO;
 import com.veadan.folib.entity.*;
+import com.veadan.folib.enums.SyncStrategyEnum;
 import com.veadan.folib.event.privilege.PrivilegeEventTypeEnum;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.users.dto.UserAuthDTO;
 import com.veadan.folib.users.service.*;
+import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.ws.common.FolibWsRunManageUtil;
 import com.veadan.folib.ws.common.FolibWsRunManageV2;
 import com.veadan.folib.ws.server.Command;
@@ -28,7 +30,6 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -86,52 +87,27 @@ public class UserAuthSyncTask {
                     Session session = folibWsRunManageV2.getSession(targetHostName);
                     nodeDto.setWsClientOnline(session != null && session.isOpen());
                 });
-                map.forEach((key, value) -> {
-                    log.debug("key:{},value:{}", key, value);
-                    Boolean isThisCluster = value.getIsThisCluster();
-                    Boolean wsClientOnline = value.getWsClientOnline();
-                    Boolean isSyncPrivilege = value.getIsSyncPrivilege();
+                map.forEach((key, dispatchNodeDto) -> {
+                    log.debug("key:{},dispatchNodeDto:{}", key, dispatchNodeDto);
+                    Boolean isThisCluster = dispatchNodeDto.getIsThisCluster();
+                    Boolean wsClientOnline = dispatchNodeDto.getWsClientOnline();
+                    Boolean autoRegister = dispatchNodeDto.getAutoRegister();
+                    Boolean isSyncPrivilege = dispatchNodeDto.getIsSyncPrivilege();
+                    String syncStrategy = dispatchNodeDto.getSyncStrategy();
+                    String clusterNodeHost = dispatchNodeDto.getClusterNodeHost();
 
-                    if (!isThisCluster && !value.getAutoRegister()
+                    log.info("isThisCluster:{},wsClientOnline:{},isSyncPrivilege:{},syncStrategy:{},clusterNodeHost:{}", isThisCluster, wsClientOnline, isSyncPrivilege, syncStrategy, clusterNodeHost);
+
+                    if (!isThisCluster
                             && !Objects.equals(wsClientOnline, null) && wsClientOnline
                             && !Objects.equals(isSyncPrivilege, null) && isSyncPrivilege) {
-                        WSMessageRequest wsMessageRequest = null;
-                        WSMessageResponse messageResponse = null;
-                        String clusterNodeHost = value.getClusterNodeHost();
-                        String targetHostName = FolibWsRunManageUtil.getTargetNode(clusterNodeHost);
-                        if (StringUtils.isBlank(targetHostName)) {
-                            //WS目标节点未找到，尝试转发到集群中其他节点处理
-                            targetHostName = FolibWsRunManageUtil.getTargetHostName(clusterNodeHost);
-                            if (folibWsRunManageV2.dispatch(targetHostName, PrivilegeDispatch.builder().privilegeEventTypeEnum(PrivilegeEventTypeEnum.EVENT_ALL_SYNC).targetHostName(targetHostName).build())) {
-                                return ;
-                            }
+                        if (SyncStrategyEnum.TARGET_TO_SOURCE.getValue().equalsIgnoreCase(syncStrategy) && autoRegister){
+                            syncAuthSourceToTarget(dispatchNodeDto);
+                        }  else if (SyncStrategyEnum.SOURCE_TO_TARGET.getValue().equalsIgnoreCase(syncStrategy) && !autoRegister){
+                            syncAuthSourceToTarget(dispatchNodeDto);
+                        } else if (SyncStrategyEnum.TWO_WAY_SYNC.getValue().equalsIgnoreCase(syncStrategy)){
+                            syncAuthSourceToTarget(dispatchNodeDto);
                         }
-                        int page = 1;
-                        int size = 100;
-                        boolean flag = true;
-
-                        while (flag) {
-                            //发送用户权限消息
-                            try {
-                                //分页查询请求参数
-                                UserAuthDTO userAuthReq = getUserAuthReq(page, size);
-                                if (userAuthReq != null && userAuthReq.isNextPage()) {
-                                    page++;
-                                    size += 100;
-                                }else {
-                                    flag = false;
-                                }
-                                wsMessageRequest = new WSMessageRequest(Command.USER_AUTH_SYNC, userAuthReq);
-                                messageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
-
-                                log.debug("sendRequest result,wsMessageRequest:{},messageResponse:{}", wsMessageRequest, messageResponse);
-
-                            }  catch (Exception e) {
-                                log.error("sendRequest fail,wsMessageRequest:{}", wsMessageRequest, e);
-                                flag = false;
-                            }
-                        }
-
                     }
                 });
                 log.info("UserAuthSyncTask thread name [{}] time [{}]", Thread.currentThread().getName(), DateUtil.now());
@@ -140,6 +116,57 @@ public class UserAuthSyncTask {
             }
         } else {
             log.info("LockName [{}] was not get lock", lockName);
+        }
+    }
+
+    private void syncAuthTargetToSource(String clusterNodeHost) {
+        String baseUrl = configurationManagementService.getConfiguration().getBaseUrl();
+        boolean dispatch = folibWsRunManageV2.dispatchTargetNode(clusterNodeHost, PrivilegeDispatch.builder().privilegeEventTypeEnum(PrivilegeEventTypeEnum.EVENT_ALL_SYNC).targetHostName(baseUrl).build());
+        log.info("dispatch:{}", dispatch);
+    }
+
+
+    /**
+     *  源同步到目标
+     * @param value
+     */
+    private void syncAuthSourceToTarget(ClusterDispatchNodeDto value) {
+        WSMessageRequest wsMessageRequest = null;
+        WSMessageResponse messageResponse = null;
+        String clusterNodeHost = value.getClusterNodeHost();
+        String targetHostName = FolibWsRunManageUtil.getTargetNode(clusterNodeHost);
+        if (StringUtils.isBlank(targetHostName)) {
+            //WS目标节点未找到，尝试转发到集群中其他节点处理
+            targetHostName = FolibWsRunManageUtil.getTargetHostName(clusterNodeHost);
+            log.info("targetHostName:{}", targetHostName);
+            if (folibWsRunManageV2.dispatch(targetHostName, PrivilegeDispatch.builder().privilegeEventTypeEnum(PrivilegeEventTypeEnum.EVENT_ALL_SYNC).targetHostName(targetHostName).build())) {
+                return;
+            }
+        }
+        int page = 1;
+        int size = 100;
+        boolean flag = true;
+
+        while (flag) {
+            //发送用户权限消息
+            try {
+                //分页查询请求参数
+                UserAuthDTO userAuthReq = getUserAuthReq(page, size);
+                if (userAuthReq != null && userAuthReq.isNextPage()) {
+                    page++;
+                    size += 100;
+                }else {
+                    flag = false;
+                }
+                wsMessageRequest = new WSMessageRequest(Command.USER_AUTH_SYNC, userAuthReq);
+                messageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
+
+                log.debug("sendRequest result,wsMessageRequest:{},messageResponse:{}", wsMessageRequest, messageResponse);
+
+            }  catch (Exception e) {
+                log.error("sendRequest fail,wsMessageRequest:{}", wsMessageRequest, e);
+                flag = false;
+            }
         }
     }
 

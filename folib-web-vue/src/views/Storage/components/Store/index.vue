@@ -2185,7 +2185,7 @@ export default {
       getPermissionStoragesAndRepositories({
         type: type,
         layout: layout,
-        excludeRepositoryId: excludeRepositoryId,
+        excludeRepositoryId: '',
         policy: policy
       }).then(res => {
         this.repositories = []

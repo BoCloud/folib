@@ -19,7 +19,7 @@ export default {
     'UsersDesc': '选择用户及其对所选资源的操作',
     'GroupsDesc': '选择用户组及其对所选资源的操作',
     'EnterTheNameCreate': '请输入唯一名称',
-    'EnterTheNamePattern': '请输入英文大小写字母、_ 或 -',
+    'EnterTheNamePattern': '请输入英文大小写字母、_、| 或 -',
     'AddRepositories': '添加仓库',
     'AddBuilds': '添加构建',
     'AddReleaseBundles': '添加发布包',

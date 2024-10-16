@@ -18,6 +18,7 @@ import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.ws.server.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -487,8 +488,20 @@ public class FolibWsRunManageV2 {
     public boolean dispatch(String targetNodeName, PrivilegeDispatch privilegeDispatch) {
         try {
             Session session = getSession(targetNodeName);
+            log.info("Current {}, session {}", targetNodeName, session);
             if (session == null || !session.isOpen()) {
                 return wsForwardComponent.dispatch(targetNodeName, privilegeDispatch);
+            }
+            return false;
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public boolean dispatchTargetNode(String targetNodeName, PrivilegeDispatch privilegeDispatch) {
+        try {
+            if (StringUtils.isNotEmpty(targetNodeName)) {
+                return wsForwardComponent.dispatchTargetNode(targetNodeName, privilegeDispatch);
             }
             return false;
         } catch (Exception ex) {

@@ -58,6 +58,7 @@ export default {
     'DisplayValidationFile': '显示校验文件',
     'OpenAllowsAnonymousAccess': '开启允许匿名访问，匿名用户可访问公开库及结构，关闭后匿名用户必须登录方可正常使用。',
     'OpenDisplayVerificationFile': '开启显示校验文件，仓库详情页会展示校验文件，关闭后仓库详情页则不会展示校验文件。',
+    'GlobalS3BucketTip': '全局S3桶，当全局范围使用一个相同的S3桶时，可以配置此参数，设置成功后，禁止修改。',
     'SaveOperation': '保存操作',
     'saveButton': '该保存按钮将会针对以上的修改统一保存',
     'Cancel1': '取 消',
@@ -165,6 +166,8 @@ export default {
     'SelectDistributeType': '请选择分发类型',
     'LocalCluster': '本集群',
     'SyncData': '同步数据',
+    'syncStrategy': '权限同步策略',
+    'SelectSyncStrategy': '请选择同步策略',
     'ClientUniqueIdentifier': '客户端唯一标识',
     'ClientID': '客户端ID',
     'EnterClientID': '请输入客户端ID',
@@ -444,4 +447,5 @@ export default {
     'ScheduledScan': '定时扫描',
     'TheLastScan': '最近一次扫描',
     'ArtifactScanType': '类型',
+    'GlobalS3Bucket': '全局S3桶',
 }
