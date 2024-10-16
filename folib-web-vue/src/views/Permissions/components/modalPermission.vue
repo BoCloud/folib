@@ -96,7 +96,8 @@
                                         itemUnit: $t('Groups.transfer.itemUnit'),
                                         itemsUnit: $t('Groups.transfer.itemsUnit'),
                                         searchPlaceholder: $t('Groups.transfer.searchPlaceholder'),
-                                    }" :show-search="true" :filter-option="handleFilter">
+                                    }" :show-search="true" :filter-option="handleFilter"
+                                    :showSelectAll="!isStorageAdmin">
 
                                     <template slot="children" slot-scope="{
                                         props: { direction, filteredItems, selectedKeys, disabled: listDisabled },
@@ -130,7 +131,7 @@
                                     <a-checkbox-group v-model="selectedUserPermissions" @change="handleUserPermissionChange"
                                         style="display: flex; flex-direction: column;">
                                         <a-checkbox v-for="option in permissionOptions" :key="option.value"
-                                            :disabled="isView || isAdmin" :value="option.value">
+                                            :disabled="isView || isAdmin ||isStorageAdmin"" :value="option.value">
                                             {{ option.label }}
                                         </a-checkbox>
                                     </a-checkbox-group>
