@@ -3,10 +3,13 @@
     <a-affix :offset-top="50" class="repository-affix">
       <a-row>
         <a-col :span="24" :md="24" class="mb-24">
+            <!-- 进度球-->
+<!--            <CircleProgress :progress="totalUploadProgress" :closeGlobe="isClose" :waveClassName="waveClassName" :containerClassName="containerClassName"/>-->
           <!-- User Profile Card -->
           <a-card :bordered="false" class="card-profile-head" :bodyStyle="{ padding: 0 }" :targetOffset="0"
             :affix="false">
             <template #title>
+
               <a-row type="flex" align="middle">
                 <a-col :span="24" :md="12" class="col-info">
                   <a>
@@ -92,7 +95,18 @@
                     </a-descriptions>
                   </div>
                 </a-col>
-                <a-col :span="24" :md="12" style="
+                  <a-col :span="16" :md="9" class="col-info">
+
+                          <div style="width: 100%">
+                              <a-progress
+                                  v-if="isClose"
+                                  :stroke-color="{from: '#108ee9',to: '#87d068',}"
+                                  :percent="totalUploadProgress"
+                                  :status="progressStatus"
+                              />
+                          </div>
+                  </a-col>
+                <a-col :span="8" :md="3" style="
                     display: flex;
                     align-items: center;
                     justify-content: flex-end;
@@ -708,8 +722,7 @@
               </a-row>
           </a-form>
       </a-modal>
-     <!-- 进度球-->
-      <CircleProgress :progress="totalUploadProgress" :closeGlobe="isClose" :waveClassName="waveClassName" :containerClassName="containerClassName"/>
+
     <!-- raw 、maven、npm 上传 -->
     <a-modal v-model="showUploadFormModal" :footer="null" :forceRender="true" :centered="true" :title="$t('Store.Upload')"
       on-ok="showUploadFormModal = false">
@@ -1185,8 +1198,7 @@ export default {
         uploadedSize: 0, // 当前已上传的大小
         md5CalculationComplete: false, // MD5 计算是否完成
         isClose: false,
-        waveClassName: 'wave-successes',
-        containerClassName: 'container-successes',
+        progressStatus:'active',
 
     }
   },
@@ -2602,7 +2614,7 @@ export default {
       this.$refs.debianBatchModal.openModal();
     },
     onFileChange(event) {
-        console.log('onFileChange', event)
+        //console.log('onFileChange', event)
         this.selectedFiles = Array.from(event.fileList.map(file => file.originFileObj)); // 将文件存储为数组
           this.selectedFiles.forEach((file, index) => {
               this.totalChunks[index] = Math.ceil(file.size / this.chunkSize);
@@ -2623,7 +2635,7 @@ export default {
       async calculateFilesMD5() {
           this.md5CalculationComplete = false; // 标记 MD5 计算为未完成
           this.md5Progresses = new Array(this.selectedFiles.length).fill(0); // 初始化进度为 0
-          console.log("md5Progresses:",this.md5Progresses)
+          //console.log("md5Progresses:",this.md5Progresses)
           const md5Promises = this.selectedFiles.map((file, index) => this.calculateMD5(file, index));
 
           // 使用 Promise.all 等待所有文件的 MD5 计算完成
@@ -2783,8 +2795,7 @@ export default {
                   resolve();
               } catch (error) {
                   reject(error);
-                  this.waveClassName='wave-fail';
-                  this.containerClassName='container-fail';
+                  this.progressStatus = 'exception';
                   this.$notification['error']({
                       message: this.$t('Store.EncodingError') + error,
                       description: ''
@@ -2817,8 +2828,7 @@ export default {
                       this.updateTotalProgress(chunkSize); // 上传完成时更新总进度
                       resolve();
                   } else {
-                      this.waveClassName='wave-fail';
-                      this.containerClassName= 'container-fail';
+                      this.progressStatus = 'exception'
                       reject(xhr.statusText);
                   }
               };
@@ -2831,6 +2841,9 @@ export default {
           this.uploadedSize += uploadedChunkSize;
           // 更新总的上传进度百分比
           this.totalUploadProgress = Math.floor((this.uploadedSize / this.totalUploadSize) * 100);
+          if( this.totalUploadProgress ===100){
+              this.progressStatus = 'success';
+          }
           //console.log("uploadedChunkSize:", uploadedChunkSize,"totalUploadProgress:", this.totalUploadProgress,"totalUploadSize:", this.totalUploadSize,"uploadedSize:", this.uploadedSize)
       },
       pauseUpload() {
