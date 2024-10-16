@@ -8,6 +8,8 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.IMap;
 import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
 import com.veadan.folib.components.IdGenerateUtils;
 import com.veadan.folib.components.artifact.ArtifactComponent;
@@ -193,6 +195,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
     @Inject
     private ArtifactWebService artifactWebService;
+
+    @Inject
+    private HazelcastInstance hazelcastInstance;
 
     @Override
     public ResponseEntity copy(ArtifactPromotion artifactPromotion) {
@@ -1431,31 +1436,45 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     private JSONObject getSliceUploadStatusJSONObj(String artifactFileSliceUploadRootFolderPathStr) {
-        final File sliceUploadStatusFile = new File(String.format("%s/sliceUploadStatus.json", artifactFileSliceUploadRootFolderPathStr));
-        // 检查文件是否存在
-        if (!sliceUploadStatusFile.exists()) {
-            log.warn("Slice upload status file does not exist: {}", sliceUploadStatusFile.getPath());
-            return new JSONObject(); // 返回一个空的 JSON 对象
+        //final File sliceUploadStatusFile = new File(String.format("%s/sliceUploadStatus.json", artifactFileSliceUploadRootFolderPathStr));
+        //// 检查文件是否存在
+        //if (!sliceUploadStatusFile.exists()) {
+        //    log.warn("Slice upload status file does not exist: {}", sliceUploadStatusFile.getPath());
+        //    return new JSONObject(); // 返回一个空的 JSON 对象
+        //}
+        //return Optional.ofNullable(FileUtil.readString(sliceUploadStatusFile, StandardCharsets.UTF_8))
+        //        .filter(StringUtils::isNotBlank)
+        //        .map(JSON::parseObject)
+        //        .orElse(new JSONObject());
+        // 获取 Hazelcast 分布式 Map，假设 Map 名为 "uploadStatusMap"
+        IMap<String, String> map = hazelcastInstance.getMap(artifactFileSliceUploadRootFolderPathStr);
+        if(map.localKeySet().isEmpty()){
+            return new JSONObject();
+        }else{
+            JSONObject result = new JSONObject();
+            map.localKeySet().forEach(key -> result.put(key, Boolean.valueOf(map.get(key))));
+            return result;
         }
-        return Optional.ofNullable(FileUtil.readString(sliceUploadStatusFile, StandardCharsets.UTF_8))
-                .filter(StringUtils::isNotBlank)
-                .map(JSON::parseObject)
-                .orElse(new JSONObject());
+
     }
 
     private synchronized void writeSliceUploadStatus(String artifactFileSliceUploadRootFolderPathStr, Integer chunkIndex, Boolean uploadStatus) {
-        final File sliceUploadStatusFile = new File(String.format("%s/sliceUploadStatus.json", artifactFileSliceUploadRootFolderPathStr));
+        //final File sliceUploadStatusFile = new File(String.format("%s/sliceUploadStatus.json", artifactFileSliceUploadRootFolderPathStr));
+        //
+        //if (!FileUtil.exist(sliceUploadStatusFile)) {
+        //    FileUtil.touch(sliceUploadStatusFile);
+        //}
+        //
+        //final JSONObject uploadStatusJsonObj = Optional.ofNullable(FileUtil.readString(sliceUploadStatusFile, StandardCharsets.UTF_8))
+        //        .filter(StringUtils::isNotBlank)
+        //        .map(JSON::parseObject)
+        //        .orElse(new JSONObject());
+        //uploadStatusJsonObj.put(String.valueOf(chunkIndex), uploadStatus);
+        //FileUtil.writeString(uploadStatusJsonObj.toJSONString(), sliceUploadStatusFile, StandardCharsets.UTF_8);
 
-        if (!FileUtil.exist(sliceUploadStatusFile)) {
-            FileUtil.touch(sliceUploadStatusFile);
-        }
-
-        final JSONObject uploadStatusJsonObj = Optional.ofNullable(FileUtil.readString(sliceUploadStatusFile, StandardCharsets.UTF_8))
-                .filter(StringUtils::isNotBlank)
-                .map(JSON::parseObject)
-                .orElse(new JSONObject());
-        uploadStatusJsonObj.put(String.valueOf(chunkIndex), uploadStatus);
-        FileUtil.writeString(uploadStatusJsonObj.toJSONString(), sliceUploadStatusFile, StandardCharsets.UTF_8);
+        // 获取 Hazelcast 分布式 Map，假设 Map 名为 "uploadStatusMap"
+        IMap<String, String> map = hazelcastInstance.getMap(artifactFileSliceUploadRootFolderPathStr);
+        map.put(String.valueOf(chunkIndex), Boolean.toString(uploadStatus),2, TimeUnit.HOURS);
     }
 
 
@@ -1656,11 +1675,17 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             log.error("切片上传失败", e);
             throw new BusinessException(e.getMessage());
         } finally {
+
+
             if (allSliceFileUploadCompleted) {
                 try {
+
+                    IMap<String, String> map = hazelcastInstance.getMap(artifactFileSliceUploadRootFolderPathStr);
+                    map.destroy();
+
                     FileUtil.del(new File(artifactFileSliceUploadRootFolderPathStr));
                 } catch (IORuntimeException e) {
-                   log.error("删除临时文件 [{}] 失败 [{}]", artifactFileSliceUploadRootFolderPathStr, ExceptionUtils.getStackTrace(e));
+                    log.error("删除临时文件 [{}] 失败 [{}]", artifactFileSliceUploadRootFolderPathStr, ExceptionUtils.getStackTrace(e));
                 }
             }
         }
