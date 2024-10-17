@@ -150,8 +150,8 @@ public class BrowseController
                 }
 
                 if (artifact.getScanDateTime() != null) {
-                    String lastModified = DateUtil.format(Date.from(artifact.getScanDateTime().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
-                    jsonObject.put("scanTime", lastModified);
+                    String scanDateTime = DateUtil.format(Date.from(artifact.getScanDateTime().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
+                    jsonObject.put("scanTime", scanDateTime);
                 }
 
                 Set<String> fileNames = artifact.getArtifactArchiveListing().getFilenames();
@@ -220,12 +220,10 @@ public class BrowseController
                 jsonObject.put("snippets", snippets);
                 jsonObject.put("manifest", imageManifest);
                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                dateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
-                String format = dateFormat.format(fileContent.getLastModified());
-                jsonObject.put("lastModified", format);
+                jsonObject.put("lastModified", DateUtil.format(Date.from(artifact.getLastUpdated().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), dateFormat));
                 if (artifact.getScanDateTime() != null) {
-                    String lastModified = DateUtil.format(Date.from(artifact.getScanDateTime().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), dateFormat);
-                    jsonObject.put("scanTime", lastModified);
+                    String scanDateTime = DateUtil.format(Date.from(artifact.getScanDateTime().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), dateFormat);
+                    jsonObject.put("scanTime", scanDateTime);
                 }
                 jsonObject.put("size", size);
                 jsonObject.put("imageName", imageName);
