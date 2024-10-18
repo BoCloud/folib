@@ -115,10 +115,10 @@
             </a-table>
           </a-card>-->
           <a-form-model-item :wrapper-col="{ span: 14, offset: 4 }">
-            <a-button type="primary" @click="permissionFormSubmit">
+            <a-button type="primary" @click="permissionFormSubmit" v-if="isShow">
               {{ $t('Permission.Save') }}
             </a-button>
-            <a-button class="ml-10" @click="permissionResetForm">
+            <a-button class="ml-10" @click="permissionResetForm" v-if="isShow">
               {{ $t('Permission.Cancel') }}
             </a-button>
           </a-form-model-item>
@@ -137,6 +137,7 @@ import {
 } from "@/api/folib"
 
 export default {
+  inject: ['doDrawerStatus'],
   props: {
 		folibRepository: {
 			type: Object,
@@ -146,6 +147,10 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+    isShow:{
+        type: Boolean,
+        default: true,
+    },
 	},
   data() {
     const checkScope = (rule, value, callback) => {
@@ -376,7 +381,9 @@ export default {
             this.successMsg(this.$t('Permission.OperationSuccessful'))
             this.permissionUserShow = false
             this.$emit('settingDrawerClose')
+            this.callParent(false,'process')
           }).catch((err) => {
+              this.callParent(false,'error')
             let msg = err.response.data.message?err.response.data.message:err.response.data
             if (msg && msg.length > 0) {
               this.$notification.error({
@@ -445,6 +452,11 @@ export default {
           this.permissionForm.userList.splice(index, 1)
         }
       }
+    },
+    callParent(isClose,status) {
+        if(this.doDrawerStatus){
+            this.doDrawerStatus(false,status)
+        }
     },
   },
 };
