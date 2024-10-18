@@ -20,10 +20,12 @@
                       color: '#BFBFBFFF',
                     }" @click="goBack()" />
                   </a>
-                  <a>
+                  <a style="justify-content: center;align-items: center;display: flex;">
                     <a-avatar @click="createData" :size="84" shape="square"
-                      style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
-                      :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" />
+                      style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );   "
+                                >
+                        <img :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" style="width: 150%;margin-left: -13.5px;" alt=""></img>
+                    </a-avatar>
                   </a>
                   <div class="avatar-info">
                     <a-tooltip placement="topLeft">
