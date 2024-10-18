@@ -90,7 +90,7 @@ public abstract class StorageFileSystem
             ConfigurationManagementService configurationManagementService = SpringUtil.getBean(ConfigurationManagementService.class);
             String globalS3Bucket = configurationManagementService.getConfiguration().getAdvancedConfiguration().getGlobalS3Bucket();
             if (StringUtils.isNotBlank(globalS3Bucket)) {
-                globalS3Bucket = GlobalConstants.SEPARATOR + globalS3Bucket.replaceAll(GlobalConstants.SEPARATOR, "");
+                globalS3Bucket = GlobalConstants.SEPARATOR + StringUtils.removeEnd(StringUtils.removeStart(globalS3Bucket, GlobalConstants.SEPARATOR), GlobalConstants.SEPARATOR);
                 basedir = globalS3Bucket + basedir;
             }
             return new S3Path((S3FileSystem) target, basedir);
