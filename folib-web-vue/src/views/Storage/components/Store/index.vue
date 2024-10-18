@@ -2794,6 +2794,7 @@ export default {
               // 发送请求
               try {
                   await this.uploadChunk(formData, fileIndex, chunkIndex,chunkSize);
+                  this.progressStatus='active';
                   resolve();
               } catch (error) {
                   reject(error);
