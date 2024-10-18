@@ -100,6 +100,9 @@ public class RepositoryDto
     @JsonIgnore
     private StorageDto storage;
 
+    /**是否同步存储空间到其他节点*/
+    private boolean syncEnabled;
+
 
     public RepositoryDto() {
     }
@@ -481,5 +484,13 @@ public class RepositoryDto
 
     public void setAllowAnonymous(boolean allowAnonymous) {
         this.allowAnonymous = allowAnonymous;
+    }
+
+    public boolean isSyncEnabled() {
+        return syncEnabled;
+    }
+
+    public void setSyncEnabled(boolean syncEnabled) {
+        this.syncEnabled = syncEnabled;
     }
 }
