@@ -217,7 +217,7 @@
                 :getPopupContainer="(triggerNode) => triggerNode.parentNode || document.body"
                 :filter-option="false"
                 :placeholder="$t('Storage.SelectAdministrator')">
-                <a-select-option v-for="(username) in userList" :key="username" :value="username">
+                <a-select-option v-for="(username, index) in userList" :key="index" :value="username">
                   {{ username }}
                 </a-select-option>
               </a-select>
@@ -313,7 +313,7 @@
                 :getPopupContainer="(triggerNode) => triggerNode.parentNode || document.body"
                 :filter-option="false"
                 :placeholder="$t('Storage.SelectAdministrator')">
-                <a-select-option v-for="(username) in userList" :key="username" :value="username">
+                <a-select-option v-for="(username, index) in userList" :key="index+1" :value="username">
                   {{ username }}
                 </a-select-option>
               </a-select>
@@ -1470,7 +1470,7 @@ export default {
      notEditPolicy:false,
       userQueryParams: {
         page: 1,
-        limit: 100,
+        limit: 50,
         total: 0,
         matchUsername: undefined,
       }
@@ -1761,7 +1761,7 @@ export default {
       }
     },
     getUsersList() {
-      queryUser({matchUsername: this.userQueryParams.matchUsername}, this.userQueryParams).then(res => {
+      queryUser({username: this.userQueryParams.matchUsername}, this.userQueryParams).then(res => {
         const resData = []
         if (res.data.rows) {
           res.data.rows.forEach(item => {
