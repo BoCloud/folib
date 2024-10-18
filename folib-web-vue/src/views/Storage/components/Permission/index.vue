@@ -381,7 +381,6 @@ export default {
             this.successMsg(this.$t('Permission.OperationSuccessful'))
             this.permissionUserShow = false
             this.$emit('settingDrawerClose')
-            this.callParent(false,'process')
           }).catch((err) => {
               this.callParent(false,'error')
             let msg = err.response.data.message?err.response.data.message:err.response.data

@@ -1170,7 +1170,7 @@
             (step === 5 && folibRepository.type === 'group')" :bordered="false" class="header-solid">
                 <a-row>
                     <a-col :span="24">
-                        <UnionRepository ref="unionRepository" :isShow="isShow" :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></UnionRepository>
+                        <UnionRepository ref="unionRepository" :isShow="isShow" :folibRepository="this.folibRepositoryData" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></UnionRepository>
                     </a-col>
                 </a-row>
                 <a-row>
@@ -1464,11 +1464,16 @@ export default {
     },
       layoutChecked(newVal, oldVal) {
           console.log('Selected value changed from', oldVal, 'to', newVal);
+          console.log(newVal !=="maven");
           // 在这里处理值改变的逻辑
-          if(newVal !== "maven"){
+          if(newVal !=="maven"){
               this.folibRepository.policy="mixed"
               this.notEditPolicy=true;
+          }else {
+              this.notEditPolicy=false;
           }
+          console.log("notEditPolicy",this.notEditPolicy);
+
       }
   },
   async created() {
@@ -2414,6 +2419,7 @@ export default {
       doDrawerStatus(isClose,status){
           this.folibVisible = isClose;
           this.stepsStatus = status;
+          this.step=0;
       }
   },
     provide() {

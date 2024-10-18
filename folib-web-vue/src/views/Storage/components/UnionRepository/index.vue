@@ -518,7 +518,7 @@ export default {
             this.successMsg()
             setTimeout(() => {
               this.$emit('settingDrawerClose');
-                this.callParent(false,'process')
+                //this.callParent(false,'process')
             }, 100)
           }).catch((err=> {
               this.callParent(false,'error')
