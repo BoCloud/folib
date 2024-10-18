@@ -88,6 +88,7 @@
                                 <a-transfer :data-source="allUsers" :target-keys="selectedUserKeys"
                                     :disabled="isView || isAnonymous" :render="item => item.title"
                                     @change="handleUserTransferChange" @scroll="handleScroll"
+                                    @search="handleLeftUserSearch"
                                     @selectChange="handleUserSelectChange" :list-style="{
                                         width: '270px',
                                         height: '400px',
@@ -107,7 +108,7 @@
                                             :show-header="false" :columns="userRightColumns" :data-source="filteredItems"
                                             :row-key="record => record.title"
                                             :row-selection="getUserRowSelection({ selectedKeys, itemSelectAll, itemSelect })"
-                                            size="small" class="custom-right-table">
+                                            size="small" class="custom-right-table" >
                                             <template slot="permissions" slot-scope="text, record, i">
                                                 <template
                                                     v-if="(!userPermissions[record.title] || userPermissions[record.title].length === 0) && !isAdmin&&!isStorageAdmin">
@@ -154,7 +155,8 @@
                                         itemsUnit: $t('Groups.transfer.groupItemsUnit'),
                                         searchPlaceholder: $t('Groups.transfer.searchPlaceholder'),
                                     }" :show-search="true" :filter-option="handleGroupFilter"
-                                    @scroll="handleGroupScroll" :row-key="record => record.id">
+                                    @scroll="handleGroupScroll" :row-key="record => record.id"
+                                    @search="handleLeftGroupSearch">
                                     <template slot="children" slot-scope="{
                                         props: { direction, filteredItems, selectedKeys, disabled: listDisabled },
                                         on: { itemSelectAll, itemSelect },
@@ -660,6 +662,8 @@ export default {
                 this.spinning = false;
             })
         },
+     
+
         getUsers(isLoadMore = false) {
             if (!isLoadMore) {
                 this.userPage = 1;
@@ -671,7 +675,7 @@ export default {
             }
 
             this.userLoading = true;
-            queryUser({ username: this.leftSearchValue }, { page: this.userPage, limit: this.userLimit }).then(res => {
+            queryUser({ username: this.leftUserSearchValue }, { page: this.userPage, limit: this.userLimit }).then(res => {
                 const newUsers = res.data.rows.map((item) => ({
                     key: item.username,
                     title: item.username,
@@ -687,6 +691,10 @@ export default {
                         this.allUsers.push({ key, title: key });
                     }
                 });
+                if(this.allUsers.length===this.selectedUserKeys.length&&this.userHasMore){
+                    this.userLoading = false;
+                    this.getUsers(true);
+                }
             }).catch(error => {
                 console.error('Error fetching users:', error);
             }).finally(() => {
@@ -1187,43 +1195,7 @@ export default {
 
 
 
-        getUsers(isLoadMore = false) {
-            if (!isLoadMore) {
-                this.userPage = 1;
-                this.allUsers = [];
-                this.userHasMore = true;
-            }
-            if (!this.userHasMore || this.userLoading) {
-                return;
-            }
-
-            this.userLoading = true;
-            queryUser({ username: this.leftSearchValue }, { page: this.userPage, limit: this.userLimit }).then(res => {
-                const newUsers = res.data.rows.map((item) => ({
-                    key: item.username,
-                    title: item.username,
-                }));
-                this.allUsers = [...this.allUsers, ...newUsers];
-                this.userTotal = res.data.total;
-                this.userHasMore = this.allUsers.length < this.userTotal;
-                this.userPage++;
-
-                // 确保所有已选用户都在列表中
-                this.selectedUserKeys.forEach(key => {
-                    if (!this.allUsers.some(user => user.key === key)) {
-                        this.allUsers.push({ key, title: key });
-                    }
-                });
-                if(this.allUsers.length===this.selectedUserKeys.length&&this.userHasMore){
-                    this.userLoading = false;
-                    this.getUsers(true);
-                }
-            }).catch(error => {
-                console.error('Error fetching users:', error);
-            }).finally(() => {
-                this.userLoading = false;
-            });
-        },
+       
         handleScroll(direction, e) {
             if (direction === 'left') {
                 this.$nextTick(() => {
@@ -1425,9 +1397,19 @@ export default {
             return item.title.toLowerCase().indexOf(inputValue.toLowerCase()) !== -1;
         },
 
-        handleLeftGroupSearch(e) {
-            this.leftGroupSearchValue = e.target.value;
-            this.getGroups();
+        handleLeftGroupSearch(direction, value) {
+            if(direction === 'left') {
+                this.leftGroupSearchValue = value;
+                this.getGroups();
+            }
+        },
+
+        handleLeftUserSearch(direction, value) {
+            if(direction === 'left') {
+                console.log('handleLeftUserSearch', value)
+                this.leftUserSearchValue = value;
+                this.getUsers();
+            }
         },
 
         resetGroupData() {
