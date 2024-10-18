@@ -11,6 +11,7 @@ export default {
     'ScanOn': '扫描开始',
     'ScanOff': '扫描关闭',
     'PacketList': '包列表',
+    'TrashCan':'回收站',
     'Seriousness': '严重',
     'HighRisk': '高危',
     'MediumRisk': '中危',
@@ -83,6 +84,8 @@ export default {
     'DeletionSuccessful': '删除成功',
     'DeletionFailed': '删除失败',
     'CannotPreview': '该制品无法预览',
+    'PacketListView':'包列表视图',
+    'TrashCanView':'回收站视图',
     // Data.vue
     'BasicInformation': '基本信息',
     'OwningSpace': '所属空间',
@@ -121,6 +124,7 @@ export default {
     'Operations': '操作',
     'DeletedProductSuccess': '删除制品元数据成功',
     'BomInformation': 'Bom信息',
+    'Revoke':'还原',
     // UseDoc
     'Instructions': '使用说明',
     'GlobalConfiguration': '全局配置',

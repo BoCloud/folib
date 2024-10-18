@@ -619,9 +619,10 @@ public abstract class StorageFileSystemProvider
         }
 
         @Override
+        //&& !p.startsWith(root.resolve(LayoutFileSystem.TRASH)
         public boolean accept(Path p)
                 throws IOException {
-            if (p.isAbsolute() && !p.startsWith(root.resolve(LayoutFileSystem.TRASH))
+            if (p.isAbsolute()
                     && !p.startsWith(root.resolve(LayoutFileSystem.TEMP))) {
                 return delegate == null ? true : delegate.accept(p);
             }

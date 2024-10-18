@@ -162,15 +162,30 @@
           <a-card :bordered="false" style="max-height: 1024px; min-height: 454px; overflow-y: auto" class="header-solid"
             :bodyStyle="{ paddingTop: 0, paddingBottom: 0 }">
             <template #title>
-              <h6 class="font-semibold m-0">{{ $t('Store.PacketList') }} <a class="ml-10" @click="reload()">
+              <h6 class="font-semibold m-0">{{ isTrashView?$t('Store.TrashCan'):$t('Store.PacketList') }} <a v-show="!isTrashView" class="ml-10" @click="reloadTreeData">
                   <a-icon type="reload" /></a></h6>
             </template>
-            <a-directory-tree :replaceFields="{
+            <!-- <a-button slot="extra" type="link"  size="large" style="color: black;" @click="isTrashView=!isTrashView"> -->
+              <a-tooltip slot="extra"  @click="isTrashView=!isTrashView" class="view-switch">
+                <template slot="title">
+                  {{ isTrashView?$t('Store.PacketListView'):$t('Store.TrashCanView') }}
+                </template>
+                <a-icon v-if="isTrashView" type="file-zip" />
+                <a-icon v-if="!isTrashView" type="delete" />
+              </a-tooltip>
+            <!-- </a-button> -->
+            <a-directory-tree v-if="!isTrashView" :replaceFields="{
               key: 'artifactPath',
               title: 'name',
               children: 'children',
-            }" :tree-data="treeData" :load-data="onLoadData" @select="treeSelect" @rightClick="onRightClick">
-
+            }" :tree-data="treeData" :load-data="onLoadData" @select="treeSelect" @rightClick="onRightClick" >
+            </a-directory-tree>
+            <a-directory-tree v-if="isTrashView" :replaceFields="{
+              key: 'artifactPath',
+              title: 'name',
+              children: 'children',
+            }" :tree-data="trashData" :load-data="onLoadData" @select="treeSelect" @rightClick="onRightClick">
+           
             </a-directory-tree>
           </a-card>
         </a-col>
@@ -911,8 +926,7 @@
         @mavenUploadClose="mavenUploadClose" />
 
       <div v-if="showContextMenu" :style="contextMenuStyle" class="context-menu">
-      
-        <a-menu  @click="handleMenuClick">
+        <a-menu  @click="handleRightClick">
           <a-menu-item key="1" v-if="currentFileDetial">
             <a-icon type="eye" />
             {{
@@ -925,35 +939,39 @@
                   : ""
             }}{{ $t('Store.Preview') }}
           </a-menu-item>
-          <a-menu-item key="2" v-if="copyEnabled">
+          <a-menu-item key="2" v-if="copyEnabled&&!isTrashView">
             <a-icon type="copy" />
             {{ $t('Store.Copy') }}
           </a-menu-item>
-          <a-menu-item key="3" v-if="moveEnabled">
+          <a-menu-item key="3" v-if="moveEnabled&&!isTrashView">
             <a-icon type="swap" />
             {{ $t('Store.Move') }}
           </a-menu-item>
-          <a-menu-item key="4" v-if="deleteEnabled">
-            <a-popconfirm :title="$t('Store.SuerDelete')" placement="topLeft" okType="danger"
-              :ok-text="$t('Store.Confirm')" :cancel-text="$t('Store.Cancel')" @confirm="deletePackageHandle">
+          <a-menu-item key="4" v-if="deleteEnabled&&!isTrashView">
+            <!-- <a-popconfirm :title="$t('Store.SuerDelete')" okType="danger"
+              :ok-text="$t('Store.Confirm')" :cancel-text="$t('Store.Cancel')" @confirm.stop="deletePackageHandle"  :style="{ zIndex: 2000 }"> -->
               <a-icon type="delete" />
               {{ $t('Store.Delete') }}
-            </a-popconfirm>
+            <!-- </a-popconfirm> -->
           </a-menu-item>
-          <a-menu-item key="5" v-if="dispatchEnabled">
+          <a-menu-item key="5" v-if="dispatchEnabled&&!isTrashView" >
             <a-icon type="retweet" />
             {{ $t('Store.Distribute') }}
           </a-menu-item>
 
           <a-menu-item key="6"
-            v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact">
+            v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact&&!isTrashView">
             <a-icon type="download" />
             {{ $t('Store.DownLoad') }}
           </a-menu-item>
           <a-menu-item key="7"
-            v-if="folibRepository.layout === 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact">
+            v-if="folibRepository.layout === 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact&&!isTrashView">
             <a-icon type="download" />
             {{ $t('Store.DownLoad') }}
+          </a-menu-item>
+          <a-menu-item key="8" v-if="isTrashView&&currentTreeNode && currentTreeNode.type === 'file'">
+            <a-icon type="undo" />
+            {{ $t('Store.Revoke') }}
           </a-menu-item>
         </a-menu>
       </div>
@@ -1067,6 +1085,7 @@ export default {
         layout: null
       },
       treeData: [],
+      trashData: [],
       currentFileDetial: null,
       currentTreeNode: {},
       detialVisible: false,
@@ -1126,6 +1145,7 @@ export default {
       searchViewCodes: null,
       //目标目录是否disabled
       isTargetPatDisabled: true,
+      isTrashView:false,  
       columns: [
         {
           i18nKey: 'Store.OwnedWarehouse',
@@ -1211,8 +1231,14 @@ export default {
       // 右击菜单
       showContextMenu: false,
       rightClickTop: '0px',
-      rightClickLeft: '0px'
+      rightClickLeft: '0px',
+      packageSelectedKeys:[], 
+      packageExpandedKeys:[],
+      packageLoadedKeys:[],
+
+      // packageKeys:[]
     }
+   
   },
   computed: {
 
@@ -1264,6 +1290,9 @@ export default {
         }
       })
     },
+    reloadTreeData(){
+      this.reload();
+    },
     handleCheckboxChange(selectedData) { },
     scannerChange() {
       this.scan.id =
@@ -1309,7 +1338,8 @@ export default {
             item.isLeaf = true
             item.type = 'file'
           })
-          this.treeData = d.concat(f)
+          this.treeData = d.concat(f).filter(item=>item.name!=='.trash')
+          this.trashData = d.concat(f).filter(item=>item.name==='.trash')
         })
         .catch(err => { })
     },
@@ -1798,6 +1828,7 @@ export default {
               })
             }
             this.treeData = [...this.treeData]
+            this.trashData=[...this.trashData]
             resolve()
           })
         })
@@ -1833,11 +1864,15 @@ export default {
           }
 
           this.treeData = [...this.treeData]
+          this.trashData=[...this.trashData]
           resolve()
         })
       })
     },
     treeSelect(key, e) {
+      console.log("key",key)
+      console.log("e",e)
+      console.log("this.packageSelectedKeys",this.packageSelectedKeys)
       this.currentTreeNode = e.node.dataRef
       this.scanReport = {
         show: false,
@@ -1922,6 +1957,7 @@ export default {
           active.key === '2' ? this.$t('Store.CopyCustomDirectory') : this.$t('Store.MoveCustomDirectory')
       } else if (active.key === '4') {
         //删除
+        console.log("删除")
       } else if (active.key === '5') {
         this.showOperationDispatchFormModal = true
         this.getArtifactDispatchStoragesAndRepositories(
@@ -1978,6 +2014,16 @@ export default {
           }
         }
       }
+    },
+
+    handleRightClick(active){
+      console.log(active)
+      this.handleMenuClick(active)
+      if(active.key === '4'){
+        this.deletePackageHandle();   
+      }
+
+
     },
     handleDownLoadDir() {
       let url = this.currentTreeNode.url
@@ -2537,7 +2583,6 @@ export default {
       return url;
     },
     onRightClick(params) {
-      console.log("params is ", params)
       this.showContextMenu = true;
       this.rightClickTop = `${params.event.clientY}px`;
       this.rightClickLeft = `${params.event.clientX}px`;
@@ -2590,8 +2635,12 @@ export default {
   /deep/ .ant-menu-item{
     margin: 0;
     height: 35px;
+    line-height: 35px;
     padding: 0 8px;
   }
+}
+.view-switch{
+  cursor: pointer;
 }
 
 </style>

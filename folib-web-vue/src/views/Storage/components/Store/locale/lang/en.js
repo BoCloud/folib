@@ -11,6 +11,7 @@ export default {
     'ScanOn': 'Scan on',
     'ScanOff': 'Scan off',
     'PacketList': 'Packet list',
+    'TrashCan':'Trash Can',
     'Seriousness': 'Seriousness',
     'HighRisk': 'High risk',
     'MediumRisk': 'Medium risk',
@@ -83,6 +84,9 @@ export default {
     'DeletionSuccessful': 'Deletion successful',
     'DeletionFailed': 'Deletion failed',
     'CannotPreview': 'This product cannot be previewed',
+    'PacketListView':'Packet list view',
+    'TrashCanView':'Trash can view',
+    'Revoke':'Revoke',
     // Data.vue
     'BasicInformation': 'Basic information',
     'OwningSpace': 'Owning space',
