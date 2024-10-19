@@ -4,6 +4,7 @@ import cn.hutool.core.date.StopWatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.veadan.folib.booters.PropertiesBooter;
+import com.veadan.folib.cloud.storage.s3fs.S3FileSystemProvider;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.domain.DirectoryListing;
@@ -40,6 +41,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
+import java.nio.file.spi.FileSystemProvider;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
@@ -394,9 +396,18 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
                 FileContent file = new FileContent(contentPath.getFileName().toString());
                 // 设置文件路径，移除日志目录前缀。
                 file.setPath(contentPath.toString().replace(propertiesBooter.getLogsDirectory().replace("./", ""), ""));
+                StopWatch stopWatch = new StopWatch();
+                stopWatch.start();
                 // 读取文件或目录的属性。
-                Map<String, Object> fileAttributes = Files.readAttributes(contentPath, "*");
-
+                Map<String, Object> fileAttributes = null;
+                if(contentPath.toString().startsWith("s3://") || contentPath.toString().startsWith("https://s3.")){
+                    // 读取文件或目录的属性。
+                    fileAttributes = Files.readAttributes(contentPath,"artifactPath,lastModifiedTime,resourceUrl,isDirectory,repositoryId,size,storageId");
+                }else {
+                    fileAttributes = Files.readAttributes(contentPath, "*");
+                }
+                stopWatch.stop();
+                logger.info("Read file attributes for {} in {} ms", file.getName(), stopWatch.getTotalTimeMillis());
                 // 从文件属性中提取存储ID、仓库ID和artifact路径，并设置到FileContent对象中。
                 file.setStorageId((String) fileAttributes.get(RepositoryFileAttributeType.STORAGE_ID.getName()));
                 file.setRepositoryId((String) fileAttributes.get(RepositoryFileAttributeType.REPOSITORY_ID.getName()));
