@@ -97,9 +97,9 @@
                     </a-descriptions>
                   </div>
                 </a-col>
-                  <a-col :span="16" :md="9" class="col-info">
+                  <a-col :span="16" :md="7" class="col-info">
 
-                          <div style="width: 100%">
+                          <div style="width: 85%">
                               <a-progress
                                   v-if="isClose"
                                   :stroke-color="{from: '#108ee9',to: '#87d068',}"
@@ -108,7 +108,7 @@
                               />
                           </div>
                   </a-col>
-                <a-col :span="8" :md="3" style="
+                <a-col :span="8" :md="5" style="
                     display: flex;
                     align-items: center;
                     justify-content: flex-end;
