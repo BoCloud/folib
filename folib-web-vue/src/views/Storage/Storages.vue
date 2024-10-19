@@ -209,10 +209,16 @@
             </a-form-model-item>
             <a-form-model-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN') > -1" :label="$t('Storage.Administrator')"
               :colon="false">
-              <a-select v-model="storageCreateData.admin" style="width: 100%" model="default" show-search
+              <a-select v-model="storageCreateData.admin" style="width: 100%" model="default" show-search allowClear
+                :dropdown-style="{ maxHeight: '240px', overflow: 'auto' }"
+                @change="userOnChange"
+                @search="userSearchChange"
+                @popupScroll="userPopupScroll"
+                :getPopupContainer="(triggerNode) => triggerNode.parentNode || document.body"
+                :filter-option="false"
                 :placeholder="$t('Storage.SelectAdministrator')">
-                <a-select-option v-for="(tag, index) in userList" :key="index" :value="tag.username">
-                  {{ tag.username }}
+                <a-select-option v-for="(username, index) in userList" :key="index" :value="username">
+                  {{ username }}
                 </a-select-option>
               </a-select>
             </a-form-model-item>
@@ -299,10 +305,16 @@
             </a-form-item>
             <a-form-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN') > -1" :label="$t('Storage.Administrator')"
               :colon="false">
-              <a-select v-model="currentStorage.admin" style="width: 100%" model="default" show-search
+              <a-select v-model="currentStorage.admin" style="width: 100%" model="default" show-search allowClear
+                :dropdown-style="{ maxHeight: '240px', overflow: 'auto' }"
+                @change="userOnChange"
+                @search="userSearchChange"
+                @popupScroll="userPopupScroll"
+                :getPopupContainer="(triggerNode) => triggerNode.parentNode || document.body"
+                :filter-option="false"
                 :placeholder="$t('Storage.SelectAdministrator')">
-                <a-select-option v-for="(tag, index) in userList" :key="index" :value="tag.username">
-                  {{ tag.username }}
+                <a-select-option v-for="(username, index) in userList" :key="index+1" :value="username">
+                  {{ username }}
                 </a-select-option>
               </a-select>
             </a-form-item>
@@ -1170,7 +1182,7 @@
             (step === 5 && folibRepository.type === 'group')" :bordered="false" class="header-solid">
                 <a-row>
                     <a-col :span="24">
-                        <UnionRepository ref="unionRepository" :isShow="isShow" :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></UnionRepository>
+                        <UnionRepository ref="unionRepository" :isShow="isShow" :folibRepository="this.folibRepositoryData" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></UnionRepository>
                     </a-col>
                 </a-row>
                 <a-row>
@@ -1231,7 +1243,7 @@ import {
     getStoragesAndRepositories,
     aliveRepository, repositoryEnableUsers
 } from "@/api/folib"
-import { getUsers } from "@/api/users"
+import { getUsers, queryUser } from "@/api/users"
 import CardProjectFolib from "@/components/Cards/CardProjectFolib"
 import { getLayoutType, genLayoutType, groupRepositoriesBuild, objectToGroupRepositories } from "@/utils/layoutUtil"
 import draggable from "vuedraggable"
@@ -1447,15 +1459,21 @@ export default {
         gitVCS2:[]
         //there may be other VCS ...
       },
-        permissionForm: {
-            allowAnonymous: true,
-            scope: 1,
-            userList: []
-        },
-        settingVisible: false,
-        stepsStatus:"process",
-        isRepoExist:true,
-        notEditPolicy:false,
+     permissionForm: {
+        allowAnonymous: true,
+        scope: 1,
+        userList: []
+     },
+     settingVisible: false,
+     stepsStatus:"process",
+     isRepoExist:true,
+     notEditPolicy:false,
+      userQueryParams: {
+        page: 1,
+        limit: 50,
+        total: 0,
+        matchUsername: undefined,
+      }
     };
   },
   watch: {
@@ -1464,11 +1482,16 @@ export default {
     },
       layoutChecked(newVal, oldVal) {
           console.log('Selected value changed from', oldVal, 'to', newVal);
+          console.log(newVal !=="maven");
           // 在这里处理值改变的逻辑
-          if(newVal !== "maven"){
+          if(newVal !=="maven"){
               this.folibRepository.policy="mixed"
               this.notEditPolicy=true;
+          }else {
+              this.notEditPolicy=false;
           }
+          console.log("notEditPolicy",this.notEditPolicy);
+
       }
   },
   async created() {
@@ -1738,9 +1761,48 @@ export default {
       }
     },
     getUsersList() {
-      getUsers().then(res => {
-        this.userList = res.users
+      queryUser({username: this.userQueryParams.matchUsername}, this.userQueryParams).then(res => {
+        const resData = []
+        if (res.data.rows) {
+          res.data.rows.forEach(item => {
+            resData.push(item.username)
+          })
+        }
+        this.userQueryParams.total = res.data.total
+        if(this.userList.length <= res.data.total){
+          this.userList.push(...resData)
+        }
       })
+    },
+    userSearchChange(matchUsername){
+      this.userQueryParams.matchUsername = matchUsername
+      this.userList = []
+      this.userQueryParams.page = 1
+      this.getUsersList()
+    },
+    userOnChange(value,e){
+      this.userQueryParams.matchUsername = value
+      let data = e && e.data && e.data.attrs && e.data.attrs.data
+      this.$emit('select', {...data, value, name: value})
+      if (!this.userQueryParams.matchUsername) {
+        this.userSearchChange('')
+      }
+    },
+    userPopupScroll(e){
+      const {target} = e;
+      const scrllHeight = target.scrollHeight - target.scrollTop
+      const clientHeight = target.clientHeight
+      // 下拉框不下拉的时候
+      if(scrllHeight ===0 && clientHeight ===0){
+        this.userQueryParams.page = 1
+      } else if(scrllHeight - clientHeight <= 30){
+          // 下拉到底部时
+          if(this.userList.length < this.userQueryParams.total){
+              // 如果滑到底部，则加载下一页
+              this.userQueryParams.page++
+              this.getUsersList()
+          }
+      }
     },
   async  getStorages() {
   await    getStorages().then(response => {
@@ -2414,6 +2476,7 @@ export default {
       doDrawerStatus(isClose,status){
           this.folibVisible = isClose;
           this.stepsStatus = status;
+          this.step=0;
       }
   },
     provide() {

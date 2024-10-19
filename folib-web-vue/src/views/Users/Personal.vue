@@ -56,10 +56,10 @@
                       <a-input v-model="personalForm.email" :placeholder="$t('Users.EnterEmail')" />
                     </a-form-model-item>
                     <a-form-model-item class="mb-10" :label="$t('Users.NewPassword')" :colon="false" prop="password">
-                      <a-input-password autocomplete="new-password" v-model="personalForm.password" :placeholder="$t('Users.EnterNewPassword')" />
+                      <a-input-password autocomplete="new-password" v-model="personalForm.password" :placeholder="$t('Users.EnterNewPassword')"  :disabled="!passwordUpdateEnable && personalForm.username != 'admin'"/>
                     </a-form-model-item>
                     <a-form-model-item class="mb-10" :label="$t('Users.EnterYourNewPasswordAgain')" :colon="false" prop="againPassword">
-                      <a-input-password autocomplete="new-password" v-model="personalForm.againPassword" :placeholder="$t('Users.EnterNewPasswordAgain')" />
+                      <a-input-password autocomplete="new-password" v-model="personalForm.againPassword" :placeholder="$t('Users.EnterNewPasswordAgain')" :disabled="!passwordUpdateEnable && personalForm.username != 'admin'"/>
                     </a-form-model-item>
                   </a-col>
                 </a-row>
@@ -129,6 +129,9 @@ import {
 } from "@/api/login"
 import AvatarSelector from "@/components/AvatarSelector/AvatarSelector.vue"
 import { encrypt } from "@/utils/jsencrypt"
+import {
+  getSingleDict,
+} from "@/api/advanced"
 
 export default {
   inject: ["reload"],
@@ -218,7 +221,8 @@ export default {
           {required: true, trigger: ['blur'], validator: pwdAgainCheck }
         ]
       },
-      showAvatarSelector: false
+      showAvatarSelector: false,
+      passwordUpdateEnable: true,
     }
   },
   components: {
@@ -232,6 +236,7 @@ export default {
   mounted() {},
   methods: {
     initData () {
+      this.getPasswordUpdateEnable()
       this.personalForm.username = this.$store.state.user.name
       this.personalForm.email = this.$store.state.user.email
       this.personalForm.avatar = this.$store.state.user.avatar
@@ -327,7 +332,14 @@ export default {
     passwordResetForm() {
       this.$refs.passwordForm.resetFields()
       this.initData()
-    }
+    },
+    getPasswordUpdateEnable() {
+      getSingleDict({ dictType: 'system_property', dictKey: 'PASSWORD_UPDATE_ENABLE' }).then(res => {
+        if (res && res.dictValue) {
+          this.passwordUpdateEnable = !(res.dictValue === 'false')
+        }
+      })
+    },
   },
 }
 </script>
