@@ -83,4 +83,6 @@ public interface Repository {
     UnionRepositoryConfiguration getUnionRepositoryConfig();
     boolean isSyncEnabled();
 
+    Boolean getHealthStatus();
+
 }

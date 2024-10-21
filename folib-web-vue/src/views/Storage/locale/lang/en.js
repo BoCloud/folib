@@ -236,4 +236,6 @@ export default {
     'LastTenUpdates': 'Last 10 updates to the storage data view',
     'RepositoryList': 'Repository list',
     'ScanTime': 'Scan time',
+    'RepositoryQuery': 'Please select repository query',
+    'RepositoryInfo':'Repository info'
 }

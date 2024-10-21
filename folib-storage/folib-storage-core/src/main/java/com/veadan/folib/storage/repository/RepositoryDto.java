@@ -10,6 +10,7 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.remote.RemoteRepositoryDto;
 import com.veadan.folib.yaml.repository.CustomRepositoryConfigurationDto;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
@@ -96,6 +97,13 @@ public class RepositoryDto
      * 联邦仓库配置
      */
     private MutableUnionRepositoryConfiguration unionRepositoryConfiguration;
+
+    /**
+     * proxy 健康状态
+     */
+    @Getter
+    private Boolean healthStatus;
+
 
     @JsonIgnore
     private StorageDto storage;
@@ -492,5 +500,9 @@ public class RepositoryDto
 
     public void setSyncEnabled(boolean syncEnabled) {
         this.syncEnabled = syncEnabled;
+    }
+
+    public void setHealthStatus(Boolean healthStatus){
+        this.healthStatus = healthStatus;
     }
 }

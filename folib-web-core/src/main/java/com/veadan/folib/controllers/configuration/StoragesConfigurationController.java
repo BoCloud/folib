@@ -51,6 +51,7 @@ import com.veadan.folib.storage.StorageData;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.Views;
 import com.veadan.folib.storage.repository.*;
+import com.veadan.folib.storage.repository.remote.heartbeat.RemoteRepositoryAlivenessService;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.domain.Users;
@@ -183,6 +184,8 @@ public class StoragesConfigurationController
     private PrivilegeEventListenerRegistry privilegeEventListenerRegistry;
     @Autowired
     private ResourceService resourceService;
+    @Inject
+    private RemoteRepositoryAlivenessService remoteRepositoryAlivenessCacheManager;
 
 
     public StoragesConfigurationController(ConfigurationManagementService configurationManagementService,
@@ -861,9 +864,31 @@ public class StoragesConfigurationController
             if (flag) {
                 Map<String, ? extends Repository> repositoryMap = storage.getRepositories();
                 if (Objects.nonNull(repositoryMap) && CollectionUtils.isNotEmpty(repositoryMap.values())) {
-                    repositoryMap = repositoryMap.values().stream().filter(item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || hasRepositoryResolve(item)).collect(Collectors.toMap(Repository::getId, Function.identity()));
+                    repositoryMap = repositoryMap.values().stream()
+                            .filter(item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || hasRepositoryResolve(item))
+                            .map(item -> {
+                                if(RepositoryTypeEnum.PROXY.getType().equals(item.getType())){
+                                    RepositoryDto repositoryDto = (RepositoryDto) item;
+                                    repositoryDto.setHealthStatus(remoteRepositoryAlivenessCacheManager.isAlive(((RepositoryDto) item).getRemoteRepository()));
+                                }
+                                return item;
+                            })
+                            .collect(Collectors.toMap(Repository::getId, Function.identity()));
                     storage.setRepositories((Map<String, RepositoryDto>) repositoryMap);
                 }
+            }
+            Map<String, ? extends Repository> repositoryMap = storage.getRepositories();
+            if (Objects.nonNull(repositoryMap) && CollectionUtils.isNotEmpty(repositoryMap.values())) {
+                repositoryMap = repositoryMap.values().stream()
+                        .map(item -> {
+                            if(RepositoryTypeEnum.PROXY.getType().equals(item.getType())){
+                                RepositoryDto repositoryDto = (RepositoryDto) item;
+                                repositoryDto.setHealthStatus(remoteRepositoryAlivenessCacheManager.isAlive(((RepositoryDto) item).getRemoteRepository()));
+                            }
+                            return item;
+                        })
+                        .collect(Collectors.toMap(Repository::getId, Function.identity()));
+                storage.setRepositories((Map<String, RepositoryDto>) repositoryMap);
             }
             StorageData storageData = new StorageData(storage);
             return ResponseEntity.ok(storageData);
