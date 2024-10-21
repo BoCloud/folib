@@ -234,4 +234,6 @@ export default {
     'LastTenUpdates': '近10次更新存储数据视图',
     'RepositoryList': '仓库列表',
     'ScanTime': '扫描时间',
+    'RepositoryQuery': '请选择仓库查询',
+    'RepositoryInfo':'仓库信息'
 }

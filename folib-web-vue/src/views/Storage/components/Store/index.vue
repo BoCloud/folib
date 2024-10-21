@@ -9,10 +9,9 @@
           <a-card :bordered="false" class="card-profile-head" :bodyStyle="{ padding: 0 }" :targetOffset="0"
             :affix="false">
             <template #title>
-
               <a-row type="flex" align="middle">
                 <a-col :span="24" :md="12" class="col-info">
-                  <a>
+                  <a v-if="!isChecked">
                     <a-icon type="backward" :style="{
                       fontSize: '32px',
                       marginRight: '5px',
@@ -96,7 +95,6 @@
                   </div>
                 </a-col>
                   <a-col :span="16" :md="9" class="col-info">
-
                           <div style="width: 100%">
                               <a-progress
                                   v-if="isClose"
@@ -166,8 +164,8 @@
     </a-affix>
     <a-row v-if="isSearch === false" type="flex" :gutter="24">
       <!-- Platform Settings Column -->
-      <a-col :span="24" :md="10" class="mb-24">
-        <a-card :bordered="false" style="max-height: 1024px; min-height: 454px; overflow-y: auto" class="header-solid"
+      <a-col style="margin-top:-20px;" v-if="!isChecked" :span="24" :md="10" class="mb-24">
+        <a-card :bordered="false" style="max-height: 1024px; min-height: 554px; overflow-y: auto" class="header-solid"
           :bodyStyle="{ paddingTop: 0, paddingBottom: 0 }">
           <template #title>
             <h6 class="font-semibold m-0">{{ $t('Store.PacketList') }} <a class="ml-10" @click="reload()">
@@ -181,7 +179,7 @@
           </a-directory-tree>
         </a-card>
       </a-col>
-      <a-col :span="24" :md="14" class="mb-24">
+      <a-col style="margin-top:-20px;" :span="24" :md="!isChecked ? 14 : 24" class="mb-24">
         <a-card :bordered="false" class="header-solid h-full card-profile-information"
           :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }" :headStyle="{ paddingRight: 0 }">
           <template #title>
@@ -449,7 +447,6 @@
 
             </a-row>
           </template>
-
           <a v-if="currentTreeNode.url && folibRepository.layout !== 'Docker'" class="text-dark" :href="currentTreeNode.url.search('http://localhost:38080/') !== -1
               ? currentTreeNode.url.replace(
                 'http://localhost:38080/',
@@ -466,7 +463,7 @@
   }}</a>
 
           <hr class="gradient-line" />
-          <BaseData ref="BaseData" :currentTreeNode="currentTreeNode" :repositoryType="repositoryType"
+          <BaseData ref="BaseData" :isChecked="isChecked" :currentTreeNode="currentTreeNode" :repositoryType="repositoryType"
             :currentFileDetial="currentFileDetial" :successMsg="successMsg" :folibRepository="folibRepository" @messageArchitectureChild="handleArchitectureMessage"
                     @metadataEditHandler="metadataEditHandler" @metadataHandler="metadataHandler" @setCurrentFileDetial="setCurrentFileDetial"/>
         </a-card>
@@ -985,7 +982,8 @@ export default {
     'successMsg',
     'searchType',
     'propScanReport',
-    'formateDate'
+    'formateDate',
+    'isChecked'
   ],
   components: {
     PrismEditor,

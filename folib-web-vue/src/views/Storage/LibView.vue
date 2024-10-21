@@ -1,7 +1,7 @@
 <template>
   <div class="lib-view">
     <!-- Header Background Image -->
-    <div class="profile-nav-bg" style="
+    <div v-if="!isChecked" class="profile-nav-bg" style="
             background: url(images/banner.jpg) center/cover;
             transition: all 0.3s;
           ">
@@ -21,7 +21,9 @@
     >
       <a-tab-pane :key="1" :tab="$t('Storage.Details')">
         <store
+          :style="isChecked ? 'margin-top:-70px;' : ''"
           ref="store"
+          :isChecked="isChecked"
           :metadataTypes="i18nMetadataTypes"
           :quillOptions="quillOptions"
           :propScanReport="scanReport"
@@ -165,6 +167,7 @@ import VunlerabilityReport from '@/components/Vulnerabilities/VunlerabilityRepor
 
 export default {
   inject: ["reload"],
+  props:['isChecked'],
   components: {
     CardPackageTree,
     CardProfileInformation,
@@ -430,10 +433,16 @@ export default {
     }
   },
   created() {
-    this.createData()
-    this.getStorage(this.folibRepository.storageId)
+    this.myMounted()
   },
   methods: {
+    myMounted(){
+      this.createData()
+      this.getStorage(this.folibRepository.storageId)
+    },
+    treeSelect(key,e){
+      this.$refs.store.treeSelect(key, e)
+    },
     searchBoxMouseStatus(bool) {
       this.mouseEnter = bool;
     },
