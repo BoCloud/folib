@@ -169,8 +169,8 @@ public class StorageManagementServiceImpl implements StorageManagementService {
                         folibRole = folibRoleService.insert(folibRole);
                     }
                     //添加用户和资源绑定
-                    List<RoleResourceRef> userRef = new ArrayList<>(users.size());
                     if (CollectionUtils.isNotEmpty(users)) {
+                        List<RoleResourceRef> userRef = new ArrayList<>(users.size());
                         FolibRole finalFolibRole = folibRole;
                         users.forEach(user -> {
                             addResources.forEach(res -> {
@@ -184,9 +184,9 @@ public class StorageManagementServiceImpl implements StorageManagementService {
                                 }
                             });
                         });
+                        userRef.add(RoleResourceRef.builder().roleId(roleId).resourceId(storageId).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build());
+                        roleResourceRefService.saveBath(userRef);
                     }
-                    userRef.add(RoleResourceRef.builder().roleId(roleId).resourceId(storageId).resourceType(GlobalConstants.RESOURCE_TYPE_STORAGE).build());
-                    roleResourceRefService.saveBath(userRef);
                 });
             }
         } catch (Exception e) {

@@ -17,6 +17,8 @@
             style="width: 100%"
             v-model="form.username"
             :placeholder="$t('AccessToken.UsernamePlaceholder')"
+            showSearch
+            allowClear
             :options="users"
         />
       </a-form-item>

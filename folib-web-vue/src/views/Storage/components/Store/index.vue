@@ -20,10 +20,12 @@
                       color: '#BFBFBFFF',
                     }" @click="goBack()" />
                   </a>
-                  <a>
+                  <a style="justify-content: center;align-items: center;display: flex;">
                     <a-avatar @click="createData" :size="84" shape="square"
-                      style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
-                      :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" />
+                      style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );   "
+                                >
+                        <img :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" style="width: 150%;margin-left: -13.5px;" alt=""></img>
+                    </a-avatar>
                   </a>
                   <div class="avatar-info">
                     <a-tooltip placement="topLeft">
@@ -95,9 +97,9 @@
                     </a-descriptions>
                   </div>
                 </a-col>
-                  <a-col :span="16" :md="9" class="col-info">
+                  <a-col :span="16" :md="7" class="col-info">
 
-                          <div style="width: 100%">
+                          <div style="width: 85%">
                               <a-progress
                                   v-if="isClose"
                                   :stroke-color="{from: '#108ee9',to: '#87d068',}"
@@ -106,7 +108,7 @@
                               />
                           </div>
                   </a-col>
-                <a-col :span="8" :md="3" style="
+                <a-col :span="8" :md="5" style="
                     display: flex;
                     align-items: center;
                     justify-content: flex-end;
@@ -151,12 +153,12 @@
                       <a-icon type="question-circle" theme="filled" />
                     </small>
                   </a>
-                  <!-- <div v-if="(isAdmin() || (storageAdmin && storageAdmin === $store.state.user.name)) && folibRepository.type !== 'group'">
+                  <div v-if="(isAdmin() || (storageAdmin && storageAdmin === $store.state.user.name)) && folibRepository.type !== 'group'">
                     <span class="mr-15">{{
                       scan.onScan ? $t('Store.ScanOn') : $t('Store.ScanOff')
                     }}</span>
                     <a-switch default-checked v-model="scan.onScan" @change="scannerChange" />
-                  </div> -->
+                  </div>
                 </a-col>
               </a-row>
             </template>
@@ -2792,6 +2794,7 @@ export default {
               // 发送请求
               try {
                   await this.uploadChunk(formData, fileIndex, chunkIndex,chunkSize);
+                  this.progressStatus='active';
                   resolve();
               } catch (error) {
                   reject(error);
