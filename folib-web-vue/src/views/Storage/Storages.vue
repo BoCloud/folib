@@ -159,6 +159,15 @@
                 <a-icon slot="prefix" type="appstore" />
               </a-input>
             </a-form-model-item>
+            <a-form-model-item class="mb-10"
+                                                   :label="$t('Storage.SyncStorage')"
+                                                   :colon="false" style="position: relative"
+                                                   prop="syncEnabled">
+            <a-switch v-model="storageCreateData.syncEnabled" />&nbsp;&nbsp;
+              <a-tooltip :title="$t('Setting.SyncStoragePrompt')" class="info-message">
+                <a-icon type="question-circle-o" />
+              </a-tooltip>
+          </a-form-model-item>
             <a-form-model-item class="tags-field mb-10" :label="$t('Storage.StorageType')" :colon="false">
               <a-radio-group name="radioGroup" default-value="local" @change="changeStorageType()"
                 v-model="storageCreateData.storageProvider">
@@ -256,6 +265,15 @@
               <a-input disabled v-model="currentStorage.id" :placeholder="$t('Storage.StorageSpaceName')">
                 <a-icon slot="prefix" type="appstore" />
               </a-input>
+            </a-form-item>
+            <a-form-item class="mb-10"
+                               :label="$t('Storage.SyncStorage')"
+                               :colon="false" style="position: relative"
+                               prop="syncEnabled">
+              <a-switch v-model="currentStorage.syncEnabled" @change="changeSyncEnabled"/>&nbsp;&nbsp;
+              <a-tooltip :title="$t('Setting.SyncStoragePrompt')" class="info-message">
+                <a-icon type="question-circle-o" />
+              </a-tooltip>
             </a-form-item>
             <a-form-item class="tags-field mb-10" :label="$t('Storage.StorageType')" :colon="false">
               <a-radio-group disabled name="radioGroup" default-value="local" @change="changeStorageUpdateType()"
@@ -770,45 +788,52 @@
                 </a-col>
               </a-row>
               <a-row :gutter="[24]">
-                <a-col :span="4">
+                <a-col :span="3">
                   <a-form-item class="mb-10" :label="$t('Storage.RecycleBin')" :colon="false">
                     <a-checkbox v-model="folibRepository.trashEnabled">
                       {{ folibRepository.trashEnabled ? $t('Storage.On') : $t('Storage.Off') }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="4">
+                <a-col :span="3">
                   <a-form-item class="mb-10" :label="$t('Storage.Delete')" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsDeletion">
                       {{ folibRepository.allowsDeletion ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="4">
+                <a-col :span="3">
                   <a-form-item class="mb-10" :label="$t('Storage.ForcedDeletion')" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsForceDeletion">
                       {{ folibRepository.allowsForceDeletion ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="4">
+                <a-col :span="3">
                   <a-form-item class="mb-10" :label="$t('Storage.UploadDeploy')" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsDeployment">
                       {{ folibRepository.allowsDeployment ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="4">
+                <a-col :span="3">
                   <a-form-item class="mb-10" :label="$t('Storage.UploadOverlay')" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsRedeployment">
                       {{ folibRepository.allowsRedeployment ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="4">
+                <a-col :span="3">
                   <a-form-item class="mb-10" :label="$t('Storage.DirectoryBrowsing')" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsDirectoryBrowsing">
                       {{ folibRepository.allowsDirectoryBrowsing ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
+                    </a-checkbox>
+                  </a-form-item>
+                </a-col>
+                <a-col :span="3">
+                  <a-form-item class="mb-10" :label="$t('Storage.SyncRepository')" :colon="false">
+                    <a-checkbox v-model="folibRepository.syncEnabled">
+                      {{ folibRepository.syncEnabled ?  $t('Storage.On') : $t('Storage.Off')  }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
@@ -958,6 +983,13 @@
                   <a-form-item class="mb-10" :label="$t('Storage.RemoteIndexDownload')" :colon="false">
                     <a-checkbox v-model="folibRepository.remoteRepository.downloadRemoteIndexes">
                       {{ folibRepository.remoteRepository.downloadRemoteIndexes ? $t('Storage.Download') : $t('Storage.NoDownload') }}
+                    </a-checkbox>
+                  </a-form-item>
+                </a-col>
+                <a-col :span="3">
+                  <a-form-item class="mb-10" :label="$t('Storage.SyncRepository')" :colon="false">
+                    <a-checkbox v-model="folibRepository.syncEnabled">
+                      {{ folibRepository.syncEnabled ?  $t('Storage.On') : $t('Storage.Off')  }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
@@ -1321,6 +1353,7 @@ export default {
         storageProvider: 'local',
         storageMaxSize: 0,
         bucket: null,
+        syncEnabled: false
       },
       currentDefultStorage: {
         id: null,
@@ -1330,6 +1363,7 @@ export default {
         storageProvider: 'local',
         storageMaxSize: 0,
         bucket: null,
+        syncEnabled: false
       },
       showsTorageFormModal: false,
       delForm: this.$form.createForm(this, { name: "del" }),
@@ -1340,7 +1374,8 @@ export default {
         storageProvider: 'local',
         storageMaxSize: 0,
         bucket: null,
-        users: []
+        users: [],
+        syncEnabled: false
       },
       storageCreateDefultData: {
         id: null,
@@ -1349,7 +1384,8 @@ export default {
         storageProvider: 'local',
         storageMaxSize: 0,
         bucket: null,
-        users: []
+        users: [],
+        syncEnabled: false
       },
       visibility: true,
       slack: true,
@@ -1431,6 +1467,7 @@ export default {
         storageProvider: "local",
         trashEnabled: true,
         type: "hosted",
+        syncEnabled: false
       },
       boards: [
         {
@@ -1480,6 +1517,13 @@ export default {
     '$i18n.locale'() {
       this.$forceUpdate();
     },
+    currentStorage:{
+      handler(val){
+        console.log(val);
+        
+      },
+      deep:true
+    },
       layoutChecked(newVal, oldVal) {
           console.log('Selected value changed from', oldVal, 'to', newVal);
           console.log(newVal !=="maven");
@@ -1527,6 +1571,9 @@ export default {
     }
   },
   methods: {
+    changeSyncEnabled(val){
+      this.storageCreateData.syncEnabled = val;
+    },
     message(status, type, message) {
       let statusList = [401, 403]
       if (statusList.includes(status)) {
@@ -1748,6 +1795,7 @@ export default {
         if (this.storageMaxSize) {
           this.currentStorage.storageMaxSize = this.storageMaxSize * 1024 * 1024 * 1024 * 1024
         }
+        console.log(this.currentStorage)
         updateStorages(this.currentStorage).then(response => {
           setTimeout(() => {
             this.$notification.success({
@@ -2645,5 +2693,12 @@ export default {
   .tabs-sliding.ant-tabs {
       overflow: hidden;
   }
+}
+.info-message{
+  color:#fff;
+  margin-left: 10px;
+  background:#1890ff ;
+  border-radius: 50%;
+  scale: (1.3);
 }
 </style>

@@ -29,6 +29,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -76,6 +77,8 @@ public class ConfigurationManagementServiceImpl
     protected RepositoryPathResolver repositoryPathResolver;
     @Inject
     private RepositoryManagementService repositoryManagementService;
+    @Inject
+    private ConversionService conversionService;
 
     /**
      * Yes, this is a state object.
@@ -217,6 +220,13 @@ public class ConfigurationManagementServiceImpl
             storageDto.setStorageMaxSize(storage.getStorageMaxSize());
         } else {
             storageDto.setStorageMaxSize(0L);
+        }
+        storageDto.setSyncEnabled(storage.isSyncEnabled());
+        if (!storage.getRepositories().isEmpty()) {
+            storage.getRepositories().values().forEach(repository -> {
+                RepositoryDto repositoryDto = conversionService.convert(repository, RepositoryDto.class);
+                storageDto.addRepository(repositoryDto);
+            });
         }
 //        checkUsersContainsAdmin(storageDto);
         modifyInLock(configuration -> configuration.addStorage(storageDto));

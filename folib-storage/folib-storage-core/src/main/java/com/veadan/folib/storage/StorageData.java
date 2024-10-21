@@ -44,6 +44,10 @@ public class StorageData implements Storage {
 
     @JsonView(Views.ShortStorage.class)
     private Set<String> users;
+    /**是否同步存储空间到其他节点*/
+    @JsonView(Views.ShortStorage.class)
+    private boolean syncEnabled;
+    @JsonView(Views.ShortStorage.class)
     private Set<String> repositoryUsers;
 
     @JsonView(Views.LongStorage.class)
@@ -64,6 +68,7 @@ public class StorageData implements Storage {
         this.users = delegate.getUsers();
         this.repositories = immuteRepositories(delegate.getRepositories());
         this.repositoryUsers = delegate.getRepositoryUsers();
+        this.syncEnabled = delegate.isSyncEnabled();
     }
 
     private Map<String, ? extends Repository> immuteRepositories(final Map<String, ? extends Repository> source) {
@@ -135,5 +140,15 @@ public class StorageData implements Storage {
     @Override
     public void setRepositoryUsers(Set<String> repositoryUsers) {
         this.repositoryUsers = repositoryUsers;
+    }
+
+
+    @Override
+    public boolean isSyncEnabled() {
+        return syncEnabled;
+    }
+
+    public void setSyncEnabled(boolean syncEnabled) {
+        this.syncEnabled = syncEnabled;
     }
 }

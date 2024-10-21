@@ -225,10 +225,13 @@ public class UserAuthSyncTask {
             String storageId = resource.getStorageId();
             if (StringUtils.isNotEmpty(repositoryId)) {
                 StorageDto storage = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
-                if (storage != null && storage.hasRepositories() && storage.isSyncEnabled()) {
+                if (storage != null && storage.hasRepositories()) {
                     RepositoryDto repository = storage.getRepository(repositoryId);
                     if (repository != null && !repositorys.contains(repository) && repository.isSyncEnabled()) {
                         repositorys.add(repository);
+                        if (!storages.contains(storage)) {
+                            storages.add(storage);
+                        }
                     }
                 }
             }else if (StringUtils.isNotEmpty(storageId)){

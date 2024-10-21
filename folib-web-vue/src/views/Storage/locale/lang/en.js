@@ -9,6 +9,8 @@ export default {
     'CreateStorageSpace': 'Create storage space',
     'StorageSpaceName': 'Storage space name',
     'StorageType': 'Storage type',
+    'SyncStorage': 'Sync Storage',
+    'SyncRepository': 'Sync Repository',
     'LocalStorage': 'Local storage',
     'Note': 'Note',
     'NFSStorage': 'The default storage is NFS local directory storage.',

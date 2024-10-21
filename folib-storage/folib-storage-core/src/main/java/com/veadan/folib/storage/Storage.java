@@ -33,4 +33,6 @@ public interface Storage
     Set<String> getRepositoryUsers();
 
     void setRepositoryUsers(Set<String> repositoryUsers);
+
+    boolean isSyncEnabled();
 }

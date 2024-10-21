@@ -54,6 +54,17 @@ public class StorageForm {
     @Valid
     private List<RepositoryForm> repositories;
 
+    public boolean isSyncEnabled() {
+        return syncEnabled;
+    }
+
+    public void setSyncEnabled(boolean syncEnabled) {
+        this.syncEnabled = syncEnabled;
+    }
+
+    /**是否同步存储空间到其他节点*/
+    private boolean syncEnabled;
+
     public String getId() {
         return id;
     }
