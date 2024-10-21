@@ -67,6 +67,7 @@
                         :show-search="true"
                         :filter-option="handleFilter"
                         @scroll="handleScroll"
+                        @search="handleLeftSearch"
                     >
                         <!-- <span
                             slot="header"
@@ -363,9 +364,11 @@ export default {
         handleFilter(inputValue, item) {
             return item.title.toLowerCase().indexOf(inputValue.toLowerCase()) !== -1;
         },
-        handleLeftSearch(e) {
-            this.leftSearchValue = e.target.value;
-            this.getUsers();
+        handleLeftSearch(direction, value) {
+            if(direction === 'left') {
+                this.leftSearchValue = value;
+                this.getUsers();
+            }
         },
         onSelectChange(selectedRowKeys) {
             this.selectedRowKeys = selectedRowKeys;

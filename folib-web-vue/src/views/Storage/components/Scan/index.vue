@@ -40,10 +40,10 @@
             </a-radio-group>
           </a-card>
           <a-form-model-item :wrapper-col="{ span: 14, offset: 4 }">
-            <a-button type="primary" @click="scanFormSubmit">
+            <a-button type="primary" @click="scanFormSubmit" v-if="isShow">
               {{ $t('Scan.Save') }}
             </a-button>
-            <a-button class="ml-10" @click="scanResetForm">
+            <a-button class="ml-10" @click="scanResetForm" v-if="isShow">
               {{ $t('Scan.Cancel') }}
             </a-button>
           </a-form-model-item>
@@ -61,6 +61,7 @@ import {
   getCacheConfig
 } from "@/api/foEyes"
 export default {
+  inject: ['doDrawerStatus'],
   props: {
 		folibRepository: {
 			type: Object,
@@ -70,6 +71,10 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+    isShow:{
+        type: Boolean,
+        default: true,
+    },
 	},
   data() {
     return {
@@ -148,12 +153,14 @@ export default {
             this.successMsg(this.$t('Scan.OperationSuccessful'))
             setTimeout(() => {
               this.scanResetForm()
+                this.callParent(true,'process')
             }, 100);
           }).catch((err) => {
               let error = err.response.data.message?err.response.data.message:this.$t('Storage.UnknownError')
               this.$notification["error"]({
                 message: error,
               })
+            this.callParent(false,'error')
           })
         }
       })
@@ -162,6 +169,11 @@ export default {
       this.$refs.scanForm.resetFields()
       this.$emit('settingDrawerClose')
     },
+    callParent(isClose,status) {
+        if(this.doDrawerStatus){
+            this.doDrawerStatus(false,status)
+        }
+    }
   },
 };
 </script>

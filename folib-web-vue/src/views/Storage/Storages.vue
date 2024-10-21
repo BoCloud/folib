@@ -196,10 +196,16 @@
             </a-form-model-item>
             <a-form-model-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN') > -1" :label="$t('Storage.Administrator')"
               :colon="false">
-              <a-select v-model="storageCreateData.admin" style="width: 100%" model="default" show-search
+              <a-select v-model="storageCreateData.admin" style="width: 100%" model="default" show-search allowClear
+                :dropdown-style="{ maxHeight: '240px', overflow: 'auto' }"
+                @change="userOnChange"
+                @search="userSearchChange"
+                @popupScroll="userPopupScroll"
+                :getPopupContainer="(triggerNode) => triggerNode.parentNode || document.body"
+                :filter-option="false"
                 :placeholder="$t('Storage.SelectAdministrator')">
-                <a-select-option v-for="(tag, index) in userList" :key="index" :value="tag.username">
-                  {{ tag.username }}
+                <a-select-option v-for="(username, index) in userList" :key="index" :value="username">
+                  {{ username }}
                 </a-select-option>
               </a-select>
             </a-form-model-item>
@@ -286,10 +292,16 @@
             </a-form-item>
             <a-form-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN') > -1" :label="$t('Storage.Administrator')"
               :colon="false">
-              <a-select v-model="currentStorage.admin" style="width: 100%" model="default" show-search
+              <a-select v-model="currentStorage.admin" style="width: 100%" model="default" show-search allowClear
+                :dropdown-style="{ maxHeight: '240px', overflow: 'auto' }"
+                @change="userOnChange"
+                @search="userSearchChange"
+                @popupScroll="userPopupScroll"
+                :getPopupContainer="(triggerNode) => triggerNode.parentNode || document.body"
+                :filter-option="false"
                 :placeholder="$t('Storage.SelectAdministrator')">
-                <a-select-option v-for="(tag, index) in userList" :key="index" :value="tag.username">
-                  {{ tag.username }}
+                <a-select-option v-for="(username, index) in userList" :key="index+1" :value="username">
+                  {{ username }}
                 </a-select-option>
               </a-select>
             </a-form-item>
@@ -370,7 +382,6 @@
     <a-drawer placement="right" width="65%" :title="(folibRepositoryEditDisabled ? $t('Storage.Edit') : $t('Storage.create')) + $t('Storage.ProductWarehouse')"
       :visible="folibVisible" @close="closeUserDialog">
       <div class="mx-auto m-50" style="max-width: 1000px;">
-
         <!-- Header -->
         <h3 class="mt-25 mb-5 text-center">{{ $t('Storage.Start') }}{{ folibRepositoryEditDisabled ? $t('Storage.Edit') : $t('Storage.create') }}{{ $t('Storage.yourFolib') }}</h3>
         <h5 v-if="language==='zh'" class="text-center font-regular">{{ $t('Storage.Will') }}
@@ -384,17 +395,21 @@
         <div class="my-50" style="max-width: 1000px;">
 
           <!-- Steps -->
-          <a-steps progress-dot v-model="step">
-            <a-step
-              v-if="folibRepository.type === 'hosted' || folibRepository.type === 'proxy' || folibRepository.type === 'group'"
-              :title="$t('Storage.TypeSelection')" />
-            <a-step
-              v-if="folibRepository.type === 'hosted' || folibRepository.type === 'proxy' || folibRepository.type === 'group'"
-              :title="$t('Storage.BasicInformation')" />
-            <a-step v-if="folibRepository.type === 'proxy'" :title="$t('Storage.RemoteConfiguration')" />
-            <a-step v-if="folibRepository.type === 'group'" :title="$t('Storage.CombinationConfiguration')" />
-            <!-- <a-step title="定时策略" /> -->
-          </a-steps>
+            <a-steps progress-dot v-model="step" @change="handleStepChange" size="small" :status="stepsStatus">
+                <a-step
+                    v-if="folibRepository.type === 'hosted' || folibRepository.type === 'proxy' || folibRepository.type === 'group'"
+                    :title="$t('Storage.TypeSelection')" style="margin-left: -10px;"/>
+                <a-step disabled
+                        v-if="folibRepository.type === 'hosted' || folibRepository.type === 'proxy' || folibRepository.type === 'group'"
+                        :title="$t('Storage.BasicInformation')"/>
+                <a-step v-if="folibRepository.type === 'proxy'" :title="$t('Storage.RemoteConfiguration')"/>
+                <a-step v-if="folibRepository.type === 'group'" :title="$t('Storage.CombinationConfiguration')"/>
+                <a-step :title="$t('Storage.PermissionSetting')" :disabled="isRepoExist" />
+                <a-step :title="$t('Storage.TimingPolicy')" :disabled="isRepoExist" />
+                <a-step :title="$t('Storage.FederatedRepository')"  :disabled="isRepoExist"/>
+                <a-step :title="$t('Storage.Scan')"  :disabled="isRepoExist"/>
+                <!-- <a-step title="定时策略" /> -->
+            </a-steps>
           <!-- / Steps -->
 
         </div>
@@ -402,9 +417,9 @@
 
         <!-- Wizard form cards -->
         <div class="mb-50">
-          <!-- Step 1 : About -->
+          <!-- Step 1 : About && (folibRepository.type === 'hosted' || folibRepository.type === 'proxy' || folibRepository.type === 'group')-->
           <a-card
-            v-if="step === 0 && (folibRepository.type === 'hosted' || folibRepository.type === 'proxy' || folibRepository.type === 'group')"
+            v-if="step === 0"
             :bordered="false" class="header-solid">
 
             <h5 class="font-regular text-center">{{ folibRepositoryEditDisabled ? $t('Storage.ClickNext') : $t('Storage.HowToChoose') }} </h5>
@@ -671,7 +686,7 @@
             </a-form>
           </a-card>
 
-          <!-- Step 2 : Account -->
+          <!-- Step 2 : Account  && (folibRepository.type === 'hosted' || folibRepository.type === 'proxy' || folibRepository.type === 'group')-->
           <a-card
             v-else-if="step === 1 && (folibRepository.type === 'hosted' || folibRepository.type === 'proxy' || folibRepository.type === 'group')"
             :bordered="false" class="header-solid">
@@ -704,7 +719,7 @@
                 </a-col>
                 <a-col :span="6">
                   <a-form-item class="mb-10" :label="$t('Storage.VersioningStrategy')" :colon="false">
-                    <a-select default-value="release" v-model="folibRepository.policy">
+                    <a-select default-value="release" v-model="folibRepository.policy" :disabled="notEditPolicy">
                       <a-select-option value="release">
                         release
                       </a-select-option>
@@ -791,8 +806,8 @@
                 </a-col>
                 <a-col :span="12" class="text-right">
                   <a-button v-if="folibRepository.type === 'hosted'" type="primary"
-                    @click="addOrUpdateRepositorySecond(false)" class="px-25">
-                    {{ $t('Storage.Complete') }}{{ folibRepositoryEditDisabled ? $t('Storage.Edit') : $t('Storage.create') }}
+                    @click="addOrUpdateRepositorySecond(true)" class="px-25">
+                      {{ $t('Storage.Next') }}
                   </a-button>
                   <!-- <a-button v-if="folibRepository.type === 'hosted'" style="margin-left: 20px"
                     @click="addOrUpdateRepositorySecond(true)" class="px-25">
@@ -807,6 +822,7 @@
           </a-card>
 
           <!-- Step 3 : Address -->
+            <!--  -->
           <a-card v-else-if="step === 2 && (folibRepository.type === 'proxy')" :bordered="false" class="header-solid">
             <h5 class="font-regular text-center">{{ $t('Storage.WarehouseConfig') }}</h5>
             <p class="text-center">
@@ -978,8 +994,8 @@
                   <a-button @click="moveStep(-1)" class="px-25">{{ $t('Storage.Back') }}</a-button>
                 </a-col>
                 <a-col :span="12" class="text-right">
-                  <a-button type="primary" @click="addOrUpdateRepositoryHandel(false)" class="px-25">
-                    {{ $t('Storage.Complete') }}{{ folibRepositoryEditDisabled ? $t('Storage.Edit') : $t('Storage.create') }}
+                  <a-button type="primary" @click="addOrUpdateRepositoryHandel(true)" class="px-25">
+                      {{ $t('Storage.Next') }}
                   </a-button>
                   <!-- <a-button style="margin-left: 20px" @click="addOrUpdateRepositoryHandel(true)" class="px-25">
                     {{ folibRepositoryEditDisabled? '修改': '创建' }}并设置定时策略</a-button> -->
@@ -1013,105 +1029,179 @@
                 <a-button @click="moveStep(-1)" class="px-25">{{ $t('Storage.Back') }}</a-button>
               </a-col>
               <a-col :span="12" class="text-right">
-                <a-button type="primary" @click="addOrUpdateRepositoryHandel(false)" class="px-25">
-                  {{ $t('Storage.Complete') }}{{ folibRepositoryEditDisabled ? $t('Storage.Edit') : $t('Storage.create') }}
+                <a-button type="primary" @click="addOrUpdateRepositoryHandel(true)" class="px-25">
+                    {{ $t('Storage.Next') }}
                 </a-button>
                 <!-- <a-button style="margin-left:20px" @click="addOrUpdateRepositoryHandel(true)" class="px-25">
                   {{ folibRepositoryEditDisabled? '修改': '创建' }}并设置定时策略</a-button> -->
               </a-col>
             </a-row>
           </a-card>
-          <a-card v-else-if="step === 3" :bordered="false" class="header-solid">
-            <h5 class="font-regular text-center">{{ $t('Storage.CustomizedStrategy') }}</h5>
-            <p class="text-center">{{ $t('Storage.TimingStrategy') }}</p>
-            <a-form :form="form" :hideRequiredMark="true">
+<!--          <a-card v-else-if="step === 3" :bordered="false" class="header-solid">-->
+<!--            <h5 class="font-regular text-center">{{ $t('Storage.CustomizedStrategy') }}</h5>-->
+<!--            <p class="text-center">{{ $t('Storage.TimingStrategy') }}</p>-->
+<!--            <a-form :form="form" :hideRequiredMark="true">-->
 
-              <div v-for="(i, index) in cronCanSetList" :key="index">
-                <a-row type="flex" align="middle">
-                  <a-col style="min-width: 40px;" class="text-center">
-                    <a-icon type="clock-circle" class="text-gray-6" style="font-size: 18px;" />
-                  </a-col>
-                  <a-col class="pl-15">
-                    <p class="mb-0">{{ i.name }}</p>
-                    <small class="text-dark">{{ i.description }}</small>
-                  </a-col>
-                  <a-col :span="24" :md="12" class="ml-auto"
-                    style="display: flex; align-items: center; justify-content: flex-end">
-                    <a-tag v-if="i.isSetted && i.isSetted.uuid" color="success" class="ant-tag-success font-bold">{{ $t('Storage.HaveSet') }}
-                    </a-tag>
-                    <span class="ml-5">{{ i.scope }}</span>
-                    <a-button @click="cronShowHandle(i, index)" type="link" class="btn-more ml-5">
-                      {{ $t('Storage.ExpandSetting') }}
-                      <a-icon :type="i.isShow ? 'arrow-down' : 'arrow-right'" />
-                    </a-button>
-                  </a-col>
-                </a-row>
-                <a-card v-if="i.isShow" :bordered="false" class="bg-gray-3 shadow-0 mb-24"
-                  :bodyStyle="{ padding: '8px' }">
-                  <a-row type="flex" align="middle">
-                    <a-col>
-                      <p class="font-semibold mb-0 ml-10">{{ i.isSetted.jobClass }}</p>
-                    </a-col>
-                    <a-col class="ml-auto">
-                      <a-input v-model="i.isSetted.cronExpression" size="small" class="font-regular text-sm text-dark"
-                        style="width: 100px;" />
-                    </a-col>
-                    <a-col class="ml-auto">
-                      <span class="mr-15">{{ i.isSetted.oneTimeExecution ? $t('Storage.ExecuteOnce') : $t('Storage.LoopExecution') }}</span>
-                      <a-switch v-model="i.isSetted.oneTimeExecution"
-                        @change="oneTimeExecutionChange($event, i.isSetted)" />
-                    </a-col>
-                    <a-col class="ml-auto">
-                      <span class="mr-15">{{ i.isSetted.immediateExecution ? $t('Storage.ImmediateExecution') : $t('Storage.NoImmediateExecution') }}</span>
-                      <a-switch v-model="i.isSetted.immediateExecution"
-                        @change="immediateExecutionChange($event, i.isSetted)" />
-                    </a-col>
-                  </a-row>
-                  <hr v-if="i.fields.length > 2" class="gradient-line my-10">
-                  <a-row type="flex" align="middle">
-                    <a-col v-if="i.fields.length > 2" style="margin-right: 15px">
-                      <p class="font-semibold mb-0 ml-10">{{ $t('Storage.OtherParameters') }}:</p>
-                    </a-col>
-                    <div v-if="i.fields.length > 2">
-                      <div v-for="(f, index) in i.fields" :key="index">
-                        <a-col v-if="f.name !== 'storageId' && f.name !== 'repositoryId'" class="ml-auto">
-                          <span style="margin-left: 15px" class="mr-15">{{ f.name }}</span>
-                          <a-input v-if="f.type === 'string'" v-model="f.value" size="small"
-                            class="font-regular text-sm text-dark" style="width: 250px;" />
-                          <a-input-number v-if="f.type === 'int' && f.name === 'numberToKeep'" v-model="f.value"
-                            size="small" class="font-regular text-sm text-dark" style="width: 120px;" />
-                          <a-input-number :min="1" v-if="f.type === 'int' && f.name === 'storageDay'" v-model="f.value"
-                                          size="small" class="font-regular text-sm text-dark" style="width: 120px;" />
-                          <a-date-picker v-if="f.type === 'int' && f.name === 'keepPeriod'" v-model="f.value"
-                            size="small" class="font-regular text-sm text-dark" style="width: 120px;" />
-                          <a-switch v-if="f.type === 'boolean'" v-model="f.value" @change="() => { $forceUpdate() }" />
-                        </a-col>
-                      </div>
-                    </div>
-                  </a-row>
-                  <a-row :gutter="[24]">
+<!--              <div v-for="(i, index) in cronCanSetList" :key="index">-->
+<!--                <a-row type="flex" align="middle">-->
+<!--                  <a-col style="min-width: 40px;" class="text-center">-->
+<!--                    <a-icon type="clock-circle" class="text-gray-6" style="font-size: 18px;" />-->
+<!--                  </a-col>-->
+<!--                  <a-col class="pl-15">-->
+<!--                    <p class="mb-0">{{ i.name }}</p>-->
+<!--                    <small class="text-dark">{{ i.description }}</small>-->
+<!--                  </a-col>-->
+<!--                  <a-col :span="24" :md="12" class="ml-auto"-->
+<!--                    style="display: flex; align-items: center; justify-content: flex-end">-->
+<!--                    <a-tag v-if="i.isSetted && i.isSetted.uuid" color="success" class="ant-tag-success font-bold">{{ $t('Storage.HaveSet') }}-->
+<!--                    </a-tag>-->
+<!--                    <span class="ml-5">{{ i.scope }}</span>-->
+<!--                    <a-button @click="cronShowHandle(i, index)" type="link" class="btn-more ml-5">-->
+<!--                      {{ $t('Storage.ExpandSetting') }}-->
+<!--                      <a-icon :type="i.isShow ? 'arrow-down' : 'arrow-right'" />-->
+<!--                    </a-button>-->
+<!--                  </a-col>-->
+<!--                </a-row>-->
+<!--                <a-card v-if="i.isShow" :bordered="false" class="bg-gray-3 shadow-0 mb-24"-->
+<!--                  :bodyStyle="{ padding: '8px' }">-->
+<!--                  <a-row type="flex" align="middle">-->
+<!--                    <a-col>-->
+<!--                      <p class="font-semibold mb-0 ml-10">{{ i.isSetted.jobClass }}</p>-->
+<!--                    </a-col>-->
+<!--                    <a-col class="ml-auto">-->
+<!--                      <a-input v-model="i.isSetted.cronExpression" size="small" class="font-regular text-sm text-dark"-->
+<!--                        style="width: 100px;" />-->
+<!--                    </a-col>-->
+<!--                    <a-col class="ml-auto">-->
+<!--                      <span class="mr-15">{{ i.isSetted.oneTimeExecution ? $t('Storage.ExecuteOnce') : $t('Storage.LoopExecution') }}</span>-->
+<!--                      <a-switch v-model="i.isSetted.oneTimeExecution"-->
+<!--                        @change="oneTimeExecutionChange($event, i.isSetted)" />-->
+<!--                    </a-col>-->
+<!--                    <a-col class="ml-auto">-->
+<!--                      <span class="mr-15">{{ i.isSetted.immediateExecution ? $t('Storage.ImmediateExecution') : $t('Storage.NoImmediateExecution') }}</span>-->
+<!--                      <a-switch v-model="i.isSetted.immediateExecution"-->
+<!--                        @change="immediateExecutionChange($event, i.isSetted)" />-->
+<!--                    </a-col>-->
+<!--                  </a-row>-->
+<!--                  <hr v-if="i.fields.length > 2" class="gradient-line my-10">-->
+<!--                  <a-row type="flex" align="middle">-->
+<!--                    <a-col v-if="i.fields.length > 2" style="margin-right: 15px">-->
+<!--                      <p class="font-semibold mb-0 ml-10">{{ $t('Storage.OtherParameters') }}:</p>-->
+<!--                    </a-col>-->
+<!--                    <div v-if="i.fields.length > 2">-->
+<!--                      <div v-for="(f, index) in i.fields" :key="index">-->
+<!--                        <a-col v-if="f.name !== 'storageId' && f.name !== 'repositoryId'" class="ml-auto">-->
+<!--                          <span style="margin-left: 15px" class="mr-15">{{ f.name }}</span>-->
+<!--                          <a-input v-if="f.type === 'string'" v-model="f.value" size="small"-->
+<!--                            class="font-regular text-sm text-dark" style="width: 250px;" />-->
+<!--                          <a-input-number v-if="f.type === 'int' && f.name === 'numberToKeep'" v-model="f.value"-->
+<!--                            size="small" class="font-regular text-sm text-dark" style="width: 120px;" />-->
+<!--                          <a-input-number :min="1" v-if="f.type === 'int' && f.name === 'storageDay'" v-model="f.value"-->
+<!--                                          size="small" class="font-regular text-sm text-dark" style="width: 120px;" />-->
+<!--                          <a-date-picker v-if="f.type === 'int' && f.name === 'keepPeriod'" v-model="f.value"-->
+<!--                            size="small" class="font-regular text-sm text-dark" style="width: 120px;" />-->
+<!--                          <a-switch v-if="f.type === 'boolean'" v-model="f.value" @change="() => { $forceUpdate() }" />-->
+<!--                        </a-col>-->
+<!--                      </div>-->
+<!--                    </div>-->
+<!--                  </a-row>-->
+<!--                  <a-row :gutter="[24]">-->
+<!--                    <a-col :span="12">-->
+<!--                    </a-col>-->
+<!--                    <a-col :span="12" class="text-right">-->
+<!--                      <a-button @click="saveCronOneSetHandle(i)" type="primary" size="small" shape="circle"-->
+<!--                        icon="save" />-->
+<!--                      <a-button v-if="i.isSetted.uuid" @click="delCronOneSetHandle(i)" style="margin-left: 15px"-->
+<!--                        type="danger" size="small" shape="circle" icon="delete" />-->
+<!--                    </a-col>-->
+<!--                  </a-row>-->
+<!--                </a-card>-->
+<!--                <hr class="gradient-line my-10">-->
+<!--              </div>-->
+<!--              <hr class="gradient-line my-10">-->
+<!--              <a-row :gutter="[24]">-->
+<!--                <a-col :span="12">-->
+<!--                </a-col>-->
+<!--                <a-col :span="12" class="text-right">-->
+<!--                  <a-button type="primary" @click="andCronSetHandle" class="px-25">{{ $t('Storage.CompleteSetting') }}</a-button>-->
+<!--                </a-col>-->
+<!--              </a-row>-->
+<!--            </a-form>-->
+<!--          </a-card>-->
+
+           <a-card v-else-if="(step === 2 && folibRepository.type === 'hosted') ||
+            (  folibRepository.type === 'proxy' && step === 3) ||
+            (step === 3 && folibRepository.type === 'group')" :bordered="false" class="header-solid">
+               <a-row>
+                   <a-col :span="24">
+                       <Permission ref="permission" :isShow="isShow" :folibRepository="this.folibRepositoryData" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></Permission>
+                   </a-col>
+               </a-row>
+               <a-row>
+                   <a-col :span="12">
+                       <a-button @click="moveStep(-1)" class="px-25">{{ $t('Storage.Back') }}</a-button>
+                   </a-col>
+                   <a-col :span="12" style="text-align: right;">
+                       <a-button type="primary" @click="doPermission()" class="px-25">{{ $t('Storage.Next') }}</a-button>
+                   </a-col>
+               </a-row>
+           </a-card>
+            <a-card v-else-if="(step === 3 && folibRepository.type === 'hosted') ||
+            (  folibRepository.type === 'proxy' && step === 4) ||
+            (step === 4 && folibRepository.type === 'group')" :bordered="false" class="header-solid">
+
+                <a-row>
                     <a-col :span="12">
+                        <CronTask :folibRepository="this.folibRepositoryData" @settingDrawerClose="settingDrawerClose"></CronTask>
                     </a-col>
-                    <a-col :span="12" class="text-right">
-                      <a-button @click="saveCronOneSetHandle(i)" type="primary" size="small" shape="circle"
-                        icon="save" />
-                      <a-button v-if="i.isSetted.uuid" @click="delCronOneSetHandle(i)" style="margin-left: 15px"
-                        type="danger" size="small" shape="circle" icon="delete" />
+                </a-row>
+                <a-row>
+                    <a-col :span="12">
+                        <a-button @click="moveStep(-1)" class="px-25">{{ $t('Storage.Back') }}</a-button>
                     </a-col>
-                  </a-row>
-                </a-card>
-                <hr class="gradient-line my-10">
-              </div>
-              <hr class="gradient-line my-10">
-              <a-row :gutter="[24]">
-                <a-col :span="12">
-                </a-col>
-                <a-col :span="12" class="text-right">
-                  <a-button type="primary" @click="andCronSetHandle" class="px-25">{{ $t('Storage.CompleteSetting') }}</a-button>
-                </a-col>
-              </a-row>
-            </a-form>
-          </a-card>
+                    <a-col :span="12" style="text-align: right;">
+                        <a-button type="primary" @click="moveStep(1)" class="px-25">{{ $t('Storage.Next') }}</a-button>
+                    </a-col>
+                </a-row>
+            </a-card>
+            <a-card v-else-if="(step === 4 && folibRepository.type === 'hosted') ||
+            (  folibRepository.type === 'proxy' && step === 5) ||
+            (step === 5 && folibRepository.type === 'group')" :bordered="false" class="header-solid">
+                <a-row>
+                    <a-col :span="24">
+                        <UnionRepository ref="unionRepository" :isShow="isShow" :folibRepository="this.folibRepositoryData" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></UnionRepository>
+                    </a-col>
+                </a-row>
+                <a-row>
+                    <a-col :span="12">
+                        <a-button @click="moveStep(-1)" class="px-25">{{ $t('Storage.Back') }}</a-button>
+                    </a-col>
+                    <a-col :span="12" style="text-align: right;">
+                        <a-button type="primary" @click="doUnionRepository" class="px-25">{{ $t('Storage.Next') }}</a-button>
+                    </a-col>
+                </a-row>
+
+
+
+            </a-card>
+            <a-card v-else-if="(step === 5 && folibRepository.type === 'hosted') ||
+            (  folibRepository.type === 'proxy' && step === 6) ||
+            (step === 6 && folibRepository.type === 'group')" :bordered="false" class="header-solid">
+                <a-row>
+                    <a-col :span="24">
+                        <Scan ref="scan" :isShow="isShow" :folibRepository="this.folibRepositoryData" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></Scan>
+                    </a-col>
+                </a-row>
+
+                <a-row>
+                    <a-col :span="12">
+                        <a-button @click="moveStep(-1)" class="px-25">{{ $t('Storage.Back') }}</a-button>
+                    </a-col>
+                    <a-col :span="12" style="text-align: right;">
+                        <a-button type="primary" @click="doScan()" class="px-25"> {{ $t('Storage.Complete') }}{{ folibRepositoryEditDisabled ? $t('Storage.Edit') : $t('Storage.create') }}</a-button>
+                    </a-col>
+                </a-row>
+            </a-card>
         </div>
       </div>
     </a-drawer>
@@ -1121,26 +1211,26 @@
 
 <script>
 import {
-  getStorages,
-  updateStorages,
-  getLibrary,
-  getLibraryFilter,
-  getLibraryByQuery,
-  addOrUpdateRepository,
-  getRepositoryResponseEntity,
-  delRepositoryResponseEntity,
-  getBaseUrl,
-  createStorages,
-  deleteStorages,
-  crontasksList,
-  crontasksByRepository,
-  creatCronOne,
-  updateCronOne,
-  delCronOne,
-  getStoragesAndRepositories,
-  aliveRepository
+    getStorages,
+    updateStorages,
+    getLibrary,
+    getLibraryFilter,
+    getLibraryByQuery,
+    addOrUpdateRepository,
+    getRepositoryResponseEntity,
+    delRepositoryResponseEntity,
+    getBaseUrl,
+    createStorages,
+    deleteStorages,
+    crontasksList,
+    crontasksByRepository,
+    creatCronOne,
+    updateCronOne,
+    delCronOne,
+    getStoragesAndRepositories,
+    aliveRepository, repositoryEnableUsers
 } from "@/api/folib"
-import { getUsers } from "@/api/users"
+import { getUsers, queryUser } from "@/api/users"
 import CardProjectFolib from "@/components/Cards/CardProjectFolib"
 import { getLayoutType, genLayoutType, groupRepositoriesBuild, objectToGroupRepositories } from "@/utils/layoutUtil"
 import draggable from "vuedraggable"
@@ -1155,9 +1245,18 @@ import Overview from "../StorageMonitoring/components/Overview"
 import StorageInfo from "../StorageMonitoring/components/StorageInfo"
 import storageInfoCard from './Storage-components/storage-info-card.vue'
 import LibView from './LibView.vue'
+import CronTask from "@/views/Storage/components/Cron/index.vue";
+import UnionRepository from "@/views/Storage/components/UnionRepository/index.vue";
+import Scan from "@/views/Storage/components/Scan/index.vue";
+import Permission from "@/views/Storage/components/Permission/index.vue";
+
 export default {
   inject: ["reload"],
   components: {
+      Permission,
+      Scan,
+      UnionRepository,
+      CronTask,
     CardProjectFolib,
     draggable,
     FolibKanbanBoard,
@@ -1275,6 +1374,12 @@ export default {
       artifactMaxSize: 100,
       storageMaxSize: 0,
       folibRepositoryEditDisabled: false,
+      isShow:false,
+      folibRepositoryData:{
+          id: "",
+          storageId:"",
+          layout: "",
+      },
       folibRepository: {
         allowsDeletion: true,
         allowsDeployment: true,
@@ -1351,13 +1456,41 @@ export default {
       },
       layoutType:'isFilter',
       isChecked:true,
-      isShowOverview: false
+      isShowOverview: false,
+     permissionForm: {
+        allowAnonymous: true,
+        scope: 1,
+        userList: []
+     },
+     settingVisible: false,
+     stepsStatus:"process",
+     isRepoExist:true,
+     notEditPolicy:false,
+      userQueryParams: {
+        page: 1,
+        limit: 50,
+        total: 0,
+        matchUsername: undefined,
+      }
     };
   },
   watch: {
     '$i18n.locale'() {
       this.$forceUpdate();
-    }
+    },
+      layoutChecked(newVal, oldVal) {
+          console.log('Selected value changed from', oldVal, 'to', newVal);
+          console.log(newVal !=="maven");
+          // 在这里处理值改变的逻辑
+          if(newVal !=="maven"){
+              this.folibRepository.policy="mixed"
+              this.notEditPolicy=true;
+          }else {
+              this.notEditPolicy=false;
+          }
+          console.log("notEditPolicy",this.notEditPolicy);
+
+      }
   },
   async created() {
     this.userInfo = store.state.user
@@ -1655,8 +1788,17 @@ export default {
       }
     },
     getUsersList() {
-      getUsers().then(res => {
-        this.userList = res.users
+      queryUser({username: this.userQueryParams.matchUsername}, this.userQueryParams).then(res => {
+        const resData = []
+        if (res.data.rows) {
+          res.data.rows.forEach(item => {
+            resData.push(item.username)
+          })
+        }
+        this.userQueryParams.total = res.data.total
+        if(this.userList.length <= res.data.total){
+          this.userList.push(...resData)
+        }
       })
     },
     async getStorages() {
@@ -1664,6 +1806,44 @@ export default {
           this.storageData = response.storages;
           this.cacheStorage()
         })
+    },
+    userSearchChange(matchUsername){
+      this.userQueryParams.matchUsername = matchUsername
+      this.userList = []
+      this.userQueryParams.page = 1
+      this.getUsersList()
+    },
+    userOnChange(value,e){
+      this.userQueryParams.matchUsername = value
+      let data = e && e.data && e.data.attrs && e.data.attrs.data
+      this.$emit('select', {...data, value, name: value})
+      if (!this.userQueryParams.matchUsername) {
+        this.userSearchChange('')
+      }
+    },
+    userPopupScroll(e){
+      const {target} = e;
+      const scrllHeight = target.scrollHeight - target.scrollTop
+      const clientHeight = target.clientHeight
+      // 下拉框不下拉的时候
+      if(scrllHeight ===0 && clientHeight ===0){
+        this.userQueryParams.page = 1
+      } else if(scrllHeight - clientHeight <= 30){
+          // 下拉到底部时
+          if(this.userList.length < this.userQueryParams.total){
+              // 如果滑到底部，则加载下一页
+              this.userQueryParams.page++
+              this.getUsersList()
+          }
+      }
+    },
+  async  getStorages() {
+  await    getStorages().then(response => {
+        this.storageData = response.storages;
+        this.cacheStorage()
+      })
+
+
     },
     setCurrentStorage(item) {
       if (!item.admin || item.admin === '') {
@@ -1818,6 +1998,9 @@ export default {
     },
 
     moveStep(distance) {
+        if(this.stepsStatus === "error" && distance>0){
+           return ;
+        }
       this.step += distance;
       if (this.step === 2 && !this.repositoryNameCheck(this.folibRepositoryIds)) {
         this.step -= distance;
@@ -1827,6 +2010,7 @@ export default {
         this.repositoryList()
         this.calcHeight()
       }
+
     },
 
     // Toggle an item from the checkbox.
@@ -1991,10 +2175,17 @@ export default {
 
       delete this.folibRepository.customConfigurations
       delete this.folibRepository.storageId
+      this.folibRepositoryData.id= this.folibRepository.id;
+      this.folibRepositoryData.storageId= this.currentStorage.id;
+      this.folibRepositoryData.layout = this.folibRepository.layout;
+
       this.folibRepository.artifactMaxSize = this.artifactMaxSize * 1024 * 1024
       addOrUpdateRepository(this.currentStorage.id, this.folibRepository.id, this.folibRepository).then(res => {
         if (!res.error) {
           setTimeout(() => {
+              //this.moveStep(1);
+              this.stepsStatus="process";
+              this.isRepoExist=false
             this.$notification.open({
               class: 'ant-notification-success',
               message: this.folibRepositoryEditDisabled ? this.$t('Storage.WarehouseModified') : this.$t('Storage.WarehouseAdded'),
@@ -2006,12 +2197,14 @@ export default {
 
         this.getStorage(this.currentStorage.id)
         if (!isNotSetCron) {
+            console.log("isNotSetCron")
           this.step = 0
           this.folibVisible = false
           this.resetFolibRepository()
         } else if (isNotSetCron) {
           if (this.folibRepository.type === 'hosted') {
-            this.moveStep(2)
+            this.moveStep(1)
+              console.log("step", this.step)
           } else {
             this.moveStep(1)
           }
@@ -2022,6 +2215,7 @@ export default {
         let error = JSON.stringify(err.response.data)
         let msg = error.indexOf('The repository id already exists') !== -1 ? this.$t('Storage.RepositoryNameExists') : this.$t('Storage.FailedCreate')
         this.message(err.response.status, "error", msg)
+          this.stepsStatus="error"
       })
 
     },
@@ -2278,8 +2472,51 @@ export default {
     },
     delGitItem(index){
       this.folibRepository.repositoryConfiguration.gitVCS.splice(index, 1);
-    }
+    },
+      handleStepChange(){
+        console.log("step:",this.step)
+      },
+      scopeChange (e) {
+          this.userReset()
+          this.getUsersList2()
+      },
+      getUsersList2() {
+          this.userList = []
+          let query = {storageId: this.folibRepository.storageId, repositoryId: this.folibRepository.id, scope: this.permissionForm.scope}
+          repositoryEnableUsers(query).then(res => {
+              this.userList = res
+          })
+      },
+      userReset() {
+          this.permissionForm.userList = Object.assign([], this.sourceUserList)
+      },
+      settingDrawerClose() {
+          this.$emit('settingDrawerClose')
+      },
+      doPermission(){
+        console.log("this.folibRepository:",this.folibRepository)
+        this.$refs.permission.permissionFormSubmit()
+          this.moveStep(1);
+      },
+      doUnionRepository(){
+         this.$refs.unionRepository.unionRepositoryFormSubmit();
+          this.moveStep(1);
+      },
+      doScan(){
+        this.$refs.scan.scanFormSubmit()
+
+      },
+      doDrawerStatus(isClose,status){
+          this.folibVisible = isClose;
+          this.stepsStatus = status;
+          this.step=0;
+      }
   },
+    provide() {
+        return {
+            doDrawerStatus: this.doDrawerStatus // 提供给子组件的方法
+        };
+    },
 };
 </script>
 

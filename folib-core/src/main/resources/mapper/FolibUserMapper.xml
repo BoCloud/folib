@@ -26,17 +26,12 @@
         where id = #{id}
     </select>
 
-    <select id="countUserRole" resultType="java.lang.Long">
-        SELECT
-        count(DISTINCT  fu.id)
+    <sql id="userCountSql">
+        SELECT fu.id
         FROM folib_user fu
-        left join user_group_ref ugr on fu.id = ugr.user_id
-        left join role_resource_ref rrr on
-        ((rrr.ref_type = 1
-        and rrr.entity_id = fu.id)
-        or (rrr.ref_type = 2
-        and rrr.entity_id = ugr.user_group_id))
-        where 1=1
+        LEFT JOIN user_group_ref ugr ON fu.id = ugr.user_id
+        LEFT JOIN role_resource_ref rrr ON rrr.ref_type = 1 AND rrr.entity_id = fu.id
+        WHERE fu.user_type = 'general'
         <if test="user.id != null and user.id != ''">
             and fu.id = #{user.id}
         </if>
@@ -70,56 +65,103 @@
                 #{role}
             </foreach>
         </if>
+    </sql>
+
+    <sql id="userGroupCountSql">
+        SELECT fu.id
+        FROM folib_user fu
+        LEFT JOIN user_group_ref ugr ON fu.id = ugr.user_id
+        LEFT JOIN role_resource_ref rrr ON rrr.ref_type = 2 and rrr.entity_id = user_group_id
+        WHERE fu.user_type = 'general'
+        <if test="user.id != null and user.id != ''">
+            and fu.id = #{user.id}
+        </if>
+        <if test="user.username != null and user.username != ''">
+            and username like concat('%',#{user.username},'%')
+        </if>
+        <if test="user.password != null and user.password != ''">
+            and password = #{user.password}
+        </if>
+        <if test="user.originalPassword != null and user.originalPassword != ''">
+            and original_password = #{user.originalPassword}
+        </if>
+        <if test="user.avatar != null and user.avatar != ''">
+            and avatar = #{user.avatar}
+        </if>
+        <if test="user.email != null and user.email != ''">
+            and email like concat('%',#{user.email},'%')
+        </if>
+        <if test="user.userType != null and user.userType != ''">
+            and user_type = #{user.userType}
+        </if>
+        <if test="user.enabled != null and user.enabled != ''">
+            and enabled = #{user.enabled}
+        </if>
+        <if test="user.sourceId != null and user.sourceId != ''">
+            and source_id = #{user.sourceId}
+        </if>
+        <if test="user.roles != null and user.roles.size() > 0">
+            and rrr.role_id in
+            <foreach collection="user.roles" item="role" separator="," open="(" close=")">
+                #{role}
+            </foreach>
+        </if>
+    </sql>
+
+    <select id="countUserRole" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM (
+        <include refid="userCountSql"/>
+        UNION
+        <include refid="userGroupCountSql"/>
+        ) tmp;
     </select>
 
-    <!--分页查询指定行数据-->
-    <select id="queryAllUserRoleByLimit" resultType="com.veadan.folib.dto.UserDTO">
+
+    <sql id="queryUserSql">
         SELECT
-            fu.*,
-            GROUP_CONCAT(distinct ugr.user_group_name) AS userGroups,
-            GROUP_CONCAT(distinct ugr.user_group_id) AS userGroupIds,
-            GROUP_CONCAT(distinct NULLIF(rrr.role_id, '')) AS roles
+        fu.*,
+        GROUP_CONCAT(distinct ugr.user_group_name) AS userGroups,
+        GROUP_CONCAT(distinct ugr.user_group_id) AS userGroupIds,
+        GROUP_CONCAT(distinct NULLIF(rrr.role_id, '')) AS roles
         FROM folib_user fu
-        left join user_group_ref ugr on fu.id = ugr.user_id
-        left join role_resource_ref rrr on
-        ((rrr.ref_type = 1
-            and rrr.entity_id = fu.id)
-        or (rrr.ref_type = 2
-            and rrr.entity_id = ugr.user_group_id))
-        where 1=1
-            <if test="user.id != null and user.id != ''">
-                and fu.id = #{user.id}
-            </if>
-            <if test="user.username != null and user.username != ''">
-                and username = #{user.username}
-            </if>
-            <if test="user.matchUsername != null and user.matchUsername != ''">
-                and username like concat('%',#{user.matchUsername},'%')
-            </if>
-            <if test="user.password != null and user.password != ''">
-                and password = #{user.password}
-            </if>
-            <if test="user.originalPassword != null and user.originalPassword != ''">
-                and original_password = #{user.originalPassword}
-            </if>
-            <if test="user.avatar != null and user.avatar != ''">
-                and avatar = #{user.avatar}
-            </if>
-            <if test="user.email != null and user.email != ''">
-                and email = #{user.email}
-            </if>
-            <if test="user.matchEmail != null and user.matchEmail != ''">
-                and email like concat('%',#{user.matchEmail},'%')
-            </if>
-            <if test="user.userType != null and user.userType != ''">
-                and user_type = #{user.userType}
-            </if>
-            <if test="user.enabled != null and user.enabled != ''">
-                and enabled = #{user.enabled}
-            </if>
-            <if test="user.sourceId != null and user.sourceId != ''">
-                and source_id = #{user.sourceId}
-            </if>
+        LEFT JOIN user_group_ref ugr ON fu.user_type= 'general' and fu.id = ugr.user_id
+        INNER JOIN role_resource_ref rrr ON
+        rrr.ref_type = 1
+        AND rrr.entity_id = fu.id
+        WHERE fu.user_type= 'general'
+        <if test="user.id != null and user.id != ''">
+            and fu.id = #{user.id}
+        </if>
+        <if test="user.username != null and user.username != ''">
+            and username = #{user.username}
+        </if>
+        <if test="user.matchUsername != null and user.matchUsername != ''">
+            and username like concat('%',#{user.matchUsername},'%')
+        </if>
+        <if test="user.password != null and user.password != ''">
+            and password = #{user.password}
+        </if>
+        <if test="user.originalPassword != null and user.originalPassword != ''">
+            and original_password = #{user.originalPassword}
+        </if>
+        <if test="user.avatar != null and user.avatar != ''">
+            and avatar = #{user.avatar}
+        </if>
+        <if test="user.email != null and user.email != ''">
+            and email = #{user.email}
+        </if>
+        <if test="user.matchEmail != null and user.matchEmail != ''">
+            and email like concat('%',#{user.matchEmail},'%')
+        </if>
+        <if test="user.userType != null and user.userType != ''">
+            and user_type = #{user.userType}
+        </if>
+        <if test="user.enabled != null and user.enabled != ''">
+            and enabled = #{user.enabled}
+        </if>
+        <if test="user.sourceId != null and user.sourceId != ''">
+            and source_id = #{user.sourceId}
+        </if>
         group by fu.id
         <if test="user.roles != null and user.roles.size() > 0">
             having
@@ -127,6 +169,73 @@
                 find_in_set(#{role}, roles)
             </foreach>
         </if>
+    </sql>
+
+    <sql id="queryUserGroupSql">
+        SELECT
+        fu.*,
+        GROUP_CONCAT(distinct ugr.user_group_name) AS userGroups,
+        GROUP_CONCAT(distinct ugr.user_group_id) AS userGroupIds,
+        GROUP_CONCAT(distinct NULLIF(rrr.role_id, '')) AS roles
+        FROM folib_user fu
+        INNER JOIN user_group_ref ugr  ON fu.id = ugr.user_id
+        INNER JOIN role_resource_ref rrr ON
+        rrr.ref_type = 2
+        AND rrr.entity_id = ugr.user_group_id
+        WHERE fu.user_type= 'general'
+        <if test="user.id != null and user.id != ''">
+            and fu.id = #{user.id}
+        </if>
+        <if test="user.username != null and user.username != ''">
+            and username = #{user.username}
+        </if>
+        <if test="user.matchUsername != null and user.matchUsername != ''">
+            and username like concat('%',#{user.matchUsername},'%')
+        </if>
+        <if test="user.password != null and user.password != ''">
+            and password = #{user.password}
+        </if>
+        <if test="user.originalPassword != null and user.originalPassword != ''">
+            and original_password = #{user.originalPassword}
+        </if>
+        <if test="user.avatar != null and user.avatar != ''">
+            and avatar = #{user.avatar}
+        </if>
+        <if test="user.email != null and user.email != ''">
+            and email = #{user.email}
+        </if>
+        <if test="user.matchEmail != null and user.matchEmail != ''">
+            and email like concat('%',#{user.matchEmail},'%')
+        </if>
+        <if test="user.userType != null and user.userType != ''">
+            and user_type = #{user.userType}
+        </if>
+        <if test="user.enabled != null and user.enabled != ''">
+            and enabled = #{user.enabled}
+        </if>
+        <if test="user.sourceId != null and user.sourceId != ''">
+            and source_id = #{user.sourceId}
+        </if>
+        group by fu.id
+        <if test="user.roles != null and user.roles.size() > 0">
+            having
+            <foreach collection="user.roles" item="role" separator="or" >
+                find_in_set(#{role}, roles)
+            </foreach>
+        </if>
+    </sql>
+    <!--分页查询指定行数据-->
+    <select id="queryAllUserRoleByLimit" resultType="com.veadan.folib.dto.UserDTO">
+        SELECT id, username, `password`, original_password, avatar, email, user_type, enabled, source_id, deleted, create_by, create_time, update_by, update_time,
+        GROUP_CONCAT(distinct NULLIF(userGroups, ''))  AS userGroups,
+        GROUP_CONCAT(distinct NULLIF(userGroupIds, '')) AS userGroupIds,
+        GROUP_CONCAT(distinct NULLIF(roles, '')) AS roles
+        FROM (
+        <include refid="queryUserSql"/>
+        UNION
+        <include refid="queryUserGroupSql"/>
+        ) tmp
+        GROUP BY tmp.id
     </select>
 
     <!--分页查询指定行数据-->

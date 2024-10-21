@@ -198,7 +198,7 @@
                   <a-col :span="12">
                     <a-form-model-item class="mb-10" :label="$t('Users.Password')" :colon="false" prop="password"
                                        :required="passwordRequired">
-                      <a-input-password :disabled="userNotEdit" autocomplete="new-password" placeholder="******"
+                      <a-input-password :disabled="userNotEdit || (!userNotEdit && !passwordUpdateEnable && currentUser.user.username != null && currentUser.user.username != 'admin')" autocomplete="new-password" placeholder="******"
                                         v-model="currentUser.user.password" />
                     </a-form-model-item>
                   </a-col>
@@ -296,6 +296,9 @@ import { encrypt } from "@/utils/jsencrypt"
 import textOver from "@/components/Tools/textOver";
 import { getPermissionList } from "@/api/permissions";
 import { getGroupList } from "@/api/group";
+import {
+  getSingleDict,
+} from "@/api/advanced"
 
 export default ({
   inject: ["reload"],
@@ -377,7 +380,8 @@ export default ({
           label: "Users.GeneralUsers",
           value: "GENERAL",
         }
-      ]
+      ],
+      passwordUpdateEnable: true,
     }
   },
   created() {
@@ -389,6 +393,7 @@ export default ({
       await this.getCurrentGroup()
       this.getUsers()
       this.queryUsers()
+      this.getPasswordUpdateEnable()
     },
     getUsers() {
       getUsers().then(res => {
@@ -557,7 +562,7 @@ export default ({
           this.$set(item, 'enabled', item.joinGroup === '1')
           if (item.joinGroup === '1') { userGroupIds.push(`${item.id}`) }
         })
-        this.currentUser = { user: { userGroupIds }, assignableRoles: roles }
+        this.currentUser = { user: { userGroupIds, username:null}, assignableRoles: roles }
         this.userNotEdit = false
         this.passwordRequired = true
         if (this.$refs.userForm) {
@@ -609,6 +614,13 @@ export default ({
       } else {
           this.currentUser.user.userGroupIds = this.currentUser.user.userGroupIds.filter(item => item !== id)
       }
+    },
+    getPasswordUpdateEnable() {
+      getSingleDict({ dictType: 'system_property', dictKey: 'PASSWORD_UPDATE_ENABLE' }).then(res => {
+        if (res && res.dictValue) {
+          this.passwordUpdateEnable = !(res.dictValue === 'false')
+        }
+      })
     },
   }
 })
