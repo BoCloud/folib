@@ -82,4 +82,6 @@ public interface Repository {
 
     UnionRepositoryConfiguration getUnionRepositoryConfig();
 
+    Boolean getHealthStatus();
+
 }

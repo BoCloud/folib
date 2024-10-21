@@ -113,6 +113,11 @@ public class RepositoryData
      */
     private UnionRepositoryConfiguration unionRepositoryConfiguration;
 
+    /**
+     * proxy 健康状态
+     */
+    private boolean healthStatus;
+
     @JsonIgnore
     private Storage storage;
 
@@ -162,6 +167,9 @@ public class RepositoryData
         this.scope = delegate.getScope();
         this.allowAnonymous = delegate.isAllowAnonymous();
         this.unionRepositoryConfiguration = immuteUnionRepositoryConfiguration(mutableRepository.getUnionRepositoryConfiguration());
+        if (delegate.getHealthStatus() != null) {
+            this.healthStatus = delegate.getHealthStatus();
+        }
     }
 
     private ProxyConfiguration immuteProxyConfiguration(final MutableProxyConfiguration source) {
@@ -422,5 +430,10 @@ public class RepositoryData
     @Override
     public UnionRepositoryConfiguration getUnionRepositoryConfig() {
         return unionRepositoryConfiguration;
+    }
+
+    @Override
+    public Boolean getHealthStatus() {
+        return healthStatus;
     }
 }
