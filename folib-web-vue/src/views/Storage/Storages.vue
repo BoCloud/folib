@@ -417,10 +417,10 @@
                         :title="$t('Storage.BasicInformation')"/>
                 <a-step v-if="folibRepository.type === 'proxy'" :title="$t('Storage.RemoteConfiguration')"/>
                 <a-step v-if="folibRepository.type === 'group'" :title="$t('Storage.CombinationConfiguration')"/>
-                <a-step title="权限设置" :disabled="isRepoExist" />
-                <a-step title="定时策略" :disabled="isRepoExist" />
-                <a-step title="联邦库"  :disabled="isRepoExist"/>
-                <a-step title="扫描" :disabled="isRepoExist"/>
+                <a-step :title="$t('Storage.PermissionSetting')" :disabled="isRepoExist" />
+                <a-step :title="$t('Storage.TimingPolicy')" :disabled="isRepoExist" />
+                <a-step :title="$t('Storage.FederatedRepository')"  :disabled="isRepoExist"/>
+                <a-step :title="$t('Storage.Scan')"  :disabled="isRepoExist"/>
                 <!-- <a-step title="定时策略" /> -->
             </a-steps>
           <!-- / Steps -->
@@ -1202,7 +1202,7 @@
             (step === 6 && folibRepository.type === 'group')" :bordered="false" class="header-solid">
                 <a-row>
                     <a-col :span="24">
-                        <Scan ref="scan" :isShow="isShow" :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></Scan>
+                        <Scan ref="scan" :isShow="isShow" :folibRepository="this.folibRepositoryData" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></Scan>
                     </a-col>
                 </a-row>
 
