@@ -31,7 +31,7 @@
                   <h6 class="font-semibold m-0">{{ isChecked ? $t('Storage.RepositoryList') : $t('Storage.StorageList')}}</h6>
                 </a-col>
                 <a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
-                  <a-switch style="margin-right:10px;" v-model="isChecked" @change="getDetailInfo"></a-switch>
+                  <!-- <a-switch style="margin-right:10px;" v-model="isChecked" @change="getDetailInfo"></a-switch> -->
                   <a class="text-center text-muted font-bold" v-if="!isChecked">
                     <h3 v-if="$store.state.user.roles.indexOf('ADMIN') > -1" class="font-semibold text-muted mb-0"
                       @click="createHandleView">+</h3>
@@ -1455,7 +1455,7 @@ export default {
         storageId: null
       },
       layoutType:'isFilter',
-      isChecked:true,
+      isChecked:false,
       isShowOverview: false,
      permissionForm: {
         allowAnonymous: true,
