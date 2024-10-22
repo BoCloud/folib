@@ -170,6 +170,8 @@ public class RepositoryStreamSupport {
         @Override
         public void flush()
                 throws IOException {
+            long allStartTime = System.currentTimeMillis();
+            long startTime;
             logger.debug("Flushing [{}]", getContext().getPath());
 
             super.flush();
@@ -180,8 +182,12 @@ public class RepositoryStreamSupport {
             if (transaction != null && !transaction.isRollbackOnly()) {
                 logger.info("Commit [{}]", getContext().getPath());
                 try {
+                    startTime = System.currentTimeMillis();
                     RepositoryStreamSupport.this.commit();
+                    logger.info("Flush db commit [{}] take time [{}] ms." , getContext().getPath(), System.currentTimeMillis() - startTime);
+                    startTime = System.currentTimeMillis();
                     transactionManager.commit(transaction);
+                    logger.info("Flush transaction commit [{}] take time [{}] ms." , getContext().getPath(), System.currentTimeMillis() - startTime);
                     logger.info("Commited [{}]", getContext().getPath());
                 } catch (Exception ex) {
                     String realMessage = CommonUtils.getRealMessage(ex);
@@ -197,6 +203,7 @@ public class RepositoryStreamSupport {
             } else {
                 logger.warn("Skip commit [{}]", getContext().getPath());
             }
+            logger.info("Flush [{}] take time [{}] ms." , getContext().getPath(), System.currentTimeMillis() - allStartTime);
         }
 
         @Override

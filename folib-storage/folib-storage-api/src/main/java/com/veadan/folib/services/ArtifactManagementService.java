@@ -226,13 +226,16 @@ public class ArtifactManagementService
         logger.info("IOUtils copy [{}] size [{}] take time [{}] ms" , repositoryPath.toString(), totalAmountOfBytes, System.currentTimeMillis() - startTime);
 
         URI repositoryPathId = repositoryPath.toUri();
+        startTime = System.currentTimeMillis();
         Map<String, String> digestMap = aos.getDigestMap(repository.getLayout());
+        logger.info("Get digest [{}] take time [{}] ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
         if (Boolean.FALSE.equals(checksumAttribute) && !digestMap.isEmpty())
         {
+            startTime = System.currentTimeMillis();
             // Store artifact digests in cache if we have them.
             addChecksumsToCacheManager(digestMap, repositoryPathId);
-
             writeChecksums(repositoryPath, digestMap);
+            logger.info("Write check sum [{}] take time [{}] ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
         }
 
         if (Boolean.TRUE.equals(checksumAttribute))
@@ -424,6 +427,7 @@ public class ArtifactManagementService
     public boolean performRepositoryAcceptanceValidation(RepositoryPath path)
             throws IOException, ProviderImplementationException, ArtifactCoordinatesValidationException
     {
+        long startTime = System.currentTimeMillis();
         logger.debug("Validate artifact with path [{}]", path);
 
         Repository repository = path.getFileSystem().getRepository();
@@ -460,6 +464,7 @@ public class ArtifactManagementService
         if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
             artifactOperationsValidator.checkStorageSize(path);
         }
+        logger.info("Repository acceptance validation [{}] take time [{}] ms." , path.toString(), System.currentTimeMillis() - startTime);
         return true;
     }
 
