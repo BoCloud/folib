@@ -264,6 +264,29 @@ public class StoragesConfigurationController
 
         try {
             StorageDto storage = conversionService.convert(storageFormToUpdate, StorageDto.class);
+            if (storage != null) {
+                storage.setSyncEnabled(storageFormToUpdate.isSyncEnabled());
+
+                StorageDto storageInfo = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
+                //更新仓库：同步状态开启或关闭，同步状态到仓库
+                boolean syncEnabled = storageFormToUpdate.isSyncEnabled();
+                if (storageInfo != null && !Objects.equals(storageInfo.isSyncEnabled(), syncEnabled)) {
+                    Collection<? extends Repository> repositorys = storageInfo.getRepositories().values();
+                    Map<String, RepositoryDto> repositoryMap = new HashMap<>();
+                    repositorys.forEach(repository -> {
+                        if( !Objects.equals(repository.isSyncEnabled(), syncEnabled)) {
+                            RepositoryDto repositoryDto = conversionService.convert(repository, RepositoryDto.class);
+                            if (repositoryDto != null) {
+                                repositoryDto.setSyncEnabled(syncEnabled);
+                                repositoryMap.put(repository.getId(), repositoryDto);
+                            }
+                        }
+                    });
+                    if (!repositoryMap.isEmpty()) {
+                        storage.setRepositories(repositoryMap);
+                    }
+                }
+            }
             if (StringUtils.isBlank(storage.getAdmin())) {
                 storage.setAdmin(NotifyScopesTypeEnum.ADMIN.getScope());
             }
@@ -272,6 +295,7 @@ public class StoragesConfigurationController
             clusterSyncService.syncStorage(syncStorageDto);
             //同步资源信息到其他节点
             privilegeEventListenerRegistry.dispatchResourceSyncEvent(storage.getId());
+
             return getSuccessfulResponseEntity(SUCCESSFUL_UPDATE_STORAGE, accept);
         } catch (ConfigurationException | IOException e) {
             return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_UPDATE_STORAGE_ERROR, e, accept);
@@ -970,6 +994,7 @@ public class StoragesConfigurationController
             if (Objects.isNull(repository)) {
                 return getFailedResponseEntity(HttpStatus.BAD_REQUEST, "The repository params is null", accept);
             }
+            repository.setSyncEnabled(repositoryForm.isSyncEnabled());
             if (repositoryForm.getArtifactMaxSize() == 0) {
                 repository.setArtifactMaxSize(107374182400L);
             }

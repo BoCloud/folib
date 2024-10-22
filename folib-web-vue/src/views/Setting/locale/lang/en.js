@@ -188,6 +188,7 @@ export default {
     'EnterYourLogoutAddress': 'Please enter your logout address',
     'LogOutRedirectURL': 'Log out the redirect URL',
     'RedirectURLAfterLogin': 'The redirected address after logout',
+    'SyncStoragePrompt': 'If the synchronization button is enabled, the synchronization button will be enabled for all repositories in the current space. If you turn off the Sync button, the Sync button will be turned off in all current spaces. Enabling or disabling the repository synchronization button alone does not affect the operation of this button.',
     'EnterRedirectURL': 'Please enter the redirect URL after logging out',
     'Address': 'Address',
     'GetInterfaceAddress': 'Get the interface address of AccessToken',

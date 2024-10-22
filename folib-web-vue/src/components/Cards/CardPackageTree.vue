@@ -21,12 +21,11 @@
 	export default ({
 		data() {
 			return {
-        expandedKeys,
-        selectedKeys,
-        treeData,
-        onLoadData,
+				expandedKeys,
+				selectedKeys,
+				treeData,
+				onLoadData,
 			}
 		},
 	})
-
 </script>

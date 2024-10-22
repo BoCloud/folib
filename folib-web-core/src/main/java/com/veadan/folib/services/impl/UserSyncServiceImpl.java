@@ -219,7 +219,10 @@ public class UserSyncServiceImpl implements UserSyncService
         //删除资源信息
         List<String> removeResourceIds = date.getRemoveResourceIds();
         if (CollectionUtils.isNotEmpty(removeResourceIds)) {
-            String resourceId = removeResourceIds.get(0);
+            resourceService.deleteByIds(removeResourceIds);
+            roleResourceRefService.deleteByResourceIds(removeResourceIds);
+
+           /* String resourceId = removeResourceIds.get(0);
             Resource resource = resourceService.queryById(resourceId);
             if (resource != null) {
                 String repositoryId = resource.getRepositoryId();
@@ -269,7 +272,7 @@ public class UserSyncServiceImpl implements UserSyncService
                     }
                 }
 
-            }
+            }*/
         }
     }
 

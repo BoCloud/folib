@@ -188,6 +188,7 @@ export default {
     'EnterYourLogoutAddress': '请输入登出地址',
     'LogOutRedirectURL': '登出重定向URL',
     'RedirectURLAfterLogin': '登出后的重定向地址',
+    'SyncStoragePrompt': '开启同步按钮，则会开启所有当前空间下的仓库同步按钮；关闭同步按钮，则会关闭所有当前空间下的同步按钮；单独开启或关闭仓库同步按钮，不影响此按钮操作。',
     'EnterRedirectURL': '请输入登出后的重定向URL',
     'Address': '地址',
     'GetInterfaceAddress': '获取AccessToken的接口地址',

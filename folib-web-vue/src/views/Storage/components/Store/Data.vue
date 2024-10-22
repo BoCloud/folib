@@ -470,6 +470,7 @@ export default {
     "currentFileDetial",
     "folibRepository",
     "successMsg",
+    'isChecked'
   ],
   components: {
     PrismEditor,

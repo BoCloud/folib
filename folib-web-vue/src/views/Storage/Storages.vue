@@ -3,29 +3,57 @@
 	"./layouts/Dashboard.vue" .
  -->
 
-<template>
-
+ <template>
   <div id="storages">
-    <a-row type="flex" :gutter="[24, 24]">
-
+    <a-row :style="isChecked ? 'opacity:1;' : 'opacity:0;'" type="flex" :gutter="[24, 24]" style="margin-bottom:-30px;transition: all 0.5s ease;">
+        <a-col :span="24" :lg="24">
+          <storageInfoCard
+            :currentStorage="currentStorage"
+            :baseUrl="baseUrl"
+            :layoutType="layoutType"
+            :storageData="storageData"
+            @copy="copy"
+            @updateHandleView="updateHandleView"
+            @handheTableSearch='handheTableSearch'
+            @createHandleView="createHandleView"
+            @showOverview="showOverview"
+          />
+        </a-col>
+    </a-row>
+    <a-row :style="isChecked ? 'margin-top:0;' : 'margin-top:-150px;'" style="transition: all 0.5s ease;" v-if="!isShowOverview" type="flex" :gutter="[24, 24]">
       <a-col :span="24" :lg="6">
         <!-- Page Anchors -->
 <!--        <a-affix :offset-top="navbarFixed ? 100 : 10">-->
-          <a-card :bordered="false" class="header-solid mb-24">
+          <a-card :bordered="false" :style="isChecked ? 'height:780px;' : ''" class="header-solid mb-24">
             <template #title>
               <a-row type="flex" align="middle">
                 <a-col :span="24" :md="12" class="col-info">
-                  <h6 class="font-semibold m-0">{{ $t('Storage.StorageList') }}</h6>
+                  <h6 class="font-semibold m-0">{{ isChecked ? $t('Storage.RepositoryList') : $t('Storage.StorageList')}}</h6>
                 </a-col>
                 <a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
-                  <a class="text-center text-muted font-bold">
+                  <!-- <a-switch style="margin-right:10px;" v-model="isChecked" @change="getDetailInfo"></a-switch> -->
+                  <a class="text-center text-muted font-bold" v-if="!isChecked">
                     <h3 v-if="$store.state.user.roles.indexOf('ADMIN') > -1" class="font-semibold text-muted mb-0"
                       @click="createHandleView">+</h3>
+                  </a>
+                  <a class="text-center text-muted font-bold" v-if="isChecked">
+                    <h3 class="font-semibold text-muted mb-0"
+                      @click="folibVisibleShow">+</h3>
                   </a>
                 </a-col>
               </a-row>
             </template>
-            <a-anchor :targetOffset="navbarFixed ? 100 : 10" :affix="false">
+            <a-directory-tree v-if="isChecked" @select="treeSelect" @expand="onExpand">
+              <a-tree-node key="0-0" title="parent 0">
+                <a-tree-node key="0-0-0" title="leaf 0-0" is-leaf />
+                <a-tree-node key="0-0-1" title="leaf 0-1" is-leaf />
+              </a-tree-node>
+              <a-tree-node key="0-1" title="parent 1">
+                <a-tree-node key="0-1-0" title="leaf 1-0" is-leaf />
+                <a-tree-node key="0-1-1" title="leaf 1-1" is-leaf />
+              </a-tree-node>
+            </a-directory-tree>
+            <a-anchor v-else :targetOffset="navbarFixed ? 100 : 10" :affix="false">
               <a-anchor-link v-for="(item, index) in storageData" :key="index" href="javascript:void(null)"
                 :class="{ slectActive: item.id === currentStorage.id }">
                 <div slot="title" class="ant-list-item-meta" @click="setCurrentStorage(item)">
@@ -43,69 +71,16 @@
 
       </a-col>
       <a-col :span="24" :lg="18">
-        <!-- User Profile card -->
-        <a-card :bordered="false" id="profile" class="card-profile-head" :bodyStyle="{ padding: 0, }">
-          <template #title>
-            <a-row type="flex" align="middle">
-              <a-col :span="24" :md="12" class="col-info">
-                <a-avatar :size="74" shape="square" src="images/folib/storage.svg" />
-                <div class="avatar-info">
-                  <h4 class="font-semibold m-0">
-                    <span>{{ currentStorage.id }}</span>
-                    <a-tooltip placement="topLeft">
-                      <template slot="title">
-                        <span>{{ $t('Storage.s3Storage') }}</span>
-                      </template>
-                      <a-icon style="margin-left: 15px" v-if="currentStorage.storageProvider === 's3'" type="cloud"
-                        theme="filled" class="text-gray-6 text-lg" />
-                    </a-tooltip>
-                  </h4>
-                  <p>{{ baseUrl }}api/browse/{{ currentStorage.id }} <a>
-                      <a-tooltip placement="topLeft">
-                        <template slot="title">
-                          <span>{{ $t('Storage.CopyStorageSpacePath') }}</span>
-                        </template>
-                        <a-icon type="copy" @click="copy(baseUrl + 'api/browse/' + currentStorage.id)" />
-                      </a-tooltip>
-                    </a></p>
-                </div>
-              </a-col>
-              <a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
-                <a-tooltip placement="topLeft">
-                  <template slot="title">
-                    <span>{{ $t('Storage.ModifyStorageSpace') }}</span>
-                  </template>
-                  <div v-if="hasStoragePermission()" @click="updateHandleView">
-                    <svg width="20px" height="20px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg"
-                      xmlns:xlink="http://www.w3.org/1999/xlink">
-                      <title>settings</title>
-                      <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                        <g transform="translate(-2020.000000, -442.000000)" class="fill-dark" fill="#FFFFFF"
-                          fill-rule="nonzero">
-                          <g transform="translate(1716.000000, 291.000000)">
-                            <g transform="translate(304.000000, 151.000000)">
-                              <polygon class="color-background" opacity="0.596981957"
-                                points="18.0883333 15.7316667 11.1783333 8.82166667 13.3333333 6.66666667 6.66666667 0 0 6.66666667 6.66666667 13.3333333 8.82166667 11.1783333 15.315 17.6716667">
-                              </polygon>
-                              <path class="color-background"
-                                d="M31.5666667,23.2333333 C31.0516667,23.2933333 30.53,23.3333333 30,23.3333333 C29.4916667,23.3333333 28.9866667,23.3033333 28.48,23.245 L22.4116667,30.7433333 L29.9416667,38.2733333 C32.2433333,40.575 35.9733333,40.575 38.275,38.2733333 L38.275,38.2733333 C40.5766667,35.9716667 40.5766667,32.2416667 38.275,29.94 L31.5666667,23.2333333 Z"
-                                opacity="0.596981957"></path>
-                              <path class="color-background"
-                                d="M33.785,11.285 L28.715,6.215 L34.0616667,0.868333333 C32.82,0.315 31.4483333,0 30,0 C24.4766667,0 20,4.47666667 20,10 C20,10.99 20.1483333,11.9433333 20.4166667,12.8466667 L2.435,27.3966667 C0.95,28.7083333 0.0633333333,30.595 0.00333333333,32.5733333 C-0.0583333333,34.5533333 0.71,36.4916667 2.11,37.89 C3.47,39.2516667 5.27833333,40 7.20166667,40 C9.26666667,40 11.2366667,39.1133333 12.6033333,37.565 L27.1533333,19.5833333 C28.0566667,19.8516667 29.01,20 30,20 C35.5233333,20 40,15.5233333 40,10 C40,8.55166667 39.685,7.18 39.1316667,5.93666667 L33.785,11.285 Z">
-                              </path>
-                            </g>
-                          </g>
-                        </g>
-                      </g>
-                    </svg>
-                  </div>
-                </a-tooltip>
-              </a-col>
-            </a-row>
-          </template>
-        </a-card>
-
-        <a-tabs class="tabs-sliding" default-active-key="1">
+        <storageInfoCard
+          :style="isChecked ? 'opacity:0;' : 'opacity:1;'"
+          style="transition: all 0.5s ease;"
+          :currentStorage="currentStorage"
+          :baseUrl="baseUrl"
+          @copy="copy"
+          @updateHandleView="updateHandleView"
+          :type="'noFilter'"
+        />
+        <a-tabs v-if="!isChecked" class="tabs-sliding" default-active-key="1">
           <a-tab-pane key="1" :tab="$t('Storage.RepositoryList')">
             <a-row type="flex" :gutter="24">
               <a-col :span="8" class="mb-24" v-for="(item, index) in repositories" :key="index">
@@ -137,7 +112,7 @@
               </a-col>
             </a-row>
           </a-tab-pane>
-          <a-tab-pane key="2" :tab="$t('Storage.StorageOverview')" v-if="isLogin">
+          <a-tab-pane key="2" v-if="isLogin" :tab="$t('Storage.StorageOverview')">
             <a-row type="flex" :gutter="24">
               <a-col :span="24">
                 <Overview :storageId="currentStorage.id"/>
@@ -146,8 +121,20 @@
             </a-row>
           </a-tab-pane>
         </a-tabs>
+        <!-- 存储空间模式下 直接展示仓库内容 -->
+         <a-card :style="isChecked ? 'margin-top:-128px;' : ''" style="border:none;transition: all 0.5s ease;" v-else bodyStyle="padding:0px;">
+           <LibView ref="libview" style="margin:14px;" :isChecked="isChecked" />
+         </a-card>
       </a-col>
     </a-row>
+    <!-- 存储空间模式下 切换到存储概览 -->
+    <a-row v-else style="margin-top:20px;">
+      <a-col :span="24">
+        <Overview :storageId="currentStorage.id"/>
+        <StorageInfo class="mt-20" :storageId="currentStorage.id"/>
+      </a-col>
+    </a-row>
+
     <a-modal v-model="showsTorageFormModal" :footer="null" :forceRender="true" :title="$t('Storage.CreateStorageSpace')"
       on-ok="showsTorageFormModal = false">
       <a-form-model :model="storageCreateData" ref="storageCreate" :rules="storageRules" :hideRequiredMark="true"
@@ -159,6 +146,15 @@
                 <a-icon slot="prefix" type="appstore" />
               </a-input>
             </a-form-model-item>
+            <a-form-model-item class="mb-10"
+                                                   :label="$t('Storage.SyncStorage')"
+                                                   :colon="false" style="position: relative"
+                                                   prop="syncEnabled">
+            <a-switch v-model="storageCreateData.syncEnabled" />&nbsp;&nbsp;
+              <a-tooltip :title="$t('Setting.SyncStoragePrompt')" class="info-message">
+                <a-icon type="question-circle-o" />
+              </a-tooltip>
+          </a-form-model-item>
             <a-form-model-item class="tags-field mb-10" :label="$t('Storage.StorageType')" :colon="false">
               <a-radio-group name="radioGroup" default-value="local" @change="changeStorageType()"
                 v-model="storageCreateData.storageProvider">
@@ -256,6 +252,15 @@
               <a-input disabled v-model="currentStorage.id" :placeholder="$t('Storage.StorageSpaceName')">
                 <a-icon slot="prefix" type="appstore" />
               </a-input>
+            </a-form-item>
+            <a-form-item class="mb-10"
+                               :label="$t('Storage.SyncStorage')"
+                               :colon="false" style="position: relative"
+                               prop="syncEnabled">
+              <a-switch v-model="currentStorage.syncEnabled" @change="changeSyncEnabled"/>&nbsp;&nbsp;
+              <a-tooltip :title="$t('Setting.SyncStoragePrompt')" class="info-message">
+                <a-icon type="question-circle-o" />
+              </a-tooltip>
             </a-form-item>
             <a-form-item class="tags-field mb-10" :label="$t('Storage.StorageType')" :colon="false">
               <a-radio-group disabled name="radioGroup" default-value="local" @change="changeStorageUpdateType()"
@@ -770,45 +775,52 @@
                 </a-col>
               </a-row>
               <a-row :gutter="[24]">
-                <a-col :span="4">
+                <a-col :span="3">
                   <a-form-item class="mb-10" :label="$t('Storage.RecycleBin')" :colon="false">
                     <a-checkbox v-model="folibRepository.trashEnabled">
                       {{ folibRepository.trashEnabled ? $t('Storage.On') : $t('Storage.Off') }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="4">
+                <a-col :span="3">
                   <a-form-item class="mb-10" :label="$t('Storage.Delete')" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsDeletion">
                       {{ folibRepository.allowsDeletion ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="4">
+                <a-col :span="3">
                   <a-form-item class="mb-10" :label="$t('Storage.ForcedDeletion')" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsForceDeletion">
                       {{ folibRepository.allowsForceDeletion ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="4">
+                <a-col :span="3">
                   <a-form-item class="mb-10" :label="$t('Storage.UploadDeploy')" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsDeployment">
                       {{ folibRepository.allowsDeployment ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="4">
+                <a-col :span="3">
                   <a-form-item class="mb-10" :label="$t('Storage.UploadOverlay')" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsRedeployment">
                       {{ folibRepository.allowsRedeployment ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="4">
+                <a-col :span="3">
                   <a-form-item class="mb-10" :label="$t('Storage.DirectoryBrowsing')" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsDirectoryBrowsing">
                       {{ folibRepository.allowsDirectoryBrowsing ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
+                    </a-checkbox>
+                  </a-form-item>
+                </a-col>
+                <a-col :span="3">
+                  <a-form-item class="mb-10" :label="$t('Storage.SyncRepository')" :colon="false">
+                    <a-checkbox v-model="folibRepository.syncEnabled">
+                      {{ folibRepository.syncEnabled ?  $t('Storage.On') : $t('Storage.Off')  }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
@@ -958,6 +970,13 @@
                   <a-form-item class="mb-10" :label="$t('Storage.RemoteIndexDownload')" :colon="false">
                     <a-checkbox v-model="folibRepository.remoteRepository.downloadRemoteIndexes">
                       {{ folibRepository.remoteRepository.downloadRemoteIndexes ? $t('Storage.Download') : $t('Storage.NoDownload') }}
+                    </a-checkbox>
+                  </a-form-item>
+                </a-col>
+                <a-col :span="3">
+                  <a-form-item class="mb-10" :label="$t('Storage.SyncRepository')" :colon="false">
+                    <a-checkbox v-model="folibRepository.syncEnabled">
+                      {{ folibRepository.syncEnabled ?  $t('Storage.On') : $t('Storage.Off')  }}
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
@@ -1256,6 +1275,8 @@ import { hasRole, isAdmin, hasPermission, isLogin } from "@/utils/permission"
 import language from "@/store/modules/language";
 import Overview from "../StorageMonitoring/components/Overview"
 import StorageInfo from "../StorageMonitoring/components/StorageInfo"
+import storageInfoCard from './Storage-components/storage-info-card.vue'
+import LibView from './LibView.vue'
 import CronTask from "@/views/Storage/components/Cron/index.vue";
 import UnionRepository from "@/views/Storage/components/UnionRepository/index.vue";
 import Scan from "@/views/Storage/components/Scan/index.vue";
@@ -1274,16 +1295,18 @@ export default {
     FolibKanbanTask,
     Overview,
     StorageInfo,
+    storageInfoCard, // 存储空间卡片信息组件
+    LibView
   },
   props: {
     navbarFixed: {
-			type: Boolean,
-			default: true,
-		},
+            type: Boolean,
+            default: true,
+        },
     anonymous: {
-			type: Boolean,
-			default: false,
-		},
+            type: Boolean,
+            default: false,
+        },
   },
   data() {
     const checkStorageId = (rule, value, callback) => {
@@ -1321,6 +1344,7 @@ export default {
         storageProvider: 'local',
         storageMaxSize: 0,
         bucket: null,
+        syncEnabled: false
       },
       currentDefultStorage: {
         id: null,
@@ -1330,6 +1354,7 @@ export default {
         storageProvider: 'local',
         storageMaxSize: 0,
         bucket: null,
+        syncEnabled: false
       },
       showsTorageFormModal: false,
       delForm: this.$form.createForm(this, { name: "del" }),
@@ -1340,7 +1365,8 @@ export default {
         storageProvider: 'local',
         storageMaxSize: 0,
         bucket: null,
-        users: []
+        users: [],
+        syncEnabled: false
       },
       storageCreateDefultData: {
         id: null,
@@ -1349,7 +1375,8 @@ export default {
         storageProvider: 'local',
         storageMaxSize: 0,
         bucket: null,
-        users: []
+        users: [],
+        syncEnabled: false
       },
       visibility: true,
       slack: true,
@@ -1431,6 +1458,7 @@ export default {
         storageProvider: "local",
         trashEnabled: true,
         type: "hosted",
+        syncEnabled: false
       },
       boards: [
         {
@@ -1459,6 +1487,13 @@ export default {
         gitVCS2:[]
         //there may be other VCS ...
       },
+      queryParams:{
+        groupId: null,
+        storageId: null
+      },
+      layoutType:'isFilter',
+      isChecked:false,
+      isShowOverview: false,
      permissionForm: {
         allowAnonymous: true,
         scope: 1,
@@ -1480,6 +1515,13 @@ export default {
     '$i18n.locale'() {
       this.$forceUpdate();
     },
+    currentStorage:{
+      handler(val){
+        console.log(val);
+
+      },
+      deep:true
+    },
       layoutChecked(newVal, oldVal) {
           console.log('Selected value changed from', oldVal, 'to', newVal);
           console.log(newVal !=="maven");
@@ -1496,13 +1538,14 @@ export default {
   },
   async created() {
     this.userInfo = store.state.user
-  await  this.getStorages();
-  await  this.getBaseUrl();
+    await  this.getStorages();
+    await  this.getBaseUrl();
 
     const params = storage.get('libView_repository')
 
     if (params) {
       this.currentStorage.id = params.item.storageId
+      this.queryParams.storageId = params.item.storageId
     }
 
     if (!this.currentStorage.id && this.storageData && this.storageData.length > 0) {
@@ -1524,9 +1567,39 @@ export default {
     },
     language() {
       return this.$store.state.language.lang
-    }
+    },
   },
   methods: {
+    // 展示存储概览
+    showOverview(val){
+      this.isShowOverview = val == 2
+    },
+    changeMoudles(){
+      this.isChecked = !this.isChecked
+      if(this.isChecked){
+        this.$refs.libview.myMounted()
+      }
+    },
+    getDetailInfo(){
+      // storage.set("libView_repository", { item, baseUrl: this.baseUrl })
+      this.$refs.libview.myMounted()
+    },
+    treeSelect(key, e) {
+      console.log('Trigger Select', key, e)
+      this.$refs.libview.treeSelect(key, e)
+    },
+    onExpand() {
+      console.log('Trigger Expand');
+    },
+    handheTableSearch(val,key){
+      if(key === 'storageId'){
+        const item = this.storageData.find(ele => ele.id === val)
+        this.setCurrentStorage(item)
+      }
+    },
+    changeSyncEnabled(val){
+      this.storageCreateData.syncEnabled = val;
+    },
     message(status, type, message) {
       let statusList = [401, 403]
       if (statusList.includes(status)) {
@@ -1748,6 +1821,7 @@ export default {
         if (this.storageMaxSize) {
           this.currentStorage.storageMaxSize = this.storageMaxSize * 1024 * 1024 * 1024 * 1024
         }
+        this.currentStorage
         updateStorages(this.currentStorage).then(response => {
           setTimeout(() => {
             this.$notification.success({
@@ -1773,6 +1847,12 @@ export default {
           this.userList.push(...resData)
         }
       })
+    },
+    async getStorages() {
+      await getStorages().then(response => {
+          this.storageData = response.storages;
+          this.cacheStorage()
+        })
     },
     userSearchChange(matchUsername){
       this.userQueryParams.matchUsername = matchUsername

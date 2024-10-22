@@ -8,6 +8,8 @@ export default {
     'CreateStorageSpace': '新建存储空间',
     'StorageSpaceName': '存储空间名称',
     'StorageType': '存储类型',
+    'SyncStorage': '同步存储空间',
+    'SyncRepository': '同步仓库',
     'LocalStorage': '本地存储',
     'Note': '说明',
     'NFSStorage': '默认为本地存储即:NFS本地目录存储',
@@ -234,4 +236,6 @@ export default {
     'LastTenUpdates': '近10次更新存储数据视图',
     'RepositoryList': '仓库列表',
     'ScanTime': '扫描时间',
+    'RepositoryQuery': '请选择仓库查询',
+    'RepositoryInfo':'仓库信息'
 }

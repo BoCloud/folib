@@ -428,13 +428,16 @@ public class RoleController extends BaseController {
                 StorageDto storage = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
                 if (storage != null && storage.hasRepositories()) {
                     RepositoryDto repository = storage.getRepository(repositoryId);
-                    if (repository != null && !repositorys.contains(repository)) {
+                    if (repository != null && !repositorys.contains(repository) && repository.isSyncEnabled()) {
                         repositorys.add(repository);
+                        if (!storages.contains(storage)) {
+                            storages.add(storage);
+                        }
                     }
                 }
             }else if (StringUtils.isNotEmpty(storageId)){
                 StorageDto storage = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
-                if (storage != null && !storages.contains(storage)) {
+                if (storage != null && !storages.contains(storage) && storage.isSyncEnabled()) {
                     storages.add(storage);
                 }
             }
