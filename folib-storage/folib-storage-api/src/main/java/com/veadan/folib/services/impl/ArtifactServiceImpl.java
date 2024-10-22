@@ -118,7 +118,9 @@ public class ArtifactServiceImpl implements ArtifactService {
                 RepositoryPath artifactRepositoryPath = repositoryPath.getParent().resolve(fileName);
                 try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                      ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream)) {
-                    objectOutputStream.writeObject(repositoryPath.getArtifactEntry());
+                    Artifact artifactEntry = repositoryPath.getArtifactEntry();
+                    artifactEntry.setMetadata(artifact.getMetadata());
+                    objectOutputStream.writeObject(artifactEntry);
                     byte[] byteArray = byteArrayOutputStream.toByteArray();
                     Files.write(artifactRepositoryPath, byteArray);
                 } catch (Exception ex) {

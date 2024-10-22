@@ -27,6 +27,7 @@ import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.schema2.Manifests;
 import com.veadan.folib.services.ArtifactManagementService;
+import com.veadan.folib.services.ArtifactMetadataService;
 import com.veadan.folib.services.ArtifactService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.DirectoryListingService;
@@ -56,6 +57,7 @@ import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.annotation.Resource;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
@@ -116,6 +118,9 @@ public class BrowseController
     @Inject
     @Lazy
     private ScanComponent scanComponent;
+
+    @Resource
+    private ArtifactMetadataService artifactMetadataService;
 
     @GetMapping(value = "/getArtifact/{storageId}/{repositoryId}/{artifactPath:.+}")
     public ResponseEntity getArtifact(@PathVariable String artifactPath,
@@ -416,14 +421,12 @@ public class BrowseController
 
     @ApiOperation(value = "recover a path from a repository.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was restore"),
-            @ApiResponse(code = 400, message = "Bad request."),
-            @ApiResponse(code = 404, message = "The specified storageId/repositoryId/path does not exist!")})
+            @ApiResponse(code = 400, message = "Bad request.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DELETE')")
     @PostMapping(value = "/restore/{storageId}/{repositoryId}/{artifactPath:.+}")
     public ResponseEntity restore(@PathVariable String storageId,@PathVariable String repositoryId,@PathVariable String artifactPath)
             throws IOException {
         logger.info("restore {}:{}/{}...", storageId, repositoryId, artifactPath);
-
         try {
             final RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
             if (!Files.exists(repositoryPath)) {
@@ -449,7 +452,6 @@ public class BrowseController
             }else {
                 artifactoryPaths.add(artifactPath);
             }
-            //
             for (String sourceArtifactoryPath : artifactoryPaths) {
                 RepositoryPath sourcePath=repositoryPathResolver.resolve(storageId, repositoryId, sourceArtifactoryPath);
                 String targetArtifactoryPath=sourceArtifactoryPath.replaceAll(".trash/","");
@@ -468,11 +470,14 @@ public class BrowseController
                                     Artifact artifact = parseArtifact(metaRepositoryPath);
                                     targetPath.setArtifact(artifact);
                                 }
-
                             }
                             artifactManagementService.validateAndStore(targetPath,is);
+                            artifactMetadataService.rebuildMetadata(storageId,repositoryId,targetArtifactoryPath);
+
                         }catch (Exception e){
                             log.error("restore {} failed",targetPath,e);
+                            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                    .body(e.getMessage());
                         }
                     }
                 }
@@ -480,7 +485,6 @@ public class BrowseController
             Files.delete(repositoryPath);
         } catch (ArtifactStorageException e) {
             logger.error(e.getMessage(), e);
-
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(e.getMessage());
         }
@@ -491,7 +495,7 @@ public class BrowseController
 
 
     private boolean notMetadata(String path){
-        return !(path.endsWith(".metadata") || path.endsWith(".md5") ||path.endsWith(".sha256")||path.endsWith(".sha1")||path.endsWith(".sm3")||path.endsWith(".xml"));
+        return !(path.endsWith(".metadata") || path.endsWith(".md5") ||path.endsWith(".sha256")||path.endsWith(".sha1")||path.endsWith(".sm3"));
     }
     private Artifact parseArtifact(Path path) {
         Artifact artifact = null;
@@ -502,9 +506,8 @@ public class BrowseController
             try {
                 Files.deleteIfExists(path);
             } catch (Exception e) {
-
+                logger.error("解析制品 [{}] 本地缓存.metadata文件错误 [{}]", path, ExceptionUtils.getStackTrace(ex));
             }
-            logger.warn("解析制品 [{}] 本地缓存.metadata文件错误 [{}]", path, ExceptionUtils.getStackTrace(ex));
         }
         return artifact;
     }

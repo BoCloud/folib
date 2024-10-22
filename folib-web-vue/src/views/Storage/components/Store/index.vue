@@ -1,537 +1,863 @@
 <template>
-    <div class="repo-info">
-      <a-affix :offset-top="50" class="repository-affix">
-        <a-row>
-          <a-col :span="24" :md="24" class="mb-24">
-            <!-- User Profile Card -->
-            <a-card :bordered="false" class="card-profile-head" :bodyStyle="{ padding: 0 }" :targetOffset="0"
-              :affix="false">
-              <template #title>
-                <a-row type="flex" align="middle">
-                  <a-col :span="24" :md="18" class="col-info">
-                    <a>
-                      <a-icon type="backward" :style="{
-                        fontSize: '32px',
-                        marginRight: '5px',
-                        opacity: '0.8',
-                        color: '#BFBFBFFF',
-                      }" @click="goBack()" />
-                    </a>
-                    <a>
-                      <a-avatar @click="createData" :size="84" shape="square"
-                        style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
-                        :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" />
-                    </a>
-                    <div class="avatar-info">
-                      <a-tooltip placement="topLeft">
-                        <template slot="title">
-                          {{ $t('Store.GotoBrowsePage') }}
-                        </template>
-                        <a :href="baseUrl +
-                          'api/browse/' +
-                          folibRepository.storageId +
-                          '/' +
-                          folibRepository.id" target="_blank">
-                          <h4 class="font-semibold m-0" @click="createData">
-                            {{ folibRepository.id }}
-                          </h4>
-                        </a>
-                      </a-tooltip>
-                      <a-descriptions title="" :column="1" class="repo-address">
-                        <a-descriptions-item :label="$t('Store.BrowseAddress')">
-                          <a-tooltip placement="topLeft">
-                            <template slot="title">
-                              {{ $t('Store.WarehouseBrowseAddress') }}
-                            </template>
-                            <a :href="baseUrl +
-                              'api/browse/' +
-                              folibRepository.storageId +
-                              '/' +
-                              folibRepository.id" target="_blank">
-                              <p class="copy-p">
-                                {{ baseUrl +
-                                  'api/browse/' +
-                                  folibRepository.storageId +
-                                  '/' +
-                                  folibRepository.id }}
-                              </p>
-                            </a>
-                          </a-tooltip>
-                          <a class="ml-10">
-                            <a-icon type="copy" @click="
-                              copy(
-                                baseUrl +
+  <div class="repo-info">
+    <a-affix :offset-top="50" class="repository-affix">
+      <a-row>
+        <a-col :span="24" :md="24" class="mb-24">
+          <!-- User Profile Card -->
+          <a-card :bordered="false" class="card-profile-head" :bodyStyle="{ padding: 0 }" :targetOffset="0"
+            :affix="false">
+            <template #title>
+              <a-row type="flex" align="middle">
+                <a-col :span="24" :md="18" class="col-info">
+                  <a>
+                    <a-icon type="backward" :style="{
+                      fontSize: '32px',
+                      marginRight: '5px',
+                      opacity: '0.8',
+                      color: '#BFBFBFFF',
+                    }" @click="goBack()" />
+                  </a>
+                  <a>
+                    <a-avatar @click="createData" :size="84" shape="square"
+                      style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
+                      :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" />
+                  </a>
+                  <div class="avatar-info">
+                    <a-tooltip placement="topLeft">
+                      <template slot="title">
+                        {{ $t('Store.GotoBrowsePage') }}
+                      </template>
+                      <a :href="baseUrl +
+                        'api/browse/' +
+                        folibRepository.storageId +
+                        '/' +
+                        folibRepository.id" target="_blank">
+                        <h4 class="font-semibold m-0" @click="createData">
+                          {{ folibRepository.id }}
+                        </h4>
+                      </a>
+                    </a-tooltip>
+                    <a-descriptions title="" :column="1" class="repo-address">
+                      <a-descriptions-item :label="$t('Store.BrowseAddress')">
+                        <a-tooltip placement="topLeft">
+                          <template slot="title">
+                            {{ $t('Store.WarehouseBrowseAddress') }}
+                          </template>
+                          <a :href="baseUrl +
+                            'api/browse/' +
+                            folibRepository.storageId +
+                            '/' +
+                            folibRepository.id" target="_blank">
+                            <p class="copy-p">
+                              {{ baseUrl +
                                 'api/browse/' +
                                 folibRepository.storageId +
                                 '/' +
-                                folibRepository.id
-                              )" />
+                                folibRepository.id }}
+                            </p>
                           </a>
-                        </a-descriptions-item>
-                        <a-descriptions-item :label="$t('Store.UseAddress')">
-                          <a-tooltip>
-                            <template slot="title">
-                              {{ $t('Store.WarehouseUsageAddress') }}
-                            </template>
-                            <a>
-                              <p class="copy-p">
-                                {{
-                                  getRepositoryUrl()
-                                }}
-                              </p>
-                            </a>
-                          </a-tooltip>
-                          <a class="ml-10">
-                            <a-icon type="copy" @click="
+                        </a-tooltip>
+                        <a class="ml-10">
+                          <a-icon type="copy" @click="
+                            copy(
+                              baseUrl +
+                              'api/browse/' +
+                              folibRepository.storageId +
+                              '/' +
+                              folibRepository.id
+                            )" />
+                        </a>
+                      </a-descriptions-item>
+                      <a-descriptions-item :label="$t('Store.UseAddress')">
+                        <a-tooltip>
+                          <template slot="title">
+                            {{ $t('Store.WarehouseUsageAddress') }}
+                          </template>
+                          <a>
+                            <p class="copy-p">
+                              {{
+                                getRepositoryUrl()
+                              }}
+                            </p>
+                          </a>
+                        </a-tooltip>
+                        <a class="ml-10">
+                          <a-icon type="copy" @click="
                             copy(
                               getRepositoryUrl()
                             )
-                              " />
-                          </a>
-                        </a-descriptions-item>
-                        <a-descriptions-item v-if="folibRepository.remoteRepository" :label="$t('Store.ProxyAddress')">
-                          <p class="copy-p">{{ folibRepository.remoteRepository.url }}</p>
-                        </a-descriptions-item>
-                        <a-descriptions-item class="group-descriptions" :label="$t('Store.GroupRepositories')"
-                          v-if="folibRepository.groupRepositories && folibRepository.groupRepositories.length > 0">
-                          <div class="group-repositories-container">
-                            <a-tooltip>
-                              <template slot="title">
-                                <div v-for="(repo, index) in folibRepository.groupRepositories" :key="index">{{ repo }}
-                                </div>
-                              </template>
-                              <p class="ellipsis-text"> {{ folibRepository.groupRepositories.join('\n') }}</p>
-                            </a-tooltip>
-                          </div>
-                        </a-descriptions-item>
-                      </a-descriptions>
-                    </div>
-                  </a-col>
-                  <a-col :span="24" :md="6" style="
+                            " />
+                        </a>
+                      </a-descriptions-item>
+                      <a-descriptions-item v-if="folibRepository.remoteRepository" :label="$t('Store.ProxyAddress')">
+                        <p class="copy-p">{{ folibRepository.remoteRepository.url }}</p>
+                      </a-descriptions-item>
+                      <a-descriptions-item class="group-descriptions" :label="$t('Store.GroupRepositories')"
+                        v-if="folibRepository.groupRepositories && folibRepository.groupRepositories.length > 0">
+                        <div class="group-repositories-container">
+                          <a-tooltip>
+                            <template slot="title">
+                              <div v-for="(repo, index) in folibRepository.groupRepositories" :key="index">{{ repo }}
+                              </div>
+                            </template>
+                            <p class="ellipsis-text"> {{ folibRepository.groupRepositories.join('\n') }}</p>
+                          </a-tooltip>
+                        </div>
+                      </a-descriptions-item>
+                    </a-descriptions>
+                  </div>
+                </a-col>
+                <a-col :span="24" :md="6" style="
                     display: flex;
                     align-items: center;
                     justify-content: flex-end;
                   ">
-                    <a v-if="folibRepository.layout === 'Docker' && folibRepository.type === 'hosted'">
-                      <small style="padding-right: 20px" @click="handleDockerUploud">
-                        {{ $t('Store.Upload') }}
-                        <a-icon type="cloud-upload" />
-                      </small>
-                    </a>
-                    <a v-if="uploadEnabled && folibRepository.layout === 'rpm'">
-                      <small style="padding-right: 20px" @click="handleRpmUpload">
-                        {{ $t('Store.Upload') }}
-                        <a-icon type="cloud-upload" />
-                      </small>
-                    </a>
-                    <a v-if="uploadEnabled && folibRepository.layout === 'Maven 2'"><small style="padding-right: 20px"
-                        @click="handleMavenUpload">
-                        {{ $t('Store.Upload') }}
-                        <a-icon type="cloud-upload" />
-                      </small>
-                    </a>
-                    <a
-                      v-if="uploadEnabled && folibRepository.layout !== 'rpm' && folibRepository.subLayout !== 'ohpm' && folibRepository.subLayout !== 'go'"><small
-                        style="padding-right: 20px" @click="handleUpload">
-                        {{ $t('Store.BatchUpload') }}
-                        <a-icon type="cloud-upload" />
-                      </small>
-                    </a>
-                    <a v-if="folibRepository.layout !== 'Raw'">
-                      <small style="padding-right: 20px" @click="UsedHelperVisible">
-                        {{ $t('Store.UseHelp') }}
-                        <a-icon type="question-circle" theme="filled" />
-                      </small>
-                    </a>
-                    <!-- <div v-if="(isAdmin() || (storageAdmin && storageAdmin === $store.state.user.name)) && folibRepository.type !== 'group'">
+                  <a v-if="folibRepository.layout === 'Docker' && folibRepository.type === 'hosted'">
+                    <small style="padding-right: 20px" @click="handleDockerUploud">
+                      {{ $t('Store.Upload') }}
+                      <a-icon type="cloud-upload" />
+                    </small>
+                  </a>
+                  <a v-if="uploadEnabled && folibRepository.layout === 'rpm'">
+                    <small style="padding-right: 20px" @click="handleRpmUpload">
+                      {{ $t('Store.Upload') }}
+                      <a-icon type="cloud-upload" />
+                    </small>
+                  </a>
+                  <a v-if="uploadEnabled && folibRepository.layout === 'Maven 2'"><small style="padding-right: 20px"
+                      @click="handleMavenUpload">
+                      {{ $t('Store.Upload') }}
+                      <a-icon type="cloud-upload" />
+                    </small>
+                  </a>
+                  <a
+                    v-if="uploadEnabled && folibRepository.layout !== 'rpm' && folibRepository.subLayout !== 'ohpm' && folibRepository.subLayout !== 'go'"><small
+                      style="padding-right: 20px" @click="handleUpload">
+                      {{ $t('Store.BatchUpload') }}
+                      <a-icon type="cloud-upload" />
+                    </small>
+                  </a>
+                  <a v-if="folibRepository.layout !== 'Raw'">
+                    <small style="padding-right: 20px" @click="UsedHelperVisible">
+                      {{ $t('Store.UseHelp') }}
+                      <a-icon type="question-circle" theme="filled" />
+                    </small>
+                  </a>
+                  <!-- <div v-if="(isAdmin() || (storageAdmin && storageAdmin === $store.state.user.name)) && folibRepository.type !== 'group'">
                     <span class="mr-15">{{
                       scan.onScan ? $t('Store.ScanOn') : $t('Store.ScanOff')
                     }}</span>
                     <a-switch default-checked v-model="scan.onScan" @change="scannerChange" />
                   </div> -->
+                </a-col>
+              </a-row>
+            </template>
+          </a-card>
+        </a-col>
+      </a-row>
+    </a-affix>
+    <a-row v-if="isSearch === false" type="flex" :gutter="24">
+      <!-- Platform Settings Column -->
+      <a-col :span="24" :md="10" class="mb-24">
+        <a-card :bordered="false" style="max-height: 1024px; min-height: 454px; overflow-y: auto" class="header-solid"
+          :bodyStyle="{ paddingTop: 0, paddingBottom: 0 }">
+          <template #title>
+            <h6 class="font-semibold m-0">{{ isTrashView ? $t('Store.TrashCan') : $t('Store.PacketList') }} <a
+                v-show="!isTrashView" class="ml-10" @click="reloadTreeData">
+                <a-icon type="reload" /></a></h6>
+          </template>
+          <!-- <a-button slot="extra" type="link"  size="large" style="color: black;" @click="isTrashView=!isTrashView"> -->
+          <a-tooltip slot="extra" @click="isTrashView = !isTrashView" class="view-switch">
+            <template slot="title">
+              {{ isTrashView ? $t('Store.PacketListView') : $t('Store.TrashCanView') }}
+            </template>
+            <a-icon v-if="isTrashView" type="file-zip" />
+            <a-icon v-if="!isTrashView" type="delete" />
+          </a-tooltip>
+          <!-- </a-button> -->
+          <a-directory-tree v-if="!isTrashView" :replaceFields="{
+            key: 'artifactPath',
+            title: 'name',
+            children: 'children',
+          }" :tree-data="treeData" :load-data="onLoadData" @select="treeSelect" @rightClick="onRightClick">
+          </a-directory-tree>
+          <a-directory-tree v-if="isTrashView" :replaceFields="{
+            key: 'artifactPath',
+            title: 'name',
+            children: 'children',
+          }" :tree-data="trashData" :load-data="onLoadData" @select="treeSelect" @rightClick="onRightClick">
+
+          </a-directory-tree>
+        </a-card>
+      </a-col>
+      <a-col :span="24" :md="14" class="mb-24">
+        <a-card :bordered="false" class="header-solid h-full card-profile-information"
+          :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }" :headStyle="{ paddingRight: 0 }">
+          <template #title>
+            <a-row type="flex" align="middle" v-if="folibRepository.layout !== 'Docker'">
+              <a-col :span="16" class="font-semibold m-0">
+                <a-row type="flex" align="middle">
+                  <a-col :span="8" :xs="24" :xl="16">
+                    <a-avatar v-if="!currentTreeNode.isLeaf" :size="24" shape="square"
+                      :src="'images/folib/package.svg'" />
+                    <a-avatar v-if="currentTreeNode.isLeaf" :size="24" shape="square" :src="'images/folib/' +
+                      getFileType(currentTreeNode.name) +
+                      '.svg'
+                      " />
+                    {{ currentTreeNode.name }}
+                  </a-col>
+                  <a-col :span="8" :xs="24" :xl="8">
+                    <span class="ml-auto" v-if="scanReport.show" @click="openDetial">
+                      <a-space :size="1" class="avatar-chips">
+                        <template v-if="scanReport.vulnerabilitesCount > 0">
+                          <a-tooltip>
+                            <template slot="title">{{ $t('Store.Seriousness') }}</template>
+                            <div class="">
+                              <a-avatar :size="24" :src="'images/folib/critical.svg'" />
+                              <span class="mb-0 text-dark">{{
+                                scanReport.critical
+                              }}</span>
+                            </div>
+                          </a-tooltip>
+
+                          <a-tooltip>
+                            <template slot="title">{{ $t('Store.HighRisk') }}</template>
+                            <div class="">
+                              <a-avatar :size="24" :src="'images/folib/high.svg'" />
+                              <span class="mb-0 text-dark">{{
+                                scanReport.high
+                              }}</span>
+                            </div>
+                          </a-tooltip>
+
+                          <a-tooltip>
+                            <template slot="title">{{ $t('Store.MediumRisk') }}</template>
+                            <div class="">
+                              <a-avatar :size="24" :src="'images/folib/medium.svg'" />
+                              <span class="mb-0 text-dark">{{
+                                scanReport.medium
+                              }}</span>
+                            </div>
+                          </a-tooltip>
+
+                          <a-tooltip>
+                            <template slot="title">{{ $t('Store.LowRisk') }}</template>
+                            <div class="">
+                              <a-avatar :size="24" :src="'images/folib/low.svg'" />
+                              <span class="mb-0 text-dark">{{
+                                scanReport.low
+                              }}</span>
+                            </div>
+                          </a-tooltip>
+                        </template>
+                        <template v-else>
+                          <a-tooltip>
+                            <template slot="title">{{ $t('Store.Health') }}</template>
+                            <a-avatar :size="24" :src="'images/folib/healthy.svg'" />
+                          </a-tooltip>
+                        </template>
+                      </a-space>
+                    </span>
+                    <span v-if="scanReport.fail">
+                      <a-tag color="#f50">
+                        {{ $t('Store.ScanFailure') }}
+                      </a-tag>
+                    </span>
                   </a-col>
                 </a-row>
-              </template>
-            </a-card>
+              </a-col>
+              <a-col :span="8" class="text-right">
+                <a-dropdown v-if="$store.state.user.token && currentTreeNode.url" class="mr-30"
+                  placement="bottomCenter">
+                  <span style="font-size: 16px; cursor: pointer">
+                    {{ $t('Store.More') }}
+                    <a-icon type="more" class="text-muted" style="font-size: 16px" />
+                  </span>
+                  <template #overlay>
+                    <a-menu slot="overlay" @click="handleMenuClick">
+                      <a-menu-item key="1" v-if="currentFileDetial">
+                        <a-icon type="eye" />
+                        {{
+                          currentFileDetial.listTree
+                            ? $t('Store.Package')
+                            : viewCodes
+                              ? $t('Store.Document')
+                              : folibRepository.layout === "Docker"
+                                ? $t('Store.Details')
+                                : ""
+                        }}{{ $t('Store.Preview') }}
+                      </a-menu-item>
+                      <a-menu-item key="2" v-if="copyEnabled&&!isTrashView">
+                        <a-icon type="copy" />{{ $t('Store.Copy') }}
+                      </a-menu-item>
+                      <a-menu-item key="3" v-if="moveEnabled&&!isTrashView">
+                        <a-icon type="swap" />{{ $t('Store.Move') }}
+                      </a-menu-item>
+                      <a-menu-item key="4" v-if="deleteEnabled&&!isTrashView">
+                        <a-popconfirm :title="$t('Store.SuerDelete')" placement="topLeft" okType="danger"
+                          :ok-text="$t('Store.Confirm')" :cancel-text="$t('Store.Cancel')"
+                          @confirm="deletePackageHandle">
+                          <a-icon type="delete" />{{ $t('Store.Delete') }}
+                        </a-popconfirm>
+                      </a-menu-item>
+                      <a-menu-item key="5" v-if="dispatchEnabled&&!isTrashView">
+                        <a-icon type="retweet" />{{ $t('Store.Distribute') }}
+                      </a-menu-item>
+
+                      <a-menu-item key="6"
+                        v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact&&!isTrashView">
+                        <a-icon type="download" />{{ $t('Store.DownLoad') }}
+                      </a-menu-item>
+
+                      <a-menu-item key="7"
+                        v-if="(folibRepository.layout === 'Raw' && currentTreeNode && currentTreeNode.type === 'dir'&&!isTrashView)">
+                        <a-icon type="download" />{{ $t('Store.DownLoad') }}
+                      </a-menu-item>
+                      <a-menu-item key="8" v-if="isTrashView && currentTreeNode">
+                        <a-icon type="undo" />{{ $t('Store.Restore') }}
+                      </a-menu-item>
+                      <a-modal :title="$t('Store.Prompts')" :visible="downLoadVisible" :okText="$t('Store.Confirm')"
+                        :cancelText="$t('Store.Cancel')" centered @ok="handleDownLoadDir"
+                        @cancel="handleDownLoadDirCancel">
+                        <p>{{ currentTreeNode.artifactPath + $t('Store.DirSize') + rawPathSize + ", "+$t('Store.ConfirmDownload') }}</p>
+                      </a-modal>
+                    </a-menu>
+                  </template>
+                </a-dropdown>
+              </a-col>
+            </a-row>
+            <a-row type="flex" align="middle" v-if="folibRepository.layout === 'Docker'">
+              <a-col :span="16" class="font-semibold m-0">
+                <a-row type="flex" align="middle">
+                  <a-col :span="8" :xs="24" :xl="16">
+                    <a-avatar :size="24" shape="square" :src="'images/folib/docker-s.svg'" />
+                    {{ currentTreeNode.name }}
+                  </a-col>
+                  <a-col :span="8" :xs="24" :xl="8">
+                    <span class="ml-auto" v-if="scanReport.show" @click="openDetial">
+                      <a-space :size="1" class="avatar-chips">
+                        <template v-if="scanReport.vulnerabilitesCount > 0">
+                          <a-tooltip>
+                            <template slot="title">{{ $t('Store.Seriousness') }}</template>
+                            <div class="">
+                              <a-avatar :size="24" :src="'images/folib/critical.svg'" />
+                              <span class="mb-0 text-dark">{{
+                                scanReport.critical
+                              }}</span>
+                            </div>
+                          </a-tooltip>
+
+                          <a-tooltip>
+                            <template slot="title">{{ $t('Store.HighRisk') }}</template>
+                            <div class="">
+                              <a-avatar :size="24" :src="'images/folib/high.svg'" />
+                              <span class="mb-0 text-dark">{{
+                                scanReport.high
+                              }}</span>
+                            </div>
+                          </a-tooltip>
+
+                          <a-tooltip>
+                            <template slot="title">{{ $t('Store.MediumRisk') }}</template>
+                            <div class="">
+                              <a-avatar :size="24" :src="'images/folib/medium.svg'" />
+                              <span class="mb-0 text-dark">{{
+                                scanReport.medium
+                              }}</span>
+                            </div>
+                          </a-tooltip>
+
+                          <a-tooltip>
+                            <template slot="title">{{ $t('Store.LowRisk') }}</template>
+                            <div class="">
+                              <a-avatar :size="24" :src="'images/folib/low.svg'" />
+                              <span class="mb-0 text-dark">{{
+                                scanReport.low
+                              }}</span>
+                            </div>
+                          </a-tooltip>
+                        </template>
+                        <template v-else>
+                          <a-tooltip>
+                            <template slot="title">{{ $t('Store.Health') }}</template>
+                            <a-avatar :size="24" :src="'images/folib/healthy.svg'" />
+                          </a-tooltip>
+                        </template>
+                      </a-space>
+                    </span>
+                    <span v-if="scanReport.fail">
+                      <a-tag color="#f50">
+                        {{ $t('Store.ScanFailure') }}
+                      </a-tag>
+                    </span>
+                  </a-col>
+                </a-row>
+              </a-col>
+
+
+              <a-col :span="8" class="text-right">
+                <a-dropdown v-if="$store.state.user.token && currentTreeNode.url" class="mr-45">
+                  <span style="font-size: 16px; cursor: pointer">
+                    {{ $t('Store.More') }}
+                    <a-icon type="more" class="text-muted" style="font-size: 16px" />
+                  </span>
+                  <template #overlay>
+
+
+                    <a-menu slot="overlay" @click="handleMenuClick">
+                      <a-menu-item key="1" v-if="currentFileDetial">
+                        <a-icon type="eye" />
+                        {{
+                          currentFileDetial.listTree
+                            ? $t('Store.Package')
+                            : viewCodes
+                              ? $t('Store.Document')
+                              : folibRepository.layout === "Docker"
+                                ? $t('Store.Details')
+                                : ""
+                        }}{{ $t('Store.Preview') }}
+                      </a-menu-item>
+                      <a-menu-item key="2" v-if="copyEnabled&&!isTrashView">
+                        <a-icon type="copy" />
+                        {{ $t('Store.Copy') }}
+                      </a-menu-item>
+                      <a-menu-item key="3" v-if="moveEnabled&&!isTrashView">
+                        <a-icon type="swap" />
+                        {{ $t('Store.Move') }}
+                      </a-menu-item>
+                      <a-menu-item key="4" v-if="deleteEnabled&&!isTrashView">
+                        <a-popconfirm :title="$t('Store.SuerDelete')" placement="topLeft" okType="danger"
+                          :ok-text="$t('Store.Confirm')" :cancel-text="$t('Store.Cancel')"
+                          @confirm="deletePackageHandle">
+                          <a-icon type="delete" />
+                          {{ $t('Store.Delete') }}
+                        </a-popconfirm>
+                      </a-menu-item>
+                      <a-menu-item key="5" v-if="dispatchEnabled&&!isTrashView">
+                        <a-icon type="retweet" />
+                        {{ $t('Store.Distribute') }}
+                      </a-menu-item>
+
+                      <a-menu-item key="6"
+                        v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact&&!isTrashView">
+                        <a-icon type="download" />
+                        {{ $t('Store.DownLoad') }}
+                      </a-menu-item>
+
+                      <a-menu-item key="7"
+                        v-if="folibRepository.layout === 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact&&!isTrashView">
+                        <a-icon type="download" />
+                        {{ $t('Store.DownLoad') }}
+                      </a-menu-item>
+                      <a-menu-item key="8" v-if="isTrashView && currentTreeNode">
+                        <a-icon type="undo" />{{ $t('Store.Restore') }}
+                      </a-menu-item>
+                    </a-menu>
+                  </template>
+                </a-dropdown>
+              </a-col>
+
+
+            </a-row>
+          </template>
+
+          <a v-if="currentTreeNode.url && folibRepository.layout !== 'Docker'" class="text-dark ellipsis-link"
+            :href="getFormattedUrl(currentTreeNode.url)" target="_blank" :title="getFormattedUrl(currentTreeNode.url)">
+            {{ getFormattedUrl(currentTreeNode.url) }}
+          </a>
+          <a v-if="currentTreeNode.url && folibRepository.layout !== 'Docker'" class="ml-10"><a-icon type="copy"
+              @click="copy(getFormattedUrl(currentTreeNode.url))" /> </a>
+          <hr class="gradient-line" />
+          <BaseData ref="BaseData" :currentTreeNode="currentTreeNode" :repositoryType="repositoryType"
+            :currentFileDetial="currentFileDetial" :successMsg="successMsg" :folibRepository="folibRepository"
+            @messageArchitectureChild="handleArchitectureMessage" @metadataEditHandler="metadataEditHandler"
+            @metadataHandler="metadataHandler" @setCurrentFileDetial="setCurrentFileDetial" />
+        </a-card>
+      </a-col>
+    </a-row>
+    <a-row v-if="isSearch === true" type="flex" :gutter="24">
+      <!-- Platform Settings Column -->
+      <Search ref="search" :columns="columns" :folibRepository="this.folibRepository" />
+    </a-row>
+    <use-doc :usedVisible="usedVisible" :repositoryType="repositoryType" :folibRepository="folibRepository"
+      :ivyCode="ivyCode" :baseUrl="baseUrl" :dockerCode="dockerCode" @close="closeUsedVisibleDialog" />
+    <!-- 预览 -->
+    <a-drawer placement="right" width="45%" :title="currentTreeNode.name" :visible="viewCodeVisible"
+      @close="closeViewCodeDialog">
+      <div class="mx-auto m-50">
+        <div class="mb-50">
+          <a-card :bordered="false" class="header-solid">
+            <a-directory-tree v-if="currentFileDetial && currentFileDetial.listTree"
+              :replaceFields="{ title: 'name', children: 'children' }" :tree-data="currentFileDetial.listTree" />
+          </a-card>
+          <prism-editor class="my-editor height-300" v-if="currentFileDetial &&
+            viewCodes &&
+            folibRepository.layout !== 'Docker'
+          " v-model="viewCodes" :highlight="highlighterHandle" :line-numbers="false"
+            :readonly="true"></prism-editor>
+
+          <a-tabs v-if="currentFileDetial &&
+            currentManifest &&
+            folibRepository.layout === 'Docker'
+          " class="tabs-sliding" default-active-key="1">
+            <a-tab-pane key="1" tab="Layers">
+              <a-timeline>
+                <a-timeline-item color="primary" v-for="(key, index) in currentManifest.config" :key="index">
+                  {{ index }}
+                  <p>
+                    {{ currentManifest.config[index] }}
+                  </p>
+                </a-timeline-item>
+              </a-timeline>
+            </a-tab-pane>
+            <a-tab-pane key="2" :tab="$t('Store.ProductionHistory')">
+              <a-timeline>
+                <a-timeline-item color="primary" v-for="(key, index) in currentManifest.history" :key="index">
+                  {{ formateDate(key.created) }}
+                  <p>
+                    {{ key.created_by }}
+                  </p>
+                </a-timeline-item>
+              </a-timeline>
+            </a-tab-pane>
+          </a-tabs>
+        </div>
+      </div>
+    </a-drawer>
+    <add-metadata v-if="showMetadataHandler" :showMetadataHandler="showMetadataHandler" :quillOptions="quillOptions"
+      :handlerMetadataType="handlerMetadataType" :propMetadataForm="metadataForm"
+      :metadataConfigList="metadataConfigList" :currentTreeNode="currentTreeNode" :metadataTypes="metadataTypes"
+      :successMsg="successMsg" @metadataHandlerCancel="metadataHandlerCancel" @metadataReflesh="metadataReflesh" />
+
+    <!-- 复制 -->
+    <a-modal v-model="showOperationFormModal" :footer="null" :forceRender="true" :centered="true"
+      :title="operationTitle" on-ok="showCopyFormModal = false">
+      <a-form :form="operationForm" ref="operationForm" layout="vertical" @submit.prevent="handleOperationSubmit">
+        <a-row :gutter="[24]">
+          <a-col :span="24">
+            <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" :colon="false"
+              ref="targetRepositories" prop="targetRepositories">
+              <gb-ant-select-two-cascader allowClear :placeholder="$t('Store.SelectTargetWarehouse')" v-decorator="[
+                'targetRepositories',
+                {
+                  initialValue: [],
+                  rules: [
+                    {
+                      required: true,
+                      message: $t('Store.SelectTargetWarehouse'),
+                      type: 'array',
+                    },
+                  ],
+                },
+              ]" :selectOptionsConfig="{
+                  key: 'key',
+                  value: 'key',
+                  text: 'name',
+                  children: 'children',
+                }" dropdownClassName="customer-multiple-cascader" :treeData="repositories" />
+            </a-form-item>
+            <!-- <a-form-item class="tags-field mb-10" :colon="false" :label="customTitle" valuePropName="checked">
+              <a-switch v-decorator="['custom',
+                {
+                  valuePropName: 'checked',
+                  rules: [
+                    { required: false, message: '' },
+                  ],
+                },
+              ]" style="width:10%;" @change="customChange">
+              </a-switch>
+            </a-form-item> -->
+            <a-form-item class="tags-field mb-10" v-if="!custom" :label="$t('Store.TargetDirectory')" prop="path"
+              :colon="false" style="display:none;">
+              <a-input v-decorator="[
+                'path',
+                {
+                  rules: [{ required: true, message: $t('Store.TargetDirectory') }],
+                },
+              ]" :disabled="true" :placeholder="$t('Store.TargetDirectory')">
+              </a-input>
+            </a-form-item>
+            <a-form-item class="tags-field mb-10" v-if="!custom" :label="$t('Store.TargetDirectory')" prop="targetPath"
+              :colon="false">
+              <a-input v-decorator="[
+                'targetPath',
+                {
+                  rules: [{ required: true, message: $t('Store.TargetDirectory') }],
+                },
+              ]" :disabled="isTargetPatDisabled" :placeholder="$t('Store.TargetDirectory')">
+              </a-input>
+            </a-form-item>
+            <a-form-item class="tags-field mb-10" v-if="custom" :label="$t('Store.TargetDirectory')" prop="path"
+              :colon="false">
+              <a-input v-decorator="[
+                'path',
+                {
+                  rules: [{ required: true, message: $t('Store.InputTargetDirectory') }],
+                },
+              ]" :disabled="false" :placeholder="$t('Store.InputTargetDirectory')">
+              </a-input>
+            </a-form-item>
+          </a-col>
+          <a-col :span="24" class="text-center">
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">{{ $t('Store.Submit')
+              }}</a-button>
+            <a-button key="back" @click="operationFormModalClose()" class="px-30 ml-10" size="small">{{
+              $t('Store.Cancel')
+            }}</a-button>
           </a-col>
         </a-row>
-      </a-affix>
-      <a-row v-if="isSearch === false" type="flex" :gutter="24">
-        <!-- Platform Settings Column -->
-        <a-col :span="24" :md="10" class="mb-24">
-          <a-card :bordered="false" style="max-height: 1024px; min-height: 454px; overflow-y: auto" class="header-solid"
-            :bodyStyle="{ paddingTop: 0, paddingBottom: 0 }">
-            <template #title>
-              <h6 class="font-semibold m-0">{{ isTrashView?$t('Store.TrashCan'):$t('Store.PacketList') }} <a v-show="!isTrashView" class="ml-10" @click="reloadTreeData">
-                  <a-icon type="reload" /></a></h6>
-            </template>
-            <!-- <a-button slot="extra" type="link"  size="large" style="color: black;" @click="isTrashView=!isTrashView"> -->
-              <a-tooltip slot="extra"  @click="isTrashView=!isTrashView" class="view-switch">
-                <template slot="title">
-                  {{ isTrashView?$t('Store.PacketListView'):$t('Store.TrashCanView') }}
-                </template>
-                <a-icon v-if="isTrashView" type="file-zip" />
-                <a-icon v-if="!isTrashView" type="delete" />
-              </a-tooltip>
-            <!-- </a-button> -->
-            <a-directory-tree v-if="!isTrashView" :replaceFields="{
-              key: 'artifactPath',
-              title: 'name',
-              children: 'children',
-            }" :tree-data="treeData" :load-data="onLoadData" @select="treeSelect" @rightClick="onRightClick" >
-            </a-directory-tree>
-            <a-directory-tree v-if="isTrashView" :replaceFields="{
-              key: 'artifactPath',
-              title: 'name',
-              children: 'children',
-            }" :tree-data="trashData" :load-data="onLoadData" @select="treeSelect" @rightClick="onRightClick">
-           
-            </a-directory-tree>
-          </a-card>
-        </a-col>
-        <a-col :span="24" :md="14" class="mb-24">
-          <a-card :bordered="false" class="header-solid h-full card-profile-information"
-            :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }" :headStyle="{ paddingRight: 0 }">
-            <template #title>
-              <a-row type="flex" align="middle" v-if="folibRepository.layout !== 'Docker'">
-                <a-col :span="16" class="font-semibold m-0">
-                  <a-row type="flex" align="middle">
-                    <a-col :span="8" :xs="24" :xl="16">
-                      <a-avatar v-if="!currentTreeNode.isLeaf" :size="24" shape="square"
-                        :src="'images/folib/package.svg'" />
-                      <a-avatar v-if="currentTreeNode.isLeaf" :size="24" shape="square" :src="'images/folib/' +
-                        getFileType(currentTreeNode.name) +
-                        '.svg'
-                        " />
-                      {{ currentTreeNode.name }}
-                    </a-col>
-                    <a-col :span="8" :xs="24" :xl="8">
-                      <span class="ml-auto" v-if="scanReport.show" @click="openDetial">
-                        <a-space :size="1" class="avatar-chips">
-                          <template v-if="scanReport.vulnerabilitesCount > 0">
-                            <a-tooltip>
-                              <template slot="title">{{ $t('Store.Seriousness') }}</template>
-                              <div class="">
-                                <a-avatar :size="24" :src="'images/folib/critical.svg'" />
-                                <span class="mb-0 text-dark">{{
-                                  scanReport.critical
-                                }}</span>
-                              </div>
-                            </a-tooltip>
+      </a-form>
+    </a-modal>
+    <!--    rpm 上传表单 start-->
+    <a-modal v-model="showRpmUploadFormModal" :footer="null" :forceRender="true" :centered="true"
+      :title="$t('Store.Upload')" on-ok="showRpmUploadFormModal = false">
+      <a-form :form="rpmUploadForm" ref="rpmUploadForm" layout="horizontal" @submit.prevent="handleRpmUploadSubmit">
+        <a-row :gutter="[24]">
+          <a-col :span="24">
+            <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" prop="repostoryId"
+              :colon="false">
+              <a-input v-decorator="[
+                'repostoryId',
+                {
+                  rules: [{ required: true, message: $t('Store.InputTargetWarehouse') }],
+                },
+              ]" :disabled="true" :placeholder="$t('Store.InputTargetWarehouse')">
+              </a-input>
+            </a-form-item>
+            <a-form-item :label="$t('Store.SelectFile')">
+              <a-upload v-decorator="[
+                'files',
+                {
+                  rules: [{ required: true, message: $t('Store.PleaseSelectFile') }],
+                  valuePropName: 'fileList',
+                  getValueFromEvent: normFile,
+                },
+              ]" name="files" :multiple="true" :beforeUpload="beforeUpload" list-type="text" accept=".rpm">
+                <a-button>
+                  <a-icon type="upload" />
+                  {{ $t('Store.SelectFile') }} </a-button>
+              </a-upload>
+            </a-form-item>
+          </a-col>
+          <a-col :span="24" class="text-center">
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">{{ $t('Store.Upload')
+              }}</a-button>
+            <a-button key="back" @click="uploadRpmFormModalClose()" class="px-30 ml-10" size="small">{{
+              $t('Store.Cancel')
+            }}</a-button>
+          </a-col>
+        </a-row>
+      </a-form>
+    </a-modal>
+    <!--   rpm 上传表单 end -->
+    <!-- docker上传表单 -->
+    <a-modal v-model="showDockerUploadFormModal" :footer="null" :forceRender="true" :centered="true"
+      :title="$t('Store.Upload')" on-ok="showDockerUploadFormModal = false">
+      <a-form :form="dockerUploadForm" ref="dockerUploadForm" layout="horizontal"
+        @submit.prevent="handleDockerUploadSubmit">
+        <a-row :gutter="[24]">
+          <a-col :span="24">
+            <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" prop="repostoryId"
+              :colon="false">
+              <a-input :disabled="true" :placeholder="$t('Store.InputTargetWarehouse')" v-model="folibRepository.id">
+              </a-input>
+            </a-form-item>
 
-                            <a-tooltip>
-                              <template slot="title">{{ $t('Store.HighRisk') }}</template>
-                              <div class="">
-                                <a-avatar :size="24" :src="'images/folib/high.svg'" />
-                                <span class="mb-0 text-dark">{{
-                                  scanReport.high
-                                }}</span>
-                              </div>
-                            </a-tooltip>
+          </a-col>
+          <a-col :span="24">
+            <a-form-item :label="$t('Store.UploadMode')">
+              <a-radio-group v-decorator="[
+                'type',
+                {
+                  rules: [{ required: true, message: $t('Store.SelectUploadMode') }],
+                },
+              ]">
+                <a-radio value="image">
+                  {{ $t('Store.Image') }}
+                </a-radio>
+                <a-radio value="subsidiary">
+                  {{ $t('Store.SubsidiaryFiles') }}
+                </a-radio>
+              </a-radio-group>
+            </a-form-item>
+          </a-col>
+          <a-col :span="24">
 
-                            <a-tooltip>
-                              <template slot="title">{{ $t('Store.MediumRisk') }}</template>
-                              <div class="">
-                                <a-avatar :size="24" :src="'images/folib/medium.svg'" />
-                                <span class="mb-0 text-dark">{{
-                                  scanReport.medium
-                                }}</span>
-                              </div>
-                            </a-tooltip>
+            <a-form-item :label="$t('Store.SelectFile')">
+              <a-upload v-decorator="[
+                'files',
+                {
+                  rules: [{ required: true, message: $t('Store.PleaseSelectFile') }],
+                  valuePropName: 'fileList',
+                  getValueFromEvent: normFile,
+                },
+              ]" name="files" :multiple="false" :beforeUpload="beforeUpload" list-type="text"
+                accept=".gz,.tar,.zip,.giz">
+                <a-button>
+                  <a-icon type="upload" />
+                  {{ $t('Store.SelectFile') }}
+                </a-button>
+              </a-upload>
+            </a-form-item>
 
-                            <a-tooltip>
-                              <template slot="title">{{ $t('Store.LowRisk') }}</template>
-                              <div class="">
-                                <a-avatar :size="24" :src="'images/folib/low.svg'" />
-                                <span class="mb-0 text-dark">{{
-                                  scanReport.low
-                                }}</span>
-                              </div>
-                            </a-tooltip>
-                          </template>
-                          <template v-else>
-                            <a-tooltip>
-                              <template slot="title">{{ $t('Store.Health') }}</template>
-                              <a-avatar :size="24" :src="'images/folib/healthy.svg'" />
-                            </a-tooltip>
-                          </template>
-                        </a-space>
-                      </span>
-                      <span v-if="scanReport.fail">
-                        <a-tag color="#f50">
-                          {{ $t('Store.ScanFailure') }}
-                        </a-tag>
-                      </span>
-                    </a-col>
-                  </a-row>
-                </a-col>
-                <a-col :span="8" class="text-right">
-                  <a-dropdown v-if="$store.state.user.token && currentTreeNode.url" class="mr-30"
-                    placement="bottomCenter">
-                    <span style="font-size: 16px; cursor: pointer">
-                      {{ $t('Store.More') }}
-                      <a-icon type="more" class="text-muted" style="font-size: 16px" />
-                    </span>
-                    <template #overlay>
-                      <a-menu slot="overlay" @click="handleMenuClick">
-                        <a-menu-item key="1" v-if="currentFileDetial">
-                          <a-icon type="eye" />
-                          {{
-                            currentFileDetial.listTree
-                            ? $t('Store.Package')
-                            : viewCodes
-                              ? $t('Store.Document')
-                              : folibRepository.layout === "Docker"
-                                ? $t('Store.Details')
-                                : ""
-                          }}{{ $t('Store.Preview') }}
-                        </a-menu-item>
-                        <a-menu-item key="2" v-if="copyEnabled">
-                          <a-icon type="copy" />{{ $t('Store.Copy') }}
-                        </a-menu-item>
-                        <a-menu-item key="3" v-if="moveEnabled">
-                          <a-icon type="swap" />{{ $t('Store.Move') }}
-                        </a-menu-item>
-                        <a-menu-item key="4" v-if="deleteEnabled">
-                          <a-popconfirm :title="$t('Store.SuerDelete')" placement="topLeft" okType="danger"
-                            :ok-text="$t('Store.Confirm')" :cancel-text="$t('Store.Cancel')"
-                            @confirm="deletePackageHandle">
-                            <a-icon type="delete" />{{ $t('Store.Delete') }}
-                          </a-popconfirm>
-                        </a-menu-item>
-                        <a-menu-item key="5" v-if="dispatchEnabled">
-                          <a-icon type="retweet" />{{ $t('Store.Distribute') }}
-                        </a-menu-item>
+          </a-col>
+          <a-col :span="24">
+            <a-form-item class="tags-field mb-10 label-with-icon " :label="$t('Store.ImageTag')" prop="imageTag"
+              :colon="false">
+              <div>
+                <span> {{ $t('Store.ImageTagSpecification') }}</span>
+              </div>
+              <a-input v-decorator="[
+                'imageTag',
+                {
+                  rules: [
+                    {
+                      required: true,
+                      pattern: /^[a-zA-Z0-9_\-\./]+(?:\/[a-zA-Z0-9_\-\./]+)?:[a-zA-Z0-9_\-\./]+$/,
+                      message: $t('Store.InputImageTag'),
+                    },
+                  ],
+                },
+              ]" :disabled="false" :placeholder="$t('Store.InputImageTag')" />
+            </a-form-item>
+          </a-col>
 
-                        <a-menu-item key="6"
-                          v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact">
-                          <a-icon type="download" />{{ $t('Store.DownLoad') }}
-                        </a-menu-item>
 
-                        <a-menu-item key="7"
-                          v-if="(folibRepository.layout === 'Raw' && currentTreeNode && currentTreeNode.type === 'dir')">
-                          <a-icon type="download" />{{ $t('Store.DownLoad') }}
-                        </a-menu-item>
-                        <a-modal :title="$t('Store.Prompts')" :visible="downLoadVisible" :okText="$t('Store.Confirm')"
-                          :cancelText="$t('Store.Cancel')" centered @ok="handleDownLoadDir"
-                          @cancel="handleDownLoadDirCancel">
-                          <p>{{ currentTreeNode.artifactPath + $t('Store.DirSize') + rawPathSize + "
-                            , "+$t('Store.ConfirmDownload') }}</p>
-                        </a-modal>
+          <a-col :span="24" class="text-center">
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">
+              {{ $t('Store.Upload') }}
+            </a-button>
+            <a-button key="back" @click="uploadDockerFormModalClose()" class="px-30 ml-10" size="small">
+              {{ $t('Store.Cancel') }}
+            </a-button>
+          </a-col>
+        </a-row>
+      </a-form>
+    </a-modal>
 
-                      </a-menu>
+    <!-- raw 、maven、npm 上传 -->
+    <a-modal v-model="showUploadFormModal" :footer="null" :forceRender="true" :centered="true"
+      :title="$t('Store.Upload')" on-ok="showUploadFormModal = false">
+      <a-form :form="uploadForm" ref="uploadForm" layout="horizontal" @submit.prevent="handleUploadSubmit">
+        <a-row :gutter="[24]">
+          <a-col :span="24">
+            <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" prop="repostoryId"
+              :colon="false">
+              <a-input v-decorator="[
+                'repostoryId',
+                {
+                  rules: [{ required: true, message: $t('Store.InputTargetWarehouse') }],
+                },
+              ]" :disabled="true" :placeholder="$t('Store.InputTargetWarehouse')">
+              </a-input>
+            </a-form-item>
+            <a-form-item :label="$t('Store.UploadMode')"
+              v-if="folibRepository.layout === 'Maven 2' || folibRepository.layout === 'Raw'">
+              <a-radio-group v-decorator="[
+                'type',
+                {
+                  rules: [{ required: true, message: $t('Store.SelectUploadMode') }],
+                },
+              ]" @change="uploadTypeChange">
+                <a-radio :value="1">
+                  {{ $t('Store.Product') }}
+                </a-radio>
+                <a-radio :value="2">
+                  {{ $t('Store.ZipUpload') }}
+                </a-radio>
+              </a-radio-group>
+              <div>
+                <span v-if="uploadType === 1">{{ $t('Store.ProductUpload') }}</span>
+                <span v-if="uploadType === 2">{{ $t('Store.ZipFileUpload') }}{{ this.uploadMaxSize.size +
+                  this.uploadMaxSize.unit }}</span>
+              </div>
+            </a-form-item>
+            <a-form-item :label="$t('Store.SelectFile')">
+              <a-upload v-decorator="[
+                'files',
+                {
+                  rules: [{ required: true, message: $t('Store.PleaseSelectFile') }],
+                  valuePropName: 'fileList',
+                  getValueFromEvent: normFile,
+                },
+              ]" name="files" :multiple="uploadType === 1 ? true : false" :beforeUpload="beforeUpload"
+                list-type="text"
+                :accept="uploadType === 1 ? (folibRepository.layout === 'Raw' ? '*' : folibRepository.layout === 'npm' ? '.tgz' : folibRepository.layout === 'pub' ? '.gz' : '.jar,.war,.pom') : ('.zip')">
+                <a-button>
+                  <a-icon type="upload" />
+                  {{ $t('Store.SelectFile') }}</a-button>
+              </a-upload>
+            </a-form-item>
+            <a-form-item class="tags-field mb-10" prop="targetPath" :colon="false"
+              v-if="(!targetDirectoryExcludeLayout.includes(folibRepository.layout)) || uploadType === 2">
+              <template slot="label">
+                {{ $t('Store.TargetDirectory') }}
+                <a-popover placement="topLeft" v-if="uploadType === 2">
+                  <template slot="content">
+                    <p class="mb-0">{{ $t('Store.unzippedDirectory') }}</p>
+                  </template>
+                  <a class="ml-5">
+                    <a-icon type="question-circle" theme="filled" /></a>
+                </a-popover>
+              </template>
+              <a-input v-decorator="[
+                'targetPath',
+                {
+                  rules: [
+                    { required: false, message: $t('Store.InputTargetDirectory') }
+                  ],
+                },
+              ]" :placeholder="$t('Store.InputTargetDirectory')">
+              </a-input>
+            </a-form-item>
+          </a-col>
+          <a-col :span="24" class="text-center">
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">{{ $t('Store.Upload')
+              }}</a-button>
+            <a-button key="back" @click="uploadFormModalClose()" class="px-30 ml-10" size="small">{{ $t('Store.Cancel')
+              }}</a-button>
+          </a-col>
+        </a-row>
+      </a-form>
+    </a-modal>
+    <!--分发 -->
+    <a-modal v-model="showOperationDispatchFormModal" width="50%" :footer="null" :forceRender="true" :centered="true"
+      :title="operationTitle">
+      <a-form :form="operationForm" ref="operationForm" layout="vertical" @submit.prevent="handleOperationSubmit">
+        <a-row :gutter="[24]">
+          <a-col :span="24">
+            <a-form-item class="tags-field mb-10" :label="$t('Store.NodeType')" :colon="true"
+              v-if="this.enableUnionRepository.includes(this.folibRepository.layout)">
+              <a-radio-group v-decorator="[
+                'type',
+                {
+                  rules: [{ required: true, message: $t('Store.NodeTypeSelect') }],
+                },
+              ]" @change="typeChange">
+                <a-radio :value="1">
+                  <span>{{ $t('Store.InternalNode') }}</span>
+                  <a-popover placement="topLeft">
+                    <template slot="content">
+                      <p class="mb-0">{{ instanceName + $t('Store.ProductWarehouseNode') }}</p>
                     </template>
-                  </a-dropdown>
-                </a-col>
-              </a-row>
-              <a-row type="flex" align="middle" v-if="folibRepository.layout === 'Docker'">
-                <a-col :span="16" class="font-semibold m-0">
-                  <a-row type="flex" align="middle">
-                    <a-col :span="8" :xs="24" :xl="16">
-                      <a-avatar :size="24" shape="square" :src="'images/folib/docker-s.svg'" />
-                      {{ currentTreeNode.name }}
-                    </a-col>
-                    <a-col :span="8" :xs="24" :xl="8">
-                      <span class="ml-auto" v-if="scanReport.show" @click="openDetial">
-                        <a-space :size="1" class="avatar-chips">
-                          <template v-if="scanReport.vulnerabilitesCount > 0">
-                            <a-tooltip>
-                              <template slot="title">{{ $t('Store.Seriousness') }}</template>
-                              <div class="">
-                                <a-avatar :size="24" :src="'images/folib/critical.svg'" />
-                                <span class="mb-0 text-dark">{{
-                                  scanReport.critical
-                                }}</span>
-                              </div>
-                            </a-tooltip>
-
-                            <a-tooltip>
-                              <template slot="title">{{ $t('Store.HighRisk') }}</template>
-                              <div class="">
-                                <a-avatar :size="24" :src="'images/folib/high.svg'" />
-                                <span class="mb-0 text-dark">{{
-                                  scanReport.high
-                                }}</span>
-                              </div>
-                            </a-tooltip>
-
-                            <a-tooltip>
-                              <template slot="title">{{ $t('Store.MediumRisk') }}</template>
-                              <div class="">
-                                <a-avatar :size="24" :src="'images/folib/medium.svg'" />
-                                <span class="mb-0 text-dark">{{
-                                  scanReport.medium
-                                }}</span>
-                              </div>
-                            </a-tooltip>
-
-                            <a-tooltip>
-                              <template slot="title">{{ $t('Store.LowRisk') }}</template>
-                              <div class="">
-                                <a-avatar :size="24" :src="'images/folib/low.svg'" />
-                                <span class="mb-0 text-dark">{{
-                                  scanReport.low
-                                }}</span>
-                              </div>
-                            </a-tooltip>
-                          </template>
-                          <template v-else>
-                            <a-tooltip>
-                              <template slot="title">{{ $t('Store.Health') }}</template>
-                              <a-avatar :size="24" :src="'images/folib/healthy.svg'" />
-                            </a-tooltip>
-                          </template>
-                        </a-space>
-                      </span>
-                      <span v-if="scanReport.fail">
-                        <a-tag color="#f50">
-                          {{ $t('Store.ScanFailure') }}
-                        </a-tag>
-                      </span>
-                    </a-col>
-                  </a-row>
-                </a-col>
-
-
-                <a-col :span="8" class="text-right">
-                  <a-dropdown v-if="$store.state.user.token && currentTreeNode.url" class="mr-45">
-                    <span style="font-size: 16px; cursor: pointer">
-                      {{ $t('Store.More') }}
-                      <a-icon type="more" class="text-muted" style="font-size: 16px" />
-                    </span>
-                    <template #overlay>
-
-
-                      <a-menu slot="overlay" @click="handleMenuClick">
-                        <a-menu-item key="1" v-if="currentFileDetial">
-                          <a-icon type="eye" />
-                          {{
-                            currentFileDetial.listTree
-                            ? $t('Store.Package')
-                            : viewCodes
-                              ? $t('Store.Document')
-                              : folibRepository.layout === "Docker"
-                                ? $t('Store.Details')
-                                : ""
-                          }}{{ $t('Store.Preview') }}
-                        </a-menu-item>
-                        <a-menu-item key="2" v-if="copyEnabled">
-                          <a-icon type="copy" />
-                          {{ $t('Store.Copy') }}
-                        </a-menu-item>
-                        <a-menu-item key="3" v-if="moveEnabled">
-                          <a-icon type="swap" />
-                          {{ $t('Store.Move') }}
-                        </a-menu-item>
-                        <a-menu-item key="4" v-if="deleteEnabled">
-                          <a-popconfirm :title="$t('Store.SuerDelete')" placement="topLeft" okType="danger"
-                            :ok-text="$t('Store.Confirm')" :cancel-text="$t('Store.Cancel')"
-                            @confirm="deletePackageHandle">
-                            <a-icon type="delete" />
-                            {{ $t('Store.Delete') }}
-                          </a-popconfirm>
-                        </a-menu-item>
-                        <a-menu-item key="5" v-if="dispatchEnabled">
-                          <a-icon type="retweet" />
-                          {{ $t('Store.Distribute') }}
-                        </a-menu-item>
-
-                        <a-menu-item key="6"
-                          v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact">
-                          <a-icon type="download" />
-                          {{ $t('Store.DownLoad') }}
-                        </a-menu-item>
-
-                        <a-menu-item key="7"
-                          v-if="folibRepository.layout === 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact">
-                          <a-icon type="download" />
-                          {{ $t('Store.DownLoad') }}
-                        </a-menu-item>
-                      </a-menu>
+                    <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
+                  </a-popover>
+                </a-radio>
+                <a-radio :value="2">
+                  <span>{{ $t('Store.ExternalNode') }}</span>
+                  <a-popover placement="topLeft">
+                    <template slot="content">
+                      <p class="mb-0">{{ $t('Store.OtherTypeNode') }}</p>
                     </template>
-                  </a-dropdown>
-                </a-col>
-
-
-              </a-row>
-            </template>
-
-            <a v-if="currentTreeNode.url && folibRepository.layout !== 'Docker'" class="text-dark ellipsis-link"
-              :href="getFormattedUrl(currentTreeNode.url)" target="_blank" :title="getFormattedUrl(currentTreeNode.url)">
-              {{ getFormattedUrl(currentTreeNode.url) }}
-            </a>
-            <a v-if="currentTreeNode.url && folibRepository.layout !== 'Docker'" class="ml-10"><a-icon type="copy"
-                @click="copy(getFormattedUrl(currentTreeNode.url))" /> </a>
-            <hr class="gradient-line" />
-            <BaseData ref="BaseData" :currentTreeNode="currentTreeNode" :repositoryType="repositoryType"
-              :currentFileDetial="currentFileDetial" :successMsg="successMsg" :folibRepository="folibRepository"
-              @messageArchitectureChild="handleArchitectureMessage" @metadataEditHandler="metadataEditHandler"
-              @metadataHandler="metadataHandler" @setCurrentFileDetial="setCurrentFileDetial" />
-          </a-card>
-        </a-col>
-      </a-row>
-      <a-row v-if="isSearch === true" type="flex" :gutter="24">
-        <!-- Platform Settings Column -->
-        <Search ref="search" :columns="columns" :folibRepository="this.folibRepository" />
-      </a-row>
-      <use-doc :usedVisible="usedVisible" :repositoryType="repositoryType" :folibRepository="folibRepository"
-        :ivyCode="ivyCode" :baseUrl="baseUrl" :dockerCode="dockerCode" @close="closeUsedVisibleDialog" />
-      <!-- 预览 -->
-      <a-drawer placement="right" width="45%" :title="currentTreeNode.name" :visible="viewCodeVisible"
-        @close="closeViewCodeDialog">
-        <div class="mx-auto m-50">
-          <div class="mb-50">
-            <a-card :bordered="false" class="header-solid">
-              <a-directory-tree v-if="currentFileDetial && currentFileDetial.listTree"
-                :replaceFields="{ title: 'name', children: 'children' }" :tree-data="currentFileDetial.listTree" />
-            </a-card>
-            <prism-editor class="my-editor height-300" v-if="currentFileDetial &&
-              viewCodes &&
-              folibRepository.layout !== 'Docker'
-              " v-model="viewCodes" :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
-
-            <a-tabs v-if="currentFileDetial &&
-              currentManifest &&
-              folibRepository.layout === 'Docker'
-              " class="tabs-sliding" default-active-key="1">
-              <a-tab-pane key="1" tab="Layers">
-                <a-timeline>
-                  <a-timeline-item color="primary" v-for="(key, index) in currentManifest.config" :key="index">
-                    {{ index }}
-                    <p>
-                      {{ currentManifest.config[index] }}
-                    </p>
-                  </a-timeline-item>
-                </a-timeline>
-              </a-tab-pane>
-              <a-tab-pane key="2" :tab="$t('Store.ProductionHistory')">
-                <a-timeline>
-                  <a-timeline-item color="primary" v-for="(key, index) in currentManifest.history" :key="index">
-                    {{ formateDate(key.created) }}
-                    <p>
-                      {{ key.created_by }}
-                    </p>
-                  </a-timeline-item>
-                </a-timeline>
-              </a-tab-pane>
-            </a-tabs>
-          </div>
-        </div>
-      </a-drawer>
-      <add-metadata v-if="showMetadataHandler" :showMetadataHandler="showMetadataHandler" :quillOptions="quillOptions"
-        :handlerMetadataType="handlerMetadataType" :propMetadataForm="metadataForm"
-        :metadataConfigList="metadataConfigList" :currentTreeNode="currentTreeNode" :metadataTypes="metadataTypes"
-        :successMsg="successMsg" @metadataHandlerCancel="metadataHandlerCancel" @metadataReflesh="metadataReflesh" />
-
-      <!-- 复制 -->
-      <a-modal v-model="showOperationFormModal" :footer="null" :forceRender="true" :centered="true"
-        :title="operationTitle" on-ok="showCopyFormModal = false">
-        <a-form :form="operationForm" ref="operationForm" layout="vertical" @submit.prevent="handleOperationSubmit">
-          <a-row :gutter="[24]">
-            <a-col :span="24">
-              <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" :colon="false"
-                ref="targetRepositories" prop="targetRepositories">
-                <gb-ant-select-two-cascader allowClear :placeholder="$t('Store.SelectTargetWarehouse')" v-decorator="[
+                    <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
+                  </a-popover>
+                </a-radio>
+              </a-radio-group>
+            </a-form-item>
+            <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" :colon="false"
+              ref="targetRepositories" prop="targetRepositories">
+              <div class="selectdrop">
+                <a-tree-select v-decorator="[
                   'targetRepositories',
                   {
                     initialValue: [],
@@ -543,314 +869,14 @@
                       },
                     ],
                   },
-                ]" :selectOptionsConfig="{
-  key: 'key',
-  value: 'key',
-  text: 'name',
-  children: 'children',
-}" dropdownClassName="customer-multiple-cascader" :treeData="repositories" />
-              </a-form-item>
-              <!-- <a-form-item class="tags-field mb-10" :colon="false" :label="customTitle" valuePropName="checked">
-              <a-switch v-decorator="['custom',
-                {
-                  valuePropName: 'checked',
-                  rules: [
-                    { required: false, message: '' },
-                  ],
-                },
-              ]" style="width:10%;" @change="customChange">
-              </a-switch>
-            </a-form-item> -->
-              <a-form-item class="tags-field mb-10" v-if="!custom" :label="$t('Store.TargetDirectory')" prop="path"
-                :colon="false" style="display:none;">
-                <a-input v-decorator="[
-                  'path',
-                  {
-                    rules: [{ required: true, message: $t('Store.TargetDirectory') }],
-                  },
-                ]" :disabled="true" :placeholder="$t('Store.TargetDirectory')">
-                </a-input>
-              </a-form-item>
-              <a-form-item class="tags-field mb-10" v-if="!custom" :label="$t('Store.TargetDirectory')" prop="targetPath"
-                :colon="false">
-                <a-input v-decorator="[
-                  'targetPath',
-                  {
-                    rules: [{ required: true, message: $t('Store.TargetDirectory') }],
-                  },
-                ]" :disabled="isTargetPatDisabled" :placeholder="$t('Store.TargetDirectory')">
-                </a-input>
-              </a-form-item>
-              <a-form-item class="tags-field mb-10" v-if="custom" :label="$t('Store.TargetDirectory')" prop="path"
-                :colon="false">
-                <a-input v-decorator="[
-                  'path',
-                  {
-                    rules: [{ required: true, message: $t('Store.InputTargetDirectory') }],
-                  },
-                ]" :disabled="false" :placeholder="$t('Store.InputTargetDirectory')">
-                </a-input>
-              </a-form-item>
-            </a-col>
-            <a-col :span="24" class="text-center">
-              <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">{{ $t('Store.Submit')
-              }}</a-button>
-              <a-button key="back" @click="operationFormModalClose()" class="px-30 ml-10" size="small">{{
-                $t('Store.Cancel')
-              }}</a-button>
-            </a-col>
-          </a-row>
-        </a-form>
-      </a-modal>
-      <!--    rpm 上传表单 start-->
-      <a-modal v-model="showRpmUploadFormModal" :footer="null" :forceRender="true" :centered="true"
-        :title="$t('Store.Upload')" on-ok="showRpmUploadFormModal = false">
-        <a-form :form="rpmUploadForm" ref="rpmUploadForm" layout="horizontal" @submit.prevent="handleRpmUploadSubmit">
-          <a-row :gutter="[24]">
-            <a-col :span="24">
-              <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" prop="repostoryId"
-                :colon="false">
-                <a-input v-decorator="[
-                  'repostoryId',
-                  {
-                    rules: [{ required: true, message: $t('Store.InputTargetWarehouse') }],
-                  },
-                ]" :disabled="true" :placeholder="$t('Store.InputTargetWarehouse')">
-                </a-input>
-              </a-form-item>
-              <a-form-item :label="$t('Store.SelectFile')">
-                <a-upload v-decorator="[
-                  'files',
-                  {
-                    rules: [{ required: true, message: $t('Store.PleaseSelectFile') }],
-                    valuePropName: 'fileList',
-                    getValueFromEvent: normFile,
-                  },
-                ]" name="files" :multiple="true" :beforeUpload="beforeUpload" list-type="text" accept=".rpm">
-                  <a-button>
-                    <a-icon type="upload" />
-                    {{ $t('Store.SelectFile') }} </a-button>
-                </a-upload>
-              </a-form-item>
-            </a-col>
-            <a-col :span="24" class="text-center">
-              <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">{{ $t('Store.Upload')
-              }}</a-button>
-              <a-button key="back" @click="uploadRpmFormModalClose()" class="px-30 ml-10" size="small">{{
-                $t('Store.Cancel')
-              }}</a-button>
-            </a-col>
-          </a-row>
-        </a-form>
-      </a-modal>
-      <!--   rpm 上传表单 end -->
-      <!-- docker上传表单 -->
-      <a-modal v-model="showDockerUploadFormModal" :footer="null" :forceRender="true" :centered="true"
-        :title="$t('Store.Upload')" on-ok="showDockerUploadFormModal = false">
-        <a-form :form="dockerUploadForm" ref="dockerUploadForm" layout="horizontal"
-          @submit.prevent="handleDockerUploadSubmit">
-          <a-row :gutter="[24]">
-            <a-col :span="24">
-              <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" prop="repostoryId"
-                :colon="false">
-                <a-input :disabled="true" :placeholder="$t('Store.InputTargetWarehouse')" v-model="folibRepository.id">
-                </a-input>
-              </a-form-item>
-
-            </a-col>
-            <a-col :span="24">
-              <a-form-item :label="$t('Store.UploadMode')">
-                <a-radio-group v-decorator="[
-                  'type',
-                  {
-                    rules: [{ required: true, message: $t('Store.SelectUploadMode') }],
-                  },
-                ]">
-                  <a-radio value="image">
-                    {{ $t('Store.Image') }}
-                  </a-radio>
-                  <a-radio value="subsidiary">
-                    {{ $t('Store.SubsidiaryFiles') }}
-                  </a-radio>
-                </a-radio-group>
-              </a-form-item>
-            </a-col>
-            <a-col :span="24">
-
-              <a-form-item :label="$t('Store.SelectFile')">
-                <a-upload v-decorator="[
-                  'files',
-                  {
-                    rules: [{ required: true, message: $t('Store.PleaseSelectFile') }],
-                    valuePropName: 'fileList',
-                    getValueFromEvent: normFile,
-                  },
-                ]" name="files" :multiple="false" :beforeUpload="beforeUpload" list-type="text"
-                  accept=".gz,.tar,.zip,.giz">
-                  <a-button>
-                    <a-icon type="upload" />
-                    {{ $t('Store.SelectFile') }}
-                  </a-button>
-                </a-upload>
-              </a-form-item>
-
-            </a-col>
-            <a-col :span="24">
-              <a-form-item class="tags-field mb-10 label-with-icon " :label="$t('Store.ImageTag')" prop="imageTag"
-                :colon="false">
-                <div>
-                  <span> {{ $t('Store.ImageTagSpecification') }}</span>
-                </div>
-                <a-input v-decorator="[
-                  'imageTag',
-                  {
-                    rules: [
-                      {
-                        required: true,
-                        pattern: /^[a-zA-Z0-9_\-\./]+(?:\/[a-zA-Z0-9_\-\./]+)?:[a-zA-Z0-9_\-\./]+$/,
-                        message: $t('Store.InputImageTag'),
-                      },
-                    ],
-                  },
-                ]" :disabled="false" :placeholder="$t('Store.InputImageTag')" />
-              </a-form-item>
-            </a-col>
-
-
-            <a-col :span="24" class="text-center">
-              <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">
-                {{ $t('Store.Upload') }}
-              </a-button>
-              <a-button key="back" @click="uploadDockerFormModalClose()" class="px-30 ml-10" size="small">
-                {{ $t('Store.Cancel') }}
-              </a-button>
-            </a-col>
-          </a-row>
-        </a-form>
-      </a-modal>
-
-      <!-- raw 、maven、npm 上传 -->
-      <a-modal v-model="showUploadFormModal" :footer="null" :forceRender="true" :centered="true"
-        :title="$t('Store.Upload')" on-ok="showUploadFormModal = false">
-        <a-form :form="uploadForm" ref="uploadForm" layout="horizontal" @submit.prevent="handleUploadSubmit">
-          <a-row :gutter="[24]">
-            <a-col :span="24">
-              <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" prop="repostoryId"
-                :colon="false">
-                <a-input v-decorator="[
-                  'repostoryId',
-                  {
-                    rules: [{ required: true, message: $t('Store.InputTargetWarehouse') }],
-                  },
-                ]" :disabled="true" :placeholder="$t('Store.InputTargetWarehouse')">
-                </a-input>
-              </a-form-item>
-              <a-form-item :label="$t('Store.UploadMode')"
-                v-if="folibRepository.layout === 'Maven 2' || folibRepository.layout === 'Raw'">
-                <a-radio-group v-decorator="[
-                  'type',
-                  {
-                    rules: [{ required: true, message: $t('Store.SelectUploadMode') }],
-                  },
-                ]" @change="uploadTypeChange">
-                  <a-radio :value="1">
-                    {{ $t('Store.Product') }}
-                  </a-radio>
-                  <a-radio :value="2">
-                    {{ $t('Store.ZipUpload') }}
-                  </a-radio>
-                </a-radio-group>
-                <div>
-                  <span v-if="uploadType === 1">{{ $t('Store.ProductUpload') }}</span>
-                  <span v-if="uploadType === 2">{{ $t('Store.ZipFileUpload') }}{{ this.uploadMaxSize.size +
-                    this.uploadMaxSize.unit }}</span>
-                </div>
-              </a-form-item>
-              <a-form-item :label="$t('Store.SelectFile')">
-                <a-upload v-decorator="[
-                  'files',
-                  {
-                    rules: [{ required: true, message: $t('Store.PleaseSelectFile') }],
-                    valuePropName: 'fileList',
-                    getValueFromEvent: normFile,
-                  },
-                ]" name="files" :multiple="uploadType === 1 ? true : false" :beforeUpload="beforeUpload" list-type="text"
-                  :accept="uploadType === 1 ? (folibRepository.layout === 'Raw' ? '*' : folibRepository.layout === 'npm' ? '.tgz' : folibRepository.layout === 'pub' ? '.gz' : '.jar,.war,.pom') : ('.zip')">
-                  <a-button>
-                    <a-icon type="upload" />
-                    {{ $t('Store.SelectFile') }}</a-button>
-                </a-upload>
-              </a-form-item>
-              <a-form-item class="tags-field mb-10" prop="targetPath" :colon="false"
-                v-if="(!targetDirectoryExcludeLayout.includes(folibRepository.layout)) || uploadType === 2">
-                <template slot="label">
-                  {{ $t('Store.TargetDirectory') }}
-                  <a-popover placement="topLeft" v-if="uploadType === 2">
-                    <template slot="content">
-                      <p class="mb-0">{{ $t('Store.unzippedDirectory') }}</p>
-                    </template>
-                    <a class="ml-5">
-                      <a-icon type="question-circle" theme="filled" /></a>
-                  </a-popover>
-                </template>
-                <a-input v-decorator="[
-                  'targetPath',
-                  {
-                    rules: [
-                      { required: false, message: $t('Store.InputTargetDirectory') }
-                    ],
-                  },
-                ]" :placeholder="$t('Store.InputTargetDirectory')">
-                </a-input>
-              </a-form-item>
-            </a-col>
-            <a-col :span="24" class="text-center">
-              <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">{{ $t('Store.Upload')
-              }}</a-button>
-              <a-button key="back" @click="uploadFormModalClose()" class="px-30 ml-10" size="small">{{ $t('Store.Cancel')
-              }}</a-button>
-            </a-col>
-          </a-row>
-        </a-form>
-      </a-modal>
-      <!--分发 -->
-      <a-modal v-model="showOperationDispatchFormModal" width="50%" :footer="null" :forceRender="true" :centered="true"
-        :title="operationTitle">
-        <a-form :form="operationForm" ref="operationForm" layout="vertical" @submit.prevent="handleOperationSubmit">
-          <a-row :gutter="[24]">
-            <a-col :span="24">
-              <a-form-item class="tags-field mb-10" :label="$t('Store.NodeType')" :colon="true"
-                v-if="this.enableUnionRepository.includes(this.folibRepository.layout)">
-                <a-radio-group v-decorator="[
-                  'type',
-                  {
-                    rules: [{ required: true, message: $t('Store.NodeTypeSelect') }],
-                  },
-                ]" @change="typeChange">
-                  <a-radio :value="1">
-                    <span>{{ $t('Store.InternalNode') }}</span>
-                    <a-popover placement="topLeft">
-                      <template slot="content">
-                        <p class="mb-0">{{ instanceName + $t('Store.ProductWarehouseNode') }}</p>
-                      </template>
-                      <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
-                    </a-popover>
-                  </a-radio>
-                  <a-radio :value="2">
-                    <span>{{ $t('Store.ExternalNode') }}</span>
-                    <a-popover placement="topLeft">
-                      <template slot="content">
-                        <p class="mb-0">{{ $t('Store.OtherTypeNode') }}</p>
-                      </template>
-                      <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
-                    </a-popover>
-                  </a-radio>
-                </a-radio-group>
-              </a-form-item>
-              <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" :colon="false"
-                ref="targetRepositories" prop="targetRepositories">
-                <div class="selectdrop">
-                  <a-tree-select v-decorator="[
+                ]" style="width: 100%" treeCheckable :maxTagCount="6"
+                  :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }" :tree-data="repositories"
+                  :placeholder="$t('Store.SelectTargetWarehouse')" allow-clear show-search
+                  :replaceFields="{ children: 'children', title: 'key', key: 'key', value: 'key' }"
+                  v-if="artifactoryType === 1">
+                </a-tree-select>
+                <gb-ant-select-two-cascader allowClear style="width:100%;"
+                  :placeholder="$t('Store.SelectTargetWarehouse')" v-decorator="[
                     'targetRepositories',
                     {
                       initialValue: [],
@@ -862,120 +888,100 @@
                         },
                       ],
                     },
-                  ]" style="width: 100%" treeCheckable :maxTagCount="6"
-                    :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }" :tree-data="repositories"
-                    :placeholder="$t('Store.SelectTargetWarehouse')" allow-clear show-search
-                    :replaceFields="{ children: 'children', title: 'key', key: 'key', value: 'key' }"
-                    v-if="artifactoryType === 1">
-                  </a-tree-select>
-                  <gb-ant-select-two-cascader allowClear style="width:100%;"
-                    :placeholder="$t('Store.SelectTargetWarehouse')" v-decorator="[
-                      'targetRepositories',
-                      {
-                        initialValue: [],
-                        rules: [
-                          {
-                            required: true,
-                            message: $t('Store.SelectTargetWarehouse'),
-                            type: 'array',
-                          },
-                        ],
-                      },
-                    ]" :selectOptionsConfig="{
-  key: 'key',
-  value: 'key',
-  text: 'key',
-  children: 'children'
-}" :allText="$t('Store.selectAll')" :noDataText="$t('Store.NoData')" dropdownClassName="customer-multiple-cascader"
-                    :treeData="externalNodeRepositories" v-if="artifactoryType === 2" />
-                </div>
-              </a-form-item>
-              <a-form-item class="tags-field mb-10" v-if="!custom" :label="$t('Store.TargetDirectory')" prop="path"
-                :colon="false">
-                <a-input v-decorator="[
-                  'path',
-                  {
-                    rules: [{ required: true, message: $t('Store.TargetDirectory') }],
-                  },
-                ]" :disabled="true" :placeholder="$t('Store.InputTargetDirectory')">
-                </a-input>
-              </a-form-item>
-              <a-form-item class="tags-field mb-10" v-if="custom" :label="$t('Store.TargetDirectory')" prop="path"
-                :colon="false">
-                <a-input v-decorator="[
-                  'path',
-                  {
-                    rules: [{ required: true, message: $t('Store.InputTargetDirectory') }],
-                  },
-                ]" :disabled="false" :placeholder="$t('Store.InputTargetDirectory')">
-                </a-input>
-              </a-form-item>
-            </a-col>
-            <a-col :span="24" class="text-center">
-              <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">{{ $t('Store.Submit')
+                  ]" :selectOptionsConfig="{
+                      key: 'key',
+                      value: 'key',
+                      text: 'key',
+                      children: 'children'
+                    }" :allText="$t('Store.selectAll')" :noDataText="$t('Store.NoData')" dropdownClassName="customer-multiple-cascader"
+                  :treeData="externalNodeRepositories" v-if="artifactoryType === 2" />
+              </div>
+            </a-form-item>
+            <a-form-item class="tags-field mb-10" v-if="!custom" :label="$t('Store.TargetDirectory')" prop="path"
+              :colon="false">
+              <a-input v-decorator="[
+                'path',
+                {
+                  rules: [{ required: true, message: $t('Store.TargetDirectory') }],
+                },
+              ]" :disabled="true" :placeholder="$t('Store.InputTargetDirectory')">
+              </a-input>
+            </a-form-item>
+            <a-form-item class="tags-field mb-10" v-if="custom" :label="$t('Store.TargetDirectory')" prop="path"
+              :colon="false">
+              <a-input v-decorator="[
+                'path',
+                {
+                  rules: [{ required: true, message: $t('Store.InputTargetDirectory') }],
+                },
+              ]" :disabled="false" :placeholder="$t('Store.InputTargetDirectory')">
+              </a-input>
+            </a-form-item>
+          </a-col>
+          <a-col :span="24" class="text-center">
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">{{ $t('Store.Submit')
               }}</a-button>
-              <a-button key="back" @click="operationFormModalClose()" class="px-30 ml-10" size="small">{{
-                $t('Store.Cancel')
-              }}</a-button>
-            </a-col>
-          </a-row>
-        </a-form>
-      </a-modal>
+            <a-button key="back" @click="operationFormModalClose()" class="px-30 ml-10" size="small">{{
+              $t('Store.Cancel')
+            }}</a-button>
+          </a-col>
+        </a-row>
+      </a-form>
+    </a-modal>
 
-      <MavenUpload v-if="mavenUploadVisible" :modelVisible="mavenUploadVisible" :folibRepository="this.folibRepository"
-        @mavenUploadClose="mavenUploadClose" />
+    <MavenUpload v-if="mavenUploadVisible" :modelVisible="mavenUploadVisible" :folibRepository="this.folibRepository"
+      @mavenUploadClose="mavenUploadClose" />
 
-      <div v-if="showContextMenu" :style="contextMenuStyle" class="context-menu">
-        <a-menu  @click="handleRightClick">
-          <a-menu-item key="1" v-if="currentFileDetial">
-            <a-icon type="eye" />
-            {{
-              currentFileDetial.listTree
+    <div v-if="showContextMenu" :style="contextMenuStyle" class="context-menu">
+      <a-menu @click="handleRightClick">
+        <a-menu-item key="1" v-if="currentFileDetial">
+          <a-icon type="eye" />
+          {{
+            currentFileDetial.listTree
               ? $t('Store.Package')
               : viewCodes
                 ? $t('Store.Document')
                 : folibRepository.layout === "Docker"
                   ? $t('Store.Details')
                   : ""
-            }}{{ $t('Store.Preview') }}
-          </a-menu-item>
-          <a-menu-item key="2" v-if="copyEnabled&&!isTrashView">
-            <a-icon type="copy" />
-            {{ $t('Store.Copy') }}
-          </a-menu-item>
-          <a-menu-item key="3" v-if="moveEnabled&&!isTrashView">
-            <a-icon type="swap" />
-            {{ $t('Store.Move') }}
-          </a-menu-item>
-          <a-menu-item key="4" v-if="deleteEnabled&&!isTrashView">
-            <!-- <a-popconfirm :title="$t('Store.SuerDelete')" okType="danger"
+          }}{{ $t('Store.Preview') }}
+        </a-menu-item>
+        <a-menu-item key="2" v-if="copyEnabled && !isTrashView">
+          <a-icon type="copy" />
+          {{ $t('Store.Copy') }}
+        </a-menu-item>
+        <a-menu-item key="3" v-if="moveEnabled && !isTrashView">
+          <a-icon type="swap" />
+          {{ $t('Store.Move') }}
+        </a-menu-item>
+        <a-menu-item key="4" v-if="deleteEnabled && !isTrashView">
+          <!-- <a-popconfirm :title="$t('Store.SuerDelete')" okType="danger"
               :ok-text="$t('Store.Confirm')" :cancel-text="$t('Store.Cancel')" @confirm.stop="deletePackageHandle"  :style="{ zIndex: 2000 }"> -->
-              <a-icon type="delete" />
-              {{ $t('Store.Delete') }}
-            <!-- </a-popconfirm> -->
-          </a-menu-item>
-          <a-menu-item key="5" v-if="dispatchEnabled&&!isTrashView" >
-            <a-icon type="retweet" />
-            {{ $t('Store.Distribute') }}
-          </a-menu-item>
+          <a-icon type="delete" />
+          {{ $t('Store.Delete') }}
+          <!-- </a-popconfirm> -->
+        </a-menu-item>
+        <a-menu-item key="5" v-if="dispatchEnabled && !isTrashView">
+          <a-icon type="retweet" />
+          {{ $t('Store.Distribute') }}
+        </a-menu-item>
 
-          <a-menu-item key="6"
-            v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact&&!isTrashView">
-            <a-icon type="download" />
-            {{ $t('Store.DownLoad') }}
-          </a-menu-item>
-          <a-menu-item key="7"
-            v-if="folibRepository.layout === 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact&&!isTrashView">
-            <a-icon type="download" />
-            {{ $t('Store.DownLoad') }}
-          </a-menu-item>
-          <a-menu-item key="8" v-if="isTrashView&&currentTreeNode && currentTreeNode.type === 'file'">
-            <a-icon type="undo" />
-            {{ $t('Store.Revoke') }}
-          </a-menu-item>
-        </a-menu>
-      </div>
+        <a-menu-item key="6"
+          v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact && !isTrashView">
+          <a-icon type="download" />
+          {{ $t('Store.DownLoad') }}
+        </a-menu-item>
+        <a-menu-item key="7"
+          v-if="folibRepository.layout === 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact && !isTrashView">
+          <a-icon type="download" />
+          {{ $t('Store.DownLoad') }}
+        </a-menu-item>
+        <a-menu-item key="8" v-if="isTrashView && currentTreeNode">
+          <a-icon type="undo" />{{ $t('Store.Restore') }}
+        </a-menu-item>
+      </a-menu>
     </div>
+  </div>
 </template>
 
 <script>
@@ -1005,7 +1011,7 @@ import {
   getPermissionStoragesAndRepositories,
   getStorageAndRepositoryPermission,
   getStoragesAndRepositories,
-  getArtifactDispatchStoragesAndRepositories
+  getArtifactDispatchStoragesAndRepositories,
 } from '@/api/folib'
 import {
   artifactCopy,
@@ -1016,7 +1022,7 @@ import {
   artifactDispatch,
   artifactUploadZip, getRawPathSize
 } from '@/api/artifact'
-import { getMetadataConfiguration } from '@/api/settings'
+import { getMetadataConfiguration, restore, } from '@/api/settings'
 import { hasRole, isAdmin, isAnonymous, isLogin } from '@/utils/permission'
 import { getExternalNodeRepositories } from "@/api/externalNode"
 import {
@@ -1067,6 +1073,7 @@ export default {
       rpmUploadForm: this.$form.createForm(this, { name: 'rpmUpload_form' }),
       uploadForm: this.$form.createForm(this, { name: 'upload_form' }),
       dockerUploadForm: this.$form.createForm(this, { name: 'dockerUpload_form' }),
+      restoreForm: this.$form.createForm(this, { name: 'restore_form' }),
       showUploadFormModal: false,
       showRpmUploadFormModal: false,
       showDockerUploadFormModal: false,
@@ -1145,7 +1152,7 @@ export default {
       searchViewCodes: null,
       //目标目录是否disabled
       isTargetPatDisabled: true,
-      isTrashView:false,  
+      isTrashView: false,
       columns: [
         {
           i18nKey: 'Store.OwnedWarehouse',
@@ -1232,13 +1239,16 @@ export default {
       showContextMenu: false,
       rightClickTop: '0px',
       rightClickLeft: '0px',
-      packageSelectedKeys:[], 
-      packageExpandedKeys:[],
-      packageLoadedKeys:[],
+      packageSelectedKeys: [],
+      packageExpandedKeys: [],
+      packageLoadedKeys: [],
+      restoreTitle: null,
+      showRestoreForm: false
+
 
       // packageKeys:[]
     }
-   
+
   },
   computed: {
 
@@ -1290,7 +1300,7 @@ export default {
         }
       })
     },
-    reloadTreeData(){
+    reloadTreeData() {
       this.reload();
     },
     handleCheckboxChange(selectedData) { },
@@ -1338,8 +1348,8 @@ export default {
             item.isLeaf = true
             item.type = 'file'
           })
-          this.treeData = d.concat(f).filter(item=>item.name!=='.trash')
-          this.trashData = d.concat(f).filter(item=>item.name==='.trash')
+          this.treeData = d.concat(f).filter(item => item.name !== '.trash')
+          this.trashData = d.concat(f).filter(item => item.name === '.trash')
         })
         .catch(err => { })
     },
@@ -1828,7 +1838,7 @@ export default {
               })
             }
             this.treeData = [...this.treeData]
-            this.trashData=[...this.trashData]
+            this.trashData = [...this.trashData]
             resolve()
           })
         })
@@ -1864,15 +1874,12 @@ export default {
           }
 
           this.treeData = [...this.treeData]
-          this.trashData=[...this.trashData]
+          this.trashData = [...this.trashData]
           resolve()
         })
       })
     },
     treeSelect(key, e) {
-      console.log("key",key)
-      console.log("e",e)
-      console.log("this.packageSelectedKeys",this.packageSelectedKeys)
       this.currentTreeNode = e.node.dataRef
       this.scanReport = {
         show: false,
@@ -2013,17 +2020,43 @@ export default {
             window.open(baseUrl)
           }
         }
+      } else if (active.key === '8') {
+        const self = this;
+        const file = this.currentTreeNode.artifactPath.split('/').pop();
+        const targetFile = this.currentTreeNode.artifactPath.replace(".trash/", "");
+        this.$confirm({
+          title: this.$t('Store.Restore') + ": " + file,
+          content: this.$t('Store.RestoreConfirm', { targetRepositories: this.folibRepository.id, path: targetFile }),
+          okText: this.$t('Store.Confirm'),
+          cancelText: this.$t('Store.Cancel'),
+          onOk() {
+            return new Promise((resolve, reject) => {
+              const response = self.restorePackageHandle()
+              if (response) {
+                self.$notification.success({
+                  message: self.$t('Store.RestoreSuccessful')
+                })
+                self.reload()
+                resolve();
+              }
+            }).catch(error => {
+              console.log(error);
+              self.$notification.error({
+                message: self.$t('Store.RestoreFailed')
+              })
+              reject();
+            });
+          },
+          onCancel() { },
+        });
       }
     },
 
-    handleRightClick(active){
-      console.log(active)
+    handleRightClick(active) {
       this.handleMenuClick(active)
-      if(active.key === '4'){
-        this.deletePackageHandle();   
+      if (active.key === '4') {
+        this.deletePackageHandle();
       }
-
-
     },
     handleDownLoadDir() {
       let url = this.currentTreeNode.url
@@ -2266,6 +2299,15 @@ export default {
         })
         .finally(() => { })
     },
+
+    async restorePackageHandle() {
+      const response = await restore(
+        this.currentTreeNode.storageId,
+        this.currentTreeNode.repositoryId,
+        this.currentTreeNode.artifactPath
+      );
+      return response;
+    },
     handlerRespMetadata(res) {
       let metadataList = []
       if (
@@ -2491,10 +2533,10 @@ export default {
         this.uploadEnabled =
           this.folibRepository.status.indexOf('Out of Service') === -1 &&
           this.enablUploadedLayout.includes(this.folibRepository.layout) &&
-          (this.folibRepository.type === 'hosted' || (this.folibRepository.type==='group'&&this.folibRepository.groupDefaultRepository)) &&
+          (this.folibRepository.type === 'hosted' || (this.folibRepository.type === 'group' && this.folibRepository.groupDefaultRepository)) &&
           (hasRole('ARTIFACTS_MANAGER') ||
             this.permissions.includes('ARTIFACTS_DEPLOY'))
-        console.log("this.uploadEnabled",this.uploadEnabled)
+        console.log("this.uploadEnabled", this.uploadEnabled)
         this.copyEnabled =
           this.folibRepository.type === 'hosted' &&
           (hasRole('ARTIFACTS_MANAGER') ||
@@ -2586,7 +2628,7 @@ export default {
       this.showContextMenu = true;
       this.rightClickTop = `${params.event.clientY}px`;
       this.rightClickLeft = `${params.event.clientX}px`;
-      this.currentTreeNode =  params.node.dataRef;
+      this.currentTreeNode = params.node.dataRef;
 
     },
     closeContextMenu() {
@@ -2632,15 +2674,16 @@ export default {
   border: 1px solid #d9d9d9;
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  /deep/ .ant-menu-item{
+
+  /deep/ .ant-menu-item {
     margin: 0;
     height: 35px;
     line-height: 35px;
     padding: 0 8px;
   }
 }
-.view-switch{
+
+.view-switch {
   cursor: pointer;
 }
-
 </style>

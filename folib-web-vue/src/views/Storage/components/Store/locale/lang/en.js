@@ -83,10 +83,14 @@ export default {
     'Distributing': 'Distributing, please check laterr',
     'DeletionSuccessful': 'Deletion successful',
     'DeletionFailed': 'Deletion failed',
+    'RestoreSuccessful':'Restore successful',
+    'RestoreFailed':'Restore failed',
     'CannotPreview': 'This product cannot be previewed',
     'PacketListView':'Packet list view',
     'TrashCanView':'Trash can view',
-    'Revoke':'Revoke',
+    'ReStore':'ReStore',
+    'RestoreConfirm':'Are you sure you want to restore it to the {targetRepositories} repository at {path}?',
+
     // Data.vue
     'BasicInformation': 'Basic information',
     'OwningSpace': 'Owning space',

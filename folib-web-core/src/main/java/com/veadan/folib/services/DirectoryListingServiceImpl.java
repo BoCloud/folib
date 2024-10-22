@@ -8,6 +8,7 @@ import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
+import com.veadan.folib.providers.io.LayoutFileSystem;
 import com.veadan.folib.providers.io.RepositoryFileAttributeType;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -365,6 +366,15 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
             logger.info("Error accessing path {}", p);
             return false;
         }
+    }
+
+    private boolean isTrashNotHiddenPath(Path p){
+        String path=p.toString();
+        if(path.contains(LayoutFileSystem.TRASH)){
+            path = path.replace(LayoutFileSystem.TRASH, "");
+            return !path.contains("/.");
+        }
+        return false;
     }
 
     /**

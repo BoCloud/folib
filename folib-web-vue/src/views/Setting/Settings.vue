@@ -2428,7 +2428,8 @@ export default {
       formData.append("file", info.file)
       uploadLicenseFile(formData).then(() => {
         this.successMsg("上传成功");
-        this.getMachineCode;
+        this.getMachineCode();
+     
       }).catch(err => {
           this.$notification['error']({
             message: err.response.data.error,

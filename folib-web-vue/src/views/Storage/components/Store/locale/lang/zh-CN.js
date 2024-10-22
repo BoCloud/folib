@@ -83,6 +83,8 @@ export default {
     'Distributing': '分发中，请稍候查看',
     'DeletionSuccessful': '删除成功',
     'DeletionFailed': '删除失败',
+    'RestoreSuccessful':'还原成功',
+    'RestoreFailed':'还原失败',
     'CannotPreview': '该制品无法预览',
     'PacketListView':'包列表视图',
     'TrashCanView':'回收站视图',
@@ -124,7 +126,8 @@ export default {
     'Operations': '操作',
     'DeletedProductSuccess': '删除制品元数据成功',
     'BomInformation': 'Bom信息',
-    'Revoke':'还原',
+    'Restore':'还原',
+    'RestoreConfirm':'您确定要将其恢复到仓库{targetRepositories}的{path}位置吗？',
     // UseDoc
     'Instructions': '使用说明',
     'GlobalConfiguration': '全局配置',

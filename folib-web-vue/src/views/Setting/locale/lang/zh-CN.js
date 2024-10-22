@@ -129,7 +129,7 @@ export default {
     'OfficiallyActivated': '在线激活',
     'OfflineActivated': '离线激活',
     'TryItOut': '试用',
-    'FOLIBSerialNumber': '1.在线激活:你可以复制左侧机器码来获取FOLIB的序列号，并将序列号填入下方。在线激活请确保激活过程可以联网，如果需要开通网络策略，请将"license.folib.com"设置为白名单。\n2.离线激活:先从本司获取license文件,在点击离线激活按钮进行上传',
+    'FOLIBSerialNumber': '1.在线激活:你可以复制左侧机器码来获取FOLIB的序列号，并将序列号填入下方。在线激活请确保激活过程可以联网，如果需要开通网络策略，请将"license.folib.com"设置为白名单。\n2.离线激活:先从本司获取license文件,再点击离线激活按钮进行上传',
     'machineCode': '请粘贴本机器码的序列号',
     'MetadataConfig': '元数据配置',
     'Display': '展示',

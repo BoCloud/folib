@@ -207,3 +207,10 @@ export function uploadLicenseFile(data){
     data: data
   })
 }
+
+export function restore (storageId,repositoryId,path) {
+  return axios({
+    url: '/api/browse/restore/'+storageId+'/'+repositoryId+'/'+path,
+    method: 'post'
+  })
+}
