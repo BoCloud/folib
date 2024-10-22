@@ -8,7 +8,7 @@
         <template #title>
             <a-row type="flex" align="middle">
                 <a-col :span="layoutType === 'isFilter' ? 8 : 20" class="col-info">
-                    <a-avatar :title="layoutType === 'isFilter' ? '点击添加存储空间':''" :style="layoutType === 'isFilter' ? 'cursor:pointer':''" :size="74" shape="square" @click="createHandleView" src="images/folib/storage.svg" />
+                    <a-avatar :title="layoutType === 'isFilter' ? $t('Storage.CreateStorageSpace') :''" :style="layoutType === 'isFilter' ? 'cursor:pointer':''" :size="74" shape="square" @click="createHandleView" src="images/folib/storage.svg" />
                     <div class="avatar-info">
                     <h4 class="font-semibold m-0">
                         <span v-if="layoutType !== 'isFilter'">{{ currentStorage.id }}</span>
@@ -43,14 +43,51 @@
                 <a-col v-if="layoutType === 'isFilter'" :span="12" style="display: flex;align-items: center;">
                     <a-form layout="inline">
                         <a-form-item style="margin-top:-2px;">
-                            <a-button type="primary" v-if="$store.state.user.roles.indexOf('ADMIN') > -1" @click="createHandleView"><a-icon type="plus" />新增存储空间</a-button>
-                        </a-form-item>
-                        <a-form-item style="width:21%;">
-                            <a-input-search :placeholder="$t('Module.ArtifactPathQuery')" class="v-search" v-model="queryParams.searchKeyword" @search="handheTableSearch()" />
+                            <a-button type="primary" v-if="$store.state.user.roles.indexOf('ADMIN') > -1" @click="createHandleView"><a-icon type="plus" />{{ $t('Storage.CreateStorageSpace') }}</a-button>
                         </a-form-item>
                         <a-form-item>
                             <a-select
                                 class="v-search"
+                                style="width:140px;"
+                                v-model="queryParams.packageType"
+                                :placeholder="$t('Storage.packageTypeQuery')"
+                                show-search
+                                allowClear
+                                @change="handheTableSearch($event,'packageType')"
+                            >
+                                <a-select-option
+                                    v-for="(item,index) in typeList"
+                                    :key="index"
+                                    :value="item.type"
+                                >
+                                    {{ item.name }}
+                                </a-select-option>
+                            </a-select>
+                        </a-form-item>
+                        <a-form-item>
+                            <a-select 
+                                class="v-search"
+                                style="width:140px;"
+                                v-model="queryParams.type" 
+                                show-search
+                                allowClear
+                                :placeholder="$t('Storage.StrategyTypeQuery')"
+                            >
+                                <a-select-option value="hosted">
+                                    {{ $t('Storage.Local') }}
+                                </a-select-option>
+                                <a-select-option value="proxy">
+                                    {{ $t('Storage.Agent') }}
+                                </a-select-option>
+                                <a-select-option value="group">
+                                    {{ $t('Storage.Combination') }}
+                                </a-select-option>
+                            </a-select>
+                        </a-form-item>
+                        <!-- <a-form-item>
+                            <a-select
+                                class="v-search"
+                                style="width:140px;"
                                 v-model="queryParams.storageId"
                                 :placeholder="$t('Storage.RepositoryQuery')"
                                 show-search
@@ -64,50 +101,8 @@
                                     {{ item.id }}
                                 </a-select-option>
                             </a-select>
-                        </a-form-item>
-                        <a-form-item>
-                            <a-select
-                                class="v-search"
-                                v-model="queryParams.storageId"
-                                :placeholder="$t('Storage.RepositoryQuery')"
-                                show-search
-                                @change="handheTableSearch($event,'storageId')"
-                            >
-                                <a-select-option
-                                    v-for="(item) in storageData"
-                                    :key="item.id"
-                                    :value="item.id"
-                                >
-                                    {{ item.id }}
-                                </a-select-option>
-                            </a-select>
-                        </a-form-item>
-                        <a-form-item>
-                            <a-select
-                                class="v-search"
-                                v-model="queryParams.storageId"
-                                :placeholder="$t('Storage.RepositoryQuery')"
-                                show-search
-                                @change="handheTableSearch($event,'storageId')"
-                            >
-                                <a-select-option
-                                    v-for="(item) in storageData"
-                                    :key="item.id"
-                                    :value="item.id"
-                                >
-                                    {{ item.id }}
-                                </a-select-option>
-                            </a-select>
-                        </a-form-item>
+                        </a-form-item> -->
                     </a-form>
-                    <!-- <a-row type="flex" :gutter="[24, 24]">
-                        <a-col :span="3">
-                            <a class="text-center text-muted font-bold">
-                                <h3 v-if="$store.state.user.roles.indexOf('ADMIN') > -1" class="font-semibold text-muted mb-0"
-                                @click="createHandleView">+</h3>
-                            </a>
-                        </a-col>
-                    </a-row> -->
                 </a-col>
                 <a-col :span="4" style="display: flex; align-items: center; justify-content: flex-end;">
                     <a-tabs v-if="layoutType === 'isFilter'" class="tabs-sliding" style="margin-top:-2px;margin-right:10px;" default-active-key="1" @change="getTabKey">
@@ -153,6 +148,7 @@
 import { isAdmin } from "@/utils/permission"
 import Overview from "../../StorageMonitoring/components/Overview"
 import StorageInfo from "../../StorageMonitoring/components/StorageInfo"
+import typeList from "./select-type";
 export default {
     components:{
         Overview,
@@ -164,7 +160,9 @@ export default {
             queryParams:{
                 groupId:'',
                 storageId:'',
-                searchKeyword:''
+                packageType:'',
+                searchKeyword:'',
+                type:''
             },
         }
     },
@@ -177,10 +175,11 @@ export default {
             },
             immediate:true,
             deep:true,
+            typeList:[]
         }
     },
     mounted() {
-
+        this.typeList = typeList
     },
     methods:{
         hasStoragePermission() {

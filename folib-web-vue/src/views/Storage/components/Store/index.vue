@@ -1220,7 +1220,9 @@ export default {
     initData () {
       this.instanceName = sessionStorage.getItem("instanceName")
       this.createData()
-      this.getBrowse()
+      if(!this.isChecked){
+        this.getBrowse()
+      }
       if (isLogin())
       {
         this.scannerRules()

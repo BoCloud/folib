@@ -31,7 +31,11 @@
                   <h6 class="font-semibold m-0">{{ isChecked ? $t('Storage.RepositoryList') : $t('Storage.StorageList')}}</h6>
                 </a-col>
                 <a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
-                  <!-- <a-switch style="margin-right:10px;" v-model="isChecked" @change="getDetailInfo"></a-switch> -->
+                  <a-switch 
+                    style="margin-right:10px;"
+                    v-model="isChecked"
+                    @change="getDetailInfo"
+                  ></a-switch>
                   <a class="text-center text-muted font-bold" v-if="!isChecked">
                     <h3 v-if="$store.state.user.roles.indexOf('ADMIN') > -1" class="font-semibold text-muted mb-0"
                       @click="createHandleView">+</h3>
@@ -43,16 +47,7 @@
                 </a-col>
               </a-row>
             </template>
-            <a-directory-tree v-if="isChecked" @select="treeSelect" @expand="onExpand">
-              <a-tree-node key="0-0" title="parent 0">
-                <a-tree-node key="0-0-0" title="leaf 0-0" is-leaf />
-                <a-tree-node key="0-0-1" title="leaf 0-1" is-leaf />
-              </a-tree-node>
-              <a-tree-node key="0-1" title="parent 1">
-                <a-tree-node key="0-1-0" title="leaf 1-0" is-leaf />
-                <a-tree-node key="0-1-1" title="leaf 1-1" is-leaf />
-              </a-tree-node>
-            </a-directory-tree>
+            <repositoryTree v-if="isChecked" @treeSelect="treeSelect" @repositorySelect="repositorySelect" @expand="onExpand" :repositories="repositories" />
             <a-anchor v-else :targetOffset="navbarFixed ? 100 : 10" :affix="false">
               <a-anchor-link v-for="(item, index) in storageData" :key="index" href="javascript:void(null)"
                 :class="{ slectActive: item.id === currentStorage.id }">
@@ -122,9 +117,13 @@
           </a-tab-pane>
         </a-tabs>
         <!-- 存储空间模式下 直接展示仓库内容 -->
-         <a-card :style="isChecked ? 'margin-top:-128px;' : ''" style="border:none;transition: all 0.5s ease;" v-else bodyStyle="padding:0px;">
-           <LibView ref="libview" style="margin:14px;" :isChecked="isChecked" />
-         </a-card>
+        <LibView v-else 
+          ref="libview" 
+          :storageAdmin="currentStorage.admin" 
+          :style="isChecked ? 'margin-top:-135px;' : ''" style="border:none;transition: all 0.5s ease;" 
+          :isChecked="isChecked" 
+          @handleMenuClick="handleMenuClick"
+        />
       </a-col>
     </a-row>
     <!-- 存储空间模式下 切换到存储概览 -->
@@ -430,247 +429,7 @@
             <a-form :form="form" class="mt-30" :hideRequiredMark="true">
               <a-row type="flex" :gutter="[24]">
                 <a-col :span="24" :md="10" :lg="20" class="mx-auto">
-                  <a-row class="checkbox-group" type="flex" :gutter="[50]">
-                    <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'raw' ? 'active' : '']"
-                        @click="toggleCheckbox('raw')">
-                        <a-avatar :size="44" shape="square"
-                          style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                          <img src="images/folib/raw.svg" style="width: 100%;" alt="">
-                        </a-avatar>
-                      </div>
-                      <h6>Raw</h6>
-                    </a-col>
-                    <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'maven' ? 'active' : '']"
-                        @click="toggleCheckbox('maven')">
-                        <a-avatar :size="44" shape="square"
-                          style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                          <img src="images/folib/maven.svg" style="width: 100%;" alt="">
-                        </a-avatar>
-                      </div>
-                      <h6>Maven</h6>
-                    </a-col>
-                    <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'npm' ? 'active' : '']"
-                        @click="toggleCheckbox('npm')">
-                        <a-avatar :size="44" shape="square"
-                          style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                          <img src="images/folib/npm.svg" style="width: 100%;" alt="">
-                        </a-avatar>
-                      </div>
-                      <h6>Npm</h6>
-                    </a-col>
-                    <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'yarn' ? 'active' : '']"
-                        @click="toggleCheckbox('yarn')">
-                        <a-avatar :size="44" shape="square"
-                          style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                          <img src="images/folib/yarn.svg" style="width: 100%;" alt="">
-                        </a-avatar>
-                      </div>
-                      <h6>Yarn</h6>
-                    </a-col>
-                    <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'nuget' ? 'active' : '']"
-                        @click="toggleCheckbox('nuget')">
-                        <a-avatar :size="44" shape="square"
-                          style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                          <img src="images/folib/nuget.svg" style="width: 100%;" alt="">
-                        </a-avatar>
-                      </div>
-                      <h6>NuGet</h6>
-                    </a-col>
-                    <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'ivy' ? 'active' : '']"
-                        @click="toggleCheckbox('ivy')">
-                        <a-avatar :size="44" shape="square"
-                          style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                          <img src="images/folib/ivy.svg" style="width: 100%;" alt="">
-                        </a-avatar>
-                      </div>
-                      <h6>Ivy</h6>
-                    </a-col>
-                    <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'sbt' ? 'active' : '']"
-                        @click="toggleCheckbox('sbt')">
-                        <a-avatar :size="44" shape="square"
-                          style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                          <img src="images/folib/sbt.svg" style="width: 100%;" alt="">
-                        </a-avatar>
-                      </div>
-                      <h6>SBT</h6>
-                    </a-col>
-                    <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'gradle' ? 'active' : '']"
-                        @click="toggleCheckbox('gradle')">
-                        <a-avatar :size="44" shape="square"
-                          style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                          <img src="images/folib/gradle.svg" style="width: 100%;" alt="">
-                        </a-avatar>
-                      </div>
-                      <h6>Gradle</h6>
-                    </a-col>
-                    <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'rpm' ? 'active' : '']"
-                        @click="toggleCheckbox('rpm')">
-                        <a-avatar :size="44" shape="square"
-                          style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                          <img src="images/folib/rpm.svg" style="width: 100%;" alt="">
-                        </a-avatar>
-                      </div>
-                      <h6>Rpm</h6>
-                    </a-col>
-                    <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'docker' ? 'active' : '']"
-                        @click="toggleCheckbox('docker')">
-                        <a-avatar :size="44" shape="square"
-                          style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                          <img src="images/folib/docker.svg" style="width: 100%;" alt="">
-                        </a-avatar>
-                      </div>
-                      <h6>Docker</h6>
-                    </a-col>
-                    <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'php' ? 'active' : '']"
-                        @click="toggleCheckbox('php')">
-                        <a-avatar :size="44" shape="square"
-                          style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                          <img src="images/folib/php.svg" style="width: 100%;" alt="">
-                        </a-avatar>
-                      </div>
-                      <h6>Php</h6>
-                    </a-col>
-                    <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'pypi' ? 'active' : '']"
-                        @click="toggleCheckbox('pypi')">
-                        <a-avatar :size="44" shape="square"
-                          style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                          <img src="images/folib/pypi.svg" style="width: 100%;" alt="">
-                        </a-avatar>
-                      </div>
-                      <h6>PyPi</h6>
-                    </a-col>
-                    <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'conan' ? 'active' : '']"
-                        @click="toggleCheckbox('conan')">
-                        <a-avatar :size="44" shape="square"
-                          style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                          <img src="images/folib/conan.svg" style="width: 100%;" alt="">
-                        </a-avatar>
-                      </div>
-                      <h6>Conan</h6>
-                    </a-col>
-                    <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'helm' ? 'active' : '']"
-                        @click="toggleCheckbox('helm')">
-                        <a-avatar :size="44" shape="square"
-                          style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                          <img src="images/folib/helm.svg" style="width: 100%;" alt="">
-                        </a-avatar>
-                      </div>
-                      <h6>Helm</h6>
-                    </a-col>
-                    <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'cocoapods' ? 'active' : '']"
-                           @click="toggleCheckbox('cocoapods')">
-                        <a-avatar :size="44" shape="square"
-                                  style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                          <img src="images/folib/cocoapods.svg" style="width: 100%;" alt="">
-                        </a-avatar>
-                      </div>
-                      <h6>CocoaPods</h6>
-                    </a-col>
-                    <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'go' ? 'active' : '']"
-                           @click="toggleCheckbox('go')">
-                        <a-avatar :size="44" shape="square"
-                                  style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                          <img src="images/folib/go.svg" style="width: 100%;" alt="">
-                        </a-avatar>
-                      </div>
-                      <h6>Go</h6>
-                    </a-col>
-                    <a-col :span="4">
-                        <div class="checkbox-label" :class="[layoutChecked === 'ohpm' ? 'active' : '']"
-                               @click="toggleCheckbox('ohpm')">
-                            <a-avatar :size="44" shape="square"
-                                        style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                                <img src="images/folib/ohpm.svg" style="width: 100%;" alt="">
-                            </a-avatar>
-                        </div>
-                        <h6>Ohpm</h6>
-                    </a-col>
-
-                    <a-col :span="4">
-                        <div class="checkbox-label" :class="[layoutChecked === 'gitlfs' ? 'active' : '']"
-                               @click="toggleCheckbox('gitlfs')">
-                              <a-avatar :size="44" shape="square"
-                                        style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                                  <img src="images/folib/gitlfs.svg" style="width: 100%;" alt="">
-                              </a-avatar>
-                        </div>
-                        <h6>Git LFS</h6>
-                    </a-col>
-                    <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'huggingface' ? 'active' : '']"
-                      @click="toggleCheckbox('huggingface')">
-                        <a-avatar :size="44" shape="square"
-                                  style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                          <img src="images/folib/huggingface.svg" style="width: 100%;" alt="">
-                        </a-avatar>
-                      </div>
-                      <h6>huggingface</h6>
-                    </a-col>
-                    <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'pub' ? 'active' : '']"
-                        @click="toggleCheckbox('pub')">
-                        <a-avatar :size="44" shape="square"
-                          style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                          <img src="images/folib/pub.svg" style="width: 100%;" alt="">
-                        </a-avatar>
-                      </div>
-                      <h6>Pub</h6>
-                    </a-col>
-                    <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'debian' ? 'active' : '']"
-                      @click="toggleCheckbox('debian')">
-                        <a-avatar :size="44" shape="square"
-                                  style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                          <img src="images/folib/debian.svg" style="width: 100%;" alt="">
-                        </a-avatar>
-                      </div>
-                      <h6>Debian</h6>
-                    </a-col>
-                    <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'gems' ? 'active' : '']">
-                        <a-tooltip>
-                          <template slot="title">
-                            {{ $t('Storage.NextVersion') }}🤝
-                          </template>
-                        <a-avatar :size="44" shape="square"
-                                  style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                          <img src="images/folib/gems.svg" style="width: 100%;" alt="">
-                        </a-avatar>
-                        </a-tooltip>
-                      </div>
-                      <h6>Gems</h6>
-                    </a-col>
-                    <a-col :span="4">
-                      <div class="checkbox-label" :class="[layoutChecked === 'rust' ? 'active' : '']">
-                        <a-tooltip>
-                          <template slot="title">
-                            {{ $t('Storage.NextVersion') }}🤝
-                          </template>
-                        <a-avatar :size="44" shape="square"
-                                  style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                          <img src="images/folib/rust.svg" style="width: 100%;" alt="">
-                        </a-avatar>
-                        </a-tooltip>
-                      </div>
-                      <h6>Rust</h6>
-                    </a-col>
-                  </a-row>
+                  <select-type @toggleCheckbox="toggleCheckbox" :layoutChecked="layoutChecked" />
                   <a-checkbox-group class="d-none" v-model="checkedList" :options="checkboxOptions" />
                 </a-col>
               </a-row>
@@ -1249,6 +1008,8 @@ import CronTask from "@/views/Storage/components/Cron/index.vue";
 import UnionRepository from "@/views/Storage/components/UnionRepository/index.vue";
 import Scan from "@/views/Storage/components/Scan/index.vue";
 import Permission from "@/views/Storage/components/Permission/index.vue";
+import selectType from './Storage-components/select-type.vue'
+import repositoryTree from './Storage-components/repository-tree.vue'
 
 export default {
   inject: ["reload"],
@@ -1264,7 +1025,9 @@ export default {
     Overview,
     StorageInfo,
     storageInfoCard, // 存储空间卡片信息组件
-    LibView
+    LibView,
+    selectType,
+    repositoryTree
   },
   props: {
     navbarFixed: {
@@ -1455,7 +1218,7 @@ export default {
         storageId: null
       },
       layoutType:'isFilter',
-      isChecked:false,
+      isChecked: false,
       isShowOverview: false,
      permissionForm: {
         allowAnonymous: true,
@@ -1536,12 +1299,24 @@ export default {
         this.$refs.libview.myMounted()
       }
     },
-    getDetailInfo(){
-      // storage.set("libView_repository", { item, baseUrl: this.baseUrl })
-      this.$refs.libview.myMounted()
+    getDetailInfo(val){
+      const item = this.repositories[0]
+      storage.set("libView_repository", { item, baseUrl: this.baseUrl })
+      this.$nextTick(() => {
+        if(val){
+          this.$refs.libview.myMounted()
+        }
+      })
     },
+    // 点击仓库
+    repositorySelect(item){
+      storage.set("libView_repository", { item, baseUrl: this.baseUrl })
+      this.$nextTick(() => {
+          this.$refs.libview.myMounted()
+      })
+    },  
+    // 点击仓库下的文件
     treeSelect(key, e) {
-      console.log('Trigger Select', key, e)
       this.$refs.libview.treeSelect(key, e)
     },
     onExpand() {

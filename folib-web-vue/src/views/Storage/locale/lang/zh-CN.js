@@ -235,5 +235,7 @@ export default {
     'RepositoryList': '仓库列表',
     'ScanTime': '扫描时间',
     'RepositoryQuery': '请选择仓库查询',
-    'RepositoryInfo':'仓库信息'
+    'RepositoryInfo':'仓库信息',
+    'packageTypeQuery':'选择包类型搜索',
+    'StrategyTypeQuery': '选择策略类型搜索',
 }
