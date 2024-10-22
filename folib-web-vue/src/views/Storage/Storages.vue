@@ -2726,4 +2726,11 @@ export default {
       overflow: hidden;
   }
 }
+.info-message{
+  color:#fff;
+  margin-left: 10px;
+  background:#1890ff ;
+  border-radius: 50%;
+  scale: (1.3);
+}
 </style>

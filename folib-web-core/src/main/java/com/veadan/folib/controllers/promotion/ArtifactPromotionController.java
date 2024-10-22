@@ -68,6 +68,24 @@ public class ArtifactPromotionController extends BaseArtifactController {
     @Value("${folib.temp}")
     private String tempPath;
 
+    @PostMapping("/sync/copy")
+    @PermissionCheck(resourceKey = "ARTIFACTS_COPY", storageKey = "srcStorageId", repositoryKey = "srcRepositoryId")
+    public ResponseEntity syncCopy(@RequestBody @Validated ArtifactPromotion artifactPromotion,
+                               BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            throw new RequestBodyValidationException("请求参数错误", bindingResult);
+        }
+        return artifactPromotionService.syncCopy(artifactPromotion);
+    }
+
+    @PostMapping("/sync/move")
+    @PermissionCheck(resourceKey = "ARTIFACTS_MOVE", storageKey = "srcStorageId", repositoryKey = "srcRepositoryId")
+    public ResponseEntity syncMove(@RequestBody @Validated ArtifactPromotion artifactPromotion, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            throw new RequestBodyValidationException("请求参数错误", bindingResult);
+        }
+        return artifactPromotionService.syncMove(artifactPromotion);
+    }
     @PostMapping("/copy")
     @PermissionCheck(resourceKey = "ARTIFACTS_COPY", storageKey = "srcStorageId", repositoryKey = "srcRepositoryId")
     public ResponseEntity copy(@RequestBody @Validated ArtifactPromotion artifactPromotion,

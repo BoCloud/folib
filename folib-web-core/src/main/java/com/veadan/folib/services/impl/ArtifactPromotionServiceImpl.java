@@ -200,6 +200,45 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     private HazelcastInstance hazelcastInstance;
 
     @Override
+    public ResponseEntity syncCopy(ArtifactPromotion artifactPromotion) {
+        try{
+            checkParam(artifactPromotion);
+            final String srcStorageId = artifactPromotion.getSrcStorageId();
+            final String srcRepositoryId = artifactPromotion.getSrcRepositoryId();
+            Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepositoryId);
+
+            // 多个目标仓库复制
+            artifactPromotion.getTargetRepositoyList().forEach(x -> {
+                String destStorageId = x.getTargetStorageId();
+                String destRepositoryId = x.getTargetRepositoryId();
+                log.info("Copy [{}] from [{}] [{}] to [{}] [{}]...", artifactPromotion.getPath(), srcStorageId, srcRepositoryId, destStorageId,
+                        destRepositoryId);
+                singleSyncCopy(artifactPromotion, srcRepository, destStorageId, destRepositoryId);
+            });
+        } catch (Exception e) {
+            log.error("Copy path params [{}] error [{}]", JSONObject.toJSONString(artifactPromotion), ExceptionUtils.getStackTrace(e));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
+        }
+        return ResponseEntity.ok("Artifact copy success");
+    }
+
+    @Override
+    public ResponseEntity syncMove(ArtifactPromotion artifactPromotion) {
+
+        try {
+            checkParam(artifactPromotion);
+            promotionUtil.executeMove(artifactPromotion);
+        } catch (Exception e) {
+            log.error("Move path params [{}] error [{}]", JSONObject.toJSONString(artifactPromotion), ExceptionUtils.getStackTrace(e));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
+        }
+        return ResponseEntity.ok("Artifact move success");
+
+    }
+
+    @Override
     public ResponseEntity copy(ArtifactPromotion artifactPromotion) {
         try {
             checkParam(artifactPromotion);
@@ -276,6 +315,12 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, artifactPromotion.getPath());
         RepositoryPath targetPath = artifactPromotion.getTargetPath() == null ? null : repositoryPathResolver.resolve(destRepository, artifactPromotion.getTargetPath());
         promotionUtil.executeCopy(srcPath, srcRepository, targetPath, destRepository);
+    }
+    private void singleSyncCopy(ArtifactPromotion artifactPromotion, Repository srcRepository, String destStorageId, String destRepositoryId) {
+        Repository destRepository = repositoryManagementService.getStorage(destStorageId).getRepository(destRepositoryId);
+        RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, artifactPromotion.getPath());
+        RepositoryPath targetPath = artifactPromotion.getTargetPath() == null ? null : repositoryPathResolver.resolve(destRepository, artifactPromotion.getTargetPath());
+        promotionUtil.executeSyncCopy(srcPath, srcRepository, targetPath, destRepository);
     }
 
     @Override
