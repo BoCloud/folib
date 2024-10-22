@@ -204,12 +204,13 @@ public class ArtifactManagementService
                                OutputStream os)
             throws IOException
     {
+        long startTime = System.currentTimeMillis();
         LayoutOutputStream aos = StreamUtils.findSource(LayoutOutputStream.class, os);
 
         Repository repository = repositoryPath.getRepository();
 
         Boolean checksumAttribute = RepositoryFiles.isChecksum(repositoryPath);
-
+        logger.info("Read attribute [{}] take time [{}] ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
         // If we have no digests, then we have a checksum to store.
         if (Boolean.TRUE.equals(checksumAttribute))
         {
@@ -221,7 +222,7 @@ public class ArtifactManagementService
             artifactEventListenerRegistry.dispatchArtifactUploadingEvent(repositoryPath);
         }
 
-        long startTime = System.currentTimeMillis();
+        startTime = System.currentTimeMillis();
         long totalAmountOfBytes = IOUtils.copy(is, os);
         logger.info("IOUtils copy [{}] size [{}] take time [{}] ms" , repositoryPath.toString(), totalAmountOfBytes, System.currentTimeMillis() - startTime);
 
