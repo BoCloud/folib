@@ -2728,7 +2728,7 @@ export default {
 }
 .info-message{
   color:#fff;
-  margin-left: 10px;
+  margin-left: 15px;
   background:#1890ff ;
   border-radius: 50%;
   scale: (1.3);
