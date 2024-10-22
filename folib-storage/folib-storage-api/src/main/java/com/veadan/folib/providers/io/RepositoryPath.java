@@ -243,7 +243,6 @@ public class RepositoryPath
 
         RepositoryPath result = getFileSystem().getRootDirectory().relativize(this);
         if (result.startsWith(LayoutFileSystem.TEMP)) {
-            int nameCount = result.getNameCount();
             result = result.subpath(1, result.getNameCount());
         }
 

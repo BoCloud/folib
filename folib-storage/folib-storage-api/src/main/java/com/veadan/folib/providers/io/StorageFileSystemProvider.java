@@ -619,7 +619,7 @@ public abstract class StorageFileSystemProvider
         }
 
         @Override
-        //&& !p.startsWith(root.resolve(LayoutFileSystem.TRASH)
+        //为了展示回收站 去掉回收站判断&& !p.startsWith(root.resolve(LayoutFileSystem.TRASH)
         public boolean accept(Path p)
                 throws IOException {
             if (p.isAbsolute()
