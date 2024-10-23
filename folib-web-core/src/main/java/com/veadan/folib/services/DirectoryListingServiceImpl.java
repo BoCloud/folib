@@ -165,11 +165,14 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
 
         DirectoryListing directoryListing = new DirectoryListing();
         //Map<String, List<FileContent>> content = generateDirectoryListingV2(path);
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start("fromPath");
         Map<String, List<FileContent>> content = generateDirectoryListingV3(path).block();
 
         directoryListing.setDirectories(content.get("directories"));
         directoryListing.setFiles(content.get("files"));
-
+        stopWatch.stop();
+        logger.info("generateDirectoryListingV3: " + stopWatch.getTotalTimeMillis());
         return directoryListing;
     }
 
@@ -314,10 +317,10 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
         return listPaths(path)
                 //.filter(this::isValidPath)
                 .collectList()
-                .flatMapMany(contentPaths -> Flux.fromIterable(ListUtils.partition(contentPaths, 200)))
+                .flatMapMany(contentPaths -> Flux.fromIterable(ListUtils.partition(contentPaths, 2)))
                 // 使用并行处理提高效率 在多个 Flux 中使用 .publishOn(Schedulers.boundedElastic()) 时，Schedulers.boundedElastic() 是共享的，而不是为每个 Flux 创建独立的线程池。
                 .publishOn(Schedulers.boundedElastic())
-                .parallel(1)
+                .parallel(4)
                 // 根据路径构建文件内容任务
                 .flatMap(paths -> buildFileContentTask(paths, showChecksum))
                 // 将并行处理的结果序列化
@@ -396,18 +399,20 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
                 FileContent file = new FileContent(contentPath.getFileName().toString());
                 // 设置文件路径，移除日志目录前缀。
                 file.setPath(contentPath.toString().replace(propertiesBooter.getLogsDirectory().replace("./", ""), ""));
-                StopWatch stopWatch = new StopWatch();
-                stopWatch.start();
+                //StopWatch stopWatch = new StopWatch();
+                //stopWatch.start();
                 // 读取文件或目录的属性。
-                Map<String, Object> fileAttributes = null;
-                if(contentPath.toString().startsWith("s3://") || contentPath.toString().startsWith("https://s3.")){
-                    // 读取文件或目录的属性。
-                    fileAttributes = Files.readAttributes(contentPath,"artifactPath,lastModifiedTime,resourceUrl,isDirectory,repositoryId,size,storageId");
-                }else {
-                    fileAttributes = Files.readAttributes(contentPath, "*");
-                }
-                stopWatch.stop();
-                logger.info("Read file attributes for {} in {} ms", file.getName(), stopWatch.getTotalTimeMillis());
+                Map<String, Object> fileAttributes = Files.readAttributes(contentPath, "folib:repositoryId,folib:storageId,folib:artifactPath,folib:resourceUrl,lastModifiedTime,size,isDirectory");
+                //if(contentPath.toString().startsWith("s3://") || contentPath.toString().startsWith("https://s3.")){
+                //    // 读取文件或目录的属性。
+                //    fileAttributes = Files.readAttributes(contentPath, "folib:repositoryId,folib:storageId,folib:artifactPath,folib:resourceUrl,lastModifiedTime,size,isDirectory");
+                //    //fileAttributes = Files.readAttributes(contentPath, "*");
+                ////Files.readAttributes(contentPath,"artifactPath,lastModifiedTime,resourceUrl,isDirectory,folib:repositoryId,size,folib:storageId");
+                //}else {
+                //    fileAttributes = Files.readAttributes(contentPath, "folib:repositoryId,folib:storageId,folib:artifactPath,folib:resourceUrl,lastModifiedTime,size,isDirectory");
+                //}
+                //stopWatch.stop();
+                //logger.info("Read file attributes for {} in {} ms", file.getName(), stopWatch.getTotalTimeMillis());
                 // 从文件属性中提取存储ID、仓库ID和artifact路径，并设置到FileContent对象中。
                 file.setStorageId((String) fileAttributes.get(RepositoryFileAttributeType.STORAGE_ID.getName()));
                 file.setRepositoryId((String) fileAttributes.get(RepositoryFileAttributeType.REPOSITORY_ID.getName()));
@@ -445,6 +450,8 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
             finalResult.merge(result);
         }
         Map<String, List<FileContent>> listing = new HashMap<>();
+        finalResult.getDirectories().sort(Comparator.comparing(FileContent::getName));
+        finalResult.getFiles().sort(Comparator.comparing(FileContent::getName));
         listing.put("directories", finalResult.getDirectories());
         listing.put("files", finalResult.getFiles());
         return listing;
