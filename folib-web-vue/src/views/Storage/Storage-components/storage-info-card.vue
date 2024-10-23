@@ -49,11 +49,11 @@
                             <a-select
                                 class="v-search"
                                 style="width:140px;"
-                                v-model="queryParams.packageType"
+                                v-model="queryParams.layout"
                                 :placeholder="$t('Storage.packageTypeQuery')"
+                                @change="search"
                                 show-search
                                 allowClear
-                                @change="handheTableSearch($event,'packageType')"
                             >
                                 <a-select-option
                                     v-for="(item,index) in typeList"
@@ -71,6 +71,7 @@
                                 v-model="queryParams.type" 
                                 show-search
                                 allowClear
+                                @change="search"
                                 :placeholder="$t('Storage.StrategyTypeQuery')"
                             >
                                 <a-select-option value="hosted">
@@ -158,11 +159,11 @@ export default {
     data() {
         return {
             queryParams:{
-                groupId:'',
                 storageId:'',
-                packageType:'',
-                searchKeyword:'',
-                type:''
+                layout: null,
+                type: null,
+                limit:100,
+                page:1
             },
         }
     },
@@ -182,6 +183,9 @@ export default {
         this.typeList = typeList
     },
     methods:{
+        search(){
+            this.handheTableSearch()
+        },
         hasStoragePermission() {
             return isAdmin() || this.currentStorage.admin === this.$store.state.user.name
         },
@@ -200,7 +204,11 @@ export default {
             const params = {
                 val: key === 'storageId' ? val.key : val
             }
-            this.$emit('handheTableSearch',params.val, key)
+            if(key){
+                this.$emit('handheTableSearch',params.val, key)
+            }else{
+                this.$emit('handheTableSearch',this.queryParams)
+            }
         },
         getTabKey(val){
             this.$emit('showOverview',val)

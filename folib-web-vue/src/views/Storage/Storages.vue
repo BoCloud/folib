@@ -987,7 +987,8 @@ import {
     updateCronOne,
     delCronOne,
     getStoragesAndRepositories,
-    aliveRepository, repositoryEnableUsers
+    aliveRepository, repositoryEnableUsers,
+    queryRepositoriesByStorage
 } from "@/api/folib"
 import { getUsers, queryUser } from "@/api/users"
 import CardProjectFolib from "@/components/Cards/CardProjectFolib"
@@ -1305,6 +1306,15 @@ export default {
       this.$nextTick(() => {
         if(val){
           this.$refs.libview.myMounted()
+        }else{
+          const params = {
+            storageId: item.id,
+            layout: null,
+            type: null,
+            limit: 100,
+            page: 1
+          }
+          this.getQueryStorage(params)
         }
       })
     },
@@ -1326,6 +1336,8 @@ export default {
       if(key === 'storageId'){
         const item = this.storageData.find(ele => ele.id === val)
         this.setCurrentStorage(item)
+      }else{
+        this.getQueryStorage(val) // 此时的val为queryParams
       }
     },
     message(status, type, message) {
@@ -1612,13 +1624,11 @@ export default {
           }
       }
     },
-  async  getStorages() {
-  await    getStorages().then(response => {
+    async getStorages() {
+      await getStorages().then(response => {
         this.storageData = response.storages;
         this.cacheStorage()
       })
-
-
     },
     setCurrentStorage(item) {
       if (!item.admin || item.admin === '') {
@@ -1642,6 +1652,13 @@ export default {
         this.storagePrefix = this.currentStorage.basedir.replace("/" + this.currentStorage.id, "").replace("/", "")
       }
       this.getStorage(this.currentStorage.id)
+    },
+    getQueryStorage(queryParams){
+      queryRepositoriesByStorage(queryParams).then(res => {
+        if(res.status === 200){
+          this.repositories = res.data.rows || []
+        }
+      })
     },
     getStorage(id) {
       if (id) {

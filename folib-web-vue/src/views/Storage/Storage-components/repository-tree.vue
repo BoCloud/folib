@@ -103,7 +103,6 @@ export default {
                         }
                     }
                     this.treeSelect('',e)
-                    console.log(this.treeData)
                 }
             },
             immediate: true
