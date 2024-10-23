@@ -274,7 +274,7 @@ public class StoragesConfigurationController
                     Collection<? extends Repository> repositorys = storageInfo.getRepositories().values();
                     Map<String, RepositoryDto> repositoryMap = new HashMap<>();
                     repositorys.forEach(repository -> {
-                        if( !Objects.equals(repository.isSyncEnabled(), syncEnabled)) {
+                        if (!Objects.equals(repository.isSyncEnabled(), syncEnabled)) {
                             RepositoryDto repositoryDto = conversionService.convert(repository, RepositoryDto.class);
                             if (repositoryDto != null) {
                                 repositoryDto.setSyncEnabled(syncEnabled);
@@ -367,7 +367,7 @@ public class StoragesConfigurationController
                     && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())))
             ).collect(Collectors.toList());
         }
-        if(storageRepositorieMap != null) {
+        if (storageRepositorieMap != null) {
             storageRepositorieMap.putAll(storageRepMap);
         }
         return storages.stream().filter(s -> (CollectionUtils.isNotEmpty(s.getRepositories().values())
@@ -511,7 +511,7 @@ public class StoragesConfigurationController
         return new TableResultResponse<>(repositorieList.size(), pageRepository);
     }
 
-    private  void getAnonyRepositories(String storageId, String type, String excludeType, String excludeRepositoryId, String layout, String policy, List<Storage> collect, Map<String, List<String>> storageRepMap, List<Repository> repositorieList, List<StorageTreeForm> storageTreeForms) {
+    private void getAnonyRepositories(String storageId, String type, String excludeType, String excludeRepositoryId, String layout, String policy, List<Storage> collect, Map<String, List<String>> storageRepMap, List<Repository> repositorieList, List<StorageTreeForm> storageTreeForms) {
         boolean filterByStorageId = StringUtils.isNotBlank(storageId);
         boolean filterByType = StringUtils.isNotBlank(type);
         boolean filterByLayout = StringUtils.isNotBlank(layout);
@@ -618,7 +618,7 @@ public class StoragesConfigurationController
             List<Repository> repositories;
             for (Storage storage : storages) {
                 boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username)
-                || storage.getRepositoryUsers().contains(username));
+                        || storage.getRepositoryUsers().contains(username));
                 storageTreeForm = StorageTreeForm.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
                 repositories = new LinkedList<Repository>(storage.getRepositories().values());
                 repositories = repositories.stream().distinct()
@@ -695,7 +695,7 @@ public class StoragesConfigurationController
             List<Repository> repositories;
             for (Storage storage : storages) {
                 boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username)
-                || storage.getRepositoryUsers().contains(username));
+                        || storage.getRepositoryUsers().contains(username));
                 storageTreeForm = StorageTreeForm.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
                 repositories = new LinkedList<Repository>(storage.getRepositories().values());
                 repositories = repositories.stream().distinct()
@@ -839,6 +839,9 @@ public class StoragesConfigurationController
                                                    @RequestParam(value = "filter", required = false) Boolean filter,
                                                    Authentication authentication) {
         StorageDto storage = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
+        if (Objects.isNull(storage)) {
+            return getFailedResponseEntity(HttpStatus.NOT_FOUND, STORAGE_NOT_FOUND, MediaType.APPLICATION_JSON_VALUE);
+        }
         if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
             Map<String, List<String>> storageRepMap = new HashMap<>();
             //获取匿名角色关联的存储空间
@@ -858,30 +861,15 @@ public class StoragesConfigurationController
         }
         //查询数据库中存储空间绑定的用户
         storageManagementService.getStorageUsers(Collections.singletonList(storage));
-        if (storage != null) {
-            String username = loginUsername();
-            boolean flag = Boolean.TRUE.equals(filter) && !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isEmpty(storage.getUsers()) || (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username)) || storage.getRepositoryUsers().contains(username));
-            if (flag) {
-                Map<String, ? extends Repository> repositoryMap = storage.getRepositories();
-                if (Objects.nonNull(repositoryMap) && CollectionUtils.isNotEmpty(repositoryMap.values())) {
-                    repositoryMap = repositoryMap.values().stream()
-                            .filter(item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || hasRepositoryResolve(item))
-                            .map(item -> {
-                                if(RepositoryTypeEnum.PROXY.getType().equals(item.getType())){
-                                    RepositoryDto repositoryDto = (RepositoryDto) item;
-                                    repositoryDto.setHealthStatus(remoteRepositoryAlivenessCacheManager.isAlive(((RepositoryDto) item).getRemoteRepository()));
-                                }
-                                return item;
-                            })
-                            .collect(Collectors.toMap(Repository::getId, Function.identity()));
-                    storage.setRepositories((Map<String, RepositoryDto>) repositoryMap);
-                }
-            }
+        String username = loginUsername();
+        boolean flag = Boolean.TRUE.equals(filter) && !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isEmpty(storage.getUsers()) || (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username)) || storage.getRepositoryUsers().contains(username));
+        if (flag) {
             Map<String, ? extends Repository> repositoryMap = storage.getRepositories();
             if (Objects.nonNull(repositoryMap) && CollectionUtils.isNotEmpty(repositoryMap.values())) {
                 repositoryMap = repositoryMap.values().stream()
+                        .filter(item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || hasRepositoryResolve(item))
                         .map(item -> {
-                            if(RepositoryTypeEnum.PROXY.getType().equals(item.getType())){
+                            if (RepositoryTypeEnum.PROXY.getType().equals(item.getType())) {
                                 RepositoryDto repositoryDto = (RepositoryDto) item;
                                 repositoryDto.setHealthStatus(remoteRepositoryAlivenessCacheManager.isAlive(((RepositoryDto) item).getRemoteRepository()));
                             }
@@ -890,11 +878,22 @@ public class StoragesConfigurationController
                         .collect(Collectors.toMap(Repository::getId, Function.identity()));
                 storage.setRepositories((Map<String, RepositoryDto>) repositoryMap);
             }
-            StorageData storageData = new StorageData(storage);
-            return ResponseEntity.ok(storageData);
-        } else {
-            return getFailedResponseEntity(HttpStatus.NOT_FOUND, STORAGE_NOT_FOUND, MediaType.APPLICATION_JSON_VALUE);
         }
+        Map<String, ? extends Repository> repositoryMap = storage.getRepositories();
+        if (Objects.nonNull(repositoryMap) && CollectionUtils.isNotEmpty(repositoryMap.values())) {
+            repositoryMap = repositoryMap.values().stream()
+                    .map(item -> {
+                        if (RepositoryTypeEnum.PROXY.getType().equals(item.getType())) {
+                            RepositoryDto repositoryDto = (RepositoryDto) item;
+                            repositoryDto.setHealthStatus(remoteRepositoryAlivenessCacheManager.isAlive(((RepositoryDto) item).getRemoteRepository()));
+                        }
+                        return item;
+                    })
+                    .collect(Collectors.toMap(Repository::getId, Function.identity()));
+            storage.setRepositories((Map<String, RepositoryDto>) repositoryMap);
+        }
+        StorageData storageData = new StorageData(storage);
+        return ResponseEntity.ok(storageData);
     }
 
     @ApiOperation(value = "Deletes a storage.")

@@ -150,10 +150,10 @@
                                                    :label="$t('Storage.SyncStorage')"
                                                    :colon="false" style="position: relative"
                                                    prop="syncEnabled">
-            <a-switch v-model="storageCreateData.syncEnabled" />&nbsp;&nbsp;
-              <a-tooltip :title="$t('Setting.SyncStoragePrompt')" class="info-message">
-                <a-icon type="question-circle-o" />
-              </a-tooltip>
+            <a-switch v-model="storageCreateData.syncEnabled" />
+            <a-tooltip :title="$t('Setting.SyncStoragePrompt')" class="info-message">
+              <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
+            </a-tooltip>
           </a-form-model-item>
             <a-form-model-item class="tags-field mb-10" :label="$t('Storage.StorageType')" :colon="false">
               <a-radio-group name="radioGroup" default-value="local" @change="changeStorageType()"
@@ -244,7 +244,7 @@
     </a-modal>
 
     <a-modal v-model="showStorageUpdate" :footer="null" :forceRender="true" :title="$t('Storage.StorageSpaceOperation')"
-      on-ok="showStorageUpdate = false" width="50%">
+      on-ok="showStorageUpdate = false">
       <a-form :hideRequiredMark="true">
         <a-row :gutter="[24]">
           <a-col :span="24">
@@ -259,7 +259,7 @@
                                prop="syncEnabled">
               <a-switch v-model="currentStorage.syncEnabled" @change="changeSyncEnabled"/>&nbsp;&nbsp;
               <a-tooltip :title="$t('Setting.SyncStoragePrompt')" class="info-message">
-                <a-icon type="question-circle-o" />
+                <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
               </a-tooltip>
             </a-form-item>
             <a-form-item class="tags-field mb-10" :label="$t('Storage.StorageType')" :colon="false">
@@ -1699,6 +1699,7 @@ export default {
       })
     },
     updateHandleView() {
+      this.getStorage(this.currentStorage.id)
       this.showStorageUpdate = true
       this.getUsersList()
     },
@@ -1929,6 +1930,10 @@ export default {
             this.storageMaxSize = (response.storageMaxSize / ( 1024 * 1024 * 1024 * 1024)).toFixed(3)
           } else {
             this.storageMaxSize = 0
+          }
+          this.currentStorage.syncEnabled = false
+          if (response.syncEnabled) {
+            this.currentStorage.syncEnabled = true
           }
           this.currentStorage.admin = response.admin
           this.currentStorage.users = response.users
