@@ -38,13 +38,13 @@ pipeline {
                                      nvm use 14.6.0
                                      npm install -g yarn
                                      yarn -v
-                                     mvn clean --settings folib-settings.xml -Dmaven.test.skip=true -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true -Dmaven.wagon.http.ssl.ignore.validity.dates=true
+                                     mvn clean -U --settings folib-settings.xml -Dmaven.test.skip=true -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true -Dmaven.wagon.http.ssl.ignore.validity.dates=true
                                      cd folib-web-vue
 
                                      yarn install
                                      yarn run build
                                      cd ..
-                                     mvn  package -T 8 --settings folib-settings.xml -DskipTests -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true -Dmaven.wagon.http.ssl.ignore.validity.dates=true
+                                     mvn  package -U -T 8 --settings folib-settings.xml -DskipTests -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true -Dmaven.wagon.http.ssl.ignore.validity.dates=true
                                      cd folib-distribution/target
                                      tar -zxf folib-distribution-1.0-SNAPSHOT.tar.gz folib-distribution-1.0-SNAPSHOT
                                  '''
