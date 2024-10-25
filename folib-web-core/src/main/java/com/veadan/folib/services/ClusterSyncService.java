@@ -87,4 +87,6 @@ public interface ClusterSyncService {
     void addScheduledTask(ClusterDataSyncTaskPo clusterDataSyncTaskPo);
 
     Set<String> getHostNodeList();
+
+    Set<String> getHostNodeListV2();
 }

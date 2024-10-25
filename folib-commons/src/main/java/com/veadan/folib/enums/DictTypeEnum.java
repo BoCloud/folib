@@ -14,6 +14,10 @@ import lombok.NoArgsConstructor;
 public enum DictTypeEnum {
 
     /**
+     * 首次初始化
+     */
+    INITIAL_INITIALIZATION("initial_initialization"),
+    /**
      * 上传进度
      */
     UPLOAD_PROCESS("upload_process"),
@@ -65,6 +69,10 @@ public enum DictTypeEnum {
      * 全量制品扫描
      */
     ARTIFACT_FULL_SCAN("artifact_full_scan"),
+    /**
+     * 集群节点
+     */
+    CLUSTER_NODES("cluster_nodes"),
     ;
 
     private String type;

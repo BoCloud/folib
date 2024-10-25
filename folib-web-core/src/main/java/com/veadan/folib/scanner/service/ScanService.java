@@ -741,7 +741,7 @@ public class ScanService {
         XpEngine engine = new XpEngine(settings);
         try {
             engine.doUpdates();
-        } catch (UpdateException e) {
+        } catch (Exception e) {
             log.error("Update mirror error [{}]", ExceptionUtils.getStackTrace(e));
         }
     }
