@@ -11,11 +11,11 @@ import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ArtifactWebService;
+import com.veadan.folib.storage.ArtifactStorageException;
 import com.veadan.folib.storage.Storage;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.web.RepositoryMapping;
+import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -32,6 +32,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
+
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 /**
  * @author leipenghui
@@ -339,6 +341,38 @@ public class ArtifactStorageController extends JFrogBaseController {
         });
 
         return result;
+    }
+
+    @ApiOperation(value = "删除制品或目录")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @DeleteMapping(value = {"/{repositoryId}/{artifactPath:.+}"})
+    public ResponseEntity<?> delete(@PathVariable String repositoryId,
+                                    @ApiParam(value = "Whether to use force delete")
+                                    @RequestParam(defaultValue = "false", name = "force", required = false) boolean force,
+                                    @PathVariable String artifactPath) throws IOException {
+        final String storageId = getDefaultStorageId(repositoryId);
+        Storage storage = getStorage(storageId);
+        if (Objects.isNull(storage)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, STORAGE_NOT_FOUND_MESSAGE));
+        }
+        if (Objects.isNull(storage.getRepository(repositoryId))) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, REPOSITORY_NOT_FOUND_MESSAGE));
+        }
+        logger.info("Deleting {}:{}/{}...", storageId, repositoryId, artifactPath);
+        try {
+            final RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+            if (!Files.exists(repositoryPath)) {
+                return ResponseEntity.status(NOT_FOUND)
+                        .body("The specified path does not exist!");
+            }
+            artifactManagementService.delete(repositoryPath, force);
+        } catch (ArtifactStorageException e) {
+            logger.error(e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(e.getMessage());
+        }
+
+        return ResponseEntity.ok("The artifact was deleted.");
     }
 
 }
