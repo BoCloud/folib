@@ -4,10 +4,18 @@
 日期：
 **/
 <template>
-    <div class="tree_container">
+    <div class="tree_container" :key="key" @scroll="handleScroll">
         <a-tree class="repositoryTree" 
-            :replaceFields="replaceFields" :load-data="onLoadData" :tree-data="treeData" :show-line="true"
-            :defaultExpandAll="false" @select="treeSelect" @expand="onExpand" show-icon default-expand-all>
+            :replaceFields="replaceFields" 
+            :load-data="onLoadData" 
+            :tree-data="treeData" 
+            :show-line="true"
+            :defaultExpandAll="false" 
+            @select="treeSelect" 
+            @expand="onExpand" 
+            show-icon 
+            default-expand-all
+        >
             <a-icon slot="switcherIcon" type="down" />
             <a-icon slot="switcherIcon" type="folder-open" />
             <template slot="title" slot-scope="{ expanded,name,id,type,selected,fileType }">
@@ -17,7 +25,7 @@
                         {{ id }}
                     </span>
                     <span v-else>
-                        <a-icon class="tree_icon" v-if="type === 'dir'" :type="expanded ? 'folder-open' : 'folder'" />
+                        <a-icon class="tree_icon" v-if="type === 'dir' || type === 'DIR'" :type="expanded ? 'folder-open' : 'folder'" />
                         <a-icon class="tree_icon" v-else :type="getIconType(name,type)"></a-icon>
                         <span class="tree_title">
                             {{ name }}
@@ -35,7 +43,8 @@ import remote from './images/remote.svg'
 import remoteCheck from './images/remote-check.svg'
 import virtual from './images/virtual.svg'
 import virtualCheck from './images/virtual-check.svg'
-import { getDockerArtifact, browse } from '@/api/folib'
+import { getDockerArtifact, browse, getArtifact } from '@/api/folib'
+import { getLayoutType } from '@/utils/layoutUtil'
 import { name } from 'store/storages/cookieStorage'
 export default {
     props: ['repositories'],
@@ -47,7 +56,10 @@ export default {
                 key: 'key',
                 title: 'name',
                 children: 'children',
-            }
+            },
+            key: 0,
+            repositoryType:'',
+            artifactPath:''
         };
     },
     computed: {
@@ -66,20 +78,22 @@ export default {
         },
         getIconType(){
             return (name,type) => {
+                const _name = name.toLowerCase()
+                const _type = type.toLowerCase()
                 let icon = ''
-                if (type === 'file') {
+                if (_type === 'file') {
                     icon = 'file'
                 }
-                if(name.indexOf('.png') !== -1){
+                if(_name.indexOf('.png') !== -1){
                     icon = 'file-image'
                 }
-                if(name.indexOf('.zip') !== -1){
+                if(_name.indexOf('.zip') !== -1){
                     icon = 'file-zip'
                 }
-                if(name.indexOf('.md') !== -1){
+                if(_name.indexOf('.md') !== -1){
                     icon = 'file-markdown'
                 }
-                if(name.indexOf('.pdf') !== -1){
+                if(_name.indexOf('.pdf') !== -1){
                     icon = 'file-pdf'
                 }
                 return icon
@@ -96,7 +110,9 @@ export default {
                         ele.key = ele.id
                         ele.name = ele.id
                         ele.artifactPath = ''
+                        ele.newDetailPage = true
                     })
+                    this.key ++
                     const e = {
                         node: {
                             dataRef: this.treeData[0]
@@ -109,9 +125,32 @@ export default {
         }
     },
     methods: {
+        handleScroll(event){
+            const { scrollTop, clientHeight, scrollHeight } = event.target;
+            // 当滚动到底部时加载更多
+            if (scrollTop + clientHeight >= scrollHeight) {
+                this.$emit('loadMore')
+            }
+        },
+        // 判断那些文件类型是可以打开的
+        getFileIsOpen(name){
+            const _name = name.toLowerCase()
+            const tarArr = ['.tar','.jar','.zip','.7z','.tar.gz']
+            let key = false
+            tarArr.forEach(ele => {
+                if(_name.indexOf(ele) !== -1){
+                    key = true
+                }
+            })
+            return key
+        },
         treeSelect(key, e) {
+            console.log(key,e,'eeeeeeeeeee')
+            const {newDetailPage} = e.node.dataRef
+            this.$store.commit('setNewDetailPage', !!newDetailPage)
             if (e.node.dataRef.fileType == 'document') {
                 this.folibRepository = e.node.dataRef
+                this.repositoryType = getLayoutType(this.folibRepository)
                 if (this.folibRepository.status.indexOf('Out of Service') !== -1) {
                     this.$notification.warning({
                         message: this.$t('Store.ServiceShutdown')
@@ -125,45 +164,67 @@ export default {
                     return false
                 }
                 this.$emit('repositorySelect', e.node.dataRef)
-            } else {
+            }else{
                 this.$emit('treeSelect', key, e)
+            }
+            if(!!newDetailPage){
+                console.log(e.node.dataRef)
+                const {id, storageId} = this.folibRepository
+                let params = e.node.dataRef
+                params.repositoryId = id
+                params.storageId = storageId
+                this.$store.commit('setCurrentTreeNode', params)
             }
         },
         onExpand() {
             this.$emit('onExpand')
         },
         onLoadData(treeNode) {
+            console.log(treeNode,'treeNodetreeNodetreeNode')
             if(treeNode.dataRef.fileType === 'document'){
                 this.folibRepository = treeNode.dataRef
+                this.repositoryType = getLayoutType(this.folibRepository)
             }
-            console.log(this.folibRepository)
-            if (this.folibRepository.layout === 'Docker') {
+            const {storageId,id,layout} = this.folibRepository
+            const {artifactPath,name} = treeNode.dataRef
+            const params = {
+                treeNode,
+                storageId,
+                id,
+                layout,
+                artifactPath,
+                name
+            }
+            if(this.getFileIsOpen(name)){
+                return this.getPackagePreview(params)
+            }
+            
+            if (layout === 'Docker') {
                 return new Promise(resolve => {
                     if (treeNode.dataRef.children) {
                         resolve()
                         return
                     }
                     getDockerArtifact(
-                        this.folibRepository.storageId,
-                        this.folibRepository.id,
-                        treeNode.dataRef.artifactPath
+                        storageId,
+                        id,
+                        artifactPath
                     ).then(res => {
                         treeNode.dataRef.children = []
                         if (res.directories.length > 0) {
                             const d = res.directories
-
                             d.forEach((item, index, d) => {
                                 item.type = 'dir'
-                                item.key = this.folibRepository.id + item.artifactPath
+                                item.key = id + item.artifactPath
                                 treeNode.dataRef.children.push(item)
                             })
                         }
                         if (res.files.length > 0) {
                             const a = res.files
                             a.forEach((item, index, a) => {
-                                item.isLeaf = true
+                                item.isLeaf = !this.getFileIsOpen(item.name)
                                 item.type = 'file'
-                                item.key = this.folibRepository.id + item.artifactPath
+                                item.key = id + item.artifactPath
                                 treeNode.dataRef.children.push(item)
                             })
                         }
@@ -172,15 +233,16 @@ export default {
                     })
                 })
             }
+
             return new Promise(resolve => {
                 if (treeNode.dataRef.children) {
                     resolve()
                     return
                 }
                 browse(
-                    this.folibRepository.storageId,
-                    this.folibRepository.id,
-                    treeNode.dataRef.artifactPath
+                    storageId,
+                    id,
+                    artifactPath
                 ).then(res => {
                     if (!treeNode.dataRef.children) {
                         treeNode.dataRef.children = []
@@ -189,16 +251,16 @@ export default {
                         const d = res.directories
                         d.forEach((item, index, d) => {
                             item.type = 'dir'
-                            item.key = this.folibRepository.id + item.artifactPath
+                            item.key = id + item.artifactPath
                         })
                         treeNode.dataRef.children = d
                     }
                     if (res.files.length > 0) {
                         const a = res.files
                         a.forEach((item, index, a) => {
-                            item.isLeaf = true
+                            item.isLeaf = !this.getFileIsOpen(item.name)
                             item.type = 'file'
-                            item.key = this.folibRepository.id + item.artifactPath
+                            item.key = id + item.artifactPath
                         })
                         treeNode.dataRef.children = treeNode.dataRef.children.concat(a)
                     }
@@ -208,34 +270,38 @@ export default {
                 })
             })
         },
-        // getBrowse() {
-        //     if (this.folibRepository.status.indexOf('Out of Service') !== -1) {
-        //         this.$notification.warning({
-        //             message: this.$t('Store.ServiceShutdown')
-        //         })
-        //         return false
-        //     }
-        //     if (!this.folibRepository.allowsDirectoryBrowsing) {
-        //         this.$notification.warning({
-        //             message: this.$t('Store.BrowseNotEnabled')
-        //         })
-        //         return false
-        //     }
-        //     browse(this.folibRepository.storageId, this.folibRepository.id, '')
-        //         .then(res => {
-        //             const d = res.directories
-        //             d.forEach((item, index, d) => {
-        //                 item.type = 'dir'
-        //             })
-        //             const f = res.files
-        //             f.forEach((item, index) => {
-        //                 item.isLeaf = true
-        //                 item.type = 'file'
-        //             })
-        //             this.treeData = d.concat(f)
-        //         })
-        //         .catch(err => { })
-        // },
+        // 获取可以继续打开的文件的目录（对应包预览）
+        getPackagePreview({treeNode,storageId,id,artifactPath}){
+            return new Promise(resolve => {
+                if (treeNode.dataRef.children) {
+                    resolve()
+                    return
+                }
+                getArtifact(
+                    this.repositoryType,
+                    storageId,
+                    id,
+                    artifactPath
+                ).then(res => {
+                    function setNewDetailPage(arr){
+                        arr.forEach(ele => {
+                            ele.newDetailPage = true
+                            ele.artifactPath = `${id}/${artifactPath}/${ele.name}`
+                            if(ele?.children?.length){
+                                setNewDetailPage(ele.children)
+                            }
+                        })
+                    }
+                    treeNode.dataRef.children = []  
+                    if(res.listTree){
+                        setNewDetailPage(res.listTree)
+                        treeNode.dataRef.children = treeNode.dataRef.children.concat(res.listTree)
+                    }
+                    this.treeData = [...this.treeData]
+                    resolve()
+                })
+            })
+        },
     },
 };
 </script>

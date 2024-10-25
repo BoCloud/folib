@@ -47,7 +47,7 @@
                 </a-col>
               </a-row>
             </template>
-            <repositoryTree v-if="isChecked" @treeSelect="treeSelect" @repositorySelect="repositorySelect" @expand="onExpand" :repositories="repositories" />
+            <repositoryTree v-if="isChecked" @loadMore="loadMore" @treeSelect="treeSelect" @repositorySelect="repositorySelect" @expand="onExpand" :repositories="repositories" />
             <a-anchor v-else :targetOffset="navbarFixed ? 100 : 10" :affix="false">
               <a-anchor-link v-for="(item, index) in storageData" :key="index" href="javascript:void(null)"
                 :class="{ slectActive: item.id === currentStorage.id }">
@@ -117,7 +117,8 @@
           </a-tab-pane>
         </a-tabs>
         <!-- 存储空间模式下 直接展示仓库内容 -->
-        <LibView v-else 
+        <LibView v-else
+          :key="libViewKey"
           ref="libview" 
           :storageAdmin="currentStorage.admin" 
           :style="isChecked ? 'margin-top:-135px;' : ''" style="border:none;transition: all 0.5s ease;" 
@@ -429,7 +430,7 @@
             <a-form :form="form" class="mt-30" :hideRequiredMark="true">
               <a-row type="flex" :gutter="[24]">
                 <a-col :span="24" :md="10" :lg="20" class="mx-auto">
-                  <select-type @toggleCheckbox="toggleCheckbox" :layoutChecked="layoutChecked" />
+                  <select-type @toggleCheckbox="toggleCheckbox" :layoutChecked="layoutChecked" :isEdit="folibRepositoryEditDisabled" />
                   <a-checkbox-group class="d-none" v-model="checkedList" :options="checkboxOptions" />
                 </a-col>
               </a-row>
@@ -1235,7 +1236,8 @@ export default {
         limit: 50,
         total: 0,
         matchUsername: undefined,
-      }
+      },
+      libViewKey:0
     };
   },
   watch: {
@@ -1307,11 +1309,12 @@ export default {
         if(val){
           this.$refs.libview.myMounted()
         }else{
+          this.$store.commit('setNewDetailPage',false) // 将newDetailPage参数复原，以免影响到原有模式的详情页面
           const params = {
-            storageId: item.id,
+            storageId: this.currentStorage.id,
             layout: null,
             type: null,
-            limit: 100,
+            limit: 1000,
             page: 1
           }
           this.getQueryStorage(params)
@@ -1327,7 +1330,10 @@ export default {
     },  
     // 点击仓库下的文件
     treeSelect(key, e) {
-      this.$refs.libview.treeSelect(key, e)
+      this.libViewKey ++
+      this.$nextTick(() => {
+          this.$refs.libview.treeSelect(key, e)
+      })
     },
     onExpand() {
       console.log('Trigger Expand');
@@ -1653,10 +1659,20 @@ export default {
       }
       this.getStorage(this.currentStorage.id)
     },
+    loadMore(){
+      // const params = {
+      //   storageId: this.currentStorage.id,
+      //   layout: null,
+      //   type: null,
+      //   limit: 10,
+      //   page: 1
+      // }
+      // this.getQueryStorage(params)
+    },
     getQueryStorage(queryParams){
       queryRepositoriesByStorage(queryParams).then(res => {
         if(res.status === 200){
-          this.repositories = res.data.rows || []
+          this.repositories = this.repositories || []
         }
       })
     },

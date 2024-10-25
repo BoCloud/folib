@@ -17,7 +17,7 @@
                                 {{ currentStorage.id }} <a-icon style="font-size:20px;" type="down" />
                             </a>
                             <a-menu slot="overlay" @click="handheTableSearch($event,'storageId')">
-                                <a-menu-item v-for="item in storageData" :key="item.id">
+                                <a-menu-item v-for="item in storageData" :key="item.id" :class="{active:currentStorage.id === item.id }">
                                     {{ item.id }}
                                 </a-menu-item>
                             </a-menu>
@@ -220,5 +220,12 @@ export default {
     .overlayClassName{
         height:500px;
         overflow: auto;
+    }
+    .active{
+        background: #bae7ff;
+        font-weight: 600;
+    }
+    .ant-dropdown-menu-item:hover{
+        background: #bae7ff;
     }
 </style>

@@ -340,4 +340,6 @@ export default {
     "DirSize": "The size of the file in the directory is ",
     "ConfirmDownload": "Are you sure you want to download it?",
     'ScanTime': 'Scan time',
+    'RepositoryType':'Repository Type',
+    'StrategyType': 'Strategy Type'
 }
