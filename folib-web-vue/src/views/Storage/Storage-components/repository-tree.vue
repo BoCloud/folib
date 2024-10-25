@@ -69,9 +69,9 @@ export default {
                 if (type === 'hosted') {
                     src = selected ? localCheck : local
                 } else if (type === 'group') {
-                    src = selected ? remoteCheck : remote
-                } else {
                     src = selected ? virtualCheck : virtual
+                } else {
+                    src = selected ? remoteCheck : remote
                 }
                 return src
             }
