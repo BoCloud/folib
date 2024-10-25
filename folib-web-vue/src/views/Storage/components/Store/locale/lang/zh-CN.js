@@ -340,4 +340,6 @@ export default {
     "DirSize": "目录下文件大小是 ",
     "ConfirmDownload": "确定下载吗？",
     'ScanTime': '扫描时间',
+    'RepositoryType':'仓库类型',
+    'StrategyType': '策略类型'
 }
