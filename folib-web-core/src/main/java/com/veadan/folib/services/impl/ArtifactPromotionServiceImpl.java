@@ -100,6 +100,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -1349,48 +1350,56 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         try {
 
             // 记录已上传的切片状态
-            final JSONObject sliceUploadStatusJSONObj = this.getSliceUploadStatusJSONObj(artifactFileSliceUploadRootFolderPathStr);
+            //final JSONObject sliceUploadStatusJSONObj = this.getSliceUploadStatusJSONObj(artifactFileSliceUploadRootFolderPathStr);
 
             // 检查当前切片是否已经上传，如果已上传则跳过
-            if (Files.exists(Path.of(artifactFileSliceUploadFilePathStr)) &&
-                    (sliceUploadStatusJSONObj.containsKey(String.valueOf(chunkNo)) && (Boolean) sliceUploadStatusJSONObj.get(String.valueOf(chunkNo)))) {
+            //if (Files.exists(Path.of(artifactFileSliceUploadFilePathStr)) &&
+            //        (sliceUploadStatusJSONObj.containsKey(String.valueOf(chunkNo)) && (Boolean) sliceUploadStatusJSONObj.get(String.valueOf(chunkNo)))) {
+            //    log.info("Chunk {} already uploaded.", chunkNo);
+            //    return true;
+            //}
+
+            if (Files.exists(Path.of(artifactFileSliceUploadFilePathStr)) ) {
                 log.info("Chunk {} already uploaded.", chunkNo);
-                return true;
+
+            }else {
+                // 确保文件路径存在
+                if (!FileUtil.exist(artifactFileSliceUploadFile)) {
+                    // 创建空文件
+                    log.info("Creating empty file: {}", artifactFileSliceUploadFilePathStr);
+                    FileUtil.touch(artifactFileSliceUploadFile);
+                }
+
+                // 保存文件分片
+                try (final InputStream inputStream = file.getInputStream();
+                     final FileOutputStream fileOutputStream = new FileOutputStream(artifactFileSliceUploadFile)) {
+                    IoUtil.copy(inputStream, fileOutputStream);
+                    // 状态写入
+                    this.writeSliceUploadStatus(artifactFileSliceUploadRootFolderPathStr, chunkNo, true);
+                    log.info("Chunk {} uploaded.", chunkNo);
+                } catch (IOException e) {
+                    log.info("切片文件转存失败", e);
+                    // 状态写入
+                    this.writeSliceUploadStatus(artifactFileSliceUploadRootFolderPathStr, chunkNo, false);
+                    throw new BusinessException(BusinessCodeEnum.ARTIFACT_SLICE_UPLOAD_CHUNK_FILE_SAVE_FAILED);
+                }
             }
 
-            // 确保文件路径存在
-            if (!FileUtil.exist(artifactFileSliceUploadFile)) {
-                // 创建空文件
-                log.info("Creating empty file: {}", artifactFileSliceUploadFilePathStr);
-                FileUtil.touch(artifactFileSliceUploadFile);
-            }
 
-            // 保存文件分片
-            try (final InputStream inputStream = file.getInputStream();
-                 final FileOutputStream fileOutputStream = new FileOutputStream(artifactFileSliceUploadFile)) {
-                IoUtil.copy(inputStream, fileOutputStream);
-                // 状态写入
-                this.writeSliceUploadStatus(artifactFileSliceUploadRootFolderPathStr, chunkNo, true);
-                log.info("Chunk {} uploaded.", chunkNo);
-            } catch (IOException e) {
-                log.info("切片文件转存失败", e);
-                // 状态写入
-                this.writeSliceUploadStatus(artifactFileSliceUploadRootFolderPathStr, chunkNo, false);
-                throw new BusinessException(BusinessCodeEnum.ARTIFACT_SLICE_UPLOAD_CHUNK_FILE_SAVE_FAILED);
-            }
 
             // 检查所有切片是否都已上传完成
-            final JSONObject updatedSliceUploadStatusJSONObj = this.getSliceUploadStatusJSONObj(artifactFileSliceUploadRootFolderPathStr);
+            //final JSONObject updatedSliceUploadStatusJSONObj = this.getSliceUploadStatusJSONObj(artifactFileSliceUploadRootFolderPathStr);
             // 通过判断上传完成的数量与最大切片块的数量确定是否所有切片文件都已上传完成
-            allSliceFileUploadCompleted = canMerger(artifactFileSliceUploadFile.length(), chunkNoMax, artifactFileSliceUploadRootFolderPathStr);
+            //allSliceFileUploadCompleted = canMerger(artifactFileSliceUploadFile.length(), chunkNoMax, artifactFileSliceUploadRootFolderPathStr);
+            allSliceFileUploadCompleted = canMerger( chunkNoMax, artifactFileSliceUploadRootFolderPathStr);
             log.info("allSliceFileUploadCompleted: {}", allSliceFileUploadCompleted);
             if (allSliceFileUploadCompleted) {
                 // 校验每个切片的上传状态
-                for (int i = 1; i <= chunkNoMax; i++) {
-                    if (!(Boolean) updatedSliceUploadStatusJSONObj.get(String.valueOf(i))) {
-                        throw new BusinessException(BusinessCodeEnum.ARTIFACT_SLICE_UPLOAD_CHUNK_FILE_UPLOAD_FAILED, String.valueOf(i));
-                    }
-                }
+                //for (int i = 1; i <= chunkNoMax; i++) {
+                //    if (!(Boolean) updatedSliceUploadStatusJSONObj.get(String.valueOf(i))) {
+                //        throw new BusinessException(BusinessCodeEnum.ARTIFACT_SLICE_UPLOAD_CHUNK_FILE_UPLOAD_FAILED, String.valueOf(i));
+                //    }
+                //}
 
                 // 进行合并操作
                 final List<String> sliceFilePathList = IntStream.range(1, chunkNoMax + 1)
@@ -1460,13 +1469,13 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             log.info("Slice upload status map exist: {}", artifactFileSliceUploadRootFolderPathStr);
             JSONObject result = new JSONObject();
             map.localKeySet().forEach(key -> result.put(key, Boolean.valueOf(map.get(key))));
-            log.info("Slice upload status map content: {}", result);
+            log.info("Slice upload status map content: {}", result.toString());
             return result;
         }
 
     }
 
-    private synchronized void writeSliceUploadStatus(String artifactFileSliceUploadRootFolderPathStr, Integer chunkIndex, Boolean uploadStatus) {
+    private  void writeSliceUploadStatus(String artifactFileSliceUploadRootFolderPathStr, Integer chunkIndex, Boolean uploadStatus) {
         //final File sliceUploadStatusFile = new File(String.format("%s/sliceUploadStatus.json", artifactFileSliceUploadRootFolderPathStr));
         //
         //if (!FileUtil.exist(sliceUploadStatusFile)) {
@@ -1481,9 +1490,17 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         //FileUtil.writeString(uploadStatusJsonObj.toJSONString(), sliceUploadStatusFile, StandardCharsets.UTF_8);
 
         log.info("Slice upload status map write: {}", artifactFileSliceUploadRootFolderPathStr);
+        log.info("Slice upload status map write: {}", chunkIndex);
+        log.info("Slice upload status map write: {}", uploadStatus);
         IMap<String, String> map = hazelcastInstance.getMap(artifactFileSliceUploadRootFolderPathStr);
-        map.put(String.valueOf(chunkIndex), Boolean.toString(uploadStatus),2, TimeUnit.HOURS);
-        log.info("Slice upload status map content: {}", map);
+        try {
+            map.lock(String.valueOf(chunkIndex));
+            map.put(String.valueOf(chunkIndex), Boolean.toString(uploadStatus), 2, TimeUnit.HOURS);
+        } finally {
+            map.unlock(String.valueOf(chunkIndex));
+        }
+        Map<String, String> localMapCopy = new HashMap<>(map);
+        log.info("Slice upload status map content: {}", localMapCopy);
     }
 
 
@@ -1593,52 +1610,62 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         final String artifactFileSliceUploadFilePathStr = String.format("%s/chunkFile_%s", artifactFileSliceUploadRootFolderPathStr, chunkNo);
         final File artifactFileSliceUploadFile = new File(artifactFileSliceUploadFilePathStr);
         boolean allSliceFileUploadCompleted = false;
+        AtomicBoolean allSliceFileDownloadCompleted = new AtomicBoolean(false);
 
         try {
 
             // 记录已上传的切片状态
-            final JSONObject sliceUploadStatusJSONObj = this.getSliceUploadStatusJSONObj(artifactFileSliceUploadRootFolderPathStr);
+            //final JSONObject sliceUploadStatusJSONObj = this.getSliceUploadStatusJSONObj(artifactFileSliceUploadRootFolderPathStr);
 
             // 检查当前切片是否已经上传，如果已上传则跳过
-            if (Files.exists(Path.of(artifactFileSliceUploadFilePathStr)) &&
-                    sliceUploadStatusJSONObj.containsKey(String.valueOf(chunkNo)) && (Boolean) sliceUploadStatusJSONObj.get(String.valueOf(chunkNo))) {
+            //if (Files.exists(Path.of(artifactFileSliceUploadFilePathStr)) &&
+            //        sliceUploadStatusJSONObj.containsKey(String.valueOf(chunkNo)) && (Boolean) sliceUploadStatusJSONObj.get(String.valueOf(chunkNo))) {
+            //    log.info("Chunk {} already uploaded.", chunkNo);
+            //    return true;
+            //}
+
+            if (Files.exists(Path.of(artifactFileSliceUploadFilePathStr))) {
                 log.info("Chunk {} already uploaded.", chunkNo);
-                return true;
-            }
-
-            // 确保文件路径存在
-            if (!FileUtil.exist(artifactFileSliceUploadFile)) {
-                // 创建空文件
-                log.info("Create empty file {}", artifactFileSliceUploadFile);
-                FileUtil.touch(artifactFileSliceUploadFile);
-            }
-
-            // 保存文件分片
-            try (final InputStream inputStream = file.getInputStream();
-                 final FileOutputStream fileOutputStream = new FileOutputStream(artifactFileSliceUploadFile)) {
-                IoUtil.copy(inputStream, fileOutputStream);
-                // 状态写入
-                this.writeSliceUploadStatus(artifactFileSliceUploadRootFolderPathStr, chunkNo, true);
-                log.info("Chunk {} saved.", chunkNo);
-            } catch (IOException e) {
-                log.info("切片文件转存失败", e);
-                // 状态写入
-                this.writeSliceUploadStatus(artifactFileSliceUploadRootFolderPathStr, chunkNo, false);
-                throw new BusinessException(BusinessCodeEnum.ARTIFACT_SLICE_UPLOAD_CHUNK_FILE_SAVE_FAILED);
-            }
-
-            // 检查所有切片是否都已上传完成
-            final JSONObject updatedSliceUploadStatusJSONObj = this.getSliceUploadStatusJSONObj(artifactFileSliceUploadRootFolderPathStr);
-            // 通过判断上传完成的数量与最大切片块的数量确定是否所有切片文件都已上传完成
-            allSliceFileUploadCompleted = canMerger(updatedSliceUploadStatusJSONObj.size(),  chunkNoMax, artifactFileSliceUploadRootFolderPathStr);
-            log.info("can merger:{}", allSliceFileUploadCompleted);
-            if (allSliceFileUploadCompleted) {
-                // 校验每个切片的上传状态
-                for (int i = 1; i <= chunkNoMax; i++) {
-                    if (!(Boolean) updatedSliceUploadStatusJSONObj.get(String.valueOf(i))) {
-                        throw new BusinessException(BusinessCodeEnum.ARTIFACT_SLICE_UPLOAD_CHUNK_FILE_UPLOAD_FAILED, String.valueOf(i));
-                    }
+            } else {
+                // 确保文件路径存在
+                if (!FileUtil.exist(artifactFileSliceUploadFile)) {
+                    // 创建空文件
+                    log.info("Create empty file {}", artifactFileSliceUploadFile);
+                    FileUtil.touch(artifactFileSliceUploadFile);
                 }
+
+                // 保存文件分片
+                try (final InputStream inputStream = file.getInputStream();
+                     final FileOutputStream fileOutputStream = new FileOutputStream(artifactFileSliceUploadFile)) {
+                    log.info("Chunk {} saved.", chunkNo);
+                    IoUtil.copy(inputStream, fileOutputStream);
+                    // 状态写入
+                    //this.writeSliceUploadStatus(artifactFileSliceUploadRootFolderPathStr, chunkNo, true);
+                } catch (IOException e) {
+                    log.info("切片文件转存失败", e);
+                    // 状态写入
+                    //this.writeSliceUploadStatus(artifactFileSliceUploadRootFolderPathStr, chunkNo, false);
+                    Files.deleteIfExists(Path.of(artifactFileSliceUploadFilePathStr));
+                    throw new BusinessException(BusinessCodeEnum.ARTIFACT_SLICE_UPLOAD_CHUNK_FILE_SAVE_FAILED);
+                }
+            }
+
+
+            log.info("All chunk files uploaded.");
+            // 检查所有切片是否都已上传完成
+            // final JSONObject updatedSliceUploadStatusJSONObj = this.getSliceUploadStatusJSONObj(artifactFileSliceUploadRootFolderPathStr);
+            // 通过判断上传完成的数量与最大切片块的数量确定是否所有切片文件都已上传完成
+            //allSliceFileUploadCompleted = canMerger(updatedSliceUploadStatusJSONObj.size(),  chunkNoMax, artifactFileSliceUploadRootFolderPathStr);
+            allSliceFileUploadCompleted = canMerger(chunkNoMax, artifactFileSliceUploadRootFolderPathStr);
+            allSliceFileDownloadCompleted.set(allSliceFileUploadCompleted);
+            log.info("can merger:{}", allSliceFileUploadCompleted);
+            if (allSliceFileDownloadCompleted.get()) {
+                // 校验每个切片的上传状态
+                //for (int i = 1; i <= chunkNoMax; i++) {
+                //    if (!(Boolean) updatedSliceUploadStatusJSONObj.get(String.valueOf(i))) {
+                //        throw new BusinessException(BusinessCodeEnum.ARTIFACT_SLICE_UPLOAD_CHUNK_FILE_UPLOAD_FAILED, String.valueOf(i));
+                //    }
+                //}
 
                 log.info("All chunk files uploaded.");
                 // 进行合并操作
@@ -1694,12 +1721,13 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             throw new BusinessException(e.getMessage());
         } finally {
             log.info("SliceUploadTask finally");
-            if (allSliceFileUploadCompleted) {
+            if (allSliceFileDownloadCompleted.get()) {
                 log.info("SliceUploadTask finally delete temp file");
                 try {
-                    IMap<String, String> map = hazelcastInstance.getMap(artifactFileSliceUploadRootFolderPathStr);
-                    map.destroy();
-                    log.info("Map deleted");
+                    //IMap<String, String> map = hazelcastInstance.getMap(artifactFileSliceUploadRootFolderPathStr);
+                    //log.info("Map size:{}",map.toString());
+                    //map.destroy();
+                    //log.info("Map deleted key:{}",artifactFileSliceUploadRootFolderPathStr);
                     FileUtil.del(new File(artifactFileSliceUploadRootFolderPathStr));
                 } catch (IORuntimeException e) {
                     log.error("删除临时文件 [{}] 失败 [{}]", artifactFileSliceUploadRootFolderPathStr, ExceptionUtils.getStackTrace(e));
@@ -1714,6 +1742,14 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         long chunkSize = Files.list(Path.of(artifactFileSliceUploadRootFolderPathStr)).filter(p -> p.getFileName().toString().startsWith("chunkFile_")).count();
         log.info("chunkSize:{},updatedSliceSize:{},chunkNoMax:{}", chunkSize, updatedSliceSize, chunkNoMax);
         boolean result =  chunkSize == chunkNoMax || updatedSliceSize == chunkNoMax;
+        log.info("canMerger:{}", result);
+        return result;
+    }
+
+    public boolean canMerger( long chunkNoMax,String artifactFileSliceUploadRootFolderPathStr) throws IOException {
+        long chunkSize = Files.list(Path.of(artifactFileSliceUploadRootFolderPathStr)).filter(p -> p.getFileName().toString().startsWith("chunkFile_")).count();
+        log.info("chunkSize:{},chunkNoMax:{}", chunkSize, chunkNoMax);
+        boolean result =  chunkSize == chunkNoMax;
         log.info("canMerger:{}", result);
         return result;
     }
