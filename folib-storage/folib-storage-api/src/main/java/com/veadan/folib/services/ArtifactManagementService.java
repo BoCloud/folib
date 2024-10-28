@@ -31,6 +31,7 @@ import com.veadan.folib.storage.validation.resource.ArtifactOperationsValidator;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.FileSystemUtils;
@@ -85,6 +86,9 @@ public class ArtifactManagementService
     @Inject
     protected RepositoryPathResolver repositoryPathResolver;
 
+    @Value("${folib.uploadRestrictions:false}")
+    private boolean artifactUploadRestrictions;
+
     public long validateAndStore(RepositoryPath repositoryPath,
                                  InputStream is)
             throws IOException,
@@ -136,6 +140,10 @@ public class ArtifactManagementService
     {
         long  startTime = System.currentTimeMillis();
         long result;
+        // Check size
+        if(artifactUploadRestrictions){
+            artifactOperationsValidator.checkArtifactSize(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), is);
+        }
         try (final RepositoryStreamSupport.RepositoryOutputStream aos = artifactResolutionService.getOutputStream(repositoryPath))
         {
             result = writeArtifact(repositoryPath, is, aos);
