@@ -2814,7 +2814,7 @@ export default {
                   reject(error);
                   this.progressStatus = 'exception';
                   this.$notification['error']({
-                      message: this.$t('Store.EncodingError') + error,
+                      message: this.$t('Store.UploadFailed'),
                       description: ''
                   })
               } finally {
@@ -2841,12 +2841,15 @@ export default {
                   }
               };
               xhr.onload = () => {
+
                   if (xhr.status === 200) {
                       this.updateTotalProgress(chunkSize); // 上传完成时更新总进度
                       resolve();
                   } else {
                       this.progressStatus = 'exception'
-                      reject(xhr.statusText);
+                      //console.log('upload status:',xhr.status,'xhr.responseText:',xhr.responseText,"xhr.statusText",xhr.statusText)
+                      reject(xhr.responseText);
+
                   }
               };
               xhr.onerror = () => reject('上传失败');

@@ -510,3 +510,11 @@ export function queryRepositoriesByStorage (dataQuery) {
     method: 'get'
   })
 }
+
+export function jfrogMigrate (data) {
+  return axios({
+    url: '/api/migrate/jfrog',
+    data: data,
+    method: 'post'
+  })
+}
