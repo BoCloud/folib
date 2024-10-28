@@ -340,4 +340,5 @@ export default {
     "DirSize": "目录下文件大小是 ",
     "ConfirmDownload": "确定下载吗？",
     'ScanTime': '扫描时间',
+    "UploadFailed": "文件上传失败"
 }
