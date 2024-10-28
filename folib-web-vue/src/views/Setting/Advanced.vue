@@ -324,6 +324,16 @@
               </a-tab-pane>
             </a-tabs>
           </a-tab-pane>
+          <a-tab-pane :key="7" :tab="$t('Setting.JfrogMigrate')">
+            <a-card :bordered="false" class="header-solid">
+              <template #title>
+                <h6>{{ $t('Setting.JfrogMigrate') }}</h6>
+                <p>{{ $t('Setting.JfrogMigrateInfo') }}
+                </p>
+              </template>
+              <jfrog-migration/>
+            </a-card>
+          </a-tab-pane>
         </a-tabs>
       </a-col>
     </a-row>
@@ -339,6 +349,7 @@ import "prismjs/themes/prism-tomorrow.css"
 import DataMigration from "./components/DataMigration.vue"
 import ArtifactsBackup from "./components/ArtifactsBackup.vue";
 import ArtifactsCache from "./components/Cache/index.vue";
+import JfrogMigration from "./components/JfrogMigration.vue"
 
 import {
   getStoragesAndRepositories,
@@ -422,6 +433,7 @@ export default {
     DataMigration,
     ArtifactsBackup,
     ArtifactsCache,
+    JfrogMigration,
   },
   computed: {
 
