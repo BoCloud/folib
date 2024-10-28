@@ -13,8 +13,20 @@ export default new Vuex.Store({
     user,
     language
   },
-  state: {},
-  mutations: {},
+  state: {
+    newDetailPage: false,
+    currentTreeNode:{}
+  },
+  mutations: {
+    setNewDetailPage(state, key) {
+      state.newDetailPage = key
+      console.log(state.newDetailPage,'state.newDetailPage')
+    },
+    setCurrentTreeNode(state, info) {
+      state.currentTreeNode = info
+      console.log(state.currentTreeNode,'state.currentTreeNode')
+    },
+  },
   actions: {},
   getters
 })
