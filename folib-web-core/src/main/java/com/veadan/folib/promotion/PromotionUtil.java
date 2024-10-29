@@ -168,6 +168,15 @@ public class PromotionUtil {
 
     private static final long MAX_SLICE_BYTE_SIZE = 1024L * 1024L * 100L;//100MB
 
+    public void executeSyncCopy(RepositoryPath sourcePath, Repository srcRepository, RepositoryPath targetPath, Repository targetRepository) {
+        try {
+            //handleCopy(sourcePath, srcRepository, targetRepository);
+            handleCopy(sourcePath, srcRepository, targetPath, targetRepository);
+            log.info("Execute copy srcRepository [{}] [{}] targetRepository [{}] [{}] path [{}] finished", srcRepository.getStorage().getId(), srcRepository.getId(), targetRepository.getStorage().getId(), targetRepository.getId(), sourcePath);
+        } catch (Exception e) {
+            log.info("Execute copy srcRepository [{}] [{}] targetRepository [{}] [{}] path [{}] error [{}]", srcRepository.getStorage().getId(), srcRepository.getId(), targetRepository.getStorage().getId(), targetRepository.getId(), sourcePath, ExceptionUtils.getStackTrace(e));
+        }
+    }
     @Async("asyncCopyThreadPoolTaskExecutor")
     public void executeCopy(RepositoryPath sourcePath, Repository srcRepository, RepositoryPath targetPath, Repository targetRepository) {
         try {
@@ -517,6 +526,47 @@ public class PromotionUtil {
 
     @Async("asyncCopyThreadPoolTaskExecutor")
     public void executeMove(ArtifactPromotion artifactPromotion) {
+        final String srcStorageId = artifactPromotion.getSrcStorageId();
+        final String srcRepositoryId = artifactPromotion.getSrcRepositoryId();
+        Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepositoryId);
+        final RepositoryPath srcRepositoryPath = repositoryPathResolver.resolve(srcRepository, artifactPromotion.getPath());
+        RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, artifactPromotion.getPath());
+        List<TargetRepositoyDto> list = artifactPromotion.getTargetRepositoyList();
+        List<FutureTask<String>> listTask = Lists.newArrayList();
+        list.forEach(target -> {
+            // 多个目标仓库移动
+            String targetStorageId = target.getTargetStorageId();
+            String targetRepositoryId = target.getTargetRepositoryId();
+            Repository targetRepository = repositoryManagementService.getStorage(targetStorageId).getRepository(targetRepositoryId);
+            RepositoryPath targetPath = artifactPromotion.getTargetPath() == null ? null : repositoryPathResolver.resolve(targetRepository, artifactPromotion.getTargetPath());
+            FutureTask<String> future = new FutureTask<String>(
+                    new ArtifactPromotionCopyTask(srcPath, srcRepository, targetPath, targetRepository));
+            listTask.add(future);
+            asyncCopyThreadPoolTaskExecutor.submit(future);
+        });
+        boolean delFlag = true;
+        for (FutureTask<String> task : listTask) {
+            try {
+                String rs = task.get();
+                if (StringUtils.isNotBlank(rs)) {
+                    delFlag = false;
+                    log.error("Move error [{}]", rs);
+                }
+            } catch (Exception e) {
+                log.error("error [{}]", ExceptionUtils.getStackTrace(e));
+            }
+        }
+        if (delFlag) {
+            try {
+                artifactManagementService.delete(srcRepositoryPath, true);
+            } catch (IOException e) {
+                log.error("Delete srcRepositoryPath error [{}]", ExceptionUtils.getStackTrace(e));
+            }
+        }
+        log.info("Execute move params [{}] finished", JSONObject.toJSONString(artifactPromotion));
+    }
+
+    public void executeSyncMove(ArtifactPromotion artifactPromotion) {
         final String srcStorageId = artifactPromotion.getSrcStorageId();
         final String srcRepositoryId = artifactPromotion.getSrcRepositoryId();
         Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepositoryId);

@@ -47,27 +47,36 @@
                         </a-form-item>
                         <a-form-item>
                             <a-select
-                                class="v-search"
-                                style="width:140px;"
+                                class="v-search self-icon_search"
+                                style="width:160px;"
                                 v-model="queryParams.layout"
                                 :placeholder="$t('Storage.packageTypeQuery')"
                                 @change="search"
                                 show-search
                                 allowClear
+                                option-label-prop="label"
                             >
                                 <a-select-option
                                     v-for="(item,index) in typeList"
                                     :key="index"
                                     :value="item.type"
+                                    :label="item.name"
                                 >
-                                    {{ item.name }}
+                                    <div class="option_style_item">
+                                        <div class="image_item">
+                                            <img :src="item.src" style="width: 100%;" alt="">  
+                                        </div>
+                                        <div>
+                                            {{ item.name }}
+                                        </div>
+                                    </div>
                                 </a-select-option>
                             </a-select>
                         </a-form-item>
                         <a-form-item>
                             <a-select 
                                 class="v-search"
-                                style="width:140px;"
+                                style="width:160px;"
                                 v-model="queryParams.type" 
                                 show-search
                                 allowClear
@@ -160,9 +169,9 @@ export default {
         return {
             queryParams:{
                 storageId:'',
-                layout: null,
-                type: null,
-                limit:100,
+                layout: undefined,
+                type: undefined,
+                limit:1000,
                 page:1
             },
         }
@@ -184,6 +193,7 @@ export default {
     },
     methods:{
         search(){
+            console.log(123123123)
             this.handheTableSearch()
         },
         hasStoragePermission() {
@@ -205,8 +215,10 @@ export default {
                 val: key === 'storageId' ? val.key : val
             }
             if(key){
+                console.log(1)
                 this.$emit('handheTableSearch',params.val, key)
             }else{
+                console.log(2)
                 this.$emit('handheTableSearch',this.queryParams)
             }
         },
@@ -227,5 +239,15 @@ export default {
     }
     .ant-dropdown-menu-item:hover{
         background: #bae7ff;
+    }
+    .option_style_item{
+        display:flex;
+        justify-content:space-between;
+    }
+    .image_item{
+        border-radius: 4px; 
+        width:25px;
+        padding: 1px;
+        background-image: linear-gradient( 310deg, #020202, #5c6391 );
     }
 </style>

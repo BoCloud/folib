@@ -185,7 +185,7 @@
       <a-col style="margin-top:-20px;" :span="24" :md="!isChecked ? 14 : 24" class="mb-24">
         <a-card :bordered="false" class="header-solid h-full card-profile-information"
           :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }" :headStyle="{ paddingRight: 0 }">
-          <template #title v-if="!newDetailPage">
+          <template #title v-if="isChecked ? !newDetailPage : true ">
             <a-row type="flex" align="middle" v-if="folibRepository.layout !== 'Docker'">
               <a-col :span="16" class="font-semibold m-0">
                 <a-row type="flex" align="middle">
