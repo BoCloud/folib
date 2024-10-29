@@ -185,7 +185,7 @@
       <a-col style="margin-top:-20px;" :span="24" :md="!isChecked ? 14 : 24" class="mb-24">
         <a-card :bordered="false" class="header-solid h-full card-profile-information"
           :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }" :headStyle="{ paddingRight: 0 }">
-          <template #title>
+          <template #title v-if="isChecked ? !newDetailPage : true ">
             <a-row type="flex" align="middle" v-if="folibRepository.layout !== 'Docker'">
               <a-col :span="16" class="font-semibold m-0">
                 <a-row type="flex" align="middle">
@@ -396,8 +396,6 @@
                     <a-icon type="more" class="text-muted" style="font-size: 16px" />
                   </span>
                   <template #overlay>
-
-
                     <a-menu slot="overlay" @click="handleMenuClick">
                       <a-menu-item key="1" v-if="currentFileDetial">
                         <a-icon type="eye" />
@@ -446,8 +444,6 @@
                   </template>
                 </a-dropdown>
               </a-col>
-
-
             </a-row>
           </template>
           <a v-if="currentTreeNode.url && folibRepository.layout !== 'Docker'" class="text-dark" :href="currentTreeNode.url.search('http://localhost:38080/') !== -1
@@ -464,11 +460,20 @@
     )
     : currentTreeNode.url
   }}</a>
-
           <hr class="gradient-line" />
-          <BaseData ref="BaseData" :isChecked="isChecked" :currentTreeNode="currentTreeNode" :repositoryType="repositoryType"
-            :currentFileDetial="currentFileDetial" :successMsg="successMsg" :folibRepository="folibRepository" @messageArchitectureChild="handleArchitectureMessage"
-                    @metadataEditHandler="metadataEditHandler" @metadataHandler="metadataHandler" @setCurrentFileDetial="setCurrentFileDetial"/>
+          <BaseData 
+              ref="BaseData"
+              :isChecked="isChecked" 
+              :currentTreeNode="currentTreeNode" 
+              :repositoryType="repositoryType"
+              :currentFileDetial="currentFileDetial" 
+              :successMsg="successMsg" 
+              :folibRepository="folibRepository" 
+              @messageArchitectureChild="handleArchitectureMessage"
+              @metadataEditHandler="metadataEditHandler" 
+              @metadataHandler="metadataHandler" 
+              @setCurrentFileDetial="setCurrentFileDetial"
+          />
         </a-card>
       </a-col>
     </a-row>
@@ -1204,6 +1209,9 @@ export default {
     }
   },
   computed: {
+    newDetailPage(){
+      return this.$store.state.newDetailPage
+    },
     i18nColumns() {
       return this.columns.map(column => {
         if (column.i18nKey) {
@@ -1213,6 +1221,12 @@ export default {
       })
     },
   },
+  watch:{
+    currentTreeNode(val){
+      console.log(val,'watch currentTreeNode');
+      
+    } 
+  },
   created () {
     this.initData()
   },
@@ -1220,7 +1234,9 @@ export default {
     initData () {
       this.instanceName = sessionStorage.getItem("instanceName")
       this.createData()
-      this.getBrowse()
+      if(!this.isChecked){
+        this.getBrowse()
+      }
       if (isLogin())
       {
         this.scannerRules()
@@ -1877,8 +1893,7 @@ export default {
         medium: 0,
         low: 0
       }
-      if (this.currentTreeNode.type === 'file')
-      {
+      if (this.currentTreeNode.type === 'file'){
         getArtifact(
           this.repositoryType,
           this.currentTreeNode.storageId,
@@ -2799,7 +2814,7 @@ export default {
                   reject(error);
                   this.progressStatus = 'exception';
                   this.$notification['error']({
-                      message: this.$t('Store.EncodingError') + error,
+                      message: this.$t('Store.UploadFailed'),
                       description: ''
                   })
               } finally {
@@ -2826,12 +2841,15 @@ export default {
                   }
               };
               xhr.onload = () => {
+
                   if (xhr.status === 200) {
                       this.updateTotalProgress(chunkSize); // 上传完成时更新总进度
                       resolve();
                   } else {
                       this.progressStatus = 'exception'
-                      reject(xhr.statusText);
+                      //console.log('upload status:',xhr.status,'xhr.responseText:',xhr.responseText,"xhr.statusText",xhr.statusText)
+                      reject(xhr.responseText);
+
                   }
               };
               xhr.onerror = () => reject('上传失败');

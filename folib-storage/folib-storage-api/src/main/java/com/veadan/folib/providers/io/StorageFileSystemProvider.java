@@ -1,5 +1,7 @@
 package com.veadan.folib.providers.io;
 
+import cn.hutool.core.date.StopWatch;
+import cn.hutool.core.util.StrUtil;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.storage.repository.Repository;
 import org.apache.commons.io.output.ProxyOutputStream;
@@ -476,19 +478,24 @@ public abstract class StorageFileSystemProvider
         if (!RepositoryPath.class.isInstance(path)) {
             return getTarget().readAttributes(path, attributes, options);
         }
-
         RepositoryPath repositoryPath = (RepositoryPath) path;
 
         Map<String, Object> result = new HashMap<>();
-        if (!attributes.startsWith(FOLIB_SCHEME)) {
-            result.putAll(getTarget().readAttributes(unwrap(path), attributes, options));
-            if (!attributes.equals("*")) {
-                return result;
-            }
+        String attributes1 = attributes.equals("*") ? "*" : Arrays.stream(attributes.split(",")).filter(d->d.startsWith(FOLIB_SCHEME)).collect(Collectors.joining(","));
+        String attributes2= attributes.equals("*") ? "*" : Arrays.stream(attributes.split(",")).filter(d->!d.startsWith(FOLIB_SCHEME)).collect(Collectors.joining(","));
+
+        if (!attributes2.isEmpty()) {
+            result.putAll(getTarget().readAttributes(unwrap(path), attributes2, options));
         }
+        //if (!attributes.startsWith(FOLIB_SCHEME)) {
+           // result.putAll(getTarget().readAttributes(unwrap(path), attributes2, options));
+            //if (!attributes.equals("*")) {
+            //    return result;
+            //}
+        //}
 
         Set<RepositoryFileAttributeType> targetRepositoryAttributes = new HashSet<>(
-                RepositoryFiles.parseAttributes(attributes));
+                RepositoryFiles.parseAttributes(attributes1));
 
         final Map<RepositoryFileAttributeType, Object> repositoryFileAttributes = new HashMap<>(targetRepositoryAttributes.size()*2);
         for (Iterator<RepositoryFileAttributeType> iterator = targetRepositoryAttributes.iterator(); iterator.hasNext(); ) {
@@ -516,8 +523,7 @@ public abstract class StorageFileSystemProvider
                 .stream()
                 .collect(Collectors.toMap(e -> e.getKey()
                                 .getName(),
-                        e -> e.getValue())));
-
+                        Map.Entry::getValue)));
         return result;
     }
 

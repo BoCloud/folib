@@ -24,8 +24,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.inject.Inject;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
@@ -164,6 +169,50 @@ public class ArtifactOperationsValidator {
         }
     }
 
+    public void checkArtifactSize(String storageId,
+                                  String repositoryId,
+                                  InputStream stream )
+            throws IOException {
+        if(stream==null){
+            throw new ArtifactResolutionException("Uploaded file is empty.");
+        }
+         long fileSize = calculateStreamSize(stream);
+        if (fileSize == 0) {
+            throw new ArtifactResolutionException("Uploaded file is empty.");
+        }
+
+        Repository repository = getConfiguration().getStorage(storageId).getRepository(repositoryId);
+        long artifactMaxSize = repository.getArtifactMaxSize();
+
+        if (artifactMaxSize > 0 && fileSize > artifactMaxSize) {
+            throw new ArtifactResolutionException("The size of the artifact exceeds the maximum size accepted by " +
+                    "this repository (" + fileSize + "/" +
+                    artifactMaxSize + ").");
+        }
+    }
+
+    public void checkArtifactSize(String storageId,
+                                  String repositoryId,
+                                  Path sourcePath )
+            throws IOException {
+        if(!Files.exists(sourcePath)){
+            throw new ArtifactResolutionException("Uploaded file is empty.");
+        }
+        long fileSize = getFileSize(sourcePath.toString());
+        if (fileSize == 0) {
+            throw new ArtifactResolutionException("Uploaded file is empty.");
+        }
+
+        Repository repository = getConfiguration().getStorage(storageId).getRepository(repositoryId);
+        long artifactMaxSize = repository.getArtifactMaxSize();
+
+        if (artifactMaxSize > 0 && fileSize > artifactMaxSize) {
+            throw new ArtifactResolutionException("The size of the artifact exceeds the maximum size accepted by " +
+                    "this repository (" + fileSize + "/" +
+                    artifactMaxSize + ").");
+        }
+    }
+
 
     public void checkStorageSize(RepositoryPath repositoryPath)
             throws IOException {
@@ -272,4 +321,19 @@ public class ArtifactOperationsValidator {
         return configurationManager.getConfiguration();
     }
 
+    public long calculateStreamSize(InputStream inputStream) throws IOException {
+        long size = 0;
+        byte[] buffer = new byte[8192];  // 较大缓冲区提升读性能
+        int bytesRead;
+        while ((bytesRead = inputStream.read(buffer)) != -1) {
+            size += bytesRead;
+        }
+        return size;
+    }
+
+    public long getFileSize(String filePath) throws IOException {
+        try (FileChannel fileChannel = new FileInputStream(filePath).getChannel()) {
+            return fileChannel.size();
+        }
+    }
 }

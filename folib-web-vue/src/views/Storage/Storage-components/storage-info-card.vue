@@ -8,7 +8,7 @@
         <template #title>
             <a-row type="flex" align="middle">
                 <a-col :span="layoutType === 'isFilter' ? 8 : 20" class="col-info">
-                    <a-avatar :title="layoutType === 'isFilter' ? '点击添加存储空间':''" :style="layoutType === 'isFilter' ? 'cursor:pointer':''" :size="74" shape="square" @click="createHandleView" src="images/folib/storage.svg" />
+                    <a-avatar :title="layoutType === 'isFilter' ? $t('Storage.CreateStorageSpace') :''" :style="layoutType === 'isFilter' ? 'cursor:pointer':''" :size="74" shape="square" @click="createHandleView" src="images/folib/storage.svg" />
                     <div class="avatar-info">
                     <h4 class="font-semibold m-0">
                         <span v-if="layoutType !== 'isFilter'">{{ currentStorage.id }}</span>
@@ -17,7 +17,7 @@
                                 {{ currentStorage.id }} <a-icon style="font-size:20px;" type="down" />
                             </a>
                             <a-menu slot="overlay" @click="handheTableSearch($event,'storageId')">
-                                <a-menu-item v-for="item in storageData" :key="item.id">
+                                <a-menu-item v-for="item in storageData" :key="item.id" :class="{active:currentStorage.id === item.id }">
                                     {{ item.id }}
                                 </a-menu-item>
                             </a-menu>
@@ -43,14 +43,61 @@
                 <a-col v-if="layoutType === 'isFilter'" :span="12" style="display: flex;align-items: center;">
                     <a-form layout="inline">
                         <a-form-item style="margin-top:-2px;">
-                            <a-button type="primary" v-if="$store.state.user.roles.indexOf('ADMIN') > -1" @click="createHandleView"><a-icon type="plus" />新增存储空间</a-button>
-                        </a-form-item>
-                        <a-form-item style="width:21%;">
-                            <a-input-search :placeholder="$t('Module.ArtifactPathQuery')" class="v-search" v-model="queryParams.searchKeyword" @search="handheTableSearch()" />
+                            <a-button type="primary" v-if="$store.state.user.roles.indexOf('ADMIN') > -1" @click="createHandleView"><a-icon type="plus" />{{ $t('Storage.CreateStorageSpace') }}</a-button>
                         </a-form-item>
                         <a-form-item>
                             <a-select
+                                class="v-search self-icon_search"
+                                style="width:160px;"
+                                v-model="queryParams.layout"
+                                :placeholder="$t('Storage.packageTypeQuery')"
+                                @change="search"
+                                show-search
+                                allowClear
+                                option-label-prop="label"
+                            >
+                                <a-select-option
+                                    v-for="(item,index) in typeList"
+                                    :key="index"
+                                    :value="item.type"
+                                    :label="item.name"
+                                >
+                                    <div class="option_style_item">
+                                        <div class="image_item">
+                                            <img :src="item.src" style="width: 100%;" alt="">  
+                                        </div>
+                                        <div>
+                                            {{ item.name }}
+                                        </div>
+                                    </div>
+                                </a-select-option>
+                            </a-select>
+                        </a-form-item>
+                        <a-form-item>
+                            <a-select 
                                 class="v-search"
+                                style="width:160px;"
+                                v-model="queryParams.type" 
+                                show-search
+                                allowClear
+                                @change="search"
+                                :placeholder="$t('Storage.StrategyTypeQuery')"
+                            >
+                                <a-select-option value="hosted">
+                                    {{ $t('Storage.Local') }}
+                                </a-select-option>
+                                <a-select-option value="proxy">
+                                    {{ $t('Storage.Agent') }}
+                                </a-select-option>
+                                <a-select-option value="group">
+                                    {{ $t('Storage.Combination') }}
+                                </a-select-option>
+                            </a-select>
+                        </a-form-item>
+                        <!-- <a-form-item>
+                            <a-select
+                                class="v-search"
+                                style="width:140px;"
                                 v-model="queryParams.storageId"
                                 :placeholder="$t('Storage.RepositoryQuery')"
                                 show-search
@@ -64,50 +111,8 @@
                                     {{ item.id }}
                                 </a-select-option>
                             </a-select>
-                        </a-form-item>
-                        <a-form-item>
-                            <a-select
-                                class="v-search"
-                                v-model="queryParams.storageId"
-                                :placeholder="$t('Storage.RepositoryQuery')"
-                                show-search
-                                @change="handheTableSearch($event,'storageId')"
-                            >
-                                <a-select-option
-                                    v-for="(item) in storageData"
-                                    :key="item.id"
-                                    :value="item.id"
-                                >
-                                    {{ item.id }}
-                                </a-select-option>
-                            </a-select>
-                        </a-form-item>
-                        <a-form-item>
-                            <a-select
-                                class="v-search"
-                                v-model="queryParams.storageId"
-                                :placeholder="$t('Storage.RepositoryQuery')"
-                                show-search
-                                @change="handheTableSearch($event,'storageId')"
-                            >
-                                <a-select-option
-                                    v-for="(item) in storageData"
-                                    :key="item.id"
-                                    :value="item.id"
-                                >
-                                    {{ item.id }}
-                                </a-select-option>
-                            </a-select>
-                        </a-form-item>
+                        </a-form-item> -->
                     </a-form>
-                    <!-- <a-row type="flex" :gutter="[24, 24]">
-                        <a-col :span="3">
-                            <a class="text-center text-muted font-bold">
-                                <h3 v-if="$store.state.user.roles.indexOf('ADMIN') > -1" class="font-semibold text-muted mb-0"
-                                @click="createHandleView">+</h3>
-                            </a>
-                        </a-col>
-                    </a-row> -->
                 </a-col>
                 <a-col :span="4" style="display: flex; align-items: center; justify-content: flex-end;">
                     <a-tabs v-if="layoutType === 'isFilter'" class="tabs-sliding" style="margin-top:-2px;margin-right:10px;" default-active-key="1" @change="getTabKey">
@@ -153,6 +158,7 @@
 import { isAdmin } from "@/utils/permission"
 import Overview from "../../StorageMonitoring/components/Overview"
 import StorageInfo from "../../StorageMonitoring/components/StorageInfo"
+import typeList from "./select-type";
 export default {
     components:{
         Overview,
@@ -162,9 +168,11 @@ export default {
     data() {
         return {
             queryParams:{
-                groupId:'',
                 storageId:'',
-                searchKeyword:''
+                layout: undefined,
+                type: undefined,
+                limit:1000,
+                page:1
             },
         }
     },
@@ -177,12 +185,17 @@ export default {
             },
             immediate:true,
             deep:true,
+            typeList:[]
         }
     },
     mounted() {
-
+        this.typeList = typeList
     },
     methods:{
+        search(){
+            console.log(123123123)
+            this.handheTableSearch()
+        },
         hasStoragePermission() {
             return isAdmin() || this.currentStorage.admin === this.$store.state.user.name
         },
@@ -201,7 +214,13 @@ export default {
             const params = {
                 val: key === 'storageId' ? val.key : val
             }
-            this.$emit('handheTableSearch',params.val, key)
+            if(key){
+                console.log(1)
+                this.$emit('handheTableSearch',params.val, key)
+            }else{
+                console.log(2)
+                this.$emit('handheTableSearch',this.queryParams)
+            }
         },
         getTabKey(val){
             this.$emit('showOverview',val)
@@ -213,5 +232,22 @@ export default {
     .overlayClassName{
         height:500px;
         overflow: auto;
+    }
+    .active{
+        background: #bae7ff;
+        font-weight: 600;
+    }
+    .ant-dropdown-menu-item:hover{
+        background: #bae7ff;
+    }
+    .option_style_item{
+        display:flex;
+        justify-content:space-between;
+    }
+    .image_item{
+        border-radius: 4px; 
+        width:25px;
+        padding: 1px;
+        background-image: linear-gradient( 310deg, #020202, #5c6391 );
     }
 </style>
