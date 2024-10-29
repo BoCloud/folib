@@ -40,6 +40,7 @@ import io.swagger.annotations.Api;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.mapstruct.Mapping;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -320,6 +321,14 @@ public class UnicomSSOController extends BaseController {
     }
 
 
+    @GetMapping("/layout/type")
+    public UnicomLayoutSupportVO getSupported(@RequestParam String layout){
+        UnicomLayoutSupportVO supportVO = new UnicomLayoutSupportVO();
+        return supportVO;
+
+    }
+
+
     public UicomUserDTO verify(String sessionId) {
 //        try {
 //            HttpHeaders header = getHeader();
@@ -416,6 +425,8 @@ public class UnicomSSOController extends BaseController {
         }
         return webUrlPrefix + "index.html";
     }
+
+
 
 
 }
