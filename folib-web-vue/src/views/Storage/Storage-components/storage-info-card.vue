@@ -171,7 +171,7 @@ export default {
                 storageId:'',
                 layout: undefined,
                 type: undefined,
-                limit:100,
+                limit:1000,
                 page:1
             },
         }
@@ -193,6 +193,7 @@ export default {
     },
     methods:{
         search(){
+            console.log(123123123)
             this.handheTableSearch()
         },
         hasStoragePermission() {
@@ -214,8 +215,10 @@ export default {
                 val: key === 'storageId' ? val.key : val
             }
             if(key){
+                console.log(1)
                 this.$emit('handheTableSearch',params.val, key)
             }else{
+                console.log(2)
                 this.$emit('handheTableSearch',this.queryParams)
             }
         },

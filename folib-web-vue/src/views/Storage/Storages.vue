@@ -1387,7 +1387,11 @@ export default {
         const item = this.storageData.find(ele => ele.id === val)
         this.setCurrentStorage(item)
       }else{
-        this.getQueryStorage(val) // 此时的val为queryParams
+        console.log(val,'log of val')
+        // 此时的val为queryParams
+        const params = JSON.parse(JSON.stringify(val))
+        params.layout = genLayoutType(val.layout)
+        this.getQueryStorage(params) 
       }
     },
     changeSyncEnabled(val){
@@ -1720,7 +1724,7 @@ export default {
     getQueryStorage(queryParams){
       queryRepositoriesByStorage(queryParams).then(res => {
         if(res.status === 200){
-          this.repositories = this.repositories || []
+          this.repositories = res.data.rows || []
         }
       })
     },

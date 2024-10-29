@@ -5,7 +5,7 @@
 **/
 <template>
     <div class="tree_container" :key="key" @scroll="handleScroll">
-        <a-tree class="repositoryTree" 
+        <a-tree class="repositoryTree"
             :replaceFields="replaceFields" 
             :load-data="onLoadData" 
             :tree-data="treeData" 
@@ -113,6 +113,9 @@ export default {
                         ele.newDetailPage = true
                     })
                     this.key ++
+                    // if(!this.treeData.length){
+                    //     return
+                    // }
                     const e = {
                         node: {
                             dataRef: this.treeData[0]
