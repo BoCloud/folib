@@ -9,10 +9,7 @@ import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
-import com.veadan.folib.providers.io.RepositoryFileAttributeType;
-import com.veadan.folib.providers.io.RepositoryFiles;
-import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.providers.io.*;
 import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.scanner.common.util.SpringContextUtil;
@@ -402,7 +399,13 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
                 //StopWatch stopWatch = new StopWatch();
                 //stopWatch.start();
                 // 读取文件或目录的属性。
-                Map<String, Object> fileAttributes = Files.readAttributes(contentPath, "folib:repositoryId,folib:storageId,folib:artifactPath,folib:resourceUrl,lastModifiedTime,size,isDirectory");
+                FileSystemProvider provider =  contentPath.getFileSystem().provider();
+                Map<String, Object> fileAttributes = null;
+                if( provider instanceof StorageFileSystemProvider){
+                    fileAttributes = Files.readAttributes(contentPath, "folib:repositoryId,folib:storageId,folib:artifactPath,folib:resourceUrl,lastModifiedTime,size,isDirectory");
+                }else {
+                    fileAttributes = Files.readAttributes(contentPath, "*");
+                }
                 //if(contentPath.toString().startsWith("s3://") || contentPath.toString().startsWith("https://s3.")){
                 //    // 读取文件或目录的属性。
                 //    fileAttributes = Files.readAttributes(contentPath, "folib:repositoryId,folib:storageId,folib:artifactPath,folib:resourceUrl,lastModifiedTime,size,isDirectory");
