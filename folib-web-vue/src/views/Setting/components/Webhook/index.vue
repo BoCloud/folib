@@ -150,6 +150,7 @@
               allowClear
               @search="handleRepositorySearch"
               @popupScroll="handleRepositoryPopupScroll"
+              mode="multiple"
               >
               <a-select-option v-for="repository in repositories" :key="repository.storageId+':'+repository.id">
                 {{ repository.storageId+':'+repository.id }}
@@ -427,7 +428,7 @@ export default {
         url: '',
         accessToken: '',
         events: [],
-        repository:'',
+        repository:[],
         ssl: false,
       },
       repositories:[],

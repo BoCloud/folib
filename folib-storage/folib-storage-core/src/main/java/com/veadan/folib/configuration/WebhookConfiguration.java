@@ -49,7 +49,7 @@ public class WebhookConfiguration
     /**
      * 所属仓库
      */
-    private String repository;
+    private Set<String>  repository;
 
     public WebhookConfiguration(MutableWebhookConfiguration mutableWebhookConfiguration) {
         this.uuid = mutableWebhookConfiguration.getUuid();

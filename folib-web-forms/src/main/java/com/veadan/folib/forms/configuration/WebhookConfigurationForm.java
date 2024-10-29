@@ -53,7 +53,7 @@ public class WebhookConfigurationForm
     /**
      * 所属仓库 不填则对所有仓库生效
      */
-    private String repository;
+    private Set<String>  repository;
 
     public WebhookConfigurationForm(WebhookConfiguration webhookConfiguration) {
         this.uuid = webhookConfiguration.getUuid();

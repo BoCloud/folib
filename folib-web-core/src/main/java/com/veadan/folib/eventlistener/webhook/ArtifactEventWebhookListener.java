@@ -90,9 +90,9 @@ public class ArtifactEventWebhookListener {
                     if (!webhookConfiguration.getEvents().contains(artifactEventTypeEnum.toString())) {
                         continue;
                     }
-                    if(Objects.nonNull(webhookConfiguration.getRepository())){
+                    if(Objects.nonNull(webhookConfiguration.getRepository())&&!webhookConfiguration.getRepository().isEmpty()){
                         String eventRepository=repositoryPath.getStorageId()+":"+repositoryPath.getRepositoryId();
-                        if(!webhookConfiguration.getRepository().equals(eventRepository)){
+                        if(!webhookConfiguration.getRepository().contains(eventRepository)){
                             continue;
                         }
                     }
