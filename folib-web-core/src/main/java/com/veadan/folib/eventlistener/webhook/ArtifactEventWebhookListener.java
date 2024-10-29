@@ -74,13 +74,13 @@ public class ArtifactEventWebhookListener {
                 artifactPath = path.substring(path.indexOf(storageAndRepository) + storageAndRepository.length());
                 JSONObject defaultBodyJson = new JSONObject();
                 defaultBodyJson.put("artifactPath", artifactPath);
-                defaultBodyJson.put("X-Folibrary-Event", artifactEventTypeEnum.toString());
+                defaultBodyJson.put("eventType", artifactEventTypeEnum.toString());
                 body = defaultBodyJson.toJSONString();
                 List<String> removeKeyList = Lists.newArrayList("artifactArchiveListing", "artifactCoordinates", "report", "tagSet");
                 if (Objects.nonNull(artifact)) {
                     body = JSONObject.toJSONString(artifact);
                     JSONObject bodyJson = JSONObject.parseObject(body);
-                    bodyJson.put("X-Folibrary-Event", artifactEventTypeEnum.toString());
+                    bodyJson.put("eventType", artifactEventTypeEnum.toString());
                     removeKeyList.forEach(bodyJson::remove);
                     body = bodyJson.toJSONString();
                     artifactPath = getArtifactPath(repositoryPath, artifact);
