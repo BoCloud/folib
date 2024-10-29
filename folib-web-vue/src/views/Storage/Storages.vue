@@ -1390,7 +1390,7 @@ export default {
         console.log(val,'log of val')
         // 此时的val为queryParams
         const params = JSON.parse(JSON.stringify(val))
-        params.layout = genLayoutType(val.layout)
+        params.layout = val.layout ? genLayoutType(val.layout) : ''
         this.getQueryStorage(params) 
       }
     },
