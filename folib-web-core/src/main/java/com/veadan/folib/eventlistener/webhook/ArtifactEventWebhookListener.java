@@ -74,11 +74,13 @@ public class ArtifactEventWebhookListener {
                 artifactPath = path.substring(path.indexOf(storageAndRepository) + storageAndRepository.length());
                 JSONObject defaultBodyJson = new JSONObject();
                 defaultBodyJson.put("artifactPath", artifactPath);
+                defaultBodyJson.put("X-Folibrary-Event", artifactEventTypeEnum.toString());
                 body = defaultBodyJson.toJSONString();
                 List<String> removeKeyList = Lists.newArrayList("artifactArchiveListing", "artifactCoordinates", "report", "tagSet");
                 if (Objects.nonNull(artifact)) {
                     body = JSONObject.toJSONString(artifact);
                     JSONObject bodyJson = JSONObject.parseObject(body);
+                    bodyJson.put("X-Folibrary-Event", artifactEventTypeEnum.toString());
                     removeKeyList.forEach(bodyJson::remove);
                     body = bodyJson.toJSONString();
                     artifactPath = getArtifactPath(repositoryPath, artifact);
@@ -87,6 +89,12 @@ public class ArtifactEventWebhookListener {
                 for (WebhookConfigurationForm webhookConfiguration : webhookConfigurationList) {
                     if (!webhookConfiguration.getEvents().contains(artifactEventTypeEnum.toString())) {
                         continue;
+                    }
+                    if(Objects.nonNull(webhookConfiguration.getRepository())){
+                        String eventRepository=repositoryPath.getStorageId()+":"+repositoryPath.getRepositoryId();
+                        if(!webhookConfiguration.getRepository().equals(eventRepository)){
+                            continue;
+                        }
                     }
                     try {
                         headerMap = Maps.newHashMap();

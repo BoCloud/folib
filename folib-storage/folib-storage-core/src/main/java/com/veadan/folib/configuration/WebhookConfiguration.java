@@ -46,12 +46,18 @@ public class WebhookConfiguration
      */
     private Boolean ssl;
 
+    /**
+     * 所属仓库
+     */
+    private String repository;
+
     public WebhookConfiguration(MutableWebhookConfiguration mutableWebhookConfiguration) {
         this.uuid = mutableWebhookConfiguration.getUuid();
         this.url = mutableWebhookConfiguration.getUrl();
         this.accessToken = mutableWebhookConfiguration.getAccessToken();
         this.events = mutableWebhookConfiguration.getEvents();
         this.ssl = mutableWebhookConfiguration.getSsl();
+        this.repository= mutableWebhookConfiguration.getRepository();
     }
 
     public Set<String> getEvents() {

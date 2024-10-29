@@ -447,4 +447,7 @@ export default {
     'TheLastScan': 'Last scan',
     'ArtifactScanType': 'Type',
     'GlobalS3Bucket': 'Global S3 bucket',
+    'EventRepositroy':'event repository',
+    'EventRepositroyInfo':'The repository that the webhook takes effect on, if not selected, it will take effect on all repository',
+    'SelectTheRepository':'Please select the repository'
 }

@@ -50,12 +50,18 @@ public class WebhookConfigurationForm
      */
     private Boolean ssl;
 
+    /**
+     * 所属仓库 不填则对所有仓库生效
+     */
+    private String repository;
+
     public WebhookConfigurationForm(WebhookConfiguration webhookConfiguration) {
         this.uuid = webhookConfiguration.getUuid();
         this.url = webhookConfiguration.getUrl();
         this.accessToken = webhookConfiguration.getAccessToken();
         this.events = webhookConfiguration.getEvents();
         this.ssl = webhookConfiguration.getSsl();
+        this.repository= webhookConfiguration.getRepository();
     }
 
     @JsonIgnore()

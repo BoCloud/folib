@@ -33,6 +33,9 @@ public class MutableWebhookConfiguration
      */
     private String accessToken;
 
+    //事件仓库 storageId:repositoryId
+    private String repository;
+
     /**
      * 触发事件
      */

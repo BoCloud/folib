@@ -357,6 +357,9 @@ public class StoragesConfigurationController
     public TableResultResponse<Repository> getStoragesAndRepositories(@ApiParam(value = "Search for repository names in a specific storageId")
                                                                       @RequestParam(value = "storageId", required = false)
                                                                               String storageId,
+                                                                      @ApiParam(value = "Filter repository names by name")
+                                                                      @RequestParam (value="name",required = false)
+                                                                      String name,
                                                                       @ApiParam(value = "Filter repository names by type (i.e. hosted, group, proxy)")
                                                                       @RequestParam(value = "type", required = false)
                                                                               String type,
@@ -391,6 +394,7 @@ public class StoragesConfigurationController
             boolean filterByExcludeRepositoryId = StringUtils.isNotBlank(excludeRepositoryId);
             boolean filterByExcludeType = StringUtils.isNotBlank(excludeType);
             boolean filterByPolicy = StringUtils.isNotBlank(policy);
+            boolean filterByName=StringUtils.isNotBlank(name);
             String excludedStorageId = "", excludedRepositoryId = "";
             if (filterByExcludeRepositoryId) {
                 excludedStorageId = ConfigurationUtils.getStorageId(storageId, excludeRepositoryId);
@@ -409,17 +413,18 @@ public class StoragesConfigurationController
                 boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username));
                 storageTreeForm = StorageTreeForm.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
                 repositories = new LinkedList<Repository>(storage.getRepositories().values());
-                repositorieList.addAll(repositories);
                 repositories = repositories.stream().distinct()
                         .filter(r -> !filterByType || r.getType().equalsIgnoreCase(type))
                         .filter(r -> !filterByLayout || r.getLayout().equalsIgnoreCase(layout))
                         .filter(r -> !filterByPolicy || r.getPolicy().equalsIgnoreCase(policy))
                         .filter(r -> !filterByExcludeRepositoryId || (!r.getStorageIdAndRepositoryId().equalsIgnoreCase(excludedStorageIdAndRepositoryId)))
                         .filter(r -> !filterByExcludeType || !r.getType().equalsIgnoreCase(excludeType))
+                        .filter(r->!filterByName||r.getId().toLowerCase().contains(name.toLowerCase()))
                         .collect(Collectors.toCollection(LinkedList::new));
                 if (flag) {
                     repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()))).collect(Collectors.toList());
                 }
+                repositorieList.addAll(repositories);
                 storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeForm.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout())
                         .scope(repository.getScope()).build()).collect(Collectors.toList()));
                 storageTreeForms.add(storageTreeForm);

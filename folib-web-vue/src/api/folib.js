@@ -61,8 +61,9 @@ export function getStoragesAndRepositories (dataQuery) {
 
 export function queryRepositories (dataQuery) {
   return axios({
-    url: `/api/configuration/folib/storages/queryStoragesAndRepositories?page=${dataQuery.page}&limit=${dataQuery.limit}`,
-    method: 'get'
+    url: `/api/configuration/folib/storages/queryStoragesAndRepositories`,
+    method: 'get',
+    params: dataQuery
   })
 }
 export function getPermissionStoragesAndRepositories (dataQuery) {

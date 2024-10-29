@@ -112,6 +112,8 @@ public class CodeActivateService {
                     FileUtil.touch(file);
                     FileUtil.writeUtf8String(data.toJSONString(), file);
                 }
+                // 激活后删除缓存里的license
+                distributedCacheComponent.delete(LICENSE_KEY);
             } else {
                 data.put("rel", false);
                 data.put("message", "激活失败，你已经试用过一次了，不可重复，请换一台机器");

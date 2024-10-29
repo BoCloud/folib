@@ -447,4 +447,7 @@ export default {
     'TheLastScan': '最近一次扫描',
     'ArtifactScanType': '类型',
     'GlobalS3Bucket': '全局S3桶',
+    'EventRepositroy':'所属仓库',
+    'EventRepositroyInfo':'webhook所生效的仓库,不选择则对所有仓库生效',
+    'SelectTheRepository':'请选择所属仓库'
 }

@@ -21,6 +21,9 @@
                     <a-descriptions-item :label="$t('Setting.AccessToken')">
                       {{ item.accessToken }}
                     </a-descriptions-item>
+                    <a-descriptions-item :label="$t('Setting.EventRepositroy')">
+                      {{ item.repository?item.repository:'--' }}
+                    </a-descriptions-item>
                     <a-descriptions-item :label="$t('Setting.TriggerEvent')">
                       <div v-if="item.events">
                         <span v-for="(se, sei) in events" :key="sei">
@@ -126,6 +129,33 @@
               v-model="webhookForm.accessToken"
             />
           </a-form-model-item>
+        <a-form-model-item 
+             class="mb-10"
+            :colon="false"
+            prop="accessToken">
+            <template v-slot:label>
+              <span>{{ $t('Setting.EventRepositroy') }}</span>
+              <a-popover placement="topLeft">
+                    <template slot="content">
+                      <p class="mb-0">{{ $t('Setting.EventRepositroyInfo') }}</p>
+                    </template>
+                    <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
+              </a-popover>
+            </template>
+            <a-select v-model="webhookForm.repository" 
+              :placeholder="$t('Setting.SelectTheRepository')"
+              :loading="repositoryLoading"
+              :filter-option="false"
+              show-search
+              allowClear
+              @search="handleRepositorySearch"
+              @popupScroll="handleRepositoryPopupScroll"
+              >
+              <a-select-option v-for="repository in repositories" :key="repository.storageId+':'+repository.id">
+                {{ repository.storageId+':'+repository.id }}
+              </a-select-option>
+            </a-select>
+        </a-form-model-item>
           <a-form-model-item class="mb-10"
             :label="$t('Setting.TriggerEvent')"
             :colon="false"
@@ -310,6 +340,8 @@ import { highlight, languages } from "prismjs/components/prism-core"
 import "prismjs/components/prism-clike"
 import "prismjs/components/prism-javascript"
 import "prismjs/themes/prism-tomorrow.css"
+import {queryRepositories} from "@/api/folib"
+import { debounce } from 'lodash';
 
 export default {
   props: {
@@ -395,8 +427,16 @@ export default {
         url: '',
         accessToken: '',
         events: [],
+        repository:'',
         ssl: false,
       },
+      repositories:[],
+      repositoryLoading: false,
+      repositoryPage: 1,
+      repositoryLimit: 20,
+      repositoryTotal: 0,
+      repositoryKeyword: '',
+      hasMore: true,
       webhookRules: {
         url: [
           { required: true, trigger: ['blur'], validator: acceptUrlValidator },
@@ -509,7 +549,14 @@ export default {
     }
   },
   created() {
-    this.initData()
+    this.initData();
+    this.debouncedSearch = debounce(this.loadRepositories, 300);
+  },
+  beforeDestroy() {
+    // 在组件销毁前取消防抖函数
+    if (this.debouncedSearch) {
+      this.debouncedSearch.cancel();
+    }
   },
 	watch: {
     'activeKey' : function (newval) {
@@ -545,6 +592,67 @@ export default {
     initData () {
       this.queryWebhooks()
     },
+    async loadRepositories () {
+      if(!this.hasMore||this.repositoryLoading) {
+        return;
+      }
+      try {
+        const params = {
+          page: this.repositoryPage,
+          limit: this.repositoryLimit,
+          name: this.repositoryKeyword,
+        }
+      const res = await queryRepositories(params);
+      if(res&&res.data) {
+        // 如果是新的搜索，清空原有列表
+        if (this.repositoryPage === 1) {
+            this.repositories = []
+          }
+          this.repositories = [...this.repositories, ...res.data.rows]
+          this.repositoryTotal = res.data.total
+          this.hasMore = this.repositories.length < this.repositoryTotal
+          this.repositoryPage++
+        }
+      } catch (error) {
+        this.$notification.error({
+          message: this.$t('Setting.ErrorLoadingRepositories'),
+          description: error.message
+        })
+      }finally{
+        this.repositoryLoading = false  
+      }
+    },
+     // 处理搜索输入
+     handleRepositorySearch(value) {
+      this.repositoryKeyword = value
+      this.repositoryPage = 1
+      this.hasMore = true
+      this.debouncedSearch()
+    },
+
+    // 处理滚动加载
+    handleRepositoryPopupScroll(e) {
+      const { target } = e
+      if (
+        target.scrollTop + target.offsetHeight >= target.scrollHeight - 20 &&
+        !this.repositoryLoading &&
+        this.hasMore
+      ) {
+        this.debouncedSearch();
+      }
+    },
+
+    // 重置数据
+    resetRepositoryData() {
+      this.repositories = [];
+      this.repositoryPage = 1;
+      this.repositoryTotal = 0;
+      this.repositoryKeyword = '';
+      this.hasMore = true;
+      if (this.debouncedSearch) {
+        this.debouncedSearch.cancel();
+      }
+    },
     queryWebhooks () {
       this.webhooks = []
       getWebhooks().then((res) => {
@@ -570,6 +678,7 @@ export default {
         this.webhookForm  = Object.assign({}, item)
       }
       this.webhookVisible = true
+      this.loadRepositories();
     },
     webhookDrawerClose() {
       this.webhookResetForm()
