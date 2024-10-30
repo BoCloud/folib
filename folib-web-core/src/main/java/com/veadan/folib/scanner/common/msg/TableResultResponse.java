@@ -2,6 +2,9 @@
 
 package com.veadan.folib.scanner.common.msg;
 
+import com.fasterxml.jackson.annotation.JsonView;
+import com.veadan.folib.storage.Views;
+
 import java.util.List;
 
 /**
@@ -12,6 +15,7 @@ import java.util.List;
  */
 public class TableResultResponse<T> extends BaseResponse {
 
+    @JsonView(Views.ShortStorage.class)
     TableData<T> data;
 
     public TableResultResponse(long total, List<T> rows) {
@@ -41,7 +45,9 @@ public class TableResultResponse<T> extends BaseResponse {
     }
 
     public class TableData<T> {
+        @JsonView(Views.ShortStorage.class)
         long total;
+        @JsonView(Views.ShortStorage.class)
         List<T> rows;
 
         public TableData(long total, List<T> rows) {
