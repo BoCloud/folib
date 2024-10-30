@@ -28,6 +28,10 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface ArtifactPromotionService {
 
+    ResponseEntity syncCopy(ArtifactPromotion artifactPromotion);
+
+    ResponseEntity syncMove(ArtifactPromotion artifactPromotion);
+
     ResponseEntity copy(ArtifactPromotion artifactPromotion);
 
     ResponseEntity move(ArtifactPromotion artifactPromotion);
