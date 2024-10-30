@@ -29,6 +29,7 @@ public class JacksonConfig {
                 .serializationInclusion(JsonInclude.Include.NON_NULL) // 忽略 null 值
                 .featuresToDisable(SerializationFeature.FAIL_ON_EMPTY_BEANS) // 禁用空对象错误
                 .featuresToEnable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS) // 启用大小写不敏感枚举
+                .featuresToEnable(MapperFeature.DEFAULT_VIEW_INCLUSION)
                 .build();
 
         // 配置 AnnotationIntrospector
