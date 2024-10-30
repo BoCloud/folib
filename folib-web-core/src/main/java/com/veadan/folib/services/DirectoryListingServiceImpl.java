@@ -20,6 +20,8 @@ import com.veadan.folib.services.support.ArtifactRoutingRulesChecker;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.users.domain.Privileges;
+import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.utils.compatator.DirectoryNameCompatator;
 import lombok.Data;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
@@ -29,6 +31,8 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -116,6 +120,9 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
             String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
             String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
             Repository subRepository = configurationManagementService.getConfiguration().getRepository(sId, rId);
+            if(!groupSubPrivileges(subRepository,null,Privileges.ARTIFACTS_RESOLVE.getAuthority())){
+                continue;
+            }
             if (!subRepository.isInService()) {
                 continue;
             }
@@ -565,4 +572,16 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
             return this;
         }
     }
+
+    private boolean groupSubPrivileges(Repository repository,String path,String authority ){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (Objects.isNull(authentication)) {
+            return false;
+        }
+        SpringSecurityUser  user=(SpringSecurityUser) authentication.getPrincipal();
+
+        Collection<Privileges> storageAuthorities =user.getStorageAuthorities(repository.getStorage().getId(), repository.getId(),Collections.singletonList(path));
+        return storageAuthorities.stream().anyMatch(item -> item.getAuthority().equals(authority));
+    }
+
 }
