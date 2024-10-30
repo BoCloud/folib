@@ -8,6 +8,7 @@
     <a-row :style="isChecked ? 'opacity:1;' : 'opacity:0;'" type="flex" :gutter="[24, 24]" style="margin-bottom:-30px;transition: all 0.5s ease;">
         <a-col :span="24" :lg="24">
           <storageInfoCard
+            ref="storageInfoCard"
             :currentStorage="currentStorage"
             :baseUrl="baseUrl"
             :layoutType="layoutType"
@@ -32,6 +33,7 @@
                 </a-col>
                 <a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
                   <a-switch 
+                    :disabled="switchDisabled"
                     style="margin-right:10px;"
                     v-model="isChecked"
                     @change="getDetailInfo"
@@ -47,7 +49,7 @@
                 </a-col>
               </a-row>
             </template>
-            <repositoryTree v-if="isChecked" @loadMore="loadMore" @treeSelect="treeSelect" @repositorySelect="repositorySelect" @expand="onExpand" :repositories="repositories" />
+            <repositoryTree ref="repositoryTree" v-if="isChecked" @loadMore="loadMore" @treeSelect="treeSelect" @repositorySelect="repositorySelect" @expand="onExpand" :repositories="repositories" :storageId="currentStorage.id" />
             <a-anchor v-else :targetOffset="navbarFixed ? 100 : 10" :affix="false">
               <a-anchor-link v-for="(item, index) in storageData" :key="index" href="javascript:void(null)"
                 :class="{ slectActive: item.id === currentStorage.id }">
@@ -77,35 +79,40 @@
         />
         <a-tabs v-if="!isChecked" class="tabs-sliding" default-active-key="1">
           <a-tab-pane key="1" :tab="$t('Storage.RepositoryList')">
-            <a-row type="flex" :gutter="24">
-              <a-col :span="8" class="mb-24" v-for="(item, index) in repositories" :key="index">
-                <!-- Project Card -->
-                <CardProjectFolib :title=item.id :logo="'images/folib/' + getLayoutType(item) + '.svg'"
-                  :team="['images/folib/' + item.type + '.svg']" :participants="item.type" :due="item.policy"
-                  :repository="item" :storageAdmin="currentStorage.admin" @handleMenuClick="handleMenuClick" @goToDetial="goToDetial(item)">
-                  <a-tooltip placement="topLeft">
-                    <template slot="title">
-                      {{ getRepositoryUrl(item) }}
-                    </template>
-                    <p>http://..../{{ item.id }} <a>
-                        <a-icon type="copy" @click="copy(getRepositoryUrl(item))" />
-                      </a></p>
-                  </a-tooltip>
-                </CardProjectFolib>
-                <!-- / Project Card -->
-              </a-col>
-
-              <a-col :span="8" class="mb-24" v-if="hasStoragePermission()">
-                <a-card @click="folibVisibleShow()" class="crm-bar-line header-solid h-full xinjian"
-                  :bodyStyle="{ padding: 0, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }">
-                  <a class="text-center text-muted font-bold">
-                    <h3 class="font-semibold text-muted mb-0">+</h3>
-                    <h5 class="font-semibold text-muted">{{ $t('Storage.createModal') }}</h5>
-                  </a>
-                </a-card>
-
-              </a-col>
-            </a-row>
+            <div style="min-height:calc(100vh - 150px)">
+              <a-row type="flex" :gutter="24">
+                <a-col :span="8" class="mb-24" v-for="(item, index) in repositories" :key="index">
+                  <!-- Project Card -->
+                  <CardProjectFolib :title=item.id :logo="'images/folib/' + getLayoutType(item) + '.svg'"
+                    :team="['images/folib/' + item.type + '.svg']" :participants="item.type" :due="item.policy"
+                    :repository="item" :storageAdmin="currentStorage.admin" @handleMenuClick="handleMenuClick" @goToDetial="goToDetial(item)">
+                    <a-tooltip placement="topLeft">
+                      <template slot="title">
+                        {{ getRepositoryUrl(item) }}
+                      </template>
+                      <p>http://..../{{ item.id }} <a>
+                          <a-icon type="copy" @click="copy(getRepositoryUrl(item))" />
+                        </a></p>
+                    </a-tooltip>
+                  </CardProjectFolib>
+                  <!-- / Project Card -->
+                </a-col>
+  
+                <a-col :span="8" class="mb-24" v-if="hasStoragePermission()">
+                  <a-card @click="folibVisibleShow()" class="crm-bar-line header-solid h-full xinjian"
+                    :bodyStyle="{ padding: 0, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }">
+                    <a class="text-center text-muted font-bold">
+                      <h3 class="font-semibold text-muted mb-0">+</h3>
+                      <h5 class="font-semibold text-muted">{{ $t('Storage.createModal') }}</h5>
+                    </a>
+                  </a-card>
+                </a-col>
+              </a-row>
+            </div>
+            <!-- 分页 -->
+            <div style="display: flex; align-items: center; justify-content: flex-end;margin-bottom:40px;">
+              <a-pagination @change="handlerPageNum" @showSizeChange="handlerPageSize" :total="queryParams.total" show-size-changer />
+            </div>
           </a-tab-pane>
           <a-tab-pane key="2" v-if="isLogin" :tab="$t('Storage.StorageOverview')">
             <a-row type="flex" :gutter="24">
@@ -1254,7 +1261,12 @@ export default {
       },
       queryParams:{
         groupId: null,
-        storageId: null
+        storageId: null,
+        layout: null,
+        type: null,
+        page:1,
+        limit: 10,
+        total:0,
       },
       layoutType:'isFilter',
       isChecked: false,
@@ -1274,7 +1286,8 @@ export default {
         total: 0,
         matchUsername: undefined,
       },
-      libViewKey:0
+      libViewKey:0,
+      switchDisabled:true
     };
   },
   watch: {
@@ -1349,20 +1362,31 @@ export default {
     getDetailInfo(val){
       const item = this.repositories[0]
       storage.set("libView_repository", { item, baseUrl: this.baseUrl })
+      this.repositories = []
       this.$nextTick(() => {
         if(val){
-          this.$refs.libview.myMounted()
+          this.$refs.repositoryTree.loadingMoreShow(true)
+          // this.$refs.libview.myMounted()
+          this.queryParams.limit = 20 // 20
         }else{
           this.$store.commit('setNewDetailPage',false) // 将newDetailPage参数复原，以免影响到原有模式的详情页面
-          const params = {
-            storageId: this.currentStorage.id,
-            layout: null,
-            type: null,
-            limit: 1000,
-            page: 1
-          }
-          this.getQueryStorage(params)
+          this.queryParams.limit = 10
+          // 清空搜索仓库模式下的搜索条件，防止下次进入时影响数据
+          this.$refs.storageInfoCard.emptyQuery()
         }
+        // 每次切换模式 都清空除storageId以外的当前已存在的搜索条件
+        this.queryParams.page = 1
+        this.queryParams.layout = null
+        this.queryParams.type = null
+        const params = {
+          storageId: this.currentStorage.id,
+          layout: null,
+          type: null,
+          limit: this.queryParams.limit,
+          page: this.queryParams.page
+        }
+        // 获取切换模式后第一次加载的数据
+        this.getQueryStorage(params)
       })
     },
     // 点击仓库
@@ -1382,8 +1406,18 @@ export default {
     onExpand() {
       console.log('Trigger Expand');
     },
-    handheTableSearch(val,key){
-      if(key === 'storageId'){
+    handheTableSearch(val,type,queryParams){
+      this.repositories = []
+      this.$nextTick(() => {
+        this.$refs.repositoryTree.empty()
+        this.$refs.repositoryTree.loadingMoreShow(true)
+      })
+      this.queryParams.page = 1
+      if(type === 'storageId'){
+        const params = JSON.parse(JSON.stringify(queryParams))
+        // 给当前页面搜索条赋值
+        this.queryParams.layout = params.layout ? genLayoutType(params.layout) : ''
+        this.queryParams.type = params.type
         const item = this.storageData.find(ele => ele.id === val)
         this.setCurrentStorage(item)
       }else{
@@ -1391,6 +1425,11 @@ export default {
         // 此时的val为queryParams
         const params = JSON.parse(JSON.stringify(val))
         params.layout = val.layout ? genLayoutType(val.layout) : ''
+        params.page = 1
+        params.limit = 20 // 20
+        // 给当前页面搜索条赋值
+        this.queryParams.layout = params.layout
+        this.queryParams.type = params.type
         this.getQueryStorage(params) 
       }
     },
@@ -1711,25 +1750,44 @@ export default {
       }
       this.getStorage(this.currentStorage.id)
     },
-    loadMore(){
-      // const params = {
-      //   storageId: this.currentStorage.id,
-      //   layout: null,
-      //   type: null,
-      //   limit: 10,
-      //   page: 1
-      // }
-      // this.getQueryStorage(params)
+    loadMore(total){
+      if(total !== this.queryParams.total){
+        this.$refs.repositoryTree.loadingMoreShow(true)
+        this.queryParams.page ++
+        console.log('滚动加载...')
+        const params = {
+          storageId: this.currentStorage.id,
+          layout: this.queryParams.layout,
+          type: this.queryParams.type,
+          limit: this.queryParams.limit,
+          page: this.queryParams.page
+        }
+        this.getQueryStorage(params)
+      }else{
+        this.$refs.repositoryTree.loadingMoreShow(false)
+      }
+    },
+    handlerPageNum(page, pageSize){
+      this.queryParams.page = page
+      this.getStorage(this.currentStorage.id)
+    },
+    handlerPageSize(current, size){
+      this.queryParams.limit = size
+      this.queryParams.page = 1
+      this.getStorage(this.currentStorage.id)
     },
     getQueryStorage(queryParams){
       queryRepositoriesByStorage(queryParams).then(res => {
+        this.switchDisabled = false
         if(res.status === 200){
+          this.queryParams.total = res.data.total
           this.repositories = res.data.rows || []
         }
       })
     },
     getStorage(id) {
       if (id) {
+        this.switchDisabled = true
         getLibraryFilter(id).then(response => {
           this.currentStorage.id = response.id
           this.currentStorage.basedir = response.basedir
@@ -1747,9 +1805,20 @@ export default {
           if (response.syncEnabled) {
             this.currentStorage.syncEnabled = true
           }
+          if(this.$refs.repositoryTree){
+            this.$refs.repositoryTree.empty()
+          }
           this.currentStorage.admin = response.admin
           this.currentStorage.users = response.users
-          this.repositories = response.repositories
+          const params = {
+            storageId: this.currentStorage.id,
+            layout: this.queryParams.layout,
+            type: this.queryParams.type,
+            limit: this.queryParams.limit,
+            page: this.queryParams.page
+          }
+          this.getQueryStorage(params)
+          // this.repositories = response.repositories
         })
       }
     },
