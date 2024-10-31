@@ -348,7 +348,7 @@ public class NpmArtifactController
             RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
             vulnerabilityBlock(repositoryPath);
             provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
-            logger.debug("[{}] downloadPackageWithScope [{}] task time [{}] ms", this.getClass().getSimpleName(), repositoryPath.toString(), System.currentTimeMillis() - startTime);
+            logger.debug("[{}] downloadPackageWithScope [{}] task time [{}] ms", this.getClass().getSimpleName(), artifactPath, System.currentTimeMillis() - startTime);
         } else {
             packageVersion = getPackageJsonVersion(packageNameWithVersion, repository.getSubLayout());
             String pgName = NpmSubLayout.OHPM.getValue().equals(repository.getSubLayout()) ? NpmLayoutProvider.OH_PACKAGE_JSON : NpmLayoutProvider.PACKAGE_JSON;
@@ -403,7 +403,7 @@ public class NpmArtifactController
             RepositoryPath path = artifactResolutionService.resolvePath(storageId, repositoryId, coordinates.buildPath());
             vulnerabilityBlock(path);
             provideArtifactDownloadResponse(request, response, httpHeaders, path);
-            logger.debug("[{}] downloadPackage [{}] task time [{}] ms", this.getClass().getSimpleName(), path.toString(), System.currentTimeMillis() - startTime);
+            logger.debug("[{}] downloadPackage [{}] task time [{}] ms", this.getClass().getSimpleName(), coordinates.buildPath(), System.currentTimeMillis() - startTime);
         } else {
             packageVersion = getPackageJsonVersion(packageNameWithVersion, repository.getSubLayout());
             artifactPath = String.format("%s/%s/%s/%s", packageName, packageName, packageVersion, NpmLayoutProvider.PACKAGE_JSON);
@@ -450,7 +450,7 @@ public class NpmArtifactController
             return ResponseEntity.status(HttpStatus.OK).build();
         }
         final String storageId = repository.getStorage().getId();
-        final String repositoryId = repository.getId();
+        final String repositoryId = ifIsGroupAndStoreToDefault(repository);
         final String subLayout = repository.getSubLayout();
 
         logger.info("npm publish request for {}/{}/{}", storageId, repositoryId, name);

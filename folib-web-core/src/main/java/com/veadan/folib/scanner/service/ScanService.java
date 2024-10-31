@@ -15,6 +15,8 @@ import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.license.LicenseComponent;
+import com.veadan.folib.components.sbom.BomComponent;
+import com.veadan.folib.components.sbom.SbomComponent;
 import com.veadan.folib.components.scan.ScanComponent;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.cluster.dto.SyncCronJobDto;
@@ -56,6 +58,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.text.similarity.JaccardSimilarity;
+import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.apache.tinkerpop.gremlin.process.traversal.Order;
 import org.owasp.dependencycheck.data.update.exception.UpdateException;
 import org.owasp.dependencycheck.dependency.*;
@@ -128,6 +132,7 @@ public class ScanService {
     private ArtifactComponent artifactComponent;
 
     @Inject
+    @Lazy
     private ArtifactEventScannerListener artifactEventScannerListener;
 
     @Inject
@@ -147,6 +152,9 @@ public class ScanService {
 
     @Inject
     private DistributedCacheComponent distributedCacheComponent;
+
+    @Inject
+    private SbomComponent sbomComponent;
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -185,11 +193,12 @@ public class ScanService {
             Set<String> filePaths = artifact.getFilePaths();
             Set<String> filePathSet = Sets.newLinkedHashSet();
             List<Dependency> dependencyList = Lists.newArrayList(), itemDependencyList;
+            List<BomComponent> sbomComponentList = Lists.newArrayList();
             Dependency[] dependencies = null;
             for (String filePath : filePaths) {
                 filePath = parseFilePath(filePath);
                 //执行扫描
-                dependencies = scanWorker(artifact, filePath);
+                dependencies = scanWorker(artifact, filePath, sbomComponentList);
                 if (Objects.isNull(dependencies)) {
                     continue;
                 }
@@ -201,7 +210,8 @@ public class ScanService {
                 itemDependencyList = null;
             }
             artifact.setFilePaths(filePathSet);
-            buildReport(artifact, dependencyList);
+            List<License> licenses = licenseComponent.getLicenses();
+            buildReport(licenses, artifact, dependencyList, sbomComponentList);
             dependencyList.clear();
             dependencyList = null;
         } catch (Exception e) {
@@ -302,17 +312,12 @@ public class ScanService {
         return filePath;
     }
 
-
-    public Dependency[] scanWorker(Artifact artifact, String filePath) {
-        String parentPath = null;
-        XpEngine engine = null;
+    private String getFilePath(String parentPath, Artifact artifact, String filePath) {
         try {
-            engine = new XpEngine(getSettings());
             RepositoryPath repositoryPath = resolvePath(artifact);
             if (repositoryPath.getTarget() instanceof S3Path) {
                 Path artifactPath;
                 S3Path s3RepositoryPath = (S3Path) repositoryPath.getTarget();
-                parentPath = tempPath + File.separator + UUID.randomUUID();
                 //s3存储
                 if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
                     String temp = filePath.substring(filePath.indexOf(repositoryPath.getStorageId()));
@@ -340,7 +345,26 @@ public class ScanService {
                 log.warn("File size exceeds scan limit [{}]", path.toString());
                 return null;
             }
-            log.info("Scan file path [{}]", filePath);
+            return filePath;
+        } catch (Exception ex) {
+            log.error("Get filePath [{}] [{}] error [{}]", artifact.getUuid(), filePath, ExceptionUtils.getStackTrace(ex));
+        }
+        return null;
+    }
+
+    public Dependency[] scanWorker(Artifact artifact, String filePath, List<BomComponent> sbomComponentList) {
+        String parentPath = tempPath + File.separator + UUID.randomUUID();
+        XpEngine engine = null;
+        try {
+            engine = new XpEngine(getSettings());
+            filePath = getFilePath(parentPath, artifact, filePath);
+            if (StringUtils.isBlank(filePath)) {
+                return null;
+            }
+            List<BomComponent> sbomComponents = sbomComponent.sbomComponent(Path.of(filePath));
+            if (CollectionUtils.isNotEmpty(sbomComponents)) {
+                sbomComponentList.addAll(sbomComponents);
+            }
             engine.scan(filePath);
             engine.analyzeDependencies();
             return engine.getDependencies();
@@ -353,7 +377,7 @@ public class ScanService {
                 engine.close();
             }
             //删除临时文件
-            if (Objects.nonNull(parentPath)) {
+            if (new File(parentPath).exists()) {
                 FileUtil.del(new File(parentPath));
             }
         }
@@ -381,7 +405,7 @@ public class ScanService {
         return scannerReport;
     }
 
-    private void buildReport(Artifact artifact, List<Dependency> dependencyList) {
+    private void buildReport(List<License> licenses, Artifact artifact, List<Dependency> dependencyList, List<BomComponent> sbomComponentList) {
         int vulnCount = 0;
         int vulnSuppressedCount = 0;
         int cpeSuppressedCount = 0;
@@ -402,6 +426,7 @@ public class ScanService {
         Set<Vulnerability> vulnerabilitySet = Sets.newHashSet();
         int evidenceQuantity = 0;
         Set<Component> componentSet = Sets.newLinkedHashSet();
+        List<String> licenseIds = licenses.stream().map(License::getLicenseId).collect(Collectors.toList());
         for (Dependency dependency : dependencyList) {
             if (dependency.getVulnerabilities().size() > 0) {
                 vulnDepCount = vulnDepCount + 1;
@@ -415,7 +440,7 @@ public class ScanService {
                 vulnSuppressedCount = vulnSuppressedCount + dependency.getSuppressedVulnerabilities().size();
             }
             evidenceQuantity = evidenceQuantity + dependency.getEvidence().size();
-            buildComponent(dependency, componentSet);
+            buildComponent(licenses, licenseIds, dependency, componentSet, sbomComponentList);
         }
         artifact.setScanDate(DateUtils.getTodayDate());
         artifact.setScanDateTime(LocalDateTimeInstance.now());
@@ -427,10 +452,13 @@ public class ScanService {
     /**
      * 构建组件
      *
-     * @param dependency   dependency
-     * @param componentSet componentSet
+     * @param licenses          license列表
+     * @param licenseIds        licenseId列表
+     * @param dependency        dependency
+     * @param componentSet      componentSet
+     * @param sbomComponentList sbom的扫描结果
      */
-    private void buildComponent(Dependency dependency, Set<Component> componentSet) {
+    private void buildComponent(List<License> licenses, List<String> licenseIds, Dependency dependency, Set<Component> componentSet, List<BomComponent> sbomComponentList) {
         String nameKey = "name", groupIdKey = "groupId", versionKey = "version", fileName;
         LocalDateTime now = LocalDateTimeInstance.now();
         Component component = new ComponentEntity(dependency.getSha1sum());
@@ -443,21 +471,94 @@ public class ScanService {
             }
             component.setFileName(fileName);
         }
-        List<License> licenses = licenseComponent.getLicenses();
         component.setDescription(dependency.getDescription());
         component.setMd5sum(dependency.getMd5sum());
         component.setSha256sum(dependency.getSha256sum());
         if (CollectionUtils.isNotEmpty(licenses)) {
+            Set<String> licenseSet = Sets.newLinkedHashSet();
             if (StringUtils.isNotBlank(dependency.getLicense())) {
-                log.info("Dependency license [{}]", dependency.getLicense());
+                log.debug("Dependency license [{}]", dependency.getLicense());
                 String[] dependencyLicenses = dependency.getLicense().split(",");
-                Set<String> licenseSet = Sets.newLinkedHashSet();
-                for (String license : dependencyLicenses) {
-                    licenseSet.addAll(licenses.stream().filter(item -> StringUtils.isNotBlank(item.getLicenseUrl())).filter(item -> Arrays.stream(item.getLicenseUrl().split(",")).anyMatch(license::contains)).map(License::getLicenseId).collect(Collectors.toSet()));
+                LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
+                JaccardSimilarity jaccardSimilarity = new JaccardSimilarity();
+                double levenshteinSimilarValue = getLevenshteinDistanceSimilarValue();
+                double jaccardSimilarValue = getJaccardSimilarValue();
+                for (String dependencyLicense : dependencyLicenses) {
+                    if (StringUtils.isNotBlank(dependencyLicense)) {
+                        for (License license : licenses) {
+                            if (StringUtils.isNotBlank(license.getLicenseUrl())) {
+                                if (Arrays.stream(license.getLicenseUrl().split(","))
+                                        .anyMatch(licenseUrl -> {
+                                            double licenseUrlLevenshteinResult = levenshteinDistance.apply(dependencyLicense, licenseUrl);
+                                            double licenseUrlJaccardResult = jaccardSimilarity.apply(dependencyLicense, licenseUrl);
+                                            log.info("License [{}] dependencyLicense [{}] licenseUrl [{}] levenshteinSimilarValue [{}] jaccardSimilarValue [{}] licenseUrlLevenshteinResult [{}] licenseUrlJaccardResult [{}]", license.getLicenseId(), dependencyLicense, licenseUrl, levenshteinSimilarValue, jaccardSimilarValue, licenseUrlLevenshteinResult, licenseUrlJaccardResult);
+                                            boolean similar = (licenseUrlLevenshteinResult <= levenshteinSimilarValue && licenseUrlJaccardResult >= jaccardSimilarValue);
+                                            if (similar) {
+                                                log.info("License [{}] dependencyLicense [{}] licenseUrl [{}] levenshteinSimilarValue [{}] jaccardSimilarValue [{}] licenseUrlLevenshteinResult [{}] licenseUrlJaccardResult [{}] similar value matching", license.getLicenseId(), dependencyLicense, licenseUrl, levenshteinSimilarValue, jaccardSimilarValue, licenseUrlLevenshteinResult, licenseUrlJaccardResult);
+                                                return true;
+                                            }
+                                            if (dependencyLicense.contains(licenseUrl)) {
+                                                log.info("License [{}] dependencyLicense [{}] contains licenseUrl [{}]", license.getLicenseId(), dependencyLicense, licenseUrl);
+                                                return true;
+                                            }
+                                            return false;
+                                        })) {
+                                    licenseSet.add(license.getLicenseId());
+                                }
+                            }
+                            double licenseNameLevenshteinResult = levenshteinDistance.apply(dependencyLicense, license.getLicenseName());
+                            double licenseNameJaccardResult = jaccardSimilarity.apply(dependencyLicense, license.getLicenseName());
+                            log.info("License [{}] dependencyLicense [{}] licenseName [{}] levenshteinSimilarValue [{}] jaccardSimilarValue [{}] licenseUrlLevenshteinResult [{}] licenseUrlJaccardResult [{}]", license.getLicenseId(), dependencyLicense, license.getLicenseName(), levenshteinSimilarValue, jaccardSimilarValue, licenseNameLevenshteinResult, licenseNameJaccardResult);
+                            if (licenseNameLevenshteinResult <= levenshteinSimilarValue && licenseNameJaccardResult >= jaccardSimilarValue) {
+                                log.info("License [{}] dependencyLicense [{}] licenseName [{}] levenshteinSimilarValue [{}] jaccardSimilarValue [{}] licenseUrlLevenshteinResult [{}] licenseUrlJaccardResult [{}] similar value matching", license.getLicenseId(), dependencyLicense, license.getLicenseName(), levenshteinSimilarValue, jaccardSimilarValue, licenseNameLevenshteinResult, licenseNameJaccardResult);
+                                licenseSet.add(license.getLicenseId());
+                            }
+                            if (Arrays.stream(dependencyLicense.split(": "))
+                                    .anyMatch(item -> {
+                                        if (StringUtils.isNotBlank(license.getLicenseUrl())) {
+                                            if (Arrays.stream(license.getLicenseUrl().split(","))
+                                                    .anyMatch(licenseUrl -> {
+                                                        double licenseUrlLevenshteinResult = levenshteinDistance.apply(item, licenseUrl);
+                                                        double licenseUrlJaccardResult = jaccardSimilarity.apply(item, licenseUrl);
+                                                        log.info("License [{}] dependencyLicense [{}] item [{}] licenseUrl [{}] levenshteinSimilarValue [{}] jaccardSimilarValue [{}] licenseUrlLevenshteinResult [{}] licenseUrlJaccardResult [{}]", license.getLicenseId(), dependencyLicense, item, licenseUrl, levenshteinSimilarValue, jaccardSimilarValue, licenseUrlLevenshteinResult, licenseUrlJaccardResult);
+                                                        boolean similar = (licenseUrlLevenshteinResult <= levenshteinSimilarValue && licenseUrlJaccardResult >= jaccardSimilarValue);
+                                                        if (similar) {
+                                                            log.info("License [{}] dependencyLicense [{}] item [{}] licenseUrl [{}] levenshteinSimilarValue [{}] jaccardSimilarValue [{}] licenseUrlLevenshteinResult [{}] licenseUrlJaccardResult [{}] similar value matching", license.getLicenseId(), dependencyLicense, item, licenseUrl, levenshteinSimilarValue, jaccardSimilarValue, licenseUrlLevenshteinResult, licenseUrlJaccardResult);
+                                                            return true;
+                                                        }
+                                                        return false;
+                                                    })) {
+                                                licenseSet.add(license.getLicenseId());
+                                            }
+                                        }
+                                        double licenseNameItemLevenshteinResult = levenshteinDistance.apply(item, license.getLicenseName());
+                                        double licenseNameItemJaccardResult = jaccardSimilarity.apply(item, license.getLicenseName());
+                                        log.info("License [{}] dependencyLicense [{}] item [{}] licenseName [{}] levenshteinSimilarValue [{}] jaccardSimilarValue [{}] licenseUrlLevenshteinResult [{}] licenseUrlJaccardResult [{}]", license.getLicenseId(), dependencyLicense, item, license.getLicenseName(), levenshteinSimilarValue, jaccardSimilarValue, licenseNameItemLevenshteinResult, licenseNameItemJaccardResult);
+                                        if (licenseNameItemLevenshteinResult <= levenshteinSimilarValue && licenseNameItemJaccardResult >= jaccardSimilarValue) {
+                                            log.info("License [{}] dependencyLicense [{}] item [{}] licenseName [{}] levenshteinSimilarValue [{}] jaccardSimilarValue [{}] licenseUrlLevenshteinResult [{}] licenseUrlJaccardResult [{}] similar value matching", license.getLicenseId(), dependencyLicense, item, license.getLicenseName(), levenshteinSimilarValue, jaccardSimilarValue, licenseNameItemLevenshteinResult, licenseNameItemJaccardResult);
+                                            return true;
+                                        }
+                                        return false;
+                                    })) {
+                                licenseSet.add(license.getLicenseId());
+                            }
+                        }
+                    }
                 }
-                log.info("LicenseSet {}", licenseSet);
-                component.setLicense(licenseSet);
             }
+            Optional<BomComponent> sbomComponentOptional = sbomComponentList.stream().filter(sbom -> dependency.getSha1sum().equalsIgnoreCase(sbom.getSha1())).findFirst();
+            sbomComponentOptional.ifPresent(bomComponent -> {
+                if (CollectionUtils.isNotEmpty(bomComponent.getLicenses())) {
+                    bomComponent.getLicenses().forEach(license -> {
+                        log.info("Component [{}] [{}] sbom license [{}]", component.getUuid(), component.getFileName(), JSONObject.toJSONString(license));
+                        if (Objects.nonNull(license) && Objects.nonNull(license.getLicense()) && StringUtils.isNotBlank(license.getLicense().getId()) && licenseIds.contains(license.getLicense().getId())) {
+                            licenseSet.add(license.getLicense().getId());
+                        }
+                    });
+                }
+            });
+            log.debug("LicenseSet {}", licenseSet);
+            component.setLicense(licenseSet);
         }
         if (CollectionUtils.isNotEmpty(dependency.getVulnerabilities())) {
             Set<Vulnerability> vulnerabilitySet = dependency.getVulnerabilities();
@@ -854,4 +955,34 @@ public class ScanService {
         return retryCount;
     }
 
+    public boolean validateRepositoryScan(String storageId, String repositoryId) {
+        Example example = new Example(ScanRules.class);
+        example.createCriteria().andEqualTo("id", String.format("%s-%s", storageId, repositoryId));
+        example.createCriteria().andEqualTo("onScan", 1);
+        List<ScanRules> scanRulesList = scanRulesMapper.selectByExample(example);
+        if (CollectionUtils.isEmpty(scanRulesList)) {
+            return false;
+        }
+        return true;
+    }
+
+    private double getLevenshteinDistanceSimilarValue() {
+        double similarValue = 10;
+        String key = "LICENSE_LEVENSHTEIN_SIMILAR_VALUE";
+        String cacheValue = distributedCacheComponent.get(key);
+        if (StringUtils.isNotBlank(cacheValue)) {
+            similarValue = Double.parseDouble(cacheValue);
+        }
+        return similarValue;
+    }
+
+    private double getJaccardSimilarValue() {
+        double similarValue = 0.85;
+        String key = "LICENSE_JACCARD_SIMILAR_VALUE";
+        String cacheValue = distributedCacheComponent.get(key);
+        if (StringUtils.isNotBlank(cacheValue)) {
+            similarValue = Double.parseDouble(cacheValue);
+        }
+        return similarValue;
+    }
 }

@@ -77,7 +77,7 @@ public class CocoapodsArtifactController extends BaseArtifactController
                                  @PathVariable String artifactPath,
                                  HttpServletRequest request) {
         final String storageId = repository.getStorage().getId();
-        final String repositoryId = repository.getId();
+        final String repositoryId = ifIsGroupAndStoreToDefault(repository);
 
         try {
             final BufferedInputStream artifactByteArrayInputStream = new BufferedInputStream(request.getInputStream());

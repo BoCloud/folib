@@ -46,6 +46,8 @@ public interface Repository {
 
     Set<String> getGroupRepositories();
 
+    String getGroupDefaultRepository();
+
     Set<String> getArtifactCoordinateValidators();
 
     Storage getStorage();

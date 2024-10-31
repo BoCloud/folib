@@ -72,6 +72,16 @@ public class RepositoryDto
 
     private Set<String> groupRepositories = new LinkedHashSet<>();
 
+    private String groupDefaultRepository;
+
+    public String getGroupDefaultRepository() {
+        return groupDefaultRepository;
+    }
+
+    public void setGroupDefaultRepository(String groupDefaultRepository) {
+        this.groupDefaultRepository = groupDefaultRepository;
+    }
+
     private Set<String> artifactCoordinateValidators = new LinkedHashSet<>();
 
     /**

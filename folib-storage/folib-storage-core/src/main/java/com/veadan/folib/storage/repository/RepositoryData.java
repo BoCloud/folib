@@ -85,6 +85,17 @@ public class RepositoryData
     @JsonDeserialize(using = StringArrayToMapJsonDeserializer.class)
     private Map<String, String> groupRepositories;
 
+    @Override
+    public String getGroupDefaultRepository() {
+        return groupDefaultRepository;
+    }
+
+    public void setGroupDefaultRepository(String groupDefaultRepository) {
+        this.groupDefaultRepository = groupDefaultRepository;
+    }
+
+    private String groupDefaultRepository;
+
     @JsonSerialize(using = MapValuesJsonSerializer.class)
     @JsonDeserialize(using = StringArrayToMapJsonDeserializer.class)
     private Map<String, String> artifactCoordinateValidators;
@@ -149,6 +160,7 @@ public class RepositoryData
         this.allowsDeletion = delegate.isAllowsDeletion();
         this.allowsDirectoryBrowsing = delegate.isAllowsDirectoryBrowsing();
         this.checksumHeadersEnabled = delegate.isChecksumHeadersEnabled();
+        this.groupDefaultRepository=delegate.getGroupDefaultRepository();
 
         RepositoryDto mutableRepository = (RepositoryDto) delegate;
         this.proxyConfiguration = immuteProxyConfiguration(mutableRepository.getProxyConfiguration());

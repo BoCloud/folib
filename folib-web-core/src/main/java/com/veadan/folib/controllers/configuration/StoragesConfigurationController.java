@@ -419,6 +419,9 @@ public class StoragesConfigurationController
     public TableResultResponse<Repository> getStoragesAndRepositories(@ApiParam(value = "Search for repository names in a specific storageId")
                                                                       @RequestParam(value = "storageId", required = false)
                                                                               String storageId,
+                                                                      @ApiParam(value = "Filter repository names by name")
+                                                                      @RequestParam (value="name",required = false)
+                                                                      String name,
                                                                       @ApiParam(value = "Filter repository names by type (i.e. hosted, group, proxy)")
                                                                       @RequestParam(value = "type", required = false)
                                                                               String type,
@@ -469,6 +472,7 @@ public class StoragesConfigurationController
             boolean filterByExcludeRepositoryId = StringUtils.isNotBlank(excludeRepositoryId);
             boolean filterByExcludeType = StringUtils.isNotBlank(excludeType);
             boolean filterByPolicy = StringUtils.isNotBlank(policy);
+            boolean filterByName=StringUtils.isNotBlank(name);
             String excludedStorageId = "", excludedRepositoryId = "";
             if (filterByExcludeRepositoryId) {
                 excludedStorageId = ConfigurationUtils.getStorageId(storageId, excludeRepositoryId);
@@ -493,6 +497,7 @@ public class StoragesConfigurationController
                         .filter(r -> !filterByPolicy || r.getPolicy().equalsIgnoreCase(policy))
                         .filter(r -> !filterByExcludeRepositoryId || (!r.getStorageIdAndRepositoryId().equalsIgnoreCase(excludedStorageIdAndRepositoryId)))
                         .filter(r -> !filterByExcludeType || !r.getType().equalsIgnoreCase(excludeType))
+                        .filter(r->!filterByName||r.getId().toLowerCase().contains(name.toLowerCase()))
                         .collect(Collectors.toCollection(LinkedList::new));
                 if (flag) {
                     repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || hasRepositoryResolve(item))).collect(Collectors.toList());

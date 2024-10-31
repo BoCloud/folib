@@ -80,7 +80,8 @@ public class GitLfsArtifactController extends BaseArtifactController {
                            HttpServletRequest request) {
         try {
             GitLfsJson gitLfsJson =gitLfsObjectMapper.readValue(request.getInputStream(), GitLfsJson.class);
-            return gitLfsLocalService.lfsUploadResponse(repository.getStorage().getId(),repository.getId(), gitLfsJson, request.getHeader("Authorization"));
+            String repositoryId=ifIsGroupAndStoreToDefault(repository);
+            return gitLfsLocalService.lfsUploadResponse(repository.getStorage().getId(),repositoryId, gitLfsJson, request.getHeader("Authorization"));
         } catch (Exception e) {
             this.logger.error("Failed to parse request body into GitLfsBatchJson with an error: {}", e.getMessage());
             this.logger.debug("", e);
@@ -97,7 +98,7 @@ public class GitLfsArtifactController extends BaseArtifactController {
                                    HttpServletRequest request) {
 
         final String storageId = repository.getStorage().getId();
-        final String repositoryId = repository.getId();
+        final String repositoryId = ifIsGroupAndStoreToDefault(repository);
         logger.info("Requested /{}/{}.", storageId, repositoryId);
         String auth = request.getHeader(HttpHeaders.AUTHORIZATION);
         GitLfsBatchRes res = UPLOAD.equals(req.getOperation()) ? setUploadRes(req, storageId, repositoryId, auth) : setDownloadRes(req, storageId, repositoryId);
@@ -113,7 +114,7 @@ public class GitLfsArtifactController extends BaseArtifactController {
                                     @PathVariable String path,
                                     HttpServletRequest request) {
         final String storageId = repository.getStorage().getId();
-        final String repositoryId = repository.getId();
+        final String repositoryId = ifIsGroupAndStoreToDefault(repository);
 
         try (InputStream is =  request.getInputStream()){
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
