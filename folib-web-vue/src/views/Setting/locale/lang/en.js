@@ -468,4 +468,10 @@ export default {
     'TheLastScan': 'Last scan',
     'ArtifactScanType': 'Type',
     'GlobalS3Bucket': 'Global S3 bucket',
+    'MigrateContent':'Migrate content',
+    'Repository': 'Repository',
+    'Group': 'Group',
+    'Permission': 'Permission',
+    'PleaseSelectAtLeastOneContent': 'Please select at least one content to migrate',
+    
 }

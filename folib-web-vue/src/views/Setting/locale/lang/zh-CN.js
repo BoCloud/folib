@@ -466,4 +466,10 @@ export default {
     'TheLastScan': '最近一次扫描',
     'ArtifactScanType': '类型',
     'GlobalS3Bucket': '全局S3桶',
+    'MigrateContent':'迁移内容',
+    'Repository': '仓库',
+    'Group': '用户组',
+    'Permission': '权限',
+    'PleaseSelectAtLeastOneContent': '请至少选择一个对象进行迁移',
+    
 }
