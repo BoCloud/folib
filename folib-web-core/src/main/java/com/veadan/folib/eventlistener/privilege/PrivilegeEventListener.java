@@ -6,6 +6,7 @@ import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.PrivilegeDispatch;
 import com.veadan.folib.dto.UserDTO;
 import com.veadan.folib.entity.*;
+import com.veadan.folib.enums.SyncStrategyEnum;
 import com.veadan.folib.event.AsyncEventListener;
 import com.veadan.folib.event.privilege.PrivilegeEvent;
 import com.veadan.folib.event.privilege.PrivilegeEventTypeEnum;
@@ -14,6 +15,7 @@ import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.users.dto.UserAuthDTO;
 import com.veadan.folib.users.service.*;
+import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.ws.common.FolibWsRunManageUtil;
 import com.veadan.folib.ws.common.FolibWsRunManageV2;
 import com.veadan.folib.ws.server.Command;
@@ -83,43 +85,63 @@ public class PrivilegeEventListener {
                 nodeDto.setWsClientOnline(session != null && session.isOpen());
             });
 
-            map.forEach((key, value) -> {
-                Boolean isThisCluster = value.getIsThisCluster();
-                Boolean wsClientOnline = value.getWsClientOnline();
-                Boolean isSyncPrivilege = value.getIsSyncPrivilege();
+            map.forEach((key, dispatchNodeDto) -> {
+                log.debug("key:{},dispatchNodeDto:{}", key, dispatchNodeDto);
+                Boolean isThisCluster = dispatchNodeDto.getIsThisCluster();
+                Boolean wsClientOnline = dispatchNodeDto.getWsClientOnline();
+                Boolean isSyncPrivilege = dispatchNodeDto.getIsSyncPrivilege();
+                String syncStrategy = dispatchNodeDto.getSyncStrategy();
+                String clusterNodeHost = dispatchNodeDto.getClusterNodeHost();
+                Boolean autoRegister = dispatchNodeDto.getAutoRegister();
 
-                if (!isThisCluster && !value.getAutoRegister()
+                log.info("isThisCluster:{},wsClientOnline:{},isSyncPrivilege:{},syncStrategy:{},clusterNodeHost:{}", isThisCluster, wsClientOnline, isSyncPrivilege, syncStrategy, clusterNodeHost);
+
+                if (!isThisCluster
                         && !Objects.equals(wsClientOnline, null) && wsClientOnline
-                        && !Objects.equals(isSyncPrivilege, null) && isSyncPrivilege) {
-                    WSMessageRequest wsMessageRequest = null;
-                    WSMessageResponse messageResponse = null;
-                    String clusterNodeHost = value.getClusterNodeHost();
-                    String targetHostName = FolibWsRunManageUtil.getTargetNode(clusterNodeHost);
-                    if (StringUtils.isBlank(targetHostName)) {
-                        //WS目标节点未找到，尝试转发到集群中其他节点处理
-                        targetHostName = FolibWsRunManageUtil.getTargetHostName(clusterNodeHost);
-                        if (folibWsRunManageV2.dispatch(targetHostName, PrivilegeDispatch.builder().targetHostName(targetHostName).privilegeEventTypeEnum(privilegeEventTypeEnum).uuId(uuId).build())) {
-                            return ;
-                        }
+                        && !Objects.equals(isSyncPrivilege, null) && isSyncPrivilege){
+                    if (SyncStrategyEnum.TARGET_TO_SOURCE.getValue().equalsIgnoreCase(syncStrategy) && autoRegister){
+                        syncAuthSourceToTarget(dispatchNodeDto, privilegeEventTypeEnum, uuId);
+                    }  else if (SyncStrategyEnum.SOURCE_TO_TARGET.getValue().equalsIgnoreCase(syncStrategy) && !autoRegister){
+                        syncAuthSourceToTarget(dispatchNodeDto, privilegeEventTypeEnum, uuId);
+                    } else if (SyncStrategyEnum.TWO_WAY_SYNC.getValue().equalsIgnoreCase(syncStrategy)){
+                        syncAuthSourceToTarget(dispatchNodeDto, privilegeEventTypeEnum, uuId);
                     }
-
-                     //发送用户权限消息
-                    try {
-                        //查询请求参数
-                        UserAuthDTO userAuthReq = getUserAuthReq(privilegeEventTypeEnum, uuId);
-                        wsMessageRequest = new WSMessageRequest(Command.USER_AUTH_SYNC, userAuthReq);
-                        messageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
-//                        SpringContextUtil.getBeanWithAnnotation(RelationalDatabaseUserService.RelationalDatabase.class, RelationalDatabaseUserService.class).syncUserAuth(userAuthReq);
-                        log.debug("sendRequest result,wsMessageRequest:{},messageResponse:{}", wsMessageRequest, messageResponse);
-                    }  catch (Exception e) {
-                        log.error("sendRequest fail,wsMessageRequest:{}", wsMessageRequest, e);
-                    }
-
                 }
             });
 
         } catch (Exception ex) {
             log.error("事件监听，处理backup，事件类型：{} 主键id：{} 错误：{}", source, uuId, ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
+    private void syncAuthTargetToSource(String clusterNodeHost, PrivilegeEventTypeEnum privilegeEventTypeEnum, String uuId) {
+        String baseUrl = configurationManagementService.getConfiguration().getBaseUrl();
+        boolean dispatch = folibWsRunManageV2.dispatchTargetNode(clusterNodeHost, PrivilegeDispatch.builder().privilegeEventTypeEnum(privilegeEventTypeEnum).targetHostName(baseUrl).uuId(uuId).build());
+        log.info("dispatch:{}", dispatch);
+    }
+    private void syncAuthSourceToTarget(ClusterDispatchNodeDto value, PrivilegeEventTypeEnum privilegeEventTypeEnum, String uuId) {
+        WSMessageRequest wsMessageRequest = null;
+        WSMessageResponse messageResponse = null;
+        String clusterNodeHost = value.getClusterNodeHost();
+        String targetHostName = FolibWsRunManageUtil.getTargetNode(clusterNodeHost);
+        if (StringUtils.isBlank(targetHostName)) {
+            //WS目标节点未找到，尝试转发到集群中其他节点处理
+            targetHostName = FolibWsRunManageUtil.getTargetHostName(clusterNodeHost);
+            if (folibWsRunManageV2.dispatch(targetHostName, PrivilegeDispatch.builder().targetHostName(targetHostName).privilegeEventTypeEnum(privilegeEventTypeEnum).uuId(uuId).build())) {
+                return;
+            }
+        }
+
+        //发送用户权限消息
+        try {
+            //查询请求参数
+            UserAuthDTO userAuthReq = getUserAuthReq(privilegeEventTypeEnum, uuId);
+            wsMessageRequest = new WSMessageRequest(Command.USER_AUTH_SYNC, userAuthReq);
+            messageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
+//                        SpringContextUtil.getBeanWithAnnotation(RelationalDatabaseUserService.RelationalDatabase.class, RelationalDatabaseUserService.class).syncUserAuth(userAuthReq);
+            log.debug("sendRequest result,wsMessageRequest:{},messageResponse:{}", wsMessageRequest, messageResponse);
+        }  catch (Exception e) {
+            log.error("sendRequest fail,wsMessageRequest:{}", wsMessageRequest, e);
         }
     }
 
@@ -252,9 +274,21 @@ public class PrivilegeEventListener {
                 String repositoryId = resource.getRepositoryId();
                 String storageId = resource.getStorageId();
                 if (StringUtils.isNotEmpty(repositoryId)) {
-                    repositorys.add(configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId));
-                } else {
-                    storages.add(configurationManagementService.getMutableConfigurationClone().getStorage(storageId));
+                     StorageDto storage = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
+                    if (storage != null && storage.hasRepositories()) {
+                        RepositoryDto repository = storage.getRepository(repositoryId);
+                        if (repository != null && !repositorys.contains(repository) && repository.isSyncEnabled()) {
+                            repositorys.add(repository);
+                            if (!storages.contains(storage)) {
+                                storages.add(storage);
+                            }
+                        }
+                    }
+                } else if (StringUtils.isNotEmpty(storageId)){
+                    StorageDto storage = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
+                    if (storage != null && !storages.contains(storage) && storage.isSyncEnabled()) {
+                        storages.add(storage);
+                    }
                 }
             });
             if (!repositorys.isEmpty()) {

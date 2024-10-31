@@ -191,7 +191,7 @@ public class ResourceServiceImpl implements ResourceService {
     @Override
     public void deleteByIds(List<String> resourceIds) {
         Example example = new Example(Resource.class);
-        example.createCriteria().andIn("Id", resourceIds);
+        example.createCriteria().andIn("id", resourceIds);
         resourceMapper.selectByExample(example);
         //删除资源关联的权限信息
         roleResourceRefService.deleteByResourceIds(resourceIds);

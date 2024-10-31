@@ -113,8 +113,16 @@ public class RepositoryData
      */
     private UnionRepositoryConfiguration unionRepositoryConfiguration;
 
+    /**
+     * proxy 健康状态
+     */
+    private boolean healthStatus;
+
     @JsonIgnore
     private Storage storage;
+
+    /**是否同步存储空间到其他节点*/
+    private boolean syncEnabled;
 
     RepositoryData() {
 
@@ -161,7 +169,11 @@ public class RepositoryData
         this.subLayout = delegate.getSubLayout();
         this.scope = delegate.getScope();
         this.allowAnonymous = delegate.isAllowAnonymous();
+        this.syncEnabled = delegate.isSyncEnabled();
         this.unionRepositoryConfiguration = immuteUnionRepositoryConfiguration(mutableRepository.getUnionRepositoryConfiguration());
+        if (delegate.getHealthStatus() != null) {
+            this.healthStatus = delegate.getHealthStatus();
+        }
     }
 
     private ProxyConfiguration immuteProxyConfiguration(final MutableProxyConfiguration source) {
@@ -422,5 +434,19 @@ public class RepositoryData
     @Override
     public UnionRepositoryConfiguration getUnionRepositoryConfig() {
         return unionRepositoryConfiguration;
+    }
+
+    @Override
+    public boolean isSyncEnabled() {
+        return syncEnabled;
+    }
+
+    public void setSyncEnabled(boolean syncEnabled) {
+        this.syncEnabled = syncEnabled;
+    }
+
+    @Override
+    public Boolean getHealthStatus() {
+        return healthStatus;
     }
 }

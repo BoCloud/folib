@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableSet;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
 import com.veadan.folib.cron.jobs.fields.*;
+import com.veadan.folib.providers.layout.Maven2LayoutProvider;
 import com.veadan.folib.repository.MavenRepositoryFeatures;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
@@ -65,7 +66,7 @@ public class RemoveTimestampedMavenSnapshotCronJob
         // The period to keep artifacts (the number of days)
         int keepPeriod = config.getProperty(PROPERTY_KEEP_PERIOD) != null ?
                 Integer.parseInt(config.getProperty(PROPERTY_KEEP_PERIOD)) :
-                30;
+                0;
 
         if (storageId == null) {
             Map<String, Storage> storages = getStorages();
@@ -113,7 +114,7 @@ public class RemoveTimestampedMavenSnapshotCronJob
 
         repositories.forEach((repositoryId, repository) ->
         {
-            if (repository.getPolicy().equals(RepositoryPolicyEnum.SNAPSHOT.getPolicy()) || repository.getPolicy().equals(RepositoryPolicyEnum.MIXED.getPolicy())) {
+            if (Maven2LayoutProvider.ALIAS.equals(repository.getLayout()) && repository.getPolicy().equals(RepositoryPolicyEnum.SNAPSHOT.getPolicy()) || repository.getPolicy().equals(RepositoryPolicyEnum.MIXED.getPolicy())) {
                 try {
                     mavenRepositoryFeatures.removeTimestampedSnapshots(storageId,
                             repositoryId,

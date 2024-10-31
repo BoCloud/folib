@@ -31,6 +31,13 @@ public interface UserGroupMapper extends CommonMapper<UserGroup> {
      * @return 对象列表
      */
     List<UserGroupListDTO> queryAllByLimit(@Param("userGroup") UserGroup userGroup);
+
+     /**
+      * 查询用户组及用户组下的成员
+      * @param userGroup 查询条件
+      * @return 对象列表
+      */
+     List<UserGroupListDTO> queryAllByUser(@Param("userGroup") UserGroup userGroup);
     /** 
      * 统计总行数
      *

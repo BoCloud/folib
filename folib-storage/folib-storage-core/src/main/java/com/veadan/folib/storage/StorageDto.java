@@ -29,7 +29,11 @@ public class StorageDto
 
     private Long storageMaxSize;
 
+    /**是否同步存储空间到其他节点*/
+    private boolean syncEnabled;
+
     private Set<String> users = new LinkedHashSet<>();
+    private Set<String> repositoryUsers = new LinkedHashSet<>();
 
     private Map<String, RepositoryDto> repositories = new LinkedHashMap<>();
 
@@ -153,5 +157,20 @@ public class StorageDto
         sb.append('}');
         return sb.toString();
     }
-    
+
+    public Set<String> getRepositoryUsers() {
+        return repositoryUsers;
+    }
+
+    public void setRepositoryUsers(Set<String> repositoryUsers) {
+        this.repositoryUsers = repositoryUsers;
+    }
+
+    public boolean isSyncEnabled() {
+        return syncEnabled;
+    }
+
+    public void setSyncEnabled(boolean syncEnabled) {
+        this.syncEnabled = syncEnabled;
+    }
 }

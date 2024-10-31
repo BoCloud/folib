@@ -20,6 +20,8 @@ import java.util.List;
 public class AccessUserGroupsDTO {
     /**用户组id*/
     private String id;
+    /**用户组名称*/
+    private String name;
 
     private List<String> access = new ArrayList<>();
 }

@@ -28,6 +28,7 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -120,7 +121,10 @@ public class RpmArtifactController extends BaseArtifactController {
                 String filename = multipartFile.getOriginalFilename();
                 String rpmPath = "Packages/" + filename;
                 RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, rpmPath);
-                artifactManagementService.store(repositoryPath, multipartFile.getInputStream());
+                try (InputStream is =  multipartFile.getInputStream()){
+                    artifactManagementService.store(repositoryPath, is);
+                }
+
             }
 
             RepositoryPath repoPath = repositoryPathResolver.resolve(repository, "repodata");
@@ -156,7 +160,7 @@ public class RpmArtifactController extends BaseArtifactController {
     @ApiOperation(value = "Used to build rpm local repository atficat index")
     @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
             @ApiResponse(code = 400, message = "An error occurred.")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @GetMapping(value = {"{storageId}/{repositoryId}/buildIndex"})
     public ResponseEntity buildIndex(@RepositoryMapping Repository repository) {
         try {

@@ -81,5 +81,8 @@ public interface Repository {
     boolean isAllowAnonymous();
 
     UnionRepositoryConfiguration getUnionRepositoryConfig();
+    boolean isSyncEnabled();
+
+    Boolean getHealthStatus();
 
 }

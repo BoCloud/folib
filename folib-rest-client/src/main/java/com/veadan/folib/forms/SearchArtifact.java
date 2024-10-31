@@ -46,6 +46,26 @@ public class SearchArtifact {
      */
     private String pattern;
     /**
+     * 开始时间
+     */
+    private String beginDate;
+    /**
+     * 结束时间
+     */
+    private String endDate;
+    /**
+     * 漏洞扫描状态
+     */
+    private String safeLevel;
+    /**
+     * 校验码类型
+     */
+    private String digestAlgorithm;
+    /**
+     * 校验码
+     */
+    private String digest;
+    /**
      * 排序字段
      */
     private String sortField;

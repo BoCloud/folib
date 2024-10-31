@@ -96,6 +96,16 @@ public class RepositoryForm {
     @NotEmpty(message = "请填写黑名单", groups = {RepositoryForm.BlackGroup.class})
     private Set<String> vulnerabilityBlacks;
 
+    public boolean isSyncEnabled() {
+        return syncEnabled;
+    }
+
+    public void setSyncEnabled(boolean syncEnabled) {
+        this.syncEnabled = syncEnabled;
+    }
+
+    /**是否同步存储空间到其他节点*/
+    private boolean syncEnabled;
     /**
      * 仓库可见范围 1 存储空间内 2 公开
      */

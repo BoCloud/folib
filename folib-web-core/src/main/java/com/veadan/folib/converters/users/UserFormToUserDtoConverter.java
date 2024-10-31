@@ -21,6 +21,7 @@ public enum UserFormToUserDtoConverter
         UserDto user = new UserDto();
         user.setUsername(userForm.getUsername());
         user.setPassword(userForm.getPassword());
+        user.setOriginalPassword(userForm.getOriginalPassword());
         user.setEnabled(userForm.isEnabled());
         user.setRoleNames(userForm.getRoles());
         user.setSecurityTokenKey(userForm.getSecurityTokenKey());

@@ -154,10 +154,10 @@
             </a-row>
           </a-card>
           <a-form-model-item :wrapper-col="{ span: 14, offset: 4 }">
-            <a-button type="primary" @click="unionRepositoryFormSubmit">
+            <a-button type="primary" @click="unionRepositoryFormSubmit" v-if="isShow">
               {{ $t('UnionRepository.Save') }}
             </a-button>
-            <a-button class="ml-10" @click="unionRepositoryFormReset">
+            <a-button class="ml-10" @click="unionRepositoryFormReset" v-if="isShow">
               {{ $t('UnionRepository.Cancel') }}
             </a-button>
           </a-form-model-item>
@@ -174,6 +174,7 @@ import {
 } from "@/api/folib"
 import { getExternalNodeRepositories } from "@/api/externalNode"
 export default {
+  inject: ['doDrawerStatus'],
   props: {
     folibRepository: {
       type: Object,
@@ -182,6 +183,10 @@ export default {
     settingVisible: {
       type: Boolean,
       default: false,
+    },
+    isShow:{
+          type: Boolean,
+          default: true,
     },
   },
   data() {
@@ -512,12 +517,20 @@ export default {
           unionRepositoryConfig(this.folibRepository.storageId,this.folibRepository.id,data).then(res => {
             this.successMsg()
             setTimeout(() => {
-              this.$emit('settingDrawerClose')
+              this.$emit('settingDrawerClose');
+                //this.callParent(false,'process')
             }, 100)
-          })
+          }).catch((err=> {
+              this.callParent(false,'error')
+          }))
         }
       })
     },
+      callParent(isClose,status) {
+          if(this.doDrawerStatus){
+              this.doDrawerStatus(false,status)
+          }
+      },
     getExternalNodeRepositories(params) {
       getExternalNodeRepositories(params).then(res => {
         if (res) {

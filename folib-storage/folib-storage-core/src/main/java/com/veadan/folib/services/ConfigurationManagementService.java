@@ -55,6 +55,9 @@ public interface ConfigurationManagementService {
     void saveRepository(String storageId,
                         RepositoryDto repository) throws IOException;
 
+    void setRepositoryBasedir(String storageId,
+                        RepositoryDto repository) throws IOException;
+
     void removeRepositoryFromAssociatedGroups(String storageId,
                                               String repositoryId) throws IOException;
 
@@ -125,6 +128,8 @@ public interface ConfigurationManagementService {
     void setSmtpSettings(MutableSmtpConfiguration smtpConfiguration) throws IOException;
 
     void updateStorage(StorageDto storage) throws IOException;
+
+    void updateStorageBasedir(StorageDto storage) throws IOException;
 
     /**
      * 设置平台级别白名单

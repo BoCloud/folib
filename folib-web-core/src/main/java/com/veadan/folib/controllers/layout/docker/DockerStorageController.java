@@ -71,13 +71,13 @@ public class DockerStorageController extends BaseArtifactController {
                                  HttpServletRequest request) {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
-        try {
+        try (InputStream is =  request.getInputStream()){
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
             if (!DockerUtils.isSubsidiaryFile(repositoryPath)) {
                 String msg = String.format("The parent path of the artifact path [%s] must be [%s]", artifactPath, DockerUtils.SUBSIDIARY_PATH);
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(msg);
             }
-            artifactManagementService.validateAndStore(repositoryPath, request.getInputStream());
+            artifactManagementService.validateAndStore(repositoryPath, is);
             return ResponseEntity.ok("The artifact was deployed successfully.");
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -218,8 +218,8 @@ public class DockerStorageController extends BaseArtifactController {
         RepositoryPath repositoryPath = dockerComponent.resolveManifest(storageId, repositoryId, repository, tag);
         if (Files.exists(repositoryPath)) {
             ObjectMapper mapper = new ObjectMapper();
-            File file = new File(repositoryPath.toString());
-            return mapper.readTree(file);
+            return mapper.readTree(Files.readString(repositoryPath));
+
         } else {
             //docker 镜像不存在
             throw new RuntimeException("the docker image does not exist ");
@@ -243,8 +243,7 @@ public class DockerStorageController extends BaseArtifactController {
         RepositoryPath repositoryPath = dockerComponent.resolveManifest(storageId, repositoryId, repository, digest);
         if (Files.exists(repositoryPath)) {
             ObjectMapper mapper = new ObjectMapper();
-            File file = new File(repositoryPath.toString());
-            return mapper.readTree(file);
+            return mapper.readTree(Files.readString(repositoryPath));
         } else {
             //docker 镜像不存在
             throw new RuntimeException("the docker image does not exist ");

@@ -31,6 +31,7 @@ import com.veadan.folib.storage.validation.resource.ArtifactOperationsValidator;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.FileSystemUtils;
@@ -85,6 +86,9 @@ public class ArtifactManagementService
     @Inject
     protected RepositoryPathResolver repositoryPathResolver;
 
+    @Value("${folib.uploadRestrictions:false}")
+    private boolean artifactUploadRestrictions;
+
     public long validateAndStore(RepositoryPath repositoryPath,
                                  InputStream is)
             throws IOException,
@@ -136,6 +140,10 @@ public class ArtifactManagementService
     {
         long  startTime = System.currentTimeMillis();
         long result;
+        // Check size
+        if(artifactUploadRestrictions){
+            artifactOperationsValidator.checkArtifactSize(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), is);
+        }
         try (final RepositoryStreamSupport.RepositoryOutputStream aos = artifactResolutionService.getOutputStream(repositoryPath))
         {
             result = writeArtifact(repositoryPath, is, aos);
@@ -204,12 +212,13 @@ public class ArtifactManagementService
                                OutputStream os)
             throws IOException
     {
+        long startTime = System.currentTimeMillis();
         LayoutOutputStream aos = StreamUtils.findSource(LayoutOutputStream.class, os);
 
         Repository repository = repositoryPath.getRepository();
 
         Boolean checksumAttribute = RepositoryFiles.isChecksum(repositoryPath);
-
+        logger.info("Read attribute [{}] take time [{}] ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
         // If we have no digests, then we have a checksum to store.
         if (Boolean.TRUE.equals(checksumAttribute))
         {
@@ -221,18 +230,21 @@ public class ArtifactManagementService
             artifactEventListenerRegistry.dispatchArtifactUploadingEvent(repositoryPath);
         }
 
-        long startTime = System.currentTimeMillis();
+        startTime = System.currentTimeMillis();
         long totalAmountOfBytes = IOUtils.copy(is, os);
         logger.info("IOUtils copy [{}] size [{}] take time [{}] ms" , repositoryPath.toString(), totalAmountOfBytes, System.currentTimeMillis() - startTime);
 
         URI repositoryPathId = repositoryPath.toUri();
+        startTime = System.currentTimeMillis();
         Map<String, String> digestMap = aos.getDigestMap(repository.getLayout());
+        logger.info("Get digest [{}] take time [{}] ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
         if (Boolean.FALSE.equals(checksumAttribute) && !digestMap.isEmpty())
         {
+            startTime = System.currentTimeMillis();
             // Store artifact digests in cache if we have them.
             addChecksumsToCacheManager(digestMap, repositoryPathId);
-
             writeChecksums(repositoryPath, digestMap);
+            logger.info("Write check sum [{}] take time [{}] ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
         }
 
         if (Boolean.TRUE.equals(checksumAttribute))
@@ -424,6 +436,7 @@ public class ArtifactManagementService
     public boolean performRepositoryAcceptanceValidation(RepositoryPath path)
             throws IOException, ProviderImplementationException, ArtifactCoordinatesValidationException
     {
+        long startTime = System.currentTimeMillis();
         logger.debug("Validate artifact with path [{}]", path);
 
         Repository repository = path.getFileSystem().getRepository();
@@ -460,6 +473,7 @@ public class ArtifactManagementService
         if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
             artifactOperationsValidator.checkStorageSize(path);
         }
+        logger.info("Repository acceptance validation [{}] take time [{}] ms." , path.toString(), System.currentTimeMillis() - startTime);
         return true;
     }
 

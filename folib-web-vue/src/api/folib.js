@@ -502,3 +502,19 @@ export function getArtifactsPage (query) {
     params: query
   })
 }
+
+export function queryRepositoriesByStorage (dataQuery) {
+  return axios({
+    url: '/api/configuration/folib/storages/queryStoragesAndRepositories',
+    params: dataQuery,
+    method: 'get'
+  })
+}
+
+export function jfrogMigrate (data) {
+  return axios({
+    url: '/api/migrate/jfrog',
+    data: data,
+    method: 'post'
+  })
+}

@@ -1,5 +1,6 @@
 package com.veadan.folib.services.impl;
 
+import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.cluster.SyncRepositoryEnum;
 import com.veadan.folib.cluster.SyncStorageEnum;
 import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
@@ -88,7 +89,7 @@ public class UserSyncServiceImpl implements UserSyncService
             List<UserGroup> userGroupList = userGroupService.queryByGroupNames(groupNames);
             Map<String, Long> userGroupMap = new HashMap<>();
             if (CollectionUtils.isNotEmpty(userGroupList)) {
-                userGroupMap = userGroupList.stream().collect(Collectors.toMap(UserGroup::getGroupName, UserGroup::getId));
+                userGroupMap = userGroupList.stream().collect(Collectors.toMap(UserGroup::getGroupName, UserGroup::getId, (existing, replacement) -> existing));
             }
 
             if (CollectionUtils.isNotEmpty(groups)) {
@@ -218,7 +219,10 @@ public class UserSyncServiceImpl implements UserSyncService
         //删除资源信息
         List<String> removeResourceIds = date.getRemoveResourceIds();
         if (CollectionUtils.isNotEmpty(removeResourceIds)) {
-            String resourceId = removeResourceIds.get(0);
+            resourceService.deleteByIds(removeResourceIds);
+            roleResourceRefService.deleteByResourceIds(removeResourceIds);
+
+           /* String resourceId = removeResourceIds.get(0);
             Resource resource = resourceService.queryById(resourceId);
             if (resource != null) {
                 String repositoryId = resource.getRepositoryId();
@@ -268,7 +272,7 @@ public class UserSyncServiceImpl implements UserSyncService
                     }
                 }
 
-            }
+            }*/
         }
     }
 

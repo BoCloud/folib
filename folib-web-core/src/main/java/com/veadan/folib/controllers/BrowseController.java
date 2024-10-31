@@ -150,8 +150,8 @@ public class BrowseController
                 }
 
                 if (artifact.getScanDateTime() != null) {
-                    String lastModified = DateUtil.format(Date.from(artifact.getScanDateTime().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
-                    jsonObject.put("scanTime", lastModified);
+                    String scanDateTime = DateUtil.format(Date.from(artifact.getScanDateTime().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
+                    jsonObject.put("scanTime", scanDateTime);
                 }
 
                 Set<String> fileNames = artifact.getArtifactArchiveListing().getFilenames();
@@ -220,12 +220,10 @@ public class BrowseController
                 jsonObject.put("snippets", snippets);
                 jsonObject.put("manifest", imageManifest);
                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                dateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
-                String format = dateFormat.format(fileContent.getLastModified());
-                jsonObject.put("lastModified", format);
+                jsonObject.put("lastModified", DateUtil.format(Date.from(artifact.getLastUpdated().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), dateFormat));
                 if (artifact.getScanDateTime() != null) {
-                    String lastModified = DateUtil.format(Date.from(artifact.getScanDateTime().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), dateFormat);
-                    jsonObject.put("scanTime", lastModified);
+                    String scanDateTime = DateUtil.format(Date.from(artifact.getScanDateTime().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), dateFormat);
+                    jsonObject.put("scanTime", scanDateTime);
                 }
                 jsonObject.put("size", size);
                 jsonObject.put("imageName", imageName);
@@ -303,7 +301,7 @@ public class BrowseController
     @ApiOperation(value = "List configured storages.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The list was returned."),
             @ApiResponse(code = 500, message = "An error occurred.")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping(produces = {MediaType.TEXT_PLAIN_VALUE,
             MediaType.TEXT_HTML_VALUE,
             MediaType.APPLICATION_JSON_VALUE})
@@ -336,7 +334,7 @@ public class BrowseController
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The list was returned."),
             @ApiResponse(code = 404, message = "The requested storage was not found."),
             @ApiResponse(code = 500, message = "An error occurred.")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping(value = "/{storageId}",
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.TEXT_HTML_VALUE,
@@ -410,7 +408,7 @@ public class BrowseController
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The list was returned."),
             @ApiResponse(code = 404, message = "The requested storage, repository, or path was not found."),
             @ApiResponse(code = 500, message = "An error occurred.")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping(value = {"{storageId}/{repositoryId}/{path:.+}"},
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.TEXT_HTML_VALUE,

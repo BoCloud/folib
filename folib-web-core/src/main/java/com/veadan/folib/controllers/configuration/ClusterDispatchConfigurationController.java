@@ -6,6 +6,7 @@ import com.veadan.folib.cluster.SyncClusterDispatchEnum;
 import com.veadan.folib.controllers.cluster.dto.SyncClusterDispatchDto;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.enums.AuditEventNameEnum;
+import com.veadan.folib.enums.SyncStrategyEnum;
 import com.veadan.folib.forms.configuration.ClusterDispatchNodeForm;
 import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.services.ClusterDispatchManagementService;
@@ -17,6 +18,7 @@ import com.veadan.folib.ws.common.FolibWsRunManageV2;
 import com.veadan.folib.ws.server.DistributionService;
 import com.veadan.folib.ws.server.PromotionTaskQueue;
 import io.swagger.annotations.*;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
@@ -81,6 +83,10 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
                 getMutableConfigurationClone().getClusterDispatchNode();
         final Collection<ClusterDispatchNodeDto> values = map.values();
         values.forEach(nodeDto -> {
+            String syncStrategy = nodeDto.getSyncStrategy();
+            if (StringUtils.isEmpty(syncStrategy)) {
+                nodeDto.setSyncStrategy(SyncStrategyEnum.SOURCE_TO_TARGET.getValue());
+            }
             String targetHostName = FolibWsRunManageUtil.getSimpleTargetHostName(nodeDto);
             Session session = folibWsRunManageV2.getSession(targetHostName);
             nodeDto.setWsClientOnline(session != null && session.isOpen());
@@ -115,6 +121,10 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
                 // 创建分发节点
                 nodeDto = new ClusterDispatchNodeDto();
                 BeanUtils.copyProperties(clusterDispatchNodeForm, nodeDto);
+                String syncStrategy = nodeDto.getSyncStrategy();
+                if (StringUtils.isEmpty(syncStrategy)) {
+                    nodeDto.setSyncStrategy(SyncStrategyEnum.SOURCE_TO_TARGET.getValue());
+                }
 
                 nodeDto.setCreateTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 

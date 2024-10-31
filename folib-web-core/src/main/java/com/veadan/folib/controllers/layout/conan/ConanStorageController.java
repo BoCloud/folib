@@ -42,7 +42,7 @@ public class ConanStorageController extends BaseArtifactController {
     @Qualifier("browseRepositoryDirectoryListingService")
     private volatile DirectoryListingService directoryListingService;
 
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @RequestMapping(value = {"/api/conan/info"}, method = {RequestMethod.POST})
     public ResponseEntity<ConanInfo> info(@RequestHeader HttpHeaders httpHeaders,
                                           @RequestBody @Valid ConanInfoDto conanInfoDto,
@@ -81,7 +81,7 @@ public class ConanStorageController extends BaseArtifactController {
         return ResponseEntity.ok(ConanInfo.builder().recipeInfo(conanRecipeInfo).packageCount(packageCount).build());
     }
 
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @RequestMapping(value = {"/api/conan/packageInfo"}, method = {RequestMethod.POST})
     public ResponseEntity<ConanPackageInfo> packageInfo(@RequestHeader HttpHeaders httpHeaders,
                                                         @RequestBody @Valid ConanInfoDto conanInfoDto,

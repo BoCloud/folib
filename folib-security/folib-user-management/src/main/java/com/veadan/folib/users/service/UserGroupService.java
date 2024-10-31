@@ -30,6 +30,8 @@ public interface UserGroupService{
      * @return 查询结果
      */
     PageInfo<UserGroupListDTO> paginQuery(UserGroup userGroup, PageRequest pageRequest);
+
+    PageInfo<UserGroupListDTO> pageQueryAndUserNumber(UserGroup userGroup, PageRequest pageRequest);
     /** 
      * 新增数据
      *

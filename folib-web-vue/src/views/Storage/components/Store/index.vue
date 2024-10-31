@@ -3,13 +3,15 @@
     <a-affix :offset-top="50" class="repository-affix">
       <a-row>
         <a-col :span="24" :md="24" class="mb-24">
+            <!-- 进度球-->
+<!--            <CircleProgress :progress="totalUploadProgress" :closeGlobe="isClose" :waveClassName="waveClassName" :containerClassName="containerClassName"/>-->
           <!-- User Profile Card -->
           <a-card :bordered="false" class="card-profile-head" :bodyStyle="{ padding: 0 }" :targetOffset="0"
             :affix="false">
             <template #title>
               <a-row type="flex" align="middle">
                 <a-col :span="24" :md="12" class="col-info">
-                  <a>
+                  <a v-if="!isChecked">
                     <a-icon type="backward" :style="{
                       fontSize: '32px',
                       marginRight: '5px',
@@ -17,10 +19,12 @@
                       color: '#BFBFBFFF',
                     }" @click="goBack()" />
                   </a>
-                  <a>
+                  <a style="justify-content: center;align-items: center;display: flex;">
                     <a-avatar @click="createData" :size="84" shape="square"
-                      style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
-                      :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" />
+                      style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );   "
+                                >
+                        <img :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" style="width: 150%;margin-left: -13.5px;" alt=""></img>
+                    </a-avatar>
                   </a>
                   <div class="avatar-info">
                     <a-tooltip placement="topLeft">
@@ -92,7 +96,18 @@
                     </a-descriptions>
                   </div>
                 </a-col>
-                <a-col :span="24" :md="12" style="
+                  <a-col :span="16" :md="7" class="col-info">
+
+                          <div style="width: 85%">
+                              <a-progress
+                                  v-if="isClose"
+                                  :stroke-color="{from: '#108ee9',to: '#87d068',}"
+                                  :percent="totalUploadProgress"
+                                  :status="progressStatus"
+                              />
+                          </div>
+                  </a-col>
+                <a-col :span="8" :md="5" style="
                     display: flex;
                     align-items: center;
                     justify-content: flex-end;
@@ -115,7 +130,18 @@
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
-                  <a v-if="uploadEnabled && folibRepository.layout !== 'rpm' && folibRepository.subLayout !== 'ohpm' && folibRepository.subLayout !== 'go'"><small style="padding-right: 20px" @click="handleUpload">
+                  <a v-if="uploadEnabled && folibRepository.layout === 'debian'"><small style="padding-right: 20px"
+                      @click="handleDebianUpload">
+                    {{ $t('Store.Upload') }}
+                      <a-icon type="cloud-upload" />
+                    </small>
+                  </a>
+                  <a v-if="uploadEnabled && folibRepository.layout !== 'rpm' &&  folibRepository.layout !== 'GitLfs' && folibRepository.layout !== 'GitLfs' && folibRepository.subLayout !== 'ohpm' && folibRepository.subLayout !== 'go' && folibRepository.layout !== 'debian'"><small style="padding-right: 20px" @click="handleUpload">
+                      {{ $t('Store.BatchUpload') }}
+                      <a-icon type="cloud-upload" />
+                    </small>
+                  </a>
+                  <a v-if="uploadEnabled && folibRepository.layout === 'debian'"><small style="padding-right: 20px" @click="handleDebianBatchUpload">
                       {{ $t('Store.BatchUpload') }}
                       <a-icon type="cloud-upload" />
                     </small>
@@ -126,12 +152,12 @@
                       <a-icon type="question-circle" theme="filled" />
                     </small>
                   </a>
-                  <!-- <div v-if="(isAdmin() || (storageAdmin && storageAdmin === $store.state.user.name)) && folibRepository.type !== 'group'">
+                  <div v-if="(isAdmin() || (storageAdmin && storageAdmin === $store.state.user.name)) && folibRepository.type !== 'group'">
                     <span class="mr-15">{{
                       scan.onScan ? $t('Store.ScanOn') : $t('Store.ScanOff')
                     }}</span>
                     <a-switch default-checked v-model="scan.onScan" @change="scannerChange" />
-                  </div> -->
+                  </div>
                 </a-col>
               </a-row>
             </template>
@@ -141,8 +167,8 @@
     </a-affix>
     <a-row v-if="isSearch === false" type="flex" :gutter="24">
       <!-- Platform Settings Column -->
-      <a-col :span="24" :md="10" class="mb-24">
-        <a-card :bordered="false" style="max-height: 1024px; min-height: 454px; overflow-y: auto" class="header-solid"
+      <a-col style="margin-top:-20px;" v-if="!isChecked" :span="24" :md="10" class="mb-24">
+        <a-card :bordered="false" style="max-height: 1024px; min-height: 554px; overflow-y: auto" class="header-solid"
           :bodyStyle="{ paddingTop: 0, paddingBottom: 0 }">
           <template #title>
             <h6 class="font-semibold m-0">{{ $t('Store.PacketList') }} <a class="ml-10" @click="reload()">
@@ -156,10 +182,10 @@
           </a-directory-tree>
         </a-card>
       </a-col>
-      <a-col :span="24" :md="14" class="mb-24">
+      <a-col style="margin-top:-20px;" :span="24" :md="!isChecked ? 14 : 24" class="mb-24">
         <a-card :bordered="false" class="header-solid h-full card-profile-information"
           :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }" :headStyle="{ paddingRight: 0 }">
-          <template #title>
+          <template #title v-if="isChecked ? !newDetailPage : true ">
             <a-row type="flex" align="middle" v-if="folibRepository.layout !== 'Docker'">
               <a-col :span="16" class="font-semibold m-0">
                 <a-row type="flex" align="middle">
@@ -370,8 +396,6 @@
                     <a-icon type="more" class="text-muted" style="font-size: 16px" />
                   </span>
                   <template #overlay>
-
-
                     <a-menu slot="overlay" @click="handleMenuClick">
                       <a-menu-item key="1" v-if="currentFileDetial">
                         <a-icon type="eye" />
@@ -420,11 +444,8 @@
                   </template>
                 </a-dropdown>
               </a-col>
-
-
             </a-row>
           </template>
-
           <a v-if="currentTreeNode.url && folibRepository.layout !== 'Docker'" class="text-dark" :href="currentTreeNode.url.search('http://localhost:38080/') !== -1
               ? currentTreeNode.url.replace(
                 'http://localhost:38080/',
@@ -439,11 +460,20 @@
     )
     : currentTreeNode.url
   }}</a>
-
           <hr class="gradient-line" />
-          <BaseData ref="BaseData" :currentTreeNode="currentTreeNode" :repositoryType="repositoryType"
-            :currentFileDetial="currentFileDetial" :successMsg="successMsg" :folibRepository="folibRepository" @messageArchitectureChild="handleArchitectureMessage"
-                    @metadataEditHandler="metadataEditHandler" @metadataHandler="metadataHandler" @setCurrentFileDetial="setCurrentFileDetial"/>
+          <BaseData 
+              ref="BaseData"
+              :isChecked="isChecked" 
+              :currentTreeNode="currentTreeNode" 
+              :repositoryType="repositoryType"
+              :currentFileDetial="currentFileDetial" 
+              :successMsg="successMsg" 
+              :folibRepository="folibRepository" 
+              @messageArchitectureChild="handleArchitectureMessage"
+              @metadataEditHandler="metadataEditHandler" 
+              @metadataHandler="metadataHandler" 
+              @setCurrentFileDetial="setCurrentFileDetial"
+          />
         </a-card>
       </a-col>
     </a-row>
@@ -596,7 +626,7 @@
                   valuePropName: 'fileList',
                   getValueFromEvent: normFile,
                 },
-              ]" name="files" :multiple="true" :beforeUpload="beforeUpload" list-type="text" accept=".rpm">
+              ]" name="files" :multiple="true" :beforeUpload="beforeUpload" @change="onFileChange" list-type="text" accept=".rpm">
                 <a-button>
                   <a-icon type="upload" />
                   {{ $t('Store.SelectFile') }} </a-button>
@@ -604,7 +634,7 @@
             </a-form-item>
           </a-col>
           <a-col :span="24" class="text-center">
-            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">{{ $t('Store.Upload') }}</a-button>
+            <a-button key="submit" class="px-30" size="small" type="primary" :disabled="isUploading || !md5CalculationComplete" htmlType="submit">{{ $t('Store.Upload') }}</a-button>
             <a-button key="back" @click="uploadRpmFormModalClose()" class="px-30 ml-10" size="small">{{ $t('Store.Cancel') }}</a-button>
           </a-col>
         </a-row>
@@ -651,7 +681,7 @@
                   valuePropName: 'fileList',
                   getValueFromEvent: normFile,
                 },
-              ]" name="files" :multiple="false" :beforeUpload="beforeUpload" list-type="text" accept=".gz,.tar,.zip,.giz">
+              ]" name="files" :multiple="false" :beforeUpload="beforeUpload" @change="onFileChange" list-type="text" accept=".gz,.tar,.zip,.giz">
                               <a-button>
                                   <a-icon type="upload"/>
                                   {{ $t('Store.SelectFile') }}
@@ -687,7 +717,7 @@
 
 
                   <a-col :span="24" class="text-center">
-                      <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">
+                      <a-button key="submit" class="px-30" size="small" type="primary" :disabled="isUploading || !md5CalculationComplete" htmlType="submit">
                           {{ $t('Store.Upload') }}
                       </a-button>
                       <a-button key="back" @click="uploadDockerFormModalClose()" class="px-30 ml-10" size="small">
@@ -740,7 +770,7 @@
                   valuePropName: 'fileList',
                   getValueFromEvent: normFile,
                 },
-              ]" name="files" :multiple="uploadType === 1 ? true : false" :beforeUpload="beforeUpload" list-type="text"
+              ]" name="files" :multiple="uploadType === 1 ? true : false" :beforeUpload="beforeUpload" list-type="text" @change="onFileChange"
                 :accept="uploadType === 1 ? (folibRepository.layout === 'Raw' ? '*' : folibRepository.layout === 'npm' ? '.tgz' : folibRepository.layout === 'pub' ? '.gz' :'.jar,.war,.pom') : ('.zip')">
                 <a-button>
                   <a-icon type="upload" />
@@ -771,7 +801,7 @@
             </a-form-item>
           </a-col>
           <a-col :span="24" class="text-center">
-            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">{{ $t('Store.Upload') }}</a-button>
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit" :disabled="isUploading || !md5CalculationComplete">{{ $t('Store.Upload') }}</a-button>
             <a-button key="back" @click="uploadFormModalClose()" class="px-30 ml-10" size="small">{{ $t('Store.Cancel') }}</a-button>
           </a-col>
         </a-row>
@@ -881,11 +911,15 @@
 
     <MavenUpload v-if="mavenUploadVisible" :modelVisible="mavenUploadVisible" :folibRepository="this.folibRepository"
       @mavenUploadClose="mavenUploadClose" />
+    <DebianUpload  ref="debianmodal" :folibRepository="folibRepository"/>
+    <DebianBatchUpload  ref="debianBatchModal" :folibRepository="folibRepository"/>
   </div>
 </template>
 
 <script>
 import store from 'store'
+import storage from "store";
+import Cookies from "js-cookie";
 import uuidv4 from 'uuid/v4'
 import {
   getLayoutType,
@@ -935,6 +969,8 @@ import BaseData from './Data.vue'
 import UseDoc from './UseDoc.vue'
 import AddMetadata from './AddMetadata.vue'
 import MavenUpload from '../MavenUpload/index.vue'
+import DebianUpload from '../Debian/DebianUpload.vue'
+import DebianBatchUpload from '../Debian/DebianBatchUpload.vue'
 import Search from '../Search/index.vue'
 import { PrismEditor } from 'vue-prism-editor'
 import 'vue-prism-editor/dist/prismeditor.min.css' // import the styles somewhere
@@ -943,6 +979,9 @@ import { highlight, languages } from 'prismjs/components/prism-core'
 import 'prismjs/components/prism-clike'
 import 'prismjs/components/prism-javascript'
 import 'prismjs/themes/prism-tomorrow.css'
+import SparkMD5 from 'spark-md5';
+import {ACCESS_TOKEN} from "@/store/mutation-types";
+import CircleProgress from '@/components/Tools/CircleProgress.vue';
 export default {
   inject: ['reload'],
   props: [
@@ -951,7 +990,8 @@ export default {
     'successMsg',
     'searchType',
     'propScanReport',
-    'formateDate'
+    'formateDate',
+    'isChecked'
   ],
   components: {
     PrismEditor,
@@ -960,7 +1000,10 @@ export default {
     UseDoc,
     AddMetadata,
     MavenUpload,
-    Search
+    Search,
+    DebianUpload,
+    DebianBatchUpload,
+    CircleProgress
   },
   data () {
     return {
@@ -1114,7 +1157,7 @@ export default {
       showOperationDispatchFormModal: false,
       repositories: [],
       custom: false,
-      enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm', 'go','GitLfs', 'pub'],
+      enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm', 'go','GitLfs', 'pub','debian'],
       targetDirectoryExcludeLayout: ['Maven 2', 'npm', 'pub'],
       storageAdmin: '',
       permissions: [],
@@ -1131,10 +1174,44 @@ export default {
         "Raw",
         "Maven 2",
         "Docker"
-      ]
+      ],
+      sliceUploadData: {
+          file: null,
+          chunkSize: 5 * 1024 * 1024, // 分片大小 5MB
+          uploadProgress: 0, //进度
+          currentChunk: 0, // 当前分片
+          totalChunks: 0, // 分片总数
+          isUploading: false, // 是否正在上传
+          paused: false, // 是否暂停
+          fileId: '', // 文件的唯一标识，用于断点续传
+          fileMD5: '', // 文件的md5值
+          progress: 0, // md5进度
+      },
+        selectedFiles: [], // 保存选中的多个文件
+        chunkSize: 5 * 1024 * 1024, // 分片大小 5MB
+        uploadProgresses: [], // 保存每个文件的上传进度
+        currentChunks: [], // 保存每个文件的当前上传分片索引
+        totalChunks: [], // 保存每个文件的总分片数
+        isUploading: false,
+        paused: false,
+        fileIds: [], // 保存每个文件的唯一标识
+        fileMD5s: [], // 保存每个文件的 MD5 值
+        md5Progresses: [], // 保存每个文件 MD5 计算的进度
+        maxConcurrency: 1, // 最大并发数
+        activeUploads: 0, // 当前的并发上传数
+        totalUploadProgress: 0, // 总的上传进度
+        totalUploadSize: 0, // 总的上传大小
+        uploadedSize: 0, // 当前已上传的大小
+        md5CalculationComplete: false, // MD5 计算是否完成
+        isClose: false,
+        progressStatus:'active',
+
     }
   },
   computed: {
+    newDetailPage(){
+      return this.$store.state.newDetailPage
+    },
     i18nColumns() {
       return this.columns.map(column => {
         if (column.i18nKey) {
@@ -1144,6 +1221,12 @@ export default {
       })
     },
   },
+  watch:{
+    currentTreeNode(val){
+      console.log(val,'watch currentTreeNode');
+      
+    } 
+  },
   created () {
     this.initData()
   },
@@ -1151,7 +1234,9 @@ export default {
     initData () {
       this.instanceName = sessionStorage.getItem("instanceName")
       this.createData()
-      this.getBrowse()
+      if(!this.isChecked){
+        this.getBrowse()
+      }
       if (isLogin())
       {
         this.scannerRules()
@@ -1260,6 +1345,8 @@ export default {
     uploadDockerFormModalClose () {
           this.dockerUploadForm.resetFields()
           this.showDockerUploadFormModal = false
+          this.isUploading=false;
+          this.md5CalculationComplete=false;
     },
     handleRpmUpload () {
       this.rpmUploadForm.resetFields()
@@ -1276,6 +1363,8 @@ export default {
     uploadRpmFormModalClose () {
       this.rpmUploadForm.resetFields()
       this.showRpmUploadFormModal = false
+      this.isUploading=false;
+      this.md5CalculationComplete=false;
     },
     beforeUpload (file, fileList) {
       return false
@@ -1355,14 +1444,17 @@ export default {
                       item.name = fileName
                       fileList.push(item)
                   }
-                  fileList.forEach(item => {
-                      this.handlerDockerUploadFile(
-                          values.type,
-                          values.imageTag,
-                          item.name.replace(':', '/'),
-                          item.originFileObj
-                      )
-                  })
+                  // fileList.forEach(item => {
+                  //     this.handlerDockerUploadFile(
+                  //         values.type,
+                  //         values.imageTag,
+                  //         item.name.replace(':', '/'),
+                  //         item.originFileObj
+                  //     )
+                  // })
+                  console.info('docker:', values)
+                  const imageTag = values.imageTag ? values.imageTag : fileList[0].originFileObj.name;
+                  this.uploadFiles(values.targetPath,false,null,imageTag,values.type)
                   this.successMsg(this.$t('Store.CheckProgress'))
                   this.uploadDockerFormModalClose()
               }
@@ -1398,13 +1490,14 @@ export default {
             item.name = fileName
             fileList.push(item)
           }
-          fileList.forEach(item => {
-            this.handlerRpmUploadFile(
-              values.targetPath,
-              item.name.replace(':', '/'),
-              item.originFileObj
-            )
-          })
+          // fileList.forEach(item => {
+          //   this.handlerRpmUploadFile(
+          //     values.targetPath,
+          //     item.name.replace(':', '/'),
+          //     item.originFileObj
+          //   )
+          // })
+            this.uploadFiles(values.targetPath,false,null,null,null)
           this.successMsg(this.$t('Store.CheckProgress'))
           this.uploadRpmFormModalClose()
         }
@@ -1528,11 +1621,13 @@ export default {
                 .trim()
                 .replace(/^\/+|\/+$/g, '')
             }
-            this.handlerUploadZipFile(
-              values.targetPath,
-              file.name,
-              file.originFileObj
-            )
+            // this.handlerUploadZipFile(
+            //   values.targetPath,
+            //   file.name,
+            //   file.originFileObj
+            // )
+             //this.onFileChange(values.targetPath, file.name, values.files[0].originFileObj)
+             this.uploadFiles(values.targetPath,true,null,null,null)
           } else
           {
             if (values.files.length > 10)
@@ -1568,13 +1663,15 @@ export default {
               item.name = fileName
               fileList.push(item)
             }
-            fileList.forEach(item => {
-              this.handlerUploadFile(
-                values.targetPath,
-                item.name,
-                item.originFileObj
-              )
-            })
+            // fileList.forEach(item => {
+            //   this.handlerUploadFile(
+            //     values.targetPath,
+            //     item.name,
+            //     item.originFileObj
+            //   )
+            //    this.onFileChange(values.targetPath, item.name, item.originFileObj)
+            // })
+            this.uploadFiles(values.targetPath,false,null,null,null)
           }
           this.successMsg(this.$t('Store.CheckProgress'))
           this.uploadFormModalClose()
@@ -1639,6 +1736,8 @@ export default {
     },
     uploadFormModalClose () {
       this.showUploadFormModal = false
+        this.isUploading=false;
+        this.md5CalculationComplete=false;
     },
     UsedHelperVisible () {
       if (this.repositoryType === 'ivy')
@@ -1794,8 +1893,7 @@ export default {
         medium: 0,
         low: 0
       }
-      if (this.currentTreeNode.type === 'file')
-      {
+      if (this.currentTreeNode.type === 'file'){
         getArtifact(
           this.repositoryType,
           this.currentTreeNode.storageId,
@@ -2103,7 +2201,7 @@ export default {
       getPermissionStoragesAndRepositories({
         type: type,
         layout: layout,
-        excludeRepositoryId: excludeRepositoryId,
+        excludeRepositoryId: '',
         policy: policy
       }).then(res => {
         this.repositories = []
@@ -2524,7 +2622,265 @@ export default {
       this.operationForm.setFieldsValue({
         targetRepositories: [],
       })
-    }
+    },
+    handleDebianUpload() {
+      this.$refs.debianmodal.openModal();
+    },
+    handleDebianBatchUpload() {
+      this.$refs.debianBatchModal.openModal();
+    },
+    onFileChange(event) {
+        //console.log('onFileChange', event)
+        this.selectedFiles = Array.from(event.fileList.map(file => file.originFileObj)); // 将文件存储为数组
+          this.selectedFiles.forEach((file, index) => {
+              this.totalChunks[index] = Math.ceil(file.size / this.chunkSize);
+              this.fileIds[index] = this.generateFileId(file);// 根据文件生成唯一ID
+              this.uploadProgresses[index] = 0; // 初始化进度
+              this.currentChunks[index] = 0; // 初始化当前分片
+              //this.fileMD5s[index] = ''; // 初始化文件 MD5
+              //this.md5Progresses[index] = 0; // 初始化 MD5 计算进度
+              //this.calculateMD5(file, index); // 计算文件 MD5
+          });
+        // 开始计算 MD5
+        this.calculateFilesMD5();
+        // 计算所有文件的总大小
+        this.totalUploadSize = this.selectedFiles.reduce((sum, file) => sum + file.size, 0);
+    },
+
+      // 计算多个文件的 MD5 值
+      async calculateFilesMD5() {
+          this.md5CalculationComplete = false; // 标记 MD5 计算为未完成
+          this.md5Progresses = new Array(this.selectedFiles.length).fill(0); // 初始化进度为 0
+          //console.log("md5Progresses:",this.md5Progresses)
+          const md5Promises = this.selectedFiles.map((file, index) => this.calculateMD5(file, index));
+
+          // 使用 Promise.all 等待所有文件的 MD5 计算完成
+          await Promise.all(md5Promises);
+          // 所有 MD5 计算完成，启用上传按钮
+          this.md5CalculationComplete = true;
+
+      },
+
+      /**
+       * 计算每个文件的 MD5 值
+       * @param file
+       * @param index
+       * @returns {Promise<unknown>}
+       */
+      calculateMD5(file, index) {
+          return new Promise((resolve) => {
+              const chunkSize = 2 * 1024 * 1024; // 每次读取2MB
+              const chunks = Math.ceil(file.size / chunkSize);
+              let currentChunk = 0;
+              const spark = new SparkMD5.ArrayBuffer();
+              const fileReader = new FileReader();
+
+              fileReader.onload = (e) => {
+                  spark.append(e.target.result); // 添加数据到 SparkMD5
+                  currentChunk++;
+
+                  if (currentChunk < chunks) {
+                      this.md5Progresses[index] = Math.floor((currentChunk / chunks) * 100); // 更新 MD5 计算进度
+                      loadNext();
+                  } else {
+                      this.fileMD5s[index] = spark.end(); // 计算最终的 MD5
+                      this.md5Progresses[index] = 100;
+                      resolve()
+                  }
+              };
+
+              fileReader.onerror = () => {
+                  console.error('文件读取错误');
+                  resolve()
+              };
+
+              const loadNext = () => {
+                  const start = currentChunk * chunkSize;
+                  const end = Math.min(start + chunkSize, file.size);
+                  fileReader.readAsArrayBuffer(file.slice(start, end));
+              };
+
+              loadNext(); // 开始读取第一个分片
+          });
+      },
+      generateFileId(file) {
+          return `${file.name}-${file.size}-${file.lastModified}`;
+      },
+
+      /**
+       * 上传文件
+       * @param path 路径
+       * @param isUnzip 是否解压
+       * @param fileMetaDataMap 文件元数据
+       * @param imageTag 镜像tag
+       * @param fileType 文件类型 （业务类型）
+       * @returns {Promise<void>}
+       */
+      async uploadFiles(path,isUnzip,fileMetaDataMap,imageTag,fileType) {
+          this.isUploading = true;
+          this.paused = false;
+          this.currentFileIndex = 0; // 重置当前上传文件的索引
+          this.uploadedSize = 0; // 重置已上传的大小
+          await this.uploadNextFile(path,isUnzip,fileMetaDataMap,imageTag,fileType); // 开始上传文件
+      },
+      /**
+       * 上传下一个文件
+       * @param path 路径
+       * @param isUnzip 是否解压
+       * @param fileMetaDataMap 文件元数据
+       * @param imageTag 镜像tag
+       * @param fileType 文件类型 （业务类型）
+       * @returns {Promise<void>}
+       */
+      async uploadNextFile(path,isUnzip,fileMetaDataMap,imageTag,fileType) {
+          // 当有文件未上传时，继续上传下一个文件
+          if (this.currentFileIndex < this.selectedFiles.length) {
+              const file = this.selectedFiles[this.currentFileIndex];
+              await this.uploadFile(file, this.currentFileIndex,path,isUnzip,fileMetaDataMap,imageTag,fileType);
+              this.currentFileIndex++; // 文件上传完成后处理下一个文件
+              this.uploadNextFile(path,isUnzip,fileMetaDataMap,imageTag,fileType); // 递归上传下一个文件
+          } else {
+              this.isUploading = false; // 所有文件上传完成
+          }
+      },
+      /**
+       * 上传文件
+       * @param file 文件对象
+       * @param fileIndex 文件索引
+       * @param path 路径
+       * @param isUnzip 是否解压
+       * @param fileMetaDataMap 文件元数据
+       * @param imageTag 镜像tag
+       * @param fileType 文件类型 （业务类型）
+       * @returns {Promise<void>}
+       */
+      async uploadFile(file, fileIndex,path,isUnzip,fileMetaDataMap,imageTag,fileType) {
+          const promises = [];
+          for (this.currentChunks[fileIndex]; this.currentChunks[fileIndex] < this.totalChunks[fileIndex]; this.currentChunks[fileIndex]++) {
+              if (this.paused) break;
+              if (this.activeUploads >= this.maxConcurrency) {
+                  await Promise.race(promises); // 等待至少一个上传完成
+              }
+              promises.push(this.uploadSingleChunk(file, fileIndex, this.currentChunks[fileIndex],path,isUnzip,fileMetaDataMap,imageTag,fileType));
+          }
+
+          await Promise.all(promises); // 等待所有分片上传完成
+      },
+
+      /**
+       * 上传单个分片
+       * @param file 文件
+       * @param fileIndex 文件索引
+       * @param chunkIndex 切片索引
+       * @param path 路径
+       * @param isUnzip 是否解压
+       * @param fileMetaDataMap 文件元数据
+       * @param imageTag 镜像tag
+       * @param fileType 文件类型 （业务类型）
+       * @returns {Promise<unknown>}
+       */
+      uploadSingleChunk(file, fileIndex, chunkIndex, path,isUnzip,fileMetaDataMap,imageTag,fileType) {
+          return new Promise(async (resolve, reject) => {
+              this.activeUploads++;
+              const start = chunkIndex * this.chunkSize;
+              const end = Math.min(start + this.chunkSize, file.size);
+              const chunk = file.slice(start, end);
+              const chunkSize = end - start;
+              const chunkMD5 = SparkMD5.ArrayBuffer.hash(chunk);
+              const formData = new FormData();
+              formData.append('file', chunk, file.name);
+              formData.append('fileName', file.name);
+              formData.append('fileId', this.fileIds[fileIndex]);
+              formData.append('storageId', this.folibRepository.storageId);
+              formData.append('repositoryId', this.folibRepository.id);
+              formData.append('path', path);
+              formData.append('totalChunks', this.totalChunks[fileIndex]);
+              formData.append('currentChunk', chunkIndex + 1);
+              formData.append('currentChunkSize', chunk.size); // 添加当前分片大小
+              formData.append('chunkSize', chunkSize);
+              formData.append('chunkMD5', chunkMD5);
+              formData.append('fileMd5', this.fileMD5s[fileIndex]);
+              formData.append("originalFilename",file.name)
+              formData.append('isUnzip', isUnzip);
+              formData.append('fileMetaDataMap', fileMetaDataMap);
+              formData.append('imageTag', imageTag ? imageTag:'');
+              formData.append('fileType', fileType);
+              // 发送请求
+              try {
+                  await this.uploadChunk(formData, fileIndex, chunkIndex,chunkSize);
+                  this.progressStatus='active';
+                  resolve();
+              } catch (error) {
+                  reject(error);
+                  this.progressStatus = 'exception';
+                  this.$notification['error']({
+                      message: this.$t('Store.UploadFailed'),
+                      description: ''
+                  })
+              } finally {
+                  this.activeUploads--;
+              }
+          });
+      },
+      uploadChunk(formData, fileIndex, chunkIndex,chunkSize) {
+          return new Promise((resolve, reject) => {
+              const xhr = new XMLHttpRequest();
+              xhr.open('POST', '/api/artifact/folib/promotion/slice/upload-web');
+              const token = storage.get(ACCESS_TOKEN) ? storage.get(ACCESS_TOKEN) : Cookies.get("access_token");
+              xhr.setRequestHeader('Authorization', 'Bearer '+token);
+              xhr.upload.onprogress = (event) => {
+                  if (event.lengthComputable) {
+                      this.isClose = true;
+                      this.uploadProgresses[fileIndex] = Math.floor(
+                          ((chunkIndex + event.loaded / event.total) / this.totalChunks[fileIndex]) * 100
+                      );
+
+                      //const uploadedChunkSize = event.loaded / event.total * chunkSize;
+                      //console.log("totalChunks:", this.totalChunks[fileIndex],"event.loaded:",event.loaded,"event.total:",event.total,"uploadedChunkSize:",uploadedChunkSize)
+                      //this.updateTotalProgress(uploadedChunkSize);
+                  }
+              };
+              xhr.onload = () => {
+
+                  if (xhr.status === 200) {
+                      this.updateTotalProgress(chunkSize); // 上传完成时更新总进度
+                      resolve();
+                  } else {
+                      this.progressStatus = 'exception'
+                      //console.log('upload status:',xhr.status,'xhr.responseText:',xhr.responseText,"xhr.statusText",xhr.statusText)
+                      reject(xhr.responseText);
+
+                  }
+              };
+              xhr.onerror = () => reject('上传失败');
+              xhr.send(formData);
+          });
+      },
+      updateTotalProgress(uploadedChunkSize) {
+          // 更新已上传的总大小
+          this.uploadedSize += uploadedChunkSize;
+          // 更新总的上传进度百分比
+          this.totalUploadProgress = Math.floor((this.uploadedSize / this.totalUploadSize) * 100);
+          if( this.totalUploadProgress ===100){
+              this.progressStatus = 'success';
+          }
+          //console.log("uploadedChunkSize:", uploadedChunkSize,"totalUploadProgress:", this.totalUploadProgress,"totalUploadSize:", this.totalUploadSize,"uploadedSize:", this.uploadedSize)
+      },
+      pauseUpload() {
+          this.paused = true;
+          this.isUploading = false;
+      },
+      resumeUpload() {
+          if (this.paused) {
+              this.isUploading = true;
+              this.paused = false;
+              this.uploadNextFile(); // 恢复文件上传
+          }
+      },
+      onCloseSpeed(){
+        this.isClose = false;
+      }
+
   }
 }
 </script>

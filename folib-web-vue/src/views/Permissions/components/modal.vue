@@ -12,7 +12,7 @@
                     prop="name"
                     :rules="[
                         { required: true, message: $t('Permissions.EnterTheNameCreate'), trigger: 'blur' },
-                        { pattern: /^[0-9A-Za-z_-]+$/, message: $t('Permissions.EnterTheNamePattern') }
+                        { pattern: /^[0-9A-Za-z_|-]+$/, message: $t('Permissions.EnterTheNamePattern') }
                     ]"
                 >
                     <a-input
@@ -25,8 +25,8 @@
             </a-form-model>
             <a-steps v-model="step" size="small" class="step">
                 <a-step :title="$t('Permissions.Resources')" :status="step === 0 ? 'process' : 'wait'" :disabled="isAdmin" :description="$t('Permissions.ResourcesDesc')"/>
-                <a-step :title="$t('Permissions.Users')" :status="step === 1 ? 'process' : 'wait'" :description="$t('Permissions.UsersDesc')"/>
-                <a-step :title="$t('Permissions.Groups')" :status="step === 2 ? 'process' : 'wait'" :description="$t('Permissions.GroupsDesc')"/>
+                <a-step :title="$t(`Permissions.${isAnonymous ? 'Permissions' : 'Users'}`)" :status="step === 1 ? 'process' : 'wait'" :description="$t(`Permissions.${isAnonymous ? 'PermissionsDesc' : 'UsersDesc'}`)"/>
+                <a-step :title="$t('Permissions.Groups')" v-show="!isAnonymous" :status="step === 2 ? 'process' : 'wait'" :description="$t('Permissions.GroupsDesc')"/>
             </a-steps>
             <div v-show="!step">
                 <repositories
@@ -41,7 +41,7 @@
                 />
             </div>
             <div v-if="step === 1" class="by-flex by-col-stretch">
-                <div class="select-content">
+                <div class="select-content" v-if="!isAnonymous">
                     <div class="title">
                         <span class="by-rela">
                             {{ $t(`Permissions.SelectedUser`) }}
@@ -91,7 +91,7 @@
                         <div class="title by-flex by-row-between">
                             <span>{{ $t(`Permissions.SelectedPermissions`) }}</span>
                             <a-button
-                                v-if="!isView && userSelectList.length && !isAdmin && !isStorageAdmin"
+                                v-if="!isView && (userSelectList.length && !isAdmin && !isStorageAdmin || isAnonymous)"
                                 type="primary"
                                 size="small"
                                 @click="onRepositoriesCheckAllChange"
@@ -112,7 +112,7 @@
                                     </a-col>
                                     <a-col :span="24" :md="12" class="ml-auto" style="display: flex; align-items: center; justify-content: flex-end">
                                         <span class="mr-15">{{ $t(`Permissions.${item.enabled ? 'Enabled' : 'Disabled'}`) }}</span>
-                                        <a-switch v-model="item.enabled" :disabled="!userSelectList.length || isView || isAdmin || isStorageAdmin" @change="onRepositoriesChange"/>
+                                        <a-switch v-model="item.enabled" :disabled="(!userSelectList.length && !isAnonymous) || isView || isAdmin || isStorageAdmin" @change="onRepositoriesChange"/>
                                     </a-col>
                                 </a-row>
                             </div>
@@ -257,8 +257,10 @@ export default {
             confirmLoading: false,
             repositoriesOptions: [],
             logoValueMap: [],
-            repositoriesTotal:0,
-            storageTotal:0
+            repositoriesTotal: 0,
+            storageTotal: 0,
+            isAnonymous: false,
+            anonymousAccess: []
         }
     },
     watch: {
@@ -274,7 +276,7 @@ export default {
         step(val) {
             if (val === 1) {
                 this.currentUserIndex = this.userSelectList[0]?.key || 0
-                this.repositoriesCheckedList = this.userAuthMap[this.currentUserIndex] || []
+                this.repositoriesCheckedList = this.isAnonymous ? this.anonymousAccess : this.userAuthMap[this.currentUserIndex] || []
                 this.repositoriesOptions.forEach(item => {
                     item.enabled = this.repositoriesCheckedList.includes(item.value)
                 })
@@ -297,6 +299,7 @@ export default {
             this.isAdmin = isAdmin
             this.isStorageAdmin = id?.startsWith('STORAGE_ADMIN_')
             this.isStorageUser = id?.startsWith('STORAGE_USER_')
+            this.isAnonymous = id === 'ANONYMOUS'
             this.isEdit = !!id
             this.init()
             await this.getStorageList()
@@ -311,13 +314,13 @@ export default {
         },
         initOptions() {
             this.repositoriesOptions = [
-                // {
-                //     label: this.$t(`Permissions.Download`),
-                //     value: 'ARTIFACTS_RESOLVE',
-                //     enabled: false,
-                //     logo: 'download',
-                //     desc: this.$t(`Permissions.DownloadDesc`)
-                // },
+                {
+                    label: this.$t(`Permissions.Download`),
+                    value: 'ARTIFACTS_RESOLVE',
+                    enabled: false,
+                    logo: 'download',
+                    desc: this.$t(`Permissions.DownloadDesc`)
+                },
                 {
                     label: this.$t(`Permissions.DeployCache`),
                     value: 'ARTIFACTS_DEPLOY',
@@ -358,6 +361,7 @@ export default {
             this.userSelectCopyList = []
             this.userAuthMap = {}
             this.currentUserIndex = 0
+            this.anonymousAccess = []
             this.repositoriesCheckedList = []
             this.repositoriesCheckAll = false
 
@@ -375,7 +379,7 @@ export default {
         {
             this.spinning = true;
             getPermissionDetail(id).then(res => {
-                const { name, privileges, resources } = res
+                const { name, privileges, resources, access } = res
                 this.form.name = name;
                 this.userAuthMap = {}
                 privileges.users.forEach(item => {
@@ -383,7 +387,7 @@ export default {
                 })
                 if (privileges.users.length)
                     this.getUsers(Object.keys(this.userAuthMap))
-
+                this.anonymousAccess = access || []
                 this.groupAuthMap = {}
                 privileges.groups.forEach(item => {
                     this.groupAuthMap[item.id] = item.access
@@ -619,8 +623,11 @@ export default {
                             groups,
                             users,
                         },
-                        resources
+                        resources,
+                        access: []
                     }
+                    if (this.isAnonymous)
+                        params.access = this.repositoriesOptions.filter(item => item.enabled).map(item => item.value)
                     const method = this.isEdit ? updatePermission : createPermission;
                     method(params).then(res => {
                         this.visible = false;

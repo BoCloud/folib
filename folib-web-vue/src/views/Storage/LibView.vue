@@ -1,7 +1,7 @@
 <template>
-  <div class="lib-view">
+  <div :key="key" class="lib-view">
     <!-- Header Background Image -->
-    <div class="profile-nav-bg" style="
+    <div v-if="!isChecked" class="profile-nav-bg" style="
             background: url(images/banner.jpg) center/cover;
             transition: all 0.3s;
           ">
@@ -21,7 +21,9 @@
     >
       <a-tab-pane :key="1" :tab="$t('Storage.Details')">
         <store
+          :style="isChecked ? 'margin-top:-50px;' : ''"
           ref="store"
+          :isChecked="isChecked"
           :metadataTypes="i18nMetadataTypes"
           :quillOptions="quillOptions"
           :propScanReport="scanReport"
@@ -37,6 +39,8 @@
           :vulnerabilityColumns="i18nVulnerabilityColumns"
         />
       </a-tab-pane>
+      <a-button v-if="isShowEdit && isChecked" class="repository-setting" slot="tabBarExtraContent" size="small" icon="edit" @click="handleMenuClick('edit')"></a-button>
+      <a-button v-if="isShowDelete && isChecked" class="repository-setting" slot="tabBarExtraContent" size="small" icon="delete" @click="handleMenuClick('delete')"></a-button>
       <a-button v-if="eventSettingEnabled" slot="tabBarExtraContent" class="repository-setting ant-btn ant-btn-sm ant-btn-icon-only" size="small" @click="eventPageVisible = true" >
         <i aria-label="icon: setting" class="anticon anticon-setting">
           <svg t="1703130640254" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4432" width="1em" height="1em"><path d="M722.189474 792.252632c-10.778947 0-18.863158 8.084211-18.863158 18.863157v115.873685c0 13.473684-10.778947 24.252632-24.252632 24.252631H97.010526c-13.473684 0-24.252632-10.778947-24.252631-24.252631V344.926316c0-13.473684 10.778947-24.252632 24.252631-24.252632h582.063158c13.473684 0 24.252632 10.778947 24.252632 24.252632V646.736842c0 10.778947 8.084211 18.863158 18.863158 18.863158s18.863158-8.084211 18.863158-18.863158V344.926316c0-35.031579-26.947368-61.978947-61.978948-61.978948H97.010526c-35.031579 0-61.978947 26.947368-61.978947 61.978948v582.063158c0 35.031579 26.947368 61.978947 61.978947 61.978947h582.063158c35.031579 0 61.978947-26.947368 61.978948-61.978947v-115.873685c0-10.778947-8.084211-18.863158-18.863158-18.863157z" fill="#101010" p-id="4433"></path><path d="M926.989474 35.031579H344.926316c-35.031579 0-61.978947 26.947368-61.978948 61.978947v123.957895c0 10.778947 8.084211 18.863158 18.863158 18.863158s18.863158-8.084211 18.863158-18.863158V97.010526c0-13.473684 10.778947-24.252632 24.252632-24.252631h582.063158c13.473684 0 24.252632 10.778947 24.252631 24.252631v582.063158c0 13.473684-10.778947 24.252632-24.252631 24.252632H344.926316c-13.473684 0-24.252632-10.778947-24.252632-24.252632V388.042105c0-10.778947-8.084211-18.863158-18.863158-18.863158s-18.863158 8.084211-18.863158 18.863158v291.031579c0 35.031579 26.947368 61.978947 61.978948 61.978948h582.063158c35.031579 0 61.978947-26.947368 61.978947-61.978948V97.010526c0-35.031579-26.947368-61.978947-61.978947-61.978947z" fill="#101010" p-id="4434"></path></svg>
@@ -165,6 +169,7 @@ import VunlerabilityReport from '@/components/Vulnerabilities/VunlerabilityRepor
 
 export default {
   inject: ["reload"],
+  props:['isChecked','storageAdmin'],
   components: {
     CardPackageTree,
     CardProfileInformation,
@@ -180,6 +185,8 @@ export default {
   },
   data() {
     return {
+      isShowEdit:false,
+      isShowDelete:false,
       scan: {
         id: "",
         repository: "",
@@ -409,6 +416,7 @@ export default {
       settingVisible: false,
       eventSettingEnabled: false,
       eventPageVisible: false,
+      key:0
     }
   },
   computed: {
@@ -430,10 +438,22 @@ export default {
     }
   },
   created() {
-    this.createData()
-    this.getStorage(this.folibRepository.storageId)
+    this.myMounted()
   },
   methods: {
+    handleMenuClick(type){
+      this.$emit("handleMenuClick",type,this.folibRepository.id)
+    },
+    myMounted(){
+      this.key ++
+      this.createData()
+      this.getStorage(this.folibRepository.storageId)
+      this.isShowEdit = (isAdmin() || this.storageAdmin === this.$store.state.user.name)
+      this.isShowDelete = (isAdmin() || this.storageAdmin === this.$store.state.user.name) && (this.folibRepository.allowsDeletion || this.folibRepository.allowsForceDeletion)
+    },
+    treeSelect(key,e){
+      this.$refs.store.treeSelect(key, e)
+    },
     searchBoxMouseStatus(bool) {
       this.mouseEnter = bool;
     },

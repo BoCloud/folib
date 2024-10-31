@@ -264,7 +264,8 @@ export default {
     'ViewDetail': '查看详情',
     "SshKeygen":"利用工具ssh-keygen生成公、私钥",
     "PrivateKeyPath":"设置私钥路径",
-    "SetPublishingId":"设置发布用户",
+    "SetPublishingId":"设置发布用户 ohpm客户端低于1.6.0版本",
+    "SetPublishingIdPlus":"设置发布用户 ohpm客户端1.6.0及以上版本",
     "SetRepository":"设置仓库",
     "SetPublishingRepository":"设置发布库",
     "SslCheck":"ssl校验",
@@ -339,4 +340,7 @@ export default {
     "DirSize": "目录下文件大小是 ",
     "ConfirmDownload": "确定下载吗？",
     'ScanTime': '扫描时间',
+    "UploadFailed": "文件上传失败",
+    'RepositoryType':'仓库类型',
+    'StrategyType': '策略类型'
 }

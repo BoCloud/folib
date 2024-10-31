@@ -90,6 +90,8 @@ public interface RoleResourceRefService{
 
     List<RoleResourceRef> queryRoleByUserId(String uuid, List<String> roles);
 
+    List<PermissionsDTO> queryPermissionsByStorageIds(List<String> storageIds);
+
     void savePermissions(RoleDTO roleForm, String roleId, String username);
 
     List<RoleResourceRef> queryApiAuthorities(List<String> roleIds);
@@ -116,6 +118,7 @@ public interface RoleResourceRefService{
     List<FolibUser> queryUserByRoleIds(String roleId);
 
     void deleteAllByRoleId(String roleId);
+    void deleteAnonymousRole(String roleId);
 
     /**
      *  更新存储空间关联用户

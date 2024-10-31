@@ -277,7 +277,7 @@ public class AuthorizationConfigServiceImpl
     
     @Override
     public void clearPrivilegesAnonymous() throws IOException {
-        roleResourceRefService.deleteAllByRoleId(SystemRole.ANONYMOUS.name());
+        roleResourceRefService.deleteAnonymousRole(SystemRole.ANONYMOUS.name());
     }
 
     private void modifyInLock(final Consumer<AuthorizationConfigDto> operation) throws IOException

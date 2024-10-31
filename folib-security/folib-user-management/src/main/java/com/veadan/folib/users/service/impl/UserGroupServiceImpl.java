@@ -70,7 +70,14 @@ public class UserGroupServiceImpl implements UserGroupService {
         List<UserGroupListDTO> userGroupListDTOS = userGroupMapper.queryAllByLimit(userGroup);
         return new PageInfo<>(userGroupListDTOS);
     }
-    
+
+    @Override
+    public PageInfo<UserGroupListDTO> pageQueryAndUserNumber(UserGroup userGroup, PageRequest pageRequest) {
+        PageHelper.startPage(pageRequest.getPageNumber(), pageRequest.getPageSize());
+        List<UserGroupListDTO> userGroupListDTOS = userGroupMapper.queryAllByUser(userGroup);
+        return new PageInfo<>(userGroupListDTOS);
+    }
+
     /** 
      * 新增数据
      *
@@ -164,6 +171,9 @@ public class UserGroupServiceImpl implements UserGroupService {
 
     @Override
     public List<UserGroup> queryByIds(List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
         Example example = new Example(UserGroup.class);
         example.createCriteria().andIn("id", ids);
         return userGroupMapper.selectByExample(example);
@@ -171,6 +181,9 @@ public class UserGroupServiceImpl implements UserGroupService {
 
     @Override
     public List<UserGroup> queryByGroupNames(List<String> groupNames) {
+        if (CollectionUtils.isEmpty(groupNames)) {
+            return Collections.emptyList();
+        }
         Example example = new Example(UserGroup.class);
         example.createCriteria().andIn("groupName", groupNames);
         return userGroupMapper.selectByExample(example);

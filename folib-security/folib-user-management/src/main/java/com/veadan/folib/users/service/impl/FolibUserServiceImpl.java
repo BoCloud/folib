@@ -60,7 +60,7 @@ public class FolibUserServiceImpl implements FolibUserService {
 
     @Override
     public UserDTO findByUserName(String username) {
-        PageInfo<UserDTO> folibUsers = getUsers(UserDto.builder().id(username).build(), 0, 1);
+        PageInfo<UserDTO> folibUsers = getUsers(UserDto.builder().id(username).build(), 1, 1);
         List<UserEntity> userEntities = UserConvert.INSTANCE.UserDTOsToUserList(folibUsers.getList());
         if (CollectionUtils.isNotEmpty(userEntities)) {
             return UserConvert.INSTANCE.UserEntityToUserDTO(userEntities.get(0));

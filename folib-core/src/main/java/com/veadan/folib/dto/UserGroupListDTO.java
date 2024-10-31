@@ -71,5 +71,7 @@ public class UserGroupListDTO implements Serializable,Cloneable {
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
     private Date updateTime ;
 
+    private int userCount;
+
     private String roles;
 }

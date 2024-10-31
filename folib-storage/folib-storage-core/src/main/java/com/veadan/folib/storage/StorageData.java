@@ -13,6 +13,7 @@ import javax.annotation.concurrent.Immutable;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -43,6 +44,11 @@ public class StorageData implements Storage {
 
     @JsonView(Views.ShortStorage.class)
     private Set<String> users;
+    /**是否同步存储空间到其他节点*/
+    @JsonView(Views.ShortStorage.class)
+    private boolean syncEnabled;
+    @JsonView(Views.ShortStorage.class)
+    private Set<String> repositoryUsers;
 
     @JsonView(Views.LongStorage.class)
     @JsonSerialize(using = MapValuesJsonSerializer.class)
@@ -61,6 +67,8 @@ public class StorageData implements Storage {
         this.storageMaxSize = delegate.getStorageMaxSize();
         this.users = delegate.getUsers();
         this.repositories = immuteRepositories(delegate.getRepositories());
+        this.repositoryUsers = delegate.getRepositoryUsers();
+        this.syncEnabled = delegate.isSyncEnabled();
     }
 
     private Map<String, ? extends Repository> immuteRepositories(final Map<String, ? extends Repository> source) {
@@ -121,5 +129,26 @@ public class StorageData implements Storage {
     @Override
     public Map<String, ? extends Repository> getRepositories() {
         return repositories;
+    }
+
+
+    @Override
+    public Set<String> getRepositoryUsers() {
+        return repositoryUsers;
+    }
+
+    @Override
+    public void setRepositoryUsers(Set<String> repositoryUsers) {
+        this.repositoryUsers = repositoryUsers;
+    }
+
+
+    @Override
+    public boolean isSyncEnabled() {
+        return syncEnabled;
+    }
+
+    public void setSyncEnabled(boolean syncEnabled) {
+        this.syncEnabled = syncEnabled;
     }
 }

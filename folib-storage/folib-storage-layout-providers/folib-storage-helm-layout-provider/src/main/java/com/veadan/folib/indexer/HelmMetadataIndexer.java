@@ -248,17 +248,12 @@ public class HelmMetadataIndexer {
 
     private void writeToIndexYaml(HelmIndexYamlMetadata indexYaml) {
         try {
-            InputStream inputStream = HelmUtils.indexYamlToInputStream(indexYaml);
-            try {
+
+            try (InputStream inputStream = HelmUtils.indexYamlToInputStream(indexYaml)){
                 RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, "index.yaml");
                 artifactManagementService.store(repositoryPath, inputStream);
                 inputStream.close();
             } catch (Throwable throwable) {
-                try {
-                    inputStream.close();
-                } catch (Throwable throwable1) {
-                    throwable.addSuppressed(throwable1);
-                }
                 throw throwable;
             }
         } catch (IOException e) {

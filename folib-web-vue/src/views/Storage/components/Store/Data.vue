@@ -2,100 +2,103 @@
   <div class="artifact-base-data">
     <a-tabs default-active-key="1" @change="artifactTabChange">
       <a-tab-pane key="1" :tab="$t('Store.BasicInformation')">
-        <a-descriptions
-          v-if="folibRepository.layout !== 'Docker'"
-          title=""
-          :column="1"
-          style="word-break: break-all;word-wrap: break-word;"
-        >
-          <a-descriptions-item :label="$t('Store.OwningSpace')">
-            {{ currentTreeNode.storageId }}
-          </a-descriptions-item>
-          <a-descriptions-item :label="$t('Store.OwnedWarehouse')">
-            {{ currentTreeNode.repositoryId }}
-          </a-descriptions-item>
-          <a-descriptions-item :label="$t('Store.Name')">
-            {{ currentTreeNode.name }}
-          </a-descriptions-item>
-          <a-descriptions-item :label="$t('Store.ThePath')">
-            {{ currentTreeNode.artifactPath }}
-          </a-descriptions-item>
-          <a-descriptions-item :label="$t('Store.FileSize')">
-            {{ fileSizeConver(currentTreeNode.size) }}
-          </a-descriptions-item>
-          <a-descriptions-item :label="$t('Store.ModifyTheTime')">
-            {{ formateDate(currentTreeNode.lastModified) }}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.LastUsedTime')">
-            {{ currentFileDetial.lastUsedTime }}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.ScanTime')">
-            {{ currentFileDetial.scanTime }}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.DownloadTimes')">
-            {{ currentFileDetial.downloadCount }}
-          </a-descriptions-item>
-          <template v-if="currentFileDetial && currentFileDetial.artifact && currentFileDetial.artifact.checksums" >
-            <a-descriptions-item :label="key" v-for="(value, key, index) in currentFileDetial.artifact.checksums" :key="index" span="2">
-              {{ value }}
-            </a-descriptions-item>
-          </template>
-        </a-descriptions>
-        <div v-if="currentFileDetial && currentFileDetial.manifest && currentFileDetial.manifest.manifests">
-          <a-tag class="mb-10" :color="index === selectedTag? selectedColor : ''" v-for="(item, index) in currentFileDetial.manifest.manifests" :key="index" @click="clickTag(item, index)">
-            <a> {{ item.platform.os + '/' + item.platform.architecture + (item.platform.variant? '/' + item.platform.variant : '') }} </a>
-          </a-tag>
+        <div v-if="newDetailPage">
+            <detailPage />
         </div>
-        <a-descriptions
-          v-if="folibRepository.layout === 'Docker'"
-          title=""
-          :column="1"
-        >
-
-
-          <a-descriptions-item :label="$t('Store.OwningSpace')">
-            {{ currentTreeNode.storageId }}
-          </a-descriptions-item>
-          <a-descriptions-item :label="$t('Store.OwningSpace')">
-            {{ currentTreeNode.repositoryId }}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.ImageName')">
-            {{ currentFileDetial.imageName }}
-          </a-descriptions-item>
-          <a-descriptions-item :label="currentFileDetial ? $t('Store.VersionNumber') : $t('Store.Name')">
-            {{ currentTreeNode.name }}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.FileSize')">
-            {{ fileSizeConver(currentFileDetial.size) }}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="SHA-256">
-            {{ currentFileDetial.sha256 }}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.ModifyTheTime')">
-            {{ currentFileDetial.lastModified }}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.ScanTime')">
-            {{ currentFileDetial.scanTime }}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifest.layers" :label="$t('Store.NumberOfFloors')">
-            {{ currentFileDetial.manifest.layers.length }}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" :label="$t('Store.MakeADockerVersion')">
-            {{ currentFileDetial.manifestConfig.docker_version }}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" :label="$t('Store.MirrorOS')">
-            <a-tag> {{ currentFileDetial.manifestConfig.os }}</a-tag>
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" :label="$t('Store.TheInfrastructure')">
-            {{ currentFileDetial.manifestConfig.architecture }}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig && currentFileDetial.manifestConfig.variant" :label="$t('Store.Version')">
-            {{ currentFileDetial.manifestConfig.variant || ''}}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && !currentFileDetial.manifestConfig" :label="$t('Store.CacheStatus')">
-            {{ $t('Store.Uncached') }}
-          </a-descriptions-item>
-        </a-descriptions>
+        <div v-else>
+          <a-descriptions
+            v-if="folibRepository.layout !== 'Docker'"
+            title=""
+            :column="1"
+            style="word-break: break-all;word-wrap: break-word;"
+          >
+            <a-descriptions-item :label="$t('Store.OwningSpace')">
+              {{ currentTreeNode.storageId }}
+            </a-descriptions-item>
+            <a-descriptions-item :label="$t('Store.OwnedWarehouse')">
+              {{ currentTreeNode.repositoryId }}
+            </a-descriptions-item>
+            <a-descriptions-item :label="$t('Store.Name')">
+              {{ currentTreeNode.name }}
+            </a-descriptions-item>
+            <a-descriptions-item :label="$t('Store.ThePath')">
+              <span v-if="isChecked">{{ currentTreeNode.repositoryId }}/</span>{{ currentTreeNode.artifactPath }}
+            </a-descriptions-item>
+            <a-descriptions-item :label="$t('Store.FileSize')">
+              {{ fileSizeConver(currentTreeNode.size) }}
+            </a-descriptions-item>
+            <a-descriptions-item :label="$t('Store.ModifyTheTime')">
+              {{ formateDate(currentTreeNode.lastModified) }}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.LastUsedTime')">
+              {{ currentFileDetial.lastUsedTime }}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.ScanTime')">
+              {{ currentFileDetial.scanTime }}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.DownloadTimes')">
+              {{ currentFileDetial.downloadCount }}
+            </a-descriptions-item>
+            <template v-if="currentFileDetial && currentFileDetial.artifact && currentFileDetial.artifact.checksums" >
+              <a-descriptions-item :label="key" v-for="(value, key, index) in currentFileDetial.artifact.checksums" :key="index" span="2">
+                {{ value }}
+              </a-descriptions-item>
+            </template>
+          </a-descriptions>
+          <div v-if="currentFileDetial && currentFileDetial.manifest && currentFileDetial.manifest.manifests">
+            <a-tag class="mb-10" :color="index === selectedTag? selectedColor : ''" v-for="(item, index) in currentFileDetial.manifest.manifests" :key="index" @click="clickTag(item, index)">
+              <a> {{ item.platform.os + '/' + item.platform.architecture + (item.platform.variant? '/' + item.platform.variant : '') }} </a>
+            </a-tag>
+          </div>
+          <a-descriptions
+            v-if="folibRepository.layout === 'Docker'"
+            title=""
+            :column="1"
+          >
+            <a-descriptions-item :label="$t('Store.OwningSpace')">
+              {{ currentTreeNode.storageId}}
+            </a-descriptions-item>
+            <a-descriptions-item :label="$t('Store.OwningSpace')">
+              {{ currentTreeNode.repositoryId}}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.ImageName')">
+              {{ currentFileDetial.imageName }}
+            </a-descriptions-item>
+            <a-descriptions-item :label="currentFileDetial ? $t('Store.VersionNumber') : $t('Store.Name')">
+              {{ currentTreeNode.name }}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.FileSize')">
+              {{ fileSizeConver(currentFileDetial.size) }}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial" label="SHA-256">
+              {{ currentFileDetial.sha256 }}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.ModifyTheTime')">
+              {{ currentFileDetial.lastModified }}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.ScanTime')">
+              {{ currentFileDetial.scanTime }}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifest.layers" :label="$t('Store.NumberOfFloors')">
+              {{ currentFileDetial.manifest.layers.length }}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" :label="$t('Store.MakeADockerVersion')">
+              {{ currentFileDetial.manifestConfig.docker_version }}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" :label="$t('Store.MirrorOS')">
+              <a-tag> {{ currentFileDetial.manifestConfig.os }}</a-tag>
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" :label="$t('Store.TheInfrastructure')">
+              {{ currentFileDetial.manifestConfig.architecture }}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig && currentFileDetial.manifestConfig.variant" :label="$t('Store.Version')">
+              {{ currentFileDetial.manifestConfig.variant || ''}}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial && !currentFileDetial.manifestConfig" :label="$t('Store.CacheStatus')">
+              {{ $t('Store.Uncached') }}
+            </a-descriptions-item>
+          </a-descriptions>
+        </div>
       </a-tab-pane>
       <a-tab-pane key="2" :tab="$t('Store.Metadata')">
         <a v-if="metadataEnabled" @click="metadataHandler()">
@@ -461,6 +464,7 @@ import "quill/dist/quill.snow.css";
 import { quillEditor } from "vue-quill-editor";
 import { hasRole, isAdmin, isAnonymous, isLogin } from "@/utils/permission";
 import ChartPolicyViolationBreakdown from "../../../ComponentAnalysis/Projects/Components/ChartPolicyViolationBreakdown.vue"
+import detailPage from "./detailPage.vue";
 
 export default {
   name: "BaseData",
@@ -470,11 +474,13 @@ export default {
     "currentFileDetial",
     "folibRepository",
     "successMsg",
+    'isChecked',
   ],
   components: {
     PrismEditor,
     quillEditor,
     ChartPolicyViolationBreakdown,
+    detailPage
   },
   data() {
     return {
@@ -611,6 +617,9 @@ export default {
     };
   },
   computed: {
+    newDetailPage(){
+      return this.$store.state.newDetailPage
+    },
     i18nMetadataColumns() {
       return this.metadataColumns.map(column => {
         if (column.i18nKey) {
@@ -618,7 +627,7 @@ export default {
         }
         return column;
       })
-    }
+    },
   },
   created() {
     if (isLogin()){

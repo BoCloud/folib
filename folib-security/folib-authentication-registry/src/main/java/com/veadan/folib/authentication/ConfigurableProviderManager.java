@@ -1,5 +1,7 @@
 package com.veadan.folib.authentication;
 
+import cn.hutool.json.JSONUtil;
+import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veadan.folib.authentication.api.AuthenticationItem;
@@ -10,6 +12,7 @@ import com.veadan.folib.authentication.registry.AuthenticationProvidersRegistry;
 import com.veadan.folib.authentication.support.AuthenticationConfigurationContext;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.domain.SecurityRoleEntity;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.UserEntity;
 import com.veadan.folib.entity.FolibUser;
@@ -21,6 +24,7 @@ import com.veadan.folib.users.userdetails.UserDetailsMapper;
 import com.veadan.folib.util.LocalDateTimeInstance;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -45,6 +49,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.transaction.Transactional;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -117,9 +122,12 @@ public class ConfigurableProviderManager extends ProviderManager implements User
     private Optional<User> loadUserDetails(String username) {
         String userKey = String.format("user_%s", username);
         String userInfo = distributedCacheComponent.get(userKey);
+
         ObjectMapper objectMapper = new ObjectMapper();
         if (Strings.isNotEmpty(userInfo)) {
-            User folibUser;
+            UserEntity userEntity = getUserEntity(userInfo);
+            return Optional.of(userEntity);
+            /*User folibUser;
             try {
                 folibUser = objectMapper.readValue(userInfo, UserEntity.class);
             } catch (JsonProcessingException e) {
@@ -128,7 +136,7 @@ public class ConfigurableProviderManager extends ProviderManager implements User
             Optional<User> optionalUser = Optional.ofNullable(folibUser).filter(this::isInternalOrValidExternalUser);
             if (optionalUser.isPresent()) {
                 return optionalUser;
-            }
+            }*/
         }else {
             Optional<User> optionalUser = Optional.ofNullable(folibExternalUsersCacheManager.findByUsername(username)).filter(this::isInternalOrValidExternalUser);
             if (optionalUser.isPresent()) {
@@ -142,6 +150,20 @@ public class ConfigurableProviderManager extends ProviderManager implements User
         }
 
         return loadExternalUserDetails(username);
+    }
+
+    private static @NotNull UserEntity getUserEntity(String userInfo) {
+        UserEntity userEntity = JSONObject.parseObject(userInfo, UserEntity.class);
+        JSONObject jsonObject = JSONObject.parseObject(userInfo);
+        Object roles = jsonObject.get("roles");
+        List<SecurityRoleEntity> securityRoleEntityList = JSONObject.parseArray(roles.toString(), SecurityRoleEntity.class);
+        JSONObject lastUpdated = JSONObject.parseObject(jsonObject.get("lastUpdated").toString());
+        String datetimeString = lastUpdated.get("year") + "-" + String.format("%02d",lastUpdated.get("monthValue")) + "-" + String.format("%02d",lastUpdated.get("dayOfMonth")) + " " + String.format("%02d",lastUpdated.get("hour")) + ":" + String.format("%02d",lastUpdated.get("minute")) + ":" + String.format("%02d",lastUpdated.get("second"));
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime localDateTime = LocalDateTime.parse(datetimeString, formatter);
+        userEntity.setLastUpdated(localDateTime);
+        userEntity.setRoles(new HashSet<>(securityRoleEntityList));
+        return userEntity;
     }
 
     protected Optional<User> loadExternalUserDetails(String username) {

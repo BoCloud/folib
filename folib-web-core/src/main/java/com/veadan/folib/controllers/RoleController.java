@@ -11,6 +11,7 @@ import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.PrivilegeDispatch;
 import com.veadan.folib.dto.*;
 import com.veadan.folib.entity.*;
+import com.veadan.folib.enums.SyncStrategyEnum;
 import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
 import com.veadan.folib.event.privilege.PrivilegeEventTypeEnum;
 import com.veadan.folib.forms.users.auth.RoleForm;
@@ -50,6 +51,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
+import javax.websocket.Session;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -234,21 +236,14 @@ public class RoleController extends BaseController {
     @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping(value = "/queryRole", produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    public TableResultResponse<FolibRoleDTO> queryUser(@RequestParam(name = "page", required = false) Integer page,
-                                                        @RequestParam(name = "limit", required = false) Integer limit,
+    public TableResultResponse<FolibRoleDTO> queryUser(@RequestParam(name = "page", required = false ,defaultValue ="1") Integer page,
+                                                        @RequestParam(name = "limit", required = false,defaultValue = "10") Integer limit,
                                                        @RequestParam(name = "storageId", required = false) String storageId,
                                                        @RequestParam(name = "repositoryId", required = false) String repositoryId,
                                                        @RequestParam(name = "path", required = false) String path,
                                                         @RequestParam(name = "name", required = false) String name,
                                                        @RequestParam(name = "matchRoleName", required = false) String matchName,
                                                         @RequestParam(name = "isDefault", required = false) String isDefault) {
-        if (Objects.isNull(page) || page < 1) {
-            page = 1;
-        }
-        if (Objects.isNull(limit)) {
-            limit = 10;
-        }
-
         PageRequest pageRequest = PageRequest.of(page, limit);
         FolibRole folibRole = FolibRole.builder().build();
         folibRole.setEnName(name);
@@ -303,44 +298,79 @@ public class RoleController extends BaseController {
         if (MapUtils.isEmpty(map)) {
             return;
         }
-        map.forEach((key, value) -> {
-            Boolean isThisCluster = value.getIsThisCluster();
-            Boolean wsClientOnline = value.getWsClientOnline();
-            Boolean isSyncPrivilege = value.getIsSyncPrivilege();
+        final Collection<ClusterDispatchNodeDto> values = map.values();
+        values.forEach(nodeDto -> {
+            String targetHostName1 = FolibWsRunManageUtil.getSimpleTargetHostName(nodeDto);
+            Session session = folibWsRunManageV2.getSession(targetHostName1);
+            nodeDto.setWsClientOnline(session != null && session.isOpen());
+        });
+        map.forEach((key, dispatchNodeDto) -> {
+            if (targetHostName.equalsIgnoreCase(dispatchNodeDto.getClusterNodeHost())) {
+                Boolean isThisCluster = dispatchNodeDto.getIsThisCluster();
+                Boolean wsClientOnline = dispatchNodeDto.getWsClientOnline();
+                Boolean isSyncPrivilege = dispatchNodeDto.getIsSyncPrivilege();
+                String syncStrategy = dispatchNodeDto.getSyncStrategy();
+                Boolean autoRegister = dispatchNodeDto.getAutoRegister();
 
-            if (!isThisCluster && wsClientOnline && isSyncPrivilege) {
-                WSMessageRequest wsMessageRequest = null;
-                WSMessageResponse messageResponse = null;
-
-                int page = 1;
-                int size = 100;
-                boolean flag = true;
-                while (flag) {
-                    //发送用户权限消息
-                    try {
-                        //分页查询请求参数
-                        UserAuthDTO userAuthReq = getUserAuthReq(page, size);
-                        if (userAuthReq != null && userAuthReq.isNextPage()) {
-                            page++;
-                            size += 100;
-                        }else {
-                            flag = false;
-                        }
-                        wsMessageRequest = new WSMessageRequest(Command.USER_AUTH_SYNC, userAuthReq);
-                        messageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
-
-                        log.debug("sendRequest result,wsMessageRequest:{},messageResponse:{}", wsMessageRequest, messageResponse);
-
-                    }  catch (Exception e) {
-                        log.error("sendRequest fail,wsMessageRequest:{}", wsMessageRequest, e);
-                        flag = false;
+                if (!isThisCluster && !Objects.equals(wsClientOnline, null) && wsClientOnline
+                            && !Objects.equals(isSyncPrivilege, null) && isSyncPrivilege) {
+                    if (SyncStrategyEnum.TARGET_TO_SOURCE.getValue().equalsIgnoreCase(syncStrategy) && autoRegister){
+                        syncAuthSourceToTarget(dispatchNodeDto);
+                    }  else if (SyncStrategyEnum.SOURCE_TO_TARGET.getValue().equalsIgnoreCase(syncStrategy) && !autoRegister){
+                        syncAuthSourceToTarget(dispatchNodeDto);
+                    } else if (SyncStrategyEnum.TWO_WAY_SYNC.getValue().equalsIgnoreCase(syncStrategy)){
+                        syncAuthSourceToTarget(dispatchNodeDto);
                     }
                 }
-
             }
         });
         log.info("UserAuthSyncTask thread name [{}] time [{}]", Thread.currentThread().getName(), DateUtil.now());
     }
+
+    private void syncAuthTargetToSource(String clusterNodeHost) {
+        String baseUrl = configurationManagementService.getConfiguration().getBaseUrl();
+        boolean dispatch = folibWsRunManageV2.dispatchTargetNode(clusterNodeHost, PrivilegeDispatch.builder().privilegeEventTypeEnum(PrivilegeEventTypeEnum.EVENT_ALL_SYNC).targetHostName(baseUrl).build());
+        log.info("dispatch:{}", dispatch);
+    }
+    private void syncAuthSourceToTarget(ClusterDispatchNodeDto value) {
+        WSMessageRequest wsMessageRequest = null;
+        WSMessageResponse messageResponse = null;
+        String clusterNodeHost = value.getClusterNodeHost();
+        String targetHostName = FolibWsRunManageUtil.getTargetNode(clusterNodeHost);
+        if (StringUtils.isBlank(targetHostName)) {
+            //WS目标节点未找到，尝试转发到集群中其他节点处理
+            targetHostName = FolibWsRunManageUtil.getTargetHostName(clusterNodeHost);
+            log.info("targetHostName:{}", targetHostName);
+            if (folibWsRunManageV2.dispatch(targetHostName, PrivilegeDispatch.builder().privilegeEventTypeEnum(PrivilegeEventTypeEnum.EVENT_ALL_SYNC).targetHostName(targetHostName).build())) {
+                return;
+            }
+        }
+        int page = 1;
+        int size = 100;
+        boolean flag = true;
+        while (flag) {
+            //发送用户权限消息
+            try {
+                //分页查询请求参数
+                UserAuthDTO userAuthReq = getUserAuthReq(page, size);
+                if (userAuthReq != null && userAuthReq.isNextPage()) {
+                    page++;
+                    size += 100;
+                }else {
+                    flag = false;
+                }
+                wsMessageRequest = new WSMessageRequest(Command.USER_AUTH_SYNC, userAuthReq);
+                messageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
+
+                log.debug("sendRequest result,wsMessageRequest:{},messageResponse:{}", wsMessageRequest, messageResponse);
+
+            }  catch (Exception e) {
+                log.error("sendRequest fail,wsMessageRequest:{}", wsMessageRequest, e);
+                flag = false;
+            }
+        }
+    }
+
     private UserAuthDTO getUserAuthReq(int page, int size) {
 
         UserAuthDTO.UserAuthDTOBuilder builder = UserAuthDTO.builder();
@@ -398,13 +428,16 @@ public class RoleController extends BaseController {
                 StorageDto storage = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
                 if (storage != null && storage.hasRepositories()) {
                     RepositoryDto repository = storage.getRepository(repositoryId);
-                    if (repository != null && !repositorys.contains(repository)) {
+                    if (repository != null && !repositorys.contains(repository) && repository.isSyncEnabled()) {
                         repositorys.add(repository);
+                        if (!storages.contains(storage)) {
+                            storages.add(storage);
+                        }
                     }
                 }
             }else if (StringUtils.isNotEmpty(storageId)){
                 StorageDto storage = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
-                if (storage != null && !storages.contains(storage)) {
+                if (storage != null && !storages.contains(storage) && storage.isSyncEnabled()) {
                     storages.add(storage);
                 }
             }

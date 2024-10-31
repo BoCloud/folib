@@ -9,6 +9,7 @@ import com.veadan.folib.entity.Dict;
 import com.veadan.folib.model.request.ArtifactPromotionNodeOptionCallbackReq;
 import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
 import com.veadan.folib.model.request.ArtifactSliceUploadReq;
+import com.veadan.folib.model.request.ArtifactSliceUploadWebReq;
 import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
 import com.veadan.folib.model.response.ArtifactSliceUploadInfoRes;
 import com.veadan.folib.storage.repository.Repository;
@@ -26,6 +27,10 @@ import java.util.concurrent.CompletableFuture;
  * @author qijianping
  */
 public interface ArtifactPromotionService {
+
+    ResponseEntity syncCopy(ArtifactPromotion artifactPromotion);
+
+    ResponseEntity syncMove(ArtifactPromotion artifactPromotion);
 
     ResponseEntity copy(ArtifactPromotion artifactPromotion);
 
@@ -173,5 +178,12 @@ public interface ArtifactPromotionService {
     * @param syncNo
     */
    ResponseEntity<?> deleteTask(String syncNo);
+
+   /**
+    * web切片上传
+    * @param model
+    * @return
+    */
+   Boolean webSliceUpload(ArtifactSliceUploadWebReq model);
 
 }

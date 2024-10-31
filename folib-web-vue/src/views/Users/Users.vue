@@ -198,7 +198,7 @@
                   <a-col :span="12">
                     <a-form-model-item class="mb-10" :label="$t('Users.Password')" :colon="false" prop="password"
                                        :required="passwordRequired">
-                      <a-input-password :disabled="userNotEdit" autocomplete="new-password" placeholder="******"
+                      <a-input-password :disabled="userNotEdit || (!userNotEdit && !passwordUpdateEnable && currentUser.user.username != null && currentUser.user.username != 'admin')" autocomplete="new-password" placeholder="******"
                                         v-model="currentUser.user.password" />
                     </a-form-model-item>
                   </a-col>
@@ -291,11 +291,14 @@
 
 <script>
 
-import { getUsers, queryUser, getUserDetial, putUserDetial, getUsersCreateFields, delUser } from "@/api/users";
+import { getUsers, queryUser, getUserDetial, putUserDetial, saveUser, getUsersCreateFields, delUser } from "@/api/users";
 import { encrypt } from "@/utils/jsencrypt"
 import textOver from "@/components/Tools/textOver";
 import { getPermissionList } from "@/api/permissions";
 import { getGroupList } from "@/api/group";
+import {
+  getSingleDict,
+} from "@/api/advanced"
 
 export default ({
   inject: ["reload"],
@@ -352,6 +355,7 @@ export default ({
       userTotal: 0,
       currentUser: null,
       userNotEdit: true,
+      type: null,
       deleteVisible: false,
       willDelUserName: null,
       userPage: {
@@ -376,7 +380,8 @@ export default ({
           label: "Users.GeneralUsers",
           value: "GENERAL",
         }
-      ]
+      ],
+      passwordUpdateEnable: true,
     }
   },
   created() {
@@ -388,6 +393,7 @@ export default ({
       await this.getCurrentGroup()
       this.getUsers()
       this.queryUsers()
+      this.getPasswordUpdateEnable()
     },
     getUsers() {
       getUsers().then(res => {
@@ -479,6 +485,7 @@ export default ({
       if (this.$refs.userForm) {
         this.$refs.userForm.resetFields()
       }
+      this.type = 2
     },
     userEditSaveHandle() {
       this.$refs.userForm.validate(valid => {
@@ -509,10 +516,35 @@ export default ({
           if (user.password) {
             user.password = encrypt(user.password)
           }
-          putUserDetial(user).then(res => {
-            this.userNotEdit = true
-            this.reload()
-          })
+          if (this.type == 1) {
+            saveUser(user).then(res => {
+              this.userNotEdit = true
+              this.type = null
+              this.reload()
+            }).catch((err) => {
+              let msg = err.response.data.message ? err.response.data.message : err.response.data
+              let errStatusArr = [200, 500, 403, 304, 401]
+              if (!errStatusArr.includes(err.response.status)) {
+                this.$notification.error({
+                  message: msg,
+                })
+              }
+            })
+          } else {
+            putUserDetial(user).then(res => {
+              this.userNotEdit = true
+              this.type = null
+              this.reload()
+            }).catch((err) => {
+              let msg = err.response.data.message ? err.response.data.message : err.response.data
+              let errStatusArr = [200, 500, 403, 304, 401]
+              if (!errStatusArr.includes(err.response.status)) {
+                this.$notification.error({
+                  message: msg,
+                })
+              }
+            })
+          }
         } else {
           return false
         }
@@ -530,13 +562,14 @@ export default ({
           this.$set(item, 'enabled', item.joinGroup === '1')
           if (item.joinGroup === '1') { userGroupIds.push(`${item.id}`) }
         })
-        this.currentUser = { user: { userGroupIds }, assignableRoles: roles }
+        this.currentUser = { user: { userGroupIds, username:null}, assignableRoles: roles }
         this.userNotEdit = false
         this.passwordRequired = true
         if (this.$refs.userForm) {
           this.$refs.userForm.resetFields()
         }
       })
+      this.type = 1
     },
     userEditCancelHandle() {
       this.userNotEdit = true
@@ -581,6 +614,13 @@ export default ({
       } else {
           this.currentUser.user.userGroupIds = this.currentUser.user.userGroupIds.filter(item => item !== id)
       }
+    },
+    getPasswordUpdateEnable() {
+      getSingleDict({ dictType: 'system_property', dictKey: 'PASSWORD_UPDATE_ENABLE' }).then(res => {
+        if (res && res.dictValue) {
+          this.passwordUpdateEnable = !(res.dictValue === 'false')
+        }
+      })
     },
   }
 })
