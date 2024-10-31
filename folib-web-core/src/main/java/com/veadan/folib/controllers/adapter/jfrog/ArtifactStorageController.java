@@ -375,4 +375,45 @@ public class ArtifactStorageController extends JFrogBaseController {
         return ResponseEntity.ok("The artifact was deleted.");
     }
 
+    @ApiOperation(value = "设置自定义元数据")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PatchMapping(value = {"/{repositoryId}/{artifactPath:.+}"})
+    public ResponseEntity<Object> setItemCustomProperties(@PathVariable("repositoryId") String repositoryId,
+                                                          @PathVariable("artifactPath") String artifactPath,
+                                                          @RequestParam(required = false) Map<String, String> customProperties,
+                                                          HttpServletRequest request) throws Exception {
+
+        String storageId = getDefaultStorageId(repositoryId);
+        Storage storage = getStorage(storageId);
+        if (customProperties!=null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(handlerErrors(HttpStatus.BAD_REQUEST.value(), PROPERTIES_VALUE_CANNOT_BE_EMPTY));
+        }
+        if (Objects.isNull(storage)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, STORAGE_NOT_FOUND_MESSAGE));
+        }
+        if (Objects.isNull(storage.getRepository(repositoryId))) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, REPOSITORY_NOT_FOUND_MESSAGE));
+        }
+        Artifact artifact = findArtifact(storageId, repositoryId, artifactPath);
+        if (Objects.isNull(artifact)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, ARTIFACT_NOT_FOUND_MESSAGE));
+        }
+        List<ArtifactMetadataForm> artifactMetadataFormList = Lists.newArrayList();
+        // 遍历所有接收到的参数
+        for (Map.Entry<String, String> entry : customProperties.entrySet()) {
+            ArtifactMetadataForm  artifactMetadataForm = ArtifactMetadataForm.builder()
+                    .storageId(storageId)
+                    .repositoryId(repositoryId)
+                    .artifactPath(artifactPath)
+                    .type(ArtifactMetadataEnum.STRING.toString())
+                    .key(entry.getKey())
+                    .value(entry.getValue())
+                    .viewShow(1)
+                    .build();
+            artifactMetadataFormList.add(artifactMetadataForm);
+        }
+        artifactWebService.batchArtifactMetadata(artifactMetadataFormList);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT.value()).body("");
+    }
+
 }
