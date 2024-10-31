@@ -1305,7 +1305,7 @@ export default {
 	    packageLoadedKeys: [],
 	    restoreTitle: null,
 	    showRestoreForm: false
-    },
+    }
   },
   computed: {
     newDetailPage(){
