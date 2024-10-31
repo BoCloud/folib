@@ -4,36 +4,42 @@
 日期：
 **/
 <template>
-    <div class="tree_container" :key="key" @scroll="handleScroll">
-        <a-tree class="repositoryTree"
-            :replaceFields="replaceFields" 
-            :load-data="onLoadData" 
-            :tree-data="treeData" 
-            :show-line="true"
-            :defaultExpandAll="false" 
-            @select="treeSelect" 
-            @expand="onExpand" 
-            show-icon 
-            default-expand-all
-        >
-            <a-icon slot="switcherIcon" type="down" />
-            <a-icon slot="switcherIcon" type="folder-open" />
-            <template slot="title" slot-scope="{ expanded,name,id,type,selected,fileType }">
-                <div class="title_box">
-                    <img v-if="fileType === 'document'" :src="getSrc(selected, type)" alt="" width="24">
-                    <span v-if="fileType === 'document'" class="tree_title">
-                        {{ id }}
-                    </span>
-                    <span v-else>
-                        <a-icon class="tree_icon" v-if="type === 'dir' || type === 'DIR'" :type="expanded ? 'folder-open' : 'folder'" />
-                        <a-icon class="tree_icon" v-else :type="getIconType(name,type)"></a-icon>
-                        <span class="tree_title">
-                            {{ name }}
+    <div>
+        <div ref="tree_container" class="tree_container" :key="key" @scroll="handleScroll">
+            <a-tree class="repositoryTree"
+                ref="tree"
+                :replaceFields="replaceFields" 
+                :load-data="onLoadData" 
+                :tree-data="treeData" 
+                :show-line="true"
+                @select="treeSelect" 
+                @expand="onExpand" 
+                show-icon
+                :selectedKeys="selectedKeys"
+            >
+                <a-icon slot="switcherIcon" type="down" />
+                <a-icon slot="switcherIcon" type="folder-open" />
+                <template slot="title" slot-scope="{ expanded,name,id,type,selected,fileType }">
+                    <div class="title_box">
+                        <img v-if="fileType === 'document'" :src="getSrc(selected, type)" alt="" width="24">
+                        <span v-if="fileType === 'document'" class="tree_title">
+                            {{ id }}
                         </span>
-                    </span>
-                </div>
-            </template>
-        </a-tree>
+                        <span v-else>
+                            <a-icon class="tree_icon" v-if="type === 'dir' || type === 'DIR'" :type="expanded ? 'folder-open' : 'folder'" />
+                            <a-icon class="tree_icon" v-else :type="getIconType(name,type)"></a-icon>
+                            <span class="tree_title">
+                                {{ name }}
+                            </span>
+                        </span>
+                    </div>
+                </template>
+            </a-tree>
+        </div>
+        <div>
+            <!-- :tip="`${$t('Storage.Loading')}...`" -->
+            <a-spin style="width:100%;" v-if="loadingMore"/>
+        </div>
     </div>
 </template>
 <script>
@@ -47,7 +53,7 @@ import { getDockerArtifact, browse, getArtifact } from '@/api/folib'
 import { getLayoutType } from '@/utils/layoutUtil'
 import { name } from 'store/storages/cookieStorage'
 export default {
-    props: ['repositories'],
+    props: ['repositories','storageId'],
     data() {
         return {
             treeData: [],
@@ -57,9 +63,11 @@ export default {
                 title: 'name',
                 children: 'children',
             },
-            key: 0,
+            key:0,
             repositoryType:'',
-            artifactPath:''
+            artifactPath:'',
+            loadingMore:false,
+            selectedKeys:[]
         };
     },
     computed: {
@@ -104,7 +112,20 @@ export default {
         repositories: {
             handler(val) {
                 if (val) {
-                    this.treeData = JSON.parse(JSON.stringify(val))
+                    this.loadingMore = false
+                    this.treeData = this.treeData.concat(JSON.parse(JSON.stringify(val)))
+                    // function uniqueById(arr) {
+                    //     const unique = [];
+                    //     const seen = new Set();
+                    //     arr.forEach(item => {
+                    //         if (!seen.has(item.id)) {
+                    //         unique.push(item);
+                    //         seen.add(item.id);
+                    //         }
+                    //     });
+                    //     return unique;
+                    // }
+                    // this.treeData = uniqueById(this.treeData)
                     this.treeData.map(ele => {
                         ele.fileType = 'document'
                         ele.key = ele.id
@@ -112,10 +133,10 @@ export default {
                         ele.artifactPath = ''
                         ele.newDetailPage = true
                     })
-                    this.key ++
-                    // if(!this.treeData.length){
-                    //     return
-                    // }
+                    if(!this.treeData.length){
+                        return
+                    }
+                    this.selectedKeys = [this.treeData[0].id]
                     const e = {
                         node: {
                             dataRef: this.treeData[0]
@@ -125,14 +146,31 @@ export default {
                 }
             },
             immediate: true
+        },
+        storageId(val){
+            if(val){
+                // 切换不同的存储空间时，清空原有的树结构
+                this.key ++ 
+                this.empty()
+                this.loadingMoreShow(true)
+            }
         }
     },
     methods: {
+        empty(){
+            this.treeData = []
+        },
+        // 设置loading状态
+        loadingMoreShow(key){
+            this.loadingMore = key
+            console.log(this.loadingMore)
+        },
         handleScroll(event){
             const { scrollTop, clientHeight, scrollHeight } = event.target;
             // 当滚动到底部时加载更多
             if (scrollTop + clientHeight >= scrollHeight) {
-                this.$emit('loadMore')
+                const total = this.treeData.length
+                this.$emit('loadMore', total)
             }
         },
         // 判断那些文件类型是可以打开的
@@ -148,8 +186,8 @@ export default {
             return key
         },
         treeSelect(key, e) {
-            console.log(key,e,'eeeeeeeeeee')
             const {newDetailPage} = e.node.dataRef
+            this.selectedKeys = [e.node.dataRef.key]
             this.$store.commit('setNewDetailPage', !!newDetailPage)
             if (e.node.dataRef.fileType == 'document') {
                 this.folibRepository = e.node.dataRef
@@ -289,6 +327,7 @@ export default {
                     function setNewDetailPage(arr){
                         arr.forEach(ele => {
                             ele.newDetailPage = true
+                            ele.key = ele.name
                             ele.artifactPath = `${id}/${artifactPath}/${ele.name}`
                             if(ele?.children?.length){
                                 setNewDetailPage(ele.children)
@@ -334,7 +373,7 @@ export default {
     line-height: 32px !important;
 }
 .tree_container{
-    height: 650px;
+    max-height: 650px;
     overflow: auto;
 }
 .repositoryTree .ant-tree-switcher-noop{

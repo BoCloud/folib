@@ -22,7 +22,7 @@ public class TableResultResponse<T> extends BaseResponse {
         this.data = new TableData<T>();
     }
 
-    TableResultResponse<T> total(int total){
+    TableResultResponse<T> total(int total) {
         this.data.setTotal(total);
         return this;
     }
