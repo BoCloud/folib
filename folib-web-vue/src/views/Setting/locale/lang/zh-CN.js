@@ -449,7 +449,7 @@ export default {
     'GlobalS3Bucket': '全局S3桶',
     'EventRepositroy':'所属仓库',
     'EventRepositroyInfo':'webhook所生效的仓库,不选择则对所有仓库生效',
-    'SelectTheRepository':'请选择所属仓库'
+    'SelectTheRepository':'请选择所属仓库',
     'BlackAndWhiteList': '黑白名单',
     'BlockingStrategy': '阻断策略',
     'VulnerabilityWhiteList':'漏洞白名单',

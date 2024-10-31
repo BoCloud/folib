@@ -6,6 +6,7 @@ import cn.hutool.crypto.SecureUtil;
 import cn.hutool.http.HttpRequest;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.veadan.folib.cluster.FolibLockProperties;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.licence.ActivateVo;
 import com.veadan.folib.licence.MacUtil;
@@ -43,7 +44,10 @@ public class CodeActivateService {
     @Inject
     private DistributedCacheComponent distributedCacheComponent;
 
-    private final static String LICENSE_KEY = "folib:license";
+    @Inject
+    private FolibLockProperties folibLockProperties;
+
+    private final static String LICENSE_KEY = "folib:license:%s";
 
     @Value("${folib.home}")
     private String homePath;
@@ -57,10 +61,11 @@ public class CodeActivateService {
         JSONObject data = new JSONObject();
         if (!isPoc) {
             try {
+                String machineCode = MacUtil.getMachineCode();
                 String result = HttpRequest.get(SERVER_URL)
                         .header("Content-Type", "application/json")
                         .form("activate", code)
-                        .form("machineCode", MacUtil.getMachineCode())
+                        .form("machineCode", machineCode)
                         .execute().body();
                 JSONObject res = JSON.parseObject(result);
                 if (res.getBoolean("rel")) {
@@ -82,7 +87,7 @@ public class CodeActivateService {
                     data = res;
                 }
                 // 激活后删除缓存里的license
-                distributedCacheComponent.delete(LICENSE_KEY);
+                distributedCacheComponent.delete(getLicenseKey());
             } catch (Exception exception) {
                 data.put("rel", false);
                 data.put("message", "激活失败，网络异常");
@@ -94,13 +99,14 @@ public class CodeActivateService {
                     .values());
 
             if (storages.size() <= 2) {
+                String machineCode = MacUtil.getMachineCode();
                 data.put("activate", "已激活");
                 //试用一个月
                 data.put("endDate", DateUtil.nextMonth().toDateStr());
                 data.put("codes", code);
                 data.put("type", "试用版");
                 data.put("level", "pro");
-                data.put("mac", MacUtil.getMachineCode());
+                data.put("mac", machineCode);
                 data.put("rel", true);
                 String md5 = SecureUtil.md5(data.toJSONString() + "folib!@#$%^&*ABCD");
                 data.put("md5", md5);
@@ -113,7 +119,7 @@ public class CodeActivateService {
                     FileUtil.writeUtf8String(data.toJSONString(), file);
                 }
                 // 激活后删除缓存里的license
-                distributedCacheComponent.delete(LICENSE_KEY);
+                distributedCacheComponent.delete(getLicenseKey());
             } else {
                 data.put("rel", false);
                 data.put("message", "激活失败，你已经试用过一次了，不可重复，请换一台机器");
@@ -132,7 +138,7 @@ public class CodeActivateService {
             Path path = file.toPath();
             Files.copy(is, path, StandardCopyOption.REPLACE_EXISTING);
             // 删除原有的license缓存
-            distributedCacheComponent.delete(LICENSE_KEY);
+            distributedCacheComponent.delete(getLicenseKey());
             return ResponseEntity.ok("license upload success");
         } catch (Exception e) {
             log.error("激活失败{}", e.getMessage(), e);
@@ -143,7 +149,7 @@ public class CodeActivateService {
 
     public ActivateVo isNotActivate() throws Exception {
         JSONObject dataObj;
-        String cacheLicense = distributedCacheComponent.get(LICENSE_KEY);
+        String cacheLicense = distributedCacheComponent.get(getLicenseKey());
         if (cacheLicense != null) {
             try {
                 return JSONObject.parseObject(cacheLicense, ActivateVo.class);
@@ -202,11 +208,15 @@ public class CodeActivateService {
         log.info("将获取的license保存至缓存");
         try {
             String activeStr = JSONObject.toJSONString(activateVo);
-            distributedCacheComponent.put(LICENSE_KEY, activeStr, 24, TimeUnit.HOURS);
+            distributedCacheComponent.put(getLicenseKey(), activeStr, 24, TimeUnit.HOURS);
         } catch (Exception e) {
             log.error("license 存入缓存失败");
         }
         return activateVo;
+    }
+
+    private String getLicenseKey() {
+        return String.format(LICENSE_KEY, folibLockProperties.getFolibLockIp());
     }
 
 }

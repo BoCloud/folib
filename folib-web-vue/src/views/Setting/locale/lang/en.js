@@ -449,7 +449,7 @@ export default {
     'GlobalS3Bucket': 'Global S3 bucket',
     'EventRepositroy':'event repository',
     'EventRepositroyInfo':'The repository that the webhook takes effect on, if not selected, it will take effect on all repository',
-    'SelectTheRepository':'Please select the repository'
+    'SelectTheRepository':'Please select the repository',
     'BlackAndWhiteList': 'Black and White List',
     'BlockingStrategy': 'Blocking strategy',
     'VulnerabilityWhiteList':'Vulnerability whitelist',

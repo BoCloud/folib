@@ -114,7 +114,7 @@
               v-model="blockStrategyForm.blockStrategyName" :style="{ width: '950px', }" />
           </a-form-model-item>
           <a-form-model-item class="mb-10" :label="$t('BlockStrategy.ChooseBlockRepository')" :colon="false"
-            prop="accessToken">
+            prop="repositoriesKeys">
             <a-transfer :data-source="repositoriesList"
               :titles="[$t('BlockStrategy.SelectableRepositories'), $t('BlockStrategy.SelectedRepositories')]"
               :render="item => item.title" :target-keys="selectedRepositoriesKeys" :disabled="false" show-search
@@ -180,7 +180,7 @@
             </template>
             <a-switch v-model="blockStrategyForm.filterAllPackageName" />
           </a-form-model-item>
-          <a-form-model-item class="mb-10" :colon="false" prop="accessToken">
+          <a-form-model-item class="mb-10" :colon="false" prop="packageNames">
             <template slot="label">
               {{ $t('BlockStrategy.ChooseToBlockPackageName') }}
               <a-popover placement="topLeft">
@@ -218,7 +218,7 @@
               </a-checkbox>
             </a-checkbox-group>
           </a-form-model-item>
-          <a-form-model-item class="mb-10" :colon="false" prop="accessToken">
+          <a-form-model-item class="mb-10" :colon="false" prop="licenses">
             <template slot="label">
               {{ $t('BlockStrategy.ChooseToBlockLicense') }}
               <a-popover placement="topLeft">
@@ -281,6 +281,13 @@ export default {
         callback()
       }
     }
+    const checkRepositoriesKeys = (rule, value, callback) => {
+      if (!this.selectedRepositoriesKeys || this.selectedRepositoriesKeys.length <= 0) {
+        callback(new Error(this.$t('BlockStrategy.ChooseBlockRepository')))
+      } else {
+        callback()
+      }
+    }
     return {
       blockStrategyVisible: false,
       blockStrategyForm: {
@@ -311,9 +318,9 @@ export default {
         filterAllPackageName: [
           { required: false, trigger: ['blur', 'change'] },
         ],
-        // filterAllLicense: [
-        //   { required: false, trigger: ['blur', 'change']},
-        // ],
+        repositoriesKeys: [
+          { required: true, trigger: ['blur', 'change'], validator: checkRepositoriesKeys},
+        ],
       },
       blockStrategyList: [],
       blockStrategyQuery: {
@@ -750,7 +757,7 @@ export default {
         return
       }
       this.licenseLoading = true;
-      getLicensesList({ page: this.licensePage, limit: this.licenseLimit, licenseId: this.searchLicense }).then(res => {
+      getLicensesList({ page: this.licensePage, limit: this.licenseLimit, searchKeyword: this.searchLicense }).then(res => {
         const newLicenses = res.data.rows.map((item) => {
           let temp = {}
           temp.key = item.licenseId
