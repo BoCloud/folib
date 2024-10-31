@@ -1499,6 +1499,7 @@ export default {
       })
     },
     updateHandleView() {
+      this.getStorage(this.currentStorage.id)
       this.showStorageUpdate = true
       this.getUsersList()
     },

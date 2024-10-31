@@ -2,6 +2,7 @@ package com.veadan.folib.controllers;
 
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.components.block.ArtifactBlockComponent;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.CacheSettings;
@@ -20,6 +21,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -55,6 +57,9 @@ public abstract class BaseArtifactController
 
     @Autowired
     private ArtifactComponent artifactComponent;
+
+    @Autowired
+    private ArtifactBlockComponent artifactBlockComponent;
 
     @Autowired
     private DictService dictService;
@@ -129,7 +134,7 @@ public abstract class BaseArtifactController
         if (Objects.isNull(artifact)) {
             return null;
         }
-        boolean block = artifactComponent.vulnerabilityBlock(artifact, repositoryPath.getRepository().getLayout());
+        boolean block = artifactBlockComponent.artifactBlockStrategy(artifact, repositoryPath.getRepository().getLayout());
         if (block) {
             httpServletResponse.setContentType(org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
             httpServletResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);

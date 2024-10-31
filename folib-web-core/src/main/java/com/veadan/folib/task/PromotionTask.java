@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.components.block.ArtifactBlockComponent;
 import com.veadan.folib.components.promotion.ArtifactPromotionProvider;
 import com.veadan.folib.components.promotion.ArtifactPromotionProviderRegistry;
 import com.veadan.folib.configuration.UnionTargetRepositoryConfiguration;
@@ -54,6 +55,10 @@ public class PromotionTask {
     @Inject
     @Lazy
     private ArtifactComponent artifactComponent;
+
+    @Inject
+    @Lazy
+    private ArtifactBlockComponent artifactBlockComponent;
 
     @Inject
     @Lazy
@@ -120,7 +125,7 @@ public class PromotionTask {
                             try {
                                 storageId = artifact.getStorageId();
                                 repositoryId = artifact.getRepositoryId();
-                                block = artifactComponent.vulnerabilityBlock(artifact, null);
+                                block = artifactBlockComponent.artifactBlockStrategy(artifact, null);
                                 if (block) {
                                     log.info("存储空间 [{}] 所属仓库 [{}] 制品 [{}] 存在漏洞，满足安全策略配置中的阻断条件，取消晋级", storageId, repositoryId, artifact.getArtifactPath());
                                     artifactComponent.handlerArtifactPromotion("", artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), PromotionStatusEnum.BLOCK.getStatus());

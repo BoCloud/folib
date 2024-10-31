@@ -30,7 +30,7 @@ public class LicenseComponent {
     public List<License> getLicenses() {
         if (CollectionUtils.isEmpty(licenseList)) {
             log.info("获取所有license [{}]", DateUtil.now());
-            licenseList = licenseService.selectLicense(License.builder().isDeprecated(0).build());
+            licenseList = licenseService.getLicenseCache();
         }
         return licenseList;
     }

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.veadan.folib.mapper.BlockStrategyMapper">
+
+    <select id="selectList" resultType="com.veadan.folib.entity.BlockStrategy">
+        SELECT
+            DISTINCT
+            bs.id,
+            bs.block_strategy_name,
+            bs.vulnerability_levels,
+            bs.filter_vulnerability_whites,
+            bs.filter_vulnerability_blacks,
+            bs.filter_license_whites,
+            bs.filter_license_blacks,
+            bs.filter_all_package_name,
+            bs.filter_all_license
+        FROM
+            block_strategy bs
+        LEFT JOIN block_strategy_repository bsr ON bs.id = bsr.block_strategy_id
+        LEFT JOIN block_strategy_info bsi ON bs.id = bsi.block_strategy_id
+        <where>
+            bs.id > 0
+            <if test="blockStrategy.blockStrategyName != null and blockStrategy.blockStrategyName != ''">
+                AND bs.block_strategy_name = #{blockStrategy.blockStrategyName}
+            </if>
+            <if test="blockStrategy.matchBlockStrategyName != null and blockStrategy.matchBlockStrategyName != ''">
+                AND bs.block_strategy_name LIKE concat(#{blockStrategy.matchBlockStrategyName}, '%')
+            </if>
+            <if test="blockStrategy.storageId != null and blockStrategy.storageId != ''">
+                AND bsr.storage_id = #{blockStrategy.storageId}
+            </if>
+            <if test="blockStrategy.matchStorageId != null and blockStrategy.matchStorageId != ''">
+                AND bsr.storage_id LIKE concat(#{blockStrategy.matchStorageId}, '%')
+            </if>
+            <if test="blockStrategy.repositoryId != null and blockStrategy.repositoryId != ''">
+                AND bsr.repository_id = #{blockStrategy.repositoryId}
+            </if>
+            <if test="blockStrategy.matchRepositoryId != null and blockStrategy.matchRepositoryId != ''">
+                AND bsr.repository_id LIKE concat(#{blockStrategy.matchRepositoryId}, '%')
+            </if>
+            <if test="blockStrategy.packageName != null and blockStrategy.packageName != ''">
+                AND bsi.package_name = #{blockStrategy.packageName}
+            </if>
+            <if test="blockStrategy.matchPackageName != null and blockStrategy.matchPackageName != ''">
+                AND bsi.package_name LIKE concat(#{blockStrategy.matchPackageName}, '%')
+            </if>
+            <if test="blockStrategy.licenseId != null and blockStrategy.licenseId != ''">
+                AND bsi.license_id = #{blockStrategy.licenseId}
+            </if>
+            <if test="blockStrategy.matchLicenseId != null and blockStrategy.matchLicenseId != ''">
+                AND bsi.license_id LIKE concat(#{blockStrategy.matchLicenseId}, '%')
+            </if>
+        </where>
+        ORDER BY bs.id
+    </select>
+
+    <resultMap id="selectInfoListMap" type="com.veadan.folib.domain.blockstrategy.BlockStrategyRecord">
+        <result column="id" property="id"/>
+        <result column="block_strategy_name" property="blockStrategyName"/>
+        <result column="vulnerability_levels" property="vulnerabilityLevels"/>
+        <result column="filter_vulnerability_whites" property="filterVulnerabilityWhites"/>
+        <result column="filter_vulnerability_blacks" property="filterVulnerabilityBlacks"/>
+        <result column="filter_license_whites" property="filterLicenseWhites"/>
+        <result column="filter_license_blacks" property="filterLicenseBlacks"/>
+        <result column="filter_all_package_name" property="filterAllPackageName"/>
+        <result column="filter_all_license" property="filterAllLicense"/>
+        <collection property="blockStrategyInfos" javaType="java.util.List" ofType="com.veadan.folib.entity.BlockStrategyInfo" columnPrefix="bsi_">
+            <result column="license_id" property="licenseId"/>
+            <result column="package_name" property="packageName"/>
+        </collection>
+    </resultMap>
+
+    <select id="selectInfoList" resultMap="selectInfoListMap">
+        SELECT
+            bs.id,
+            bs.block_strategy_name,
+            bs.vulnerability_levels,
+            bs.filter_vulnerability_whites,
+            bs.filter_vulnerability_blacks,
+            bs.filter_license_whites,
+            bs.filter_license_blacks,
+            bs.filter_all_package_name,
+            bs.filter_all_license,
+            bsi.license_id bsi_license_id,
+            bsi.package_name bsi_package_name
+        FROM
+        block_strategy bs
+        LEFT JOIN block_strategy_repository bsr ON bs.id = bsr.block_strategy_id
+        LEFT JOIN block_strategy_info bsi ON bs.id = bsi.block_strategy_id
+        <where>
+            bs.id > 0
+            <if test="blockStrategy.blockStrategyName != null and blockStrategy.blockStrategyName != ''">
+                AND bs.block_strategy_name = #{blockStrategy.blockStrategyName}
+            </if>
+            <if test="blockStrategy.matchBlockStrategyName != null and blockStrategy.matchBlockStrategyName != ''">
+                AND bs.block_strategy_name LIKE concat(#{blockStrategy.matchBlockStrategyName}, '%')
+            </if>
+            <if test="blockStrategy.storageId != null and blockStrategy.storageId != ''">
+                AND bsr.storage_id = #{blockStrategy.storageId}
+            </if>
+            <if test="blockStrategy.matchStorageId != null and blockStrategy.matchStorageId != ''">
+                AND bsr.storage_id LIKE concat(#{blockStrategy.matchStorageId}, '%')
+            </if>
+            <if test="blockStrategy.repositoryId != null and blockStrategy.repositoryId != ''">
+                AND bsr.repository_id = #{blockStrategy.repositoryId}
+            </if>
+            <if test="blockStrategy.matchRepositoryId != null and blockStrategy.matchRepositoryId != ''">
+                AND bsr.repository_id LIKE concat(#{blockStrategy.matchRepositoryId}, '%')
+            </if>
+            <if test="blockStrategy.packageName != null and blockStrategy.packageName != ''">
+                AND bsi.package_name = #{blockStrategy.packageName}
+            </if>
+            <if test="blockStrategy.matchPackageName != null and blockStrategy.matchPackageName != ''">
+                AND bsi.package_name LIKE concat(#{blockStrategy.matchPackageName}, '%')
+            </if>
+            <if test="blockStrategy.licenseId != null and blockStrategy.licenseId != ''">
+                AND bsi.license_id = #{blockStrategy.licenseId}
+            </if>
+            <if test="blockStrategy.matchLicenseId != null and blockStrategy.matchLicenseId != ''">
+                AND bsi.license_id LIKE concat(#{blockStrategy.matchLicenseId}, '%')
+            </if>
+        </where>
+        ORDER BY bs.id
+    </select>
+</mapper>

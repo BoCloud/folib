@@ -1,16 +1,12 @@
 package com.veadan.folib.task;
 
 
-import com.google.common.collect.Lists;
-import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.scanner.service.ScanService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 /**
  * @author leipenghui
@@ -27,7 +23,7 @@ public class ScannerTask {
     /**
      * 每5分钟
      */
-    @Scheduled(cron = "0 0/5 * * * ? ")
+    @Scheduled(cron = "0 0/1 * * * ? ")
     public void run() {
         scanService.artifactsScan();
     }

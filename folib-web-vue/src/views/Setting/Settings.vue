@@ -304,72 +304,24 @@
           </a-col>
         </a-row>
       </a-tab-pane>
-      <a-tab-pane key="2" :tab="$t('Setting.SecurityPolicy')">
-        <!-- <a-row type="flex" :gutter="[24]"> -->
-        <!-- <a-col :span="24" :lg="24"> -->
-        <a-tabs class="tabs-sliding card-container" default-active-key="1" @change="vulnerabilityTabChange($event)">
-          <a-tab-pane key="1" :tab="$t('Setting.TheWhiteList')">
-            <a-card class="header-solid white-card" id="white">
-              <!-- <template #title>
-                    <p>白名单</p>
-                  </template> -->
-              <div class="o-btn" @click="() => (showVulnerabilitiesModal = true, vulnerabilitiesType = 1)">
-                <img src="images/folib/white.svg" />
-              </div>
-              <div class="white-group">
-                <a-list item-layout="vertical" size="large" :data-source="vulnerabilities.whiteList"
-                  :pagination="vulnerabilities.whiteList.length === 0 ? false : { pageSize: 5, total: vulnerabilities.whiteList.length, showLessItems: true }">
-                  <a-list-item slot="renderItem" :key="index" slot-scope="item, index">
-                    <label>{{ item }}</label>
-                    <template #extra>
-                      <a-popconfirm :title="$t('Setting.SureRemovedWhitelist')" :ok-text="$t('Setting.BeSure')"
-                        :cancel-text="$t('Setting.Cancel')" class="d-popconfirm" @confirm="removeWhite(item)">
-                        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path class="fill-danger" fill-rule="evenodd" clip-rule="evenodd"
-                            d="M9 2C8.62123 2 8.27497 2.214 8.10557 2.55279L7.38197 4H4C3.44772 4 3 4.44772 3 5C3 5.55228 3.44772 6 4 6L4 16C4 17.1046 4.89543 18 6 18H14C15.1046 18 16 17.1046 16 16V6C16.5523 6 17 5.55228 17 5C17 4.44772 16.5523 4 16 4H12.618L11.8944 2.55279C11.725 2.214 11.3788 2 11 2H9ZM7 8C7 7.44772 7.44772 7 8 7C8.55228 7 9 7.44772 9 8V14C9 14.5523 8.55228 15 8 15C7.44772 15 7 14.5523 7 14V8ZM12 7C11.4477 7 11 7.44772 11 8V14C11 14.5523 11.4477 15 12 15C12.5523 15 13 14.5523 13 14V8C13 7.44772 12.5523 7 12 7Z"
-                            fill="#111827" />
-                        </svg>
-                        <span class="text-danger">DELETE</span>
-                      </a-popconfirm>
-                    </template>
-                  </a-list-item>
-                </a-list>
-              </div>
-            </a-card>
+      <a-tab-pane key="2"
+                  :tab="$t('Setting.SecurityPolicy')">
+        <a-tabs class="tabs-sliding card-container"
+                default-active-key="1"
+                @change="vulnerabilityTabChange($event)">
+          <a-tab-pane key="1"
+                :tab="$t('Setting.BlackAndWhiteList')">
+            <BlackWhite :securityPolicyActiveKey="securityPolicyActiveKey"/>
           </a-tab-pane>
-          <a-tab-pane key="2" :tab="$t('Setting.Blacklist')">
-            <a-card class="header-solid black-card" id="black">
-              <!-- <template #title>
-                    <p>黑名单</p>
-                  </template> -->
-              <div class="o-btn o-black" @click="() => (showVulnerabilitiesModal = true, vulnerabilitiesType = 2)">
-                <img src="images/folib/black.svg" />
-              </div>
-              <div class="black-group">
-                <a-list item-layout="vertical" size="large" :data-source="vulnerabilities.blackList"
-                  :pagination="vulnerabilities.blackList.length === 0 ? false : { pageSize: 5, total: vulnerabilities.blackList.length, showLessItems: true }">
-                  <a-list-item slot="renderItem" :key="index" slot-scope="item, index">
-                    {{ item }}
-                    <template #extra>
-                      <a-popconfirm :title="$t('Setting.SureRemovedBlacklisted')" :ok-text="$t('Setting.BeSure')"
-                        :cancel-text="$t('Setting.Cancel')" class="d-popconfirm" @confirm="removeBlack(item)">
-                        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path class="fill-danger" fill-rule="evenodd" clip-rule="evenodd"
-                            d="M9 2C8.62123 2 8.27497 2.214 8.10557 2.55279L7.38197 4H4C3.44772 4 3 4.44772 3 5C3 5.55228 3.44772 6 4 6L4 16C4 17.1046 4.89543 18 6 18H14C15.1046 18 16 17.1046 16 16V6C16.5523 6 17 5.55228 17 5C17 4.44772 16.5523 4 16 4H12.618L11.8944 2.55279C11.725 2.214 11.3788 2 11 2H9ZM7 8C7 7.44772 7.44772 7 8 7C8.55228 7 9 7.44772 9 8V14C9 14.5523 8.55228 15 8 15C7.44772 15 7 14.5523 7 14V8ZM12 7C11.4477 7 11 7.44772 11 8V14C11 14.5523 11.4477 15 12 15C12.5523 15 13 14.5523 13 14V8C13 7.44772 12.5523 7 12 7Z"
-                            fill="#111827" />
-                        </svg>
-                        <span class="text-danger">DELETE</span>
-                      </a-popconfirm>
-                    </template>
-                  </a-list-item>
-                </a-list>
-              </div>
-            </a-card>
-          </a-tab-pane>
-          <a-tab-pane key="3" :tab="$t('Setting.NotificationSet')">
-            <a-card class="header-solid" id="notice">
-              <a-form :form="ruleForm" ref="ruleForm" layout="vertical" :wrapper-col="{ span: 10 }"
-                @submit.prevent="ruleFormSubmit">
+          <a-tab-pane key="2"
+                      :tab="$t('Setting.NotificationSet')">
+            <a-card class="header-solid"
+                    id="notice">
+              <a-form :form="ruleForm"
+                      ref="ruleForm"
+                      layout="vertical"
+                      :wrapper-col="{ span: 10 }"
+                      @submit.prevent="ruleFormSubmit">
                 <a-row :gutter="[24]">
                   <a-col :span="24">
                     <a-form-item class="mb-10" :label="$t('Setting.NotifyVulnerabilityLevel')">
@@ -455,124 +407,11 @@
               </a-form>
             </a-card>
           </a-tab-pane>
-          <a-tab-pane key="4" :tab="$t('Setting.BlockingSet')">
-            <a-card>
-              <a-row :gutter="16">
-                <a-col :span="18">
-                  <a-card class="header-solid block block-settings">
-                    <a-form class="block-form" ref="blockForm" :form="blockForm" layout="horizontal"
-                      :wrapper-col="{ span: 24 }" @submit.prevent="blockFormSubmit">
-                      <a-row :gutter="[24]">
-                        <a-col :span="24" class="text-left">
-                          <a-form-item class="mb-10" label="" :wrapper-col="{ span: 24 }">
-                            <a-radio-group v-decorator="['blockType',
-                              {
-                                rules: [
-                                  { required: true, message: $t('Setting.SelectBlockingMode') },
-                                ],
-                              },
-                            ]" style="width: 100%;" @change="blockTypeChange($event.target.value)">
-                              <a-row>
-                                <a-col :span="6">
-                                  <a-radio :value="1">
-                                    {{ $t('Setting.FullBlock') }} <span class="tips">{{ $t('Setting.autoFilterBlacklist')
-                                    }}</span>
-                                  </a-radio>
-                                </a-col>
-                                <a-row class="block-full mt-30">
-                                  <a-col :span="24">
-                                    <a-form-item class="" :label="$t('Setting.VulnerabilityLevel')"
-                                      :label-col="{ span: 4 }" :wrapper-col="{ span: 14 }">
-                                      <a-checkbox-group v-decorator="['blockLevels',
-                                        {
-                                          rules: [
-                                            { required: false, message: $t('Setting.SelectVulnerabilityLevel'), type: 'array' },
-                                          ],
-                                        },
-                                      ]" style="width: 100%;">
-                                        <a-row>
-                                          <a-col :span="6">
-                                            <a-checkbox value="CRITICAL">
-                                              {{ $t('Setting.Seriously') }}
-                                            </a-checkbox>
-                                          </a-col>
-                                          <a-col :span="6">
-                                            <a-checkbox value="HIGH">
-                                              {{ $t('Setting.HighRisk') }}
-                                            </a-checkbox>
-                                          </a-col>
-                                          <a-col :span="6">
-                                            <a-checkbox value="MEDIUM">
-                                              {{ $t('Setting.MediumRisk') }}
-                                            </a-checkbox>
-                                          </a-col>
-                                          <a-col :span="6">
-                                            <a-checkbox value="LOW">
-                                              {{ $t('Setting.LowRisk') }}
-                                            </a-checkbox>
-                                          </a-col>
-                                        </a-row>
-                                      </a-checkbox-group>
-                                    </a-form-item>
-                                  </a-col>
-                                  <a-col :span="24">
-                                    <a-form-item class="" :label="$t('Setting.FilteringWhitelist')"
-                                      :label-col="{ span: 4 }" :wrapper-col="{ span: 1 }">
-                                      <a-switch v-decorator="['filterWhites',
-                                        {
-                                          valuePropName: 'checked',
-                                          rules: [
-                                            { required: false },
-                                          ],
-                                        },
-                                      ]" style="width: 100%;">
-
-                                      </a-switch>
-                                    </a-form-item>
-                                  </a-col>
-                                </a-row>
-                                <a-col class="mt-30" :span="24">
-                                  <a-radio :value="2">
-                                    {{ $t('Setting.BlacklistBlocking') }} <span class="tips">{{
-                                      $t('Setting.autoFilterWhitelist') }}</span>
-                                  </a-radio>
-                                </a-col>
-                                <a-col class="mt-30" :span="24">
-                                  <a-radio :value="3">
-                                    {{ $t('Setting.PackageNameBlocking') }} <span class="tips">{{
-                                      $t('Setting.InterceptByPacketName') }}</span>
-                                  </a-radio>
-                                  <a-tooltip v-if="packageNameShow" @click="packageNameModalShow">
-                                    <template slot="title">{{ $t('Setting.Add') }}</template>
-                                    <a-icon type="plus-circle" theme="filled" class="cursor-pointer package-name-add"
-                                      :style="{ fontSize: '28px', color: '#1890FF' }" />
-                                  </a-tooltip>
-                                </a-col>
-                              </a-row>
-                            </a-radio-group>
-                          </a-form-item>
-                        </a-col>
-                        <a-col :span="24">
-                          <package-name v-if="packageNameShow" ref="packageName" />
-                        </a-col>
-                        <a-col :span="12" class="text-right mt-50">
-                          <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">{{
-                            $t('Setting.Save') }}</a-button>
-                        </a-col>
-                        <a-col :span="12" class="text-left mt-50">
-                          <a-button key="back" class="px-30 ml-10" size="small" @click="blockFormCancel()">{{
-                            $t('Setting.Cancel') }}</a-button>
-                        </a-col>
-                      </a-row>
-                    </a-form>
-                  </a-card>
-                </a-col>
-              </a-row>
-            </a-card>
+          <a-tab-pane key="3"
+                      :tab="$t('Setting.BlockingStrategy')">
+              <BlockStrategy :securityPolicyActiveKey="securityPolicyActiveKey"/>
           </a-tab-pane>
         </a-tabs>
-        <!-- </a-col> -->
-        <!-- </a-row> -->
       </a-tab-pane>
       <a-tab-pane key="3" :tab="'LDAP ' + $t('Setting.configuration')">
         <div class="mx-auto mt-50" style="max-width: 1000px;">
@@ -1330,6 +1169,8 @@ import { upperCase } from "@antv/util";
 import PackageName from "./components/Package/index.vue"
 import AddPackageName from "./components/Package/add.vue"
 import AuditConfig from "./components/AuditConfig.vue";
+import BlockStrategy from './components/BlockStrategy/index.vue'
+import BlackWhite from './components/BlackWhite/index.vue'
 
 export default {
   props: ['navbarFixed'],
@@ -1339,6 +1180,8 @@ export default {
     PackageName,
     AddPackageName,
     AuditConfig,
+    BlockStrategy,
+    BlackWhite,
   },
   data() {
     const checkClusterEnName = (rule, value, callback) => {
@@ -1744,6 +1587,7 @@ export default {
       ssoList: [],
       globalS3BucketDisabled: false,
       fileList: [],
+      securityPolicyActiveKey: undefined
     }
   },
   computed: {
@@ -2061,6 +1905,7 @@ export default {
         .finally(() => { })
     },
     vulnerabilityTabChange(key) {
+      this.securityPolicyActiveKey = key
       if (key === '3') {
         this.getSecurityPolicy()
         this.getUsersList()

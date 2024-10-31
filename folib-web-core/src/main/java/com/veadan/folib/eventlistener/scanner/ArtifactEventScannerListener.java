@@ -16,9 +16,13 @@ import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerFileSystem;
+import com.veadan.folib.scanner.service.ScanService;
+import com.veadan.folib.scanner.service.ScannerService;
+import com.veadan.folib.scanner.task.ScannerTask;
 import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.services.ArtifactService;
 import com.veadan.folib.services.DictService;
+import com.veadan.folib.ws.server.Priority;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -29,6 +33,7 @@ import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
@@ -61,6 +66,14 @@ public class ArtifactEventScannerListener {
 
     @Inject
     private DockerComponent dockerComponent;
+
+    @Inject
+    @Lazy
+    private ScannerService scannerService;
+
+    @Inject
+    @Lazy
+    private ScanService scanService;
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -278,6 +291,7 @@ public class ArtifactEventScannerListener {
                 Set<String> filePaths = Sets.newLinkedHashSet();
                 filePaths.add(repositoryPath.toAbsolutePath().toString());
                 artifact.setFilePaths(filePaths);
+                handlerScannerTask(repositoryPath, artifact);
                 artifactService.saveOrUpdateArtifact(artifact);
             } catch (Exception ex) {
                 log.error("获取Artifact错误：{}", ExceptionUtils.getStackTrace(ex));
@@ -307,6 +321,7 @@ public class ArtifactEventScannerListener {
                 }
                 artifact.setSafeLevel(SafeLevelEnum.UN_SCAN.getLevel());
                 artifact.setFilePaths(filePaths);
+                handlerScannerTask(repositoryPath, artifact);
                 artifactService.saveOrUpdateArtifact(artifact);
             } catch (IOException ex) {
                 log.error("获取Artifact错误：{}", ExceptionUtils.getStackTrace(ex));
@@ -440,5 +455,21 @@ public class ArtifactEventScannerListener {
                 log.error("获取Artifact错误：{}", ExceptionUtils.getStackTrace(ex));
             }
         }
+    }
+
+    private void handlerScannerTask(RepositoryPath repositoryPath, Artifact artifact) {
+        if (!scanService.validateRepositoryScan(repositoryPath.getStorageId(), repositoryPath.getRepositoryId())) {
+            return;
+        }
+        String taskId = artifact.getUuid();
+        ScannerTask scannerTask = new ScannerTask(Priority.HIGH.getValue(), taskId,
+                () -> {
+                    try {
+                        scanService.syncScan(Collections.singletonList(artifact));
+                    } catch (Exception ex) {
+                        log.error("HandlerScannerTask taskId [{}] error [{}] ", taskId, ExceptionUtils.getStackTrace(ex));
+                    }
+                });
+        scannerService.addTask(scannerTask);
     }
 }

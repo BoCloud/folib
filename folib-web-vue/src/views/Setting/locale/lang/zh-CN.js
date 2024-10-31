@@ -450,4 +450,15 @@ export default {
     'EventRepositroy':'所属仓库',
     'EventRepositroyInfo':'webhook所生效的仓库,不选择则对所有仓库生效',
     'SelectTheRepository':'请选择所属仓库'
+    'BlackAndWhiteList': '黑白名单',
+    'BlockingStrategy': '阻断策略',
+    'VulnerabilityWhiteList':'漏洞白名单',
+    'VulnerabilityBlacklist':'漏洞黑名单',
+    'LicenseWhiteList':'License白名单',
+    'LicenseBlacklist':'License黑名单',
+    'PackageNameBlacklist':'包名黑名单',
+    'AddLicenseWhitelist':'新增License白名单',
+    'AddLicenseBlacklist':'新增License黑名单',
+    'PleaseSelectLicense':'请选择License',
+    'EnterVulnerabilityQuery': '输入漏洞编号查询',
 }

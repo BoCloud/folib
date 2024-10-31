@@ -450,4 +450,15 @@ export default {
     'EventRepositroy':'event repository',
     'EventRepositroyInfo':'The repository that the webhook takes effect on, if not selected, it will take effect on all repository',
     'SelectTheRepository':'Please select the repository'
+    'BlackAndWhiteList': 'Black and White List',
+    'BlockingStrategy': 'Blocking strategy',
+    'VulnerabilityWhiteList':'Vulnerability whitelist',
+    'VulnerabilityBlacklist':'Vulnerability blacklist',
+    'LicenseWhiteList':'License whitelist',
+    'LicenseBlacklist':'License blacklist',
+    'PackageNameBlacklist':'Package Name Blacklist',
+    'AddLicenseWhitelist':'Add License Whitelist',
+    'AddLicenseBlacklist':'Add License Blacklist',
+    'PleaseSelectLicense':'Please select License',
+    'EnterVulnerabilityQuery': 'Enter vulnerability query',
 }

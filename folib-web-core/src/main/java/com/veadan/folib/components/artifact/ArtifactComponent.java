@@ -566,7 +566,7 @@ public class ArtifactComponent {
      * @param layout   layout
      * @return true
      */
-    public boolean vulnerabilityBlock(Artifact artifact, String layout) {
+    private boolean vulnerabilityBlock(Artifact artifact, String layout) {
         if (Objects.isNull(artifact)) {
             return false;
         }

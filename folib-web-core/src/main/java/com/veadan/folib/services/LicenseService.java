@@ -1,7 +1,7 @@
 package com.veadan.folib.services;
 
+import com.veadan.folib.domain.license.LicenseBlackWhite;
 import com.veadan.folib.entity.License;
-import com.veadan.folib.forms.component.ComponentTableForm;
 import com.veadan.folib.forms.license.LicenseTableForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 
@@ -55,10 +55,37 @@ public interface LicenseService {
     /**
      * 分页查询license列表
      *
-     * @param page          页码
-     * @param limit         每页数量
-     * @param searchKeyword 搜索关键词
+     * @param page           页码
+     * @param limit          每页数量
+     * @param searchKeyword  搜索关键词
+     * @param licenseId      license名称
+     * @param blackWhiteType 黑白名单类型
      * @return license列表
      */
-    TableResultResponse<LicenseTableForm> queryLicensePage(Integer page, Integer limit, String searchKeyword);
+    TableResultResponse<LicenseTableForm> queryLicensePage(Integer page, Integer limit, String searchKeyword, String licenseId, Integer blackWhiteType);
+
+    /**
+     * 查询license列表
+     *
+     * @param searchKeyword         搜索关键词
+     * @param licenseId             license名称
+     * @param blackWhiteType        黑白名单类型
+     * @param excludeBlackWhiteType 排除黑白名单类型
+     * @return license列表
+     */
+    List<LicenseTableForm> queryLicense(String searchKeyword, String licenseId, Integer blackWhiteType, Integer excludeBlackWhiteType);
+
+    /**
+     * 设置黑白名单
+     *
+     * @param licenseBlackWhite 参数
+     */
+    void blackWhite(LicenseBlackWhite licenseBlackWhite);
+
+    /**
+     * 获取license缓存
+     *
+     * @return license缓存
+     */
+    List<License> getLicenseCache();
 }

@@ -36,7 +36,7 @@ public class DirectorySizeCalculatorUtils {
     public Result compute() {
         final Result result = new Result();
         try {
-            if (!Files.exists(directory)) {
+            if (!Files.exists(directory) || !Files.exists(directory.getTarget())) {
                 log.warn("DirectorySizeCalculatorUtils directory [{}] not exists", directory);
                 return result;
             }
