@@ -5,26 +5,39 @@
       :bordered="false" class="kanban-card mb-24"
 	>
     <a-row :gutter="[24]">
-      <a-col :span="6">
+      <a-col :span="4" class="pl-4">
         <a-avatar
-            :size="32"
+            :size="48"
             shape="square"
             style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
         >
           <img :src="'images/folib/'+getLayoutType(task)+'.svg'" style="width: 100%;" alt="">
         </a-avatar>
       </a-col >
-      <a-col :span="18">
+      <a-col :span="15">
         <div>
-          <a-tag class="mb-5 bg-warning">存储空间</a-tag>
+          <a-tag class="mb-5 bg-warning">{{$t('Kanban.Storage')}}</a-tag>
           <span>{{ task.storageId }}</span>
         </div>
         <div>
-          <a-tag class="mb-0 bg-success">仓库名称</a-tag>
+          <a-tag class="mb-5 bg-success">{{$t('Kanban.Repository')}}</a-tag>
           <span>{{ task.repositoryId }}</span>
           <a-icon v-if="task.scope===2" class="ml-10" :style="{color:'#52C41A'}" type="unlock" />
         </div>
+        <div>
+          <a-tag class="mb-0 bg-gradient-secondary">{{$t('Kanban.Type')}}</a-tag>
+          <span>{{ task.type }}</span>
+          <a-icon v-if="task.scope===2" class="ml-10"  type="unlock" />
+        </div>
       </a-col>
+      <a-col :span="3" class="pl-0 actions-col">
+        <a-tag v-if="task.isDefault&&boardId==='folibGoup'" color="blue" >{{$t('Kanban.DefaultRepository')}}</a-tag>
+        <a-button v-if="!task.isDefault&&task.type==='hosted'&&boardId==='folibGoup'" type="link" class="p-0"
+        @click="setDefault">{{$t('Kanban.SetDefaultRepository')}}</a-button>
+        <a-button v-if="task.isDefault&&task.type==='hosted'&&boardId==='folibGoup'" type="link" class="p-0 mt-8"
+        @click="cancelDefault">{{$t('Kanban.CancelDefaultRepository')}}</a-button>
+      </a-col>
+      
     </a-row>
 
 
@@ -52,6 +65,12 @@ import {getLayoutType }from "@/utils/layoutUtil"
     methods: {
       getLayoutType(item){
         return  getLayoutType(item)
+      },
+      setDefault(){
+        this.$emit('setDefault',this.task.id,this.boardId);
+      },
+      cancelDefault(){
+        this.$emit('cancelDefault',this.task.id,this.boardId);
       }
     }
 	}

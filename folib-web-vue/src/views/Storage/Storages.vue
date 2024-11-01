@@ -817,9 +817,9 @@
               <div id="kanban" class="kanban">
                 <draggable :list="i18nBoards" :animation="200" class="kanban-boards" ghost-class="ghost-card"
                   group="i18nBoards">
-                  <FolibKanbanBoard v-for="(board) in i18nBoards" :key="board.id" :board="board">
+                  <FolibKanbanBoard  v-for="(board) in i18nBoards" :key="board.id" :board="board">
                     <draggable :list="board.tasks" :animation="200" ghost-class="ghost-card" group="tasks" ref="draggable" :style="{height: draggableHeight, overflowY: 'auto'}">
-                      <FolibKanbanTask v-for="(task) in board.tasks" :key="task.id" :task="task" :boardId="board.id">
+                      <FolibKanbanTask  ref="kanbanBoard" v-for="(task) in board.tasks" :key="task.id" :task="task" :boardId="board.id" @setDefault="setDefaultRepository" @cancelDefault="cancelDefaultRepository">
                       </FolibKanbanTask>
 
                     </draggable>
@@ -1296,7 +1296,8 @@ export default {
         matchUsername: undefined,
       },
       libViewKey:0,
-      switchDisabled:true
+      switchDisabled:true,
+      groupDefaultRepository:undefined,
     };
   },
   watch: {
@@ -1877,12 +1878,21 @@ export default {
       getStoragesAndRepositories({layout: layout, excludeRepositoryId: excludeRepositoryId }).then(res => {
         let repositories = []
         let id,arr
+          //  判断是否有默认的仓库
+        const defaultRepositoryId = this.folibRepository.groupDefaultRepository;
+        if(defaultRepositoryId){
+          this.groupDefaultRepository=defaultRepositoryId;
+        }
         res.forEach(item => {
           if (item.children && item.children.length > 0) {
             item.children.forEach(children => {
               id = children.key.replace(",", ":")
               arr = id.split(":")
-              repositories.push({id: id, storageId: arr[0], repositoryId: arr[1], layout: children.layout, scope: children.scope})
+              let isDefault = false;
+              if(defaultRepositoryId&&defaultRepositoryId===id){
+                isDefault = true;
+              }
+              repositories.push({id: id, storageId: arr[0], repositoryId: arr[1], layout: children.layout, scope: children.scope,type:children.type,isDefault:isDefault})
             })
           }
         })
@@ -1958,6 +1968,10 @@ export default {
     // Toggle an item from the checkbox.
     toggleCheckbox(item) {
       this.layoutChecked = item
+      if(!this.folibRepositoryEditDisabled){
+        this.moveStep(1);
+      }
+      
     },
 
     cronShowHandle(i, index) {
@@ -2101,6 +2115,13 @@ export default {
       //将组合好的仓库转为groupRepository
       if (this.step === 2 && this.folibRepository.type === 'group' && this.boards[1].tasks.length > 0) {
         this.folibRepository.groupRepositories = groupRepositoriesBuild(this.boards[1].tasks)
+        // 判断是否组合库里有默认库有则添加
+        if(this.folibRepository.groupRepositories.find(item=>item===this.groupDefaultRepository)){
+          this.folibRepository.groupDefaultRepository=this.groupDefaultRepository;
+        }else{
+          this.folibRepository.groupDefaultRepository=null;
+          this.defaultRepositoryId=null;
+        }
         this.folibRepository.proxyConfiguration = null
         this.folibRepository.remoteRepository = null
       }
@@ -2452,7 +2473,35 @@ export default {
           this.folibVisible = isClose;
           this.stepsStatus = status;
           this.step=0;
-      }
+      },
+    setDefaultRepository(id){
+      this.groupDefaultRepository=id;
+      this.i18nBoards.forEach(board=>{
+        board.tasks.forEach(item=>{
+          if(item.id===id){
+            item.isDefault = true;
+          }else{
+            item.isDefault = false;
+          }
+        });
+      });
+      this.$refs.kanbanBoard.forEach(item=>{
+        item.$forceUpdate();
+      });
+    },
+
+    cancelDefaultRepository(){
+      this.groupDefaultRepository=null;
+      this.i18nBoards.forEach(board=>{
+        board.tasks.forEach(item=>{
+            item.isDefault = false;
+        });
+      });
+      this.$refs.kanbanBoard.forEach(item=>{
+        item.$forceUpdate();
+      });
+    }
+
   },
     provide() {
         return {
@@ -2465,7 +2514,7 @@ export default {
 <style lang="scss" scoped>
 
 .kanban-board {
-  min-width: 450px;
+  min-width: 430px;
   box-shadow: none;
   background: #e9ecef;
   margin-right: 20px;

@@ -358,15 +358,24 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
         // 检查路径字符串是否以点(.)开头，或者文件名是否为MANIFEST或BLOBS，这些都不被认为是有效的层文件。
         // 同时检查路径中是否包含'/.'但不包含'.specs'，或者文件是隐藏文件但路径中不包含'.specs'，这些情况都会被认为是无效路径。
         try {
-        return !p.toString().startsWith(".") &&
+        return (!p.toString().startsWith(".")) &&
                 !DockerLayoutProvider.MANIFEST.equalsIgnoreCase(p.getFileName().toString()) &&
                 !DockerLayoutProvider.BLOBS.equalsIgnoreCase(p.getFileName().toString()) &&
-                (!p.toString().contains("/.") || p.toString().contains(".specs")) &&
-                (!Files.isHidden(p) || p.toString().contains(".specs"));
+                (!p.toString().contains("/.") || p.toString().contains(".specs")||isTrashNotHiddenPath(p)) &&
+                (!Files.isHidden(p) || p.toString().contains(".specs")||isTrashNotHiddenPath(p));
         } catch (IOException e) {
             logger.info("Error accessing path {}", p);
             return false;
         }
+    }
+
+    private boolean isTrashNotHiddenPath(Path p){
+        String path=p.toString();
+        if(path.contains(LayoutFileSystem.TRASH)){
+            path = path.replace(LayoutFileSystem.TRASH, "");
+            return !path.contains("/.");
+        }
+        return false;
     }
 
     /**

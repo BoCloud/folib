@@ -11,6 +11,7 @@ export default {
     'ScanOn': 'Scan on',
     'ScanOff': 'Scan off',
     'PacketList': 'Packet list',
+    'TrashCan':'Trash Can',
     'Seriousness': 'Seriousness',
     'HighRisk': 'High risk',
     'MediumRisk': 'Medium risk',
@@ -82,7 +83,14 @@ export default {
     'Distributing': 'Distributing, please check laterr',
     'DeletionSuccessful': 'Deletion successful',
     'DeletionFailed': 'Deletion failed',
+    'RestoreSuccessful':'Restore successful',
+    'RestoreFailed':'Restore failed',
     'CannotPreview': 'This product cannot be previewed',
+    'PacketListView':'Packet list view',
+    'TrashCanView':'Trash can view',
+    'ReStore':'ReStore',
+    'RestoreConfirm':'Are you sure you want to restore it to the {targetRepositories} repository at {path}?',
+
     // Data.vue
     'BasicInformation': 'Basic information',
     'OwningSpace': 'Owning space',
@@ -342,5 +350,7 @@ export default {
     'ScanTime': 'Scan time',
     "UploadFailed": "file upload failed",
     'RepositoryType':'Repository Type',
-    'StrategyType': 'Strategy Type'
+    'StrategyType': 'Strategy Type',
+    'ProxyAddress':'Proxyaddress',
+    'GroupRepositories':'Group repositories'
 }

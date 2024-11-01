@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.veadan.folib.mapper.BlockStrategyRepositoryMapper">
+
+    <insert id="batchInsertBlockStrategyRepository">
+        INSERT INTO `block_strategy_repository` ( `id`, `block_strategy_id`, `storage_id`, `repository_id`, `create_by`, `create_time` )
+        VALUES
+        <foreach collection="blockStrategyRepositoryList" item="item" separator=",">
+            (#{item.id}, #{item.blockStrategyId}, #{item.storageId}, #{item.repositoryId}, #{item.createBy}, #{item.createTime})
+        </foreach>
+    </insert>
+
+</mapper>

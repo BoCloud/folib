@@ -8,7 +8,7 @@
 <template>
     <div id="app">
         <a-locale-provider :locale="locale">
-            <component :is="layout" v-if="routerAlive" :key="$route.fullPath">
+            <component :is="layout" v-if="routerAlive">
                 <router-view/>
             </component>
         </a-locale-provider>

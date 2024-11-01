@@ -1,10 +1,12 @@
 package com.veadan.folib.scanner.service.impl;
 
 import com.google.common.collect.Lists;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.thirdparty.foeyes.FoEyesComponent;
 import com.veadan.folib.components.thirdparty.foeyes.enums.ClassifierEnum;
 import com.veadan.folib.components.thirdparty.foeyes.reponse.ProjectInfo;
 import com.veadan.folib.components.thirdparty.foeyes.request.CreateProjectRequest;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.Tree;
 import com.veadan.folib.scanner.biz.ScanRulesBiz;
 import com.veadan.folib.scanner.entity.ScanRules;
@@ -41,6 +43,9 @@ public class ScanRulesServiceImpl implements ScanRulesService {
     @Autowired
     private ConfigurationManagementService configurationManagementService;
 
+    @Autowired
+    private DistributedCacheComponent distributedCacheComponent;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void saveOrUpdateScanRules(ScanRules scanRules) {
@@ -57,6 +62,8 @@ public class ScanRulesServiceImpl implements ScanRulesService {
             scanRules.setProjectUuid(projectInfo.getUuid());
             scanRulesBiz.updateSelectiveById(scanRules);
         }
+        String cacheKey = String.format(GlobalConstants.SCAN_ENABLE_REPOSITORY_KEY, scanRules.getId().toUpperCase());
+        distributedCacheComponent.delete(cacheKey);
     }
 
     @Override

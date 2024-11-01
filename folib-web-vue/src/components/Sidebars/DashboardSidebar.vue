@@ -5,6 +5,7 @@
     breakpoint="lg"
     collapsed-width="0"
     width="250px"
+    ref="scrollContainer" 
     :collapsed="sidebarCollapsed"
     @collapse="$emit('toggleSidebar', !sidebarCollapsed)"
     :trigger="null"
@@ -119,7 +120,7 @@
           <span class="label">{{ $t('Sidebars.Groups') }}</span>
         </router-link>
       </a-menu-item>
-       <a-menu-item v-if="userInfo.roles.indexOf('ADMIN') > -1">
+       <a-menu-item v-if="userInfo.roles.indexOf('ADMIN') > -1" >
         <router-link to="/permissions">
           <span class="icon">
             <a-icon type="smile" theme="filled" class="m-0" />
@@ -247,7 +248,7 @@ export default {
       if (cacheConfig) {
         this.foeyesEnable = cacheConfig.enable
       }
-    }
+    },
   },
 };
 </script>

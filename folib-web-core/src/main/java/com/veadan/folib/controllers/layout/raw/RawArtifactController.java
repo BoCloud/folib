@@ -64,7 +64,7 @@ public class RawArtifactController
                                  HttpServletRequest request)
     {
         final String storageId = repository.getStorage().getId();
-        final String repositoryId = repository.getId();
+        final String repositoryId = ifIsGroupAndStoreToDefault(repository);
 
         try (InputStream inputStream = request.getInputStream()){
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);

@@ -3,6 +3,7 @@ package com.veadan.folib.services.impl;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.google.common.collect.Lists;
+import com.hazelcast.core.HazelcastInstance;
 import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
 import com.veadan.folib.configuration.SecurityPolicyConfiguration;
 import com.veadan.folib.domain.PackageNameBlockInfo;
@@ -15,7 +16,6 @@ import com.veadan.folib.mapper.PackageNameBlockMapper;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.PackageNameBlockService;
-import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.utils.UserUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -28,6 +28,7 @@ import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -38,11 +39,18 @@ import java.util.stream.Collectors;
 @Service
 public class PackageNameBlockServiceImpl implements PackageNameBlockService {
 
+    private final static String PACKAGE_NAME_BLOCK = "PACKAGE_NAME_BLOCK";
+
+    private final static String PACKAGE_NAME_BLOCK_CACHE = "PACKAGE_NAME_BLOCK_CACHE";
+
     @Inject
     private PackageNameBlockMapper packageNameBlockMapper;
 
     @Inject
     private ConfigurationManagementService configurationManagementService;
+
+    @Inject
+    private HazelcastInstance hazelcastInstance;
 
     @Override
     public TableResultResponse<PackageNameBlockInfo> queryPackageNameBlockList(Integer page, Integer limit, PackageNameBlockForm packageNameBlockForm) {
@@ -209,12 +217,10 @@ public class PackageNameBlockServiceImpl implements PackageNameBlockService {
 
     @Override
     public List<PackageNameBlock> getPackageNameBlockCache() {
-        CacheUtil<String, List<PackageNameBlock>> cacheUtil = CacheUtil.getInstance();
-        String key = "PACKAGE_NAME_BLOCK";
-        List<PackageNameBlock> packageNameBlockList = cacheUtil.get(key);
+        List<PackageNameBlock> packageNameBlockList = getCache();
         if (CollectionUtils.isEmpty(packageNameBlockList)) {
             packageNameBlockList = packageNameBlockMapper.selectAll();
-            cacheUtil.put(key, packageNameBlockList);
+            putCache(packageNameBlockList, 8);
         }
         return packageNameBlockList;
     }
@@ -269,9 +275,36 @@ public class PackageNameBlockServiceImpl implements PackageNameBlockService {
      * 刷新缓存
      */
     private void clearCache() {
-        CacheUtil<String, List<PackageNameBlock>> cacheUtil = CacheUtil.getInstance();
-        String key = "PACKAGE_NAME_BLOCK";
-        cacheUtil.remove(key);
+        Map<String, List<PackageNameBlock>> hazelcastMap = hazelcastInstance.getMap(PACKAGE_NAME_BLOCK_CACHE);
+        hazelcastMap.remove(PACKAGE_NAME_BLOCK);
+    }
+
+    /**
+     * 加入缓存
+     *
+     * @param cacheValue 缓存值
+     * @param ttl        缓存时间，小时
+     */
+    private void putCache(List<PackageNameBlock> cacheValue, long ttl) {
+        if (CollectionUtils.isEmpty(cacheValue)) {
+            return;
+        }
+        hazelcastInstance.getMap(PACKAGE_NAME_BLOCK_CACHE).put(PACKAGE_NAME_BLOCK, cacheValue, ttl, TimeUnit.HOURS);
+    }
+
+    /**
+     * 获取缓存
+     *
+     * @return 缓存值
+     */
+    private List<PackageNameBlock> getCache() {
+        try {
+            Map<String, List<PackageNameBlock>> hazelcastMap = hazelcastInstance.getMap(PACKAGE_NAME_BLOCK_CACHE);
+            return hazelcastMap.get(PACKAGE_NAME_BLOCK);
+        } catch (Exception ex) {
+            log.warn(ExceptionUtils.getStackTrace(ex));
+            return null;
+        }
     }
 
 }

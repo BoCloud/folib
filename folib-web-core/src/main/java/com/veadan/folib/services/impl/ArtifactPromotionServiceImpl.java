@@ -757,6 +757,15 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     public ResponseEntity upload(MultipartFile[] files, String storageId, String repositoryId, String
             filePathMap, String fileMetaDataMap, String uuid, String imageTag, String fileType, String baseUrl, String token) {
         try {
+
+            Repository repository = repositoryManagementService.getStorage(storageId).getRepository(repositoryId);
+            if(repository!=null&&RepositoryTypeEnum.GROUP.getType().equals(repository.getType())&&StringUtils.isNotBlank(repository.getGroupDefaultRepository())){
+                String defaultRepository = repository.getGroupDefaultRepository();
+                String[] split = defaultRepository.split(":");
+                if(split.length==2){
+                    repositoryId=split[1];
+                }
+            }
             validateStorageAndRepository(storageId, repositoryId);
             List<FutureTask<String>> listTask = new ArrayList<>();
             Map<String, String> mapType = JSON.parseObject(filePathMap, Map.class);
@@ -805,6 +814,14 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     @Override
     public ResponseEntity upload(String parseArtifact, String storageId, String repositoryId) {
         try {
+            Repository repository = repositoryManagementService.getStorage(storageId).getRepository(repositoryId);
+            if(repository!=null&&RepositoryTypeEnum.GROUP.getType().equals(repository.getType())&&StringUtils.isNotBlank(repository.getGroupDefaultRepository())){
+                String defaultRepository = repository.getGroupDefaultRepository();
+                String[] split = defaultRepository.split(":");
+                if(split.length==2){
+                    repositoryId=split[1];
+                }
+            }
             validateStorageAndRepository(storageId, repositoryId);
             ArtifactParse artifactParse = JSONObject.parseObject(parseArtifact, ArtifactParse.class);
             List<FutureTask<String>> listTask = new ArrayList<>();

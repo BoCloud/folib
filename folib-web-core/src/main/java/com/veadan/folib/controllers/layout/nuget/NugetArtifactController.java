@@ -101,7 +101,7 @@ public class NugetArtifactController
                                         @PathVariable("version") String version)
     {
         final String storageId = repository.getStorage().getId();
-        final String repositoryId = repository.getId();
+        final String repositoryId = ifIsGroupAndStoreToDefault(repository);
 
         logger.info("Nuget delete request: storageId-[{}]; repositoryId-[{}]; packageId-[{}]", storageId, repositoryId,
                     packageId);
@@ -420,7 +420,7 @@ public class NugetArtifactController
                                      HttpServletRequest request)
     {
         final String storageId = repository.getStorage().getId();
-        final String repositoryId = repository.getId();
+        final String repositoryId = ifIsGroupAndStoreToDefault(repository);
 
         logger.info("Nuget push request: storageId-[{}]; repositoryId-[{}]", storageId, repositoryId);
 

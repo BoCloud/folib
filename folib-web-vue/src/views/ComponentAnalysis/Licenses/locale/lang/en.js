@@ -1,5 +1,6 @@
 export default {
     'EnterLicenseNameQuery': 'Enter the license name query',
+    'EnterLicenseQuery': 'Enter the license query',
     'Name': 'Name',
     'LicenseNumber': 'License number',
     'Overview': 'Overview',

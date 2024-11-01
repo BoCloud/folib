@@ -37,5 +37,6 @@
     <include file="classpath:db/changelog/changelog_resource_update.xml"/>
     <include file="classpath:db/changelog/changelog_user_auth_init_1.xml"/>
     <include file="classpath:db/changelog/changelog_user_auth_update.xml"/>
+    <include file="classpath:db/changelog/changelog_block_strategy_init.xml"/>
     <!--后续增加的按照写对应的sql与changelog-->
 </databaseChangeLog>

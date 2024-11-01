@@ -238,6 +238,11 @@ export default {
         return column;
       });
     },
+    groupRepositoriesString() {
+      return this.folibRepository.groupRepositories && this.folibRepository.groupRepositories.length > 0
+        ? this.folibRepository.groupRepositories.join(' ')
+        : '';
+    }
   },
   created() {
     this.initData()
@@ -467,4 +472,10 @@ export default {
   margin-bottom: 2px;
 }
 
+.group-repositories {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f0f2f5;
+  border-radius: 4px;
+}
 </style>

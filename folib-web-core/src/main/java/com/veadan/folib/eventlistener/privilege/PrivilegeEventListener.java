@@ -66,7 +66,7 @@ public class PrivilegeEventListener {
         int source = (int) event.getSource();
         String uuId = event.getUuId();
         PrivilegeEventTypeEnum privilegeEventTypeEnum = PrivilegeEventTypeEnum.queryPrivilegeEventTypeEnumByType(source);
-        log.debug("监听到权限同步事件 [{}]，主键Id [{}]", privilegeEventTypeEnum, uuId);
+        log.info("监听到权限同步事件 [{}]，主键Id [{}]", privilegeEventTypeEnum, uuId);
         if (Objects.isNull(privilegeEventTypeEnum)) {
             return;
         }
