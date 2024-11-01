@@ -49,19 +49,26 @@
                 </a-col>
               </a-row>
             </template>
-            <repositoryTree ref="repositoryTree" v-if="isChecked" @loadMore="loadMore" @treeSelect="treeSelect" @repositorySelect="repositorySelect" @expand="onExpand" :repositories="repositories" :storageId="currentStorage.id" />
-            <a-anchor v-else :targetOffset="navbarFixed ? 100 : 10" :affix="false">
-              <a-anchor-link v-for="(item, index) in storageData" :key="index" href="javascript:void(null)"
-                :class="{ slectActive: item.id === currentStorage.id }">
-                <div slot="title" class="ant-list-item-meta" @click="setCurrentStorage(item)">
-                  <a-icon :type="item.storageProvider === 's3' ? 'cloud' : 'appstore'" theme="filled"
-                    class="text-gray-6 text-lg" />
-                  <h4 class="ant-list-item-meta-title">
-                    <span class="font-regular">{{ item.id }}</span>
-                  </h4>
-                </div>
-              </a-anchor-link>
-            </a-anchor>
+            <!-- 仓库列表树 -->
+            <repositoryTree 
+                ref="repositoryTree" 
+                v-if="isChecked" 
+                @loadMore="loadMore" 
+                @treeSelect="treeSelect" 
+                @repositorySelect="repositorySelect" 
+                @expand="onExpand" 
+                :repositories="repositories" 
+                :storageId="currentStorage.id" 
+            />
+            <!-- 存储列表 -->
+            <storageList 
+                v-else 
+                ref="storageList"
+                :navbarFixed="navbarFixed" 
+                :storageData="storageData" 
+                :currentStorage="currentStorage"
+                @setCurrentStorage="setCurrentStorage" 
+            />
           </a-card>
 <!--        </a-affix>-->
         <!-- / Page Anchors -->
@@ -1051,6 +1058,7 @@ import Scan from "@/views/Storage/components/Scan/index.vue";
 import Permission from "@/views/Storage/components/Permission/index.vue";
 import selectType from './Storage-components/select-type.vue'
 import repositoryTree from './Storage-components/repository-tree.vue'
+import storageList from './Storage-components/storage-list.vue'
 
 export default {
   inject: ["reload"],
@@ -1068,7 +1076,8 @@ export default {
     storageInfoCard, // 存储空间卡片信息组件
     LibView,
     selectType,
-    repositoryTree
+    repositoryTree,
+    storageList
   },
   props: {
     navbarFixed: {
@@ -2454,10 +2463,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.slectActive {
-  background-color: #eeeeee !important;
-  border-radius: 8px;
-}
 
 .kanban-board {
   min-width: 450px;

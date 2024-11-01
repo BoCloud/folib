@@ -2,107 +2,134 @@ const typeList = [
     {
         src:'images/folib/raw.svg',
         type:'raw',
-        name:'Raw'
+        name:'Raw',
+        disabled:false
     },
     {
         src:'images/folib/maven.svg',
         type:'maven',
-        name:'Maven'
+        name:'Maven',
+        disabled:false
     },
     {
         src:'images/folib/npm.svg',
         type:'npm',
-        name:'Npm'
+        name:'Npm',
+        disabled:false
     },
     {
         src:'images/folib/yarn.svg',
         type:'yarn',
-        name:'Yarn'
+        name:'Yarn',
+        disabled:false
     },
     {
         src:'images/folib/nuget.svg',
         type:'nuget',
-        name:'NuGet'
+        name:'NuGet',
+        disabled:false
     },
     {
         src:'images/folib/ivy.svg',
         type:'ivy',
-        name:'Ivy'
+        name:'Ivy',
+        disabled:false
     },
     {
         src:'images/folib/sbt.svg',
         type:'sbt',
-        name:'SBT'
+        name:'SBT',
+        disabled:false
     },
     {
         src:'images/folib/gradle.svg',
         type:'gradle',
-        name:'Gradle'
+        name:'Gradle',
+        disabled:false
     },
     {
         src:'images/folib/rpm.svg',
         type:'rpm',
-        name:'Rpm'
+        name:'Rpm',
+        disabled:false
     },
     {
         src:'images/folib/docker.svg',
         type:'docker',
-        name:'Docker'
+        name:'Docker',
+        disabled:false
     },
     {
         src:'images/folib/php.svg',
         type:'php',
-        name:'Php'
+        name:'Php',
+        disabled:false
     },
     {
         src:'images/folib/pypi.svg',
         type:'pypi',
-        name:'PyPi'
+        name:'PyPi',
+        disabled:false
     },
     {
         src:'images/folib/conan.svg',
         type:'conan',
-        name:'Conan'
+        name:'Conan',
+        disabled:false
     },
     {
         src:'images/folib/helm.svg',
         type:'helm',
-        name:'Helm'
+        name:'Helm',
+        disabled:false
     },
     {
         src:'images/folib/cocoapods.svg',
         type:'cocoapods',
-        name:'CocoaPods'
+        name:'CocoaPods',
+        disabled:false
     },
     {
         src:'images/folib/go.svg',
         type:'go',
-        name:'Go'
+        name:'Go',
+        disabled:false
     },
     {
         src:'images/folib/ohpm.svg',
         type:'ohpm',
-        name:'Ohpm'
+        name:'Ohpm',
+        disabled:false
     },
     {
         src:'images/folib/gitlfs.svg',
         type:'gitlfs',
-        name:'Git LFS'
+        name:'Git LFS',
+        disabled:false
     },
     {
         src:'images/folib/huggingface.svg',
         type:'huggingface',
-        name:'huggingface'
+        name:'huggingface',
+        disabled:false
     },
     {
         src:'images/folib/pub.svg',
         type:'pub',
-        name:'Pub'
+        name:'Pub',
+        disabled:false
     },
     {
-        src:'images/folib/debian.svg',
-        type:'debian',
-        name:'Debian'
+        src:'images/folib/gems.svg',
+        type:'gems',
+        name:'Gems',
+        disabled:true,
+    },
+    {
+        src:'images/folib/rust.svg',
+        type:'rust',
+        name:'Rust',
+        disabled:true,
     },
 ]
 

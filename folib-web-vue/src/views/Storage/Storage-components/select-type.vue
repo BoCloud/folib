@@ -10,42 +10,30 @@
             <a-col :span="4" v-for="(item,index) in typeList" :key="index">
                 <div class="checkbox-label" 
                     :class="[layoutChecked === item.type ? 'active' : '']"
-                    @click="toggleCheckbox(item.type)"
+                    @click="toggleCheckbox(item)"
                 >
-                    <a-avatar :size="44" shape="square"
-                        style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
+                    <a-tooltip v-if="item.disabled">
+                        <template slot="title">
+                            {{ $t('Storage.NextVersion') }}🤝
+                        </template>
+                        <a-avatar 
+                            :size="44" 
+                            shape="square"
+                            style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
+                        >
+                            <img :src="item.src" style="width: 100%;" alt="">
+                        </a-avatar>
+                    </a-tooltip>
+                    <a-avatar 
+                        v-else
+                        :size="44" 
+                        shape="square"
+                        style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
+                    >
                         <img :src="item.src" style="width: 100%;" alt="">
                     </a-avatar>
                 </div>
                 <h6>{{ item.name }}</h6>
-            </a-col>
-            <a-col :span="4">
-                <div class="checkbox-label" :class="[layoutChecked === 'gems' ? 'active' : '']">
-                <a-tooltip>
-                    <template slot="title">
-                    {{ $t('Storage.NextVersion') }}🤝
-                    </template>
-                <a-avatar :size="44" shape="square"
-                            style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                    <img src="images/folib/gems.svg" style="width: 100%;" alt="">
-                </a-avatar>
-                </a-tooltip>
-                </div>
-                <h6>Gems</h6>
-            </a-col>
-            <a-col :span="4">
-                <div class="checkbox-label" :class="[layoutChecked === 'rust' ? 'active' : '']">
-                <a-tooltip>
-                    <template slot="title">
-                    {{ $t('Storage.NextVersion') }}🤝
-                    </template>
-                <a-avatar :size="44" shape="square"
-                            style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );">
-                    <img src="images/folib/rust.svg" style="width: 100%;" alt="">
-                </a-avatar>
-                </a-tooltip>
-                </div>
-                <h6>Rust</h6>
             </a-col>
         </a-row>
     </div>
@@ -57,15 +45,17 @@ export default {
     props:['layoutChecked','isEdit'],
     data() {
         return {
-            typeList:[]
+            typeList,
         }
     },
     mounted() {
-        this.typeList = typeList
+        
     },
     methods:{
         toggleCheckbox(item) {
-            this.$emit('toggleCheckbox',item)
+            if(!item.disabled){
+                this.$emit('toggleCheckbox',item.type)
+            }
         },
     }
 }

@@ -6,7 +6,8 @@
 <template>
     <div>
         <div ref="tree_container" class="tree_container" :key="key" @scroll="handleScroll">
-            <a-tree class="repositoryTree"
+            <a-tree 
+                class="repositoryTree"
                 ref="tree"
                 :replaceFields="replaceFields" 
                 :load-data="onLoadData" 
@@ -51,7 +52,7 @@ import virtual from './images/virtual.svg'
 import virtualCheck from './images/virtual-check.svg'
 import { getDockerArtifact, browse, getArtifact } from '@/api/folib'
 import { getLayoutType } from '@/utils/layoutUtil'
-import { name } from 'store/storages/cookieStorage'
+
 export default {
     props: ['repositories','storageId'],
     data() {
