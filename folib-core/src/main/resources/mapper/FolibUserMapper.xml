@@ -235,7 +235,20 @@
         UNION
         <include refid="queryUserGroupSql"/>
         ) tmp
-        GROUP BY tmp.id
+        GROUP BY tmp.id,
+        tmp.username,
+        tmp.`password`,
+        tmp.original_password,
+        tmp.avatar,
+        tmp.email,
+        tmp.user_type,
+        tmp.enabled,
+        tmp.source_id,
+        tmp.deleted,
+        tmp.create_by,
+        tmp.create_time,
+        tmp.update_by,
+        tmp.update_time
     </select>
 
     <!--分页查询指定行数据-->

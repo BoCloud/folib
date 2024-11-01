@@ -285,7 +285,8 @@ public abstract class BaseArtifactController
      * @param repository 仓库对象
      * @return 仓库id
      */
-    protected String ifIsGroupAndStoreToDefault(Repository repository){
+    @Deprecated
+    private String ifIsGroupAndStoreToDefault(Repository repository){
         if(RepositoryTypeEnum.GROUP.getType().equals(repository.getType())&&StringUtils.isNotBlank(repository.getGroupDefaultRepository())){
             String defaultRepository = repository.getGroupDefaultRepository();
             String[] split = defaultRepository.split(":");

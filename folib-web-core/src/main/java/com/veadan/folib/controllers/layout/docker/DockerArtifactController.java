@@ -339,7 +339,6 @@ public class DockerArtifactController extends BaseArtifactController {
 
 
     ) throws Exception {
-        repositoryId=ifIsGroupAndStoreToDefault(repository);
         InputStream inputStream = request.getInputStream();
         response.setCharacterEncoding("utf8");
         String extractPath = getExtractPath(request);

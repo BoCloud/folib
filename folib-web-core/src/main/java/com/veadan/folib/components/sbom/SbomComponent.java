@@ -126,18 +126,18 @@ public class SbomComponent {
      */
     private String getBinPath() {
         try {
-            String path = "";
+            String path = SBOMBinTypeEnum.UNIX_AMD.getPath();
+            log.info("IS_OS_LINUX [{}] IS_OS_MAC [{}] IS_OS_WINDOWS [{}] cpuArch [{}]", SystemUtils.IS_OS_LINUX, SystemUtils.IS_OS_MAC, SystemUtils.IS_OS_WINDOWS, SystemUtils.OS_ARCH);
+            String x86 = "x86", amd = "amd", arm = "arm";
             if (SystemUtils.IS_OS_LINUX) {
                 String cpuArch = SystemUtils.OS_ARCH;
-                String x86 = "x86", arm = "arm";
-                if (cpuArch.contains(x86)) {
+                if (cpuArch.contains(x86) || cpuArch.contains(amd)) {
                     path = SBOMBinTypeEnum.UNIX_AMD.getPath();
                 } else if (cpuArch.contains(arm)) {
                     path = SBOMBinTypeEnum.UNIX_ARM.getPath();
                 }
             } else if (SystemUtils.IS_OS_MAC) {
                 String cpuArch = SystemUtils.OS_ARCH;
-                String x86 = "x86", arm = "arm";
                 if (cpuArch.contains(x86)) {
                     path = SBOMBinTypeEnum.MAC_AMD.getPath();
                 } else if (cpuArch.contains(arm)) {

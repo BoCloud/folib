@@ -117,7 +117,7 @@ public class HelmArtifactController extends BaseArtifactController {
                                  HttpServletResponse response,
                                  @RequestParam("chart") MultipartFile[] charts) {
         final String storageId = repository.getStorage().getId();
-        final String repositoryId = ifIsGroupAndStoreToDefault(repository);
+        final String repositoryId = repository.getId();
         try {
             for (MultipartFile file : charts) {
                 String[] strArray = file.getOriginalFilename().split("/");

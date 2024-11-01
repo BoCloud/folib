@@ -88,6 +88,15 @@
           <a-tab-pane key="1" :tab="$t('Storage.RepositoryList')">
             <div style="min-height:calc(100vh - 150px)">
               <a-row type="flex" :gutter="24">
+                <a-col :span="8" class="mb-24" v-if="hasStoragePermission()">
+                  <a-card @click="folibVisibleShow()" class="crm-bar-line header-solid h-full xinjian"
+                    :bodyStyle="{ padding: 0, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }">
+                    <a class="text-center text-muted font-bold">
+                      <h3 class="font-semibold text-muted mb-0">+</h3>
+                      <h5 class="font-semibold text-muted">{{ $t('Storage.createModal') }}</h5>
+                    </a>
+                  </a-card>
+                </a-col>
                 <a-col :span="8" class="mb-24" v-for="(item, index) in repositories" :key="index">
                   <!-- Project Card -->
                   <CardProjectFolib :title=item.id :logo="'images/folib/' + getLayoutType(item) + '.svg'"
@@ -103,16 +112,6 @@
                     </a-tooltip>
                   </CardProjectFolib>
                   <!-- / Project Card -->
-                </a-col>
-  
-                <a-col :span="8" class="mb-24" v-if="hasStoragePermission()">
-                  <a-card @click="folibVisibleShow()" class="crm-bar-line header-solid h-full xinjian"
-                    :bodyStyle="{ padding: 0, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }">
-                    <a class="text-center text-muted font-bold">
-                      <h3 class="font-semibold text-muted mb-0">+</h3>
-                      <h5 class="font-semibold text-muted">{{ $t('Storage.createModal') }}</h5>
-                    </a>
-                  </a-card>
                 </a-col>
               </a-row>
             </div>
