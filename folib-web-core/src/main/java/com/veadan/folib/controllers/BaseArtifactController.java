@@ -117,7 +117,7 @@ public abstract class BaseArtifactController
                 }
             }
         }
-        artifactComponent.afterRead(repositoryPath);
+//        artifactComponent.afterRead(repositoryPath);
         logger.debug("Download [{}] 结束时间 [{}]", repositoryPath.toString(), System.currentTimeMillis() - startTime);
         return true;
     }
