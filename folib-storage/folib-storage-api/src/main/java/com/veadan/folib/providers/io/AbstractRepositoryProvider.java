@@ -22,6 +22,7 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.util.LocalDateTimeInstance;
+import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.util.UserUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.output.CountingOutputStream;
@@ -308,12 +309,16 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
             return;
         }
         String username = UserUtils.getUsername();
-        LocalDateTime now = LocalDateTimeInstance.now();
-        artifact.setCreated(now);
+        //获取文件创建时间当做制品的创建时间
+        LocalDateTime createTime = RepositoryPathUtil.getFileCreationTime(repositoryPath);
+        if (Objects.isNull(createTime)) {
+            createTime = LocalDateTime.now();
+        }
+        artifact.setCreated(createTime);
         artifact.setCreatedBy(username);
         artifact.setUpdatedBy(username);
-        artifact.setLastUpdated(now);
-        artifact.setLastUsed(now);
+        artifact.setLastUpdated(createTime);
+        artifact.setLastUsed(createTime);
         Repository repository = repositoryPath.getRepository();
         Storage storage = repository.getStorage();
         ArtifactCoordinates coordinates = RepositoryFiles.readCoordinates(repositoryPath);

@@ -20,6 +20,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -92,17 +96,19 @@ public class RepositoryPathUtil {
      * @param layout               布局
      * @param repositoryPath       路径
      * @param excludeDirectoryList 排除的目录列表
+     * @param beginDate            开始日期
+     * @param endDate              结束日期
      * @return 列表
      * @throws IOException 异常
      */
-    public static List<RepositoryPath> getPaths(String layout, RepositoryPath repositoryPath, List<String> excludeDirectoryList) throws IOException {
+    public static List<RepositoryPath> getPaths(String layout, RepositoryPath repositoryPath, List<String> excludeDirectoryList, LocalDateTime beginDate, LocalDateTime endDate) throws IOException {
         List<RepositoryPath> pathList = Lists.newArrayList();
         if (!Files.exists(repositoryPath)) {
             log.warn("Path [{}] not exists", repositoryPath);
             return pathList;
         }
         RepositoryPathResolver repositoryPathResolver = SpringUtil.getBean(RepositoryPathResolver.class);
-        if (!Files.isDirectory(repositoryPath)) {
+        if (!Files.isDirectory(repositoryPath) && withinTimeFrame(repositoryPath, beginDate, endDate)) {
             //是一个文件
             pathList.add(repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(repositoryPath)));
             log.info("Path [{}] find paths [{}]", repositoryPath, pathList.size());
@@ -116,7 +122,7 @@ public class RepositoryPathUtil {
                                                  BasicFileAttributes attrs)
                         throws IOException {
                     RepositoryPath itemPath = (RepositoryPath) file;
-                    if (include(1, itemPath, isDockerLayout)) {
+                    if (include(1, itemPath, isDockerLayout) && withinTimeFrame(itemPath, beginDate, endDate)) {
                         log.info("Find path [{}]", itemPath);
                         pathList.add(repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath)));
                     }
@@ -146,6 +152,19 @@ public class RepositoryPathUtil {
         }
         log.info("Path [{}] find paths [{}]", repositoryPath, pathList.size());
         return pathList;
+    }
+
+    /**
+     * 获取绝对路径下的所有文件
+     *
+     * @param layout               布局
+     * @param repositoryPath       路径
+     * @param excludeDirectoryList 排除的目录列表
+     * @return 列表
+     * @throws IOException 异常
+     */
+    public static List<RepositoryPath> getPaths(String layout, RepositoryPath repositoryPath, List<String> excludeDirectoryList) throws IOException {
+        return getPaths(layout, repositoryPath, excludeDirectoryList, null, null);
     }
 
     /**
@@ -287,5 +306,36 @@ public class RepositoryPathUtil {
             log.warn(ExceptionUtils.getStackTrace(ex));
             return false;
         }
+    }
+
+    public static boolean withinTimeFrame(RepositoryPath repositoryPath, LocalDateTime beginDate, LocalDateTime endDate) {
+        if (Objects.isNull(beginDate) || Objects.isNull(endDate)) {
+            return true;
+        }
+        boolean flag = false;
+        LocalDateTime fileCreationTime = getFileCreationTime(repositoryPath);
+        if (Objects.isNull(fileCreationTime)) {
+            return false;
+        }
+        if (fileCreationTime.isAfter(beginDate) && fileCreationTime.isBefore(endDate)) {
+            flag = true;
+        }
+        log.info("RepositoryPath [{}] fileCreationTime [{}] beginDateTime [{}] endDateTime [{}] within time frame [{}]", repositoryPath.toString(), fileCreationTime, beginDate, endDate, flag);
+        return flag;
+    }
+
+    public static LocalDateTime getFileCreationTime(Path path) {
+        LocalDateTime lastModifiedDateTime = null;
+        try {
+            BasicFileAttributes attributes = Files.readAttributes(path, BasicFileAttributes.class);
+            FileTime fileTime = attributes.creationTime();
+            // 将FileTime转换为Instant
+            Instant instant = fileTime.toInstant();
+            // 将Instant转换为LocalDateTime
+            lastModifiedDateTime = instant.atZone(ZoneId.of("Asia/Shanghai")).toLocalDateTime();
+        } catch (IOException ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
+        return lastModifiedDateTime;
     }
 }

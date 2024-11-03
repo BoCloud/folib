@@ -872,15 +872,63 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
     @Override
+    @Async("asyncThreadPoolTaskExecutor")
+    public void buildGraphIndexForce(String username, String beginDate, String endDate, String storageId, String repositoryId, String storageIdAndRepositoryIds, String path, Boolean metadata, Integer batch) {
+        log.info("BuildGraphIndexForce is starting...");
+        try {
+            LocalDateTime beginLocalDateTime = null, endLocalDateTime = null;
+            if (StringUtils.isNotBlank(beginDate) && StringUtils.isNotBlank(endDate)) {
+                beginLocalDateTime = DateUtil.parseLocalDateTime(beginDate, DatePattern.NORM_DATETIME_MINUTE_PATTERN);
+                endLocalDateTime = DateUtil.parseLocalDateTime(endDate, DatePattern.NORM_DATETIME_MINUTE_PATTERN);
+            }
+            if (StringUtils.isNotBlank(storageIdAndRepositoryIds)) {
+                for (String storageIdAndRepositoryId : storageIdAndRepositoryIds.split(GlobalConstants.COMMA)) {
+                    storageId = ConfigurationUtils.getStorageId(storageIdAndRepositoryId, storageIdAndRepositoryId);
+                    repositoryId = ConfigurationUtils.getRepositoryId(storageIdAndRepositoryId);
+                    if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
+                        handleRepository(storageId, repositoryId, path, metadata, batch, beginLocalDateTime, endLocalDateTime, true);
+                    }
+                }
+            } else if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
+                handleRepository(storageId, repositoryId, path, metadata, batch);
+            } else if (StringUtils.isNotBlank(storageId)) {
+                path = "";
+                Map<String, ? extends Repository> repositoryMaps = configurationManagementService.getConfiguration().getStorage(storageId).getRepositories();
+                if (!repositoryMaps.isEmpty()) {
+                    for (String repository : repositoryMaps.keySet()) {
+                        handleRepository(storageId, repository, path, metadata, batch, beginLocalDateTime, endLocalDateTime, true);
+                    }
+                }
+            } else if (StringUtils.isBlank(storageId) && StringUtils.isBlank(repositoryId)) {
+                path = "";
+                Map<String, Storage> storageMap = configurationManagementService.getConfiguration().getStorages();
+                if (!storageMap.isEmpty()) {
+                    for (Map.Entry<String, Storage> storageEntry : storageMap.entrySet()) {
+                        Map<String, ? extends Repository> repositoryMaps = configurationManagementService.getMutableConfigurationClone().getStorage(storageEntry.getKey()).getRepositories();
+                        if (!repositoryMaps.isEmpty()) {
+                            for (String repository : repositoryMaps.keySet()) {
+                                handleRepository(storageEntry.getKey(), repository, path, metadata, batch, beginLocalDateTime, endLocalDateTime, true);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            log.error("BuildGraphIndexForce is error [{}]", ExceptionUtils.getStackTrace(ex));
+        }
+        log.info("BuildGraphIndexForce is finished");
+    }
+
+    @Override
     public StatusInfo store(String username, String storageId, String repositoryId, String path, String uuid, MultipartFile file) {
         String parentPath = tempPath + File.separator + UUID.fastUUID().toString();
         File parentFile = new File(parentPath);
         StatusInfo statusInfo = StatusInfo.builder().total(0).success(0).fail(0).build();
         try (InputStream inputStream = file.getInputStream()) {
-            String fileOriginalName =null;
-            if(file instanceof FileStreamMultipartFile){
+            String fileOriginalName = null;
+            if (file instanceof FileStreamMultipartFile) {
                 fileOriginalName = ((FileStreamMultipartFile) file).getOriginalFilename();
-            }else if(file instanceof CommonsMultipartFile){
+            } else if (file instanceof CommonsMultipartFile) {
                 fileOriginalName = ((CommonsMultipartFile) file).getFileItem().getName();
             }
 
@@ -1816,8 +1864,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
      * @param path         path
      * @param metadata     是否同步元数据 true 是 false 否
      * @param batch        每批数量
+     * @param beginDate    开始日期
+     * @param endDate      结束日期
+     * @param force        是否强制 true 强制 其他不强制
      */
-    private void handleRepository(String storageId, String repositoryId, String path, Boolean metadata, Integer batch) {
+    private void handleRepository(String storageId, String repositoryId, String path, Boolean metadata, Integer batch, LocalDateTime beginDate, LocalDateTime endDate, Boolean force) {
         try {
             log.info("StorageId [{}]，repositoryId [{}] starting...", storageId, repositoryId);
             RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
@@ -1828,11 +1879,24 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             if (Objects.isNull(batch)) {
                 batch = 500;
             }
-            handleArtifacts(repositoryPath, repositoryPath.getRepository(), metadata, batch);
+            handleArtifacts(repositoryPath, repositoryPath.getRepository(), metadata, batch, beginDate, endDate, force);
             log.info("StorageId [{}] repositoryId [{}] is finished", storageId, repositoryId);
         } catch (Exception ex) {
             log.error("StorageId [{}] repositoryId [{}] error [{}]", storageId, repositoryId, ExceptionUtils.getStackTrace(ex));
         }
+    }
+
+    /**
+     * 单仓库
+     *
+     * @param storageId    存储空间
+     * @param repositoryId 仓库id
+     * @param path         path
+     * @param metadata     是否同步元数据 true 是 false 否
+     * @param batch        每批数量
+     */
+    private void handleRepository(String storageId, String repositoryId, String path, Boolean metadata, Integer batch) {
+        handleRepository(storageId, repositoryId, path, metadata, batch, null, null, null);
     }
 
     /**
@@ -2019,10 +2083,13 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
      * @param repository         仓库信息
      * @param metadata           是否同步元数据 true 是 false 否
      * @param batch              每批数量
+     * @param beginDate          开始日期
+     * @param endDate            结束日期
+     * @param force              是否强制 true 强制 其他不强制
      * @return NFS目录下的所有文件
      */
-    private List<RepositoryPath> handleArtifacts(RepositoryPath rootRepositoryPath, Repository repository, Boolean metadata, Integer batch) throws Exception {
-        List<RepositoryPath> resultList = RepositoryPathUtil.getPaths(repository.getLayout(), rootRepositoryPath, Lists.newArrayList(DockerLayoutProvider.BLOBS, DockerLayoutProvider.MANIFEST));
+    private List<RepositoryPath> handleArtifacts(RepositoryPath rootRepositoryPath, Repository repository, Boolean metadata, Integer batch, LocalDateTime beginDate, LocalDateTime endDate, Boolean force) throws Exception {
+        List<RepositoryPath> resultList = RepositoryPathUtil.getPaths(repository.getLayout(), rootRepositoryPath, Lists.newArrayList(DockerLayoutProvider.BLOBS, DockerLayoutProvider.MANIFEST), beginDate, endDate);
         List<List<RepositoryPath>> fileLists = Lists.partition(resultList, batch);
         List<FutureTask<String>> futureTaskList = Lists.newArrayList();
         final boolean isDocker = DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout());
@@ -2045,15 +2112,24 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                                     //blobs
                                     for (String layer : layerList) {
                                         RepositoryPath blobPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), DockerLayoutProvider.BLOBS + File.separator + layer);
+                                        if (Boolean.TRUE.equals(force)) {
+                                            doForceDelete(blobPath);
+                                        }
                                         artifactManagementService.validateAndStoreIndex(blobPath);
                                     }
                                     if (StringUtils.isNotBlank(manifest.getDigest())) {
                                         RepositoryPath manifestPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), DockerLayoutProvider.MANIFEST + File.separator + manifest.getDigest());
+                                        if (Boolean.TRUE.equals(force)) {
+                                            doForceDelete(manifestPath);
+                                        }
                                         dockerComponent.handleLayers(manifestPath);
                                         artifactManagementService.validateAndStoreIndex(manifestPath);
                                     }
                                 }
                             }
+                        }
+                        if (Boolean.TRUE.equals(force)) {
+                            doForceDelete(repositoryPath);
                         }
                         if (Boolean.TRUE.equals(metadata)) {
                             handlerMetadata(artifactPath, repositoryPath);
@@ -2080,6 +2156,23 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         }
         log.info("HandleArtifacts [{}] is finished", rootRepositoryPath.toString());
         return resultList;
+    }
+
+    private void doForceDelete(RepositoryPath repositoryPath) {
+        try {
+            //强制构建索引，若图库中存在则删除图库的记录
+            Artifact artifact = getArtifact(repositoryPath);
+            if (Objects.nonNull(artifact)) {
+                //先缓存元数据信息
+                artifactComponent.cacheArtifactMetadata(repositoryPath, artifact.getMetadata());
+                //删除图库记录
+                artifactRepository.deleteById(artifact.getUuid());
+                repositoryPath.setArtifact(null);
+                log.info("Delete artifact storageId [{}] repositoryId [{}] path [{}]", artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath());
+            }
+        } catch (Exception ex) {
+            log.error("Force delete artifact [{}] error [{}]", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
+        }
     }
 
     public boolean hasAdmin() {
@@ -2161,6 +2254,8 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
 
     private void handlerMetadata(String artifactPath, RepositoryPath repositoryPath) {
         try {
+            Artifact artifact = null;
+            String metadata = "";
             String metadataPath = String.format("%s%s/%s", artifactPath, ".artifactory-metadata", "properties.xml");
             RepositoryPath metadataRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), metadataPath);
             if (Objects.nonNull(metadataRepositoryPath) && Files.exists(metadataRepositoryPath)) {
@@ -2179,22 +2274,30 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     artifactMetadata = ArtifactMetadata.builder().type(ArtifactMetadataEnum.STRING.toString()).value(metadataValue).viewShow(1).build();
                     itemMetadataJson.put(metadataKey, artifactMetadata);
                 }
-                promotionUtil.setMetaData(repositoryPath, JSONObject.toJSONString(itemMetadataJson));
+                metadata = JSONObject.toJSONString(itemMetadataJson);
+                promotionUtil.setMetaData(repositoryPath, metadata);
             }
             String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
             RepositoryPath artifactMetadataRepositoryPath = repositoryPath.getParent().resolve(fileName);
             if (Files.exists(artifactMetadataRepositoryPath)) {
                 try (InputStream inputStream = Files.newInputStream(artifactMetadataRepositoryPath);
                      ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
-                    Artifact artifact = (Artifact) objectInputStream.readObject();
+                    artifact = (Artifact) objectInputStream.readObject();
                     if (Objects.nonNull(artifact) && StringUtils.isNotBlank(artifact.getMetadata())) {
-                        promotionUtil.setMetaData(repositoryPath, artifact.getMetadata());
+                        metadata = artifact.getMetadata();
+                        promotionUtil.setMetaData(repositoryPath, metadata);
                     }
                 } catch (Exception ex) {
                     Files.deleteIfExists(artifactMetadataRepositoryPath);
                     log.warn("解析制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
                 }
             }
+            //从元数据缓存文件中获取元数据
+            metadata = artifactComponent.getCacheArtifactMetadata(repositoryPath);
+            if (StringUtils.isNotBlank(metadata)) {
+                promotionUtil.setMetaData(repositoryPath, metadata);
+            }
+            log.info("Artifact storageId [{}] repositoryId [{}] path [{}] metadata [{}]", repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), artifactPath, metadata);
         } catch (Exception ex) {
             log.error("handleArtifact sync metadata path：{}，error：{}", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
         }
