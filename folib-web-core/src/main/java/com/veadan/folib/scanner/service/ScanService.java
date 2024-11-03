@@ -957,8 +957,7 @@ public class ScanService {
 
     public boolean validateRepositoryScan(String storageId, String repositoryId) {
         Example example = new Example(ScanRules.class);
-        example.createCriteria().andEqualTo("id", String.format("%s-%s", storageId, repositoryId));
-        example.createCriteria().andEqualTo("onScan", 1);
+        example.createCriteria().andEqualTo("id", String.format("%s-%s", storageId, repositoryId)).andEqualTo("onScan", true);
         List<ScanRules> scanRulesList = scanRulesMapper.selectByExample(example);
         if (CollectionUtils.isEmpty(scanRulesList)) {
             return false;
