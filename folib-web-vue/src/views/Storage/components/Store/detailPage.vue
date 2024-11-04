@@ -33,6 +33,21 @@
             <a-descriptions-item v-if="currentTreeNode.layout" :label="$t('Store.FileSize')">
               {{ fileSizeConver(currentTreeNode.artifactMaxSize)}}
             </a-descriptions-item>
+            <a-descriptions-item v-if="currentTreeNode.remoteRepository" :label="$t('Store.ProxyAddress')">
+               <p class="copy-p">{{ currentTreeNode.remoteRepository.url }}</p>
+            </a-descriptions-item>
+                <a-descriptions-item class="group-descriptions" :label="$t('Store.GroupRepositories')"
+                        v-if="currentTreeNode.groupRepositories && currentTreeNode.groupRepositories.length > 0">
+                        <div class="group-repositories-container">
+                          <a-tooltip>
+                            <template slot="title">
+                              <div v-for="(repo, index) in currentTreeNode.groupRepositories" :key="index">{{ repo }}
+                              </div>
+                            </template>
+                            <p class="ellipsis-text"> {{ currentTreeNode.groupRepositories.join('\n') }}</p>
+                        </a-tooltip>
+                  </div>
+            </a-descriptions-item>
             <!-- <a-descriptions-item :label="$t('Store.ModifyTheTime')">
               {{ formateDate(currentTreeNode.lastModified) }}
             </a-descriptions-item> -->
@@ -45,12 +60,13 @@ import { fileSizeConver, formateDate } from "@/utils/layoutUtil";
 export default {
     data() {
         return {
+            props: ['folibRepository'],
 
         }
     },
     computed:{
         currentTreeNode() {
-            return this.$store.state.currentTreeNode
+            return this.$store.state.currentTreeNode?this.$store.state.currentTreeNode:this.folibRepository;
         }
     },
     mounted() {

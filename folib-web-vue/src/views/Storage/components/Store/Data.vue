@@ -2,8 +2,8 @@
   <div class="artifact-base-data">
     <a-tabs default-active-key="1" @change="artifactTabChange">
       <a-tab-pane key="1" :tab="$t('Store.BasicInformation')">
-        <div v-if="newDetailPage">
-            <detailPage />
+        <div v-if="newDetailPage||Object.entries(currentTreeNode).length===0">
+            <detailPage :folibRepository="folibRepository" />
         </div>
         <div v-else>
           <a-descriptions
