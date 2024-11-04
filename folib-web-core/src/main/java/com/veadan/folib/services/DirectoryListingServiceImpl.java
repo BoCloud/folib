@@ -1,8 +1,11 @@
 package com.veadan.folib.services;
 
 import cn.hutool.core.date.StopWatch;
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.veadan.folib.authorization.dto.Role;
+import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.booters.PropertiesBooter;
 import com.veadan.folib.cloud.storage.s3fs.S3FileSystemProvider;
 import com.veadan.folib.configuration.ConfigurationManager;
@@ -21,6 +24,7 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.users.domain.Privileges;
+import com.veadan.folib.users.dto.AccessModelDto;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.utils.compatator.DirectoryNameCompatator;
 import lombok.Data;
@@ -44,6 +48,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.*;
@@ -120,7 +125,7 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
             String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
             String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
             Repository subRepository = configurationManagementService.getConfiguration().getRepository(sId, rId);
-            if(!groupSubPrivileges(subRepository,null,Privileges.ARTIFACTS_RESOLVE.getAuthority())){
+            if(!groupSubPrivileges(subRepository,path,Privileges.ARTIFACTS_RESOLVE.getAuthority())){
                 continue;
             }
             if (!subRepository.isInService()) {
@@ -573,15 +578,32 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
         }
     }
 
-    private boolean groupSubPrivileges(Repository repository,String path,String authority ){
+    private boolean groupSubPrivileges(Repository repository,RepositoryPath repositoryPath,String authority ){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (Objects.isNull(authentication)) {
             return false;
         }
+        String absolutePath = repositoryPath.getTarget().toString();
+        String storeAndRep= repositoryPath.getRepository().getStorage().getId()+"/"+repositoryPath.getRepositoryId()+"/";
+        int index = absolutePath.indexOf(storeAndRep);
+        String relativePath="";
+        if(index!=-1){
+            relativePath=absolutePath.substring(index+storeAndRep.length());
+        }
+        List<String> paths=null;
+        if(StringUtils.isNotBlank(relativePath)){
+            paths=Collections.singletonList(relativePath);
+        }
         SpringSecurityUser  user=(SpringSecurityUser) authentication.getPrincipal();
+        Collection<Privileges> storageAuthorities =user.getStorageAuthorities(repository.getStorage().getId(), repository.getId(),paths);
 
-        Collection<Privileges> storageAuthorities =user.getStorageAuthorities(repository.getStorage().getId(), repository.getId(),Collections.singletonList(path));
+        // 如果 matchPath 以 "/**" 结尾
+
         return storageAuthorities.stream().anyMatch(item -> item.getAuthority().equals(authority));
     }
+
+    // 判断当前用户对该仓库的权限类型及操作类型
+
+
 
 }
