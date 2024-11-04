@@ -13,8 +13,8 @@ import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.ArtifactStatistics;
 import com.veadan.folib.domain.thirdparty.ArtifactInfo;
 import com.veadan.folib.domain.thirdparty.ArtifactQuery;
-import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.enums.AuditEventNameEnum;
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
 import com.veadan.folib.gremlin.entity.KeyValue;
@@ -116,7 +116,7 @@ public class ArtifactController extends BaseController {
     }
 
     @ApiOperation(value = "全局设置添加或者更新元数据")
-    @AuditLog(value = AuditEventNameEnum.UPDATE_META,target ="#artifactMetadataForm.key" )
+    @AuditLog(value = AuditEventNameEnum.UPDATE_META, target = "#artifactMetadataForm.key")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_METADATA')")
     @PutMapping(value = "/globalSettingAddOrUpdateMetadata")
@@ -149,7 +149,7 @@ public class ArtifactController extends BaseController {
     }
 
     @ApiOperation(value = "新增制品元数据")
-    @AuditLog(value = AuditEventNameEnum.UPDATE_META,target ="#artifactMetadataForm.storageId + '-'+ #artifactMetadataForm.repositoryId+ '-'+ #artifactMetadataForm.key " )
+    @AuditLog(value = AuditEventNameEnum.UPDATE_META, target = "#artifactMetadataForm.storageId + '-'+ #artifactMetadataForm.repositoryId+ '-'+ #artifactMetadataForm.key ")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_METADATA')")
     @PutMapping(value = "/artifactMetadata")
@@ -197,7 +197,7 @@ public class ArtifactController extends BaseController {
     }
 
     @ApiOperation(value = "构建图数据库索引")
-    @AuditLog(value = AuditEventNameEnum.BUILD_GRAPH_INDEX,target ="#storageId+'-'+#repositoryId" )
+    @AuditLog(value = AuditEventNameEnum.BUILD_GRAPH_INDEX, target = "#storageId+'-'+#repositoryId")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(value = "/buildGraphIndex")
@@ -209,6 +209,25 @@ public class ArtifactController extends BaseController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
         artifactWebService.buildGraphIndex(userDetails.getUsername(), storageId, repositoryId, path, metadata, batch);
+        return ResponseEntity.ok("ok");
+    }
+
+    @ApiOperation(value = "构建图数据库索引")
+    @AuditLog(value = AuditEventNameEnum.BUILD_GRAPH_INDEX, target = "#storageId+'-'+#repositoryId")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @PostMapping(value = "/buildGraphIndexForce")
+    public ResponseEntity<String> buildGraphIndex(@RequestParam(name = "storageId", required = false) String storageId,
+                                                  @RequestParam(name = "repositoryId", required = false) String repositoryId,
+                                                  @RequestParam(name = "storageIdAndRepositoryIds", required = false) String storageIdAndRepositoryIds,
+                                                  @RequestParam(name = "path", required = false) String path,
+                                                  @RequestParam(name = "metadata", required = false) Boolean metadata,
+                                                  @RequestParam(name = "batch", required = false) Integer batch,
+                                                  @RequestParam(name = "beginDate", required = false) String beginDate,
+                                                  @RequestParam(name = "endDate", required = false) String endDate) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
+        artifactWebService.buildGraphIndexForce(userDetails.getUsername(), beginDate, endDate, storageId, repositoryId, storageIdAndRepositoryIds, path, metadata, batch);
         return ResponseEntity.ok("ok");
     }
 
@@ -396,7 +415,7 @@ public class ArtifactController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
-    @AuditLog(value = AuditEventNameEnum.BUILD_GRAPH_INDEX,target ="#storageId+'-'+#repositoryId" )
+    @AuditLog(value = AuditEventNameEnum.BUILD_GRAPH_INDEX, target = "#storageId+'-'+#repositoryId")
     @GetMapping(value = "/mavenIndexer/{storageId}/{repositoryId}")
     public ResponseEntity<String> mavenIndexer(@PathVariable String storageId,
                                                @PathVariable String repositoryId,

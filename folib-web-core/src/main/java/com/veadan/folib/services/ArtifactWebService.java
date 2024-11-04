@@ -168,6 +168,21 @@ public interface ArtifactWebService {
     void buildGraphIndex(String username, String storageId, String repositoryId, String path, Boolean metadata, Integer batch);
 
     /**
+     * 强制生成图数据库信息，已存在图库中继续更新
+     *
+     * @param username                  用户名
+     * @param beginDate                 开始日期
+     * @param endDate                   结束日期
+     * @param storageId                 存储空间
+     * @param repositoryId              仓库id
+     * @param storageIdAndRepositoryIds 存储空间-仓库组合
+     * @param path                      path
+     * @param metadata                  是否同步元数据 true 是 false 否
+     * @param batch                     每批数量
+     */
+    void buildGraphIndexForce(String username, String beginDate, String endDate, String storageId, String repositoryId, String storageIdAndRepositoryIds, String path, Boolean metadata, Integer batch);
+
+    /**
      * 根据压缩包生成制品信息
      *
      * @param username     用户名
