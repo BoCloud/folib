@@ -2,7 +2,7 @@ package com.veadan.folib.controllers.unicom;
 
 import lombok.Data;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  * @author huayanjun
@@ -13,6 +13,6 @@ public class UnicomLayoutSupportVO {
 
     private boolean supported;
 
-    private List<String> types;
+    private Set<String> types;
 
 }

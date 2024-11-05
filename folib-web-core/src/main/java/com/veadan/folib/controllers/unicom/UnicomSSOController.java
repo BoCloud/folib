@@ -337,9 +337,15 @@ public class UnicomSSOController extends BaseController {
     @GetMapping("/layout/type")
     public UnicomLayoutSupportVO getSupported(@RequestParam String layout){
         UnicomLayoutSupportVO supportVO = new UnicomLayoutSupportVO();
-        //获取当前layout布局支持的
-        return supportVO;
-
+        Set<String> types = layoutType.get(layout);
+        if(types==null||types.isEmpty()){
+            supportVO.setSupported(false);
+            return supportVO;
+        }else {
+            supportVO.setSupported(true);
+            supportVO.setTypes(types);
+            return supportVO;
+        }
     }
 
 
