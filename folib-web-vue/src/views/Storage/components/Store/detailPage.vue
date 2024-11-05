@@ -30,7 +30,7 @@
             <a-descriptions-item v-if="!currentTreeNode.layout" :label="$t('Store.ThePath')">
               {{ currentTreeNode.artifactPath }}
             </a-descriptions-item>
-            <a-descriptions-item v-if="currentTreeNode.layout" :label="$t('Store.FileSize')">
+            <a-descriptions-item v-if="currentTreeNode.layout" :label="$t('Store.ArtifactMaxSize')">
               {{ fileSizeConver(currentTreeNode.artifactMaxSize)}}
             </a-descriptions-item>
             <a-descriptions-item v-if="currentTreeNode.remoteRepository" :label="$t('Store.ProxyAddress')">

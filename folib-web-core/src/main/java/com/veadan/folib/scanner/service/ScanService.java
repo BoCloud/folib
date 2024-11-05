@@ -491,14 +491,14 @@ public class ScanService {
                                         .anyMatch(licenseUrl -> {
                                             double licenseUrlLevenshteinResult = levenshteinDistance.apply(dependencyLicense, licenseUrl);
                                             double licenseUrlJaccardResult = jaccardSimilarity.apply(dependencyLicense, licenseUrl);
-                                            log.info("License [{}] dependencyLicense [{}] licenseUrl [{}] levenshteinSimilarValue [{}] jaccardSimilarValue [{}] licenseUrlLevenshteinResult [{}] licenseUrlJaccardResult [{}]", license.getLicenseId(), dependencyLicense, licenseUrl, levenshteinSimilarValue, jaccardSimilarValue, licenseUrlLevenshteinResult, licenseUrlJaccardResult);
+                                            log.debug("License [{}] dependencyLicense [{}] licenseUrl [{}] levenshteinSimilarValue [{}] jaccardSimilarValue [{}] licenseUrlLevenshteinResult [{}] licenseUrlJaccardResult [{}]", license.getLicenseId(), dependencyLicense, licenseUrl, levenshteinSimilarValue, jaccardSimilarValue, licenseUrlLevenshteinResult, licenseUrlJaccardResult);
                                             boolean similar = (licenseUrlLevenshteinResult <= levenshteinSimilarValue && licenseUrlJaccardResult >= jaccardSimilarValue);
                                             if (similar) {
-                                                log.info("License [{}] dependencyLicense [{}] licenseUrl [{}] levenshteinSimilarValue [{}] jaccardSimilarValue [{}] licenseUrlLevenshteinResult [{}] licenseUrlJaccardResult [{}] similar value matching", license.getLicenseId(), dependencyLicense, licenseUrl, levenshteinSimilarValue, jaccardSimilarValue, licenseUrlLevenshteinResult, licenseUrlJaccardResult);
+                                                log.debug("License [{}] dependencyLicense [{}] licenseUrl [{}] levenshteinSimilarValue [{}] jaccardSimilarValue [{}] licenseUrlLevenshteinResult [{}] licenseUrlJaccardResult [{}] similar value matching", license.getLicenseId(), dependencyLicense, licenseUrl, levenshteinSimilarValue, jaccardSimilarValue, licenseUrlLevenshteinResult, licenseUrlJaccardResult);
                                                 return true;
                                             }
                                             if (dependencyLicense.contains(licenseUrl)) {
-                                                log.info("License [{}] dependencyLicense [{}] contains licenseUrl [{}]", license.getLicenseId(), dependencyLicense, licenseUrl);
+                                                log.debug("License [{}] dependencyLicense [{}] contains licenseUrl [{}]", license.getLicenseId(), dependencyLicense, licenseUrl);
                                                 return true;
                                             }
                                             return false;
@@ -508,9 +508,9 @@ public class ScanService {
                             }
                             double licenseNameLevenshteinResult = levenshteinDistance.apply(dependencyLicense, license.getLicenseName());
                             double licenseNameJaccardResult = jaccardSimilarity.apply(dependencyLicense, license.getLicenseName());
-                            log.info("License [{}] dependencyLicense [{}] licenseName [{}] levenshteinSimilarValue [{}] jaccardSimilarValue [{}] licenseUrlLevenshteinResult [{}] licenseUrlJaccardResult [{}]", license.getLicenseId(), dependencyLicense, license.getLicenseName(), levenshteinSimilarValue, jaccardSimilarValue, licenseNameLevenshteinResult, licenseNameJaccardResult);
+                            log.debug("License [{}] dependencyLicense [{}] licenseName [{}] levenshteinSimilarValue [{}] jaccardSimilarValue [{}] licenseUrlLevenshteinResult [{}] licenseUrlJaccardResult [{}]", license.getLicenseId(), dependencyLicense, license.getLicenseName(), levenshteinSimilarValue, jaccardSimilarValue, licenseNameLevenshteinResult, licenseNameJaccardResult);
                             if (licenseNameLevenshteinResult <= levenshteinSimilarValue && licenseNameJaccardResult >= jaccardSimilarValue) {
-                                log.info("License [{}] dependencyLicense [{}] licenseName [{}] levenshteinSimilarValue [{}] jaccardSimilarValue [{}] licenseUrlLevenshteinResult [{}] licenseUrlJaccardResult [{}] similar value matching", license.getLicenseId(), dependencyLicense, license.getLicenseName(), levenshteinSimilarValue, jaccardSimilarValue, licenseNameLevenshteinResult, licenseNameJaccardResult);
+                                log.debug("License [{}] dependencyLicense [{}] licenseName [{}] levenshteinSimilarValue [{}] jaccardSimilarValue [{}] licenseUrlLevenshteinResult [{}] licenseUrlJaccardResult [{}] similar value matching", license.getLicenseId(), dependencyLicense, license.getLicenseName(), levenshteinSimilarValue, jaccardSimilarValue, licenseNameLevenshteinResult, licenseNameJaccardResult);
                                 licenseSet.add(license.getLicenseId());
                             }
                             if (Arrays.stream(dependencyLicense.split(": "))
@@ -520,10 +520,10 @@ public class ScanService {
                                                     .anyMatch(licenseUrl -> {
                                                         double licenseUrlLevenshteinResult = levenshteinDistance.apply(item, licenseUrl);
                                                         double licenseUrlJaccardResult = jaccardSimilarity.apply(item, licenseUrl);
-                                                        log.info("License [{}] dependencyLicense [{}] item [{}] licenseUrl [{}] levenshteinSimilarValue [{}] jaccardSimilarValue [{}] licenseUrlLevenshteinResult [{}] licenseUrlJaccardResult [{}]", license.getLicenseId(), dependencyLicense, item, licenseUrl, levenshteinSimilarValue, jaccardSimilarValue, licenseUrlLevenshteinResult, licenseUrlJaccardResult);
+                                                        log.debug("License [{}] dependencyLicense [{}] item [{}] licenseUrl [{}] levenshteinSimilarValue [{}] jaccardSimilarValue [{}] licenseUrlLevenshteinResult [{}] licenseUrlJaccardResult [{}]", license.getLicenseId(), dependencyLicense, item, licenseUrl, levenshteinSimilarValue, jaccardSimilarValue, licenseUrlLevenshteinResult, licenseUrlJaccardResult);
                                                         boolean similar = (licenseUrlLevenshteinResult <= levenshteinSimilarValue && licenseUrlJaccardResult >= jaccardSimilarValue);
                                                         if (similar) {
-                                                            log.info("License [{}] dependencyLicense [{}] item [{}] licenseUrl [{}] levenshteinSimilarValue [{}] jaccardSimilarValue [{}] licenseUrlLevenshteinResult [{}] licenseUrlJaccardResult [{}] similar value matching", license.getLicenseId(), dependencyLicense, item, licenseUrl, levenshteinSimilarValue, jaccardSimilarValue, licenseUrlLevenshteinResult, licenseUrlJaccardResult);
+                                                            log.debug("License [{}] dependencyLicense [{}] item [{}] licenseUrl [{}] levenshteinSimilarValue [{}] jaccardSimilarValue [{}] licenseUrlLevenshteinResult [{}] licenseUrlJaccardResult [{}] similar value matching", license.getLicenseId(), dependencyLicense, item, licenseUrl, levenshteinSimilarValue, jaccardSimilarValue, licenseUrlLevenshteinResult, licenseUrlJaccardResult);
                                                             return true;
                                                         }
                                                         return false;
@@ -533,9 +533,9 @@ public class ScanService {
                                         }
                                         double licenseNameItemLevenshteinResult = levenshteinDistance.apply(item, license.getLicenseName());
                                         double licenseNameItemJaccardResult = jaccardSimilarity.apply(item, license.getLicenseName());
-                                        log.info("License [{}] dependencyLicense [{}] item [{}] licenseName [{}] levenshteinSimilarValue [{}] jaccardSimilarValue [{}] licenseUrlLevenshteinResult [{}] licenseUrlJaccardResult [{}]", license.getLicenseId(), dependencyLicense, item, license.getLicenseName(), levenshteinSimilarValue, jaccardSimilarValue, licenseNameItemLevenshteinResult, licenseNameItemJaccardResult);
+                                        log.debug("License [{}] dependencyLicense [{}] item [{}] licenseName [{}] levenshteinSimilarValue [{}] jaccardSimilarValue [{}] licenseUrlLevenshteinResult [{}] licenseUrlJaccardResult [{}]", license.getLicenseId(), dependencyLicense, item, license.getLicenseName(), levenshteinSimilarValue, jaccardSimilarValue, licenseNameItemLevenshteinResult, licenseNameItemJaccardResult);
                                         if (licenseNameItemLevenshteinResult <= levenshteinSimilarValue && licenseNameItemJaccardResult >= jaccardSimilarValue) {
-                                            log.info("License [{}] dependencyLicense [{}] item [{}] licenseName [{}] levenshteinSimilarValue [{}] jaccardSimilarValue [{}] licenseUrlLevenshteinResult [{}] licenseUrlJaccardResult [{}] similar value matching", license.getLicenseId(), dependencyLicense, item, license.getLicenseName(), levenshteinSimilarValue, jaccardSimilarValue, licenseNameItemLevenshteinResult, licenseNameItemJaccardResult);
+                                            log.debug("License [{}] dependencyLicense [{}] item [{}] licenseName [{}] levenshteinSimilarValue [{}] jaccardSimilarValue [{}] licenseUrlLevenshteinResult [{}] licenseUrlJaccardResult [{}] similar value matching", license.getLicenseId(), dependencyLicense, item, license.getLicenseName(), levenshteinSimilarValue, jaccardSimilarValue, licenseNameItemLevenshteinResult, licenseNameItemJaccardResult);
                                             return true;
                                         }
                                         return false;
@@ -550,7 +550,7 @@ public class ScanService {
             sbomComponentOptional.ifPresent(bomComponent -> {
                 if (CollectionUtils.isNotEmpty(bomComponent.getLicenses())) {
                     bomComponent.getLicenses().forEach(license -> {
-                        log.info("Component [{}] [{}] sbom license [{}]", component.getUuid(), component.getFileName(), JSONObject.toJSONString(license));
+                        log.debug("Component [{}] [{}] sbom license [{}]", component.getUuid(), component.getFileName(), JSONObject.toJSONString(license));
                         if (Objects.nonNull(license) && Objects.nonNull(license.getLicense()) && StringUtils.isNotBlank(license.getLicense().getId()) && licenseIds.contains(license.getLicense().getId())) {
                             licenseSet.add(license.getLicense().getId());
                         }
@@ -842,7 +842,7 @@ public class ScanService {
         XpEngine engine = new XpEngine(settings);
         try {
             engine.doUpdates();
-        } catch (UpdateException e) {
+        } catch (Exception e) {
             log.error("Update mirror error [{}]", ExceptionUtils.getStackTrace(e));
         }
     }
