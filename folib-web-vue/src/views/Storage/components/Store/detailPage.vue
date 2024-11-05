@@ -58,19 +58,26 @@
 <script>
 import { fileSizeConver, formateDate } from "@/utils/layoutUtil";
 export default {
+  props: ['folibRepository','isStoreView'],
     data() {
         return {
-            props: ['folibRepository'],
+            
 
         }
     },
     computed:{
         currentTreeNode() {
-            return this.$store.state.currentTreeNode?this.$store.state.currentTreeNode:this.folibRepository;
+          if(this.isStoreView){
+            let currentTreeNode={...this.folibRepository};
+            currentTreeNode.name=this.folibRepository.id;
+            return currentTreeNode;
+          }else{
+            return this.$store.state.currentTreeNode
+          }
         }
     },
     mounted() {
-
+      
     },
     methods:{
         fileSizeConver(size){
