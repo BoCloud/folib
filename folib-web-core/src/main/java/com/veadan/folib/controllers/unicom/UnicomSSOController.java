@@ -40,6 +40,7 @@ import io.swagger.annotations.Api;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.maven.Maven;
 import org.mapstruct.Mapping;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -92,6 +93,16 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/unicom")
 @Api(tags = "通联单点登录")
 public class UnicomSSOController extends BaseController {
+
+    public static final Map<String ,Set<String>> layoutType=new HashMap<>();
+    static {
+        layoutType.put("raw",Set.of("**"));
+        layoutType.put("Maven 2",Set.of(".jar", ".war", ".pom"));
+        layoutType.put("npm",Set.of(".tgz"));
+        layoutType.put("rpm",Set.of(".rpm"));
+        layoutType.put("docker",Set.of(".gz",".tar",".zip",".giz"));
+        layoutType.put("debian",Set.of("debian"));
+    }
 
     @Resource
     private RestTemplate restTemplate;
@@ -149,6 +160,8 @@ public class UnicomSSOController extends BaseController {
 
 
     private final String PREFIX = "unicom-";
+
+
 
 
     @GetMapping("/login")
@@ -324,6 +337,7 @@ public class UnicomSSOController extends BaseController {
     @GetMapping("/layout/type")
     public UnicomLayoutSupportVO getSupported(@RequestParam String layout){
         UnicomLayoutSupportVO supportVO = new UnicomLayoutSupportVO();
+        //获取当前layout布局支持的
         return supportVO;
 
     }
