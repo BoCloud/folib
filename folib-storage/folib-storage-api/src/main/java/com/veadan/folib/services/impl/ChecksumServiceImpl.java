@@ -14,6 +14,7 @@ import com.veadan.folib.storage.repository.Repository;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -42,12 +43,20 @@ public class ChecksumServiceImpl
     public void regenerateChecksum(String storageId,
                                    String repositoryId,
                                    String basePath,
+                                   String lastModifiedTime,
                                    boolean forceRegeneration)
         throws IOException
     {
         Storage storage = getConfiguration().getStorage(storageId);
+        if (Objects.isNull(storage)) {
+            logger.warn("Storage [{}] not found", storageId);
+            return;
+        }
         Repository repository = storage.getRepository(repositoryId);
-
+        if (Objects.isNull(repository)) {
+            logger.warn("Repository [{}] [{}] not found", storageId, repositoryId);
+            return;
+        }
         LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(repository.getLayout());
         if (layoutProvider == null)
         {
@@ -63,11 +72,9 @@ public class ChecksumServiceImpl
         
         ArtifactLocationGenerateChecksumOperation operation = new ArtifactLocationGenerateChecksumOperation();
         operation.setBasePath(repositoryBasePath);
+        operation.setLastModifiedTime(lastModifiedTime);
         operation.setForceRegeneration(forceRegeneration);
-
-        ArtifactDirectoryLocator locator = new ArtifactDirectoryLocator();
-        locator.setOperation(operation);
-        locator.locateArtifactDirectories();
+        operation.execute(repositoryBasePath);
     }
 
     public Configuration getConfiguration()

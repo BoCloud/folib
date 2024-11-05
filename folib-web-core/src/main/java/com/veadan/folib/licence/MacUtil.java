@@ -29,7 +29,7 @@ public class MacUtil {
         Set<String> result = new HashSet<>();
         NodeComponent nodeComponent = SpringContextUtil.getBean(NodeComponent.class);
         String localHostId = nodeComponent.cassandraClusterInfo().getLocalHostId();
-        log.info("MachineCode localHostId [{}]", localHostId);
+        log.debug("MachineCode localHostId [{}]", localHostId);
         result.add(localHostId);
         Properties props = System.getProperties();
         String javaVersion = props.getProperty("java.version");

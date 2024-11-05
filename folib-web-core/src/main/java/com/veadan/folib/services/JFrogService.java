@@ -47,10 +47,10 @@ public interface JFrogService {
      * @param address     地址
      * @param username    用户名
      * @param password    密码
-     * @param packageType 仓库类型
+     * @param packageTypes 仓库类型
      * @return 仓库列表
      */
-    List<LightweightRepository> listRepository(String address, String username, String password, String packageType);
+    List<LightweightRepository> listRepository(String address, String username, String password, List<String> packageTypes);
 
     /**
      * 判断仓库是否存在
@@ -69,7 +69,6 @@ public interface JFrogService {
      * @param repositoryPath 制品
      * @param artifactPath   路径
      * @param recordStatus   是否记录状态 true（记录）其他（不记录）
-     * @return 结果
      */
-    File uploadItem(String nodeName, String repositoryName, RepositoryPath repositoryPath, String artifactPath, Boolean recordStatus);
+    void uploadItem(String nodeName, String repositoryName, RepositoryPath repositoryPath, String artifactPath, Boolean recordStatus);
 }

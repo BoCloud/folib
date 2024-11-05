@@ -92,6 +92,7 @@ public class LayoutRequestCondition extends AbstractRequestCondition<ExposableRe
             cacheUtil.put(key, repository);
         }
         if (!layout.equals(repository.getLayout())) {
+            //log.warn("layout not match, request layout:{}, repository layout:{}", layout, repository.getLayout());
             return null;
         }
         return new RepositoryRequestCondition(repository);

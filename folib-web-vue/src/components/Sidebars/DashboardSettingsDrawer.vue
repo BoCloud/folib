@@ -22,11 +22,11 @@
 			</svg>
 		</a-button>
 		<!-- / Settings Drawer Close Button -->
-		
+
 		<!-- Settings Drawer Content -->
 		<div class="drawer-content">
-			<h6>风格配置</h6>
-			<p>调整你喜欢的样式.</p>
+			<h6>{{ $t('Sidebars.StyleSettings') }}</h6>
+			<p>{{ $t('Sidebars.AdjustStyleYouLike') }}</p>
 			<hr>
 <!--			<div class="sidebar-color">-->
 <!--				<h6>主题色</h6>-->
@@ -40,15 +40,15 @@
 <!--				</a-radio-group>-->
 <!--			</div>-->
 			<div class="sidenav-type">
-				<h6>菜单显示风格</h6>
-				<p>目前支持2种风格,其他风格后续更新</p>
+				<h6>{{ $t('Sidebars.MenuDisplayStyle') }}</h6>
+				<p>{{ $t('Sidebars.CurrentlySupportsStyles') }}</p>
 				<a-radio-group button-style="solid" v-model="sidebarThemeModel" @change="$emit('updateSidebarTheme', $event.target.value)" defaultValue="primary">
-					<a-radio-button value="light">透明</a-radio-button>
-					<a-radio-button value="white">白底</a-radio-button>
+					<a-radio-button value="light">{{ $t('Sidebars.Transparent') }}</a-radio-button>
+					<a-radio-button value="white">{{ $t('Sidebars.WhiteBackground') }}</a-radio-button>
 				</a-radio-group>
 			</div>
 			<div class="navbar-fixed">
-				<h6>导航锁定</h6>
+				<h6>{{ $t('Sidebars.NavigationLock') }}</h6>
 				<a-switch default-checked v-model="navbarFixedModel" @change="$emit('toggleNavbarPosition', navbarFixedModel)" />
 			</div>
 <!--			<div class="download">-->
@@ -97,17 +97,17 @@
 				type: Boolean,
 				default: false,
 			},
-			
+
 			// Main sidebar color.
 			sidebarColor: {
 				type: String,
 				default: "primary",
 			},
-			
+
 			// Main sidebar theme : light, white, dark.
 			sidebarTheme: {
 				type: String,
-				default: "light",
+				default: "white",
 			},
 
 			// Header fixed status.
@@ -126,10 +126,10 @@
 			return {
 				// The wrapper element to attach dropdowns to.
 				wrapper: document.body,
-				
+
 				// Main sidebar color.
 				sidebarColorModel: this.sidebarColor,
-				
+
 				// Main sidebar theme : light, white, dark.
 				sidebarThemeModel: this.sidebarTheme,
 

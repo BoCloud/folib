@@ -1,9 +1,9 @@
 package com.veadan.folib.storage.repository.remote.heartbeat;
 
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -45,6 +45,8 @@ public class RemoteRepositoriesHeartbeatMonitorInitiator
     @Inject
     private RemoteRepositoryHeartbeatMonitorStrategyRegistry remoteRepositoryHeartbeatMonitorStrategyRegistry;
 
+    private final Map<String, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
+
     @Override
     public void destroy()
     {
@@ -62,9 +64,17 @@ public class RemoteRepositoriesHeartbeatMonitorInitiator
         getRemoteRepositories().stream().forEach(rr -> scheduleRemoteRepositoryMonitoring(defaultIntervalSeconds, rr));
     }
 
-    private void scheduleRemoteRepositoryMonitoring(int defaultIntervalSeconds,
-                                                    RemoteRepository remoteRepository)
+    public void scheduleRemoteRepositoryMonitoring(int defaultIntervalSeconds,
+                                                    String storageAndRepositoryId)
     {
+        Repository repository = configurationManager.getRepository(storageAndRepositoryId);
+        if (Objects.isNull(repository)) {
+            return;
+        }
+        RemoteRepository remoteRepository = repository.getRemoteRepository();
+        if (Objects.isNull(remoteRepository)) {
+            return;
+        }
         int intervalSeconds = ObjectUtils.defaultIfNull(remoteRepository.getCheckIntervalSeconds(),
                                                         defaultIntervalSeconds);
 
@@ -74,13 +84,22 @@ public class RemoteRepositoriesHeartbeatMonitorInitiator
 
         RemoteRepositoryHeartbeatMonitor remoteRepositoryHeartBeatMonitor = new RemoteRepositoryHeartbeatMonitor(remoteRepositoryCacheManager,
                                                                                                                  determineMonitorStrategy(remoteRepository),
-                                                                                                                 remoteRepository);
-        executor.scheduleWithFixedDelay(new MdcContextProvider(remoteRepositoryHeartBeatMonitor),
+                                                                                                                 storageAndRepositoryId);
+        ScheduledFuture<?> scheduledTask = executor.scheduleWithFixedDelay(new MdcContextProvider(remoteRepositoryHeartBeatMonitor),
                                         0,
                                         intervalSeconds, TimeUnit.SECONDS);
-
+        scheduledTasks.put(storageAndRepositoryId, scheduledTask);
         logger.info("Remote repository {} scheduled for monitoring with interval seconds {}",
                     remoteRepository.getUrl(), intervalSeconds);
+    }
+
+    public void cancelRemoteRepositoryMonitoring(String storageAndRepositoryId) {
+        ScheduledFuture<?> scheduledTask = scheduledTasks.remove(storageAndRepositoryId);
+        if (scheduledTask != null) {
+            // 取消定时任务
+            scheduledTask.cancel(true);
+            logger.info("Remote repository {} monitoring cancelled", storageAndRepositoryId);
+        }
     }
 
     private RemoteRepositoryHeartbeatMonitorStrategy determineMonitorStrategy(final RemoteRepository remoteRepository)
@@ -89,7 +108,7 @@ public class RemoteRepositoriesHeartbeatMonitorInitiator
     }
 
 
-    private List<RemoteRepository> getRemoteRepositories()
+    private List<String> getRemoteRepositories()
     {
         return configurationManager.getConfiguration()
                                    .getStorages()
@@ -97,11 +116,11 @@ public class RemoteRepositoriesHeartbeatMonitorInitiator
                                    .stream()
                                    .flatMap(s -> s.getRepositories().values().stream())
                                    .filter(Repository::isProxyRepository)
-                                   .map(r -> r.getRemoteRepository())
+                                   .map(r -> r.getStorageIdAndRepositoryId())
                                    .collect(Collectors.toList());
     }
 
-    private int getDefaultRemoteRepositoriesHeartbeatIntervalSeconds()
+    public int getDefaultRemoteRepositoriesHeartbeatIntervalSeconds()
     {
         return configurationManager.getConfiguration().getRemoteRepositoriesConfiguration().getCheckIntervalSeconds();
     }

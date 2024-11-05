@@ -1,9 +1,12 @@
 package com.veadan.folib.providers.layout;
 
+import cn.hutool.crypto.digest.SM3;
 import com.google.common.collect.ImmutableSet;
 import com.veadan.folib.artifact.archive.*;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.ArtifactGroup;
 import com.veadan.folib.domain.ArtifactIdGroup;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
@@ -17,6 +20,7 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.CacheUtil;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -58,15 +62,18 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
     @Inject
     protected StorageProviderRegistry storageProviderRegistry;
 
+    @Inject
+    private DistributedCacheComponent distributedCacheComponent;
+
     @Override
     public abstract Set<String> getDefaultArtifactCoordinateValidators();
 
     protected abstract boolean isArtifactMetadata(RepositoryPath repositoryPath);
 
-    protected abstract T getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException;
+    public abstract T getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException;
 
     protected Set<String> getDigestAlgorithmSet() {
-        return Stream.of(MessageDigestAlgorithms.MD5, MessageDigestAlgorithms.SHA_1, MessageDigestAlgorithms.SHA_256)
+        return Stream.of(MessageDigestAlgorithms.MD5, MessageDigestAlgorithms.SHA_1, MessageDigestAlgorithms.SHA_256, SM3.ALGORITHM_NAME)
                 .collect(Collectors.toSet());
     }
 
@@ -130,7 +137,7 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
                     boolean isChecksum = Boolean.TRUE.equals(attributesLocal.get(RepositoryFileAttributeType.CHECKSUM));
                     boolean isDirectory = Files.isDirectory(repositoryPath);
 
-                    value = !isChecksum && !isDirectory;
+                    value = !isChecksum && !isDirectory && !RepositoryFiles.isArtifactMetadata(repositoryPath);
 
                     break;
                 case COORDINATES:
@@ -167,6 +174,10 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
 
                     break;
                 case EXPIRED:
+                    value = false;
+
+                    break;
+                case REFRESH_CONTENT:
                     value = false;
 
                     break;
@@ -241,6 +252,19 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
     }
 
     @Override
+    public byte[] getContentByEqualsFileName(RepositoryPath repositoryPath, Path path, String fileName) {
+        if (ARCHIVE_LISTING_FUNCTION.supports(repositoryPath)) {
+            try {
+                return ARCHIVE_LISTING_FUNCTION.getContentByEqualsFileName(repositoryPath, path, fileName);
+            } catch (IOException e) {
+                logger.warn("Unable to file content in archive path {} using {}",
+                        repositoryPath, ARCHIVE_LISTING_FUNCTION, e);
+            }
+        }
+        return null;
+    }
+
+    @Override
     public Set<ArtifactGroup> getArtifactGroups(RepositoryPath path)
             throws IOException {
         if (!RepositoryFiles.isArtifact(path)) {
@@ -256,4 +280,15 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
 
         return artifactIdGroup.map(ArtifactGroup.class::cast).map(Collections::singleton).orElse(Collections.emptySet());
     }
+
+    @Override
+    public int refreshContentInterval(RepositoryPath repositoryPath) {
+        String key = repositoryPath.getRepository().getLayout().toUpperCase() + "_REFRESH_CONTENT_INTERVAL";
+        String refreshContentInterval = distributedCacheComponent.get(key);
+        if (StringUtils.isBlank(refreshContentInterval)) {
+            return GlobalConstants.DEFAULT_REFRESH_CONTENT_INTERVAL;
+        }
+        return Integer.parseInt(refreshContentInterval);
+    }
+
 }

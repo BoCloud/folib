@@ -6,10 +6,11 @@ import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.UserEntity;
 import com.veadan.folib.users.domain.UserData;
 import com.veadan.folib.users.service.UserAlreadyExistsException;
-import com.veadan.folib.users.service.impl.DatabaseUserService;
+import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.users.userdetails.FolibExternalUsersCacheManager;
 import com.veadan.folib.users.userdetails.FolibUserDetails;
 import com.veadan.folib.util.LocalDateTimeInstance;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janusgraph.core.SchemaViolationException;
 import org.slf4j.Logger;
@@ -26,7 +27,7 @@ import java.util.Optional;
  */
 @Component
 @Transactional
-public class DatabaseExternalUsersCacheManager extends DatabaseUserService implements FolibExternalUsersCacheManager {
+public class DatabaseExternalUsersCacheManager extends RelationalDatabaseUserService implements FolibExternalUsersCacheManager {
 
     private static final Logger logger = LoggerFactory.getLogger(DatabaseExternalUsersCacheManager.class);
 
@@ -34,7 +35,7 @@ public class DatabaseExternalUsersCacheManager extends DatabaseUserService imple
     public UserEntity findByUsername(String username) {
         UserEntity result = super.findByUsername(username);
         if (result != null) {
-            logger.info("User found in DB: username=[{}], sourceId=[{}], id=[{}], uuid=[{}]",
+            logger.debug("User found in DB: username=[{}], sourceId=[{}], id=[{}], uuid=[{}]",
                     result.getUsername(),
                     result.getSourceId(),
                     result.getNativeId(),
@@ -74,25 +75,28 @@ public class DatabaseExternalUsersCacheManager extends DatabaseUserService imple
 
             UserEntity userEntry = oldUser.orElseGet(() -> new UserEntity(username));
             String ldapUserDetailsServiceSourceId = "ldapUserDetailsService";
-            if(!ldapUserDetailsServiceSourceId.equalsIgnoreCase(sourceId) && !StringUtils.isBlank(user.getPassword())) {
+            if (!ldapUserDetailsServiceSourceId.equalsIgnoreCase(sourceId) && !StringUtils.isBlank(user.getPassword())) {
                 userEntry.setPassword(user.getPassword());
             }
+            userEntry.setUsername(username);
             userEntry.setEmail(user.getEmail());
             userEntry.setEnabled(user.isEnabled());
-            userEntry.setRoles(user.getRoles());
+            if (CollectionUtils.isEmpty(userEntry.getRoles())) {
+                userEntry.setRoles(user.getRoles());
+            }
             userEntry.setSecurityTokenKey(user.getSecurityTokenKey());
             userEntry.setLastUpdated(LocalDateTimeInstance.now());
             userEntry.setSourceId(sourceId);
 
-            UserEntity result = userRepository.save(userEntry);
-            logger.info("Cache external user: username=[{}], id=[{}], uuid=[{}], sourceId=[{}], lastUpdated=[{}], UserDetails=[{}]",
-                    result.getUsername(),
-                    result.getNativeId(),
-                    result.getUuid(),
-                    result.getSourceId(),
-                    result.getLastUpdated(),
+            save(userEntry);
+            logger.debug("Cache external user: username=[{}], id=[{}], uuid=[{}], sourceId=[{}], lastUpdated=[{}], UserDetails=[{}]",
+                    userEntry.getUsername(),
+                    userEntry.getNativeId(),
+                    userEntry.getUuid(),
+                    userEntry.getSourceId(),
+                    userEntry.getLastUpdated(),
                     springUser.getClass().getSimpleName());
-            return result;
+            return userEntry;
         } catch (SchemaViolationException e) {
             throw new UserAlreadyExistsException(String.format("Failed to cache external user from [%s], duplicate [%s] already exists.", sourceId,
                     user.getUsername()),

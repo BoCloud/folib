@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div v-if="clients && clients.length >0">
     <div class="other-text" >其他登录方式</div>
     <div class="item-con-p">
     <div v-for="(item,index) in clients"
@@ -10,7 +10,7 @@
           </template>
       <div @click="toSingleLogin(item)" class="item-con">
        
-          <div class="text-icon" :class="textBg(index)">{{ item.clientId.substring(0,1) }} </div>
+          <div class="text-icon" :class="textBg(index)">{{ item.clientName.substring(0,1) }} </div>
         
       </div>   
     </a-tooltip>
@@ -43,16 +43,13 @@ export default {
     textBg(index){
      return this.textColor[index%4]
     },
-    toSingleLogin(clientObject){ 
-    let url =clientObject.ssoPath+"?redirect_uri="+clientObject.redirectPath+"&client_id="+clientObject.clientId+"&response_type=code"
+    toSingleLogin(client){ 
+    let url =client.ssoPath+"?redirect_uri="+client.redirectPath+"&client_id="+client.clientId+"&state="+client.clientId+"&response_type=code&scope=openid%20profile%20email"
     // 可以在输入的时候限定格式
     url= url.startsWith("http")? url:"http://"+url
-
-    sessionStorage.setItem('loginMethod','single')
-    // 这里要给退出url的地址
-    sessionStorage.setItem('loginOutUti',clientObject.loginOutUrl+"?client_id="+clientObject.clientId+"&post_logout_redirect_uri="+clientObject.loginOutRedPath)
-    sessionStorage.setItem('clientInfo',JSON.stringify(clientObject) )
-    // 跳转到登录页面
+    // 缓存SSO退出地址
+    localStorage.setItem('SSOLogout',client.loginOutUrl+"?client_id="+client.clientId+"&post_logout_redirect_uri="+client.loginOutRedPath)
+    // 跳转到SSO登录页面
     window.location.href=url
     }
   }

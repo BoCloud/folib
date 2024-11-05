@@ -15,6 +15,7 @@
 				:sidebarTheme="sidebarTheme"
 				@toggleSidebar="toggleSidebar"
 			></DashboardSidebar>
+		
 			<!-- / Main Sidebar -->
 
 			<!-- Layout Content -->
@@ -32,7 +33,7 @@
 
 				<!-- Page Content -->
 				<a-layout-content>
-					<router-view :navbarFixed="navbarFixed" />
+					<router-view :navbarFixed="navbarFixed"  :key="$route.fullPath"/>
 				</a-layout-content>
 				<!-- / Page Content -->
 
@@ -124,7 +125,7 @@
 				sidebarColor: "primary",
 				
 				// Main sidebar theme : light, white, dark.
-				sidebarTheme: "light",
+				sidebarTheme: "white",
 
 				// Header fixed status.
 				navbarFixed: false,

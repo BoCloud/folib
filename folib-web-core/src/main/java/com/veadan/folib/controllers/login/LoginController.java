@@ -1,6 +1,8 @@
 package com.veadan.folib.controllers.login;
 
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.controllers.BaseController;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.security.authentication.JwtTokenFetcher;
 import com.veadan.folib.security.authentication.suppliers.JsonFormLoginSupplier;
 import com.veadan.folib.users.security.JwtClaimsProvider;
@@ -69,7 +71,10 @@ public class LoginController
         return formLogin(authentication);
     }
 
+
+
     @ApiOperation(value = "返回提供的用户名和密码的 JWT 身份验证令牌")
+    @AuditLog(value = AuditEventNameEnum.WEB_LOGIN,target ="#authentication.principal.username" )
     @ApiResponses(value = {@ApiResponse(code = 200, message = "Returns generated JWT token"),
             @ApiResponse(code = 401, message = "Invalid credentials"),
             @ApiResponse(code = 500, message = "org.springframework.security.core.Authentication " +

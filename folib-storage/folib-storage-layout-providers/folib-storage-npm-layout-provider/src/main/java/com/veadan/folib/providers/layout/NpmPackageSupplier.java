@@ -6,14 +6,17 @@ import com.veadan.folib.artifact.ArtifactTag;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
 import com.veadan.folib.config.NpmLayoutProviderConfig;
 import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.enums.NpmSubLayout;
 import com.veadan.folib.npm.metadata.Dependency;
 import com.veadan.folib.npm.metadata.Dist;
 import com.veadan.folib.npm.metadata.PackageVersion;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ArtifactTagService;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -49,6 +52,9 @@ public class NpmPackageSupplier implements Function<Path, NpmPackageDesc> {
     @NpmLayoutProviderConfig.NpmObjectMapper
     private ObjectMapper npmJacksonMapper;
 
+    @Inject
+    protected RepositoryPathResolver repositoryPathResolver;
+
     @Override
     public NpmPackageDesc apply(Path path) {
         RepositoryPath repositoryPath = (RepositoryPath) path;
@@ -72,9 +78,13 @@ public class NpmPackageSupplier implements Function<Path, NpmPackageDesc> {
         npmPackageDesc.setReleaseDate(releaseDate);
 
         PackageVersion npmPackage = null;
-        if (StringUtils.isNotBlank(artifactEntry.getPackageInfo())) {
+        String packagePath = NpmSubLayout.OHPM.getValue().equals(repositoryPath.getRepository().getSubLayout()) ? NpmLayoutProvider.OHPM_PACKAGE_JSON_PATH : NpmLayoutProvider.DEFAULT_PACKAGE_JSON_PATH;
+        byte[] packageJsonBytes = layoutProvider.getContentByFileName(repositoryPath, repositoryPath, packagePath);
+
+        if (Objects.nonNull(packageJsonBytes)) {
+            String packageJson = new String(packageJsonBytes, StandardCharsets.UTF_8);
             try {
-                npmPackage = npmJacksonMapper.readValue(artifactEntry.getPackageInfo(), PackageVersion.class);
+                npmPackage = npmJacksonMapper.readValue(packageJson, PackageVersion.class);
             } catch (Exception ex) {
                 logger.warn("Artifact packageVersion 转换异常 [{}]", artifactEntry.getUuid());
             }
@@ -115,9 +125,6 @@ public class NpmPackageSupplier implements Function<Path, NpmPackageDesc> {
         }
         dist.setTarball(url);
 
-        if (artifactEntry.getTagSet().contains(artifactTagService.findOneOrCreate(ArtifactTag.LAST_VERSION))) {
-            npmPackageDesc.setLastVersion(true);
-        }
         return npmPackageDesc;
     }
 

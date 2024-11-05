@@ -4,13 +4,18 @@ import static com.veadan.folib.db.schema.Vertices.USER;
 import static org.neo4j.ogm.annotation.Relationship.OUTGOING;
 import static com.veadan.folib.db.schema.Edges.USER_HAS_SECURITY_ROLES;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.veadan.folib.data.domain.DomainEntity;
 import com.veadan.folib.gremlin.adapters.DateConverter;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 import org.neo4j.ogm.annotation.typeconversion.Convert;
@@ -19,32 +24,60 @@ import org.neo4j.ogm.annotation.typeconversion.Convert;
  * @author xuxinping
  *
  */
+@EqualsAndHashCode(callSuper = true)
 @NodeEntity(USER)
 public class UserEntity extends DomainEntity implements User
 {
+
+    public UserEntity(String name)
+    {
+        setUuid(name);
+    }
 
     private String password;
 
     private String originalPassword;
 
+    public void setGroupIds(Set<Long> groupIds) {
+        this.groupIds = groupIds;
+    }
+
+    @Override
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public Boolean getEnabled() {
+        return enabled;
+    }
+
     private Boolean enabled = true;
 
     private String email;
-
     private String avatar;
+
+    private String username;
 
     @Relationship(type = USER_HAS_SECURITY_ROLES, direction = OUTGOING)
     private Set<SecurityRole> roles = new HashSet<>();
 
+    private Set<Long> groupIds = new HashSet<>();
+
+    private Set<String> userGroups;
+    private Set<String> userGroupIds;
     private String securityTokenKey;
 
     @Convert(DateConverter.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime lastUpdated;
 
     private String sourceId;
 
     private String userType="general";
-
 
     @Override
     public String getUserType() {
@@ -57,11 +90,6 @@ public class UserEntity extends DomainEntity implements User
 
     UserEntity()
     {
-    }
-
-    public UserEntity(String username)
-    {
-        setUuid(username);
     }
 
     @Override
@@ -88,6 +116,13 @@ public class UserEntity extends DomainEntity implements User
     public Set<SecurityRole> getRoles()
     {
         return roles;
+    }
+
+    @Override
+    public Set<Long> getGroupIds() {
+        return groupIds != null ? new HashSet<>(groupIds)
+                : new HashSet<>();
+
     }
 
     public void setRoles(Set<SecurityRole> roles)
@@ -175,5 +210,23 @@ public class UserEntity extends DomainEntity implements User
 
     public void setOriginalPassword(String originalPassword) {
         this.originalPassword = originalPassword;
+    }
+
+    @Override
+    public Set<String> getUserGroups() {
+        return userGroups;
+    }
+
+    public void setUserGroups(Set<String> userGroups) {
+        this.userGroups = userGroups;
+    }
+
+    @Override
+    public Set<String> getUserGroupIds() {
+        return userGroupIds;
+    }
+
+    public void setUserGroupIds(Set<String> userGroupIds) {
+        this.userGroupIds = userGroupIds;
     }
 }

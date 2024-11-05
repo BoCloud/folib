@@ -56,7 +56,7 @@ public class Maven2LayoutProvider
     }
 
     @Override
-    protected MavenArtifactCoordinates getArtifactCoordinates(RepositoryPath repositoryPath)
+    public MavenArtifactCoordinates getArtifactCoordinates(RepositoryPath repositoryPath)
             throws IOException
     {
         MavenArtifact artifact = MavenArtifactUtils.convertPathToArtifact(repositoryPath);
@@ -194,6 +194,23 @@ public class Maven2LayoutProvider
             try
             {
                 return JarArchiveListingFunction.INSTANCE.getContentByFileName(repositoryPath, path, fileName);
+            }
+            catch (IOException e)
+            {
+                logger.warn("Unable to file content in archive path {} using {}",
+                        repositoryPath, JarArchiveListingFunction.INSTANCE, e);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public byte[] getContentByEqualsFileName(RepositoryPath repositoryPath, Path path, String fileName) {
+        if (JarArchiveListingFunction.INSTANCE.supports(repositoryPath))
+        {
+            try
+            {
+                return JarArchiveListingFunction.INSTANCE.getContentByEqualsFileName(repositoryPath, path, fileName);
             }
             catch (IOException e)
             {

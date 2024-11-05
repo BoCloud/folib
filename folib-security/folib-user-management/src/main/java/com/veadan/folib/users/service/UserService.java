@@ -3,6 +3,7 @@ package com.veadan.folib.users.service;
 import com.veadan.folib.domain.PageResultResponse;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.users.domain.Users;
+import com.veadan.folib.users.dto.UserAuthDTO;
 import org.jose4j.lang.JoseException;
 
 import java.util.List;
@@ -65,5 +66,6 @@ public interface UserService {
      * @return 用户列表
      */
     List<User> findUserByRoles(List<String> rolesList);
+
 
 }

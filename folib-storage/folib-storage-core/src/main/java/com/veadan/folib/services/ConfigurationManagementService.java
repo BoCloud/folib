@@ -31,6 +31,10 @@ public interface ConfigurationManagementService {
     void setBaseUrl(String baseUrl) throws IOException;
 
     void setPort(int port) throws IOException;
+    
+    void setKbps(Integer kbps) throws IOException;
+    
+    void setSliceMbSize(Long sliceMbSize) throws IOException;
 
     void setAdvancedConfiguration(MutableAdvancedConfiguration advancedConfiguration) throws IOException;
 
@@ -49,6 +53,9 @@ public interface ConfigurationManagementService {
     void removeStorage(String storageId) throws IOException;
 
     void saveRepository(String storageId,
+                        RepositoryDto repository) throws IOException;
+
+    void setRepositoryBasedir(String storageId,
                         RepositoryDto repository) throws IOException;
 
     void removeRepositoryFromAssociatedGroups(String storageId,
@@ -121,6 +128,8 @@ public interface ConfigurationManagementService {
     void setSmtpSettings(MutableSmtpConfiguration smtpConfiguration) throws IOException;
 
     void updateStorage(StorageDto storage) throws IOException;
+
+    void updateStorageBasedir(StorageDto storage) throws IOException;
 
     /**
      * 设置平台级别白名单
@@ -285,4 +294,11 @@ public interface ConfigurationManagementService {
     void setUnionRepositoryConfiguration(String storageId,
                                          String repositoryId,
                                          MutableUnionRepositoryConfiguration mutableUnionRepositoryConfiguration) throws IOException;
+
+    /**
+     * 新增或者更新仓库
+     * @param storageId     存储空间
+     * @param repository    仓库
+     */
+    void addOrUpdateRepository(String storageId, RepositoryDto repository);
 }

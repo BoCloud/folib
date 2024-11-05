@@ -2,47 +2,47 @@
   <div class="wrapper">
     <template>
       <a-tabs class="tabs-sliding" default-active-key="1" @change="handleChangeTabs">
-        <a-tab-pane key="1" tab="概览">
+        <a-tab-pane key="1" :tab="$t('Licenses.Overview')">
           <a-card :bordered="false" class="header-solid h-full" :bodyStyle="{ padding: '24px' }">
             <table>
               <tr>
-                <td class="heading">许可证名称:</td>
+                <td class="heading">{{ $t('Licenses.LicenseName') }}:</td>
                 <td>{{ license.licenseName }}</td>
               </tr>
               <tr>
-                <td class="heading">SPDX许可证ID:</td>
+                <td class="heading">{{ $t('Licenses.SPDXLicenseID') }}:</td>
                 <td>{{ license.licenseId }}</td>
               </tr>
               <tr>
-                <td class="heading">OSI已授权:</td>
+                <td class="heading">{{ $t('Licenses.OSIAuthorized') }}:</td>
                 <td>
                   <span v-if="license.isOsiApproved"><a-icon type="check-square" /></span>
                   <span v-else><a-icon type="close-square" /></span>
                 </td>
               </tr>
               <tr>
-                <td class="heading">自由软件:</td>
+                <td class="heading">{{ $t('Licenses.FreeSoftware') }}:</td>
                 <td>
                   <span v-if="license.isFsfLibre"><a-icon type="check-square" /></span>
                   <span v-else><a-icon type="close-square" /></span>
                 </td>
               </tr>
               <tr>
-                <td class="heading">废弃:</td>
+                <td class="heading">{{ $t('Licenses.Abandon') }}:</td>
                 <td>
                   <span v-if="license.isDeprecated"><a-icon type="check-square" /></span>
                   <span v-else><a-icon type="close-square" /></span>
                 </td>
               </tr>
               <tr>
-                <td class="heading">自定义许可证:</td>
+                <td class="heading">{{ $t('Licenses.CustomLicenses') }}:</td>
                 <td>
                   <span v-if="license.isCustomLicense"><a-icon type="check-square" /></span>
                   <span v-else><a-icon type="close-square" /></span>
                 </td>
               </tr>
               <tr>
-                <td class="heading">备注:</td>
+                <td class="heading">{{ $t('Licenses.remark') }}:</td>
                 <td>{{ license.comment }}</td>
               </tr>
               <tr>
@@ -52,7 +52,7 @@
             </table>
           </a-card>
         </a-tab-pane>
-        <a-tab-pane key="2" tab="许可证文本（原文）">
+        <a-tab-pane key="2" :tab="$t('Licenses.originalLicenseText')">
           <a-card :bordered="false" class="header-solid h-full" :bodyStyle="{ padding: '24px' }">
             <prism-editor
                 class="my-editor"
@@ -63,7 +63,7 @@
               ></prism-editor>
           </a-card>
         </a-tab-pane>
-        <a-tab-pane key="3" tab="许可证文本（中文）">
+        <a-tab-pane key="3" :tab="$t('Licenses.ChineseLicenseText')">
           <a-card :bordered="false" class="header-solid h-full" :bodyStyle="{ padding: '24px' }">
             <prism-editor
                 class="my-editor"
@@ -74,7 +74,7 @@
               ></prism-editor>
           </a-card>
         </a-tab-pane>
-        <a-tab-pane key="4" tab="模板">
+        <a-tab-pane key="4" :tab="$t('Licenses.Template')">
           <a-card :bordered="false" class="header-solid h-full" :bodyStyle="{ padding: '24px' }">
             <prism-editor
                 class="my-editor"
@@ -85,7 +85,7 @@
               ></prism-editor>
           </a-card>
         </a-tab-pane>
-        <a-tab-pane key="5" tab="源标头">
+        <a-tab-pane key="5" :tab="$t('Licenses.SourceHeader')">
           <a-card :bordered="false" class="header-solid h-full" :bodyStyle="{ padding: '24px' }">
             <prism-editor
                 class="my-editor"

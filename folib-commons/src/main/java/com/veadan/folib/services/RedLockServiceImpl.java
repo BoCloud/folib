@@ -80,7 +80,7 @@ public class RedLockServiceImpl implements RedLockService {
     public void unLock(String lockKey) {
         RLock lock = redissonClient.getLock(lockKey);
         if (Objects.nonNull(lock) && lock.isLocked() && lock.isHeldByCurrentThread()) {
-            log.info("Current ThreadName：{} lockKey：{} unlock", Thread.currentThread().getName(), lockKey);
+            log.debug("Current ThreadName：{} lockKey：{} unlock", Thread.currentThread().getName(), lockKey);
             lock.unlock();
         }
     }

@@ -1,14 +1,14 @@
 <template>
-  <div class="lib-view">
+  <div :key="key" class="lib-view">
     <!-- Header Background Image -->
-    <div class="profile-nav-bg">
-        <div
-          :class="[mouseEnter ? 'mouse-enter nested' : 'nested']"
-          style="
-            background: url(images/bg-profile.jpg) center/cover;
+    <div v-if="!isChecked" class="profile-nav-bg" style="
+            background: url(images/banner.jpg) center/cover;
             transition: all 0.3s;
-          "
-        ></div>
+          ">
+<!--        <div-->
+<!--          :class="[mouseEnter ? 'mouse-enter nested' : 'nested']"-->
+<!--          -->
+<!--        ></div>-->
       <a-row type="flex" :md="8" :xs="4">
         <search-box @mouse="searchBoxMouseStatus" @search="search"/>
       </a-row>
@@ -19,10 +19,12 @@
       :activeKey="tabActiveKey"
       @change="tabChange($event)"
     >
-      <a-tab-pane :key="1" tab="详情">
+      <a-tab-pane :key="1" :tab="$t('Storage.Details')">
         <store
+          :style="isChecked ? 'margin-top:-50px;' : ''"
           ref="store"
-          :metadataTypes="metadataTypes"
+          :isChecked="isChecked"
+          :metadataTypes="i18nMetadataTypes"
           :quillOptions="quillOptions"
           :propScanReport="scanReport"
           :successMsg="successMsg"
@@ -30,18 +32,25 @@
           @openDetial="openDetial"
         />
       </a-tab-pane>
-      <a-tab-pane :key="2" tab="统计" v-if="$store.state.user.token">
+      <a-tab-pane :key="2" :tab="$t('Storage.Statistics')" v-if="$store.state.user.token">
         <safe
           v-if="tabActiveKey == 2"
           :folibRepository="folibRepository"
-          :vulnerabilityColumns="vulnerabilityColumns"
+          :vulnerabilityColumns="i18nVulnerabilityColumns"
         />
       </a-tab-pane>
+      <a-button v-if="isShowEdit && isChecked" class="repository-setting" slot="tabBarExtraContent" size="small" icon="edit" @click="handleMenuClick('edit')"></a-button>
+      <a-button v-if="isShowDelete && isChecked" class="repository-setting" slot="tabBarExtraContent" size="small" icon="delete" @click="handleMenuClick('delete')"></a-button>
+      <a-button v-if="eventSettingEnabled" slot="tabBarExtraContent" class="repository-setting ant-btn ant-btn-sm ant-btn-icon-only" size="small" @click="eventPageVisible = true" >
+        <i aria-label="icon: setting" class="anticon anticon-setting">
+          <svg t="1703130640254" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4432" width="1em" height="1em"><path d="M722.189474 792.252632c-10.778947 0-18.863158 8.084211-18.863158 18.863157v115.873685c0 13.473684-10.778947 24.252632-24.252632 24.252631H97.010526c-13.473684 0-24.252632-10.778947-24.252631-24.252631V344.926316c0-13.473684 10.778947-24.252632 24.252631-24.252632h582.063158c13.473684 0 24.252632 10.778947 24.252632 24.252632V646.736842c0 10.778947 8.084211 18.863158 18.863158 18.863158s18.863158-8.084211 18.863158-18.863158V344.926316c0-35.031579-26.947368-61.978947-61.978948-61.978948H97.010526c-35.031579 0-61.978947 26.947368-61.978947 61.978948v582.063158c0 35.031579 26.947368 61.978947 61.978947 61.978947h582.063158c35.031579 0 61.978947-26.947368 61.978948-61.978947v-115.873685c0-10.778947-8.084211-18.863158-18.863158-18.863157z" fill="#101010" p-id="4433"></path><path d="M926.989474 35.031579H344.926316c-35.031579 0-61.978947 26.947368-61.978948 61.978947v123.957895c0 10.778947 8.084211 18.863158 18.863158 18.863158s18.863158-8.084211 18.863158-18.863158V97.010526c0-13.473684 10.778947-24.252632 24.252632-24.252631h582.063158c13.473684 0 24.252632 10.778947 24.252631 24.252631v582.063158c0 13.473684-10.778947 24.252632-24.252631 24.252632H344.926316c-13.473684 0-24.252632-10.778947-24.252632-24.252632V388.042105c0-10.778947-8.084211-18.863158-18.863158-18.863158s-18.863158 8.084211-18.863158 18.863158v291.031579c0 35.031579 26.947368 61.978947 61.978948 61.978948h582.063158c35.031579 0 61.978947-26.947368 61.978947-61.978948V97.010526c0-35.031579-26.947368-61.978947-61.978947-61.978947z" fill="#101010" p-id="4434"></path></svg>
+        </i>
+      </a-button>
       <a-button v-if="settingsEnabled" slot="tabBarExtraContent" icon="setting" class="repository-setting" size="small" @click="settingDrawerShow()" />
     </a-tabs>
     <!-- / Header Background Image -->
-
     <SettingsDrawer :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></SettingsDrawer>
+    <EventPageDrawer :folibRepository="this.folibRepository" :eventPageVisible="eventPageVisible" @eventDrawerClose="eventPageVisible=false"></EventPageDrawer>
 
     <!-- docker -->
     <a-drawer
@@ -98,7 +107,7 @@
                 </template>
               </a-timeline>
             </a-tab-pane>
-            <a-tab-pane key="2" tab="制作历史">
+            <a-tab-pane key="2" :tab="$t('Storage.MakingHistory')">
               <a-timeline>
                 <template v-if="currentManifest.history[index]">
                   <a-timeline-item
@@ -136,7 +145,6 @@ import {
   formateDate,
 } from "@/utils/layoutUtil";
 import {
-  getArtifact,
   viewArtifactFile,
   getLibraryFilter
 } from "@/api/folib";
@@ -155,11 +163,13 @@ import { quillEditor } from "vue-quill-editor";
 import Store from "./components/Store/index.vue";
 import Safe from "./components/Safe/index.vue";
 import SettingsDrawer from "./components/Repository/SettingsDrawer.vue";
+import EventPageDrawer from "./components/Repository/EventPageDrawer.vue";
 import { hasRole, isAdmin, hasPermission, isLogin } from "@/utils/permission";
 import VunlerabilityReport from '@/components/Vulnerabilities/VunlerabilityReport'
 
 export default {
   inject: ["reload"],
+  props:['isChecked','storageAdmin'],
   components: {
     CardPackageTree,
     CardProfileInformation,
@@ -170,10 +180,13 @@ export default {
     Store,
     Safe,
     SettingsDrawer,
+    EventPageDrawer,
     VunlerabilityReport,
   },
   data() {
     return {
+      isShowEdit:false,
+      isShowDelete:false,
       scan: {
         id: "",
         repository: "",
@@ -200,12 +213,14 @@ export default {
       columns: [
         {
           title: "制品路径",
+          i18nKey: "Storage.ProductPath",
           dataIndex: "path",
           scopedSlots: { customRender: "path" },
           width: 550,
         },
         {
           title: "创建时间",
+          i18nKey: "Storage.CreationTime",
           dataIndex: "created",
           sorter: true,
           sortDirections: ["descend", "ascend"],
@@ -214,6 +229,7 @@ export default {
         },
         {
           title: "最近使用时间",
+          i18nKey: "Storage.LastTimeOfUse",
           dataIndex: "lastUsed",
           sorter: true,
           scopedSlots: { customRender: "lastUsed" },
@@ -221,6 +237,7 @@ export default {
         },
         {
           title: "下载次数",
+          i18nKey: "Storage.NumberOfDownloads",
           dataIndex: "downloadCount",
           sorter: true,
           scopedSlots: { customRender: "created" },
@@ -228,6 +245,7 @@ export default {
         },
         {
           title: "制品大小",
+          i18nKey: "Storage.ProductSize",
           dataIndex: "sizeInBytes",
           sorter: true,
           scopedSlots: { customRender: "sizeInBytes" },
@@ -247,84 +265,108 @@ export default {
       vulnerColumns: [
         {
           title: "CVE编号",
+          i18nKey: "Storage.CVENumber",
           dataIndex: "name",
           scopedSlots: { customRender: "name" },
         },
         {
           title: "漏洞等级",
+          i18nKey: "Storage.VulnerabilityLevel",
           dataIndex: "highestSeverityText",
           scopedSlots: { customRender: "highestSeverityText" },
         },
         {
           title: "CvssV2评分",
+          i18nKey: "Storage.CvssV2Score",
           dataIndex: "cvssV2",
           scopedSlots: { customRender: "v2_exploitabilityScore" },
         },
         {
           title: "CvssV3评分",
+          i18nKey: "Storage.CvssV3Score",
           dataIndex: "cvssV3",
           scopedSlots: { customRender: "v3_exploitabilityScore" },
         },
         {
           title: "引入版本",
+          i18nKey: "Storage.ImportVersion",
           scopedSlots: { customRender: "versionStartIncluding" },
         },
         {
           title: "建议修复版本",
+          i18nKey: "Storage.RecommendedFixVersion",
           scopedSlots: { customRender: "versionEndExcluding" },
         },
       ],
       vulnerabilityColumns: [
         {
           title: "漏洞编号",
+          i18nKey: "Storage.VulnerabilityNumber",
           dataIndex: "uuid",
           scopedSlots: { customRender: "uuid" },
+          width: 180,
         },
         {
           title: "引入时间",
+          i18nKey: "Storage.IntroducingTime",
           dataIndex: "created",
           scopedSlots: { customRender: "created" },
           align: "center",
+          width: 180,
         },
         {
           title: "CvssV2评分",
+          i18nKey: "Storage.CvssV2Score",
           dataIndex: "cvssV2Score",
           scopedSlots: { customRender: "cvssV2Score" },
           align: "center",
+          width: 130,
         },
         {
           title: "CvssV2漏洞等级",
+          i18nKey: "Storage.CvssV2VulnerabilityLevel",
           dataIndex: "cvssV2Severity",
           scopedSlots: { customRender: "cvssV2Severity" },
           align: "center",
+          width: 200,
         },
         {
           title: "CvssV3评分",
+          i18nKey: "Storage.CvssV3Score",
           dataIndex: "cvssV3Score",
           scopedSlots: { customRender: "cvssV3Score" },
           align: "center",
+          width: 130,
         },
         {
           title: "CvssV3漏洞等级",
+          i18nKey: "Storage.CvssV3VulnerabilityLevel",
           dataIndex: "cvssV3Severity",
           scopedSlots: { customRender: "cvssV3Severity" },
           align: "center",
+          width: 200,
         },
         {
           title: "最高漏洞等级",
+          i18nKey: "Storage.HighestVulnerabilityLevel",
           dataIndex: "highestSeverityText",
           scopedSlots: { customRender: "highestSeverityText" },
           align: "center",
+          width: 220,
         },
         {
           title: "建议修复版本",
+          i18nKey: "Storage.RecommendedFixVersion",
           dataIndex: "versionEndExcluding",
           scopedSlots: { customRender: "versionEndExcluding" },
+          width: 200,
         },
         {
           title: "操作",
+          i18nKey: "Storage.Operation",
           dataIndex: "operation",
           scopedSlots: { customRender: "operation" },
+          width: 280,
         },
       ],
       tabActiveKey: 1,
@@ -338,14 +380,17 @@ export default {
       metadataTypes: [
         {
           label: "数字",
+          i18nKey: "Storage.TheNumbers",
           value: "NUMERICAL",
         },
         {
           label: "字符串",
+          i18nKey: "Storage.String",
           value: "STRING",
         },
         {
           label: "文本",
+          i18nKey: "Storage.Text",
           value: "TEXT",
         },
         {
@@ -369,13 +414,46 @@ export default {
       },
       settingsEnabled: false,
       settingVisible: false,
+      eventSettingEnabled: false,
+      eventPageVisible: false,
+      key:0
+    }
+  },
+  computed: {
+    i18nVulnerabilityColumns() {
+      return this.vulnerabilityColumns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      });
+    },
+    i18nMetadataTypes() {
+      return this.metadataTypes.map(item => {
+        if (item.i18nKey) {
+          item.title = this.$t(item.i18nKey);
+        }
+        return item;
+      });
     }
   },
   created() {
-    this.createData()
-    this.getStorage(this.folibRepository.storageId)
+    this.myMounted()
   },
   methods: {
+    handleMenuClick(type){
+      this.$emit("handleMenuClick",type,this.folibRepository.id)
+    },
+    myMounted(){
+      this.key ++
+      this.createData()
+      this.getStorage(this.folibRepository.storageId)
+      this.isShowEdit = (isAdmin() || this.storageAdmin === this.$store.state.user.name)
+      this.isShowDelete = (isAdmin() || this.storageAdmin === this.$store.state.user.name) && (this.folibRepository.allowsDeletion || this.folibRepository.allowsForceDeletion)
+    },
+    treeSelect(key,e){
+      this.$refs.store.treeSelect(key, e)
+    },
     searchBoxMouseStatus(bool) {
       this.mouseEnter = bool;
     },
@@ -471,8 +549,9 @@ export default {
       }
     },
     successMsg(message) {
+      console.log(message, '--------')
       if (!message) {
-        message = "操作成功";
+        message = this.$t('Storage.OperationSuccessful');
       }
       this.$notification["success"]({
         message: message,
@@ -505,6 +584,7 @@ export default {
     },
     getStorage(id) {
       getLibraryFilter(id).then(response => {
+        this.eventSettingEnabled = isAdmin() || response.admin === this.$store.state.user.name
         this.settingsEnabled = isAdmin() || response.admin === this.$store.state.user.name
       })
     },
@@ -521,7 +601,7 @@ $md: 768px;
     justify-content: center;
     align-items: center;
     color: #fafafa;
-    position: relative;
+    //position: relative;
     overflow: hidden;
     width: 100%;
   }

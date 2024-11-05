@@ -36,6 +36,16 @@ public class Configuration {
 
     private final int port;
 
+    /**
+     * 全局节点传输速率（KB/s）
+     */
+    private Integer kbps;
+
+    /**
+     * 节点传输切片大小（MB）,缺省值50MB
+     */
+    private Long sliceMbSize;
+
     private final ProxyConfiguration proxyConfiguration;
 
     private final SessionConfiguration sessionConfiguration;
@@ -78,6 +88,8 @@ public class Configuration {
         revision = delegate.getRevision();
         baseUrl = delegate.getBaseUrl();
         port = delegate.getPort();
+        kbps = delegate.getKbps();
+        sliceMbSize = delegate.getSliceMbSize();
         proxyConfiguration = immuteProxyConfiguration(delegate.getProxyConfiguration());
         sessionConfiguration = immuteSessionConfiguration(delegate.getSessionConfiguration());
         remoteRepositoriesConfiguration = immuteRemoteRepositoriesConfiguration(
@@ -161,6 +173,14 @@ public class Configuration {
 
     public int getPort() {
         return port;
+    }
+
+    public Integer getKbps() {
+        return kbps;
+    }
+
+    public Long getSliceMbSize() {
+        return sliceMbSize;
     }
 
     public ProxyConfiguration getProxyConfiguration() {

@@ -9,7 +9,7 @@ export function getLayoutType(item) {
         layoutCast = item.subLayout ? item.subLayout : 'npm'
         return layoutCast
     }
-    return layout === "NuGet" ? "nuget" : layout === "Raw" ? "raw" : layout === "PyPi" ? "pypi" : layout === "Docker" ? "docker" : layout === "rpm" ? "rpm" : layout
+    return layout === "NuGet" ? "nuget" : layout === "Raw" ? "raw" : layout === "PyPi" ? "pypi" : layout === "Docker" ? "docker" : layout ==="GitLfs" ? "gitlfs" : layout ==="HuggingFace" ? "huggingface" : layout === "Pub" ? "pub" : layout === "rpm" ? "rpm" : layout
 }
 
 export function getFileImage(layout, name) {
@@ -29,7 +29,7 @@ export function getLayoutType2(layout, repository, type) {
         layoutCast = repository.subLayout ? repository.subLayout : 'npm'
         return layoutCast
     }
-    return layout === "NuGet" ? "nuget" : layout === "Raw" ? "raw" : layout === "PyPi" ? "pypi" : layout === "Docker" ? "docker" : layout === "rpm" ? "rpm" : layout
+    return layout === "NuGet" ? "nuget" : layout === "Raw" ? "raw" : layout === "PyPi" ? "pypi" : layout === "Docker" ? "docker" : layout ==="GitLfs" ? "gitlfs" : layout ==="HuggingFace" ? "huggingface" : layout === "Pub" ? "pub" : layout === "rpm" ? "rpm" : layout
 }
 
 export function genLayoutType(layout) {
@@ -38,12 +38,11 @@ export function genLayoutType(layout) {
     if (layout === "maven" || layout === "ivy" || layout === "sbt" || layout === "gradle") {
         return "Maven 2"
     }
-    if (layout === "npm" || layout === "yarn") {
+    if (layout === "npm" || layout === "yarn" || layout === "ohpm") {
 
         return "npm"
     }
-    return layout === "nuget" ? "NuGet" : layout === "raw" ? "Raw" : layout === "pypi" ? "PyPi" : layout === "docker" ? "Docker" : layout === "rpm" ? "rpm" : layout;
-
+    return layout === "nuget" ? "NuGet" : layout === "raw" ? "Raw" : layout === "pypi" ? "PyPi" : layout === "docker" ? "Docker" : layout === "rpm" ? "rpm" : layout ==="gitlfs" ? "GitLfs" : layout ==="huggingface" ? "HuggingFace" : layout === "Pub" ? "pub" : layout;
 }
 
 export function groupRepositoriesBuild(repositories) {
@@ -80,8 +79,11 @@ export function getFileType(name) {
 }
 
 export function fileSizeConver(limit) {
+    limit = Math.abs(limit)
     var size = "";
-    if (limit < 0.1 * 1024) {
+    if (limit === 0) {
+        size = limit.toFixed(2) + "B";
+    } else if (limit < 0.1 * 1024) {
         //如果小于0.1KB转化成B
         size = limit.toFixed(2) + "B";
     } else if (limit < 0.1 * 1024 * 1024) {
@@ -93,6 +95,36 @@ export function fileSizeConver(limit) {
     } else {
         //其他转化成GB
         size = (limit / (1024 * 1024 * 1024)).toFixed(2) + "GB";
+    }
+    var sizestr = size + "";
+    var len = sizestr.indexOf("\.");
+    var dec = sizestr.substr(len + 1, 2);
+    if (dec == "00") {
+        //当小数点后为00时 去掉小数部分
+        return sizestr.substring(0, len) + sizestr.substr(len + 3, 2);
+    }
+    return sizestr;
+}
+
+export function fileSizeConverUnit(limit, unit) {
+    limit = Math.abs(limit)
+    var size = "";
+    switch (unit) {
+        case "B":
+            size = limit.toFixed(2);
+            break;
+        case "KB":
+            size = (limit / 1024).toFixed(2);
+            break;
+        case "MB":
+            size = (limit / (1024 * 1024)).toFixed(2);
+            break;
+        case "GB":
+            size = (limit / (1024 * 1024 * 1024)).toFixed(2);
+            break;
+        default:
+            size = (limit / (1024 * 1024 * 1024)).toFixed(2);
+            break;
     }
     var sizestr = size + "";
     var len = sizestr.indexOf("\.");

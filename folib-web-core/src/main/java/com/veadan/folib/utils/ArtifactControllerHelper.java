@@ -1,6 +1,7 @@
 package com.veadan.folib.utils;
 
 import com.alibaba.fastjson.JSON;
+import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.exception.ExceptionHandlingOutputStream;
 import com.veadan.folib.io.ByteRangeInputStream;
@@ -22,6 +23,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -185,7 +187,7 @@ public class ArtifactControllerHelper
     }
 
     public static void provideArtifactHeaders(HttpServletResponse response,
-                                              RepositoryPath path)
+                                              Path path)
             throws IOException
     {
         if (path == null || Files.notExists(path) || Files.isDirectory(path))
@@ -193,41 +195,23 @@ public class ArtifactControllerHelper
             response.setStatus(HttpStatus.NOT_FOUND.value());
             return;
         }
-        RepositoryFileAttributes fileAttributes = Files.readAttributes(path, RepositoryFileAttributes.class);
         if (setContentLength(response)) {
-            response.setHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(fileAttributes.size()));
+            response.setHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(Files.size(path)));
         }
         response.setHeader(HttpHeaders.LAST_MODIFIED, DateTimeFormatter.RFC_1123_DATE_TIME.format(
-                ZonedDateTime.ofInstant(fileAttributes.lastModifiedTime().toInstant(), ZoneId.systemDefault())));
+                ZonedDateTime.ofInstant(Files.getLastModifiedTime(path).toInstant(), ZoneId.systemDefault())));
 
         // TODO: This is far from optimal and will need to have a content type approach at some point:
         String contentType = getContentType(path);
         response.setContentType(contentType);
 
         response.setHeader(HttpHeaders.ACCEPT_RANGES, "bytes");
-
-//        path.getFileSystem().provider().resolveChecksumPathMap(path).forEach((key, value) -> {
-//            String checksumValue;
-//            try
-//            {
-//                checksumValue = new String(Files.readAllBytes(value), StandardCharsets.UTF_8).trim();
-//            }
-//            catch (IOException ioe)
-//            {
-//                return;
-//            }
-//
-//            String checksumName = String.format("Checksum-%s",
-//                                                key.toUpperCase().replace("-", ""));
-//
-//            response.setHeader(checksumName, checksumValue);
-//        });
     }
 
-    private static String getContentType(RepositoryPath path)
+    private static String getContentType(Path path)
             throws IOException
     {
-        if (RepositoryFiles.isChecksum(path) || (path.getFileName().toString().endsWith(".properties")))
+        if (path.getFileName().toString().endsWith(".properties"))
         {
             return MediaType.TEXT_PLAIN_VALUE;
         }
@@ -238,7 +222,7 @@ public class ArtifactControllerHelper
         else if (path.getFileName().toString().endsWith(".gz"))
         {
             return com.google.common.net.MediaType.GZIP.toString();
-        } else if (path.toString().contains("/manifest/") && path.getFileName().toString().startsWith("sha256:")) {
+        } else if (DockerArtifactCoordinates.isManifestPath(path)) {
             //docker repository v2
             ImageManifest imageManifest = JSON.parseObject(Files.readString(path), ImageManifest.class);
             return imageManifest.getMediaType();

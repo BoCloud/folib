@@ -1,15 +1,15 @@
 package com.veadan.folib.users.userdetails;
 
-import com.beust.jcommander.internal.Sets;
 import com.google.common.base.Objects;
 import com.veadan.folib.authorization.dto.Role;
-import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.users.domain.Privileges;
+import com.veadan.folib.users.dto.AccessModel;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class SpringSecurityUser
         implements UserDetails {
@@ -102,7 +102,14 @@ public class SpringSecurityUser
 
     @Override
     public Collection<Privileges> getAuthorities() {
-        return roles.stream().flatMap(r -> r.getAccessModel().getApiAuthorities().stream()).collect(Collectors.toSet());
+        return roles.stream().flatMap(r -> {
+            AccessModel accessModel = r.getAccessModel();
+            if (accessModel != null){
+                return accessModel.getApiAuthorities().stream();
+            }else {
+                return Stream.empty();
+            }
+        }).collect(Collectors.toSet());
     }
 
     public Collection<Privileges> getStorageAuthorities(String path) {
@@ -163,7 +170,7 @@ public class SpringSecurityUser
         return enabled.equals(user.enabled) &&
                 Objects.equal(username, user.username) &&
 //                Objects.equal(password, user.password) &&
-                Objects.equal(roles, user.roles) &&
+//                Objects.equal(roles, user.roles) &&
                 Objects.equal(url, user.url) &&
                 Objects.equal(securityKey, user.securityKey) &&
                 Objects.equal(sourceId, user.sourceId);
@@ -171,11 +178,13 @@ public class SpringSecurityUser
 
     @Override
     public int hashCode() {
-        String[] hashCodeTargets = new String[roles.size() + 5];
+        String[] hashCodeTargets = new String[5];
+        int i = 0;
+        /*String[] hashCodeTargets = new String[roles.size() + 5];
         int i = 0;
         for (Role role : roles) {
             hashCodeTargets[i++] = role.getName();
-        }
+        }*/
         hashCodeTargets[i++] = String.valueOf(username);
 //        hashCodeTargets[i++] = String.valueOf(password);
         hashCodeTargets[i++] = String.valueOf(enabled);

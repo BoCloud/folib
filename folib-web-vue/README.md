@@ -16,9 +16,13 @@ yarn run serve
 ```shell
 tar -cvf dist.tar dist
 docker build -t folib/folib-web .
-
+docker stop folib-web
+docker rm folib-web
 docker run -ti -d --restart=always   -p 9527:9527   --name folib-web folib/folib-web:latest
 
 docker run -ti -d --restart=always   -p 9527:9527 -v/opt/folib/folib-web/:/etc/nginx/conf.d/  --name folib-web folib/folib-web:latest
 
 ```
+
+
+

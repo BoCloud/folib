@@ -2,8 +2,10 @@ package com.veadan.folib.promotion;
 
 import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.fastjson.JSON;
+import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.dto.ArtifactDto;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
@@ -18,6 +20,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 
 @Slf4j
@@ -57,16 +60,20 @@ public class PullArtifactTask implements Callable<String> {
 
     @Override
     public String call() throws Exception {
+        Response response = null;
         try {
+            RepositoryPath destPath = repositoryPathResolver.resolve(targetStorageId, targetRepostoryId, path);
+            if (RepositoryFiles.isChecksum(destPath)) {
+                return "ok";
+            }
             Client client = clientPool.getRestClient();
             WebTarget target = client.target(srcUrl);
             Invocation.Builder builder = target.request();
             securityComponent.securityTokenHeader(builder);
-            Response response = builder.post(Entity.entity(artifac, MediaType.APPLICATION_JSON));
-            RepositoryPath destPath = repositoryPathResolver.resolve(targetStorageId, targetRepostoryId, path);
+            response = builder.post(Entity.entity(artifac, MediaType.APPLICATION_JSON));
             boolean isDocker = destPath.getRepository().getLayout().equalsIgnoreCase("docker");
             if (isDocker) {
-                if (!path.contains("sha256") && !path.endsWith(".sha256")) {
+                if (!path.contains("sha256") && !DockerArtifactCoordinates.exclude(path)) {
                     try (InputStream is = response.readEntity(InputStream.class);) {
                         Files.copy(is, destPath);
                     }
@@ -91,22 +98,27 @@ public class PullArtifactTask implements Callable<String> {
             if (!rePullResultFlag) {
                 throw new Exception(e.getMessage());
             }
+        } finally {
+            if (Objects.nonNull(response)) {
+                response.close();
+            }
         }
         log.info("File {} pulled", JSON.toJSONString(artifac));
         return "ok";
     }
 
     private boolean reTryPull() {
+        Response response = null;
         try {
             Client client = clientPool.getRestClient();
             WebTarget target = client.target(srcUrl);
             Invocation.Builder builder = target.request();
             securityComponent.securityTokenHeader(builder);
-            Response response = builder.post(Entity.entity(artifac, MediaType.APPLICATION_JSON));
+            response = builder.post(Entity.entity(artifac, MediaType.APPLICATION_JSON));
             RepositoryPath destPath = repositoryPathResolver.resolve(targetStorageId, targetRepostoryId, path);
             boolean isDocker = destPath.getRepository().getLayout().equalsIgnoreCase("docker");
             if (isDocker) {
-                if (!path.contains("sha256") && !path.endsWith(".sha256")) {
+                if (!path.contains("sha256") && !DockerArtifactCoordinates.exclude(path)) {
                     try (InputStream is = response.readEntity(InputStream.class);) {
                         Files.copy(is, destPath);
                     }
@@ -121,6 +133,10 @@ public class PullArtifactTask implements Callable<String> {
             return true;
         } catch (Exception e) {
             return false;
+        } finally {
+            if (Objects.nonNull(response)) {
+                response.close();
+            }
         }
     }
 }

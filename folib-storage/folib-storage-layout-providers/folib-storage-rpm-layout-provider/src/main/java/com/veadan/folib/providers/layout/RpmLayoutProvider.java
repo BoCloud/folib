@@ -9,6 +9,7 @@ import com.veadan.folib.repository.RepositoryManagementStrategy;
 import com.veadan.folib.repository.RpmRepositoryFeatures;
 import com.veadan.folib.repository.RpmRepositoryManagementStrategy;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
+import org.apache.tinkerpop.gremlin.structure.T;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -53,26 +54,24 @@ public class RpmLayoutProvider extends AbstractLayoutProvider<RpmArtifactCoordin
     @PostConstruct
     public void register()
     {
-        headerMappingRegistry.register(ALIAS, USER_AGENT_PREFIX);
+       // headerMappingRegistry.register(ALIAS, USER_AGENT_PREFIX);
         logger.info("Registered layout provider '{}' with alias '{}'.", getClass().getCanonicalName(), ALIAS);
     }
 
-    protected RpmArtifactCoordinates getArtifactCoordinates(RepositoryPath path)
+    @Override
+    public RpmArtifactCoordinates getArtifactCoordinates(RepositoryPath path)
             throws IOException    {
         return RpmArtifactCoordinates.parse(RepositoryFiles.relativizePath(path));
     }
 
 
     @Override
-    public boolean isArtifactMetadata(RepositoryPath path)
-    {
-        return false;
-    }
+    public boolean isArtifactMetadata(RepositoryPath path) {return false;}
 
     public boolean isRpmMetadata(RepositoryPath path)
     {
-//        return !path.getFileName().toString().endsWith(".rpm");
-        return true;
+        return !path.getFileName().toString().endsWith(".rpm");
+       // return true;
     }
 
     @Override
@@ -106,6 +105,7 @@ public class RpmLayoutProvider extends AbstractLayoutProvider<RpmArtifactCoordin
                     }
 
                     break;
+
                 default:
 
                     break;

@@ -4,25 +4,28 @@
     <a-card :bordered="false" class="vulnerabilities-card" :bodyStyle="{ padding: 0 }" style="margin-bottom: 20px">
       <a-descriptions v-if="artifactData.layout !== 'Docker'" title="" :column="2"
         style="word-break: break-all;word-wrap: break-word;">
-        <a-descriptions-item label="所属空间">
+        <a-descriptions-item :label="$t('Artifacts.OwningSpace')">
           {{ artifactData.artifact.storageId }}
         </a-descriptions-item>
-        <a-descriptions-item label="所属仓库">
+        <a-descriptions-item :label="$t('Artifacts.OwnedWarehouse')">
           {{ artifactData.artifact.repositoryId }}
         </a-descriptions-item>
-        <a-descriptions-item label="制品路径">
+        <a-descriptions-item :label="$t('Artifacts.ProductPath')">
           {{ artifactData.artifact.artifactPath }}
         </a-descriptions-item>
-        <a-descriptions-item label="文件大小">
+        <a-descriptions-item :label="$t('Artifacts.FileSize')">
           {{ fileSizeConver(artifactData.artifact.sizeInBytes) }}
         </a-descriptions-item>
-        <a-descriptions-item label="修改时间">
+        <a-descriptions-item :label="$t('Artifacts.ModifyTheTime')">
           {{ artifactData.lastModified }}
         </a-descriptions-item>
-        <a-descriptions-item label="使用时间">
+        <a-descriptions-item :label="$t('Artifacts.ServiceTime')">
           {{ artifactData.lastUsedTime }}
         </a-descriptions-item>
-        <a-descriptions-item label="下载次数">
+        <a-descriptions-item :label="$t('Artifacts.ScanTime')">
+          {{ artifactData.scanTime }}
+        </a-descriptions-item>
+        <a-descriptions-item :label="$t('Artifacts.DownloadTimes')">
           {{ artifactData.downloadCount }}
         </a-descriptions-item>
       </a-descriptions>
@@ -36,37 +39,40 @@
         </template>
       </a-descriptions>
       <a-descriptions v-if="artifactData.layout === 'Docker'" title="" :column="2">
-        <a-descriptions-item label="所属空间">
+        <a-descriptions-item :label="$t('Artifacts.OwningSpace')">
           {{ artifactData.artifact.storageId }}
         </a-descriptions-item>
-        <a-descriptions-item label="所属仓库">
+        <a-descriptions-item :label="$t('Artifacts.OwnedWarehouse')">
           {{ artifactData.artifact.repositoryId }}
         </a-descriptions-item>
-        <a-descriptions-item label="镜像名称">
-          {{ artifactData.artifact.artifactCoordinates.imageName }}
+        <a-descriptions-item :label="$t('Artifacts.ImageName')">
+          {{ artifactData.artifact.artifactCoordinates.name }}
         </a-descriptions-item>
-        <a-descriptions-item label="版本号">
+        <a-descriptions-item :label="$t('Artifacts.VersionNumber')">
           {{ artifactData.artifact.artifactCoordinates.version }}
         </a-descriptions-item>
-        <a-descriptions-item label="文件大小">
+        <a-descriptions-item :label="$t('Artifacts.FileSize')">
           {{ fileSizeConver( artifactData.size) }}
         </a-descriptions-item>
-        <a-descriptions-item label="SHA-256">
+        <a-descriptions-item :label="SHA-256">
           {{ artifactData.sha256 }}
         </a-descriptions-item>
-        <a-descriptions-item label="修改时间">
+        <a-descriptions-item :label="$t('Artifacts.ModifyTheTime')">
           {{ artifactData.lastModified }}
         </a-descriptions-item>
-        <a-descriptions-item label="层数">
+        <a-descriptions-item :label="$t('Artifacts.ScanTime')">
+          {{ artifactData.scanTime }}
+        </a-descriptions-item>
+        <a-descriptions-item :label="$t('Artifacts.NumberOfFloors')">
           {{ artifactData.manifest.layers.length }}
         </a-descriptions-item>
-        <a-descriptions-item label="制作Docker版本">
+        <a-descriptions-item :label="$t('Artifacts.MakeADockerVersion')">
           {{ artifactData.manifestConfig.docker_version }}
         </a-descriptions-item>
-        <a-descriptions-item label="镜像OS">
+        <a-descriptions-item :label="$t('Artifacts.MirrorOS')">
           <a-tag> {{ artifactData.manifestConfig.os }}</a-tag>
         </a-descriptions-item>
-        <a-descriptions-item label="基础架构">
+        <a-descriptions-item :label="$t('Artifacts.TheInfrastructure')">
           {{ artifactData.manifestConfig.architecture }}
         </a-descriptions-item>
       </a-descriptions>
@@ -76,7 +82,7 @@
           <div class="bar-card">
             <div class="callout b-severity-unassigned">
               <div class="text">
-                <div class="text-muted">总数</div>
+                <div class="text-muted">{{ $t('Artifacts.Total') }}</div>
                 <strong>{{ artifactData.artifact.vulnerabilitiesCount }}</strong>
               </div>
             </div>
@@ -84,7 +90,7 @@
           <div class="bar-card">
             <div class="callout b-severity-critical">
               <div class="text">
-                <div class="text-muted">严重</div>
+                <div class="text-muted">{{ $t('Artifacts.Seriously') }}</div>
                 <strong>{{ artifactData.artifact.criticalVulnerabilitiesCount }}</strong>
               </div>
             </div>
@@ -92,7 +98,7 @@
           <div class="bar-card">
             <div class="callout b-severity-high">
               <div class="text">
-                <div class="text-muted">高危</div>
+                <div class="text-muted">{{ $t('Artifacts.HighRisk') }}</div>
                 <strong>{{ artifactData.artifact.highVulnerabilitiesCount }}</strong>
               </div>
             </div>
@@ -100,7 +106,7 @@
           <div class="bar-card">
             <div class="callout b-severity-medium">
               <div class="text">
-                <div class="text-muted">中危</div>
+                <div class="text-muted">{{ $t('Artifacts.MediumRisk') }}</div>
                 <strong>{{ artifactData.artifact.mediumVulnerabilitiesCount }}</strong>
               </div>
             </div>
@@ -108,7 +114,7 @@
           <div class="bar-card">
             <div class="callout b-severity-low">
               <div class="text">
-                <div class="text-muted">低危</div>
+                <div class="text-muted">{{ $t('Artifacts.LowRisk') }}</div>
                 <strong>{{ artifactData.artifact.lowVulnerabilitiesCount }}</strong>
               </div>
             </div>

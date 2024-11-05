@@ -8,12 +8,18 @@ import com.veadan.folib.users.domain.Privileges;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
 
 /**
  * @author 
  * @author veadan
  * @author Veadan
  */
+@Data
+@Builder
+@AllArgsConstructor
 public class PathPrivilegesDto
         implements Serializable, PathPrivileges
 {

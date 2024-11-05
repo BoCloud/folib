@@ -50,3 +50,4 @@ lib/*
 /folib-web-vue/node_modules/
 /folib-web-vue/dist/
 /folib-web-core/src/main/resources/ui/
+/folib-web-vue/yarn.lock

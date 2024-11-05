@@ -115,22 +115,22 @@ public class UserAdapter implements VertexEntityTraversalAdapter<User> {
     private EntityTraversal<Vertex, Vertex> unfoldUser(User entity) {
         EntityTraversal<Vertex, Vertex> t = __.<Vertex>identity();
 
-        if (entity.getPassword() != null) {
+        if (StringUtils.isNotBlank(entity.getPassword())) {
             t = t.property(single, "password", entity.getPassword());
         }
         if (StringUtils.isNotBlank(entity.getOriginalPassword())) {
             t = t.property(single, "originalPassword", entity.getOriginalPassword());
         }
-        if (entity.getUserType() != null) {
+        if (StringUtils.isNotBlank(entity.getUserType())) {
             t = t.property(single, "userType", entity.getUserType());
         }
-        if (entity.getEmail() != null) {
+        if (StringUtils.isNotBlank(entity.getEmail())) {
             t = t.property(single, "email", entity.getEmail());
         }
-        if (entity.getSecurityTokenKey() != null) {
+        if (StringUtils.isNotBlank(entity.getSecurityTokenKey())) {
             t = t.property(single, "securityTokenKey", entity.getSecurityTokenKey());
         }
-        if (entity.getSourceId() != null) {
+        if (StringUtils.isNotBlank(entity.getSourceId())) {
             t = t.property(single, "sourceId", entity.getSourceId());
         }
         if (entity.getLastUpdated() != null) {

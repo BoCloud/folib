@@ -13,7 +13,6 @@ import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.DictService;
 import com.veadan.folib.services.MavenIndexerService;
 import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -24,8 +23,6 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
@@ -63,7 +60,7 @@ public class MavenIndexerServiceImpl implements MavenIndexerService {
     private DictService dictService;
 
     @Inject
-    private ThreadPoolTaskExecutor asyncDownloadArtifactThreadPoolTaskExecutor;
+    private ThreadPoolTaskExecutor asyncFetchRemotePackageThreadPoolTaskExecutor;
 
     @Inject
     private ArtifactResolutionService artifactResolutionService;
@@ -100,7 +97,7 @@ public class MavenIndexerServiceImpl implements MavenIndexerService {
 
     @Async
     @Override
-    public void handlerMavenIndexerAndDownLoad(String username,Repository repository, String mavenIndexerPath, Integer batch, Integer poolSize) {
+    public void handlerMavenIndexerAndDownLoad(String username, Repository repository, String mavenIndexerPath, Integer batch, Integer poolSize) {
         if (Objects.isNull(batch)) {
             batch = 500;
         }
@@ -202,7 +199,7 @@ public class MavenIndexerServiceImpl implements MavenIndexerService {
                 if (Objects.nonNull(threadPoolTaskExecutor)) {
                     threadPoolTaskExecutor.submit(futureTask);
                 } else {
-                    asyncDownloadArtifactThreadPoolTaskExecutor.submit(futureTask);
+                    asyncFetchRemotePackageThreadPoolTaskExecutor.submit(futureTask);
                 }
             }
             for (FutureTask<String> task : futureTaskList) {
@@ -288,8 +285,8 @@ public class MavenIndexerServiceImpl implements MavenIndexerService {
     /**
      * 记录下载状态
      *
-     * @param key         key
-     * @param value       value
+     * @param key     key
+     * @param value   value
      * @param comment comment
      */
     private void handlerDownLoadStatus(String key, String value, String comment) {
@@ -308,11 +305,11 @@ public class MavenIndexerServiceImpl implements MavenIndexerService {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(corePoolSize);
         executor.setMaxPoolSize(maxPoolSize);
-        executor.setQueueCapacity(Integer.MAX_VALUE);
+        executor.setQueueCapacity(1000000);
         executor.setKeepAliveSeconds(120);
         executor.setThreadNamePrefix("customSyncArtifact_");
         executor.setWaitForTasksToCompleteOnShutdown(true);
-        executor.setAwaitTerminationSeconds(60);
+        executor.setAwaitTerminationSeconds(6);
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         executor.initialize();
         return executor;

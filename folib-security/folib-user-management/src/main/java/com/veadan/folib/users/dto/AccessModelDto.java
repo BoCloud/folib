@@ -8,12 +8,18 @@ import java.util.Set;
 
 import com.veadan.folib.users.domain.AccessModelData;
 import com.veadan.folib.users.domain.Privileges;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @author 
  * @author Veadan
  * @author veadan
  */
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class AccessModelDto
         implements AccessModel
 {

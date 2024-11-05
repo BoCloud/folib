@@ -15,7 +15,7 @@
             }"
           >
             <template #title>
-              <h5 class="mb-0 font-semibold">查询日志</h5>
+              <h5 class="mb-0 font-semibold">{{ $t('Setting.QueryLog') }}</h5>
             </template>
             <prism-editor
               class="my-editor2"
@@ -35,7 +35,7 @@
           <template #title>
             <a-row type="flex" align="middle">
               <a-col :span="24" :md="12">
-                <h6 class="font-semibold m-0">Gremlin查询</h6>
+                <h6 class="font-semibold m-0">Gremlin {{ $t('Setting.Query') }}</h6>
               </a-col>
               <a-col
                 :span="24"
@@ -47,7 +47,7 @@
                 "
               >
                 <a-button type="primary" @click="getGraphData()">
-                  查询
+                  {{ $t('Setting.Query') }}
                 </a-button>
               </a-col>
             </a-row>
@@ -65,16 +65,16 @@
                 </a-form-item>
               </a-col>
             </a-row>
-            <p>说明:</p>
+            <p>{{ $t('Setting.Note') }}</p>
             <ul class="pl-15 text-muted">
-              <li>Gremlin查询语言请看官方文档</li>
-              <li>默认查询内置的Gremlin数据库server端口为8182</li>
+              <li>Gremlin {{ $t('Setting.SeeOfficialDocument') }}</li>
+              <li>{{ $t('Setting.8182Port') }}</li>
             </ul>
           </a-form>
         </a-card>
         <a-card :bordered="false" class="header-solid mb-24">
           <template #title>
-            <h5 class="mb-0 font-semibold">拓扑结果</h5>
+            <h5 class="mb-0 font-semibold">{{ $t('Setting.TopologicalResult') }}</h5>
           </template>
           <div class="g6-x" id="containerG6" ref="containerG6"></div>
         </a-card>
@@ -390,7 +390,6 @@ export default {
       });
       // 鼠标事件
       this.graph.on("node:mouseenter", (e) => {
-        // debugger;
         const globalFontSize = 8;
 
         const item = e.item;

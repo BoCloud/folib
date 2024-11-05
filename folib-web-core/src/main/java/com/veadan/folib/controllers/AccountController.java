@@ -2,25 +2,36 @@ package com.veadan.folib.controllers;
 
 import javax.inject.Inject;
 
+import com.veadan.folib.authorization.dto.Role;
+import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.controllers.users.UserController;
 import com.veadan.folib.controllers.users.support.UserOutput;
+import com.veadan.folib.domain.UserRepositoryPermission;
 import com.veadan.folib.forms.users.UserForm;
 import com.veadan.folib.domain.User;
+import com.veadan.folib.storage.Storage;
 import com.veadan.folib.users.domain.Privileges;
+import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.dto.UserDto;
+import com.veadan.folib.users.security.AuthoritiesProvider;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.EncodedPasswordUser;
 import com.veadan.folib.users.service.impl.DatabaseUserService.Database;
+import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.RSAUtils;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.*;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -43,15 +54,21 @@ public class AccountController
 {
 
     @Inject
-    @Database
+    @RelationalDatabaseUserService.RelationalDatabase
     private UserService userService;
 
     @Inject
     private PasswordEncoder passwordEncoder;
 
     @Inject
+    private ConfigurationManager configurationManager;
+
+    @Inject
     private RSAUtils rsaUtils;
-    
+    @Autowired
+    @Lazy
+    private AuthoritiesProvider authoritiesProvider;
+
     @ApiOperation(value = "获取当前登录用户的帐户详细信息")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "Returns account details"),
                             @ApiResponse(code = 403, message = "Unauthenticated access or user account has been disabled"),
@@ -129,9 +146,22 @@ public class AccountController
     @GetMapping(value = "/permission/{storageId}/{repositoryId}",
             produces = { MediaType.APPLICATION_JSON_VALUE })
     @ResponseBody
-    public ResponseEntity<Set<String>> getStorageAndRepositoryPermission(Authentication authentication, @ApiParam(value = "The storageId", required = true) @PathVariable String storageId, @ApiParam(value = "The repositoryId", required = true) @PathVariable String repositoryId) {
-        SpringSecurityUser userDetails = (SpringSecurityUser)authentication.getPrincipal();
-        Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(storageId, repositoryId, null);
-        return ResponseEntity.ok(storageAuthorities.stream().map(Privileges::getAuthority).collect(Collectors.toSet()));
+    public ResponseEntity<UserRepositoryPermission> getStorageAndRepositoryPermission(Authentication authentication, @ApiParam(value = "The storageId", required = true) @PathVariable String storageId, @ApiParam(value = "The repositoryId", required = true) @PathVariable String repositoryId) {
+        Storage storage = configurationManager.getStorage(storageId);
+        UserRepositoryPermission userRepositoryPermission = null;
+        if (authentication == null) {
+            Authentication authentication1 = SecurityContextHolder.getContext().getAuthentication();
+            if (!authentication1.isAuthenticated() || authentication1 instanceof AnonymousAuthenticationToken) {
+                Role anonymousRole = authoritiesProvider.getRuntimeRole(SystemRole.ANONYMOUS.name());
+                Set<Privileges> pathAuthorities = anonymousRole.getAccessModel().getPathAuthorities(storageId, repositoryId, null);
+                userRepositoryPermission = UserRepositoryPermission.builder().storageAdmin(storage.getAdmin()).permissions(pathAuthorities.stream().map(Privileges::getAuthority).collect(Collectors.toSet())).build();
+            }
+        }else {
+            SpringSecurityUser userDetails = (SpringSecurityUser)authentication.getPrincipal();
+            Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(storageId, repositoryId, null);
+            userRepositoryPermission = UserRepositoryPermission.builder().storageAdmin(storage.getAdmin()).permissions(storageAuthorities.stream().map(Privileges::getAuthority).collect(Collectors.toSet())).build();
+        }
+
+        return ResponseEntity.ok(userRepositoryPermission);
     }
 }

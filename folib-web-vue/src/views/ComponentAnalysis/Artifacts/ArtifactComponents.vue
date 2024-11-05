@@ -3,13 +3,13 @@
     <a-card :bordered="false" style="margin-top: 20px; margin-bottom: 20px">
       <div class="mx-25 search">
         <a-col :span="24" class="text-right">
-          <a-input-search placeholder="输入组件名称查询" class="v-search" v-model="queryParams.searchKeyword" @search="handheTableSearch()" />
+          <a-input-search :placeholder="$t('Artifacts.componentNameQuery')" class="v-search" v-model="queryParams.searchKeyword" @search="handheTableSearch()" />
         </a-col>
       </div>
       <a-table
         rowKey="uuid"
         class="mt-20"
-        :columns="columns"
+        :columns="i18nColumns"
         :data-source="componentsData"
         @change="handleChangeTable"
         :scroll="{ x: true }"
@@ -55,26 +55,31 @@ export default {
       columns: [
         {
           title: "组件名称",
+          i18nKey: 'Artifacts.ComponentName',
           dataIndex: "name",
           scopedSlots: { customRender: "name" },
         },
         {
           title: "版本",
+          i18nKey: 'Artifacts.VersionNumber',
           dataIndex: "version",
           width: "200px",
         },
         {
           title: "组",
+          i18nKey: 'Artifacts.Group',
           dataIndex: "groupId",
-        }, 
+        },
         {
           title: "许可证",
+          i18nKey: 'Artifacts.Licence',
           dataIndex: "license",
           scopedSlots: { customRender: "license" },
           width: "200px",
         },
         {
           title: "漏洞",
+          i18nKey: 'Artifacts.Vulnerability',
           dataIndex: "vulnerabilitiesCount",
           scopedSlots: { customRender: "vulnerabilitiesCount" },
           width: "200px",
@@ -90,6 +95,16 @@ export default {
         searchKeyword: "",
       },
     };
+  },
+  computed: {
+    i18nColumns() {
+      return this.columns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    },
   },
   watch: {
     artifactData() {

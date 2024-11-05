@@ -100,10 +100,10 @@
 
     <!-- <a-card :bordered="false" class="header-solid h-full" :bodyStyle="{ padding: 0 }"> -->
     <a-tabs class="tabs-sliding" default-active-key="1" @change="handleChangeTabs">
-      <a-tab-pane key="1" tab="总览">
+      <a-tab-pane key="1" :tab="$t('Module.GeneralView')">
         <ComponentDashboard :component="component" v-if="tabActive == 1"></ComponentDashboard>
       </a-tab-pane>
-      <a-tab-pane key="2" tab="漏洞">
+      <a-tab-pane key="2" :tab="$t('Module.Vulnerability')">
         <ComponentVulnerabilities :component="component" v-if="tabActive == 2"></ComponentVulnerabilities>
       </a-tab-pane>
     </a-tabs>

@@ -1,17 +1,20 @@
 <template>
   <form onsubmit="event.preventDefault();" role="search" @mouseover="mouse(true)" @mouseleave="mouse(false)">
     <label for="search">Search for stuff</label>
-    <input id="search" type="search" placeholder="搜索制品..." required v-model="value" />
+    <input id="search" type="search" :placeholder="$t('Tools.SearchForProducts')" required v-model="value" />
     <a-dropdown>
       <a-menu slot="overlay" @click="handleSearchMenuClick">
         <a-menu-item :key="1">
-          普通
+          {{ $t('Tools.Ordinary') }}
         </a-menu-item>
         <a-menu-item :key="2">
-          元数据
+          {{ $t('Tools.Metadata') }}
+        </a-menu-item>
+        <a-menu-item :key="3">
+          {{ $t('Tools.DigestChecksum') }}
         </a-menu-item>
       </a-menu>
-      <a-button> 维度 <a-icon type="down" /> </a-button>
+      <a-button> {{ $t('Tools.Dimension') }} <a-icon type="down" /> </a-button>
     </a-dropdown>
   </form>
 </template>
@@ -44,10 +47,11 @@ $rad: 60px;
 $dur: 0.3s;
 $colorDark: #2f2f2f;
 $colorLight: rgba(255, 255, 255, 1);
-$colorBrand: #aeb0b9;
+$colorBrand: #2c76ff;
+//$colorBrand: #aeb0b9;
 $ff: 'Lato', sans-serif;
 $h: 50px;
-$btnWidth: 100px;
+$btnWidth: 120px;
 $fs: 17px;
 $bez: cubic-bezier(0, 0, 0.43, 1.49);
 
@@ -121,7 +125,7 @@ button {
 
 input:not(:placeholder-shown) {
   border-radius: $rad 0 0 $rad;
-  width: calc(100% - 90px);
+  width: calc(100% - 110px);
 
   +button {
     display: block;

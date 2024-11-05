@@ -3,6 +3,7 @@ package com.veadan.folib.security.vote;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.veadan.folib.authorization.domain.RoleData;
+import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.controllers.BrowseController;
 import com.veadan.folib.services.ConfigurationManagementService;
@@ -24,6 +25,7 @@ import org.springframework.security.access.ConfigAttribute;
 import org.springframework.security.access.expression.method.ExpressionBasedPreInvocationAdvice;
 import org.springframework.security.access.prepost.PreInvocationAuthorizationAdviceVoter;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.jaas.JaasGrantedAuthority;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
@@ -32,8 +34,10 @@ import javax.inject.Inject;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.veadan.folib.web.Constants.*;
+import static org.apache.cassandra.auth.Roles.getRoles;
 
 /**
  * @author xuxinping
@@ -86,6 +90,9 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
                     return true;
                 }
                 repository = storage.getRepository(repositoryId);
+                if (Objects.isNull(repository)) {
+                    return true;
+                }
                 cacheUtil.put(key, repository);
             }
             return repository.isAllowAnonymous();
@@ -98,12 +105,33 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
             Collection<? extends GrantedAuthority> apiAuthorities = authentication.getAuthorities();
             logger.debug("Privileges for [{}] are [{}]", principal, apiAuthorities);
             if (!authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
+                if (!configurationManagementService.getConfiguration().getAdvancedConfiguration().isAllowAnonymous()) {
+                    return Collections.emptySet();
+                }
+                Role anonymousRole = authoritiesProvider.getRuntimeRole(SystemRole.ANONYMOUS.name());
+                Set<Privileges> anonymousApiAuthorities = anonymousRole.getAccessModel().getApiAuthorities();
+                String requestUri = UrlUtils.getRequestUri();
+                List<String> paths = Arrays.asList(ARTIFACT_ROOT_PATH, DOCKER_ROOT_PATH, BrowseController.ROOT_CONTEXT, STORAGE_ROOT_PATH);
+                if (paths.stream().noneMatch(requestUri::startsWith)) {
+                    return anonymousApiAuthorities;
+                }
+                if (storageId == null || repositoryId == null) {
+                    return anonymousApiAuthorities;
+                }
+                Set<Privileges> storageAuthorities = anonymousRole.getAccessModel().getPathAuthorities(requestUri);
+                List<GrantedAuthority> authorities = new ArrayList<>(anonymousApiAuthorities);
+                if (storageAuthorities.isEmpty()) {
+                    return anonymousApiAuthorities;
+                }else {
+                    authorities.remove(Privileges.ARTIFACTS_RESOLVE);
+                }
                 if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
                     if (Boolean.FALSE.equals(getRepositoryAllowAnonymousFromCacheOrLoad(storageId, repositoryId))) {
                         return Collections.emptySet();
                     }
                 }
-                return authoritiesProvider.getRuntimeRole(SystemRole.ANONYMOUS.name()).getAccessModel().getApiAuthorities();
+                authorities.addAll(storageAuthorities);
+                return authorities;
             } else if (!(principal instanceof SpringSecurityUser)) {
                 logger.warn("Unknown authentication principal type [{}]", principal.getClass());
                 return authentication.getAuthorities();

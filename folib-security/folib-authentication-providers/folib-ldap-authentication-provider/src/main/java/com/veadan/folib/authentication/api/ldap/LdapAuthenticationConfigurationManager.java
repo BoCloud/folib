@@ -89,12 +89,12 @@ public class LdapAuthenticationConfigurationManager
             AuthenticationItem item = list.get(i);
             if (item.getName().equalsIgnoreCase("ldapUserDetailsService"))
             {
-                item.setOrder(configuration.getEnableProvider() ? 1 : 0);
+//                item.setOrder(configuration.getEnableProvider() ? 1 : 0);
                 item.setEnabled(configuration.getEnableProvider());
             }
             else if(item.getName().equalsIgnoreCase("yamlUserDetailService"))
             {
-                item.setOrder(configuration.getEnableProvider() ? 0 : 1);
+//                item.setOrder(configuration.getEnableProvider() ? 0 : 1);
             }
         }
 

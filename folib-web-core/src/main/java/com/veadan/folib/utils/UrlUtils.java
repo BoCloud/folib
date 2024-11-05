@@ -1,14 +1,19 @@
 package com.veadan.folib.utils;
 
+import com.veadan.folib.scanner.common.exception.BusinessException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.servlet.http.HttpServletRequest;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Optional;
 
 /**
  * @author
  */
+@Slf4j
 public class UrlUtils {
 
     private UrlUtils() {
@@ -37,35 +42,55 @@ public class UrlUtils {
     }
 
 
-    public static void main(String[] args) {
-        String sourcePath = "";
-        String[] result = parsePath(sourcePath);
-        if (result != null) {
-            String srcStorageId = result[0];
-            String srcRepostoryId = result[1];
-            System.out.println("srcStorageId: " + srcStorageId);
-            System.out.println("srcRepostoryId: " + srcRepostoryId);
-        } else {
-            System.out.println("Invalid sourcePath format");
-        }
-    }
-
-    public static String[] parsePath(String artiactPath) {
+    public static String[] parsePath(String artifactPath) {
         try {
-            URL url = new URL(artiactPath);
+            URL url = new URL(artifactPath);
             String path = url.getPath();
             String hostUrl = url.getHost();
             String[] parts = path.split("/");
-            if (parts.length >= 0) {
-                String storageId = parts[1];
-                String repostoryId = parts[2];
-                return new String[]{storageId, repostoryId, hostUrl};
-            }
-
+            String storageId = parts[1];
+            String repositoryId = parts[2];
+            return new String[]{storageId, repositoryId, hostUrl};
         } catch (Exception e) {
             // URL 格式不正确或解析失败
+            throw new BusinessException(String.format("%s URL 格式不正确或解析失败", artifactPath));
         }
-        return null;
+    }
+
+    public static Integer getPort(String urlStr) {
+        if (urlStr.startsWith("https")) {
+            return 443;
+        }
+        try {
+            final URL url = new URL(urlStr);
+            return Optional.of(url.getPort()).map(p -> p < 0 ? 80 : p).get();
+        } catch (MalformedURLException e) {
+            log.error("解析端口错误", e);
+            return null;
+        }
+    }
+
+    public static String getHost(String urlStr) {
+        try {
+            final URL url = new URL(urlStr);
+            return url.getHost();
+        } catch (MalformedURLException e) {
+            log.error("解析Host错误", e);
+            return null;
+        }
+    }
+    
+    public static String addQuery(String urlStr, String key, String value) {
+        final StringBuilder builder = new StringBuilder(urlStr);
+        if (!urlStr.contains("?")) {
+            builder.append("?");
+        }
+        if (!builder.toString().endsWith("?")) {
+            builder.append("&");
+        }
+        
+        builder.append(key).append("=").append(value);
+        return builder.toString();
     }
 
 }

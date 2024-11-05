@@ -1,11 +1,14 @@
 package com.veadan.folib.client;
 
 import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Feature;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.Closeable;
+import java.util.Map;
 import java.util.Objects;
 
 import org.apache.http.client.config.RequestConfig;
@@ -25,14 +28,19 @@ public class RestArtifactResolver
 
     private final String repositoryBaseUrl;
     private final String targetUrl;
+    private MultivaluedMap<String, Object> headers;
     private final Client client;
     private Feature authentication;
     private RemoteRepositoryRetryArtifactDownloadConfiguration configuration;
 
+    private ClientRequestFilter bearerTokenAuthFilter;
+
     public RestArtifactResolver(Client client,
                                 String repositoryBaseUrl,
                                 String targetUrl,
-                                RemoteRepositoryRetryArtifactDownloadConfiguration configuration)
+                                MultivaluedMap<String, Object> headers,
+                                RemoteRepositoryRetryArtifactDownloadConfiguration configuration,
+                                ClientRequestFilter bearerTokenAuthFilter)
     {
         this.client = client;
         //连接建立超时时间
@@ -41,17 +49,21 @@ public class RestArtifactResolver
             this.client.property(ClientProperties.CONNECT_TIMEOUT, connectTimeOut);
         }
         this.targetUrl = targetUrl;
+        this.headers = headers;
         this.repositoryBaseUrl = normalize(repositoryBaseUrl);
         this.configuration = configuration;
+        this.bearerTokenAuthFilter = bearerTokenAuthFilter;
     }
 
     public RestArtifactResolver(Client client,
                                 String repositoryBaseUrl,
                                 String targetUrl,
+                                MultivaluedMap<String, Object> headers,
                                 RemoteRepositoryRetryArtifactDownloadConfiguration configuration,
-                                Feature authentication)
+                                Feature authentication,
+                                ClientRequestFilter bearerTokenAuthFilter )
     {
-        this(client, repositoryBaseUrl, targetUrl, configuration);
+        this(client, repositoryBaseUrl, targetUrl, headers, configuration,bearerTokenAuthFilter);
         this.authentication = authentication;
     }
 
@@ -86,15 +98,17 @@ public class RestArtifactResolver
         if(StringUtils.hasText(targetUrl)){
             url = targetUrl;
         }
-        logger.info("Getting {}...", url);
+        logger.debug("Getting {}...", url);
 
         WebTarget resource = new WebTargetBuilder(url).withAuthentication()
                                                       .customRequestConfig()
                                                       .build();
-
         long startTime = System.currentTimeMillis();
         logger.debug("Url [{}] 开始于 [{}]", url, startTime);
         Invocation.Builder request = resource.request();
+        if (Objects.nonNull(headers)) {
+            request.headers(headers);
+        }
         Response response;
 
         if (offset > 0)
@@ -114,7 +128,7 @@ public class RestArtifactResolver
     {
         String url = escapeUrl(path);
 
-        logger.info("Heading {}...", url);
+        logger.debug("Heading {}...", url);
 
         WebTarget resource = new WebTargetBuilder(url)
                                      .withAuthentication()
@@ -152,6 +166,9 @@ public class RestArtifactResolver
             if (authentication != null)
             {
                 target.register(authentication);
+            }
+            if (bearerTokenAuthFilter != null) {
+                target.register(bearerTokenAuthFilter);
             }
             return this;
         }

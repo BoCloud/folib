@@ -1,16 +1,23 @@
 package com.veadan.folib.repository;
 
+import cn.hutool.json.JSONUtil;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.config.NpmLayoutProviderConfig.NpmObjectMapper;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.ArtifactIdGroup;
 import com.veadan.folib.domain.ArtifactIdGroupEntity;
+import com.veadan.folib.enums.NpmPacketSuffix;
+import com.veadan.folib.enums.NpmSubLayout;
 import com.veadan.folib.npm.NpmSearchRequest;
 import com.veadan.folib.npm.NpmViewRequest;
 import com.veadan.folib.npm.metadata.*;
@@ -19,7 +26,6 @@ import com.veadan.folib.providers.repository.RepositorySearchRequest;
 import com.veadan.folib.providers.repository.event.RemoteRepositorySearchEvent;
 import com.veadan.folib.repositories.ArtifactIdGroupRepository;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
-import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
@@ -29,7 +35,6 @@ import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import com.veadan.folib.storage.validation.artifact.version.GenericReleaseVersionValidator;
 import com.veadan.folib.storage.validation.artifact.version.GenericSnapshotVersionValidator;
 import com.veadan.folib.storage.validation.deployment.RedeploymentValidator;
-import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.yaml.configuration.repository.NpmRepositoryConfigurationData;
 import com.veadan.folib.yaml.configuration.repository.remote.NpmRemoteRepositoryConfiguration;
 import com.veadan.folib.yaml.configuration.repository.remote.NpmRemoteRepositoryConfigurationDto;
@@ -39,6 +44,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.glassfish.jersey.apache.connector.ApacheClientProperties;
+import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +66,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Executor;
 
@@ -110,7 +117,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
 
     @Inject
     @Lazy
-    private ArtifactManagementService artifactManagementService;
+    private DistributedCacheComponent distributedCacheComponent;
 
     @PostConstruct
     public void init() {
@@ -134,7 +141,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
         boolean allowsUnpublish = repositoryConfiguration.map(NpmRepositoryConfigurationData::isAllowsUnpublish)
                 .orElse(ALLOWS_UNPUBLISH_DEFAULT);
 
-        logger.info("allowsUnpublish is [{}] for storageId: [{}]; repositoryId: [{}]",
+        logger.debug("allowsUnpublish is [{}] for storageId: [{}]; repositoryId: [{}]",
                 allowsUnpublish,
                 storageId,
                 repositoryId);
@@ -158,8 +165,8 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
         SearchResults searchResults;
         Client restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
         try {
-            logger.info("Search NPM packages for [{}].", remoteRepositoryUrl);
-
+            logger.debug("Search NPM packages for [{}].", remoteRepositoryUrl);
+            clientConfig(restClient);
             WebTarget service = restClient.target(remoteRepository.getUrl());
             authentication(service, remoteRepository.getUsername(), remoteRepository.getPassword());
             service = service.path("-/v1/search").queryParam("text", text).queryParam("size", size);
@@ -167,11 +174,10 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
             InputStream inputStream = service.request().buildGet().invoke(InputStream.class);
             searchResults = npmJacksonMapper.readValue(inputStream, SearchResults.class);
 
-            logger.info("Searched NPM packages for [{}].", remoteRepository.getUrl());
+            logger.debug("Searched NPM packages for [{}].", remoteRepository.getUrl());
 
         } catch (Exception e) {
             logger.error("Failed to search NPM packages [{}]", remoteRepositoryUrl, e);
-
             return;
         } finally {
             restClient.close();
@@ -228,8 +234,8 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
         Client restClient = proxyRepositoryConnectionPoolConfigurationService.
                 getRestClient(repository.getStorage().getId(), repository.getId());
         try {
-            logger.info("Fetching remote changes for [{}] since [{}].", replicateUrl, since);
-
+            logger.debug("Fetching remote changes for [{}] since [{}].", replicateUrl, since);
+            clientConfig(restClient);
             WebTarget service = restClient.target(replicateUrl);
             authentication(service, repository.getRemoteRepository().getUsername(), repository.getRemoteRepository().getPassword());
             service = service.path("_changes");
@@ -308,7 +314,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
 
         }
 
-        logger.info("Fetched remote changes for  [{}] since [{}].",
+        logger.debug("Fetched remote changes for  [{}] since [{}].",
                 repositoryConfiguration.getReplicateUrl(),
                 repositoryConfiguration.getLastChangeId());
 
@@ -331,11 +337,12 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
         Client restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
         Response response = null;
         try {
+            clientConfig(restClient);
             WebTarget service = restClient.target(remoteRepository.getUrl());
             authentication(service, remoteRepository.getUsername(), remoteRepository.getPassword());
             service = service.path(packageId);
             url = service.getUri().toString();
-            logger.info("Downloading NPM remote package feed for [{}].", url);
+            logger.debug("Downloading NPM remote package feed for [{}].", url);
             response = service.request(MediaType.APPLICATION_JSON).get();
             if (response.getStatus() == HttpStatus.SC_OK) {
                 String readString = response.readEntity(String.class);
@@ -346,7 +353,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
                 displayResponseError(url, response);
                 return null;
             }
-            logger.info("Downloaded NPM remote package feed for [{}] take time [{}] ms.", url, System.currentTimeMillis() - startTime);
+            logger.debug("Downloaded NPM remote package feed for [{}] take time [{}] ms.", url, System.currentTimeMillis() - startTime);
         } catch (Exception e) {
             logger.error("Failed to fetch NPM remote package feed [{}]", url, e);
             return packageFeed;
@@ -367,6 +374,50 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
                     packageFeed.getName(),
                     e);
         }
+    }
+
+    public String fetchRemoteBinaryFeed(String storageId,
+                                        String repositoryId,
+                                        String packageId) {
+        String binaryFeed = null;
+        Storage storage = getConfiguration().getStorage(storageId);
+        Repository repository = storage.getRepository(repositoryId);
+
+        RemoteRepository remoteRepository = repository.getRemoteRepository();
+        if (remoteRepository == null) {
+            return null;
+        }
+        String url = "";
+        long startTime = System.currentTimeMillis();
+        Client restClient = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
+        Response response = null;
+        try {
+            clientConfig(restClient);
+            WebTarget service = restClient.target(remoteRepository.getUrl());
+            authentication(service, remoteRepository.getUsername(), remoteRepository.getPassword());
+            service = service.path(packageId);
+            url = service.getUri().toString();
+            logger.debug("Downloading NPM remote binary feed for [{}].", url);
+            response = service.request(MediaType.APPLICATION_JSON).get();
+            if (response.getStatus() == HttpStatus.SC_OK) {
+                String readString = response.readEntity(String.class);
+                if (StringUtils.isNotBlank(readString)) {
+                    binaryFeed = readString;
+                }
+            } else {
+                displayResponseError(url, response);
+                return null;
+            }
+            logger.debug("Downloaded NPM remote binary feed for [{}] take time [{}] ms.", url, System.currentTimeMillis() - startTime);
+        } catch (Exception e) {
+            logger.error("Failed to fetch NPM remote binary feed [{}]", url, e);
+            return binaryFeed;
+        } finally {
+            if (Objects.nonNull(response)) {
+                response.close();
+            }
+        }
+        return binaryFeed;
     }
 
     /**
@@ -414,7 +465,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
             RepositorySearchRequest predicate = event.getPredicate();
             Long packagesCount = packagesCount(storageId, repositoryId, predicate);
 
-            logger.info("NPM remote repository [{}] local cached package count is [{}]",
+            logger.debug("NPM remote repository [{}] local cached package count is [{}]",
                     repository.getId(), packagesCount);
 
             Runnable job = () -> fetchRemoteSearchResult(storageId, repositoryId, npmSearchRequest.getText(),
@@ -468,11 +519,12 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
         ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(storageId, repositoryId, packageId);
         packageFeed = fetchRemotePackageFeed(storage.getId(), repository.getId(),
                 packageId);
+        final String packageSuffix = NpmSubLayout.OHPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
         if (Objects.nonNull(packageFeed)) {
             String separator = "/";
             String baseUrl = StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), separator);
             String repositoryBaseUrl = baseUrl + String.format("/storages/%s/%s/", storageId, repositoryId);
-            logger.info("[{}] storage [{}] repository [{}] repositoryBaseUrl is [{}]", this.getClass().getSimpleName(), storageId, repositoryId, repositoryBaseUrl);
+            logger.debug("[{}] storage [{}] repository [{}] repositoryBaseUrl is [{}]", this.getClass().getSimpleName(), storageId, repositoryId, repositoryBaseUrl);
             Versions versions = packageFeed.getVersions();
             if (Objects.nonNull(versions) && MapUtils.isNotEmpty(versions.getAdditionalProperties())) {
                 long startTime = System.currentTimeMillis();
@@ -481,38 +533,19 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
                 for (Map.Entry<String, PackageVersion> versionEntry : versions.getAdditionalProperties().entrySet()) {
                     Dist dist = versionEntry.getValue().getDist();
                     if (Objects.nonNull(dist) && StringUtils.isNotBlank(dist.getTarball())) {
-                        npmArtifactCoordinates = NpmArtifactCoordinates.of(versionEntry.getValue().getName(), versionEntry.getValue().getVersion());
+                        npmArtifactCoordinates = NpmArtifactCoordinates.of(versionEntry.getValue().getName(), versionEntry.getValue().getVersion(),packageSuffix);
                         uri = npmArtifactCoordinates.convertToResource(npmArtifactCoordinates);
                         dist.setTarball(repositoryBaseUrl + uri.toString());
                     }
                 }
-                logger.info("[{}] storage [{}] repository [{}] replace tarball take time [{}] ms", this.getClass().getSimpleName(), storageId, repositoryId, System.currentTimeMillis() - startTime);
+                logger.debug("[{}] storage [{}] repository [{}] replace tarball take time [{}] ms", this.getClass().getSimpleName(), storageId, repositoryId, System.currentTimeMillis() - startTime);
             }
-            ArtifactIdGroup finalArtifactIdGroup = artifactIdGroup;
-            PackageFeed finalPackageFeed = packageFeed;
-            Runnable job = () -> {
-                try {
-                    long startTime = System.currentTimeMillis();
-                    finalArtifactIdGroup.setMetadata(npmJacksonMapper.writeValueAsString(finalPackageFeed));
-                    artifactIdGroupRepository.merge(finalArtifactIdGroup);
-                    logger.info("[{}] storage [{}] repository [{}] update artifactIdGroup [{}] metadata take time [{}] ms", this.getClass().getSimpleName(), storageId, repositoryId, finalArtifactIdGroup.getUuid(), System.currentTimeMillis() - startTime);
-                } catch (Exception ex) {
-                    String realMessage = CommonUtils.getRealMessage(ex);
-                    logger.warn("[{}] [{}] updateArtifactIdGroup error [{}]",
-                            this.getClass().getSimpleName(), finalArtifactIdGroup.getUuid(), realMessage);
-                    if (CommonUtils.catchException(realMessage)) {
-                        logger.warn("[{}] [{}] updateArtifactIdGroup catch error",
-                                this.getClass().getSimpleName(), finalArtifactIdGroup.getUuid());
-                    }
-                    throw new RuntimeException(ex);
-                }
-            };
-            eventTaskExecutor.execute(job);
         } else {
+            //兼容代理源不能使用的情况
             artifactIdGroup = artifactIdGroupRepository.findByArtifactIdGroup(artifactIdGroup.getUuid());
             if (Objects.nonNull(artifactIdGroup)) {
-                String metadata = artifactIdGroup.getMetadata();
-                if (StringUtils.isNotBlank(metadata)) {
+                String metadata = getArtifactIdGroupMetadata(artifactIdGroup);
+                if (StringUtils.isNotBlank(metadata) && JSONUtil.isJson(metadata)) {
                     try (InputStream inputStream = new ByteArrayInputStream(metadata.getBytes())) {
                         packageFeed = npmJacksonMapper.readValue(inputStream, PackageFeed.class);
                     } catch (IOException ex) {
@@ -522,6 +555,69 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
             }
         }
         return packageFeed;
+    }
+
+    public String handleViewBinary(Repository sourceRepository, String storageId, String repositoryId, String packageId) {
+        String binaryFeed = null;
+        Storage storage = getConfiguration().getStorage(storageId);
+        Repository repository = storage.getRepository(repositoryId);
+        RemoteRepository remoteRepository = repository.getRemoteRepository();
+        if (remoteRepository == null) {
+            return binaryFeed;
+        }
+        ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(storageId, repositoryId, packageId);
+        binaryFeed = fetchRemoteBinaryFeed(storage.getId(), repository.getId(),
+                packageId);
+        if (StringUtils.isBlank(binaryFeed)) {
+            //兼容代理源不能使用的情况
+            artifactIdGroup = artifactIdGroupRepository.findByArtifactIdGroup(artifactIdGroup.getUuid());
+            if (Objects.nonNull(artifactIdGroup)) {
+                String metadata = getArtifactIdGroupMetadata(artifactIdGroup);
+                if (StringUtils.isNotBlank(metadata) && JSONUtil.isJson(metadata)) {
+                    binaryFeed = metadata;
+                }
+            }
+        } else if (JSONUtil.isJson(binaryFeed)) {
+            String baseUrl = StringUtils.removeEnd(configurationManager.getConfiguration().getBaseUrl(), GlobalConstants.SEPARATOR);
+            String repositoryBaseUrl = baseUrl + String.format("/storages/%s/%s", sourceRepository.getStorage().getId(), sourceRepository.getId());
+            logger.debug("[{}] storage [{}] repository [{}] repositoryBaseUrl is [{}]", this.getClass().getSimpleName(), storageId, repositoryId, repositoryBaseUrl);
+            JSONArray jsonArray = JSONArray.parseArray(binaryFeed);
+            JSONObject jsonObject;
+            String key = "url";
+            URL url;
+            for (int i = 0; i < jsonArray.size(); i++) {
+                try {
+                    jsonObject = jsonArray.getJSONObject(i);
+                    if (jsonObject.containsKey(key)) {
+                        url = new URL(jsonObject.getString(key));
+                        jsonObject.put(key, repositoryBaseUrl + url.getPath());
+                    }
+                } catch (Exception ex) {
+                    logger.warn(ExceptionUtils.getStackTrace(ex));
+                }
+            }
+            binaryFeed = jsonArray.toJSONString();
+        }
+        return binaryFeed;
+    }
+
+    /**
+     * 获取metadata
+     *
+     * @param artifactIdGroup artifactIdGroup
+     * @return metadata
+     */
+    public String getArtifactIdGroupMetadata(ArtifactIdGroup artifactIdGroup) {
+        if (Objects.isNull(artifactIdGroup) || StringUtils.isBlank(artifactIdGroup.getMetadata()) || !JSONUtil.isJson(artifactIdGroup.getMetadata())) {
+            return "";
+        }
+        JSONObject metadataJson = JSONObject.parseObject(artifactIdGroup.getMetadata());
+        String cacheTimeKey = "cacheTime", metadataKey = "metadata";
+        if (metadataJson.containsKey(cacheTimeKey)) {
+            String data = metadataJson.getString(metadataKey);
+            return GlobalConstants.NO_DATA.equals(data) ? "" : data;
+        }
+        return "";
     }
 
     private Boolean packagesExists(String storageId,
@@ -558,5 +654,21 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
             webTarget.property(ApacheClientProperties.REQUEST_CONFIG,
                     RequestConfig.custom().setCircularRedirectsAllowed(true).build());
         }
+    }
+
+    private void clientConfig(Client client) {
+        Integer connectTimeOut = globalClientConnectTimeOut();
+        if (Objects.nonNull(connectTimeOut)) {
+            client.property(ClientProperties.CONNECT_TIMEOUT, connectTimeOut);
+        }
+    }
+
+    private Integer globalClientConnectTimeOut() {
+        String key = "globalClientConnectTimeOut";
+        String globalClientConnectTimeOut = distributedCacheComponent.get(key);
+        if (StringUtils.isBlank(globalClientConnectTimeOut)) {
+            return null;
+        }
+        return Integer.parseInt(globalClientConnectTimeOut);
     }
 }

@@ -9,6 +9,7 @@ package com.veadan.folib.users.domain;
 public enum SystemRole
 {
     ADMIN,
+    READERS,
     UI_MANAGER,
     REPOSITORY_MANAGER,
     ARTIFACTS_MANAGER,

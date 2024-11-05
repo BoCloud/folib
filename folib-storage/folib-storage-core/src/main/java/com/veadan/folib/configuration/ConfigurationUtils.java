@@ -38,5 +38,10 @@ public class ConfigurationUtils
 
         return storageAndRepositoryIds[2];
     }
+
+    public static String getStorageIdAndRepositoryId(String storageId, String repositoryId)
+    {
+       return String.format("%s:%s", storageId, repositoryId);
+    }
     
 }

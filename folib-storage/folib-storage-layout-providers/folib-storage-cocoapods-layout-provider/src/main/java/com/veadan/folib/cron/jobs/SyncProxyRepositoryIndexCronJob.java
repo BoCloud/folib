@@ -78,7 +78,7 @@ public class SyncProxyRepositoryIndexCronJob extends JavaCronJob
         return CronJobDefinition.newBuilder()
                 .jobClass(SyncProxyRepositoryIndexCronJob.class.getName())
                 .name("定时同步Cocoapods远程仓库索引的任务").scope(COCOAPODS)
-                .description("用于定时同步Cocoapods远程仓库索引到Folib仓库")
+                .description("用于定时同步Cocoapods远程仓库索引文件")
                 .fields(FIELDS)
                 .build();
     }

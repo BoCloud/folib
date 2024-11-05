@@ -161,7 +161,7 @@
 
 <script>
 
-import { scannerRepositoryPage, getArtifact } from "@/api/folib";
+import { scannerRepositoryPage, getArtifact, getArtifactReport } from "@/api/folib";
 import { getLayoutType2 } from "@/utils/layoutUtil";
 import ChartBar from '@/components/Charts/ChartBar';
 import ChartLine from '@/components/Charts/ChartLine'
@@ -317,7 +317,7 @@ export default ({
       })
     },
     getScanReport(row) {
-      getArtifact(
+      getArtifactReport(
         null,
         row.storageId,
         row.repositoryId,

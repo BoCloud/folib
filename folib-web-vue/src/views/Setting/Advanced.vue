@@ -3,29 +3,28 @@
     <a-row type="flex" :gutter="24">
       <a-col :span="24" class="mb-24">
         <a-tabs class="tabs-sliding" :default-active-key="1" @change="tabChange($event)">
-          <a-tab-pane :key="1" tab="构建数据">
+          <a-tab-pane :key="1" :tab="$t('Setting.BuildData')">
             <a-card :bordered="false" class="header-solid">
               <template #title>
-                <h6>构建制品索引</h6>
-                <p>该功能用于从 JFrog Artifactory、Sonatype Nexus 迁移制品数据
-                </p>
+                <h6>{{ $t('Setting.BuildAnArtifactIndex') }}</h6>
+                <p>{{ $t('Setting.migrateArtifactData') }}</p>
               </template>
-              <a-descriptions title="最近一次构建" :column="1" class="mb-20">
-                <a-descriptions-item label="用户">
+              <a-descriptions :title="$t('Setting.InMostRecentBuild')" :column="1" class="mb-20">
+                <a-descriptions-item :label="$t('Setting.User')">
                   {{ singleDict.dictKey }}
                 </a-descriptions-item>
-                <a-descriptions-item label="时间">
+                <a-descriptions-item :label="$t('Setting.Time')">
                   {{ singleDict.createTime }}
                 </a-descriptions-item>
-                <a-descriptions-item label="参数">
+                <a-descriptions-item :label="$t('Setting.Parameters')">
                   {{ singleDict.dictValue }}
                 </a-descriptions-item>
-                <a-descriptions-item label="状态">
+                <a-descriptions-item :label="$t('Setting.Status')">
                   <a-tag v-if="singleDict.comment"
                     :color="singleDict.comment.indexOf('完成') !== -1 ? 'green' : singleDict.comment.indexOf('错误') !== -1 ? 'red' : 'orange'">
                     {{ singleDict.comment }}
-                    <a-popconfirm title="确定要更改状态吗？" okType="danger" ok-text="确定" cancel-text="取消"
-                      @confirm="updateSingleDict(1, singleDict.id, '手动结束')">
+                    <a-popconfirm :title="$t('Setting.sureChangeState')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
+                      @confirm="updateSingleDict(1, singleDict.id, $t('Setting.ManualClosing'))">
                       <a-icon type="unlock" theme="filled" v-if="singleDict.comment.indexOf('中') !== -1" />
                     </a-popconfirm>
                   </a-tag>
@@ -37,20 +36,20 @@
                 <a-row :gutter="[24]">
                   <a-col :span="24">
                     <a-row :gutter="[24]">
-                      <a-col :span="4">
-                        <a-form-model-item class="mb-10" label="存储空间" :colon="false" prop="storageId">
+                      <a-col :span="8">
+                        <a-form-model-item class="mb-10" :label="$t('Setting.StorageSpace')" :colon="false" prop="storageId">
                           <a-select @change="handleStorageChange" showSearch allowClear
-                            v-model="buildGraphIndexForm.storageId" placeholder="请选择存储空间">
+                            v-model="buildGraphIndexForm.storageId" :placeholder="$t('Setting.selectTheStorageSpace')">
                             <a-select-option v-for="storageId in storages" :key="storageId">
                               {{ storageId }}
                             </a-select-option>
                           </a-select>
                         </a-form-model-item>
                       </a-col>
-                      <a-col :span="4">
-                        <a-form-model-item class="mb-10" label="所属仓库" :colon="false" prop="repositoryId">
+                      <a-col :span="8">
+                        <a-form-model-item class="mb-10" :label="$t('Setting.OwnedWarehouse')" :colon="false" prop="repositoryId">
                           <a-select showSearch @change="handleRepositoryChange" allowClear
-                            v-model="buildGraphIndexForm.repositoryId" placeholder="请选择所属仓库">
+                            v-model="buildGraphIndexForm.repositoryId" :placeholder="$t('Setting.selectYourRepository')">
                             <a-select-option v-for="repositoryId in repositories" :key="repositoryId">
                               {{ repositoryId }}
                             </a-select-option>
@@ -62,22 +61,22 @@
                       <a-col :span="8">
                         <a-form-model-item class="mb-10" :colon="false" prop="path">
                           <template slot="label">
-                            制品绝对路径
+                            {{ $t('Setting.ProductAbsolutePath') }}
                             <a-popover placement="topLeft">
                               <template slot="content">
-                                <p class="mb-0">可指定目录进行构建数据，若不填写则为仓库的根目录</p>
-                                <p class="mb-0">目录为绝对路径（容器部署，则为容器内部的绝对路径）</p>
+                                <p class="mb-0">{{ $t('Setting.specifyDirectoryBuildData') }}</p>
+                                <p class="mb-0">{{ $t('Setting.DirectoryAbsolutePath') }}</p>
                               </template>
                               <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
                             </a-popover>
                           </template>
-                          <a-input v-model="buildGraphIndexForm.path" placeholder="请输入制品绝对路径" />
+                          <a-input v-model="buildGraphIndexForm.path" :placeholder="$t('Setting.enterAbsoluteProductPath')" />
                         </a-form-model-item>
                       </a-col>
                     </a-row>
                     <a-row :gutter="[24]">
                       <a-col :span="4">
-                        <a-form-model-item class="mb-10" label="同步元数据" :colon="false" prop="metadata">
+                        <a-form-model-item class="mb-10" :label="$t('Setting.SynchronizingMetadata')" :colon="false" prop="metadata">
                           <a-switch v-model="buildGraphIndexForm.metadata"  />
                         </a-form-model-item>
                       </a-col>
@@ -85,14 +84,14 @@
                     <a-row :gutter="[24]">
                       <a-col :span="12">
                         <a-form-model-item :wrapper-col="{ span: 14, offset: 6 }">
-                          <a-popconfirm title="确定要构建数据吗？" okType="danger" ok-text="确定" cancel-text="取消"
+                          <a-popconfirm :title="$t('Setting.sureBuildData')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
                             @confirm="buildGraphIndexFormSubmit" :disabled="singleDict.comment.indexOf('中') > -1">
                             <a-button type="danger" :disabled="singleDict.comment.indexOf('中') > -1">
-                              保存
+                              {{ $t('Setting.Save') }}
                             </a-button>
                           </a-popconfirm>
                           <a-button class="ml-10" @click="buildGraphIndexResetForm">
-                            取消
+                            {{ $t('Setting.Cancel') }}
                           </a-button>
                         </a-form-model-item>
                       </a-col>
@@ -102,83 +101,152 @@
               </a-form-model>
             </a-card>
           </a-tab-pane>
-          <a-tab-pane :key="2" tab="Maven数据迁移">
+          <a-tab-pane :key="2" :tab="$t('Setting.MavenDataMigration')">
             <a-card :bordered="false" class="header-solid">
               <template #title>
-                <h6>制品数据迁移</h6>
-                <p>该功能用于从 JFrog Artifactory、Sonatype Nexus 使用MavenIndxer方式迁移制品数据
+                <h6>{{ $t('Setting.ArtifactDataMigration') }}</h6>
+                <p>{{ $t('Setting.MavenIndxerSonatypeNexus') }}
                 </p>
               </template>
               <data-migration/>
             </a-card>
           </a-tab-pane>
-          <a-tab-pane :key="3" tab="漏洞更新">
-            <a-card :bordered="false" class="header-solid">
-              <template #title>
-                <h6>更新漏洞数据</h6>
-                <p>该功能用于更新漏洞数据至本地漏洞库
-                </p>
-              </template>
-              <a-descriptions title="最近一次更新" :column="1" class="mb-20">
-                <a-descriptions-item label="用户">
-                  {{ singleDict.dictKey }}
-                </a-descriptions-item>
-                <a-descriptions-item label="时间">
-                  {{ singleDict.createTime }}
-                </a-descriptions-item>
-                <a-descriptions-item label="状态">
-                  <a-tag v-if="singleDict.comment"
-                    :color="singleDict.comment.indexOf('完成') !== -1 ? 'green' : singleDict.comment.indexOf('错误') !== -1 ? 'red' : 'orange'">
-                    {{ singleDict.comment }}
-                    <a-popconfirm title="确定要更改状态吗？" okType="danger" ok-text="确定" cancel-text="取消"
-                      @confirm="updateSingleDict(2, singleDict.id, '手动结束')">
-                      <a-icon type="unlock" theme="filled" v-if="singleDict.comment.indexOf('中') !== -1" />
-                    </a-popconfirm>
-                  </a-tag>
-                  <span v-else>--</span>
-                </a-descriptions-item>
-              </a-descriptions>
-              <a-form-model layout="horizontal" ref="vulnerabilitiesForm" :model="vulnerabilitiesForm"
-                :hideRequiredMark="true">
-                <a-row :gutter="[24]">
-                  <a-col :span="24">
-                    <a-row :gutter="[24]">
-                      <a-col :span="12">
-                        <a-form-model-item>
-                          <a-popconfirm title="确定要更新漏洞数据吗？" okType="danger" ok-text="确定" cancel-text="取消"
-                            @confirm="vulnerabilitiesFormSubmit" :disabled="singleDict.comment.indexOf('中') > -1">
-                            <a-button type="danger" :disabled="singleDict.comment.indexOf('中') > -1">
-                              更新
-                            </a-button>
-                          </a-popconfirm>
-                        </a-form-model-item>
-                      </a-col>
-                    </a-row>
-                  </a-col>
-                </a-row>
-              </a-form-model>
-            </a-card>
+          <a-tab-pane :key="3" :tab="$t('Setting.BugUpdate')">
+            <a-row :gutter="[24]">
+              <a-col :span="12">
+                <a-card :bordered="false" class="header-solid">
+                  <template #title>
+                    <h6>{{ $t('Setting.UpdateVulnerabilityData') }}</h6>
+                    <p>{{ $t('Setting.updateDataToLibrary') }}
+                    </p>
+                  </template>
+                  <a-descriptions :title="$t('Setting.TheLastUpdate')" :column="1" class="mb-20">
+                    <a-descriptions-item :label="$t('Setting.User')">
+                      {{ singleDict.dictKey }}
+                    </a-descriptions-item>
+                    <a-descriptions-item :label="$t('Setting.Time')">
+                      {{ singleDict.createTime }}
+                    </a-descriptions-item>
+                    <a-descriptions-item :label="$t('Setting.Status')">
+                      <a-tag v-if="singleDict.comment"
+                        :color="singleDict.comment.indexOf('完成') !== -1 ? 'green' : singleDict.comment.indexOf('错误') !== -1 ? 'red' : 'orange'">
+                        {{ singleDict.comment }}
+                        <a-popconfirm :title="$t('Setting.sureChangeState')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
+                          @confirm="updateSingleDict(3, singleDict.id, $t('Setting.ManualClosing'))">
+                          <a-icon type="unlock" theme="filled" v-if="singleDict.comment.indexOf('中') !== -1" />
+                        </a-popconfirm>
+                      </a-tag>
+                      <span v-else>--</span>
+                    </a-descriptions-item>
+                    <a-descriptions-item :label="$t('Setting.Timing')">
+                      <a-input size="small"
+                        :placeholder="$t('Setting.CronRules')" v-model="vulnerabilityCron.cronExpression">
+                        <a-icon slot="suffix" type="clock-circle"/>
+                      </a-input>
+                    </a-descriptions-item>
+                  </a-descriptions>
+                  <a-popconfirm :title="$t('Setting.SureUpdateTheVulnerabilityData')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
+                    @confirm="vulnerabilitiesSubmit(1)" :disabled="singleDict.comment.indexOf('中') > -1">
+                    <a-button :disabled="singleDict.comment.indexOf('中') > -1" class="mr-20">
+                      {{ $t('Setting.ManualUpdate') }}
+                    </a-button>
+                  </a-popconfirm>
+                  <a-popconfirm :title="$t('Setting.SureUpdateTheVulnerabilityDataCron')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
+                    @confirm="vulnerabilitiesSubmit(2)" :disabled="singleDict.comment.indexOf('中') > -1">
+                    <a-button type="primary" :disabled="singleDict.comment.indexOf('中') > -1" class="mr-20">
+                      {{ $t('Setting.RegularUpdate') }}
+                    </a-button>
+                  </a-popconfirm>
+                  <a-popconfirm :title="$t('Setting.SureDeleteTheVulnerabilityDataCron')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
+                    @confirm="delCronOne" :disabled="singleDict.comment.indexOf('中') > -1">
+                    <a-button type="danger" :disabled="singleDict.comment.indexOf('中') > -1">
+                      {{ $t('Setting.DeleteRegularUpdate') }}
+                    </a-button>
+                  </a-popconfirm>
+                </a-card>
+              </a-col>
+              <a-col :span="12">
+                <a-card :bordered="false" class="header-solid">
+                  <template #title>
+                    <h6>{{ $t('Setting.ScanSettings') }}</h6>
+                    <p>{{ $t('Setting.ArtifactScanTips') }}
+                    </p>
+                  </template>
+                  <a-descriptions :title="$t('Setting.TheLastScan')" :column="1" class="mb-20">
+                    <a-descriptions-item :label="$t('Setting.User')">
+                      {{ artifactScanDict.dictKey }}
+                    </a-descriptions-item>
+                    <a-descriptions-item :label="$t('Setting.Time')">
+                      {{ artifactScanDict.createTime }}
+                    </a-descriptions-item>
+                    <a-descriptions-item :label="$t('Setting.ArtifactScanType')">
+                      <span v-if="artifactScanDict.dictKey !== '--'">
+                        {{ artifactScanDict.dictKey === 'Cron Job' ? $t('Setting.ScheduledScan') : $t('Setting.ManualScanning') }}
+                      </span>
+                      <span v-else>
+                        --
+                      </span>
+                    </a-descriptions-item>
+                    <a-descriptions-item :label="$t('Setting.Timing')">
+                      <a-input size="small"
+                        :placeholder="$t('Setting.CronRules')" v-model="artifactScanCron.cronExpression">
+                        <a-icon slot="suffix" type="clock-circle"/>
+                      </a-input>
+                    </a-descriptions-item>
+                  </a-descriptions>
+                  <a-popconfirm :title="$t('Setting.ArtifactScanNow')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
+                    @confirm="artifactScanSubmit(1)">
+                    <a-button class="mr-20">
+                      {{ $t('Setting.ScanImmediately') }}
+                    </a-button>
+                  </a-popconfirm>
+                  <a-popconfirm :title="$t('Setting.SureUpdateTheArtifactScanCron')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
+                    @confirm="artifactScanSubmit(2)">
+                    <a-button type="primary" class="mr-20">
+                      {{ $t('Setting.ScheduledScan') }}
+                    </a-button>
+                  </a-popconfirm>
+                  <a-popconfirm :title="$t('Setting.SureDeleteTheArtifactScanCron')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
+                    @confirm="delArtifactCronOne">
+                    <a-button type="danger">
+                      {{ $t('Setting.DeleteRegularUpdate') }}
+                    </a-button>
+                  </a-popconfirm>
+                </a-card>
+              </a-col>
+            </a-row>
           </a-tab-pane>
-          <a-tab-pane :key="4" tab="备份策略">
+          <a-tab-pane :key="4" :tab="$t('Setting.BackupStrategy')">
             <a-card :bordered="false" class="header-solid">
               <template #title>
-                <h6>备份策略</h6>
-                <p>该功能用于设置备份策略备份指定存储空间、仓库的制品数据
-                </p>
+                <h6>{{ $t('Setting.BackupStrategy') }}</h6>
+                <p>{{ $t('Setting.setTheBackupPolicy') }}</p>
               </template>
               <ArtifactsBackup/>
             </a-card>
           </a-tab-pane>
-          <a-tab-pane :key="5" tab="DB信息">
+          <a-tab-pane :key="5" :tab="$t('Setting.CachingStrategy')">
+            <a-card :bordered="false" class="header-solid">
+              <template #title>
+                <h6>{{ $t('Setting.CachingStrategy') }}</h6>
+                <p>{{ $t('Setting.setSSDCacheAccelerationStrategy') }}</p>
+              </template>
+              <ArtifactsCache/>
+            </a-card>
+          </a-tab-pane>
+          <a-tab-pane :key="6" :tab="'DB' + $t('Setting.Information')">
             <a-tabs class="tabs-sliding" :default-active-key="1" @change="dbTabChange($event)">
               <a-tab-pane :key="1" tab="Schema">
                 <a-card :bordered="false" class="header-solid">
                   <template #title>
-                    <h6>Schema信息</h6>
-                    <p>该功能用于查看Schema信息</p>
+                    <h6>Schema {{ $t('Setting.Information') }}</h6>
+                    <p>{{ $t('Setting.viewTheSchemaInformation') }}</p>
                   </template>
                   <a-row :gutter="[24]">
                     <a-col :span="24">
+                      <a-tag color="#f50" class="mb-10 ml-15" v-if="janusGraphInfo.exceptionalIndexSet && janusGraphInfo.exceptionalIndexSet.length > 0">
+                        {{ $t('Setting.Notice') }}， {{janusGraphInfo.exceptionalIndexSet }} {{ $t('Setting.checkIndexInformation') }}
+                      </a-tag>
                       <prism-editor class="metadata-prism-editor" v-model="janusGraphInfo.schema"
                         :highlight="highlighterHandle" :line-numbers="true" :readonly="true">
                       </prism-editor>
@@ -186,11 +254,11 @@
                   </a-row>
                 </a-card>
               </a-tab-pane>
-              <a-tab-pane :key="2" tab="索引操作">
+              <a-tab-pane :key="2" :tab="$t('Setting.IndexingOperations')">
                 <a-card :bordered="false" class="header-solid">
                   <template #title>
-                    <h6>索引操作</h6>
-                    <p>该功能用于索引的重建、注册</p>
+                    <h6>{{ $t('Setting.IndexingOperations') }}</h6>
+                    <p>{{ $t('Setting.usedIndexReconstructionRegistration') }}</p>
                   </template>
                   <a-row :gutter="[24]">
                     <a-col :span="24">
@@ -200,24 +268,24 @@
                           <a-col :span="24">
                             <a-row :gutter="[24]">
                               <a-col :span="6">
-                                <a-form-model-item label="索引名称" :colon="false" prop="indexName">
-                                  <a-input placeholder="请输入索引名称" v-model="janusGraphIndexForm.indexName" />
+                                <a-form-model-item :label="$t('Setting.IndexName')" :colon="false" prop="indexName">
+                                  <a-input :placeholder="$t('Setting.enterTheIndexName')" v-model="janusGraphIndexForm.indexName" />
                                 </a-form-model-item>
                               </a-col>
                             </a-row>
                             <a-row :gutter="[24]">
                               <a-col :span="12">
                                 <a-form-model-item>
-                                  <a-popconfirm title="确定要重建该索引吗？" okType="danger" ok-text="确定" cancel-text="取消"
+                                  <a-popconfirm :title="$t('Setting.sureRebuildThisIndex')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
                                     @confirm="janusGraphIndexFormSubmit(1)">
                                     <a-button type="danger" class="mr-20">
-                                      重建索引
+                                      {{ $t('Setting.Reindexing') }}
                                     </a-button>
                                   </a-popconfirm>
-                                  <a-popconfirm title="确定要注册该索引吗？" okType="danger" ok-text="确定" cancel-text="取消"
+                                  <a-popconfirm :title="$t('Setting.sureRegisterThisIndex')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
                                     @confirm="janusGraphIndexFormSubmit(2)">
                                     <a-button type="danger">
-                                      注册索引
+                                      {{ $t('Setting.RegisterTheIndex') }}
                                     </a-button>
                                   </a-popconfirm>
                                 </a-form-model-item>
@@ -230,17 +298,22 @@
                   </a-row>
                 </a-card>
               </a-tab-pane>
-              <a-tab-pane :key="3" tab="实例操作">
+              <a-tab-pane :key="3" :tab="$t('Setting.InstanceManipulation')">
                 <a-card :bordered="false" class="header-solid">
                   <template #title>
-                    <h6>实例操作</h6>
-                    <p>该功能用于查看、删除实例操作，下方为实例列表</p>
+                    <h6>{{ $t('Setting.InstanceManipulation') }}</h6>
+                    <p>{{ $t('Setting.viewAndDeleteInstance') }}</p>
                   </template>
                   <a-row :gutter="[24]">
+                    <a-col :span="24">
+                      <a-tag color="#f50" class="mb-10" v-if="janusGraphInfo.instanceStatus !== 'normal'">
+                        {{ $t('Setting.clusterNodesNum') }}[{{janusGraphInfo.clusterNodeTotal}}]，{{ $t('Setting.instancesIsAbnormal') }}
+                      </a-tag>
+                    </a-col>
                     <a-col :span="6" v-for="(instance, index) in janusGraphInfo.openInstances" :key="index">
                       <a-tag :color="instance.indexOf('(current)') !== -1 ? 'red' : 'green'">
                         {{ instance }}
-                        <a-popconfirm title="确定要删除该实例吗？" okType="danger" ok-text="确定" cancel-text="取消"
+                        <a-popconfirm :title="$t('Setting.sureDeleteTheInstance')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
                           @confirm="removeInstance(instance)">
                           <a-icon type="close" v-if="instance.indexOf('(current)') === -1" />
                         </a-popconfirm>
@@ -250,6 +323,16 @@
                 </a-card>
               </a-tab-pane>
             </a-tabs>
+          </a-tab-pane>
+          <a-tab-pane :key="7" :tab="$t('Setting.JfrogMigrate')">
+            <a-card :bordered="false" class="header-solid">
+              <template #title>
+                <h6>{{ $t('Setting.JfrogMigrate') }}</h6>
+                <p>{{ $t('Setting.JfrogMigrateInfo') }}
+                </p>
+              </template>
+              <jfrog-migration/>
+            </a-card>
           </a-tab-pane>
         </a-tabs>
       </a-col>
@@ -265,14 +348,20 @@ import "prismjs/components/prism-javascript"
 import "prismjs/themes/prism-tomorrow.css"
 import DataMigration from "./components/DataMigration.vue"
 import ArtifactsBackup from "./components/ArtifactsBackup.vue";
+import ArtifactsCache from "./components/Cache/index.vue";
+import JfrogMigration from "./components/JfrogMigration.vue"
+
 import {
-  getStoragesAndRepositories
+  getStoragesAndRepositories,
+  delCronOne
 } from "@/api/folib"
 import {
   buildGraphIndex
 } from "@/api/artifact"
 import {
-  vulnerabilitiesDataUpdate
+  vulnerabilitiesDataUpdate,
+  artifactScan,
+  getCrontaskByClass
 } from "@/api/settings"
 import {
   janusGraph,
@@ -285,6 +374,13 @@ import {
 
 export default {
   data() {
+    const checkIndexName = (rule, value, callback) => {
+      if (!value) {
+        callback(new Error(this.$t('Setting.enterTheIndexName')))
+      } else {
+        callback()
+      }
+    }
     return {
       storages: [],
       repositoriesData: {},
@@ -295,11 +391,11 @@ export default {
         metadata: false,
         path: ''
       },
-      vulnerabilitiesForm: {
-
-      },
       janusGraphInfo: {
         openInstances: [],
+        exceptionalIndexSet: [],
+        clusterNodeTotal: 0,
+        instanceStatus: '',
         schema: '',
       },
       janusGraphIndexForm: {
@@ -307,7 +403,7 @@ export default {
       },
       janusGraphIndexRules: {
         indexName: [
-          { required: true, message: '请输入索引名称', trigger: 'blur' },
+          { required: true, trigger: 'blur', validator: checkIndexName },
         ],
       },
       singleDict: {
@@ -316,12 +412,28 @@ export default {
         dictValue: '--',
         comment: ''
       },
+      artifactScanDict: {
+        createTime: '--',
+        dictKey: '--',
+        dictValue: '--',
+        comment: ''
+      },
+      vulnerabilityCron: {
+        cronExpression: undefined,
+        uuid: undefined,
+      },
+      artifactScanCron: {
+        cronExpression: undefined,
+        uuid: undefined,
+      },
     }
   },
   components: {
     PrismEditor,
     DataMigration,
-    ArtifactsBackup
+    ArtifactsBackup,
+    ArtifactsCache,
+    JfrogMigration,
   },
   computed: {
 
@@ -339,7 +451,7 @@ export default {
     },
     message(type, message) {
       if (!message) {
-        message = "操作成功"
+        message = this.$t('Setting.OperationSuccessful')
       }
       this.$notification[type]({
         message: message,
@@ -384,10 +496,10 @@ export default {
               setTimeout(() => {
                 this.getSingleDict('build_graph_index')
               }, 100)
-              this.message("success", "请稍等，构建数据任务已启动，正在异步执行")
+              this.message("success", this.$t('Setting.buildDataTaskHasStarted'))
             }
           }).catch((err) => {
-            this.message("error", "执行构建数据失败")
+            this.message("error", this.$t('Setting.FailExecuteBuildData'))
           }).finally(() => {
 
           })
@@ -398,20 +510,29 @@ export default {
       this.$refs.buildGraphIndexForm.resetFields()
       this.initData()
     },
-    vulnerabilitiesFormSubmit() {
-      this.$refs.vulnerabilitiesForm.validate(valid => {
-        if (valid) {
-          vulnerabilitiesDataUpdate().then(res => {
-            setTimeout(() => {
-              this.getSingleDict('vulnerability_update')
-            }, 100)
-            this.message("success", "请稍等，漏洞数据更新任务已启动，正在异步执行")
-          }).catch((err) => {
-            this.message("error", "执行漏洞更新失败")
-          }).finally(() => {
-
-          })
+    vulnerabilitiesSubmit(type) {
+      let params = {}
+      if (type === 2 && !this.vulnerabilityCron.cronExpression) {
+        this.message("warning", this.$t('Setting.CronRules'))
+        return false
+      }
+      if (type === 2) {
+        params.cron = this.vulnerabilityCron.cronExpression
+      }
+      vulnerabilitiesDataUpdate(params).then(res => {
+        setTimeout(() => {
+          this.getSingleDict('vulnerability_update')
+        }, 100)
+        if (type === 2) {
+          this.message("success", this.$t('Setting.VulnerabilityUpdateCronTask'))
+          this.getCrontaskByClass()
+        } else {
+          this.message("success", this.$t('Setting.vulnerabilityUpdateTaskStarted'))
         }
+      }).catch((err) => {
+        this.message("error", this.$t('Setting.updateFailExecute'))
+      }).finally(() => {
+
       })
     },
     getJanusGraphInfo() {
@@ -426,11 +547,11 @@ export default {
     removeInstance(instance) {
       if (instance) {
         if (instance.indexOf('(current)') !== -1) {
-          this.message("warning", "当前实例不允许删除")
+          this.message("warning", this.$t('Setting.currentInstanceNotAllowDeleted'))
           return false
         }
         deleteInstance(instance).then(res => {
-          this.message("success", "删除实例成功")
+          this.message("success", this.$t('Setting.DeleteInstanceSuccessful'))
           this.getJanusGraphInfo()
         }).catch((err) => {
         }).finally(() => {
@@ -445,17 +566,17 @@ export default {
           }
           if (type === 1) {
             reindex(data).then(res => {
-              this.message("success", "重建索引执行成功")
+              this.message("success", this.$t('Setting.reindexingWasSuccessful'))
             }).catch((err) => {
-              let msg = err.response.data.error ? err.response.data.error : '执行重建索引失败'
+              let msg = err.response.data.error ? err.response.data.error : this.$t('Setting.FailReindex')
               this.message("error", msg)
             }).finally(() => {
             })
           } else if (type === 2) {
             registerIndex(data).then(res => {
-              this.message("success", "注册索引执行成功")
+              this.message("success", this.$t('Setting.RegisterIndexSuccessful'))
             }).catch((err) => {
-              let msg = err.response.data.error ? err.response.data.error : '执行注册索引失败'
+              let msg = err.response.data.error ? err.response.data.error : this.$t('Setting.FailRegisterTheIndex')
               this.message("error", msg)
             }).finally(() => {
             })
@@ -468,8 +589,10 @@ export default {
         this.buildGraphIndexResetForm()
       } else if (activeTab === 2) {
       } else if (activeTab === 3) {
+        this.getCrontaskByClass()
         this.getSingleDict('vulnerability_update')
-      } else if (activeTab === 5) {
+        this.getArtifactScanDict()
+      } else if (activeTab === 6) {
         this.getJanusGraphInfo()
       }
     },
@@ -495,12 +618,88 @@ export default {
         }
       })
     },
+    getArtifactScanDict() {
+      this.artifactScanDict = {
+        createTime: '--',
+        dictKey: '--',
+        dictValue: '--',
+        comment: ''
+      }
+      getSingleDict({ dictType: 'artifact_full_scan' }).then(res => {
+        if (res) {
+          this.artifactScanDict = res
+        }
+      })
+    },
     updateSingleDict(type, id, comment) {
       updateSingleDict({ id: id, comment: comment }).then(res => {
         this.tabChange(type)
-        this.message("success", "状态更新成功")
+        this.message("success", this.$t('Setting.updateStatusSuccessful'))
       })
-    }
+    },
+    getCrontaskByClass() {
+      getCrontaskByClass({ className: 'com.veadan.folib.cron.jobs.VulnerabilityRefreshCronJob' }).then(res => {
+        if (res && res.cronTaskConfigurations && res.cronTaskConfigurations.length > 0) {
+          this.vulnerabilityCron.uuid = res.cronTaskConfigurations[0].uuid
+          this.vulnerabilityCron.cronExpression = res.cronTaskConfigurations[0].cronExpression
+        }
+      })
+      getCrontaskByClass({ className: 'com.veadan.folib.cron.jobs.ArtifactScanCronJob' }).then(res => {
+        if (res && res.cronTaskConfigurations && res.cronTaskConfigurations.length > 0) {
+          this.artifactScanCron.uuid = res.cronTaskConfigurations[0].uuid
+          this.artifactScanCron.cronExpression = res.cronTaskConfigurations[0].cronExpression
+        }
+      })
+    },
+    delCronOne() {
+      if (!this.vulnerabilityCron.uuid) {
+         return false
+      }
+      delCronOne(this.vulnerabilityCron.uuid).then(res => {
+        this.vulnerabilityCron = {
+          uuid: undefined,
+          cronExpression: undefined,
+        }
+        this.message("success", this.$t('Setting.OperationSuccessful'))
+      })
+    },
+    artifactScanSubmit(type) {
+      let params = {}
+      if (type === 2 && !this.artifactScanCron.cronExpression) {
+        this.message("warning", this.$t('Setting.CronRules'))
+        return false
+      }
+      if (type === 2) {
+        params.cron = this.artifactScanCron.cronExpression
+      }
+      artifactScan(params).then(res => {
+        setTimeout(() => {
+          this.getArtifactScanDict()
+        }, 100)
+        if (type === 2) {
+          this.message("success", this.$t('Setting.ArtifactScanCronTask'))
+          this.getCrontaskByClass()
+        } else {
+          this.message("success", this.$t('Setting.OperationSuccessful'))
+        }
+      }).catch((err) => {
+        this.message("error", this.$t('Setting.updateFailExecute'))
+      }).finally(() => {
+
+      })
+    },
+    delArtifactCronOne() {
+      if (!this.artifactScanCron.uuid) {
+         return false
+      }
+      delCronOne(this.artifactScanCron.uuid).then(res => {
+        this.artifactScanCron = {
+          uuid: undefined,
+          cronExpression: undefined,
+        }
+        this.message("success", this.$t('Setting.OperationSuccessful'))
+      })
+    },
   }
 }
 </script>

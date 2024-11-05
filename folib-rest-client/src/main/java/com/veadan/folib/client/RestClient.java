@@ -28,6 +28,8 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -76,15 +78,30 @@ public class RestClient extends ArtifactClient {
      * @return 客户端实例
      */
     public static RestClient getRestClientInstance(String baseUrl, String username, String password) {
-        String ports = baseUrl.substring(baseUrl.lastIndexOf(":") + 1);
-        ports = ports.replace("/", "");
-        int port = Integer.parseInt(ports);
-        RestClient client = new RestClient();
-        client.setUsername(username);
-        client.setPassword(password);
-        client.setPort(port);
-        client.setContextBaseUrl(baseUrl);
-        return client;
+
+        try {
+            URL url = new URL(baseUrl);
+//            // 获取协议
+//            String protocol = url.getProtocol();
+//            // 获取主机名（域名或IP地址）
+//            String host = url.getHost();
+            // 获取端口号，如果没有明确指定端口，默认为协议的默认端口（如HTTP的默认端口是80）
+            int port = url.getPort();
+            if (port == -1) {
+                port = url.getDefaultPort();
+            }
+            RestClient client = new RestClient();
+            client.setUsername(username);
+            client.setPassword(password);
+            client.setPort(port);
+            client.setContextBaseUrl(baseUrl);
+            return client;
+
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+
+
     }
 
     /**
@@ -452,15 +469,8 @@ public class RestClient extends ArtifactClient {
                 if (folderJson.containsKey(directoriesKey) && StringUtils.isNotBlank(folderJson.getString(directoriesKey))) {
                     directories = JSONArray.parseArray(folderJson.getString(directoriesKey), Folder.class);
                     if (!CollectionUtils.isEmpty(directories)) {
-                        if ("docker".equalsIgnoreCase(layout) && StringUtils.isNotBlank(path)) {
-                            //docker布局
-                            dockerFiles = directories.stream().filter(f -> (!"blobs".equalsIgnoreCase(f.getName())) && (!"manifest".equalsIgnoreCase(f.getName()))).collect(Collectors.toList());
-                            dockerFiles.forEach(item -> item.setFolder(false));
-                            folders.addAll(dockerFiles);
-                        } else {
-                            directories.forEach(item -> item.setFolder(true));
-                            folders.addAll(directories);
-                        }
+                        directories.forEach(item -> item.setFolder(true));
+                        folders.addAll(directories);
                     }
                 }
                 if (folderJson.containsKey(filesKey) && StringUtils.isNotBlank(folderJson.getString(filesKey))) {

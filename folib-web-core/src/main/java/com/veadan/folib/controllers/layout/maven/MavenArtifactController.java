@@ -17,9 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.WritableByteChannel;
+import java.io.InputStream;
 import java.nio.file.Files;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -67,7 +65,7 @@ public class MavenArtifactController
             HttpServletResponse response)
             throws Exception {
         long startTime = System.currentTimeMillis();
-        logger.debug("Requested /{}/{}/{} startTime {} .", storageId, repositoryId, artifactPath, startTime);
+        logger.info("Requested /{}/{}/{}", storageId, repositoryId, artifactPath);
 //        artifactPath = correctIndexPathIfNecessary(repository, artifactPath);
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
         vulnerabilityBlock(repositoryPath);
@@ -86,9 +84,9 @@ public class MavenArtifactController
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
 
-        try {
+        try (InputStream is = request.getInputStream()){
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-            artifactManagementService.validateAndStore(repositoryPath, request.getInputStream());
+            artifactManagementService.validateAndStore(repositoryPath,is);
 
             return ResponseEntity.ok("The artifact was deployed successfully.");
         } catch (Exception e) {

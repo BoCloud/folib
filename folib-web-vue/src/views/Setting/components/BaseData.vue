@@ -8,8 +8,8 @@
               <div class="icon">
                 <img src="images/folib/process-files-open.svg" alt="" />
               </div>
-              <h6>句柄情况</h6>
-              <p>系统最大句柄为:{{ monitorData.fileOpenMax }}</p>
+              <h6>{{ $t('Setting.handleCase') }}</h6>
+              <p>{{ $t('Setting.maximumSystemHandle') }}: {{ monitorData.fileOpenMax }}</p>
             </template>
           </a-statistic>
         </a-card>
@@ -21,8 +21,8 @@
               <div class="icon">
                 <img src="images/folib/disk.svg" alt="" />
               </div>
-              <h6>存储大小</h6>
-              <p>系统最大空间:{{ monitorData.disktotal | filterTwoNum }}</p>
+              <h6>{{ $t('Setting.StorageSize') }}</h6>
+              <p>{{ $t('Setting.MaximumSystemSpace') }}: {{ monitorData.disktotal | filterTwoNum }}</p>
             </template>
           </a-statistic>
         </a-card>
@@ -34,8 +34,8 @@
               <div class="icon">
                 <img src="images/folib/jvmCommitted.svg" alt="" />
               </div>
-              <h6>可用内存</h6>
-              <p>指JVM可用内存大小</p>
+              <h6>{{ $t('Setting.AvailableMemory') }}</h6>
+              <p>{{ $t('Setting.availableJVM') }}</p>
             </template>
           </a-statistic>
         </a-card>
@@ -47,8 +47,8 @@
               <div class="icon">
                 <img src="images/folib/jetty.svg" alt="" />
               </div>
-              <h6>线程数量</h6>
-              <p>当前程序的线程数量</p>
+              <h6>{{ $t('Setting.NumberOfThreads') }}</h6>
+              <p>{{ $t('Setting.currentProgramNum') }}</p>
             </template>
           </a-statistic>
         </a-card>
@@ -60,8 +60,8 @@
               <div class="icon">
                 <img src="images/folib/loadAverage.svg" alt="" />
               </div>
-              <h6>系统负载</h6>
-              <p>当前系统的负载评估值</p>
+              <h6>{{ $t('Setting.SystemLoad') }}</h6>
+              <p>{{ $t('Setting.CurrentSystemLoadEstimate') }}</p>
             </template>
           </a-statistic>
         </a-card>
@@ -73,8 +73,8 @@
               <div class="icon">
                 <img src="images/folib/gc.svg" alt="" />
               </div>
-              <h6>GC耗时</h6>
-              <p>执行时间:{{ monitorData.gcpause.total | filterTwoNum }}s</p>
+              <h6>GC{{ $t('Setting.TimeConsuming') }}</h6>
+              <p>{{ $t('Setting.ExecutionTime') }}: {{ monitorData.gcpause.total | filterTwoNum }}s</p>
             </template>
           </a-statistic>
         </a-card>
@@ -88,15 +88,15 @@
           :bodyStyle="{ padding: '0 12px 8px 3px' }"
         >
           <template #title>
-            <h6>CPU使用情况</h6>
+            <h6>{{ $t('Setting.CPUUsage') }}</h6>
           </template>
           <ChartLineGradient
             ref="cpu"
             :labels="cpuLabels"
             :dataOne="cpuDataOne"
             :dataTwo="cpuDataTwo"
-            dataOneTag="系统CPU"
-            dataTwoTag="Folib进程CPU"
+            :dataOneTag="$t('Setting.SystemCPU')"
+            :dataTwoTag="$t('Setting.FolibProcessCPU')"
           />
         </a-card>
       </a-col>
@@ -107,15 +107,15 @@
           :bodyStyle="{ padding: '0 12px 8px 3px' }"
         >
           <template #title>
-            <h6>内存使用情况(GB)</h6>
+            <h6>{{ $t('Setting.MemoryUsage') }}(GB)</h6>
           </template>
           <ChartLineGradient
             ref="mem"
             :labels="memLabels"
             :dataOne="memDataOne"
             :dataTwo="memDataTwo"
-            dataOneTag="最大可用内存"
-            dataTwoTag="Folib当前使用内存"
+            :dataOneTag="$t('Setting.MaxAvailableMemory')"
+            :dataTwoTag="$t('Setting.FolibCurrentlyUsesMemory')"
           />
         </a-card>
       </a-col>
@@ -126,14 +126,14 @@
           :bodyStyle="{ padding: '0 12px 8px 3px' }"
         >
           <template #title>
-            <h6>JVM线程情况</h6>
+            <h6>JVM {{ $t('Setting.InTheThreadCase') }}</h6>
           </template>
           <ChartLineGradient
             ref="thread"
             :labels="threadLabels"
             :dataOne="threadDataOne"
             :dataTwo="threadDataTwo"
-            dataOneTag="活动线程数"
+            :dataOneTag="$t('Setting.NumberOfActiveThreads')"
             dataTwoTag="BLOCKED"
           />
         </a-card>
@@ -201,7 +201,6 @@ export default {
   watch: {
     activeTab:{
       handler(val) {
-      // debugger
       if (val === "1") {
         this.getMetrics();
       } else {
@@ -209,7 +208,7 @@ export default {
       }
     },
     immediate:true
-    }  
+    }
   },
   created() {},
   mounted() {

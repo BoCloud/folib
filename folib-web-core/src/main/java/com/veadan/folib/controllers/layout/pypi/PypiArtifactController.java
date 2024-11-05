@@ -1,19 +1,16 @@
 package com.veadan.folib.controllers.layout.pypi;
 
-import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
+import com.veadan.folib.components.PypiBrowsePackageHtmlResponseBuilder;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.ArtifactIdGroup;
 import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.providers.ProviderImplementationException;
 import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.providers.repository.RepositoryProviderRegistry;
-import com.veadan.folib.pypi.PypiSearchRequest;
-import com.veadan.folib.pypi.PypiSearchResult;
 import com.veadan.folib.repository.PypiRepositoryFeatures;
-import com.veadan.folib.services.ArtifactCoordinatesService;
+import com.veadan.folib.services.PypiService;
 import com.veadan.folib.storage.metadata.pypi.PypiArtifactMetadata;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
@@ -29,7 +26,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -39,9 +36,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * Rest End Points for Pypi Artifacts requests.
@@ -51,7 +52,7 @@ import java.util.*;
  */
 @RestController
 @LayoutRequestMapping(PypiArtifactCoordinates.LAYOUT_NAME)
-@Api(description = "python坐标控制器",tags = "python坐标控制器")
+@Api(description = "python坐标控制器", tags = "python坐标控制器")
 public class PypiArtifactController extends BaseArtifactController {
 
     private static final Set<String> VALID_ACTIONS = Sets.newHashSet("file_upload");
@@ -59,20 +60,21 @@ public class PypiArtifactController extends BaseArtifactController {
     private static final Set<String> VALID_FILE_TYPES = Sets.newHashSet("sdist", "bdist_wheel");
 
     @Inject
-    private RepositoryProviderRegistry repositoryProviderRegistry;
-
-    @Inject
-    private PypiBrowsePackageHtmlResponseBuilder htmlResponseBuilder;
-
-    @Inject
-    private PypiRepositoryFeatures.PypiSearchPackagesEventListener pypiSearchPackagesEventListener;
-
-    @Inject
-    private ArtifactCoordinatesService artifactCoordinatesService;
+    private PypiService pypiService;
 
     @Inject
     @Lazy
     private ArtifactComponent artifactComponent;
+
+    @Inject
+    private PypiBrowsePackageHtmlResponseBuilder pypiBrowsePackageHtmlResponseBuilder;
+
+    @Override
+    @PreAuthorize("authenticated")
+    @GetMapping(value = "/{storageId}/{repositoryId}")
+    public ResponseEntity<String> checkRepositoryAccess() {
+        return super.checkRepositoryAccess();
+    }
 
     @ApiOperation(value = "This end point will be used to upload/deploy python package.")
     @ApiResponses(value = {@ApiResponse(code = HttpURLConnection.HTTP_OK, message = "python package was deployed successfully."),
@@ -101,10 +103,10 @@ public class PypiArtifactController extends BaseArtifactController {
             @RequestParam(name = "author_email", required = false) String authorEmail,
             @RequestParam(name = "content", required = true) MultipartFile file,
             HttpServletRequest request) {
-
+        String repositoryId= repository.getId();
         logger.info("python package upload request for storageId -> [{}] , repositoryId -> [{}]",
                 repository.getStorage().getId(),
-                repository.getId());
+                repositoryId);
 
         try {
             if (!isValidAction(action)) {
@@ -112,7 +114,6 @@ public class PypiArtifactController extends BaseArtifactController {
                         .body("Invalid value for \":action\" parameter. Valid action values are "
                                 + VALID_ACTIONS);
             }
-
             PypiArtifactMetadata pypiArtifactMetadata = new PypiArtifactMetadata().withAction(action)
                     .withAuthor(author)
                     .withAuthorEmail(authorEmail)
@@ -132,7 +133,7 @@ public class PypiArtifactController extends BaseArtifactController {
                     .withVersion(version);
 
             return validateAndUploadPackage(pypiArtifactMetadata, file, repository.getStorage().getId(),
-                    repository.getId());
+                    repositoryId);
         } catch (Exception e) {
             logger.error("Failed to process pypi upload request for storageId -> [{}] , repositoryId -> [{}]",
                     repository.getStorage().getId(), repository.getId(), e);
@@ -183,7 +184,7 @@ public class PypiArtifactController extends BaseArtifactController {
             @ApiResponse(code = HttpURLConnection.HTTP_INTERNAL_ERROR, message = "An error occurred while executing download request."),
             @ApiResponse(code = HttpURLConnection.HTTP_UNAVAILABLE, message = "Service Unavailable.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(path = "/{storageId}/{repositoryId}/packages/{artifactName}", method = RequestMethod.GET)
+    @RequestMapping(path = "/{storageId}/{repositoryId}/packages/{artifactName:.+}", method = RequestMethod.GET)
     public void downloadPackage(@RepositoryMapping Repository repository,
                                 @PathVariable(name = "artifactName") String artifactName,
                                 HttpServletRequest request,
@@ -203,22 +204,9 @@ public class PypiArtifactController extends BaseArtifactController {
             response.setStatus(HttpStatus.BAD_REQUEST.value());
             return;
         }
-
-        String targetUrl = null;
-        if (repository.isProxyRepository() && Objects.nonNull(repository.getRemoteRepository())) {
-            ArtifactIdGroup artifactIdGroup = getArtifactIdGroup(repository, coordinates);
-            if (Objects.nonNull(artifactIdGroup) && StringUtils.hasText(artifactIdGroup.getMetadata())) {
-                List<PypiSearchResult> pypiSearchRequestList = JSONObject.parseArray(artifactIdGroup.getMetadata(), PypiSearchResult.class);
-                Optional<PypiSearchResult> optionalPypiSearchResult = pypiSearchRequestList.stream().filter(item -> item.getArtifactName().equals(artifactName)).findFirst();
-                if (optionalPypiSearchResult.isPresent()) {
-                    targetUrl = optionalPypiSearchResult.get().getArtifactUrl();
-                }
-            }
-        }
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(
                 repository.getStorage().getId(),
                 repository.getId(),
-                targetUrl,
                 coordinates.buildPath());
         vulnerabilityBlock(repositoryPath);
         provideArtifactDownloadResponse(request, response, headers, repositoryPath);
@@ -257,13 +245,32 @@ public class PypiArtifactController extends BaseArtifactController {
                                                 HttpServletResponse response,
                                                 @RequestHeader HttpHeaders headers)
             throws Exception {
+        if (!request.getRequestURI().endsWith("/")) {
+            final Map<String, String> uriVariables = new HashMap<String, String>();
+            uriVariables.put("storageId", repository.getStorage().getId());
+            uriVariables.put("repositoryId", repository.getId());
+            uriVariables.put("packageName", packageName);
 
+            final URI location = ServletUriComponentsBuilder
+                    .fromCurrentServletMapping()
+                    .path("/storages/{storageId}/{repositoryId}/simple/{packageName}/")
+                    .build()
+                    .expand(uriVariables)
+                    .toUri();
+            headers.setLocation(location);
+            return ResponseEntity.status(HttpStatus.SEE_OTHER)
+                    .headers(headers)
+                    .body(HttpStatus.SEE_OTHER.getReasonPhrase());
+        }
         final String packageNameToDownload = PypiPackageNameConverter.escapeSpecialCharacters(packageName);
 
         logger.info("Get package path request for storageId -> [{}] , repositoryId -> [{}], packageName -> [{}]",
                 repository.getStorage().getId(),
                 repository.getId(), packageNameToDownload);
-        String html = artifactComponent.getPypiArtifactIdGroupCache(repository, new PypiSearchRequest(packageName));
+        String html = pypiService.packages(repository, packageName, packageName);
+        if (StringUtils.isBlank(html)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(pypiBrowsePackageHtmlResponseBuilder.nouFound());
+        }
         return ResponseEntity.status(HttpStatus.OK).body(html);
     }
 
@@ -284,7 +291,13 @@ public class PypiArtifactController extends BaseArtifactController {
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId,
                 repositoryId,
                 coordinates.buildPath());
-        artifactManagementService.validateAndStore(repositoryPath, file.getInputStream());
+        try( InputStream is =  file.getInputStream()) {
+            artifactManagementService.validateAndStore(repositoryPath, is);
+        }catch (IOException e){
+            logger.error(e.getMessage(), e);
+            throw new IOException(e);
+        }
+
 
         return ResponseEntity.status(HttpStatus.OK).body("The artifact was deployed successfully.");
     }

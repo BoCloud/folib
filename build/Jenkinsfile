@@ -1,0 +1,78 @@
+#!/usr/bin/env groovy
+pipeline {
+    agent { label 'master' }
+    parameters {
+        string(name: 'repoUrl', defaultValue: 'http://58.210.154.140:8888/folib/folib-server.git', description: '')
+        string(name: 'repoCred', defaultValue: 'folib', description: '')
+        string(name: 'repoBranch', defaultValue: 'dev', description: '')
+        string(name: 'dockerUrl', defaultValue: 'https://public.folib.com', description: 'Hub地址')
+        string(name: 'hub_certificate', defaultValue: 'public-folib-key', description: 'Hub凭证')
+        string(name: 'docker_repo', defaultValue: 'mufan/mufan-docker', description: '镜像仓库名称')
+        string(name: 'docker_name', defaultValue: 'folib-server', description: '镜像名称')
+        string(name: 'dockerTag', defaultValue: '1.2.6.4', description: '镜像版本')
+        string(name: 'buildPackageType', defaultValue: 'k8s', description: '部署包名称')
+        string(name: 'platform', defaultValue: 'linux/amd64', description: '支持linux/amd64')
+        string(name: 'maven_settings_id', defaultValue: 'devops-settings-folib', description: 'maven-settings的id')
+        booleanParam(name: 'clean_ws', defaultValue: false, description: '是否清理工作空间缓存')
+    }
+
+    stages {
+        stage('git pull') {
+            steps {
+                script {
+                    if (params.clean_ws == true) {
+                        cleanWs()
+                    }
+                }
+                git credentialsId: params.repoCred, url: params.repoUrl, branch: params.repoBranch
+            }
+        }
+        stage('mvn install') {
+                     steps {
+                         withEnv(['JAVA_HOME=/var/jenkins_home/buildEnv/jdk-11']) {
+                             withMaven(globalMavenSettingsConfig: "${params.maven_settings_id}") {
+                                 sh '''
+                                    export NVM_DIR="/var/jenkins_home/buildEnv/nvm-0.38.0"
+                                     [ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh"
+                                     [ -s "$NVM_DIR/bash_completion" ] && \\. "$NVM_DIR/bash_completion"
+                                     nvm use 14.6.0
+                                     npm install -g yarn
+                                     yarn -v
+                                     mvn clean -U --settings folib-settings.xml -Dmaven.test.skip=true -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true -Dmaven.wagon.http.ssl.ignore.validity.dates=true
+                                     cd folib-web-vue
+
+                                     yarn install
+                                     yarn run build
+                                     cd ..
+                                     mvn  package -U -T 8 --settings folib-settings.xml -DskipTests -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true -Dmaven.wagon.http.ssl.ignore.validity.dates=true
+                                     cd folib-distribution/target
+                                     tar -zxf folib-distribution-1.0-SNAPSHOT.tar.gz folib-distribution-1.0-SNAPSHOT
+                                 '''
+                             }
+                         }
+                     }
+                 }
+        stage('docker build') {
+            steps {
+                script {
+                    dir("folib-distribution/target/folib-distribution-1.0-SNAPSHOT") {
+
+                        withEnv(["PATH+=/var/jenkins_home/buildEnv/cli-plugins"]) {
+                            echo "${params.dockerUrl}  ${params.hub_certificate}"
+                            def gitCommit = sh(returnStdout: true, script: 'git rev-parse HEAD').trim()
+                            echo "${gitCommit}"
+                            docker.withRegistry("${params.dockerUrl}", "${params.hub_certificate}") {
+                                def dockerRegistryHost = params.dockerUrl.replaceAll('https?://', '')
+                                def tag = "${params.dockerTag}" as Object
+                                def dockerTagWithRegistry = "${dockerRegistryHost}/${params.docker_repo}/${params.docker_name}:" + tag
+                                sh "docker-buildx create --use --driver-opt=network=host --name=mybuilder-cn --driver docker-container --driver-opt image=dockerpracticesig/buildkit:master"
+                                sh "docker-buildx build -t ${dockerTagWithRegistry} -f Dockerfile --build-arg PACKAGE_TYPE=${params.buildPackageType} --platform ${params.platform} . --push"
+                            }
+                        }
+                    }
+
+                }
+            }
+        }
+    }
+}

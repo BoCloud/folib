@@ -1,5 +1,6 @@
 package com.veadan.folib.storage.indexing.group;
 
+import com.google.common.collect.Lists;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.storage.indexing.*;
@@ -13,6 +14,7 @@ import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.locks.Lock;
 
 import org.apache.lucene.index.IndexNotFoundException;
@@ -59,30 +61,31 @@ public class RepositoryGroupIndexCreator
     {
         final Repository repository = indexingContext.getRepositoryRaw();
         final Storage storage = repository.getStorage();
-
-        for (final String storageAndRepositoryId : repository.getGroupRepositories())
+        List<String> storageAndRepositoryIdList = Lists.newArrayList();
+        configurationManager.resolveGroupRepository(repository, storageAndRepositoryIdList);
+        for (final String storageAndRepositoryId : storageAndRepositoryIdList)
         {
             final String sId = ConfigurationUtils.getStorageId(storage.getId(), storageAndRepositoryId);
             final String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
 
             final RepositoryPath subRepositoryIndexDirectoryPath = getSubRepositoryIndexPath(sId, rId);
 
-            final Lock lock = repositoryPathLock.lock(subRepositoryIndexDirectoryPath).readLock();
-            lock.lock();
-            try
-            {
+            if (repositoryPathLock.lock(subRepositoryIndexDirectoryPath)) {
                 try
                 {
-                    indexingContext.merge(new SimpleFSDirectory(subRepositoryIndexDirectoryPath));
+                    try
+                    {
+                        indexingContext.merge(new SimpleFSDirectory(subRepositoryIndexDirectoryPath));
+                    }
+                    catch (IndexNotFoundException ex)
+                    {
+                        logger.warn("IndexNotFound in [{}]", subRepositoryIndexDirectoryPath, ex);
+                    }
                 }
-                catch (IndexNotFoundException ex)
+                finally
                 {
-                    logger.warn("IndexNotFound in [{}]", subRepositoryIndexDirectoryPath, ex);
+                    repositoryPathLock.unLock(subRepositoryIndexDirectoryPath);
                 }
-            }
-            finally
-            {
-                lock.unlock();
             }
         }
     }

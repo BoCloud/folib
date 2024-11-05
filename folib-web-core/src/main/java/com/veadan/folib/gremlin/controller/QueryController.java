@@ -4,6 +4,7 @@ import com.veadan.folib.gremlin.entity.QueryResult;
 import com.veadan.folib.gremlin.entity.vo.PropertyVo;
 import com.veadan.folib.gremlin.service.QueryService;
 import io.swagger.annotations.Api;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
+@PreAuthorize("hasAuthority('ADMIN')")
 @RequestMapping("/api/gremlin")
 @Api(description = "gremlin处理模块",tags = "gremlin处理模块")
 public class QueryController {

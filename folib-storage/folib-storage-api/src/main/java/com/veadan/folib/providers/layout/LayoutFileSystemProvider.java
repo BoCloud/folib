@@ -1,8 +1,14 @@
 package com.veadan.folib.providers.layout;
 
+import cn.hutool.core.date.DatePattern;
+import cn.hutool.core.date.DateUtil;
+import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.ArtifactNotFoundException;
+import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.domain.Vulnerability;
+import com.veadan.folib.domain.ArtifactIdGroup;
+import com.veadan.folib.domain.ArtifactIdGroupEntity;
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
 import com.veadan.folib.io.*;
@@ -11,12 +17,19 @@ import com.veadan.folib.providers.io.RepositoryFileAttributeType;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.StorageFileSystemProvider;
+import com.veadan.folib.repositories.ArtifactIdGroupRepository;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repositories.VulnerabilityRepository;
 import com.veadan.folib.storage.ArtifactResolutionException;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.util.CommonUtils;
+import com.veadan.folib.util.LocalDateTimeInstance;
+import com.veadan.folib.util.RepositoryPathUtil;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.carlspring.commons.io.reloading.FSReloadableInputStreamHandler;
 import org.slf4j.Logger;
@@ -26,16 +39,15 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.OpenOption;
-import java.nio.file.Path;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.nio.file.spi.FileSystemProvider;
 import java.security.NoSuchAlgorithmException;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.*;
 
 /**
  * This class decorates {@link StorageFileSystemProvider} with common layout specific
@@ -56,6 +68,9 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
 
     @Inject
     private ArtifactRepository artifactEntityRepository;
+
+    @Inject
+    private ArtifactIdGroupRepository artifactIdGroupRepository;
 
     @Inject
     private VulnerabilityRepository vulnerabilityRepository;
@@ -157,25 +172,80 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
     public void storeChecksum(RepositoryPath basePath,
                               boolean forceRegeneration)
             throws IOException {
-        Files.walk(basePath)
-                .filter(p -> !Files.isDirectory(p))
-                .filter(p -> {
-                    try {
-                        return !Boolean.TRUE.equals(RepositoryFiles.isChecksum((RepositoryPath) p));
-                    } catch (IOException e) {
-                        logger.error("Failed to read attributes for [{}]", p, e);
-                    }
-                    return false;
-                })
-                .forEach(p -> {
-                    try {
-                        writeChecksum((RepositoryPath) p, forceRegeneration);
-                    } catch (IOException e) {
-                        logger.error("Failed to write checksum for [{}]", p, e);
-                    }
-                });
+        storeChecksum(basePath, "", forceRegeneration);
     }
 
+    private LocalDateTime getFileUpdateTime(RepositoryPath repositoryPath) {
+        LocalDateTime lastModifiedDateTime = null;
+        try {
+            BasicFileAttributes attributes = Files.readAttributes(repositoryPath, BasicFileAttributes.class);
+            FileTime fileTime = attributes.lastModifiedTime();
+            // 将FileTime转换为Instant
+            Instant instant = fileTime.toInstant();
+            // 将Instant转换为LocalDateTime
+            lastModifiedDateTime = instant.atZone(ZoneId.of("Asia/Shanghai")).toLocalDateTime();
+        } catch (IOException ex) {
+            logger.error(ExceptionUtils.getStackTrace(ex));
+        }
+        return lastModifiedDateTime;
+    }
+
+    public void storeChecksum(RepositoryPath basePath, String lastModifiedTime,
+                              boolean forceRegeneration)
+            throws IOException {
+        final boolean isDockerLayout = ProductTypeEnum.Docker.getFoLibraryName().equalsIgnoreCase(basePath.getRepository().getLayout());
+        try {
+            Files.walkFileTree(basePath, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file,
+                                                 BasicFileAttributes attrs)
+                        throws IOException {
+                    try {
+                        RepositoryPath itemPath = (RepositoryPath) file;
+                        logger.info("RepositoryPath path [{}] ", itemPath.toString());
+                        if (RepositoryPathUtil.include(1, itemPath, isDockerLayout, false)) {
+                            if (StringUtils.isNotBlank(lastModifiedTime)) {
+                                LocalDateTime lastModifiedDateTime = getFileUpdateTime(itemPath);
+                                if (Objects.isNull(lastModifiedDateTime) || !LocalDateTime.now().minusDays(Integer.parseInt(lastModifiedTime)).isBefore(lastModifiedDateTime)) {
+                                    logger.info("RepositoryPath path [{}] lastModifiedDateTime [{}] is before lastModifiedTime [{}] skip...", itemPath.toString(), lastModifiedTime, DateUtil.format(lastModifiedDateTime, DatePattern.NORM_DATETIME_PATTERN));
+                                    return FileVisitResult.SKIP_SUBTREE;
+                                }
+                            }
+                            logger.info("Find path [{}]", itemPath);
+                            writeChecksum(itemPath, forceRegeneration);
+                        }
+                    } catch (Exception e) {
+                        logger.error("Failed to write checksum for [{}]", file, e);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+                    try {
+                        RepositoryPath itemPath = (RepositoryPath) dir;
+                        logger.info("RepositoryPath directory [{}] ", itemPath.toString());
+                        if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !RepositoryPathUtil.include(2, itemPath, isDockerLayout)) {
+                            logger.info("RepositoryPath directory [{}] skip...", itemPath.toString());
+                            return FileVisitResult.SKIP_SUBTREE;
+                        }
+                    } catch (Exception e) {
+                        logger.error("Failed to directory for [{}]", dir, e);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir,
+                                                          IOException exc)
+                        throws IOException {
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (Exception ex) {
+            logger.error(ExceptionUtils.getStackTrace(ex));
+        }
+    }
 
     protected void writeChecksum(RepositoryPath path,
                                  boolean force)
@@ -186,7 +256,9 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
                 //calculate checksum while reading the stream
             }
             String layout = path.getRepository().getLayout();
+            final Artifact artifact = artifactEntityRepository.findOneArtifact(path.getStorageId(), path.getRepositoryId(), RepositoryFiles.relativizePath(path));
             Set<String> digestAlgorithmSet = path.getFileSystem().getDigestAlgorithmSet();
+            final Map<String, String> checksumMap = Maps.newHashMap();
             digestAlgorithmSet.stream()
                     .forEach(p ->
                     {
@@ -198,11 +270,25 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
                         }
                         try {
                             Files.write(checksumPath, checksum.getBytes());
+                            checksumMap.put(p, checksum);
                         } catch (IOException e) {
                             logger.error("Failed to write checksum for [{}]",
                                     checksumPath.toString(), e);
                         }
                     });
+            try {
+                if (Objects.nonNull(artifact) && MapUtils.isNotEmpty(checksumMap) && !CommonUtils.areMapsEqual(artifact.getChecksums(), checksumMap)) {
+                    logger.info("Artifact storageId [{}] repositoryId [{}] path [{}] checksums update old checksums [{}] new checksums [{}]", artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), artifact.getChecksums(), checksumMap);
+                    artifact.setChecksums(checksumMap);
+                    artifact.setSizeInBytes(Files.size(path));
+                    artifact.setLastUpdated(LocalDateTimeInstance.now());
+                    artifactEntityRepository.saveOrUpdate(artifact);
+                }
+            } catch (Exception ex) {
+                logger.error("Update artifact checksums for [{}] error [{}]",
+                        path.toString(), ExceptionUtils.getStackTrace(ex));
+            }
+            logger.info("RepositoryPath [{}] new checksums [{}]", path, checksumMap);
         }
     }
 
@@ -246,9 +332,19 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
         Artifact artifactEntry = Optional.ofNullable(repositoryPath.getArtifactEntry())
                 .orElseGet(() -> fetchArtifactEntry(repositoryPath));
         if (artifactEntry != null) {
-            Set<String> vulnerabilities = Optional.ofNullable(artifactEntry.getVulnerabilitySet()).orElse(Collections.emptySet()).stream().map(Vulnerability::getUuid).collect(Collectors.toSet());
             artifactEntityRepository.delete(artifactEntry);
-            vulnerabilityRepository.handlerVulnerabilityForArtifactDelete(vulnerabilities);
+            ArtifactCoordinates c = RepositoryFiles.readCoordinates(repositoryPath);
+            if (Objects.nonNull(c) && StringUtils.isNotBlank(c.getId()) && ProductTypeEnum.Npm.getFoLibraryName().equals(repositoryPath.getRepository().getLayout())) {
+                ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(artifactEntry.getStorageId(), artifactEntry.getRepositoryId(), c.getId());
+                artifactIdGroup = artifactIdGroupRepository.findByArtifactIdGroup(artifactIdGroup.getUuid());
+                if (Objects.nonNull(artifactIdGroup) && StringUtils.isNotBlank(artifactIdGroup.getMetadata())) {
+                    artifactIdGroup.setMetadata("");
+                    artifactIdGroupRepository.saveOrUpdate(artifactIdGroup);
+                }
+            }
+            if (CollectionUtils.isNotEmpty(artifactEntry.getVulnerabilities())) {
+                vulnerabilityRepository.asyncHandlerVulnerabilityForArtifactDelete(repositoryPath, artifactEntry.getVulnerabilities());
+            }
         }
 
         super.doDeletePath(repositoryPath, force);
@@ -332,13 +428,18 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
 
     private void deleteArtifactMedataFile(RepositoryPath repositoryPath) {
         try {
-            if (repositoryPath.getRoot().toString().equals(repositoryPath.toString())) {
+            if (Files.exists(repositoryPath) && Files.isSameFile(repositoryPath.getRoot(), repositoryPath)) {
                 return;
             }
             String artifactMetadataFileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
             RepositoryPath artifactRepositoryPath = repositoryPath.getParent().resolve(artifactMetadataFileName);
             if (Files.exists(artifactRepositoryPath)) {
                 super.delete(artifactRepositoryPath, true);
+            }
+            String artifactMetadataDirectoryName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".foLibrary-metadata";
+            RepositoryPath artifactMetadataDirectoryPath = repositoryPath.getParent().resolve(artifactMetadataDirectoryName);
+            if (Files.exists(artifactMetadataDirectoryPath)) {
+                super.delete(artifactMetadataDirectoryPath, true);
             }
         } catch (Exception ex) {
             logger.error("删除制品缓存元数据文件 [{}] 失败：[{}]", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));

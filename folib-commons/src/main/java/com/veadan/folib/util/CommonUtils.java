@@ -7,11 +7,17 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author leipenghui
@@ -142,5 +148,68 @@ public class CommonUtils {
         String lockNoTimestamp = "no lock column contained our timestamp";
         List<String> errList = Lists.newArrayList(expectedErr, lockErr, uniquenessErr, lockNoTimestamp);
         return errList.stream().anyMatch(err::contains);
+    }
+
+    /**
+     * 把数组所有元素排序，并按照“参数=参数值”的模式用“&”字符拼接成字符串
+     *
+     * @param params 需要排序并参与字符拼接的参数组
+     * @return 拼接后字符串
+     */
+    public static String createLinkStringByGet(Map<String, String> params) {
+        String preStr = "?";
+        try {
+            List<String> keys = new ArrayList<String>(params.keySet());
+            Collections.sort(keys);
+            for (int i = 0; i < keys.size(); i++) {
+                String key = keys.get(i);
+                String value = params.get(key);
+                value = URLEncoder.encode(value, "UTF-8");
+                if (i == keys.size() - 1) {
+                    //拼接时，不包括最后一个&字符
+                    preStr = preStr + key + "=" + value;
+                } else {
+                    preStr = preStr + key + "=" + value + "&";
+                }
+            }
+        } catch (Exception ex) {
+            log.error("字符拼接错误：{}", ExceptionUtils.getStackTrace(ex));
+        }
+        return preStr;
+    }
+
+    /**
+     * 毫秒数转为UTC时间
+     *
+     * @param millis 毫秒数
+     * @return UTC时间
+     */
+    public static String getConvertMillis2String(long millis) {
+        // 将毫秒数转换为Instant对象
+        Instant instant = Instant.ofEpochMilli(millis);
+        // 转换为UTC时间
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_INSTANT;
+        return instant.atOffset(ZoneOffset.UTC).format(formatter);
+    }
+
+    /**
+     * 比较两个map是否一致
+     *
+     * @param map1 map1
+     * @param map2 map2
+     * @return true 两个map一致 false 两个map不一致
+     */
+    public static boolean areMapsEqual(Map<String, String> map1, Map<String, String> map2) {
+        if (map1.size() != map2.size()) {
+            return false;
+        }
+        for (Map.Entry<String, String> entry : map1.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            if (!map2.containsKey(key) || !map2.get(key).equals(value)) {
+                return false;
+            }
+        }
+        return true;
     }
 }

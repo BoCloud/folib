@@ -23,6 +23,7 @@ import javax.inject.Inject;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -75,12 +76,16 @@ public class CocoapodsIndexServiceImpl implements CocoapodsIndexService
         final String baseUrl = StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/");
         final String username = remoteRepository.getUsername();
         final String password = remoteRepository.getPassword();
+        String url2 = String.format("%s/archive/refs/heads/master.tar.gz", url);
         url = String.format("%s/archive/refs/heads/master.zip", url);
+
         final String specIndexZipTempUri = ".specs/temp/master.zip";
         final String specIndexTarGzTempUri = ".specs/master.tar.gz";
         final String indexTempFolderPath = String.format("%s%s%s%s", tempPath, File.separator, UUID.randomUUID(), File.separator);
         RepositoryPath specIndexZipTempPath = null;
         String ziFilePath = null;
+
+        String URL_PATTERN = "^(http|https)://(?:[a-zA-Z0-9.-]+|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})(?::\\d+)?/storages/[^/]+/[^/]+$";
 
         try 
         {
@@ -93,10 +98,18 @@ public class CocoapodsIndexServiceImpl implements CocoapodsIndexService
             }
             catch (Exception e)
             { logger.error("删除旧的索引文件失败", e); }
-            // 下载代理索引zip
-            specIndexZipTempPath = artifactResolutionService.resolvePath(storageId, repositoryId, url, specIndexZipTempUri);
-            if (!Files.exists(specIndexZipTempPath))
-            { throw new RuntimeException("下载Cocoapods远程仓库索引Zip失败"); }
+            if(url.contains("github.com")){
+                // 下载代理索引zip
+                specIndexZipTempPath = artifactResolutionService.resolvePath(storageId, repositoryId, url, specIndexZipTempUri);
+                if (!Files.exists(specIndexZipTempPath)) {
+                    throw new RuntimeException("下载Cocoapods远程仓库索引Zip失败");
+                }
+            }else if(url.matches(URL_PATTERN)) {
+                specIndexZipTempPath = artifactResolutionService.resolvePath(storageId, repositoryId, url2, specIndexTarGzTempUri);
+            }else {
+                throw new RuntimeException("Cocoapods 不支持代理库："+url);
+            }
+
 
             ziFilePath = specIndexZipTempPath.getTarget().toString();
             String tarGzFilePath = specIndexZipTempPath.getTarget().getParent().getParent().toString()+"/master.tar.gz";
@@ -108,10 +121,11 @@ public class CocoapodsIndexServiceImpl implements CocoapodsIndexService
                 tarGzFilePath = localTarGzFileTempPath;
                 FileUtil.touch(new File(ziFilePath));
                 FileUtil.touch(new File(tarGzFilePath));
-
-                // 将S3网络路径缓存到本地
-                FileUtil.writeFromStream(new BufferedInputStream(Files.newInputStream(specIndexZipTempPath)), localZipFileTempPath);
-                logger.info("S3存储，转存S3文件到本本地：{}", specIndexZipTempPath);
+                try (InputStream inputStream = new BufferedInputStream(Files.newInputStream(specIndexZipTempPath))) {
+                    // 将S3网络路径缓存到本地
+                    FileUtil.writeFromStream(inputStream, localZipFileTempPath);
+                    logger.info("S3存储，转存S3文件到本本地：{}", specIndexZipTempPath);
+                }
             }
 
             logger.info("开始转换Cocoapods仓库代理仓库Zip（{}:{}）", specIndexZipTempPath, ziFilePath);
@@ -157,7 +171,9 @@ public class CocoapodsIndexServiceImpl implements CocoapodsIndexService
             if (S3FileSystemStorageProvider.ALIAS.equals(repository.getStorageProvider()))
             { // 存储模式为S3将转换后的索引TarGz上传到S3
                 final RepositoryPath indexTarZipPath = repositoryPathResolver.resolve(storageId, repositoryId, specIndexTarGzTempUri);
-                artifactManagementService.store(indexTarZipPath, Files.newInputStream(Path.of(tarGzFilePath)));
+                try (InputStream inputStream = Files.newInputStream(Path.of(tarGzFilePath))) {
+                    artifactManagementService.store(indexTarZipPath, inputStream);
+                }
                 logger.info("S3存储，回传本地转换后TarGz文件成功：{}", specIndexTarGzTempUri);
             }
 

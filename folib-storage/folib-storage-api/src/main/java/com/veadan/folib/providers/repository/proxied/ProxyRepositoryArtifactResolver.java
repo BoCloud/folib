@@ -1,14 +1,5 @@
 package com.veadan.folib.providers.repository.proxied;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-
-import javax.inject.Inject;
-
 import com.veadan.folib.client.RestArtifactResolver;
 import com.veadan.folib.config.HelmRepoUtil;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
@@ -24,12 +15,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import java.util.function.Function;
+
 /**
  * @author veadan
  */
 @Component
-public class ProxyRepositoryArtifactResolver
-{
+public class ProxyRepositoryArtifactResolver {
     private static final Logger logger = LoggerFactory.getLogger(ProxyRepositoryArtifactResolver.class);
 
     @Inject
@@ -40,7 +37,7 @@ public class ProxyRepositoryArtifactResolver
 
     @Inject
     private RestArtifactResolverFactory restArtifactResolverFactory;
-    
+
     @Inject
     private RepositoryPathLock repositoryPathLock;
 
@@ -52,50 +49,52 @@ public class ProxyRepositoryArtifactResolver
 
     @Inject
     private HelmRepoUtil helmRepoUtil;
+    @Inject
+    private List<FallbackRemoteArtifactInputStreamFactory> fallbackRemoteArtifactInputStreamRegistry;
 
     /**
      * This method has been developed to force fetch resource from remote.
-     *
+     * <p>
      * It should not contain any local / cache existence checks.
-     *
+     * <p>
      * Update this method carefully.
      */
     public RepositoryPath fetchRemoteResource(RepositoryPath repositoryPath)
-        throws IOException
-    {
+            throws IOException {
         Repository repository = repositoryPath.getFileSystem().getRepository();
         final RemoteRepository remoteRepository = repository.getRemoteRepository();
-        if (!remoteRepositoryAlivenessCacheManager.isAlive(remoteRepository))
-        {
+        if (!remoteRepositoryAlivenessCacheManager.isAlive(remoteRepository)) {
             logger.warn("Remote repository '{}' is down.", remoteRepository.getUrl());
+            return null;
         }
 
         RestArtifactResolver client = restArtifactResolverFactory.newInstance(remoteRepository,repositoryPath);
-//        ReadWriteLock lockSource = repositoryPathLock.lock(repositoryPath, "remote-fetch");
-//        Lock lock = lockSource.writeLock();
-//        lock.lock();
+        Function<Exception, InputStream> fallback = null;
+        for (FallbackRemoteArtifactInputStreamFactory fallbackRemoteArtifactInputStreamFactory : fallbackRemoteArtifactInputStreamRegistry) {
+            if (repositoryPath.getRepository().getLayout().equals(fallbackRemoteArtifactInputStreamFactory.getLayout())){
+                fallback = fallbackRemoteArtifactInputStreamFactory.getFallbackRemoteArtifactInputStream(repositoryPath);
+                break;
+            }
+        }
+        InputStream inputStream = new ProxyRepositoryInputStream(client, repositoryPath);
+        if (fallback != null) {
+            inputStream = new FallbackRemoteArtifactInputStream(inputStream, fallback);
+        }
 
-        try (InputStream is = new BufferedInputStream(new ProxyRepositoryInputStream(client, repositoryPath)))
-        {
+        try (InputStream is = new BufferedInputStream(inputStream)) {
             return doFetch(repositoryPath, is);
         }
-//        finally
-//        {
-//            lock.unlock();
-//        }
     }
 
     private RepositoryPath doFetch(RepositoryPath repositoryPath,
                                    InputStream is)
-        throws IOException
-    {
+            throws IOException {
         //We need this to force initialize lazy connection to remote repository.
         int available = is.available();
         logger.info("Got [{}] available bytes for [{}].", available, repositoryPath);
-        
+
         RepositoryPath result = onSuccessfulProxyRepositoryResponse(is, repositoryPath);
-        if (RepositoryFiles.isArtifact(repositoryPath))
-        {
+        if (RepositoryFiles.isArtifact(repositoryPath)) {
             artifactEventListenerRegistry.dispatchArtifactFetchedFromRemoteEvent(result);
         }
         return result;
@@ -104,13 +103,13 @@ public class ProxyRepositoryArtifactResolver
     protected RepositoryPath onSuccessfulProxyRepositoryResponse(InputStream is,
                                                                  RepositoryPath repositoryPath)
             throws IOException {
-        boolean indexFlage = repositoryPath.getRepository().getLayout().equalsIgnoreCase("helm")
-                && repositoryPath.toString().endsWith("index.yaml");
         artifactManagementService.store(repositoryPath, is);
         // helm 代理修改索引
-        if (indexFlage) {
+        boolean indexFlag = repositoryPath.getRepository().getLayout().equalsIgnoreCase("helm")
+                && repositoryPath.toString().endsWith("index.yaml");
+        if (indexFlag) {
             helmRepoUtil.reloadIndex(repositoryPath);
-            logger.info("重新加载 heml indx");
+            logger.info("Reload helm index");
         }
         // TODO: Add a policy for validating the checksums of downloaded artifacts
         // TODO: Validate the local checksum against the remote's checksums    徐新平

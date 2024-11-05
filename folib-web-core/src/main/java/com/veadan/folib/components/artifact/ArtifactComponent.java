@@ -1,5 +1,7 @@
 package com.veadan.folib.components.artifact;
 
+import cn.hutool.core.date.DatePattern;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -7,60 +9,66 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.archive.JarArchiveListingFunction;
-import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
+import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.components.DistributedLockComponent;
+import com.veadan.folib.components.PypiBrowsePackageHtmlResponseBuilder;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.config.NpmLayoutProviderConfig;
-import com.veadan.folib.configuration.*;
-import com.veadan.folib.controllers.layout.pypi.PypiBrowsePackageHtmlResponseBuilder;
-import com.veadan.folib.data.criteria.Paginator;
-import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.domain.ArtifactEntity;
-import com.veadan.folib.domain.ArtifactIdGroup;
-import com.veadan.folib.domain.Vulnerability;
-import com.veadan.folib.enums.BlockTypeEnum;
-import com.veadan.folib.enums.PromotionStatusEnum;
-import com.veadan.folib.enums.VersionConditionTypeEnum;
+import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.configuration.SecurityPolicyConfiguration;
+import com.veadan.folib.configuration.UnionRepositoryConfiguration;
+import com.veadan.folib.configuration.UnionTargetRepositoryConfiguration;
+import com.veadan.folib.constant.GlobalConstants;
+import com.veadan.folib.domain.*;
+import com.veadan.folib.entity.ArtifactCacheRecord;
+import com.veadan.folib.entity.Dict;
+import com.veadan.folib.entity.PackageNameBlock;
+import com.veadan.folib.enums.*;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
-import com.veadan.folib.npm.metadata.*;
+import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
+import com.veadan.folib.npm.metadata.PackageVersion;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
 import com.veadan.folib.providers.layout.*;
-import com.veadan.folib.providers.repository.RepositoryProvider;
 import com.veadan.folib.providers.repository.RepositoryProviderRegistry;
-import com.veadan.folib.providers.repository.RepositorySearchRequest;
-import com.veadan.folib.pypi.PypiSearchRequest;
-import com.veadan.folib.pypi.PypiSearchResult;
 import com.veadan.folib.repositories.ArtifactIdGroupRepository;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repository.NpmRepositoryFeatures;
 import com.veadan.folib.repository.PypiRepositoryFeatures;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
-import com.veadan.folib.services.ArtifactService;
-import com.veadan.folib.services.ConfigurationManagementService;
-import com.veadan.folib.services.DictService;
+import com.veadan.folib.services.*;
+import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.storage.repository.RepositoryDto;
-import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.util.CommonUtils;
-import com.veadan.folib.utils.PypiPackageNameConverter;
-import com.veadan.folib.utils.VersionUtil;
+import com.veadan.folib.util.FileSizeConvertUtils;
+import com.veadan.folib.util.LocalDateTimeInstance;
+import com.veadan.folib.utils.VersionUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.maven.artifact.ArtifactUtils;
+import org.apache.maven.artifact.repository.metadata.Metadata;
+import org.apache.maven.artifact.repository.metadata.Snapshot;
+import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.folib.util.Commons;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
@@ -69,11 +77,15 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 import java.io.*;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author leipenghui
@@ -150,6 +162,27 @@ public class ArtifactComponent {
     @Lazy
     private ArtifactEventListenerRegistry artifactEventListenerRegistry;
 
+    @Inject
+    @Lazy
+    private PackageNameBlockService packageNameBlockService;
+
+    @Inject
+    @Lazy
+    private ArtifactCacheRecordService artifactCacheRecordService;
+
+    @Inject
+    @Qualifier("browseRepositoryDirectoryListingService")
+    @Lazy
+    private volatile DirectoryListingService directoryListingService;
+
+    @Inject
+    @Lazy
+    private DistributedLockComponent distributedLockComponent;
+
+    @Inject
+    @Lazy
+    private ArtifactMetadataService artifactMetadataService;
+
     /**
      * 读取文件内容
      *
@@ -175,13 +208,12 @@ public class ArtifactComponent {
         String artifactContent = "";
         if (repositoryPath.getTarget() instanceof S3Path) {
             String parentPath = "";
-            try {
+            try (InputStream inputStream = Files.newInputStream(repositoryPath)) {
                 S3Path s3Path = (S3Path) repositoryPath.getTarget();
-                InputStream inputStream = Files.newInputStream(repositoryPath);
                 parentPath = tempPath + File.separator + UUID.randomUUID();
                 String filePath = parentPath + File.separator + s3Path.getFileName();
                 File tempFile = new File(filePath);
-                FileUtil.writeFromStream(inputStream, tempFile, true);
+                FileUtil.writeFromStream(inputStream, tempFile);
                 artifactContent = FileUtil.readString(tempFile, StandardCharsets.UTF_8);
             } catch (IOException ex) {
                 throw new IOException(ex);
@@ -224,7 +256,7 @@ public class ArtifactComponent {
      * @return true 支持 false 不支持
      */
     public boolean layoutSupportsForScan(RepositoryPath repositoryPath) {
-        return layoutSupports(repositoryPath, false, true);
+        return layoutSupports(repositoryPath, false, true, false);
     }
 
     /**
@@ -234,7 +266,7 @@ public class ArtifactComponent {
      * @return true 支持 false 不支持
      */
     public boolean layoutSupportsForBlock(RepositoryPath repositoryPath) {
-        return layoutSupports(repositoryPath, true, false);
+        return layoutSupports(repositoryPath, true, false, false);
     }
 
     /**
@@ -245,7 +277,17 @@ public class ArtifactComponent {
      * @return true 支持 false 不支持
      */
     public boolean layoutSupports(RepositoryPath repositoryPath) {
-        return layoutSupports(repositoryPath, false, false);
+        return layoutSupports(repositoryPath, false, false, false);
+    }
+
+    /**
+     * 晋级 校验制品类型是否是该布局支持的类型
+     *
+     * @param repositoryPath 仓库地址
+     * @return true 支持 false 不支持
+     */
+    public boolean layoutSupportsForPromotion(RepositoryPath repositoryPath) {
+        return layoutSupports(repositoryPath, false, false, true);
     }
 
     /**
@@ -254,33 +296,25 @@ public class ArtifactComponent {
      * @param repositoryPath 仓库地址
      * @param block          阻断 true
      * @param scan           安全扫描 true
+     * @param promotion      晋级 true
      * @return true 支持 false 不支持
      */
-    public boolean layoutSupports(RepositoryPath repositoryPath, Boolean block, Boolean scan) {
+    public boolean layoutSupports(RepositoryPath repositoryPath, Boolean block, Boolean scan, Boolean promotion) {
         boolean flag = false;
-        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+        if (Objects.isNull(repositoryPath)) {
             log.warn("RepositoryPath [{}] does not exist", repositoryPath);
             return false;
         }
-//        try {
-//            if (RepositoryFiles.isChecksum(repositoryPath)) {
-//                log.error("LayoutSupports [{}] isChecksum", repositoryPath);
-//                return false;
-//            }
-//        } catch (Exception ex) {
-//            log.error("LayoutSupports get [{}] isChecksum error [{}]", repositoryPath, ExceptionUtils.getStackTrace(ex));
-//            return false;
-//        }
         if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
             log.debug("docker布局");
             String blobs = "blobs";
             String manifest = "manifest";
             String path = repositoryPath.toAbsolutePath().toString();
             if (Boolean.TRUE.equals(block)) {
-                if (path.contains("sha256") && !path.endsWith(".sha256")) {
+                if (DockerArtifactCoordinates.include(path)) {
                     flag = true;
                 }
-            } else if (path.contains("sha256") && !path.contains(blobs) && !path.contains(manifest) && !path.endsWith(".sha256")) {
+            } else if (path.contains("sha256") && !path.contains(blobs) && !path.contains(manifest) && DockerArtifactCoordinates.include(path)) {
                 flag = true;
             }
         } else if (repositoryPath.getFileSystem() instanceof MavenFileSystem) {
@@ -293,6 +327,9 @@ public class ArtifactComponent {
         } else if (repositoryPath.getFileSystem() instanceof NpmFileSystem) {
             log.debug("npm布局");
             List<String> suffixList = Arrays.asList("package.json", ".tgz");
+            if (Boolean.TRUE.equals(promotion)) {
+                suffixList = Arrays.asList(".tgz", ".har");
+            }
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof NugetFileSystem) {
             log.debug("nuget布局");
@@ -334,6 +371,32 @@ public class ArtifactComponent {
             } else {
                 flag = true;
             }
+        } else if (repositoryPath.getFileSystem() instanceof GoFileSystem) {
+            log.debug("Go布局");
+            if (Boolean.TRUE.equals(scan)) {
+                List<String> allSuffixList = Lists.newArrayList(".mod", ".zip");
+                flag = endsWith(repositoryPath.getFileName().toString(), allSuffixList);
+            } else {
+                flag = true;
+            }
+        } else if (repositoryPath.getFileSystem() instanceof GitFlsFileSystem) {
+            log.debug("GitLfs布局");
+            if (Boolean.TRUE.equals(scan)) {
+                flag = false;
+            } else {
+                flag = true;
+            }
+        } else if (repositoryPath.getFileSystem() instanceof HuggingFaceFileSystem) {
+            log.debug("HuggingFaceFile布局");
+            if (Boolean.TRUE.equals(scan)) {
+                flag = false;
+            } else {
+                flag = true;
+            }
+        } else if (repositoryPath.getFileSystem() instanceof PubFileSystem) {
+            log.debug("pub布局");
+            List<String> allSuffixList = Lists.newArrayList(".tar.gz");
+            flag = endsWith(repositoryPath.getFileName().toString(), allSuffixList);
         }
         log.debug("制品路径 [{}] 布局 [{}] 是否是该布局支持的制品类型 [{}]", repositoryPath.toString(), repositoryPath.getRepository().getLayout(), flag);
         return flag;
@@ -352,7 +415,7 @@ public class ArtifactComponent {
                 log.debug("docker布局");
                 String blobs = "blobs";
                 String manifest = "manifest";
-                if (filePath.contains("sha256") && !filePath.contains(blobs) && !filePath.contains(manifest) && !filePath.endsWith(".sha256")) {
+                if (filePath.contains("sha256") && !filePath.contains(blobs) && !filePath.contains(manifest) && DockerArtifactCoordinates.include(filePath)) {
                     flag = true;
                 }
             } else if (Maven2LayoutProvider.ALIAS.equals(layout)) {
@@ -393,6 +456,20 @@ public class ArtifactComponent {
                 List<String> suffixList = Collections.singletonList(".tar.gz");
                 flag = endsWith(filePath, suffixList);
                 log.debug("Cocoapods布局");
+            } else if (GoLayoutProvider.ALIAS.equals(layout)) {
+                List<String> suffixList = Lists.newArrayList(".info", ".mod", ".zip");
+                flag = endsWith(filePath, suffixList);
+                log.debug("Go布局");
+            } else if (GitLfsLayoutProvider.ALIAS.equals(layout)) {
+                log.debug("GitLfs布局");
+                flag = true;
+            } else if (HuggingFaceLayoutProvider.ALIAS.equals(layout)) {
+                log.debug("HuggingFaceFile布局");
+                flag = true;
+            } else if (PubLayoutProvider.ALIAS.equals(layout)) {
+                log.debug("pub布局");
+                List<String> suffixList = Collections.singletonList(".tar.gz");
+                flag = endsWith(filePath, suffixList);
             }
             log.debug("制品路径 [{}] 布局 [{}] 是否是该布局支持的制品类型 [{}]", filePath, layout, flag);
         }
@@ -457,8 +534,9 @@ public class ArtifactComponent {
      * @param artifactId artifactId
      * @param version    version
      * @param pomPath    pomPath
+     * @param packaging  packaging
      */
-    public void pomGenerator(String groupId, String artifactId, String version, String pomPath) {
+    public void pomGenerator(String groupId, String artifactId, String version, String pomPath, String packaging) {
         FileWriter fileWriter = null;
         try {
             // 创建Maven项目模型
@@ -467,6 +545,9 @@ public class ArtifactComponent {
             model.setGroupId(groupId);
             model.setArtifactId(artifactId);
             model.setVersion(version);
+            if (StringUtils.isNotBlank(packaging)) {
+                model.setPackaging(packaging);
+            }
             // 保存POM文件
             MavenXpp3Writer writer = new MavenXpp3Writer();
             fileWriter = new FileWriter(pomPath);
@@ -485,106 +566,106 @@ public class ArtifactComponent {
      * @param layout   layout
      * @return true
      */
-    public boolean vulnerabilityBlock(Artifact artifact, String layout) {
+    private boolean vulnerabilityBlock(Artifact artifact, String layout) {
         if (Objects.isNull(artifact)) {
             return false;
         }
         boolean block = false;
-        String storageId = artifact.getStorageId(), repositoryId = artifact.getRepositoryId();
-        if (StringUtils.isBlank(layout)) {
-            RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
-            layout = rootRepositoryPath.getRepository().getLayout();
-        }
-        boolean isDockerLayout = DockerLayoutProvider.ALIAS.equals(layout);
-        Set<Vulnerability> vulnerabilitySet = artifact.getVulnerabilitySet();
-        if (isDockerLayout) {
-            String manifest = "manifest";
-            String path = artifact.getUuid();
-            if (path.contains("sha256") && !path.endsWith(".sha256") && path.contains(manifest)) {
-                String keywords = path.substring(path.lastIndexOf("manifest/") + "manifest/".length());
-                vulnerabilitySet = artifactRepository.fetchVulnerabilitiesByKeywords(storageId, repositoryId, keywords);
+        try {
+            String storageId = artifact.getStorageId(), repositoryId = artifact.getRepositoryId();
+            if (StringUtils.isBlank(layout)) {
+                RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
+                layout = rootRepositoryPath.getRepository().getLayout();
             }
-        }
-        Set<String> vulnerabilities = Optional.ofNullable(vulnerabilitySet).orElse(Collections.emptySet()).stream().map(Vulnerability::getUuid).collect(Collectors.toSet());
-        MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration = configurationManagementService.getMutableConfigurationClone().getSecurityPolicyConfiguration();
-        if (Objects.nonNull(mutableSecurityPolicyConfiguration)) {
-            RepositoryDto repositoryDto = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId);
-            Set<String> repositoryBlacks = repositoryDto.getVulnerabilityBlacks();
-            Set<String> repositoryWhites = repositoryDto.getVulnerabilityWhites();
-            Set<String> platformBlacks = mutableSecurityPolicyConfiguration.getBlacks();
-            Set<String> platformWhites = mutableSecurityPolicyConfiguration.getWhites();
-            if (BlockTypeEnum.ALL.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
-                if (CollectionUtils.isEmpty(vulnerabilitySet)) {
-                    return false;
+            boolean isDockerLayout = DockerLayoutProvider.ALIAS.equals(layout);
+            Set<Vulnerability> vulnerabilitySet = artifact.getVulnerabilitySet();
+            if (isDockerLayout) {
+                String manifest = "manifest";
+                String path = artifact.getUuid();
+                if (DockerArtifactCoordinates.include(path) && path.contains(manifest)) {
+                    String keywords = path.substring(path.lastIndexOf("manifest/") + "manifest/".length());
+                    vulnerabilitySet = artifactRepository.fetchVulnerabilitiesByKeywords(storageId, repositoryId, keywords);
                 }
-                //过滤仓库级别黑名单
-                block = vulnerabilities.stream().anyMatch(repositoryBlacks::contains);
-                if (!block) {
-                    Set<String> allSet = Sets.newLinkedHashSet(), blackSet;
-                    //不在阻断漏洞等级内的漏洞集合，需要过滤黑名单
-                    Set<Vulnerability> unIncludeVulnerabilitySet = Sets.newLinkedHashSet();
-                    if (CollectionUtils.isNotEmpty(mutableSecurityPolicyConfiguration.getBlockLevels())) {
-                        for (Vulnerability vulnerability : vulnerabilitySet) {
-                            //开启白名单过滤
-                            if (Boolean.TRUE.equals(mutableSecurityPolicyConfiguration.getFilterWhites())) {
-                                //过滤仓库级别白名单、平台级别白名单
-                                if (repositoryWhites.contains(vulnerability.getUuid()) || platformWhites.contains(vulnerability.getUuid())) {
-                                    continue;
+            }
+            Set<String> vulnerabilities = Optional.ofNullable(vulnerabilitySet).orElse(Collections.emptySet()).stream().map(Vulnerability::getUuid).collect(Collectors.toSet());
+            final SecurityPolicyConfiguration mutableSecurityPolicyConfiguration = configurationManagementService.getConfiguration().getSecurityPolicyConfiguration();
+            if (Objects.nonNull(mutableSecurityPolicyConfiguration)) {
+                final Repository repositoryDto = configurationManagementService.getConfiguration().getStorage(storageId).getRepository(repositoryId);
+                Set<String> repositoryBlacks = repositoryDto.getVulnerabilityBlacks();
+                Set<String> repositoryWhites = repositoryDto.getVulnerabilityWhites();
+                Set<String> platformBlacks = mutableSecurityPolicyConfiguration.getBlacks();
+                Set<String> platformWhites = mutableSecurityPolicyConfiguration.getWhites();
+                if (BlockTypeEnum.ALL.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
+                    if (CollectionUtils.isEmpty(vulnerabilitySet)) {
+                        return false;
+                    }
+                    //过滤仓库级别黑名单
+                    block = vulnerabilities.stream().anyMatch(repositoryBlacks::contains);
+                    if (!block) {
+                        Set<String> allSet = Sets.newLinkedHashSet(), blackSet;
+                        //不在阻断漏洞等级内的漏洞集合，需要过滤黑名单
+                        Set<Vulnerability> unIncludeVulnerabilitySet = Sets.newLinkedHashSet();
+                        if (CollectionUtils.isNotEmpty(mutableSecurityPolicyConfiguration.getBlockLevels())) {
+                            for (Vulnerability vulnerability : vulnerabilitySet) {
+                                //开启白名单过滤
+                                if (Boolean.TRUE.equals(mutableSecurityPolicyConfiguration.getFilterWhites())) {
+                                    //过滤仓库级别白名单、平台级别白名单
+                                    if (repositoryWhites.contains(vulnerability.getUuid()) || platformWhites.contains(vulnerability.getUuid())) {
+                                        continue;
+                                    }
+                                }
+                                if (mutableSecurityPolicyConfiguration.getBlockLevels().contains(vulnerability.getHighestSeverityText())) {
+                                    allSet.add(vulnerability.getUuid());
+                                } else {
+                                    unIncludeVulnerabilitySet.add(vulnerability);
                                 }
                             }
-                            if (mutableSecurityPolicyConfiguration.getBlockLevels().contains(vulnerability.getHighestSeverityText())) {
-                                allSet.add(vulnerability.getUuid());
-                            } else {
-                                unIncludeVulnerabilitySet.add(vulnerability);
-                            }
                         }
+                        //过滤平台级别黑名单
+                        blackSet = unIncludeVulnerabilitySet.stream().filter(item -> platformBlacks.contains(item.getUuid())).map(Vulnerability::getUuid).collect(Collectors.toCollection(LinkedHashSet::new));
+                        allSet.addAll(blackSet);
+                        block = CollectionUtils.isNotEmpty(allSet);
                     }
-                    //过滤平台级别黑名单
-                    blackSet = unIncludeVulnerabilitySet.stream().filter(item -> platformBlacks.contains(item.getUuid())).map(Vulnerability::getUuid).collect(Collectors.toCollection(LinkedHashSet::new));
-                    allSet.addAll(blackSet);
-                    block = CollectionUtils.isNotEmpty(allSet);
-                }
-            } else if (BlockTypeEnum.BLACK.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
-                if (CollectionUtils.isEmpty(vulnerabilitySet)) {
-                    return false;
-                }
-                //黑名单阻断
-                block = vulnerabilities.stream().anyMatch(item -> repositoryBlacks.contains(item) ||
-                        (!repositoryWhites.contains(item) && platformBlacks.contains(item)));
-            } else if (BlockTypeEnum.PACKAGE_NAME.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
-                //包名阻断
-                Set<String> packageNames = mutableSecurityPolicyConfiguration.getPackageNames();
-                if (CollectionUtils.isNotEmpty(packageNames)) {
-                    String separator = ",";
-                    block = packageNames.stream().anyMatch(packageName -> {
-                        if (StringUtils.isNotBlank(packageName) && packageName.contains(separator)) {
-                            //需要分隔
-                            List<String> list = Arrays.asList(packageName.split(separator));
-                            String name = "", condition = "", version = "", artifactVersion = "";
-                            if (list.size() == 3) {
-                                name = list.get(0);
-                                condition = list.get(1);
-                                version = list.get(2);
-                                if (artifact.getArtifactPath().contains(name) && StringUtils.isNotBlank(condition) && StringUtils.isNotBlank(version)) {
-                                    artifactVersion = artifact.getArtifactCoordinates().getVersion();
-                                    if (StringUtils.isBlank(artifactVersion)) {
-                                        return false;
-                                    }
-                                    try {
-                                        int compare = VersionUtil.compareVersions(artifactVersion, version);
-                                        log.info("StorageId [{}] repositoryId [{}] artifactPath [{}] name [{}] condition [{}] version [{}] artifactVersion [{}] compare [{}]", storageId, repositoryId, artifact.getArtifactPath(), name, condition, version, artifactVersion, compare);
-                                        return VersionConditionTypeEnum.queryValue(condition).contains(compare);
-                                    } catch (Exception ex) {
-                                        log.error(ExceptionUtils.getStackTrace(ex));
-                                    }
+                } else if (BlockTypeEnum.BLACK.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
+                    if (CollectionUtils.isEmpty(vulnerabilitySet)) {
+                        return false;
+                    }
+                    //黑名单阻断
+                    block = vulnerabilities.stream().anyMatch(item -> repositoryBlacks.contains(item) ||
+                            (!repositoryWhites.contains(item) && platformBlacks.contains(item)));
+                } else if (BlockTypeEnum.PACKAGE_NAME.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
+                    //包名阻断
+                    List<PackageNameBlock> packageNameBlockList = packageNameBlockService.getPackageNameBlockCache();
+                    if (CollectionUtils.isNotEmpty(packageNameBlockList)) {
+                        packageNameBlockList = packageNameBlockList.stream().filter(item -> artifact.getArtifactPath().contains(item.getPackageName())).collect(Collectors.toList());
+                        if (CollectionUtils.isEmpty(packageNameBlockList)) {
+                            return false;
+                        }
+                        block = packageNameBlockList.stream().anyMatch(packageNameBlock -> {
+                            if (ConditionTypeEnum.RANGE.getCondition().equals(packageNameBlock.getConditionValue())) {
+                                String artifactVersion = artifact.getArtifactCoordinates().getVersion();
+                                if (StringUtils.isBlank(artifactVersion)) {
                                     return false;
                                 }
+                                long startTime = System.currentTimeMillis();
+                                boolean flag = VersionUtils.versionInRange(artifactVersion, packageNameBlock.getVersion());
+                                long endTime = System.currentTimeMillis();
+                                log.debug("比较版本耗时：[{}] 毫秒", endTime - startTime);
+                                return flag;
+                            } else if (ConditionTypeEnum.EQ.getCondition().equals(packageNameBlock.getConditionValue())) {
+                                String artifactVersion = artifact.getArtifactCoordinates().getVersion();
+                                if (StringUtils.isBlank(artifactVersion)) {
+                                    return false;
+                                }
+                                return artifact.getArtifactPath().contains(packageNameBlock.getPackageName()) && artifactVersion.equals(packageNameBlock.getVersion());
                             }
-                        }
-                        return artifact.getArtifactPath().contains(packageName);
-                    });
+                            return artifact.getArtifactPath().contains(packageNameBlock.getPackageName());
+                        });
+                    }
                 }
             }
+        } catch (Exception ex) {
+            log.warn("判断制品 [{}] [{}] [{}] 是否需要阻断错误 [{}]", artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), ExceptionUtils.getStackTrace(ex));
         }
         return block;
     }
@@ -598,15 +679,12 @@ public class ArtifactComponent {
      */
     public Set<UnionTargetRepositoryConfiguration> getUnionTargetRepositories(String storageId, String repositoryId) {
         Set<UnionTargetRepositoryConfiguration> unionTargetRepositoryConfigurations = null;
-        RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
-        if (Objects.nonNull(rootRepositoryPath)) {
-            Repository repository = rootRepositoryPath.getRepository();
-            if (Objects.nonNull(repository)) {
-                UnionRepositoryConfiguration unionRepositoryConfiguration = repository.getUnionRepositoryConfig();
-                if (Objects.nonNull(unionRepositoryConfiguration)) {
-                    if (Boolean.TRUE.equals(unionRepositoryConfiguration.getEnable()) && CollectionUtils.isNotEmpty(unionRepositoryConfiguration.getUnionTargetRepositories())) {
-                        unionTargetRepositoryConfigurations = unionRepositoryConfiguration.getUnionTargetRepositories();
-                    }
+        Repository repository = configurationManager.getRepository(storageId, repositoryId);
+        if (Objects.nonNull(repository)) {
+            UnionRepositoryConfiguration unionRepositoryConfiguration = repository.getUnionRepositoryConfig();
+            if (Objects.nonNull(unionRepositoryConfiguration)) {
+                if (Boolean.TRUE.equals(unionRepositoryConfiguration.getEnable()) && CollectionUtils.isNotEmpty(unionRepositoryConfiguration.getUnionTargetRepositories())) {
+                    unionTargetRepositoryConfigurations = unionRepositoryConfiguration.getUnionTargetRepositories();
                 }
             }
         }
@@ -621,9 +699,9 @@ public class ArtifactComponent {
      * @return 仓库信息
      */
     public Repository getRepository(String storageId, String repositoryId) {
-        RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
-        if (Objects.nonNull(rootRepositoryPath) && Objects.nonNull(rootRepositoryPath.getRepository())) {
-            return rootRepositoryPath.getRepository();
+        Repository repository = configurationManager.getRepository(storageId, repositoryId);
+        if (Objects.nonNull(repository)) {
+            return repository;
         }
         return null;
     }
@@ -638,77 +716,58 @@ public class ArtifactComponent {
      * @param promotion    晋级状态
      */
     public void handlerArtifactPromotion(String node, String storageId, String repositoryId, String artifactPath, String promotion) {
-        handlerArtifactPromotion(node, null, storageId, repositoryId, artifactPath, promotion);
-    }
-
-    /**
-     * 更新晋级状态
-     *
-     * @param node      节点
-     * @param artifact  制品
-     * @param promotion 晋级状态
-     */
-    public void handlerArtifactPromotion(String node, Artifact artifact, String promotion) {
-        handlerArtifactPromotion(node, artifact, null, null, null, promotion);
-    }
-
-    /**
-     * 更新晋级状态
-     *
-     * @param node         节点
-     * @param artifact     制品
-     * @param storageId    存储空间
-     * @param repositoryId 仓库名称
-     * @param artifactPath 制品路径
-     * @param promotion    晋级状态
-     */
-    private void handlerArtifactPromotion(String node, Artifact artifact, String storageId, String repositoryId, String artifactPath, String promotion) {
-        Artifact updateArtifact = null;
-        if (Objects.nonNull(artifact)) {
-            updateArtifact = new ArtifactEntity(artifact.getNativeId(), artifact.getStorageId(), artifact.getRepositoryId(), artifact.getUuid(), artifact.getArtifactCoordinates());
-            updateArtifact.setPromotionNodes(artifact.getPromotionNodes());
-        } else if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId) && StringUtils.isNotBlank(artifactPath)) {
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-            if (Objects.nonNull(repositoryPath)) {
-                try {
-                    artifact = repositoryPath.getArtifactEntry();
-                    if (Objects.nonNull(artifact)) {
-                        updateArtifact = new ArtifactEntity(artifact.getNativeId(), artifact.getStorageId(), artifact.getRepositoryId(), artifact.getUuid(), artifact.getArtifactCoordinates());
-                        updateArtifact.setPromotionNodes(artifact.getPromotionNodes());
-                    }
-                } catch (Exception ex) {
-                    log.error("存储空间： {} 仓库：{} 制品：{} 错误：{}", storageId, repositoryId, artifactPath, ExceptionUtils.getStackTrace(ex));
-                }
-            }
-        }
-        if (Objects.nonNull(updateArtifact)) {
-            if (StringUtils.isBlank(node) || PromotionStatusEnum.FAIL.getStatus().equals(promotion) || PromotionStatusEnum.WAIT.getStatus().equals(promotion)) {
-                updateArtifact.setPromotion(promotion);
-            }
-            Set<String> promotionNodes = updateArtifact.getPromotionNodes();
-            if (StringUtils.isNotBlank(node)) {
-                if (CollectionUtils.isEmpty(promotionNodes)) {
-                    promotionNodes = Sets.newLinkedHashSet();
-                }
-                Iterator<String> iterable = promotionNodes.iterator();
-                String promotionNode = "";
-                while (iterable.hasNext()) {
-                    promotionNode = iterable.next();
-                    if (StringUtils.isNotBlank(promotionNode) && promotionNode.contains(node)) {
-                        //节点信息已存在，移除
-                        iterable.remove();
-                        log.debug("存储空间： {} 仓库：{} 制品：{} 节点：{} 已存在，移除", updateArtifact.getStorageId(), updateArtifact.getRepositoryId(), artifactPath, node);
+        String lockKey = String.format("%s-%s-%s-%s", "promotion", storageId, repositoryId, artifactPath);
+        if (distributedLockComponent.lock(lockKey, GlobalConstants.WAIT_LOCK_TIME)) {
+            try {
+                Artifact updateArtifact = null;
+                if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId) && StringUtils.isNotBlank(artifactPath)) {
+                    RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+                    if (Objects.nonNull(repositoryPath)) {
+                        try {
+                            Artifact artifact = repositoryPath.getArtifactEntry();
+                            if (Objects.nonNull(artifact)) {
+                                updateArtifact = new ArtifactEntity(artifact.getNativeId(), artifact.getStorageId(), artifact.getRepositoryId(), artifact.getUuid(), artifact.getArtifactCoordinates());
+                                updateArtifact.setPromotionNodes(artifact.getPromotionNodes());
+                            }
+                        } catch (Exception ex) {
+                            log.error("存储空间： {} 仓库：{} 制品：{} 错误：{}", storageId, repositoryId, artifactPath, ExceptionUtils.getStackTrace(ex));
+                        }
                     }
                 }
-                promotionNode = String.format("%s,%s", node, promotion);
-                promotionNodes.add(promotionNode);
-                updateArtifact.setPromotionNodes(promotionNodes);
-                log.info("存储空间： {} 仓库：{} 制品：{} 晋级节点：{}", updateArtifact.getStorageId(), updateArtifact.getRepositoryId(), updateArtifact.getUuid(), promotionNodes);
+                if (Objects.nonNull(updateArtifact)) {
+                    if (StringUtils.isBlank(node) || PromotionStatusEnum.FAIL.getStatus().equals(promotion) || PromotionStatusEnum.WAIT.getStatus().equals(promotion)) {
+                        updateArtifact.setPromotion(promotion);
+                    }
+                    Set<String> promotionNodes = updateArtifact.getPromotionNodes();
+                    if (StringUtils.isNotBlank(node)) {
+                        if (CollectionUtils.isEmpty(promotionNodes)) {
+                            promotionNodes = Sets.newLinkedHashSet();
+                        }
+                        Iterator<String> iterable = promotionNodes.iterator();
+                        String promotionNode = "";
+                        while (iterable.hasNext()) {
+                            promotionNode = iterable.next();
+                            if (StringUtils.isNotBlank(promotionNode) && promotionNode.contains(node)) {
+                                //节点信息已存在，移除
+                                iterable.remove();
+                                log.debug("存储空间： {} 仓库：{} 制品：{} 节点：{} 已存在，移除", updateArtifact.getStorageId(), updateArtifact.getRepositoryId(), artifactPath, node);
+                            }
+                        }
+                        promotionNode = String.format("%s,%s", node, promotion);
+                        promotionNodes.add(promotionNode);
+                        updateArtifact.setPromotionNodes(promotionNodes);
+                        log.info("存储空间： {} 仓库：{} 制品：{} 晋级节点：{}", updateArtifact.getStorageId(), updateArtifact.getRepositoryId(), updateArtifact.getUuid(), promotionNodes);
+                    }
+                    if (CollectionUtils.isNotEmpty(promotionNodes) && promotionNodes.stream().allMatch(item -> item.contains(PromotionStatusEnum.SUCCESS.getStatus()))) {
+                        updateArtifact.setPromotion(PromotionStatusEnum.SUCCESS.getStatus());
+                    }
+                    artifactService.saveOrUpdateArtifact(updateArtifact);
+                }
+            } finally {
+                distributedLockComponent.unLock(lockKey);
             }
-            if (CollectionUtils.isNotEmpty(promotionNodes) && promotionNodes.stream().allMatch(item -> item.contains(PromotionStatusEnum.SUCCESS.getStatus()))) {
-                updateArtifact.setPromotion(PromotionStatusEnum.SUCCESS.getStatus());
-            }
-            artifactService.saveOrUpdateArtifact(updateArtifact);
+        } else {
+            log.warn("Handle artifact promotion status [{}] was not get lock", lockKey);
         }
     }
 
@@ -720,7 +779,7 @@ public class ArtifactComponent {
     public void checkArtifactPromotion(Artifact artifact) {
         if (Objects.nonNull(artifact)) {
             Set<String> promotionNodes = artifact.getPromotionNodes();
-            if (CollectionUtils.isNotEmpty(promotionNodes) && promotionNodes.stream().allMatch(PromotionStatusEnum.SUCCESS.getStatus()::contains)) {
+            if (CollectionUtils.isNotEmpty(promotionNodes) && promotionNodes.stream().allMatch(item -> item.contains(PromotionStatusEnum.SUCCESS.getStatus()))) {
                 artifact.setPromotion(PromotionStatusEnum.SUCCESS.getStatus());
                 artifactService.saveOrUpdateArtifact(artifact);
             }
@@ -745,12 +804,17 @@ public class ArtifactComponent {
                     if (StringUtils.isNotBlank(promotionNode) && promotionNode.contains(node)) {
                         //节点信息已存在，移除
                         iterable.remove();
-                        log.debug("存储空间： {} 仓库：{} 制品：{} 节点：{} 不存在，移除", artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), node);
+                        log.info("存储空间： {} 仓库：{} 制品：{} 节点：{} 不存在，移除", artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), node);
                     }
                 }
-                if (CollectionUtils.isNotEmpty(promotionNodes) && promotionNodes.stream().allMatch(PromotionStatusEnum.SUCCESS.getStatus()::contains)) {
+                if (CollectionUtils.isNotEmpty(promotionNodes) && promotionNodes.stream().allMatch(item -> item.contains(PromotionStatusEnum.SUCCESS.getStatus()))) {
                     updateArtifact.setPromotion(PromotionStatusEnum.SUCCESS.getStatus());
                 }
+                if (CollectionUtils.isEmpty(promotionNodes)) {
+                    updateArtifact.setPromotion(GlobalConstants.DROP);
+                    promotionNodes.add(GlobalConstants.DROP);
+                }
+                updateArtifact.setPromotionNodes(promotionNodes);
                 artifactService.saveOrUpdateArtifact(updateArtifact);
             }
         }
@@ -799,57 +863,27 @@ public class ArtifactComponent {
     }
 
     /**
-     * 查询NpmArtifactIdGroupCache
-     *
-     * @param repository       repository
-     * @param artifactId       artifactId
-     * @param coordinateValues coordinateValues
-     * @return packageFeed
-     */
-    public PackageFeed getNpmArtifactIdGroupCache(Repository repository, String artifactId, Collection<String> coordinateValues, RepositorySearchRequest predicate) {
-        PackageFeed packageFeed = null;
-        if (repository.isGroupRepository()) {
-            PackageFeed itemPackageFeed = null;
-            List<PackageFeed> packageFeedList = Lists.newArrayList();
-            for (String storageAndRepositoryId : repository.getGroupRepositories()) {
-                String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
-                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
-                itemPackageFeed = getNpmArtifactPackageFeed(configurationManager.getRepository(sId, rId), artifactId, coordinateValues, predicate);
-                if (Objects.nonNull(itemPackageFeed)) {
-                    packageFeedList.add(itemPackageFeed);
-                }
-            }
-            if (CollectionUtils.isNotEmpty(packageFeedList)) {
-                packageFeed = packageFeedList.stream().max(Comparator.comparing(i -> i.getVersions().getAdditionalProperties().size())).get();
-                PackageFeed finalPackageFeed = packageFeed;
-                packageFeedList.forEach(p -> {
-                    for (Map.Entry<String, PackageVersion> entry : p.getVersions().getAdditionalProperties().entrySet()) {
-                        finalPackageFeed.getVersions().setAdditionalProperty(entry.getKey(), entry.getValue());
-                    }
-                });
-            }
-            if (Objects.nonNull(packageFeed)) {
-                packageFeed.setAdditionalProperty("_rev", generateRevisionHashcode(packageFeed));
-            }
-        } else {
-            packageFeed = getNpmArtifactPackageFeed(repository, artifactId, coordinateValues, predicate);
-        }
-        return packageFeed;
-    }
-
-    /**
      * 更新ArtifactIdGroup
      *
-     * @param uuid     uuid
-     * @param metadata metadata
+     * @param artifactIdGroup artifactIdGroup
+     * @param metadata        metadata
      */
-    public void updateArtifactIdGroup(String uuid, String metadata) {
+    public void updateArtifactIdGroup(ArtifactIdGroup artifactIdGroup, String metadata) {
+        String uuid = "";
         try {
             long startTime = System.currentTimeMillis();
-            ArtifactIdGroup artifactIdGroup = getArtifactIdGroup(uuid);
             if (Objects.nonNull(artifactIdGroup)) {
-                artifactIdGroup.setMetadata(metadata);
-                artifactIdGroupRepository.merge(artifactIdGroup);
+                uuid = artifactIdGroup.getUuid();
+                if (StringUtils.isNotBlank(metadata)) {
+                    JSONObject metadataJson = new JSONObject();
+                    LocalDateTime nowDate = LocalDateTimeInstance.now();
+                    metadataJson.put("cacheTime", Commons.toLong(nowDate));
+                    metadataJson.put("metadata", metadata);
+                    artifactIdGroup.setMetadata(metadataJson.toJSONString());
+                } else {
+                    artifactIdGroup.setMetadata(metadata);
+                }
+                artifactIdGroupRepository.saveOrUpdate(artifactIdGroup);
                 log.debug("[{}] updateArtifactIdGroup [{}] take time [{}] ms", this.getClass().getSimpleName(), uuid, System.currentTimeMillis() - startTime);
             }
         } catch (Exception ex) {
@@ -859,87 +893,8 @@ public class ArtifactComponent {
             if (CommonUtils.catchException(realMessage)) {
                 log.warn("[{}] [{}] updateArtifactIdGroup catch error",
                         this.getClass().getSimpleName(), uuid);
-                return;
             }
-            throw ex;
         }
-    }
-
-    /**
-     * 查询NpmArtifactPackageFeed
-     *
-     * @param repository              repository
-     * @param artifactId              artifactId
-     * @param coordinateValues        coordinateValues
-     * @param repositorySearchRequest repositorySearchRequest
-     * @return NpmArtifactPackageFeed
-     */
-    public PackageFeed getNpmArtifactPackageFeed(Repository repository,
-                                                 String artifactId,
-                                                 Collection<String> coordinateValues, RepositorySearchRequest repositorySearchRequest) {
-        PackageFeed packageFeed = null;
-        long startTime = System.currentTimeMillis();
-        if (RepositoryTypeEnum.PROXY.getType().equals(repository.getType())) {
-            packageFeed = npmRepositoryFeatures.handleViewPackage(repository.getStorage().getId(), repository.getId(), artifactId);
-        } else if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
-            packageFeed = handlePackageFeed(repository, artifactId, repositorySearchRequest);
-        }
-        log.debug("[{}] getNpmArtifactPackageFeed storageId [{}] repositoryId [{}] artifactId [{}] coordinateValues [{}] take time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), artifactId, coordinateValues, System.currentTimeMillis() - startTime);
-        return packageFeed;
-    }
-
-    private PackageFeed handlePackageFeed(Repository repository, String packageId, RepositorySearchRequest predicate) {
-        final String storageId = repository.getStorage().getId();
-        final String repositoryId = repository.getId();
-        RepositoryProvider provider = repositoryProviderRegistry.getProvider(repository.getType());
-        Paginator paginator = new Paginator();
-        paginator.setProperty("version");
-        paginator.setUseLimit(Boolean.FALSE);
-
-        List<Path> searchResult = provider.search(storageId, repositoryId, predicate, paginator);
-        if (CollectionUtils.isEmpty(searchResult)) {
-            return null;
-        }
-        PackageFeed packageFeed = new PackageFeed();
-        packageFeed.setName(packageId);
-        packageFeed.setAdditionalProperty("_id", packageId);
-        Versions versions = new Versions();
-        packageFeed.setVersions(versions);
-
-        Time npmTime = new Time();
-        packageFeed.setTime(npmTime);
-
-        DistTags distTags = new DistTags();
-        packageFeed.setDistTags(distTags);
-        searchResult.stream().map(npmPackageSupplier).forEach(p -> {
-            PackageVersion npmPackage = p.getNpmPackage();
-            versions.setAdditionalProperty(npmPackage.getVersion(), npmPackage);
-            npmTime.setAdditionalProperty(npmPackage.getVersion(), p.getReleaseDate());
-
-            Date created = npmTime.getCreated();
-            npmTime.setCreated(created == null || created.before(p.getReleaseDate()) ? p.getReleaseDate() : created);
-
-            Date modified = npmTime.getModified();
-            npmTime.setModified(modified == null || modified.before(p.getReleaseDate()) ? p.getReleaseDate()
-                    : modified);
-
-            if (p.isLastVersion()) {
-                distTags.setLatest(npmPackage.getVersion());
-            }
-
-        });
-        packageFeed.setAdditionalProperty("_rev", generateRevisionHashcode(packageFeed));
-        return packageFeed;
-    }
-
-    private String generateRevisionHashcode(PackageFeed packageFeed) {
-        String versionsShaSum = packageFeed.getVersions().getAdditionalProperties()
-                .values()
-                .stream()
-                .map(x -> x.getDist().getShasum())
-                .collect(Collectors.joining());
-        return packageFeed.getVersions().getAdditionalProperties().size() + "-" +
-                DigestUtils.sha1Hex(versionsShaSum).substring(0, 16);
     }
 
     /**
@@ -978,100 +933,26 @@ public class ArtifactComponent {
     }
 
     /**
-     * 查询PypiArtifactIdGroupCache
-     *
-     * @param repository        repository
-     * @param pypiSearchRequest pypiSearchRequest
-     * @return PypiSearchResult
-     */
-    public String getPypiArtifactIdGroupCache(Repository repository, PypiSearchRequest pypiSearchRequest) {
-        String html = pypiBrowsePackageHtmlResponseBuilder.nouFound();
-        Object obj = null;
-        if (repository.isGroupRepository()) {
-            Object itemObj = null;
-            Set<PypiSearchResult> packageFeedSet = Sets.newLinkedHashSet();
-            for (String storageAndRepositoryId : repository.getGroupRepositories()) {
-                String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
-                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
-                itemObj = getPypiArtifactPackageFeed(configurationManager.getRepository(sId, rId), pypiSearchRequest);
-                if (Objects.nonNull(itemObj)) {
-                    packageFeedSet.addAll((List<PypiSearchResult>) itemObj);
-                }
-            }
-            if (CollectionUtils.isNotEmpty(packageFeedSet)) {
-                html = pypiBrowsePackageHtmlResponseBuilder.getProxyHtmlResponse(Lists.newArrayList(packageFeedSet));
-            }
-        } else {
-            obj = getPypiArtifactPackageFeed(repository, pypiSearchRequest);
-            if (Objects.nonNull(obj)) {
-                if (obj instanceof String) {
-                    html = (String) obj;
-                } else {
-                    html = pypiBrowsePackageHtmlResponseBuilder.getProxyHtmlResponse((List<PypiSearchResult>) obj);
-                }
-            }
-        }
-        return html;
-    }
-
-    /**
-     * 查询NpmArtifactPackageFeed
-     *
-     * @param repository        repository
-     * @param pypiSearchRequest pypiSearchRequest
-     * @return PypiSearchResult
-     */
-    public Object getPypiArtifactPackageFeed(Repository repository,
-                                             PypiSearchRequest pypiSearchRequest) {
-        Object obj = null;
-        long startTime = System.currentTimeMillis();
-        if (RepositoryTypeEnum.PROXY.getType().equals(repository.getType())) {
-            List<PypiSearchResult> pypiSearchResultList = pypiRepositoryFeatures.fetchRemotePypiSearchResult(repository.getStorage().getId(), repository.getId(), pypiSearchRequest);
-            if (CollectionUtils.isNotEmpty(pypiSearchResultList)) {
-                obj = pypiSearchResultList;
-            }
-        } else if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
-            final String packageNameToDownload = PypiPackageNameConverter.escapeSpecialCharacters(pypiSearchRequest.getPackageName());
-            obj = handlePypiLocalRepository(repository, packageNameToDownload);
-        }
-        log.debug("[{}] getPypiArtifactPackageFeed storageId [{}] repositoryId [{}] artifactId [{}] take time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), pypiSearchRequest.getPackageName(), System.currentTimeMillis() - startTime);
-        return obj;
-    }
-
-    private String handlePypiLocalRepository(Repository repository, String packageNameToDownload) {
-        String html = null;
-        RepositoryProvider provider = repositoryProviderRegistry.getProvider(repository.getType());
-        RepositorySearchRequest predicate = new RepositorySearchRequest(packageNameToDownload, Collections.singleton(PypiArtifactCoordinates.WHEEL_EXTENSION));
-        Paginator paginator = new Paginator();
-        List<Path> searchResult = provider.search(repository.getStorage().getId(), repository.getId(),
-                predicate, paginator);
-        if (CollectionUtils.isNotEmpty(searchResult)) {
-            try {
-                html = pypiBrowsePackageHtmlResponseBuilder.getHtmlResponse(searchResult);
-            } catch (Exception ex) {
-                log.error(ExceptionUtils.getStackTrace(ex));
-            }
-        }
-        return html;
-    }
-
-    /**
      * 存储制品元数据文件
      *
      * @param repositoryPath repositoryPath
      */
     public void storeArtifactMetadataFile(RepositoryPath repositoryPath) {
         try {
-            if (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath)) {
+            if (Objects.nonNull(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry()) && Files.exists(repositoryPath)) {
+                Artifact artifact = repositoryPath.getArtifactEntry();
                 String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
                 RepositoryPath artifactRepositoryPath = repositoryPath.getParent().resolve(fileName);
                 try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                      ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream)) {
-                    objectOutputStream.writeObject(repositoryPath.getArtifactEntry());
+                    objectOutputStream.writeObject(artifact);
                     byte[] byteArray = byteArrayOutputStream.toByteArray();
                     Files.write(artifactRepositoryPath, byteArray);
                 } catch (Exception ex) {
                     log.warn("写入制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
+                }
+                if (StringUtils.isNotBlank(artifact.getMetadata())) {
+                    cacheArtifactMetadata(repositoryPath, artifact.getMetadata());
                 }
             }
         } catch (Exception ex) {
@@ -1087,7 +968,7 @@ public class ArtifactComponent {
      */
     public void storeArtifactMetadataFile(RepositoryPath repositoryPath, Path metadataPath) {
         try {
-            if (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath)) {
+            if (Objects.nonNull(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry()) && Files.exists(repositoryPath)) {
                 String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
                 Path artifactRepositoryPath = metadataPath.getParent().resolve(fileName);
                 try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -1104,27 +985,80 @@ public class ArtifactComponent {
         }
     }
 
-    //    @Async("eventTaskExecutor")
-    public void beforeRead(RepositoryPath repositoryPath) {
-        try {
-//            if (!RepositoryFiles.isArtifact(repositoryPath)) {
-//                return;
-//            }
-            artifactEventListenerRegistry.dispatchArtifactDownloadingEvent(repositoryPath);
-        } catch (Exception ex) {
-            log.error("RepositoryPath beforeRead error ", ex);
+    public Integer getLatestIndex() {
+        Path path = Path.of(getEventParentPath());
+        if (Files.exists(path)) {
+            try (Stream<Path> pathStream = Files.list(path)) {
+                List<Path> pathList = pathStream.sorted().collect(Collectors.toList());
+                if (CollectionUtils.isNotEmpty(pathList)) {
+                    Path eventPath = pathList.get(pathList.size() - 1);
+                    String filename = eventPath.getFileName().toString();
+                    filename = FilenameUtils.getBaseName(filename);
+                    List<String> nameSplitList = Arrays.asList(filename.split("_"));
+                    if (CollectionUtils.isNotEmpty(nameSplitList)) {
+                        String index = nameSplitList.get(nameSplitList.size() - 1);
+                        return Integer.parseInt(index);
+                    }
+                }
+            } catch (Exception ex) {
+                log.warn(ExceptionUtils.getStackTrace(ex));
+            }
+        }
+        return null;
+    }
+
+    public String getEventParentPath() {
+        return tempPath + File.separator + "artifactEvent";
+    }
+
+    public Path getEventPath(Integer index) throws IOException {
+        if (Objects.isNull(index)) {
+            index = 1;
+        }
+        String filename = DateUtil.format(DateUtil.date(), DatePattern.PURE_DATE_PATTERN) + "_index_%s.txt";
+        String filePath = getEventParentPath() + File.separator + String.format(filename, index);
+        log.debug("Event file path [{}]", filePath);
+        Path path = Path.of(filePath);
+        Files.createDirectories(path.getParent());
+        //每个事件文件20M大小
+        BigDecimal maxSize = BigDecimal.valueOf(20);
+        if (!Files.exists(path)) {
+            Files.createFile(path);
+        }
+        if (FileSizeConvertUtils.convertBytesWithDecimal(Files.size(path), FileUnitTypeEnum.MB.getUnit()).compareTo(maxSize) >= 0) {
+            return getEventPath(index + 1);
+        }
+        return path;
+    }
+
+    private void storeEvent(RepositoryPath repositoryPath, ArtifactEventTypeEnum artifactEventTypeEnum) throws IOException {
+        Path eventPath = getEventPath(getLatestIndex());
+        //追加写模式
+        try (BufferedWriter writer = Files.newBufferedWriter(eventPath, StandardCharsets.UTF_8, StandardOpenOption.APPEND)) {
+            ArtifactEventRecord artifactEventRecord = ArtifactEventRecord.builder().storageId(repositoryPath.getStorageId()).repositoryId(repositoryPath.getRepositoryId())
+                    .artifactPath(RepositoryFiles.relativizePath(repositoryPath)).eventType(artifactEventTypeEnum.getType()).build();
+            writer.write(JSONObject.toJSONString(artifactEventRecord) + System.lineSeparator());
         }
     }
 
-    //    @Async("eventTaskExecutor")
     public void afterRead(RepositoryPath repositoryPath) {
         try {
-//            if (!RepositoryFiles.isArtifact(repositoryPath)) {
-//                return;
-//            }
-            artifactEventListenerRegistry.dispatchArtifactDownloadedEvent(repositoryPath);
+            if (Objects.isNull(repositoryPath) || !RepositoryFiles.isArtifact(repositoryPath)) {
+                return;
+            }
+            long startTime = System.currentTimeMillis();
+            storeEvent(repositoryPath, ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DOWNLOADED);
+            log.debug("Write EVENT_ARTIFACT_FILE_DOWNLOADED take time [{}] ms", System.currentTimeMillis() - startTime);
         } catch (Exception ex) {
-            log.error("RepositoryPath beforeRead error ", ex);
+            log.error("RepositoryPath afterRead error ", ex);
+        }
+    }
+
+    public void artifactCache(RepositoryPath repositoryPath) {
+        try {
+            artifactEventListenerRegistry.dispatchArtifactCacheEvent(repositoryPath);
+        } catch (Exception ex) {
+            log.error("RepositoryPath artifactCache error ", ex);
         }
     }
 
@@ -1142,4 +1076,224 @@ public class ArtifactComponent {
 
         return packageVersion;
     }
+
+    @Async("asyncThreadPoolTaskExecutor")
+    public void asyncHandlerArtifactCacheRecord(RepositoryPath repositoryPath, CacheSettings cacheSettings, Path targetPath) {
+        handlerArtifactCacheRecord(repositoryPath, cacheSettings, targetPath);
+    }
+
+    public void handlerArtifactCacheRecord(RepositoryPath repositoryPath, CacheSettings cacheSettings, Path targetPath) {
+        try {
+            if (Objects.isNull(repositoryPath)) {
+                return;
+            }
+            String artifactPath = "", md5, sha1, sha256;
+            Long size = 0L;
+            Artifact artifact = repositoryPath.getArtifactEntry();
+            String sourcePath = repositoryPath.toString();
+            String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId();
+            if (Objects.nonNull(artifact)) {
+                artifactPath = artifact.getArtifactPath();
+                size = artifact.getSizeInBytes();
+                md5 = artifact.getChecksums().getOrDefault(MessageDigestAlgorithms.MD5, "");
+                sha1 = artifact.getChecksums().getOrDefault(MessageDigestAlgorithms.SHA_1, "");
+                sha256 = artifact.getChecksums().getOrDefault(MessageDigestAlgorithms.SHA_256, "");
+            } else {
+                String prefix = String.format("/%s/%s/", storageId, repositoryId);
+                artifactPath = sourcePath.substring(sourcePath.indexOf(prefix) + prefix.length());
+                size = Files.size(repositoryPath);
+                md5 = getChecksum(repositoryPath, "md5");
+                sha1 = getChecksum(repositoryPath, "sha1");
+                sha256 = getChecksum(repositoryPath, "sha256");
+            }
+            ArtifactCacheRecord artifactCacheRecord = ArtifactCacheRecord.builder().storageId(storageId)
+                    .repositoryId(repositoryId).artifactPath(artifactPath).size(size).md5(md5).sha1(sha1).sha256(sha256)
+                    .cacheDirectoryPath(cacheSettings.getDirectoryPath()).cachePath(targetPath.toString()).build();
+            if (!Files.exists(repositoryPath)) {
+                artifactCacheRecordService.verifySourceRepositoryPath(repositoryPath);
+                return;
+            }
+            handlerArtifactCacheRecord(artifactCacheRecord);
+        } catch (Exception ex) {
+            log.warn("处理制品缓存记录失败：[{}]", ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
+    public String getChecksum(RepositoryPath repositoryPath, String checksumKey) {
+        try {
+            Path checksumSha1Path = repositoryPath.resolveSibling(repositoryPath.getFileName().toString() + "." + checksumKey);
+            if (Files.exists(checksumSha1Path)) {
+                return Files.readString(checksumSha1Path);
+            }
+        } catch (Exception ex) {
+            log.warn(ExceptionUtils.getStackTrace(ex));
+        }
+        return "";
+    }
+
+    public CacheSettings getCacheConfig() {
+        CacheUtil<String, CacheSettings> cacheUtil = CacheUtil.getInstance();
+        String key = DictTypeEnum.CACHE_SETTINGS.getType();
+        CacheSettings cacheSettings = cacheUtil.get(key);
+        if (Objects.isNull(cacheSettings)) {
+            Dict dict = dictService.selectLatestOneDict(Dict.builder().dictType(DictTypeEnum.CACHE_SETTINGS.getType()).build());
+            if (Objects.nonNull(dict)) {
+                cacheSettings = JSONObject.parseObject(dict.getDictValue(), CacheSettings.class);
+                if (Objects.nonNull(cacheSettings)) {
+                    cacheUtil.put(key, cacheSettings);
+                    CacheUtil<String, String> cacheUtilPath = CacheUtil.getInstance();
+                    String pathKey = "ARTIFACT_CACHE_ROOT_PATH";
+                    if (Boolean.TRUE.equals(cacheSettings.isEnabled())) {
+                        cacheUtilPath.put(pathKey, cacheSettings.getDirectoryPath());
+                    } else {
+                        cacheUtilPath.remove(pathKey);
+                    }
+                }
+            }
+        }
+        return cacheSettings;
+    }
+
+    public void handlerArtifactCacheRecord(ArtifactCacheRecord artifactCacheRecord) {
+        artifactCacheRecordService.saveOrUpdateArtifactCacheRecord(artifactCacheRecord);
+    }
+
+    public List<ArtifactCacheRecord> getArtifactCacheRecord(ArtifactCacheRecord artifactCacheRecord, Integer limit) {
+        return artifactCacheRecordService.getArtifactCacheRecord(artifactCacheRecord, null, limit);
+    }
+
+    public RepositoryPath getRepositoryPath(String storageId, String repositoryId, String artifactPath) {
+        try {
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+            Repository repository = getRepository(storageId, repositoryId);
+            if (!DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout())) {
+                //非docker布局
+                return repositoryPath;
+            }
+            if (!Files.isDirectory(repositoryPath)) {
+                return null;
+            }
+            DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+            List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(fileContents)) {
+                return null;
+            }
+            FileContent fileContent = fileContents.get(0);
+            return repositoryPathResolver.resolve(storageId, repositoryId, fileContent.getArtifactPath());
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+            return null;
+        }
+    }
+
+    /**
+     * 获取metadata
+     *
+     * @param repositoryPath repositoryPath
+     * @param version        version
+     * @return metadata
+     */
+    private Metadata getMetadata(RepositoryPath repositoryPath, String version) {
+        Path metadataPath = null;
+        try {
+            Metadata metadata = null;
+            if (ArtifactUtils.isSnapshot(version)) {
+                metadataPath = MetadataHelper.getSnapshotMetadataPath(repositoryPath, version);
+            } else {
+                metadataPath = MetadataHelper.getMetadataPath(repositoryPath);
+            }
+            if (Files.exists(metadataPath)) {
+                try (InputStream inputStream = Files.newInputStream(metadataPath)) {
+                    metadata = artifactMetadataService.getMetadata(inputStream);
+                }
+            }
+            return metadata;
+        } catch (Exception ex) {
+            log.error("path：{}，getMetadata error：{}", metadataPath, ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException("path：【" + metadataPath + "】getMetadata error");
+        }
+    }
+
+    /**
+     * 计算版本号
+     *
+     * @param storageId    storageId
+     * @param repositoryId repositoryId
+     * @param groupId      groupId
+     * @param artifactId   artifactId
+     * @param version      version
+     * @param artifactName artifactName
+     * @return 版本号
+     */
+    private String calcLatestSnapshotVersion(String storageId, String repositoryId, String groupId, String artifactId, String version, String artifactName) {
+        if (ArtifactUtils.isSnapshot(version)) {
+            String artifactPath = String.format("%s/%s", groupId, artifactId);
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+            try {
+                int buildNumber = 1;
+                Metadata metadata = getMetadata(repositoryPath, version);
+                if (Objects.nonNull(metadata)) {
+                    Versioning versioning = metadata.getVersioning();
+                    if (Objects.nonNull(versioning)) {
+                        Snapshot snapshot = versioning.getSnapshot();
+                        if (Objects.nonNull(snapshot)) {
+                            buildNumber = snapshot.getBuildNumber() + 1;
+                        }
+                    }
+                }
+                String timestamp = MetadataHelper.getDateFormatInstance().format(Calendar.getInstance().getTime());
+                artifactName = artifactName.replace("SNAPSHOT",
+                        timestamp.substring(0, 8) + "." + timestamp.substring(8) + "-" + buildNumber);
+            } catch (Exception ex) {
+                log.error("path：{}，calcLatestSnapshotVersion error：{}", repositoryPath.toAbsolutePath().toString(), ExceptionUtils.getStackTrace(ex));
+                throw new RuntimeException("path 【" + repositoryPath.toAbsolutePath().toString() + "】calcLatestSnapshotVersion error");
+            }
+        }
+        return artifactName;
+    }
+
+    public String calcMavenArtifactPath(String storageId, String repositoryId, String groupId, String artifactId, String version, String artifactName) {
+        if (groupId.contains(GlobalConstants.POINT)) {
+            groupId = groupId.replace(GlobalConstants.POINT, File.separator);
+        }
+        return String.format("%s/%s/%s/%s", groupId, artifactId, version, calcLatestSnapshotVersion(storageId, repositoryId, groupId, artifactId, version, artifactName));
+    }
+
+    public RepositoryPath getBomRepositoryPath(RepositoryPath repositoryPath) {
+        String filename = FilenameUtils.getName(repositoryPath.getFileName().toString());
+        String filePath = "." + filename + ".foLibrary-metadata/bom.json";
+        return repositoryPath.resolveSibling(filePath);
+    }
+
+    public RepositoryPath getCacheArtifactMetadataPath(RepositoryPath repositoryPath) {
+        String artifactMetadataDirectoryName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + GlobalConstants.FO_LIBRARY_METADATA;
+        return repositoryPath.resolveSibling(artifactMetadataDirectoryName).resolve("metadata.json");
+    }
+
+    public String getCacheArtifactMetadata(RepositoryPath repositoryPath) {
+        String metadata = "";
+        try {
+            RepositoryPath cacheArtifactMetadataPath = getCacheArtifactMetadataPath(repositoryPath);
+            if (Objects.nonNull(cacheArtifactMetadataPath) && Files.exists(cacheArtifactMetadataPath)) {
+                metadata = Files.readString(cacheArtifactMetadataPath);
+                log.info("Cache artifact metadata path [{}] exists metadata [{}]", cacheArtifactMetadataPath, metadata);
+            }
+        } catch (Exception ex) {
+            log.error("GetCacheArtifactMetadata error [{}]", ExceptionUtils.getStackTrace(ex));
+        }
+        return metadata;
+    }
+
+    public void cacheArtifactMetadata(RepositoryPath repositoryPath, String metadata) {
+        try {
+            RepositoryPath cacheArtifactMetadataPath = getCacheArtifactMetadataPath(repositoryPath);
+            if (Objects.nonNull(cacheArtifactMetadataPath) && StringUtils.isNotBlank(metadata)) {
+                Files.writeString(cacheArtifactMetadataPath, metadata);
+                log.info("Cache artifact metadata path [{}] success metadata [{}]", cacheArtifactMetadataPath, metadata);
+            }
+        } catch (Exception ex) {
+            log.error("StoreArtifactMetadata error [{}]", ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
 }

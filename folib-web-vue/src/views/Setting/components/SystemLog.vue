@@ -6,7 +6,7 @@
         <a-card style="max-height:1024px;min-height:454px;overflow-y: auto" class="header-solid"
           :bodyStyle="{ paddingTop: 0, paddingBottom: 0 }">
           <template #title>
-            <h6 class="font-semibold m-0">日志列表</h6>
+            <h6 class="font-semibold m-0">{{ $t('Setting.LogList') }}</h6>
           </template>
           <a-directory-tree :replaceFields="{
             key: 'name',
@@ -22,11 +22,11 @@
           <template #title>
             <a-row type="flex" align="middle">
               <a-col :span="24" :md="12">
-                <h6 class="font-semibold m-0">在线日志查看</h6>
+                <h6 class="font-semibold m-0">{{ $t('Setting.OnlineLogView') }}</h6>
               </a-col>
               <a-col v-if="path" :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
                 <a-button type="primary" @click="viewLogs()">
-                  同步
+                  {{ $t('Setting.synchronization') }}
                 </a-button>
               </a-col>
             </a-row>

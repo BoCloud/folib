@@ -119,6 +119,22 @@ public class NodeComponent {
     }
 
     /**
+     * 获取集群节点个数
+     *
+     * @return 集群节点个数
+     */
+    public int getClusterNodeTotal() {
+        Map<String, Float> effectiveOwnershipMap = nodeProbe.effectiveOwnershipWithPort(keyspace);
+        Map<String, String> tokensToEndpointsMap = nodeProbe.getTokenToEndpointMap(true);
+        SortedMap<String, SetHostStatWithPort> dcsMap = NodeTool.getOwnershipByDcWithPort(nodeProbe, true, tokensToEndpointsMap, effectiveOwnershipMap);
+        int nodeTotal = 0;
+        for (Map.Entry<String, SetHostStatWithPort> entry : dcsMap.entrySet()) {
+            nodeTotal = nodeTotal + entry.getValue().size();
+        }
+        return nodeTotal;
+    }
+
+    /**
      * 移除节点
      *
      * @param token token
@@ -130,6 +146,7 @@ public class NodeComponent {
             throw new UnsupportedOperationException("不能移除自身");
         }
         nodeProbe.removeNode(token);
+        log.info("从cassandra集群移除节点：{} 完成", token);
     }
 
     /**
@@ -141,6 +158,7 @@ public class NodeComponent {
             Map<String, String> options = Maps.newLinkedHashMap();
             options.put(RepairOption.PARALLELISM_KEY, RepairParallelism.DATACENTER_AWARE.getName());
             nodeProbe.repairAsync(System.out, keyspace, options);
+            log.info("尝试修复cassandra集群信息结束");
         } catch (IOException ex) {
             log.error("修复cassandra集群错误：{}", ExceptionUtils.getStackTrace(ex));
             throw new RuntimeException("修复错误，请稍候重试");

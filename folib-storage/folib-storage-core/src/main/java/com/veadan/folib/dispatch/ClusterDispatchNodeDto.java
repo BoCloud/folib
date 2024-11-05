@@ -51,4 +51,30 @@ public class ClusterDispatchNodeDto implements Serializable {
      * 创建时间
      */
     private String createTime;
+
+    /**
+     * 自动注册<br>
+     * 自动注册的节点无法编辑或删除
+     */
+    private Boolean autoRegister = false;
+
+    /**
+     * Ws客户端节点在线状态
+     */
+    private Boolean wsClientOnline;
+
+    /**
+     * 节点传输速率（KB/s）
+     */
+    private Integer kbps;
+
+    /**
+     * 是否同步权限
+     */
+    private Boolean isSyncPrivilege;
+
+    /**
+     * 同步策略
+     */
+    private String syncStrategy;
 }

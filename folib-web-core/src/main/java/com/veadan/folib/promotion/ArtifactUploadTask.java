@@ -8,15 +8,22 @@ import cn.hutool.extra.compress.extractor.Extractor;
 import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.cloud.tools.jib.api.Containerizer;
+import com.google.cloud.tools.jib.api.Jib;
+import com.google.cloud.tools.jib.api.RegistryImage;
+import com.google.cloud.tools.jib.api.TarImage;
 import com.veadan.folib.artifact.MavenArtifactUtils;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
+import com.veadan.folib.artifact.coordinates.PubArtifactCoordinates;
 import com.veadan.folib.components.artifact.ArtifactComponent;
-import com.veadan.folib.config.NpmLayoutProviderConfig;
+import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.domain.DockerManifest;
 import com.veadan.folib.entity.Dict;
-import com.veadan.folib.npm.metadata.PackageVersion;
+import com.veadan.folib.enums.NpmPacketSuffix;
+import com.veadan.folib.enums.NpmSubLayout;
+import com.veadan.folib.enums.UploadTypeEnum;
+import com.veadan.folib.metadata.indexer.RpmRepoIndexer;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -28,12 +35,15 @@ import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ArtifactMetadataService;
 import com.veadan.folib.services.DictService;
 import com.veadan.folib.services.RepositoryManagementService;
+import com.veadan.folib.services.impl.FileStreamMultipartFile;
 import com.veadan.folib.storage.metadata.MetadataHelper;
+import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.util.MessageDigestUtils;
+import com.veadan.folib.utils.DockerUtils;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.artifact.ArtifactUtils;
@@ -42,24 +52,27 @@ import org.apache.maven.artifact.repository.metadata.Snapshot;
 import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.apache.maven.index.artifact.Gav;
 import org.apache.maven.model.Model;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
-import javax.inject.Inject;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Callable;
 
+@Data
 @Slf4j
 public class ArtifactUploadTask implements Callable<String> {
 
     private String storageId;
     private String repositoryId;
     private MultipartFile file;
+    private InputStream inputStream;
     private RepositoryManagementService repositoryManagementService;
     private RepositoryPathResolver repositoryPathResolver;
     private ArtifactManagementService artifactManagementService;
@@ -74,6 +87,11 @@ public class ArtifactUploadTask implements Callable<String> {
     private MavenRepositoryFeatures mavenRepositoryFeatures;
     private String parseArtifact;
     private ArtifactComponent artifactComponent;
+    private RepositoryPath repositoryPath;
+    private String imageTag;
+    private String fileType;
+    private String baseUrl;
+    private String token;
 
     public ArtifactUploadTask() {
     }
@@ -110,6 +128,79 @@ public class ArtifactUploadTask implements Callable<String> {
         this.artifactComponent = SpringUtil.getBean(ArtifactComponent.class);
     }
 
+    public ArtifactUploadTask(String storageId,
+                              String repositoryId,
+                              InputStream inputStream,
+                              RepositoryPathResolver repositoryPathResolver,
+                              ArtifactManagementService artifactManagementService,
+                              PromotionUtil promotionUtil,
+                              LayoutProviderRegistry layoutProviderRegistry,
+                              ArtifactMetadataService artifactMetadataService,
+                              ArtifactRepository artifactRepository,
+                              MavenRepositoryFeatures mavenRepositoryFeatures,
+                              String tempPath,
+                              String fileRelativePath, String metaData, String uuid, String parseArtifact) {
+        this.storageId = storageId;
+        this.repositoryId = repositoryId;
+        this.inputStream = inputStream;
+        this.repositoryPathResolver = repositoryPathResolver;
+        this.artifactManagementService = artifactManagementService;
+        this.promotionUtil = promotionUtil;
+        this.layoutProviderRegistry = layoutProviderRegistry;
+        this.artifactMetadataService = artifactMetadataService;
+        this.artifactRepository = artifactRepository;
+        this.mavenRepositoryFeatures = mavenRepositoryFeatures;
+        this.tempPath = tempPath;
+        this.fileRelativePath = fileRelativePath;
+        this.metaData = metaData;
+        this.uuid = uuid;
+        this.parseArtifact = parseArtifact;
+        this.artifactComponent = SpringUtil.getBean(ArtifactComponent.class);
+    }
+
+    public ArtifactUploadTask(String storageId,
+                              String repositoryId,
+                              MultipartFile file,
+                              RepositoryManagementService repositoryManagementService,
+                              RepositoryPathResolver repositoryPathResolver,
+                              ArtifactManagementService artifactManagementService,
+                              PromotionUtil promotionUtil,
+                              LayoutProviderRegistry layoutProviderRegistry,
+                              ArtifactMetadataService artifactMetadataService,
+                              ArtifactRepository artifactRepository,
+                              MavenRepositoryFeatures mavenRepositoryFeatures,
+                              String tempPath,
+                              String fileRelativePath,
+                              String metaData,
+                              String uuid,
+                              String parseArtifact,
+                              String imageTag,
+                              String fileType,
+                              String baseUrl,
+                              String token) {
+        this.storageId = storageId;
+        this.repositoryId = repositoryId;
+        this.file = file;
+        this.repositoryManagementService = repositoryManagementService;
+        this.repositoryPathResolver = repositoryPathResolver;
+        this.artifactManagementService = artifactManagementService;
+        this.promotionUtil = promotionUtil;
+        this.layoutProviderRegistry = layoutProviderRegistry;
+        this.artifactMetadataService = artifactMetadataService;
+        this.artifactRepository = artifactRepository;
+        this.mavenRepositoryFeatures = mavenRepositoryFeatures;
+        this.tempPath = tempPath;
+        this.fileRelativePath = fileRelativePath;
+        this.metaData = metaData;
+        this.uuid = uuid;
+        this.parseArtifact = parseArtifact;
+        this.artifactComponent = SpringUtil.getBean(ArtifactComponent.class);
+        this.imageTag = imageTag;
+        this.fileType = fileType;
+        this.baseUrl = baseUrl;
+        this.token = token;
+    }
+
     @Override
     public String call() {
         String rs = "";
@@ -126,6 +217,8 @@ public class ArtifactUploadTask implements Callable<String> {
                     throw new IOException("artifact file not found");
                 }
                 is = Files.newInputStream(Path.of(artifactParse.getFilePath()));
+            } else if (Objects.nonNull(inputStream)) {
+                is = inputStream;
             }
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, fileRelativePath);
             if (RepositoryFiles.isChecksum(repositoryPath) || RepositoryFiles.isTrash(repositoryPath)) {
@@ -141,6 +234,12 @@ public class ArtifactUploadTask implements Callable<String> {
                 handlerMavenLayoutUpload(is, layout, repositoryPath, artifactParse);
             } else if (NpmLayoutProvider.ALIAS.equals(layout)) {
                 handlerNpmLayoutUpload(is, layout, repositoryPath);
+            } else if (PubLayoutProvider.ALIAS.equals(layout)) {
+                handlerPubLayoutUpload(is, layout, repositoryPath);
+            } else if (DockerLayoutProvider.ALIAS.equals(layout) && StringUtils.isNotBlank(fileType)) {
+                handlerDockerUploadProcess(this.storageId, this.repositoryId, this.imageTag, fileType, this.file, this.baseUrl);
+            }else if(RpmLayoutProvider.ALIAS.equals(layout)){
+                handlerRpmLayoutUpload(this.storageId, this.repositoryId,this.file);
             } else {
                 promotionUtil.setMetaData(repositoryPath, metaData);
                 artifactManagementService.store(repositoryPath, is);
@@ -338,8 +437,7 @@ public class ArtifactUploadTask implements Callable<String> {
             }
             Gav artifactGav = MavenArtifactUtils.convertPathToGav(artifactRepositoryPath);
             byte[] pomBytes = layoutProvider.getContentByFileName(repositoryPath, path, "pom.xml");
-            String artifactName = fileRelativePath;
-            String pomName = FilenameUtils.getBaseName(artifactName) + ".pom";
+            String pomName = String.format("%s-%s", artifactId, artifactGav.getVersion()) + ".pom";
             File pomTempFile = null;
             if (Objects.nonNull(pomBytes)) {
                 //包内存在pom，直接使用
@@ -350,10 +448,10 @@ public class ArtifactUploadTask implements Callable<String> {
                 //包内不存在pom，需生成pom
                 pomName = String.format("%s-%s", artifactId, artifactGav.getVersion()) + ".pom";
                 pomTempFile = new File(parentTempFile.getAbsolutePath() + File.separator + pomName);
-                artifactComponent.pomGenerator(sourceGroupId, artifactId, version, pomTempFile.getAbsolutePath());
+                artifactComponent.pomGenerator(sourceGroupId, artifactId, version, pomTempFile.getAbsolutePath(), artifactGav.getExtension());
             }
             String pomPath = String.format("%s/%s/%s/%s", groupId, artifactId, version, pomName);
-            log.info("maven2 layout xml path ：{}，properties：{}，artifactParse: {}, groupId：{}，artifactId：{}, version：{} artifactPath：{}", pomTempFile.getAbsolutePath(), properties, artifactParse, groupId, artifactId, version, pomPath);
+            log.info("maven2 layout xml path ：{}，properties：{}，artifactParse: {}, groupId：{}，artifactId：{}, version：{} gavVersion: {} artifactPath：{}", pomTempFile.getAbsolutePath(), properties, artifactParse, groupId, artifactId, version, artifactGav.getVersion(), pomPath);
             RepositoryPath pomRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, pomPath);
             isValidGavPath = MavenArtifactUtils.isGAV(pomRepositoryPath);
             if (!isValidGavPath) {
@@ -465,24 +563,31 @@ public class ArtifactUploadTask implements Callable<String> {
         File parentTempFile = null;
         try {
             String supportedExt = "tgz";
+            String ohpmExt = "har";
             //npm布局
             parentTempFile = new File(tempPath + File.separator + UUID.randomUUID() + File.separator);
             File artifactTempFile = new File(parentTempFile.getAbsolutePath() + File.separator + fileRelativePath);
             FileUtil.writeFromStream(is, artifactTempFile);
             Path path = Path.of(artifactTempFile.getAbsolutePath());
             String ext = FileUtil.extName(artifactTempFile);
-            if (!supportedExt.equals(ext)) {
-                throw new RuntimeException("Only the tgz suffix is supported");
+
+            boolean isOhnpmSubLayout = NpmSubLayout.OHPM.getValue().equals(repositoryPath.getRepository().getSubLayout());
+            String expectedExtension = isOhnpmSubLayout ? ohpmExt : supportedExt;
+            if (!expectedExtension.equals(ext)) {
+                String errorMessage = isOhnpmSubLayout ? "Only the .har suffix is supported" : "Only the .tgz suffix is supported";
+                throw new RuntimeException(errorMessage);
             }
+
             LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(layout);
             if (Objects.nonNull(layoutProvider)) {
-                byte[] packageJsonBytes = layoutProvider.getContentByFileName(repositoryPath, path, NpmLayoutProvider.PACKAGE_JSON);
-                String packageJson = new String(packageJsonBytes, StandardCharsets.UTF_8);
-                log.info("npm package.json：{}", packageJson);
                 RuntimeException runtimeException = new RuntimeException("package.json is not found in this file or package.json has an error");
-                if (StringUtils.isBlank(packageJson)) {
+                String packagePath = isOhnpmSubLayout ? NpmLayoutProvider.OHPM_PACKAGE_JSON_PATH : NpmLayoutProvider.DEFAULT_PACKAGE_JSON_PATH;
+                byte[] packageJsonBytes = layoutProvider.getContentByEqualsFileName(repositoryPath, path, packagePath);
+                if (Objects.isNull(packageJsonBytes)) {
                     throw runtimeException;
                 }
+                String packageJson = new String(packageJsonBytes, StandardCharsets.UTF_8);
+                log.info("npm package.json：{}", packageJson);
                 try {
                     JSONObject packageJsonObj = JSONObject.parseObject(packageJson);
                     String name = packageJsonObj.getString("name");
@@ -490,18 +595,21 @@ public class ArtifactUploadTask implements Callable<String> {
                     if (StringUtils.isBlank(name) || StringUtils.isBlank(version)) {
                         throw runtimeException;
                     }
-                    NpmArtifactCoordinates npmArtifactCoordinates = NpmArtifactCoordinates.of(name, version);
+
+                    final String packagesuffix = NpmSubLayout.OHPM.getValue().equals(repositoryPath.getRepository().getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
+                    NpmArtifactCoordinates npmArtifactCoordinates = NpmArtifactCoordinates.of(name, version, packagesuffix);
                     String artifactPath = npmArtifactCoordinates.convertToPath(npmArtifactCoordinates);
                     log.info("The fileRelativePath：{} artifactPath：{}", fileRelativePath, artifactPath);
                     repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
                     try (InputStream inputStream = new BufferedInputStream(Files.newInputStream(path))) {
                         promotionUtil.setMetaData(repositoryPath, metaData);
-                        promotionUtil.setPackageInfo(repositoryPath, packageJson);
                         artifactManagementService.store(repositoryPath, inputStream);
+                        this.repositoryPath = repositoryPath;
                     }
                     try (InputStream inputStream = new ByteArrayInputStream(packageJsonBytes)) {
                         artifactManagementService.store(repositoryPath.resolveSibling("package.json"), inputStream);
                     }
+                    artifactComponent.updateArtifactIdGroup(new ArtifactIdGroupEntity(storageId, repositoryId, npmArtifactCoordinates.getId()), "");
                 } catch (Exception ex) {
                     log.error("handlerNpmLayoutUpload file：{}，error：{}", artifactTempFile.getAbsolutePath(), ExceptionUtils.getStackTrace(ex));
                     throw runtimeException;
@@ -574,6 +682,52 @@ public class ArtifactUploadTask implements Callable<String> {
     }
 
     /**
+     * 处理pub布局制品上传
+     *
+     * @param is             is
+     * @param layout         layout
+     * @param repositoryPath repositoryPath
+     */
+    private void handlerPubLayoutUpload(InputStream is, String layout, RepositoryPath repositoryPath) {
+        File parentTempFile = null;
+        try {
+            parentTempFile = new File(tempPath + File.separator + UUID.randomUUID() + File.separator);
+            File artifactTempFile = new File(parentTempFile.getAbsolutePath() + File.separator + fileRelativePath);
+            FileUtil.writeFromStream(is, artifactTempFile);
+            Path path = Path.of(artifactTempFile.getAbsolutePath());
+            if (!fileRelativePath.endsWith(PubArtifactCoordinates.PUB_EXTENSION)) {
+                String errorMessage = "Only the .tar.gz suffix is supported";
+                throw new RuntimeException(errorMessage);
+            }
+
+            LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(layout);
+            if (Objects.nonNull(layoutProvider)) {
+                try {
+                    PubArtifactCoordinates pubArtifactCoordinates = PubArtifactCoordinates.packageNameParse(fileRelativePath);
+                    String artifactPath = pubArtifactCoordinates.convertToPath(pubArtifactCoordinates);
+                    log.info("The fileRelativePath：{} artifactPath：{}", fileRelativePath, artifactPath);
+                    repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+                    try (InputStream inputStream = new BufferedInputStream(Files.newInputStream(path))) {
+                        promotionUtil.setMetaData(repositoryPath, metaData);
+                        artifactManagementService.store(repositoryPath, inputStream);
+                        this.repositoryPath = repositoryPath;
+                    }
+                } catch (Exception ex) {
+                    log.error("handlerPubLayoutUpload file：{}，error：{}", artifactTempFile.getAbsolutePath(), ExceptionUtils.getStackTrace(ex));
+                    throw ex;
+                }
+            }
+        } catch (Exception ex) {
+            log.error("handlerPubLayoutUpload path：{}，error：{}", repositoryPath.toAbsolutePath(), ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException(ex.getMessage());
+        } finally {
+            if (Objects.nonNull(parentTempFile)) {
+                FileUtil.del(parentTempFile);
+            }
+        }
+    }
+
+    /**
      * maven仓库
      *
      * @param repositoryPath repositoryPath
@@ -583,6 +737,9 @@ public class ArtifactUploadTask implements Callable<String> {
     private void handlerMavenStore(RepositoryPath repositoryPath, InputStream inputStream) throws Exception {
         mavenRepositoryFeatures.versionValidator(repositoryPath);
         artifactManagementService.store(repositoryPath, inputStream);
+        if (Objects.isNull(this.repositoryPath)) {
+            this.repositoryPath = repositoryPath;
+        }
     }
 
     /**
@@ -602,7 +759,9 @@ public class ArtifactUploadTask implements Callable<String> {
                 metadataPath = MetadataHelper.getMetadataPath(repositoryPath);
             }
             if (Files.exists(metadataPath)) {
-                metadata = artifactMetadataService.getMetadata(Files.newInputStream(metadataPath));
+                try (InputStream inputStream = Files.newInputStream(metadataPath)) {
+                    metadata = artifactMetadataService.getMetadata(inputStream);
+                }
             }
             return metadata;
         } catch (Exception ex) {
@@ -626,5 +785,105 @@ public class ArtifactUploadTask implements Callable<String> {
             dictService.saveOrUpdateDict(Dict.builder().dictKey(uuid).comment(comment).build(), null);
         }
     }
+
+    private void handlerDockerUploadProcess(final String storageId, final String repositoryId, final String path, final String fileType, final MultipartFile multipartFile, String baseUrl) throws Exception {
+        if (UploadTypeEnum.SUBSIDIARY.getType().equals(fileType)) {
+            handlerDockerSubsidiary(storageId, repositoryId, path, multipartFile);
+        } else {
+            handlerDockerImage(storageId, repositoryId, path, multipartFile, baseUrl);
+        }
+    }
+
+    private void handlerDockerSubsidiary(final String storageId, final String repositoryId, final String path, final MultipartFile multipartFile) throws Exception {
+        String artifactPath = path.replace(":", File.separator);
+        RepositoryPath dockerTagRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        if (!Files.exists(dockerTagRepositoryPath)) {
+            String msg = String.format("Docker tag [%s] [%s] [%s] not found", storageId, repositoryId, artifactPath);
+            throw new IllegalArgumentException(msg);
+        }
+        RepositoryPath dockerSubsidiaryRepositoryPath = DockerUtils.getDockerSubsidiaryPath(dockerTagRepositoryPath);
+        String fileOriginalName = null;
+        if(multipartFile instanceof FileStreamMultipartFile){
+            fileOriginalName = ((FileStreamMultipartFile) multipartFile).getOriginalFilename();
+        }else {
+             fileOriginalName = (((CommonsMultipartFile) multipartFile).getFileItem()).getName();
+        }
+        RepositoryPath dockerSubsidiaryFileRepositoryPath = dockerSubsidiaryRepositoryPath.resolve(fileOriginalName);
+        String subsidiaryFilePath = RepositoryFiles.relativizePath(dockerSubsidiaryFileRepositoryPath);
+        log.error("Docker upload subsidiary file uuid [{}] storageId [{}] repositoryId [{}] artifactPath [{}]", uuid, storageId, repositoryId, subsidiaryFilePath);
+        try (InputStream is = multipartFile.getInputStream()) {
+            artifactManagementService.store(dockerSubsidiaryFileRepositoryPath, is);
+        } catch (Exception ex) {
+            log.error("Docker upload subsidiary file error uuid [{}] storageId [{}] repositoryId [{}] artifactPath [{}] error [{}] ", uuid, storageId, repositoryId, subsidiaryFilePath, ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException(ex.getMessage());
+        }
+    }
+
+    private void handlerDockerImage(final String storageId, final String repositoryId, final String path, final MultipartFile multipartFile, String baseUrl) throws IOException {
+        log.info("Requested get docker application file {}/{}/{}.", storageId, repositoryId, path);
+        String url = String.join("/", baseUrl, storageId, repositoryId, path);
+
+        final String prefix1 = "http://";
+        final String prefix2 = "https://";
+        String tag = url.replaceAll("^" + prefix1, "");
+        if (url.contains(prefix1)) {
+            tag = url.replaceAll("^" + prefix1, "");
+        } else if (url.contains(prefix2)) {
+            tag = url.replaceAll("^" + prefix2, "");
+        }
+        Path tempDirectory =null;
+        try (InputStream inputStream = multipartFile.getInputStream()) {
+            String token = this.token;
+            String uuid = UUID.randomUUID().toString();
+            String TEMP_UPLOAD_DIR = String.join("/", tempPath, uuid);
+            // 将文件保存到指定目录下
+            String fileName = multipartFile.getOriginalFilename();
+            tempDirectory = Files.createDirectory(Path.of(TEMP_UPLOAD_DIR));
+            Path localPath = Paths.get(String.join("/", tempDirectory.toString(), fileName));
+
+            Files.copy(inputStream, localPath);
+
+            Path localPath2 = DockerParsePacketsUtil.parsePackets(localPath, tempDirectory);
+            Jib.from(TarImage.at(localPath2))
+                    .containerize(Containerizer.to(
+                            RegistryImage
+                                    .named(tag)
+                                    .addCredential("<token>", token)
+                    ).setAllowInsecureRegistries(true));
+
+
+        } catch (Exception e) {
+            log.error("docker upload error uuid: {} ,storageId:{} ,repositoryId:{} ,tag:{} error: {}", uuid, storageId, repositoryId, tag, ExceptionUtils.getStackTrace(e));
+        } finally {
+            if (tempDirectory != null) {
+                Files.walk(tempDirectory)
+                        .sorted(Comparator.reverseOrder())
+                        .map(Path::toFile)
+                        .forEach(File::delete);
+            }
+        }
+    }
+
+    private void handlerRpmLayoutUpload(final String storageId, final String repositoryId,final MultipartFile multipartFile){
+
+        try {
+            String filename = multipartFile.getOriginalFilename();
+            String rpmPath = "Packages/" + filename;
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, rpmPath);
+            try (InputStream is = multipartFile.getInputStream()) {
+                artifactManagementService.store(repositoryPath, is);
+            }
+            RepositoryPath repoPath = repositoryPathResolver.resolve(storageId, repositoryId, "repodata");
+            RpmRepoIndexer rpmRepoIndexer = new RpmRepoIndexer(repositoryPathResolver, artifactManagementService, tempPath);
+            if (!Files.exists(repoPath)) {
+                rpmRepoIndexer.indexWriter(storageId, repositoryId);
+            } else {
+                rpmRepoIndexer.indexWriter(storageId, repositoryId);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+        }
+    }
+
 
 }

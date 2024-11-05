@@ -41,7 +41,7 @@ public class PhpLayoutProvider
     }
 
     @Override
-    protected PhpArtifactCoordinates getArtifactCoordinates(RepositoryPath path) throws IOException {
+    public PhpArtifactCoordinates getArtifactCoordinates(RepositoryPath path) throws IOException {
         PhpArtifactCoordinates phpArtifactCoordinates = PhpArtifactCoordinates.parse(RepositoryFiles.relativizePath(path));
         if (Objects.nonNull(path.getArtifactEntry()) && Objects.nonNull(path.getArtifactEntry().getArtifactCoordinates())) {
             phpArtifactCoordinates.setDescription(path.getArtifactEntry().getArtifactCoordinates().getCoordinates().getOrDefault(PhpArtifactCoordinates.DESCRIPTION, ""));

@@ -11,4 +11,6 @@ public interface CustomRepositoryConfigurationFormVisitor<T>
     T visit(NugetRepositoryConfigurationForm form);
 
     T visit(RawRepositoryConfigurationForm form);
+
+    T visit(GoRepositoryConfigurationForm form);
 }

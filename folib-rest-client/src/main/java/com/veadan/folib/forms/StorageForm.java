@@ -33,6 +33,16 @@ public class StorageForm {
     private String admin;
 
     /**
+     * 存储类型 local、s3
+     */
+    private String storageProvider;
+
+    /**
+     * 存储配额
+     */
+    private Long storageMaxSize;
+
+    /**
      * 普通用户
      */
     private Set<String> users;

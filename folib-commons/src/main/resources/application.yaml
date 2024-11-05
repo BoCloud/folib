@@ -5,6 +5,7 @@ server:
       timeout: 50000
   jetty:
     max-http-form-post-size: 524288000 # Maximum size in bytes of the HTTP post or put content.
+
 spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
@@ -51,17 +52,25 @@ spring:
     password: ${folib.redis.password:123456}
 mybatis:
   mapper-locations: "classpath*:mapper/*.xml"
-
+  configuration:
+    map-underscore-to-camelcase: true
+    #log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 mapper:
-  mappers: com.veadan.folib.scanner.common.base.CommonMapper
+  mappers: com.veadan.folib.common.base.CommonMapper
   identity: MYSQL
 
 scan:
-  base-proxy: ${folib.nvd:nvd.folib.com}    #扫描网络代理地址
+  base-proxy: ${folib.nvd:nvd.folib.com/feeds/json/cve/1.1}    #扫描网络代理地址
   storage-base: ${folib.vault}/
   thread-pool: 200
 
 folib:
+  promotion:
+    queue-size: 1000
+    thread: 2
+    retry-count: 3
+    ws-request-timout: 10
+    ws-request-timout-of-artifact-upload: 600
   basedir: .
   home: ${folib.basedir}/folib
   vault: ${folib.basedir}/folib-vault
@@ -83,8 +92,6 @@ folib:
       basedir: ${folib.vault}/storages
   host: localhost
   port: 38080
-  dependentLibraryPrefix: anhui
-  dependentPushUrl: http://172.29.63.45:9022
   nuget:
     download:
       feed: false
@@ -102,89 +109,89 @@ folib:
             enabled: true
   threadPool:
     async:
-      corePoolSize: 12
-      maxPoolSize: 12
-      queueCapacity: 2147483647
-      keepAliveSeconds: 200
+      corePoolSize: ${threadPool.common.core:12}
+      maxPoolSize: ${threadPool.common.max:12}
+      queueCapacity: ${threadPool.common.queue:100000000}
+      keepAliveSeconds: 0
       threadNamePrefix: async_
-      awaitTerminationSeconds: 60
+      awaitTerminationSeconds: 6
     asyncEventListener:
-      corePoolSize: 12
-      maxPoolSize: 12
-      queueCapacity: 2147483647
+      corePoolSize: ${threadPool.common.core:12}
+      maxPoolSize: ${threadPool.common.max:12}
+      queueCapacity: ${threadPool.common.queue:100000000}
       keepAliveSeconds: 0
       threadNamePrefix: asyncEventListener_
-      awaitTerminationSeconds: 0
-    asyncStorage:
-      corePoolSize: 12
-      maxPoolSize: 12
-      queueCapacity: 2147483647
-      keepAliveSeconds: 200
-      threadNamePrefix: asyncStorage_
-      awaitTerminationSeconds: 60
-    asyncRepository:
-      corePoolSize: 12
-      maxPoolSize: 12
-      queueCapacity: 2147483647
-      keepAliveSeconds: 200
-      threadNamePrefix: asyncRepository_
-      awaitTerminationSeconds: 60
-    asyncSecurityPolicy:
-      corePoolSize: 12
-      maxPoolSize: 12
-      queueCapacity: 2147483647
-      keepAliveSeconds: 200
-      threadNamePrefix: asyncSecurityPolicyConfig_
-      awaitTerminationSeconds: 60
+      awaitTerminationSeconds: 6
     asyncConfig:
-      corePoolSize: 12
-      maxPoolSize: 12
-      queueCapacity: 2147483647
-      keepAliveSeconds: 200
+      corePoolSize: 2
+      maxPoolSize: 2
+      queueCapacity: 1000
+      keepAliveSeconds: 0
       threadNamePrefix: asyncConfig_
-      awaitTerminationSeconds: 60
-    asyncRepositoryCleanup:
-      corePoolSize: 12
-      maxPoolSize: 12
-      queueCapacity: 2147483647
-      keepAliveSeconds: 200
-      threadNamePrefix: asyncRepositoryCleanup_
-      awaitTerminationSeconds: 120
-    asyncCronJob:
-      corePoolSize: 12
-      maxPoolSize: 12
-      queueCapacity: 2147483647
-      keepAliveSeconds: 200
-      threadNamePrefix: asyncCronJob_
-      awaitTerminationSeconds: 120
-    asyncClusterDispatch:
-      corePoolSize: 12
-      maxPoolSize: 12
-      queueCapacity: 2147483647
-      keepAliveSeconds: 200
-      threadNamePrefix: asyncClusterDispatch_
-      awaitTerminationSeconds: 120
+      awaitTerminationSeconds: 6
     asyncFetchRemotePackage:
-      corePoolSize: 12
-      maxPoolSize: 12
-      queueCapacity: 2147483647
+      corePoolSize: ${threadPool.common.core:12}
+      maxPoolSize: ${threadPool.common.max:12}
+      queueCapacity: ${threadPool.common.queue:100000000}
       keepAliveSeconds: 0
       threadNamePrefix: asyncFetchRemotePackage_
-      awaitTerminationSeconds: 0
+      awaitTerminationSeconds: 6
     asyncScan:
-      corePoolSize: 30
-      maxPoolSize: 30
-      queueCapacity: 2147483647
+      corePoolSize: ${threadPool.scan.core:2}
+      maxPoolSize: ${threadPool.scan.max:2}
+      queueCapacity: ${threadPool.scan.queue:12}
       keepAliveSeconds: 0
       threadNamePrefix: asyncScan_
       awaitTerminationSeconds: 0
-    asyncDownloadArtifact:
-      corePoolSize: 16
-      maxPoolSize: 16
-      queueCapacity: 2147483647
+    asyncWsCommand:
+      corePoolSize: 12
+      maxPoolSize: 200
+      queueCapacity: 200000
       keepAliveSeconds: 0
-      threadNamePrefix: asyncDownloadArtifact_
-      awaitTerminationSeconds: 0
+      threadNamePrefix: asyncWsCommand_
+      awaitTerminationSeconds: 6
+    asyncApiBrowse:
+#       corePoolSize: 12
+#       maxPoolSize: 12
+      queueCapacity: 500
+      keepAliveSeconds: 0
+      threadNamePrefix: asyncApiBrowse_
+      awaitTerminationSeconds: 6
+    asyncCopy:
+      corePoolSize: ${threadPool.common.core:12}
+      maxPoolSize: ${threadPool.common.max:12}
+      queueCapacity: ${threadPool.common.queue:100000000}
+      keepAliveSeconds: 0
+      threadNamePrefix: asyncCopy_
+      awaitTerminationSeconds: 6
+    asyncEventLog:
+      corePoolSize: ${threadPool.eventLog.core:2}
+      maxPoolSize: ${threadPool.eventLog.max:2}
+      queueCapacity: ${threadPool.eventLog.queue:100}
+      keepAliveSeconds: 0
+      threadNamePrefix: asyncEventLog_
+      awaitTerminationSeconds: 6
+    asyncWsHeartbeat:
+      corePoolSize: ${threadPool.common.max:12}
+      maxPoolSize: ${threadPool.common.max:12}
+      queueCapacity: ${threadPool.common.queue:100000000}
+      keepAliveSeconds: 0
+      threadNamePrefix: asyncWsHeartbeat_
+      awaitTerminationSeconds: 6
+    asyncPromotion:
+      corePoolSize: ${threadPool.common.core:12}
+      maxPoolSize: ${threadPool.common.max:12}
+      queueCapacity: ${threadPool.common.queue:100000000}
+      keepAliveSeconds: 0
+      threadNamePrefix: asyncPromotion_
+      awaitTerminationSeconds: 6
+    asyncDeleteArtifact:
+      corePoolSize: ${threadPool.common.core:12}
+      maxPoolSize: ${threadPool.common.max:12}
+      queueCapacity: ${threadPool.common.queue:100000}
+      keepAliveSeconds: 0
+      threadNamePrefix: asyncDeleteArtifact_
+      awaitTerminationSeconds: 6
 # Changes to these properties must also be applied to [folib/folib-web-integration-tests] and possibly the pipeline.
 # Please ping us on our chat channel (https://chat.carlspring.org/) to confirm.
 logging:
@@ -226,14 +233,13 @@ cacheManagerConfiguration:
   groupConfig:
     name: folib
     password: password
-  enableMulticastConfig: false
-  multicast:
-    multicastGroup: 224.2.2.3
-    multicastPort: 54327
-    multicastTimeoutSeconds: 2
-    multicastTimeToLive: 32
-    trustedInterfaces: en0,en1
-    loopbackModeEnabled: false
+  tcpIpPort: ${folib.cache.port:5701}
+  enableTcpIpConfig: true
+  tcpIp:
+    tcpIpTimeoutSeconds: 20
+    #ip地址逗号隔开
+    members: ${folib.cache.cluster:127.0.0.1:5701}
+
   instanceId: folib
   caches:
     remoteRepositoryAliveness:
@@ -262,11 +268,20 @@ s3fs:
     connections: 1000
   protocol: http
   region: folib
-  uri: s3://192.168.5.100:9000/
+  uri: s3://192.168.5.103:9000
   access:
     key: admin
   secret:
-    key: admin@V587
+    key: admin123
 rsa:
   privateKey: MIICdQIBADANBgkqhkiG9w0BAQEFAASCAl8wggJbAgEAAoGBAIyu/3z87O6l94pIricIgo1VpYvNuK/StdlehIaQM6R9PmDAr5/phnFYWJEh+ZhMUIl6c/qIvcQr0y0Q2FRPF6085l4QLvbJI+FQ9xSspKWFGEzUuoEVogOtjlBz0Fl3VXO0wmZSrCnUhF14PWWBNz5e0X1ZIVEreGWj4XrCR+NjAgMBAAECgYB53Kig2vJdstQfK9/3Hc8AoHzbAiOF4e710ILZkRW62WZsJty6l22GxzFI3nY3L3vf6nuGPGatBA1UDzBkr3Jgqm0TSKSqlZokmCs3v1/gtkr/TSt36F58lAswR4I5iPdcDXkNfViidzqnvCahpwWpUAjteeUsx1hBQM1p8gWvOQJBANFs78S/EXfmkxy0d4Pf7uoFRXlrMC4SpP/9AjKHaRexbLesG4jYXLclx16pZXj7VqOWBORcVBKn9y1guFOnYdUCQQCr+G3EsX++e8G32lYmYnNp082Fg+tGSz2RG/LrwDqJOSyuB87LFJcRphNdo266f23SpQI2luqh91ByiBatPRRXAkBNlZTyB3LaP4JqlPTd1xz0d4V4aNxNhTy5VSr2OzIUw/cpyEnfFYCrnQRSLmFYQ4yiR9aCHy5KRw2MMxO2cgENAkAs9RRVQIYB2T6qftTY0hIUD4ACMJuYU+Ezh1f5U9a5uw24LWhdZPOddIpJh4lSDjA6ylKKzOdoEkygtH0hKv+fAkBcHH9QUQsUE40ffNcITptbMJGfQzkl3yYCwuM8xrK3KyvYLSk5qL+xcCnTloboTjVNuwgJWuiujBy6DlAZTAj/
   publicKey: MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCMrv98/OzupfeKSK4nCIKNVaWLzbiv0rXZXoSGkDOkfT5gwK+f6YZxWFiRIfmYTFCJenP6iL3EK9MtENhUTxetPOZeEC72ySPhUPcUrKSlhRhM1LqBFaIDrY5Qc9BZd1VztMJmUqwp1IRdeD1lgTc+XtF9WSFRK3hlo+F6wkfjYwIDAQAB
+swagger:
+  enable: ${folib.swagger.enable:false}
+thirdParty:
+  foeyes:
+    enable: ${folib.thirdParty.foeyes.enable:false}
+    baseUrl: ${folib.thirdParty.foeyes.baseUrl:http://10.10.28.61:9527}
+    accessKey: ${folib.thirdParty.foeyes.accessKey:racdvMVzV9Wnqu8NAfQkyrsD0a2N0fNE}
+    username: ""
+    password: ""

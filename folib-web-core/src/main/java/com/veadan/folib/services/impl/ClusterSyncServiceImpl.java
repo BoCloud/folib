@@ -75,7 +75,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
     }
 
     @Override
-    @Async("asyncStorageThreadPoolExecutor")
+    @Async("asyncConfigThreadPoolExecutor")
     public void syncStorage(SyncStorageDto syncStorageDto) {
         // 向各个节点发送请求  判断全局配置的代理 判断是否是集群
         if (!isNeedClusterSync()) {
@@ -90,7 +90,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
     }
 
     @Override
-    @Async("asyncSecurityPolicyConfigurationThreadPoolExecutor")
+    @Async("asyncConfigThreadPoolExecutor")
     public void syncSecurityPolicyConfiguration(MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration) {
         if (!isNeedClusterSync()) {
             logger.info("Cluster mode not opened");
@@ -102,7 +102,8 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
         });
     }
 
-    private Set<String> getHostNodeList() {
+    @Override
+    public Set<String> getHostNodeList() {
         Set<String> nodeSet = Sets.newLinkedHashSet();
         try {
             CassandraClusterForm cassandraClusterForm = nodeComponent.cassandraClusterInfo();
@@ -193,7 +194,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
     }
 
     @Override
-    @Async("asyncRepositoryThreadPoolExecutor")
+    @Async("asyncConfigThreadPoolExecutor")
     public void syncRepository(SyncRepositoryDto syncRepositoryDto) {
         if (!isNeedClusterSync()) {
             logger.info("Cluster mode not opened");
@@ -208,7 +209,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
     }
 
     @Override
-    @Async("asyncCronJobThreadPoolExecutor")
+    @Async("asyncConfigThreadPoolExecutor")
     public void syncCronJob(SyncCronJobDto syncCronJobDto) {
         if (!isNeedClusterSync()) {
             logger.info("Cluster mode not opened");
@@ -221,7 +222,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
     }
 
     @Override
-    @Async("asyncClusterDispatchThreadPoolExecutor")
+    @Async("asyncConfigThreadPoolExecutor")
     public void syncClusterDispatch(SyncClusterDispatchDto syncClusterDispatchDto) {
         if (!isNeedClusterSync()) {
             logger.info("Cluster mode not opened");

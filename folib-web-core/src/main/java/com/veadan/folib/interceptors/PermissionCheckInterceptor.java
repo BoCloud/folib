@@ -1,11 +1,15 @@
 package com.veadan.folib.interceptors;
 
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.extra.spring.SpringUtil;
+import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONObject;
+import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.config.PermissionCheck;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
+import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.scanner.common.util.IPUtil;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.users.domain.Privileges;
@@ -74,14 +78,14 @@ public class PermissionCheckInterceptor implements HandlerInterceptor {
 
         //是否在白名单中
         String ipAddr = IPUtil.getIpAddr(request);
-        log.info("当前调用ip {} ", ipAddr);
+        log.info("Current request ip [{}]", ipAddr);
         if (getWhiteList(ipAddr).contains(ipAddr)) {
-            log.info("{} 白名单调用 {}", ipAddr, handlerMethod.toString());
+            log.info("Whitelist call [{}] [{}]", ipAddr, handlerMethod.toString());
             return true;
         }
         //获取用的角色权限列表中是否拥有该权限
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (!authentication.isAuthenticated()) {
+        if (Objects.isNull(authentication) || !authentication.isAuthenticated()) {
             handlerResponse(response);
             return false;
         }
@@ -109,6 +113,17 @@ public class PermissionCheckInterceptor implements HandlerInterceptor {
                     }
                 }
             }
+            String parseArtifact = request.getParameter("parseArtifact");
+            if (StringUtils.isNotBlank(parseArtifact) && JSONUtil.isJson(parseArtifact)) {
+                ArtifactParse artifactParse = null;
+                artifactParse = JSONObject.parseObject(parseArtifact, ArtifactParse.class);
+                ArtifactComponent artifactComponent = SpringUtil.getBean(ArtifactComponent.class);
+                String artifactPath = artifactComponent.calcMavenArtifactPath(storageId, repositoryId, artifactParse.getGroupId(), artifactParse.getArtifactId(), artifactParse.getVersion(), FileUtil.getName(artifactParse.getFilePath()));
+                if (StringUtils.isNotBlank(artifactPath)) {
+                    filePaths = Lists.newArrayList();
+                    filePaths.add(artifactPath);
+                }
+            }
             String body = StringUtils.EMPTY;
             if (request instanceof RequestWrapper) {
                 body = ((RequestWrapper) request).getBody();
@@ -118,13 +133,15 @@ public class PermissionCheckInterceptor implements HandlerInterceptor {
                 storageId = jsonObject.getString(storageKey);
                 repositoryId = jsonObject.getString(repositoryKey);
             }
-            SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
-            Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(storageId, repositoryId, filePaths);
-            boolean flag = storageAuthorities.stream().anyMatch(item -> item.getAuthority().equals(resourceKey));
-            if (!flag) {
-                handlerResponse(response);
+            if (authentication.getPrincipal() instanceof SpringSecurityUser) {
+                SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
+                Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(storageId, repositoryId, filePaths);
+                boolean flag = storageAuthorities.stream().anyMatch(item -> item.getAuthority().equals(resourceKey));
+                if (!flag) {
+                    handlerResponse(response);
+                }
+                return flag;
             }
-            return flag;
         }
         handlerResponse(response);
         return false;

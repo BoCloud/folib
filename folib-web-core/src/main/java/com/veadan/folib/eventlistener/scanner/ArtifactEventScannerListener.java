@@ -16,9 +16,13 @@ import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerFileSystem;
+import com.veadan.folib.scanner.service.ScanService;
+import com.veadan.folib.scanner.service.ScannerService;
+import com.veadan.folib.scanner.task.ScannerTask;
 import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.services.ArtifactService;
 import com.veadan.folib.services.DictService;
+import com.veadan.folib.ws.server.Priority;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -29,6 +33,7 @@ import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
@@ -62,8 +67,18 @@ public class ArtifactEventScannerListener {
     @Inject
     private DockerComponent dockerComponent;
 
+    @Inject
+    @Lazy
+    private ScannerService scannerService;
+
+    @Inject
+    @Lazy
+    private ScanService scanService;
+
     @Value("${folib.temp}")
     private String tempPath;
+
+    private static final String temp = ".temp";
 
     @AsyncEventListener
     public void handle(final ArtifactEvent<RepositoryPath> event) throws IOException {
@@ -73,7 +88,21 @@ public class ArtifactEventScannerListener {
         if (!validate) {
             return;
         }
-        log.info("Start handler artifact scan {}，path {}", ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source), repositoryPath);
+        log.debug("Start handler artifact scan [{}] path [{}]", ArtifactEventTypeEnum.queryArtifactEventTypeEnumByType(source), repositoryPath);
+        handle(repositoryPath, source);
+    }
+
+    public Artifact handle(RepositoryPath repositoryPath, int source) {
+        if (!Files.exists(repositoryPath)) {
+            try {
+                if (Objects.nonNull(repositoryPath.getArtifactEntry())) {
+                    handlerUnwantedScan(repositoryPath, source);
+                }
+            } catch (Exception ex) {
+                log.error(ExceptionUtils.getStackTrace(ex));
+            }
+            return null;
+        }
         if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
             //docker布局
             boolean isStoredEvent = ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType() != source && ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() != source;
@@ -81,16 +110,16 @@ public class ArtifactEventScannerListener {
                 Path path = repositoryPath.getTarget();
                 if (path instanceof S3Path) {
                     //S3存储
-                    handlerDockerS3Path(repositoryPath, path, source);
+                    return handlerDockerS3Path(repositoryPath, path, source);
                 } else {
-                    handlerDockerFilePath(repositoryPath, source);
+                    return handlerDockerFilePath(repositoryPath, source);
                 }
             } else {
-                handlerScan(repositoryPath, source);
+                return handlerScan(repositoryPath, source);
             }
         } else {
             //非docker布局
-            handlerScan(repositoryPath, source);
+            return handlerScan(repositoryPath, source);
         }
     }
 
@@ -101,34 +130,37 @@ public class ArtifactEventScannerListener {
      * @param path           path
      * @param source         事件类型
      */
-    private void handlerDockerS3Path(RepositoryPath repositoryPath, Path path, Integer source) {
+    private Artifact handlerDockerS3Path(RepositoryPath repositoryPath, Path path, Integer source) {
         String parentPath = "";
         try {
             //S3存储
             S3Path s3Path = (S3Path) path;
             String key = s3Path.getKey();
             DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) repositoryPath.getArtifactEntry().getArtifactCoordinates();
-            InputStream inputStream = Files.newInputStream(repositoryPath);
             parentPath = tempPath + File.separator + UUID.randomUUID();
             String filePath = parentPath + File.separator + s3Path.getFileName();
-            File tempFile = new File(filePath);
-            FileUtil.writeFromStream(inputStream, tempFile, true);
+            try (InputStream inputStream = Files.newInputStream(repositoryPath)) {
+                File tempFile = new File(filePath);
+                FileUtil.writeFromStream(inputStream, tempFile);
+            }
             //获取图层中的digest列表
             List<String> digestList = getImageManifest(repositoryPath);
             if (CollectionUtils.isNotEmpty(digestList)) {
                 String blobsItemPath = "", tempPath = "", blobs = "blobs";
                 Set<String> filePaths = Sets.newLinkedHashSet();
+                File digestTempFile;
                 for (String digest : digestList) {
-                    blobsItemPath = String.format("%s/%s/%s", dockerArtifactCoordinates.getName(), blobs, digest);
+                    blobsItemPath = String.format("%s/%s", blobs, digest);
                     RepositoryPath blobsRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), blobsItemPath);
                     filePath = parentPath + File.separator + digest;
-                    tempFile = new File(filePath);
-                    inputStream = Files.newInputStream(blobsRepositoryPath);
-                    FileUtil.writeFromStream(inputStream, tempFile, true);
-                    tempPath = parentPath + File.separator + "temp";
-                    handlerDockerBlobFile(repositoryPath, filePaths, tempFile.getPath(), tempPath);
+                    digestTempFile = new File(filePath);
+                    try (InputStream digestInputStream = Files.newInputStream(blobsRepositoryPath)) {
+                        FileUtil.writeFromStream(digestInputStream, digestTempFile);
+                    }
+                    tempPath = parentPath + File.separator + temp;
+                    handlerDockerBlobFile(repositoryPath, filePaths, digestTempFile.getPath(), tempPath);
                 }
-                handlerScan(repositoryPath, source, filePaths);
+                return handlerScan(repositoryPath, source, filePaths);
             }
         } catch (Exception ex) {
             log.error("处理S3存储docker布局制品事件错误：{}", ExceptionUtils.getStackTrace(ex));
@@ -138,6 +170,7 @@ public class ArtifactEventScannerListener {
                 FileUtil.del(new File(parentPath));
             }
         }
+        return null;
     }
 
 
@@ -147,7 +180,7 @@ public class ArtifactEventScannerListener {
      * @param repositoryPath 制品路径
      * @param source         事件类型
      */
-    private void handlerDockerFilePath(RepositoryPath repositoryPath, Integer source) {
+    private Artifact handlerDockerFilePath(RepositoryPath repositoryPath, Integer source) {
         String filePath = repositoryPath.toAbsolutePath().toString();
         File file = FileUtil.file(filePath);
         //版本目录
@@ -155,20 +188,21 @@ public class ArtifactEventScannerListener {
         //获取图层中的digest列表
         List<String> digestList = getImageManifest(repositoryPath);
         //存放解压文件的目录路径
-        String tempPath = parentFile.getPath() + File.separator + "temp";
+        String tempPath = parentFile.getPath() + File.separator + temp;
         int maxSize = 100;
         if (CollectionUtils.isNotEmpty(digestList)) {
             String blobsPath = "";
             Set<String> filePaths = Sets.newLinkedHashSet();
             for (String digest : digestList) {
                 if (filePaths.size() >= maxSize) {
-                   break;
+                    break;
                 }
-                blobsPath = parentFile.getParent() + File.separator + "blobs" + File.separator + digest;
+                blobsPath = repositoryPath.getRoot() + File.separator + "blobs" + File.separator + digest;
                 handlerDockerBlobFile(repositoryPath, filePaths, blobsPath, tempPath);
             }
-            handlerScan(repositoryPath, source, filePaths);
+            return handlerScan(repositoryPath, source, filePaths);
         }
+        return null;
     }
 
     private List<String> getImageManifest(RepositoryPath repositoryPath) {
@@ -219,11 +253,11 @@ public class ArtifactEventScannerListener {
                 String finalVersionKey = versionKey;
                 for (String filePath : filePathList) {
                     if (filePaths.size() >= maxSize) {
-                        log.info("Docker制品扫描结果过多超出限制：{} size {} maxSize：{}", path.toString(), filePaths.size(), maxSize);
+                        log.info("Docker制品扫描结果过多超出限制 [{}] size [{}] maxSize [{}]", path.toString(), filePaths.size(), maxSize);
                         return;
                     }
                     if (isS3) {
-                        S3Path s3PathObject = new S3Path(finalS3Path.getFileSystem(), finalVersionKey + File.separator + "temp" + File.separator + FileUtil.getName(filePath));
+                        S3Path s3PathObject = new S3Path(finalS3Path.getFileSystem(), finalVersionKey + File.separator + temp + File.separator + FileUtil.getName(filePath));
                         //将docker镜像中解压出来的文件上传到S3
                         finalS3Path.getFileSystem().getClient().putObject(PutObjectRequest.builder().bucket(finalS3Path.getBucketName()).key(s3PathObject.getKey()).build(), Path.of(filePath));
                         filePaths.add(finalS3Path.toString().substring(0, finalS3Path.toString().indexOf(finalS3Path.getKey())) + s3PathObject.toString());
@@ -241,26 +275,29 @@ public class ArtifactEventScannerListener {
      * @param repositoryPath 制品信息
      * @param source         事件类型
      */
-    private void handlerScan(RepositoryPath repositoryPath, int source) {
+    private Artifact handlerScan(RepositoryPath repositoryPath, int source) {
+        Artifact artifact = null;
         if (ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType() != source && ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() != source) {
             try {
-                Artifact artifact = repositoryPath.getArtifactEntry();
+                artifact = repositoryPath.getArtifactEntry();
                 if (artifact == null) {
-                    log.warn("No [{}] for [{}].",
+                    log.debug("No [{}] for [{}].",
                             Artifact.class.getSimpleName(),
                             repositoryPath);
 
-                    return;
+                    return null;
                 }
                 artifact.setSafeLevel(SafeLevelEnum.UN_SCAN.getLevel());
                 Set<String> filePaths = Sets.newLinkedHashSet();
                 filePaths.add(repositoryPath.toAbsolutePath().toString());
                 artifact.setFilePaths(filePaths);
+                handlerScannerTask(repositoryPath, artifact);
                 artifactService.saveOrUpdateArtifact(artifact);
             } catch (Exception ex) {
                 log.error("获取Artifact错误：{}", ExceptionUtils.getStackTrace(ex));
             }
         }
+        return artifact;
     }
 
     /**
@@ -270,24 +307,27 @@ public class ArtifactEventScannerListener {
      * @param source         事件类型
      * @param filePaths      文件路径集合
      */
-    private void handlerScan(RepositoryPath repositoryPath, int source, Set<String> filePaths) {
+    private Artifact handlerScan(RepositoryPath repositoryPath, int source, Set<String> filePaths) {
+        Artifact artifact = null;
         if (ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType() != source && ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() != source) {
             try {
-                Artifact artifact = repositoryPath.getArtifactEntry();
+                artifact = repositoryPath.getArtifactEntry();
                 if (artifact == null) {
-                    log.warn("No [{}] for [{}].",
+                    log.debug("No [{}] for [{}].",
                             Artifact.class.getSimpleName(),
                             repositoryPath);
 
-                    return;
+                    return artifact;
                 }
                 artifact.setSafeLevel(SafeLevelEnum.UN_SCAN.getLevel());
                 artifact.setFilePaths(filePaths);
+                handlerScannerTask(repositoryPath, artifact);
                 artifactService.saveOrUpdateArtifact(artifact);
             } catch (IOException ex) {
                 log.error("获取Artifact错误：{}", ExceptionUtils.getStackTrace(ex));
             }
         }
+        return artifact;
     }
 
     /**
@@ -403,7 +443,7 @@ public class ArtifactEventScannerListener {
             try {
                 Artifact artifact = repositoryPath.getArtifactEntry();
                 if (artifact == null) {
-                    log.warn("No [{}] for [{}].",
+                    log.debug("No [{}] for [{}].",
                             Artifact.class.getSimpleName(),
                             repositoryPath);
 
@@ -415,5 +455,21 @@ public class ArtifactEventScannerListener {
                 log.error("获取Artifact错误：{}", ExceptionUtils.getStackTrace(ex));
             }
         }
+    }
+
+    private void handlerScannerTask(RepositoryPath repositoryPath, Artifact artifact) {
+        if (!scanService.validateRepositoryScan(repositoryPath.getStorageId(), repositoryPath.getRepositoryId())) {
+            return;
+        }
+        String taskId = artifact.getUuid();
+        ScannerTask scannerTask = new ScannerTask(Priority.HIGH.getValue(), taskId,
+                () -> {
+                    try {
+                        scanService.syncScan(Collections.singletonList(artifact));
+                    } catch (Exception ex) {
+                        log.error("HandlerScannerTask taskId [{}] error [{}] ", taskId, ExceptionUtils.getStackTrace(ex));
+                    }
+                });
+        scannerService.addTask(scannerTask);
     }
 }

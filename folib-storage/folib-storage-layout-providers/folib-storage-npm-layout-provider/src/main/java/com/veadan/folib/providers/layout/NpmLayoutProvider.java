@@ -1,6 +1,9 @@
 package com.veadan.folib.providers.layout;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -10,6 +13,7 @@ import java.util.stream.Stream;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import cn.hutool.crypto.digest.SM3;
 import com.veadan.folib.providers.io.RepositoryFileAttributeType;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -20,6 +24,7 @@ import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -40,6 +45,10 @@ public class NpmLayoutProvider
 
     public static final String  PACKAGE_JSON = "package.json";
 
+    public static final String  OH_PACKAGE_JSON = "oh-package.json5";
+
+    public static final String  DEFAULT_PACKAGE_JSON_PATH = "package/package.json";
+    public static final String  OHPM_PACKAGE_JSON_PATH = "package/oh-package.json5";
     public static final String DEFAULT_SUFFIX = "tgz";
 
     public static final Pattern NPM_URL_USERNAME_PATTERN = Pattern.compile(
@@ -58,21 +67,27 @@ public class NpmLayoutProvider
         logger.info("Registered layout provider '{}' with alias '{}'.", getClass().getCanonicalName(), ALIAS);
     }
 
-    protected NpmArtifactCoordinates getArtifactCoordinates(RepositoryPath path)
+    @Override
+    public NpmArtifactCoordinates getArtifactCoordinates(RepositoryPath path)
             throws IOException
     {
         return NpmArtifactCoordinates.parse(RepositoryFiles.relativizePath(path));
     }
 
+    @Override
     public boolean isArtifactMetadata(RepositoryPath path)
     {
-        return path.getFileName().toString().endsWith(PACKAGE_JSON);
+        return path.getFileName().toString().endsWith(PACKAGE_JSON) || path.getFileName().toString().endsWith(OH_PACKAGE_JSON);
     }
 
     public boolean isNpmMetadata(RepositoryPath path)
     {
         return path.getFileName().toString().endsWith("package-lock.json") ||
                path.getFileName().toString().endsWith("npm-shrinkwrap.json");
+    }
+
+    public boolean isNpmPackageJson(RepositoryPath path) {
+        return path.getFileName().toString().endsWith(".json");
     }
 
     @Override
@@ -106,6 +121,14 @@ public class NpmLayoutProvider
                     }
 
                     break;
+                case REFRESH_CONTENT:
+                    final Instant halfAnHourAgo = Instant.now().minus(refreshContentInterval(repositoryPath), ChronoUnit.MINUTES);
+                    value = BooleanUtils.isTrue((Boolean) value) || (Files.exists(repositoryPath) && isNpmPackageJson(repositoryPath)
+                            &&
+                            !RepositoryFiles.wasModifiedAfter(repositoryPath,
+                                    halfAnHourAgo));
+                    result.put(attributeType, value);
+                    break;
                 default:
 
                     break;
@@ -136,7 +159,7 @@ public class NpmLayoutProvider
     @Override
     public Set<String> getDigestAlgorithmSet()
     {
-        return Stream.of(MessageDigestAlgorithms.MD5, MessageDigestAlgorithms.SHA_1, MessageDigestAlgorithms.SHA_256, MessageDigestAlgorithms.SHA_512)
+        return Stream.of(MessageDigestAlgorithms.MD5, MessageDigestAlgorithms.SHA_1, MessageDigestAlgorithms.SHA_256, MessageDigestAlgorithms.SHA_512, SM3.ALGORITHM_NAME)
                      .collect(Collectors.toSet());
     }
 

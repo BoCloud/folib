@@ -7,6 +7,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class ScanConfig {
 
+    @Value("${spring.datasource.driver-class-name}")
+    private String driverClassName;
     @Value("${spring.datasource.url}")
     private String dbUrl;
     @Value("${spring.datasource.username}")
@@ -15,6 +17,7 @@ public class ScanConfig {
     private String dbPass;
     @Value("${scan.base-proxy}")
     private String scanPoxy;
+
 
     @Value("${scan.storage-base}")
     private String watchMonitorPath;
@@ -59,4 +62,11 @@ public class ScanConfig {
         this.scanPoxy = scanPoxy;
     }
 
+    public String getDriverClassName() {
+        return driverClassName;
+    }
+
+    public void setDriverClassName(String driverClassName) {
+        this.driverClassName = driverClassName;
+    }
 }

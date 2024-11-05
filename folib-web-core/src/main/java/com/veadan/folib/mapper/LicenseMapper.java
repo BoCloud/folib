@@ -1,13 +1,29 @@
 package com.veadan.folib.mapper;
 
+import com.veadan.folib.common.base.CommonMapper;
 import com.veadan.folib.entity.License;
-import com.veadan.folib.scanner.common.base.CommonMapper;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 /**
  * @author leipenghui
  */
 @Component
 public interface LicenseMapper extends CommonMapper<License> {
+
+    /**
+     * 查询License列表
+     *
+     * @param searchKeyword         搜索关键词
+     * @param licenseId             license名称
+     * @param blackWhiteType        黑白名单类型
+     * @param excludeBlackWhiteType 排除黑白名单类型
+     * @param isDeprecated          是否已弃用 1是 0否
+     * @return License列表
+     */
+    List<License> selectLicense(@Param("searchKeyword") String searchKeyword, @Param("licenseId") String licenseId, @Param("blackWhiteType") Integer blackWhiteType, @Param("excludeBlackWhiteType") Integer excludeBlackWhiteType, @Param("isDeprecated") Integer isDeprecated);
+
 
 }

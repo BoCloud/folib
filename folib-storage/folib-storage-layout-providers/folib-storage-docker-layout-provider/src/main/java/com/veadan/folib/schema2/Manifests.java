@@ -26,7 +26,7 @@ public class Manifests
     private String mediaType;
 
     @JsonPropertyDescription("The size in bytes of the object. This field exists so that a client will have an expected size for the content before validating. If the length of the retrieved content does not match the specified length, the content should not be trusted.")
-    private Integer size;
+    private Long size;
     
     @JsonPropertyDescription("The digest of the content, as defined by the Registry V2 HTTP API Specificiation.")
     private String digest;

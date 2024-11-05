@@ -79,13 +79,13 @@ public class ArtifactIdGroupServiceImpl
                         artifactGroupId));
 
         ArtifactCoordinates lastVersion = addArtifactsToGroup(artifactsBatch, artifactGroup);
-        logger.info("Last version for group [{}] is [{}] with [{}]",
+        logger.debug("Last version for group [{}] is [{}] with [{}]",
                 artifactGroup.getName(),
                 lastVersion.getVersion(),
                 lastVersion.getPath());
 
         try {
-            artifactIdGroupRepository.merge(artifactGroup);
+            artifactIdGroupRepository.saveOrUpdate(artifactGroup);
         } catch (Exception ex) {
             String realMessage = CommonUtils.getRealMessage(ex);
             if (CommonUtils.catchException(realMessage)) {

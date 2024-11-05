@@ -25,7 +25,15 @@ public class StorageDto
 
     private String admin;
 
+    private String storageProvider;
+
+    private Long storageMaxSize;
+
+    /**是否同步存储空间到其他节点*/
+    private boolean syncEnabled;
+
     private Set<String> users = new LinkedHashSet<>();
+    private Set<String> repositoryUsers = new LinkedHashSet<>();
 
     private Map<String, RepositoryDto> repositories = new LinkedHashMap<>();
 
@@ -87,6 +95,25 @@ public class StorageDto
     }
 
     @Override
+    public String getStorageProvider() {
+        return storageProvider;
+    }
+
+    public void setStorageProvider(String storageProvider) {
+        this.storageProvider = storageProvider;
+    }
+
+
+    @Override
+    public Long getStorageMaxSize() {
+        return storageMaxSize;
+    }
+
+    public void setStorageMaxSize(Long storageMaxSize) {
+        this.storageMaxSize = storageMaxSize;
+    }
+
+    @Override
     public Map<String, ? extends Repository> getRepositories()
     {
         return repositories;
@@ -130,5 +157,20 @@ public class StorageDto
         sb.append('}');
         return sb.toString();
     }
-    
+
+    public Set<String> getRepositoryUsers() {
+        return repositoryUsers;
+    }
+
+    public void setRepositoryUsers(Set<String> repositoryUsers) {
+        this.repositoryUsers = repositoryUsers;
+    }
+
+    public boolean isSyncEnabled() {
+        return syncEnabled;
+    }
+
+    public void setSyncEnabled(boolean syncEnabled) {
+        this.syncEnabled = syncEnabled;
+    }
 }

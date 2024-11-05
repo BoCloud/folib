@@ -3,13 +3,13 @@
     <a-card :bordered="false" style="margin-top: 20px; margin-bottom: 20px">
       <div class="mx-25 search">
         <a-col :span="24" class="text-right">
-          <a-input-search placeholder="输入制品路径查询" class="v-search" v-model="queryParams.searchKeyword" @search="handheTableSearch()" />
+          <a-input-search :placeholder="$t('Vulnerabilities.ArtifactPathQuery')" class="v-search" v-model="queryParams.searchKeyword" @search="handheTableSearch()" />
         </a-col>
       </div>
       <a-table
         rowKey="uuid"
         class="mt-20"
-        :columns="columns"
+        :columns="i18nColumns"
         :data-source="artifacts"
         @change="handleChangeTable"
         :scroll="{ x: true }"
@@ -36,14 +36,17 @@ export default {
       columns: [
         {
           title: "存储空间",
+          i18nKey: 'Vulnerabilities.StorageSpace',
           dataIndex: "storageId",
         },
         {
           title: "所属仓库",
+          i18nKey: 'Vulnerabilities.OwnedWarehouse',
           dataIndex: "repositoryId",
         },
         {
           title: "制品路径",
+          i18nKey: 'Vulnerabilities.ProductPath',
           dataIndex: "artifactPath",
           scopedSlots: { customRender: "artifactPath" },
         },
@@ -60,6 +63,16 @@ export default {
         total: 0,
       },
     };
+  },
+  computed: {
+    i18nColumns() {
+      return this.columns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    },
   },
   created() {
     this.getData();

@@ -1,18 +1,18 @@
 <template>
   <div>
-    <a-modal v-model="showPackageName" title="新增包名" :maskClosable="false"
-      cancelText="取消" okText="确定" @cancel="packageNameHandlerCancel()" @ok="packageNameHandlerConfirm()" centered>
+    <a-modal v-model="showPackageName" :title="$t('Package.CreatePackage')" :maskClosable="false"
+      :cancelText="$t('Package.Cancel')" :okText="$t('Package.Confirm')" @cancel="packageNameHandlerCancel()" @ok="packageNameHandlerConfirm()" centered>
       <a-form-model layout="horizontal" ref="packageNameForm" :model="packageNameForm" :rules="packageNameRules"
         :hideRequiredMark="false">
         <a-row :gutter="[24]">
           <a-col :span="24">
-            <a-form-model-item class="mb-10" label="包名称" :colon="false" prop="packageName">
-              <a-input placeholder="请输入包名称" v-model="packageNameForm.packageName" />
+            <a-form-model-item class="mb-10" :label="$t('Package.PackageName')" :colon="false" prop="packageName">
+              <a-input :placeholder="$t('Package.PackageNamePlaceholder')" v-model="packageNameForm.packageName" />
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
-            <a-form-model-item class="mb-10" label="条件类型" :colon="false" prop="condition">
-              <a-select v-model="packageNameForm.condition" placeholder="请选择条件类型" show-search allowClear optionFilterProp="label">
+            <a-form-model-item class="mb-10" :label="$t('Package.ConditionType')" :colon="false" prop="condition">
+              <a-select v-model="packageNameForm.condition" :placeholder="$t('Package.ConditionTypePlaceholder')" show-search allowClear optionFilterProp="label">
                 <a-select-option v-for="(item, index) in conditionList" :label="item.label" :key="index"
                   :value="item.value">
                   {{ item.label }}
@@ -21,8 +21,8 @@
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
-            <a-form-model-item class="mb-10" label="版本号" :colon="false" prop="version">
-              <a-input placeholder="请输入版本号" v-model="packageNameForm.version" />
+            <a-form-model-item class="mb-10" :label="$t('Package.Version')" :colon="false" prop="version">
+              <a-input :placeholder="$t('Package.VersionPlaceholder')" v-model="packageNameForm.version" />
             </a-form-model-item>
           </a-col>
         </a-row>
@@ -32,8 +32,8 @@
 </template>
 <script>
 import {
-  securityPolicyAddPackageName,
-} from '@/api/folib'
+  savePackageNameBlock,
+} from '@/api/packageNameBlock'
 
 export default {
   props: {
@@ -48,14 +48,14 @@ export default {
   data() {
     const acceptConditionValidator = (rule, value, callBack) => {
       if (!value && this.packageNameForm.version) {
-        callBack("请选择条件")
+        callBack(this.$t('Package.ConditionTypePlaceholder'))
       } else {
         callBack()
       }
     }
     const acceptVersionValidator = (rule, value, callBack) => {
       if (!value && this.packageNameForm.condition) {
-        callBack("请输入版本号")
+        callBack(this.$t('Package.VersionPlaceholder'))
       } else {
         callBack()
       }
@@ -68,15 +68,15 @@ export default {
       ],
       packageNameRules: {
         packageName: [
-          { required: true, message: "请输入包名称", trigger: "blur" },
-          { min: 1, max: 300, message: '包名称长度在1到300个字符', trigger: 'blur' },
+          { required: true, message: this.$t('Package.PackageNamePlaceholder'), trigger: "blur" },
+          { min: 1, max: 300, message: this.$t('Package.PackageNameLength'), trigger: 'blur' },
         ],
         condition: [
           { required: false, trigger: ['blur'], validator: acceptConditionValidator },
         ],
         version: [
           { required: false, trigger: ['blur'], validator: acceptVersionValidator },
-          { min: 1, max: 100, message: '版本号长度在1到100个字符', trigger: 'blur' }
+          { min: 1, max: 100, message: this.$t('Package.VersionLength'), trigger: 'blur' }
         ],
       },
       packageNameForm: {
@@ -100,7 +100,7 @@ export default {
   methods: {
     successMsg(message) {
       if (!message) {
-        message = "操作成功"
+        message = this.$t("Package.OperateSuccess")
       }
       this.$notification["success"]({
         message: message,
@@ -123,15 +123,23 @@ export default {
     packageNameHandlerConfirm() {
       this.$refs.packageNameForm.validate((valid) => {
         if (valid) {
-          let data = this.packageNameForm.packageName
-          if (this.packageNameForm.condition && this.packageNameForm.version) {
-            data = data + "," + this.packageNameForm.condition + "," + this.packageNameForm.version
+          let data = {
+            packageName: this.packageNameForm.packageName
           }
-          securityPolicyAddPackageName({
-            blockType: 3,
-            packageNames: [data]
-          }).then(res => {
-            this.successMsg('添加包名 ' + this.packageNameForm.packageName + ' 成功')
+          if (this.packageNameForm.condition && this.packageNameForm.version) {
+            if (this.packageNameForm.condition === '<') {
+              data.conditionValue =  'range'
+              data.version = '(*,' + this.packageNameForm.version + ')'
+            } else if (this.packageNameForm.condition === '<=') {
+              data.conditionValue =  'range'
+              data.version = '(*,' + this.packageNameForm.version + ']'
+            } else {
+              data.conditionValue =  'eq'
+              data.version = this.packageNameForm.version
+            }
+          }
+          savePackageNameBlock(data).then(res => {
+            this.successMsg(this.$t('Package.CreatePackage') + ' ' + this.packageNameForm.packageName + this.$t('Package.Success'))
           }).catch(err => {
             this.$notification['error']({
               message: err.response.data.error,

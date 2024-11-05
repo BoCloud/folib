@@ -1,5 +1,7 @@
 package com.veadan.folib.providers.layout;
 
+import com.veadan.folib.enums.NpmPacketSuffix;
+import com.veadan.folib.enums.NpmSubLayout;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.repository.NpmRepositoryFeatures;
 import com.veadan.folib.services.ArtifactManagementService;
@@ -33,7 +35,6 @@ public class NpmUnpublishService
     }
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-
     @Inject
     private ArtifactResolutionService artifactResolutionService;
 
@@ -105,14 +106,15 @@ public class NpmUnpublishService
             return Result.UNPUBLISH_DISABLED;
         }
         NpmArtifactCoordinates coordinates;
+        final String packageSuffix = NpmSubLayout.OHPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
         if (packageScope != null)
         {
             coordinates = NpmArtifactCoordinates.of(
-                    String.format("%s/%s", packageScope, packageName), version);
+                    String.format("%s/%s", packageScope, packageName), version, packageSuffix);
         }
         else
         {
-            coordinates = NpmArtifactCoordinates.of(packageName, version);
+            coordinates = NpmArtifactCoordinates.of(packageName, version,packageSuffix);
         }
         String repositoryId = repository.getId(), storageId = repository.getStorage().getId();
         RepositoryPath path = null;

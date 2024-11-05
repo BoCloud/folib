@@ -35,7 +35,7 @@ import com.veadan.folib.users.dto.PathPrivilegesDto;
 import com.veadan.folib.users.dto.RepositoryPrivilegesDto;
 import com.veadan.folib.users.dto.StoragePrivilegesDto;
 import com.veadan.folib.users.service.UserService;
-import com.veadan.folib.users.service.impl.DatabaseUserService;
+import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -83,7 +83,7 @@ public class RepositoryManagementServiceImpl
     private AuthorizationConfigService authorizationConfigService;
 
     @Inject
-    @DatabaseUserService.Database
+    @RelationalDatabaseUserService.RelationalDatabase
     @Lazy
     private UserService userService;
 

@@ -1,18 +1,18 @@
 <template>
   <div>
-    <a-modal v-model="showExternalNode" :title="handlerExternalNodeType === 1 ? '新增外部节点' : '修改外部节点'" :maskClosable="false"
-      cancelText="取消" okText="确定" @cancel="externalNodeHandlerCancel()" @ok="externalNodeHandlerConfirm()" centered>
+    <a-modal v-model="showExternalNode" :title="handlerExternalNodeType === 1 ? $t('ExternalNode.AddExternalNode') : $t('ExternalNode.ModifyExternalNode')" :maskClosable="false"
+      :cancelText="$t('ExternalNode.Cancel')" :okText="$t('ExternalNode.Confirm')" @cancel="externalNodeHandlerCancel()" @ok="externalNodeHandlerConfirm()" centered>
       <a-form-model layout="horizontal" ref="externalNodeForm" :model="externalNodeForm" :rules="externalNodeRules"
         :hideRequiredMark="false">
         <a-row :gutter="[24]">
           <a-col :span="24">
-            <a-form-model-item class="mb-10" label="外部节点名称" :colon="false" prop="nodeName">
-              <a-input placeholder="请输入外部节点名称" :disabled="handlerExternalNodeType === 2" v-model="externalNodeForm.nodeName" />
+            <a-form-model-item class="mb-10" :label="$t('ExternalNode.ExternalNodeName')" :colon="false" prop="nodeName">
+              <a-input :placeholder="$t('ExternalNode.EnterExternalNodeName')" :disabled="handlerExternalNodeType === 2" v-model="externalNodeForm.nodeName" />
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
-            <a-form-model-item class="mb-10" label="制品库类型" :colon="false" prop="type">
-              <a-select v-model="externalNodeForm.type" placeholder="请选择制品库类型" show-search optionFilterProp="label">
+            <a-form-model-item class="mb-10" :label="$t('ExternalNode.ArtifactRepositoryType')" :colon="false" prop="type">
+              <a-select v-model="externalNodeForm.type" :placeholder="$t('ExternalNode.selectArtifactType')" show-search optionFilterProp="label">
                 <a-select-option v-for="(item, index) in artifactoryList" :label="item.label" :key="index"
                   :value="item.value">
                   {{ item.label }}
@@ -21,18 +21,18 @@
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
-            <a-form-model-item class="mb-10" label="外部节点地址" :colon="false" prop="address">
-              <a-input placeholder="请输入外部节点地址" v-model="externalNodeForm.address" />
+            <a-form-model-item class="mb-10" :label="$t('ExternalNode.ExternalNodeAddress')" :colon="false" prop="address">
+              <a-input :placeholder="$t('ExternalNode.EnterExternalNodeAddress')" v-model="externalNodeForm.address" />
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
-            <a-form-model-item class="mb-10" label="用户名" :colon="false" prop="username">
-              <a-input placeholder="请输入用户名" v-model="externalNodeForm.username" />
+            <a-form-model-item class="mb-10" :label="$t('ExternalNode.Username')" :colon="false" prop="username">
+              <a-input :placeholder="$t('ExternalNode.EnterYourUsername')" v-model="externalNodeForm.username" />
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
-            <a-form-model-item class="mb-10" label="密码" :colon="false" prop="password">
-              <a-input-password placeholder="请输入密码" v-model="externalNodeForm.password" />
+            <a-form-model-item class="mb-10" :label="$t('ExternalNode.Password')" :colon="false" prop="password">
+              <a-input-password :placeholder="$t('ExternalNode.EnterThePassword')" v-model="externalNodeForm.password" />
             </a-form-model-item>
           </a-col>
         </a-row>
@@ -66,32 +66,56 @@ export default {
       let url = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/[\]@!\$&'\*\+,;=.]+$/;
       if (value) {
         if (!url.test(value)) {
-          callBack("请输入正确的URL")
+          callBack(this.$t('ExternalNode.EnterValidURL'))
+        } else if (value.length < 1 || value.length > 255) {
+          callBack(this.$t('ExternalNode.addressLengthLimit'))
         } else {
           callBack()
         }
       } else {
-        callBack("请输入外部节点地址")
+        callBack(this.$t('ExternalNode.EnterExternalNodeAddress'))
+      }
+    }
+    const nodeNameValidator = (rule, value, callBack) => {
+      if (!value) {
+        callBack(this.$t('ExternalNode.EnterExternalNodeName'))
+      } else {
+        callBack()
+      }
+    }
+    const typeValidator = (rule, value, callBack) => {
+      if (!value) {
+        callBack(this.$t('ExternalNode.selectArtifactType'))
+      } else {
+        callBack()
+      }
+    }
+    const usernameValidator = (rule, value, callBack) => {
+      if (!value) {
+        callBack(this.$t('ExternalNode.EnterYourUsername'))
+      } else {
+        callBack()
+      }
+    }
+    const passwordValidator = (rule, value, callBack) => {
+      if (!value) {
+        callBack(this.$t('ExternalNode.EnterThePassword'))
+      } else {
+        callBack()
       }
     }
     return {
       artifactoryList: [{ label: "JFrog", value: "JFrog" }],
       externalNodeRules: {
-        nodeName: [{ required: true, message: "请输入外部节点名称", trigger: "blur" }],
-        type: [{ required: true, message: "请选择制品库类型", trigger: "blur" }],
+        nodeName: [{ required: true, trigger: "blur", validator: nodeNameValidator }],
+        type: [{ required: true, trigger: "blur", validator: typeValidator }],
         address: [
-          { required: true, trigger: ['blur'], validator: acceptUrlValidator },
-          {
-            min: 1,
-            max: 255,
-            message: "长度在 1 到 255 个字符",
-            trigger: "blur",
-          },
+          { required: true, trigger: ['blur'], validator: acceptUrlValidator }
         ],
         username: [
-          { required: true, message: "请输入用户名", trigger: "blur" },
+          { required: true, trigger: "blur", validator: usernameValidator },
         ],
-        password: [{ required: true, message: "请输入密码", trigger: "blur" }],
+        password: [{ required: true, trigger: "blur", validator: passwordValidator }],
       },
       externalNodeForm: {
         id: undefined,
@@ -123,7 +147,7 @@ export default {
   methods: {
     successMsg(message) {
       if (!message) {
-        message = "操作成功"
+        message = this.$t('ExternalNode.OperateSuccess')
       }
       this.$notification["success"]({
         message: message,
@@ -154,7 +178,7 @@ export default {
           }
           if (this.handlerExternalNodeType === 1) {
             saveExternalNode(data).then((res) => {
-              this.successMsg("新增外部节点成功")
+              this.successMsg(this.$t('ExternalNode.ExternalNodeAddSuccess'))
               this.resetExternalNodeForm()
               this.$emit("externalNodeReflesh")
             }).catch((err) => {
@@ -164,7 +188,7 @@ export default {
             }).finally(() => { })
           } else {
             updateExternalNode(data).then((res) => {
-              this.successMsg("修改外部节点成功")
+              this.successMsg(this.$t('ExternalNode.ExternalNodeModifySuccess'))
               this.resetExternalNodeForm()
               this.$emit("externalNodeReflesh")
             }).catch((err) => {

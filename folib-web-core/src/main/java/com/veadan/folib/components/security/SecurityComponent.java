@@ -3,7 +3,7 @@ package com.veadan.folib.components.security;
 import com.veadan.folib.security.authentication.JwtTokenFetcher;
 import com.veadan.folib.users.security.SecurityTokenProvider;
 import com.veadan.folib.users.service.UserService;
-import com.veadan.folib.users.service.impl.DatabaseUserService;
+import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -21,7 +21,7 @@ import javax.ws.rs.client.Invocation;
 public class SecurityComponent {
 
     @Inject
-    @DatabaseUserService.Database
+    @RelationalDatabaseUserService.RelationalDatabase
     private UserService userService;
 
     @Inject

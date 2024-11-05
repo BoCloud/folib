@@ -1,31 +1,30 @@
 package com.veadan.folib.controllers.adapter.jfrog;
 
 import com.alibaba.fastjson.JSONObject;
-import com.mysql.cj.util.StringUtils;
+import com.google.common.collect.Maps;
 import com.veadan.folib.controllers.adapter.jfrog.dto.DockerCopyDto;
 import com.veadan.folib.domain.ArtifactPromotion;
-import com.veadan.folib.domain.DirectoryListing;
-import com.veadan.folib.domain.FileContent;
 import com.veadan.folib.dto.TargetRepositoyDto;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.services.ArtifactPromotionService;
 import com.veadan.folib.services.DirectoryListingService;
-import com.veadan.folib.services.impl.ArtifactPromotionServiceImpl;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.compress.utils.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
-import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * @author leipenghui
@@ -37,9 +36,9 @@ import java.util.stream.Collectors;
 //@PreAuthorize("hasAuthority('ADMIN')")
 @Api(description = "JFrog拷贝", tags = "JFrog拷贝")
 public class ArtifactCopyController extends JFrogBaseController {
-    @Inject
-    private ArtifactPromotionServiceImpl artifactPromotionServiceImp;
 
+    @Inject
+    private ArtifactPromotionService artifactPromotionService;
 
     @Inject
     @Qualifier("browseRepositoryDirectoryListingService")
@@ -60,23 +59,24 @@ public class ArtifactCopyController extends JFrogBaseController {
                                        @PathVariable("artifactPath") String artifactPath,
                                        String to,
                                        String dry) throws Exception {
-        String storageId = getDefaultStorageId();
+        String storageId = getDefaultStorageId(repositoryId);
         boolean checkRepository = checkRepository(storageId, repositoryId);
         if (!checkRepository) {
             return repositoryNotFound("source");
         }
-        Map<String, Object> result = new HashMap<>();
-        List<JSONObject> infoList = new ArrayList<>();
+        Map<String, Object> result = Maps.newHashMap();
+        List<JSONObject> infoList = Lists.newArrayList();
         JSONObject jsonObject = new JSONObject();
         try {
-            log.info("制品copy接口调用，参数respositryId:{};参数artifactPath:{};参数to:{};参数dry:{}", repositoryId, artifactPath, to, dry);
+            log.info("Copy repositoryId [{}] artifactPath [{}] to [{}] dry [{}]", repositoryId, artifactPath, to, dry);
             // 解析目标地址 目录地址必须是/开始
             if (!to.startsWith("/")) {
                 to = "/" + to;
             }
-            String[] targetStrs = to.split("/");
-            String targetRepositoryId = targetStrs[1];
-            checkRepository = checkRepository(storageId, targetRepositoryId);
+            String[] targetArr = to.split("/");
+            String targetRepositoryId = targetArr[1];
+            String targetStorageId = getDefaultStorageId(targetRepositoryId);
+            checkRepository = checkRepository(targetStorageId, targetRepositoryId);
             if (!checkRepository) {
                 return repositoryNotFound("target");
             }
@@ -84,14 +84,14 @@ public class ArtifactCopyController extends JFrogBaseController {
             artifactPromotion.setPath(artifactPath);
             artifactPromotion.setSrcStorageId(storageId);
             artifactPromotion.setSrcRepositoryId(repositoryId);
-            List<TargetRepositoyDto> list = new ArrayList<>();
+            List<TargetRepositoyDto> list = Lists.newArrayList();
             TargetRepositoyDto targetRepositoyDto = new TargetRepositoyDto();
-            targetRepositoyDto.setTargetStorageId(storageId);
+            targetRepositoyDto.setTargetStorageId(targetStorageId);
             targetRepositoyDto.setTargetRepositoryId(targetRepositoryId);
             list.add(targetRepositoyDto);
             artifactPromotion.setTargetRepositoyList(list);
-            ResponseEntity responseEntity = artifactPromotionServiceImp.copy(artifactPromotion);
-            if (responseEntity.getStatusCode().value() == 200) {
+            ResponseEntity responseEntity = artifactPromotionService.copy(artifactPromotion);
+            if (responseEntity.getStatusCode().value() == HttpStatus.OK.value()) {
                 jsonObject.put("level", "info");
                 jsonObject.put("message", "copying " + storageId + "/" + repositoryId + "/" + artifactPath + " to " + to + " completed successfully");
                 infoList.add(jsonObject);
@@ -129,8 +129,8 @@ public class ArtifactCopyController extends JFrogBaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PostMapping("/api/docker/{repositoryId}/v2/promote")
     public ResponseEntity<Object> dockerCopy(@PathVariable("repositoryId") String repositoryId, @RequestBody DockerCopyDto dockerCopyDto) {
-        log.info("docker 制品晋级(copy)接口调用，参数{}实体{}", repositoryId, JSONObject.toJSONString(dockerCopyDto));
-        String storageId = getDefaultStorageId();
+        log.info("Docker copy repositoryId [{}] params [{}]", repositoryId, JSONObject.toJSONString(dockerCopyDto));
+        String storageId = getDefaultStorageId(repositoryId);
         boolean checkRepository = checkRepository(storageId, repositoryId);
         if (!checkRepository) {
             return repositoryNotFound("source");
@@ -138,68 +138,46 @@ public class ArtifactCopyController extends JFrogBaseController {
         String imageTag = dockerCopyDto.getTag();
         String artifactPath = dockerCopyDto.getDockerRepository();
         String split = "/";
-        if (artifactPath.contains(split)) {
-            String[] artifactPathArr = artifactPath.split(split);
-            artifactPath = artifactPathArr[0];
-            imageTag = artifactPathArr[1];
+        if (StringUtils.isNotBlank(imageTag)) {
+            artifactPath = artifactPath + split + StringUtils.removeStart(imageTag, split);
         }
         String targetRepositoryId = dockerCopyDto.getTargetRepo();
-        checkRepository = checkRepository(storageId, targetRepositoryId);
+        String targetStorageId = getDefaultStorageId(targetRepositoryId);
+        checkRepository = checkRepository(targetStorageId, targetRepositoryId);
         if (!checkRepository) {
             return repositoryNotFound("target");
         }
-        List<JSONObject> infoList = new ArrayList<>();
+        List<JSONObject> infoList = Lists.newArrayList();
         JSONObject jsonObject = new JSONObject();
-        List<String> tagList = new ArrayList<>();
-        // 如果有带tag号 这边默认时晋级最新的
-        if (!StringUtils.isNullOrEmpty(imageTag)) {
-            tagList.add(imageTag);
-        } else {
-            //查找所有的tag号，将所有的tag全部晋级到目标仓库
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, dockerCopyDto.getDockerRepository());
-            try {
-                DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-                List<FileContent> imageDirList = directoryListing.getDirectories().stream().filter(f -> (!f.getName().equals("blobs")) && (!f.getName().equals("manifest"))).collect(Collectors.toList());
-                imageDirList.forEach(item -> {
-                    log.info("晋级镜像版本{}", item.getName());
-                    tagList.add(item.getName());
-                });
-            } catch (IOException e) {
-                jsonObject.put("info", "error");
-                jsonObject.put("message", "镜像版本失败获取失败");
-                return ResponseEntity.ok(jsonObject);
+        try {
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+            if (!Files.exists(repositoryPath) || !Files.isDirectory(repositoryPath)) {
+                return artifactNotFound(artifactPath);
             }
-        }
-        // 这里已经获取到所有的镜像tag 循环上传
-        for (String tag : tagList) {
-            try {
-                ArtifactPromotion artifactPromotion = new ArtifactPromotion();
-                artifactPromotion.setPath(artifactPath + "/" + tag);
-                artifactPromotion.setSrcStorageId(storageId);
-                artifactPromotion.setSrcRepositoryId(repositoryId);
-                List<TargetRepositoyDto> list = new ArrayList<>();
-                TargetRepositoyDto targetRepositoyDto = new TargetRepositoyDto();
-                targetRepositoyDto.setTargetStorageId(storageId);
-                targetRepositoyDto.setTargetRepositoryId(targetRepositoryId);
-                list.add(targetRepositoyDto);
-                artifactPromotion.setTargetRepositoyList(list);
-                ResponseEntity responseEntity = artifactPromotionServiceImp.copy(artifactPromotion);
-
-                if (responseEntity.getStatusCode().value() == 200) {
-                    jsonObject.put("level", "info");
-                    jsonObject.put("message", "copying " + storageId + "/" + repositoryId + "/" + artifactPath + " to " + JSONObject.toJSONString(artifactPromotion) + " completed successfully");
-                    infoList.add(jsonObject);
-                } else {
-                    jsonObject.put("level", "error");
-                    jsonObject.put("message", "copying " + storageId + "/" + repositoryId + "/" + artifactPath + " to " + JSONObject.toJSONString(artifactPromotion) + " fail " + responseEntity.getStatusCode());
-                    infoList.add(jsonObject);
-                }
-            } catch (Exception exception) {
+            ArtifactPromotion artifactPromotion = new ArtifactPromotion();
+            artifactPromotion.setPath(artifactPath);
+            artifactPromotion.setSrcStorageId(storageId);
+            artifactPromotion.setSrcRepositoryId(repositoryId);
+            List<TargetRepositoyDto> list = new ArrayList<>();
+            TargetRepositoyDto targetRepositoyDto = new TargetRepositoyDto();
+            targetRepositoyDto.setTargetStorageId(targetStorageId);
+            targetRepositoyDto.setTargetRepositoryId(targetRepositoryId);
+            list.add(targetRepositoyDto);
+            artifactPromotion.setTargetRepositoyList(list);
+            ResponseEntity responseEntity = artifactPromotionService.copy(artifactPromotion);
+            if (responseEntity.getStatusCode().value() == HttpStatus.OK.value()) {
+                jsonObject.put("level", "info");
+                jsonObject.put("message", "copying " + storageId + "/" + repositoryId + "/" + artifactPath + " to " + JSONObject.toJSONString(artifactPromotion) + " completed successfully");
+                infoList.add(jsonObject);
+            } else {
                 jsonObject.put("level", "error");
-                jsonObject.put("message", "copying " + storageId + "/" + repositoryId + "/" + artifactPath + " to " + JSONObject.toJSONString(dockerCopyDto) + " fail " + exception.getMessage());
+                jsonObject.put("message", "copying " + storageId + "/" + repositoryId + "/" + artifactPath + " to " + JSONObject.toJSONString(artifactPromotion) + " fail " + responseEntity.getStatusCode());
                 infoList.add(jsonObject);
             }
-
+        } catch (Exception exception) {
+            jsonObject.put("level", "error");
+            jsonObject.put("message", "copying " + storageId + "/" + repositoryId + "/" + artifactPath + " to " + JSONObject.toJSONString(dockerCopyDto) + " fail " + exception.getMessage());
+            infoList.add(jsonObject);
         }
         return ResponseEntity.ok(infoList);
     }

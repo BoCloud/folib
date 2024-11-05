@@ -37,6 +37,9 @@ public interface User extends DomainObject
     String getOriginalPassword();
 
     Set<SecurityRole> getRoles();
+    Set<Long> getGroupIds();
+    Set<String> getUserGroups();
+    Set<String> getUserGroupIds();
 
     String getSecurityTokenKey();
 
@@ -47,4 +50,5 @@ public interface User extends DomainObject
     String getSourceId();
 
     String getAvatar();
+
 }

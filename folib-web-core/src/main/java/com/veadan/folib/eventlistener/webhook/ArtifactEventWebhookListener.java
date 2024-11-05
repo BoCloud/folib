@@ -51,6 +51,10 @@ public class ArtifactEventWebhookListener {
         if (Objects.isNull(artifactEventTypeEnum)) {
             return;
         }
+        handleEventRecord(artifactEventTypeEnum, repositoryPath);
+    }
+
+    public void handleEventRecord(ArtifactEventTypeEnum artifactEventTypeEnum, RepositoryPath repositoryPath) {
         if (validateArtifactEvent(artifactEventTypeEnum) && artifactComponent.layoutSupports(repositoryPath)) {
             try {
                 List<WebhookConfigurationForm> webhookConfigurationList = webhookService.getWebhookConfiguration();
@@ -59,7 +63,7 @@ public class ArtifactEventWebhookListener {
                     return;
                 }
                 Artifact artifact = repositoryPath.getArtifactEntry();
-                if (Objects.isNull(artifact) && ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() != source) {
+                if (Objects.isNull(artifact) && ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() != artifactEventTypeEnum.getType()) {
                     log.debug("repositoryPath：{} artifact未从图库中找到，无后续操作", repositoryPath);
                     return;
                 }
@@ -70,11 +74,13 @@ public class ArtifactEventWebhookListener {
                 artifactPath = path.substring(path.indexOf(storageAndRepository) + storageAndRepository.length());
                 JSONObject defaultBodyJson = new JSONObject();
                 defaultBodyJson.put("artifactPath", artifactPath);
+                defaultBodyJson.put("eventType", artifactEventTypeEnum.toString());
                 body = defaultBodyJson.toJSONString();
                 List<String> removeKeyList = Lists.newArrayList("artifactArchiveListing", "artifactCoordinates", "report", "tagSet");
                 if (Objects.nonNull(artifact)) {
                     body = JSONObject.toJSONString(artifact);
                     JSONObject bodyJson = JSONObject.parseObject(body);
+                    bodyJson.put("eventType", artifactEventTypeEnum.toString());
                     removeKeyList.forEach(bodyJson::remove);
                     body = bodyJson.toJSONString();
                     artifactPath = getArtifactPath(repositoryPath, artifact);
@@ -83,6 +89,12 @@ public class ArtifactEventWebhookListener {
                 for (WebhookConfigurationForm webhookConfiguration : webhookConfigurationList) {
                     if (!webhookConfiguration.getEvents().contains(artifactEventTypeEnum.toString())) {
                         continue;
+                    }
+                    if(Objects.nonNull(webhookConfiguration.getRepository())&&!webhookConfiguration.getRepository().isEmpty()){
+                        String eventRepository=repositoryPath.getStorageId()+":"+repositoryPath.getRepositoryId();
+                        if(!webhookConfiguration.getRepository().contains(eventRepository)){
+                            continue;
+                        }
                     }
                     try {
                         headerMap = Maps.newHashMap();
@@ -95,11 +107,11 @@ public class ArtifactEventWebhookListener {
                         }
                         webhookService.handlerWebhook(webhookConfiguration, repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), artifactPath, artifactEventTypeEnum.toString(), body, headerMap);
                     } catch (Exception ex) {
-                        log.error("事件监听，处理webhook，事件类型：{} repositoryPath：{} 错误：{}", source, repositoryPath, ExceptionUtils.getStackTrace(ex));
+                        log.error("事件监听，处理webhook，事件类型：{} repositoryPath：{} 错误：{}", artifactEventTypeEnum.getType(), repositoryPath, ExceptionUtils.getStackTrace(ex));
                     }
                 }
             } catch (Exception ex) {
-                log.error("事件监听，处理webhook，事件类型：{} repositoryPath：{} 错误：{}", source, repositoryPath, ExceptionUtils.getStackTrace(ex));
+                log.error("事件监听，处理webhook，事件类型：{} repositoryPath：{} 错误：{}", artifactEventTypeEnum.getType(), repositoryPath, ExceptionUtils.getStackTrace(ex));
             }
         }
     }
@@ -111,7 +123,7 @@ public class ArtifactEventWebhookListener {
      * @return true 需要处理 false 不需要处理
      */
     private boolean validateArtifactEvent(ArtifactEventTypeEnum artifactEventTypeEnum) {
-        List<Integer> list = Arrays.asList(ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_STORED.getType(), ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_UPDATED.getType(), ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DOWNLOADED.getType(), ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DOWNLOAD_BLOCKED.getType(), ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType(), ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType());
+        List<Integer> list = Arrays.asList(ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_STORED.getType(), ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_UPDATED.getType(), ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DOWNLOAD_BLOCKED.getType(), ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType(), ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType());
         return list.contains(artifactEventTypeEnum.getType());
     }
 

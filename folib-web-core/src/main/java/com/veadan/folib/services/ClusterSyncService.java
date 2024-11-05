@@ -5,6 +5,8 @@ import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
 import com.veadan.folib.controllers.cluster.dto.*;
 import com.veadan.folib.entity.ClusterDataSyncTaskPo;
 
+import java.util.Set;
+
 public interface ClusterSyncService {
 
     void syncConfiguration();
@@ -84,4 +86,5 @@ public interface ClusterSyncService {
 
     void addScheduledTask(ClusterDataSyncTaskPo clusterDataSyncTaskPo);
 
+    Set<String> getHostNodeList();
 }

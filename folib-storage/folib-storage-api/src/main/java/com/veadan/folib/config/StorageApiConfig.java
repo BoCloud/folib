@@ -24,7 +24,8 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
                  "com.veadan.folib.yaml",
                  "com.veadan.folib.dependency",
                  "com.veadan.folib.domain",
-                 "com.veadan.folib.booters"
+                 "com.veadan.folib.booters",
+                 "com.veadan.folib.component"
 })
 @EnableAsync
 public class StorageApiConfig
@@ -32,9 +33,6 @@ public class StorageApiConfig
 
     @Inject
     private List<ArtifactCoordinatesValidator> versionValidators;
-
-    @Inject
-    private ThreadPoolTaskExecutor asyncEventListenerExecutor;
 
     @Bean
     ChecksumCacheManager checksumCacheManager()
@@ -58,14 +56,5 @@ public class StorageApiConfig
     {
         return new StorageBooter();
     }
-
-//    @Bean
-//    public ApplicationEventMulticaster applicationEventMulticaster() {
-//        //创建一个事件广播器
-//        SimpleApplicationEventMulticaster result = new SimpleApplicationEventMulticaster();
-//        //设置异步执行器,来完成异步执行监听事件这样会导致所有的监听器都异步执行
-//        result.setTaskExecutor(asyncEventListenerExecutor);
-//        return result;
-//    }
 
 }

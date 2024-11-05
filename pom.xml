@@ -43,6 +43,7 @@
         <module>folib-web-core</module>
         <module>folib-distribution</module>
         <module>folib-web-vue</module>
+        <module>folib-core</module>
     </modules>
 
     <profiles>

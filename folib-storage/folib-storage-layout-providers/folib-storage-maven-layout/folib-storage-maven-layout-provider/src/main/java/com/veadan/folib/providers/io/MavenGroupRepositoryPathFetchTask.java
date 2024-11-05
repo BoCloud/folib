@@ -24,6 +24,7 @@ public class MavenGroupRepositoryPathFetchTask implements Callable<Path> {
 
     @Override
     public Path call() throws Exception {
+        log.debug("FetchPath resolvedPath [{}]", resolvedPath.toString());
         return provider.fetchPath(resolvedPath);
     }
 }

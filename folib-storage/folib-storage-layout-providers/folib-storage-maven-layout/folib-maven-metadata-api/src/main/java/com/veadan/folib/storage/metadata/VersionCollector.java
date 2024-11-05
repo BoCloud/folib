@@ -1,7 +1,7 @@
 package com.veadan.folib.storage.metadata;
 
-import cn.hutool.core.io.FileUtil;
 import cn.hutool.extra.spring.SpringUtil;
+import com.google.common.collect.Lists;
 import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.storage.metadata.maven.comparators.MetadataVersionComparator;
@@ -9,22 +9,8 @@ import com.veadan.folib.storage.metadata.maven.comparators.SnapshotVersionCompar
 import com.veadan.folib.storage.metadata.maven.io.filters.ArtifactVersionDirectoryFilter;
 import com.veadan.folib.storage.metadata.maven.versions.MetadataVersion;
 import com.veadan.folib.storage.metadata.maven.visitors.ArtifactVersionDirectoryVisitor;
-
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import com.google.common.collect.Lists;
+import com.veadan.folib.vo.Repository;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.ArtifactUtils;
@@ -42,19 +28,31 @@ import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 /**
  * @author stodorov
  */
-public class VersionCollector
-{
+public class VersionCollector {
 
     private static final Logger logger = LoggerFactory.getLogger(VersionCollector.class);
 
     private static final M2GavCalculator M2_GAV_CALCULATOR = new M2GavCalculator();
 
     public VersionCollectionRequest collectVersions(Path artifactBasePath)
-            throws IOException
-    {
+            throws IOException {
         VersionCollectionRequest request = new VersionCollectionRequest();
         request.setArtifactBasePath(artifactBasePath);
 
@@ -62,22 +60,18 @@ public class VersionCollector
 
         List<Path> versionPaths;
         try (DirectoryStream<Path> ds = Files.newDirectoryStream(artifactBasePath,
-                                                                 new ArtifactVersionDirectoryFilter()))
-        {
+                new ArtifactVersionDirectoryFilter())) {
             versionPaths = Lists.newArrayList(ds);
             versionPaths = versionPaths.stream().filter(dir -> Files.isDirectory(dir)).collect(Collectors.toList());
         }
 
         // Add all versions
-        for (Path versionDirectoryPath : versionPaths)
-        {
-            try
-            {
+        for (Path versionDirectoryPath : versionPaths) {
+            try {
                 Path pomArtifactPath = getPomPath(artifactBasePath, versionDirectoryPath);
 
                 // No pom, no metadata.
-                if (pomArtifactPath != null)
-                {
+                if (pomArtifactPath != null) {
                     logger.info("pomArtifactPath [{}]", pomArtifactPath.toString());
                     if (!Files.exists(pomArtifactPath)) {
                         logger.info("pomArtifactPath [{}] not exists", pomArtifactPath.toString());
@@ -86,21 +80,19 @@ public class VersionCollector
                     Model pom = getPom(pomArtifactPath);
 
                     BasicFileAttributes fileAttributes = Files.readAttributes(versionDirectoryPath,
-                                                                              BasicFileAttributes.class);
+                            BasicFileAttributes.class);
 
                     // TODO: This will not work for versionless POM-s which extend the version from a parent.
                     // TODO: If pom.getVersion() == null, walk the parents until a parent with
                     // TODO: a non-null version is found and use that as the version.
                     String version = pom.getVersion() != null ? pom.getVersion() :
-                                     (pom.getParent() != null ? pom.getParent().getVersion() : null);
+                            (pom.getParent() != null ? pom.getParent().getVersion() : null);
 
-                    if (version == null)
-                    {
+                    if (version == null) {
                         continue;
                     }
 
-                    if (ArtifactUtils.isSnapshot(version))
-                    {
+                    if (ArtifactUtils.isSnapshot(version)) {
                         version = ArtifactUtils.toSnapshotVersion(version);
                     }
 
@@ -110,8 +102,7 @@ public class VersionCollector
 
                     versions.add(metadataVersion);
 
-                    if (artifactIsPlugin(pom))
-                    {
+                    if (artifactIsPlugin(pom)) {
                         String name = pom.getName() != null ? pom.getName() : pom.getArtifactId();
 
                         // TODO: SB-339: Get the maven plugin's prefix properly when generating metadata
@@ -128,16 +119,13 @@ public class VersionCollector
                         request.addPlugin(plugin);
                     }
                 }
-            }
-            catch (XmlPullParserException | IOException e)
-            {
+            } catch (XmlPullParserException | IOException e) {
                 logger.error("POM file '{}' appears to be corrupt.", versionDirectoryPath.toAbsolutePath(), e);
             }
         }
 
         // 1.1 < 1.2 < 1.3 ....
-        if (!versions.isEmpty())
-        {
+        if (!versions.isEmpty()) {
             Collections.sort(versions, new MetadataVersionComparator());
         }
 
@@ -148,11 +136,9 @@ public class VersionCollector
     }
 
     private Path getPomPath(Path artifactBasePath,
-                            Path versionDirectoryPath)
-    {
+                            Path versionDirectoryPath) {
         String version = versionDirectoryPath.getFileName().toString();
-        if (!ArtifactUtils.isSnapshot(version))
-        {
+        if (!ArtifactUtils.isSnapshot(version)) {
             Path path = Paths.get(versionDirectoryPath.toAbsolutePath().toString(),
                     artifactBasePath.getFileName().toString() + "-" +
                             versionDirectoryPath.getFileName() + ".pom");
@@ -160,24 +146,21 @@ public class VersionCollector
                 return new S3Path(SpringUtil.getBean(S3FileSystem.class), path.toString());
             }
             return path;
-        }
-        else
-        {
+        } else {
             // Attempt to get the latest available POM
 //            List<String> filePaths = Arrays.asList(versionDirectoryPath.toFile()
 //                    .list((dir, name) -> name.endsWith(".pom")));
 
             List<String> filePaths = null;
 
-            try {
-                filePaths =  Files.list(versionDirectoryPath).filter(f -> !Files.isDirectory(f) && f.getFileName().toString().endsWith(".pom")).map(p -> p.toAbsolutePath().toString()).collect(Collectors.toList());
+            try (Stream<Path> pathStream = Files.list(versionDirectoryPath)) {
+                filePaths = pathStream.filter(f -> !Files.isDirectory(f) && f.getFileName().toString().endsWith(".pom")).map(p -> p.toAbsolutePath().toString()).collect(Collectors.toList());
             } catch (IOException ex) {
                 logger.error("[{}] getPomPath error [{}]", this.getClass().getSimpleName(), ExceptionUtils.getStackTrace(ex));
                 return null;
             }
 
-            if (!filePaths.isEmpty())
-            {
+            if (!filePaths.isEmpty()) {
                 Collections.sort(filePaths);
                 if (versionDirectoryPath.toString().startsWith("s3://")) {
                     logger.info("filePaths [{}]", filePaths);
@@ -185,9 +168,7 @@ public class VersionCollector
                 } else {
                     return Paths.get(filePaths.get(filePaths.size() - 1));
                 }
-            }
-            else
-            {
+            } else {
                 return null;
             }
         }
@@ -200,26 +181,29 @@ public class VersionCollector
      * @throws IOException
      */
     public List<SnapshotVersion> collectTimestampedSnapshotVersions(Path artifactVersionPath)
-            throws IOException
-    {
+            throws IOException {
         List<SnapshotVersion> snapshotVersions = new ArrayList<>();
-
+        if (!Files.exists(artifactVersionPath)) {
+            logger.warn("RepositoryPath [{}] not exists", artifactVersionPath);
+            return snapshotVersions;
+        }
         ArtifactVersionDirectoryVisitor artifactVersionDirectoryVisitor = new ArtifactVersionDirectoryVisitor();
 
         Files.walkFileTree(artifactVersionPath, artifactVersionDirectoryVisitor);
 
-        for (Path filePath : artifactVersionDirectoryVisitor.getMatchingPaths())
-        {
+        for (Path filePath : artifactVersionDirectoryVisitor.getMatchingPaths()) {
             String unixBasedFilePath = FilenameUtils.separatorsToUnix(filePath.toString());
             Gav gav = M2_GAV_CALCULATOR.pathToGav(unixBasedFilePath);
-            //TODO 非空判断 其他仓库的metadata.xml
+            if (Objects.isNull(gav)) {
+                continue;
+            }
             Artifact artifact = new DefaultArtifact(gav.getGroupId(),
-                                                    gav.getArtifactId(),
-                                                    gav.getVersion(),
-                                                    null,
-                                                    gav.getExtension(),
-                                                    gav.getClassifier(),
-                                                    new DefaultArtifactHandler(gav.getExtension()));
+                    gav.getArtifactId(),
+                    gav.getVersion(),
+                    null,
+                    gav.getExtension(),
+                    gav.getClassifier(),
+                    new DefaultArtifactHandler(gav.getExtension()));
             String name = filePath.getFileName().toString();
 //            String name = FileUtil.getName(filePath.toString());
 //            if (filePath instanceof S3Path) {
@@ -230,29 +214,25 @@ public class VersionCollector
 //            }
 
             SnapshotVersion snapshotVersion = MetadataHelper.createSnapshotVersion(artifact,
-                                                                                   FilenameUtils.getExtension(name));
+                    FilenameUtils.getExtension(name));
 
             snapshotVersions.add(snapshotVersion);
         }
 
-        if (!snapshotVersions.isEmpty())
-        {
+        if (!snapshotVersions.isEmpty()) {
             Collections.sort(snapshotVersions, new SnapshotVersionComparator());
         }
 
         return snapshotVersions;
     }
 
-    public Versioning generateVersioning(List<MetadataVersion> versions)
-    {
+    public Versioning generateVersioning(List<MetadataVersion> versions) {
         Versioning versioning = new Versioning();
 
-        if (!versions.isEmpty())
-        {
+        if (!versions.isEmpty()) {
             // Sort versions naturally (1.1 < 1.2 < 1.3 ...)
             Collections.sort(versions, new MetadataVersionComparator());
-            for (MetadataVersion version : versions)
-            {
+            for (MetadataVersion version : versions) {
                 versioning.addVersion(version.getVersion());
             }
 
@@ -265,30 +245,25 @@ public class VersionCollector
         return versioning;
     }
 
-    public Versioning generateSnapshotVersions(List<SnapshotVersion> snapshotVersionList)
-    {
+    public Versioning generateSnapshotVersions(List<SnapshotVersion> snapshotVersionList) {
         Versioning versioning = new Versioning();
 
-        if (!snapshotVersionList.isEmpty())
-        {
+        if (!snapshotVersionList.isEmpty()) {
             versioning.setSnapshotVersions(snapshotVersionList);
         }
 
         return versioning;
     }
 
-    private boolean artifactIsPlugin(Model model)
-    {
+    private boolean artifactIsPlugin(Model model) {
         return model.getPackaging().equals("maven-plugin");
     }
 
     private Model getPom(Path filePath)
-            throws IOException, XmlPullParserException
-    {
+            throws IOException, XmlPullParserException {
 
         logger.info("filePath [{}]", filePath.toString());
-        try (InputStream inputStream = Files.newInputStream(filePath))
-        {
+        try (InputStream inputStream = Files.newInputStream(filePath)) {
             MavenXpp3Reader reader = new MavenXpp3Reader();
             return reader.read(inputStream);
         }

@@ -6,14 +6,6 @@ cronTasksConfiguration:
       cronExpression: 0 0 1 * * ?
       oneTimeExecution: false
       immediateExecution: false
-    - uuid: 2222a559-6eac-4cda-81d2-83dbfcf1b1e0
-      name: Cleanup Expired Artifacts From Proxy Repositories Cron Job
-      jobClass: com.veadan.folib.cron.jobs.CleanupExpiredArtifactsFromProxyRepositoriesCronJob
-      cronExpression: 0 0 1 * * ?
-      oneTimeExecution: false
-      immediateExecution: false
-      properties:
-        lastAccessedTimeInDays: 60
     - uuid: 9dd9a6ef-d953-4ce0-be3d-3031fcfd993b
       name: Re-generate Artifacts Checksums Cron Job
       jobClass: com.veadan.folib.cron.jobs.RegenerateChecksumCronJob
@@ -26,15 +18,15 @@ cronTasksConfiguration:
       cronExpression: 0 0 1 * * ?
       oneTimeExecution: false
       immediateExecution: false
-    - uuid: c9e7eeef-4e97-4500-aa12-e714a246c2dc
-      name: Remove Timestamped Maven Snapshots Cron Job
-      jobClass: com.veadan.folib.cron.jobs.RemoveTimestampedMavenSnapshotCronJob
-      cronExpression: 0 0 1 * * ?
-      oneTimeExecution: false
-      immediateExecution: false
     - uuid: 00dcbfe3-461b-4dc7-995b-4cc637ca611e
       name: Docker仓库清理任务
       jobClass: com.veadan.folib.cron.jobs.CleanupDockerRepositoryCronJob
       cronExpression: 0 0 1 * * ?
+      oneTimeExecution: false
+      immediateExecution: false
+    - uuid: e4087b9a-202d-46d0-972a-5fb374b6b423
+      name: 定时清除晋级/分发记录表数据任务
+      jobClass: com.veadan.folib.cron.jobs.ClearArtifactSyncRecordCronJob
+      cronExpression: 0 0 0 1/7 * ?
       oneTimeExecution: false
       immediateExecution: false

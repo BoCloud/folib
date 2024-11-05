@@ -74,7 +74,9 @@ public class MavenGroupRepositoryPathFetchEventListener {
         List<FutureTask<Path>> futureTasks = Lists.newArrayList();
         FutureTask<Path> futureTask = null;
         MavenGroupRepositoryPathFetchTask mavenGroupRepositoryPathFetchTask = null;
-        for (String storageAndRepositoryId : groupRepository.getGroupRepositories()) {
+        List<String> storageAndRepositoryIdList = Lists.newArrayList();
+        configurationManager.resolveGroupRepository(groupRepository, storageAndRepositoryIdList);
+        for (String storageAndRepositoryId : storageAndRepositoryIdList) {
             String sId = ConfigurationUtils.getStorageId(storage.getId(), storageAndRepositoryId);
             String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
             Repository subRepository = configurationManager.getRepository(sId, rId);
@@ -95,10 +97,10 @@ public class MavenGroupRepositoryPathFetchEventListener {
             asyncFetchRemotePackageThreadPoolTaskExecutor.submit(futureTask);
         }
 
-        fetchPathsInParallel(futureTasks);
+        fetchPathsInTask(futureTasks);
     }
 
-    private void fetchPathsInParallel(final List<FutureTask<Path>> futureTasks) {
+    private void fetchPathsInTask(final List<FutureTask<Path>> futureTasks) {
         futureTasks
                 .forEach(action -> {
                     try {

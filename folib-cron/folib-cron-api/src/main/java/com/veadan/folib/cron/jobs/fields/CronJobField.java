@@ -37,6 +37,11 @@ public abstract class CronJobField
         return field.getName();
     }
 
+    public String getAliasName()
+    {
+        return field.getAliasName();
+    }
+
     public String getType()
     {
         Assert.notNull(field, () -> String.format("Field %s does not have type", field));

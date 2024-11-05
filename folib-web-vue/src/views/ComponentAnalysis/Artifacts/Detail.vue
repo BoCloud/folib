@@ -96,13 +96,13 @@
     </a-card>
 
     <a-tabs class="tabs-sliding" default-active-key="1" @change="handleChangeTabs">
-      <a-tab-pane key="1" tab="总览">
+      <a-tab-pane key="1" :tab="$t('Artifacts.GeneralView')">
         <ArtifactDashboard :artifactData="artifactData" v-if="tabActive == 1"></ArtifactDashboard>
       </a-tab-pane>
-      <a-tab-pane key="2" tab="组件">
+      <a-tab-pane key="2" :tab="$t('Artifacts.Component')">
         <ArtifactComponents :artifactData="artifactData" v-if="tabActive == 2"></ArtifactComponents>
       </a-tab-pane>
-      <a-tab-pane key="3" tab="漏洞">
+      <a-tab-pane key="3" :tab="$t('Artifacts.Vulnerability')">
         <ArtifactVulnerability :artifactData="artifactData" v-if="tabActive == 3"></ArtifactVulnerability>
       </a-tab-pane>
     </a-tabs>
@@ -141,7 +141,7 @@ export default {
   },
   watch: {
     $route(to, from) {
-      console.log("路由变化了");
+      // console.log("路由变化了");
       this.initialize();
     },
     deep: true,
@@ -151,7 +151,7 @@ export default {
       let data = this.$route.query.data
       if (data) {
         this.queryArtifact(JSON.parse(data))
-      }  
+      }
     },
     handleClickMenu(p) {
       this.$router.push(`/artifacts/artifactsDetail/${p.uuid}`);

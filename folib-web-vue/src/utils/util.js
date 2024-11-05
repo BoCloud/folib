@@ -157,3 +157,59 @@ export function concatenateComponentName(group, name, version) {
   let v = trimToNull(version);
   return (g != null ? g + " " : "") + (n != null ? n : "") + (v != null ? " " + v : "");
 }
+
+export function convertToBytes(size, unit) {
+  const sizeNumeric = Number(size);
+  if (isNaN(sizeNumeric)) {
+    throw new Error("Invalid size value: " + size);
+  }
+  switch (unit) {
+    case "B":
+      return sizeNumeric;
+    case "KB":
+      return sizeNumeric * 1024;
+    case "MB":
+      return sizeNumeric * 1024 * 1024;
+    case "GB":
+      return sizeNumeric * 1024 * 1024 * 1024;
+    case "TB":
+      return sizeNumeric * 1024 * 1024 * 1024 * 1024;
+    case "PB":
+      return sizeNumeric * 1024 * 1024 * 1024 * 1024 * 1024;
+    default:
+      throw new Error("Unsupported unit: " + unit);
+  }
+}
+
+// 防抖
+export const debounce = (fn, delay) => {
+  const t = delay || 750;
+  let timer;
+  return function () {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      // 改变this指向并传递参数
+      fn.apply(this, arguments)
+    }, t);
+  }
+}
+
+export const download = (blob, fileName) => {
+  if (window.navigator.msSaveOrOpenBlob) {
+    //兼容IE10
+    navigator.msSaveBlob(blob, fileName)
+  } else {
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', fileName)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  }
+}
+
+
+
+

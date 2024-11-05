@@ -1,45 +1,57 @@
 package com.veadan.folib.controllers;
+
+import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.components.block.ArtifactBlockComponent;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.domain.CacheSettings;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.repositories.ArtifactRepository;
-import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.services.ArtifactManagementService;
+import com.veadan.folib.services.DictService;
+import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.utils.ArtifactControllerHelper;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.HandlerMapping;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.TimeZone;
 
 public abstract class BaseArtifactController
         extends BaseController {
 
     @Inject
     protected ArtifactManagementService artifactManagementService;
-
-    @Inject
-    private ArtifactRepository artifactRepository;
-
-    @Autowired
-    private ProxyRepositoryConnectionPoolConfigurationService clientPool;
 
     @Autowired
     private HttpServletResponse httpServletResponse;
@@ -51,7 +63,10 @@ public abstract class BaseArtifactController
     private ArtifactComponent artifactComponent;
 
     @Autowired
-    private ThreadPoolTaskExecutor asyncRepositoryThreadPoolExecutor;
+    private ArtifactBlockComponent artifactBlockComponent;
+
+    @Autowired
+    private DictService dictService;
 
 
     protected boolean provideArtifactDownloadResponse(HttpServletRequest request,
@@ -64,63 +79,46 @@ public abstract class BaseArtifactController
         if (response.isCommitted()) {
             return false;
         }
-
-        ArtifactControllerHelper.provideArtifactHeaders(response, repositoryPath);
-
+        Path path = getCachePath(repositoryPath);
+        ArtifactControllerHelper.provideArtifactHeaders(response, path);
         // If the resource is not found, return false.
         if (response.getStatus() == HttpStatus.NOT_FOUND.value()) {
             return false;
         }
-
         // If it's a HEAD request, return true.
         if (RequestMethod.HEAD.name().equals(request.getMethod())) {
             return true;
         }
+        SimpleDateFormat sdf = new SimpleDateFormat("E, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
+        sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
+        response.setHeader("Last-Modified", sdf.format(new Date()));
         long startTime = System.currentTimeMillis();
-        logger.debug("Download {} 开始时间 {}", repositoryPath.toString(), startTime);
-        artifactComponent.beforeRead(repositoryPath);
-
-        if(repositoryPath.toString().startsWith("s3://")){
-            try (InputStream is = artifactResolutionService.getInputStream(repositoryPath))
-            {
-                if (ArtifactControllerHelper.isRangedRequest(httpHeaders))
-                {
-                    logger.debug("Detected ranged request.");
-
-                    ArtifactControllerHelper.handlePartialDownload(is, httpHeaders, response);
-                }
-                else
-                {
+        logger.debug("Download [{}] 开始时间 [{}]", repositoryPath.toString(), startTime);
+        if (ArtifactControllerHelper.isRangedRequest(httpHeaders)) {
+            //分片
+            logger.debug("RepositoryPath [{}] Detected ranged request.", path.toString());
+            try (InputStream is = Files.newInputStream(path)) {
+                ArtifactControllerHelper.handlePartialDownload(is, httpHeaders, response);
+            }
+        } else if (path.toString().startsWith("s3://")) {
+            //S3
+            if (path instanceof RepositoryPath) {
+                try (InputStream is = artifactResolutionService.getInputStream((RepositoryPath) path)) {
                     copyToResponse(is, response);
                 }
             }
-        }else {
-            try (FileChannel fileChannel = FileChannel.open(repositoryPath)) {
-                WritableByteChannel responseChannel = Channels.newChannel(response.getOutputStream());
+        } else {
+            try (FileChannel fileChannel = FileChannel.open(path);
+                 WritableByteChannel responseChannel = Channels.newChannel(response.getOutputStream())) {
                 long fileSize = fileChannel.size();
-
-                // Handle partial content using ranges from httpHeaders and adjust the start and end accordingly.
-                if (ArtifactControllerHelper.isRangedRequest(httpHeaders)) {
-                    // adjust based on range from headers
-                    long start = 0;
-                    // adjust based on range from headers
-                    long end = fileSize - 1;
-                    long length = end - start + 1;
-
-                    response.setStatus(HttpStatus.PARTIAL_CONTENT.value());
-                    // Set appropriate Content-Range header values.
-                    response.setHeader("Content-Range", "bytes " + start + "-" + end + "/" + fileSize);
-
-                    fileChannel.transferTo(start, length, responseChannel);
-                    artifactComponent.afterRead(repositoryPath);
-                } else {
-                    fileChannel.transferTo(0, fileSize, responseChannel);
-                    artifactComponent.afterRead(repositoryPath);
+                for (long left = fileSize; left > 0; ) {
+                    logger.debug("RepositoryPath [{}] position [{}] left [{}]", path.toString(), fileSize - left, left);
+                    left -= fileChannel.transferTo((fileSize - left), left, responseChannel);
                 }
             }
         }
-
-        logger.debug("Download {} 结束时间 {}", repositoryPath.toString(), System.currentTimeMillis() - startTime);
+//        artifactComponent.afterRead(repositoryPath);
+        logger.debug("Download [{}] 结束时间 [{}]", repositoryPath.toString(), System.currentTimeMillis() - startTime);
         return true;
     }
 
@@ -139,35 +137,11 @@ public abstract class BaseArtifactController
         if (!supportLayout) {
             return null;
         }
-        String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
-        RepositoryPath artifactRepositoryPath = repositoryPath.getParent().resolve(fileName);
-        Artifact artifact = null;
-        long startTime = System.currentTimeMillis();
-        logger.debug("Block JSON {} 开始时间 {}", repositoryPath.toString(), startTime);
-        if (Files.exists(artifactRepositoryPath)) {
-            try (InputStream byteArrayInputStream = Files.newInputStream(artifactRepositoryPath);
-                 ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream)) {
-                artifact = (Artifact) objectInputStream.readObject();
-            } catch (Exception ex) {
-                logger.warn("解析制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
-            }
-        }
-        logger.debug("Block JSON {} 结束时间 {}", repositoryPath.toString(), System.currentTimeMillis() - startTime);
+        Artifact artifact = getArtifact(repositoryPath);
         if (Objects.isNull(artifact)) {
-            artifact = repositoryPath.getArtifactEntry();
-            if (Objects.isNull(artifact)) {
-                return null;
-            }
-            try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream)) {
-                objectOutputStream.writeObject(artifact);
-                byte[] byteArray = byteArrayOutputStream.toByteArray();
-                Files.write(artifactRepositoryPath, byteArray);
-            } catch (Exception ex) {
-                logger.warn("写入制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
-            }
+            return null;
         }
-        boolean block = artifactComponent.vulnerabilityBlock(artifact, repositoryPath.getRepository().getLayout());
+        boolean block = artifactBlockComponent.artifactBlockStrategy(artifact, repositoryPath.getRepository().getLayout());
         if (block) {
             httpServletResponse.setContentType(org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
             httpServletResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
@@ -190,10 +164,139 @@ public abstract class BaseArtifactController
 
     public boolean artifactRealExists(RepositoryPath repositoryPath) {
         try {
-            return Objects.nonNull(repositoryPath) && Files.exists(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry()) && Boolean.TRUE.equals(repositoryPath.getArtifactEntry().getArtifactFileExists());
+            if (Objects.isNull(repositoryPath)) {
+                return false;
+            }
+            repositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(repositoryPath));
+            return Files.exists(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry());
         } catch (Exception ex) {
             logger.error("判断制品是否存在发生错误：{}", ExceptionUtils.getStackTrace(ex));
             return false;
+        }
+    }
+
+    private Path getCachePath(RepositoryPath repositoryPath) {
+        if (Objects.isNull(repositoryPath)) {
+            return null;
+        }
+        Path path = repositoryPath;
+        String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId();
+        try {
+            CacheSettings cacheSettings = artifactComponent.getCacheConfig();
+            if (Objects.isNull(cacheSettings) || !cacheSettings.isEnabled()) {
+                return path;
+            }
+            Path cacheParentPath = Files.createDirectories(Paths.get(cacheSettings.getDirectoryPath()));
+            String sourcePath = repositoryPath.toString();
+            String prefix = String.format("/%s/%s/", storageId, repositoryId);
+            String targetSubPath = sourcePath.substring(sourcePath.indexOf(prefix) + 1);
+            Path targetPath = cacheParentPath.resolve(targetSubPath);
+            boolean existsCache = Files.exists(targetPath) && (RepositoryFiles.isArtifactChecksum(FilenameUtils.getName(targetPath.getFileName().toString())) || RepositoryFiles.validateChecksum(repositoryPath, targetPath) || DockerLayoutProvider.ALIAS.equals(repositoryPath.getRepository().getLayout()));
+            if (existsCache) {
+                logger.info("存在缓存 storageId [{}] repositoryId [{}]，源制品地址 [{}] 缓存制品地址 [{}]", storageId, repositoryId, sourcePath, targetPath.toString());
+                path = targetPath;
+//                artifactComponent.asyncHandlerArtifactCacheRecord(repositoryPath, cacheSettings, targetPath);
+            } else {
+                //不存在缓存，触发缓存事件
+                if (repositoryPath.toString().contains(MetadataHelper.MAVEN_METADATA_XML)) {
+                    return path;
+                }
+                artifactComponent.artifactCache(repositoryPath);
+            }
+        } catch (Exception ex) {
+            logger.warn("缓存制品 [{}] [{}] [{}] 错误 [{}]", storageId, repositoryId, repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
+        }
+        return path;
+    }
+
+    private Artifact getArtifact(RepositoryPath repositoryPath) throws IOException {
+        Artifact artifact = null;
+        if (Files.isSameFile(repositoryPath.getRoot(), repositoryPath)) {
+            return null;
+        }
+        String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
+        if (repositoryPath.getTarget() instanceof S3Path) {
+            CacheUtil<String, String> cacheUtil = CacheUtil.getInstance();
+            String cacheRootPathDir = cacheUtil.get("ARTIFACT_CACHE_ROOT_PATH");
+            if (StringUtils.isNotBlank(cacheRootPathDir)) {
+                Path cacheRootPath = Path.of(cacheRootPathDir);
+                String sourcePath = repositoryPath.toString();
+                String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId();
+                String prefix = String.format("/%s/%s/", storageId, repositoryId);
+                String targetSubPath = sourcePath.substring(sourcePath.indexOf(prefix) + 1);
+                Path cacheArtifactPath = cacheRootPath.resolve(targetSubPath);
+                Path cacheArtifactMetadataPath = cacheArtifactPath.getParent().resolve(fileName);
+                if (Files.exists(cacheArtifactMetadataPath)) {
+                    //获取metadata缓存文件
+                    artifact = parseArtifact(cacheArtifactMetadataPath);
+                }
+            }
+        }
+        if (Objects.isNull(artifact)) {
+            RepositoryPath artifactMetadataRepositoryPath = repositoryPath.getParent().resolve(fileName);
+            if (Files.exists(artifactMetadataRepositoryPath)) {
+                //获取metadata源文件
+                artifact = parseArtifact(artifactMetadataRepositoryPath);
+            }
+        }
+        if (Objects.isNull(artifact)) {
+            //查询图库
+            try {
+                artifact = repositoryPath.getArtifactEntry();
+                artifactComponent.storeArtifactMetadataFile(repositoryPath);
+            } catch (Exception ex) {
+                logger.warn("查询制品信息 [{}] 错误 [{}]", repositoryPath, ExceptionUtils.getStackTrace(ex));
+            }
+        }
+        return artifact;
+    }
+
+    private Artifact parseArtifact(Path path) {
+        Artifact artifact = null;
+        try (InputStream inputStream = Files.newInputStream(path);
+             ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
+            artifact = (Artifact) objectInputStream.readObject();
+        } catch (Exception ex) {
+            try {
+                Files.deleteIfExists(path);
+            } catch (Exception e) {
+
+            }
+            logger.warn("解析制品 [{}] 本地缓存.metadata文件错误 [{}]", path, ExceptionUtils.getStackTrace(ex));
+        }
+        return artifact;
+    }
+
+    /**
+     * 提取请求路径中为/**的内容
+     *
+     * @param request 请求
+     * @return 提取请求路径中为/**的内容
+     */
+    protected String getExtractPath(final HttpServletRequest request) {
+        String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
+        String bestMatchPattern = (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
+        return new AntPathMatcher().extractPathWithinPattern(bestMatchPattern, path);
+    }
+
+    /**
+     * 用户制品上传过程
+     * 获取仓库id方法 如果是组合库且配置了默认库 获取的是配置的默认id 否则获取的为仓库id
+     * @param repository 仓库对象
+     * @return 仓库id
+     */
+    @Deprecated
+    private String ifIsGroupAndStoreToDefault(Repository repository){
+        if(RepositoryTypeEnum.GROUP.getType().equals(repository.getType())&&StringUtils.isNotBlank(repository.getGroupDefaultRepository())){
+            String defaultRepository = repository.getGroupDefaultRepository();
+            String[] split = defaultRepository.split(":");
+            if(split.length==2){
+                return split[1];
+            }else {
+                return repository.getId();
+            }
+        }else {
+            return repository.getId();
         }
     }
 }

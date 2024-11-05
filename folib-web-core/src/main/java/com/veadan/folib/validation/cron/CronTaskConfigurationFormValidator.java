@@ -147,9 +147,6 @@ public class CronTaskConfigurationFormValidator
             }
 
             String autocompleteValue = definitionField.getAutocompleteValue();
-            if("storageDay".equals(definitionField.getName())){
-                continue;
-            }
 
             if (autocompleteValue != null)
             {

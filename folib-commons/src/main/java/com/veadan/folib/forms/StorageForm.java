@@ -33,6 +33,11 @@ public class StorageForm {
     private String admin;
 
     /**
+     * 存储配额
+     */
+    private Long storageMaxSize;
+
+    /**
      * 普通用户
      */
     private Set<String> users;

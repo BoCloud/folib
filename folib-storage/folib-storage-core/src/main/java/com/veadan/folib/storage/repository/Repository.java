@@ -46,6 +46,8 @@ public interface Repository {
 
     Set<String> getGroupRepositories();
 
+    String getGroupDefaultRepository();
+
     Set<String> getArtifactCoordinateValidators();
 
     Storage getStorage();
@@ -81,5 +83,8 @@ public interface Repository {
     boolean isAllowAnonymous();
 
     UnionRepositoryConfiguration getUnionRepositoryConfig();
+    boolean isSyncEnabled();
+
+    Boolean getHealthStatus();
 
 }

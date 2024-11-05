@@ -9,6 +9,7 @@ import javax.validation.constraints.NotEmpty;
 
 
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.veadan.folib.domain.RpmNamingPatterns.*;
 
@@ -36,30 +37,45 @@ public class RpmArtifactCoordinatesUtils
      */
     public static RpmArtifactCoordinates parse(@NotEmpty String path)
     {
-        String fileName = FilenameUtils.getName(path);
-        if (!fileName.endsWith(".rpm"))
+        String rpmFileName = FilenameUtils.getName(path);
+        if (!rpmFileName.endsWith(".rpm"))
         {
             throw new IllegalArgumentException("The artifact packaging can be only '.rpm'");
         }
 
-        String baseName = parseBaseName(fileName);
-        String version = parseVersion(fileName);
-        String release = parseRelease(fileName);
-        RpmPackageType packageType = parsePackageType(fileName);
+        // 正则表达式分为四部分：baseName, version, release, packageType
+        String regex = "^(.*?)-([^-]+)-([^-]+)\\.([^.]+)\\.rpm$";
 
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(rpmFileName);
 
-        RpmArtifactCoordinates artifactCoordinates;
-        if (packageType == RpmPackageType.SOURCE)
-        {
-            artifactCoordinates = new RpmArtifactCoordinates(baseName, version, release, packageType);
+        if (matcher.matches()) {
+            String baseName = matcher.group(1);
+            String version = matcher.group(2);
+            String release = matcher.group(3);
+            String type = matcher.group(4);
+            RpmArtifactCoordinates artifactCoordinates;
+            if (RpmPackageType.SOURCE.equals(type))
+            {
+                artifactCoordinates = new RpmArtifactCoordinates(baseName, version, release,path,RpmPackageType.SOURCE);
+            }
+            else
+            {
+                RpmPackageArch arch = parseArch(rpmFileName);
+                artifactCoordinates = new RpmArtifactCoordinates(baseName, version, release, RpmPackageType.valueOf(type.toUpperCase()), arch, path);
+            }
+
+            return artifactCoordinates;
+        } else {
+           throw new RuntimeException("The RPM filename does not match the expected format.");
         }
-        else
-        {
-            RpmPackageArch arch = parseArch(fileName);
-            artifactCoordinates = new RpmArtifactCoordinates(baseName, version, release, packageType, arch);
-        }
+        //String baseName = parseBaseName(fileName);
+        //String version = parseVersion(fileName);
+        //String release = parseRelease(fileName);
+        //RpmPackageType packageType = parsePackageType(fileName);
 
-        return artifactCoordinates;
+
+
     }
 
     private static String parseBaseName(String fileName)

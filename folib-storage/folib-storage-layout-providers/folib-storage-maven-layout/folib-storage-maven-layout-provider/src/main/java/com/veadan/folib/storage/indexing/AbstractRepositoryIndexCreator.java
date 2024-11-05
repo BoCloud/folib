@@ -31,31 +31,22 @@ public abstract class AbstractRepositoryIndexCreator
         final RepositoryPath repositoryIndexDirectoryPath = getRepositoryIndexDirectoryPathResolver().resolve(
                 repository);
 
-        final Lock lock = repositoryPathLock.lock(repositoryIndexDirectoryPath).writeLock();
-        try
+        if (repositoryPathLock.lock(repositoryIndexDirectoryPath))
         {
-            if (lock.tryLock(5, TimeUnit.SECONDS))
+            try (final RepositoryCloseableIndexingContext indexingContext = getRepositoryIndexingContextFactory().create(
+                    repository))
             {
-                try (final RepositoryCloseableIndexingContext indexingContext = getRepositoryIndexingContextFactory().create(
-                        repository))
-                {
-                    onIndexingContextCreated(repositoryIndexDirectoryPath, indexingContext);
-                }
-                finally
-                {
-                    lock.unlock();
-                }
+                onIndexingContextCreated(repositoryIndexDirectoryPath, indexingContext);
             }
-            else
+            finally
             {
-                throw new IndexLockedException(String.format("Index of repository [%s:%s] is currently locked.",
-                                                             repository.getStorage().getId(), repository.getId()));
+                repositoryPathLock.unLock(repositoryIndexDirectoryPath);
             }
         }
-        catch (InterruptedException e)
+        else
         {
-            Thread.currentThread().interrupt();
-            throw new IOException(e);
+            throw new IndexLockedException(String.format("Index of repository [%s:%s] is currently locked.",
+                                                         repository.getStorage().getId(), repository.getId()));
         }
 
         return repositoryIndexDirectoryPath;

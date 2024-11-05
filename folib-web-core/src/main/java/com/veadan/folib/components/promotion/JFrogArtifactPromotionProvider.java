@@ -1,27 +1,29 @@
 package com.veadan.folib.components.promotion;
 
+import com.alibaba.fastjson.JSON;
+import com.veadan.folib.components.layout.DockerComponent;
 import com.veadan.folib.configuration.UnionTargetRepositoryConfiguration;
 import com.veadan.folib.domain.ArtifactDispatch;
-import com.veadan.folib.dto.PromotionArtifactDto;
-import com.veadan.folib.dto.PromotionNodeOptionDto;
 import com.veadan.folib.dto.TargetDispatchRepositoryDto;
+import com.veadan.folib.entity.ArtifactSyncRecord;
 import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
-import com.veadan.folib.enums.PromotionStatusEnum;
+import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
 import com.veadan.folib.promotion.PromotionUtil;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.JFrogService;
+import com.veadan.folib.util.RepositoryPathUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.jfrog.artifactory.client.model.File;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.Map;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -41,7 +43,13 @@ public class JFrogArtifactPromotionProvider implements ArtifactPromotionProvider
     private RepositoryPathResolver repositoryPathResolver;
 
     @Inject
+    private DockerComponent dockerComponent;
+
+    @Inject
     private PromotionUtil promotionUtil;
+
+    @Inject
+    private ArtifactSyncRecordMapper artifactSyncRecordMapper;
 
     @PostConstruct
     @Override
@@ -52,59 +60,87 @@ public class JFrogArtifactPromotionProvider implements ArtifactPromotionProvider
     }
 
     @Override
-    public void promotion(RepositoryPath repositoryPath, String artifactPath, UnionTargetRepositoryConfiguration unionTargetRepositoryConfiguration) {
+    public List<String> promotion(RepositoryPath repositoryPath, String artifactPath, UnionTargetRepositoryConfiguration unionTargetRepositoryConfiguration) {
         String storageId = repositoryPath.getStorageId();
         String repositoryId = repositoryPath.getRepositoryId();
         artifactPath = artifactPath.replace(String.format("%s/%s/", storageId, repositoryId), "");
         log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 目标路径：{} 满足晋级条件，开始晋级", storageId, repositoryId, artifactPath, unionTargetRepositoryConfiguration.getNode(), unionTargetRepositoryConfiguration.getType(), unionTargetRepositoryConfiguration.getRepositoryId(), artifactPath);
-        File file = jFrogService.uploadItem(unionTargetRepositoryConfiguration.getNode(), unionTargetRepositoryConfiguration.getRepositoryId(), repositoryPath, artifactPath, true);
-        log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 目标路径：{} 晋级结果：{}", storageId, repositoryId, artifactPath, unionTargetRepositoryConfiguration.getNode(), unionTargetRepositoryConfiguration.getType(), unionTargetRepositoryConfiguration.getRepositoryId(), artifactPath, Objects.isNull(file) ? PromotionStatusEnum.FAIL.getStatus() : PromotionStatusEnum.SUCCESS.getStatus());
+        jFrogService.uploadItem(unionTargetRepositoryConfiguration.getNode(), unionTargetRepositoryConfiguration.getRepositoryId(), repositoryPath, artifactPath, true);
+        return null;
     }
 
     @Override
-    public void dispatch(ArtifactDispatch artifactDispatch) {
+    public List<String> dispatch(ArtifactDispatch artifactDispatch) {
         String storageId = artifactDispatch.getSrcStorageId();
         String repositoryId = artifactDispatch.getSrcRepositoryId();
         String artifactPath = artifactDispatch.getPath().replace(String.format("%s/%s/", storageId, repositoryId), ""), uploadArtifactPath = "";
-        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-        String srcArtifactPath = repositoryPath.getTarget().toString();
-        RepositoryPath uploadRepositoryPath;
-        PromotionArtifactDto promotionArtifactDto;
-        PromotionNodeOptionDto uploadDto;
+        RepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
         for (TargetDispatchRepositoryDto item : artifactDispatch.getTargetDispatchRepositoryList()) {
             log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{}", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId());
             try {
-                promotionArtifactDto = new PromotionArtifactDto(storageId, repositoryId,
-                        "", "", srcArtifactPath, "");
-                uploadDto = promotionUtil.getPromotionUploadDto(promotionArtifactDto);
-                if (Objects.isNull(uploadDto) || MapUtils.isEmpty(uploadDto.getPathMap())) {
+                List<RepositoryPath> list = RepositoryPathUtil.getPaths(rootRepositoryPath.getRepository().getLayout(), rootRepositoryPath);
+                if (CollectionUtils.isEmpty(list)) {
                     log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 未找到需要分发的制品数据", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId());
                     continue;
                 }
-                for (Map.Entry<String, Map<String, InputStream>> entry : uploadDto.getPathMap().entrySet()) {
-                    uploadRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, entry.getKey());
-                    if (!artifactRealExists(uploadRepositoryPath)) {
-                        log.warn("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 制品源文件[{}]未找到", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId(), entry.getKey());
+                for (RepositoryPath repositoryPath : list) {
+                    if (!artifactRealExists(repositoryPath)) {
+                        log.warn("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 制品源文件[{}]未找到", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId(), repositoryPath.toString());
                         continue;
                     }
-                    uploadArtifactPath = uploadRepositoryPath.getArtifactEntry().getArtifactPath().replace(String.format("%s/%s/", storageId, repositoryId), "");
+                    uploadArtifactPath = RepositoryFiles.relativizePath(repositoryPath);
                     log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 目标路径：{} 开始分发", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId(), uploadArtifactPath);
-                    File file = jFrogService.uploadItem(item.getDispatchClusterEnName(), item.getTargetRepositoryId(), uploadRepositoryPath, uploadArtifactPath, false);
-                    log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 目标路径：{} 分发结果：{}", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId(), uploadArtifactPath, Objects.isNull(file) ? PromotionStatusEnum.FAIL.getStatus() : PromotionStatusEnum.SUCCESS.getStatus());
-
+                    jFrogService.uploadItem(item.getDispatchClusterEnName(), item.getTargetRepositoryId(), repositoryPath, uploadArtifactPath, false);
                 }
             } catch (Exception ex) {
                 log.error("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 分发错误：{}", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId(), ExceptionUtils.getStackTrace(ex));
             }
         }
+        return null;
     }
 
     private boolean artifactRealExists(RepositoryPath repositoryPath) {
         try {
-            return Objects.nonNull(repositoryPath) && Files.exists(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry()) && Boolean.TRUE.equals(repositoryPath.getArtifactEntry().getArtifactFileExists());
+            return Objects.nonNull(repositoryPath) && Files.exists(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry());
         } catch (Exception ex) {
             log.error("判断制品是否存在发生错误：{}", ExceptionUtils.getStackTrace(ex));
             return false;
+        }
+    }
+
+    /**
+     * 重试
+     *
+     * @param syncNo 分发编号
+     */
+    @Override
+    public void retryDispatch(String syncNo) {
+        ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectBySyncNo(syncNo);
+        String storageId = artifactSyncRecord.getSourceStorageId();
+        String repositoryId = artifactSyncRecord.getSourceRepositoryId();
+        String artifactPath = artifactSyncRecord.getSourcePath().replace(String.format("%s/%s/", storageId, repositoryId), ""), uploadArtifactPath = "";
+        RepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        List<TargetDispatchRepositoryDto> targetDispatchRepositoryList = JSON.parseArray(artifactSyncRecord.getTargetPath(), TargetDispatchRepositoryDto.class);
+        for (TargetDispatchRepositoryDto item : targetDispatchRepositoryList) {
+            log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{}", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId());
+            try {
+                List<RepositoryPath> list = RepositoryPathUtil.getPaths(rootRepositoryPath.getRepository().getLayout(), rootRepositoryPath);
+                if (CollectionUtils.isEmpty(list)) {
+                    log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 未找到需要分发的制品数据", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId());
+                    continue;
+                }
+                for (RepositoryPath repositoryPath : list) {
+                    if (!artifactRealExists(repositoryPath)) {
+                        log.warn("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 制品源文件[{}]未找到", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId(), repositoryPath.toString());
+                        continue;
+                    }
+                    uploadArtifactPath = RepositoryFiles.relativizePath(repositoryPath);
+                    log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 目标路径：{} 开始分发", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId(), uploadArtifactPath);
+                    jFrogService.uploadItem(item.getDispatchClusterEnName(), item.getTargetRepositoryId(), repositoryPath, uploadArtifactPath, false);
+                }
+            } catch (Exception ex) {
+                log.error("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 分发错误：{}", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId(), ExceptionUtils.getStackTrace(ex));
+            }
         }
     }
 }

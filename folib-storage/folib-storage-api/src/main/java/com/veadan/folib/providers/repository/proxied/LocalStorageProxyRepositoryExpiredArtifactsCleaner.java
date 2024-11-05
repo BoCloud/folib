@@ -1,10 +1,7 @@
 package com.veadan.folib.providers.repository.proxied;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 import javax.inject.Inject;
 
@@ -56,14 +53,14 @@ public class LocalStorageProxyRepositoryExpiredArtifactsCleaner
             throws IOException
     {
         final Page<Artifact> artifactEntries = artifactEntityRepository.findMatching(lastAccessedTimeInDays, minSizeInBytes,
-                                                                                     PageRequest.of(0, Integer.MAX_VALUE));
+                                                                                     PageRequest.of(0, 1));
         List<Artifact> artifactsToDelete = filterAccessibleProxiedArtifacts(artifactEntries.toList());
         if (artifactsToDelete.isEmpty())
         {
             return;
         }
 
-        logger.info("Cleaning artifacts {}", artifactsToDelete);
+        logger.info("Cleaning artifacts {}", artifactsToDelete.size());
         deleteFromStorage(artifactsToDelete);
     }
 
@@ -79,7 +76,15 @@ public class LocalStorageProxyRepositoryExpiredArtifactsCleaner
         {
             final Artifact artifactEntry = it.next();
             final Storage storage = configurationManager.getConfiguration().getStorage(artifactEntry.getStorageId());
+            if (Objects.isNull(storage)) {
+                result.add(artifactEntry);
+                continue;
+            }
             final Repository repository = storage.getRepository(artifactEntry.getRepositoryId());
+            if (Objects.isNull(repository)) {
+                result.add(artifactEntry);
+                continue;
+            }
             if (!repository.isProxyRepository())
             {
                 continue;
@@ -107,11 +112,7 @@ public class LocalStorageProxyRepositoryExpiredArtifactsCleaner
     {
         for (final Artifact artifactEntry : artifactEntries)
         {
-            final Storage storage = configurationManager.getConfiguration().getStorage(artifactEntry.getStorageId());
-            final Repository repository = storage.getRepository(artifactEntry.getRepositoryId());
-            
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository).resolve(artifactEntry);
-
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactEntry.getStorageId(), artifactEntry.getRepositoryId(), artifactEntry.getArtifactPath());
             artifactManagementService.delete(repositoryPath, true);
         }
     }

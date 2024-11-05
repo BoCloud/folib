@@ -11,11 +11,45 @@
 	Chart.register(...registerables);
 
 	export default ({
-		props: [
-		],
+		props: {
+			data: {
+				type: Object,
+				default: function () {
+					return {
+						labels: ['A', 'B', 'C'],
+						datasets: [
+							{
+							label: "Projects",
+							weight: 9,
+							cutout: 0,
+							tension: 0.9,
+							pointRadius: 2,
+							borderWidth: 2,
+							backgroundColor: ['#52C41A', '#1890FF'],
+							data: [15, 20],
+							fill: false
+							}
+						],
+					}
+				}
+			},
+			height: {
+				type: Number,
+				default: 300,
+			},
+		},
+		watch: {
+			data: {
+				handler(newVal) {
+					if (this.chart) {
+						this.updateChart(newVal);
+					}
+				},
+				deep: true,
+			},
+		},
 		data(){
 			return {
-				height: 300,
 			} ;
 		},
 		mounted () { 
@@ -23,20 +57,7 @@
 
 			this.chart = new Chart(ctx, {
 				type: "pie",
-				data: {
-					labels: ['Facebook', 'Direct', 'Organic', 'Referral'],
-					datasets: [{
-						label: "Projects",
-						weight: 9,
-						cutout: 0,
-						tension: 0.9,
-						pointRadius: 2,
-						borderWidth: 2,
-						backgroundColor: ['#F5222D', '#B37FEB', '#141414', '#1890FF'],
-						data: [15, 20, 12, 60],
-						fill: false
-					}],
-				},
+				data: this.data,
 				options: {
 					responsive: true,
 					maintainAspectRatio: false,
@@ -75,6 +96,12 @@
 					},
 				},
 			});
+		},
+		methods: {
+			updateChart(newData) {
+				this.chart.data = newData;
+				this.chart.update();
+			}
 		},
 		// Right before the component is destroyed,
 		// also destroy the chart.

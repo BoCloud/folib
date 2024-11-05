@@ -36,6 +36,15 @@ public class MutableConfiguration
     private int port = 48080;
 
     /**
+     * 节点传输速率（KB/s）
+     */
+    private Integer kbps;
+    /**
+     * 节点传输切片大小（MB）
+     */
+    private Long sliceMbSize = 1024L;
+
+    /**
      * The global proxy settings to use when no per-repository proxy settings have been defined.
      */
     private MutableProxyConfiguration proxyConfiguration;
@@ -124,6 +133,22 @@ public class MutableConfiguration
 
     public void setPort(int port) {
         this.port = port;
+    }
+
+    public Integer getKbps() {
+        return kbps;
+    }
+
+    public void setKbps(Integer kbps) {
+        this.kbps = kbps;
+    }
+
+    public Long getSliceMbSize() {
+        return sliceMbSize;
+    }
+
+    public void setSliceMbSize(Long sliceMbSize) {
+        this.sliceMbSize = sliceMbSize;
     }
 
     public MutableProxyConfiguration getProxyConfiguration() {

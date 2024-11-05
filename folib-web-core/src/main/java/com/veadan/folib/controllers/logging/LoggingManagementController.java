@@ -26,6 +26,7 @@ import io.swagger.annotations.ApiResponses;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.input.Tailer;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.autoconfigure.logging.LogFileWebEndpointProperties;
 import org.springframework.boot.actuate.logging.LogFileWebEndpoint;
@@ -79,17 +80,9 @@ public class LoggingManagementController
     @Inject
     private Function<SseEmitter, SseEmitterAwareTailerListenerAdapter> tailerListenerAdapterPrototypeFactory;
 
-    private DirectoryListingService directoryListingService;
-
-    public DirectoryListingService getDirectoryListingService()
-    {
-        return Optional.ofNullable(directoryListingService).orElseGet(() -> {
-            String baseUrl = StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/");
-
-            return directoryListingService = new DirectoryListingServiceImpl(
-                    String.format("%s" + ROOT_CONTEXT, baseUrl));
-        });
-    }
+    @Inject
+    @Qualifier("browseRepositoryDirectoryListingService")
+    private volatile DirectoryListingService directoryListingService;
 
     @ApiOperation(value = "Used to download log data.")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "The log file was retrieved successfully."),
@@ -164,8 +157,8 @@ public class LoggingManagementController
                 return getBadRequestResponseEntity("Requested path is not a directory!", acceptHeader);
             }
 
-            DirectoryListing directoryListing = getDirectoryListingService().fromPath(logsBaseDir, requestedLogPath);
-            directoryListing.setFiles(directoryListing.getFiles().stream().filter(file -> file.getName().endsWith(".log")).collect(Collectors.toList()));
+            DirectoryListing directoryListing = directoryListingService.fromPath(logsBaseDir, requestedLogPath);
+            directoryListing.setFiles(directoryListing.getFiles().stream().filter(file -> file.getName().endsWith(".log") && !file.getName().startsWith("gc-")).collect(Collectors.toList()));
             if (acceptHeader != null && acceptHeader.contains(MediaType.APPLICATION_JSON_VALUE))
             {
                 return ResponseEntity.ok(objectMapper.writer().writeValueAsString(directoryListing));

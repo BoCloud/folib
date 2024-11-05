@@ -1,5 +1,7 @@
 package com.veadan.folib.providers.io;
 
+import cn.hutool.core.date.StopWatch;
+import cn.hutool.core.util.StrUtil;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.storage.repository.Repository;
 import org.apache.commons.io.output.ProxyOutputStream;
@@ -21,6 +23,7 @@ import java.nio.file.spi.FileSystemProvider;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This class decorates storage {@link FileSystemProvider}.
@@ -175,13 +178,13 @@ public abstract class StorageFileSystemProvider
             return;
         }
 
-        logger.info("Deleting hidden folders for [{}]", path);
+        logger.debug("Deleting hidden folders for [{}]", path);
 
         FileSystemUtils.deleteRecursively(unwrap(root).resolve(LayoutFileSystem.TEMP));
         FileSystemUtils.deleteRecursively(unwrap(root).resolve(LayoutFileSystem.TRASH));
         Files.delete(unwrap(root));
 
-        logger.info("Hidden folders deleted [{}]", path);
+        logger.debug("Hidden folders deleted [{}]", path);
 
     }
 
@@ -212,12 +215,14 @@ public abstract class StorageFileSystemProvider
                 try {
                     Files.delete(unwrap(dir));
                 } catch (DirectoryNotEmptyException e) {
-                    String message = Files.list(unwrap(dir))
+                    try (Stream<Path> pathStream = Files.list(unwrap(dir))) {
+                        String message = pathStream
                             .map(p -> p.getFileName().toString())
-                            .reduce((p1,
-                                     p2) -> String.format("%s%n%s", p1, p2))
-                            .get();
-                    throw new IOException(message, e);
+                                .reduce((p1,
+                                         p2) -> String.format("%s%n%s", p1, p2))
+                                .get();
+                        throw new IOException(message, e);
+                    }
                 }
 
                 return FileVisitResult.CONTINUE;
@@ -305,7 +310,8 @@ public abstract class StorageFileSystemProvider
 
     public RepositoryPath moveFromTemporaryDirectory(TempRepositoryPath tempPath)
             throws IOException {
-        logger.info("Moving [{}]", tempPath.getTarget());
+        long startTime = System.currentTimeMillis();
+        logger.debug("Moving [{}]", tempPath.getTarget());
         RepositoryPath path = tempPath.getTempTarget();
 
         if (!Files.exists(tempPath.getTarget())) {
@@ -324,7 +330,7 @@ public abstract class StorageFileSystemProvider
             Files.move(tempPath.getTarget(), path.getTarget(), StandardCopyOption.ATOMIC_MOVE);
         }
 
-
+        logger.debug("Moving finished [{}] task time [{}] ms", tempPath.getTarget(), System.currentTimeMillis() - startTime);
         //path.artifactEntry = tempPath.artifactEntry;
 
         return path;
@@ -356,7 +362,7 @@ public abstract class StorageFileSystemProvider
         RepositoryPath trashPath = rebase(path, trashBasePath);
 
         if (!Files.exists(trashPath.getParent().getTarget())) {
-            logger.info("Creating: [{}]", trashPath.getParent());
+            logger.debug("Creating: [{}]", trashPath.getParent());
 
             Files.createDirectories(trashPath.getParent().getTarget());
         }
@@ -472,21 +478,26 @@ public abstract class StorageFileSystemProvider
         if (!RepositoryPath.class.isInstance(path)) {
             return getTarget().readAttributes(path, attributes, options);
         }
-
         RepositoryPath repositoryPath = (RepositoryPath) path;
 
         Map<String, Object> result = new HashMap<>();
-        if (!attributes.startsWith(FOLIB_SCHEME)) {
-            result.putAll(getTarget().readAttributes(unwrap(path), attributes, options));
-            if (!attributes.equals("*")) {
-                return result;
-            }
+        String attributes1 = attributes.equals("*") ? "*" : Arrays.stream(attributes.split(",")).filter(d->d.startsWith(FOLIB_SCHEME)).collect(Collectors.joining(","));
+        String attributes2= attributes.equals("*") ? "*" : Arrays.stream(attributes.split(",")).filter(d->!d.startsWith(FOLIB_SCHEME)).collect(Collectors.joining(","));
+
+        if (!attributes2.isEmpty()) {
+            result.putAll(getTarget().readAttributes(unwrap(path), attributes2, options));
         }
+        //if (!attributes.startsWith(FOLIB_SCHEME)) {
+           // result.putAll(getTarget().readAttributes(unwrap(path), attributes2, options));
+            //if (!attributes.equals("*")) {
+            //    return result;
+            //}
+        //}
 
         Set<RepositoryFileAttributeType> targetRepositoryAttributes = new HashSet<>(
-                RepositoryFiles.parseAttributes(attributes));
+                RepositoryFiles.parseAttributes(attributes1));
 
-        final Map<RepositoryFileAttributeType, Object> repositoryFileAttributes = new HashMap<>();
+        final Map<RepositoryFileAttributeType, Object> repositoryFileAttributes = new HashMap<>(targetRepositoryAttributes.size()*2);
         for (Iterator<RepositoryFileAttributeType> iterator = targetRepositoryAttributes.iterator(); iterator.hasNext(); ) {
             RepositoryFileAttributeType repositoryFileAttributeType = iterator.next();
             Optional.ofNullable(repositoryPath.cachedAttributes.get(repositoryFileAttributeType))
@@ -499,22 +510,20 @@ public abstract class StorageFileSystemProvider
         if (!targetRepositoryAttributes.isEmpty()) {
             Map<RepositoryFileAttributeType, Object> newAttributes = getRepositoryFileAttributes(repositoryPath,
                     targetRepositoryAttributes.toArray(new RepositoryFileAttributeType[targetRepositoryAttributes.size()]));
-            newAttributes.entrySet()
-                    .stream()
-                    .forEach(e -> {
-                        repositoryFileAttributes.put(e.getKey(),
-                                e.getValue());
-                        repositoryPath.cachedAttributes.put(e.getKey(),
-                                e.getValue());
-                    });
+            newAttributes.forEach((key, value) -> {
+                repositoryFileAttributes.put(key,
+                        value);
+
+                repositoryPath.cachedAttributes.put(key,
+                        value);
+            });
         }
 
         result.putAll(repositoryFileAttributes.entrySet()
                 .stream()
                 .collect(Collectors.toMap(e -> e.getKey()
                                 .getName(),
-                        e -> e.getValue())));
-
+                        Map.Entry::getValue)));
         return result;
     }
 
@@ -616,9 +625,10 @@ public abstract class StorageFileSystemProvider
         }
 
         @Override
+        //为了展示回收站 去掉回收站判断&& !p.startsWith(root.resolve(LayoutFileSystem.TRASH)
         public boolean accept(Path p)
                 throws IOException {
-            if (p.isAbsolute() && !p.startsWith(root.resolve(LayoutFileSystem.TRASH))
+            if (p.isAbsolute()
                     && !p.startsWith(root.resolve(LayoutFileSystem.TEMP))) {
                 return delegate == null ? true : delegate.accept(p);
             }

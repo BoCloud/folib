@@ -1,7 +1,7 @@
 <template>
   <div class="wapper">
-    <p>组件信息</p>
-    <p>组件概览</p>
+    <p>{{ $t('Artifacts.ComponentInformation') }}</p>
+    <p>{{ $t('Artifacts.ComponentOverview') }}</p>
     <div class="graph">
       <div id="components" ref="components"></div>
     </div>
@@ -170,7 +170,7 @@ export default {
             }, next: 'inline' }} action="delete">-</text>
         </rect>
         <rect style={{ fill: ${color}, width: ${width + 24}, height: 2, x: 0, y: 22 }} />
-        
+
       </group>
     `;
         },
@@ -201,7 +201,7 @@ export default {
             }, next: 'inline' }} action="delete">-</text>
         </rect>
         <rect style={{ fill: ${color}, width: ${width + 24}, height: 2, x: 0, y: 32 }} />
-        
+
       </group>
     `;
         },

@@ -31,6 +31,7 @@ public abstract class AbstractMavenArtifactLocatorOperation
     {
     }
 
+    @Override
     public void execute(RepositoryPath direcotryPath)
             throws IOException
     {

@@ -31,6 +31,15 @@ export function putUserDetial (user) {
     data: user
   })
 }
+
+export function saveUser (user) {
+  return axios({
+    url: '/api/users',
+    method: 'put',
+    data: user
+  })
+}
+
 export function getUsersCreateFields () {
   return axios({
     url: '/api/formData/userFields',
@@ -44,7 +53,23 @@ export function delUser (username) {
   })
 }
 
+export function getUserToken (username,expireSeconds) {
+  return axios({
+    url: '/api/users/'+username+'/generate-security-token',
+    method: 'get',
+    query: {
+      'expireSeconds': expireSeconds
+    }
+   })
+}
 
+export function generateUserSecurityToken (data) {
+  return axios({
+    url: '/api/users/generate-current-security-token',
+    method: 'get',
+    params: data
+  })
+}
 
 
 

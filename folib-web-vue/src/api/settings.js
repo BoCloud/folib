@@ -116,13 +116,21 @@ export function globalSettingDelArtifactDispatchConfig(clusterEnName) {
   })
 }
 
-export function vulnerabilitiesDataUpdate() {
+export function vulnerabilitiesDataUpdate(params) {
   return axios({
     url: '/api/folibScanner/update',
-    method: 'get'
+    method: 'get',
+    params: params
   })
 }
 
+export function artifactScan(params) {
+  return axios({
+    url: '/api/folibScanner/scan',
+    method: 'get',
+    params: params
+  })
+}
 
 export function getDataIndexDump(param) {
   return axios({
@@ -145,5 +153,64 @@ export function getAllowAnonymous () {
   return axios({
     url: '/api/configuration/folib/allowAnonymous',
     method: 'get'
+  })
+}
+
+export function getArtifactSyncRecordPage(dataFilter){
+  return axios({
+    url: '/api/artifactSyncRecord/page?'+objToUrlQuery(dataFilter),
+    method: 'get'
+  })
+}
+
+function objToUrlQuery(obj) {
+  if (undefined !== obj && obj) {
+    return Object.keys(obj).map(k => k+"="+obj[k]).join("&")
+  }
+  return ""
+}
+
+export function getArtifactSyncRecordCount(){
+  return axios({
+    url: '/api/artifactSyncRecord/getCount/30',
+    method: 'get'
+  })
+}
+
+export function getStatusTrends(){
+  return axios({
+    url: '/api/artifactSyncRecord/getStatusTrends/30',
+    method: 'get'
+  })
+}
+
+export function fileSizeStatisticsByWarehouse(days, limitNumber){
+  return axios({
+    url: '/api/artifactSyncRecord/fileSizeStatisticsByWarehouse/'+days+'/'+limitNumber,
+    method: 'get',
+  })
+}
+
+export function getCrontaskByClass(params) {
+  return axios({
+    url: '/api/configuration/crontasks/getByClass',
+    method: 'get',
+    params: params
+  })
+}
+
+export function uploadLicenseFile(data){
+  return axios({
+    url: '/api/ping/offlineActivate',
+    method: 'post',
+    headers: {"Content-type": "multipart/form-data",},
+    data: data
+  })
+}
+
+export function restore (storageId,repositoryId,path) {
+  return axios({
+    url: '/api/browse/restore/'+storageId+'/'+repositoryId+'/'+path,
+    method: 'post'
   })
 }
