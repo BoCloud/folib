@@ -120,6 +120,12 @@ const typeList = [
         disabled:false
     },
     {
+        src:'images/folib/debian.svg',
+        type:'debian',
+        name:'Debian',
+        disabled:false,
+    },
+    {
         src:'images/folib/gems.svg',
         type:'gems',
         name:'Gems',

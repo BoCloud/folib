@@ -244,6 +244,10 @@ public class RepositoryPathUtil {
     }
 
     public static boolean include(int type, RepositoryPath repositoryPath, boolean isDockerLayout) throws IOException {
+       return include(type, repositoryPath, isDockerLayout, true);
+    }
+
+    public static boolean include(int type, RepositoryPath repositoryPath, boolean isDockerLayout, boolean filterArtifact) throws IOException {
         String name = repositoryPath.getFileName().toString();
         if (StringUtils.isBlank(name)) {
             return false;
@@ -264,7 +268,7 @@ public class RepositoryPathUtil {
         if (type == 1 && isDockerLayout && !name.startsWith("sha256")) {
             return false;
         }
-        if (type == 1 && !RepositoryFiles.isArtifact(repositoryPath)) {
+        if (filterArtifact && type == 1 && !RepositoryFiles.isArtifact(repositoryPath)) {
             return false;
         }
         return true;
