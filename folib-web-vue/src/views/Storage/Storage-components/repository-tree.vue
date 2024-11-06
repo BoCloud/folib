@@ -5,8 +5,9 @@
 **/
 <template>
     <div>
-        <div ref="tree_container" class="tree_container" :key="key" @scroll="handleScroll">
+        <div ref="tree_container" class="tree_container" @scroll="handleScroll">
             <a-tree 
+                :key="key"
                 class="repositoryTree"
                 ref="tree"
                 :replaceFields="replaceFields" 
@@ -15,6 +16,7 @@
                 :show-line="true"
                 @select="treeSelect" 
                 @expand="onExpand" 
+                @rightClick="rightClick"
                 show-icon
                 :selectedKeys="selectedKeys"
             >
@@ -41,6 +43,22 @@
             <!-- :tip="`${$t('Storage.Loading')}...`" -->
             <a-spin style="width:100%;" v-if="loadingMore"/>
         </div>
+        <!-- v-if='showContextMenu'  -->
+        <rightMenu
+            v-show="showContextMenu"
+            :style="contextMenuStyle"
+            :folibRepository="folibRepository" 
+            :repositoryType="repositoryType" 
+            :currentFileDetial="currentFileDetial" 
+            :uploadEnabled="uploadEnabled"
+            :copyEnabled='copyEnabled'
+            :dispatchEnabled="dispatchEnabled"
+            :moveEnabled="moveEnabled"
+            :deleteEnabled="deleteEnabled"
+            :currentTreeNode="currentTreeNode"
+            :isTrashView="isTrashView"
+            @reload="reload"
+        />
     </div>
 </template>
 <script>
@@ -50,10 +68,14 @@ import remote from './images/remote.svg'
 import remoteCheck from './images/remote-check.svg'
 import virtual from './images/virtual.svg'
 import virtualCheck from './images/virtual-check.svg'
-import { getDockerArtifact, browse, getArtifact } from '@/api/folib'
+import { getDockerArtifact, browse, getArtifact, getStorageAndRepositoryPermission } from '@/api/folib'
 import { getLayoutType } from '@/utils/layoutUtil'
-
+import rightMenu from './right-menu.vue'
+import { hasRole, isAdmin } from '@/utils/permission'
 export default {
+    components:{
+        rightMenu
+    },
     props: ['repositories','storageId'],
     data() {
         return {
@@ -68,7 +90,20 @@ export default {
             repositoryType:'',
             artifactPath:'',
             loadingMore:false,
-            selectedKeys:[]
+            selectedKeys:[],
+            currentFileDetial:{},
+            permissions:[],
+            uploadEnabled: false,
+            copyEnabled: false,
+            dispatchEnabled: false,
+            moveEnabled: false,
+            deleteEnabled: false,
+            showContextMenu: false,
+            currentTreeNode:{},
+            rightClickTop:'0px',
+            rightClickLeft:'0px',
+            enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm', 'go','GitLfs', 'pub','debian'],
+            isTrashView: false,
         };
     },
     computed: {
@@ -107,7 +142,14 @@ export default {
                 }
                 return icon
             }
-        }
+        },
+        contextMenuStyle() {
+            return {
+                position: 'fixed',
+                top: this.rightClickTop,
+                left: this.rightClickLeft,
+            }
+        },
     },
     watch: {
         repositories: {
@@ -133,6 +175,7 @@ export default {
                         ele.name = ele.id
                         ele.artifactPath = ''
                         ele.newDetailPage = true
+                        ele.treeType = 'root'
                     })
                     if(!this.treeData.length){
                         return
@@ -157,7 +200,33 @@ export default {
             }
         }
     },
+    mounted() {
+        document.addEventListener('click', this.closeContextMenu);
+    },
+    beforeDestroy() {
+        document.removeEventListener('click', this.closeContextMenu);
+    },
     methods: {
+        reload(){
+            console.log(123)
+            this.treeData = []
+            this.$emit('getDetailInfo',true,'repositoryTree')
+        },
+        setKeyValue(){
+            this.key ++
+        },
+        rightClick(e){
+            const {treeType} = e.node.dataRef
+            if(treeType !== 'root' && treeType !== 'lastRoot'){
+                this.showContextMenu = true
+                this.rightClickTop = `${e.event.clientY}px`;
+                this.rightClickLeft = `${e.event.clientX}px`;
+                this.currentTreeNode = e.node.dataRef;
+            }
+        },
+        closeContextMenu() {
+            this.showContextMenu = false;
+        },
         empty(){
             this.treeData = []
         },
@@ -177,7 +246,7 @@ export default {
         // 判断那些文件类型是可以打开的
         getFileIsOpen(name){
             const _name = name.toLowerCase()
-            const tarArr = ['.tar','.jar','.zip','.7z','.tar.gz']
+            const tarArr = ['.tar','.jar','.zip','.7z','.tar.gz','tgz']
             let key = false
             tarArr.forEach(ele => {
                 if(_name.indexOf(ele) !== -1){
@@ -226,6 +295,7 @@ export default {
             if(treeNode.dataRef.fileType === 'document'){
                 this.folibRepository = treeNode.dataRef
                 this.repositoryType = getLayoutType(this.folibRepository)
+                this.queryPermission()
             }
             const {storageId,id,layout} = this.folibRepository
             const {artifactPath,name} = treeNode.dataRef
@@ -325,9 +395,11 @@ export default {
                     id,
                     artifactPath
                 ).then(res => {
+                    this.currentFileDetial = res
                     function setNewDetailPage(arr){
                         arr.forEach(ele => {
                             ele.newDetailPage = true
+                            ele.treeType = 'lastRoot'
                             ele.key = ele.name
                             ele.artifactPath = `${id}/${artifactPath}/${ele.name}`
                             if(ele?.children?.length){
@@ -343,6 +415,27 @@ export default {
                     this.treeData = [...this.treeData]
                     resolve()
                 })
+            })
+        },
+        queryPermission() {
+            this.storageAdmin = ""
+            this.permissions = []
+            getStorageAndRepositoryPermission(
+                this.folibRepository.storageId,
+                this.folibRepository.id
+            ).then(res => {
+                this.storageAdmin = res.storageAdmin
+                this.permissions = res.permissions || []
+                this.uploadEnabled =
+                this.folibRepository.status.indexOf('Out of Service') === -1 &&
+                this.enablUploadedLayout.includes(this.folibRepository.layout) &&
+                (this.folibRepository.type === 'hosted' || (this.folibRepository.type === 'group' && this.folibRepository.groupDefaultRepository)) &&
+                (hasRole('ARTIFACTS_MANAGER') ||
+                this.permissions.includes('ARTIFACTS_DEPLOY'))
+                this.copyEnabled = this.folibRepository.type === 'hosted' && (hasRole('ARTIFACTS_MANAGER') || this.permissions.includes('ARTIFACTS_COPY'))
+                this.dispatchEnabled = this.folibRepository.type === 'hosted' && isAdmin()
+                this.moveEnabled = this.folibRepository.type === 'hosted' && (hasRole('ARTIFACTS_MANAGER') || this.permissions.includes('ARTIFACTS_MOVE'))
+                this.deleteEnabled = this.folibRepository.type !== 'group' && (hasRole('ARTIFACTS_MANAGER') || this.permissions.includes('ARTIFACTS_DELETE'))
             })
         },
     },

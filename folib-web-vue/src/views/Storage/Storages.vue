@@ -57,6 +57,7 @@
                 @treeSelect="treeSelect" 
                 @repositorySelect="repositorySelect" 
                 @expand="onExpand" 
+                @getDetailInfo="getDetailInfo"
                 :repositories="repositories" 
                 :storageId="currentStorage.id" 
             />
@@ -1369,10 +1370,13 @@ export default {
         this.$refs.libview.myMounted()
       }
     },
-    getDetailInfo(val){
-      const item = this.repositories[0]
-      storage.set("libView_repository", { item, baseUrl: this.baseUrl })
-      this.repositories = []
+    getDetailInfo(val,type){
+      console.log(val,type)
+      if(this.repositories.length){
+        const item = this.repositories[0]
+        storage.set("libView_repository", { item, baseUrl: this.baseUrl })
+        this.repositories = []
+      }
       this.$nextTick(() => {
         if(val){
           this.$refs.repositoryTree.loadingMoreShow(true)
@@ -1396,7 +1400,7 @@ export default {
           page: this.queryParams.page
         }
         // 获取切换模式后第一次加载的数据
-        this.getQueryStorage(params)
+        this.getQueryStorage(params,type)
       })
     },
     // 点击仓库
@@ -1786,12 +1790,15 @@ export default {
       this.queryParams.page = 1
       this.getStorage(this.currentStorage.id)
     },
-    getQueryStorage(queryParams){
+    getQueryStorage(queryParams,type){
       queryRepositoriesByStorage(queryParams).then(res => {
         this.switchDisabled = false
         if(res.status === 200){
           this.queryParams.total = res.data.total
           this.repositories = res.data.rows || []
+          if(type){
+            this.$refs.repositoryTree.setKeyValue()
+          }
         }
       })
     },
