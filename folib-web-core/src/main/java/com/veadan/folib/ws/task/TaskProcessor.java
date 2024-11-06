@@ -1,10 +1,12 @@
 package com.veadan.folib.ws.task;
 
 ;
+import cn.hutool.extra.spring.SpringUtil;
 import com.veadan.folib.ws.server.DistributionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
@@ -26,7 +28,8 @@ public class TaskProcessor {
     private final DistributionService distributionService;
     private final Sinks.Many<DistributionTask> sink;
     private final Scheduler ioScheduler;
-    private final int cpuCores;
+    //@Value("${folib.promotion.thread:4}")
+    private  int cpuCores;
 
     /**
      * TaskProcessor 构造函数
@@ -36,13 +39,15 @@ public class TaskProcessor {
      */
     @Autowired
     public TaskProcessor(DistributionService distributionService) throws NoSuchFieldException, IllegalAccessException {
+
+        cpuCores = SpringUtil.getProperty("folib.promotion.thread") == null ? 4 : Integer.parseInt(SpringUtil.getProperty("folib.promotion.thread"));
         this.distributionService = distributionService;
         //支持多个订阅者（多播），并且使用缓冲区来处理背压
         this.sink = Sinks.many().multicast().onBackpressureBuffer();
 
         //ToDo cpu核心数用于并发数量，并发数量固定后要考虑网络带宽，否则会出现网络带宽不足
         //cpuCores = Runtime.getRuntime().availableProcessors();
-        cpuCores = 4;
+        //cpuCores = 4;
         // 配置一个适用于 IO 密集型任务的 Scheduler
         //ioScheduler = Schedulers.fromExecutor(executor);
         ioScheduler = Schedulers.boundedElastic();

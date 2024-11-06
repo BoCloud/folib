@@ -3,6 +3,7 @@ package com.veadan.folib.ws.server;
 import cn.hutool.core.collection.CollectionUtil;
 import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
 import com.veadan.folib.util.CollectionUtils;
+import com.veadan.folib.ws.server.config.SemaphoreConfig;
 import com.veadan.folib.ws.task.DistributionTask;
 import com.veadan.folib.ws.task.OptimizedDynamicPriorityBlockingQueue;
 import org.slf4j.Logger;
@@ -25,7 +26,9 @@ public class DistributionService {
 
     private static final int MAX_SIZE = Runtime.getRuntime().availableProcessors();
 
-    public static final Semaphore semaphore = new Semaphore(4);
+    //public static final Semaphore semaphore = new Semaphore(4);
+    @Autowired
+    private SemaphoreConfig semaphoreConfig;
 
     /**
      * 创建优先级队列，使用自然排序
@@ -39,7 +42,7 @@ public class DistributionService {
      */
     public void addTask(DistributionTask task) {
         log.info("addTask: " + task.getTaskId() + " priority: " + task.getPriority());
-        log.info("当前的可用许可数量: " + semaphore.availablePermits());
+        log.info("当前的可用许可数量: " + semaphoreConfig.getSemaphore().availablePermits());
         queue.put(task, task.getTaskId());
         log.info("addTask queue size:{}: " ,queue.size());
     }
@@ -121,15 +124,15 @@ public class DistributionService {
      * @throws InterruptedException
      */
     public void acquire() throws InterruptedException {
-        semaphore.acquire();
-        log.info("当前的可用许可数量: " + semaphore.availablePermits());
+        semaphoreConfig.getSemaphore().acquire();
+        log.info("当前的可用许可数量: " + semaphoreConfig.getSemaphore().availablePermits());
     }
 
     /**
      * 释放信号量
      */
     public void release() {
-        semaphore.release();
-        log.info("当前的可用许可数量: " + semaphore.availablePermits());
+        semaphoreConfig.getSemaphore().release();
+        log.info("当前的可用许可数量: " + semaphoreConfig.getSemaphore().availablePermits());
     }
 }
