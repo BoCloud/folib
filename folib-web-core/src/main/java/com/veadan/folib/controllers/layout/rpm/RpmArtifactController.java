@@ -112,7 +112,7 @@ public class RpmArtifactController extends BaseArtifactController {
                                  @RequestParam("files") MultipartFile[] files,
                                  @RequestParam(name = "uuid", required = false) String uuid) {
         final String storageId = repository.getStorage().getId();
-        final String repositoryId = ifIsGroupAndStoreToDefault(repository);
+        final String repositoryId = repository.getId();
         try {
             for (MultipartFile multipartFile : files) {
                 if (multipartFile.isEmpty()) {

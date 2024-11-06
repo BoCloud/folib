@@ -103,7 +103,7 @@ public class PypiArtifactController extends BaseArtifactController {
             @RequestParam(name = "author_email", required = false) String authorEmail,
             @RequestParam(name = "content", required = true) MultipartFile file,
             HttpServletRequest request) {
-        String repositoryId=ifIsGroupAndStoreToDefault(repository);
+        String repositoryId= repository.getId();
         logger.info("python package upload request for storageId -> [{}] , repositoryId -> [{}]",
                 repository.getStorage().getId(),
                 repositoryId);

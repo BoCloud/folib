@@ -940,15 +940,19 @@ public class ArtifactComponent {
     public void storeArtifactMetadataFile(RepositoryPath repositoryPath) {
         try {
             if (Objects.nonNull(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry()) && Files.exists(repositoryPath)) {
+                Artifact artifact = repositoryPath.getArtifactEntry();
                 String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
                 RepositoryPath artifactRepositoryPath = repositoryPath.getParent().resolve(fileName);
                 try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                      ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream)) {
-                    objectOutputStream.writeObject(repositoryPath.getArtifactEntry());
+                    objectOutputStream.writeObject(artifact);
                     byte[] byteArray = byteArrayOutputStream.toByteArray();
                     Files.write(artifactRepositoryPath, byteArray);
                 } catch (Exception ex) {
                     log.warn("写入制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
+                }
+                if (StringUtils.isNotBlank(artifact.getMetadata())) {
+                    cacheArtifactMetadata(repositoryPath, artifact.getMetadata());
                 }
             }
         } catch (Exception ex) {
@@ -1259,6 +1263,37 @@ public class ArtifactComponent {
         String filename = FilenameUtils.getName(repositoryPath.getFileName().toString());
         String filePath = "." + filename + ".foLibrary-metadata/bom.json";
         return repositoryPath.resolveSibling(filePath);
+    }
+
+    public RepositoryPath getCacheArtifactMetadataPath(RepositoryPath repositoryPath) {
+        String artifactMetadataDirectoryName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + GlobalConstants.FO_LIBRARY_METADATA;
+        return repositoryPath.resolveSibling(artifactMetadataDirectoryName).resolve("metadata.json");
+    }
+
+    public String getCacheArtifactMetadata(RepositoryPath repositoryPath) {
+        String metadata = "";
+        try {
+            RepositoryPath cacheArtifactMetadataPath = getCacheArtifactMetadataPath(repositoryPath);
+            if (Objects.nonNull(cacheArtifactMetadataPath) && Files.exists(cacheArtifactMetadataPath)) {
+                metadata = Files.readString(cacheArtifactMetadataPath);
+                log.info("Cache artifact metadata path [{}] exists metadata [{}]", cacheArtifactMetadataPath, metadata);
+            }
+        } catch (Exception ex) {
+            log.error("GetCacheArtifactMetadata error [{}]", ExceptionUtils.getStackTrace(ex));
+        }
+        return metadata;
+    }
+
+    public void cacheArtifactMetadata(RepositoryPath repositoryPath, String metadata) {
+        try {
+            RepositoryPath cacheArtifactMetadataPath = getCacheArtifactMetadataPath(repositoryPath);
+            if (Objects.nonNull(cacheArtifactMetadataPath) && StringUtils.isNotBlank(metadata)) {
+                Files.writeString(cacheArtifactMetadataPath, metadata);
+                log.info("Cache artifact metadata path [{}] success metadata [{}]", cacheArtifactMetadataPath, metadata);
+            }
+        } catch (Exception ex) {
+            log.error("StoreArtifactMetadata error [{}]", ExceptionUtils.getStackTrace(ex));
+        }
     }
 
 }

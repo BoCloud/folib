@@ -450,7 +450,7 @@ public class NpmArtifactController
             return ResponseEntity.status(HttpStatus.OK).build();
         }
         final String storageId = repository.getStorage().getId();
-        final String repositoryId = ifIsGroupAndStoreToDefault(repository);
+        final String repositoryId = repository.getId();
         final String subLayout = repository.getSubLayout();
 
         logger.info("npm publish request for {}/{}/{}", storageId, repositoryId, name);

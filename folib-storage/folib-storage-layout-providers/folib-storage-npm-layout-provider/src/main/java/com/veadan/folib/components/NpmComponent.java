@@ -38,11 +38,15 @@ import org.springframework.util.Assert;
 import javax.inject.Inject;
 import java.io.*;
 import java.net.URL;
+import java.nio.CharBuffer;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.Base64;
 import java.util.Objects;
 
 /**
@@ -74,11 +78,14 @@ public class NpmComponent {
                 return null;
             }
             artifactPath = RepositoryFiles.relativizePath(repositoryPath);
-            String packageFeedJson = Files.readString(repositoryPath);
-            if (JSONUtil.isJson(packageFeedJson)) {
-                try (InputStream inputStream = new ByteArrayInputStream(packageFeedJson.getBytes())) {
-                    packageFeed = npmJacksonMapper.readValue(inputStream, PackageFeed.class);
-                }
+            //String packageFeedJson = Files.readString(repositoryPath);
+            //if (JSONUtil.isJson(packageFeedJson)) {
+            //    try (InputStream inputStream = new ByteArrayInputStream(packageFeedJson.getBytes())) {
+            //        packageFeed = npmJacksonMapper.readValue(inputStream, PackageFeed.class);
+            //    }
+            //}
+            try (InputStream inputStream = Files.newInputStream(repositoryPath)) {
+                packageFeed = npmJacksonMapper.readValue(inputStream, PackageFeed.class);
             }
         } catch (Exception ex) {
             log.warn("Npm storageId [{}] repositoryId [{}] artifactPath [{}] read packageFeed error [{}]", repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), artifactPath, ExceptionUtils.getStackTrace(ex));
@@ -297,8 +304,15 @@ public class NpmComponent {
         // 1. 解压到临时目录
         File tempDir = Files.createTempDirectory("har-extract").toFile();
         unTarGz(source.toFile().getPath(), tempDir.getPath());
-        String newJsonContent = Files.readString(Path.of(tempDir.getPath(), "/package/oh-package.json5"));
-        JSONObject version = npmJacksonMapper.readValue(newJsonContent, JSONObject.class);
+        JSONObject version = null;
+        try (InputStream inputStream = Files.newInputStream(Path.of(tempDir.getPath(), "/package/oh-package.json5"))) {
+            version = npmJacksonMapper.readValue(inputStream, JSONObject.class);
+        }
+        if (version == null){
+            throw new IllegalArgumentException("oh-package.json5 not found");
+        }
+        //String newJsonContent = Files.readString(Path.of(tempDir.getPath(), "/package/oh-package.json5"));
+        //JSONObject version = npmJacksonMapper.readValue(newJsonContent, JSONObject.class);
         version.put("_ohpmVersion", ohpmVersion);
         // 2. 修改文件
         File jsonFile = new File(tempDir, "/package/oh-package.json5");
@@ -413,7 +427,12 @@ public class NpmComponent {
                 return null;
             }
             artifactPath = RepositoryFiles.relativizePath(repositoryPath);
-            data = Files.readString(repositoryPath);
+            try (FileChannel fileChannel = FileChannel.open(repositoryPath, StandardOpenOption.READ)) {
+                MappedByteBuffer buffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileChannel.size());
+                CharBuffer charBuffer = StandardCharsets.UTF_8.decode(buffer);
+                data = charBuffer.toString();
+            }
+            //data = Files.readString(repositoryPath);
         } catch (Exception ex) {
             log.warn("Npm storageId [{}] repositoryId [{}] artifactPath [{}] read binary error [{}]", repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), artifactPath, ExceptionUtils.getStackTrace(ex));
         }

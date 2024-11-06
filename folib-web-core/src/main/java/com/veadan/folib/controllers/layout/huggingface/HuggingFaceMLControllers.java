@@ -338,7 +338,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                                              HttpServletRequest request,
                                              @PathVariable("modelName") String modelName,
                                              @PathVariable("oid") String oid) throws IOException {
-        String repositoryId=ifIsGroupAndStoreToDefault(repository);
+        String repositoryId = repository.getId();
         MlModelRequestContext context = MlModelRequestContext.builder()
                 .storageId(repository.getStorage().getId())
                 .repositoryId(repositoryId)

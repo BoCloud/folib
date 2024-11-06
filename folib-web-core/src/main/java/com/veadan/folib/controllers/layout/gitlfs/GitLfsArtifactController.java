@@ -80,7 +80,7 @@ public class GitLfsArtifactController extends BaseArtifactController {
                            HttpServletRequest request) {
         try {
             GitLfsJson gitLfsJson =gitLfsObjectMapper.readValue(request.getInputStream(), GitLfsJson.class);
-            String repositoryId=ifIsGroupAndStoreToDefault(repository);
+            String repositoryId= repository.getId();
             return gitLfsLocalService.lfsUploadResponse(repository.getStorage().getId(),repositoryId, gitLfsJson, request.getHeader("Authorization"));
         } catch (Exception e) {
             this.logger.error("Failed to parse request body into GitLfsBatchJson with an error: {}", e.getMessage());
@@ -98,7 +98,7 @@ public class GitLfsArtifactController extends BaseArtifactController {
                                    HttpServletRequest request) {
 
         final String storageId = repository.getStorage().getId();
-        final String repositoryId = ifIsGroupAndStoreToDefault(repository);
+        final String repositoryId = repository.getId();
         logger.info("Requested /{}/{}.", storageId, repositoryId);
         String auth = request.getHeader(HttpHeaders.AUTHORIZATION);
         GitLfsBatchRes res = UPLOAD.equals(req.getOperation()) ? setUploadRes(req, storageId, repositoryId, auth) : setDownloadRes(req, storageId, repositoryId);
@@ -114,7 +114,7 @@ public class GitLfsArtifactController extends BaseArtifactController {
                                     @PathVariable String path,
                                     HttpServletRequest request) {
         final String storageId = repository.getStorage().getId();
-        final String repositoryId = ifIsGroupAndStoreToDefault(repository);
+        final String repositoryId = repository.getId();
 
         try (InputStream is =  request.getInputStream()){
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
