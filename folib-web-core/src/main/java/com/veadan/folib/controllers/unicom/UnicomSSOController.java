@@ -380,7 +380,7 @@ public class UnicomSSOController extends BaseController {
     public UicomUserDetail getUserDetail(String loginName) {
         try {
             HttpHeaders header = getHeader();
-            String url = unicomConfig.getUserDetailUrl() + "?loginName=" + loginName;
+            String url =unicomConfig.getUserDetailUrl() + "?loginName=" + loginName;
             HttpEntity<String> entity = new HttpEntity<>(header);
             ResponseEntity<UicomUserDetail> response = restTemplate.exchange(url, HttpMethod.POST, entity, UicomUserDetail.class);
             if (response.getStatusCode() == HttpStatus.OK) {
