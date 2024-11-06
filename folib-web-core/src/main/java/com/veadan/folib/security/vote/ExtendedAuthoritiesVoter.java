@@ -5,6 +5,7 @@ import com.google.common.cache.CacheBuilder;
 import com.veadan.folib.authorization.domain.RoleData;
 import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
+import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
 import com.veadan.folib.controllers.BrowseController;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.Storage;
@@ -17,6 +18,7 @@ import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.utils.UrlUtils;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -104,13 +106,13 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
             Object principal = authentication.getPrincipal();
             Collection<? extends GrantedAuthority> apiAuthorities = authentication.getAuthorities();
             logger.debug("Privileges for [{}] are [{}]", principal, apiAuthorities);
+            String requestUri = parseRequestUri(UrlUtils.getRequestUri());
             if (!authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
                 if (!configurationManagementService.getConfiguration().getAdvancedConfiguration().isAllowAnonymous()) {
                     return Collections.emptySet();
                 }
                 Role anonymousRole = authoritiesProvider.getRuntimeRole(SystemRole.ANONYMOUS.name());
                 Set<Privileges> anonymousApiAuthorities = anonymousRole.getAccessModel().getApiAuthorities();
-                String requestUri = UrlUtils.getRequestUri();
                 List<String> paths = Arrays.asList(ARTIFACT_ROOT_PATH, DOCKER_ROOT_PATH, BrowseController.ROOT_CONTEXT, STORAGE_ROOT_PATH);
                 if (paths.stream().noneMatch(requestUri::startsWith)) {
                     return anonymousApiAuthorities;
@@ -136,7 +138,6 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
                 logger.warn("Unknown authentication principal type [{}]", principal.getClass());
                 return authentication.getAuthorities();
             }
-            String requestUri = UrlUtils.getRequestUri();
             List<String> paths = Arrays.asList(ARTIFACT_ROOT_PATH, DOCKER_ROOT_PATH, BrowseController.ROOT_CONTEXT, STORAGE_ROOT_PATH);
             if (paths.stream().noneMatch(requestUri::startsWith)) {
                 return apiAuthorities;
@@ -192,4 +193,14 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
         }
 
     }
+
+    private String parseRequestUri(String requestUri) {
+        try {
+            requestUri = UriUtils.decode(requestUri);
+        } catch (Exception ex) {
+            logger.error("Get requestUri error [{}]", ExceptionUtils.getStackTrace(ex));
+        }
+        return requestUri;
+    }
+
 }

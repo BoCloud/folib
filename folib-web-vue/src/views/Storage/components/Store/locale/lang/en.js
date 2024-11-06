@@ -97,6 +97,7 @@ export default {
     'Name': 'Name',
     'ThePath': 'The path',
     'FileSize': 'File size',
+    'ArtifactMaxSize': 'Artifact max size',
     'ModifyTheTime': 'Modify the time',
     'ImageName': 'Image name',
     'VersionNumber': 'Version number',

@@ -93,6 +93,7 @@ export default {
     'Name': '名称',
     'ThePath': '路径',
     'FileSize': '文件大小',
+    'ArtifactMaxSize': '制品大小限制',
     'ModifyTheTime': '修改时间',
     'ImageName': '镜像名称',
     'VersionNumber': '版本号',
