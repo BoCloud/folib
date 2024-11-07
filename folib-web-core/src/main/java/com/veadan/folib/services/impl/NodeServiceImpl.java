@@ -4,6 +4,8 @@ import com.veadan.folib.components.cassandra.CassandraComponent;
 import com.veadan.folib.components.node.NodeComponent;
 import com.veadan.folib.forms.node.CassandraClusterForm;
 import com.veadan.folib.services.NodeService;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Service;
  * @author leipenghui
  * @date 2022/11/1
  **/
+@Slf4j
 @Service
 public class NodeServiceImpl implements NodeService {
 
@@ -37,7 +40,11 @@ public class NodeServiceImpl implements NodeService {
 
     @Override
     public void modifyReplicationFactor(int replicationFactor) {
-        cassandraComponent.modifyReplicationFactor(replicationFactor);
+        try {
+            cassandraComponent.modifyReplicationFactor(replicationFactor);
+        } catch (Exception ex) {
+            log.error("Modify replication factor error [{}]", ExceptionUtils.getStackTrace(ex));
+        }
     }
 
     @Override
@@ -47,6 +54,10 @@ public class NodeServiceImpl implements NodeService {
 
     @Override
     public void modifyGcGraceSeconds(Integer seconds) {
-        cassandraComponent.modifyGcGraceSeconds(seconds);
+        try {
+            cassandraComponent.modifyGcGraceSeconds(seconds);
+        } catch (Exception ex) {
+            log.error("Modify gc grace seconds error [{}]", ExceptionUtils.getStackTrace(ex));
+        }
     }
 }

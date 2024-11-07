@@ -1,10 +1,13 @@
 package com.veadan.folib.components;
 
+import com.veadan.folib.cluster.ClusterProperties;
+import com.veadan.folib.cluster.FolibLockProperties;
 import com.veadan.folib.components.cassandra.CassandraComponent;
 import com.veadan.folib.config.janusgraph.JanusGraphDbProfile;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.UpgradeTaskStatusEnum;
+import com.veadan.folib.scanner.common.util.DateUtils;
 import com.veadan.folib.scanner.common.util.SpringContextUtil;
 import com.veadan.folib.scanner.service.ScanService;
 import com.veadan.folib.services.DictService;
@@ -20,10 +23,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * @author leipenghui
@@ -46,6 +46,12 @@ public class FolibApplicationRunner implements ApplicationRunner {
     @Lazy
     private DistributedCacheComponent distributedCacheComponent;
 
+    @Autowired
+    private FolibLockProperties ipProperties;
+
+    @Autowired
+    private ClusterProperties clusterProperties;
+
     @Override
     public void run(ApplicationArguments args) throws Exception {
         this.initData();
@@ -55,10 +61,11 @@ public class FolibApplicationRunner implements ApplicationRunner {
      * 初始化数据
      */
     private void initData() {
+        saveClusterNodes();
         initSystemPropertiesData();
-        int total = scanService.countProperties();
-        boolean isInit = total <= 1;
-        log.info("Table properties data total is [{}]", total);
+        Dict existsDict = dictService.selectLatestOneDict(Dict.builder().dictType(DictTypeEnum.INITIAL_INITIALIZATION.getType()).build());
+        boolean isInit = Objects.isNull(existsDict);
+        log.info("Is this the first initialization [{}]", isInit);
         if (isInit) {
             if (JanusGraphDbProfile.PROFILE_EMBEDDED.equals(System.getProperty(JanusGraphDbProfile.PROPERTY_PROFILE))) {
                 String clusterNodeTotal = System.getProperty("CLUSTER_NODE_TOTAL");
@@ -67,11 +74,12 @@ public class FolibApplicationRunner implements ApplicationRunner {
                     nodeService.modifyReplicationFactor(Integer.parseInt(clusterNodeTotal));
                 }
             }
+            dictService.saveOrUpdateDict(Dict.builder().dictType(DictTypeEnum.INITIAL_INITIALIZATION.getType()).dictKey(DateUtils.formatTime(new Date())).build(), true);
         }
         String gcGraceSeconds = System.getProperty(CassandraComponent.GC_GRACE_SECONDS_KEY, CassandraComponent.DEFAULT_GC_GRACE_SECONDS.toString());
         nodeService.modifyGcGraceSeconds(Integer.parseInt(gcGraceSeconds));
         handlerUnExecutedTask();
-        if (isInit) {
+        if (scanService.countProperties() <= 1) {
             //初始化漏洞库，耗时长，放到最后
             log.info("The initialization of vulnerability data begins ");
             scanService.updateMirror();
@@ -148,11 +156,31 @@ public class FolibApplicationRunner implements ApplicationRunner {
         List<Dict> dictList = dictService.selectDict(Dict.builder().dictType(DictTypeEnum.SYSTEM_PROPERTY.getType()).build());
         Optional.ofNullable(dictList).orElse(Collections.emptyList()).forEach(dict -> {
             if (StringUtils.isNotBlank(dict.getDictKey())) {
-                System.setProperty(dict.getDictKey(), dict.getDictValue());
-                distributedCacheComponent.put(dict.getDictKey(), dict.getDictValue());
-                log.info("Init System Properties Data key：{}, value：{}", dict.getDictKey(), dict.getDictValue());
+                try {
+                    System.setProperty(dict.getDictKey(), dict.getDictValue());
+                    distributedCacheComponent.put(dict.getDictKey(), dict.getDictValue());
+                    log.info("Init System Properties Data key [{}] value [{}]", dict.getDictKey(), dict.getDictValue());
+                } catch (Exception ex) {
+                    log.error("Init System Properties Data key [{}] value [{}] error [{}]", dict.getDictKey(), dict.getDictValue(), ExceptionUtils.getStackTrace(ex));
+                }
             }
         });
+    }
+
+    private void saveClusterNodes() {
+        try {
+            if (!clusterProperties.getOpenFlag()) {
+                return;
+            }
+            String currentNode = ipProperties.getFolibLockIp();
+            log.info("Cluster mode is enabled, current node is [{}]", currentNode);
+            Dict dict = dictService.selectOneDict(Dict.builder().dictType(DictTypeEnum.CLUSTER_NODES.getType()).dictKey(currentNode).build());
+            if (Objects.isNull(dict)) {
+                dictService.saveOrUpdateDict(Dict.builder().dictType(DictTypeEnum.CLUSTER_NODES.getType()).dictKey(currentNode).build(), true);
+            }
+        } catch (Exception ex) {
+            log.error("Save cluster nodes error [{}]", ExceptionUtils.getStackTrace(ex));
+        }
     }
 
 }
