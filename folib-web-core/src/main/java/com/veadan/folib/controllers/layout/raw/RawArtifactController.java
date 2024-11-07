@@ -95,29 +95,10 @@ public class RawArtifactController
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
         logger.info("Requested /{}/{}/{}.", storageId, repositoryId, path);
-
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
-        if (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath) && Files.isDirectory(repositoryPath)) {
-            String uuid = UUID.randomUUID().toString();
-            Path tempPaths = Paths.get(String.join("/", tempPath, uuid));
-            Files.createDirectories(tempPaths);
-            String baseDirPath = getLastDirectoryDirect(repositoryPath);
-            Path zipFilePath = Paths.get(String.join("/", tempPaths.toString(), baseDirPath + ".zip"));
-            zipDirectory(repositoryPath.toString(), zipFilePath.toString());
-            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + zipFilePath.getFileName().toString() + "\"");
-            response.setContentType("application/octet-stream");
-            copyToResponse(Files.newInputStream(Path.of(zipFilePath.toString())), response);
-            Files.walk(tempPaths)
-                    .sorted(Comparator.reverseOrder())
-                    .map(Path::toFile)
-                    .forEach(File::delete);
-        } else {
-            vulnerabilityBlock(repositoryPath);
-            provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
-        }
+        vulnerabilityBlock(repositoryPath);
+        provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
     }
-
-
 
     public  void zipDirectory(String sourceDirPath, String zipFilePath) throws IOException {
         Path sourceDir = Paths.get(sourceDirPath);
