@@ -181,14 +181,11 @@
                             <a-col :span="7">
                                 <div class="permissions-checkbox-container">
                                     <div class="permission-title">
-                                        <a-checkbox :indeterminate="groupIndeterminate" :checked="groupCheckAll"
-                                            @change="onGroupCheckAllChange">
-                                            {{ $t('Permissions.SelectedPermissions') }}
-                                        </a-checkbox>
+                                        {{ $t('Permissions.SelectedPermissions') }}
                                     </div>
-                                    <a-checkbox-group v-model="selectedGroupPermissions"
+                                    <a-checkbox-group v-model="selectedGroupPermissions "
                                         @change="handleGroupPermissionChange"
-                                        style="display: flex; flex-direction: column;">
+                                        style="display: flex; flex-direction: column;" >
                                         <a-checkbox v-for="option in permissionOptions" :key="option.value"
                                             :disabled="isView || isAdmin" :value="option.value">
                                             {{ option.label }}
@@ -454,10 +451,23 @@ export default {
             selectedUserPermissions: [],
             // 用户组右侧被复选框选中的值
             selectedGroupItems: [],
+            //查看/下载
+            //元数据
+            //部署/缓存
+            //删除/覆盖
+            //仓库管理
+
             permissionOptions: [
                 {
                     label: this.$t(`Permissions.Download`),
                     value: 'ARTIFACTS_RESOLVE',
+                    enabled: false,
+                    logo: 'download',
+                    desc: this.$t(`Permissions.DownloadDesc`)
+                },
+                {
+                    label: this.$t(`Permissions.Metadata`),
+                    value: 'CONFIGURATION_ADD_UPDATE_METADATA',
                     enabled: false,
                     logo: 'download',
                     desc: this.$t(`Permissions.DownloadDesc`)
@@ -475,6 +485,13 @@ export default {
                     enabled: false,
                     logo: 'deleteUpdate',
                     desc: this.$t(`Permissions.DeleteUpdateDesc`)
+                },
+                {
+                    label: this.$t(`Permissions.Manage`),
+                    value: 'ARTIFACTS_MANAGE',
+                    enabled: false,
+                    logo: 'deleteUpdate',
+                    desc: this.$t(`Permissions.ManageDesc`)
                 },
             ],
             userPermissions: {},

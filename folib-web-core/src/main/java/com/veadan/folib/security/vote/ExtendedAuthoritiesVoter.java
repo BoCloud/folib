@@ -6,6 +6,10 @@ import com.veadan.folib.authorization.domain.RoleData;
 import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.controllers.BrowseController;
+import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
@@ -35,6 +39,7 @@ import java.net.URI;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.veadan.folib.web.Constants.*;
 import static org.apache.cassandra.auth.Roles.getRoles;
@@ -55,6 +60,9 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
     @Lazy
     private AuthoritiesProvider authoritiesProvider;
 
+    @Autowired
+    @Lazy
+    protected ArtifactResolutionService artifactResolutionService;
     public ExtendedAuthoritiesVoter() {
         super(new ExpressionBasedPreInvocationAdvice());
     }
@@ -144,6 +152,23 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
             if (storageId == null || repositoryId == null) {
                 return apiAuthorities;
             }
+            String storeAndRepo=storageId+"/"+repositoryId+"/";
+            int index = requestUri.indexOf(storeAndRepo);
+            String relativePath="";
+            if(index!=-1){
+                relativePath=requestUri.substring(index+storeAndRepo.length());
+            }
+            RepositoryPath resolve=null;
+            try {
+                 resolve = artifactResolutionService.resolvePath(storageId, repositoryId, relativePath);
+                String[] split = requestUri.split("/");
+                split[2]=resolve.getStorageId();
+                split[3]=resolve.getRepositoryId();
+                requestUri= String.join("/", split);
+            } catch (Exception e) {
+                logger.error("err");
+            }
+
             SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
             Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(requestUri);
             if (storageAuthorities.isEmpty()) {
