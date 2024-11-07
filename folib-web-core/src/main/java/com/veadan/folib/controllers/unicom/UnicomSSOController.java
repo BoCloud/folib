@@ -97,7 +97,7 @@ public class UnicomSSOController extends BaseController {
     public static final Map<String ,Set<String>> layoutType=new HashMap<>();
     static {
         layoutType.put("raw",Set.of("**"));
-        layoutType.put("Maven 2",Set.of(".jar", ".war", ".pom"));
+        layoutType.put("maven 2",Set.of(".jar", ".war", ".pom"));
         layoutType.put("npm",Set.of(".tgz"));
         layoutType.put("rpm",Set.of(".rpm"));
         layoutType.put("docker",Set.of(".gz",".tar",".zip",".giz"));
@@ -337,6 +337,7 @@ public class UnicomSSOController extends BaseController {
     @GetMapping("/layout/type")
     public UnicomLayoutSupportVO getSupported(@RequestParam String layout){
         UnicomLayoutSupportVO supportVO = new UnicomLayoutSupportVO();
+        layout= layout.toLowerCase();
         Set<String> types = layoutType.get(layout);
         if(types==null||types.isEmpty()){
             supportVO.setSupported(false);
