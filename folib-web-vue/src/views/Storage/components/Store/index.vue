@@ -93,21 +93,7 @@
                             " />
                         </a>
                       </a-descriptions-item>
-                      <a-descriptions-item v-if="folibRepository.remoteRepository" :label="$t('Store.ProxyAddress')">
-                        <p class="copy-p">{{ folibRepository.remoteRepository.url }}</p>
-                      </a-descriptions-item>
-                      <a-descriptions-item class="group-descriptions" :label="$t('Store.GroupRepositories')"
-                        v-if="folibRepository.groupRepositories && folibRepository.groupRepositories.length > 0">
-                        <div class="group-repositories-container">
-                          <a-tooltip>
-                            <template slot="title">
-                              <div v-for="(repo, index) in folibRepository.groupRepositories" :key="index">{{ repo }}
-                              </div>
-                            </template>
-                            <p class="ellipsis-text"> {{ folibRepository.groupRepositories.join('\n') }}</p>
-                          </a-tooltip>
-                        </div>
-                      </a-descriptions-item>
+                      
                     </a-descriptions>
                   </div>
                 </a-col>

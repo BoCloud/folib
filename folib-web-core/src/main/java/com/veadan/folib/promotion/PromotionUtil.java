@@ -166,7 +166,7 @@ public class PromotionUtil {
     @Autowired
     private DistributionService distributionService;
 
-    private static final long MAX_SLICE_BYTE_SIZE = 1024L * 1024L * 100L;//100MB
+    private static final long MAX_SLICE_BYTE_SIZE =   100L;//100MB
 
     public void executeSyncCopy(RepositoryPath sourcePath, Repository srcRepository, RepositoryPath targetPath, Repository targetRepository) {
         try {
@@ -1342,9 +1342,10 @@ public class PromotionUtil {
     }
 
     private List<ArtifactSliceUploadHttpEntityBuilder> getArtifactSliceUploadHttpEntityList(Map<String, Map<String, RepositoryPath>> filePathMap, String storageId, String repositoryId, long chunkSize) {
-        if (chunkSize <= 0 || chunkSize > MAX_SLICE_BYTE_SIZE) {
-            chunkSize = MAX_SLICE_BYTE_SIZE;
-            log.info("chunkSize {} exceeds the maximum value {} , use MAX_SLICE_BYTE_SIZE {}", chunkSize, MAX_SLICE_BYTE_SIZE, MAX_SLICE_BYTE_SIZE);
+        Long globalSliceMb = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(MAX_SLICE_BYTE_SIZE) *1024L * 1024L;
+        if (chunkSize <= 0 || chunkSize > globalSliceMb) {
+            chunkSize = globalSliceMb;
+            log.info("chunkSize {} exceeds the maximum value {} , use MAX_SLICE_BYTE_SIZE {}", chunkSize, globalSliceMb, globalSliceMb);
         }
         long finalChunkSize = chunkSize;
         return filePathMap.values().stream().map(m -> {

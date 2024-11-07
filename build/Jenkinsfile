@@ -9,7 +9,7 @@ pipeline {
         string(name: 'hub_certificate', defaultValue: 'public-folib-key', description: 'Hub凭证')
         string(name: 'docker_repo', defaultValue: 'mufan/mufan-docker', description: '镜像仓库名称')
         string(name: 'docker_name', defaultValue: 'folib-server', description: '镜像名称')
-        string(name: 'dockerTag', defaultValue: '1.2.6.4', description: '镜像版本')
+        string(name: 'dockerTag', defaultValue: '1.2.7', description: '镜像版本')
         string(name: 'buildPackageType', defaultValue: 'k8s', description: '部署包名称')
         string(name: 'platform', defaultValue: 'linux/amd64', description: '支持linux/amd64')
         string(name: 'maven_settings_id', defaultValue: 'devops-settings-folib', description: 'maven-settings的id')
@@ -62,9 +62,10 @@ pipeline {
                             def gitCommit = sh(returnStdout: true, script: 'git rev-parse HEAD').trim()
                             echo "${gitCommit}"
                             docker.withRegistry("${params.dockerUrl}", "${params.hub_certificate}") {
+                                def timestamp = new Date().format('yyyyMMddHHmm')
                                 def dockerRegistryHost = params.dockerUrl.replaceAll('https?://', '')
                                 def tag = "${params.dockerTag}" as Object
-                                def dockerTagWithRegistry = "${dockerRegistryHost}/${params.docker_repo}/${params.docker_name}:" + tag
+                                def dockerTagWithRegistry = "${dockerRegistryHost}/${params.docker_repo}/${params.docker_name}:" + tag +  "-" + timestamp
                                 sh "docker-buildx create --use --driver-opt=network=host --name=mybuilder-cn --driver docker-container --driver-opt image=dockerpracticesig/buildkit:master"
                                 sh "docker-buildx build -t ${dockerTagWithRegistry} -f Dockerfile --build-arg PACKAGE_TYPE=${params.buildPackageType} --platform ${params.platform} . --push"
                             }
