@@ -451,6 +451,10 @@ export default {
       this.isShowEdit = (isAdmin() || this.storageAdmin === this.$store.state.user.name)
       this.isShowDelete = (isAdmin() || this.storageAdmin === this.$store.state.user.name) && (this.folibRepository.allowsDeletion || this.folibRepository.allowsForceDeletion)
     },
+    handleMenuClickTree(active,currentTreeNode){
+      console.log(active)
+      this.$refs.store.handleMenuClickTree(active,currentTreeNode)
+    },
     treeSelect(key,e){
       this.$refs.store.treeSelect(key, e)
     },

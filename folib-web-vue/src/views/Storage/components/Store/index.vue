@@ -2021,6 +2021,10 @@ export default {
       }
 
     },
+    handleMenuClickTree(active,currentTreeNode){
+      this.currentTreeNode = currentTreeNode
+      this.handleMenuClick(active)
+    },
     handleMenuClick(active) {
       this.operationForm.resetFields()
       this.isTargetPatDisabled = this.folibRepository.layout !== 'Raw';

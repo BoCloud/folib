@@ -63,8 +63,9 @@ export default {
                 this.deletePackageHandle()
             }
         },
-        handleMenuClick(){
-
+        // 右键菜单选择操作
+        handleMenuClick(active){
+            this.$emit('handleMenuClick',active)
         },
         deletePackageHandle() {
             deleteArtifact(

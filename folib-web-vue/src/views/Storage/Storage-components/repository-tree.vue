@@ -58,6 +58,7 @@
             :currentTreeNode="currentTreeNode"
             :isTrashView="isTrashView"
             @reload="reload"
+            @handleMenuClick="handleMenuClick"
         />
     </div>
 </template>
@@ -76,7 +77,7 @@ export default {
     components:{
         rightMenu
     },
-    props: ['repositories','storageId'],
+    props: ['repositories','storageId','isTrashView'],
     data() {
         return {
             treeData: [],
@@ -103,7 +104,6 @@ export default {
             rightClickTop:'0px',
             rightClickLeft:'0px',
             enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm', 'go','GitLfs', 'pub','debian'],
-            isTrashView: false,
         };
     },
     computed: {
@@ -198,6 +198,9 @@ export default {
                 this.empty()
                 this.loadingMoreShow(true)
             }
+        },
+        isTrashView(){
+            this.reload()
         }
     },
     mounted() {
@@ -208,9 +211,12 @@ export default {
     },
     methods: {
         reload(){
-            console.log(123)
             this.treeData = []
             this.$emit('getDetailInfo',true,'repositoryTree')
+        },
+        // 右键菜单选择操作
+        handleMenuClick(active){
+            this.$emit('handleMenuClick',active,this.currentTreeNode)
         },
         setKeyValue(){
             this.key ++
@@ -324,14 +330,22 @@ export default {
                     ).then(res => {
                         treeNode.dataRef.children = []
                         if (res.directories.length > 0) {
-                            const d = res.directories
+                            let f = res.directories
+                            if(res.directories.some(ele => ele.name === '.trash')){
+                                if(this.isTrashView){
+                                    f = res.directories.filter(ele => ele.name === '.trash')
+                                }else{
+                                    f = res.directories.filter(ele => ele.name !== '.trash')
+                                }
+                            }
+                            const d = f
                             d.forEach((item, index, d) => {
                                 item.type = 'dir'
                                 item.key = id + item.artifactPath
                                 treeNode.dataRef.children.push(item)
                             })
                         }
-                        if (res.files.length > 0) {
+                        if (res.files.length > 0 && !this.isTrashView) {
                             const a = res.files
                             a.forEach((item, index, a) => {
                                 item.isLeaf = !this.getFileIsOpen(item.name)
@@ -360,14 +374,22 @@ export default {
                         treeNode.dataRef.children = []
                     }
                     if (res.directories.length > 0) {
-                        const d = res.directories
+                        let f = res.directories
+                        if(res.directories.some(ele => ele.name === '.trash')){
+                            if(this.isTrashView){
+                                f = res.directories.filter(ele => ele.name === '.trash')
+                            }else{
+                                f = res.directories.filter(ele => ele.name !== '.trash')
+                            }
+                        }
+                        const d = f
                         d.forEach((item, index, d) => {
                             item.type = 'dir'
                             item.key = id + item.artifactPath
                         })
                         treeNode.dataRef.children = d
                     }
-                    if (res.files.length > 0) {
+                    if (res.files.length > 0 && !this.isTrashView) {
                         const a = res.files
                         a.forEach((item, index, a) => {
                             item.isLeaf = !this.getFileIsOpen(item.name)

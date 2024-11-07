@@ -42,6 +42,13 @@
                     <h3 v-if="$store.state.user.roles.indexOf('ADMIN') > -1" class="font-semibold text-muted mb-0"
                       @click="createHandleView">+</h3>
                   </a>
+                  <a class="text-center text-muted font-bold" v-if="isChecked" style="margin-right:8px;">
+                    <h5 class="font-semibold text-muted mb-0"
+                      @click="toggleTree">
+                        <a-icon v-if="isTrashView" type="delete" />
+                        <a-icon v-else type="file-zip" />
+                    </h5>
+                  </a>
                   <a class="text-center text-muted font-bold" v-if="isChecked">
                     <h3 class="font-semibold text-muted mb-0"
                       @click="folibVisibleShow">+</h3>
@@ -54,11 +61,13 @@
                 ref="repositoryTree" 
                 v-if="isChecked" 
                 @loadMore="loadMore" 
+                @handleMenuClick="handleMenuClickTree"
                 @treeSelect="treeSelect" 
                 @repositorySelect="repositorySelect" 
                 @expand="onExpand" 
                 @getDetailInfo="getDetailInfo"
                 :repositories="repositories" 
+                :isTrashView="isTrashView"
                 :storageId="currentStorage.id" 
             />
             <!-- 存储列表 -->
@@ -131,13 +140,13 @@
           </a-tab-pane>
         </a-tabs>
         <!-- 存储空间模式下 直接展示仓库内容 -->
-        <LibView v-else
+        <LibView 
+          v-else
           :key="libViewKey"
           ref="libview" 
           :storageAdmin="currentStorage.admin" 
           :style="isChecked ? 'margin-top:-135px;' : ''" style="border:none;transition: all 0.5s ease;" 
           :isChecked="isChecked" 
-          @handleMenuClick="handleMenuClick"
         />
       </a-col>
     </a-row>
@@ -1239,8 +1248,9 @@ export default {
         storageProvider: "local",
         trashEnabled: true,
         type: "hosted",
-        syncEnabled: false
+        syncEnabled: false,
       },
+      isTrashView: false,
       boards: [
         {
           id: "folibHub",
@@ -1400,6 +1410,12 @@ export default {
         }
         // 获取切换模式后第一次加载的数据
         this.getQueryStorage(params,type)
+      })
+    },
+    // 右键菜单选择操作
+    handleMenuClickTree(active,currentTreeNode){
+      this.$nextTick(() => {
+          this.$refs.libview.handleMenuClickTree(active,currentTreeNode)
       })
     },
     // 点击仓库
@@ -1764,7 +1780,7 @@ export default {
       this.getStorage(this.currentStorage.id)
     },
     loadMore(total){
-      if(total !== this.queryParams.total){
+      if(total !== this.queryParams.total && !this.$refs.loadingMore){
         this.$refs.repositoryTree.loadingMoreShow(true)
         this.queryParams.page ++
         console.log('滚动加载...')
@@ -1906,6 +1922,9 @@ export default {
         this.boards[0].tasks = tasksObj.enableSelect
         this.boards[1].tasks = tasksObj.isSelect
       })
+    },
+    toggleTree(){
+      this.isTrashView = !this.isTrashView
     },
     folibVisibleShow() {
       checkMachineCode().then(res => {
