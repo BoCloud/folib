@@ -144,6 +144,7 @@
           v-else
           :key="libViewKey"
           ref="libview" 
+          @handleMenuClick="handleMenuClick"
           :storageAdmin="currentStorage.admin" 
           :style="isChecked ? 'margin-top:-135px;' : ''" style="border:none;transition: all 0.5s ease;" 
           :isChecked="isChecked" 
@@ -1368,6 +1369,10 @@ export default {
       return this.$store.state.language.lang
     },
   },
+  mounted(){
+    this.$store.commit('setNewDetailPage',true)
+    this.$store.commit('setNewDetailPage',false)
+  },
   methods: {
     // 展示存储概览
     showOverview(val){
@@ -1812,7 +1817,9 @@ export default {
           this.queryParams.total = res.data.total
           this.repositories = res.data.rows || []
           if(type){
-            this.$refs.repositoryTree.setKeyValue()
+            if(this.$refs.repositoryTree){
+              this.$refs.repositoryTree.setKeyValue()
+            }
           }
         }
       })

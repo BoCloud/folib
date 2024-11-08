@@ -476,6 +476,7 @@
           <hr class="gradient-line" />
           <BaseData 
               ref="BaseData"
+              :key="pageKey"
               :isChecked="isChecked" 
               :currentTreeNode="currentTreeNode" 
               :repositoryType="repositoryType"
@@ -1290,7 +1291,8 @@ export default {
 	    packageExpandedKeys: [],
 	    packageLoadedKeys: [],
 	    restoreTitle: null,
-	    showRestoreForm: false
+	    showRestoreForm: false,
+      pageKey:0
     }
   },
   computed: {
@@ -1316,7 +1318,7 @@ export default {
   watch:{
     currentTreeNode(val){
       console.log(val,'watch currentTreeNode');
-      
+      this.pageKey ++
     } 
   },
   created () {
