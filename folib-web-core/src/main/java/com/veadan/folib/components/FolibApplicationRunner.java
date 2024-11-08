@@ -61,7 +61,6 @@ public class FolibApplicationRunner implements ApplicationRunner {
      * 初始化数据
      */
     private void initData() {
-        saveClusterNodes();
         initSystemPropertiesData();
         Dict existsDict = dictService.selectLatestOneDict(Dict.builder().dictType(DictTypeEnum.INITIAL_INITIALIZATION.getType()).build());
         boolean isInit = Objects.isNull(existsDict);

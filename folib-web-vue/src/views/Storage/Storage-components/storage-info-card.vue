@@ -95,6 +95,15 @@
                                 </a-select-option>
                             </a-select>
                         </a-form-item>
+                        <a-form-item>
+                            <a-input-search
+                                class="v-search"
+                                style="width:160px;"
+                                v-model="queryParams.name" 
+                                @search="search"
+                                :placeholder="$t('Storage.RepositoryNameQuery')"
+                            />
+                        </a-form-item>
                     </a-form>
                 </a-col>
                 <a-col :span="4" style="display: flex; align-items: center; justify-content: flex-end;">
@@ -152,6 +161,7 @@ export default {
         return {
             queryParams:{
                 storageId:'',
+                name: undefined,
                 layout: undefined,
                 type: undefined,
                 limit:1000,
@@ -178,6 +188,7 @@ export default {
         emptyQuery(){
             this.queryParams.layout = undefined
             this.queryParams.type = undefined
+            this.queryParams.name = undefined
         },
         search(){
             this.handheTableSearch()

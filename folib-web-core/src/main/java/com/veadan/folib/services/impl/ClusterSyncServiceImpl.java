@@ -93,7 +93,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
             return;
         }
         logger.info("Sync storage");
-        getHostNodeListV2().forEach(nodeUrl -> {
+        getHostNodeList().forEach(nodeUrl -> {
             handleSyncStorage(syncStorageDto.getStorageId(), syncStorageDto, nodeUrl, false);
         });
 
@@ -107,7 +107,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
             return;
         }
         logger.info("Sync securityPolicyConfiguration");
-        getHostNodeListV2().forEach(nodeUrl -> {
+        getHostNodeList().forEach(nodeUrl -> {
             handleSyncSecurityPolicyConfiguration(mutableSecurityPolicyConfiguration, nodeUrl, false);
         });
     }
@@ -182,7 +182,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
             return;
         }
         logger.info("Sync metadataConfiguration");
-        getHostNodeListV2().forEach(nodeUrl -> {
+        getHostNodeList().forEach(nodeUrl -> {
             handleSyncMetadataConfiguration(syncMetadataDto, nodeUrl, false);
         });
     }
@@ -237,7 +237,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
         }
 
         logger.info("Sync repository");
-        getHostNodeListV2().forEach(nodeUrl -> {
+        getHostNodeList().forEach(nodeUrl -> {
             handleSyncRepository(syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryId(),
                     syncRepositoryDto, nodeUrl, false);
         });
@@ -251,7 +251,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
             return;
         }
         logger.info("Sync cron job");
-        getHostNodeListV2().forEach(nodeUrl -> {
+        getHostNodeList().forEach(nodeUrl -> {
             handleSyncCronJob(syncCronJobDto, nodeUrl, false);
         });
     }
@@ -264,7 +264,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
             return;
         }
         logger.info("Sync cluster dispatch job");
-        getHostNodeListV2().forEach(nodeUrl -> {
+        getHostNodeList().forEach(nodeUrl -> {
             handleSyncClusterDispatch(syncClusterDispatchDto, nodeUrl, false);
         });
     }
@@ -352,7 +352,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
             return;
         }
         logger.info("Sync authorization");
-        getHostNodeListV2().forEach(nodeUrl -> {
+        getHostNodeList().forEach(nodeUrl -> {
             handleSyncAuthorization(syncAuthorizationDto, nodeUrl, false);
         });
     }
@@ -365,7 +365,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
             return;
         }
         logger.info("Sync Webhook");
-        getHostNodeListV2().forEach(nodeUrl -> {
+        getHostNodeList().forEach(nodeUrl -> {
             handleSyncWebhookConfiguration(syncWebhookDto, nodeUrl, false);
         });
     }
@@ -378,7 +378,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
             return;
         }
         logger.info("Sync unionRepository job");
-        getHostNodeListV2().forEach(nodeUrl -> {
+        getHostNodeList().forEach(nodeUrl -> {
             handleSyncUnionRepositoryConfiguration(syncUnionRepositoryDto, nodeUrl, false);
         });
     }
@@ -391,7 +391,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
             return;
         }
         logger.info("Sync serverSettings job");
-        getHostNodeListV2().forEach(nodeUrl -> {
+        getHostNodeList().forEach(nodeUrl -> {
             handleSyncServerSettingsConfiguration(syncServerSettingsDto, nodeUrl, false);
         });
     }
@@ -403,7 +403,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
             return;
         }
         logger.info("Sync Ldap job");
-        getHostNodeListV2().forEach(nodeUrl -> {
+        getHostNodeList().forEach(nodeUrl -> {
             handleSyncLdapConfiguration(syncLdapDto, nodeUrl, false);
         });
     }
@@ -712,7 +712,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
             logger.info("Cluster mode not opened");
             return false;
         }
-        if (getHostNodeListV2().size() == 0) {
+        if (getHostNodeList().size() == 0) {
             logger.info("No valid node is found in cluster mode");
             return false;
         }
