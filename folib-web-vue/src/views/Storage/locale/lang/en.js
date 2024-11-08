@@ -241,5 +241,6 @@ export default {
     'RepositoryInfo':'Repository info',
     'packageTypeQuery':'Select package type search',
     'StrategyTypeQuery':'Select strategy type search',
+    'RepositoryNameQuery':'Enter the Repository Name search',
     'Loading':'Loading more'
 }
