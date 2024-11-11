@@ -77,7 +77,7 @@
                 </div>
             </a-table>
         </a-card>
-        <CreateModal ref="modal" @reset="searchPermissions"></CreateModal>
+        <CreateModal  ref="modal" @reset="searchPermissions"></CreateModal>
     </div>
 </template>
 <script>

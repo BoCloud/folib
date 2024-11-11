@@ -107,6 +107,7 @@ export default {
     'PermissionsDesc': '选择资源对应权限',
     'Description': '权限描述',
     'SelectResources': '选择资源',
+    'ManageDesc':'仓库管理权限',
     'ResourceName': '资源名称',
     'Type': '资源类型',
     'Path': '路径',
@@ -118,5 +119,6 @@ export default {
     'IncludeTooltip': '指定仓库权限包含的路径',
     'Group': '用户组',
     'User': '用户',
+    'SearchRepositories':'请输入仓库名称'
 
 }

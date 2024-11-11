@@ -1,18 +1,14 @@
 package com.veadan.folib.security.vote;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.veadan.folib.authorization.domain.RoleData;
 import com.veadan.folib.authorization.dto.Role;
-import com.veadan.folib.authorization.service.AuthorizationConfigService;
+import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.controllers.BrowseController;
-import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.providers.io.RepositoryPathResolver;
-import com.veadan.folib.services.ArtifactResolutionService;
+import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.security.AuthoritiesProvider;
@@ -29,20 +25,23 @@ import org.springframework.security.access.ConfigAttribute;
 import org.springframework.security.access.expression.method.ExpressionBasedPreInvocationAdvice;
 import org.springframework.security.access.prepost.PreInvocationAuthorizationAdviceVoter;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.authentication.jaas.JaasGrantedAuthority;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
-import java.net.URI;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
-import static com.veadan.folib.web.Constants.*;
-import static org.apache.cassandra.auth.Roles.getRoles;
+import static com.veadan.folib.web.Constants.ARTIFACT_ROOT_PATH;
+import static com.veadan.folib.web.Constants.DOCKER_ROOT_PATH;
+import static com.veadan.folib.web.Constants.STORAGE_ROOT_PATH;
 
 /**
  * @author xuxinping
@@ -62,7 +61,13 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
 
     @Autowired
     @Lazy
-    protected ArtifactResolutionService artifactResolutionService;
+    private ConfigurationManager configurationManager;
+
+    @Autowired
+    @Lazy
+    private ArtifactRepository artifactRepository;
+
+
     public ExtendedAuthoritiesVoter() {
         super(new ExpressionBasedPreInvocationAdvice());
     }
@@ -106,9 +111,9 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
             return repository.isAllowAnonymous();
         }
 
-        private Collection<? extends GrantedAuthority> calculateExtendedAuthorities(Authentication authentication) {
-            String storageId = UrlUtils.getCurrentStorageId();
-            String repositoryId = UrlUtils.getCurrentRepositoryId();
+        private Collection<? extends GrantedAuthority> calculateExtendedAuthorities(Authentication authentication, String storageId, String repositoryId, String path) {
+            storageId = storageId == null ? UrlUtils.getCurrentStorageId() : storageId;
+            repositoryId = repositoryId == null ? UrlUtils.getCurrentRepositoryId() : repositoryId;
             Object principal = authentication.getPrincipal();
             Collection<? extends GrantedAuthority> apiAuthorities = authentication.getAuthorities();
             logger.debug("Privileges for [{}] are [{}]", principal, apiAuthorities);
@@ -130,7 +135,7 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
                 List<GrantedAuthority> authorities = new ArrayList<>(anonymousApiAuthorities);
                 if (storageAuthorities.isEmpty()) {
                     return anonymousApiAuthorities;
-                }else {
+                } else {
                     authorities.remove(Privileges.ARTIFACTS_RESOLVE);
                 }
                 if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
@@ -144,7 +149,7 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
                 logger.warn("Unknown authentication principal type [{}]", principal.getClass());
                 return authentication.getAuthorities();
             }
-            String requestUri = UrlUtils.getRequestUri();
+            String requestUri = path == null ? UrlUtils.getRequestUri() : path;
             List<String> paths = Arrays.asList(ARTIFACT_ROOT_PATH, DOCKER_ROOT_PATH, BrowseController.ROOT_CONTEXT, STORAGE_ROOT_PATH);
             if (paths.stream().noneMatch(requestUri::startsWith)) {
                 return apiAuthorities;
@@ -152,32 +157,52 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
             if (storageId == null || repositoryId == null) {
                 return apiAuthorities;
             }
-            String storeAndRepo=storageId+"/"+repositoryId+"/";
-            int index = requestUri.indexOf(storeAndRepo);
-            String relativePath="";
-            if(index!=-1){
-                relativePath=requestUri.substring(index+storeAndRepo.length());
-            }
-            RepositoryPath resolve=null;
-            try {
-                 resolve = artifactResolutionService.resolvePath(storageId, repositoryId, relativePath);
-                String[] split = requestUri.split("/");
-                split[2]=resolve.getStorageId();
-                split[3]=resolve.getRepositoryId();
-                requestUri= String.join("/", split);
-            } catch (Exception e) {
-                logger.error("err");
-            }
-
-            SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
-            Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(requestUri);
-            if (storageAuthorities.isEmpty()) {
+            // 资源权限
+            if (configurationManager.getStorage(storageId) == null || configurationManager.getRepository(storageId, repositoryId) == null) {
                 return apiAuthorities;
             }
-            List<GrantedAuthority> extendedAuthorities = new ArrayList<>(apiAuthorities);
-            extendedAuthorities.addAll(storageAuthorities);
-            logger.debug("Privileges for [{}] was extended to [{}]", userDetails.getUsername(), extendedAuthorities);
-            return extendedAuthorities;
+
+            Repository repository = configurationManager.getRepository(storageId, repositoryId);
+            // 判断是否为组合库
+            if (RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
+                String storeAndRepo = storageId + "/" + repositoryId + "/";
+                int index = requestUri.indexOf(storeAndRepo);
+                String relativePath = "";
+                if (index != -1) {
+                    relativePath = requestUri.substring(index + storeAndRepo.length());
+                }
+                // 获取所有子仓库
+                List<String> storageAndRepositoryIds = new LinkedList<>();
+                configurationManager.resolveGroupRepository(repository, storageAndRepositoryIds);
+                Set<GrantedAuthority> extendedAuthorities = new HashSet<>();
+                for (String storageAndRepositoryId : storageAndRepositoryIds) {
+                    String subStorageId = ConfigurationUtils.getStorageId(storageId, storageAndRepositoryId);
+                    String subRepositoryId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+                    String newPath = rewriteByStoreAndRepo(requestUri, subStorageId, subRepositoryId);
+                    Repository subrepository = configurationManager.getRepository(subStorageId, subRepositoryId);
+                    // 如果是本地库判断该仓库是否有该制品
+                    if (RepositoryTypeEnum.HOSTED.getType().equals(subrepository.getType())) {
+                        if (artifactRepository.artifactExists(subStorageId, subRepositoryId, relativePath)) {
+                            Collection<? extends GrantedAuthority> grantedAuthorities = calculateExtendedAuthorities(authentication, subStorageId, subRepositoryId, newPath);
+                            extendedAuthorities.addAll(grantedAuthorities);
+                        }
+                    } else {
+                        Collection<? extends GrantedAuthority> grantedAuthorities = calculateExtendedAuthorities(authentication, subStorageId, subRepositoryId, newPath);
+                        extendedAuthorities.addAll(grantedAuthorities);
+                    }
+                }
+                return extendedAuthorities;
+            } else {
+                SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
+                Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(requestUri);
+                if (storageAuthorities.isEmpty()) {
+                    return apiAuthorities;
+                }
+                List<GrantedAuthority> extendedAuthorities = new ArrayList<>(apiAuthorities);
+                extendedAuthorities.addAll(storageAuthorities);
+                logger.debug("Privileges for [{}] was extended to [{}]", userDetails.getUsername(), extendedAuthorities);
+                return extendedAuthorities;
+            }
         }
 
         @Override
@@ -187,7 +212,7 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
 
         @Override
         public Collection<? extends GrantedAuthority> getAuthorities() {
-            return calculateExtendedAuthorities(getSourceAuthentication());
+            return calculateExtendedAuthorities(getSourceAuthentication(), null, null, null);
         }
 
         @Override
@@ -215,6 +240,16 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
                 throws IllegalArgumentException {
             getSourceAuthentication().setAuthenticated(isAuthenticated);
         }
+    }
 
+    String rewriteByStoreAndRepo(String path, String storageId, String repositoryId) {
+        String[] split = path.split("/");
+        if (split.length <= 4) {
+            return path;
+        } else {
+            split[2] = storageId;
+            split[3] = repositoryId;
+            return String.join("/", split);
+        }
     }
 }

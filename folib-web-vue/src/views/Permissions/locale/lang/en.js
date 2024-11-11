@@ -68,7 +68,7 @@ export default {
     'SelectedUsersBundles': 'Selected Users Release Bundles',
     'ResourceTip': 'Resource type not selected',
     'NoPermissionsTip': 'No permissions are selected. This user will not be saved in the permission target.',
-    'Download': 'read/download',
+    'Download': 'Read/Download',
     'Metadata':'Metadata',
     'Manage':'Manage',
     'DeployCache': 'Deploy/Cache',
@@ -103,6 +103,7 @@ export default {
     'Disabled': 'Disabled',
     'Permissions': 'Permissions',
     'PermissionsDesc': 'Select the permissions that correspond to the resource',
+    'ManageDesc':'Repository management permission',
     'Description': 'Description',
     'SelectResources': 'Select Resources',
     'ResourceName': 'Resource Name',
@@ -116,5 +117,9 @@ export default {
     'IncludeTooltip': 'Specify the path that the repository permission includes',
     'Group': 'Group',
     'User': 'User',
+    'SearchRepositories':'Please enter the repository name',
+    'Confirm':'Confirm',
+    'Cancel':'Cancel',
+
     
 }
