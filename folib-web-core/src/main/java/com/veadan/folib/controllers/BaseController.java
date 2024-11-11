@@ -8,6 +8,7 @@ import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.configuration.MutableConfiguration;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.controllers.support.ListEntityBody;
@@ -472,24 +473,21 @@ public abstract class BaseController {
     }
 
     // 根据仓库验证 增加组合仓库过滤
-    public boolean validatePathPrivileges(Repository repository, List<String> paths, String authority) {
+    public boolean validatePathPrivileges(Repository repository, List<String> paths, String authority){
         if(RepositoryTypeEnum.GROUP.getType().equals(repository.getType())){
-            Set<String> groupRepositories = repository.getGroupRepositories();
-            for (String groupRepository : groupRepositories) {
-                String[] storageAndRepo = groupRepository.split(":");
-                if(storageAndRepo.length!=2){
-                    logger.error("invalid groupRepository name");
-                }else {
-                    String storageId=storageAndRepo[0];
-                    String repositoryId=storageAndRepo[1];
-                    Repository subRepository = configurationManagementService.getConfiguration().getRepository(storageId, repositoryId);
-                    if(RepositoryScopeEnum.OPEN.getType().equals(subRepository.getScope())||validatePathPrivileges(subRepository,paths,authority)){
-                        return true;
-                    }
+            List<String> storageAndRepositoryIds = new LinkedList<>();
+            configurationManager.resolveGroupRepository(repository, storageAndRepositoryIds);
+            for (String storageAndRepositoryId : storageAndRepositoryIds) {
+                String subStorageId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
+                String subRepositoryId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+                Repository subRepository = configurationManagementService.getConfiguration().getRepository(subStorageId, subRepositoryId);
+                if(RepositoryScopeEnum.OPEN.getType().equals(subRepository.getScope())||validatePathPrivileges(subRepository,paths,authority)){
+                    return true;
                 }
             }
             return false;
-        }else {
+        }
+        else {
             return validatePathPrivileges(repository.getStorage().getId(),repository.getId(),paths,authority);
         }
     }

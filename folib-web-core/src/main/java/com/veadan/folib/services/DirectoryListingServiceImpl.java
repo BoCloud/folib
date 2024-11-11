@@ -594,15 +594,11 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
         if(StringUtils.isNotBlank(relativePath)){
             paths=Collections.singletonList(relativePath);
         }
-        SpringSecurityUser  user=(SpringSecurityUser) authentication.getPrincipal();
+        SpringSecurityUser user=(SpringSecurityUser) authentication.getPrincipal();
         Collection<Privileges> storageAuthorities =user.getStorageAuthorities(repository.getStorage().getId(), repository.getId(),paths);
-
-        // 如果 matchPath 以 "/**" 结尾
-
         return storageAuthorities.stream().anyMatch(item -> item.getAuthority().equals(authority));
     }
 
-    // 判断当前用户对该仓库的权限类型及操作类型
 
 
 
