@@ -15,6 +15,7 @@ import com.veadan.folib.controllers.support.ResponseEntityBody;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
+import com.veadan.folib.enums.RepositoryScopeEnum;
 import com.veadan.folib.exception.ExceptionHandlingOutputStream;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathLock;
@@ -26,6 +27,7 @@ import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.dto.AccessModelDto;
@@ -347,7 +349,7 @@ public abstract class BaseController {
     }
 
     public boolean hasRepositoryResolve(Repository repository) {
-       return validatePathPrivileges(repository.getStorage().getId(), repository.getId(), null, Privileges.ARTIFACTS_RESOLVE.name());
+       return validatePathPrivileges(repository, null, Privileges.ARTIFACTS_RESOLVE.name());
     }
 
     public SpringSecurityUser loginUser() {
@@ -468,5 +470,30 @@ public abstract class BaseController {
         Collection<Privileges> storageAuthorities = loginUser().getStorageAuthorities(storageId, repositoryId, paths);
         return storageAuthorities.stream().anyMatch(item -> item.getAuthority().equals(authority));
     }
+
+    // 根据仓库验证 增加组合仓库过滤
+    public boolean validatePathPrivileges(Repository repository, List<String> paths, String authority) {
+        if(RepositoryTypeEnum.GROUP.getType().equals(repository.getType())){
+            Set<String> groupRepositories = repository.getGroupRepositories();
+            for (String groupRepository : groupRepositories) {
+                String[] storageAndRepo = groupRepository.split(":");
+                if(storageAndRepo.length!=2){
+                    logger.error("invalid groupRepository name");
+                }else {
+                    String storageId=storageAndRepo[0];
+                    String repositoryId=storageAndRepo[1];
+                    Repository subRepository = configurationManagementService.getConfiguration().getRepository(storageId, repositoryId);
+                    if(RepositoryScopeEnum.OPEN.getType().equals(subRepository.getScope())||validatePathPrivileges(subRepository,paths,authority)){
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }else {
+            return validatePathPrivileges(repository.getStorage().getId(),repository.getId(),paths,authority);
+        }
+    }
+
+
 
 }

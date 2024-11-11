@@ -71,9 +71,11 @@ export default {
     'SelectedUsersBundles': '选定用户发布包',
     'ResourceTip': '未选择资源类型',
     'NoPermissionsTip': '未选择任何权限。此用户将不会保存在权限目标中。',
-    'Download': '下载',
+    'Download': '查看/下载',
+    'Metadata':'元数据',
     'DeployCache': '部署/缓存',
-    'DeleteUpdate': '删除/更新',
+    'DeleteUpdate': '删除/覆盖',
+    'Manage':'仓库管理',
     'PromoDistribution': '晋级/分发',
     'SelectAll': '全选',
     'SelectUsers': '选择用户',
@@ -95,6 +97,7 @@ export default {
     'CheckAll': '全部选中',
     'UnselectAll': '取消全选',
     'DownloadDesc': '下载制品',
+    'MetaDataDesc':'编辑元数据',
     'DeployCacheDesc': '部署制品并部署到远程仓库缓存',
     'DeleteUpdateDesc': '删除或覆盖制品',
     'PromoDistributionDesc': '制品晋级并分发',
@@ -104,6 +107,7 @@ export default {
     'PermissionsDesc': '选择资源对应权限',
     'Description': '权限描述',
     'SelectResources': '选择资源',
+    'ManageDesc':'仓库管理权限',
     'ResourceName': '资源名称',
     'Type': '资源类型',
     'Path': '路径',
@@ -115,5 +119,6 @@ export default {
     'IncludeTooltip': '指定仓库权限包含的路径',
     'Group': '用户组',
     'User': '用户',
+    'SearchRepositories':'请输入仓库名称'
 
 }
