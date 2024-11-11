@@ -269,7 +269,8 @@ public class DockerArtifactController extends BaseArtifactController {
     })
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 500, message = "An error occurred.")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
+    //docker buildx build方式不会传递用户认证信息，所以此处权限不能为ARTIFACTS_DEPLOY，会导致401报错
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/uploads/"}, method = {RequestMethod.POST}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity<Object> startingAnUpload(@RequestHeader HttpHeaders httpHeaders,
                                                    Authentication authentication,
