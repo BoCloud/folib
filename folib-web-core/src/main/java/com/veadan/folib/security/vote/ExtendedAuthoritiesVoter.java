@@ -1,7 +1,6 @@
 package com.veadan.folib.security.vote;
 
 import com.veadan.folib.authorization.dto.Role;
-import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
@@ -120,7 +119,7 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
             Object principal = authentication.getPrincipal();
             Collection<? extends GrantedAuthority> apiAuthorities = authentication.getAuthorities();
             logger.debug("Privileges for [{}] are [{}]", principal, apiAuthorities);
-            String requestUri = parseRequestUri(UrlUtils.getRequestUri());
+            String requestUri =  path == null ? parseRequestUri(UrlUtils.getRequestUri()):path;
             if (!authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
                 if (!configurationManagementService.getConfiguration().getAdvancedConfiguration().isAllowAnonymous()) {
                     return Collections.emptySet();
