@@ -79,7 +79,7 @@ public class HuggingFaceArtifactCoordinates extends LayoutArtifactCoordinatesEnt
             extension = matcher1.group(1);
         }
 
-        if (StringUtils.isBlank(name) || StringUtils.isBlank(version) || StringUtils.isBlank(extension)) {
+        if (StringUtils.isBlank(name) || StringUtils.isBlank(version) ) {
             log.warn("Path [{}] name [{}] version [{}] extension [{}] pattern [{}] parse error", path, name, version, extension, HFML_PATH_PATTERN.toString());
             throw new RuntimeException(msg);
         }
