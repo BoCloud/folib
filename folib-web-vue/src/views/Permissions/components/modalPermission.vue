@@ -904,9 +904,11 @@ export default {
         handleConfirm() {
             this.$refs.form.validate(validate => {
                 if (validate) {
-                    if (!this.selectedResources.length && !this.isAdmin) {
-                        this.$message.error(this.$t('Permissions.AtLeastOneRepository'))
-                        return
+                    if(this.form.name.trim()!='ANONYMOUS'){
+                        if (!this.selectedResources.length && !this.isAdmin) {
+                            this.$message.error(this.$t('Permissions.AtLeastOneRepository'))
+                            return
+                        }
                     }
                     const groups = Object.entries(this.groupPermissions).map(([key, value]) => ({
                         id: key,
@@ -1522,6 +1524,9 @@ export default {
                 })
             })
             this.expandedRowKeys=[];
+            if(this.form.name.trim()==='ANONYMOUS'&&this.selectedResources.length===0){
+                this.anonymousPermissions=[];
+            }
         },
         handleResourceModalCancel() {
             this.resourceModalVisible = false;
