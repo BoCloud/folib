@@ -377,7 +377,6 @@ export default {
             storageTotal: 0,
             activeTab: "1", // 默认显示的标签页
             radioModel: 'StorageSpace',
-            selectedRowKeys: [],
             expandedRowKeys: [],
             selectedStorageKeys: [],
             selectedRepositoryKeys: [],
@@ -593,7 +592,7 @@ export default {
                     }
                 })
             }
-        }
+        },
         
     },
 
@@ -638,11 +637,7 @@ export default {
             this.groupPermissions = {};
             this.selectedRepositoryKeys = [];
             this.selectedStorageKeys = [];
-            this.groupIndeterminate = false;
-            this.groupCheckAll = false;
             this.selectedGroupPermissions = [];
-            this.indeterminate = false;
-            this.checkAll = false;
             this.selectedUserPermissions = [];
             this.allGroups=[],
             this.allUsers=[],
@@ -657,6 +652,8 @@ export default {
             this.selectedGroupKeys = [];
             this.leftGroupSearchValue = '';
             this.activeTab = "1";
+            this.selectedUserItems = [];
+            this.selectedGroupItems = [];
         },
         getDetail(id) {
             this.spinning = true;
@@ -670,7 +667,12 @@ export default {
                 privileges.users.forEach(item => {
                     this.userPermissions[item.id] = item.access
                     this.selectedUserKeys.push(item.id)
-                })
+                });
+                if(this.selectedUserKeys.length>0){
+                    this.selectedUserItems.push(this.selectedUserKeys[0]);
+                    this.selectedUserPermissions = this.userPermissions[this.selectedUserKeys[0]];
+                }
+                
                 // 用户组权限
                 this.groupPermissions = {}
                 this.selectedGroupKeys = []
@@ -678,6 +680,11 @@ export default {
                     this.groupPermissions[item.id] = item.access
                     this.selectedGroupKeys.push(item.id)
                 })
+                if(this.selectedGroupKeys.length>0){
+                    this.selectedGroupItems.push(this.selectedGroupKeys[0]);
+                    this.selectedGroupPermissions = this.groupPermissions[this.selectedGroupKeys[0]];
+                }
+                
                 // 资源
 
                 this.selectedPath = [];
@@ -765,44 +772,9 @@ export default {
                 this.userLoading = false;
             });
         },
-        getGroups(isLoadMore = false) {
-            if (!isLoadMore) {
-                this.groupPage = 1;
-                this.allGroups = [];
-                this.groupHasMore = true;
-            }
-            if (!this.groupHasMore || this.groupLoading) {
-                return;
-            }
-
-            this.groupLoading = true;
-            getGroupList({ page: this.groupPage, limit: this.groupLimit, groupName: this.leftGroupSearchValue }).then(res => {
-                const newGroups = res.data.rows.map((item) => ({
-                    key: item.id,  // 改为使用 id
-                    id: item.id,   // 添加 id 字段
-                    title: item.groupName,
-                }));
-                this.allGroups = [...this.allGroups, ...newGroups];
-                this.groupTotal = res.data.total;
-                this.groupHasMore = this.allGroups.length < this.groupTotal;
-                this.groupPage++;
-
-                // 确保所有已选用户组都在列表中
-                this.selectedGroupKeys.forEach(key => {
-                    if (!this.allGroups.some(group => group.key === key)) {
-                        this.allGroups.push({ key, title: key });
-                    }
-                });
-            }).catch(error => {
-                console.error('Error fetching groups:', error);
-            }).finally(() => {
-                this.groupLoading = false;
-            });
-        },
         onGroupChange() {
             const checkedValues = this.repositoriesOptions.filter(item => item.enabled).map(item => item.value)
             this.groupCheckedList = checkedValues;
-            this.groupCheckAll = checkedValues.length === 4
             this.groupAuthMap[this.currentGroupIndex] = checkedValues
         },
        
@@ -1158,7 +1130,7 @@ export default {
                     }
                 })
             }
-            this.selectedUserItems = targetSelectedKeys;
+            this.selectedUserItems=targetSelectedKeys;
             if (targetSelectedKeys.length === 1) {
                 // 单选情况
                 const selectedUser = targetSelectedKeys[0];
@@ -1231,18 +1203,6 @@ export default {
             });
             // 更新之前的选中状态
             this.previousUserPermissions = [...this.selectedUserPermissions];
-
-            // const checkedCount = checkedValues.length;
-            // this.checkAll = checkedCount === this.permissionOptions.length;
-            // this.indeterminate = checkedCount > 0 && checkedCount < this.permissionOptions.length;
-            // if (this.currentSelectedUser) {
-            //     this.$set(this.userPermissions, this.currentSelectedUser, newCheckedValues);
-            // } else {
-            //     // 如果是多选，更新所有选中用户的权限
-            //     this.selectedUserItems.forEach(userKey => {
-            //         this.$set(this.userPermissions, userKey, [...newCheckedValues]);
-            //     });
-            // }
             this.selectedUserItems.forEach(userKey => {
                     this.$set(this.userPermissions, userKey, [...newCheckedValues]);
             });
@@ -1269,10 +1229,10 @@ export default {
                         : difference(selectedKeys, treeSelectedKeys);
                     itemSelectAll(diffKeys, selected);
                 },
-                onSelect({ key }, selected) {
-                    itemSelect(key, selected);
+                onSelect({ key }, selected,selectedRowKeys) {
+                    itemSelect(key, selected,selectedRowKeys);
                 },
-                selectedRowKeys: selectedKeys,
+                selectedRowKeys: this.selectedUserItems,
                 columnWidth: 30
             };
         },   
@@ -1381,10 +1341,6 @@ export default {
                     this.permissionOptions.map(option => option.value)
                 );
             }
-
-            const checkedCount = this.selectedGroupPermissions.length;
-            this.groupCheckAll = checkedCount === this.permissionOptions.length;
-            this.groupIndeterminate = checkedCount > 0 && checkedCount < this.permissionOptions.length;
         },
 
 
@@ -1420,7 +1376,7 @@ export default {
                 onSelect({ key }, selected) {
                     itemSelect(key, selected);
                 },
-                selectedRowKeys: selectedKeys,
+                selectedRowKeys: this.selectedGroupItems,
                 columnWidth: 30
             };
         },
@@ -1450,14 +1406,6 @@ export default {
             });
             // 更新之前的选中状态
             this.previousPermissions = [...this.selectedGroupPermissions ];
-            // if (this.currentSelectedGroup) {
-            //     this.$set(this.groupPermissions, this.currentSelectedGroup, newCheckedValues);
-            // } else {
-            //     // 如果是多选，更新所有选中用户组的权限
-            //     this.selectedGroupItems.forEach(groupKey => {
-            //         this.$set(this.groupPermissions, groupKey, [...newCheckedValues]);
-            //     });
-            // }
             this.selectedGroupItems.forEach(groupKey => {
                     this.$set(this.groupPermissions, groupKey, [...newCheckedValues]);
             });
