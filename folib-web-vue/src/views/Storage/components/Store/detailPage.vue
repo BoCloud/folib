@@ -36,16 +36,25 @@
             <a-descriptions-item v-if="currentTreeNode.remoteRepository" :label="$t('Store.ProxyAddress')">
                <p class="copy-p">{{ currentTreeNode.remoteRepository.url }}</p>
             </a-descriptions-item>
-                <a-descriptions-item class="group-descriptions" :label="$t('Store.GroupRepositories')"
+                <a-descriptions-item class="group-descriptions" :label="$t('Store.GroupRepositories') + '(' + currentTreeNode.groupRepositories.length + ')'"
                         v-if="currentTreeNode.groupRepositories && currentTreeNode.groupRepositories.length > 0">
                         <div class="group-repositories-container">
-                          <a-tooltip>
+                          <!-- <a-tooltip>
                             <template slot="title">
                               <div v-for="(repo, index) in currentTreeNode.groupRepositories" :key="index">{{ repo }}
                               </div>
                             </template>
                             <p class="ellipsis-text"> {{ currentTreeNode.groupRepositories.join('\n') }}</p>
-                        </a-tooltip>
+                        </a-tooltip> -->
+                        <a-tag v-for="(repo, index) in currentTreeNode.groupRepositories" :key="index">
+                          <a-tooltip>
+                            <template slot="title">
+                              <div>{{ $t('Store.StorageName') + ":"}}<span class="ml-10">{{ repo.split(":")[0] }}</span></div>
+                              <div>{{ $t('Store.RepositoryName') + ":"}}<span class="ml-10">{{ repo.split(":")[1] }}</span></div>
+                            </template>
+                            <span class="ellipsis-text">{{ repo }}</span>
+                          </a-tooltip>
+                        </a-tag>
                   </div>
             </a-descriptions-item>
             <!-- <a-descriptions-item :label="$t('Store.ModifyTheTime')">
