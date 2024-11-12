@@ -13,8 +13,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties("custom.unicom")
 public class UnicomConfig {
-    private String appCode="1234";
-    private String appSecret="1234";
+    private String appCode="";
+    private String appSecret="";
     private String appName;
     private String verifyUrl="";
     private String userDetailUrl="";

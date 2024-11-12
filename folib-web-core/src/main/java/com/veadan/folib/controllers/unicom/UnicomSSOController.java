@@ -101,7 +101,7 @@ public class UnicomSSOController extends BaseController {
         layoutType.put("npm",Set.of(".tgz"));
         layoutType.put("rpm",Set.of(".rpm"));
         layoutType.put("docker",Set.of(".gz",".tar",".zip",".giz"));
-        layoutType.put("debian",Set.of("debian"));
+        layoutType.put("debian",Set.of(".deb"));
     }
 
     @Resource
@@ -199,7 +199,6 @@ public class UnicomSSOController extends BaseController {
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
         }
         //跳转到首页
-
         return new RedirectView(getUIIndex(), true, false);
     }
 
