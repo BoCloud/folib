@@ -136,6 +136,23 @@
                                 </div>
                             </a-col>
                         </a-row>
+                        <a-row>
+                            <a-col :span="9">
+                                <span class="by-m-t-10 describe-span">
+                                    {{ $t('Permissions.SelectableUserDescription') }}
+                                </span>
+                            </a-col>
+                            <a-col :span="8">
+                                <span class="by-p-l-10 describe-span">
+                                    {{ $t('Permissions.SelectedUserDescription') }}
+                                </span>
+                            </a-col>
+                            <a-col :span="6">
+                                <span class="by-p-l-12 describe-span">
+                                    {{ $t('Permissions.SelectUserPermissionDescription') }}
+                                </span>
+                            </a-col>
+                        </a-row>
                     </a-tab-pane>
                     <a-tab-pane key="3" :tab="$t('Permissions.Groups')" :disabled="isAnonymous||isStorageAdmin">
                         <a-row>
@@ -189,6 +206,23 @@
                                         </a-checkbox>
                                     </a-checkbox-group>
                                 </div>
+                            </a-col>
+                        </a-row>
+                        <a-row>
+                            <a-col :span="9">
+                                <span class="by-m-t-10 describe-span">
+                                    {{ $t('Permissions.SelectableGroupDescription') }}
+                                </span>
+                            </a-col>
+                            <a-col :span="8">
+                                <span class="by-p-l-10 describe-span">
+                                    {{ $t('Permissions.SelectedGroupDescription') }}
+                                </span>
+                            </a-col>
+                            <a-col :span="6">
+                                <span class="by-p-l-12 describe-span">
+                                    {{ $t('Permissions.SelectGroupPermissionDescription') }}
+                                </span>
                             </a-col>
                         </a-row>
                     </a-tab-pane>
@@ -1092,7 +1126,9 @@ export default {
                         // 如果用户没有权限，初始化为空数组
                         this.$set(this.userPermissions, key, []);
                     }
+                    this.selectedUserItems.push(key);
                 });
+               
             } else {
                 moveKeys.forEach(key => {
                     // 从权限对象中删除该用户
@@ -1173,7 +1209,6 @@ export default {
             // 更新所有选中用户的权限
             const allValues = this.permissionOptions.map(option => option.value);
             let newCheckedValues = [...checkedValues];
-
             // 找出新选中的值（与之前的选中状态比较）
             const previousSet = new Set(this.previousUserPermissions);
             const currentSet = new Set(checkedValues);
@@ -1197,17 +1232,20 @@ export default {
             // 更新之前的选中状态
             this.previousUserPermissions = [...this.selectedUserPermissions];
 
-            const checkedCount = checkedValues.length;
-            this.checkAll = checkedCount === this.permissionOptions.length;
-            this.indeterminate = checkedCount > 0 && checkedCount < this.permissionOptions.length;
-            if (this.currentSelectedUser) {
-                this.$set(this.userPermissions, this.currentSelectedUser, newCheckedValues);
-            } else {
-                // 如果是多选，更新所有选中用户的权限
-                this.selectedUserItems.forEach(userKey => {
+            // const checkedCount = checkedValues.length;
+            // this.checkAll = checkedCount === this.permissionOptions.length;
+            // this.indeterminate = checkedCount > 0 && checkedCount < this.permissionOptions.length;
+            // if (this.currentSelectedUser) {
+            //     this.$set(this.userPermissions, this.currentSelectedUser, newCheckedValues);
+            // } else {
+            //     // 如果是多选，更新所有选中用户的权限
+            //     this.selectedUserItems.forEach(userKey => {
+            //         this.$set(this.userPermissions, userKey, [...newCheckedValues]);
+            //     });
+            // }
+            this.selectedUserItems.forEach(userKey => {
                     this.$set(this.userPermissions, userKey, [...newCheckedValues]);
-                });
-            }
+            });
         },
         updateSelectedPermissions() {
             // 获取所有选中用户的权限交集
@@ -1310,6 +1348,7 @@ export default {
                     if (!this.groupPermissions[key]) {
                         this.$set(this.groupPermissions, key, []);
                     }
+                    this.selectedGroupItems.push(key);
                 });
             } else {
                 moveKeys.forEach(key => {
@@ -1411,14 +1450,17 @@ export default {
             });
             // 更新之前的选中状态
             this.previousPermissions = [...this.selectedGroupPermissions ];
-            if (this.currentSelectedGroup) {
-                this.$set(this.groupPermissions, this.currentSelectedGroup, newCheckedValues);
-            } else {
-                // 如果是多选，更新所有选中用户组的权限
-                this.selectedGroupItems.forEach(groupKey => {
+            // if (this.currentSelectedGroup) {
+            //     this.$set(this.groupPermissions, this.currentSelectedGroup, newCheckedValues);
+            // } else {
+            //     // 如果是多选，更新所有选中用户组的权限
+            //     this.selectedGroupItems.forEach(groupKey => {
+            //         this.$set(this.groupPermissions, groupKey, [...newCheckedValues]);
+            //     });
+            // }
+            this.selectedGroupItems.forEach(groupKey => {
                     this.$set(this.groupPermissions, groupKey, [...newCheckedValues]);
-                });
-            }
+            });
         },
 
         updateSelectedGroupPermissions() {
@@ -2077,5 +2119,10 @@ export default {
     /deep/ .ant-card-body {
         padding: 8px;
     }
+}
+
+.describe-span{
+    font-size: 12px;
+    font-weight: 300;
 }
 </style>

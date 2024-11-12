@@ -120,6 +120,11 @@ export default {
     'SearchRepositories':'Please enter the repository name',
     'Confirm':'Confirm',
     'Cancel':'Cancel',
-
+    'SelectableUserDescription':'*Select the user to configure permissions for',
+    'SelectedUserDescription':'*View or edit each user\'s corresponding permissions',
+    'SelectUserPermissionDescription':'*Configure the specific permissions each user has',
+    'SelectableGroupDescription':'*Select the group to configure permissions for',
+    'SelectedGroupDescription':'*View or edit each group\'s corresponding permissions',
+    'SelectGroupPermissionDescription':'*Configure the specific permissions each group has'
     
 }

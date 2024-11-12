@@ -119,6 +119,12 @@ export default {
     'IncludeTooltip': '指定仓库权限包含的路径',
     'Group': '用户组',
     'User': '用户',
-    'SearchRepositories':'请输入仓库名称'
+    'SearchRepositories':'请输入仓库名称',
+    'SelectableUserDescription':'*选择需要配置权限的用户',
+    'SelectedUserDescription':'*查看或编辑每个用户对应的权限',
+    'SelectUserPermissionDescription':'*配置用户拥有的具体权限',
+    'SelectableGroupDescription':'*选择需要配置权限的用户组',
+    'SelectedGroupDescription':'*查看或编辑每个用户组对应的权限',
+    'SelectGroupPermissionDescription':'*配置用户组拥有的具体权限'
 
 }
