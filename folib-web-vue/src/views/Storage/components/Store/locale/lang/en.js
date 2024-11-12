@@ -353,5 +353,9 @@ export default {
     'RepositoryType':'Repository Type',
     'StrategyType': 'Strategy Type',
     'ProxyAddress':'Proxyaddress',
-    'GroupRepositories':'Group repositories'
+    'GroupRepositories':'Group repositories',
+    //debian
+    'DebianGlobalConfiguration':'First, you need to add the repository related information to the "/etc/apt/sources.list" file, and execute the following command:',
+    'DebianPermissionConfiguration':'If you need to add the credential information to the "/etc/apt/sources.list" file, execute the following command:',
+    'DebianCommandOperation':'After configuration, use the following command to install the package:'
 }

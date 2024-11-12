@@ -351,4 +351,9 @@ export default {
     'StrategyType': '策略类型',
     'ProxyAddress':'代理地址',
     'GroupRepositories':'组合仓库',
+    // Debian
+    'DebianGlobalConfiguration': '首先需要将仓库相关信息添加至"/etc/apt/sources.list文件， 执行如下命令：',
+    'DebianPermissionConfiguration': '如需要将凭证信息添加至"/etc/apt/sources.list"文件，执行如下命令：',
+    'DebianCommandOperation':'配置完毕后使用如下命令安装包：'
+
 }
