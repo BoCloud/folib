@@ -1275,6 +1275,40 @@ go 1.20' :readonly="true">
             ></prism-editor>
         </a-timeline-item>
       </a-timeline>
+      <a-timeline v-if="folibRepository.layout === 'debian'">
+        <a-timeline-item color="primary">
+          Debian {{ $t('Store.GlobalConfiguration') }}
+          <small>Debian{{ $t('Store.Configuration') }}{{ $t('Store.GlobalConfiguration') }}</small>
+          <p>{{ $t('Store.DebianGlobalConfiguration') }}</p>
+          <prism-editor
+            class="my-editor height-300"
+            :value="debianConfiguration"
+            :highlight="highlighterHandle"
+            :line-numbers="false"
+            :readonly="true"
+          >
+          </prism-editor>
+          <p>{{ $t('Store.DebianPermissionConfiguration') }}</p>
+          <prism-editor
+            class="my-editor height-300"
+            :value="debianPermissonConfiguration"
+            :highlight="highlighterHandle"
+            :line-numbers="false"
+            :readonly="true"
+          ></prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          {{ $t('Store.CommandOperation') }}
+          <small>{{ $t('Store.DebianCommandOperation') }}</small>
+          <prism-editor
+            class="my-editor height-300"
+            :value="debianCommand"
+            :highlight="highlighterHandle"
+            :line-numbers="false"
+            :readonly="true"
+          ></prism-editor>
+        </a-timeline-item>
+      </a-timeline>
       <a-timeline>
         <a-timeline-item color="primary">
           {{ $t('Store.WarehouseAddress') }}
@@ -1335,6 +1369,20 @@ export default {
   },
   mounted() {
       this.huggingfaceInit();
+  },
+  computed: {
+    debianConfiguration() {
+      return  `sudo sh -c " echo  'deb ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id} <DISTRIBUTION> <COMPONENT> ' >> /etc/apt/sources.list "`
+    },
+    debianPermissonConfiguration() {
+      const name = this.$store.getters.name;
+      const url = this.baseUrl.replace('http://','').replace('https://','');
+      const protocol = this.baseUrl.startsWith('http://') ? 'http://' : 'https://';
+      return  `sudo sh -c " echo  'deb  ${protocol}${name}:<PASSWORD>@${url}storages/${this.folibRepository.storageId}/${this.folibRepository.id} <DISTRIBUTION> <COMPONENT> ' >> /etc/apt/sources.list "`
+    },
+    debianCommand(){
+      return ` apt update --allow-insecure-repositories \n apt-get install <DEBIAN_PACKAGE_NAME>`
+    }
   },
   methods: {
     highlighterHandle(code) {
