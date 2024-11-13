@@ -1,7 +1,7 @@
 <template>
   <form onsubmit="event.preventDefault();" role="search" @mouseover="mouse(true)" @mouseleave="mouse(false)">
     <label for="search">Search for stuff</label>
-    <input id="search" type="search" :placeholder="$t('Tools.SearchForProducts')" required v-model="value" />
+    <input id="search" type="search" :placeholder="$t('Tools.SearchForProducts')" required v-model="value"  @keydown.enter="onSearch"/>
     <a-dropdown>
       <a-menu slot="overlay" @click="handleSearchMenuClick">
         <a-menu-item :key="1">
@@ -34,6 +34,11 @@ export default {
     },
     handleSearchMenuClick(active) {
       this.searchType = active.key
+      this.search()
+    },
+    onSearch(){
+      console.log("onSearch");
+      this.searchType=1;
       this.search()
     },
     mouse(bool) {
