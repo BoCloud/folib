@@ -122,6 +122,7 @@ public class BrowseController
     @Resource
     private ArtifactMetadataService artifactMetadataService;
 
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping(value = "/getArtifact/{storageId}/{repositoryId}/{artifactPath:.+}")
     public ResponseEntity getArtifact(@PathVariable String artifactPath,
                                       @PathVariable String storageId,
@@ -249,7 +250,7 @@ public class BrowseController
     }
 
 
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @ApiOperation(value = "List the contents for a docker.")
     @GetMapping(value = "/getDockerArtifact/{storageId}/{repositoryId}/{path:.+}")
     public Object getDockerArtifact(@PathVariable("storageId") String storageId,

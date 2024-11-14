@@ -113,7 +113,7 @@ public class DockerLayoutComponent {
         if (StringUtils.isBlank(manifestString)) {
             return null;
         }
-        ImageManifest imageManifest = JSON.parseObject(manifestString, ImageManifest.class);
+        ImageManifest imageManifest = parseImageManifest(repositoryPath, manifestString);
         if (CollectionUtils.isNotEmpty(imageManifest.getManifests())) {
             //多架构镜像
             ImageManifest itemImageManifest = null;
@@ -123,7 +123,7 @@ public class DockerLayoutComponent {
                 if (StringUtils.isBlank(manifestString)) {
                     continue;
                 }
-                itemImageManifest = JSON.parseObject(manifestString, ImageManifest.class);
+                itemImageManifest = parseImageManifest(manifestPath, manifestString);
                 itemImageManifest.setDigest(manifests.getDigest());
                 imageManifestList.add(itemImageManifest);
             }
@@ -256,4 +256,14 @@ public class DockerLayoutComponent {
             log.warn(ExceptionUtils.getStackTrace(ex));
         }
     }
+
+    private ImageManifest parseImageManifest(RepositoryPath repositoryPath, String manifestString) {
+        try {
+            return JSON.parseObject(manifestString, ImageManifest.class);
+        } catch (Exception ex) {
+            log.error("RepositoryPath [{}] manifest [{}] parse error [{}]", repositoryPath, manifestString, ExceptionUtils.getStackTrace(ex));
+            throw ex;
+        }
+    }
+
 }

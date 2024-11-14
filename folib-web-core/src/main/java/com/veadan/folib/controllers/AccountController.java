@@ -142,7 +142,7 @@ public class AccountController
 
     @ApiOperation(value = "获取当前用户对指定存储空间和仓库的权限信息")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "Returns permissions details")})
-    @PreAuthorize("hasAuthority('AUTHENTICATED_USER')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping(value = "/permission/{storageId}/{repositoryId}",
             produces = { MediaType.APPLICATION_JSON_VALUE })
     @ResponseBody
