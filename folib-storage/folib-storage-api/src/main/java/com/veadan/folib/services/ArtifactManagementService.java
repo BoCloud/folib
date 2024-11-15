@@ -246,6 +246,8 @@ public class ArtifactManagementService
             startTime = System.currentTimeMillis();
             // Store artifact digests in cache if we have them.
             addChecksumsToCacheManager(digestMap, repositoryPathId);
+            logger.info("Write addChecksumsToCacheManager [{}] take time [{}] ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
+            startTime = System.currentTimeMillis();
             writeChecksums(repositoryPath, digestMap);
             logger.info("Write check sum [{}] take time [{}] ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
         }
@@ -353,10 +355,14 @@ public class ArtifactManagementService
         digestMap.entrySet()
                 .stream()
                 .forEach(entry -> {
+                    long startTime = System.currentTimeMillis();
                     final RepositoryPath checksumPath = provider.getChecksumPath(repositoryPath, entry.getKey());
+                    logger.info("Write check sum [{}] algorithm [{}] digest [{}] find checksumPath [{}] take time [{}] ms", repositoryPath.toString(), entry.getKey(), entry.getValue(), checksumPath, System.currentTimeMillis() - startTime);
                     try
                     {
+                        startTime = System.currentTimeMillis();
                         Files.write(checksumPath, entry.getValue().getBytes(StandardCharsets.UTF_8));
+                        logger.info("Write check sum [{}] algorithm [{}] digest [{}] take time [{}] ms", repositoryPath.toString(), entry.getKey(), entry.getValue(), System.currentTimeMillis() - startTime);
                     }
                     catch (IOException ex)
                     {
@@ -446,18 +452,23 @@ public class ArtifactManagementService
 
         Repository repository = path.getFileSystem().getRepository();
 
+        long validateStartTime = System.currentTimeMillis();
         artifactOperationsValidator.validate(path);
+        logger.info("Repository artifactOperationsValidator [{}] take time [{}] ms." , path.toString(), System.currentTimeMillis() - validateStartTime);
 
         if (!RepositoryFiles.isArtifact(path))
         {
             return path;
         }
 
+        long readCoordinatesStartTime = System.currentTimeMillis();
         ArtifactCoordinates coordinates = RepositoryFiles.readCoordinates(path);
+        logger.info("Repository readCoordinates [{}] take time [{}] ms." , path.toString(), System.currentTimeMillis() - readCoordinatesStartTime);
         logger.debug("Validate artifact with coordinates [{}]", coordinates);
 
         try
         {
+            long artifactCoordinatesValidatorStartTime = System.currentTimeMillis();
             for (String validatorKey : repository.getArtifactCoordinateValidators())
             {
                 ArtifactCoordinatesValidator validator = artifactCoordinatesValidatorRegistry.getProvider(
@@ -467,16 +478,20 @@ public class ArtifactManagementService
                     validator.validate(repository, coordinates);
                 }
             }
+            logger.info("Repository artifactCoordinatesValidator [{}] take time [{}] ms." , path.toString(), System.currentTimeMillis() - artifactCoordinatesValidatorStartTime);
         }
         catch (VersionValidationException e)
         {
             throw new ArtifactStorageException(e);
         }
-
+        long checkAllowsStartTime = System.currentTimeMillis();
         artifactOperationsValidator.checkAllowsRedeployment(repository, coordinates);
         artifactOperationsValidator.checkAllowsDeployment(repository);
+        logger.info("Repository checkAllows [{}] take time [{}] ms." , path.toString(), System.currentTimeMillis() - checkAllowsStartTime);
         if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
+            long checkStorageSizeStartTime = System.currentTimeMillis();
             artifactOperationsValidator.checkStorageSize(path);
+            logger.info("Repository checkStorageSize [{}] take time [{}] ms." , path.toString(), System.currentTimeMillis() - checkStorageSizeStartTime);
         }
         logger.info("Repository acceptance validation [{}] take time [{}] ms." , path.toString(), System.currentTimeMillis() - startTime);
         return path;

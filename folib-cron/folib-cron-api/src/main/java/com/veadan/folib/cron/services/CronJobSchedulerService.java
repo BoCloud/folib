@@ -12,7 +12,7 @@ import java.util.UUID;
 public interface CronJobSchedulerService
 {
 
-    void scheduleJob(CronTaskConfigurationDto cronTaskConfiguration);
+    void scheduleJob(CronTaskConfigurationDto cronTaskConfiguration, boolean serviceStartup);
 
     void deleteJob(UUID cronTaskConfigurationUuid);
 

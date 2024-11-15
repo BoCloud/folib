@@ -45,7 +45,7 @@ class CronTaskConfigurationServiceImpl
             if (dto.isOneTimeExecution()) {
                 continue;
             }
-            cronJobSchedulerService.scheduleJob(dto);
+            cronJobSchedulerService.scheduleJob(dto, true);
         }
         logger.info("---定时任务已全部启动---");
     }
@@ -55,7 +55,7 @@ class CronTaskConfigurationServiceImpl
         logger.info("CronTaskConfigurationService.saveConfiguration()");
 
         UUID configurationId = cronTaskDataService.save(configuration);
-        cronJobSchedulerService.scheduleJob(configuration);
+        cronJobSchedulerService.scheduleJob(configuration, false);
 
         cronTaskEventListenerRegistry.dispatchCronTaskCreatedEvent(configuration.getUuid());
 

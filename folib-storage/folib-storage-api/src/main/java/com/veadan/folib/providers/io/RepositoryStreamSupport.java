@@ -210,10 +210,14 @@ public class RepositoryStreamSupport {
         public void close()
                 throws IOException {
             try {
+                long startTime = System.currentTimeMillis();
                 super.close();
+                logger.info("IOUtils close [{}] take time [{}] ms." , getContext().getPath(), System.currentTimeMillis() - startTime);
+                startTime = System.currentTimeMillis();
                 if (((CountingOutputStream) out).getByteCount() > 0) {
                     callback.onAfterWrite((RepositoryStreamWriteContext) ctx);
                 }
+                logger.info("OnAfterWrite [{}] take time [{}] ms." , getContext().getPath(), System.currentTimeMillis() - startTime);
             } catch (Exception e) {
                 logger.error("Failed to close [{}].", getContext().getPath(), e);
 
