@@ -32,6 +32,7 @@ import com.veadan.folib.users.security.JwtClaimsProvider;
 import com.veadan.folib.users.security.SecurityTokenProvider;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.DatabaseUserService;
+import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.utils.FileUtils;
@@ -107,7 +108,7 @@ public class DockerArtifactController extends BaseArtifactController {
     private DockerComponent dockerComponent;
 
     @Inject
-    @DatabaseUserService.Database
+    @RelationalDatabaseUserService.RelationalDatabase
     private UserService userService;
 
     @Inject
@@ -285,6 +286,7 @@ public class DockerArtifactController extends BaseArtifactController {
     ) {
         try {
             if (Objects.isNull(authentication)) {
+                logger.info("===没有authentication===");
                 setTokenUrl(request, response);
                 return new ResponseEntity<>(unAuth(), HttpStatus.UNAUTHORIZED);
             }
