@@ -78,6 +78,7 @@ public class DatabaseExternalUsersCacheManager extends RelationalDatabaseUserSer
             if (!ldapUserDetailsServiceSourceId.equalsIgnoreCase(sourceId) && !StringUtils.isBlank(user.getPassword())) {
                 userEntry.setPassword(user.getPassword());
             }
+            userEntry.setUsername(username);
             userEntry.setEmail(user.getEmail());
             userEntry.setEnabled(user.isEnabled());
             if (CollectionUtils.isEmpty(userEntry.getRoles())) {

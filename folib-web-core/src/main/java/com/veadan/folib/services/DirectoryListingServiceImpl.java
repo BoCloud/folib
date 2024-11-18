@@ -1,8 +1,11 @@
 package com.veadan.folib.services;
 
 import cn.hutool.core.date.StopWatch;
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.veadan.folib.authorization.dto.Role;
+import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.booters.PropertiesBooter;
 import com.veadan.folib.cloud.storage.s3fs.S3FileSystemProvider;
 import com.veadan.folib.configuration.ConfigurationManager;
@@ -17,6 +20,9 @@ import com.veadan.folib.services.support.ArtifactRoutingRulesChecker;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.users.domain.Privileges;
+import com.veadan.folib.users.dto.AccessModelDto;
+import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.utils.compatator.DirectoryNameCompatator;
 import lombok.Data;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
@@ -26,6 +32,8 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -37,6 +45,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.*;
@@ -113,6 +122,9 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
             String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
             String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
             Repository subRepository = configurationManagementService.getConfiguration().getRepository(sId, rId);
+            if(!groupSubPrivileges(subRepository,path,Privileges.ARTIFACTS_RESOLVE.getAuthority())){
+                continue;
+            }
             if (!subRepository.isInService()) {
                 continue;
             }
@@ -314,10 +326,10 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
         return listPaths(path)
                 //.filter(this::isValidPath)
                 .collectList()
-                .flatMapMany(contentPaths -> Flux.fromIterable(ListUtils.partition(contentPaths, 2)))
+                .flatMapMany(contentPaths -> Flux.fromIterable(ListUtils.partition(contentPaths, 20)))
                 // 使用并行处理提高效率 在多个 Flux 中使用 .publishOn(Schedulers.boundedElastic()) 时，Schedulers.boundedElastic() 是共享的，而不是为每个 Flux 创建独立的线程池。
                 .publishOn(Schedulers.boundedElastic())
-                .parallel(4)
+                .parallel(16)
                 // 根据路径构建文件内容任务
                 .flatMap(paths -> buildFileContentTask(paths, showChecksum))
                 // 将并行处理的结果序列化
@@ -358,15 +370,24 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
         // 检查路径字符串是否以点(.)开头，或者文件名是否为MANIFEST或BLOBS，这些都不被认为是有效的层文件。
         // 同时检查路径中是否包含'/.'但不包含'.specs'，或者文件是隐藏文件但路径中不包含'.specs'，这些情况都会被认为是无效路径。
         try {
-        return !p.toString().startsWith(".") &&
+        return (!p.toString().startsWith(".")) &&
                 !DockerLayoutProvider.MANIFEST.equalsIgnoreCase(p.getFileName().toString()) &&
                 !DockerLayoutProvider.BLOBS.equalsIgnoreCase(p.getFileName().toString()) &&
-                (!p.toString().contains("/.") || p.toString().contains(".specs")) &&
-                (!Files.isHidden(p) || p.toString().contains(".specs"));
+                (!p.toString().contains("/.") || p.toString().contains(".specs")||isTrashNotHiddenPath(p)) &&
+                (!Files.isHidden(p) || p.toString().contains(".specs")||isTrashNotHiddenPath(p));
         } catch (IOException e) {
             logger.info("Error accessing path {}", p);
             return false;
         }
+    }
+
+    private boolean isTrashNotHiddenPath(Path p){
+        String path=p.toString();
+        if(path.contains(LayoutFileSystem.TRASH)){
+            path = path.replace(LayoutFileSystem.TRASH, "");
+            return !path.contains("/.");
+        }
+        return false;
     }
 
     /**
@@ -568,4 +589,29 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
             return this;
         }
     }
+
+    private boolean groupSubPrivileges(Repository repository,RepositoryPath repositoryPath,String authority ){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (Objects.isNull(authentication)) {
+            return false;
+        }
+        String absolutePath = repositoryPath.getTarget().toString();
+        String storeAndRep= repositoryPath.getRepository().getStorage().getId()+"/"+repositoryPath.getRepositoryId()+"/";
+        int index = absolutePath.indexOf(storeAndRep);
+        String relativePath="";
+        if(index!=-1){
+            relativePath=absolutePath.substring(index+storeAndRep.length());
+        }
+        List<String> paths=null;
+        if(StringUtils.isNotBlank(relativePath)){
+            paths=Collections.singletonList(relativePath);
+        }
+        SpringSecurityUser user=(SpringSecurityUser) authentication.getPrincipal();
+        Collection<Privileges> storageAuthorities =user.getStorageAuthorities(repository.getStorage().getId(), repository.getId(),paths);
+        return storageAuthorities.stream().anyMatch(item -> item.getAuthority().equals(authority));
+    }
+
+
+
+
 }

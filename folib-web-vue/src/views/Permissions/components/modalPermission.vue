@@ -64,8 +64,8 @@
                                 @click="showResourceModal" type="primary" class="by-m-b-10">
                                 {{ $t('Permissions.SelectResources') }}
                             </a-button>
-                            <a-table :columns="selectedResourcesColumns" :dataSource="selectedResources" :pagination="false"
-                                size="small" class="selected-resources-table" rowKey="record => record.title">
+                           <a-table :columns="selectedResourcesColumns" :dataSource="selectedResources" :pagination="false"
+                                size="small" class="selected-resources-table" :rowKey="record => record.title">
                                 <template slot="type" slot-scope="text">
                                     <span v-if="text === 'storage'">{{ $t('Permissions.StorageSpace') }}</span>
                                     <span v-else-if="text === 'repository'">{{ $t('Permissions.Repository') }}</span>
@@ -75,7 +75,7 @@
                         </div>
                         <a-card  class="by-m-t-10 anonymous-permissions-group" v-if="isAnonymous">
                             <span class="by-m-r-40"> {{ $t('Permissions.SelectedPermissions') }}</span>   
-                            <a-checkbox-group v-model="anonymousPermissions" >
+                            <a-checkbox-group v-model="anonymousPermissions" :disabled="isView" @change="handleAnonymousPermissionChange">
                                 <a-checkbox v-for="option in permissionOptions" :key="option.value" :value="option.value">
                                     {{ option.label }}
                                 </a-checkbox>
@@ -124,11 +124,8 @@
                             <a-col :span="7">
                                 <div class="permissions-checkbox-container">
                                     <div class="permission-title">
-                                        <a-checkbox :indeterminate="indeterminate" :checked="checkAll"
-                                            :disabled="isView || isAdmin ||isStorageAdmin" @change="onCheckAllChange">
-                                            {{ $t('Permissions.SelectedPermissions') }}
-                                        </a-checkbox>
-                                 </div>
+                                            {{ $t('Permissions.SelectedPermissions') }}  
+                                    </div>
                                     <a-checkbox-group v-model="selectedUserPermissions" @change="handleUserPermissionChange"
                                         style="display: flex; flex-direction: column;">
                                         <a-checkbox v-for="option in permissionOptions" :key="option.value"
@@ -137,6 +134,23 @@
                                         </a-checkbox>
                                     </a-checkbox-group>
                                 </div>
+                            </a-col>
+                        </a-row>
+                        <a-row>
+                            <a-col :span="9">
+                                <span class="by-m-t-10 describe-span">
+                                    {{ $t('Permissions.SelectableUserDescription') }}
+                                </span>
+                            </a-col>
+                            <a-col :span="8">
+                                <span class="by-p-l-10 describe-span">
+                                    {{ $t('Permissions.SelectedUserDescription') }}
+                                </span>
+                            </a-col>
+                            <a-col :span="6">
+                                <span class="by-p-l-12 describe-span">
+                                    {{ $t('Permissions.SelectUserPermissionDescription') }}
+                                </span>
                             </a-col>
                         </a-row>
                     </a-tab-pane>
@@ -181,20 +195,34 @@
                             <a-col :span="7">
                                 <div class="permissions-checkbox-container">
                                     <div class="permission-title">
-                                        <a-checkbox :indeterminate="groupIndeterminate" :checked="groupCheckAll"
-                                            @change="onGroupCheckAllChange">
-                                            {{ $t('Permissions.SelectedPermissions') }}
-                                        </a-checkbox>
+                                        {{ $t('Permissions.SelectedPermissions') }}
                                     </div>
-                                    <a-checkbox-group v-model="selectedGroupPermissions"
+                                    <a-checkbox-group v-model="selectedGroupPermissions "
                                         @change="handleGroupPermissionChange"
-                                        style="display: flex; flex-direction: column;">
+                                        style="display: flex; flex-direction: column;" >
                                         <a-checkbox v-for="option in permissionOptions" :key="option.value"
                                             :disabled="isView || isAdmin" :value="option.value">
                                             {{ option.label }}
                                         </a-checkbox>
                                     </a-checkbox-group>
                                 </div>
+                            </a-col>
+                        </a-row>
+                        <a-row>
+                            <a-col :span="9">
+                                <span class="by-m-t-10 describe-span">
+                                    {{ $t('Permissions.SelectableGroupDescription') }}
+                                </span>
+                            </a-col>
+                            <a-col :span="8">
+                                <span class="by-p-l-10 describe-span">
+                                    {{ $t('Permissions.SelectedGroupDescription') }}
+                                </span>
+                            </a-col>
+                            <a-col :span="6">
+                                <span class="by-p-l-12 describe-span">
+                                    {{ $t('Permissions.SelectGroupPermissionDescription') }}
+                                </span>
                             </a-col>
                         </a-row>
                     </a-tab-pane>
@@ -229,16 +257,13 @@
                 </template>
                 <template slot="expandedRowRender" slot-scope="record">
                     <div v-if="record.repositories && record.repositories.length" class="expanded-row-content">
-                        <div class="repository-search">
-
-                        </div>
                         <a-table class="repository-table" :columns="perRepositoryColumns"
                             :data-source="filteredRepositories(record)" :row-selection="{
                                 selectedRowKeys: selectedRepositoryKeys,
                                 onChange: onRepositoriesChange,
                                 type: 'checkbox',
                                 columnWidth: 30
-                            }" :row-key="(record) => record.id" :pagination="false" :scroll="{ y: 200 }">
+                            }" :row-key="(record) => record.storageId+'/'+record.title" :pagination="false" :scroll="{ y: 200 }">
                             <div slot="includes" slot-scope="text,record">
                                 <div class="insert-item" :class="{ 'has-error': record.isInError }">
                                     <a-input v-model="record.currentInPattern" :placeholder="$t('Permissions.NewPatterns')"
@@ -308,6 +333,7 @@ import TextOver from "@/components/Tools/textOver.vue";
 
 export default {
     name: "modal",
+    inject: ["reload"],
     components: {
         TextOver,
         repositories,
@@ -351,12 +377,12 @@ export default {
             storageTotal: 0,
             activeTab: "1", // 默认显示的标签页
             radioModel: 'StorageSpace',
-            selectedRowKeys: [],
             expandedRowKeys: [],
             selectedStorageKeys: [],
             selectedRepositoryKeys: [],
             selectedPath: [],
             anonymousPermissions:[],
+            previousAnonymousPermissions:[],
             storageColumns: [
                 {
                     dataIndex: 'id',
@@ -372,7 +398,6 @@ export default {
                     slots: { title: 'repositoriesTitle' }
                 },
                 {
-
                     dataIndex: 'includes',
                     key: 'includes',
                     slots: { title: 'includesTitle' },
@@ -419,10 +444,16 @@ export default {
             resourceModalVisible: false,
             selectedResourcesColumns: [
                 {
-                    title: this.$t('Permissions.ResourceName'),
-                    dataIndex: 'title',
-                    width: '50%',
-                    key: 'title',
+                    title: this.$t('Permissions.StorageSpace'),
+                    dataIndex: 'storageId',
+                    width: '20%',
+                    key: 'storageId',
+                },
+                {
+                    title: this.$t('Permissions.Repository'),
+                    dataIndex: 'repositoryId',
+                    width: '20%',
+                    key: 'repositoryId',
                 },
                 {
                     title: this.$t('Permissions.Type'),
@@ -452,39 +483,46 @@ export default {
                 },
             ],
             selectedUserPermissions: [],
-            // 用户组右侧被复选框选中的值
+            previousUserPermissions:[],
             selectedGroupItems: [],
             permissionOptions: [
                 {
                     label: this.$t(`Permissions.Download`),
                     value: 'ARTIFACTS_RESOLVE',
                     enabled: false,
-                    logo: 'download',
+                    desc: this.$t(`Permissions.DownloadDesc`)
+                },
+                {
+                    label: this.$t(`Permissions.Metadata`),
+                    value: 'CONFIGURATION_ADD_UPDATE_METADATA',
+                    enabled: false,
                     desc: this.$t(`Permissions.DownloadDesc`)
                 },
                 {
                     label: this.$t(`Permissions.DeployCache`),
                     value: 'ARTIFACTS_DEPLOY',
                     enabled: false,
-                    logo: 'deployCache',
                     desc: this.$t(`Permissions.DeployCacheDesc`)
                 },
                 {
                     label: this.$t(`Permissions.DeleteUpdate`),
                     value: 'ARTIFACTS_DELETE',
                     enabled: false,
-                    logo: 'deleteUpdate',
                     desc: this.$t(`Permissions.DeleteUpdateDesc`)
+                },
+                {
+                    label: this.$t(`Permissions.Manage`),
+                    value: 'ARTIFACTS_MANAGE',
+                    enabled: false,
+                    desc: this.$t(`Permissions.ManageDesc`)
                 },
             ],
             userPermissions: {},
             groupPermissions: {},
             currentSelectedUser: null,
-            indeterminate: false,
-            checkAll: false,
             selectedGroupPermissions: [],
+            previousPermissions: [],
             currentSelectedGroup: null,
-            groupIndeterminate: false,
             storagePage:1,
         }
     },
@@ -519,6 +557,12 @@ export default {
         },
     },
     watch: {
+        visible(val) {
+            if (!val) {
+                // 将所有 data 重置为初始状态
+                this.resetAllData();
+            }
+        },
         activeTab(newValue) {
             if (newValue === "2" && this.allUsers.length === 0) {
                 this.getUsers();
@@ -548,7 +592,7 @@ export default {
                     }
                 })
             }
-        }
+        },
         
     },
 
@@ -577,10 +621,15 @@ export default {
             }
         },
         closeModal() {
+            this.resetAllData();
+        },
+
+        resetAllData(){
             this.visible = false;
             this.selectedResources = [],
             this.resetData;
             this.form = {};
+            this.$refs.form.resetFields(); 
             this.selectedUserKeys = [];
             this.selectedGroupKeys = [];
             this.selectedPath = [];
@@ -588,11 +637,7 @@ export default {
             this.groupPermissions = {};
             this.selectedRepositoryKeys = [];
             this.selectedStorageKeys = [];
-            this.groupIndeterminate = false;
-            this.groupCheckAll = false;
             this.selectedGroupPermissions = [];
-            this.indeterminate = false;
-            this.checkAll = false;
             this.selectedUserPermissions = [];
             this.allGroups=[],
             this.allUsers=[],
@@ -601,8 +646,14 @@ export default {
             this.storageTotal=0,
             this.repositoriesList=[],
             this.repositoriesTotal=0,
-            this.resetGroupData;
+            this.groupPage = 1;
+            this.allGroups = [];
+            this.groupHasMore = true;
+            this.selectedGroupKeys = [];
+            this.leftGroupSearchValue = '';
             this.activeTab = "1";
+            this.selectedUserItems = [];
+            this.selectedGroupItems = [];
         },
         getDetail(id) {
             this.spinning = true;
@@ -616,7 +667,12 @@ export default {
                 privileges.users.forEach(item => {
                     this.userPermissions[item.id] = item.access
                     this.selectedUserKeys.push(item.id)
-                })
+                });
+                if(this.selectedUserKeys.length>0){
+                    this.selectedUserItems.push(this.selectedUserKeys[0]);
+                    this.selectedUserPermissions = this.userPermissions[this.selectedUserKeys[0]];
+                }
+                
                 // 用户组权限
                 this.groupPermissions = {}
                 this.selectedGroupKeys = []
@@ -624,8 +680,18 @@ export default {
                     this.groupPermissions[item.id] = item.access
                     this.selectedGroupKeys.push(item.id)
                 })
+                if(this.selectedGroupKeys.length>0){
+                    this.selectedGroupItems.push(this.selectedGroupKeys[0]);
+                    this.selectedGroupPermissions = this.groupPermissions[this.selectedGroupKeys[0]];
+                }
+                
                 // 资源
+
+                this.selectedPath = [];
+                this.selectedRepositoryKeys = [];
+                this.selectedStorageKeys = [];
                 this.selectedResources = resources.map(item => {
+                    const key = `${item.storageId}/${item.repositoryId}`;
                     const i = {}
                     i.title = item.resourceId
                     i.storageId = item.storageId;
@@ -639,6 +705,10 @@ export default {
                             repositoryId: item.repositoryId,
                             path: item.path,
                         });
+                        if(!this.selectedRepositoryKeys.includes(key)){
+                            this.selectedRepositoryKeys.push(key);
+                        }
+                        
 
                     } else if (item.repositoryId) {
                         i.type = 'repository';
@@ -654,6 +724,7 @@ export default {
                 // 加载用户和用户组数据
                 if(this.isAnonymous){
                     this.anonymousPermissions = access || [];     
+                    this.previousAnonymousPermissions=this.anonymousPermissions;
                 }else{
                     this.getUsers();
                     this.getGroups();
@@ -701,68 +772,12 @@ export default {
                 this.userLoading = false;
             });
         },
-        getGroups(isLoadMore = false) {
-            if (!isLoadMore) {
-                this.groupPage = 1;
-                this.allGroups = [];
-                this.groupHasMore = true;
-            }
-            if (!this.groupHasMore || this.groupLoading) {
-                return;
-            }
-
-            this.groupLoading = true;
-            getGroupList({ page: this.groupPage, limit: this.groupLimit, groupName: this.leftGroupSearchValue }).then(res => {
-                const newGroups = res.data.rows.map((item) => ({
-                    key: item.id,  // 改为使用 id
-                    id: item.id,   // 添加 id 字段
-                    title: item.groupName,
-                }));
-                this.allGroups = [...this.allGroups, ...newGroups];
-                this.groupTotal = res.data.total;
-                this.groupHasMore = this.allGroups.length < this.groupTotal;
-                this.groupPage++;
-
-                // 确保所有已选用户组都在列表中
-                this.selectedGroupKeys.forEach(key => {
-                    if (!this.allGroups.some(group => group.key === key)) {
-                        this.allGroups.push({ key, title: key });
-                    }
-                });
-            }).catch(error => {
-                console.error('Error fetching groups:', error);
-            }).finally(() => {
-                this.groupLoading = false;
-            });
-        },
-        // onRepositoriesChange() {
-        //     const checkedValues = this.repositoriesOptions.filter(item => item.enabled).map(item => item.value)
-        //     this.repositoriesCheckedList = checkedValues;
-        //     this.repositoriesCheckAll = checkedValues.length === 4
-        //     this.userAuthMap[this.currentUserIndex] = checkedValues
-        // },
-        // onRepositoriesCheckAllChange() {
-        //     this.repositoriesCheckAll = !this.repositoriesCheckAll;
-        //     this.repositoriesCheckedList = this.repositoriesCheckAll ? this.repositoriesOptions.map(item => item.value) : [];
-        //     this.userAuthMap[this.currentUserIndex] = this.repositoriesCheckedList
-        //     this.repositoriesOptions.forEach(item => {
-        //         item.enabled = this.repositoriesCheckAll
-        //     })
-        // },
-
         onGroupChange() {
             const checkedValues = this.repositoriesOptions.filter(item => item.enabled).map(item => item.value)
             this.groupCheckedList = checkedValues;
-            this.groupCheckAll = checkedValues.length === 4
             this.groupAuthMap[this.currentGroupIndex] = checkedValues
         },
-        onGroupCheckAllChange(e) {
-            const checkedValue = e.target.checked;
-            this.selectedGroupPermissions = checkedValue ? this.permissionOptions.map(option => option.value) : [];
-            this.groupIndeterminate = false;
-            this.groupCheckAll = checkedValue;
-            this.handleGroupPermissionChange(this.selectedGroupPermissions);
-        },
+       
         openSelectModal(type) {
             const selectedRows = type === 'USER' ? this.userSelectList : this.groupSelectList
             this.$refs.selectUserGroup.openModal(type, selectedRows, this.isStorageAdmin);
@@ -774,10 +789,10 @@ export default {
                     limit: 10
                 }).then(res => {
                     this.storageList = res.data.rows;
-                    this.storageTotal = res.data.total
-                    resolve()
+                    this.storageTotal = res.data.total;
+                    resolve();
                 }).catch(e => {
-                    reject(e)
+                    reject(e);
                 })
             })
         },
@@ -889,9 +904,11 @@ export default {
         handleConfirm() {
             this.$refs.form.validate(validate => {
                 if (validate) {
-                    if (!this.selectedResources.length && !this.isAdmin) {
-                        this.$message.error(this.$t('Permissions.AtLeastOneRepository'))
-                        return
+                    if(this.form.name.trim()!='ANONYMOUS'){
+                        if (!this.selectedResources.length && !this.isAdmin) {
+                            this.$message.error(this.$t('Permissions.AtLeastOneRepository'))
+                            return
+                        }
                     }
                     const groups = Object.entries(this.groupPermissions).map(([key, value]) => ({
                         id: key,
@@ -1005,21 +1022,24 @@ export default {
                 const params = {
                     storageId: storageId,
                     limit: 1000,
+                    excludeType: 'group',
                     page: 1
                 };
                 const res = await queryRepositoriesByStorage(params);
                 const storageIndex = this.storageList.findIndex(storage => storage.id === storageId);
                 if (storageIndex > -1) {
                     const repositories = res.data.rows.map(item => {
-                        const path = this.selectedPath.find(p => p.storageId === item.storageId && p.repositoryId === item.id);
-                        if (path) {
-                            return {
-                                id: storageId + '/' + item.id,
+                        const paths = this.selectedPath.filter(p => p.storageId === item.storageId && p.repositoryId === item.id);
+                        if (paths.length) {
+                            const repository = {id: storageId + '/' + item.id,
                                 title: item.id,
                                 currentInPattern: '',
                                 isInError: false,
-                                storageId: item.storageId,
-                                includes: [path.path]
+                                storageId: item.storageId,}
+                            const includes = paths.map(path => path.path);
+                            return {
+                                ...repository,
+                                includes: includes
                             }
                         } else {
                             return {
@@ -1080,7 +1100,9 @@ export default {
                         // 如果用户没有权限，初始化为空数组
                         this.$set(this.userPermissions, key, []);
                     }
+                    this.selectedUserItems.push(key);
                 });
+               
             } else {
                 moveKeys.forEach(key => {
                     // 从权限对象中删除该用户
@@ -1103,7 +1125,6 @@ export default {
         },
 
         handleUserSelectChange(sourceSelectedKeys, targetSelectedKeys) {
-            
             if(this.isStorageAdmin&&sourceSelectedKeys.length===1){
                 this.allUsers.forEach(item=>{
                     if(item.key!=sourceSelectedKeys[0]){
@@ -1111,7 +1132,7 @@ export default {
                     }
                 })
             }
-            this.selectedUserItems = targetSelectedKeys;
+            this.selectedUserItems=targetSelectedKeys;
             if (targetSelectedKeys.length === 1) {
                 // 单选情况
                 const selectedUser = targetSelectedKeys[0];
@@ -1128,41 +1149,66 @@ export default {
                 this.selectedUserPermissions = [];
 
             }
-            if (this.selectedUserPermissions.length === 0) {
-                this.checkAll = false;
-                this.indeterminate = false;
-            } else if (this.selectedUserPermissions.length === 3) {
-                this.checkAll = true;
-                this.indeterminate = false;
-            } else {
-                this.indeterminate = true;
-            }
-
+            this.previousUserPermissions = [...this.selectedUserPermissions];
             this.currentSelectedUser = targetSelectedKeys.length === 1 ? targetSelectedKeys[0] : null;
+        },
+
+        handleAnonymousPermissionChange(checkedValues){
+            // 更新所有选中用户的权限
+            const allValues = this.permissionOptions.map(option => option.value);
+            let newCheckedValues = [...checkedValues]; 
+            const previousSet = new Set(this.previousanonymousPermissions);
+            const newlyCheckedValues = checkedValues.filter(value => !previousSet.has(value));
+            if (newlyCheckedValues.length > 0) {
+                newlyCheckedValues.forEach(value => {
+                    const currentIndex = allValues.indexOf(value);
+                    if (currentIndex > 0) {
+                        // 将当前值之前的所有值都添加到选中数组中
+                        for (let i = 0; i < currentIndex; i++) {
+                            if (!newCheckedValues.includes(allValues[i])) {
+                                    newCheckedValues.push(allValues[i]);
+                            }           
+                        }
+                    }
+                });
+            }
+            this.anonymousPermissions = [...new Set(newCheckedValues)].sort((a, b) => {
+                return allValues.indexOf(a) - allValues.indexOf(b);
+            });
+            // 更新之前的选中状态
+            this.previousanonymousPermissions = [...this.anonymousPermissions];
+
         },
         handleUserPermissionChange(checkedValues) {
             // 更新所有选中用户的权限
-            const checkedCount = checkedValues.length;
-            this.checkAll = checkedCount === this.permissionOptions.length;
-            this.indeterminate = checkedCount > 0 && checkedCount < this.permissionOptions.length;
-            if (this.currentSelectedUser) {
-                this.$set(this.userPermissions, this.currentSelectedUser, checkedValues);
-            } else {
-                // 如果是多选，更新所有选中用户的权限
-                this.selectedUserItems.forEach(userKey => {
-                    this.$set(this.userPermissions, userKey, [...checkedValues]);
+            const allValues = this.permissionOptions.map(option => option.value);
+            let newCheckedValues = [...checkedValues];
+            // 找出新选中的值（与之前的选中状态比较）
+            const previousSet = new Set(this.previousUserPermissions);
+            const currentSet = new Set(checkedValues);
+            const newlyCheckedValues = checkedValues.filter(value => !previousSet.has(value));
+            if (newlyCheckedValues.length > 0) {
+                newlyCheckedValues.forEach(value => {
+                    const currentIndex = allValues.indexOf(value);
+                    if (currentIndex > 0) {
+                        // 将当前值之前的所有值都添加到选中数组中
+                        for (let i = 0; i < currentIndex; i++) {
+                            if (!newCheckedValues.includes(allValues[i])) {
+                                    newCheckedValues.push(allValues[i]);
+                            }           
+                        }
+                    }
                 });
             }
+            this.selectedUserPermissions = [...new Set(newCheckedValues)].sort((a, b) => {
+                return allValues.indexOf(a) - allValues.indexOf(b);
+            });
+            // 更新之前的选中状态
+            this.previousUserPermissions = [...this.selectedUserPermissions];
+            this.selectedUserItems.forEach(userKey => {
+                    this.$set(this.userPermissions, userKey, [...newCheckedValues]);
+            });
         },
-
-        onCheckAllChange(e) {
-            const checkedValue = e.target.checked;
-            this.selectedUserPermissions = checkedValue ? this.permissionOptions.map(option => option.value) : [];
-            this.indeterminate = false;
-            this.checkAll = checkedValue;
-            this.handleUserPermissionChange(this.selectedUserPermissions);
-        },
-
         updateSelectedPermissions() {
             // 获取所有选中用户的权限交集
             if (this.selectedUserKeys.length === 1) {
@@ -1185,17 +1231,13 @@ export default {
                         : difference(selectedKeys, treeSelectedKeys);
                     itemSelectAll(diffKeys, selected);
                 },
-                onSelect({ key }, selected) {
-                    itemSelect(key, selected);
+                onSelect({ key }, selected,selectedRowKeys) {
+                    itemSelect(key, selected,selectedRowKeys);
                 },
-                selectedRowKeys: selectedKeys,
+                selectedRowKeys: this.selectedUserItems,
                 columnWidth: 30
             };
-        },
-
-
-
-       
+        },   
         handleScroll(direction, e) {
             if (direction === 'left') {
                 this.$nextTick(() => {
@@ -1208,8 +1250,6 @@ export default {
                     }
                 });
             }
-
-
         },
         handleFilter(inputValue, item) {
             return item.title.toLowerCase().indexOf(inputValue.toLowerCase()) !== -1;
@@ -1270,15 +1310,14 @@ export default {
                     if (!this.groupPermissions[key]) {
                         this.$set(this.groupPermissions, key, []);
                     }
+                    this.selectedGroupItems.push(key);
                 });
             } else {
                 moveKeys.forEach(key => {
                     this.$delete(this.groupPermissions, key);
                 });
             }
-
             this.selectedGroupKeys = nextTargetKeys;
-
             const leftListCount = this.allGroups.length - this.selectedGroupKeys.length;
             const threshold = Math.min(this.groupLimit, 10);
 
@@ -1304,10 +1343,6 @@ export default {
                     this.permissionOptions.map(option => option.value)
                 );
             }
-
-            const checkedCount = this.selectedGroupPermissions.length;
-            this.groupCheckAll = checkedCount === this.permissionOptions.length;
-            this.groupIndeterminate = checkedCount > 0 && checkedCount < this.permissionOptions.length;
         },
 
 
@@ -1325,8 +1360,8 @@ export default {
             } else {
                 this.selectedGroupPermissions = [];
             }
+            this.previousGroupPermissions = [...this.selectedGroupPermissions];
             this.currentSelectedGroup = targetSelectedKeys.length === 1 ? targetSelectedKeys[0] : null;
-            this.updateGroupCheckStatus;
         },
 
         getGroupRowSelection({ selectedKeys, itemSelectAll, itemSelect }) {
@@ -1343,27 +1378,40 @@ export default {
                 onSelect({ key }, selected) {
                     itemSelect(key, selected);
                 },
-                selectedRowKeys: selectedKeys,
+                selectedRowKeys: this.selectedGroupItems,
                 columnWidth: 30
             };
         },
 
         handleGroupPermissionChange(checkedValues) {
-            const checkedCount = checkedValues.length;
-            this.groupCheckAll = checkedCount === this.permissionOptions.length;
-            this.groupIndeterminate = checkedCount > 0 && checkedCount < this.permissionOptions.length;
+            const allValues = this.permissionOptions.map(option => option.value);
+            let newCheckedValues=[...checkedValues];
 
-            if (this.currentSelectedGroup) {
-                this.$set(this.groupPermissions, this.currentSelectedGroup, checkedValues);
-            } else {
-                // 如果是多选，更新所有选中用户组的权限
-                this.selectedGroupItems.forEach(groupKey => {
-                    this.$set(this.groupPermissions, groupKey, [...checkedValues]);
-                });
-            }
+             // 找出新选中的值（与之前的选中状态比较）
+            const previousSet = new Set(this.previousPermissions);
+            const newlyCheckedValues = checkedValues.filter(value => !previousSet.has(value));
+            if(newlyCheckedValues.length>0){
+                newlyCheckedValues.forEach(value=>{
+                    const currentValue = allValues.indexOf(value);
+                    if(currentValue>0){
+                        for(let i=0;i<currentValue;i++){
+                            if(!newCheckedValues.includes(allValues[i])){
+                                newCheckedValues.push(allValues[i]);
+                            }
+                        }
+                    }
+                })
+                };
+                // 更新选中值并排序
+            this.selectedGroupPermissions = [...new Set(newCheckedValues)].sort((a, b) => {
+                return allValues.indexOf(a) - allValues.indexOf(b);
+            });
+            // 更新之前的选中状态
+            this.previousPermissions = [...this.selectedGroupPermissions ];
+            this.selectedGroupItems.forEach(groupKey => {
+                    this.$set(this.groupPermissions, groupKey, [...newCheckedValues]);
+            });
         },
-
-        
 
         updateSelectedGroupPermissions() {
             if (this.selectedGroupKeys.length === 1) {
@@ -1406,7 +1454,6 @@ export default {
 
         handleLeftUserSearch(direction, value) {
             if(direction === 'left') {
-                console.log('handleLeftUserSearch', value)
                 this.leftUserSearchValue = value;
                 this.getUsers();
             }
@@ -1440,8 +1487,7 @@ export default {
         showResourceModal() {
             this.resourceModalVisible = true;
             this.storagePage=1;
-            this.getStorageList();
-            
+            this.getStorageList();     
         },
         handleResourceModalOk() {
             this.resourceModalVisible = false;
@@ -1459,7 +1505,7 @@ export default {
                 const paths = this.selectedPath.filter(e => e.storageId === storageId && e.repositoryId === repositoryId);
                 if (paths.length == 0) {
                     const item = {
-                        title: key,
+                        title: `${storageId}-${repositoryId}`,
                         storageId,
                         repositoryId,
                         type: 'repository',
@@ -1468,7 +1514,7 @@ export default {
                 }
                 paths.forEach(e => {
                     const item = {
-                        title: key,
+                        title: `${storageId}-${repositoryId}-${e.path}`,
                         storageId,
                         repositoryId,
                         path: e.path,
@@ -1478,6 +1524,9 @@ export default {
                 })
             })
             this.expandedRowKeys=[];
+            if(this.form.name.trim()==='ANONYMOUS'&&this.selectedResources.length===0){
+                this.anonymousPermissions=[];
+            }
         },
         handleResourceModalCancel() {
             this.resourceModalVisible = false;
@@ -2023,5 +2072,10 @@ export default {
     /deep/ .ant-card-body {
         padding: 8px;
     }
+}
+
+.describe-span{
+    font-size: 12px;
+    font-weight: 300;
 }
 </style>

@@ -19,6 +19,30 @@
         </a-col>
       </a-row>
       <a-row :gutter="24">
+        <a-col :span="24">
+          <a-form-model-item 
+          :label="$t('Setting.MigrateContent')" 
+          prop="contents"
+          :colon="false" 
+        >
+          <a-checkbox-group 
+            v-model="jfrogMigrationForm.contents" 
+            style="width: 50%;" 
+            @change="handleContentChange"
+          >
+            <a-row :gutter="24">
+              <a-col :span="6" v-for="content in contentOptions" :key="content.value">
+                <a-checkbox :value="content.value">
+                  {{ $t(content.i18nKey) }}
+                </a-checkbox>
+              </a-col>
+            </a-row>
+          </a-checkbox-group>
+          </a-form-model-item>
+
+        </a-col>
+      </a-row>
+      <a-row :gutter="24">
         <a-col :span="7">
           <a-form-model-item :colon="false" prop="targetStorage">
             <!-- <a-input v-model="jfrogMigrationForm.targetStorage" /> -->
@@ -91,6 +115,15 @@ import { getStorages, jfrogMigrate } from '@/api/folib'
 export default {
   inject: ["reload"],
   data() {
+    // 自定义校验规则
+    const validateContents = (rule, value, callback) => {
+      if (!value || value.length === 0) {
+        callback(new Error(this.$t('Setting.PleaseSelectAtLeastOneContent')));
+      } else {
+        callback();
+      }
+    };
+
     return {
       jfrogMigrationForm: {
         url: undefined,
@@ -99,15 +132,31 @@ export default {
         storageId: undefined,
         storageProvider: undefined,
         basedir: undefined,
+        contents: [],
+        previousCheckedValues:[]
+        
       },
       jfrogMigrationRules: {
         url: [{ required: true, trigger: 'blur', message: this.$t('Setting.PleaseEnterTheJfrogAddress') }],
         username: [{ required: true, trigger: 'blur', message: this.$t('Setting.PleaseEnterTheJfrogUsername') }],
         password: [{ required: true, trigger: 'blur', message: this.$t('Setting.PleaseEnterTheJfrogPassword') }],
+        contents: [
+          { 
+            required: true, 
+            validator: validateContents, 
+            trigger: 'change' 
+          }
+        ],
       },
       storages: [],
       isExistingStorage: false,
       loading:false,
+      contentOptions: [
+        { value: 'REPOSITORY', i18nKey: 'Setting.Repository' },
+        { value: 'USER', i18nKey: 'Setting.User' },
+        { value: 'GROUP', i18nKey: 'Setting.Group' },
+        { value: 'PERMISSION', i18nKey: 'Setting.Permission' }
+      ]
     }
   },
 
@@ -171,10 +220,36 @@ export default {
         this.jfrogMigrationForm.basedir = '';
         this.isExistingStorage = false;
       }
-
+    },
+    handleContentChange(checkedValues) {
+      const allValues = this.contentOptions.map(option => option.value);
+      let newCheckedValues = [...checkedValues];
+      const previousSet = new Set(this.previousCheckedValues);
+      const currentSet = new Set(checkedValues);
+      const uncheckedValue = [...previousSet].find(value => !currentSet.has(value));
+      if (uncheckedValue) {
+        const startIndex = allValues.indexOf(uncheckedValue);
+        newCheckedValues = newCheckedValues.filter(value => {
+          const index = allValues.indexOf(value);
+          return index < startIndex;
+        });
+      } else {
+        newCheckedValues.forEach(value => {
+          const currentIndex = allValues.indexOf(value);
+          for (let i = 0; i < currentIndex; i++) {
+            if (!newCheckedValues.includes(allValues[i])) {
+              newCheckedValues.push(allValues[i]);
+            }
+          }
+        });
+      }
+      this.jfrogMigrationForm.contents = [...new Set(newCheckedValues)].sort((a, b) => {
+        return allValues.indexOf(a) - allValues.indexOf(b);
+      });
+      this.previousCheckedValues = [...this.jfrogMigrationForm.contents];
     }
-
-  }
+  },
+ 
 }
 </script>
 

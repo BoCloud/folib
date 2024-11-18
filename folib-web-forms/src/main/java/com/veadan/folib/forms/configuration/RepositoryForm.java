@@ -83,6 +83,16 @@ public class RepositoryForm {
 
     private Set<String> groupRepositories;
 
+    public String getGroupDefaultRepository() {
+        return groupDefaultRepository;
+    }
+
+    public void setGroupDefaultRepository(String groupDefaultRepository) {
+        this.groupDefaultRepository = groupDefaultRepository;
+    }
+
+    private String groupDefaultRepository;
+
     private Set<String> artifactCoordinateValidators;
 
     /**

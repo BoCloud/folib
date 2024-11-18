@@ -68,6 +68,11 @@ public class LicenseTableForm implements Serializable {
     private Integer isFsfLibre;
 
     /**
+     * 黑白名单类型 1 白名单 2 黑名单
+     */
+    private Integer blackWhiteType;
+
+    /**
      * 许可证头信息
      */
     private String header;

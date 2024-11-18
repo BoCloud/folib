@@ -255,4 +255,14 @@ public interface GlobalConstants {
      * DEFAULT_READ_TIME
      */
     int DEFAULT_READ_TIME = 60;
+
+    /**
+     * 逗号
+     */
+    String COMMA = ",";
+
+    /**
+     * 扫描仓库key
+     */
+    String SCAN_ENABLE_REPOSITORY_KEY = "SCAN_ENABLE_REPOSITORY_KEY_%s";
 }

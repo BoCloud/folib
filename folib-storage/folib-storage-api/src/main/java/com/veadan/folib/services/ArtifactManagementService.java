@@ -3,6 +3,7 @@ package com.veadan.folib.services;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.io.LayoutInputStream;
@@ -29,6 +30,8 @@ import com.veadan.folib.storage.validation.artifact.version.VersionValidationExc
 import com.veadan.folib.storage.validation.deployment.RedeploymentValidator;
 import com.veadan.folib.storage.validation.resource.ArtifactOperationsValidator;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -95,7 +98,7 @@ public class ArtifactManagementService
             ProviderImplementationException,
             ArtifactCoordinatesValidationException
     {
-        performRepositoryAcceptanceValidation(repositoryPath);
+        repositoryPath = performRepositoryAcceptanceValidation(repositoryPath);
         return doStore(repositoryPath, is);
     }
 
@@ -105,7 +108,7 @@ public class ArtifactManagementService
             ProviderImplementationException,
             ArtifactCoordinatesValidationException
     {
-        performRepositoryAcceptanceValidation(repositoryPath);
+        repositoryPath = performRepositoryAcceptanceValidation(repositoryPath);
         return doStore(repositoryPath, sourcePath);
     }
 
@@ -114,7 +117,7 @@ public class ArtifactManagementService
             ProviderImplementationException,
             ArtifactCoordinatesValidationException
     {
-        performStoreIndexRepositoryAcceptanceValidation(repositoryPath);
+        repositoryPath = performStoreIndexRepositoryAcceptanceValidation(repositoryPath);
         doStoreIndex(repositoryPath);
     }
 
@@ -122,7 +125,7 @@ public class ArtifactManagementService
                       InputStream is)
             throws IOException
     {
-        performStoreRepositoryAcceptanceValidation(repositoryPath);
+        repositoryPath = performStoreRepositoryAcceptanceValidation(repositoryPath);
         return doStore(repositoryPath, is);
     }
 
@@ -130,7 +133,7 @@ public class ArtifactManagementService
                       RepositoryPath sourcePath)
             throws IOException
     {
-        performStoreRepositoryAcceptanceValidation(repositoryPath);
+        repositoryPath = performStoreRepositoryAcceptanceValidation(repositoryPath);
         return doStore(repositoryPath, sourcePath);
     }
 
@@ -433,11 +436,13 @@ public class ArtifactManagementService
                 .forEach(e -> checksumCacheManager.addArtifactChecksum(artifactPath.toString(), e.getKey(), e.getValue()));
     }
 
-    public boolean performRepositoryAcceptanceValidation(RepositoryPath path)
+    public RepositoryPath performRepositoryAcceptanceValidation(RepositoryPath path)
             throws IOException, ProviderImplementationException, ArtifactCoordinatesValidationException
     {
         long startTime = System.currentTimeMillis();
         logger.debug("Validate artifact with path [{}]", path);
+
+        path = getGroupDefaultRepository(path);
 
         Repository repository = path.getFileSystem().getRepository();
 
@@ -445,7 +450,7 @@ public class ArtifactManagementService
 
         if (!RepositoryFiles.isArtifact(path))
         {
-            return true;
+            return path;
         }
 
         ArtifactCoordinates coordinates = RepositoryFiles.readCoordinates(path);
@@ -474,14 +479,16 @@ public class ArtifactManagementService
             artifactOperationsValidator.checkStorageSize(path);
         }
         logger.info("Repository acceptance validation [{}] take time [{}] ms." , path.toString(), System.currentTimeMillis() - startTime);
-        return true;
+        return path;
     }
 
 
-    public boolean performStoreRepositoryAcceptanceValidation(RepositoryPath path)
+    public RepositoryPath performStoreRepositoryAcceptanceValidation(RepositoryPath path)
             throws IOException
     {
         logger.debug("Validate artifact with path [{}]", path);
+
+        path = getGroupDefaultRepository(path);
 
         Repository repository = path.getFileSystem().getRepository();
 
@@ -489,7 +496,7 @@ public class ArtifactManagementService
 
         if (!RepositoryFiles.isArtifact(path))
         {
-            return true;
+            return path;
         }
 
         ArtifactCoordinates coordinates = RepositoryFiles.readCoordinates(path);
@@ -517,13 +524,15 @@ public class ArtifactManagementService
         if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
             artifactOperationsValidator.checkStorageSize(path);
         }
-        return true;
+        return path;
     }
 
-    private boolean performStoreIndexRepositoryAcceptanceValidation(RepositoryPath path)
+    private RepositoryPath performStoreIndexRepositoryAcceptanceValidation(RepositoryPath path)
             throws IOException, ProviderImplementationException, ArtifactCoordinatesValidationException
     {
         logger.debug("Validate artifact with path [{}]", path);
+
+        path = getGroupDefaultRepository(path);
 
         Repository repository = path.getFileSystem().getRepository();
 
@@ -531,7 +540,7 @@ public class ArtifactManagementService
 
         if (!RepositoryFiles.isArtifact(path))
         {
-            return true;
+            return path;
         }
 
         ArtifactCoordinates coordinates = RepositoryFiles.readCoordinates(path);
@@ -556,7 +565,7 @@ public class ArtifactManagementService
         {
             throw new ArtifactStorageException(e);
         }
-        return true;
+        return path;
     }
 
     protected Storage getStorage(String storageId)
@@ -611,5 +620,31 @@ public class ArtifactManagementService
             Files.copy(srcPath, destPath);
         }
     }
+
+    public RepositoryPath getGroupDefaultRepository(RepositoryPath repositoryPath) {
+        try {
+            Repository repository = repositoryPath.getFileSystem().getRepository();
+            if (Objects.nonNull(repository) && repository.isGroupRepository() && StringUtils.isNotBlank(repository.getGroupDefaultRepository())) {
+                //是组合库，并且设置了默认上传仓库
+                String storageId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), repository.getGroupDefaultRepository());
+                String repositoryId = ConfigurationUtils.getRepositoryId(repository.getGroupDefaultRepository());
+                if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
+                    Storage storage =  configurationManager.getStorage(storageId);
+                    if (Objects.isNull(storage)) {
+                        return repositoryPath;
+                    }
+                    Repository storageRepository = storage.getRepository(repositoryId);
+                    if (Objects.isNull(storageRepository)) {
+                        return repositoryPath;
+                    }
+                    repositoryPath = repositoryPathResolver.resolve(storageId,repositoryId, RepositoryFiles.relativizePath(repositoryPath));
+                }
+            }
+        } catch (Exception ex) {
+            logger.error("RepositoryPath [{}] get group default repository error [{}]", repositoryPath, ExceptionUtils.getStackTrace(ex));
+        }
+        return repositoryPath;
+    }
+
 
 }

@@ -4,6 +4,7 @@ import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Pattern;
+import java.util.Set;
 
 /**
  * @author huayanjun
@@ -21,6 +22,9 @@ public class JfrogMigrateForm {
 
     @NotBlank(message = "jfrog地址不能为空")
     private String url;
+
+    // USER GROUP PERMISSION REPOSITORY
+    private Set<String> contents;
 
     @Pattern(regexp = "[a-zA-Z0-9\\-\\_\\.]+")
     private String storageId;

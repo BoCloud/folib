@@ -92,6 +92,13 @@ public class License implements Serializable {
     private Integer isFsfLibre;
 
     /**
+     * 黑白名单类型 1 白名单 2 黑名单
+     */
+    @ApiModelProperty("黑白名单类型 1 白名单 2 黑名单")
+    @Column(name = "black_white_type")
+    private Integer blackWhiteType;
+
+    /**
      * 许可证头信息
      */
     @ApiModelProperty("许可证头信息")

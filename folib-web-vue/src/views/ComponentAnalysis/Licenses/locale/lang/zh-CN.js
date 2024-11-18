@@ -1,5 +1,6 @@
 export default {
     'EnterLicenseNameQuery': '输入许可证名称查询',
+    'EnterLicenseQuery': '输入许可证查询',
     'Name': '名称',
     'LicenseName': '许可证名称',
     'LicenseNumber': '许可证编号',

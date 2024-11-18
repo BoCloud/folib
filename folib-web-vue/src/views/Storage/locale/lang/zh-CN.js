@@ -59,6 +59,7 @@ export default {
     'Next': '下一步',
     'FillInInformation': 'OK,接下来要填写基础信息',
     'DockerType': '你选择的是Docker仓库类型',
+    'LayoutType': '你选择的是{layout}仓库类型',
     'DifferentProcess': '选择不同的仓库策略要配置的流程不太一样',
     'KeywordPrompt': '不要出现仓库类型的关键字',
     'Strategy': '策略',
@@ -240,5 +241,6 @@ export default {
     'RepositoryInfo':'仓库信息',
     'packageTypeQuery':'选择包类型搜索',
     'StrategyTypeQuery': '选择策略类型搜索',
+    'RepositoryNameQuery':'输入仓库名称搜索',
     'Loading':'加载更多'
 }

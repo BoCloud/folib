@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.veadan.folib.configuration.*;
 import com.veadan.folib.providers.storage.FileSystemStorageProvider;
 import com.veadan.folib.storage.Storage;
@@ -70,7 +71,18 @@ public class RepositoryDto
 
     private CustomRepositoryConfigurationDto repositoryConfiguration;
 
+    @JsonDeserialize(as = LinkedHashSet.class)
     private Set<String> groupRepositories = new LinkedHashSet<>();
+
+    private String groupDefaultRepository;
+
+    public String getGroupDefaultRepository() {
+        return groupDefaultRepository;
+    }
+
+    public void setGroupDefaultRepository(String groupDefaultRepository) {
+        this.groupDefaultRepository = groupDefaultRepository;
+    }
 
     private Set<String> artifactCoordinateValidators = new LinkedHashSet<>();
 

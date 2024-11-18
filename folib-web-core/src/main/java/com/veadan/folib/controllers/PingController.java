@@ -22,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.inject.Inject;
 import java.util.Date;
@@ -89,6 +90,17 @@ public class PingController
         } catch (Exception e) {
             return ResponseEntity.status(500).body("获取机器码异常");
 //            throw new RuntimeException(e);
+        }
+    }
+
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "Successful activated") })
+    @PreAuthorize("hasAuthority('AUTHENTICATED_USER')")
+    @PostMapping("/offlineActivate")
+    public ResponseEntity<String> offlineactivate(@RequestParam("file")MultipartFile licenseFile){
+        try {
+            return codeActivateService.offlineActivate(licenseFile);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("激活异常");
         }
     }
 

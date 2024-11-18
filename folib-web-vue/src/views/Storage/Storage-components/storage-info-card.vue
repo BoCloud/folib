@@ -61,6 +61,7 @@
                                     :key="index"
                                     :value="item.type"
                                     :label="item.name"
+                                    v-if="!item.disabled"
                                 >
                                     <div class="option_style_item">
                                         <div class="image_item">
@@ -94,24 +95,15 @@
                                 </a-select-option>
                             </a-select>
                         </a-form-item>
-                        <!-- <a-form-item>
-                            <a-select
+                        <a-form-item>
+                            <a-input-search
                                 class="v-search"
-                                style="width:140px;"
-                                v-model="queryParams.storageId"
-                                :placeholder="$t('Storage.RepositoryQuery')"
-                                show-search
-                                @change="handheTableSearch($event,'storageId')"
-                            >
-                                <a-select-option
-                                    v-for="(item) in storageData"
-                                    :key="item.id"
-                                    :value="item.id"
-                                >
-                                    {{ item.id }}
-                                </a-select-option>
-                            </a-select>
-                        </a-form-item> -->
+                                style="width:160px;"
+                                v-model="queryParams.name" 
+                                @search="search"
+                                :placeholder="$t('Storage.RepositoryNameQuery')"
+                            />
+                        </a-form-item>
                     </a-form>
                 </a-col>
                 <a-col :span="4" style="display: flex; align-items: center; justify-content: flex-end;">
@@ -169,11 +161,13 @@ export default {
         return {
             queryParams:{
                 storageId:'',
+                name: undefined,
                 layout: undefined,
                 type: undefined,
                 limit:1000,
                 page:1
             },
+            typeList,
         }
     },
     watch:{
@@ -185,17 +179,16 @@ export default {
             },
             immediate:true,
             deep:true,
-            typeList:[]
         }
     },
     mounted() {
-        this.$nextTick
-        this.typeList = typeList
+
     },
     methods:{
         emptyQuery(){
             this.queryParams.layout = undefined
             this.queryParams.type = undefined
+            this.queryParams.name = undefined
         },
         search(){
             this.handheTableSearch()

@@ -161,7 +161,7 @@ public class PubArtifactController
                                  @PathVariable(name = "repositoryId") String repositoryId,
                                  HttpServletRequest request,
                                  @RequestParam("file") MultipartFile file,
-                                 HttpServletResponse response) {
+                                 HttpServletResponse response) throws Exception {
         PubMetadataExtractor extractor = new PubMetadataExtractor();
         try (InputStream fileInputStream = file.getInputStream()) {
             Pair<Pubspec, Path> pubspecPathPair = extractor.extractPubSpec(fileInputStream);

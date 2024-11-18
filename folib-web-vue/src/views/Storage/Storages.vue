@@ -42,6 +42,13 @@
                     <h3 v-if="$store.state.user.roles.indexOf('ADMIN') > -1" class="font-semibold text-muted mb-0"
                       @click="createHandleView">+</h3>
                   </a>
+                  <a class="text-center text-muted font-bold" v-if="isChecked" style="margin-right:8px;">
+                    <h5 class="font-semibold text-muted mb-0"
+                      @click="toggleTree">
+                        <a-icon v-if="isTrashView" type="delete" />
+                        <a-icon v-else type="file-zip" />
+                    </h5>
+                  </a>
                   <a class="text-center text-muted font-bold" v-if="isChecked">
                     <h3 class="font-semibold text-muted mb-0"
                       @click="folibVisibleShow">+</h3>
@@ -49,19 +56,29 @@
                 </a-col>
               </a-row>
             </template>
-            <repositoryTree ref="repositoryTree" v-if="isChecked" @loadMore="loadMore" @treeSelect="treeSelect" @repositorySelect="repositorySelect" @expand="onExpand" :repositories="repositories" :storageId="currentStorage.id" />
-            <a-anchor v-else :targetOffset="navbarFixed ? 100 : 10" :affix="false">
-              <a-anchor-link v-for="(item, index) in storageData" :key="index" href="javascript:void(null)"
-                :class="{ slectActive: item.id === currentStorage.id }">
-                <div slot="title" class="ant-list-item-meta" @click="setCurrentStorage(item)">
-                  <a-icon :type="item.storageProvider === 's3' ? 'cloud' : 'appstore'" theme="filled"
-                    class="text-gray-6 text-lg" />
-                  <h4 class="ant-list-item-meta-title">
-                    <span class="font-regular">{{ item.id }}</span>
-                  </h4>
-                </div>
-              </a-anchor-link>
-            </a-anchor>
+            <!-- 仓库列表树 -->
+            <repositoryTree 
+                ref="repositoryTree" 
+                v-if="isChecked" 
+                @loadMore="loadMore" 
+                @handleMenuClick="handleMenuClickTree"
+                @treeSelect="treeSelect" 
+                @repositorySelect="repositorySelect" 
+                @expand="onExpand" 
+                @getDetailInfo="getDetailInfo"
+                :repositories="repositories" 
+                :isTrashView="isTrashView"
+                :storageId="currentStorage.id" 
+            />
+            <!-- 存储列表 -->
+            <storageList 
+                v-else 
+                ref="storageList"
+                :navbarFixed="navbarFixed" 
+                :storageData="storageData" 
+                :currentStorage="currentStorage"
+                @setCurrentStorage="setCurrentStorage" 
+            />
           </a-card>
 <!--        </a-affix>-->
         <!-- / Page Anchors -->
@@ -81,6 +98,15 @@
           <a-tab-pane key="1" :tab="$t('Storage.RepositoryList')">
             <div style="min-height:calc(100vh - 150px)">
               <a-row type="flex" :gutter="24">
+                <a-col :span="8" class="mb-24" v-if="hasStoragePermission()">
+                  <a-card @click="folibVisibleShow()" class="crm-bar-line header-solid h-full xinjian"
+                    :bodyStyle="{ padding: 0, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }">
+                    <a class="text-center text-muted font-bold">
+                      <h3 class="font-semibold text-muted mb-0">+</h3>
+                      <h5 class="font-semibold text-muted">{{ $t('Storage.createModal') }}</h5>
+                    </a>
+                  </a-card>
+                </a-col>
                 <a-col :span="8" class="mb-24" v-for="(item, index) in repositories" :key="index">
                   <!-- Project Card -->
                   <CardProjectFolib :title=item.id :logo="'images/folib/' + getLayoutType(item) + '.svg'"
@@ -96,16 +122,6 @@
                     </a-tooltip>
                   </CardProjectFolib>
                   <!-- / Project Card -->
-                </a-col>
-  
-                <a-col :span="8" class="mb-24" v-if="hasStoragePermission()">
-                  <a-card @click="folibVisibleShow()" class="crm-bar-line header-solid h-full xinjian"
-                    :bodyStyle="{ padding: 0, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }">
-                    <a class="text-center text-muted font-bold">
-                      <h3 class="font-semibold text-muted mb-0">+</h3>
-                      <h5 class="font-semibold text-muted">{{ $t('Storage.createModal') }}</h5>
-                    </a>
-                  </a-card>
                 </a-col>
               </a-row>
             </div>
@@ -124,13 +140,14 @@
           </a-tab-pane>
         </a-tabs>
         <!-- 存储空间模式下 直接展示仓库内容 -->
-        <LibView v-else
+        <LibView 
+          v-else
           :key="libViewKey"
           ref="libview" 
+          @handleMenuClick="handleMenuClick"
           :storageAdmin="currentStorage.admin" 
           :style="isChecked ? 'margin-top:-135px;' : ''" style="border:none;transition: all 0.5s ease;" 
           :isChecked="isChecked" 
-          @handleMenuClick="handleMenuClick"
         />
       </a-col>
     </a-row>
@@ -810,9 +827,9 @@
               <div id="kanban" class="kanban">
                 <draggable :list="i18nBoards" :animation="200" class="kanban-boards" ghost-class="ghost-card"
                   group="i18nBoards">
-                  <FolibKanbanBoard v-for="(board) in i18nBoards" :key="board.id" :board="board">
+                  <FolibKanbanBoard  v-for="(board) in i18nBoards" :key="board.id" :board="board">
                     <draggable :list="board.tasks" :animation="200" ghost-class="ghost-card" group="tasks" ref="draggable" :style="{height: draggableHeight, overflowY: 'auto'}">
-                      <FolibKanbanTask v-for="(task) in board.tasks" :key="task.id" :task="task" :boardId="board.id">
+                      <FolibKanbanTask  ref="kanbanBoard" v-for="(task) in board.tasks" :key="task.id" :task="task" :boardId="board.id" @setDefault="setDefaultRepository" @cancelDefault="cancelDefaultRepository">
                       </FolibKanbanTask>
 
                     </draggable>
@@ -1051,6 +1068,7 @@ import Scan from "@/views/Storage/components/Scan/index.vue";
 import Permission from "@/views/Storage/components/Permission/index.vue";
 import selectType from './Storage-components/select-type.vue'
 import repositoryTree from './Storage-components/repository-tree.vue'
+import storageList from './Storage-components/storage-list.vue'
 
 export default {
   inject: ["reload"],
@@ -1068,7 +1086,8 @@ export default {
     storageInfoCard, // 存储空间卡片信息组件
     LibView,
     selectType,
-    repositoryTree
+    repositoryTree,
+    storageList
   },
   props: {
     navbarFixed: {
@@ -1230,8 +1249,9 @@ export default {
         storageProvider: "local",
         trashEnabled: true,
         type: "hosted",
-        syncEnabled: false
+        syncEnabled: false,
       },
+      isTrashView: false,
       boards: [
         {
           id: "folibHub",
@@ -1287,7 +1307,8 @@ export default {
         matchUsername: undefined,
       },
       libViewKey:0,
-      switchDisabled:true
+      switchDisabled:true,
+      groupDefaultRepository:undefined,
     };
   },
   watch: {
@@ -1348,6 +1369,10 @@ export default {
       return this.$store.state.language.lang
     },
   },
+  mounted(){
+    this.$store.commit('setNewDetailPage',true)
+    this.$store.commit('setNewDetailPage',false)
+  },
   methods: {
     // 展示存储概览
     showOverview(val){
@@ -1359,10 +1384,13 @@ export default {
         this.$refs.libview.myMounted()
       }
     },
-    getDetailInfo(val){
-      const item = this.repositories[0]
-      storage.set("libView_repository", { item, baseUrl: this.baseUrl })
-      this.repositories = []
+    getDetailInfo(val,type){
+      console.log(val,type)
+      if(this.repositories.length){
+        const item = this.repositories[0]
+        storage.set("libView_repository", { item, baseUrl: this.baseUrl })
+        this.repositories = []
+      }
       this.$nextTick(() => {
         if(val){
           this.$refs.repositoryTree.loadingMoreShow(true)
@@ -1386,7 +1414,13 @@ export default {
           page: this.queryParams.page
         }
         // 获取切换模式后第一次加载的数据
-        this.getQueryStorage(params)
+        this.getQueryStorage(params,type)
+      })
+    },
+    // 右键菜单选择操作
+    handleMenuClickTree(active,currentTreeNode){
+      this.$nextTick(() => {
+          this.$refs.libview.handleMenuClickTree(active,currentTreeNode)
       })
     },
     // 点击仓库
@@ -1751,7 +1785,7 @@ export default {
       this.getStorage(this.currentStorage.id)
     },
     loadMore(total){
-      if(total !== this.queryParams.total){
+      if(total !== this.queryParams.total && !this.$refs.loadingMore){
         this.$refs.repositoryTree.loadingMoreShow(true)
         this.queryParams.page ++
         console.log('滚动加载...')
@@ -1776,12 +1810,17 @@ export default {
       this.queryParams.page = 1
       this.getStorage(this.currentStorage.id)
     },
-    getQueryStorage(queryParams){
+    getQueryStorage(queryParams,type){
       queryRepositoriesByStorage(queryParams).then(res => {
         this.switchDisabled = false
         if(res.status === 200){
           this.queryParams.total = res.data.total
           this.repositories = res.data.rows || []
+          if(type){
+            if(this.$refs.repositoryTree){
+              this.$refs.repositoryTree.setKeyValue()
+            }
+          }
         }
       })
     },
@@ -1868,12 +1907,21 @@ export default {
       getStoragesAndRepositories({layout: layout, excludeRepositoryId: excludeRepositoryId }).then(res => {
         let repositories = []
         let id,arr
+          //  判断是否有默认的仓库
+        const defaultRepositoryId = this.folibRepository.groupDefaultRepository;
+        if(defaultRepositoryId){
+          this.groupDefaultRepository=defaultRepositoryId;
+        }
         res.forEach(item => {
           if (item.children && item.children.length > 0) {
             item.children.forEach(children => {
               id = children.key.replace(",", ":")
               arr = id.split(":")
-              repositories.push({id: id, storageId: arr[0], repositoryId: arr[1], layout: children.layout, scope: children.scope})
+              let isDefault = false;
+              if(defaultRepositoryId&&defaultRepositoryId===id){
+                isDefault = true;
+              }
+              repositories.push({id: id, storageId: arr[0], repositoryId: arr[1], layout: children.layout, scope: children.scope,type:children.type,isDefault:isDefault})
             })
           }
         })
@@ -1881,6 +1929,9 @@ export default {
         this.boards[0].tasks = tasksObj.enableSelect
         this.boards[1].tasks = tasksObj.isSelect
       })
+    },
+    toggleTree(){
+      this.isTrashView = !this.isTrashView
     },
     folibVisibleShow() {
       checkMachineCode().then(res => {
@@ -1949,6 +2000,10 @@ export default {
     // Toggle an item from the checkbox.
     toggleCheckbox(item) {
       this.layoutChecked = item
+      if(!this.folibRepositoryEditDisabled){
+        this.moveStep(1);
+      }
+      
     },
 
     cronShowHandle(i, index) {
@@ -2092,6 +2147,13 @@ export default {
       //将组合好的仓库转为groupRepository
       if (this.step === 2 && this.folibRepository.type === 'group' && this.boards[1].tasks.length > 0) {
         this.folibRepository.groupRepositories = groupRepositoriesBuild(this.boards[1].tasks)
+        // 判断是否组合库里有默认库有则添加
+        if(this.folibRepository.groupRepositories.find(item=>item===this.groupDefaultRepository)){
+          this.folibRepository.groupDefaultRepository=this.groupDefaultRepository;
+        }else{
+          this.folibRepository.groupDefaultRepository=null;
+          this.defaultRepositoryId=null;
+        }
         this.folibRepository.proxyConfiguration = null
         this.folibRepository.remoteRepository = null
       }
@@ -2443,7 +2505,35 @@ export default {
           this.folibVisible = isClose;
           this.stepsStatus = status;
           this.step=0;
-      }
+      },
+    setDefaultRepository(id){
+      this.groupDefaultRepository=id;
+      this.i18nBoards.forEach(board=>{
+        board.tasks.forEach(item=>{
+          if(item.id===id){
+            item.isDefault = true;
+          }else{
+            item.isDefault = false;
+          }
+        });
+      });
+      this.$refs.kanbanBoard.forEach(item=>{
+        item.$forceUpdate();
+      });
+    },
+
+    cancelDefaultRepository(){
+      this.groupDefaultRepository=null;
+      this.i18nBoards.forEach(board=>{
+        board.tasks.forEach(item=>{
+            item.isDefault = false;
+        });
+      });
+      this.$refs.kanbanBoard.forEach(item=>{
+        item.$forceUpdate();
+      });
+    }
+
   },
     provide() {
         return {
@@ -2454,13 +2544,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.slectActive {
-  background-color: #eeeeee !important;
-  border-radius: 8px;
-}
 
 .kanban-board {
-  min-width: 450px;
+  min-width: 430px;
   box-shadow: none;
   background: #e9ecef;
   margin-right: 20px;

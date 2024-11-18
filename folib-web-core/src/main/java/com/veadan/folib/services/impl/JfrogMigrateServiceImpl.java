@@ -139,23 +139,39 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
     private final static String DEFAULT_STORAGE = "jfrog-storage";
 
 
+    private static final String USER="USER";
+    private static final String GROUP="GROUP";
+    private static final String PERMISSION="PERMISSION";
+
+    private static final String REPOSITORY="REPOSITORY";
+
+
     @Async
     @Override
     public void migrate(Artifactory artifactory, JfrogMigrateForm form) {
         try {
+            Map<String, Long> groupMap=null;
             // 先更新用户组
-            Map<String, Long> groupMap = groupMigrate(artifactory);
+            if(form.getContents().contains(GROUP)){
+               groupMap = groupMigrate(artifactory);
+            }
             // 同步用户及用户组关联关系
-            userMigrate(artifactory, groupMap);
-            // 创建存储空间
-            String storageId = StringUtils.isBlank(form.getStorageId()) ? DEFAULT_STORAGE : form.getStorageId();
-            form.setStorageId(storageId);
-            // 判断存储空间是否存在，不存在新建
-            Assert.isTrue(createStorageIfNotExist(form), "failed to create storage");
-            // 同步仓库
-            repositoryMigrate(storageId, artifactory);
-            // 同步权限
-            permissionMigrate(artifactory, storageId, groupMap);
+            if(form.getContents().contains(USER)){
+                userMigrate(artifactory, groupMap);
+            }
+            if(form.getContents().contains(REPOSITORY)){
+                // 创建存储空间
+                String storageId = StringUtils.isBlank(form.getStorageId()) ? DEFAULT_STORAGE : form.getStorageId();
+                form.setStorageId(storageId);
+                // 判断存储空间是否存在，不存在新建
+                Assert.isTrue(createStorageIfNotExist(form), "failed to create storage");
+                // 同步仓库
+                repositoryMigrate(storageId, artifactory);
+                // 同步权限
+                if(form.getContents().contains(GROUP)&&form.getContents().contains(USER)&&form.getContents().contains(REPOSITORY)){
+                    permissionMigrate(artifactory, storageId, groupMap);
+                }
+            }
         } catch (Exception e) {
             log.error(e.getMessage());
             throw new RuntimeException(e.getMessage());
@@ -229,12 +245,14 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             if (folibUser != null) {
                 continue;
             }
-            // 同步用户组信息
-            Collection<String> groups = user.getGroups();
-            if (groups != null && !groups.isEmpty()) {
-                for (String group : groups) {
-                    Long groupId = groupMap.get(group);
-                    newUser.getUserGroupIds().add(String.valueOf(groupId));
+            // 同步用户组信息 如果groupMap为null代表没有同步用户组
+            if(groupMap!=null){
+                Collection<String> groups = user.getGroups();
+                if (groups != null && !groups.isEmpty()) {
+                    for (String group : groups) {
+                        Long groupId = groupMap.get(group);
+                        newUser.getUserGroupIds().add(String.valueOf(groupId));
+                    }
                 }
             }
             // 设置默认密码等于用户名

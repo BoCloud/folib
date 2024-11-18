@@ -80,7 +80,8 @@ public class GitLfsArtifactController extends BaseArtifactController {
                            HttpServletRequest request) {
         try {
             GitLfsJson gitLfsJson =gitLfsObjectMapper.readValue(request.getInputStream(), GitLfsJson.class);
-            return gitLfsLocalService.lfsUploadResponse(repository.getStorage().getId(),repository.getId(), gitLfsJson, request.getHeader("Authorization"));
+            String repositoryId= repository.getId();
+            return gitLfsLocalService.lfsUploadResponse(repository.getStorage().getId(),repositoryId, gitLfsJson, request.getHeader("Authorization"));
         } catch (Exception e) {
             this.logger.error("Failed to parse request body into GitLfsBatchJson with an error: {}", e.getMessage());
             this.logger.debug("", e);
