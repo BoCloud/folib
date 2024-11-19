@@ -17,6 +17,7 @@ import com.veadan.folib.providers.io.RepositoryStreamSupport;
 import com.veadan.folib.providers.layout.LayoutFileSystemProvider;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import com.veadan.folib.repositories.ArtifactRepository;
+import com.veadan.folib.storage.ArtifactResolutionException;
 import com.veadan.folib.storage.ArtifactStorageException;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.checksum.ArtifactChecksum;
@@ -40,10 +41,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.FileSystemUtils;
 
 import javax.inject.Inject;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -139,29 +137,37 @@ public class ArtifactManagementService
 
     private long doStore(RepositoryPath repositoryPath,
                          InputStream is)
-            throws IOException
-    {
-        long  startTime = System.currentTimeMillis();
+            throws IOException {
+        long startTime = System.currentTimeMillis();
         long result;
-        // Check size
-        if(artifactUploadRestrictions){
-            artifactOperationsValidator.checkArtifactSize(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), is);
-        }
-        try (final RepositoryStreamSupport.RepositoryOutputStream aos = artifactResolutionService.getOutputStream(repositoryPath))
-        {
+        try (final RepositoryStreamSupport.RepositoryOutputStream aos = artifactResolutionService.getOutputStream(repositoryPath)) {
             result = writeArtifact(repositoryPath, is, aos);
             logger.info("Stored [{}] bytes for [{}].", result, repositoryPath);
             aos.flush();
-        }
-        catch (IOException e)
-        {
+
+        } catch (IOException e) {
             throw e;
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             throw new ArtifactStorageException(e);
+        } finally {
+             // Check size
+            if (artifactUploadRestrictions) {
+                long fileSize = Files.size(repositoryPath);
+                if (fileSize == 0) {
+                    throw new ArtifactResolutionException("Uploaded file is empty.");
+                }
+                Repository repository = getConfiguration().getStorage(repositoryPath.getStorageId()).getRepository(repositoryPath.getRepositoryId());
+                long artifactMaxSize = repository.getArtifactMaxSize();
+
+                if (artifactMaxSize > 0 && fileSize > artifactMaxSize) {
+                    delete(repositoryPath, true);
+                    throw new ArtifactResolutionException("The size of the artifact exceeds the maximum size accepted by " +
+                            "this repository (" + fileSize + "/" +
+                            artifactMaxSize + ").");
+                }
+            }
         }
-        logger.info("DoStore [{}] take time [{}] ms." , repositoryPath.toString(), System.currentTimeMillis() - startTime);
+        logger.info("DoStore [{}] take time [{}] ms.", repositoryPath.toString(), System.currentTimeMillis() - startTime);
 
         return result;
     }

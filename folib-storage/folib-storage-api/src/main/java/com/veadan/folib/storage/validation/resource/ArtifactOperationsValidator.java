@@ -24,6 +24,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.inject.Inject;
+import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -169,49 +170,8 @@ public class ArtifactOperationsValidator {
         }
     }
 
-    public void checkArtifactSize(String storageId,
-                                  String repositoryId,
-                                  InputStream stream )
-            throws IOException {
-        if(stream==null){
-            throw new ArtifactResolutionException("Uploaded file is empty.");
-        }
-         long fileSize = calculateStreamSize(stream);
-        if (fileSize == 0) {
-            throw new ArtifactResolutionException("Uploaded file is empty.");
-        }
 
-        Repository repository = getConfiguration().getStorage(storageId).getRepository(repositoryId);
-        long artifactMaxSize = repository.getArtifactMaxSize();
 
-        if (artifactMaxSize > 0 && fileSize > artifactMaxSize) {
-            throw new ArtifactResolutionException("The size of the artifact exceeds the maximum size accepted by " +
-                    "this repository (" + fileSize + "/" +
-                    artifactMaxSize + ").");
-        }
-    }
-
-    public void checkArtifactSize(String storageId,
-                                  String repositoryId,
-                                  Path sourcePath )
-            throws IOException {
-        if(!Files.exists(sourcePath)){
-            throw new ArtifactResolutionException("Uploaded file is empty.");
-        }
-        long fileSize = getFileSize(sourcePath.toString());
-        if (fileSize == 0) {
-            throw new ArtifactResolutionException("Uploaded file is empty.");
-        }
-
-        Repository repository = getConfiguration().getStorage(storageId).getRepository(repositoryId);
-        long artifactMaxSize = repository.getArtifactMaxSize();
-
-        if (artifactMaxSize > 0 && fileSize > artifactMaxSize) {
-            throw new ArtifactResolutionException("The size of the artifact exceeds the maximum size accepted by " +
-                    "this repository (" + fileSize + "/" +
-                    artifactMaxSize + ").");
-        }
-    }
 
 
     public void checkStorageSize(RepositoryPath repositoryPath)
@@ -321,15 +281,69 @@ public class ArtifactOperationsValidator {
         return configurationManager.getConfiguration();
     }
 
+//public long calculateStreamSize(InputStream inputStream) {
+//       try (BufferedInputStream bis = new BufferedInputStream(inputStream)) {
+//           byte[] buffer = new byte[8192];  // 使用 8KB 的缓冲区
+//           int bytesRead;
+//           long totalBytes = 0;
+//           while ((bytesRead = bis.read(buffer)) != -1) {
+//               totalBytes += bytesRead;  // 累加已读取的字节数
+//           }
+//           return totalBytes;
+//       } catch (IOException e) {
+//           log.error("Error calculating stream size: " + e.getMessage());
+//       }
+//       return 0;
+//   }
+
+   //  public long calculateStreamSize(InputStream inputStream) throws IOException {
+   //    if (!inputStream.markSupported()) {
+   //        throw new IllegalArgumentException("InputStream does not support mark/reset");
+   //    }
+   //    inputStream.mark(Integer.MAX_VALUE);
+   //    try (BufferedInputStream bis = new BufferedInputStream(inputStream)) {
+   //        byte[] buffer = new byte[8192];  // 使用 8KB 的缓冲区
+   //        int bytesRead;
+   //        long totalBytes = 0;
+   //        while ((bytesRead = bis.read(buffer)) != -1) {
+   //            totalBytes += bytesRead;  // 累加已读取的字节数
+   //        }
+   //        return totalBytes;
+   //    } finally {
+   //        inputStream.reset();
+   //    }
+   //}
+
     public long calculateStreamSize(InputStream inputStream) throws IOException {
-        long size = 0;
-        byte[] buffer = new byte[8192];  // 较大缓冲区提升读性能
-        int bytesRead;
-        while ((bytesRead = inputStream.read(buffer)) != -1) {
-            size += bytesRead;
+        // 使用 BufferedInputStream 包装 inputStream，但不要关闭原始流
+        BufferedInputStream bis = new BufferedInputStream(inputStream);
+
+        try {
+            // 检查 BufferedInputStream 是否支持 mark/reset
+            if (!bis.markSupported()) {
+                throw new IllegalArgumentException("InputStream does not support mark/reset");
+            }
+
+            // 标记当前位置，读取数据后可以通过 reset 恢复
+            bis.mark(Integer.MAX_VALUE);
+
+            byte[] buffer = new byte[8192];  // 使用 8KB 的缓冲区
+            int bytesRead;
+            long totalBytes = 0;
+
+            // 读取并计算流的大小
+            while ((bytesRead = bis.read(buffer)) != -1) {
+                totalBytes += bytesRead;
+            }
+
+            return totalBytes;
+        } finally {
+            // 仅关闭 BufferedInputStream，而不是原始 inputStream
+            bis.close();
         }
-        return size;
     }
+
+
 
     public long getFileSize(String filePath) throws IOException {
         try (FileChannel fileChannel = new FileInputStream(filePath).getChannel()) {
