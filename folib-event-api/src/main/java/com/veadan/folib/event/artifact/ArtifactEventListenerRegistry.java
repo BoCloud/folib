@@ -222,5 +222,49 @@ public class ArtifactEventListenerRegistry extends AbstractEventListenerRegistry
         dispatchEvent(event);
     }
 
+    public void dispatchArtifactFilePromotionEvent(String sourceStorageId,
+                                                  String sourceRepositoryId,
+                                                  String sourcePath,
+                                                  String targetStorageId,
+                                                  String targetRepositoryId,
+                                                  String syncNo,
+                                                  String targetUrl,
+                                                  int syncStatus) {
+          PromoteDispenseEvent event = new PromoteDispenseEvent(sourceStorageId,
+                sourceRepositoryId,
+                sourcePath,
+                targetStorageId,
+                targetRepositoryId,
+                syncNo,
+                syncStatus,
+                targetUrl,
+                ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_PROMOTION.getType());
+        logger.info("Dispatching ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_PROMOTION event for {}...", syncNo);
+
+        dispatchEvent(event);
+    }
+
+    public void dispatchArtifactFileDispenseEvent(String sourceStorageId,
+                                                  String sourceRepositoryId,
+                                                  String sourcePath,
+                                                  String targetStorageId,
+                                                  String targetRepositoryId,
+                                                  String syncNo,
+                                                  String targetUrl,
+                                                  int syncStatus) {
+        PromoteDispenseEvent event = new PromoteDispenseEvent(sourceStorageId,
+                sourceRepositoryId,
+                sourcePath,
+                targetStorageId,
+                targetRepositoryId,
+                syncNo,
+                syncStatus,
+                targetUrl,
+                ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DISPENSE.getType());
+
+        logger.info("Dispatching ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DISPENSE event for {}...", syncNo);
+
+        dispatchEvent(event);
+    }
 
 }

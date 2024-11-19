@@ -20,6 +20,7 @@ import com.veadan.folib.dto.*;
 import com.veadan.folib.entity.ArtifactSyncRecord;
 import com.veadan.folib.entity.ArtifactSyncSlaveRecord;
 import com.veadan.folib.enums.*;
+import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.forms.common.StorageTreeForm;
 import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
 import com.veadan.folib.mapper.ArtifactSyncSlaveRecordMapper;
@@ -80,6 +81,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 import scala.collection.mutable.StringBuilder;
 
 import javax.inject.Inject;
@@ -165,6 +168,8 @@ public class PromotionUtil {
     private PromotionConfig promotionConfig;
     @Autowired
     private DistributionService distributionService;
+    @Autowired
+    private ArtifactEventListenerRegistry artifactEventListenerRegistry;
 
     private static final long MAX_SLICE_BYTE_SIZE =   100L;//100MB
 
@@ -1515,9 +1520,54 @@ public class PromotionUtil {
         if (ArtifactSyncRecordStatusEnum.SUCCESS.getVal().equals(status)) {
             List<ArtifactSyncSlaveRecord> artifactSyncSlaveRecords = artifactSyncSlaveRecordMapper.selectBySyncNo(syncNo);
             long count = artifactSyncSlaveRecords.stream().filter(artifactSyncSlaveRecord -> ArtifactSyncRecordStatusEnum.SUCCESS.getVal().equals(artifactSyncSlaveRecord.getStatus())).count();
-            if (count == artifactSyncSlaveRecords.size()) {
+             ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectBySyncNo(syncNo);
+            if (count == artifactSyncSlaveRecords.size() && !artifactSyncRecord.getStatus().equals(status)) {
                 log.info("晋级编号 [{}] 晋级成功", syncNo);
                 artifactSyncRecordMapper.updateStatusAndFailedReasonBySyncNo(status, "", syncNo, new Date());
+                try {
+                    String str = String.format("%s/%s/", artifactSyncRecord.getSourceStorageId(), artifactSyncRecord.getSourceRepositoryId());
+                    ArtifactSyncSlaveRecord slaveRecord = artifactSyncSlaveRecords.get(0);
+                    String urlString = slaveRecord.getTargetPath();
+
+                    UriComponents uriComponents = UriComponentsBuilder.fromHttpUrl(urlString).build();
+
+                    // Extract URI parts
+                    String baseUri = uriComponents.getScheme() + "://" + uriComponents.getHost() + ":" + uriComponents.getPort();
+                    String[] pathParts = uriComponents.getPath().split("/");
+                    String storageId = pathParts[1];
+                    String repositoryId = pathParts[2];
+
+                    if (Objects.equals(artifactSyncRecord.getOpsType(), ArtifactSyncRecordOpsTypeEnum.DISPATCH.getVal())) {
+                        String path = artifactSyncRecord.getSourcePath().replace(str, "");
+                        artifactEventListenerRegistry.dispatchArtifactFileDispenseEvent(artifactSyncRecord.getSourceStorageId(),
+                                artifactSyncRecord.getSourceRepositoryId(),
+                                path,
+                                storageId,
+                                repositoryId,
+                                artifactSyncRecord.getSyncNo(),
+                                baseUri,
+                                ArtifactSyncRecordStatusEnum.SUCCESS.getVal());
+                    } else if (Objects.equals(artifactSyncRecord.getOpsType(), ArtifactSyncRecordOpsTypeEnum.PROMOTION.getVal())) {
+                        String urlStr = artifactSyncRecord.getSourcePath();
+                        UriComponents components = UriComponentsBuilder.fromHttpUrl(urlStr).build();
+                        // Extract URI parts
+                        String uri = components.getScheme() + "://" + components.getHost() + ":" + components.getPort();
+                        str = String.format("%s/%s/%s/", uri, artifactSyncRecord.getSourceStorageId(), artifactSyncRecord.getSourceRepositoryId());
+                        String path = artifactSyncRecord.getSourcePath().replace(str, "");
+                        artifactEventListenerRegistry.dispatchArtifactFilePromotionEvent(artifactSyncRecord.getSourceStorageId(),
+                                artifactSyncRecord.getSourceRepositoryId(),
+                                path,
+                                storageId,
+                                repositoryId,
+                                artifactSyncRecord.getSyncNo(),
+                                baseUri,
+                                ArtifactSyncRecordStatusEnum.SUCCESS.getVal());
+                    }
+                } catch (Exception e) {
+                    log.error("晋级/分发事件失败");
+                    log.error(e.getMessage(), e);
+                    //throw new RuntimeException(e);
+                }
             }
         } else if (ArtifactSyncRecordStatusEnum.FAILED.getVal().equals(status)) {
             log.error("晋级编号 [{}] 晋级失败，原因 [{}]", syncNo, failedReason);
