@@ -16,6 +16,7 @@ import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.util.FileSizeConvertUtils;
 import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.ws.server.*;
+import com.veadan.folib.ws.server.config.WsConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -76,6 +77,8 @@ public class FolibWsRunManageV2 {
 
     @Autowired
     private DistributedCacheComponent distributedCacheComponent;
+    @Autowired
+    private WsConfig wsConfig;
 
     private WebSocketContainer webSocketContainer;
 
@@ -268,7 +271,8 @@ public class FolibWsRunManageV2 {
     }
 
     public WSMessageResponse sendRequest(String targetHostName, WSMessageRequest wsMessageRequest) throws FolibWsRequestException {
-        return sendRequest(targetHostName, wsMessageRequest, promotionConfig.getWsRequestTimout());
+        //return sendRequest(targetHostName, wsMessageRequest, promotionConfig.getWsRequestTimout());
+        return sendRequest(targetHostName, wsMessageRequest, wsConfig.getWsRequestTimout());
     }
 
     public WSMessageResponse sendRequest(String targetHostName, WSMessageRequest wsMessageRequest, int timeout) throws FolibWsRequestException {

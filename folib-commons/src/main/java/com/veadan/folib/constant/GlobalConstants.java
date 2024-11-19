@@ -265,4 +265,21 @@ public interface GlobalConstants {
      * 扫描仓库key
      */
     String SCAN_ENABLE_REPOSITORY_KEY = "SCAN_ENABLE_REPOSITORY_KEY_%s";
+    /**
+     * 制品晋级并发线程数量
+     */
+    int FOLIB_PROMOTION_THREAD=4;
+
+    /**
+     * 制品晋级并发线程数key
+     */
+    String FOLIB_PROMOTION_THREAD_KEY = "FOLIB_PROMOTION_THREAD";
+    /**
+     * websocket响应超时时间 秒单位
+     */
+    int WS_REQUEST_TIMOUT=5;
+    /**
+     * websocket响应超时时间key
+     */
+    String WS_REQUEST_TIMOUT_KEY = "WS_REQUEST_TIMOUT";
 }

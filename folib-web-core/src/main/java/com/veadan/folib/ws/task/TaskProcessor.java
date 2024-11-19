@@ -3,6 +3,7 @@ package com.veadan.folib.ws.task;
 ;
 import cn.hutool.extra.spring.SpringUtil;
 import com.veadan.folib.ws.server.DistributionService;
+import com.veadan.folib.ws.server.config.WsConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +30,9 @@ public class TaskProcessor {
     private final Sinks.Many<DistributionTask> sink;
     private final Scheduler ioScheduler;
     //@Value("${folib.promotion.thread:4}")
-    private  int cpuCores;
+    //private final int cpuCores;
+    private WsConfig config;
+
 
     /**
      * TaskProcessor 构造函数
@@ -38,9 +41,10 @@ public class TaskProcessor {
      * @param distributionService 注入的 DistributionService 实例
      */
     @Autowired
-    public TaskProcessor(DistributionService distributionService) throws NoSuchFieldException, IllegalAccessException {
+    public TaskProcessor(DistributionService distributionService,WsConfig config) throws NoSuchFieldException, IllegalAccessException {
 
-        cpuCores = SpringUtil.getProperty("folib.promotion.thread") == null ? 4 : Integer.parseInt(SpringUtil.getProperty("folib.promotion.thread"));
+        this.config = config;
+        //cpuCores = this.config.getFoLibPromotionThread();
         this.distributionService = distributionService;
         //支持多个订阅者（多播），并且使用缓冲区来处理背压
         this.sink = Sinks.many().multicast().onBackpressureBuffer();
@@ -60,7 +64,7 @@ public class TaskProcessor {
     private void initializeTaskProcessing() {
         sink.asFlux()
                 // 并发数量控制
-                .parallel(cpuCores)
+                .parallel(this.config.getFoLibPromotionThread())
                 // 确保使用正确的调度器
                 .runOn(ioScheduler)
                 // 处理每个轨道中的任务

@@ -48,6 +48,7 @@ import com.veadan.folib.ws.common.FolibWsAction;
 import com.veadan.folib.ws.common.FolibWsRunManageUtil;
 import com.veadan.folib.ws.common.FolibWsRunManageV2;
 import com.veadan.folib.ws.server.*;
+import com.veadan.folib.ws.server.config.WsConfig;
 import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
 import com.veadan.folib.ws.task.DistributionTask;
 import lombok.Data;
@@ -170,6 +171,8 @@ public class PromotionUtil {
     private DistributionService distributionService;
     @Autowired
     private ArtifactEventListenerRegistry artifactEventListenerRegistry;
+    @Autowired
+    private WsConfig wsConfig;
 
     private static final long MAX_SLICE_BYTE_SIZE =   100L;//100MB
 
@@ -1195,7 +1198,8 @@ public class PromotionUtil {
                     public void exec(RetryTask retryTask) throws Exception {
                         try {
                             log.debug("晋级编号 [{}] 当前第 [{}] 个分片，共 [{}] 个分片，目标节点 [{}] 路径 [{}]", syncNo, finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath());
-                            WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), promotionConfig.getWsRequestTimoutOfArtifactUpload());
+                            //WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), promotionConfig.getWsRequestTimoutOfArtifactUpload());
+                            WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), wsConfig.getWsRequestTimout());
                             log.debug("晋级编号 [{}] 当前第 [{}] 个分片，共 [{}] 个分片，目标节点 [{}] 路径 [{}] 返回结果 [{}]", syncNo, finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath(), wsMessageResponse.toString());
                             if (!HttpStatus.OK.equals(wsMessageResponse.getStatus())) {
                                 throw new RuntimeException(String.valueOf(wsMessageResponse.getDate()));
@@ -1254,7 +1258,8 @@ public class PromotionUtil {
                     public void exec(RetryTask retryTask) throws Exception {
                         try {
                             log.debug("晋级编号 [{}] 当前第 [{}] 个分片，共 [{}] 个分片，目标节点 [{}] 路径 [{}]", syncNo, finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath());
-                            WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), promotionConfig.getWsRequestTimoutOfArtifactUpload());
+                            //WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), promotionConfig.getWsRequestTimoutOfArtifactUpload());
+                            WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), wsConfig.getWsRequestTimout());
                             log.debug("晋级编号 [{}] 当前第 [{}] 个分片，共 [{}] 个分片，目标节点 [{}] 路径 [{}] 返回结果 [{}]", syncNo, finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath(), wsMessageResponse.toString());
                             if (!HttpStatus.OK.equals(wsMessageResponse.getStatus())) {
                                 throw new RuntimeException(String.valueOf(wsMessageResponse.getDate()));
