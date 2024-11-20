@@ -242,5 +242,6 @@ export default {
     'packageTypeQuery':'选择包类型搜索',
     'StrategyTypeQuery': '选择策略类型搜索',
     'RepositoryNameQuery':'输入仓库名称搜索',
-    'Loading':'加载更多'
+    'Loading':'加载更多',
+    'Save':'保存',
 }

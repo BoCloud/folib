@@ -610,22 +610,28 @@
                 </a-col>
               </a-row>
               <a-row :gutter="[24]">
-                <a-col :span="12">
+                <a-col :span="18">
                   <a-button @click="moveStep(-1)" class="px-25">{{ $t('Storage.Back') }}</a-button>
                 </a-col>
-                <a-col :span="12" class="text-right">
-                  <a-button v-if="folibRepository.type === 'hosted'" type="primary"
-                    @click="addOrUpdateRepositorySecond(true)" class="px-25">
-                      {{ $t('Storage.Next') }}
-                  </a-button>
-                  <!-- <a-button v-if="folibRepository.type === 'hosted'" style="margin-left: 20px"
-                    @click="addOrUpdateRepositorySecond(true)" class="px-25">
-                    {{ folibRepositoryEditDisabled? '修改': '创建' }}并设置定时策略</a-button> -->
-
-                  <a-button v-else-if="folibRepository.type !== 'hosted'" type="primary" @click="moveStep(1)"
-                    class="px-25">{{ $t('Storage.Next') }}
-                  </a-button>
+                <a-col :span="3" class="text-right">
+                    <a-button  v-if="folibRepository.type === 'hosted'" @click="addOrUpdateRepositorySecond(true,false)" class="px-25">
+                        {{ $t('Storage.Save') }}
+                    </a-button>
                 </a-col>
+                  <a-col :span="3" class="text-right">
+                      <a-button v-if="folibRepository.type === 'hosted'" type="primary"
+                                @click="addOrUpdateRepositorySecond(true)" class="px-25">
+                          {{ $t('Storage.Next') }}
+                      </a-button>
+
+                      <!-- <a-button v-if="folibRepository.type === 'hosted'" style="margin-left: 20px"
+                        @click="addOrUpdateRepositorySecond(true)" class="px-25">
+                        {{ folibRepositoryEditDisabled? '修改': '创建' }}并设置定时策略</a-button> -->
+
+                      <a-button v-else-if="folibRepository.type !== 'hosted'" type="primary" @click="moveStep(1)"
+                                class="px-25">{{ $t('Storage.Next') }}
+                      </a-button>
+                  </a-col>
               </a-row>
             </a-form>
           </a-card>
@@ -809,7 +815,12 @@
                 <a-col :span="12">
                   <a-button @click="moveStep(-1)" class="px-25">{{ $t('Storage.Back') }}</a-button>
                 </a-col>
-                <a-col :span="12" class="text-right">
+                <a-col :span="9" class="text-right">
+                      <a-button  v-if="folibRepository.type === 'proxy'" @click="addOrUpdateRepositorySecond(true,false)" class="px-25">
+                          {{ $t('Storage.Save') }}
+                      </a-button>
+               </a-col>
+                <a-col :span="3" class="text-right">
                   <a-button type="primary" @click="addOrUpdateRepositoryHandel(true)" class="px-25">
                       {{ $t('Storage.Next') }}
                   </a-button>
@@ -844,7 +855,12 @@
               <a-col :span="12">
                 <a-button @click="moveStep(-1)" class="px-25">{{ $t('Storage.Back') }}</a-button>
               </a-col>
-              <a-col :span="12" class="text-right">
+                <a-col :span="9" class="text-right">
+                    <a-button  v-if="folibRepository.type === 'group'" @click="addOrUpdateRepositorySecond(true,false)" class="px-25">
+                        {{ $t('Storage.Save') }}
+                    </a-button>
+                </a-col>
+              <a-col :span="3" class="text-right">
                 <a-button type="primary" @click="addOrUpdateRepositoryHandel(true)" class="px-25">
                     {{ $t('Storage.Next') }}
                 </a-button>
@@ -2126,12 +2142,12 @@ export default {
       }
       return true
     },
-    addOrUpdateRepositorySecond(isNotSetCron) {
+    addOrUpdateRepositorySecond(isNotSetCron,isClose) {
       if (this.repositoryNameCheck(this.folibRepositoryIds)) {
-        this.addOrUpdateRepositoryHandel(isNotSetCron)
+        this.addOrUpdateRepositoryHandel(isNotSetCron,isClose)
       }
     },
-    addOrUpdateRepositoryHandel(isNotSetCron) {
+    addOrUpdateRepositoryHandel(isNotSetCron,isClose) {
       this.folibRepository.id = this.folibRepositoryIds
       //构建basedir
       if (this.currentStorage.storageProvider === 's3') {
@@ -2192,14 +2208,12 @@ export default {
 
         this.getStorage(this.currentStorage.id)
         if (!isNotSetCron) {
-            console.log("isNotSetCron")
           this.step = 0
           this.folibVisible = false
           this.resetFolibRepository()
         } else if (isNotSetCron) {
           if (this.folibRepository.type === 'hosted') {
             this.moveStep(1)
-              console.log("step", this.step)
           } else {
             this.moveStep(1)
           }
@@ -2211,6 +2225,11 @@ export default {
         let msg = error.indexOf('The repository id already exists') !== -1 ? this.$t('Storage.RepositoryNameExists') : this.$t('Storage.FailedCreate')
         this.message(err.response.status, "error", msg)
           this.stepsStatus="error"
+      }).finally(()=> {
+          if(isClose === false){
+              this.folibVisible = false;
+              this.step=0;
+          }
       })
 
     },
