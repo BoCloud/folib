@@ -2228,6 +2228,7 @@ export default {
       }).finally(()=> {
           if(isClose === false){
               this.folibVisible = false;
+              this.stepsStatus = 'process';
               this.step=0;
           }
       })
