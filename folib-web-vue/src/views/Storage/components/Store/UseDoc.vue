@@ -1224,7 +1224,7 @@ go 1.20' :readonly="true">
                       :readonly="true"
               ></prism-editor>
               <p></p>
-              <small>{{ $t('Store.HuggingFaceMLDownloadInfo2') }}<a href="https://jfrog.com/help/r/jfrog-artifactory-documentation/resolve-hugging-face-models-using-libraries">{{ $t('Store.HuggingFaceMLDownloadInfo3') }}</a></small>
+              <small>{{ $t('Store.HuggingFaceMLDownloadInfo2') }}<a href="https://hugging-face.cn/docs/huggingface_hub/quick-start">{{ $t('Store.HuggingFaceMLDownloadInfo3') }}</a></small>
 
           </a-timeline-item>
       </a-timeline>
