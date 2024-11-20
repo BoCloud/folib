@@ -38,4 +38,23 @@ public class WsConfig {
         }
         return timeout;
     }
+
+    public int getWsSendTimeout(){
+         int timeout = GlobalConstants.WS_SEND_TIMEOUT;
+        String cacheKey = distributedCacheComponent.get(GlobalConstants.WS_SEND_TIMEOUT_KEY);
+        if (StringUtils.isNotBlank(cacheKey)) {
+            timeout = Integer.parseInt(cacheKey);
+        }
+        return timeout;
+    }
+
+    public  int getWsRequestTimoutOfArtifactUpload(){
+        int timeout = GlobalConstants.WS_REQUEST_TIMOUT_OF_ARTIFACT_UPLOAD;
+        String cacheKey = distributedCacheComponent.get(GlobalConstants.WS_REQUEST_TIMOUT_OF_ARTIFACT_UPLOAD_KEY);
+        if (StringUtils.isNotBlank(cacheKey)) {
+            timeout = Integer.parseInt(cacheKey);
+        }
+        return timeout;
+
+    }
 }

@@ -1199,7 +1199,7 @@ public class PromotionUtil {
                         try {
                             log.debug("晋级编号 [{}] 当前第 [{}] 个分片，共 [{}] 个分片，目标节点 [{}] 路径 [{}]", syncNo, finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath());
                             //WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), promotionConfig.getWsRequestTimoutOfArtifactUpload());
-                            WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), wsConfig.getWsRequestTimout());
+                            WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), wsConfig.getWsRequestTimoutOfArtifactUpload());
                             log.debug("晋级编号 [{}] 当前第 [{}] 个分片，共 [{}] 个分片，目标节点 [{}] 路径 [{}] 返回结果 [{}]", syncNo, finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath(), wsMessageResponse.toString());
                             if (!HttpStatus.OK.equals(wsMessageResponse.getStatus())) {
                                 throw new RuntimeException(String.valueOf(wsMessageResponse.getDate()));
@@ -1259,7 +1259,7 @@ public class PromotionUtil {
                         try {
                             log.debug("晋级编号 [{}] 当前第 [{}] 个分片，共 [{}] 个分片，目标节点 [{}] 路径 [{}]", syncNo, finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath());
                             //WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), promotionConfig.getWsRequestTimoutOfArtifactUpload());
-                            WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), wsConfig.getWsRequestTimout());
+                            WSMessageResponse wsMessageResponse = folibWsRunManageV2.sendRequest(targetHostName, new WSMessageRequest(Command.UPLOAD, artifactSliceUploadReq), wsConfig.getWsRequestTimoutOfArtifactUpload());
                             log.debug("晋级编号 [{}] 当前第 [{}] 个分片，共 [{}] 个分片，目标节点 [{}] 路径 [{}] 返回结果 [{}]", syncNo, finalI + 1, size, targetHostName, artifactSliceUploadReq.getPath(), wsMessageResponse.toString());
                             if (!HttpStatus.OK.equals(wsMessageResponse.getStatus())) {
                                 throw new RuntimeException(String.valueOf(wsMessageResponse.getDate()));

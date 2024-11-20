@@ -282,4 +282,23 @@ public interface GlobalConstants {
      * websocket响应超时时间key
      */
     String WS_REQUEST_TIMOUT_KEY = "WS_REQUEST_TIMOUT";
+
+    /**
+     * websocket发送超时时间单位秒
+     */
+    int WS_SEND_TIMEOUT=3;
+
+    /**
+     * websocket发送超时时间key
+     */
+    String WS_SEND_TIMEOUT_KEY = "WS_SEND_TIMEOUT";
+
+    /**
+     * 制品晋级websocket请求超时时间 单位秒
+     */
+    int WS_REQUEST_TIMOUT_OF_ARTIFACT_UPLOAD =600;
+    /**
+     * 制品晋级websocket请求超时时间key
+     */
+    String WS_REQUEST_TIMOUT_OF_ARTIFACT_UPLOAD_KEY = "WS_REQUEST_TIMOUT_OF_ARTIFACT_UPLOAD";
 }
