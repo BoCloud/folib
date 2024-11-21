@@ -97,16 +97,16 @@ public class JfrogMapping {
 
     public static String accessConvert(Privilege privilege) {
         if (privilege == ADMIN) {
-            return "";
+            return "ARTIFACTS_MANAGE";
         } else if (privilege == DELETE) {
             return "ARTIFACTS_DELETE";
         } else if (privilege == DEPLOY) {
             return "ARTIFACTS_DEPLOY";
         } else if (privilege == ANNOTATE) {
-            return "ARTIFACTS_DEPLOY";
+            return "CONFIGURATION_ADD_UPDATE_METADATA";
         } else if (privilege == READ) {
             return "ARTIFACTS_RESOLVE";
-        } else {
+        }else {
             return "";
         }
     }

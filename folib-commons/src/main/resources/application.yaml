@@ -287,8 +287,8 @@ thirdParty:
     password: ""
 custom:
   unicom:
-    appCode: ""
-    appSecret: ""
-    appName: ""
-    verifyUrl: ""
-    userDetailUrl: ""
+    appCode: "126"
+    appSecret: "f95b5715436954c87bef2a27d688b24f"
+    appName: "博云"
+    verifyUrl: "https://testdevops.chinaunicom.cn/openapi_view/common/domain/user/verification"
+    userDetailUrl: "https://tianti.test.tg.unicom.local/openapi_view/api/v1/commonDomain/orgs/userGenericNew "

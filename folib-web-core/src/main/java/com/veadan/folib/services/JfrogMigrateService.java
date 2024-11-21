@@ -1,7 +1,7 @@
 package com.veadan.folib.services;
 
 import com.veadan.folib.forms.JfrogMigrateForm;
-import org.jfrog.artifactory.client.Artifactory;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * @author huayanjun
@@ -9,5 +9,7 @@ import org.jfrog.artifactory.client.Artifactory;
  */
 public interface JfrogMigrateService {
 
-    void migrate(Artifactory artifactory,JfrogMigrateForm form);
+    void migrate(JfrogMigrateForm form);
+
+    void changeRepositoryType(MultipartFile file);
 }

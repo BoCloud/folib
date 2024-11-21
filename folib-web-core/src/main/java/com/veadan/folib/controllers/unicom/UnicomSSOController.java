@@ -350,28 +350,22 @@ public class UnicomSSOController extends BaseController {
 
 
     public UicomUserDTO verify(String sessionId) {
-//        try {
-//            HttpHeaders header = getHeader();
-//            // 这里需要将sessionId放到query参数中，
-//            String url = unicomConfig.getVerifyUrl() + "?sessionId=" + sessionId;
-//            HttpEntity<String> entity = new HttpEntity<>(header);
-//            ResponseEntity<UicomUserDTO> response = restTemplate.exchange(url, HttpMethod.POST, entity, UicomUserDTO.class);
-//            if (response.getStatusCode() == HttpStatus.OK) {
-//                log.debug("verify success,sessionId:{}", sessionId);
-//                return response.getBody();
-//            } else {
-//                return null;
-//            }
-//        } catch (Exception e) {
-//            log.error("verify failed,sessionId:{},error:{}", sessionId, e.getMessage(), e);
-//            return null;
-//        }
-        UicomUserDTO dto = new UicomUserDTO();
-        dto.setName("huahua");
-        dto.setEmail("huayan@163.com");
-        dto.setLoginName("hua");
-        dto.setMobile("152529172");
-        return dto;
+        try {
+            HttpHeaders header = getHeader();
+            // 这里需要将sessionId放到query参数中，
+            String url = unicomConfig.getVerifyUrl() + "?sessionId=" + sessionId;
+            HttpEntity<String> entity = new HttpEntity<>(header);
+            ResponseEntity<UicomUserDTO> response = restTemplate.exchange(url, HttpMethod.POST, entity, UicomUserDTO.class);
+            if (response.getStatusCode() == HttpStatus.OK) {
+                log.debug("verify success,sessionId:{}", sessionId);
+                return response.getBody();
+            } else {
+                return null;
+            }
+        } catch (Exception e) {
+            log.error("verify failed,sessionId:{},error:{}", sessionId, e.getMessage(), e);
+            return null;
+        }
     }
 
     /**
@@ -396,23 +390,21 @@ public class UnicomSSOController extends BaseController {
     }
 
     public List<String> getUserByProject(String projectId) {
-//        try {
-//            HttpHeaders header = getHeader();
-//            String url = unicomConfig.getUserByProjectUrl() + "?projectId=" + projectId;
-//            HttpEntity<String> entity = new HttpEntity<>(header);
-//            ResponseEntity<List> response = restTemplate.exchange(url, HttpMethod.POST, entity, List.class);
-//            if (response.getStatusCode() == HttpStatus.OK) {
-//                log.debug("get user by project {} success", projectId);
-//                return response.getBody();
-//            } else {
-//                return null;
-//            }
-//        } catch (Exception e) {
-//            log.error("get user by project {} failed:{}", projectId,e.getMessage(),e);
-//            return null;
-//        }
-        return Collections.singletonList("test1");
-
+        try {
+            HttpHeaders header = getHeader();
+            String url = unicomConfig.getUserByProjectUrl() + "?projectId=" + projectId;
+            HttpEntity<String> entity = new HttpEntity<>(header);
+            ResponseEntity<List> response = restTemplate.exchange(url, HttpMethod.POST, entity, List.class);
+            if (response.getStatusCode() == HttpStatus.OK) {
+                log.debug("get user by project {} success", projectId);
+                return response.getBody();
+            } else {
+                return null;
+            }
+        } catch (Exception e) {
+            log.error("get user by project {} failed:{}", projectId,e.getMessage(),e);
+            return null;
+        }
     }
 
 
