@@ -318,7 +318,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 }
             }
             // 设置默认密码等于用户名
-            newUser.setPassword(userName);
+            newUser.setPassword("DayeKJjeRQ$4N3z");
             userService.save(new EncodedPasswordUser(newUser, passwordEncoder));
         }
     }
@@ -326,6 +326,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
     private void repositoryMigrate(String storageId, Artifactory artifactory, JfrogMigrateForm form) {
         Repositories repositories = artifactory.repositories();
         Storage storage = configurationManagementService.getConfiguration().getStorage(storageId);
+
         List<LightweightRepository> repoList = new LinkedList<>();
         repoList.addAll(repositories.list(LOCAL));
         repoList.addAll(repositories.list(REMOTE));
@@ -343,6 +344,10 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 continue;
             }
             repositoryDto.setId(repositoryId);
+            if("s3".equals(storage.getStorageProvider())){
+                String basedir=storage.getBasedir()+"/"+repositoryId;
+                repositoryDto.setBasedir(basedir);
+            }
             repositoryDto.setStorageProvider(storage.getStorageProvider());
             repositoryDto.setTrashEnabled(true);
             repositoryDto.setAllowsDeletion(true);

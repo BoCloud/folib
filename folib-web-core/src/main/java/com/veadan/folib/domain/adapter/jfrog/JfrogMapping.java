@@ -53,6 +53,7 @@ public class JfrogMapping {
         layoutMap.put("Go", GoArtifactCoordinates.LAYOUT_NAME);
         layoutMap.put("Debian", DebianConstant.LAYOUT_NAME);
         layoutMap.put("Rpm", RpmArtifactCoordinates.LAYOUT_NAME);
+        layoutMap.put("Yum",RpmArtifactCoordinates.LAYOUT_NAME);
         layoutMap.put("Swift", "");
         layoutMap.put("Terraform", "");
         layoutMap.put("TerraformBE", "");
