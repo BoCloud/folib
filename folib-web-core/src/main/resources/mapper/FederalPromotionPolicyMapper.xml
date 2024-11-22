@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.veadan.folib.mapper.FederalPromotionPolicyMapper">
+    <resultMap type="com.veadan.folib.entity.FederalPromotionPolicy" id="FederalPromotionPolicyMap">
+        <result property="policyId" column="policy_id"/>
+        <result property="name" column="name"/>
+        <result property="isEnabled" column="is_enabled"/>
+        <result property="tag" column="tag"/>
+        <result property="createdTime" column="created_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="updatedBy" column="updated_by"/>
+    </resultMap>
+
+    <!-- 通过ID查询单条数据 -->
+    <select id="queryById" resultMap="FederalPromotionPolicyMap">
+        select
+        policy_id,name,is_enabled,tag,created_time,update_time,created_by,updated_by
+        from federal_promotion_policy
+        where policy_id = #{policyId}
+    </select>
+    <!--统计总行数-->
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from federal_promotion_policy
+        <where>
+            <if test="policyId != null and policyId != ''">
+                and policy_id = #{policyId}
+            </if>
+            <if test="name != null and name != ''">
+                and name = #{name}
+            </if>
+            <if test="isEnabled != null and isEnabled != ''">
+                and is_enabled = #{isEnabled}
+            </if>
+            <if test="tag != null and tag != ''">
+                and tag = #{tag}
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                and created_time = #{createdTime}
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                and update_time = #{updateTime}
+            </if>
+            <if test="createdBy != null and createdBy != ''">
+                and created_by = #{createdBy}
+            </if>
+            <if test="updatedBy != null and updatedBy != ''">
+                and updated_by = #{updatedBy}
+            </if>
+        </where>
+    </select>
+
+    <!--新增数据-->
+    <insert id="insert" keyProperty="policy_id" useGeneratedKeys="true">
+        insert into
+        federal_promotion_policy(policy_id,name,is_enabled,tag,created_time,update_time,created_by,updated_by)
+        values (#{policyId},#{name},#{isEnabled},#{tag},#{createdTime},#{updateTime},#{createdBy},#{updatedBy})
+    </insert>
+
+    <!-- 批量新增数据 -->
+    <insert id="insertBatch" keyProperty="policy_id" useGeneratedKeys="true">
+        insert into
+        federal_promotion_policy(policy_id,name,is_enabled,tag,created_time,update_time,created_by,updated_by)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.policyId},#{entity.name},#{entity.isEnabled},#{entity.tag},#{entity.createdTime},#{entity.updateTime},#{entity.createdBy},#{entity.updatedBy})
+        </foreach>
+    </insert>
+
+    <!-- 批量新增或按主键更新数据 -->
+    <insert id="insertOrUpdateBatch" keyProperty="policy_id" useGeneratedKeys="true">
+        insert into
+        federal_promotion_policy(policy_id,name,is_enabled,tag,created_time,update_time,created_by,updated_by)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.policyId},#{entity.name},#{entity.isEnabled},#{entity.tag},#{entity.createdTime},#{entity.updateTime},#{entity.createdBy},#{entity.updatedBy})
+        </foreach>
+        on duplicate key update
+        policy_id=values(policy_id),
+        name=values(name),
+        is_enabled=values(is_enabled),
+        tag=values(tag),
+        created_time=values(created_time),
+        update_time=values(update_time),
+        created_by=values(created_by),
+        updated_by=values(updated_by)
+    </insert>
+
+    <!-- 更新数据 -->
+    <update id="update">
+        update federal_promotion_policy
+        <set>
+            <if test="policyId != null and policyId != ''">
+                policy_id = #{policyId},
+            </if>
+            <if test="name != null and name != ''">
+                name = #{name},
+            </if>
+            <if test="isEnabled != null and isEnabled != ''">
+                is_enabled = #{isEnabled},
+            </if>
+            <if test="tag != null and tag != ''">
+                tag = #{tag},
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                created_time = #{createdTime},
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                update_time = #{updateTime},
+            </if>
+            <if test="createdBy != null and createdBy != ''">
+                created_by = #{createdBy},
+            </if>
+            <if test="updatedBy != null and updatedBy != ''">
+                updated_by = #{updatedBy},
+            </if>
+        </set>
+        where policy_id = #{policyId}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteById">
+        delete from federal_promotion_policy where policy_id = #{policyId}
+    </delete>
+</mapper>
