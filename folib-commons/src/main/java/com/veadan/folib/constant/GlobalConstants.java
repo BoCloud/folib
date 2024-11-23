@@ -301,4 +301,21 @@ public interface GlobalConstants {
      * 制品晋级websocket请求超时时间key
      */
     String WS_REQUEST_TIMOUT_OF_ARTIFACT_UPLOAD_KEY = "WS_REQUEST_TIMOUT_OF_ARTIFACT_UPLOAD";
+
+    /**
+     * 仓库路径查询线程数
+     */
+    int REPOSITORY_PATH_THREAD = 16;
+    /**
+     * 仓库路径查询线程数key
+     */
+    String REPOSITORY_PATH_THREAD_KEY = "REPOSITORY_PATH_THREAD";
+    /**
+     * 仓库路径查询批量大小
+     */
+    int REPOSITORY_PATH_BATCH_SIZE = 40;
+    /**
+     * 仓库路径查询批量大小key
+     */
+    String REPOSITORY_PATH_BATCH_SIZE_KEY = "REPOSITORY_PATH_BATCH_SIZE";
 }

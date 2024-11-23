@@ -8,8 +8,10 @@ import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.booters.PropertiesBooter;
 import com.veadan.folib.cloud.storage.s3fs.S3FileSystemProvider;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
 import com.veadan.folib.providers.io.*;
@@ -59,6 +61,8 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
     private static final Logger logger = LoggerFactory.getLogger(DirectoryListingService.class);
 
     private String baseUrl;
+    @Inject
+    private DistributedCacheComponent distributedCacheComponent;
 
     @Inject()
     @Named("asyncApiBrowseThreadPoolExecutor")
@@ -326,10 +330,10 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
         return listPaths(path)
                 //.filter(this::isValidPath)
                 .collectList()
-                .flatMapMany(contentPaths -> Flux.fromIterable(ListUtils.partition(contentPaths, 20)))
+                .flatMapMany(contentPaths -> Flux.fromIterable(ListUtils.partition(contentPaths, this.getRepositoryPathBatchSize())))
                 // 使用并行处理提高效率 在多个 Flux 中使用 .publishOn(Schedulers.boundedElastic()) 时，Schedulers.boundedElastic() 是共享的，而不是为每个 Flux 创建独立的线程池。
                 .publishOn(Schedulers.boundedElastic())
-                .parallel(16)
+                .parallel(this.getRepositoryPathThread())
                 // 根据路径构建文件内容任务
                 .flatMap(paths -> buildFileContentTask(paths, showChecksum))
                 // 将并行处理的结果序列化
@@ -612,6 +616,25 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
     }
 
 
+    public int getRepositoryPathThread() {
+        int thread = GlobalConstants.REPOSITORY_PATH_THREAD;
+        String cacheKey = distributedCacheComponent.get(GlobalConstants.REPOSITORY_PATH_THREAD_KEY);
+        if (StringUtils.isNotBlank(cacheKey)) {
+            thread = Integer.parseInt(cacheKey);
+        }
+        return thread;
+
+    }
+
+
+    public int getRepositoryPathBatchSize() {
+        int batchSize = GlobalConstants.REPOSITORY_PATH_BATCH_SIZE;
+        String cacheKey = distributedCacheComponent.get(GlobalConstants.REPOSITORY_PATH_BATCH_SIZE_KEY);
+        if (StringUtils.isNotBlank(cacheKey)) {
+            batchSize = Integer.parseInt(cacheKey);
+        }
+        return batchSize;
+    }
 
 
 }
