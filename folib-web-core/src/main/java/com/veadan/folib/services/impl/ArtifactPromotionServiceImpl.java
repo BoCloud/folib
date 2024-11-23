@@ -1621,10 +1621,12 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     @Override
     public ResponseEntity<?> deleteTask(String syncNo) {
         ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectBySyncNo(syncNo);
-        if (artifactSyncRecord.getStatus() >= 3) {
+        if (artifactSyncRecord.getStatus() == 3) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("任务已经结束不能删除");
         }
-        promotionUtil.deleteTask(syncNo);
+        if(artifactSyncRecord.getStatus()<3){
+             promotionUtil.deleteTask(syncNo);
+        }
         artifactSyncSlaveRecordMapper.deleteBySyncNo(syncNo);
         artifactSyncRecordMapper.delete(artifactSyncRecord);
         return ResponseEntity.ok().build();
