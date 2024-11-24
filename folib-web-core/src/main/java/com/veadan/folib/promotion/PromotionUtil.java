@@ -482,8 +482,6 @@ public class PromotionUtil {
                 strBuilder.append(targetStorageId);
             }
             strBuilder.append("/").append(targetRepositoryId).append("/").append(artifactPath);
-            String dispatchType = dispatchNodeDto.getDispatchType();
-
             Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepositoryId);
             RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, artifactPath);
             //  遍历所有制品文件后逐步上传
@@ -521,8 +519,8 @@ public class PromotionUtil {
             if (Boolean.TRUE.equals(recordStatus)) {
                 artifactComponent.handlerArtifactPromotion(dispatchNodeDto.getClusterEnName(), srcStorageId, srcRepositoryId, artifactPath, PromotionStatusEnum.FAIL.getStatus());
             }
-            log.error("分发 [{} {} {} {} {}] 失败 [{}] ",
-                    dispatchNodeDto.getDispatchType(), dispatchNodeDto.getClusterEnName(),
+            log.error("分发 [{} {} {} {}] 失败 [{}] ",
+                    dispatchNodeDto.getClusterEnName(),
                     targetStorageId, targetRepositoryId, artifactPath, ExceptionUtils.getStackTrace(e));
             if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;

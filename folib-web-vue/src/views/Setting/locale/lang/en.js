@@ -27,7 +27,7 @@ export default {
     'AdvancedConfig': 'Advanced configuration',
     'BasicConfig': 'Basic configuration',
     'ApplicationName': 'Application name',
-    'NodeTransmissionRateLimit': 'Node Transmission Rate Limit (KB/s)',
+    'NodeTransmissionRateLimit': 'Node Transmission Rate Limit(KB/s)',
     'ProductTransferSliceSize': 'Product Transfer Slice Size (MB)',
     'PortNumber': 'Port',
     'Note': 'Note: ',

@@ -43,4 +43,7 @@ public class AnonymousAccessModel implements AccessModel
         return target.getPathAuthorities(storageId, repositoryId, paths);
     }
 
+    public AccessModel getAccessModelTarget() {
+        return target;
+    }
 }

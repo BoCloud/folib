@@ -41,6 +41,11 @@ public class RepositoryForm {
     private String layout;
 
     /**
+     * 子布局类型
+     */
+    private String subLayout;
+
+    /**
      * 仓库类型 默认 hosted
      */
     private String type;
