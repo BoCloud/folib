@@ -39,6 +39,7 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
@@ -129,10 +130,12 @@ public class PhpArtifactController extends BaseArtifactController {
                                                HttpServletRequest request,
                                                HttpServletResponse response)
             throws Exception {
-        final String storageId = repository.getStorage().getId();
-        final String repositoryId = repository.getId();
+        String storageId = repository.getStorage().getId();
+        String repositoryId = repository.getId();
         logger.info("Requested /{}/{}/{}.", storageId, repositoryId, path);
-        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, PhpArtifactCoordinates.DEFAULT_PACKAGES);
+        RepositoryPath repositoryPath = getLocalRepositoryPath(storageId, repositoryId, PhpArtifactCoordinates.DEFAULT_PACKAGES);
+        storageId = repositoryPath.getStorageId();
+        repositoryId = repositoryPath.getRepositoryId();
         JSONObject packageJson = getSourcePackagesJson(repositoryPath);
         String mirrorsKey = "mirrors";
         if (packageJson.containsKey(mirrorsKey)) {
@@ -189,6 +192,9 @@ public class PhpArtifactController extends BaseArtifactController {
      * @return 原packages.json文件信息
      */
     private JSONObject getSourcePackagesJson(RepositoryPath repositoryPath) throws IOException {
+        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+            return new JSONObject();
+        }
         String packages = artifactComponent.readRepositoryPathContent(repositoryPath);
         return JSONObject.parseObject(packages);
     }
@@ -247,6 +253,9 @@ public class PhpArtifactController extends BaseArtifactController {
      */
     private String getTargetUrl(String storageId, String repositoryId, String artifactPath, String name, String reference) throws IOException {
         String artifactContent = artifactComponent.readRepositoryPathContent(storageId, repositoryId, artifactPath);
+        if (StringUtils.isBlank(artifactContent)) {
+            return "";
+        }
         JSONObject artifactJson = JSONObject.parseObject(artifactContent);
         JSONObject packagesJson = artifactJson.getJSONObject("packages");
         JSONArray packagesJsonArray = packagesJson.getJSONArray(name);
@@ -265,5 +274,16 @@ public class PhpArtifactController extends BaseArtifactController {
             }
         }
         return url;
+    }
+
+    private RepositoryPath getLocalRepositoryPath(String storageId, String repositoryId, String artifactPath) throws IOException {
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        repositoryPath.setDisableRemote(Boolean.TRUE);
+        RepositoryPath cacheRepositoryPath = artifactResolutionService.resolvePath(repositoryPath);
+        if (Objects.nonNull(cacheRepositoryPath) && Files.exists(cacheRepositoryPath)) {
+            return cacheRepositoryPath;
+        }
+        repositoryPath.setDisableRemote(null);
+        return repositoryPath;
     }
 }

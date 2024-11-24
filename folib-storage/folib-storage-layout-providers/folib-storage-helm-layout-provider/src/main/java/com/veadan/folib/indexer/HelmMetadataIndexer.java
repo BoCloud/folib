@@ -209,8 +209,6 @@ public class HelmMetadataIndexer {
 
             Path filePath = Paths.get(String.join(".", path, "sha256"));
             metadata.helmChart.digest = readSHA256FileContent(filePath);
-            String pathPrefix = StringUtils.defaultIfBlank(baseUrl, "local://");
-            metadata.helmChart.urls = Lists.newArrayList(String.join("", pathPrefix, Paths.get(path).getFileName().toString()));
         }
         metadata.helmChart.created = Instant.now().toString();
     }

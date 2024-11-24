@@ -612,6 +612,7 @@ public class StoragesConfigurationController
             storageTreeForm = StorageTreeForm.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
             repositories = new LinkedList<>(storage.getRepositories().values());
             repositories = repositories.stream().distinct()
+                    .filter(Repository::isAllowAnonymous)
                     .filter(r -> !filterByType || r.getType().equalsIgnoreCase(type))
                     .filter(r -> !filterByLayout || r.getLayout().equalsIgnoreCase(layout))
                     .filter(r -> !filterByPolicy || r.getPolicy().equalsIgnoreCase(policy))

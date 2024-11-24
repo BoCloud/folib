@@ -184,7 +184,6 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
 
     private DirectoryListing fromPath(Path path)
             throws IOException {
-        RepositoryPath repositoryPath = (RepositoryPath) path;
         path = path.normalize();
 
         DirectoryListing directoryListing = new DirectoryListing();
@@ -371,7 +370,6 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
                 Flux::fromStream, // 将列出的文件转换为Flux流，以便进行反应式处理。
                 Stream::close // 指定在不再需要流时如何关闭它，确保资源的正确释放。
         ); // 指定在哪个线程上订阅和处理事件，这里选择使用bounded
-
         return pathFlux;
     }
 
@@ -393,9 +391,11 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
                     (!Files.isHidden(p) || p.toString().contains(".specs") || isTrashNotHiddenPath(p));
             if (isValid) {
                 //校验权限
-                RepositoryPath repositoryPath = (RepositoryPath) p;
-                if (!validatePrivileges(repositoryPath.getRepository(), repositoryPath, Privileges.ARTIFACTS_RESOLVE.getAuthority())) {
-                    return false;
+                if (p instanceof RepositoryPath) {
+                    RepositoryPath repositoryPath = (RepositoryPath) p;
+                    if (!validatePrivileges(repositoryPath.getRepository(), repositoryPath, Privileges.ARTIFACTS_RESOLVE.getAuthority())) {
+                        return false;
+                    }
                 }
             }
             return isValid;

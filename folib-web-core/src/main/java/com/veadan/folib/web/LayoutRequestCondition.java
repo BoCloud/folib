@@ -4,6 +4,7 @@ import cn.hutool.extra.spring.SpringUtil;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.veadan.folib.configuration.StoragesConfigurationManager;
+import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.CacheUtil;
 import org.springframework.web.servlet.mvc.condition.AbstractRequestCondition;
@@ -85,7 +86,11 @@ public class LayoutRequestCondition extends AbstractRequestCondition<ExposableRe
         CacheUtil<String, Repository> cacheUtil = CacheUtil.getInstance();
         Repository repository = cacheUtil.get(key);
         if (repository == null) {
-            repository = configurationManager.getRepository(storageId, repositoryId);
+            Storage storage = configurationManager.getStorage(storageId);
+            if (storage == null) {
+                return null;
+            }
+            repository = storage.getRepository(repositoryId);
             if (repository == null) {
                 return new RepositoryNotFoundRequestCondition(repositoryId);
             }

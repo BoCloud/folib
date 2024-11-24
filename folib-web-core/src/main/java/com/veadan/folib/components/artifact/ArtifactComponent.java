@@ -194,6 +194,9 @@ public class ArtifactComponent {
      */
     public String readRepositoryPathContent(String storageId, String repositoryId, String path) throws IOException {
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+        if (!Files.exists(repositoryPath)) {
+            return "";
+        }
         return readRepositoryPathContent(repositoryPath);
     }
 

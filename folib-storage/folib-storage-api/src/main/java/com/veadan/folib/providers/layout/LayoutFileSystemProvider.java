@@ -203,7 +203,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
                         throws IOException {
                     try {
                         RepositoryPath itemPath = (RepositoryPath) file;
-                        if (RepositoryPathUtil.include(1, itemPath, isDockerLayout, false)) {
+                        if (RepositoryPathUtil.include(1, itemPath, isDockerLayout, false, "")) {
                             if (StringUtils.isNotBlank(lastModifiedTime)) {
                                 LocalDateTime lastModifiedDateTime = getFileUpdateTime(itemPath);
                                 if (Objects.isNull(lastModifiedDateTime) || !LocalDateTime.now().minusDays(Integer.parseInt(lastModifiedTime)).isBefore(lastModifiedDateTime)) {
@@ -225,7 +225,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
                     try {
                         RepositoryPath itemPath = (RepositoryPath) dir;
                         logger.info("RepositoryPath directory [{}] ", itemPath.toString());
-                        if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !RepositoryPathUtil.include(2, itemPath, isDockerLayout)) {
+                        if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !RepositoryPathUtil.include(2, itemPath, isDockerLayout, "")) {
                             logger.info("RepositoryPath directory [{}] skip...", itemPath.toString());
                             return FileVisitResult.SKIP_SUBTREE;
                         }

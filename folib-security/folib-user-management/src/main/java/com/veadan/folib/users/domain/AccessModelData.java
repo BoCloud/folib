@@ -1,8 +1,10 @@
 package com.veadan.folib.users.domain;
 
 import com.google.common.collect.ImmutableSet;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.users.dto.*;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang.StringUtils;
 
 import javax.annotation.concurrent.Immutable;
@@ -141,22 +143,56 @@ public class AccessModelData
                 }
                 privileges.addAll(repository.getRepositoryPrivileges());
                 for (PathPrivileges pathPrivilege : repository.getPathPrivileges()) {
-                    String normalizedPath = StringUtils.chomp(pathPrivilege.getPath(), "/");
-                    String pathKey = repositoryKey + normalizedPath;
-                    String pathBrowseKey = storageBrowseKey + repository.getRepositoryId() + separator + normalizedPath;
-                    if (!normalizedUrl.startsWith(pathKey) && !normalizedUrl.startsWith(pathBrowseKey)) {
+                    if (normalizedUrl.equals(repositoryKey) || normalizedUrl.equals(repositoryBrowseKey)) {
+                        privileges.addAll(pathPrivilege.getPrivileges());
                         continue;
                     }
-                    String pathKeyPattern = pathKey + end;
-                    String pathBrowseKeyPattern = pathBrowseKey + end;
-                    boolean flag = normalizedUrl.matches(pathKeyPattern) || normalizedUrl.matches(pathBrowseKeyPattern) || normalizedUrl.equals(pathKey) || normalizedUrl.equals(pathBrowseKey) || pathPrivilege.isWildcard();
-                    if (flag) {
-                        privileges.addAll(pathPrivilege.getPrivileges());
+                    String normalizedPath = StringUtils.chomp(pathPrivilege.getPath(), "/");
+                    List<String> pathKeyList = splitPath(normalizedUrl, storage.getStorageId(), repository.getRepositoryId(), normalizedPath);
+                    for (String path : pathKeyList) {
+                        String pathKey = StringUtils.removeEnd(repositoryKey, GlobalConstants.SEPARATOR) + GlobalConstants.SEPARATOR + path;
+                        String pathBrowseKey = storageBrowseKey + repository.getRepositoryId() + GlobalConstants.SEPARATOR + path;
+                        String pathKeyPattern = pathKey, pathBrowseKeyPattern = pathBrowseKey;
+                        if (!normalizedPath.contains("*") && !normalizedPath.contains("?")) {
+                            pathKeyPattern = pathKey + end;
+                            pathBrowseKeyPattern = pathBrowseKey + end;
+                        }
+                        if (!normalizedUrl.startsWith(pathKey) && !normalizedUrl.startsWith(pathBrowseKey) && !normalizedUrl.matches(pathKeyPattern) && !normalizedUrl.matches(pathBrowseKeyPattern)) {
+                            continue;
+                        }
+                        boolean flag = normalizedUrl.matches(pathKeyPattern) || normalizedUrl.matches(pathBrowseKeyPattern) || normalizedUrl.equals(pathKey) || normalizedUrl.equals(pathBrowseKey) || pathPrivilege.isWildcard();
+                        if (flag) {
+                            privileges.addAll(pathPrivilege.getPrivileges());
+                        }
                     }
                 }
             }
         }
         return privileges;
+    }
+
+    public static List<String> splitPath(String normalizedUrl, String storageId, String repositoryId, String path) {
+        String storageAndRepository = String.format("/%s/%s/", storageId, repositoryId);
+        int level = normalizedUrl.substring(normalizedUrl.indexOf(storageAndRepository) + storageAndRepository.length()).split("/").length;
+        List<String> result = Lists.newArrayList();
+        String[] parts = path.split("/");
+        StringBuilder currentPath = new StringBuilder();
+        String appendPath = "";
+        for (String part : parts) {
+            if (currentPath.length() > 0) {
+                currentPath.append("/");
+            }
+            currentPath.append(part);
+            appendPath = currentPath.toString();
+            if (appendPath.split("/").length == level) {
+                result.add(StringUtils.removeStart(currentPath.toString(), GlobalConstants.SEPARATOR));
+            }
+        }
+        String p = StringUtils.removeStart(path, GlobalConstants.SEPARATOR);
+        if (!result.contains(p)) {
+            result.add(p);
+        }
+        return result;
     }
 
 }

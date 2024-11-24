@@ -545,7 +545,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
         final String repositoryId = repository.getId();
         String path = String.join("/", "models", artifactPath);
         logger.info("Requested get HuggingFaceML  file {}/{}/{}.", storageId, repositoryId, path);
-        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
         vulnerabilityBlock(repositoryPath);
         response.setCharacterEncoding("UTF-8");
         response.setHeader("Content-Disposition", "attachment;" + repositoryPath.getFileName().toString());

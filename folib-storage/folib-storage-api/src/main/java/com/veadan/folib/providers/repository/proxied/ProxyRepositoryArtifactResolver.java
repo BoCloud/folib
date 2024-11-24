@@ -104,13 +104,6 @@ public class ProxyRepositoryArtifactResolver {
                                                                  RepositoryPath repositoryPath)
             throws IOException {
         artifactManagementService.store(repositoryPath, is);
-        // helm 代理修改索引
-        boolean indexFlag = repositoryPath.getRepository().getLayout().equalsIgnoreCase("helm")
-                && repositoryPath.toString().endsWith("index.yaml");
-        if (indexFlag) {
-            helmRepoUtil.reloadIndex(repositoryPath);
-            logger.info("Reload helm index");
-        }
         // TODO: Add a policy for validating the checksums of downloaded artifacts
         // TODO: Validate the local checksum against the remote's checksums    徐新平
         // Serve the downloaded artifact
