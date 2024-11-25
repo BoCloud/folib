@@ -1212,6 +1212,7 @@ public class PromotionUtil {
                 updateRecordStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal(), syncNo, null);
             } catch (Exception e) {
                 // 更新记录状态
+                log.error(" artifactSyncSlaveRecord:{}",JSON.toJSONString(builder));
                 artifactSyncSlaveRecordMapper.updateRecordStatus(builder.getChunkArtifactRecordId(), ArtifactSyncRecordStatusEnum.FAILED.getVal(), new Date(), e.getMessage());
                 updateRecordStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal(), syncNo, e.getMessage());
                 throw e;
