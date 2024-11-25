@@ -381,7 +381,7 @@
             class="my-editor height-300"
             :value="
               'helm  registry  login  ' +
-              baseUrl +'/storages/'+
+              baseUrl +'storages/'+
               folibRepository.storageId +
               '/' +
               folibRepository.id +
@@ -390,7 +390,7 @@
               'helm  repo  add   ' +
               folibRepository.id +
               '   ' +
-              baseUrl +'/storages/'+
+              baseUrl +'storages/'+
               folibRepository.storageId +
               '/' +
               folibRepository.id +
