@@ -381,7 +381,7 @@
             class="my-editor height-300"
             :value="
               'helm  registry  login  ' +
-              baseUrl +
+              baseUrl +'/storages/'+
               folibRepository.storageId +
               '/' +
               folibRepository.id +
@@ -390,7 +390,7 @@
               'helm  repo  add   ' +
               folibRepository.id +
               '   ' +
-              baseUrl +
+              baseUrl +'/storages/'+
               folibRepository.storageId +
               '/' +
               folibRepository.id +
@@ -445,7 +445,7 @@
           <prism-editor
             class="my-editor height-300"
             :value="
-              'helm reop update  #' + this.$t('Store.HelmRepoUpdate') +
+              'helm repo update  #' + this.$t('Store.HelmRepoUpdate') +
               '\n' +
               '\n' +
               'helm search repo mysql     #' + this.$t('Store.HelmRepoSearch') +
@@ -453,7 +453,7 @@
               '\n' +
               'helm pull  ' +
               folibRepository.id +
-              '/mysql   ./    #' + this.$t('Store.HelmPull') +
+              '/mysql       #' + this.$t('Store.HelmPull') +
               '\n'
             "
             :highlight="highlighterHandle"
