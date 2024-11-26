@@ -94,23 +94,26 @@ public class AccessModelData
                     }
                     continue;
                 }
-                for (String path : paths) {
+                for (String itemPath : paths) {
                     for (PathPrivileges pathPrivilege : repository.getPathPrivileges()) {
-                        pattern = pathPrivilege.getPath();
-                        if (StringUtils.isBlank(pattern)) {
-                            continue;
+                        String normalizedPath = StringUtils.chomp(pathPrivilege.getPath(), "/");
+                        List<String> pathKeyList = Lists.newArrayList();
+                        pathKeyList.add(normalizedPath);
+                        if (enableSplitPath) {
+                            pathKeyList = splitPath(itemPath, storage.getStorageId(), repository.getRepositoryId(), normalizedPath);
                         }
-                        pattern = StringUtils.chomp(pattern, "/");
-                        if (path.equals(pattern)) {
-                            privileges.addAll(pathPrivilege.getPrivileges());
-                            break;
-                        }
-                        if (!pattern.endsWith(end)) {
-                            pattern = pattern + end;
-                        }
-                        if (path.matches(pattern)) {
-                            privileges.addAll(pathPrivilege.getPrivileges());
-                            break;
+                        for (String path : pathKeyList) {
+                            String pathKeyPattern = path;
+                            if (!normalizedPath.contains("*") && !normalizedPath.contains("?")) {
+                                pathKeyPattern = path + end;
+                            }
+                            if (!itemPath.startsWith(path) && !itemPath.matches(pathKeyPattern)) {
+                                continue;
+                            }
+                            boolean flag = itemPath.matches(pathKeyPattern) || itemPath.equals(path) || pathPrivilege.isWildcard();
+                            if (flag) {
+                                privileges.addAll(pathPrivilege.getPrivileges());
+                            }
                         }
                     }
                 }

@@ -484,6 +484,7 @@
               :successMsg="successMsg" 
               :folibRepository="folibRepository" 
               @addPageKey="addPageKey"
+              @handlerPermission="handlerPermission"
               @messageArchitectureChild="handleArchitectureMessage"
               @metadataEditHandler="metadataEditHandler" 
               @metadataHandler="metadataHandler" 
@@ -1019,6 +1020,7 @@ import {
   deleteArtifact,
   getPermissionStoragesAndRepositories,
   getStorageAndRepositoryPermission,
+  getArtifactPermission,
   getStoragesAndRepositories,
   getArtifactDispatchStoragesAndRepositories,
 } from '@/api/folib'
@@ -2605,6 +2607,37 @@ export default {
     isAdmin() {
       return isAdmin()
     },
+    handlerPermission () {
+      this.deleteEnabled = false
+      let storageId = null,repositoryId = null,artifactPath = null
+      if (this.currentFileDetial && this.currentFileDetial.artifact) {
+        //制品
+        let artifact = this.currentFileDetial.artifact
+        storageId = artifact.storageId
+        repositoryId = artifact.repositoryId
+        artifactPath = artifact.artifactPath
+      } else  if (this.currentTreeNode && this.currentTreeNode.artifactPath) {
+        //目录
+        storageId = this.currentTreeNode.storageId,
+        repositoryId = this.currentTreeNode.repositoryId,
+        artifactPath = this.currentTreeNode.artifactPath
+      }
+      if (!storageId || !repositoryId || !artifactPath) {
+        return false
+      }
+      let permissions = []
+      getArtifactPermission(
+        storageId,
+        repositoryId,
+        artifactPath
+      ).then(res => {
+        permissions = res
+        this.deleteEnabled =
+          this.folibRepository.type !== 'group' &&
+          (hasRole('ARTIFACTS_MANAGER') ||
+          permissions.includes('ARTIFACTS_DELETE'))
+      })
+    },
     queryStorageAndRepositoryPermission() {
       this.storageAdmin = ""
       this.permissions = []
@@ -2620,7 +2653,6 @@ export default {
           (this.folibRepository.type === 'hosted' || (this.folibRepository.type === 'group' && this.folibRepository.groupDefaultRepository)) &&
           (hasRole('ARTIFACTS_MANAGER') ||
             this.permissions.includes('ARTIFACTS_DEPLOY'))
-        console.log("this.uploadEnabled", this.uploadEnabled)
         this.copyEnabled =
           this.folibRepository.type === 'hosted' &&
           (hasRole('ARTIFACTS_MANAGER') ||
@@ -2631,13 +2663,7 @@ export default {
           this.folibRepository.type === 'hosted' &&
           (hasRole('ARTIFACTS_MANAGER') ||
             this.permissions.includes('ARTIFACTS_MOVE'))
-        this.deleteEnabled =
-          this.folibRepository.type !== 'group' &&
-          (hasRole('ARTIFACTS_MANAGER') ||
-            this.permissions.includes('ARTIFACTS_DELETE'))
-
       })
-
     },
     getRepositoryUrl() {
       let repositoryUrl = ''

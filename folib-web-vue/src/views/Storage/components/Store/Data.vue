@@ -643,13 +643,15 @@ export default {
       }
       this.metadataShow()
       this.queryProjectInfo()
-      this.queryArtifactPermission()
+      this.handlerDataPermission()
+      this.$emit('handlerPermission')
     },
     'currentTreeNode.artifactPath': function (newval, oldVal) {
       this.$emit('addPageKey')
+      this.$emit('handlerPermission')
       this.conanInfoReset()
       this.conanPackageInfoReset()
-      this.queryArtifactNodePermission()
+      this.handlerDataPermission()
       this.metadataList = []
       if (this.currentTreeNode.type === 'file') {
         this.getMetadata()
@@ -940,18 +942,29 @@ export default {
         this.vulnerabilitiesData = res.data
       })
     },
-    queryArtifactPermission () {
-      if (!this.currentFileDetial || !this.currentFileDetial.artifact) {
+    handlerDataPermission () {
+      this.deleteEnabled = false
+      let storageId = null,repositoryId = null,artifactPath = null
+      if (this.currentFileDetial && this.currentFileDetial.artifact) {
+        //制品
+        let artifact = this.currentFileDetial.artifact
+        storageId = artifact.storageId
+        repositoryId = artifact.repositoryId
+        artifactPath = artifact.artifactPath
+      } else  if (this.currentTreeNode && this.currentTreeNode.artifactPath) {
+        //目录
+        storageId = this.currentTreeNode.storageId,
+        repositoryId = this.currentTreeNode.repositoryId,
+        artifactPath = this.currentTreeNode.artifactPath
+      }
+      if (!storageId || !repositoryId || !artifactPath) {
         return false
       }
-      let artifact = this.currentFileDetial.artifact
       let permissions = []
-      this.deleteEnabled = false
-      this.metadataEnabled = false
       getArtifactPermission(
-        artifact.storageId,
-        artifact.repositoryId,
-        artifact.artifactPath
+        storageId,
+        repositoryId,
+        artifactPath
       ).then(res => {
         permissions = res
         this.deleteEnabled =
@@ -959,28 +972,10 @@ export default {
           (hasRole('ARTIFACTS_MANAGER') ||
           permissions.includes('ARTIFACTS_DELETE'))
         this.metadataEnabled = this.folibRepository.type !== 'group' &&
-          (hasRole('ARTIFACTS_MANAGER') ||
-          permissions.includes('CONFIGURATION_ADD_UPDATE_METADATA'))
+        (hasRole('ARTIFACTS_MANAGER') ||
+        permissions.includes('CONFIGURATION_ADD_UPDATE_METADATA'))
+        debugger
       })
-    },
-    queryArtifactNodePermission () {
-      if (!this.currentTreeNode || !this.currentTreeNode.artifactPath) {
-        return false
-      }
-      let permissions = []
-      this.deleteEnabled = false
-      getArtifactPermission(
-        this.currentTreeNode.storageId,
-        this.currentTreeNode.repositoryId,
-        this.currentTreeNode.artifactPath
-      ).then(res => {
-        permissions = res
-        this.deleteEnabled =
-          this.folibRepository.type !== 'group' &&
-          (hasRole('ARTIFACTS_MANAGER') ||
-          permissions.includes('ARTIFACTS_DELETE'))
-          this.$forceUpdate()
-      }).finally(() => {this.$forceUpdate()});
     },
     deleteSubsidiaryHandle(index, item) {
       if (!this.currentFileDetial || !this.currentFileDetial.artifact) {
