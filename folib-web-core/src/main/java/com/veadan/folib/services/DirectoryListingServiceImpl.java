@@ -10,6 +10,7 @@ import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.booters.PropertiesBooter;
 import com.veadan.folib.cloud.storage.s3fs.S3FileSystemProvider;
 import com.veadan.folib.components.DistributedCacheComponent;
+import com.veadan.folib.components.auth.AuthComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.constant.GlobalConstants;
@@ -27,7 +28,6 @@ import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.dto.AccessModelDto;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
-import com.veadan.folib.users.security.AuthoritiesProvider;
 import com.veadan.folib.utils.compatator.DirectoryNameCompatator;
 import lombok.Data;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
@@ -75,7 +75,7 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
 
     @Autowired
     @Lazy
-    private AuthoritiesProvider authoritiesProvider;
+    private AuthComponent authComponent;
 
     public DirectoryListingServiceImpl(String baseUrl) {
         super();
@@ -136,7 +136,7 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
             String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
             String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
             Repository subRepository = configurationManagementService.getConfiguration().getRepository(sId, rId);
-            if (!validatePrivileges(subRepository, path, Privileges.ARTIFACTS_RESOLVE.getAuthority())) {
+            if (!authComponent.validatePrivilegesSplitPath(subRepository, path, Privileges.ARTIFACTS_RESOLVE.getAuthority())) {
                 continue;
             }
             if (!subRepository.isInService()) {
@@ -393,7 +393,7 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
                 //校验权限
                 if (p instanceof RepositoryPath) {
                     RepositoryPath repositoryPath = (RepositoryPath) p;
-                    if (!validatePrivileges(repositoryPath.getRepository(), repositoryPath, Privileges.ARTIFACTS_RESOLVE.getAuthority())) {
+                    if (!authComponent.validatePrivilegesSplitPath(repositoryPath.getRepository(), repositoryPath, Privileges.ARTIFACTS_RESOLVE.getAuthority())) {
                         return false;
                     }
                 }
@@ -611,21 +611,6 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
             files.addAll(result.getFiles());
             return this;
         }
-    }
-
-    private boolean validatePrivileges(Repository repository, RepositoryPath repositoryPath, String authority) throws IOException {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (Objects.isNull(authentication)) {
-            return false;
-        }
-        String relativePath = RepositoryFiles.relativizePath(repositoryPath);
-        String storageId = repository.getStorage().getId(), repositoryId = repository.getId();
-        String prefix = String.format("/storages/%s/%s/", storageId, repositoryId);
-        relativePath = prefix + relativePath;
-        Collection<String> storageAuthorities = Collections.emptySet();
-        ExtendedAuthoritiesVoter extendedAuthoritiesVoter = SpringUtil.getBean(ExtendedAuthoritiesVoter.class);
-        storageAuthorities = extendedAuthoritiesVoter.getExtendedAuthorities(authentication, storageId, repositoryId, relativePath);
-        return storageAuthorities.stream().anyMatch(item -> item.equals(authority));
     }
 
     public int getRepositoryPathThread() {

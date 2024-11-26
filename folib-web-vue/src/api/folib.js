@@ -481,6 +481,13 @@ export function getStorageAndRepositoryPermission (storageId,repositoryId) {
   })
 }
 
+export function getArtifactPermission (storageId,repositoryId,artifactPath) {
+  return axios({
+    url: '/api/account/permission/'+storageId+'/'+repositoryId+'/'+artifactPath,
+    method: 'get'
+  })
+}
+
 export function unionRepositoryConfig (storageId,repositoryId,data) {
   return axios({
     url: '/api/configuration/folib/storages/'+storageId+'/'+repositoryId+'/unionRepository',

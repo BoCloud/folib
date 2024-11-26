@@ -91,9 +91,14 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
         return super.vote(new ExtendedAuthorityAuthentication(authentication), method, attributes);
     }
 
+    public Collection<String> getExtendedAuthorities(Authentication authentication, String storageId, String repositoryId, String path, Boolean enableSplitPath) {
+        ExtendedAuthorityAuthentication extendedAuth = new ExtendedAuthorityAuthentication(authentication);
+        return extendedAuth.calculateExtendedAuthorities(authentication, storageId, repositoryId, path, true, enableSplitPath).stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
+    }
+
     public Collection<String> getExtendedAuthorities(Authentication authentication, String storageId, String repositoryId, String path) {
         ExtendedAuthorityAuthentication extendedAuth = new ExtendedAuthorityAuthentication(authentication);
-        return extendedAuth.calculateExtendedAuthorities(authentication, storageId, repositoryId, path, true).stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
+        return extendedAuth.calculateExtendedAuthorities(authentication, storageId, repositoryId, path, true, false).stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
     }
 
     @SuppressWarnings("serial")
@@ -146,7 +151,7 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
             return repository;
         }
 
-        public Collection<? extends GrantedAuthority> calculateExtendedAuthorities(Authentication authentication, String storageId, String repositoryId, String path, Boolean enableResolvePath) {
+        public Collection<? extends GrantedAuthority> calculateExtendedAuthorities(Authentication authentication, String storageId, String repositoryId, String path, Boolean enableResolvePath, Boolean enableSplitPath) {
             storageId = storageId == null ? UrlUtils.getCurrentStorageId() : storageId;
             repositoryId = repositoryId == null ? UrlUtils.getCurrentRepositoryId() : repositoryId;
             Object principal = authentication.getPrincipal();
@@ -186,7 +191,7 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
                             }
                             newPath = String.format("/storages/%s/%s/%s", subStorageId, subRepositoryId, sourceRelativePath);
                         }
-                        Collection<? extends GrantedAuthority> grantedAuthorities = calculateExtendedAuthorities(authentication, subStorageId, subRepositoryId, newPath, true);
+                        Collection<? extends GrantedAuthority> grantedAuthorities = calculateExtendedAuthorities(authentication, subStorageId, subRepositoryId, newPath, true, enableSplitPath);
                         extendedAuthorities.addAll(grantedAuthorities);
                     }
                     return extendedAuthorities;
@@ -225,7 +230,7 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
                 if (storageId == null || repositoryId == null) {
                     return authorities;
                 }
-                Set<Privileges> storageAuthorities = anonymousRole.getAccessModel().getPathAuthorities(requestUri);
+                Set<Privileges> storageAuthorities = anonymousRole.getAccessModel().getPathAuthorities(requestUri, enableSplitPath);
                 if (storageAuthorities.isEmpty()) {
                     return authorities;
                 }
@@ -247,7 +252,7 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
                 return extendedAuthorities;
             }
             SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
-            Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(requestUri);
+            Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(requestUri, enableSplitPath);
             if (storageAuthorities.isEmpty()) {
                 return extendedAuthorities;
             }
@@ -263,7 +268,7 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
 
         @Override
         public Collection<? extends GrantedAuthority> getAuthorities() {
-            return calculateExtendedAuthorities(getSourceAuthentication(), null, null, null, true);
+            return calculateExtendedAuthorities(getSourceAuthentication(), null, null, null, true, false);
         }
 
         @Override

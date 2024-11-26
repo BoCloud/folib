@@ -483,6 +483,7 @@
               :currentFileDetial="currentFileDetial" 
               :successMsg="successMsg" 
               :folibRepository="folibRepository" 
+              @addPageKey="addPageKey"
               @messageArchitectureChild="handleArchitectureMessage"
               @metadataEditHandler="metadataEditHandler" 
               @metadataHandler="metadataHandler" 
@@ -1316,10 +1317,10 @@ export default {
     },
   },
   watch:{
-    currentTreeNode(val){
-      console.log(val,'watch currentTreeNode');
-      this.pageKey ++
-    } 
+    // currentTreeNode(val){
+    //   console.log(val,'watch currentTreeNode');
+    //   this.pageKey ++
+    // } 
   },
   created () {
     this.initData()
@@ -1345,6 +1346,9 @@ export default {
         this.queryStorageAndRepositoryPermission()
         this.getUploadMaxSize()
       }
+    },
+    addPageKey() {
+      this.pageKey++
     },
     scannerRules() {
       scannerRules(

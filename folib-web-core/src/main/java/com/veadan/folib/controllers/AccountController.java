@@ -3,12 +3,14 @@ package com.veadan.folib.controllers;
 import javax.inject.Inject;
 
 import com.veadan.folib.authorization.dto.Role;
+import com.veadan.folib.components.auth.AuthComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.controllers.users.UserController;
 import com.veadan.folib.controllers.users.support.UserOutput;
 import com.veadan.folib.domain.UserRepositoryPermission;
 import com.veadan.folib.forms.users.UserForm;
 import com.veadan.folib.domain.User;
+import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
@@ -68,6 +70,10 @@ public class AccountController
     @Autowired
     @Lazy
     private AuthoritiesProvider authoritiesProvider;
+
+    @Autowired
+    @Lazy
+    private AuthComponent authComponent;
 
     @ApiOperation(value = "获取当前登录用户的帐户详细信息")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "Returns account details"),
@@ -163,5 +169,16 @@ public class AccountController
         }
 
         return ResponseEntity.ok(userRepositoryPermission);
+    }
+
+    @ApiOperation(value = "获取当前用户对指定制品的权限信息")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "Returns permissions details")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @GetMapping(value = "/permission/{storageId}/{repositoryId}/{artifactPath:.+}",
+            produces = { MediaType.APPLICATION_JSON_VALUE })
+    @ResponseBody
+    public ResponseEntity<Set<String>> getArtifactPermission(Authentication authentication, @ApiParam(value = "The storageId", required = true) @PathVariable String storageId, @ApiParam(value = "The repositoryId", required = true) @PathVariable String repositoryId, @ApiParam(value = "The artifactPath", required = true) @PathVariable String artifactPath) {
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        return ResponseEntity.ok(authComponent.getPrivileges(repositoryPath));
     }
 }

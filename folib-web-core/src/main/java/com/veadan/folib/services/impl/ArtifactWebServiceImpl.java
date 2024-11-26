@@ -26,6 +26,7 @@ import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
 import com.veadan.folib.cluster.SyncMetadataEnum;
 import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.components.auth.AuthComponent;
 import com.veadan.folib.components.layout.DockerComponent;
 import com.veadan.folib.components.thirdparty.foeyes.FoEyesComponent;
 import com.veadan.folib.components.thirdparty.foeyes.enums.UploadStatusEnum;
@@ -72,6 +73,7 @@ import com.veadan.folib.services.*;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.*;
@@ -95,6 +97,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.preauth.PreAuthenticatedCredentialsNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
@@ -192,10 +195,15 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     @Inject
     private ConfigurationManager configurationManager;
 
-    @Value("${folib.temp}")
-    private String tempPath;
     @Inject
     private StorageManagementService storageManagementService;
+
+    @Autowired
+    @Lazy
+    private AuthComponent authComponent;
+
+    @Value("${folib.temp}")
+    private String tempPath;
 
     @Override
     public void exportExcel(String vulnerabilityUuid, String storageId, String repositoryId, HttpServletResponse response) throws IOException {
@@ -431,12 +439,13 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     //已存在
                     return "repeat";
                 }
+                RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
+                validateAuth(repositoryPath);
                 ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
                 BeanUtils.copyProperties(artifactMetadataForm, artifactMetadata);
                 metadataJson.put(key, artifactMetadata);
                 artifact.setMetadata(metadataJson.toJSONString());
                 artifactService.saveOrUpdateArtifact(artifact);
-                RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
                 repositoryPath.setArtifact(artifact);
                 artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
             } catch (Exception e) {
@@ -471,12 +480,13 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 String key = artifactMetadataForm.getKey();
                 metadataJson = metadataJson == null ? new JSONObject() : metadataJson;
                 if (metadataJson.containsKey(key)) {
+                    RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
+                    validateAuth(repositoryPath);
                     ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
                     BeanUtils.copyProperties(artifactMetadataForm, artifactMetadata);
                     metadataJson.put(key, artifactMetadata);
                     artifact.setMetadata(metadataJson.toJSONString());
                     artifactService.saveOrUpdateArtifact(artifact);
-                    RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
                     repositoryPath.setArtifact(artifact);
                     artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
                 }
@@ -510,10 +520,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 }
                 JSONObject metadataJson = getMetadata(artifact);
                 if (Objects.nonNull(metadataJson) && metadataJson.containsKey(artifactMetadataForm.getKey())) {
+                    RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
+                    validateAuth(repositoryPath);
                     metadataJson.remove(artifactMetadataForm.getKey());
                     artifact.setMetadata(metadataJson.toJSONString());
                     artifactService.saveOrUpdateArtifact(artifact);
-                    RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
                     repositoryPath.setArtifact(artifact);
                     artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
                 }
@@ -706,6 +717,8 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     if (Objects.isNull(artifact)) {
                         throw new BusinessException(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath()));
                     }
+                    RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath());
+                    validateAuth(repositoryPath);
                     JSONObject metadataJson = getMetadata(artifact);
                     metadataJson = metadataJson == null ? new JSONObject() : metadataJson;
                     for (ArtifactMetadataForm artifactMetadataForm : artifactMetadataFormList) {
@@ -716,7 +729,6 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     }
                     artifact.setMetadata(metadataJson.toJSONString());
                     artifactService.saveOrUpdateArtifact(artifact);
-                    RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath());
                     repositoryPath.setArtifact(artifact);
                     artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
                 } catch (Exception e) {
@@ -2306,5 +2318,12 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     private Repository getRepository(String storageId, String repositoryId) {
         return configurationManagementService.getConfiguration().getRepository(storageId, repositoryId);
     }
+
+    private void validateAuth(RepositoryPath repositoryPath) throws Exception {
+        if (!authComponent.validatePrivileges(repositoryPath.getRepository(), repositoryPath, Privileges.CONFIGURATION_ADD_UPDATE_METADATA.getAuthority())) {
+            throw new BusinessException("没有操作元数据权限");
+        }
+    }
+
 
 }

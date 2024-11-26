@@ -51,15 +51,25 @@ public class AccessModelData
 
     @Override
     public Set<Privileges> getPathAuthorities(String url) {
-        return getPathAuthorities(url, getStorageAuthorities());
+        return getPathAuthorities(url, getStorageAuthorities(), false);
+    }
+
+    @Override
+    public Set<Privileges> getPathAuthorities(String url, boolean enableSplitPath) {
+        return getPathAuthorities(url, getStorageAuthorities(), enableSplitPath);
+    }
+
+    @Override
+    public Set<Privileges> getPathAuthorities(String storageId, String repositoryId, List<String> paths, boolean enableSplitPath) {
+        return getPathAuthorities(storageId, repositoryId, paths, getStorageAuthorities(), enableSplitPath);
     }
 
     @Override
     public Set<Privileges> getPathAuthorities(String storageId, String repositoryId, List<String> paths) {
-        return getPathAuthorities(storageId, repositoryId, paths, getStorageAuthorities());
+        return getPathAuthorities(storageId, repositoryId, paths, getStorageAuthorities(), false);
     }
 
-    public static Set<Privileges> getPathAuthorities(String storageId, String repositoryId, List<String> paths, Set<? extends StoragePrivileges> storages) {
+    public static Set<Privileges> getPathAuthorities(String storageId, String repositoryId, List<String> paths, Set<? extends StoragePrivileges> storages, boolean enableSplitPath) {
         if (StringUtils.isBlank(storageId)) {
             return Collections.emptySet();
         }
@@ -109,7 +119,7 @@ public class AccessModelData
         return privileges;
     }
 
-    public static Set<Privileges> getPathAuthorities(String url, Set<? extends StoragePrivileges> storages) {
+    public static Set<Privileges> getPathAuthorities(String url, Set<? extends StoragePrivileges> storages, boolean enableSplitPath) {
         String normalizedUrl = StringUtils.chomp(url, "/");
         boolean isEnd = false;
         String separator = "", end = "/.*";
@@ -148,7 +158,11 @@ public class AccessModelData
                         continue;
                     }
                     String normalizedPath = StringUtils.chomp(pathPrivilege.getPath(), "/");
-                    List<String> pathKeyList = splitPath(normalizedUrl, storage.getStorageId(), repository.getRepositoryId(), normalizedPath);
+                    List<String> pathKeyList = Lists.newArrayList();
+                    pathKeyList.add(normalizedPath);
+                    if (enableSplitPath) {
+                        pathKeyList = splitPath(normalizedUrl, storage.getStorageId(), repository.getRepositoryId(), normalizedPath);
+                    }
                     for (String path : pathKeyList) {
                         String pathKey = StringUtils.removeEnd(repositoryKey, GlobalConstants.SEPARATOR) + GlobalConstants.SEPARATOR + path;
                         String pathBrowseKey = storageBrowseKey + repository.getRepositoryId() + GlobalConstants.SEPARATOR + path;
