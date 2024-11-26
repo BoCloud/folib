@@ -292,4 +292,11 @@ public interface ArtifactWebService {
      * @throws Exception 异常
      */
     void dockerLayoutUpgradeAll() throws Exception;
+
+    /**
+     * 删除ARTIFACTS_RESOLVE权限
+     * @param roleId 角色id
+     * @param resourceId 资源id
+     */
+    void deleteArtifactsResolve(String roleId, String resourceId);
 }

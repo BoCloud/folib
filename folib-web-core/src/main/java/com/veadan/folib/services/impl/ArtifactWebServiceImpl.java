@@ -42,6 +42,7 @@ import com.veadan.folib.domain.bom.FoEyes;
 import com.veadan.folib.domain.thirdparty.ArtifactInfo;
 import com.veadan.folib.domain.thirdparty.ArtifactQuery;
 import com.veadan.folib.entity.Dict;
+import com.veadan.folib.entity.RoleResourceRef;
 import com.veadan.folib.enums.ArtifactMetadataEnum;
 import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.RepositoryScopeEnum;
@@ -51,6 +52,7 @@ import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.forms.scanner.*;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
 import com.veadan.folib.gremlin.entity.vo.ArtifactVo;
+import com.veadan.folib.mapper.RoleResourceRefMapper;
 import com.veadan.folib.promotion.PromotionUtil;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -75,6 +77,7 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
+import com.veadan.folib.users.service.RoleResourceRefService;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.*;
 import com.veadan.folib.utils.TreeUtil;
@@ -201,6 +204,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     @Autowired
     @Lazy
     private AuthComponent authComponent;
+
+    @Autowired
+    private RoleResourceRefMapper roleResourceRefMapper;
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -1456,6 +1462,21 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     @Override
     public void dockerLayoutUpgradeAll() throws Exception {
         dockerLayoutUpgrade(null, null, null);
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void deleteArtifactsResolve(String roleId, String resourceId) {
+        List<String> roleIds = Lists.newArrayList(SystemRole.GENERAL.name());
+        if (StringUtils.isNotBlank(roleId)) {
+            roleIds.add(roleId);
+        }
+        if (StringUtils.isBlank(resourceId)) {
+            resourceId = Privileges.ARTIFACTS_RESOLVE.getAuthority();
+        }
+        Example example = new Example(RoleResourceRef.class);
+        example.createCriteria().andIn("roleId", roleIds).andEqualTo("resourceId", resourceId).andIsNull("entityId");
+        roleResourceRefMapper.deleteByExample(example);
     }
 
     private void handleDockerRepo(RepositoryPath rootRepositoryPath, RepositoryPath blobsRootRepositoryPath, RepositoryPath manifestRootRepositoryPath) {

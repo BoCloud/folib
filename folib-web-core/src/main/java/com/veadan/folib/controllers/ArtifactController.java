@@ -487,4 +487,11 @@ public class ArtifactController extends BaseController {
             return fileSize.divide(GIGABYTE, 3, RoundingMode.HALF_UP).toString() + " GB";
         }
     }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @DeleteMapping(value = "/artifactsResolve")
+    public ResponseEntity<String> deleteArtifactsResolve(@RequestParam(required = false, name = "roleId") String roleId, @RequestParam(required = false, name = "resourceId") String resourceId) throws Exception {
+        artifactWebService.deleteArtifactsResolve(roleId, resourceId);
+        return ResponseEntity.ok("");
+    }
 }
