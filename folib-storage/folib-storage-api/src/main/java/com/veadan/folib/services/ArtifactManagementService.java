@@ -1,9 +1,47 @@
 package com.veadan.folib.services;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
+import com.veadan.folib.configuration.Configuration;
+import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.configuration.ConfigurationUtils;
+import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
+import com.veadan.folib.io.LayoutInputStream;
+import com.veadan.folib.io.LayoutOutputStream;
+import com.veadan.folib.io.StreamUtils;
+import com.veadan.folib.providers.ProviderImplementationException;
+import com.veadan.folib.providers.io.RepositoryFiles;
+import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.providers.io.RepositoryStreamSupport;
+import com.veadan.folib.providers.layout.LayoutFileSystemProvider;
+import com.veadan.folib.providers.layout.LayoutProviderRegistry;
+import com.veadan.folib.repositories.ArtifactRepository;
+import com.veadan.folib.storage.ArtifactResolutionException;
+import com.veadan.folib.storage.ArtifactStorageException;
+import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.checksum.ArtifactChecksum;
+import com.veadan.folib.storage.checksum.ChecksumCacheManager;
+import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.storage.validation.ArtifactCoordinatesValidator;
+import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
+import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidatorRegistry;
+import com.veadan.folib.storage.validation.artifact.version.VersionValidationException;
+import com.veadan.folib.storage.validation.deployment.RedeploymentValidator;
+import com.veadan.folib.storage.validation.resource.ArtifactOperationsValidator;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.FileSystemUtils;
+
+import javax.inject.Inject;
+import java.io.*;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -13,42 +51,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-
-import com.veadan.folib.configuration.ConfigurationManager;
-import com.veadan.folib.io.LayoutInputStream;
-import com.veadan.folib.providers.io.RepositoryFiles;
-import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.providers.io.RepositoryPathResolver;
-import com.veadan.folib.providers.io.RepositoryStreamSupport;
-import com.veadan.folib.providers.layout.LayoutFileSystemProvider;
-import com.veadan.folib.providers.layout.LayoutProviderRegistry;
-import com.veadan.folib.storage.validation.deployment.RedeploymentValidator;
-import org.apache.commons.io.IOUtils;
-import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
-import com.veadan.folib.configuration.Configuration;
-import com.veadan.folib.domain.Artifact;
-import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
-import com.veadan.folib.io.LayoutOutputStream;
-import com.veadan.folib.io.StreamUtils;
-import com.veadan.folib.providers.ProviderImplementationException;
-import com.veadan.folib.repositories.ArtifactRepository;
-import com.veadan.folib.storage.ArtifactStorageException;
-import com.veadan.folib.storage.Storage;
-import com.veadan.folib.storage.checksum.ArtifactChecksum;
-import com.veadan.folib.storage.checksum.ChecksumCacheManager;
-import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.storage.validation.ArtifactCoordinatesValidator;
-import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
-import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidatorRegistry;
-import com.veadan.folib.storage.validation.artifact.version.VersionValidationException;
-import com.veadan.folib.storage.validation.resource.ArtifactOperationsValidator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.FileSystemUtils;
 
 /**
  * @author mtodorov
@@ -85,13 +87,16 @@ public class ArtifactManagementService
     @Inject
     protected RepositoryPathResolver repositoryPathResolver;
 
+    @Value("${folib.uploadRestrictions:false}")
+    private boolean artifactUploadRestrictions;
+
     public long validateAndStore(RepositoryPath repositoryPath,
                                  InputStream is)
             throws IOException,
             ProviderImplementationException,
             ArtifactCoordinatesValidationException
     {
-        performRepositoryAcceptanceValidation(repositoryPath);
+        repositoryPath = performRepositoryAcceptanceValidation(repositoryPath);
         return doStore(repositoryPath, is);
     }
 
@@ -101,7 +106,7 @@ public class ArtifactManagementService
             ProviderImplementationException,
             ArtifactCoordinatesValidationException
     {
-        performRepositoryAcceptanceValidation(repositoryPath);
+        repositoryPath = performRepositoryAcceptanceValidation(repositoryPath);
         return doStore(repositoryPath, sourcePath);
     }
 
@@ -110,7 +115,7 @@ public class ArtifactManagementService
             ProviderImplementationException,
             ArtifactCoordinatesValidationException
     {
-        performStoreIndexRepositoryAcceptanceValidation(repositoryPath);
+        repositoryPath = performStoreIndexRepositoryAcceptanceValidation(repositoryPath);
         doStoreIndex(repositoryPath);
     }
 
@@ -118,6 +123,7 @@ public class ArtifactManagementService
                       InputStream is)
             throws IOException
     {
+        repositoryPath = performStoreRepositoryAcceptanceValidation(repositoryPath);
         return doStore(repositoryPath, is);
     }
 
@@ -125,30 +131,43 @@ public class ArtifactManagementService
                       RepositoryPath sourcePath)
             throws IOException
     {
+        repositoryPath = performStoreRepositoryAcceptanceValidation(repositoryPath);
         return doStore(repositoryPath, sourcePath);
     }
 
     private long doStore(RepositoryPath repositoryPath,
                          InputStream is)
-            throws IOException
-    {
-        long  startTime = System.currentTimeMillis();
+            throws IOException {
+        long startTime = System.currentTimeMillis();
         long result;
-        try (final RepositoryStreamSupport.RepositoryOutputStream aos = artifactResolutionService.getOutputStream(repositoryPath))
-        {
+        try (final RepositoryStreamSupport.RepositoryOutputStream aos = artifactResolutionService.getOutputStream(repositoryPath)) {
             result = writeArtifact(repositoryPath, is, aos);
             logger.info("Stored [{}] bytes for [{}].", result, repositoryPath);
             aos.flush();
-        }
-        catch (IOException e)
-        {
+
+        } catch (IOException e) {
             throw e;
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             throw new ArtifactStorageException(e);
+        } finally {
+             // Check size
+            if (artifactUploadRestrictions) {
+                long fileSize = Files.size(repositoryPath);
+                if (fileSize == 0) {
+                    throw new ArtifactResolutionException("Uploaded file is empty.");
+                }
+                Repository repository = getConfiguration().getStorage(repositoryPath.getStorageId()).getRepository(repositoryPath.getRepositoryId());
+                long artifactMaxSize = repository.getArtifactMaxSize();
+
+                if (artifactMaxSize > 0 && fileSize > artifactMaxSize) {
+                    delete(repositoryPath, true);
+                    throw new ArtifactResolutionException("The size of the artifact exceeds the maximum size accepted by " +
+                            "this repository (" + fileSize + "/" +
+                            artifactMaxSize + ").");
+                }
+            }
         }
-        logger.info("DoStore [{}] take time [{}] ms." , repositoryPath.toString(), System.currentTimeMillis() - startTime);
+        logger.info("DoStore [{}] take time [{}] ms.", repositoryPath.toString(), System.currentTimeMillis() - startTime);
 
         return result;
     }
@@ -202,12 +221,13 @@ public class ArtifactManagementService
                                OutputStream os)
             throws IOException
     {
+        long startTime = System.currentTimeMillis();
         LayoutOutputStream aos = StreamUtils.findSource(LayoutOutputStream.class, os);
 
         Repository repository = repositoryPath.getRepository();
 
         Boolean checksumAttribute = RepositoryFiles.isChecksum(repositoryPath);
-
+        logger.info("Read attribute [{}] take time [{}] ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
         // If we have no digests, then we have a checksum to store.
         if (Boolean.TRUE.equals(checksumAttribute))
         {
@@ -219,18 +239,23 @@ public class ArtifactManagementService
             artifactEventListenerRegistry.dispatchArtifactUploadingEvent(repositoryPath);
         }
 
-        long startTime = System.currentTimeMillis();
+        startTime = System.currentTimeMillis();
         long totalAmountOfBytes = IOUtils.copy(is, os);
-        logger.info("IOUtils copy [{}] take time [{}] ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
+        logger.info("IOUtils copy [{}] size [{}] take time [{}] ms" , repositoryPath.toString(), totalAmountOfBytes, System.currentTimeMillis() - startTime);
 
         URI repositoryPathId = repositoryPath.toUri();
+        startTime = System.currentTimeMillis();
         Map<String, String> digestMap = aos.getDigestMap(repository.getLayout());
+        logger.info("Get digest [{}] take time [{}] ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
         if (Boolean.FALSE.equals(checksumAttribute) && !digestMap.isEmpty())
         {
+            startTime = System.currentTimeMillis();
             // Store artifact digests in cache if we have them.
             addChecksumsToCacheManager(digestMap, repositoryPathId);
-
+            logger.info("Write addChecksumsToCacheManager [{}] take time [{}] ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
+            startTime = System.currentTimeMillis();
             writeChecksums(repositoryPath, digestMap);
+            logger.info("Write check sum [{}] take time [{}] ms" , repositoryPath.toString(), System.currentTimeMillis() - startTime);
         }
 
         if (Boolean.TRUE.equals(checksumAttribute))
@@ -336,10 +361,14 @@ public class ArtifactManagementService
         digestMap.entrySet()
                 .stream()
                 .forEach(entry -> {
+                    long startTime = System.currentTimeMillis();
                     final RepositoryPath checksumPath = provider.getChecksumPath(repositoryPath, entry.getKey());
+                    logger.info("Write check sum [{}] algorithm [{}] digest [{}] find checksumPath [{}] take time [{}] ms", repositoryPath.toString(), entry.getKey(), entry.getValue(), checksumPath, System.currentTimeMillis() - startTime);
                     try
                     {
+                        startTime = System.currentTimeMillis();
                         Files.write(checksumPath, entry.getValue().getBytes(StandardCharsets.UTF_8));
+                        logger.info("Write check sum [{}] algorithm [{}] digest [{}] take time [{}] ms", repositoryPath.toString(), entry.getKey(), entry.getValue(), System.currentTimeMillis() - startTime);
                     }
                     catch (IOException ex)
                     {
@@ -368,7 +397,7 @@ public class ArtifactManagementService
 
         if (!matchesChecksum(checksum, artifactBasePath, checksumExtension))
         {
-            logger.error("The checksum for {} [{}] is invalid!",
+            logger.warn("The checksum for {} [{}] is invalid!",
                     artifactPath,
                     new String(checksum, StandardCharsets.UTF_8));
         }
@@ -419,10 +448,68 @@ public class ArtifactManagementService
                 .forEach(e -> checksumCacheManager.addArtifactChecksum(artifactPath.toString(), e.getKey(), e.getValue()));
     }
 
-    public boolean performRepositoryAcceptanceValidation(RepositoryPath path)
+    public RepositoryPath performRepositoryAcceptanceValidation(RepositoryPath path)
             throws IOException, ProviderImplementationException, ArtifactCoordinatesValidationException
     {
+        long startTime = System.currentTimeMillis();
         logger.debug("Validate artifact with path [{}]", path);
+
+        path = getGroupDefaultRepository(path);
+
+        Repository repository = path.getFileSystem().getRepository();
+
+        long validateStartTime = System.currentTimeMillis();
+        artifactOperationsValidator.validate(path);
+        logger.info("Repository artifactOperationsValidator [{}] take time [{}] ms." , path.toString(), System.currentTimeMillis() - validateStartTime);
+
+        if (!RepositoryFiles.isArtifact(path))
+        {
+            return path;
+        }
+
+        long readCoordinatesStartTime = System.currentTimeMillis();
+        ArtifactCoordinates coordinates = RepositoryFiles.readCoordinates(path);
+        logger.info("Repository readCoordinates [{}] take time [{}] ms." , path.toString(), System.currentTimeMillis() - readCoordinatesStartTime);
+        logger.debug("Validate artifact with coordinates [{}]", coordinates);
+
+        try
+        {
+            long artifactCoordinatesValidatorStartTime = System.currentTimeMillis();
+            for (String validatorKey : repository.getArtifactCoordinateValidators())
+            {
+                ArtifactCoordinatesValidator validator = artifactCoordinatesValidatorRegistry.getProvider(
+                        validatorKey);
+                if (validator.supports(repository))
+                {
+                    validator.validate(repository, coordinates);
+                }
+            }
+            logger.info("Repository artifactCoordinatesValidator [{}] take time [{}] ms." , path.toString(), System.currentTimeMillis() - artifactCoordinatesValidatorStartTime);
+        }
+        catch (VersionValidationException e)
+        {
+            throw new ArtifactStorageException(e);
+        }
+        long checkAllowsStartTime = System.currentTimeMillis();
+        artifactOperationsValidator.checkAllowsRedeployment(repository, coordinates);
+        artifactOperationsValidator.checkAllowsDeployment(repository);
+        logger.info("Repository checkAllows [{}] take time [{}] ms." , path.toString(), System.currentTimeMillis() - checkAllowsStartTime);
+        if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
+            long checkStorageSizeStartTime = System.currentTimeMillis();
+            artifactOperationsValidator.checkStorageSize(path);
+            logger.info("Repository checkStorageSize [{}] take time [{}] ms." , path.toString(), System.currentTimeMillis() - checkStorageSizeStartTime);
+        }
+        logger.info("Repository acceptance validation [{}] take time [{}] ms." , path.toString(), System.currentTimeMillis() - startTime);
+        return path;
+    }
+
+
+    public RepositoryPath performStoreRepositoryAcceptanceValidation(RepositoryPath path)
+            throws IOException
+    {
+        logger.debug("Validate artifact with path [{}]", path);
+
+        path = getGroupDefaultRepository(path);
 
         Repository repository = path.getFileSystem().getRepository();
 
@@ -430,7 +517,7 @@ public class ArtifactManagementService
 
         if (!RepositoryFiles.isArtifact(path))
         {
-            return true;
+            return path;
         }
 
         ArtifactCoordinates coordinates = RepositoryFiles.readCoordinates(path);
@@ -448,21 +535,25 @@ public class ArtifactManagementService
                 }
             }
         }
-        catch (VersionValidationException e)
+        catch (Exception e)
         {
             throw new ArtifactStorageException(e);
         }
-
-        artifactOperationsValidator.checkAllowsRedeployment(repository, coordinates);
-        artifactOperationsValidator.checkAllowsDeployment(repository);
-
-        return true;
+//
+//        artifactOperationsValidator.checkAllowsRedeployment(repository, coordinates);
+//        artifactOperationsValidator.checkAllowsDeployment(repository);
+        if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
+            artifactOperationsValidator.checkStorageSize(path);
+        }
+        return path;
     }
 
-    private boolean performStoreIndexRepositoryAcceptanceValidation(RepositoryPath path)
+    private RepositoryPath performStoreIndexRepositoryAcceptanceValidation(RepositoryPath path)
             throws IOException, ProviderImplementationException, ArtifactCoordinatesValidationException
     {
         logger.debug("Validate artifact with path [{}]", path);
+
+        path = getGroupDefaultRepository(path);
 
         Repository repository = path.getFileSystem().getRepository();
 
@@ -470,7 +561,7 @@ public class ArtifactManagementService
 
         if (!RepositoryFiles.isArtifact(path))
         {
-            return true;
+            return path;
         }
 
         ArtifactCoordinates coordinates = RepositoryFiles.readCoordinates(path);
@@ -495,7 +586,7 @@ public class ArtifactManagementService
         {
             throw new ArtifactStorageException(e);
         }
-        return true;
+        return path;
     }
 
     protected Storage getStorage(String storageId)
@@ -550,5 +641,31 @@ public class ArtifactManagementService
             Files.copy(srcPath, destPath);
         }
     }
+
+    public RepositoryPath getGroupDefaultRepository(RepositoryPath repositoryPath) {
+        try {
+            Repository repository = repositoryPath.getFileSystem().getRepository();
+            if (Objects.nonNull(repository) && repository.isGroupRepository() && StringUtils.isNotBlank(repository.getGroupDefaultRepository())) {
+                //是组合库，并且设置了默认上传仓库
+                String storageId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), repository.getGroupDefaultRepository());
+                String repositoryId = ConfigurationUtils.getRepositoryId(repository.getGroupDefaultRepository());
+                if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
+                    Storage storage =  configurationManager.getStorage(storageId);
+                    if (Objects.isNull(storage)) {
+                        return repositoryPath;
+                    }
+                    Repository storageRepository = storage.getRepository(repositoryId);
+                    if (Objects.isNull(storageRepository)) {
+                        return repositoryPath;
+                    }
+                    repositoryPath = repositoryPathResolver.resolve(storageId,repositoryId, RepositoryFiles.relativizePath(repositoryPath));
+                }
+            }
+        } catch (Exception ex) {
+            logger.error("RepositoryPath [{}] get group default repository error [{}]", repositoryPath, ExceptionUtils.getStackTrace(ex));
+        }
+        return repositoryPath;
+    }
+
 
 }

@@ -12,7 +12,7 @@ public class RpmNamingPatterns
 
     private static final String RPM_PACKAGE_TYPE_REGEXP = "(src)(?=(\\.rpm$))";
 
-    private static final String RPM_PACKAGE_ARCH_REGEXP = "(i386|i686|alpha|sparc|mips|ppc|pcc|m68k|SGI|x86_64|noarch)(?=(\\.rpm$))";
+    private static final String RPM_PACKAGE_ARCH_REGEXP = "(i386|i686|alpha|sparc|mips|ppc|pcc|m68k|SGI|ppc64le|src|s390x|aarch64|x86_64|noarch)(?=(\\.rpm$))";
 
     private static final String RPM_PACKAGE_EXTENSION_REGEXP = "(\\.rpm)(?=$)";
 

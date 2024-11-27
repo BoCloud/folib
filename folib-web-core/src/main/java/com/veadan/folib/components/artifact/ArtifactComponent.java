@@ -3,7 +3,6 @@ package com.veadan.folib.components.artifact;
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,16 +10,16 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.archive.JarArchiveListingFunction;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
-import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.DistributedLockComponent;
+import com.veadan.folib.components.PypiBrowsePackageHtmlResponseBuilder;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.config.NpmLayoutProviderConfig;
-import com.veadan.folib.configuration.*;
+import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.configuration.SecurityPolicyConfiguration;
+import com.veadan.folib.configuration.UnionRepositoryConfiguration;
+import com.veadan.folib.configuration.UnionTargetRepositoryConfiguration;
 import com.veadan.folib.constant.GlobalConstants;
-import com.veadan.folib.controllers.layout.pypi.PypiBrowsePackageHtmlResponseBuilder;
-import com.veadan.folib.data.criteria.Paginator;
-import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.entity.ArtifactCacheRecord;
 import com.veadan.folib.entity.Dict;
@@ -28,17 +27,13 @@ import com.veadan.folib.entity.PackageNameBlock;
 import com.veadan.folib.enums.*;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
-import com.veadan.folib.npm.metadata.*;
+import com.veadan.folib.npm.metadata.PackageVersion;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
 import com.veadan.folib.providers.layout.*;
-import com.veadan.folib.providers.repository.RepositoryProvider;
 import com.veadan.folib.providers.repository.RepositoryProviderRegistry;
-import com.veadan.folib.providers.repository.RepositorySearchRequest;
-import com.veadan.folib.pypi.PypiSearchRequest;
-import com.veadan.folib.pypi.PypiSearchResult;
 import com.veadan.folib.repositories.ArtifactIdGroupRepository;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repository.NpmRepositoryFeatures;
@@ -47,18 +42,14 @@ import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationServic
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.util.FileSizeConvertUtils;
 import com.veadan.folib.util.LocalDateTimeInstance;
-import com.veadan.folib.utils.PypiPackageNameConverter;
 import com.veadan.folib.utils.VersionUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -203,6 +194,9 @@ public class ArtifactComponent {
      */
     public String readRepositoryPathContent(String storageId, String repositoryId, String path) throws IOException {
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+        if (!Files.exists(repositoryPath)) {
+            return "";
+        }
         return readRepositoryPathContent(repositoryPath);
     }
 
@@ -265,7 +259,7 @@ public class ArtifactComponent {
      * @return true 支持 false 不支持
      */
     public boolean layoutSupportsForScan(RepositoryPath repositoryPath) {
-        return layoutSupports(repositoryPath, false, true);
+        return layoutSupports(repositoryPath, false, true, false);
     }
 
     /**
@@ -275,7 +269,7 @@ public class ArtifactComponent {
      * @return true 支持 false 不支持
      */
     public boolean layoutSupportsForBlock(RepositoryPath repositoryPath) {
-        return layoutSupports(repositoryPath, true, false);
+        return layoutSupports(repositoryPath, true, false, false);
     }
 
     /**
@@ -286,7 +280,17 @@ public class ArtifactComponent {
      * @return true 支持 false 不支持
      */
     public boolean layoutSupports(RepositoryPath repositoryPath) {
-        return layoutSupports(repositoryPath, false, false);
+        return layoutSupports(repositoryPath, false, false, false);
+    }
+
+    /**
+     * 晋级 校验制品类型是否是该布局支持的类型
+     *
+     * @param repositoryPath 仓库地址
+     * @return true 支持 false 不支持
+     */
+    public boolean layoutSupportsForPromotion(RepositoryPath repositoryPath) {
+        return layoutSupports(repositoryPath, false, false, true);
     }
 
     /**
@@ -295,9 +299,10 @@ public class ArtifactComponent {
      * @param repositoryPath 仓库地址
      * @param block          阻断 true
      * @param scan           安全扫描 true
+     * @param promotion      晋级 true
      * @return true 支持 false 不支持
      */
-    public boolean layoutSupports(RepositoryPath repositoryPath, Boolean block, Boolean scan) {
+    public boolean layoutSupports(RepositoryPath repositoryPath, Boolean block, Boolean scan, Boolean promotion) {
         boolean flag = false;
         if (Objects.isNull(repositoryPath)) {
             log.warn("RepositoryPath [{}] does not exist", repositoryPath);
@@ -325,6 +330,9 @@ public class ArtifactComponent {
         } else if (repositoryPath.getFileSystem() instanceof NpmFileSystem) {
             log.debug("npm布局");
             List<String> suffixList = Arrays.asList("package.json", ".tgz");
+            if (Boolean.TRUE.equals(promotion)) {
+                suffixList = Arrays.asList(".tgz", ".har");
+            }
             flag = endsWith(repositoryPath.getFileName().toString(), suffixList);
         } else if (repositoryPath.getFileSystem() instanceof NugetFileSystem) {
             log.debug("nuget布局");
@@ -366,6 +374,32 @@ public class ArtifactComponent {
             } else {
                 flag = true;
             }
+        } else if (repositoryPath.getFileSystem() instanceof GoFileSystem) {
+            log.debug("Go布局");
+            if (Boolean.TRUE.equals(scan)) {
+                List<String> allSuffixList = Lists.newArrayList(".mod", ".zip");
+                flag = endsWith(repositoryPath.getFileName().toString(), allSuffixList);
+            } else {
+                flag = true;
+            }
+        } else if (repositoryPath.getFileSystem() instanceof GitFlsFileSystem) {
+            log.debug("GitLfs布局");
+            if (Boolean.TRUE.equals(scan)) {
+                flag = false;
+            } else {
+                flag = true;
+            }
+        } else if (repositoryPath.getFileSystem() instanceof HuggingFaceFileSystem) {
+            log.debug("HuggingFaceFile布局");
+            if (Boolean.TRUE.equals(scan)) {
+                flag = false;
+            } else {
+                flag = true;
+            }
+        } else if (repositoryPath.getFileSystem() instanceof PubFileSystem) {
+            log.debug("pub布局");
+            List<String> allSuffixList = Lists.newArrayList(".tar.gz");
+            flag = endsWith(repositoryPath.getFileName().toString(), allSuffixList);
         }
         log.debug("制品路径 [{}] 布局 [{}] 是否是该布局支持的制品类型 [{}]", repositoryPath.toString(), repositoryPath.getRepository().getLayout(), flag);
         return flag;
@@ -425,6 +459,20 @@ public class ArtifactComponent {
                 List<String> suffixList = Collections.singletonList(".tar.gz");
                 flag = endsWith(filePath, suffixList);
                 log.debug("Cocoapods布局");
+            } else if (GoLayoutProvider.ALIAS.equals(layout)) {
+                List<String> suffixList = Lists.newArrayList(".info", ".mod", ".zip");
+                flag = endsWith(filePath, suffixList);
+                log.debug("Go布局");
+            } else if (GitLfsLayoutProvider.ALIAS.equals(layout)) {
+                log.debug("GitLfs布局");
+                flag = true;
+            } else if (HuggingFaceLayoutProvider.ALIAS.equals(layout)) {
+                log.debug("HuggingFaceFile布局");
+                flag = true;
+            } else if (PubLayoutProvider.ALIAS.equals(layout)) {
+                log.debug("pub布局");
+                List<String> suffixList = Collections.singletonList(".tar.gz");
+                flag = endsWith(filePath, suffixList);
             }
             log.debug("制品路径 [{}] 布局 [{}] 是否是该布局支持的制品类型 [{}]", filePath, layout, flag);
         }
@@ -489,8 +537,9 @@ public class ArtifactComponent {
      * @param artifactId artifactId
      * @param version    version
      * @param pomPath    pomPath
+     * @param packaging  packaging
      */
-    public void pomGenerator(String groupId, String artifactId, String version, String pomPath) {
+    public void pomGenerator(String groupId, String artifactId, String version, String pomPath, String packaging) {
         FileWriter fileWriter = null;
         try {
             // 创建Maven项目模型
@@ -499,6 +548,9 @@ public class ArtifactComponent {
             model.setGroupId(groupId);
             model.setArtifactId(artifactId);
             model.setVersion(version);
+            if (StringUtils.isNotBlank(packaging)) {
+                model.setPackaging(packaging);
+            }
             // 保存POM文件
             MavenXpp3Writer writer = new MavenXpp3Writer();
             fileWriter = new FileWriter(pomPath);
@@ -517,7 +569,7 @@ public class ArtifactComponent {
      * @param layout   layout
      * @return true
      */
-    public boolean vulnerabilityBlock(Artifact artifact, String layout) {
+    private boolean vulnerabilityBlock(Artifact artifact, String layout) {
         if (Objects.isNull(artifact)) {
             return false;
         }
@@ -814,97 +866,6 @@ public class ArtifactComponent {
     }
 
     /**
-     * 校验metadata是否过期
-     *
-     * @param artifactIdGroup artifactIdGroup
-     * @return true 过期 false 未过期
-     */
-    public String getArtifactIdGroupMetadata(ArtifactIdGroup artifactIdGroup) {
-        if (Objects.isNull(artifactIdGroup) || StringUtils.isBlank(artifactIdGroup.getMetadata()) || !JSONUtil.isJson(artifactIdGroup.getMetadata())) {
-            return "";
-        }
-        JSONObject metadataJson = JSONObject.parseObject(artifactIdGroup.getMetadata());
-        String cacheTimeKey = "cacheTime", metadataKey = "metadata";
-        if (metadataJson.containsKey(cacheTimeKey)) {
-            Long cacheTimeLong = metadataJson.getLong(cacheTimeKey);
-            LocalDateTime cacheTime = Commons.toLocalDateTime(cacheTimeLong);
-            long timeout = 3600L;
-            LocalDateTime nowDate = LocalDateTimeInstance.now();
-            LocalDateTime cacheExpireDate = cacheTime.plusSeconds(timeout);
-            if (!cacheExpireDate.isBefore(nowDate)) {
-                String data = metadataJson.getString(metadataKey);
-                return GlobalConstants.NO_DATA.equals(data) ? "" : data;
-            }
-        }
-        return "";
-    }
-
-    /**
-     * 查询NpmArtifactIdGroupCache
-     *
-     * @param repository       repository
-     * @param artifactId       artifactId
-     * @param coordinateValues coordinateValues
-     * @return packageFeed
-     */
-    public PackageFeed getNpmArtifactIdGroupCache(Repository repository, String artifactId, Collection<String> coordinateValues, RepositorySearchRequest predicate) {
-        PackageFeed packageFeed = null;
-        if (repository.isGroupRepository()) {
-            PackageFeed itemPackageFeed = null;
-            List<PackageFeed> packageFeedList = Lists.newArrayList();
-            for (String storageAndRepositoryId : repository.getGroupRepositories()) {
-                String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
-                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
-                itemPackageFeed = getNpmArtifactPackageFeed(configurationManager.getRepository(sId, rId), artifactId, coordinateValues, predicate);
-                if (Objects.nonNull(itemPackageFeed) && Objects.nonNull(itemPackageFeed.getVersions())) {
-                    packageFeedList.add(itemPackageFeed);
-                }
-            }
-            if (CollectionUtils.isNotEmpty(packageFeedList)) {
-                packageFeed = packageFeedList.stream().max(Comparator.comparing(i -> i.getVersions().getAdditionalProperties().size())).get();
-                PackageFeed finalPackageFeed = packageFeed;
-                packageFeedList.forEach(p -> {
-                    for (Map.Entry<String, PackageVersion> entry : p.getVersions().getAdditionalProperties().entrySet()) {
-                        finalPackageFeed.getVersions().setAdditionalProperty(entry.getKey(), entry.getValue());
-                    }
-                });
-            }
-            if (Objects.nonNull(packageFeed)) {
-                packageFeed.setAdditionalProperty("_rev", generateRevisionHashcode(packageFeed));
-            }
-        } else {
-            packageFeed = getNpmArtifactPackageFeed(repository, artifactId, coordinateValues, predicate);
-        }
-        return packageFeed;
-    }
-
-    /**
-     * 查询NpmArtifactIdGroupCache
-     *
-     * @param repository repository
-     * @param artifactId artifactId
-     * @return packageFeed
-     */
-    public String getNpmArtifactIdGroupBinaryCache(Repository repository, String artifactId) {
-        String binaryFeed = null;
-        if (repository.isGroupRepository()) {
-            String repositoryBinaryFeed = "";
-            for (String storageAndRepositoryId : repository.getGroupRepositories()) {
-                String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
-                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
-                repositoryBinaryFeed = getNpmArtifactIdGroupBinary(repository, configurationManager.getRepository(sId, rId), artifactId);
-                if (StringUtils.isNotBlank(repositoryBinaryFeed)) {
-                    binaryFeed = repositoryBinaryFeed;
-                    return binaryFeed;
-                }
-            }
-        } else {
-            binaryFeed = getNpmArtifactIdGroupBinary(repository, repository, artifactId);
-        }
-        return binaryFeed;
-    }
-
-    /**
      * 更新ArtifactIdGroup
      *
      * @param artifactIdGroup artifactIdGroup
@@ -937,146 +898,6 @@ public class ArtifactComponent {
                         this.getClass().getSimpleName(), uuid);
             }
         }
-    }
-
-    /**
-     * 查询NpmArtifactPackageFeed
-     *
-     * @param repository              repository
-     * @param artifactId              artifactId
-     * @param coordinateValues        coordinateValues
-     * @param repositorySearchRequest repositorySearchRequest
-     * @return NpmArtifactPackageFeed
-     */
-    public PackageFeed getNpmArtifactPackageFeed(Repository repository,
-                                                 String artifactId,
-                                                 Collection<String> coordinateValues, RepositorySearchRequest repositorySearchRequest) {
-        PackageFeed packageFeed = null;
-        long startTime = System.currentTimeMillis();
-        String storageId = repository.getStorage().getId(), repositoryId = repository.getId();
-        ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(repository.getStorage().getId(), repository.getId(), artifactId);
-        artifactIdGroup = getArtifactIdGroup(artifactIdGroup.getUuid());
-        String metadata = getArtifactIdGroupMetadata(artifactIdGroup);
-        if (StringUtils.isNotBlank(metadata)) {
-            if (JSONUtil.isJson(metadata)) {
-                log.info("Npm [{}] [{}] [{}] exists cache", storageId, repositoryId, artifactId);
-                try (InputStream inputStream = new ByteArrayInputStream(metadata.getBytes())) {
-                    packageFeed = npmJacksonMapper.readValue(inputStream, PackageFeed.class);
-                } catch (IOException ex) {
-                    log.error("[{}] storage [{}] repository [{}] artifactIdGroup [{}] metadata to packageFeed error [{}]", this.getClass().getSimpleName(), storageId, repositoryId, artifactIdGroup.getUuid(), ExceptionUtils.getStackTrace(ex));
-                }
-            }
-        } else {
-            if (RepositoryTypeEnum.PROXY.getType().equals(repository.getType())) {
-                packageFeed = npmRepositoryFeatures.handleViewPackage(storageId, repositoryId, artifactId);
-            } else if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
-                packageFeed = handlePackageFeed(repository, artifactId, repositorySearchRequest);
-            }
-            try {
-                String packageFeedJson = GlobalConstants.NO_DATA;
-                if (Objects.nonNull(packageFeed)) {
-                    packageFeedJson = npmJacksonMapper.writeValueAsString(packageFeed);
-                }
-                updateArtifactIdGroup(new ArtifactIdGroupEntity(repository.getStorage().getId(), repository.getId(), artifactId), packageFeedJson);
-            } catch (JsonProcessingException ex) {
-                log.warn("[{}] packageFeed 转换异常 [{}] error [{}]", this.getClass().getSimpleName(), JSONObject.toJSONString(packageFeed), ExceptionUtils.getStackTrace(ex));
-            }
-        }
-        log.info("[{}] getNpmArtifactPackageFeed storageId [{}] repositoryId [{}] artifactId [{}] coordinateValues [{}] take time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), artifactId, coordinateValues, System.currentTimeMillis() - startTime);
-        return packageFeed;
-    }
-
-    private PackageFeed handlePackageFeed(Repository repository, String packageId, RepositorySearchRequest predicate) {
-        final String storageId = repository.getStorage().getId();
-        final String repositoryId = repository.getId();
-        RepositoryProvider provider = repositoryProviderRegistry.getProvider(repository.getType());
-        Paginator paginator = new Paginator();
-        paginator.setProperty("version");
-        paginator.setUseLimit(Boolean.FALSE);
-
-        List<Path> searchResult = provider.search(storageId, repositoryId, predicate, paginator);
-        if (CollectionUtils.isEmpty(searchResult)) {
-            return null;
-        }
-        PackageFeed packageFeed = new PackageFeed();
-        packageFeed.setName(packageId);
-        packageFeed.setAdditionalProperty("_id", packageId);
-        Versions versions = new Versions();
-        packageFeed.setVersions(versions);
-
-        Time npmTime = new Time();
-        packageFeed.setTime(npmTime);
-
-        DistTags distTags = new DistTags();
-        packageFeed.setDistTags(distTags);
-        searchResult.stream().map(npmPackageSupplier).forEach(p -> {
-            PackageVersion npmPackage = p.getNpmPackage();
-            versions.setAdditionalProperty(npmPackage.getVersion(), npmPackage);
-            npmTime.setAdditionalProperty(npmPackage.getVersion(), p.getReleaseDate());
-
-            Date created = npmTime.getCreated();
-            npmTime.setCreated(created == null || created.before(p.getReleaseDate()) ? p.getReleaseDate() : created);
-
-            Date modified = npmTime.getModified();
-            npmTime.setModified(modified == null || modified.before(p.getReleaseDate()) ? p.getReleaseDate()
-                    : modified);
-
-            if (p.isLastVersion()) {
-                distTags.setLatest(npmPackage.getVersion());
-            }
-
-        });
-        packageFeed.setAdditionalProperty("_rev", generateRevisionHashcode(packageFeed));
-        return packageFeed;
-    }
-
-    private String generateRevisionHashcode(PackageFeed packageFeed) {
-        String versionsShaSum = packageFeed.getVersions().getAdditionalProperties()
-                .values()
-                .stream()
-                .map(x -> x.getDist().getShasum())
-                .collect(Collectors.joining());
-        return packageFeed.getVersions().getAdditionalProperties().size() + "-" +
-                DigestUtils.sha1Hex(versionsShaSum).substring(0, 16);
-    }
-
-    /**
-     * @param sourceRepository 源仓库
-     * @param repository       repository
-     * @param artifactId       artifactId
-     * @return npm binary
-     */
-    public String getNpmArtifactIdGroupBinary(Repository sourceRepository, Repository repository, String artifactId) {
-        String binaryFeed = null;
-        long startTime = System.currentTimeMillis();
-        String storageId = repository.getStorage().getId(), repositoryId = repository.getId();
-        ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(repository.getStorage().getId(), repository.getId(), artifactId);
-        artifactIdGroup = getArtifactIdGroup(artifactIdGroup.getUuid());
-        String metadata = getArtifactIdGroupMetadata(artifactIdGroup);
-        if (StringUtils.isNotBlank(metadata)) {
-            if (JSONUtil.isJson(metadata)) {
-                log.info("Npm [{}] [{}] [{}] exists cache", storageId, repositoryId, artifactId);
-                binaryFeed = metadata;
-                return binaryFeed;
-            }
-        } else {
-            if (RepositoryTypeEnum.PROXY.getType().equals(repository.getType())) {
-                binaryFeed = npmRepositoryFeatures.handleViewBinary(sourceRepository, storageId, repositoryId, artifactId);
-            } else if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
-                return null;
-            }
-            try {
-                String npmBinaryJson = GlobalConstants.NO_DATA;
-                if (Objects.nonNull(binaryFeed)) {
-                    npmBinaryJson = binaryFeed;
-                }
-                updateArtifactIdGroup(new ArtifactIdGroupEntity(repository.getStorage().getId(), repository.getId(), artifactId), npmBinaryJson);
-            } catch (Exception ex) {
-                log.warn("Error [{}]", ExceptionUtils.getStackTrace(ex));
-            }
-        }
-        log.info("[{}] getNpmArtifactPackageFeed storageId [{}] repositoryId [{}] artifactId [{}] take time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), artifactId, System.currentTimeMillis() - startTime);
-        return binaryFeed;
     }
 
     /**
@@ -1115,84 +936,6 @@ public class ArtifactComponent {
     }
 
     /**
-     * 查询PypiArtifactIdGroupCache
-     *
-     * @param repository        repository
-     * @param pypiSearchRequest pypiSearchRequest
-     * @return PypiSearchResult
-     */
-    public String getPypiArtifactIdGroupCache(Repository repository, PypiSearchRequest pypiSearchRequest) {
-        String html = pypiBrowsePackageHtmlResponseBuilder.nouFound();
-        Object obj = null;
-        if (repository.isGroupRepository()) {
-            Object itemObj = null;
-            Set<PypiSearchResult> packageFeedSet = Sets.newLinkedHashSet();
-            for (String storageAndRepositoryId : repository.getGroupRepositories()) {
-                String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
-                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
-                itemObj = getPypiArtifactPackageFeed(configurationManager.getRepository(sId, rId), pypiSearchRequest);
-                if (Objects.nonNull(itemObj)) {
-                    packageFeedSet.addAll((List<PypiSearchResult>) itemObj);
-                }
-            }
-            if (CollectionUtils.isNotEmpty(packageFeedSet)) {
-                html = pypiBrowsePackageHtmlResponseBuilder.getProxyHtmlResponse(Lists.newArrayList(packageFeedSet));
-            }
-        } else {
-            obj = getPypiArtifactPackageFeed(repository, pypiSearchRequest);
-            if (Objects.nonNull(obj)) {
-                if (obj instanceof String) {
-                    html = (String) obj;
-                } else {
-                    html = pypiBrowsePackageHtmlResponseBuilder.getProxyHtmlResponse((List<PypiSearchResult>) obj);
-                }
-            }
-        }
-        return html;
-    }
-
-    /**
-     * 查询NpmArtifactPackageFeed
-     *
-     * @param repository        repository
-     * @param pypiSearchRequest pypiSearchRequest
-     * @return PypiSearchResult
-     */
-    public Object getPypiArtifactPackageFeed(Repository repository,
-                                             PypiSearchRequest pypiSearchRequest) {
-        Object obj = null;
-        long startTime = System.currentTimeMillis();
-        if (RepositoryTypeEnum.PROXY.getType().equals(repository.getType())) {
-            List<PypiSearchResult> pypiSearchResultList = pypiRepositoryFeatures.fetchRemotePypiSearchResult(repository.getStorage().getId(), repository.getId(), pypiSearchRequest);
-            if (CollectionUtils.isNotEmpty(pypiSearchResultList)) {
-                obj = pypiSearchResultList;
-            }
-        } else if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
-            final String packageNameToDownload = PypiPackageNameConverter.escapeSpecialCharacters(pypiSearchRequest.getPackageName());
-            obj = handlePypiLocalRepository(repository, packageNameToDownload);
-        }
-        log.debug("[{}] getPypiArtifactPackageFeed storageId [{}] repositoryId [{}] artifactId [{}] take time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), pypiSearchRequest.getPackageName(), System.currentTimeMillis() - startTime);
-        return obj;
-    }
-
-    private String handlePypiLocalRepository(Repository repository, String packageNameToDownload) {
-        String html = null;
-        RepositoryProvider provider = repositoryProviderRegistry.getProvider(repository.getType());
-        RepositorySearchRequest predicate = new RepositorySearchRequest(packageNameToDownload, Collections.singleton(PypiArtifactCoordinates.WHEEL_EXTENSION));
-        Paginator paginator = new Paginator();
-        List<Path> searchResult = provider.search(repository.getStorage().getId(), repository.getId(),
-                predicate, paginator);
-        if (CollectionUtils.isNotEmpty(searchResult)) {
-            try {
-                html = pypiBrowsePackageHtmlResponseBuilder.getHtmlResponse(searchResult);
-            } catch (Exception ex) {
-                log.error(ExceptionUtils.getStackTrace(ex));
-            }
-        }
-        return html;
-    }
-
-    /**
      * 存储制品元数据文件
      *
      * @param repositoryPath repositoryPath
@@ -1200,15 +943,19 @@ public class ArtifactComponent {
     public void storeArtifactMetadataFile(RepositoryPath repositoryPath) {
         try {
             if (Objects.nonNull(repositoryPath) && Objects.nonNull(repositoryPath.getArtifactEntry()) && Files.exists(repositoryPath)) {
+                Artifact artifact = repositoryPath.getArtifactEntry();
                 String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
                 RepositoryPath artifactRepositoryPath = repositoryPath.getParent().resolve(fileName);
                 try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                      ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream)) {
-                    objectOutputStream.writeObject(repositoryPath.getArtifactEntry());
+                    objectOutputStream.writeObject(artifact);
                     byte[] byteArray = byteArrayOutputStream.toByteArray();
                     Files.write(artifactRepositoryPath, byteArray);
                 } catch (Exception ex) {
                     log.warn("写入制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
+                }
+                if (StringUtils.isNotBlank(artifact.getMetadata())) {
+                    cacheArtifactMetadata(repositoryPath, artifact.getMetadata());
                 }
             }
         } catch (Exception ex) {
@@ -1513,6 +1260,43 @@ public class ArtifactComponent {
             groupId = groupId.replace(GlobalConstants.POINT, File.separator);
         }
         return String.format("%s/%s/%s/%s", groupId, artifactId, version, calcLatestSnapshotVersion(storageId, repositoryId, groupId, artifactId, version, artifactName));
+    }
+
+    public RepositoryPath getBomRepositoryPath(RepositoryPath repositoryPath) {
+        String filename = FilenameUtils.getName(repositoryPath.getFileName().toString());
+        String filePath = "." + filename + ".foLibrary-metadata/bom.json";
+        return repositoryPath.resolveSibling(filePath);
+    }
+
+    public RepositoryPath getCacheArtifactMetadataPath(RepositoryPath repositoryPath) {
+        String artifactMetadataDirectoryName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + GlobalConstants.FO_LIBRARY_METADATA;
+        return repositoryPath.resolveSibling(artifactMetadataDirectoryName).resolve("metadata.json");
+    }
+
+    public String getCacheArtifactMetadata(RepositoryPath repositoryPath) {
+        String metadata = "";
+        try {
+            RepositoryPath cacheArtifactMetadataPath = getCacheArtifactMetadataPath(repositoryPath);
+            if (Objects.nonNull(cacheArtifactMetadataPath) && Files.exists(cacheArtifactMetadataPath)) {
+                metadata = Files.readString(cacheArtifactMetadataPath);
+                log.info("Cache artifact metadata path [{}] exists metadata [{}]", cacheArtifactMetadataPath, metadata);
+            }
+        } catch (Exception ex) {
+            log.error("GetCacheArtifactMetadata error [{}]", ExceptionUtils.getStackTrace(ex));
+        }
+        return metadata;
+    }
+
+    public void cacheArtifactMetadata(RepositoryPath repositoryPath, String metadata) {
+        try {
+            RepositoryPath cacheArtifactMetadataPath = getCacheArtifactMetadataPath(repositoryPath);
+            if (Objects.nonNull(cacheArtifactMetadataPath) && StringUtils.isNotBlank(metadata)) {
+                Files.writeString(cacheArtifactMetadataPath, metadata);
+                log.info("Cache artifact metadata path [{}] success metadata [{}]", cacheArtifactMetadataPath, metadata);
+            }
+        } catch (Exception ex) {
+            log.error("StoreArtifactMetadata error [{}]", ExceptionUtils.getStackTrace(ex));
+        }
     }
 
 }

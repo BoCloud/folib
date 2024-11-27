@@ -12,8 +12,11 @@
                   :style="{ fontSize: '28px' }"
                 />
               </div>
-              <h6>制品</h6>
-              <p>制品总数（个）</p>
+              <h6>{{ $t('Safe.Products') }}</h6>
+              <textOver
+                  :text="$t('Safe.ProductsNum')"
+                  :max="20"
+              />
             </template>
           </a-statistic>
         </a-card>
@@ -25,8 +28,11 @@
               <div class="icon">
                 <a-icon type="cloud-download" :style="{ fontSize: '28px' }" />
               </div>
-              <h6>下载</h6>
-              <p>下载总数（次）</p>
+              <h6>{{ $t('Safe.Download') }}</h6>
+              <textOver
+                  :text="$t('Safe.DownloadsNum')"
+                  :max="20"
+              />
             </template>
           </a-statistic>
         </a-card>
@@ -42,8 +48,11 @@
                   :style="{ fontSize: '28px' }"
                 />
               </div>
-              <h6>依赖</h6>
-              <p>依赖总数</p>
+              <h6>{{ $t('Safe.Dependency') }}</h6>
+              <textOver
+                  :text="$t('Safe.DependenciesNum')"
+                  :max="20"
+              />
             </template>
           </a-statistic>
         </a-card>
@@ -59,8 +68,11 @@
                   :style="{ fontSize: '28px' }"
                 />
               </div>
-              <h6>漏洞</h6>
-              <p>漏洞总数</p>
+              <h6>{{ $t('Safe.Bug') }}</h6>
+              <textOver
+                  :text="$t('Safe.BugNum')"
+                  :max="20"
+              />
             </template>
           </a-statistic>
         </a-card>
@@ -82,8 +94,11 @@
               <div class="icon">
                 <a-icon type="file-done" :style="{ fontSize: '28px' }" />
               </div>
-              <h6>白名单</h6>
-              <p>漏洞白名单</p>
+              <h6>{{ $t('Safe.WhiteList') }}</h6>
+              <textOver
+                  :text="$t('Safe.bugWhitelist')"
+                  :max="20"
+              />
             </template>
           </a-statistic>
         </a-card>
@@ -105,8 +120,11 @@
               <div class="icon">
                 <a-icon type="exception" :style="{ fontSize: '28px' }" />
               </div>
-              <h6>黑名单</h6>
-              <p>漏洞黑名单</p>
+              <h6>{{ $t('Safe.Blacklist') }}</h6>
+              <textOver
+                  :text="$t('Safe.bugBlacklist')"
+                  :max="20"
+              />
             </template>
           </a-statistic>
         </a-card>
@@ -127,7 +145,7 @@
       </Vulnerability>
     </a-card>
 
-    
+
     <a-drawer
       placement="right"
       width="20%"
@@ -162,6 +180,7 @@
 <script>
 import Vulnerability from "@/components/Vulnerabilities/Vulnerability";
 import { repositoryVulnerabilityStatistics,  getRepositoryResponseEntity} from '@/api/folib'
+import TextOver from "@/components/Tools/textOver";
 
 export default {
   props: ["folibRepository","vulnerabilityColumns"],
@@ -181,6 +200,7 @@ export default {
     };
   },
   components: {
+    TextOver,
     Vulnerability,
   },
   created() {
@@ -198,11 +218,11 @@ export default {
     },
     vulnerabilityDrawerShow(type) {
       if (type === 1) {
-        this.vulnerabilityDrawerTitle = "白名单"
+        this.vulnerabilityDrawerTitle = this.$t('Safe.WhiteList')
         this.vulnerabilityDrawerData = this.vulnerabilityStatistics.whites
       }
       if (type === 2) {
-        this.vulnerabilityDrawerTitle = "黑名单"
+        this.vulnerabilityDrawerTitle = this.$t('Safe.Blacklist')
         this.vulnerabilityDrawerData = this.vulnerabilityStatistics.blacks
       }
       this.vulnerabilityDrawerVisible = true

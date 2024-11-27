@@ -20,8 +20,8 @@ import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
 /**
  * @author 
  */
-@Component
-@Primary
+//@Component
+//@Primary
 public class CustomObjectMapper
         extends ObjectMapper
 {

@@ -8,6 +8,7 @@ import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.configuration.MutableConfiguration;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.controllers.support.ListEntityBody;
@@ -15,6 +16,7 @@ import com.veadan.folib.controllers.support.ResponseEntityBody;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
+import com.veadan.folib.enums.RepositoryScopeEnum;
 import com.veadan.folib.exception.ExceptionHandlingOutputStream;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathLock;
@@ -26,6 +28,7 @@ import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.dto.AccessModelDto;
@@ -346,6 +349,10 @@ public abstract class BaseController {
         return userDetails.getRoles().stream().anyMatch(item -> SystemRole.ADMIN.name().equals(item.getName()));
     }
 
+    public boolean hasRepositoryResolve(Repository repository) {
+       return validatePathPrivileges(repository, null, Privileges.ARTIFACTS_RESOLVE.name());
+    }
+
     public SpringSecurityUser loginUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (Objects.isNull(authentication)) {
@@ -464,5 +471,27 @@ public abstract class BaseController {
         Collection<Privileges> storageAuthorities = loginUser().getStorageAuthorities(storageId, repositoryId, paths);
         return storageAuthorities.stream().anyMatch(item -> item.getAuthority().equals(authority));
     }
+
+    // 根据仓库验证 增加组合仓库过滤
+    public boolean validatePathPrivileges(Repository repository, List<String> paths, String authority){
+        if(RepositoryTypeEnum.GROUP.getType().equals(repository.getType())){
+            List<String> storageAndRepositoryIds = new LinkedList<>();
+            configurationManager.resolveGroupRepository(repository, storageAndRepositoryIds);
+            for (String storageAndRepositoryId : storageAndRepositoryIds) {
+                String subStorageId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
+                String subRepositoryId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+                Repository subRepository = configurationManagementService.getConfiguration().getRepository(subStorageId, subRepositoryId);
+                if(RepositoryScopeEnum.OPEN.getType().equals(subRepository.getScope())||validatePathPrivileges(subRepository,paths,authority)){
+                    return true;
+                }
+            }
+            return false;
+        }
+        else {
+            return validatePathPrivileges(repository.getStorage().getId(),repository.getId(),paths,authority);
+        }
+    }
+
+
 
 }

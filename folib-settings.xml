@@ -3,61 +3,58 @@
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
     <!--本地依赖位置按照实际情况进行修改-->
-    <localRepository>/Users/leipenghui/apps/m2/repository</localRepository>
+<!--    <localRepository>/Users/leipenghui/apps/m2/repository-future</localRepository>-->
+<!--    <localRepository>/Users/zerowang/data/maven/repository-folib-server</localRepository>-->
+
 
     <mirrors>
         <mirror>
-            <id>folib-group-maven</id>
-            <name>folib-group-maven</name>
+            <id>folib-maven-group</id>
+            <name>folib-maven-group</name>
             <url>https://public.folib.com/storages/folib/folib-maven-group</url>
             <mirrorOf>central</mirrorOf>
         </mirror>
 
         <mirror>
-            <id>folib-local-maven</id>
-            <name>folib-local-maven</name>
-            <url>http://58.210.154.140:2477/storages/folib-common/folib-local-maven</url>
-            <mirrorOf>folib-local-maven</mirrorOf>
+            <id>folib-maven-local</id>
+            <name>folib-maven-local</name>
+            <url>https://public.folib.com/storages/folib/folib-maven-local</url>
+            <mirrorOf>folib-maven-local</mirrorOf>
         </mirror>
 
     </mirrors>
     <servers>
-        <server>
-            <id>folib-group-maven</id>
-            <username>admin</username>
-            <password>password</password>
-        </server>
 
 
         <server>
-            <id>folib-local-maven</id>
-            <username>admin</username>
-            <password>password</password>
+            <id>folib-maven-local</id>
+            <username>folib</username>
+            <password>folib@v587</password>
         </server>
 
     </servers>
     <profiles>
 
 
-<!--        <profile>-->
-<!--            <id>jdk-1.8</id>-->
-<!--            <activation>-->
-<!--                <activeByDefault>true</activeByDefault>-->
-<!--                <jdk>1.8</jdk>-->
-<!--            </activation>-->
-<!--            <properties>-->
-<!--                <maven.compiler.source>1.8</maven.compiler.source>-->
-<!--                <maven.compiler.target>1.8</maven.compiler.target>-->
-<!--                <maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>-->
-<!--            </properties>-->
-<!--        </profile>-->
+        <profile>
+            <id>jdk-11</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+                <jdk>11</jdk>
+            </activation>
+            <properties>
+                <maven.compiler.source>11</maven.compiler.source>
+                <maven.compiler.target>11</maven.compiler.target>
+                <maven.compiler.compilerVersion>11</maven.compiler.compilerVersion>
+            </properties>
+        </profile>
 
         <profile>
-            <id>folib-local-maven</id>
+            <id>folib-maven-local</id>
             <repositories>
                 <repository>
                     <id>central</id>
-                    <url>http://58.210.154.140:2477/storages/folib-common/folib-local-maven</url>
+                    <url>https://public.folib.com/storages/folib/folib-maven-local</url>
                     <snapshots>
                         <enabled>true</enabled>
                     </snapshots>
@@ -68,7 +65,7 @@
     </profiles>
 
     <activeProfiles>
-        <activeProfile>folib-local-maven</activeProfile>
+        <activeProfile>folib-maven-local</activeProfile>
         <activeProfile>jdk-11</activeProfile>
 
     </activeProfiles>

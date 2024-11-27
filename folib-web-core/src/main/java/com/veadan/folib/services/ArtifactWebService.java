@@ -36,6 +36,21 @@ public interface ArtifactWebService {
                      String repositoryId, HttpServletResponse response) throws IOException;
 
     /**
+     * 查询受漏洞影响的制品信息
+     *
+     * @param pageNumber        页码
+     * @param pageSize          每页数量
+     * @param vulnerabilityUuid 漏洞id
+     * @param storageId         存储空间id
+     * @param repositoryId      仓库id
+     * @param artifactName      artifactName
+     * @return 制品列表
+     */
+    TableResultResponse<com.veadan.folib.domain.ArtifactInfo> getArtifacts(Integer pageNumber, Integer pageSize, String vulnerabilityUuid,
+                                                                           String storageId,
+                                                                           String repositoryId, String artifactName);
+
+    /**
      * 全局设置添加或者更新元数据
      *
      * @param artifactMetadataForm 参数
@@ -153,6 +168,21 @@ public interface ArtifactWebService {
     void buildGraphIndex(String username, String storageId, String repositoryId, String path, Boolean metadata, Integer batch);
 
     /**
+     * 强制生成图数据库信息，已存在图库中继续更新
+     *
+     * @param username                  用户名
+     * @param beginDate                 开始日期
+     * @param endDate                   结束日期
+     * @param storageId                 存储空间
+     * @param repositoryId              仓库id
+     * @param storageIdAndRepositoryIds 存储空间-仓库组合
+     * @param path                      path
+     * @param metadata                  是否同步元数据 true 是 false 否
+     * @param batch                     每批数量
+     */
+    void buildGraphIndexForce(String username, String beginDate, String endDate, String storageId, String repositoryId, String storageIdAndRepositoryIds, String path, Boolean metadata, Integer batch);
+
+    /**
      * 根据压缩包生成制品信息
      *
      * @param username     用户名
@@ -222,6 +252,13 @@ public interface ArtifactWebService {
     void bomUpload(RepositoryPath repositoryPath, MultipartFile file);
 
     /**
+     * foeyes是否可用
+     *
+     * @return true 可用 false 不可用
+     */
+    boolean foEyesEnable();
+
+    /**
      * docker仓库旧版本升级
      *
      * @param storageId    存储空间
@@ -233,6 +270,7 @@ public interface ArtifactWebService {
 
     /**
      * docker完整性校验
+     *
      * @param storageId    存储空间
      * @param repositoryId 仓库名称
      * @throws Exception 异常
@@ -254,4 +292,11 @@ public interface ArtifactWebService {
      * @throws Exception 异常
      */
     void dockerLayoutUpgradeAll() throws Exception;
+
+    /**
+     * 删除ARTIFACTS_RESOLVE权限
+     * @param roleId 角色id
+     * @param resourceId 资源id
+     */
+    void deleteArtifactsResolve(String roleId, String resourceId);
 }

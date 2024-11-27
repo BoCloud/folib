@@ -14,6 +14,7 @@ import com.veadan.folib.util.LocalDateTimeInstance;
 import com.veadan.folib.util.UserUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.janusgraph.core.JanusGraph;
@@ -117,7 +118,9 @@ public class ArtifactServiceImpl implements ArtifactService {
                 RepositoryPath artifactRepositoryPath = repositoryPath.getParent().resolve(fileName);
                 try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                      ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream)) {
-                    objectOutputStream.writeObject(repositoryPath.getArtifactEntry());
+                    Artifact artifactEntry = repositoryPath.getArtifactEntry();
+                    artifactEntry.setMetadata(artifact.getMetadata());
+                    objectOutputStream.writeObject(artifactEntry);
                     byte[] byteArray = byteArrayOutputStream.toByteArray();
                     Files.write(artifactRepositoryPath, byteArray);
                 } catch (Exception ex) {

@@ -10,6 +10,9 @@ import { ACCESS_TOKEN, USER_INFO } from '@/store/mutation-types'
 import store from '@/store'
 import { ssoLogin,
 } from '@/api/sso'
+import {
+  getConfig,
+} from '@/api/foEyes'
 const key = 'login'
 export default ({
   created() {
@@ -48,9 +51,12 @@ export default ({
 				localStorage.setItem("SSOIdToken",idToken)
 			}
 			store.dispatch("Token", token)
+			getConfig().then((res) => {
+				localStorage.setItem("FOEYES_CONFIG", JSON.stringify(res))
+			})
 			store.dispatch("GetInfo").then((resp) => {
-				this.$router.push({ name: 'storagesHome' })
 				setTimeout(() => {
+					this.$router.push({ name: 'storagesHome' })
 					this.message("success","欢迎")
 				}, 100)
 			}).finally(() => {

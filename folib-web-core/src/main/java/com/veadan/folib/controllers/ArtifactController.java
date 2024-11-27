@@ -2,6 +2,7 @@ package com.veadan.folib.controllers;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.syncartifact.SyncArtifactProvider;
 import com.veadan.folib.components.syncartifact.SyncArtifactProviderRegistry;
@@ -12,11 +13,15 @@ import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.ArtifactStatistics;
 import com.veadan.folib.domain.thirdparty.ArtifactInfo;
 import com.veadan.folib.domain.thirdparty.ArtifactQuery;
+import com.veadan.folib.enums.AuditEventNameEnum;
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
+import com.veadan.folib.gremlin.entity.KeyValue;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.ArtifactWebService;
+import com.veadan.folib.services.MavenIndexerService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.task.EventTask;
@@ -27,6 +32,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
@@ -45,13 +51,18 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 /**
  * @author leipenghui
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/artifact/")
 @Api(description = "制品管理", tags = "制品管理")
@@ -71,12 +82,16 @@ public class ArtifactController extends BaseController {
     private ArtifactComponent artifactComponent;
 
     @Inject
+    private MavenIndexerService mavenIndexerService;
+
+    @Inject
     @Lazy
     private EventTask eventTask;
 
     private static final String STORAGE_NOT_FOUND = "The storage was not found.";
 
     private static final String REPOSITORY_NOT_FOUND = "The repository was not found.";
+
 
     @ApiOperation(value = "导出漏洞的影响范围")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
@@ -88,8 +103,20 @@ public class ArtifactController extends BaseController {
         artifactWebService.exportExcel(vulnerabilityUuid, storageId, repositoryId, response);
     }
 
+    @ApiOperation(value = "查询漏洞的影响范围")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @GetMapping(value = "/getArtifacts")
+    public TableResultResponse<com.veadan.folib.domain.ArtifactInfo> getArtifacts(@RequestParam(name = "page", required = false) Integer page,
+                                                                                  @RequestParam(name = "limit", required = false) Integer limit,
+                                                                                  @RequestParam(name = "vulnerabilityUuid") String vulnerabilityUuid,
+                                                                                  @RequestParam(name = "storageId", required = false) String storageId,
+                                                                                  @RequestParam(name = "repositoryId", required = false) String repositoryId, @RequestParam(name = "artifactName", required = false) String artifactName) {
+        return artifactWebService.getArtifacts(page, limit, vulnerabilityUuid, storageId, repositoryId, artifactName);
+    }
 
     @ApiOperation(value = "全局设置添加或者更新元数据")
+    @AuditLog(value = AuditEventNameEnum.UPDATE_META, target = "#artifactMetadataForm.key")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_METADATA')")
     @PutMapping(value = "/globalSettingAddOrUpdateMetadata")
@@ -122,8 +149,9 @@ public class ArtifactController extends BaseController {
     }
 
     @ApiOperation(value = "新增制品元数据")
+    @AuditLog(value = AuditEventNameEnum.UPDATE_META, target = "#artifactMetadataForm.storageId + '-'+ #artifactMetadataForm.repositoryId+ '-'+ #artifactMetadataForm.key ")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
-    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_METADATA')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @PutMapping(value = "/artifactMetadata")
     public ResponseEntity<String> saveArtifactMetadata(@RequestBody @Validated({ArtifactMetadataForm.AddOrUpdateGroup.class}) ArtifactMetadataForm artifactMetadataForm, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -134,7 +162,7 @@ public class ArtifactController extends BaseController {
 
     @ApiOperation(value = "修改制品元数据")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
-    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_METADATA')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @PostMapping(value = "/artifactMetadata")
     public ResponseEntity<String> updateArtifactMetadata(@RequestBody @Validated({ArtifactMetadataForm.AddOrUpdateGroup.class}) ArtifactMetadataForm artifactMetadataForm, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -145,7 +173,7 @@ public class ArtifactController extends BaseController {
 
     @ApiOperation(value = "删除制品元数据")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
-    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_METADATA')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @PostMapping(value = "/deleteArtifactMetadata")
     public ResponseEntity<ResponseMessage> deleteArtifactMetadata(@RequestBody @Validated({ArtifactMetadataForm.DeleteGroup.class}) ArtifactMetadataForm artifactMetadataForm, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -157,7 +185,7 @@ public class ArtifactController extends BaseController {
 
     @ApiOperation(value = "批量新增制品元数据")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
-    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_METADATA')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @PostMapping(value = "/batchArtifactMetadata")
     public ResponseEntity<String> batchArtifactMetadata(@RequestBody @Validated({ArtifactMetadataForm.DeleteGroup.class}) List<ArtifactMetadataForm> list, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -169,6 +197,7 @@ public class ArtifactController extends BaseController {
     }
 
     @ApiOperation(value = "构建图数据库索引")
+    @AuditLog(value = AuditEventNameEnum.BUILD_GRAPH_INDEX, target = "#storageId+'-'+#repositoryId")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(value = "/buildGraphIndex")
@@ -180,6 +209,25 @@ public class ArtifactController extends BaseController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
         artifactWebService.buildGraphIndex(userDetails.getUsername(), storageId, repositoryId, path, metadata, batch);
+        return ResponseEntity.ok("ok");
+    }
+
+    @ApiOperation(value = "构建图数据库索引")
+    @AuditLog(value = AuditEventNameEnum.BUILD_GRAPH_INDEX, target = "#storageId+'-'+#repositoryId")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @PostMapping(value = "/buildGraphIndexForce")
+    public ResponseEntity<String> buildGraphIndex(@RequestParam(name = "storageId", required = false) String storageId,
+                                                  @RequestParam(name = "repositoryId", required = false) String repositoryId,
+                                                  @RequestParam(name = "storageIdAndRepositoryIds", required = false) String storageIdAndRepositoryIds,
+                                                  @RequestParam(name = "path", required = false) String path,
+                                                  @RequestParam(name = "metadata", required = false) Boolean metadata,
+                                                  @RequestParam(name = "batch", required = false) Integer batch,
+                                                  @RequestParam(name = "beginDate", required = false) String beginDate,
+                                                  @RequestParam(name = "endDate", required = false) String endDate) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
+        artifactWebService.buildGraphIndexForce(userDetails.getUsername(), beginDate, endDate, storageId, repositoryId, storageIdAndRepositoryIds, path, metadata, batch);
         return ResponseEntity.ok("ok");
     }
 
@@ -353,7 +401,7 @@ public class ArtifactController extends BaseController {
     @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping(value = "/dockerIntegrity")
     public ResponseEntity<String> dockerIntegrity(@RequestParam(required = false, name = "storageId") String storageId,
-                                                       @RequestParam(required = false, name = "repositoryId") String repositoryId) throws Exception {
+                                                  @RequestParam(required = false, name = "repositoryId") String repositoryId) throws Exception {
         artifactWebService.dockerIntegrity(storageId, repositoryId);
         return ResponseEntity.ok("");
     }
@@ -363,6 +411,87 @@ public class ArtifactController extends BaseController {
     public ResponseEntity<String> dockerLayoutDowngrade(@RequestParam(required = false, name = "storageId") String storageId,
                                                         @RequestParam(required = false, name = "repositoryId") String repositoryId) throws Exception {
         artifactWebService.dockerLayoutDowngrade(storageId, repositoryId);
+        return ResponseEntity.ok("");
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @AuditLog(value = AuditEventNameEnum.BUILD_GRAPH_INDEX, target = "#storageId+'-'+#repositoryId")
+    @GetMapping(value = "/mavenIndexer/{storageId}/{repositoryId}")
+    public ResponseEntity<String> mavenIndexer(@PathVariable String storageId,
+                                               @PathVariable String repositoryId,
+                                               @RequestParam String mavenIndexerPath,
+                                               @RequestParam(required = false, name = "batch") Integer batch,
+                                               @RequestParam(required = false, name = "poolSize") Integer poolSize) throws Exception {
+        Storage storage = getStorage(storageId);
+        if (Objects.isNull(storage)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(GlobalConstants.STORAGE_NOT_FOUND_MESSAGE);
+        }
+        Repository repository = storage.getRepository(repositoryId);
+        if (Objects.isNull(repository)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(GlobalConstants.REPOSITORY_NOT_FOUND_MESSAGE);
+        }
+        mavenIndexerService.handlerMavenIndexerAndDownLoad(loginUsername(), repository, mavenIndexerPath, batch, poolSize);
+        return ResponseEntity.ok("");
+    }
+
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @GetMapping(value = "/getLayouts")
+    public ResponseEntity<List<KeyValue>> getLayouts() throws Exception {
+        List<KeyValue> layouts = Lists.newArrayList();
+        KeyValue keyValue = null;
+        for (ProductTypeEnum productTypeEnum : ProductTypeEnum.values()) {
+            keyValue = new KeyValue(productTypeEnum.toString(), productTypeEnum.getSubLayout());
+            layouts.add(keyValue);
+        }
+        return ResponseEntity.ok(layouts);
+    }
+
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @GetMapping(value = "/rawPathSize/{storageId}/{repositoryId}/{path:.+}")
+    public ResponseEntity<String> getRawPathSize(@PathVariable("storageId") String storageId,
+                                                 @PathVariable("repositoryId") String repositoryId,
+                                                 @PathVariable("path") String path) throws IOException {
+        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
+
+        long size = 0;
+        try (Stream<Path> stream = Files.walk((Path) repositoryPath)) {
+            size = stream
+                    .filter(Files::isRegularFile) // 只处理文件
+                    .mapToLong(item -> {
+                        try {
+                            return Files.size(item);
+                        } catch (IOException e) {
+                            log.error("Error getting size for file: " + item);
+                            return 0L;
+                        }
+                    })
+                    .sum();
+        }
+        String sizeStr = unitConversion(size);
+        return ResponseEntity.ok(sizeStr);
+    }
+
+    //单位转换
+    public String unitConversion(long fileSizeInBytes) {
+        final BigDecimal KILOBYTE = new BigDecimal(1024);
+        final BigDecimal MEGABYTE = KILOBYTE.multiply(KILOBYTE);
+        final BigDecimal GIGABYTE = MEGABYTE.multiply(KILOBYTE);
+        BigDecimal fileSize = new BigDecimal(fileSizeInBytes);
+        if (fileSizeInBytes < KILOBYTE.longValue()) {
+            return fileSizeInBytes + " B";
+        } else if (fileSizeInBytes < MEGABYTE.longValue()) {
+            return fileSize.divide(KILOBYTE, 3, RoundingMode.HALF_UP).toString() + " KB";
+        } else if (fileSizeInBytes < GIGABYTE.longValue()) {
+            return fileSize.divide(MEGABYTE, 3, RoundingMode.HALF_UP).toString() + " MB";
+        } else {
+            return fileSize.divide(GIGABYTE, 3, RoundingMode.HALF_UP).toString() + " GB";
+        }
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @DeleteMapping(value = "/artifactsResolve")
+    public ResponseEntity<String> deleteArtifactsResolve(@RequestParam(required = false, name = "roleId") String roleId, @RequestParam(required = false, name = "resourceId") String resourceId) throws Exception {
+        artifactWebService.deleteArtifactsResolve(roleId, resourceId);
         return ResponseEntity.ok("");
     }
 }

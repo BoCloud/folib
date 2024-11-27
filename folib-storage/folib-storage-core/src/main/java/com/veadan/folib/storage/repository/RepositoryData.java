@@ -85,6 +85,17 @@ public class RepositoryData
     @JsonDeserialize(using = StringArrayToMapJsonDeserializer.class)
     private Map<String, String> groupRepositories;
 
+    @Override
+    public String getGroupDefaultRepository() {
+        return groupDefaultRepository;
+    }
+
+    public void setGroupDefaultRepository(String groupDefaultRepository) {
+        this.groupDefaultRepository = groupDefaultRepository;
+    }
+
+    private String groupDefaultRepository;
+
     @JsonSerialize(using = MapValuesJsonSerializer.class)
     @JsonDeserialize(using = StringArrayToMapJsonDeserializer.class)
     private Map<String, String> artifactCoordinateValidators;
@@ -113,8 +124,16 @@ public class RepositoryData
      */
     private UnionRepositoryConfiguration unionRepositoryConfiguration;
 
+    /**
+     * proxy 健康状态
+     */
+    private boolean healthStatus;
+
     @JsonIgnore
     private Storage storage;
+
+    /**是否同步存储空间到其他节点*/
+    private boolean syncEnabled;
 
     RepositoryData() {
 
@@ -141,6 +160,7 @@ public class RepositoryData
         this.allowsDeletion = delegate.isAllowsDeletion();
         this.allowsDirectoryBrowsing = delegate.isAllowsDirectoryBrowsing();
         this.checksumHeadersEnabled = delegate.isChecksumHeadersEnabled();
+        this.groupDefaultRepository=delegate.getGroupDefaultRepository();
 
         RepositoryDto mutableRepository = (RepositoryDto) delegate;
         this.proxyConfiguration = immuteProxyConfiguration(mutableRepository.getProxyConfiguration());
@@ -161,7 +181,11 @@ public class RepositoryData
         this.subLayout = delegate.getSubLayout();
         this.scope = delegate.getScope();
         this.allowAnonymous = delegate.isAllowAnonymous();
+        this.syncEnabled = delegate.isSyncEnabled();
         this.unionRepositoryConfiguration = immuteUnionRepositoryConfiguration(mutableRepository.getUnionRepositoryConfiguration());
+        if (delegate.getHealthStatus() != null) {
+            this.healthStatus = delegate.getHealthStatus();
+        }
     }
 
     private ProxyConfiguration immuteProxyConfiguration(final MutableProxyConfiguration source) {
@@ -422,5 +446,19 @@ public class RepositoryData
     @Override
     public UnionRepositoryConfiguration getUnionRepositoryConfig() {
         return unionRepositoryConfiguration;
+    }
+
+    @Override
+    public boolean isSyncEnabled() {
+        return syncEnabled;
+    }
+
+    public void setSyncEnabled(boolean syncEnabled) {
+        this.syncEnabled = syncEnabled;
+    }
+
+    @Override
+    public Boolean getHealthStatus() {
+        return healthStatus;
     }
 }

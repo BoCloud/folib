@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import io.swagger.annotations.*;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -275,20 +276,19 @@ public class FormDataController
             repositories = configurationManagementService.getConfiguration().getGroupRepositories();
         }
 
-        Set<String> repositoryNames = Collections.emptySet();
+        List<String> repositoryNames = Lists.newArrayList();
 
         if (repositories.size() > 0)
         {
             boolean filterByTerm = StringUtils.isNotBlank(filter);
-
-            repositoryNames = repositories.stream()
-                                          .distinct()
-                                          .filter(Repository::isGroupRepository)
-                                          .flatMap(r -> r.getGroupRepositories().stream())
+            for (Repository repository : repositories) {
+                configurationManager.resolveGroupRepository(repository, repositoryNames);
+            }
+            repositoryNames = repositoryNames.stream()
                                           .filter(str -> !filterByTerm || StringUtils.containsIgnoreCase(str, filter))
                                           // we only need the repository name here
                                           //.map(str -> str.contains(":") ? str.split(":")[1] : str)
-                                          .collect(Collectors.toSet());
+                                          .collect(Collectors.toList());
 
         }
 

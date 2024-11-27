@@ -2,6 +2,7 @@ package com.veadan.folib.repositories;
 
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutDescription;
@@ -25,7 +26,6 @@ import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.CommonUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.tinkerpop.gremlin.process.traversal.Order;
@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
 @Repository
 @Transactional
 public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
-    //查找标记
+
     @Inject
     ArtifactAdapter artifactAdapter;
     @Inject
@@ -110,6 +110,8 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                                               String beginDate,
                                               String endDate,
                                               String safeLevel,
+                                              String digestAlgorithm,
+                                              String digest,
                                               String sortField,
                                               String sortOrder) {
         com.veadan.folib.storage.repository.Repository repository = null;
@@ -127,7 +129,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
             }
         }
         Long zero = 0L;
-        Long count = buildEntityTraversal(regex, artifactName, metadataSearch, storageIdAndRepositoryIdList, storageId, repositoryId, repositoryIds, beginDate, endDate, safeLevel, sortField, sortOrder).count().tryNext().orElse(zero);
+        Long count = buildEntityTraversal(regex, artifactName, metadataSearch, storageIdAndRepositoryIdList, storageId, repositoryId, repositoryIds, beginDate, endDate, safeLevel, digestAlgorithm, digest, sortField, sortOrder).count().tryNext().orElse(zero);
         if (zero.equals(count)) {
             return new PageImpl<>(Collections.emptyList(), pagination, count);
         }
@@ -135,7 +137,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         long high = (pagination.getPageNumber() + 1) * pagination.getPageSize();
 
 
-        List<Artifact> artifactList = buildEntityTraversal(regex, artifactName, metadataSearch, storageIdAndRepositoryIdList, storageId, repositoryId, repositoryIds, beginDate, endDate, safeLevel, sortField, sortOrder)
+        List<Artifact> artifactList = buildEntityTraversal(regex, artifactName, metadataSearch, storageIdAndRepositoryIdList, storageId, repositoryId, repositoryIds, beginDate, endDate, safeLevel, digestAlgorithm, digest, sortField, sortOrder)
                 .range(low, high)
                 .map(artifactAdapter.searchFold(Optional.ofNullable(repository)
                         .map(com.veadan.folib.storage.repository.Repository::getLayout)
@@ -207,7 +209,9 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
 
     private List<String> getGroupStorageIdAndRepositoryId(com.veadan.folib.storage.repository.Repository repository) {
         List<String> storageIdAndRepositoryIdList = Lists.newArrayList();
-        for (String storageAndRepositoryId : repository.getGroupRepositories()) {
+        List<String> storageAndRepositoryIdList = Lists.newArrayList();
+        configurationManager.resolveGroupRepository(repository, storageAndRepositoryIdList);
+        for (String storageAndRepositoryId : storageAndRepositoryIdList) {
             String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
             String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
             com.veadan.folib.storage.repository.Repository subRepository = configurationManagementService.getConfiguration().getRepository(sId, rId);
@@ -255,23 +259,64 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         return entityTraversal;
     }
 
-    public List<Artifact> findMatchingByVulnerabilityUuid(String vulnerabilityUuid,
+    public Page<Artifact> findMatchingByVulnerabilityUuid(Pageable pagination, String vulnerabilityUuid,
                                                           String storageId,
-                                                          List<String> storageIdAndRepositoryIdList) {
-        List<Artifact> artifactList = buildEntityTraversalByVulnerabilityUuid(vulnerabilityUuid, storageId, storageIdAndRepositoryIdList).range(0, 1000)
+                                                          List<String> storageIdAndRepositoryIdList, String artifactName) {
+        Long zero = 0L;
+        Long count = buildEntityTraversalByVulnerabilityUuid(vulnerabilityUuid, storageId, storageIdAndRepositoryIdList, artifactName).count().tryNext().orElse(zero);
+        if (zero.equals(count)) {
+            return new PageImpl<>(Collections.emptyList(), pagination, count);
+        }
+        long low = 0L;
+        long high = count;
+        if (Objects.nonNull(pagination)) {
+            low = pagination.getPageNumber() * pagination.getPageSize();
+            high = (pagination.getPageNumber() + 1) * pagination.getPageSize();
+        }
+        List<Artifact> artifactList = buildEntityTraversalByVulnerabilityUuid(vulnerabilityUuid, storageId, storageIdAndRepositoryIdList, artifactName)
+                .range(low, high)
                 .map(artifactAdapter.fold()).toList();
-        return EntityTraversalUtils.reduceHierarchy(artifactList);
+        return new PageImpl<>(artifactList, pagination, count);
     }
 
     public long countByVulnerabilityUuid(String vulnerabilityUuid,
                                          String storageId,
-                                         List<String> storageIdAndRepositoryIdList) {
-        return buildEntityTraversalByVulnerabilityUuid(vulnerabilityUuid, storageId, storageIdAndRepositoryIdList).count().tryNext().orElse(0L);
+                                         List<String> storageIdAndRepositoryIdList, String artifactName) {
+        return buildEntityTraversalByVulnerabilityUuid(vulnerabilityUuid, storageId, storageIdAndRepositoryIdList, artifactName).count().tryNext().orElse(0L);
     }
 
-    public List<Artifact> findMatchingBySafeLevels(List<String> storageIdAndRepositoryIdList, List<String> safeLevels) {
-        List<Artifact> artifactList = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList)).has(Properties.SAFE_LEVEL, P.within(safeLevels)).order().by(Properties.CREATED, Order.valueOf("desc")).range(0, 300).map(artifactAdapter.baseFold(Optional.empty())).toList();
+    public List<Artifact> findMatchingBySafeLevels(List<String> storageIdAndRepositoryIdList, List<String> safeLevels, String retryKey, Integer retryCount, String order) {
+        List<EntityTraversal<Vertex, Vertex>> orEntityTraversalList = Lists.newArrayList();
+        orEntityTraversalList.add(__.has(Properties.METADATA, Text.textRegex(String.format(".*\\\"%s\\\":\\{[^}]*\\\"value\\\":\\\"[0-%s]\\\"[^}]*}.*", retryKey, retryCount - 1))));
+        orEntityTraversalList.add(__.has(Properties.METADATA, P.eq(null)));
+        orEntityTraversalList.add(__.has(Properties.METADATA, P.eq("''")));
+        orEntityTraversalList.add(__.has(Properties.METADATA, P.eq("{}")));
+        EntityTraversal[] orEntityTraversalArray = orEntityTraversalList.toArray(new EntityTraversal[orEntityTraversalList.size()]);
+        List<Artifact> artifactList = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList)).has(Properties.SAFE_LEVEL, P.within(safeLevels))
+                .or(orEntityTraversalArray).order().by(Properties.CREATED, Order.valueOf(order)).range(0, 250).map(artifactAdapter.baseFold(Optional.empty())).toList();
         return EntityTraversalUtils.reduceHierarchy(artifactList);
+    }
+
+    public long findMatchingCountBySafeLevels(List<String> storageIdAndRepositoryIdList, List<String> safeLevels) {
+        return buildEntityTraversalSafeLevels(storageIdAndRepositoryIdList, safeLevels).count().tryNext().orElse(0L);
+    }
+
+    public Page<Artifact> findMatchingPageBySafeLevels(Pageable pagination, List<String> storageIdAndRepositoryIdList, List<String> safeLevels, String order) {
+        Long zero = 0L;
+        Long count = buildEntityTraversalSafeLevels(storageIdAndRepositoryIdList, safeLevels).count().tryNext().orElse(zero);
+        if (zero.equals(count)) {
+            return new PageImpl<>(Collections.emptyList(), pagination, count);
+        }
+        long low = pagination.getPageNumber() * pagination.getPageSize();
+        long high = (pagination.getPageNumber() + 1) * pagination.getPageSize();
+        List<Artifact> artifactList = buildEntityTraversalSafeLevels(storageIdAndRepositoryIdList, safeLevels).order().by(Properties.CREATED, Order.valueOf(order))
+                .range(low, high)
+                .map(artifactAdapter.baseFold(Optional.empty())).toList();
+        return new PageImpl<>(artifactList, pagination, count);
+    }
+
+    private EntityTraversal<Vertex, Vertex> buildEntityTraversalSafeLevels(List<String> storageIdAndRepositoryIdList, List<String> safeLevels) {
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList)).has(Properties.SAFE_LEVEL, P.within(safeLevels));
     }
 
     public Long countByStorageIdAndRepositoryId(List<String> storageIdAndRepositoryIdList, String layout) {
@@ -301,7 +346,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     public Long countAllByStorageIdAndRepositoryId(String storageId, String repositoryId) {
-       return buildEntityTraversalByStorageIdAndRepositoryId(storageId, repositoryId).count().tryNext().orElse(0L);
+        return buildEntityTraversalByStorageIdAndRepositoryId(storageId, repositoryId).count().tryNext().orElse(0L);
     }
 
     public List<Artifact> findByStorageIdAndRepositoryId(String storageId, String repositoryId, Pageable pageable) {
@@ -320,6 +365,14 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         return entityTraversal.values(Properties.SIZE_IN_BYTES).sum().tryNext().orElse(0L).longValue();
     }
 
+    public Long artifactsBytesStatisticsByStorageIds(List<String> storageIdList) {
+        EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.ARTIFACT_FILE_EXISTS, true);
+        if (CollectionUtils.isNotEmpty(storageIdList)) {
+            entityTraversal = entityTraversal.has(Properties.STORAGE_ID, P.within(storageIdList));
+        }
+        return entityTraversal.values(Properties.SIZE_IN_BYTES).sum().tryNext().orElse(0L).longValue();
+    }
+
     public Map<String, Long> countArtifactByStorageIdAndRepositoryId(List<String> storageIdAndRepositoryIdList) {
         Long downloadCount = sumDownloadCountByStorageIdAndRepositoryId(storageIdAndRepositoryIdList);
         Long dependencyCount = sumDependencyCountByStorageIdsAndRepositoryIds(storageIdAndRepositoryIdList, null, null, null);
@@ -329,7 +382,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         return map;
     }
 
-    private Long sumDownloadCountByStorageIdAndRepositoryId(List<String> storageIdAndRepositoryIdList) {
+    public Long sumDownloadCountByStorageIdAndRepositoryId(List<String> storageIdAndRepositoryIdList) {
         EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.DOWNLOAD_COUNT, P.gt(0));
         if (CollectionUtils.isNotEmpty(storageIdAndRepositoryIdList)) {
             entityTraversal = entityTraversal.has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList));
@@ -338,6 +391,10 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     private EntityTraversal<Vertex, Vertex> commonBuildEntityTraversal(List<String> storageIdAndRepositoryIdList, String date, Long startDate, Long endDate) {
+        return commonBuildEntityTraversal(storageIdAndRepositoryIdList, date, startDate, endDate, null);
+    }
+
+    private EntityTraversal<Vertex, Vertex> commonBuildEntityTraversal(List<String> storageIdAndRepositoryIdList, String date, Long startDate, Long endDate, List<String> safeLevelList) {
         EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList));
         if (StringUtils.isNotBlank(date)) {
             entityTraversal = entityTraversal.has(Properties.SCAN_DATE, date);
@@ -345,7 +402,10 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         if (Objects.nonNull(startDate) && Objects.nonNull(endDate)) {
             entityTraversal = entityTraversal.has(Properties.SCAN_DATE_TIME, P.between(startDate, endDate));
         }
-        return entityTraversal.has(Properties.SAFE_LEVEL, SafeLevelEnum.SCAN_COMPLETE.getLevel());
+        if (CollectionUtils.isEmpty(safeLevelList)) {
+            safeLevelList = Lists.newArrayList(SafeLevelEnum.SCAN_COMPLETE.getLevel());
+        }
+        return entityTraversal.has(Properties.SAFE_LEVEL, P.within(safeLevelList));
     }
 
     private Long sumDependencyCountByStorageIdsAndRepositoryIds(List<String> storageIdAndRepositoryIdList, String date, Long startDate, Long endDate) {
@@ -369,7 +429,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     private Long scanCountByStorageIdsAndRepositoryIds(List<String> storageIdAndRepositoryIdList, String date, Long startDate, Long endDate) {
-        EntityTraversal<Vertex, Vertex> entityTraversal = commonBuildEntityTraversal(storageIdAndRepositoryIdList, date, startDate, endDate);
+        EntityTraversal<Vertex, Vertex> entityTraversal = commonBuildEntityTraversal(storageIdAndRepositoryIdList, date, startDate, endDate, Lists.newArrayList(SafeLevelEnum.SCAN_COMPLETE.getLevel(), SafeLevelEnum.SCAN_FAIL.getLevel()));
         return entityTraversal.count().tryNext().orElse(0L);
     }
 
@@ -497,6 +557,8 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                                                                  String beginDate,
                                                                  String endDate,
                                                                  String safeLevel,
+                                                                 String digestAlgorithm,
+                                                                 String digest,
                                                                  String sortField,
                                                                  String sortOrder) {
         EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT);
@@ -537,6 +599,12 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         }
         if (StringUtils.isNotBlank(safeLevel)) {
             entityTraversal = entityTraversal.has(Properties.SAFE_LEVEL, safeLevel);
+        }
+        if (StringUtils.isNotBlank(digestAlgorithm) && StringUtils.isNotBlank(digest)) {
+            String digestSearch = String.format("{%s}%s", digestAlgorithm.toUpperCase(), digest);
+            entityTraversal = entityTraversal.has(Properties.CHECKSUMS, P.within(digestSearch));
+        } else if (StringUtils.isNotBlank(digest)) {
+            entityTraversal = entityTraversal.has(Properties.CHECKSUMS, Text.textContains(digest));
         }
         if (StringUtils.isNotBlank(sortField) && StringUtils.isNotBlank(sortOrder)) {
             entityTraversal = entityTraversal.order().by(sortField, Order.valueOf(sortOrder));
@@ -754,7 +822,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
 
     private EntityTraversal<Vertex, Vertex> buildEntityTraversalByVulnerabilityUuid(String vulnerabilityUuid,
                                                                                     String storageId,
-                                                                                    List<String> storageIdAndRepositoryIdList) {
+                                                                                    List<String> storageIdAndRepositoryIdList, String artifactName) {
         EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.VULNERABILITY)
                 .has(Properties.UUID, vulnerabilityUuid).inE(Edges.ARTIFACT_HAS_VULNERABILITIES).outV();
         if (StringUtils.isNotBlank(storageId)) {
@@ -762,6 +830,9 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         }
         if (CollectionUtils.isNotEmpty(storageIdAndRepositoryIdList)) {
             entityTraversal = entityTraversal.has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList));
+        }
+        if (StringUtils.isNotBlank(artifactName)) {
+            entityTraversal = entityTraversal.has(Properties.ARTIFACT_PATH, Text.textRegex(String.format(".*%s.*", artifactName)));
         }
         return entityTraversal;
     }

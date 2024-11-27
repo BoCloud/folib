@@ -7,6 +7,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
+import com.veadan.folib.authentication.api.password.PasswordAuthentication;
 import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.layout.DockerComponent;
@@ -21,6 +22,7 @@ import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.services.DirectoryListingService;
+import com.veadan.folib.services.StorageManagementService;
 import com.veadan.folib.storage.ArtifactStorageException;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
@@ -28,9 +30,13 @@ import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.security.JwtAuthenticationClaimsProvider;
 import com.veadan.folib.users.security.JwtClaimsProvider;
 import com.veadan.folib.users.security.SecurityTokenProvider;
+import com.veadan.folib.users.service.UserService;
+import com.veadan.folib.users.service.impl.DatabaseUserService;
+import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.utils.FileUtils;
+import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.*;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -43,6 +49,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -100,6 +107,15 @@ public class DockerArtifactController extends BaseArtifactController {
     @Lazy
     private DockerComponent dockerComponent;
 
+    @Inject
+    @RelationalDatabaseUserService.RelationalDatabase
+    private UserService userService;
+
+    @Inject
+    private AuthenticationManager authenticationManager;
+    @Inject
+    private StorageManagementService storageManagementService;
+
     /**
      * 文件进度
      */
@@ -139,9 +155,9 @@ public class DockerArtifactController extends BaseArtifactController {
     @ApiOperation(value = "v2 token")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "token."),
             @ApiResponse(code = 500, message = "An error occurred.")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(value = {"/v2/token"}, method = {RequestMethod.GET})
-    public ResponseEntity<Object> token(HttpServletResponse response, @RequestParam(value = "scope", required = false) String scope) {
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @RequestMapping(value = {"/v2/token"}, method = {RequestMethod.GET, RequestMethod.POST})
+    public ResponseEntity<Object> token(HttpServletRequest request, HttpServletResponse response, @RequestParam(value = "username", required = false) String username, @RequestParam(value = "password", required = false) String password, @RequestParam(value = "scope", required = false) String scope) {
         try {
             SecurityContext securityContext = SecurityContextHolder.getContext();
             Authentication authentication = securityContext.getAuthentication();
@@ -150,8 +166,18 @@ public class DockerArtifactController extends BaseArtifactController {
             }
             response.setHeader(DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.value());
             int expireSeconds = 7200;
+            if (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) {
+                //Oauth2
+                authenticationManager.authenticate(new PasswordAuthentication(username, password));
+                String token = userService.generateSecurityToken(username, expireSeconds);
+                JSONObject resultData = new JSONObject();
+                resultData.put("access_token", token);
+                resultData.put("scope", scope);
+                resultData.put("expires_in", expireSeconds);
+                return ResponseEntity.ok(resultData);
+            }
             if (authentication instanceof AnonymousAuthenticationToken) {
-                String username = authentication.getPrincipal().toString();
+                username = authentication.getPrincipal().toString();
                 Map<String, String> claimMap = Collections.singletonMap(GlobalConstants.ANONYMOUS_TOKEN_KEY, username);
                 JSONObject resultData = new JSONObject();
                 String token = securityTokenProvider.getToken(username, claimMap, expireSeconds, null);
@@ -189,7 +215,7 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "name", value = "制品名", required = true),
             @ApiImplicitParam(name = "digest", value = "digest", required = true)
     })
-    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/{digest}", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/{digest}"}, method = {RequestMethod.HEAD}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity existingLayers(@RequestHeader HttpHeaders httpHeaders,
                                          HttpServletRequest request,
@@ -212,11 +238,11 @@ public class DockerArtifactController extends BaseArtifactController {
             String artifactPath = String.format("blobs/%s", digest);
             RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
             boolean exists = artifactRealExists(repositoryPath);
-            logger.debug("StorageId [{}] repositoryId [{}] name [{}] extractPath [{}] imagePath [{}] artifactPath [{}] exists [{}]", storageId, repositoryId, name, extractPath, imagePath, artifactPath, exists);
+            logger.info("StorageId [{}] repositoryId [{}] name [{}] extractPath [{}] imagePath [{}] artifactPath [{}] exists [{}]", storageId, repositoryId, name, extractPath, imagePath, artifactPath, exists);
             //200已经存在 404不存在
             if (exists) {
                 long size = Files.size(repositoryPath);
-                logger.debug("StorageId [{}] repositoryId [{}] name [{}] extractPath [{}] imagePath [{}] artifactPath [{}] size [{}]", storageId, repositoryId, name, extractPath, imagePath, artifactPath, size);
+                logger.info("StorageId [{}] repositoryId [{}] name [{}] extractPath [{}] imagePath [{}] artifactPath [{}] size [{}]", storageId, repositoryId, name, extractPath, imagePath, artifactPath, size);
                 response.addHeader(DockerHeaderEnum.CONTENT_LENGTH.key(), size + "");
                 response.addHeader(DockerHeaderEnum.STREAM_CONTENT_TYPE.key(), DockerHeaderEnum.STREAM_CONTENT_TYPE.value());
                 return new ResponseEntity<>("OK", HttpStatus.OK);
@@ -244,6 +270,7 @@ public class DockerArtifactController extends BaseArtifactController {
     })
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 500, message = "An error occurred.")})
+    //docker buildx build方式不会传递用户认证信息，所以此处权限不能为ARTIFACTS_DEPLOY，会导致401报错
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/uploads/"}, method = {RequestMethod.POST}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity<Object> startingAnUpload(@RequestHeader HttpHeaders httpHeaders,
@@ -259,6 +286,7 @@ public class DockerArtifactController extends BaseArtifactController {
     ) {
         try {
             if (Objects.isNull(authentication)) {
+                logger.info("===没有authentication===");
                 setTokenUrl(request, response);
                 return new ResponseEntity<>(unAuth(), HttpStatus.UNAUTHORIZED);
             }
@@ -302,7 +330,9 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/{uuid}", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/uploads/{uuid}"}, method = {RequestMethod.PATCH}, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public ResponseEntity<String> chunkedUpload(@RequestHeader HttpHeaders httpHeaders,
+    public ResponseEntity<String> chunkedUpload(
+                                                @RepositoryMapping Repository repository,
+                                                @RequestHeader HttpHeaders httpHeaders,
                                                 HttpServletRequest request,
                                                 HttpServletResponse response,
                                                 @PathVariable String storageId,
@@ -372,7 +402,7 @@ public class DockerArtifactController extends BaseArtifactController {
     })
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/{uuid}", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/uploads/{uuid}"}, method = {RequestMethod.PUT}, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<Object> monolithicUpload(@RequestHeader HttpHeaders httpHeaders,
                                                    Authentication authentication,
@@ -396,6 +426,7 @@ public class DockerArtifactController extends BaseArtifactController {
         }
         ResponseEntity result = new ResponseEntity<>(HttpStatus.CREATED);
         String imagePath = "";
+        InputStream inputStream = null;
         try {
             String extractPath = getExtractPath(request);
             if (StringUtils.isNotBlank(extractPath)) {
@@ -403,7 +434,7 @@ public class DockerArtifactController extends BaseArtifactController {
             }
             imagePath = resolveImagePath(name, extractPath);
             int totalBytes = request.getContentLength();
-            InputStream inputStream = request.getInputStream();
+            inputStream = request.getInputStream();
             if (totalBytes <= 0 || inputStream.available() == 0) {
                 totalBytes = getRanges().getOrDefault(uuid, 1L).intValue();
                 updateData(digest, uuid);
@@ -413,6 +444,7 @@ public class DockerArtifactController extends BaseArtifactController {
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
             logger.info("StorageId [{}] repositoryId [{}] name [{}] imagePath [{}] digest [{}] uuid [{}] artifactPath [{}]", storageId, repositoryId, name, imagePath, digest, uuid, artifactPath);
             artifactManagementService.validateAndStore(repositoryPath, inputStream);
+
             String url = request.getRequestURI();
             url = url.replace("uploads/", "").replace(uuid, digest);
             response.reset();
@@ -430,6 +462,13 @@ public class DockerArtifactController extends BaseArtifactController {
             }
             result = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         } finally {
+            try {
+                if(inputStream!=null){
+                    inputStream.close();
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
             deleteLayers(storageId, repositoryId, imagePath, digest, uuid);
         }
         return result;
@@ -646,7 +685,7 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "name", value = "制品名", required = true),
             @ApiImplicitParam(name = "tag", value = "tag", required = true)
     })
-    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/manifests/{reference}", "/v2/{storageId}/{repositoryId}/{name}/**/manifests/{reference}"}, method = {RequestMethod.HEAD}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity existingManifests(@RequestHeader HttpHeaders httpHeaders,
                                             HttpServletRequest request,
@@ -955,6 +994,8 @@ public class DockerArtifactController extends BaseArtifactController {
             String link = "", next = "";
             List<String> resultList = Collections.emptyList(), dataList = Lists.newArrayList();
             if (CollectionUtil.isNotEmpty(storageList)) {
+                //查询数据库中存储空间绑定的用户
+                storageManagementService.getStorageUsers(storageList);
                 boolean filterByUser = !hasAdmin();
                 String finalUsername = username;
                 storageList = storageList.stream()

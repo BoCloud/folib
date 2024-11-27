@@ -3,9 +3,11 @@ package com.veadan.folib.providers.io;
 import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.util.CacheUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -28,6 +30,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public abstract class RepositoryFiles {
+    public final static String SCHEME_PREFIX = StorageFileSystemProvider.FOLIB_SCHEME + ":";
 
     public static Boolean isChecksum(RepositoryPath path)
             throws IOException {
@@ -66,7 +69,7 @@ public abstract class RepositoryFiles {
         if (StringUtils.isBlank(name)) {
             return true;
         }
-        List<String> checksumList = Lists.newArrayList(".md5", ".sha1", ".sha256", ".sha512");
+        List<String> checksumList = Lists.newArrayList(".md5", ".sha1", ".sha256", ".sha512", ".sm3");
         return checksumList.stream().anyMatch(name::endsWith);
     }
 
@@ -128,8 +131,8 @@ public abstract class RepositoryFiles {
         if (attributes == null) {
             return Collections.emptySet();
         }
-        String schemePrefix = String.format("%s:", StorageFileSystemProvider.FOLIB_SCHEME);
-        String attributesLocal = attributes.replace(schemePrefix, "").trim();
+
+        String attributesLocal = attributes.replace(SCHEME_PREFIX, "").trim();
         if (attributesLocal.equals("*")) {
             return Arrays.stream(RepositoryFileAttributeType.values())
                     .collect(Collectors.toSet());
@@ -173,7 +176,7 @@ public abstract class RepositoryFiles {
             return p.path;
         }
 
-        return p.path = relativizeUri(p).toString();
+        return p.path = p.getPath();
     }
 
     public static URI resolveResource(RepositoryPath p)
@@ -243,6 +246,31 @@ public abstract class RepositoryFiles {
                 cacheSha1 = Files.readString(sha1CachePath);
             }
             return sourceSha1.equals(cacheSha1);
+        } catch (Exception ex) {
+            log.warn(ExceptionUtils.getStackTrace(ex));
+        }
+        return false;
+    }
+
+    public static boolean validateChecksum(RepositoryPath repositoryPath, RepositoryPath targetRepositoryPath) {
+        try {
+            Set<String> digestAlgorithmSet = repositoryPath.getFileSystem().getDigestAlgorithmSet();
+            String digestAlgorithm = "sha1";
+            if (CollectionUtils.isNotEmpty(digestAlgorithmSet)) {
+                digestAlgorithm = digestAlgorithmSet.stream().findFirst().orElse("");
+            }
+            String extension = GlobalConstants.POINT + digestAlgorithm.replaceAll("-", "").toLowerCase();
+            //对比checksum
+            String sourceDigestAlgorithm = "sourceDigestAlgorithm", targetDigestAlgorithm = "targetDigestAlgorithm";
+            RepositoryPath sourceDigestAlgorithmRepositoryPath = repositoryPath.resolveSibling(repositoryPath.getFileName() + extension);
+            if (Files.exists(sourceDigestAlgorithmRepositoryPath)) {
+                sourceDigestAlgorithm = Files.readString(sourceDigestAlgorithmRepositoryPath);
+            }
+            Path targetDigestAlgorithmTargetPath = targetRepositoryPath.resolveSibling(targetRepositoryPath.getFileName() + extension);
+            if (Files.exists(targetDigestAlgorithmTargetPath)) {
+                targetDigestAlgorithm = Files.readString(targetDigestAlgorithmTargetPath);
+            }
+            return sourceDigestAlgorithm.equals(targetDigestAlgorithm);
         } catch (Exception ex) {
             log.warn(ExceptionUtils.getStackTrace(ex));
         }

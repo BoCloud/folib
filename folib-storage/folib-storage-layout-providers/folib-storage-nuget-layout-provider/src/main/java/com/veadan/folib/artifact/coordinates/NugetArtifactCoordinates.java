@@ -96,6 +96,7 @@ public class NugetArtifactCoordinates
         setCoordinate(EXTENSION, type);
     }
     
+    @Override
     public String convertToPath(NugetArtifactCoordinates c)
     {
         String idLocal = c.getId();

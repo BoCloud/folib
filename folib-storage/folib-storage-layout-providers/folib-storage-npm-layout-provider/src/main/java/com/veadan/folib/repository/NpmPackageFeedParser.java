@@ -6,6 +6,8 @@ import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactEntity;
 import com.veadan.folib.domain.ArtifactTagEntity;
+import com.veadan.folib.enums.NpmPacketSuffix;
+import com.veadan.folib.enums.NpmSubLayout;
 import com.veadan.folib.npm.metadata.*;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.services.ArtifactIdGroupService;
@@ -26,7 +28,6 @@ import java.util.Set;
 @Slf4j
 @Component
 public class NpmPackageFeedParser {
-
     @Inject
     private ArtifactTagService artifactTagService;
 
@@ -39,7 +40,7 @@ public class NpmPackageFeedParser {
     public void parseSearchResult(Repository repository,
                                   SearchResults searchResults) {
         ArtifactTag lastVersionTag = artifactTagService.findOneOrCreate(ArtifactTagEntity.LAST_VERSION);
-
+        final String packageSuffix = NpmSubLayout.OHPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
         String repositoryId = repository.getId();
         String storageId = repository.getStorage().getId();
 
@@ -47,7 +48,7 @@ public class NpmPackageFeedParser {
         for (SearchResult searchResult : searchResults.getObjects()) {
             PackageEntry packageEntry = searchResult.getPackage();
 
-            ArtifactEntity remoteArtifactEntry = parseVersion(storageId, repositoryId, packageEntry);
+            ArtifactEntity remoteArtifactEntry = parseVersion(storageId, repositoryId, packageEntry,packageSuffix);
             if (remoteArtifactEntry == null) {
                 continue;
             }
@@ -71,7 +72,7 @@ public class NpmPackageFeedParser {
         String storageId = repository.getStorage().getId();
 
         ArtifactTag lastVersionTag = artifactTagService.findOneOrCreate(ArtifactTagEntity.LAST_VERSION);
-
+        final String packageSuffix = NpmSubLayout.OHPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
         Versions versions = packageFeed.getVersions();
         if (versions == null) {
             return;
@@ -85,7 +86,7 @@ public class NpmPackageFeedParser {
         Set<Artifact> artifactToSaveSet = new HashSet<>();
         for (PackageVersion packageVersion : versionMap.values()) {
             log.info("storageId [{}] repositoryId [{}] name [{}] packageVersion [{}]", storageId, repositoryId, packageFeed.getName(), packageVersion);
-            ArtifactEntity remoteArtifactEntry = parseVersion(storageId, repositoryId, packageVersion);
+            ArtifactEntity remoteArtifactEntry = parseVersion(storageId, repositoryId, packageVersion,packageSuffix);
             if (remoteArtifactEntry == null) {
                 continue;
             }
@@ -101,8 +102,9 @@ public class NpmPackageFeedParser {
 
     private ArtifactEntity parseVersion(String storageId,
                                         String repositoryId,
-                                        PackageVersion packageVersion) {
-        NpmArtifactCoordinates c = NpmArtifactCoordinates.of(packageVersion.getName(), packageVersion.getVersion());
+                                        PackageVersion packageVersion,String packageSuffix) {
+
+        NpmArtifactCoordinates c = NpmArtifactCoordinates.of(packageVersion.getName(), packageVersion.getVersion(),packageSuffix);
         Artifact artifact = artifactRepository.findOneArtifact(storageId, repositoryId, c.buildPath());
         ArtifactEntity remoteArtifactEntry = null;
         if (Objects.nonNull(artifact)) {
@@ -128,12 +130,12 @@ public class NpmPackageFeedParser {
 
     private ArtifactEntity parseVersion(String storageId,
                                         String repositoryId,
-                                        PackageEntry packageEntry) {
+                                        PackageEntry packageEntry,String packageSuffix) {
         String scope = packageEntry.getScope();
         String packageId = NpmArtifactCoordinates.calculatePackageId("unscoped".equals(scope) ? null : scope,
                 packageEntry.getName());
 
-        NpmArtifactCoordinates c = NpmArtifactCoordinates.of(packageId, packageEntry.getVersion());
+        NpmArtifactCoordinates c = NpmArtifactCoordinates.of(packageId, packageEntry.getVersion(),packageSuffix);
 
         LocalDateTime now = LocalDateTimeInstance.now();
         Artifact artifact = artifactRepository.findOneArtifact(storageId, repositoryId, c.buildPath());

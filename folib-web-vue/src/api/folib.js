@@ -8,6 +8,13 @@ export function getStorages () {
   })
 }
 
+export function queryStorages (dataQuery) {
+  return axios({
+    url: `/api/configuration/folib/storages/queryStorages?page=${dataQuery.page}&limit=${dataQuery.limit}`,
+    method: 'get'
+  })
+}
+
 export function getLibrary (libId) {
   return axios({
     url: '/api/configuration/folib/storages/'+libId,
@@ -52,6 +59,13 @@ export function getStoragesAndRepositories (dataQuery) {
   })
 }
 
+export function queryRepositories (dataQuery) {
+  return axios({
+    url: `/api/configuration/folib/storages/queryStoragesAndRepositories`,
+    method: 'get',
+    params: dataQuery
+  })
+}
 export function getPermissionStoragesAndRepositories (dataQuery) {
   return axios({
     url: '/api/configuration/folib/storages/getPermissionStoragesAndRepositories',
@@ -179,6 +193,20 @@ export function insertOrUpdateRules (data) {
     url: '/api/scanRules/insertOrUpdate',
     method: 'post',
     data: data
+  })
+}
+
+export function queryOnScanTree (data) {
+  return axios({
+    url: '/api/scanRules/queryOnScanTree',
+    method: 'get'
+  })
+}
+
+export function queryBomOnScanTree (data) {
+  return axios({
+    url: '/api/scanRules/queryBomOnScanTree',
+    method: 'get'
   })
 }
 
@@ -453,6 +481,13 @@ export function getStorageAndRepositoryPermission (storageId,repositoryId) {
   })
 }
 
+export function getArtifactPermission (storageId,repositoryId,artifactPath) {
+  return axios({
+    url: '/api/account/permission/'+storageId+'/'+repositoryId+'/'+artifactPath,
+    method: 'get'
+  })
+}
+
 export function unionRepositoryConfig (storageId,repositoryId,data) {
   return axios({
     url: '/api/configuration/folib/storages/'+storageId+'/'+repositoryId+'/unionRepository',
@@ -461,7 +496,33 @@ export function unionRepositoryConfig (storageId,repositoryId,data) {
   })
 }
 
+export function getFoEyesEnable () {
+  return axios({
+    url: '/api/scanner/foEyesEnable',
+    method: 'get'
+  })
+}
 
+export function getArtifactsPage (query) {
+  return axios({
+    url: '/api/artifact/getArtifacts',
+    method: 'get',
+    params: query
+  })
+}
 
+export function queryRepositoriesByStorage (dataQuery) {
+  return axios({
+    url: '/api/configuration/folib/storages/queryStoragesAndRepositories',
+    params: dataQuery,
+    method: 'get'
+  })
+}
 
-
+export function jfrogMigrate (data) {
+  return axios({
+    url: '/api/migrate/jfrog',
+    data: data,
+    method: 'post'
+  })
+}

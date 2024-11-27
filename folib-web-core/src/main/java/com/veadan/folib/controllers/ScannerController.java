@@ -7,10 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -53,5 +50,11 @@ public class ScannerController extends BaseController {
     @GetMapping("/repository")
     public ResponseEntity<RepositoryScannerForm> repository(@RequestParam("storage") String storage, @RequestParam("repository") String repository, String artifactName, Integer page, Integer limit) {
         return ResponseEntity.ok(artifactWebService.repository(storage, repository, artifactName, page, limit));
+    }
+
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @GetMapping(value = "/foEyesEnable")
+    public ResponseEntity<Boolean> foEyesEnable() {
+        return ResponseEntity.ok(artifactWebService.foEyesEnable());
     }
 }

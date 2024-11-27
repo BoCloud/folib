@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.components.block.ArtifactBlockComponent;
 import com.veadan.folib.components.promotion.ArtifactPromotionProvider;
 import com.veadan.folib.components.promotion.ArtifactPromotionProviderRegistry;
 import com.veadan.folib.configuration.UnionTargetRepositoryConfiguration;
@@ -57,6 +58,10 @@ public class PromotionTask {
 
     @Inject
     @Lazy
+    private ArtifactBlockComponent artifactBlockComponent;
+
+    @Inject
+    @Lazy
     private ArtifactPromotionProviderRegistry artifactPromotionProviderRegistry;
 
     @Inject
@@ -67,6 +72,9 @@ public class PromotionTask {
     @Lazy
     private RepositoryPathResolver repositoryPathResolver;
 
+    /**
+     * 每6分钟
+     */
     @Scheduled(cron = "0 0/6 * * * ? ")
     public void run() {
         String lockName = "PromotionTask";
@@ -84,18 +92,22 @@ public class PromotionTask {
                     //晋级阻断开启，等待晋级也需要晋级
                     promotionStatusList.add(PromotionStatusEnum.WAIT.getStatus());
                 } else {
+                    safeLevelList.add(SafeLevelEnum.INIT.getLevel());
                     safeLevelList.add(SafeLevelEnum.UN_SCAN.getLevel());
+                    safeLevelList.add(SafeLevelEnum.SCANNING.getLevel());
+                    safeLevelList.add(SafeLevelEnum.SCAN_FAIL.getLevel());
                 }
                 long totalCount = artifactRepository.countPromotionMatchingByIndex(safeLevelList, promotionStatusList);
+                log.info("Promotion task find total [{}] artifact", totalCount);
                 if (totalCount <= 0) {
                     return;
                 }
-                int batchSize = 100;
+                int batchSize = 10;
                 // 计算总页数
                 int totalPages = (int) Math.ceil((double) totalCount / batchSize);
                 Pageable pageable;
                 for (int currentPage = 1; currentPage <= totalPages; currentPage++) {
-                    log.info("TotalPages [{}] currentPage [{}] batchSize [{}]", totalPages, currentPage, batchSize);
+                    log.info("Promotion task totalPages [{}] currentPage [{}] batchSize [{}]", totalPages, currentPage, batchSize);
                     if (currentPage == 1) {
                         pageable = PageRequest.of(currentPage, batchSize).first();
                     } else {
@@ -113,7 +125,7 @@ public class PromotionTask {
                             try {
                                 storageId = artifact.getStorageId();
                                 repositoryId = artifact.getRepositoryId();
-                                block = artifactComponent.vulnerabilityBlock(artifact, null);
+                                block = artifactBlockComponent.artifactBlockStrategy(artifact, null);
                                 if (block) {
                                     log.info("存储空间 [{}] 所属仓库 [{}] 制品 [{}] 存在漏洞，满足安全策略配置中的阻断条件，取消晋级", storageId, repositoryId, artifact.getArtifactPath());
                                     artifactComponent.handlerArtifactPromotion("", artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), PromotionStatusEnum.BLOCK.getStatus());
@@ -143,6 +155,10 @@ public class PromotionTask {
                                             nodePromotionStatus = getNodePromotionStatus(artifact.getPromotionNodes(), unionTargetRepository.getNode());
                                             if (PromotionStatusEnum.SUCCESS.getStatus().equals(nodePromotionStatus)) {
                                                 //当前节点已成功晋级，继续下一个节点
+                                                continue;
+                                            }
+                                            if (PromotionStatusEnum.FAIL.getStatus().equals(nodePromotionStatus) && ArtifactoryRepositoryTypeEnum.INNER.getType().equals(unionTargetRepository.getType())) {
+                                                //晋级失败的内部节点跳过，由PromotionCompensationTask触发重试
                                                 continue;
                                             }
                                             artifactPath = artifact.getArtifactPath();

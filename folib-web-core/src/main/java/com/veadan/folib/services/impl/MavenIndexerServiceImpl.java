@@ -305,7 +305,7 @@ public class MavenIndexerServiceImpl implements MavenIndexerService {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(corePoolSize);
         executor.setMaxPoolSize(maxPoolSize);
-        executor.setQueueCapacity(Integer.MAX_VALUE);
+        executor.setQueueCapacity(1000000);
         executor.setKeepAliveSeconds(120);
         executor.setThreadNamePrefix("customSyncArtifact_");
         executor.setWaitForTasksToCompleteOnShutdown(true);

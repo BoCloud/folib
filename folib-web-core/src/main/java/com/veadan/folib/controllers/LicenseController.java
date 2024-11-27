@@ -1,5 +1,6 @@
 package com.veadan.folib.controllers;
 
+import com.veadan.folib.domain.license.LicenseBlackWhite;
 import com.veadan.folib.entity.License;
 import com.veadan.folib.forms.license.LicenseTableForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
@@ -9,11 +10,14 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.springframework.beans.BeanUtils;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -33,8 +37,21 @@ public class LicenseController extends BaseController {
     @GetMapping(value = "/page")
     public TableResultResponse<LicenseTableForm> page(@RequestParam(name = "page", required = false) Integer page,
                                                       @RequestParam(name = "limit", required = false) Integer limit,
-                                                      @RequestParam(name = "searchKeyword", required = false) String searchKeyword) {
-        return licenseService.queryLicensePage(page, limit, searchKeyword);
+                                                      @RequestParam(name = "searchKeyword", required = false) String searchKeyword,
+                                                      @RequestParam(name = "licenseId", required = false) String licenseId,
+                                                      @RequestParam(name = "blackWhiteType", required = false) Integer blackWhiteType) {
+        return licenseService.queryLicensePage(page, limit, searchKeyword, licenseId, blackWhiteType);
+    }
+
+    @ApiOperation(value = "查询license列表", response = LicenseTableForm.class)
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('LICENSES_VIEW')")
+    @GetMapping(value = "/list")
+    public ResponseEntity<List<LicenseTableForm>> list(@RequestParam(name = "searchKeyword", required = false) String searchKeyword,
+                                                       @RequestParam(name = "licenseId", required = false) String licenseId,
+                                                       @RequestParam(name = "blackWhiteType", required = false) Integer blackWhiteType,
+                                                       @RequestParam(name = "excludeBlackWhiteType", required = false) Integer excludeBlackWhiteType) {
+        return ResponseEntity.ok(licenseService.queryLicense(searchKeyword, licenseId, blackWhiteType, excludeBlackWhiteType));
     }
 
     @ApiOperation(value = "查询license信息", response = LicenseTableForm.class)
@@ -49,5 +66,18 @@ public class LicenseController extends BaseController {
             BeanUtils.copyProperties(license, licenseTableForm);
         }
         return ResponseEntity.ok(licenseTableForm);
+    }
+
+    @ApiOperation(value = "设置黑白名单")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @PostMapping(value = "/blackWhite")
+    public ResponseEntity<String> blackWhite(@RequestBody @Validated LicenseBlackWhite licenseBlackWhite) {
+        License license = licenseService.selectOneLicense(License.builder().licenseId(licenseBlackWhite.getLicenseId()).build());
+        if (Objects.isNull(license)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        licenseService.blackWhite(licenseBlackWhite);
+        return ResponseEntity.ok("ok");
     }
 }

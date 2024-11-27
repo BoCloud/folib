@@ -1,14 +1,12 @@
 package com.veadan.folib.authentication;
 
 
-import com.google.common.collect.Sets;
 import com.veadan.folib.data.CacheName;
-import com.veadan.folib.domain.SecurityRole;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.UserEntity;
 import com.veadan.folib.users.domain.UserData;
 import com.veadan.folib.users.service.UserAlreadyExistsException;
-import com.veadan.folib.users.service.impl.DatabaseUserService;
+import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.users.userdetails.FolibExternalUsersCacheManager;
 import com.veadan.folib.users.userdetails.FolibUserDetails;
 import com.veadan.folib.util.LocalDateTimeInstance;
@@ -23,14 +21,13 @@ import org.springframework.stereotype.Component;
 
 import javax.transaction.Transactional;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * @author xuxinping
  */
 @Component
 @Transactional
-public class DatabaseExternalUsersCacheManager extends DatabaseUserService implements FolibExternalUsersCacheManager {
+public class DatabaseExternalUsersCacheManager extends RelationalDatabaseUserService implements FolibExternalUsersCacheManager {
 
     private static final Logger logger = LoggerFactory.getLogger(DatabaseExternalUsersCacheManager.class);
 
@@ -81,6 +78,7 @@ public class DatabaseExternalUsersCacheManager extends DatabaseUserService imple
             if (!ldapUserDetailsServiceSourceId.equalsIgnoreCase(sourceId) && !StringUtils.isBlank(user.getPassword())) {
                 userEntry.setPassword(user.getPassword());
             }
+            userEntry.setUsername(username);
             userEntry.setEmail(user.getEmail());
             userEntry.setEnabled(user.isEnabled());
             if (CollectionUtils.isEmpty(userEntry.getRoles())) {
@@ -90,15 +88,15 @@ public class DatabaseExternalUsersCacheManager extends DatabaseUserService imple
             userEntry.setLastUpdated(LocalDateTimeInstance.now());
             userEntry.setSourceId(sourceId);
 
-            UserEntity result = userRepository.save(userEntry);
+            save(userEntry);
             logger.debug("Cache external user: username=[{}], id=[{}], uuid=[{}], sourceId=[{}], lastUpdated=[{}], UserDetails=[{}]",
-                    result.getUsername(),
-                    result.getNativeId(),
-                    result.getUuid(),
-                    result.getSourceId(),
-                    result.getLastUpdated(),
+                    userEntry.getUsername(),
+                    userEntry.getNativeId(),
+                    userEntry.getUuid(),
+                    userEntry.getSourceId(),
+                    userEntry.getLastUpdated(),
                     springUser.getClass().getSimpleName());
-            return result;
+            return userEntry;
         } catch (SchemaViolationException e) {
             throw new UserAlreadyExistsException(String.format("Failed to cache external user from [%s], duplicate [%s] already exists.", sourceId,
                     user.getUsername()),

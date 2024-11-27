@@ -7,9 +7,11 @@
         <id property="id" column="id" />
         <result property="createTime" column="create_time" />
         <result property="updateTime" column="update_time" />
+        <result property="nodeId" column="node_id" />
         <result property="storageId" column="storage_id" />
         <result property="repositoryId" column="repository_id" />
         <result property="artifactPath" column="artifact_path" />
+        <result property="artifactPathPrefix" column="artifact_path_prefix" />
         <result property="size" column="size" />
         <result property="md5" column="md5" />
         <result property="sha1" column="sha1" />
@@ -20,5 +22,20 @@
         <result property="cachePath" column="cache_path" />
     </resultMap>
 
+    <delete id="batchDelete">
+        delete from artifact_cache_record where id in
+        <foreach collection="idList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <select id="selectArtifactCacheRecordByCursor" resultMap="artifactCacheRecordResultMap">
+        select * from artifact_cache_record where node_id = #{nodeId}
+        <if test="lastId!= null and lastId!=''">
+            and id > #{lastId}
+        </if>
+        order by id
+        limit #{batchSize}
+    </select>
 
 </mapper>

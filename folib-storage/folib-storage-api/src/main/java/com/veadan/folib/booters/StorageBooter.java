@@ -58,7 +58,8 @@ public class StorageBooter
     {
     }
 
-    @PostConstruct
+    //禁用存储空间、仓库启动初始化
+//    @PostConstruct
     public void initialize()
             throws IOException, RepositoryManagementStrategyException
     {

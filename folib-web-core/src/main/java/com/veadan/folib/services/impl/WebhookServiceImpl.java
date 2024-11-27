@@ -27,10 +27,10 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
-import javax.transaction.Transactional;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
@@ -268,6 +268,8 @@ public class WebhookServiceImpl implements WebhookService {
             }
         }
     }
+
+
 
     /**
      * 向其他集群节点同步webhook配置

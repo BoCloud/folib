@@ -4,12 +4,14 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.veadan.folib.configuration.*;
 import com.veadan.folib.providers.storage.FileSystemStorageProvider;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.remote.RemoteRepositoryDto;
 import com.veadan.folib.yaml.repository.CustomRepositoryConfigurationDto;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
@@ -69,7 +71,18 @@ public class RepositoryDto
 
     private CustomRepositoryConfigurationDto repositoryConfiguration;
 
+    @JsonDeserialize(as = LinkedHashSet.class)
     private Set<String> groupRepositories = new LinkedHashSet<>();
+
+    private String groupDefaultRepository;
+
+    public String getGroupDefaultRepository() {
+        return groupDefaultRepository;
+    }
+
+    public void setGroupDefaultRepository(String groupDefaultRepository) {
+        this.groupDefaultRepository = groupDefaultRepository;
+    }
 
     private Set<String> artifactCoordinateValidators = new LinkedHashSet<>();
 
@@ -97,8 +110,18 @@ public class RepositoryDto
      */
     private MutableUnionRepositoryConfiguration unionRepositoryConfiguration;
 
+    /**
+     * proxy 健康状态
+     */
+    @Getter
+    private Boolean healthStatus;
+
+
     @JsonIgnore
     private StorageDto storage;
+
+    /**是否同步存储空间到其他节点*/
+    private boolean syncEnabled;
 
 
     public RepositoryDto() {
@@ -481,5 +504,17 @@ public class RepositoryDto
 
     public void setAllowAnonymous(boolean allowAnonymous) {
         this.allowAnonymous = allowAnonymous;
+    }
+
+    public boolean isSyncEnabled() {
+        return syncEnabled;
+    }
+
+    public void setSyncEnabled(boolean syncEnabled) {
+        this.syncEnabled = syncEnabled;
+    }
+
+    public void setHealthStatus(Boolean healthStatus){
+        this.healthStatus = healthStatus;
     }
 }

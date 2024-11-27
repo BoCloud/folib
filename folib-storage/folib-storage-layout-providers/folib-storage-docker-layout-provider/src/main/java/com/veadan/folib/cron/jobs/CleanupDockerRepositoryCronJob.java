@@ -9,6 +9,7 @@ import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
 import com.veadan.folib.cron.jobs.fields.*;
 import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -287,7 +288,7 @@ public class CleanupDockerRepositoryCronJob extends JavaCronJob {
                         @Override
                         public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
                             RepositoryPath itemPath = (RepositoryPath) dir;
-                            if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !RepositoryPathUtil.include(2, itemPath, true) || (DockerArtifactCoordinates.DOCKER_LAYER_DIR_NAME_LIST.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
+                            if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !RepositoryPathUtil.include(2, itemPath, true, ProductTypeEnum.Docker.getFoLibraryName()) || (DockerArtifactCoordinates.DOCKER_LAYER_DIR_NAME_LIST.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
                                 log.info("RepositoryPath [{}] skip...", itemPath.toString());
                                 return FileVisitResult.SKIP_SUBTREE;
                             }

@@ -3,13 +3,15 @@
     <a-affix :offset-top="50" class="repository-affix">
       <a-row>
         <a-col :span="24" :md="24" class="mb-24">
+            <!-- 进度球-->
+<!--            <CircleProgress :progress="totalUploadProgress" :closeGlobe="isClose" :waveClassName="waveClassName" :containerClassName="containerClassName"/>-->
           <!-- User Profile Card -->
           <a-card :bordered="false" class="card-profile-head" :bodyStyle="{ padding: 0 }" :targetOffset="0"
             :affix="false">
             <template #title>
               <a-row type="flex" align="middle">
                 <a-col :span="24" :md="12" class="col-info">
-                  <a>
+                  <a v-if="!isChecked">
                     <a-icon type="backward" :style="{
                       fontSize: '32px',
                       marginRight: '5px',
@@ -17,15 +19,17 @@
                       color: '#BFBFBFFF',
                     }" @click="goBack()" />
                   </a>
-                  <a>
+                  <a style="justify-content: center;align-items: center;display: flex;">
                     <a-avatar @click="createData" :size="84" shape="square"
-                      style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
-                      :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" />
+                      style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );   "
+                                >
+                        <img :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" style="width: 150%;margin-left: -13.5px;" alt=""></img>
+                    </a-avatar>
                   </a>
                   <div class="avatar-info">
                     <a-tooltip placement="topLeft">
                       <template slot="title">
-                        点击可进入浏览页面
+                        {{ $t('Store.GotoBrowsePage') }}
                       </template>
                       <a :href="baseUrl +
                         'api/browse/' +
@@ -38,10 +42,10 @@
                       </a>
                     </a-tooltip>
                     <a-descriptions title="" :column="1" class="repo-address">
-                      <a-descriptions-item label="浏览地址">
+                      <a-descriptions-item :label="$t('Store.BrowseAddress')">
                         <a-tooltip placement="topLeft">
                           <template slot="title">
-                            仓库浏览地址，点击可进入浏览页面
+                            {{ $t('Store.WarehouseBrowseAddress') }}
                           </template>
                           <a :href="baseUrl +
                             'api/browse/' +
@@ -50,10 +54,10 @@
                             folibRepository.id" target="_blank">
                             <p class="copy-p">
                               {{ baseUrl +
-                              'api/browse/' +
-                              folibRepository.storageId +
-                              '/' +
-                              folibRepository.id }}
+                                'api/browse/' +
+                                folibRepository.storageId +
+                                '/' +
+                                folibRepository.id }}
                             </p>
                           </a>
                         </a-tooltip>
@@ -64,14 +68,14 @@
                               'api/browse/' +
                               folibRepository.storageId +
                               '/' +
-                              folibRepository.id 
+                              folibRepository.id
                             )" />
                         </a>
                       </a-descriptions-item>
-                      <a-descriptions-item label="使用地址">
+                      <a-descriptions-item :label="$t('Store.UseAddress')">
                         <a-tooltip>
                           <template slot="title">
-                            仓库使用地址，具体使用方法，请看页面右侧使用帮助
+                            {{ $t('Store.WarehouseUsageAddress') }}
                           </template>
                           <a>
                             <p class="copy-p">
@@ -83,46 +87,75 @@
                         </a-tooltip>
                         <a class="ml-10">
                           <a-icon type="copy" @click="
-                          copy(
-                            getRepositoryUrl()
-                          )
+                            copy(
+                              getRepositoryUrl()
+                            )
                             " />
                         </a>
                       </a-descriptions-item>
+                      
                     </a-descriptions>
                   </div>
                 </a-col>
-                <a-col :span="24" :md="12" style="
+                  <a-col :span="16" :md="7" class="col-info">
+
+                          <div style="width: 85%">
+                              <a-progress
+                                  v-if="isClose"
+                                  :stroke-color="{from: '#108ee9',to: '#87d068',}"
+                                  :percent="totalUploadProgress"
+                                  :status="progressStatus"
+                              />
+                          </div>
+                  </a-col>
+                <a-col :span="8" :md="5" style="
                     display: flex;
                     align-items: center;
                     justify-content: flex-end;
                   ">
+                  <a v-if="folibRepository.layout === 'Docker' && folibRepository.type === 'hosted'">
+                    <small style="padding-right: 20px" @click="handleDockerUploud">
+                      {{ $t('Store.Upload') }}
+                      <a-icon type="cloud-upload" />
+                    </small>
+                  </a>
                   <a v-if="uploadEnabled && folibRepository.layout === 'rpm'">
                     <small style="padding-right: 20px" @click="handleRpmUpload">
-                      上传
+                      {{ $t('Store.Upload') }}
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
                   <a v-if="uploadEnabled && folibRepository.layout === 'Maven 2'"><small style="padding-right: 20px"
                       @click="handleMavenUpload">
-                      上传
+                      {{ $t('Store.Upload') }}
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
-                  <a v-if="uploadEnabled && folibRepository.layout !== 'rpm'"><small style="padding-right: 20px" @click="handleUpload">
-                      批量上传
+                  <a v-if="uploadEnabled && folibRepository.layout === 'debian'"><small style="padding-right: 20px"
+                      @click="handleDebianUpload">
+                    {{ $t('Store.Upload') }}
+                      <a-icon type="cloud-upload" />
+                    </small>
+                  </a>
+                  <a v-if="uploadEnabled && folibRepository.layout !== 'rpm' &&  folibRepository.layout !== 'GitLfs' && folibRepository.layout !== 'GitLfs' && folibRepository.subLayout !== 'ohpm' && folibRepository.subLayout !== 'go' && folibRepository.layout !== 'debian'"><small style="padding-right: 20px" @click="handleUpload">
+                      {{ $t('Store.BatchUpload') }}
+                      <a-icon type="cloud-upload" />
+                    </small>
+                  </a>
+                  <a v-if="uploadEnabled && folibRepository.layout === 'debian'"><small style="padding-right: 20px" @click="handleDebianBatchUpload">
+                      {{ $t('Store.BatchUpload') }}
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
                   <a v-if="folibRepository.layout !== 'Raw'">
                     <small style="padding-right: 20px" @click="UsedHelperVisible">
-                      使用帮助
+                      {{ $t('Store.UseHelp') }}
                       <a-icon type="question-circle" theme="filled" />
                     </small>
                   </a>
                   <div v-if="(isAdmin() || (storageAdmin && storageAdmin === $store.state.user.name)) && folibRepository.type !== 'group'">
                     <span class="mr-15">{{
-                      scan.onScan ? "扫描开启" : "扫描关闭"
+                      scan.onScan ? $t('Store.ScanOn') : $t('Store.ScanOff')
                     }}</span>
                     <a-switch default-checked v-model="scan.onScan" @change="scannerChange" />
                   </div>
@@ -135,26 +168,42 @@
     </a-affix>
     <a-row v-if="isSearch === false" type="flex" :gutter="24">
       <!-- Platform Settings Column -->
-      <a-col :span="24" :md="10" class="mb-24">
-        <a-card :bordered="false" style="max-height: 1024px; min-height: 454px; overflow-y: auto" class="header-solid"
+      <a-col style="margin-top:-20px;" v-if="!isChecked" :span="24" :md="10" class="mb-24">
+        <a-card :bordered="false" style="max-height: 1024px; min-height: 554px; overflow-y: auto" class="header-solid"
           :bodyStyle="{ paddingTop: 0, paddingBottom: 0 }">
           <template #title>
-            <h6 class="font-semibold m-0">包列表 <a class="ml-10" @click="reload()">
+            <h6 class="font-semibold m-0">{{ isTrashView ? $t('Store.TrashCan') : $t('Store.PacketList') }} <a
+                v-show="!isTrashView" class="ml-10" @click="reloadTreeData">
                 <a-icon type="reload" /></a></h6>
           </template>
-          <a-directory-tree :replaceFields="{
+          <!-- <a-button slot="extra" type="link"  size="large" style="color: black;" @click="isTrashView=!isTrashView"> -->
+          <a-tooltip slot="extra" @click="isTrashView = !isTrashView" class="view-switch">
+            <template slot="title">
+              {{ isTrashView ? $t('Store.PacketListView') : $t('Store.TrashCanView') }}
+            </template>
+            <a-icon v-if="isTrashView" type="file-zip" />
+            <a-icon v-if="!isTrashView" type="delete" />
+          </a-tooltip>
+          <!-- </a-button> -->
+          <a-directory-tree v-if="!isTrashView" :replaceFields="{
             key: 'artifactPath',
             title: 'name',
             children: 'children',
-          }" :tree-data="treeData" :load-data="onLoadData" @select="treeSelect">
+          }" :tree-data="treeData" :load-data="onLoadData" @select="treeSelect" @rightClick="onRightClick">
+          </a-directory-tree>
+          <a-directory-tree v-if="isTrashView" :replaceFields="{
+            key: 'artifactPath',
+            title: 'name',
+            children: 'children',
+          }" :tree-data="trashData" :load-data="onLoadData" @select="treeSelect" @rightClick="onRightClick">
+
           </a-directory-tree>
         </a-card>
       </a-col>
-
-      <a-col :span="24" :md="14" class="mb-24">
+      <a-col style="margin-top:-20px;" :span="24" :md="!isChecked ? 14 : 24" class="mb-24">
         <a-card :bordered="false" class="header-solid h-full card-profile-information"
           :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }" :headStyle="{ paddingRight: 0 }">
-          <template #title>
+          <template #title v-if="isChecked ? !newDetailPage : true ">
             <a-row type="flex" align="middle" v-if="folibRepository.layout !== 'Docker'">
               <a-col :span="16" class="font-semibold m-0">
                 <a-row type="flex" align="middle">
@@ -172,7 +221,7 @@
                       <a-space :size="1" class="avatar-chips">
                         <template v-if="scanReport.vulnerabilitesCount > 0">
                           <a-tooltip>
-                            <template slot="title">严重</template>
+                            <template slot="title">{{ $t('Store.Seriousness') }}</template>
                             <div class="">
                               <a-avatar :size="24" :src="'images/folib/critical.svg'" />
                               <span class="mb-0 text-dark">{{
@@ -182,7 +231,7 @@
                           </a-tooltip>
 
                           <a-tooltip>
-                            <template slot="title">高危</template>
+                            <template slot="title">{{ $t('Store.HighRisk') }}</template>
                             <div class="">
                               <a-avatar :size="24" :src="'images/folib/high.svg'" />
                               <span class="mb-0 text-dark">{{
@@ -192,7 +241,7 @@
                           </a-tooltip>
 
                           <a-tooltip>
-                            <template slot="title">中危</template>
+                            <template slot="title">{{ $t('Store.MediumRisk') }}</template>
                             <div class="">
                               <a-avatar :size="24" :src="'images/folib/medium.svg'" />
                               <span class="mb-0 text-dark">{{
@@ -202,7 +251,7 @@
                           </a-tooltip>
 
                           <a-tooltip>
-                            <template slot="title">低危</template>
+                            <template slot="title">{{ $t('Store.LowRisk') }}</template>
                             <div class="">
                               <a-avatar :size="24" :src="'images/folib/low.svg'" />
                               <span class="mb-0 text-dark">{{
@@ -213,7 +262,7 @@
                         </template>
                         <template v-else>
                           <a-tooltip>
-                            <template slot="title">健康</template>
+                            <template slot="title">{{ $t('Store.Health') }}</template>
                             <a-avatar :size="24" :src="'images/folib/healthy.svg'" />
                           </a-tooltip>
                         </template>
@@ -221,16 +270,17 @@
                     </span>
                     <span v-if="scanReport.fail">
                       <a-tag color="#f50">
-                        扫描失败
+                        {{ $t('Store.ScanFailure') }}
                       </a-tag>
                     </span>
                   </a-col>
                 </a-row>
               </a-col>
               <a-col :span="8" class="text-right">
-                <a-dropdown v-if="$store.state.user.token && currentTreeNode.url" class="mr-30" placement="bottomCenter">
+                <a-dropdown v-if="$store.state.user.token && currentTreeNode.url" class="mr-30"
+                  placement="bottomCenter">
                   <span style="font-size: 16px; cursor: pointer">
-                    更多
+                    {{ $t('Store.More') }}
                     <a-icon type="more" class="text-muted" style="font-size: 16px" />
                   </span>
                   <template #overlay>
@@ -239,34 +289,48 @@
                         <a-icon type="eye" />
                         {{
                           currentFileDetial.listTree
-                          ? "包"
-                          : viewCodes
-                            ? "文件"
-                            : folibRepository.layout === "Docker"
-                              ? "详情"
-                              : ""
-                        }}预览
+                            ? $t('Store.Package')
+                            : viewCodes
+                              ? $t('Store.Document')
+                              : folibRepository.layout === "Docker"
+                                ? $t('Store.Details')
+                                : ""
+                        }}{{ $t('Store.Preview') }}
                       </a-menu-item>
-                      <a-menu-item key="2" v-if="copyEnabled">
-                        <a-icon type="copy" />复制
+                      <a-menu-item key="2" v-if="copyEnabled&&!isTrashView">
+                        <a-icon type="copy" />{{ $t('Store.Copy') }}
                       </a-menu-item>
-                      <a-menu-item key="3" v-if="moveEnabled">
-                        <a-icon type="swap" />移动
+                      <a-menu-item key="3" v-if="moveEnabled&&!isTrashView">
+                        <a-icon type="swap" />{{ $t('Store.Move') }}
                       </a-menu-item>
-                      <a-menu-item key="4" v-if="deleteEnabled">
-                        <a-popconfirm title="确定要删除吗？" placement="topLeft" okType="danger" ok-text="确定" cancel-text="取消"
+                      <a-menu-item key="4" v-if="deleteEnabled&&!isTrashView">
+                        <a-popconfirm :title="$t('Store.SuerDelete')" placement="topLeft" okType="danger"
+                          :ok-text="$t('Store.Confirm')" :cancel-text="$t('Store.Cancel')"
                           @confirm="deletePackageHandle">
-                          <a-icon type="delete" />删除
+                          <a-icon type="delete" />{{ $t('Store.Delete') }}
                         </a-popconfirm>
                       </a-menu-item>
-                      <a-menu-item key="5" v-if="dispatchEnabled">
-                        <a-icon type="retweet" />分发
+                      <a-menu-item key="5" v-if="dispatchEnabled&&!isTrashView">
+                        <a-icon type="retweet" />{{ $t('Store.Distribute') }}
                       </a-menu-item>
 
                       <a-menu-item key="6"
-                        v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact">
-                        <a-icon type="download" />下载
+                        v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact&&!isTrashView">
+                        <a-icon type="download" />{{ $t('Store.DownLoad') }}
                       </a-menu-item>
+
+                      <a-menu-item key="7"
+                        v-if="(folibRepository.layout === 'Raw' && currentTreeNode && currentTreeNode.type === 'dir'&&!isTrashView)">
+                        <a-icon type="download" />{{ $t('Store.DownLoad') }}
+                      </a-menu-item>
+                      <a-menu-item key="8" v-if="isTrashView && currentTreeNode">
+                        <a-icon type="undo" />{{ $t('Store.Restore') }}
+                      </a-menu-item>
+                      <a-modal :title="$t('Store.Prompts')" :visible="downLoadVisible" :okText="$t('Store.Confirm')"
+                        :cancelText="$t('Store.Cancel')" centered @ok="handleDownLoadDir"
+                        @cancel="handleDownLoadDirCancel">
+                        <p>{{ currentTreeNode.artifactPath + $t('Store.DirSize') + rawPathSize + ", "+$t('Store.ConfirmDownload') }}</p>
+                      </a-modal>
                     </a-menu>
                   </template>
                 </a-dropdown>
@@ -284,7 +348,7 @@
                       <a-space :size="1" class="avatar-chips">
                         <template v-if="scanReport.vulnerabilitesCount > 0">
                           <a-tooltip>
-                            <template slot="title">严重</template>
+                            <template slot="title">{{ $t('Store.Seriousness') }}</template>
                             <div class="">
                               <a-avatar :size="24" :src="'images/folib/critical.svg'" />
                               <span class="mb-0 text-dark">{{
@@ -294,7 +358,7 @@
                           </a-tooltip>
 
                           <a-tooltip>
-                            <template slot="title">高危</template>
+                            <template slot="title">{{ $t('Store.HighRisk') }}</template>
                             <div class="">
                               <a-avatar :size="24" :src="'images/folib/high.svg'" />
                               <span class="mb-0 text-dark">{{
@@ -304,7 +368,7 @@
                           </a-tooltip>
 
                           <a-tooltip>
-                            <template slot="title">中危</template>
+                            <template slot="title">{{ $t('Store.MediumRisk') }}</template>
                             <div class="">
                               <a-avatar :size="24" :src="'images/folib/medium.svg'" />
                               <span class="mb-0 text-dark">{{
@@ -314,7 +378,7 @@
                           </a-tooltip>
 
                           <a-tooltip>
-                            <template slot="title">低危</template>
+                            <template slot="title">{{ $t('Store.LowRisk') }}</template>
                             <div class="">
                               <a-avatar :size="24" :src="'images/folib/low.svg'" />
                               <span class="mb-0 text-dark">{{
@@ -325,7 +389,7 @@
                         </template>
                         <template v-else>
                           <a-tooltip>
-                            <template slot="title">健康</template>
+                            <template slot="title">{{ $t('Store.Health') }}</template>
                             <a-avatar :size="24" :src="'images/folib/healthy.svg'" />
                           </a-tooltip>
                         </template>
@@ -333,16 +397,18 @@
                     </span>
                     <span v-if="scanReport.fail">
                       <a-tag color="#f50">
-                        扫描失败
+                        {{ $t('Store.ScanFailure') }}
                       </a-tag>
                     </span>
                   </a-col>
                 </a-row>
               </a-col>
+
+
               <a-col :span="8" class="text-right">
                 <a-dropdown v-if="$store.state.user.token && currentTreeNode.url" class="mr-45">
                   <span style="font-size: 16px; cursor: pointer">
-                    更多
+                    {{ $t('Store.More') }}
                     <a-icon type="more" class="text-muted" style="font-size: 16px" />
                   </span>
                   <template #overlay>
@@ -351,33 +417,48 @@
                         <a-icon type="eye" />
                         {{
                           currentFileDetial.listTree
-                          ? "包"
-                          : viewCodes
-                            ? "文件"
-                            : folibRepository.layout === "Docker"
-                              ? "详情"
-                              : ""
-                        }}预览
+                            ? $t('Store.Package')
+                            : viewCodes
+                              ? $t('Store.Document')
+                              : folibRepository.layout === "Docker"
+                                ? $t('Store.Details')
+                                : ""
+                        }}{{ $t('Store.Preview') }}
                       </a-menu-item>
-                      <a-menu-item key="2" v-if="copyEnabled">
-                        <a-icon type="copy" />复制
+                      <a-menu-item key="2" v-if="copyEnabled&&!isTrashView">
+                        <a-icon type="copy" />
+                        {{ $t('Store.Copy') }}
                       </a-menu-item>
-                      <a-menu-item key="3" v-if="moveEnabled">
-                        <a-icon type="swap" />移动
+                      <a-menu-item key="3" v-if="moveEnabled&&!isTrashView">
+                        <a-icon type="swap" />
+                        {{ $t('Store.Move') }}
                       </a-menu-item>
-                      <a-menu-item key="4" v-if="deleteEnabled">
-                        <a-popconfirm title="确定要删除吗？" placement="topLeft" okType="danger" ok-text="确定" cancel-text="取消"
+                      <a-menu-item key="4" v-if="deleteEnabled&&!isTrashView">
+                        <a-popconfirm :title="$t('Store.SuerDelete')" placement="topLeft" okType="danger"
+                          :ok-text="$t('Store.Confirm')" :cancel-text="$t('Store.Cancel')"
                           @confirm="deletePackageHandle">
-                          <a-icon type="delete" />删除
+                          <a-icon type="delete" />
+                          {{ $t('Store.Delete') }}
                         </a-popconfirm>
                       </a-menu-item>
-                      <a-menu-item key="5" v-if="dispatchEnabled">
-                        <a-icon type="retweet" /> 分发
+                      <a-menu-item key="5" v-if="dispatchEnabled&&!isTrashView">
+                        <a-icon type="retweet" />
+                        {{ $t('Store.Distribute') }}
                       </a-menu-item>
 
                       <a-menu-item key="6"
-                        v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact">
-                        <a-icon type="download" />下载
+                        v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact&&!isTrashView">
+                        <a-icon type="download" />
+                        {{ $t('Store.DownLoad') }}
+                      </a-menu-item>
+
+                      <a-menu-item key="7"
+                        v-if="folibRepository.layout === 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact&&!isTrashView">
+                        <a-icon type="download" />
+                        {{ $t('Store.DownLoad') }}
+                      </a-menu-item>
+                      <a-menu-item key="8" v-if="isTrashView && currentTreeNode">
+                        <a-icon type="undo" />{{ $t('Store.Restore') }}
                       </a-menu-item>
                     </a-menu>
                   </template>
@@ -386,25 +467,29 @@
             </a-row>
           </template>
 
-          <a v-if="currentTreeNode.url && folibRepository.layout !== 'Docker'" class="text-dark" :href="currentTreeNode.url.search('http://localhost:38080/') !== -1
-              ? currentTreeNode.url.replace(
-                'http://localhost:38080/',
-                baseUrl
-              )
-              : currentTreeNode.url
-            " target="_blank">{{
-    currentTreeNode.url.search("http://localhost:38080/") !== -1
-    ? currentTreeNode.url.replace(
-      "http://localhost:38080/",
-      baseUrl
-    )
-    : currentTreeNode.url
-  }}</a>
-
-          <hr class="my-25" />
-          <BaseData ref="BaseData" :currentTreeNode="currentTreeNode" :repositoryType="repositoryType"
-            :currentFileDetial="currentFileDetial" :successMsg="successMsg" :folibRepository="folibRepository"
-            @metadataEditHandler="metadataEditHandler" @metadataHandler="metadataHandler" @setCurrentFileDetial="setCurrentFileDetial"/>
+          <a v-if="currentTreeNode.url && folibRepository.layout !== 'Docker'" class="text-dark ellipsis-link"
+            :href="getFormattedUrl(currentTreeNode.url)" target="_blank" :title="getFormattedUrl(currentTreeNode.url)">
+            {{ getFormattedUrl(currentTreeNode.url) }}
+          </a>
+          <a v-if="currentTreeNode.url && folibRepository.layout !== 'Docker'" class="ml-10"><a-icon type="copy"
+              @click="copy(getFormattedUrl(currentTreeNode.url))" /> </a>
+          <hr class="gradient-line" />
+          <BaseData 
+              ref="BaseData"
+              :key="pageKey"
+              :isChecked="isChecked" 
+              :currentTreeNode="currentTreeNode" 
+              :repositoryType="repositoryType"
+              :currentFileDetial="currentFileDetial" 
+              :successMsg="successMsg" 
+              :folibRepository="folibRepository" 
+              @addPageKey="addPageKey"
+              @handlerPermission="handlerPermission"
+              @messageArchitectureChild="handleArchitectureMessage"
+              @metadataEditHandler="metadataEditHandler" 
+              @metadataHandler="metadataHandler" 
+              @setCurrentFileDetial="setCurrentFileDetial"
+          />
         </a-card>
       </a-col>
     </a-row>
@@ -426,12 +511,13 @@
           <prism-editor class="my-editor height-300" v-if="currentFileDetial &&
             viewCodes &&
             folibRepository.layout !== 'Docker'
-            " v-model="viewCodes" :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
+          " v-model="viewCodes" :highlight="highlighterHandle" :line-numbers="false"
+            :readonly="true"></prism-editor>
 
           <a-tabs v-if="currentFileDetial &&
             currentManifest &&
             folibRepository.layout === 'Docker'
-            " class="tabs-sliding" default-active-key="1">
+          " class="tabs-sliding" default-active-key="1">
             <a-tab-pane key="1" tab="Layers">
               <a-timeline>
                 <a-timeline-item color="primary" v-for="(key, index) in currentManifest.config" :key="index">
@@ -442,7 +528,7 @@
                 </a-timeline-item>
               </a-timeline>
             </a-tab-pane>
-            <a-tab-pane key="2" tab="制作历史">
+            <a-tab-pane key="2" :tab="$t('Store.ProductionHistory')">
               <a-timeline>
                 <a-timeline-item color="primary" v-for="(key, index) in currentManifest.history" :key="index">
                   {{ formateDate(key.created) }}
@@ -457,36 +543,36 @@
       </div>
     </a-drawer>
     <add-metadata v-if="showMetadataHandler" :showMetadataHandler="showMetadataHandler" :quillOptions="quillOptions"
-      :handlerMetadataType="handlerMetadataType" :propMetadataForm="metadataForm" :metadataConfigList="metadataConfigList"
-      :currentTreeNode="currentTreeNode" :metadataTypes="metadataTypes" :successMsg="successMsg"
-      @metadataHandlerCancel="metadataHandlerCancel" @metadataReflesh="metadataReflesh" />
+      :handlerMetadataType="handlerMetadataType" :propMetadataForm="metadataForm"
+      :metadataConfigList="metadataConfigList" :currentTreeNode="currentTreeNode" :metadataTypes="metadataTypes"
+      :successMsg="successMsg" @metadataHandlerCancel="metadataHandlerCancel" @metadataReflesh="metadataReflesh" />
 
     <!-- 复制 -->
-    <a-modal v-model="showOperationFormModal" :footer="null" :forceRender="true" :centered="true" :title="operationTitle"
-      on-ok="showCopyFormModal = false">
+    <a-modal v-model="showOperationFormModal" :footer="null" :forceRender="true" :centered="true"
+      :title="operationTitle" on-ok="showCopyFormModal = false">
       <a-form :form="operationForm" ref="operationForm" layout="vertical" @submit.prevent="handleOperationSubmit">
         <a-row :gutter="[24]">
           <a-col :span="24">
-            <a-form-item class="tags-field mb-10" label="目标仓库" :colon="false" ref="targetRepositories"
-              prop="targetRepositories">
-              <gb-ant-select-two-cascader allowClear placeholder="请选择目标仓库" v-decorator="[
+            <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" :colon="false"
+              ref="targetRepositories" prop="targetRepositories">
+              <gb-ant-select-two-cascader allowClear :placeholder="$t('Store.SelectTargetWarehouse')" v-decorator="[
                 'targetRepositories',
                 {
                   initialValue: [],
                   rules: [
                     {
                       required: true,
-                      message: '请选择目标仓库',
+                      message: $t('Store.SelectTargetWarehouse'),
                       type: 'array',
                     },
                   ],
                 },
               ]" :selectOptionsConfig="{
-  key: 'key',
-  value: 'key',
-  text: 'name',
-  children: 'children',
-}" dropdownClassName="customer-multiple-cascader" :treeData="repositories" />
+                  key: 'key',
+                  value: 'key',
+                  text: 'name',
+                  children: 'children',
+                }" dropdownClassName="customer-multiple-cascader" :treeData="repositories" />
             </a-form-item>
             <!-- <a-form-item class="tags-field mb-10" :colon="false" :label="customTitle" valuePropName="checked">
               <a-switch v-decorator="['custom',
@@ -499,124 +585,225 @@
               ]" style="width:10%;" @change="customChange">
               </a-switch>
             </a-form-item> -->
-            <a-form-item class="tags-field mb-10" v-if="!custom" label="目标目录" prop="path" :colon="false">
+            <a-form-item class="tags-field mb-10" v-if="!custom" :label="$t('Store.TargetDirectory')" prop="path" :colon="false" style="display:none;">
               <a-input v-decorator="[
                 'path',
                 {
-                  rules: [{ required: true, message: '请输入目标目录' }],
+                  rules: [{ required: true, message: $t('Store.TargetDirectory') }],
                 },
-              ]" :disabled="true" placeholder="请输入目标目录">
+              ]" :disabled="true" :placeholder="$t('Store.TargetDirectory')">
               </a-input>
             </a-form-item>
-            <a-form-item class="tags-field mb-10" v-if="custom" label="目标目录" prop="path" :colon="false">
+              <a-form-item class="tags-field mb-10" v-if="!custom" :label="$t('Store.TargetDirectory')" prop="targetPath" :colon="false" >
+                  <a-input v-decorator="[
+                'targetPath',
+                {
+                  rules: [{ required: true, message: $t('Store.TargetDirectory') }],
+                },
+              ]" :disabled="isTargetPatDisabled" :placeholder="$t('Store.TargetDirectory')" >
+                  </a-input>
+              </a-form-item>
+            <a-form-item class="tags-field mb-10" v-if="custom" :label="$t('Store.TargetDirectory')" prop="path" :colon="false">
               <a-input v-decorator="[
                 'path',
                 {
-                  rules: [{ required: true, message: '请输入目标目录' }],
+                  rules: [{ required: true, message: $t('Store.InputTargetDirectory') }],
                 },
-              ]" :disabled="false" placeholder="请输入目标目录">
+              ]" :disabled="false" :placeholder="$t('Store.InputTargetDirectory')">
               </a-input>
             </a-form-item>
           </a-col>
           <a-col :span="24" class="text-center">
-            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">提交</a-button>
-            <a-button key="back" @click="operationFormModalClose()" class="px-30 ml-10" size="small">取消</a-button>
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">{{ $t('Store.Submit') }}</a-button>
+            <a-button key="back" @click="operationFormModalClose()" class="px-30 ml-10" size="small">{{ $t('Store.Cancel') }}</a-button>
           </a-col>
         </a-row>
       </a-form>
     </a-modal>
     <!--    rpm 上传表单 start-->
-    <a-modal v-model="showRpmUploadFormModal" :footer="null" :forceRender="true" :centered="true" title="上传"
+    <a-modal v-model="showRpmUploadFormModal" :footer="null" :forceRender="true" :centered="true" :title="$t('Store.Upload')"
       on-ok="showRpmUploadFormModal = false">
       <a-form :form="rpmUploadForm" ref="rpmUploadForm" layout="horizontal" @submit.prevent="handleRpmUploadSubmit">
         <a-row :gutter="[24]">
           <a-col :span="24">
-            <a-form-item class="tags-field mb-10" label="目标仓库" prop="repostoryId" :colon="false">
+            <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" prop="repostoryId" :colon="false">
               <a-input v-decorator="[
                 'repostoryId',
                 {
-                  rules: [{ required: true, message: '请输入目标仓库' }],
+                  rules: [{ required: true, message: $t('Store.InputTargetWarehouse') }],
                 },
-              ]" :disabled="true" placeholder="请输入目标仓库">
+              ]" :disabled="true" :placeholder="$t('Store.InputTargetWarehouse')">
               </a-input>
             </a-form-item>
-            <a-form-item label="选择文件">
+            <a-form-item :label="$t('Store.SelectFile')">
               <a-upload v-decorator="[
                 'files',
                 {
-                  rules: [{ required: true, message: '请选择文件' }],
+                  rules: [{ required: true, message: $t('Store.PleaseSelectFile') }],
                   valuePropName: 'fileList',
                   getValueFromEvent: normFile,
                 },
-              ]" name="files" :multiple="true" :beforeUpload="beforeUpload" list-type="text" accept=".rpm">
+              ]" name="files" :multiple="true" :beforeUpload="beforeUpload" @change="onFileChange" list-type="text" accept=".rpm">
                 <a-button>
-                  <a-icon type="upload" />选择文件 </a-button>
+                  <a-icon type="upload" />
+                  {{ $t('Store.SelectFile') }} </a-button>
               </a-upload>
             </a-form-item>
           </a-col>
           <a-col :span="24" class="text-center">
-            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">上传</a-button>
-            <a-button key="back" @click="uploadRpmFormModalClose()" class="px-30 ml-10" size="small">取消</a-button>
+            <a-button key="submit" class="px-30" size="small" type="primary" :disabled="isUploading || !md5CalculationComplete" htmlType="submit">{{ $t('Store.Upload') }}</a-button>
+            <a-button key="back" @click="uploadRpmFormModalClose()" class="px-30 ml-10" size="small">{{ $t('Store.Cancel') }}</a-button>
           </a-col>
         </a-row>
       </a-form>
     </a-modal>
     <!--   rpm 上传表单 end -->
-    <!-- raw 、maven、npm 上传 -->
-    <a-modal v-model="showUploadFormModal" :footer="null" :forceRender="true" :centered="true" title="上传"
-      on-ok="showUploadFormModal = false">
-      <a-form :form="uploadForm" ref="uploadForm" layout="horizontal" @submit.prevent="handleUploadSubmit">
-        <a-row :gutter="[24]">
-          <a-col :span="24">
-            <a-form-item class="tags-field mb-10" label="目标仓库" prop="repostoryId" :colon="false">
-              <a-input v-decorator="[
-                'repostoryId',
-                {
-                  rules: [{ required: true, message: '请输入目标仓库' }],
-                },
-              ]" :disabled="true" placeholder="请输入目标仓库">
-              </a-input>
-            </a-form-item>
-            <a-form-item label="上传方式" v-if="folibRepository.layout === 'Maven 2'">
-              <a-radio-group v-decorator="[
-                'type',
-                {
-                  rules: [{ required: true, message: '请选择上传方式' }],
-                },
-              ]" @change="uploadTypeChange">
-                <a-radio :value="1">
-                  制品
-                </a-radio>
-                <a-radio :value="2">
-                  压缩包
-                </a-radio>
-              </a-radio-group>
-              <div>
-                <span v-if="uploadType === 1">此方式支持多个制品包批量上传，一次不能超过10个文件</span>
-                <span v-if="uploadType === 2">此方式支持上传一个ZIP文件格式的压缩包，大小不能超过{{ this.uploadMaxSize.size + this.uploadMaxSize.unit }}</span>
-              </div>
-            </a-form-item>
-            <a-form-item label="选择文件">
-              <a-upload v-decorator="[
+    <!-- docker上传表单 -->
+    <a-modal v-model="showDockerUploadFormModal" :footer="null" :forceRender="true" :centered="true"
+               :title="$t('Store.Upload')"
+               on-ok="showDockerUploadFormModal = false">
+          <a-form :form="dockerUploadForm" ref="dockerUploadForm" layout="horizontal" @submit.prevent="handleDockerUploadSubmit">
+              <a-row :gutter="[24]">
+                  <a-col :span="24">
+                      <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" prop="repostoryId" :colon="false">
+                          <a-input  :disabled="true" :placeholder="$t('Store.InputTargetWarehouse')" v-model="folibRepository.id">
+                          </a-input>
+                      </a-form-item>
+
+                  </a-col>
+                  <a-col :span="24">
+                    <a-form-item :label="$t('Store.UploadMode')">
+                      <a-radio-group v-decorator="[
+                        'type',
+                        {
+                          rules: [{ required: true, message: $t('Store.SelectUploadMode') }],
+                        },
+                      ]">
+                        <a-radio value="image">
+                          {{ $t('Store.Image') }}
+                        </a-radio>
+                        <a-radio value="subsidiary">
+                          {{ $t('Store.SubsidiaryFiles') }}
+                        </a-radio>
+                      </a-radio-group>
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="24" >
+
+                      <a-form-item :label="$t('Store.SelectFile')">
+                          <a-upload v-decorator="[
                 'files',
                 {
-                  rules: [{ required: true, message: '请选择文件' }],
+                  rules: [{ required: true, message: $t('Store.PleaseSelectFile') }],
                   valuePropName: 'fileList',
                   getValueFromEvent: normFile,
                 },
-              ]" name="files" :multiple="uploadType === 1 ? true : false" :beforeUpload="beforeUpload" list-type="text"
-                :accept="uploadType === 1 ? (folibRepository.layout === 'Raw' ? '*' : folibRepository.layout === 'npm' ? '.tgz' : '.jar,.war,.pom') : ('.zip')">
+              ]" name="files" :multiple="false" :beforeUpload="beforeUpload" @change="onFileChange" list-type="text" accept=".gz,.tar,.zip,.giz">
+                              <a-button>
+                                  <a-icon type="upload"/>
+                                  {{ $t('Store.SelectFile') }}
+                              </a-button>
+                          </a-upload>
+                      </a-form-item>
+
+                  </a-col>
+                  <a-col :span="24">
+                      <a-form-item class="tags-field mb-10 label-with-icon "  :label="$t('Store.ImageTag')" prop="imageTag"
+                                   :colon="false">
+                          <div>
+                              <span> {{ $t('Store.ImageTagSpecification') }}</span>
+                          </div>
+                          <a-input
+                                  v-decorator="[
+                                      'imageTag',
+                                      {
+                                        rules: [
+                                          {
+                                            required: true,
+                                            pattern: /^[a-zA-Z0-9_\-\./]+(?:\/[a-zA-Z0-9_\-\./]+)?:[a-zA-Z0-9_\-\./]+$/,
+                                            message: $t('Store.InputImageTag'),
+                                          },
+                                        ],
+                                      },
+                                    ]"
+                                  :disabled="false"
+                                  :placeholder="$t('Store.InputImageTag')"
+                          />
+                      </a-form-item>
+                  </a-col>
+
+
+                  <a-col :span="24" class="text-center">
+                      <a-button key="submit" class="px-30" size="small" type="primary" :disabled="isUploading || !md5CalculationComplete" htmlType="submit">
+                          {{ $t('Store.Upload') }}
+                      </a-button>
+                      <a-button key="back" @click="uploadDockerFormModalClose()" class="px-30 ml-10" size="small">
+                          {{ $t('Store.Cancel') }}
+                      </a-button>
+                  </a-col>
+              </a-row>
+          </a-form>
+      </a-modal>
+
+    <!-- raw 、maven、npm 上传 -->
+    <a-modal v-model="showUploadFormModal" :footer="null" :forceRender="true" :centered="true"
+      :title="$t('Store.Upload')" on-ok="showUploadFormModal = false">
+      <a-form :form="uploadForm" ref="uploadForm" layout="horizontal" @submit.prevent="handleUploadSubmit">
+        <a-row :gutter="[24]">
+          <a-col :span="24">
+            <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" prop="repostoryId"
+              :colon="false">
+              <a-input v-decorator="[
+                'repostoryId',
+                {
+                  rules: [{ required: true, message: $t('Store.InputTargetWarehouse') }],
+                },
+              ]" :disabled="true" :placeholder="$t('Store.InputTargetWarehouse')">
+              </a-input>
+            </a-form-item>
+            <a-form-item :label="$t('Store.UploadMode')"
+              v-if="folibRepository.layout === 'Maven 2' || folibRepository.layout === 'Raw'">
+              <a-radio-group v-decorator="[
+                'type',
+                {
+                  rules: [{ required: true, message: $t('Store.SelectUploadMode') }],
+                },
+              ]" @change="uploadTypeChange">
+                <a-radio :value="1">
+                  {{ $t('Store.Product') }}
+                </a-radio>
+                <a-radio :value="2">
+                  {{ $t('Store.ZipUpload') }}
+                </a-radio>
+              </a-radio-group>
+              <div>
+                <span v-if="uploadType === 1">{{ $t('Store.ProductUpload') }}</span>
+                <span v-if="uploadType === 2">{{ $t('Store.ZipFileUpload') }}{{ this.uploadMaxSize.size +
+                  this.uploadMaxSize.unit }}</span>
+              </div>
+            </a-form-item>
+            <a-form-item :label="$t('Store.SelectFile')">
+              <a-upload v-decorator="[
+                'files',
+                {
+                  rules: [{ required: true, message: $t('Store.PleaseSelectFile') }],
+                  valuePropName: 'fileList',
+                  getValueFromEvent: normFile,
+                },
+              ]" name="files" :multiple="uploadType === 1 ? true : false" :beforeUpload="beforeUpload" list-type="text" @change="onFileChange"
+                :accept="uploadType === 1 ? (folibRepository.layout === 'Raw' ? '*' : folibRepository.layout === 'npm' ? '.tgz' : folibRepository.layout === 'pub' ? '.gz' :'.jar,.war,.pom') : ('.zip')">
                 <a-button>
-                  <a-icon type="upload" />选择文件</a-button>
+                  <a-icon type="upload" />
+                  {{ $t('Store.SelectFile') }}</a-button>
               </a-upload>
             </a-form-item>
             <a-form-item class="tags-field mb-10" prop="targetPath" :colon="false"
-              v-if="(folibRepository.layout !== 'Maven 2' && folibRepository.layout !== 'npm') || uploadType === 2">
+              v-if="(!targetDirectoryExcludeLayout.includes(folibRepository.layout)) || uploadType === 2">
               <template slot="label">
-                目标目录
+                {{ $t('Store.TargetDirectory') }}
                 <a-popover placement="topLeft" v-if="uploadType === 2">
                   <template slot="content">
-                    <p class="mb-0">压缩包将会解压到仓库内的此目录下</p>
+                    <p class="mb-0">{{ $t('Store.unzippedDirectory') }}</p>
                   </template>
                   <a class="ml-5">
                     <a-icon type="question-circle" theme="filled" /></a>
@@ -626,120 +813,124 @@
                 'targetPath',
                 {
                   rules: [
-                    { required: false, message: '请输入目标目录' }
+                    { required: false, message: $t('Store.InputTargetDirectory') }
                   ],
                 },
-              ]" placeholder="请输入目标目录">
+              ]" :placeholder="$t('Store.InputTargetDirectory')">
               </a-input>
             </a-form-item>
           </a-col>
           <a-col :span="24" class="text-center">
-            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">上传</a-button>
-            <a-button key="back" @click="uploadFormModalClose()" class="px-30 ml-10" size="small">取消</a-button>
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit" :disabled="isUploading || !md5CalculationComplete">{{ $t('Store.Upload') }}</a-button>
+            <a-button key="back" @click="uploadFormModalClose()" class="px-30 ml-10" size="small">{{ $t('Store.Cancel') }}</a-button>
           </a-col>
         </a-row>
       </a-form>
     </a-modal>
-    <!-- 分发 -->
+    <!--分发 -->
     <a-modal v-model="showOperationDispatchFormModal" width="50%" :footer="null" :forceRender="true" :centered="true"
       :title="operationTitle">
       <a-form :form="operationForm" ref="operationForm" layout="vertical" @submit.prevent="handleOperationSubmit">
         <a-row :gutter="[24]">
           <a-col :span="24">
-            <a-form-item class="tags-field mb-10" label="节点类型" :colon="true" v-if="this.enableUnionRepository.includes(this.folibRepository.layout)">
+            <a-form-item class="tags-field mb-10" :label="$t('Store.NodeType')" :colon="true"
+              v-if="this.enableUnionRepository.includes(this.folibRepository.layout)">
               <a-radio-group v-decorator="[
                 'type',
                 {
-                  rules: [{ required: true, message: '请选择节点类型' }],
+                  rules: [{ required: true, message: $t('Store.NodeTypeSelect') }],
                 },
-              ]"
-              @change="typeChange">
+              ]" @change="typeChange">
                 <a-radio :value="1">
-                  <span>内部节点</span>
+                  <span>{{ $t('Store.InternalNode') }}</span>
                   <a-popover placement="topLeft">
                     <template slot="content">
-                      <p class="mb-0">{{ instanceName + '制品库节点'}}</p>
+                      <p class="mb-0">{{ instanceName + $t('Store.ProductWarehouseNode') }}</p>
                     </template>
                     <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
                   </a-popover>
                 </a-radio>
                 <a-radio :value="2">
-                  <span>外部节点</span>
+                  <span>{{ $t('Store.ExternalNode') }}</span>
                   <a-popover placement="topLeft">
                     <template slot="content">
-                      <p class="mb-0">其他类型制品库节点</p>
+                      <p class="mb-0">{{ $t('Store.OtherTypeNode') }}</p>
                     </template>
                     <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
                   </a-popover>
                 </a-radio>
               </a-radio-group>
             </a-form-item>
-            <a-form-item class="tags-field mb-10" label="目标仓库" :colon="false" ref="targetRepositories"
-              prop="targetRepositories">
+            <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" :colon="false"
+              ref="targetRepositories" prop="targetRepositories">
               <div class="selectdrop">
-                <gb-ant-select-multiple-cascader allowClear style="width:100%;" placeholder="请选择目标仓库" v-decorator="[
+                <a-tree-select v-decorator="[
                   'targetRepositories',
                   {
                     initialValue: [],
                     rules: [
                       {
                         required: true,
-                        message: '请选择目标仓库',
+                        message: $t('Store.SelectTargetWarehouse'),
                         type: 'array',
                       },
                     ],
                   },
-                ]" :selectOptionsConfig="{
-  key: 'key',
-  value: 'key',
-  text: 'key',
-  children: 'children'
-}" allText="全选" noDataText="暂无数据" dropdownClassName="customer-multiple-cascader"
-                  :treeData="repositories" @handleCheckboxChange="handleCheckboxChange" v-if="artifactoryType === 1" />
-
-                <gb-ant-select-two-cascader allowClear style="width:100%;" placeholder="请选择目标仓库" v-decorator="[
-                'targetRepositories',
-                {
-                  initialValue: [],
-                  rules: [
+                ]" style="width: 100%" treeCheckable :maxTagCount="6"
+                  :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }" :tree-data="repositories"
+                  :placeholder="$t('Store.SelectTargetWarehouse')" allow-clear show-search
+                  :replaceFields="{ children: 'children', title: 'key', key: 'key', value: 'key' }"
+                  v-if="artifactoryType === 1">
+                </a-tree-select>
+                <gb-ant-select-two-cascader allowClear style="width:100%;"
+                  :placeholder="$t('Store.SelectTargetWarehouse')" v-decorator="[
+                    'targetRepositories',
                     {
-                      required: true,
-                      message: '请选择目标仓库',
-                      type: 'array',
+                      initialValue: [],
+                      rules: [
+                        {
+                          required: true,
+                          message: $t('Store.SelectTargetWarehouse'),
+                          type: 'array',
+                        },
+                      ],
                     },
-                  ],
-                },
-              ]" :selectOptionsConfig="{
-  key: 'key',
-  value: 'key',
-  text: 'key',
-  children: 'children'
-}" allText="全选" noDataText="暂无数据" dropdownClassName="customer-multiple-cascader"
-                  :treeData="externalNodeRepositories"  v-if="artifactoryType === 2" />
+                  ]" :selectOptionsConfig="{
+                      key: 'key',
+                      value: 'key',
+                      text: 'key',
+                      children: 'children'
+                    }" :allText="$t('Store.selectAll')" :noDataText="$t('Store.NoData')" dropdownClassName="customer-multiple-cascader"
+                  :treeData="externalNodeRepositories" v-if="artifactoryType === 2" />
               </div>
             </a-form-item>
-            <a-form-item class="tags-field mb-10" v-if="!custom" label="目标目录" prop="path" :colon="false">
+            <a-form-item class="tags-field mb-10" v-if="!custom" :label="$t('Store.TargetDirectory')" prop="path"
+              :colon="false">
               <a-input v-decorator="[
                 'path',
                 {
-                  rules: [{ required: true, message: '请输入目标目录' }],
+                  rules: [{ required: true, message: $t('Store.TargetDirectory') }],
                 },
-              ]" :disabled="true" placeholder="请输入目标目录">
+              ]" :disabled="true" :placeholder="$t('Store.InputTargetDirectory')">
               </a-input>
             </a-form-item>
-            <a-form-item class="tags-field mb-10" v-if="custom" label="目标目录" prop="path" :colon="false">
+            <a-form-item class="tags-field mb-10" v-if="custom" :label="$t('Store.TargetDirectory')" prop="path"
+              :colon="false">
               <a-input v-decorator="[
                 'path',
                 {
-                  rules: [{ required: true, message: '请输入目标目录' }],
+                  rules: [{ required: true, message: $t('Store.InputTargetDirectory') }],
                 },
-              ]" :disabled="false" placeholder="请输入目标目录">
+              ]" :disabled="false" :placeholder="$t('Store.InputTargetDirectory')">
               </a-input>
             </a-form-item>
           </a-col>
           <a-col :span="24" class="text-center">
-            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">提交</a-button>
-            <a-button key="back" @click="operationFormModalClose()" class="px-30 ml-10" size="small">取消</a-button>
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">{{ $t('Store.Submit')
+              }}</a-button>
+            <a-button key="back" @click="operationFormModalClose()" class="px-30 ml-10" size="small">{{
+              $t('Store.Cancel')
+            }}</a-button>
           </a-col>
         </a-row>
       </a-form>
@@ -747,11 +938,64 @@
 
     <MavenUpload v-if="mavenUploadVisible" :modelVisible="mavenUploadVisible" :folibRepository="this.folibRepository"
       @mavenUploadClose="mavenUploadClose" />
+    <DebianUpload  ref="debianmodal" :folibRepository="folibRepository"/>
+    <DebianBatchUpload  ref="debianBatchModal" :folibRepository="folibRepository"/>
+    <div v-if="showContextMenu" :style="contextMenuStyle" class="context-menu">
+      <a-menu @click="handleRightClick">
+        <a-menu-item key="1" v-if="currentFileDetial">
+          <a-icon type="eye" />
+          {{
+            currentFileDetial.listTree
+              ? $t('Store.Package')
+              : viewCodes
+                ? $t('Store.Document')
+                : folibRepository.layout === "Docker"
+                  ? $t('Store.Details')
+                  : ""
+          }}{{ $t('Store.Preview') }}
+        </a-menu-item>
+        <a-menu-item key="2" v-if="copyEnabled && !isTrashView">
+          <a-icon type="copy" />
+          {{ $t('Store.Copy') }}
+        </a-menu-item>
+        <a-menu-item key="3" v-if="moveEnabled && !isTrashView">
+          <a-icon type="swap" />
+          {{ $t('Store.Move') }}
+        </a-menu-item>
+        <a-menu-item key="4" v-if="deleteEnabled && !isTrashView">
+          <!-- <a-popconfirm :title="$t('Store.SuerDelete')" okType="danger"
+              :ok-text="$t('Store.Confirm')" :cancel-text="$t('Store.Cancel')" @confirm.stop="deletePackageHandle"  :style="{ zIndex: 2000 }"> -->
+          <a-icon type="delete" />
+          {{ $t('Store.Delete') }}
+          <!-- </a-popconfirm> -->
+        </a-menu-item>
+        <a-menu-item key="5" v-if="dispatchEnabled && !isTrashView">
+          <a-icon type="retweet" />
+          {{ $t('Store.Distribute') }}
+        </a-menu-item>
+
+        <a-menu-item key="6"
+          v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact && !isTrashView">
+          <a-icon type="download" />
+          {{ $t('Store.DownLoad') }}
+        </a-menu-item>
+        <a-menu-item key="7"
+          v-if="folibRepository.layout === 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact && !isTrashView">
+          <a-icon type="download" />
+          {{ $t('Store.DownLoad') }}
+        </a-menu-item>
+        <a-menu-item key="8" v-if="isTrashView && currentTreeNode">
+          <a-icon type="undo" />{{ $t('Store.Restore') }}
+        </a-menu-item>
+      </a-menu>
+    </div>
   </div>
 </template>
 
 <script>
 import store from 'store'
+import storage from "store";
+import Cookies from "js-cookie";
 import uuidv4 from 'uuid/v4'
 import {
   getLayoutType,
@@ -776,8 +1020,9 @@ import {
   deleteArtifact,
   getPermissionStoragesAndRepositories,
   getStorageAndRepositoryPermission,
+  getArtifactPermission,
   getStoragesAndRepositories,
-  getArtifactDispatchStoragesAndRepositories
+  getArtifactDispatchStoragesAndRepositories,
 } from '@/api/folib'
 import {
   artifactCopy,
@@ -786,9 +1031,9 @@ import {
   artifactUploadProgress,
   rpmArtifactUpload,
   artifactDispatch,
-  artifactUploadZip
+  artifactUploadZip, getRawPathSize
 } from '@/api/artifact'
-import { getMetadataConfiguration } from '@/api/settings'
+import { getMetadataConfiguration, restore, } from '@/api/settings'
 import { hasRole, isAdmin, isAnonymous, isLogin } from '@/utils/permission'
 import { getExternalNodeRepositories } from "@/api/externalNode"
 import {
@@ -801,6 +1046,8 @@ import BaseData from './Data.vue'
 import UseDoc from './UseDoc.vue'
 import AddMetadata from './AddMetadata.vue'
 import MavenUpload from '../MavenUpload/index.vue'
+import DebianUpload from '../Debian/DebianUpload.vue'
+import DebianBatchUpload from '../Debian/DebianBatchUpload.vue'
 import Search from '../Search/index.vue'
 import { PrismEditor } from 'vue-prism-editor'
 import 'vue-prism-editor/dist/prismeditor.min.css' // import the styles somewhere
@@ -809,6 +1056,9 @@ import { highlight, languages } from 'prismjs/components/prism-core'
 import 'prismjs/components/prism-clike'
 import 'prismjs/components/prism-javascript'
 import 'prismjs/themes/prism-tomorrow.css'
+import SparkMD5 from 'spark-md5';
+import {ACCESS_TOKEN} from "@/store/mutation-types";
+import CircleProgress from '@/components/Tools/CircleProgress.vue';
 export default {
   inject: ['reload'],
   props: [
@@ -817,7 +1067,8 @@ export default {
     'successMsg',
     'searchType',
     'propScanReport',
-    'formateDate'
+    'formateDate',
+    'isChecked'
   ],
   components: {
     PrismEditor,
@@ -826,17 +1077,26 @@ export default {
     UseDoc,
     AddMetadata,
     MavenUpload,
-    Search
+    Search,
+    DebianUpload,
+    DebianBatchUpload,
+    CircleProgress
   },
-  data () {
+  data() {
     return {
+      downLoadVisible: false,
+      downLoadLoading: true,
+      rawPathSize: "",
       baseUrl: '',
       folibRepository: {},
       repositoryType: null,
       rpmUploadForm: this.$form.createForm(this, { name: 'rpmUpload_form' }),
       uploadForm: this.$form.createForm(this, { name: 'upload_form' }),
+      dockerUploadForm: this.$form.createForm(this, { name: 'dockerUpload_form' }),
+      restoreForm: this.$form.createForm(this, { name: 'restore_form' }),
       showUploadFormModal: false,
       showRpmUploadFormModal: false,
+      showDockerUploadFormModal: false,
       uploadEnabled: false,
       copyEnabled: false,
       dispatchEnabled: false,
@@ -852,10 +1112,11 @@ export default {
         layout: null
       },
       treeData: [],
+      trashData: [],
       currentFileDetial: null,
       currentTreeNode: {},
       detialVisible: false,
-
+      targetArchitecture: null,
       metadataList: [],
       metadataConfigList: [],
       metadataEditorDrawerTitle: undefined,
@@ -909,21 +1170,27 @@ export default {
       searchDataCurrentSelect: {},
       searchViewCodeVisible: false,
       searchViewCodes: null,
+      //目标目录是否disabled
+      isTargetPatDisabled: true,
+      isTrashView: false,
       columns: [
         {
-          title: '所属仓库',
+          i18nKey: 'Store.OwnedWarehouse',
+          title: this.$t('Store.OwnedWarehouse'),
           dataIndex: 'repositoryId',
           scopedSlots: { customRender: 'repositoryId' },
           width: 150
         },
         {
-          title: '制品路径',
+          i18nKey: 'Store.ProductPath',
+          title: this.$t('Store.ProductPath'),
           dataIndex: 'path',
           scopedSlots: { customRender: 'path' },
           width: 550
         },
         {
-          title: '创建时间',
+          i18nKey: 'Store.CreationTime',
+          title: this.$t('Store.CreationTime'),
           dataIndex: 'created',
           sorter: true,
           sortDirections: ['descend', 'ascend'],
@@ -931,21 +1198,24 @@ export default {
           width: 200
         },
         {
-          title: '最近使用时间',
+          i18nKey: 'Store.LastUsedTime',
+          title: this.$t('Store.LastUsedTime'),
           dataIndex: 'lastUsed',
           sorter: true,
           scopedSlots: { customRender: 'lastUsed' },
           width: 200
         },
         {
-          title: '下载次数',
+          i18nKey: 'Store.DownloadTimes',
+          title: this.$t('Store.DownloadTimes'),
           dataIndex: 'downloadCount',
           sorter: true,
           scopedSlots: { customRender: 'created' },
           width: 200
         },
         {
-          title: '制品大小',
+          i18nKey: 'Store.ProductSize',
+          title: this.$t('Store.ProductSize'),
           dataIndex: 'sizeInBytes',
           sorter: true,
           scopedSlots: { customRender: 'sizeInBytes' },
@@ -967,7 +1237,8 @@ export default {
       showOperationDispatchFormModal: false,
       repositories: [],
       custom: false,
-      enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm'],
+      enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm', 'go','GitLfs', 'pub','debian'],
+      targetDirectoryExcludeLayout: ['Maven 2', 'npm', 'pub'],
       storageAdmin: '',
       permissions: [],
       mavenUploadVisible: false,
@@ -983,17 +1254,93 @@ export default {
         "Raw",
         "Maven 2",
         "Docker"
-      ]
+      ],
+      sliceUploadData: {
+          file: null,
+          chunkSize: 5 * 1024 * 1024, // 分片大小 5MB
+          uploadProgress: 0, //进度
+          currentChunk: 0, // 当前分片
+          totalChunks: 0, // 分片总数
+          isUploading: false, // 是否正在上传
+          paused: false, // 是否暂停
+          fileId: '', // 文件的唯一标识，用于断点续传
+          fileMD5: '', // 文件的md5值
+          progress: 0, // md5进度
+      },
+        selectedFiles: [], // 保存选中的多个文件
+        chunkSize: 5 * 1024 * 1024, // 分片大小 5MB
+        uploadProgresses: [], // 保存每个文件的上传进度
+        currentChunks: [], // 保存每个文件的当前上传分片索引
+        totalChunks: [], // 保存每个文件的总分片数
+        isUploading: false,
+        paused: false,
+        fileIds: [], // 保存每个文件的唯一标识
+        fileMD5s: [], // 保存每个文件的 MD5 值
+        md5Progresses: [], // 保存每个文件 MD5 计算的进度
+        maxConcurrency: 1, // 最大并发数
+        activeUploads: 0, // 当前的并发上传数
+        totalUploadProgress: 0, // 总的上传进度
+        totalUploadSize: 0, // 总的上传大小
+        uploadedSize: 0, // 当前已上传的大小
+        md5CalculationComplete: false, // MD5 计算是否完成
+        isClose: false,
+        progressStatus:'active',
+
+	    // 右击菜单
+	    showContextMenu: false,
+	    rightClickTop: '0px',
+	    rightClickLeft: '0px',
+	    packageSelectedKeys: [],
+	    packageExpandedKeys: [],
+	    packageLoadedKeys: [],
+	    restoreTitle: null,
+	    showRestoreForm: false,
+      pageKey:0
     }
+  },
+  computed: {
+    newDetailPage(){
+      return this.$store.state.newDetailPage
+    },
+    contextMenuStyle() {
+      return {
+        position: 'fixed',
+        top: this.rightClickTop,
+        left: this.rightClickLeft,
+      }
+    },
+    i18nColumns() {
+      return this.columns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    },
+  },
+  watch:{
+    // currentTreeNode(val){
+    //   console.log(val,'watch currentTreeNode');
+    //   this.pageKey ++
+    // } 
   },
   created () {
     this.initData()
   },
+
+  mounted() {
+    document.addEventListener('click', this.closeContextMenu);
+  },
+  beforeDestroy() {
+    document.removeEventListener('click', this.closeContextMenu);
+  },
   methods: {
-    initData () {
+    initData() {
       this.instanceName = sessionStorage.getItem("instanceName")
       this.createData()
-      this.getBrowse()
+      if(!this.isChecked){
+        this.getBrowse()
+      }
       if (isLogin())
       {
         this.scannerRules()
@@ -1002,18 +1349,23 @@ export default {
         this.getUploadMaxSize()
       }
     },
-    scannerRules () {
+    addPageKey() {
+      this.pageKey++
+    },
+    scannerRules() {
       scannerRules(
         this.folibRepository.storageId + '-' + this.folibRepository.id
       ).then(res => {
-        if (res.rel)
-        {
+        if (res.rel) {
           this.scan = res.data
         }
       })
     },
-    handleCheckboxChange (selectedData) { },
-    scannerChange () {
+    reloadTreeData() {
+      this.reload();
+    },
+    handleCheckboxChange(selectedData) { },
+    scannerChange() {
       this.scan.id =
         this.folibRepository.storageId + '-' + this.folibRepository.id
       this.scan.repository = this.folibRepository.id
@@ -1022,29 +1374,27 @@ export default {
       insertOrUpdateRules(this.scan).then(res => {
         setTimeout(() => {
           this.$notification.success({
-            message: this.scan.onScan ? '开启扫描' : '关闭扫描'
+            message: this.scan.onScan ? this.$t('Store.ScanOn') : this.$t('Store.ScanOff')
           })
         }, 100)
       })
     },
-    goBack () {
+    goBack() {
       this.$router.push({ name: 'storagesHome' })
     },
-    getLayoutTypeHandle () {
+    getLayoutTypeHandle() {
       return getLayoutType(this.folibRepository)
     },
-    getBrowse () {
-      if (this.folibRepository.status.indexOf('Out of Service') !== -1)
-      {
+    getBrowse() {
+      if (this.folibRepository.status.indexOf('Out of Service') !== -1) {
         this.$notification.warning({
-          message: '该仓库已关闭服务'
+          message: this.$t('Store.ServiceShutdown')
         })
         return false
       }
-      if (!this.folibRepository.allowsDirectoryBrowsing)
-      {
+      if (!this.folibRepository.allowsDirectoryBrowsing) {
         this.$notification.warning({
-          message: '该仓库目录浏览未开启'
+          message: this.$t('Store.BrowseNotEnabled')
         })
         return false
       }
@@ -1059,18 +1409,19 @@ export default {
             item.isLeaf = true
             item.type = 'file'
           })
-          this.treeData = d.concat(f)
+          this.treeData = d.concat(f).filter(item => item.name !== '.trash')
+          this.trashData = d.concat(f).filter(item => item.name === '.trash')
         })
         .catch(err => { })
     },
-    createData () {
+    createData() {
       //上个页面通过缓存传参，目的防止页面刷新，路由数据消失
       const params = store.get('libView_repository')
       this.folibRepository = params.item
       this.baseUrl = params.baseUrl
       this.repositoryType = this.getLayoutTypeHandle()
     },
-    copy (url) {
+    copy(url) {
       var input = document.createElement('input') // 创建input对象
       input.value = url // 设置复制内容
       document.body.appendChild(input) // 添加临时实例
@@ -1080,15 +1431,34 @@ export default {
       // console.log(url)
       setTimeout(() => {
         this.$notification.success({
-          message: '复制成功'
+          message: this.$t('Store.CopySuccess')
         })
       }, 100)
     },
-    handleRpmUpload () {
+    handleDockerUploud() {
+      this.dockerUploadForm.resetFields()
+      this.$nextTick(() => {
+        if (this.$refs.dockerUploadForm) {
+          this.dockerUploadForm.setFieldsValue({
+            repositoryId: this.folibRepository.id
+          })
+          this.dockerUploadForm.setFieldsValue({
+            type: 'image'
+          })
+        }
+      })
+      this.showDockerUploadFormModal = true;
+    },
+    uploadDockerFormModalClose () {
+          this.dockerUploadForm.resetFields()
+          this.showDockerUploadFormModal = false
+          this.isUploading=false;
+          this.md5CalculationComplete=false;
+    },
+    handleRpmUpload() {
       this.rpmUploadForm.resetFields()
       this.$nextTick(() => {
-        if (this.$refs.rpmUploadForm)
-        {
+        if (this.$refs.rpmUploadForm) {
           this.rpmUploadForm.setFieldsValue({
             repostoryId: this.folibRepository.id
           })
@@ -1096,25 +1466,25 @@ export default {
       })
       this.showRpmUploadFormModal = true
     },
-    uploadRpmFormModalClose () {
+    uploadRpmFormModalClose() {
       this.rpmUploadForm.resetFields()
       this.showRpmUploadFormModal = false
+      this.isUploading=false;
+      this.md5CalculationComplete=false;
     },
-    beforeUpload (file, fileList) {
+    beforeUpload(file, fileList) {
       return false
     },
-    normFile (e) {
-      if (Array.isArray(e))
-      {
+    normFile(e) {
+      if (Array.isArray(e)) {
         return e
       }
       return e && e.fileList
     },
-    handleUpload () {
+    handleUpload() {
       this.uploadForm.resetFields()
       this.$nextTick(() => {
-        if (this.$refs.uploadForm)
-        {
+        if (this.$refs.uploadForm) {
           let targetPath = ''
           if (this.folibRepository.layout === 'Raw') {
             if (this.currentTreeNode.type === 'dir') {
@@ -1138,58 +1508,129 @@ export default {
       this.uploadType = 1
       this.showUploadFormModal = true
     },
-    message (type, message) {
-      if (!message)
-      {
-        message = '操作成功'
+    message(type, message) {
+      if (!message) {
+        message = this.$t('Store.OperationSuccess')
       }
       this.$notification[type]({
         message: message,
         description: ''
       })
     },
+    handleDockerUploadSubmit (e) {
+          e.preventDefault()
+          this.dockerUploadForm.validateFields((err, values) => {
+              if (!err)
+              {
+                  if (values.files.length > 10)
+                  {
+                      this.$notification['warning']({
+                          message: this.$t('Store.UploadCount'),
+                          description: ''
+                      })
+                      return false
+                  }
+                  let fileList = []
+                  for (let item of values.files)
+                  {
+                      let fileName = item.name.replace(':', '/')
+                      let result = artifactCheck(
+                          this.folibRepository,
+                          fileName,
+                          item.size
+                      )
+                      if (!result.check)
+                      {
+                          this.message('warning', result.msg)
+                          return false
+                      }
+                      item.name = fileName
+                      fileList.push(item)
+                  }
+                  // fileList.forEach(item => {
+                  //     this.handlerDockerUploadFile(
+                  //         values.type,
+                  //         values.imageTag,
+                  //         item.name.replace(':', '/'),
+                  //         item.originFileObj
+                  //     )
+                  // })
+                  console.info('docker:', values)
+                  const imageTag = values.imageTag ? values.imageTag : fileList[0].originFileObj.name;
+                  this.uploadFiles(values.targetPath,false,null,imageTag,values.type)
+                  this.successMsg(this.$t('Store.CheckProgress'))
+                  this.uploadDockerFormModalClose()
+              }
+          })
+      },
     handleRpmUploadSubmit (e) {
       e.preventDefault()
       this.rpmUploadForm.validateFields((err, values) => {
-        if (!err)
-        {
-          if (values.files.length > 10)
-          {
+        if (!err) {
+          if (values.files.length > 10) {
             this.$notification['warning']({
-              message: '一次上传不能超过10个文件',
+              message: this.$t('Store.UploadCount'),
               description: ''
             })
             return false
           }
           let fileList = []
-          for (let item of values.files)
-          {
+          for (let item of values.files) {
             let fileName = item.name.replace(':', '/')
             let result = artifactCheck(
               this.folibRepository,
               fileName,
               item.size
             )
-            if (!result.check)
-            {
+            if (!result.check) {
               this.message('warning', result.msg)
               return false
             }
             item.name = fileName
             fileList.push(item)
           }
-          fileList.forEach(item => {
-            this.handlerRpmUploadFile(
-              values.targetPath,
-              item.name.replace(':', '/'),
-              item.originFileObj
-            )
-          })
-          this.successMsg('请至页面右上角上传进度中查看')
+          // fileList.forEach(item => {
+          //   this.handlerRpmUploadFile(
+          //     values.targetPath,
+          //     item.name.replace(':', '/'),
+          //     item.originFileObj
+          //   )
+          // })
+            this.uploadFiles(values.targetPath,false,null,null,null)
+          this.successMsg(this.$t('Store.CheckProgress'))
           this.uploadRpmFormModalClose()
         }
       })
     },
+    handlerDockerUploadFile (fileType, imageTag, fileName, file) {
+          file = new File([file], fileName)
+          let filePathMap ={};
+          filePathMap[fileName] = imageTag ? imageTag : fileName;
+          const formData = new FormData()
+          formData.append('storageId', this.folibRepository.storageId)
+          formData.append('repostoryId', this.folibRepository.id)
+          formData.append('filePathMap', JSON.stringify(filePathMap))
+          formData.append('imageTag', imageTag)
+          formData.append('fileType', fileType)
+          formData.append('files', file)
+          let uuid = uuidv4()
+          artifactUploadProgress(formData, uuid, fileName)
+                .then(res => { })
+                .catch(err => {
+                    let msg = err.response.data.error
+                        ? err.response.data.error
+                        : err.response.data
+                    let errStatusArr = [200, 500, 403, 304, 401]
+                    if (!errStatusArr.includes(err.response.status))
+                    {
+                        this.$notification['error']({
+                            message: this.$t('Store.EncodingError') + err.response.status,
+                            description: ''
+                        })
+                    }
+                })
+                .finally(() => { })
+      },
     handlerRpmUploadFile (targetPath, fileName, file) {
       file = new File([file], fileName)
       let filePathMap = {}
@@ -1216,10 +1657,9 @@ export default {
             : err.response.data
           console.log('rpm upload error：', msg)
           let errStatusArr = [200, 500, 403, 304, 401]
-          if (!errStatusArr.includes(err.response.status))
-          {
+          if (!errStatusArr.includes(err.response.status)) {
             this.$notification['error']({
-              message: '错误编码：' + err.response.status,
+              message: this.$t('Store.EncodingError') + err.response.status,
               description: ''
             })
           }
@@ -1233,106 +1673,100 @@ export default {
         }
       })
     },
-    convertToBytes (size, unit) {
+    convertToBytes(size, unit) {
       return convertToBytes(size, unit)
     },
-    handleUploadSubmit (e) {
+    handleUploadSubmit(e) {
       e.preventDefault()
       this.uploadForm.validateFields((err, values) => {
-        if (!err)
-        {
-          if (this.uploadType === 2)
-          {
-            if (values.files.length > 1)
-            {
+        if (!err) {
+          if (this.uploadType === 2) {
+            if (values.files.length > 1) {
               this.$notification['warning']({
-                message: '只能上传一个压缩包',
+                message: this.$t('Store.UploadZipPackage'),
                 description: ''
               })
               return false
             }
             const file = values.files[0]
             const sizeLimit = file.size > this.convertToBytes(this.uploadMaxSize.size, this.uploadMaxSize.unit)
-            if (sizeLimit)
-            {
+            if (sizeLimit) {
               this.$notification.warning({
-                message: '文件大小不能超过' + this.uploadMaxSize.size + this.uploadMaxSize.unit
+                message: this.$t('Store.fileSize') + this.uploadMaxSize.size + this.uploadMaxSize.unit
               })
               return false
             }
             const fileFamart = file.name.split('.')[
               file.name.split('.').length - 1
             ]
-            if (fileFamart !== 'zip')
-            {
+            if (fileFamart !== 'zip') {
               this.$notification.warning({
-                message: '必须上传zip格式的文件!'
+                message: this.$t('Store.ZIPFormat')
               })
               return false
             }
-            if (typeof values.targetPath === 'undefined')
-            {
+            if (typeof values.targetPath === 'undefined') {
               values.targetPath = ''
-            } else
-            {
+            } else {
               values.targetPath = values.targetPath
                 .trim()
                 .replace(/^\/+|\/+$/g, '')
             }
-            this.handlerUploadZipFile(
-              values.targetPath,
-              file.name,
-              file.originFileObj
-            )
+            // this.handlerUploadZipFile(
+            //   values.targetPath,
+            //   file.name,
+            //   file.originFileObj
+            // )
+             //this.onFileChange(values.targetPath, file.name, values.files[0].originFileObj)
+             this.uploadFiles(values.targetPath,true,null,null,null)
           } else
           {
             if (values.files.length > 10)
             {
               this.$notification['warning']({
-                message: '一次上传不能超过10个文件',
+                message: this.$t('Store.UploadCount'),
                 description: ''
               })
               return false
             }
-            if (values.targetPath && values.targetPath.startsWith('/'))
-            {
+            if (values.targetPath && values.targetPath.startsWith('/')) {
               this.$notification['warning']({
-                message: '目标目录不能以/开头',
+                message: this.$t('Store.DirectoryFormat'),
                 description: ''
               })
               return false
             }
             let fileList = []
-            for (let item of values.files)
-            {
+            for (let item of values.files) {
               let fileName = item.name.replace(':', '/')
               let result = artifactCheck(
                 this.folibRepository,
                 fileName,
                 item.size
               )
-              if (!result.check)
-              {
+              if (!result.check) {
                 this.message('warning', result.msg)
                 return false
               }
               item.name = fileName
               fileList.push(item)
             }
-            fileList.forEach(item => {
-              this.handlerUploadFile(
-                values.targetPath,
-                item.name,
-                item.originFileObj
-              )
-            })
+            // fileList.forEach(item => {
+            //   this.handlerUploadFile(
+            //     values.targetPath,
+            //     item.name,
+            //     item.originFileObj
+            //   )
+            //    this.onFileChange(values.targetPath, item.name, item.originFileObj)
+            // })
+            this.uploadFiles(values.targetPath,false,null,null,null)
           }
-          this.successMsg('请至页面右上角上传进度中查看')
+          this.successMsg(this.$t('Store.CheckProgress'))
           this.uploadFormModalClose()
         }
       })
     },
-    handlerUploadFile (targetPath, fileName, file) {
+    handlerUploadFile(targetPath, fileName, file) {
       file = new File([file], fileName)
       let filePathMap = {}
       filePathMap[fileName] = targetPath
@@ -1352,17 +1786,16 @@ export default {
             : err.response.data
           console.log('upload error：', msg)
           let errStatusArr = [200, 500, 403, 304, 401]
-          if (!errStatusArr.includes(err.response.status))
-          {
+          if (!errStatusArr.includes(err.response.status)) {
             this.$notification['error']({
-              message: '错误编码：' + err.response.status,
+              message: this.$t('Store.EncodingError') + err.response.status,
               description: ''
             })
           }
         })
         .finally(() => { })
     },
-    handlerUploadZipFile (path, fileName, file) {
+    handlerUploadZipFile(path, fileName, file) {
       file = new File([file], fileName)
       let uuid = 'zip_' + uuidv4()
       const formData = new FormData()
@@ -1378,22 +1811,22 @@ export default {
             : err.response.data
           console.log('upload error：', msg)
           let errStatusArr = [200, 500, 403, 304, 401]
-          if (!errStatusArr.includes(err.response.status))
-          {
+          if (!errStatusArr.includes(err.response.status)) {
             this.$notification['error']({
-              message: '错误编码：' + err.response.status,
+              message: this.$t('Store.EncodingError') + err.response.status,
               description: ''
             })
           }
         })
         .finally(() => { })
     },
-    uploadFormModalClose () {
+    uploadFormModalClose() {
       this.showUploadFormModal = false
+        this.isUploading=false;
+        this.md5CalculationComplete=false;
     },
-    UsedHelperVisible () {
-      if (this.repositoryType === 'ivy')
-      {
+    UsedHelperVisible() {
+      if (this.repositoryType === 'ivy') {
         this.ivyCode =
           '<ivysettings>\n' +
           '   <settings defaultResolver="' +
@@ -1409,14 +1842,13 @@ export default {
           '" m2compatible="true" usepoms="true"/>\n' +
           '   </resolvers>\n' +
           '</ivysettings>'
-      } else if (this.repositoryType === 'docker')
-      {
+      } else if (this.repositoryType === 'docker') {
         this.dockerCode.ubuntu =
           'sudo mkdir -p /etc/docker\n' +
           "sudo tee /etc/docker/daemon.json <<-'EOF'\n" +
           '{\n' +
           '"insecure-registries": ["' +
-          this.baseUrl.replace('http://', '').replace('/', '') +
+          this.baseUrl.replace('http://', '').replace('https://', '').replace('/', '') +
           '"]\n' +
           '}\n' +
           'EOF\n' +
@@ -1427,7 +1859,7 @@ export default {
           "sudo tee /etc/docker/daemon.json <<-'EOF'\n" +
           '{\n' +
           '"insecure-registries": ["' +
-          this.baseUrl.replace('http://', '').replace('/', '') +
+          this.baseUrl.replace('http://', '').replace('https://', '').replace('/', '') +
           '"]\n' +
           '}\n' +
           'EOF\n' +
@@ -1436,34 +1868,32 @@ export default {
         this.dockerCode.windows =
           '{\n' +
           '  "insecure-registries": ["' +
-          this.baseUrl.replace('http://', '').replace('/', '') +
+          this.baseUrl.replace('http://', '').replace('https://', '').replace('/', '') +
           '"]\n' +
           '}'
         this.dockerCode.macos = this.dockerCode.windows
       }
       this.usedVisible = true
     },
-    scannerChange () {
-      this.scan.id =
-        this.folibRepository.storageId + '-' + this.folibRepository.id
-      this.scan.repository = this.folibRepository.id
-      this.scan.storage = this.folibRepository.storageId
-      this.scan.layout = this.folibRepository.layout
-      insertOrUpdateRules(this.scan).then(res => {
-        setTimeout(() => {
-          this.$notification.success({
-            message: this.scan.onScan ? '开启扫描' : '关闭扫描'
-          })
-        }, 100)
-      })
-    },
-    onLoadData (treeNode) {
+    // scannerChange () {
+    //   this.scan.id =
+    //     this.folibRepository.storageId + '-' + this.folibRepository.id
+    //   this.scan.repository = this.folibRepository.id
+    //   this.scan.storage = this.folibRepository.storageId
+    //   this.scan.layout = this.folibRepository.layout
+    //   insertOrUpdateRules(this.scan).then(res => {
+    //     setTimeout(() => {
+    //       this.$notification.success({
+    //         message: this.scan.onScan ? '开启扫描' : '关闭扫描'
+    //       })
+    //     }, 100)
+    //   })
+    // },
+    onLoadData(treeNode) {
       this.currentFileDetial = null
-      if (this.folibRepository.layout === 'Docker')
-      {
+      if (this.folibRepository.layout === 'Docker') {
         return new Promise(resolve => {
-          if (treeNode.dataRef.children)
-          {
+          if (treeNode.dataRef.children) {
             resolve()
             return
           }
@@ -1475,7 +1905,7 @@ export default {
             treeNode.dataRef.children = []
             if (res.directories.length > 0) {
               const d = res.directories
-              
+
               d.forEach((item, index, d) => {
                 item.type = 'dir'
                 treeNode.dataRef.children.push(item)
@@ -1490,14 +1920,14 @@ export default {
               })
             }
             this.treeData = [...this.treeData]
+            this.trashData = [...this.trashData]
             resolve()
           })
         })
       }
 
       return new Promise(resolve => {
-        if (treeNode.dataRef.children)
-        {
+        if (treeNode.dataRef.children) {
           resolve()
           return
         }
@@ -1506,20 +1936,17 @@ export default {
           this.folibRepository.id,
           treeNode.dataRef.artifactPath
         ).then(res => {
-          if (!treeNode.dataRef.children)
-          {
+          if (!treeNode.dataRef.children) {
             treeNode.dataRef.children = []
           }
-          if (res.directories.length > 0)
-          {
+          if (res.directories.length > 0) {
             const d = res.directories
             d.forEach((item, index, d) => {
               item.type = 'dir'
             })
             treeNode.dataRef.children = d
           }
-          if (res.files.length > 0)
-          {
+          if (res.files.length > 0) {
             const a = res.files
             a.forEach((item, index, a) => {
               item.isLeaf = true
@@ -1529,11 +1956,12 @@ export default {
           }
 
           this.treeData = [...this.treeData]
+          this.trashData = [...this.trashData]
           resolve()
         })
       })
     },
-    treeSelect (key, e) {
+    treeSelect(key, e) {
       this.currentTreeNode = e.node.dataRef
       this.scanReport = {
         show: false,
@@ -1545,8 +1973,7 @@ export default {
         medium: 0,
         low: 0
       }
-      if (this.currentTreeNode.type === 'file')
-      {
+      if (this.currentTreeNode.type === 'file'){
         getArtifact(
           this.repositoryType,
           this.currentTreeNode.storageId,
@@ -1554,14 +1981,11 @@ export default {
           this.currentTreeNode.artifactPath
         ).then(res => {
           this.currentFileDetial = res
-          if (this.currentFileDetial.snippets)
-          {
+          if (this.currentFileDetial.snippets) {
             this.changeCodeTye(this.currentFileDetial.snippets[0])
           }
-          if (isLogin() && this.currentFileDetial.artifact)
-          {
-            if (this.currentFileDetial.artifact.safeLevel === "scanComplete")
-            {
+          if (isLogin() && this.currentFileDetial.artifact) {
+            if (this.currentFileDetial.artifact.safeLevel === "scanComplete") {
               this.scanReport.show = true
               this.scanReport.vulnerabilitesCount = this.currentFileDetial.artifact.vulnerabilitiesCount
               this.scanReport.critical = this.currentFileDetial.artifact.criticalVulnerabilitiesCount
@@ -1572,11 +1996,10 @@ export default {
                 this.currentTreeNode.storageId,
                 this.currentTreeNode.repositoryId,
                 this.currentTreeNode.artifactPath
-              ).then(res => { 
-                if (res.artifact && res.artifact.safeLevel === "scanComplete")
-                {
+              ).then(res => {
+                if (res.artifact && res.artifact.safeLevel === "scanComplete") {
                   this.scanReport.report = JSON.parse(
-                      res.artifact.report
+                    res.artifact.report
                   )
                 }
               })
@@ -1587,97 +2010,180 @@ export default {
           this.currentManifest = res.manifestConfig
           this.handlerRespMetadata(res)
         })
-      } else if (this.currentTreeNode.type === 'dir')
-      {
+      } else if (this.currentTreeNode.type === 'dir') {
         this.currentFileDetial = null
       }
 
     },
-    handleMenuClick (active) {
+    handleMenuClickTree(active,currentTreeNode){
+      this.currentTreeNode = currentTreeNode
+      this.handleMenuClick(active)
+    },
+    handleMenuClick(active) {
       this.operationForm.resetFields()
+      this.isTargetPatDisabled = this.folibRepository.layout !== 'Raw';
       this.$nextTick(() => {
-        if (this.$refs.operationForm)
-        {
+        if (this.$refs.operationForm) {
           this.operationForm.setFieldsValue({
             path: this.currentTreeNode.artifactPath,
+            targetPath: this.currentTreeNode.artifactPath,
             type: 1,
           })
         }
       })
-      if (active.key === '1')
-      {
+      if (active.key === '1') {
         this.viewCodeHandle()
-      } else if (active.key === '2' || active.key === '3')
-      {
+      } else if (active.key === '2' || active.key === '3') {
         //复制 或 移动
         this.showOperationFormModal = true
         this.queryPermissionStoragesAndRepositories(
           this.folibRepository.type,
           this.folibRepository.layout,
-          this.folibRepository.id,
+          this.folibRepository.storageId + ':' + this.folibRepository.id,
           this.folibRepository.policy
         )
         this.operationTitle =
           active.key === '2'
-            ? '复制 ' + this.currentTreeNode.artifactPath
-            : '移动  ' + this.currentTreeNode.artifactPath
+            ? this.$t('Store.Copy') + this.currentTreeNode.artifactPath
+            : this.$t('Store.Move') + this.currentTreeNode.artifactPath
         this.customTitle =
-          active.key === '2' ? '复制到自定义目录' : '移动到自定义目录'
-      } else if (active.key === '4')
-      {
+          active.key === '2' ? this.$t('Store.CopyCustomDirectory') : this.$t('Store.MoveCustomDirectory')
+      } else if (active.key === '4') {
         //删除
-      } else if (active.key === '5')
-      {
+        console.log("删除")
+      } else if (active.key === '5') {
         this.showOperationDispatchFormModal = true
         this.getArtifactDispatchStoragesAndRepositories(
           this.folibRepository.type,
           this.folibRepository.layout,
-          this.folibRepository.id,
           this.folibRepository.policy
         )
-        this.getExternalNodeRepositories({type: this.folibRepository.layout})
-        this.operationTitle = '分发'
-        this.customTitle = '分发到指定目录'
+        this.getExternalNodeRepositories({ type: this.folibRepository.layout })
+        this.operationTitle = this.$t('Store.Distribute')
+        this.customTitle = this.$t('Store.DistributeCustomDirectory')
         // 下载  
-      } else if (active.key === '6')
-      {
+      } else if (active.key === '6') {
         let url = this.currentTreeNode.url
-        if (url)
-        {
+        if (url) {
           window.open(url)
         }
 
+      } else if (active.key === '7') {
+        if (this.currentTreeNode.type === 'dir') {
+          this.downLoadVisible = true;
+          this.folibRepository
+          let storageId = this.folibRepository.storageId;
+          let repositoryId = this.folibRepository.id;
+          let path = this.currentTreeNode.artifactPath;
+          getRawPathSize(storageId, repositoryId, path).then(res => {
+            this.rawPathSize = res;
+
+          })
+          // let url = this.currentTreeNode.url
+          // if (url) {
+          //     url = url.replace("api/browse", "storages")
+          //     window.open(url)
+          // }
+        } else if (this.currentTreeNode.type === 'file') {
+          let uri = this.currentTreeNode.url;
+          const str = this.currentFileDetial.imageName;
+
+          // 使用正则表达式匹配第三个 '/' 后的部分
+          const regex = /^([^\/]*\/){3}(.*)$/;
+          const match = str.match(regex);
+
+          const result = match ? match[2] : '';
+          if (uri) {
+            const url = new URL(uri);
+            // 获取协议（http: 或 https:）
+            const protocol = url.protocol;
+            // 获取主机名（不包括路径和查询字符串）
+            const hostname = url.hostname;
+            // 获取端口号，如果没有指定则默认为 80（http）或 443（https）
+            const port = url.port ? `:${url.port}` : '';
+            const params = this.targetArchitecture === null ? '' : '?platform=' + this.targetArchitecture;
+            const baseUrl = `${protocol}//${hostname}${port}/storages/` + this.currentTreeNode.storageId + '/' + this.currentTreeNode.repositoryId + '/download/' + result + params;
+            window.open(baseUrl)
+          }
+        }
+      } else if (active.key === '8') {
+        const self = this;
+        const file = this.currentTreeNode.artifactPath.split('/').pop();
+        const targetFile = this.currentTreeNode.artifactPath.replace(".trash/", "");
+        this.$confirm({
+          title: this.$t('Store.Restore') + ": " + file,
+          content: this.$t('Store.RestoreConfirm', { targetRepositories: this.folibRepository.id, path: targetFile }),
+          okText: this.$t('Store.Confirm'),
+          cancelText: this.$t('Store.Cancel'),
+          onOk() {
+            return new Promise((resolve, reject) => {
+              const response = self.restorePackageHandle()
+              if (response) {
+                self.$notification.success({
+                  message: self.$t('Store.RestoreSuccessful')
+                })
+                self.reload()
+                resolve();
+              }
+            }).catch(error => {
+              console.log(error);
+              self.$notification.error({
+                message: self.$t('Store.RestoreFailed')
+              })
+              reject();
+            });
+          },
+          onCancel() { },
+        });
       }
+    },
+
+    handleRightClick(active) {
+      this.handleMenuClick(active)
+      if (active.key === '4') {
+        this.deletePackageHandle();
+      }
+    },
+    handleDownLoadDir() {
+      let url = this.currentTreeNode.url
+      if (url) {
+        url = url.replace("api/browse", "storages")
+        window.open(url)
+      }
+      this.downLoadVisible = false;
+    },
+    handleDownLoadDirCancel() {
+      this.downLoadVisible = false;
+    },
+    handleArchitectureMessage(message) {
+      this.targetArchitecture = message;
     },
     getArtifactoryRepositoryType(key) {
       let artifactoryRepositoryType = ''
       this.externalNodeRepositories.forEach(node => {
         let arr = node.children.filter(i => i.key === key)
-        if(arr && arr.length > 0){
+        if (arr && arr.length > 0) {
           artifactoryRepositoryType = arr[0].artifactoryRepositoryType
         }
       })
       return artifactoryRepositoryType
     },
-    handleOperationSubmit (e) {
+    handleOperationSubmit(e) {
       e.preventDefault()
       this.operationForm.validateFields((err, values) => {
-        if (!err)
-        {
+        if (!err) {
           let targetRepositoyList = []
           let targetDispatchRepositoryList = []
           values.targetRepositories.forEach(item => {
             let split = item.split(',')
             let arrayLength = split.length
-            if (this.operationTitle.indexOf('分发') !== -1)
-            {
+            if (this.operationTitle.indexOf(this.$t('Store.Distribute')) !== -1) {
               let json = {}
               if (this.artifactoryType === 1) {
                 let dispatchClusterEnName = split[0]
                 let dispatchTargetStorageId = split[1]
                 let dispatchTargetReopsitoryId = ''
-                if (arrayLength === 3)
-                {
+                if (arrayLength === 3) {
                   dispatchTargetReopsitoryId = split[2]
                 }
                 json = {
@@ -1696,8 +2202,7 @@ export default {
                 json.artifactoryRepositoryType = this.getArtifactoryRepositoryType(item)
               }
               targetDispatchRepositoryList.push(json)
-            } else
-            {
+            } else {
               targetRepositoyList.push({
                 targetStorageId: split[0],
                 targetRepositoryId: split[1]
@@ -1706,12 +2211,14 @@ export default {
           })
           let data = {
             path: values.path,
+            targetPath: values.targetPath,
             srcStorageId: this.folibRepository.storageId,
             srcRepositoryId: this.folibRepository.id,
             targetRepositoyList: targetRepositoyList
           }
           let dispatchData = {
             path: values.path,
+            targetPath: values.targetPath,
             srcStorageId: this.folibRepository.storageId,
             srcRepositoryId: this.folibRepository.id,
             targetDispatchRepositoryList: targetDispatchRepositoryList,
@@ -1719,11 +2226,10 @@ export default {
             layout: this.folibRepository.layout,
             policy: this.folibRepository.policy
           }
-          if (this.operationTitle.indexOf('复制') !== -1)
-          {
+          if (this.operationTitle.indexOf(this.$t('Store.Copy')) !== -1) {
             artifactCopy(data)
               .then(res => {
-                this.successMsg('复制中，请稍候查看')
+                this.successMsg(this.$t('Store.Copying'))
                 this.operationFormModalClose()
                 this.reload()
               })
@@ -1734,11 +2240,10 @@ export default {
                 })
               })
               .finally(() => { })
-          } else if (this.operationTitle.indexOf('移动') !== -1)
-          {
+          } else if (this.operationTitle.indexOf(this.$t('Store.Move')) !== -1) {
             artifactMove(data)
               .then(res => {
-                this.successMsg('移动中，请稍候查看')
+                this.successMsg(this.$t('Store.Moving'))
                 this.operationFormModalClose()
                 this.reload()
               })
@@ -1749,11 +2254,10 @@ export default {
                 })
               })
               .finally(() => { })
-          } else if (this.operationTitle.indexOf('分发') !== -1)
-          {
+          } else if (this.operationTitle.indexOf(this.$t('Store.Distribute')) !== -1) {
             artifactDispatch(dispatchData)
               .then(res => {
-                this.successMsg('分发中，请稍候查看')
+                this.successMsg(this.$t('Store.Distributing'))
                 this.operationFormModalClose()
                 this.reload()
               })
@@ -1768,33 +2272,30 @@ export default {
         }
       })
     },
-    operationFormModalClose () {
+    operationFormModalClose() {
       this.showOperationFormModal = false
       this.showOperationDispatchFormModal = false
     },
-    getArtifactDispatchStoragesAndRepositories (
+    getArtifactDispatchStoragesAndRepositories(
       type,
       layout,
-      excludeRepositoryId,
       policy
     ) {
       getArtifactDispatchStoragesAndRepositories({
         type: type,
         layout: layout,
-        excludeRepositoryId: excludeRepositoryId,
         policy: policy
       }).then(res => {
         this.repositories = []
         res.forEach(item => {
-          if (item.children && item.children.length > 0)
-          {
+          if (item.children && item.children.length > 0) {
             this.repositories.push(item)
           }
         })
-        this.repositories = [this.repositories]
+        this.repositories = this.repositories
       })
     },
-    queryPermissionStoragesAndRepositories (
+    queryPermissionStoragesAndRepositories(
       type,
       layout,
       excludeRepositoryId,
@@ -1803,38 +2304,35 @@ export default {
       getPermissionStoragesAndRepositories({
         type: type,
         layout: layout,
-        excludeRepositoryId: excludeRepositoryId,
+        excludeRepositoryId: '',
         policy: policy
       }).then(res => {
         this.repositories = []
         res.forEach(item => {
-          if (item.children && item.children.length > 0)
-          {
+          if (item.children && item.children.length > 0) {
             this.repositories.push(item)
           }
         })
       })
     },
-    getMetadataConfiguration () {
+    getMetadataConfiguration() {
       getMetadataConfiguration()
         .then(res => {
           this.metadataConfigList = res
         })
         .finally(() => { })
     },
-    metadataHandler (type, metadata) {
+    metadataHandler(type, metadata) {
       this.metadataFormReset()
-      if (metadata)
-      {
+      if (metadata) {
         this.metadataForm = metadata
       }
       this.handlerMetadataType = type
       this.showMetadataHandler = true
       this.getMetadataConfiguration()
     },
-    metadataFormReset () {
-      if (this.$refs.metadataForm)
-      {
+    metadataFormReset() {
+      if (this.$refs.metadataForm) {
         this.$refs.metadataForm.resetFields()
       }
       this.metadataForm = {
@@ -1850,10 +2348,10 @@ export default {
       this.metadataNumber = false
       this.prismEditor = false
     },
-    dispatchPackageHandle () {
+    dispatchPackageHandle() {
       console.log('分发处理 todo')
     },
-    deletePackageHandle () {
+    deletePackageHandle() {
       deleteArtifact(
         this.currentTreeNode.storageId,
         this.currentTreeNode.repositoryId,
@@ -1862,7 +2360,7 @@ export default {
         .then(res => {
           setTimeout(() => {
             this.$notification.success({
-              message: '删除成功'
+              message: this.$t('Store.DeletionSuccessful')
             })
             this.reload()
           }, 100)
@@ -1877,9 +2375,8 @@ export default {
             : err.response.data.error
               ? err.response.data.error
               : err.response.data
-          if (!msg || msg.length === 0 || typeof msg === 'object')
-          {
-            msg = '删除失败'
+          if (!msg || msg.length === 0 || typeof msg === 'object') {
+            msg = this.$t('Store.DeletionFailed')
           }
           this.$notification.error({
             message: msg,
@@ -1888,23 +2385,29 @@ export default {
         })
         .finally(() => { })
     },
-    handlerRespMetadata (res) {
+
+    async restorePackageHandle() {
+      const response = await restore(
+        this.currentTreeNode.storageId,
+        this.currentTreeNode.repositoryId,
+        this.currentTreeNode.artifactPath
+      );
+      return response;
+    },
+    handlerRespMetadata(res) {
       let metadataList = []
       if (
         res.artifact &&
         res.artifact.metadata &&
         res.artifact.metadata.length > 0
-      )
-      {
+      ) {
         let metadataJson = JSON.parse(res.artifact.metadata)
-        for (let key in metadataJson)
-        {
+        for (let key in metadataJson) {
           let flag = this.metadataConfigList.some(
             metadataConfig =>
               !metadataConfig.viewShow && metadataConfig.key === key
           )
-          if (flag)
-          {
+          if (flag) {
             metadataJson[key].viewShow = false
           }
           let metadata = Object.assign({}, metadataJson[key])
@@ -1915,12 +2418,12 @@ export default {
       this.metadataList = metadataList
       this.$forceUpdate()
     },
-    metadataEditorDrawerShow (metadata) {
+    metadataEditorDrawerShow(metadata) {
       this.metadataEditorDrawerTitle = metadata.key
       this.metadataEditorDrawerValue = metadata.value
       this.metadataEditorDrawerVisible = true
     },
-    metadataEditHandler (metadata) {
+    metadataEditHandler(metadata) {
       let key = metadata.key
       let data = {
         key: undefined,
@@ -1931,88 +2434,78 @@ export default {
         value: metadata.value
       }
       let flag = this.metadataConfigList.some(item => item.key === key)
-      if (!flag)
-      {
+      if (!flag) {
         data.custom = true
         data.customKey = key
-      } else
-      {
+      } else {
         data.key = key
         data.custom = false
       }
       this.metadataHandler(2, data)
       this.metadataTypeChange(data.type)
     },
-    metadataTypeChange (value) {
+    metadataTypeChange(value) {
       let editorList = ['TEXT', 'MD']
       let prismEditorList = ['JSON']
       let numberList = ['NUMERICAL']
-      if (editorList.indexOf(value) !== -1)
-      {
+      if (editorList.indexOf(value) !== -1) {
         this.metadataEditor = true
         this.metadataInput = false
         this.metadataNumber = false
         this.prismEditor = false
-      } else if (prismEditorList.indexOf(value) !== -1)
-      {
+      } else if (prismEditorList.indexOf(value) !== -1) {
         this.prismEditor = true
         this.metadataInput = false
         this.metadataNumber = false
         this.metadataEditor = false
-      } else if (numberList.indexOf(value) !== -1)
-      {
-        if (this.handlerMetadataType === 1)
-        {
+      } else if (numberList.indexOf(value) !== -1) {
+        if (this.handlerMetadataType === 1) {
           this.metadataForm.value = undefined
         }
         this.metadataNumber = true
         this.metadataInput = false
         this.prismEditor = false
         this.metadataEditor = false
-      } else
-      {
+      } else {
         this.metadataInput = true
         this.metadataEditor = false
         this.metadataNumber = false
         this.prismEditor = false
       }
     },
-    metadataPrismEditorDrawerShow (metadata) {
+    metadataPrismEditorDrawerShow(metadata) {
       this.metadataPrismEditorDrawerTitle = metadata.key
       this.metadataPrismEditorDrawerValue = metadata.value
       this.metadataPrismEditorDrawerVisible = true
     },
-    changeCodeTye (item) {
-      if (item)
-      {
+    changeCodeTye(item) {
+      if (item) {
         this.codeParam = {
           type: item.name === 'Maven 2' ? 'maven' : item.name.toLowerCase(),
           code: item.code
         }
       }
     },
-    getFileType (name) {
-      if (name)
-      {
+    getFileType(name) {
+      if (name) {
         return getFileType(name)
       }
     },
-    closeUsedVisibleDialog () {
+    closeUsedVisibleDialog() {
       this.usedVisible = false
     },
-    viewCodeHandle () {
-      if (this.folibRepository.layout !== 'Docker' && this.currentFileDetial && !this.currentFileDetial.listTree)
-      {
+    viewCodeHandle() {
+      if (this.folibRepository.layout !== 'Docker' && this.currentFileDetial && !this.currentFileDetial.listTree) {
         if (this.currentFileDetial.artifact) {
-          previewArtifact(this.currentTreeNode.storageId, this.currentTreeNode.repositoryId,this.currentTreeNode.artifactPath).then(res => {
+          previewArtifact(this.currentTreeNode.storageId, this.currentTreeNode.repositoryId, this.currentTreeNode.artifactPath).then(res => {
             if (res && res.length > 0) {
               this.currentFileDetial.listTree = res
               this.$forceUpdate()
             } else {
               let len = this.currentFileDetial.artifact.sizeInBytes
               if (len && len > 1048576) {
-                this.viewCodes = '该制品无法预览'
-              } else{
+                this.viewCodes = this.$t('Store.CannotPreview')
+              } else {
                 this.viewArtifactFile()
               }
             }
@@ -2023,112 +2516,129 @@ export default {
       }
       this.viewCodeVisible = true
     },
-  viewArtifactFile () {
-    viewArtifactFile(this.currentTreeNode.url).then(res => {
-      if ('string' === typeof res && res.startsWith('PK'))
-      {
-        this.viewCodes = undefined
-      } else if ('object' === typeof res)
-      {
-        if (res.data)
-        {
-          if ('string' === typeof res.data)
-          {
-            if (res.data.startsWith('PK')) {
-              this.viewCodes = '该制品无法预览'
+    viewArtifactFile() {
+      viewArtifactFile(this.currentTreeNode.url).then(res => {
+        if ('string' === typeof res && res.startsWith('PK')) {
+          this.viewCodes = undefined
+        } else if ('object' === typeof res) {
+          if (res.data) {
+            if ('string' === typeof res.data) {
+              if (res.data.startsWith('PK')) {
+                this.viewCodes = this.$t('Store.CannotPreview')
+              } else {
+                this.viewCodes = res.data
+              }
             } else {
-              this.viewCodes = res.data
+              this.viewCodes = JSON.stringify(res.data)
             }
-          } else
-          {
-            this.viewCodes = JSON.stringify(res.data)
+          } else {
+            this.viewCodes = JSON.stringify(res)
           }
-        } else
-        {
-          this.viewCodes = JSON.stringify(res)
+        } else {
+          this.viewCodes = res
         }
-      } else
-      {
-        this.viewCodes = res
-      }
-    })
-  },
-    closeViewCodeDialog () {
+      })
+    },
+    closeViewCodeDialog() {
       this.viewCodeVisible = false
       this.viewCodes = null
     },
-    metadataHandlerCancel () {
+    metadataHandlerCancel() {
       this.metadataFormReset()
       this.showMetadataHandler = false
     },
-    metadataReflesh () {
+    metadataReflesh() {
       this.metadataFormReset()
       this.$refs.BaseData.getMetadata()
       this.showMetadataHandler = false
     },
-    search (value, searchType, type) {
+    search(value, searchType, type) {
       this.isSearch = true
       this.$nextTick(() => {
         this.$refs.search.search(value, searchType, type)
       })
     },
-    onPageSizeChange () {
+    onPageSizeChange() {
       this.search(this.artifactQuery.artifactName, 1)
     },
-    handleTableChange (pagination, filters, sorter) {
+    handleTableChange(pagination, filters, sorter) {
       this.artifactQuery.sortField = null
       this.artifactQuery.sortOrder = null
-      if (pagination)
-      {
+      if (pagination) {
         this.artifactQuery.page = pagination.current
       }
-      if (sorter)
-      {
+      if (sorter) {
         this.artifactQuery.sortField = sorter.field
-        if (sorter.order)
-        {
+        if (sorter.order) {
           this.artifactQuery.sortOrder = 'asc'
-          if (sorter.order.indexOf('desc') !== -1)
-          {
+          if (sorter.order.indexOf('desc') !== -1) {
             this.artifactQuery.sortOrder = 'desc'
           }
         }
       }
       this.search(this.artifactQuery.artifactName)
     },
-    dateChange (value, dateString) {
-      if (dateString)
-      {
+    dateChange(value, dateString) {
+      if (dateString) {
         this.artifactQuery.beginDate = dateString[0]
         this.artifactQuery.endDate = dateString[1]
         if (
           this.artifactQuery.beginDate === '' &&
           this.artifactQuery.endDate === ''
-        )
-        {
+        ) {
           this.dateConfirm()
         }
       }
     },
-    dateConfirm () {
+    dateConfirm() {
       this.search(this.artifactQuery.artifactName, 1)
     },
-    openDetial () {
+    openDetial() {
       this.$emit('openDetial', this.scanReport)
     },
-    highlighterHandle (code) {
+    highlighterHandle(code) {
       return highlight(code, languages.js) //returns html
     },
-    fileSizeConver (size) {
-      if (size)
-      {
+    fileSizeConver(size) {
+      if (size) {
         return fileSizeConver(size)
       }
     },
     isAdmin() {
       return isAdmin()
     },
-    queryStorageAndRepositoryPermission () {
+    handlerPermission () {
+      this.deleteEnabled = false
+      let storageId = null,repositoryId = null,artifactPath = null
+      if (this.currentFileDetial && this.currentFileDetial.artifact) {
+        //制品
+        let artifact = this.currentFileDetial.artifact
+        storageId = artifact.storageId
+        repositoryId = artifact.repositoryId
+        artifactPath = artifact.artifactPath
+      } else  if (this.currentTreeNode && this.currentTreeNode.artifactPath) {
+        //目录
+        storageId = this.currentTreeNode.storageId,
+        repositoryId = this.currentTreeNode.repositoryId,
+        artifactPath = this.currentTreeNode.artifactPath
+      }
+      if (!storageId || !repositoryId || !artifactPath) {
+        return false
+      }
+      let permissions = []
+      getArtifactPermission(
+        storageId,
+        repositoryId,
+        artifactPath
+      ).then(res => {
+        permissions = res
+        this.deleteEnabled =
+          this.folibRepository.type !== 'group' &&
+          (hasRole('ARTIFACTS_MANAGER') ||
+          permissions.includes('ARTIFACTS_DELETE'))
+      })
+    },
+    queryStorageAndRepositoryPermission() {
       this.storageAdmin = ""
       this.permissions = []
       getStorageAndRepositoryPermission(
@@ -2140,7 +2650,7 @@ export default {
         this.uploadEnabled =
           this.folibRepository.status.indexOf('Out of Service') === -1 &&
           this.enablUploadedLayout.includes(this.folibRepository.layout) &&
-          this.folibRepository.type === 'hosted' &&
+          (this.folibRepository.type === 'hosted' || (this.folibRepository.type === 'group' && this.folibRepository.groupDefaultRepository)) &&
           (hasRole('ARTIFACTS_MANAGER') ||
             this.permissions.includes('ARTIFACTS_DEPLOY'))
         this.copyEnabled =
@@ -2153,18 +2663,11 @@ export default {
           this.folibRepository.type === 'hosted' &&
           (hasRole('ARTIFACTS_MANAGER') ||
             this.permissions.includes('ARTIFACTS_MOVE'))
-        this.deleteEnabled =
-          this.folibRepository.type !== 'group' &&
-          (hasRole('ARTIFACTS_MANAGER') ||
-            this.permissions.includes('ARTIFACTS_DELETE'))
-
       })
-
     },
-    getRepositoryUrl () {
+    getRepositoryUrl() {
       let repositoryUrl = ''
-      if (this.baseUrl)
-      {
+      if (this.baseUrl) {
         repositoryUrl =
           this.baseUrl +
           'storages/' +
@@ -2183,18 +2686,16 @@ export default {
       }
       return repositoryUrl
     },
-    handleMavenUpload () {
+    handleMavenUpload() {
       this.mavenUploadVisible = true
     },
-    mavenUploadClose () {
+    mavenUploadClose() {
       this.mavenUploadVisible = false
     },
-    uploadTypeChange (element) {
-      if (element.target.value === 1)
-      {
+    uploadTypeChange(element) {
+      if (element.target.value === 1) {
         this.uploadType = 1
-      } else if (element.target.value === 2)
-      {
+      } else if (element.target.value === 2) {
         this.uploadType = 2
       }
     },
@@ -2209,14 +2710,14 @@ export default {
       getExternalNodeRepositories(params).then(res => {
         if (res) {
           res.forEach(node => {
-            let json = {key: node.key, artifactoryRepositoryType: '', children: [], }
+            let json = { key: node.key, artifactoryRepositoryType: '', children: [], }
             node.repositories.forEach(repo => {
-              json.children.push({key: repo.key, artifactoryRepositoryType: repo.artifactoryRepositoryType, children: null})
+              json.children.push({ key: repo.key, artifactoryRepositoryType: repo.artifactoryRepositoryType, children: null })
             })
             this.externalNodeRepositories.push(json)
           })
         }
-      }).finally(() => { 
+      }).finally(() => {
       })
     },
     typeChange(event) {
@@ -2224,7 +2725,281 @@ export default {
       this.operationForm.setFieldsValue({
         targetRepositories: [],
       })
-    }
+    },
+    handleDebianUpload() {
+      this.$refs.debianmodal.openModal();
+    },
+    handleDebianBatchUpload() {
+      this.$refs.debianBatchModal.openModal();
+    },
+    onFileChange(event) {
+        //console.log('onFileChange', event)
+        this.selectedFiles = Array.from(event.fileList.map(file => file.originFileObj)); // 将文件存储为数组
+          this.selectedFiles.forEach((file, index) => {
+              this.totalChunks[index] = Math.ceil(file.size / this.chunkSize);
+              this.fileIds[index] = this.generateFileId(file);// 根据文件生成唯一ID
+              this.uploadProgresses[index] = 0; // 初始化进度
+              this.currentChunks[index] = 0; // 初始化当前分片
+              //this.fileMD5s[index] = ''; // 初始化文件 MD5
+              //this.md5Progresses[index] = 0; // 初始化 MD5 计算进度
+              //this.calculateMD5(file, index); // 计算文件 MD5
+          });
+        // 开始计算 MD5
+        this.calculateFilesMD5();
+        // 计算所有文件的总大小
+        this.totalUploadSize = this.selectedFiles.reduce((sum, file) => sum + file.size, 0);
+    },
+
+      // 计算多个文件的 MD5 值
+      async calculateFilesMD5() {
+          this.md5CalculationComplete = false; // 标记 MD5 计算为未完成
+          this.md5Progresses = new Array(this.selectedFiles.length).fill(0); // 初始化进度为 0
+          //console.log("md5Progresses:",this.md5Progresses)
+          const md5Promises = this.selectedFiles.map((file, index) => this.calculateMD5(file, index));
+
+          // 使用 Promise.all 等待所有文件的 MD5 计算完成
+          await Promise.all(md5Promises);
+          // 所有 MD5 计算完成，启用上传按钮
+          this.md5CalculationComplete = true;
+
+      },
+
+      /**
+       * 计算每个文件的 MD5 值
+       * @param file
+       * @param index
+       * @returns {Promise<unknown>}
+       */
+      calculateMD5(file, index) {
+          return new Promise((resolve) => {
+              const chunkSize = 2 * 1024 * 1024; // 每次读取2MB
+              const chunks = Math.ceil(file.size / chunkSize);
+              let currentChunk = 0;
+              const spark = new SparkMD5.ArrayBuffer();
+              const fileReader = new FileReader();
+
+              fileReader.onload = (e) => {
+                  spark.append(e.target.result); // 添加数据到 SparkMD5
+                  currentChunk++;
+
+                  if (currentChunk < chunks) {
+                      this.md5Progresses[index] = Math.floor((currentChunk / chunks) * 100); // 更新 MD5 计算进度
+                      loadNext();
+                  } else {
+                      this.fileMD5s[index] = spark.end(); // 计算最终的 MD5
+                      this.md5Progresses[index] = 100;
+                      resolve()
+                  }
+              };
+
+              fileReader.onerror = () => {
+                  console.error('文件读取错误');
+                  resolve()
+              };
+
+              const loadNext = () => {
+                  const start = currentChunk * chunkSize;
+                  const end = Math.min(start + chunkSize, file.size);
+                  fileReader.readAsArrayBuffer(file.slice(start, end));
+              };
+
+              loadNext(); // 开始读取第一个分片
+          });
+      },
+      generateFileId(file) {
+          return `${file.name}-${file.size}-${file.lastModified}`;
+      },
+
+      /**
+       * 上传文件
+       * @param path 路径
+       * @param isUnzip 是否解压
+       * @param fileMetaDataMap 文件元数据
+       * @param imageTag 镜像tag
+       * @param fileType 文件类型 （业务类型）
+       * @returns {Promise<void>}
+       */
+      async uploadFiles(path,isUnzip,fileMetaDataMap,imageTag,fileType) {
+          this.isUploading = true;
+          this.paused = false;
+          this.currentFileIndex = 0; // 重置当前上传文件的索引
+          this.uploadedSize = 0; // 重置已上传的大小
+          await this.uploadNextFile(path,isUnzip,fileMetaDataMap,imageTag,fileType); // 开始上传文件
+      },
+      /**
+       * 上传下一个文件
+       * @param path 路径
+       * @param isUnzip 是否解压
+       * @param fileMetaDataMap 文件元数据
+       * @param imageTag 镜像tag
+       * @param fileType 文件类型 （业务类型）
+       * @returns {Promise<void>}
+       */
+      async uploadNextFile(path,isUnzip,fileMetaDataMap,imageTag,fileType) {
+          // 当有文件未上传时，继续上传下一个文件
+          if (this.currentFileIndex < this.selectedFiles.length) {
+              const file = this.selectedFiles[this.currentFileIndex];
+              await this.uploadFile(file, this.currentFileIndex,path,isUnzip,fileMetaDataMap,imageTag,fileType);
+              this.currentFileIndex++; // 文件上传完成后处理下一个文件
+              this.uploadNextFile(path,isUnzip,fileMetaDataMap,imageTag,fileType); // 递归上传下一个文件
+          } else {
+              this.isUploading = false; // 所有文件上传完成
+          }
+      },
+      /**
+       * 上传文件
+       * @param file 文件对象
+       * @param fileIndex 文件索引
+       * @param path 路径
+       * @param isUnzip 是否解压
+       * @param fileMetaDataMap 文件元数据
+       * @param imageTag 镜像tag
+       * @param fileType 文件类型 （业务类型）
+       * @returns {Promise<void>}
+       */
+      async uploadFile(file, fileIndex,path,isUnzip,fileMetaDataMap,imageTag,fileType) {
+          const promises = [];
+          for (this.currentChunks[fileIndex]; this.currentChunks[fileIndex] < this.totalChunks[fileIndex]; this.currentChunks[fileIndex]++) {
+              if (this.paused) break;
+              if (this.activeUploads >= this.maxConcurrency) {
+                  await Promise.race(promises); // 等待至少一个上传完成
+              }
+              promises.push(this.uploadSingleChunk(file, fileIndex, this.currentChunks[fileIndex],path,isUnzip,fileMetaDataMap,imageTag,fileType));
+          }
+
+          await Promise.all(promises); // 等待所有分片上传完成
+      },
+
+      /**
+       * 上传单个分片
+       * @param file 文件
+       * @param fileIndex 文件索引
+       * @param chunkIndex 切片索引
+       * @param path 路径
+       * @param isUnzip 是否解压
+       * @param fileMetaDataMap 文件元数据
+       * @param imageTag 镜像tag
+       * @param fileType 文件类型 （业务类型）
+       * @returns {Promise<unknown>}
+       */
+      uploadSingleChunk(file, fileIndex, chunkIndex, path,isUnzip,fileMetaDataMap,imageTag,fileType) {
+          return new Promise(async (resolve, reject) => {
+              this.activeUploads++;
+              const start = chunkIndex * this.chunkSize;
+              const end = Math.min(start + this.chunkSize, file.size);
+              const chunk = file.slice(start, end);
+              const chunkSize = end - start;
+              const chunkMD5 = SparkMD5.ArrayBuffer.hash(chunk);
+              const formData = new FormData();
+              formData.append('file', chunk, file.name);
+              formData.append('fileName', file.name);
+              formData.append('fileId', this.fileIds[fileIndex]);
+              formData.append('storageId', this.folibRepository.storageId);
+              formData.append('repositoryId', this.folibRepository.id);
+              formData.append('path', path);
+              formData.append('totalChunks', this.totalChunks[fileIndex]);
+              formData.append('currentChunk', chunkIndex + 1);
+              formData.append('currentChunkSize', chunk.size); // 添加当前分片大小
+              formData.append('chunkSize', chunkSize);
+              formData.append('chunkMD5', chunkMD5);
+              formData.append('fileMd5', this.fileMD5s[fileIndex]);
+              formData.append("originalFilename",file.name)
+              formData.append('isUnzip', isUnzip);
+              formData.append('fileMetaDataMap', fileMetaDataMap);
+              formData.append('imageTag', imageTag ? imageTag:'');
+              formData.append('fileType', fileType);
+              // 发送请求
+              try {
+                  await this.uploadChunk(formData, fileIndex, chunkIndex,chunkSize);
+                  this.progressStatus='active';
+                  resolve();
+              } catch (error) {
+                  reject(error);
+                  this.progressStatus = 'exception';
+                  this.$notification['error']({
+                      message: this.$t('Store.UploadFailed'),
+                      description: ''
+                  })
+              } finally {
+                  this.activeUploads--;
+              }
+          });
+      },
+      uploadChunk(formData, fileIndex, chunkIndex,chunkSize) {
+          return new Promise((resolve, reject) => {
+              const xhr = new XMLHttpRequest();
+              xhr.open('POST', '/api/artifact/folib/promotion/slice/upload-web');
+              const token = storage.get(ACCESS_TOKEN) ? storage.get(ACCESS_TOKEN) : Cookies.get("access_token");
+              xhr.setRequestHeader('Authorization', 'Bearer '+token);
+              xhr.upload.onprogress = (event) => {
+                  if (event.lengthComputable) {
+                      this.isClose = true;
+                      this.uploadProgresses[fileIndex] = Math.floor(
+                          ((chunkIndex + event.loaded / event.total) / this.totalChunks[fileIndex]) * 100
+                      );
+
+                      //const uploadedChunkSize = event.loaded / event.total * chunkSize;
+                      //console.log("totalChunks:", this.totalChunks[fileIndex],"event.loaded:",event.loaded,"event.total:",event.total,"uploadedChunkSize:",uploadedChunkSize)
+                      //this.updateTotalProgress(uploadedChunkSize);
+                  }
+              };
+              xhr.onload = () => {
+
+                  if (xhr.status === 200) {
+                      this.updateTotalProgress(chunkSize); // 上传完成时更新总进度
+                      resolve();
+                  } else {
+                      this.progressStatus = 'exception'
+                      //console.log('upload status:',xhr.status,'xhr.responseText:',xhr.responseText,"xhr.statusText",xhr.statusText)
+                      reject(xhr.responseText);
+
+                  }
+              };
+              xhr.onerror = () => reject('上传失败');
+              xhr.send(formData);
+          });
+      },
+      updateTotalProgress(uploadedChunkSize) {
+          // 更新已上传的总大小
+          this.uploadedSize += uploadedChunkSize;
+          // 更新总的上传进度百分比
+          this.totalUploadProgress = Math.floor((this.uploadedSize / this.totalUploadSize) * 100);
+          if( this.totalUploadProgress ===100){
+              this.progressStatus = 'success';
+          }
+          //console.log("uploadedChunkSize:", uploadedChunkSize,"totalUploadProgress:", this.totalUploadProgress,"totalUploadSize:", this.totalUploadSize,"uploadedSize:", this.uploadedSize)
+      },
+      pauseUpload() {
+          this.paused = true;
+          this.isUploading = false;
+      },
+      resumeUpload() {
+          if (this.paused) {
+              this.isUploading = true;
+              this.paused = false;
+              this.uploadNextFile(); // 恢复文件上传
+          }
+      },
+      onCloseSpeed(){
+        this.isClose = false;
+      },
+      getFormattedUrl(url) {
+        if (!url) return '';
+        // 替换 localhost:38080 为实际的 baseUrl
+        if (url.includes('http://localhost:38080/')) {
+          return url.replace('http://localhost:38080/', this.baseUrl);
+        }
+        return url;
+      },
+     onRightClick(params) {
+       this.showContextMenu = true;
+       this.rightClickTop = `${params.event.clientY}px`;
+       this.rightClickLeft = `${params.event.clientX}px`;
+       this.currentTreeNode = params.node.dataRef;
+     },
+     closeContextMenu() {
+       this.showContextMenu = false;
+     }
   }
 }
 </script>
@@ -2233,11 +3008,48 @@ export default {
   .selectdrop .gb-ant-select-multiple-cascader .cascader-content-wrap .cascader-content-container .cascader-content-list {
     min-width: 280px;
   }
+
   .copy-p {
     display: inline-block;
   }
+
   .repo-address .ant-descriptions-item-label {
     margin-left: 0px !important;
   }
+}
+
+.ellipsis-text {
+  white-space: nowrap;
+  // overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+.ellipsis-link {
+  max-width: calc(100% - 50px);
+  display: inline-block;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  overflow: hidden;
+}
+
+.context-menu {
+  z-index: 1000;
+  background-color: #fff;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+
+  /deep/ .ant-menu-item {
+    margin: 0;
+    height: 35px;
+    line-height: 35px;
+    padding: 0 8px;
+  }
+}
+
+.view-switch {
+  cursor: pointer;
 }
 </style>

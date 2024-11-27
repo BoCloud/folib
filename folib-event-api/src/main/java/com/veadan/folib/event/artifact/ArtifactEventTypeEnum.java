@@ -117,6 +117,15 @@ public enum ArtifactEventTypeEnum {
      * Occurs when an artifact cache operation has need.
      */
     EVENT_ARTIFACT_FILE_CACHE(26),
+
+    /**
+     * Occurs when an artifact promotion operation has completed.
+     */
+    EVENT_ARTIFACT_FILE_PROMOTION(27),
+    /**
+     * Occurs when an artifact dispense operation has completed.
+     */
+    EVENT_ARTIFACT_FILE_DISPENSE(28)
     ;
 
 

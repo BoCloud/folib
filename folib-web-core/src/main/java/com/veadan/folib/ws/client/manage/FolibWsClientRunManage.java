@@ -1,5 +1,6 @@
 package com.veadan.folib.ws.client.manage;
 
+import cn.hutool.core.util.StrUtil;
 import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.ws.client.handler.FolibWsClientMessageHandler;
 import com.veadan.folib.ws.common.FolibWsAction;
@@ -11,6 +12,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.socket.PingMessage;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -30,6 +32,7 @@ import java.util.concurrent.TimeUnit;
  * @since x.x.x
  */
 @Slf4j
+@Deprecated
 public class FolibWsClientRunManage extends FolibWsRunManage {
     private static final Map<String, FolibWsServerRun> FOLIB_WS_RUN_MAP = new ConcurrentHashMap<>();
     public static final JettyWebSocketClient WEB_SOCKET_CLIENT = new JettyWebSocketClient();
@@ -43,6 +46,10 @@ public class FolibWsClientRunManage extends FolibWsRunManage {
     }
 
     public static boolean up(String nodeName, String host, Integer port, String uri, boolean forceUp) {
+        return up(nodeName, host, port, uri, forceUp, false);
+    }
+
+    public static boolean up(String nodeName, String host, Integer port, String uri, boolean forceUp, boolean enableSSL) {
         try {
             FolibWsServerRun folibWsServerRun = FOLIB_WS_RUN_MAP.get(nodeName);
             if (forceUp) {
@@ -64,12 +71,15 @@ public class FolibWsClientRunManage extends FolibWsRunManage {
             folibWsServerRun.setPort(port);
             folibWsServerRun.setUri(uri);
             folibWsServerRun.setForceUp(forceUp);
+            folibWsServerRun.setEnableSSL(enableSSL);
             FOLIB_WS_RUN_MAP.put(nodeName, folibWsServerRun);
             final String url = folibWsServerRun.getWsUrl();
             final WebSocketSession webSocketSession = WEB_SOCKET_CLIENT.doHandshake(new FolibWsClientMessageHandler(), url).get();
             log.info("【FolibWs服务端运行管理器-启动】连接到节点（{}:{}）成功", host, port);
             folibWsServerRun.setSession(webSocketSession);
             folibWsServerRun.setOnlineTime(LocalDateTime.now());
+            webSocketSession.sendMessage(new PingMessage());
+//            FOLIB_WS_RUN_MAP.put(nodeName, folibWsServerRun);
 
             return true;
         } catch (Exception e) {
@@ -152,13 +162,31 @@ public class FolibWsClientRunManage extends FolibWsRunManage {
         private String uri;
         @ApiModelProperty(value = "强制启动")
         private boolean forceUp;
+        @ApiModelProperty(value = "启用SSL")
+        private boolean enableSSL;
         @ApiModelProperty(value = "Ws服务端会话")
         private WebSocketSession session;
         @ApiModelProperty(value = "上线时间")
         private LocalDateTime onlineTime;
 
         public String getWsUrl() {
-            return String.format("ws://%s:%s%s", this.host, this.port, this.uri);
+            return String.format("ws%s://%s:%s%s", (this.enableSSL ? "s" : StrUtil.EMPTY), this.host, this.port, this.uri);
+        }
+
+        public boolean getSessionStatus() {
+            return null != this.session && this.session.isOpen();
+        }
+
+        public boolean ping() {
+            try {
+                if (this.getSessionStatus()) {
+                    this.session.sendMessage(new PingMessage());
+                    return true;
+                }
+                return false;
+            } catch (Exception e) {
+                return false;
+            }
         }
 
         public boolean doAction(FolibWsAction folibWsAction) {

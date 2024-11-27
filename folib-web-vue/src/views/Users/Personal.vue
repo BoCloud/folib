@@ -29,7 +29,7 @@
         <!-- personal Info card -->
         <a-card :bordered="false" id="personal" class="header-solid mb-24">
           <template #title>
-            <h5 class="mb-0 font-semibold">个人信息</h5>
+            <h5 class="mb-0 font-semibold">{{ $t('Users.PersonalInformation') }}</h5>
           </template>
           <a-form-model
             ref="personalForm"
@@ -49,17 +49,17 @@
               <a-col :span="24" :md="20">
                 <a-row :gutter="[24]">
                   <a-col :span="24" :md="8">
-                    <a-form-model-item class="mb-10" label="用户名" :colon="false" prop="username">
-                      <a-input v-model="personalForm.username" :disabled="true" placeholder="请输入用户名" />
+                    <a-form-model-item class="mb-10" :label="$t('Users.UserName')" :colon="false" prop="username">
+                      <a-input v-model="personalForm.username" :disabled="true" :placeholder="$t('Users.EnterYourUsername')" />
                     </a-form-model-item>
-                    <a-form-model-item class="mb-10" label="邮箱" :colon="false">
-                      <a-input v-model="personalForm.email" placeholder="请输入邮箱" />
+                    <a-form-model-item class="mb-10" :label="$t('Users.Email')" :colon="false">
+                      <a-input v-model="personalForm.email" :placeholder="$t('Users.EnterEmail')" />
                     </a-form-model-item>
-                    <a-form-model-item class="mb-10" label="新密码" :colon="false" prop="password">
-                      <a-input-password autocomplete="new-password" v-model="personalForm.password" placeholder="请输入新密码" />
+                    <a-form-model-item class="mb-10" :label="$t('Users.NewPassword')" :colon="false" prop="password">
+                      <a-input-password autocomplete="new-password" v-model="personalForm.password" :placeholder="$t('Users.EnterNewPassword')"  :disabled="!passwordUpdateEnable && personalForm.username != 'admin'"/>
                     </a-form-model-item>
-                    <a-form-model-item class="mb-10" label="再次输入新密码" :colon="false" prop="againPassword">
-                      <a-input-password autocomplete="new-password" v-model="personalForm.againPassword" placeholder="请再次输入新密码" />
+                    <a-form-model-item class="mb-10" :label="$t('Users.EnterYourNewPasswordAgain')" :colon="false" prop="againPassword">
+                      <a-input-password autocomplete="new-password" v-model="personalForm.againPassword" :placeholder="$t('Users.EnterNewPasswordAgain')" :disabled="!passwordUpdateEnable && personalForm.username != 'admin'"/>
                     </a-form-model-item>
                   </a-col>
                 </a-row>
@@ -67,10 +67,10 @@
             </a-row>
             <a-form-model-item :wrapper-col="{ span: 14, offset: 6 }">
               <a-button type="primary" @click="personalFormSubmit">
-                保存
+                {{ $t('Users.Save') }}
               </a-button>
               <a-button class="ml-10" @click="personalResetForm">
-                取消
+                {{ $t('Users.Cancel') }}
               </a-button>
             </a-form-model-item>
           </a-form-model>
@@ -129,10 +129,13 @@ import {
 } from "@/api/login"
 import AvatarSelector from "@/components/AvatarSelector/AvatarSelector.vue"
 import { encrypt } from "@/utils/jsencrypt"
+import {
+  getSingleDict,
+} from "@/api/advanced"
 
 export default {
   inject: ["reload"],
-  props: { 
+  props: {
     navbarFixed: {
 			type: Boolean,
 			default: false,
@@ -141,12 +144,16 @@ export default {
   data() {
     const checkPassword = (rule, value, callback) => {
       if (value && value.length > 0) {
-        var reg = /(?!^(\d+|[a-zA-Z]+|[~!@#$%^&*()_.]+)$)^[\w~!@#$%^&*()_.]{8,16}$/
+        var reg = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[~!@#$%^&*()_.])[A-Za-z\d~!@#$%^&*()_.]{12,30}$|^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.{12,30}$)|^(?=.*[a-z])(?=.*[A-Z])(?=.*[~!@#$%^&*()_.])(?=.{12,30}$)|^(?=.*[a-z])(?=.*\d)(?=.*[~!@#$%^&*()_.])(?=.{12,30}$)|^(?=.*[A-Z])(?=.*\d)(?=.*[~!@#$%^&*()_.])(?=.{12,30}$)/
         if (reg.test(value) === false) {
-          callback(new Error('密码应为字母，数字，特殊符号(~!@#$%^&*()_.)，两种及以上组合，8-16位字符串，如：zs666@abc'))
+          callback(new Error(this.$t('Users.PasswordFormat')))
+        } else if (value.length < 12 || value.length > 30) {
+          callback(new Error(this.$('PasswordLength')))
         } else {
           callback()
         }
+      } else if (!value) {
+        callback()
       } else {
         callback()
       }
@@ -154,20 +161,31 @@ export default {
     const pwdAgainCheck1 = (rule, value, callback) => {
       if (value || this.personalForm.password) {
         if(this.personalForm.password != this.personalForm.againPassword) {
-          callback(new Error('两次输入密码不一致！'))
+          callback(new Error(this.$t('Users.TwoDifferentPasswordInputs')))
         } else {
           callback()
         }
+      } if (!value) {
+        callback()
       } else{
         callback()
       }
     }
     const pwdAgainCheck = (rule, value, callback) => {
       if (value.length < 1) {
-        callback(new Error('重复密码不能为空！'))
-      } else if(this.passwordForm.password != this.passwordForm.againPassword){
-        callback(new Error('两次输入密码不一致！'))
-      }else{
+        callback(new Error(this.$t('Users.DuplicatePasswordsCannotBeEmpty')))
+      } else if (this.passwordForm.password != this.passwordForm.againPassword){
+        callback(new Error(this.$t('Users.TwoDifferentPasswordInputs')))
+      } else if (!value) {
+        callback()
+      } else{
+        callback()
+      }
+    }
+    const checkUsername = (rule, value, callback) => {
+      if (!value) {
+        callback(new Error(this.$t('Users.EnterYourUsername')))
+      } else {
         callback()
       }
     }
@@ -186,30 +204,25 @@ export default {
       },
       personalRules: {
         username: [
-          {required: true, message: "请输入用户名", trigger: ['blur']}
+          {required: true, trigger: ['blur'], validator: checkUsername}
         ],
         password: [
-          { required: false, message: '请输入新密码', trigger: 'blur' },
-          { min: 8, max: 16, message: '长度在 8 到 16 个字符', trigger: 'blur' },
           { required: false, trigger: 'blur', validator: checkPassword }
         ],
         againPassword: [
-          { required: false, message: '请再次输入新密码', trigger: 'blur' },
           {required: false, trigger: ['blur'], validator: pwdAgainCheck1 }
         ]
       },
       passwordRules: {
         password: [
-          { required: true, message: '请输入新密码', trigger: 'blur' },
-          { min: 8, max: 16, message: '长度在 8 到 16 个字符', trigger: 'blur' },
           { required: true, trigger: 'blur', validator: checkPassword }
         ],
         againPassword: [
-          { required: true, message: '请再次输入新密码', trigger: 'blur' },
           {required: true, trigger: ['blur'], validator: pwdAgainCheck }
         ]
       },
-      showAvatarSelector: false
+      showAvatarSelector: false,
+      passwordUpdateEnable: true,
     }
   },
   components: {
@@ -223,6 +236,7 @@ export default {
   mounted() {},
   methods: {
     initData () {
+      this.getPasswordUpdateEnable()
       this.personalForm.username = this.$store.state.user.name
       this.personalForm.email = this.$store.state.user.email
       this.personalForm.avatar = this.$store.state.user.avatar
@@ -236,7 +250,7 @@ export default {
     },
     successMsg(message) {
       if (!message) {
-        message = "操作成功";
+        message = this.$t('Users.OperateSuccess');
       }
       this.$notification["success"]({
         message: message,
@@ -260,27 +274,27 @@ export default {
             username: this.personalForm.username,
             email: this.personalForm.email,
             avatar: this.personalForm.avatar,
-            password: encrypt(this.personalForm.password)
+            password: this.personalForm.password?encrypt(this.personalForm.password): null
           }
           updateUser(user).then(res => {
             if (user.password) {
-              this.successMsg("个人信息及密码更新成功，请重新登录")
+              this.successMsg(this.$t('Users.LogInAgain'))
               setTimeout(() => {
                 this.$store.dispatch('Logout').then(() => {
                   window.location.reload()
                 })
               }, 500)
             } else {
-              this.successMsg("个人信息更新成功")
+              this.successMsg(this.$t('Users.InformationUpdated'))
             }
             this.getUserInfo()
           }).catch((err) => {
             this.$notification["error"]({
-              message: "更新个人信息失败",
+              message: this.$t('Users.FailedUpdateInformation'),
               description: ""
             })
           }).finally(() => {
-            
+
           })
         }
       })
@@ -298,7 +312,7 @@ export default {
           }
           user.password = encrypt(user.password)
           updateUser(user).then(res => {
-            this.successMsg("密码更新成功，请重新登录")
+            this.successMsg(this.$t('Users.PasswordUpdateSuccess'))
             setTimeout(() => {
               this.$store.dispatch('Logout').then(() => {
                 window.location.reload()
@@ -306,11 +320,11 @@ export default {
             }, 500)
           }).catch((err) => {
             this.$notification["error"]({
-              message: "密码更新失败",
+              message: this.$t('Users.PasswordUpdateFailed'),
               description: ""
             })
           }).finally(() => {
-            
+
           })
         }
       })
@@ -318,7 +332,14 @@ export default {
     passwordResetForm() {
       this.$refs.passwordForm.resetFields()
       this.initData()
-    }
+    },
+    getPasswordUpdateEnable() {
+      getSingleDict({ dictType: 'system_property', dictKey: 'PASSWORD_UPDATE_ENABLE' }).then(res => {
+        if (res && res.dictValue) {
+          this.passwordUpdateEnable = !(res.dictValue === 'false')
+        }
+      })
+    },
   },
 }
 </script>

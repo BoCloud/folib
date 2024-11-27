@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.io.File;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.Map;
 
 @Data
@@ -17,4 +18,5 @@ public class PromotionNodeOptionDto {
     private String repositoryId;
     private Map<String, Map<String, RepositoryPath>> pathMap;
     private Map<String, Object> fileMetaDataMap;
+    private boolean isRetry;
 }

@@ -71,28 +71,28 @@ public abstract class AbstractCronJob
         }
 
         if (!enabled(configuration, environment)) {
-            logger.info("Cron job [{}] disabled, skip execution.", configuration.getName());
+            logger.info("Cron job [{}] uuid [{}] disabled, skip execution.", configuration.getName(), jobKeyUuid);
 
             return;
         }
 
 
         String lockName = jobKeyUuid.toString();
-        long waitTime = 3L, releaseTime = 8L;
+        long waitTime = 1L, releaseTime = 8L;
         logger.info("Wait for the lock [{}]", lockName);
         if (distributedLockComponent.lock(lockName, waitTime, TimeUnit.SECONDS, releaseTime, TimeUnit.HOURS)) {
             try {
                 logger.info("Locked for [{}]", lockName);
-
-                logger.info("Cron job [{}] enabled, executing.", configuration.getName());
+                long startTime = System.currentTimeMillis();
+                logger.info("Cron job [{}] uuid [{}] enabled, executing.", configuration.getName(), jobKeyUuid);
                 setStatus(CronJobStatusEnum.EXECUTING.getStatus());
                 cronTaskEventListenerRegistry.dispatchCronTaskExecutingEvent(configuration.getUuid());
 
                 try {
                     executeTask(configuration);
-                    logger.info("Cron job task [{}] execution completed.", configuration.getName());
+                    logger.info("Cron job task [{}] uuid [{}] execution completed take time [{}] ms.", configuration.getName(), jobKeyUuid, System.currentTimeMillis() - startTime);
                 } catch (Throwable e) {
-                    logger.error("Failed to execute cron job task [{}].", configuration.getName(), e);
+                    logger.error("Failed to execute cron job task [{}] uuid [{}].", configuration.getName(), jobKeyUuid, e);
                 }
                 manager.addExecutedJob(configuration.getUuid().toString(), true);
 

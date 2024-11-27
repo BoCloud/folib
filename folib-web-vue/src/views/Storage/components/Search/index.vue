@@ -6,7 +6,7 @@
         <div class="mx-25">
           <a-row type="flex" :gutter="24">
             <a-col :span="24" md="12">
-              <label for="" class="ml-10">显示数量</label>
+              <label for="" class="ml-10">{{ $t('Store.DisplayQuantity') }}</label>
               <a-select class="ml-10 mt-10" v-model="artifactQuery.limit" @change="onPageSizeChange" style="width: 70px">
                 <a-select-option :value="5">5</a-select-option>
                 <a-select-option :value="10">10</a-select-option>
@@ -15,8 +15,8 @@
                 <a-select-option :value="25">25</a-select-option>
               </a-select>
               <a-config-provider class="ml-10 mt-10" :locale="locale" style="width: 290px">
-                <a-range-picker :show-time="{ placeholder: '选择时间', format: 'HH:mm' }" format="YYYY-MM-DD HH:mm"
-                  :placeholder="['开始日期', '结束日期']" @change="dateChange" @ok="dateConfirm" />
+                <a-range-picker :show-time="{ placeholder: $t('Store.SelectDate'), format: 'HH:mm' }" format="YYYY-MM-DD HH:mm"
+                  :placeholder="[$t('Store.StartDate'), $t('Store.EndDate')]" @change="dateChange" @ok="dateConfirm" />
               </a-config-provider>
             </a-col>
             <a-col :span="24" md="12"> </a-col>
@@ -32,10 +32,10 @@
                 color: '#BFBFBFFF',
               }" @click="goBack()" />
             </a>
-            <span style="vertical-align: super;">搜索列表</span>
+            <span style="vertical-align: super;">{{ $t('Store.SearchList') }}</span>
           </h6>
         </template>
-        <a-table class="mt-20" :columns="columns" rowKey="url" :data-source="searchData" :scroll="{ x: true }" @change="handleTableChange"
+        <a-table class="mt-20" :columns="i18nColumns" rowKey="url" :data-source="searchData" :scroll="{ x: true }" @change="handleTableChange"
           :loading="loading" :pagination="{
             pageSize: artifactQuery.limit,
             current: artifactQuery.page,
@@ -63,7 +63,7 @@
       </a-card>
     </a-col>
 
-    <a-drawer placement="right" width="65%" title="制品详情" :visible="artifactVisible" @close="artifactVisible = false"
+    <a-drawer placement="right" width="65%" :title="$t('Store.ProductDetails')" :visible="artifactVisible" @close="artifactVisible = false"
       :zIndex="100">
       <a-card :bordered="false" class="header-solid h-full card-profile-information"
         :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }" :headStyle="{ paddingRight: 0 }">
@@ -84,7 +84,7 @@
               <a-space :size="1" class="avatar-chips">
                 <template v-if="scanReport.vulnerabilitesCount > 0">
                   <a-tooltip>
-                    <template slot="title">严重</template>
+                    <template slot="title">{{ $t('Store.Seriousness') }}</template>
                     <div class="">
                       <a-avatar :size="24" :src="'images/folib/critical.svg'" />
                       <span class="mb-0 text-dark">{{
@@ -94,7 +94,7 @@
                   </a-tooltip>
 
                   <a-tooltip>
-                    <template slot="title">高危</template>
+                    <template slot="title">{{ $t('Store.HighRisk') }}</template>
                     <div class="">
                       <a-avatar :size="24" :src="'images/folib/high.svg'" />
                       <span class="mb-0 text-dark">{{ scanReport.high }}</span>
@@ -102,7 +102,7 @@
                   </a-tooltip>
 
                   <a-tooltip>
-                    <template slot="title">中危</template>
+                    <template slot="title">{{ $t('Store.MediumRisk') }}</template>
                     <div class="">
                       <a-avatar :size="24" :src="'images/folib/medium.svg'" />
                       <span class="mb-0 text-dark">{{
@@ -112,7 +112,7 @@
                   </a-tooltip>
 
                   <a-tooltip>
-                    <template slot="title">低危</template>
+                    <template slot="title">{{ $t('Store.LowRisk') }}</template>
                     <div class="">
                       <a-avatar :size="24" :src="'images/folib/low.svg'" />
                       <span class="mb-0 text-dark">{{ scanReport.low }}</span>
@@ -121,7 +121,7 @@
                 </template>
                 <template v-else>
                   <a-tooltip>
-                    <template slot="title">健康</template>
+                    <template slot="title">{{ $t('Store.Health') }}</template>
                     <a-avatar :size="24" :src="'images/folib/healthy.svg'" />
                   </a-tooltip>
                 </template>
@@ -130,7 +130,7 @@
           </h6>
         </template>
         <a-button type="link" slot="extra" @click="searchViewCodeHandle()">
-          预览
+          {{ $t('Store.Preview') }}
           <a-icon :size="24" shape="square" type="eye"></a-icon>
         </a-button>
         <a class="text-dark" v-if="searchDataCurrentSelect.layout !== 'Docker'" :href="searchDataCurrentSelect ? searchDataCurrentSelect.url : ''" target="_blank">{{
@@ -167,7 +167,7 @@
                 </a-timeline-item>
               </a-timeline>
             </a-tab-pane>
-            <a-tab-pane key="2" tab="制作历史">
+            <a-tab-pane key="2" :tab="$t('Store.ProductionHistory')">
               <a-timeline>
                 <a-timeline-item color="primary" v-for="(key, index) in searchDataCurrentSelectItem.manifestConfig.history" :key="index">
                   {{ formateDate(key.created) }}
@@ -239,6 +239,7 @@ export default {
       artifactQuery: {
         artifactName: null,
         metadataSearch: null,
+        digest: null,
         storageId: null,
         repositoryId: null,
         limit: 5,
@@ -268,6 +269,16 @@ export default {
       reportVisible: false,
     }
   },
+  computed: {
+    i18nColumns() {
+      return this.columns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    },
+  },
   created() {
 
   },
@@ -275,7 +286,7 @@ export default {
   methods: {
     message(type, message) {
       if (!message) {
-        message = "操作成功"
+        message = this.$t('Store.OperationSuccess')
       }
       this.$notification[type]({
         message: message,
@@ -398,9 +409,15 @@ export default {
         if (this.searchType === 1) {
           this.artifactQuery.artifactName = searchValue
           this.artifactQuery.metadataSearch = null
+          this.artifactQuery.digest = null
         } else if (this.searchType === 2) {
           this.artifactQuery.metadataSearch = searchValue
           this.artifactQuery.artifactName = null
+          this.artifactQuery.digest = null
+        } else if (this.searchType === 3) {
+          this.artifactQuery.digest = searchValue
+          this.artifactQuery.artifactName = null
+          this.artifactQuery.metadataSearch = null
         }
       }
       this.artifactQuery.storageId = this.folibRepository.storageId
@@ -408,6 +425,7 @@ export default {
       let params = {
         artifactName: this.artifactQuery.artifactName,
         metadataSearch: this.artifactQuery.metadataSearch,
+        digest: this.artifactQuery.digest,
         storageId: this.artifactQuery.storageId,
         repositoryId: this.artifactQuery.repositoryId,
         limit: this.artifactQuery.limit,
@@ -440,7 +458,7 @@ export default {
               } else {
                 let len = this.searchDataCurrentSelectItem.artifact.sizeInBytes
                 if (len && len > 1048576) {
-                  this.searchViewCodes = '该制品无法预览'
+                  this.searchViewCodes = this.$t('Store.CannotPreview')
                 } else{
                   this.viewArtifactFile()
                 }
@@ -464,7 +482,7 @@ export default {
           if ('string' === typeof res.data)
           {
             if (res.data.startsWith('PK')) {
-              this.searchViewCodes = '该制品无法预览'
+              this.searchViewCodes = this.$t('Store.CannotPreview')
             } else {
               this.searchViewCodes = res.data
             }

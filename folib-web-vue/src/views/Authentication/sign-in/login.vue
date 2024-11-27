@@ -1,5 +1,5 @@
-<!-- 
-	This is the illustration sign up page, it uses the dashboard layout in: 
+<!--
+	This is the illustration sign up page, it uses the dashboard layout in:
 	"./layouts/Default.vue" .
  -->
 
@@ -11,37 +11,37 @@
 			<!-- Sign in Form Column -->
 			<a-col :span="24" :md="{ span: 14, offset: 2 }" :lg="10" :xl="6" class="col-form mr-auto">
 
-				<h4 class="mb-15">登录</h4>
-				<p class="text-muted">使用用户名和密码进行登录操作</p>
+				<h4 class="mb-15">{{ $t('Authentication.Login') }}</h4>
+				<p class="text-muted">{{ $t('Authentication.UsingUsernamePasswordLogin') }}</p>
 
 				<a-tabs
 					:default-active-key="1"
 					:activeKey="loginTypeActiveKey"
 					@change="loginTypeChange($event)"
 				>
-					<a-tab-pane :key="1" tab="本地认证">
+					<a-tab-pane :key="1" :tab="$t('Authentication.LocalAuthentication')">
 							<!-- Sign in Form -->
 						<a-form id="components-form-demo-normal-login" :form="form" class="login-form" @submit="handleSubmit"
 							:hideRequiredMark="true">
-							<a-form-item class="mb-10" label="用户名" :colon="false">
+							<a-form-item class="mb-10" :label="$t('Authentication.Username')" :colon="false">
 								<a-input v-decorator="[
 									'username',
-									{ rules: [{ required: true, message: '请输入用户名!' }] },
-								]" placeholder="请输入用户名" />
+									{ rules: [{ required: true, message: $t('Authentication.EnterYourUsername') }] },
+								]" :placeholder="$t('Authentication.EnterYourUsername')" />
 							</a-form-item>
-							<a-form-item class="mb-5" label="密码" :colon="false">
-								<a-input v-decorator="[
+							<a-form-item class="mb-5" :label="$t('Authentication.Password')" :colon="false">
+								<a-input-password v-decorator="[
 									'password',
-									{ rules: [{ required: true, message: '请输入密码!'}] },
-								]" type="password" placeholder="请输入密码" />
+									{ rules: [{ required: true, message: $t('Authentication.EnterThePassword')}] },
+								]" type="password" :placeholder="$t('Authentication.EnterThePassword')" />
 							</a-form-item>
 							<!-- <a-form-item class="mb-10">
 								<a-checkbox v-decorator="[
 									'remember',
-									{ 	
+									{
 										rules: [{ required: true, message: '请勾选同意本协议'},{validator: checkRemember }],
 										valuePropName: 'checked',
-										initialValue: true, 
+										initialValue: true,
 									},
 								]">
 									保存密码 <a href="#" class="font-bold text-dark">同意本协议</a>
@@ -49,30 +49,30 @@
 							</a-form-item> -->
 							<a-form-item>
 								<a-button type="primary" block html-type="submit" class="login-form-button">
-									登录
+                  {{ $t('Authentication.Login') }}
 								</a-button>
 							</a-form-item>
 						</a-form>
 					<!-- / Sign Up Form -->
 					</a-tab-pane>
-					<a-tab-pane :key="2" tab="LDAP认证">
+					<a-tab-pane :key="2" :tab="'LDAP' + $t('Authentication.Authentication')">
 						<a-form id="components-form-demo-normal-login" :form="form" class="login-form" @submit="handleSubmit"
 							:hideRequiredMark="true">
-							<a-form-item class="mb-10" label="LDAP用户名" :colon="false">
+							<a-form-item class="mb-10" :label="'LDAP' + $t('Authentication.Username')" :colon="false">
 								<a-input v-decorator="[
 									'username',
-									{ rules: [{ required: true, message: '请输入LDAP用户名!' }] },
-								]" placeholder="请输入LDAP用户名" />
+									{ rules: [{ required: true, message: $t('Authentication.enterLDAPUsername') }] },
+								]" :placeholder="$t('Authentication.enterLDAPUsername')" />
 							</a-form-item>
-							<a-form-item class="mb-5" label="密码" :colon="false">
+							<a-form-item class="mb-5" :label="$t('Authentication.Password')" :colon="false">
 								<a-input v-decorator="[
 									'password',
-									{ rules: [{ required: true, message: '请输入密码!'}] },
-								]" type="password" placeholder="请输入密码" />
+									{ rules: [{ required: true, message: $t('Authentication.EnterThePassword')}] },
+								]" type="password" :placeholder="$t('Authentication.EnterThePassword')" />
 							</a-form-item>
 							<a-form-item>
 								<a-button type="primary" block html-type="submit" class="login-form-button">
-									登录
+                  {{ $t('Authentication.Login') }}
 								</a-button>
 							</a-form-item>
 						</a-form>
@@ -98,7 +98,7 @@
 			<!-- / Sign Up Image Column -->
 
 		</a-row>
-   
+
 
 	</div>
 </template>
@@ -109,6 +109,10 @@ import { encrypt } from "@/utils/jsencrypt"
 import {
   getSsoList,
 } from '@/api/sso'
+import {
+  getConfig,
+} from '@/api/foEyes'
+import {checkMachineCode,getServerName} from "@/api/settings"
 import  Clients  from "../../../components/loginClients/clients";
 export default {
   components:{
@@ -149,13 +153,19 @@ export default {
 						if (res.token != null) {
 							store.dispatch("GetInfo").then((res) => {
 							})
+							getConfig().then((res) => {
+								localStorage.setItem("FOEYES_CONFIG", JSON.stringify(res))
+							})
+							sessionStorage.setItem("identityLevel",'basic')
+							checkMachineCode().then(res=>{
+								sessionStorage.setItem("identityLevel",res.level)
+							})
 						}
-						//
-						this.$router.push({ name: 'storagesHome' })
-						// 延迟 1 秒显示欢迎信息
+						// 延迟显示欢迎信息
 						setTimeout(() => {
+							this.$router.push({ name: 'storagesHome' })
 							this.$notification.success({
-								message: '欢迎',
+								message: this.$t('Authentication.Welcome'),
 							})
 						}, 100)
 					})
@@ -164,7 +174,7 @@ export default {
 		},
 		checkRemember (rule, value, callback) {
 			if (value === false) {
-				callback(new Error('请勾选同意本协议'))
+				callback(new Error(this.$t('Authentication.CheckAgreementProceed')))
 			} else {
 				callback()
 			}

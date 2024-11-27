@@ -2,18 +2,20 @@
   <div id="settings">
     <a-tabs class="tabs-sliding" v-model="activeTab" default-active-key="1" >
 
-      <a-tab-pane key="1" tab="基础监控">
+      <a-tab-pane key="1" :tab="$t('Setting.BaseMonitoring')">
       <base-data  :activeTab="activeTab"/>
       </a-tab-pane>
-      <a-tab-pane key="2" tab="系统日志">
+      <a-tab-pane key="2" :tab="$t('Setting.SystemLog')">
     <system-log />
       </a-tab-pane>
-      <a-tab-pane key="3" tab="数据查询">
+      <a-tab-pane key="3" :tab="$t('Setting.dataQuery')">
         <query-data :navbar-fixed="navbarFixed"/>
       </a-tab-pane>
-      <a-tab-pane key="4" tab="集群信息" class="cluster">
+      <a-tab-pane key="4" :tab="$t('Setting.clusterInformation')" class="cluster">
              <cluster-info v-if="activeTab==='4'" />
-
+      </a-tab-pane>
+      <a-tab-pane key="5" :tab="$t('Setting.auditLog')" class="cluster">
+          <audit-log></audit-log>
       </a-tab-pane>
     </a-tabs>
   </div>
@@ -23,20 +25,22 @@ import QueryData from './components/QueryData';
 import BaseData from './components/BaseData';
 import SystemLog from './components/SystemLog';
 import ClusterInfo from './components/ClusterInfo';
+import AuditLog from "./components/AuditLog.vue";
 
 export default {
   props: ['navbarFixed'],
   data() {
     return {
       activeTab:'1',
-  
+
     };
   },
   components: {
     QueryData,
     BaseData,
     SystemLog,
-    ClusterInfo
+    ClusterInfo,
+    AuditLog,
   },
   created() {
 

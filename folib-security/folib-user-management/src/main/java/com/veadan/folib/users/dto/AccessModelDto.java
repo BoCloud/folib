@@ -8,12 +8,18 @@ import java.util.Set;
 
 import com.veadan.folib.users.domain.AccessModelData;
 import com.veadan.folib.users.domain.Privileges;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @author 
  * @author Veadan
  * @author veadan
  */
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class AccessModelDto
         implements AccessModel
 {
@@ -42,12 +48,22 @@ public class AccessModelDto
     @Override
     public Set<Privileges> getPathAuthorities(String url)
     {
-        return AccessModelData.getPathAuthorities(url, storageAuthorities);
+        return AccessModelData.getPathAuthorities(url, storageAuthorities, false);
+    }
+
+    @Override
+    public Set<Privileges> getPathAuthorities(String path, boolean enableSplitPath) {
+        return AccessModelData.getPathAuthorities(path, storageAuthorities, enableSplitPath);
+    }
+
+    @Override
+    public Set<Privileges> getPathAuthorities(String storageId, String repositoryId, List<String> paths, boolean enableSplitPath) {
+        return AccessModelData.getPathAuthorities(storageId, repositoryId, paths, storageAuthorities, enableSplitPath);
     }
 
     @Override
     public Set<Privileges> getPathAuthorities(String storageId, String repositoryId, List<String> paths) {
-        return AccessModelData.getPathAuthorities(storageId, repositoryId, paths, storageAuthorities);
+        return AccessModelData.getPathAuthorities(storageId, repositoryId, paths, storageAuthorities, false);
     }
 
 }

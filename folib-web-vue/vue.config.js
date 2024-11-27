@@ -13,10 +13,15 @@ module.exports = {
 	},
 	devServer: {
 		// development server port 8000
-		port: 9527,
+		port: 9528,
 		proxy: {
 			'/api': {
+				// target: 'http://f18811435520.e2.luyouxia.net:20626',
+				// target: 'http://10.50.8.55:38080',
+				// target: 'http://10.50.8.82:38080',
+				// target: 'https://demo2.folib.com', 
 				target: 'http://127.0.0.1:38080',
+				//target: 'http://192.168.42.128:38080',
 				// target: 'http://xpboot.cn:38080',
 				// target: 'http://10.10.33.145:38080',
 				pathRewrite: {
@@ -26,7 +31,7 @@ module.exports = {
 				proxyTimeout: 15 * 60 * 1000,
 			},
 			'/dependency': {
-				target: 'http://192.168.5.101:8081',
+				target: 'http://10.10.28.61:9527',
 				// target: 'http://192.168.5.101:8081',
 				// target: 'http://xpboot.cn:38080',
 				// target: 'http://10.10.33.145:38080',

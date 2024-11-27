@@ -2,10 +2,10 @@
   <div>
     <a-modal
       v-model="showMetadata"
-      :title="handlerMetadataType === 1 ? '新增元数据' : '修改元数据'"
+      :title="handlerMetadataType === 1 ? $t('Store.Create')+$t('Store.Metadata') : $t('Store.Modify')+$t('Store.Metadata')"
       :maskClosable="false"
-      cancelText="取消"
-      okText="确定"
+      :cancelText="$t('Store.Cancel')"
+      :okText="$t('Store.Confirm')"
       @cancel="metadataHandlerCancel()"
       @ok="metadataHandlerConfirm()"
       centered
@@ -21,7 +21,7 @@
           <a-col :span="24">
             <a-form-model-item
               class="mb-10"
-              label="自定义KEY"
+              :label="$t('Store.Custom')+'KEY'"
               :colon="false"
               prop="custom"
             >
@@ -35,7 +35,7 @@
           <a-col :span="24" v-if="!metadataForm.custom">
             <a-form-model-item
               class="mb-10"
-              label="元数据KEY"
+              :label="$t('Store.Metadata')+'KEY'"
               :colon="false"
               prop="key"
             >
@@ -43,7 +43,7 @@
                 :disabled="handlerMetadataType !== 1"
                 v-model="metadataForm.key"
                 @change="metadataKeyChange"
-                placeholder="请选择元数据KEY"
+                :placeholder="$t('Store.PleaseSelect')+$t('Store.Metadata')+'KEY'"
                 show-search
                 optionFilterProp="value"
               >
@@ -60,13 +60,13 @@
           <a-col :span="24" v-if="metadataForm.custom">
             <a-form-model-item
               class="mb-10"
-              label="元数据KEY"
+              :label="$t('Store.Metadata')+'KEY'"
               :colon="false"
               prop="customKey"
             >
               <a-input
                 :disabled="handlerMetadataType !== 1"
-                placeholder="请输入元数据KEY"
+                :placeholder="$t('Store.PleaseEnter')+$t('Store.Metadata')+'KEY'"
                 v-model="metadataForm.customKey"
               />
             </a-form-model-item>
@@ -74,7 +74,7 @@
           <a-col :span="24">
             <a-form-model-item
               class="mb-10"
-              label="元数据类型"
+              :label="$t('Store.Metadata')+$t('Store.Type')"
               :colon="false"
               prop="type"
             >
@@ -82,12 +82,12 @@
                 :disabled="!metadataForm.custom"
                 v-model="metadataForm.type"
                 @change="metadataTypeChange"
-                placeholder="请选择元数据类型"
+                :placeholder="$t('Store.PleaseSelect')+$t('Store.Metadata')+$t('Store.Type')"
                 show-search
                 optionFilterProp="label"
               >
                 <a-select-option
-                  v-for="(item, index) in metadataTypes"
+                  v-for="(item, index) in i18nMetadataTypes"
                   :label="item.label"
                   :key="index"
                   :value="item.value"
@@ -100,19 +100,19 @@
           <a-col :span="24">
             <a-form-model-item
               class="mb-30"
-              label="元数据值"
+              :label="$t('Store.Metadata')+$t('Store.value')"
               :colon="false"
               prop="value"
             >
               <a-input
                 v-if="metadataInput"
-                placeholder="请输入元数据值"
+                :placeholder="$t('Store.PleaseEnter')+$t('Store.Metadata')+$t('Store.value')"
                 v-model="metadataForm.value"
               />
               <a-input-number
                 v-if="metadataNumber"
                 style="width: 100%"
-                placeholder="请输入元数据值"
+                :placeholder="$t('Store.PleaseEnter')+$t('Store.Metadata')+$t('Store.value')"
                 v-model="metadataForm.value"
               />
               <quill-editor
@@ -127,7 +127,7 @@
                 v-model="metadataForm.value"
                 :highlight="highlighterHandle"
                 :line-numbers="true"
-                placeholder="在此处输入内容"
+                :placeholder="$t('Store.EnterSomethingHere')"
                 :readonly="false"
               >
               </prism-editor>
@@ -174,20 +174,20 @@ export default {
   data() {
     return {
       metadataRules: {
-        key: [{ required: true, message: "请选择元数据KEY", trigger: "blur" }],
+        key: [{ required: true, message: this.$t('Store.PleaseSelect')+this.$t('Store.Metadata')+'KEY', trigger: "blur" }],
         customKey: [
-          { required: true, message: "请输入元数据KEY", trigger: "blur" },
+          { required: true, message: this.$t('Store.PleaseSelect')+this.$t('Store.Metadata')+'KEY', trigger: "blur" },
           {
             min: 1,
             max: 30,
-            message: "长度在 1 到 30 个字符",
+            message: this.$t('Store.KEYLength'),
             trigger: "blur",
           },
         ],
         type: [
-          { required: true, message: "请选择元数据类型", trigger: "blur" },
+          { required: true, message: this.$t('Store.PleaseSelect')+this.$t('Store.Metadata')+this.$t('Store.Type'), trigger: "blur" },
         ],
-        value: [{ required: true, message: "请输入元数据值", trigger: "blur" }],
+        value: [{ required: true, message: this.$t('Store.PleaseEnter')+this.$t('Store.Metadata')+this.$t('Store.value'), trigger: "blur" }],
       },
        metadataForm: {
         key: undefined,
@@ -203,6 +203,16 @@ export default {
       metadataNumber: false,
       showMetadata: false,
     };
+  },
+  computed: {
+    i18nMetadataTypes() {
+      return this.metadataTypes.map(item => {
+        if (item.i18nKey) {
+          item.label = this.$t(item.i18nKey);
+        }
+        return item;
+      });
+    }
   },
   created() {
     if (this.propMetadataForm) {
@@ -303,22 +313,35 @@ export default {
               .then((res) => {
                 if (res === "repeat") {
                   this.$notification["warning"]({
-                    message: "元数据KEY已存在",
+                    message: this.$t('Store.Metadata')+'KEY'+this.$t('Store.ItExists'),
                     description: "",
                   });
                   return false;
                 }
-                this.successMsg("新增制品元数据成功");
+                this.successMsg(this.$t('Store.Create')+this.$t('Store.MetadataSuccess'));
                 this.$emit("metadataReflesh");
-              })
-              .finally(() => {});
+              }).catch((err) => {
+                let msg = err.response.data.message ? err.response.data.message : err.response.data.error ? err.response.data.error : err.response.data
+                if (msg && msg.length > 0) {
+                  this.$notification.error({
+                    message: msg,
+                    description: ""
+                  })
+                }
+              }).finally(() => {});
           } else {
-            updateArtifactMetadata(data)
-              .then((res) => {
-                this.successMsg("修改制品元数据成功");
-                this.$emit("metadataReflesh");
-              })
-              .finally(() => {});
+            updateArtifactMetadata(data).then((res) => {
+              this.successMsg(this.$t('Store.Modify')+this.$t('Store.MetadataSuccess'));
+              this.$emit("metadataReflesh");
+            }).catch((err) => {
+              let msg = err.response.data.message ? err.response.data.message : err.response.data.error ? err.response.data.error : err.response.data
+              if (msg && msg.length > 0) {
+                this.$notification.error({
+                  message: msg,
+                  description: ""
+                })
+              }
+            }).finally(() => {});
           }
         } else {
           return false;

@@ -149,15 +149,26 @@ public class ArtifactIdGroupRepository extends GremlinVertexRepository<ArtifactI
                                                Long skip,
                                                Integer limit,
                                                Boolean useLimit) {
+        return findArtifactsGremlin(storageId, repositoryId, artifactId, false, coordinateValues, skip, limit, useLimit);
+    }
+
+    public List<Artifact> findArtifactsGremlin(String storageId,
+                                               String repositoryId,
+                                               String artifactId,
+                                               Boolean useArtifactName,
+                                               Collection<String> coordinateValues,
+                                               Long skip,
+                                               Integer limit,
+                                               Boolean useLimit) {
         if (Boolean.FALSE.equals(useLimit)) {
             skip = 0L;
             ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(storageId, repositoryId, artifactId);
             long startTime = System.currentTimeMillis();
-            Long count = commonSearchCountArtifacts(storageId, repositoryId, artifactId, coordinateValues);
+            Long count = commonSearchCountArtifacts(storageId, repositoryId, artifactId, useArtifactName, coordinateValues);
             log.info("ArtifactIdGroup [{}] commonSearchCountArtifacts count [{}] take time [{}] ms", artifactIdGroup.getUuid(), count, System.currentTimeMillis() - startTime);
             if (Objects.isNull(count) || skip.equals(count)) {
                 startTime = System.currentTimeMillis();
-                count = commonCountArtifacts(storageId, repositoryId, artifactId, coordinateValues);
+                count = commonCountArtifacts(storageId, repositoryId, artifactId, useArtifactName, coordinateValues);
                 log.info("ArtifactIdGroup [{}] commonCountArtifacts count [{}] take time [{}] ms", artifactIdGroup.getUuid(), count, System.currentTimeMillis() - startTime);
             }
             if (count > 0L) {
@@ -166,7 +177,7 @@ public class ArtifactIdGroupRepository extends GremlinVertexRepository<ArtifactI
         }
         com.veadan.folib.storage.repository.Repository repository = configurationManager.getRepository(storageId, repositoryId);
         long startTime = System.currentTimeMillis();
-        List<Artifact> artifactList = commonFindArtifacts(storageId, repositoryId, artifactId, coordinateValues).order().by(Properties.CREATED, Order.asc).map(artifactAdapter.fold(Optional.ofNullable(repository)
+        List<Artifact> artifactList = commonFindArtifacts(storageId, repositoryId, artifactId, useArtifactName, coordinateValues).order().by(Properties.CREATED, Order.asc).map(artifactAdapter.fold(Optional.ofNullable(repository)
                 .map(com.veadan.folib.storage.repository.Repository::getLayout)
                 .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
                 .map(ArtifactLayoutDescription::getArtifactCoordinatesClass))).range(skip, limit).toList();
@@ -181,35 +192,73 @@ public class ArtifactIdGroupRepository extends GremlinVertexRepository<ArtifactI
                                      String repositoryId,
                                      String artifactId,
                                      Collection<String> coordinateValues) {
-        return commonFindArtifacts(storageId, repositoryId, artifactId, coordinateValues).count().tryNext().orElse(0L);
+        return commonFindArtifacts(storageId, repositoryId, artifactId, false, coordinateValues).count().tryNext().orElse(0L);
+    }
+
+    public long commonCountArtifacts(String storageId,
+                                     String repositoryId,
+                                     String artifactId,
+                                     Boolean useArtifactName,
+                                     Collection<String> coordinateValues) {
+        return commonFindArtifacts(storageId, repositoryId, artifactId, useArtifactName, coordinateValues).count().tryNext().orElse(0L);
     }
 
     public Boolean commonArtifactsExists(String storageId,
                                          String repositoryId,
                                          String artifactId,
                                          Collection<String> coordinateValues) {
-        return commonCountArtifacts(storageId, repositoryId, artifactId, coordinateValues) > 0L;
+        return commonCountArtifacts(storageId, repositoryId, artifactId, false, coordinateValues) > 0L;
+    }
+
+    public Boolean commonArtifactsExists(String storageId,
+                                         String repositoryId,
+                                         String artifactId,
+                                         Boolean useArtifactName,
+                                         Collection<String> coordinateValues) {
+        return commonCountArtifacts(storageId, repositoryId, artifactId, useArtifactName, coordinateValues) > 0L;
+    }
+
+    public static String toCaseInsensitiveRegex(String regex) {
+        StringBuilder caseInsensitiveRegex = new StringBuilder();
+        for (char c : regex.toCharArray()) {
+            if (Character.isLetter(c)) {
+                caseInsensitiveRegex.append("[").append(Character.toLowerCase(c)).append(Character.toUpperCase(c)).append("]");
+            } else {
+                caseInsensitiveRegex.append(c);
+            }
+        }
+        return caseInsensitiveRegex.toString();
     }
 
     private EntityTraversal<Vertex, Vertex> commonFindArtifacts(String storageId,
                                                                 String repositoryId,
                                                                 String artifactId,
+                                                                Boolean useArtifactName,
                                                                 Collection<String> coordinateValues) {
         String storageIdAndRepositoryId = String.format("%s-%s", storageId, repositoryId);
-        ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(storageId, repositoryId, artifactId);
-        EntityTraversal<Vertex, Vertex> t = g().V()
-                .hasLabel(Vertices.ARTIFACT_ID_GROUP).has(Properties.UUID, artifactIdGroup.getUuid()).outE(Edges.ARTIFACT_GROUP_HAS_ARTIFACTS).inV()
-                .hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, storageIdAndRepositoryId).has(Properties.UUID, Text.textPrefix(artifactIdGroup.getUuid()));
-        if (CollectionUtils.isNotEmpty(coordinateValues)) {
-            for (String coordinateValue : coordinateValues) {
-                t = t.has(Properties.UUID, Text.textContains("." + coordinateValue));
+        EntityTraversal<Vertex, Vertex> t = null;
+        if (Boolean.TRUE.equals(useArtifactName)) {
+            artifactId = artifactId  + ".*";
+            artifactId = toCaseInsensitiveRegex(artifactId);
+            t = g().V()
+                    .hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, storageIdAndRepositoryId).has(Properties.ARTIFACT_NAME, Text.textRegex(artifactId));
+            if (CollectionUtils.isNotEmpty(coordinateValues)) {
+                handleCoordinateValues(t, coordinateValues, true);
+            }
+        } else {
+            ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(storageId, repositoryId, artifactId);
+            t = g().V()
+                    .hasLabel(Vertices.ARTIFACT_ID_GROUP).has(Properties.UUID, artifactIdGroup.getUuid()).outE(Edges.ARTIFACT_GROUP_HAS_ARTIFACTS).inV()
+                    .hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, storageIdAndRepositoryId).has(Properties.UUID, Text.textPrefix(artifactIdGroup.getUuid()));
+            if (CollectionUtils.isNotEmpty(coordinateValues)) {
+                handleCoordinateValues(t, coordinateValues, false);
             }
         }
         return t;
     }
 
     /**
-     * 统计 走搜索引擎 数据时效性稍微落后
+     * 统计 走搜索引擎
      *
      * @param storageId        storageId
      * @param repositoryId     repositoryId
@@ -220,26 +269,47 @@ public class ArtifactIdGroupRepository extends GremlinVertexRepository<ArtifactI
     public Long commonSearchCountArtifacts(String storageId,
                                            String repositoryId,
                                            String artifactId,
+                                           Boolean useArtifactName,
                                            Collection<String> coordinateValues) {
         String storageIdAndRepositoryId = String.format("%s-%s", storageId, repositoryId);
-        ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(storageId, repositoryId, artifactId);
-        EntityTraversal<Vertex, Vertex> t = g().V()
-                .hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, storageIdAndRepositoryId);
-        String regex = "(%s/)", suffix = "";
-        //(folib-common-taobao-npm-vue)(.*tgz.*)
-        regex = String.format(regex, artifactIdGroup.getUuid());
-        if (CollectionUtils.isNotEmpty(coordinateValues)) {
-            for (String coordinateValue : coordinateValues) {
-                suffix = "(.*%s.*)";
-                suffix = String.format(suffix, coordinateValue);
+        if (Boolean.TRUE.equals(useArtifactName)) {
+            artifactId = artifactId  + ".*";
+            artifactId = toCaseInsensitiveRegex(artifactId);
+            EntityTraversal<Vertex, Vertex> t = g().V()
+                    .hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, storageIdAndRepositoryId)
+                    .has(Properties.ARTIFACT_NAME, Text.textRegex(artifactId));
+            if (CollectionUtils.isNotEmpty(coordinateValues)) {
+                handleCoordinateValues(t, coordinateValues, true);
+            }
+            return t.count().tryNext().orElse(0L);
+        } else {
+            ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(storageId, repositoryId, artifactId);
+            EntityTraversal<Vertex, Vertex> t = g().V()
+                    .hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, storageIdAndRepositoryId);
+            String regex = "(%s/)", suffix = "";
+            //(folib-common-taobao-npm-vue)(.*tgz.*)
+            regex = String.format(regex, artifactIdGroup.getUuid());
+            if (CollectionUtils.isNotEmpty(coordinateValues)) {
+                suffix = "(.*.(%s))";
+                suffix = String.format(suffix, String.join("|", coordinateValues));
                 regex = regex + suffix;
             }
+            t.has(Properties.UUID, Text.textRegex(regex));
+            return t.count().tryNext().orElse(0L);
         }
-        t.has(Properties.UUID, Text.textRegex(regex));
-        return t.count().tryNext().orElse(0L);
     }
 
     public ArtifactIdGroup findByArtifactIdGroup(String artifactIdGroup) {
         return g().V().hasLabel(Vertices.ARTIFACT_ID_GROUP).has(Properties.UUID, artifactIdGroup).map(adapter.artifactIdGroupFold()).tryNext().orElse(null);
+    }
+
+    private void handleCoordinateValues(EntityTraversal<Vertex, Vertex> t, Collection<String> coordinateValues, Boolean useArtifactName) {
+        String s = ".*.(%s)";
+        final String regex = String.format(s, String.join("|", coordinateValues));
+        if (Boolean.TRUE.equals(useArtifactName)) {
+            t.has(Properties.ARTIFACT_NAME, Text.textRegex(regex));
+        } else {
+            t.has(Properties.UUID, Text.textRegex(regex));
+        }
     }
 }

@@ -14,6 +14,7 @@ import com.veadan.folib.storage.repository.Repository;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -47,8 +48,15 @@ public class ChecksumServiceImpl
         throws IOException
     {
         Storage storage = getConfiguration().getStorage(storageId);
+        if (Objects.isNull(storage)) {
+            logger.warn("Storage [{}] not found", storageId);
+            return;
+        }
         Repository repository = storage.getRepository(repositoryId);
-
+        if (Objects.isNull(repository)) {
+            logger.warn("Repository [{}] [{}] not found", storageId, repositoryId);
+            return;
+        }
         LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(repository.getLayout());
         if (layoutProvider == null)
         {

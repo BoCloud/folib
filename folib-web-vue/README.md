@@ -23,3 +23,6 @@ docker run -ti -d --restart=always   -p 9527:9527   --name folib-web folib/folib
 docker run -ti -d --restart=always   -p 9527:9527 -v/opt/folib/folib-web/:/etc/nginx/conf.d/  --name folib-web folib/folib-web:latest
 
 ```
+
+
+

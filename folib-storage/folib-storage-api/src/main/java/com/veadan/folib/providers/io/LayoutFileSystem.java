@@ -1,5 +1,16 @@
 package com.veadan.folib.providers.io;
 
+import cn.hutool.extra.spring.SpringUtil;
+import com.veadan.folib.booters.PropertiesBooter;
+import com.veadan.folib.constant.GlobalConstants;
+import com.veadan.folib.enums.StorageProviderEnum;
+import com.veadan.folib.io.StorageFileSystem;
+import com.veadan.folib.providers.layout.LayoutFileSystemProvider;
+import com.veadan.folib.providers.layout.LayoutProvider;
+import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.storage.repository.Repository;
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
@@ -7,12 +18,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
-
-import com.veadan.folib.providers.layout.LayoutFileSystemProvider;
-import com.veadan.folib.providers.layout.LayoutProvider;
-import com.veadan.folib.booters.PropertiesBooter;
-import com.veadan.folib.io.StorageFileSystem;
-import com.veadan.folib.storage.repository.Repository;
 
 /**
  * This class decorates {@link StorageFileSystem} with common layout specific
@@ -33,6 +38,7 @@ public abstract class LayoutFileSystem
 
     private final Repository repository;
     private final LayoutFileSystemProvider provider;
+    private final RootRepositoryPath rootRepositoryPath;
     
     public LayoutFileSystem(PropertiesBooter propertiesBooter,
                             Repository repository,
@@ -42,6 +48,7 @@ public abstract class LayoutFileSystem
         super(repository.getStorage(), propertiesBooter, storageFileSystem);
         this.repository = repository;
         this.provider = provider;
+        this.rootRepositoryPath = new RootRepositoryPath(resolveRootPath(), this);
     }
 
     public Repository getRepository()
@@ -83,12 +90,21 @@ public abstract class LayoutFileSystem
     @Override
     public RootRepositoryPath getRootDirectory()
     {
-        return new RootRepositoryPath(resolveRootPath(), this);
+        return rootRepositoryPath;
     }
 
     private Path resolveRootPath()
     {
-        Path rootPath = Optional.ofNullable(repository.getBasedir())
+        String basedir = repository.getBasedir();
+        if (StorageProviderEnum.S3.getType().equals(repository.getStorageProvider())) {
+            ConfigurationManagementService configurationManagementService = SpringUtil.getBean(ConfigurationManagementService.class);
+            String globalS3Bucket = configurationManagementService.getConfiguration().getAdvancedConfiguration().getGlobalS3Bucket();
+            if (StringUtils.isNotBlank(globalS3Bucket)) {
+                globalS3Bucket = GlobalConstants.SEPARATOR + StringUtils.removeEnd(StringUtils.removeStart(globalS3Bucket, GlobalConstants.SEPARATOR), GlobalConstants.SEPARATOR);
+                basedir = globalS3Bucket + basedir;
+            }
+        }
+        Path rootPath = Optional.ofNullable(basedir)
                                 .filter(p -> !p.trim().isEmpty())
                                 .map(p -> getTarget().getPath(p).toAbsolutePath().normalize())
                                 .orElseGet(() -> super.getRootDirectory().resolve(repository.getId()))

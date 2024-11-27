@@ -1,11 +1,14 @@
 package com.veadan.folib.cluster;
 
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.parser.Feature;
 import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
 import com.veadan.folib.controllers.cluster.dto.*;
 import com.veadan.folib.entity.ClusterDataSyncTaskPo;
 import com.veadan.folib.mapper.ClusterDataSyncTaskMapper;
 import com.veadan.folib.services.ClusterSyncService;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,8 +17,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 
@@ -71,13 +74,18 @@ public class ClusterDataSyncTask {
                 }
                 //同步REPOSITORY
                 if (Objects.equals(SyncDataTypeEnum.REPOSITORY.getValue(), task.getTaskType())) {
-
                     SyncRepositoryDto syncRepositoryDto = JSONObject.parseObject(task.getDataJson(),
                             SyncRepositoryDto.class);
-
                     logger.debug("Start sync repository data [{} {} {} ]",
                             syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryId(), url);
-
+                    if (Boolean.TRUE.equals(syncRepositoryDto.getRepositoryDto().isGroupRepository()) && CollectionUtils.isNotEmpty(syncRepositoryDto.getRepositoryDto().getGroupRepositories())) {
+                        //组合库调整顺序
+                        JSONObject repositoryJson = JSONObject.parseObject(task.getDataJson(), Feature.OrderedField);
+                        JSONArray groupJsonArray = repositoryJson.getJSONObject("repositoryDto").getJSONArray("groupRepositories");
+                        LinkedHashSet groupLinkedHashSet = new LinkedHashSet();
+                        groupLinkedHashSet.addAll(groupJsonArray);
+                        syncRepositoryDto.getRepositoryDto().setGroupRepositories(groupLinkedHashSet);
+                    }
                     ClusterSyncResultEnum syncResult = clusterSyncService.handleSyncRepository(syncRepositoryDto.getStorageId(),
                             syncRepositoryDto.getRepositoryId(), syncRepositoryDto, url, true);
                     isSuccess(syncResult, task);

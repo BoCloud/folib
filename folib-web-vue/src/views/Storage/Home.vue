@@ -1,20 +1,20 @@
 <template>
   <div class="anonymous-home">
      <!-- Header Background Image -->
-     <div class="profile-nav-bg">
-        <div
-          :class="[mouseEnter ? 'mouse-enter nested' : 'nested']"
-          style="
+     <div class="profile-nav-bg" style="
             background: url(images/banner.jpg) center/cover;
             transition: all 0.3s;
-          "
-        ></div>
+          ">
+<!--        <div-->
+<!--          :class="[mouseEnter ? 'mouse-enter nested' : 'nested']"-->
+
+<!--        ></div>-->
       <a-row type="flex" :md="8" :xs="4">
         <SearchBox @mouse="searchBoxMouseStatus" @search="search"/>
       </a-row>
     </div>
-    <Storages v-if="!searchVisible && allowAnonymous" :anonymous="true" class="mt-15"/>
-    <Search ref="search" class="mt-20" v-if="searchVisible && allowAnonymous" :columns="columns"/>
+    <Storages v-if="!searchVisible && (allowAnonymous || isLogin())" :anonymous="true" class="mt-15"/>
+    <Search ref="search" class="mt-20" v-if="searchVisible && (allowAnonymous || isLogin())" :columns="columns"/>
   </div>
 </template>
 <script>
@@ -24,6 +24,7 @@ import {
 import Storages from "./Storages.vue"
 import SearchBox from "@/components/Tools/SearchBox"
 import Search from "./components/Search/index.vue"
+import { isLogin } from "@/utils/permission"
 
 export default {
   data() {
@@ -31,52 +32,59 @@ export default {
       mouseEnter: false,
       columns: [
         {
-          title: "存储空间",
+          i18nKey: 'Store.OwnedStorage',
+          title: this.$t('Store.OwnedStorage'),
           dataIndex: "storageId",
           scopedSlots: { customRender: "storageId" },
           width: 150,
         },
         {
-          title: "所属仓库",
-          dataIndex: "repositoryId",
-          scopedSlots: { customRender: "repositoryId" },
-          width: 150,
+          i18nKey: 'Store.OwnedWarehouse',
+          title: this.$t('Store.OwnedWarehouse'),
+          dataIndex: 'repositoryId',
+          scopedSlots: { customRender: 'repositoryId' },
+          width: 150
         },
         {
-          title: "制品路径",
-          dataIndex: "path",
-          scopedSlots: { customRender: "path" },
-          width: 550,
+          i18nKey: 'Store.ProductPath',
+          title: this.$t('Store.ProductPath'),
+          dataIndex: 'path',
+          scopedSlots: { customRender: 'path' },
+          width: 550
         },
         {
-          title: "创建时间",
-          dataIndex: "created",
+          i18nKey: 'Store.CreationTime',
+          title: this.$t('Store.CreationTime'),
+          dataIndex: 'created',
           sorter: true,
-          sortDirections: ["descend", "ascend"],
-          scopedSlots: { customRender: "created" },
-          width: 200,
+          sortDirections: ['descend', 'ascend'],
+          scopedSlots: { customRender: 'created' },
+          width: 200
         },
         {
-          title: "最近使用时间",
-          dataIndex: "lastUsed",
+          i18nKey: 'Store.LastUsedTime',
+          title: this.$t('Store.LastUsedTime'),
+          dataIndex: 'lastUsed',
           sorter: true,
-          scopedSlots: { customRender: "lastUsed" },
-          width: 200,
+          scopedSlots: { customRender: 'lastUsed' },
+          width: 200
         },
         {
-          title: "下载次数",
-          dataIndex: "downloadCount",
+          i18nKey: 'Store.DownloadTimes',
+          title: this.$t('Store.DownloadTimes'),
+          dataIndex: 'downloadCount',
           sorter: true,
-          scopedSlots: { customRender: "created" },
-          width: 200,
+          scopedSlots: { customRender: 'created' },
+          width: 200
         },
         {
-          title: "制品大小",
-          dataIndex: "sizeInBytes",
+          i18nKey: 'Store.ProductSize',
+          title: this.$t('Store.ProductSize'),
+          dataIndex: 'sizeInBytes',
           sorter: true,
-          scopedSlots: { customRender: "sizeInBytes" },
-          width: 200,
-        },
+          scopedSlots: { customRender: 'sizeInBytes' },
+          width: 200
+        }
       ],
       searchVisible: false,
       allowAnonymous: false,
@@ -104,10 +112,16 @@ export default {
         this.$refs.search.search(value, searchType, type)
       })
     },
+    isLogin() {
+      return isLogin()
+    },
     getAllowAnonymous() {
       getAllowAnonymous().then(res => {
         this.allowAnonymous = res
-        if(!this.allowAnonymous) {
+        let login = isLogin()
+        console.log("isLogin: " + login)
+        if(!login &&!this.allowAnonymous) {
+          console.log("allowAnonymous: " + this.allowAnonymous + " to /login")
           this.$router.push('/login')
         }
       })
@@ -123,7 +137,7 @@ export default {
     justify-content: center;
     align-items: center;
     color: #fafafa;
-    position: relative;
+    //position: relative;
     overflow: hidden;
     width: 100%;
   }

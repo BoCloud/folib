@@ -3,6 +3,8 @@ package com.veadan.folib.artifact.coordinates;
 
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
+import com.veadan.folib.providers.io.RepositoryFiles;
+import com.veadan.folib.providers.io.RepositoryPath;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.maven.artifact.versioning.ComparableVersion;
@@ -12,6 +14,8 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.net.URI;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @NodeEntity(Vertices.HELM_ARTIFACT_COORDINATES)
 @XmlRootElement(name = "HelmArtifactCoordinates")
@@ -36,13 +40,26 @@ public class HelmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<Hel
         resetCoordinates(NAME);
     }
 
-    public HelmArtifactCoordinates(String name) {
-        setId(name);
+    public HelmArtifactCoordinates(String relativizePath,String packageName) {
+
+        // 正则表达式匹配 Helm 包名
+//        String regex = "^(?<name>[a-z0-9-]+)-(\\d+(?:\\.\\d+)+(?:-[a-zA-Z0-9]+)?)\\.tgz$";
+//        Pattern pattern = Pattern.compile(regex);
+//        Matcher matcher = pattern.matcher(packageName);
+        setId(relativizePath);
+//        if (matcher.find()) {
+//            String name = matcher.group("name");
+//            String version = matcher.group(2);
+//            setVersion(version);
+//        } else {
+//           throw new RuntimeException("Invalid Helm package name format.");
+//        }
+
     }
 
-    public static HelmArtifactCoordinates parse(String relativizePath) {
+    public static HelmArtifactCoordinates parse(String relativizePath,String packageName) {
         log.info("parse helm relativizePath {}", relativizePath);
-        return new HelmArtifactCoordinates(relativizePath);
+        return new HelmArtifactCoordinates(relativizePath,packageName);
     }
 
     @Override
@@ -52,6 +69,10 @@ public class HelmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<Hel
 
     public void setId(String id) {
         setCoordinate(NAME, id);
+    }
+
+    public void setVersion(String version) {
+        super.setVersion(version);
     }
 
     public String getName() {

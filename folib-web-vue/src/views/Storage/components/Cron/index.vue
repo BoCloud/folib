@@ -11,11 +11,12 @@
         </a-col>
         <a-col :span="24" :md="12" class="ml-auto"
           style="display: flex; align-items: center; justify-content: flex-end">
-          <a-tag v-if="i.isSetted && i.isSetted.uuid" color="success" class="ant-tag-success font-bold">已设定
+          <a-tag v-if="i.isSetted && i.isSetted.uuid" color="success" class="ant-tag-success font-bold">
+            {{ $t('Cron.HasBeenSet') }}
           </a-tag>
           <span class="ml-5">{{ i.scope }}</span>
           <a-button @click="cronShowHandle(i, index)" type="link" class="btn-more ml-5">
-            展开设定
+            {{ $t('Cron.ExpandSettings') }}
             <a-icon :type="i.isShow ? 'arrow-down' : 'arrow-right'" />
           </a-button>
         </a-col>
@@ -31,12 +32,12 @@
               style="width: 100px;" />
           </a-col>
           <a-col class="ml-auto">
-            <span class="mr-15">{{ i.isSetted.oneTimeExecution ? '执行一次' : '循环执行' }}</span>
+            <span class="mr-15">{{ i.isSetted.oneTimeExecution ? $t('Cron.DoItOnce') : $t('Cron.LoopExecution') }}</span>
             <a-switch v-model="i.isSetted.oneTimeExecution"
               @change="oneTimeExecutionChange($event, i.isSetted)" />
           </a-col>
           <a-col class="ml-auto">
-            <span class="mr-15">{{ i.isSetted.immediateExecution ? '立即执行' : '不立即执行' }}</span>
+            <span class="mr-15">{{ i.isSetted.immediateExecution ? $t('Cron.ExecuteImmediately') : $t('Cron.NotExecutedImmediately') }}</span>
             <a-switch v-model="i.isSetted.immediateExecution"
               @change="immediateExecutionChange($event, i.isSetted)" />
           </a-col>
@@ -44,7 +45,7 @@
         <hr v-if="i.fields.length > 2" class="gradient-line my-10">
         <a-row type="flex" align="middle">
           <a-col v-if="i.fields.length > 2" style="margin-right: 15px">
-            <p class="font-semibold mb-0 ml-10">其他参数:</p>
+            <p class="font-semibold mb-0 ml-10">{{ $t('Cron.OtherParameters') }}</p>
           </a-col>
           <div v-if="i.fields.length > 2">
             <div v-for="(f, index) in i.fields" :key="index" class="mt-10">
@@ -67,7 +68,7 @@
                 <span style="margin-left: 15px" class="mr-15" v-if="f.aliasName && f.aliasName.length > 0">{{ f.aliasName }}</span>
                 <span style="margin-left: 15px" class="mr-15" v-else>{{ f.name }}</span>
                 <a-select v-model="f.value" style="width: 120px" @change="storageConditionChange($event, i.fields)">
-                  <a-select-option v-for="(item, index) in storageConditions"
+                  <a-select-option v-for="(item, index) in i18nStorageConditions"
                   :label="item.label"
                   :key="index"
                   :value="item.value">
@@ -103,7 +104,7 @@ import {
 } from "@/api/folib"
 
 export default {
-  props: { 
+  props: {
 		folibRepository: {
 			type: Object,
 			default: {},
@@ -116,34 +117,45 @@ export default {
       storageConditions: [
         {
           label: "Tag",
+          i18nKey: 'Cron.Tag',
           value: "tag"
         },
         {
-          label: "天数",
+          label: '天数',
+          i18nKey: 'Cron.Days',
           value: "day"
         }
       ],
     }
   },
-  components: {
-    
+  computed: {
+    i18nStorageConditions() {
+      return this.storageConditions.map(column => {
+        if (column.i18nKey) {
+          column.label = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    }
   },
   created() {
     this.resetData()
     this.crontasksListHandle()
   },
-  mounted() {},
+  mounted() {
+
+  },
   methods: {
     resetData() {
       this.cronCanSetList = []
       this.cronSettedList = []
     },
     storageConditionChange(event, fields) {
-      let aliasName = "保留天数"
+      let aliasName = this.$t('Cron.RetentionDaysNum')
       if (event === 'tag') {
-        aliasName = "保留个数"
+        aliasName = this.$t('Cron.KeepTheNumber')
       } else if (event === 'day') {
-        aliasName = "保留天数"
+        aliasName = this.$t('Cron.RetentionDaysNum')
       }
       fields.filter(i => i.name === "storageDay").forEach(i => i.aliasName = aliasName)
       this.$forceUpdate()
@@ -151,11 +163,11 @@ export default {
     crontasksListHandle() {
       crontasksList(this.folibRepository.layout === 'Maven 2' ? 'MAVEN' : this.folibRepository.layout.toUpperCase()).then(res => {
         this.cronCanSetList = res
-        
+
         // Cocoapods: 本地仓库过滤掉代理仓库定时任务
         if (this.folibRepository.type === "hosted")
         { this.cronCanSetList = this.cronCanSetList.filter(e => !(e.jobClass === "com.veadan.folib.cron.jobs.SyncProxyRepositoryIndexCronJob")) }
-        
+
         crontasksByRepository(this.folibRepository.storageId, this.folibRepository.id).then(res => {
           //已经被设置的定时任务列表
           this.cronSettedList = res.cronTaskConfigurations
@@ -201,7 +213,7 @@ export default {
           let cleanupTask = i.fields.filter(i => i.name === 'storageCondition')
           if (cleanupTask && cleanupTask.length >0) {
             storageCondition = cleanupTask[0].value
-          } 
+          }
           this.storageConditionChange(storageCondition, i.fields)
         }
       }
@@ -213,7 +225,7 @@ export default {
         setTimeout(() => {
           this.$notification.open({
             class: 'ant-notification-success',
-            message: '成功',
+            message: this.$t('Cron.Success'),
             description: res,
           });
         }, 100)
@@ -225,8 +237,8 @@ export default {
         if (!i.isSetted.cronExpression) {
           this.$notification.open({
             class: 'ant-notification-warning',
-            message: '操作不正确',
-            description: '请填写cron表达式',
+            message: this.$t('Cron.TheOperationIsIncorrect'),
+            description: this.$t('Cron.FillInTheCronExpression'),
           })
           return false
         }
@@ -246,7 +258,7 @@ export default {
             setTimeout(() => {
               this.$notification.open({
                 class: 'ant-notification-success',
-                message: '成功',
+                message: this.$t('Cron.Success'),
                 description: res,
               });
             }, 100)
@@ -254,7 +266,7 @@ export default {
             setTimeout(() => {
               this.$notification.open({
                 class: 'ant-notification-warning',
-                message: '失败',
+                message: this.$t('Cron.Failure'),
                 description: err.response.data.error,
               });
             }, 100)
@@ -265,7 +277,7 @@ export default {
             setTimeout(() => {
               this.$notification.open({
                 class: 'ant-notification-success',
-                message: '成功',
+                message: this.$t('Cron.Success'),
                 description: res,
               });
             }, 100)
@@ -273,7 +285,7 @@ export default {
             setTimeout(() => {
               this.$notification.open({
                 class: 'ant-notification-warning',
-                message: '失败',
+                message: this.$t('Cron.Failure'),
                 description: err.response.data.error,
               });
             }, 100)

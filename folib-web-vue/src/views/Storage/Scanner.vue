@@ -12,7 +12,7 @@
             <!-- Widget 1 Card -->
             <a-card :bordered="false" class="widget-1">
               <a-statistic
-                  title="扫描包总数"
+                  :title="$t('Storage.ScannedPacketsNum')"
                   :value="countData.scanCount"
                   :suffix="onScanProportion.toFixed(2)+'%'"
                   class="text-success"
@@ -28,7 +28,7 @@
             <!-- Widget 1 Card -->
             <a-card :bordered="false" class="widget-1">
               <a-statistic
-                  title="无需扫描包总数"
+                  :title="$t('Storage.InsteadOfScanningPacketsNum')"
                   :value="countData.notScanCount"
                   class="text-success"
               >
@@ -43,7 +43,7 @@
             <!-- Widget 1 Card -->
             <a-card :bordered="false" class="widget-1">
               <a-statistic
-                  title="扫描成功的包数量"
+                  :title="$t('Storage.SuccessScannedPacketsNum')"
                   :value="countData.scanSuccessCount"
                   :suffix="onScanAndScanedProportion.toFixed(2)+'%'"
                   class="text-success"
@@ -59,7 +59,7 @@
             <!-- Widget 1 Card -->
             <a-card :bordered="false" class="widget-1">
               <a-statistic
-                  title="扫描失败的包数量"
+                  :title="$t('Storage.FailedScansNUM')"
                   :value="countData.scanFailCount"
                   class="text-success"
               >
@@ -77,7 +77,7 @@
             <!-- Widget 1 Card -->
             <a-card :bordered="false" class="widget-1">
               <a-statistic
-                  title="扫描依赖数量"
+                  :title="$t('Storage.ScanDependenciesNum')"
                   :value="countData.dependencyCount"
                   class="text-success"
               >
@@ -92,7 +92,7 @@
             <!-- Widget 1 Card -->
             <a-card :bordered="false" class="widget-1">
               <a-statistic
-                  title="具有漏洞的包数量"
+                  :title="$t('Storage.VulnerablePackagesNum')"
                   :value="countData.dependencyVulnerabilitiesCount"
                   :suffix="vulnerableSumProportion.toFixed(2)+'%'"
                   class="text-danger"
@@ -108,7 +108,7 @@
             <!-- Widget 1 Card -->
             <a-card :bordered="false" class="widget-1">
               <a-statistic
-                  title="漏洞总数"
+                  :title="$t('Storage.VulnerabilitiesTotalNum')"
                   :value="countData.vulnerabilitiesCount"
                   :suffix="vulnerabilitesSumProportion.toFixed(2)+'%'"
                   class="text-danger"
@@ -124,7 +124,7 @@
             <!-- Widget 1 Card -->
             <a-card :bordered="false" class="widget-1">
               <a-statistic
-                  title="封存漏洞数量"
+                  :title="$t('Storage.sealedVulnerabilitiesNum')"
                   :value="countData.suppressedVulnerabilitiesCount"
                   class="text-success"
               >
@@ -145,28 +145,28 @@
             <a-card :bordered="false" class="dashboard-bar-chart">
               <chart-bar ref="volFolib" :height="220" :data="barChartData"></chart-bar>
               <div class="card-title">
-                <h6>近7天漏洞分布视图</h6>
-                <p>较上周包数量 <span class="text-success">{{weekCompare.scanCount>0?'+'+weekCompare.scanCount:weekCompare.scanCount===0?'不变':'未知'}}</span></p>
+                <h6>{{ $t('Storage.Compare') }}</h6>
+                <p>{{ $t('Storage.packagesNum') }} <span class="text-success">{{weekCompare.scanCount>0?'+'+weekCompare.scanCount:weekCompare.scanCount===0?$t('Storage.unknown'):$t('Storage.unchanged')}}</span></p>
               </div>
               <div class="card-content">
-                <p>以下为本周与上周(14天)的数据进行比较的结果</p>
+                <p>{{ $t('Storage.dataCompared') }}</p>
               </div>
               <a-row class="card-footer" type="flex" justify="center" align="top">
                 <a-col :span="6">
                   <h6>{{weekCompare.dependencyVulnerabilitiesCount}}</h6>
-                  <span>漏洞包新增</span>
+                  <span>{{ $t('Storage.NewVulnerabilityPackage') }}</span>
                 </a-col>
                 <a-col :span="6">
                   <h6>{{weekCompare.dependencyCount}}</h6>
-                  <span>扫描依赖新增</span>
+                  <span>{{ $t('Storage.ScanForNewDependencies') }}</span>
                 </a-col>
                 <a-col :span="6">
                   <h6>{{weekCompare.vulnerabilitiesCount}}</h6>
-                  <span>漏洞依赖新增</span>
+                  <span>{{ $t('Storage.NewVulnerabilityDependency') }}</span>
                 </a-col>
                 <a-col :span="6">
                   <h6>{{weekCompare.suppressedVulnerabilitiesCount}}</h6>
-                  <span>封存漏洞数新增</span>
+                  <span>{{ $t('Storage.NewSealedVulnerabilitiesNum') }}</span>
                 </a-col>
               </a-row>
             </a-card>
@@ -177,12 +177,16 @@
 
             <a-card :bordered="false" class="dashboard-bar-line header-solid">
               <template #title>
-                <h6>近30天数据</h6>
-                <p>本图为近30天数据,无新增数据的日期不展示</p>
+                <h6>{{ $t('Storage.30daysData') }}</h6>
+                <textOver
+                    :text="$t('Storage.30daysDataChat')"
+                    :max="55"
+                />
+<!--                <p>{{  }}</p>-->
               </template>
               <template #extra>
-                <a-badge color="primary" class="badge-dot-primary" text="依赖数量" />
-                <a-badge color="primary" class="badge-dot-secondary" text="漏洞数量" />
+                <a-badge color="primary" class="badge-dot-primary" :text="$t('Storage.DependingOnQuantity')" />
+                <a-badge color="primary" class="badge-dot-secondary" :text="$t('Storage.VulnerabilitiesNum')" />
               </template>
               <chart-line  ref="d30map" :height="310" :data="lineChartData"></chart-line>
             </a-card>
@@ -195,13 +199,15 @@
             <a-card :bordered="false" class="header-solid h-full" :bodyStyle="{padding: 0,}">
               <template #title>
                 <a-tabs class="tabs-sliding" default-active-key="1" @change="tabChange($event)">
-                  <a-tab-pane key="1" tab="仓库扫描情况">
-                    <a-table rowKey="id" :columns="columns" :scroll="{ x: true }" :data-source="folibScanData" :pagination="false">
+                  <a-tab-pane key="1" :tab="$t('Storage.WarehouseScanningSituation')">
+                    <a-table rowKey="id" :columns="i18nColumns" :scroll="{ x: true }" :data-source="folibScanData" :pagination="false">
                       <template slot="repository" slot-scope="text, record" >
                         <div @click="goToDetial(record)">
                           <a>
                             <h6 class="m-0">
-                              <a-avatar :size="42" shape="square" :src="'images/folib/' + LayoutTypeBuild(record) + '.svg'" style="border-radius: 8px; background-image: linear-gradient( 310deg, #f6f5f5, #e2e2e3 );" class="mr-10"></a-avatar>
+                              <a-avatar :size="42" shape="square" style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );" class="mr-10">
+                                  <img :src="'images/folib/' +  LayoutTypeBuild(record) + '.svg'" style="width: 150%;margin-left: -10px;" alt=""></img>
+                              </a-avatar>
                               {{ record.repository }}
                             </h6>
                           </a>
@@ -215,8 +221,8 @@
                       </template>
                     </a-table>
                   </a-tab-pane>
-                  <a-tab-pane key="2" tab="平台漏洞情况">
-                    <Vulnerability :vulnerabilityColumns="vulnerabilityColumns" :vulnerabilityLevel="1" :queryStorageId="false" :queryRepositoryId="false" ref="vulnerability"></Vulnerability>
+                  <a-tab-pane key="2" :tab="$t('Storage.PlatformVulnerability')">
+                    <Vulnerability :vulnerabilityColumns="i18nVulnerabilityColumns" :vulnerabilityLevel="1" :queryStorageId="false" :queryRepositoryId="false" ref="vulnerability"></Vulnerability>
                   </a-tab-pane>
                 </a-tabs>
               </template>
@@ -241,6 +247,7 @@ import Vulnerability from '@/components/Vulnerabilities/Vulnerability';
 import storage from "store";
 import store from '@/store';
 import insertCss from 'insert-css';
+import textOver from "@/components/Tools/textOver";
 
 
 
@@ -249,6 +256,7 @@ export default ({
     ChartBar,
     ChartLine,
     Vulnerability,
+    textOver
   },
   created() {
     this.userInfo=store.state.user
@@ -257,29 +265,6 @@ export default ({
   data() {
     return {
       userInfo:{},
-      lineChartData: {
-        labels: [],
-        datasets: [{
-          label: "依赖数量",
-          tension: 0.4,
-          pointRadius: 0,
-          borderColor: "#1890FF",
-          borderWidth: 1,
-          data: [],
-          maxBarThickness: 6
-
-        },
-          {
-            label: "漏洞数量",
-            tension: 0.4,
-            pointRadius: 0,
-            borderColor: "#B37FEB",
-            borderWidth: 1,
-            data: [],
-            maxBarThickness: 6
-
-          }],
-      },
       barChartData: {
         labels: [],
         datasets: [{
@@ -293,13 +278,13 @@ export default ({
         }, ],
       },
       countData: {
-        scanCount: 0, 
-        notScanCount: 0, 
-        scanSuccessCount: 0, 
+        scanCount: 0,
+        notScanCount: 0,
+        scanSuccessCount: 0,
         unScanCount: 0,
-        scanFailCount: 0, 
-        dependencyCount: 0, 
-        dependencyVulnerabilitiesCount: 0, 
+        scanFailCount: 0,
+        dependencyCount: 0,
+        dependencyVulnerabilitiesCount: 0,
         vulnerabilitiesCount: 0,
         suppressedVulnerabilitiesCount: 0,
       },
@@ -307,35 +292,42 @@ export default ({
       columns: [
         {
           title: '仓库',
+          i18nKey: 'Storage.Warehouse',
           dataIndex: 'repository',
           scopedSlots: { customRender: 'repository' },
         },
         {
           title: '存储空间',
+          i18nKey: 'Storage.StorageSpace',
           dataIndex: 'storage',
           scopedSlots: { customRender: 'storage' },
         },
         {
           title: '包总数',
+          i18nKey: 'Storage.TotalNumberOfPackets',
           dataIndex: 'scanCount',
           width: 100,
         },
         {
           title: '问题包数',
+          i18nKey: 'Storage.NumberOfQuestions',
           dataIndex: 'dependencyVulnerabilitiesCount',
           width: 100,
         },
         {
           title: '漏洞数量',
+          i18nKey: 'Storage.VulnerabilitiesNum',
           dataIndex: 'vulnerabilitiesCount',
           width: 100,
         },
         {
           title: '封存漏洞数量',
+          i18nKey: 'Storage.sealedVulnerabilitiesNum',
           dataIndex: 'suppressedVulnerabilitiesCount',
         },
         {
           title: '安全评分',
+          i18nKey: 'Storage.SecurityScore',
           dataIndex: 'star',
           scopedSlots: { customRender: 'star' },
         }
@@ -343,53 +335,63 @@ export default ({
       vulnerabilityColumns: [
         {
           title: '漏洞编号',
+          i18nKey: 'Storage.VulnerabilityNumber',
           dataIndex: 'uuid',
           scopedSlots: { customRender: 'uuid' },
         },
         {
           title: '引入时间',
+          i18nKey: 'Storage.IntroducingTime',
           dataIndex: 'created',
           scopedSlots: { customRender: 'created' },
           align: "center",
         },
         {
           title: 'CvssV2评分',
+          i18nKey: 'Storage.CvssV2Score',
           dataIndex: 'cvssV2Score',
           scopedSlots: { customRender: 'cvssV2Score' },
           align: "center",
         },
         {
           title: 'CvssV2漏洞等级',
+          i18nKey: 'Storage.CvssV2VulnerabilityLevel',
           dataIndex: 'cvssV2Severity',
           scopedSlots: { customRender: 'cvssV2Severity' },
           align: "center",
         },
         {
           title: 'CvssV3评分',
+          i18nKey: 'Storage.CvssV3Score',
           dataIndex: 'cvssV3Score',
           scopedSlots: { customRender: 'cvssV3Score' },
           align: "center",
         },
         {
           title: 'CvssV3漏洞等级',
+          i18nKey: 'Storage.CvssV3VulnerabilityLevel',
           dataIndex: 'cvssV3Severity',
           scopedSlots: { customRender: 'cvssV3Severity' },
           align: "center",
         },
         {
           title: '最高漏洞等级',
+          i18nKey: 'Storage.HighestVulnerabilityLevel',
           dataIndex: 'highestSeverityText',
           scopedSlots: { customRender: 'highestSeverityText' },
           align: "center",
         },
         {
           title: '建议修复版本',
+          i18nKey: 'Storage.RecommendedFixVersion',
           dataIndex: 'versionEndExcluding',
           scopedSlots: { customRender: 'versionEndExcluding' },
         },
         {
           title: '操作',
+          i18nKey: 'Storage.Operation',
           dataIndex: 'operation',
+          width: 280,
           scopedSlots: { customRender: 'operation' },
         },
       ],
@@ -399,6 +401,49 @@ export default ({
       onScanAndScanedProportion: 0.00,
       vulnerableSumProportion: 0.00,
       vulnerabilitesSumProportion: 0.00,
+    }
+  },
+  computed: {
+    i18nColumns() {
+      return this.columns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    },
+    i18nVulnerabilityColumns() {
+      return this.vulnerabilityColumns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    },
+    lineChartData() {
+      return  {
+        labels: [],
+            datasets: [{
+          label: this.$t('Storage.DependingOnQuantity'),
+          tension: 0.4,
+          pointRadius: 0,
+          borderColor: "#1890FF",
+          borderWidth: 1,
+          data: [],
+          maxBarThickness: 6
+
+        },
+          {
+            label: this.$t('Storage.VulnerabilitiesNum'),
+            tension: 0.4,
+            pointRadius: 0,
+            borderColor: "#B37FEB",
+            borderWidth: 1,
+            data: [],
+            maxBarThickness: 6
+
+          }],
+      }
     }
   },
   methods: {
@@ -465,7 +510,7 @@ export default ({
     },
     successMsg(message){
       if(!message){
-        message = "操作成功"
+        message = this.$t('Storage.OperationSuccessful')
       }
       this.$notification["success"]({
         message: message,

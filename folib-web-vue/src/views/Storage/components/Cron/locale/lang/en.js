@@ -1,0 +1,17 @@
+export default {
+    'HasBeenSet': 'It has been set',
+    'ExpandSettings': 'Expand Settings',
+    'DoItOnce': 'Do it once',
+    'LoopExecution': 'Loop execution',
+    'ExecuteImmediately': 'Execute immediately',
+    'NotExecutedImmediately': 'Not executed immediately',
+    'OtherParameters': 'Other parameters:',
+    'Days': 'Days',
+    'Tag': 'Tag',
+    'RetentionDaysNum': 'Number of retention days',
+    'KeepTheNumber': 'Keep the number',
+    'Success': 'Success',
+    'TheOperationIsIncorrect': 'The operation is incorrect',
+    'FillInTheCronExpression': 'Please fill in the cron expression',
+    'Failure': 'Failure',
+}

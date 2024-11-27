@@ -8,6 +8,7 @@ import com.veadan.folib.enums.ResponseDataTypeEnum;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
+import com.veadan.folib.storage.repository.remote.heartbeat.RemoteRepositoryAlivenessService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -39,6 +40,9 @@ public class ClientComponent {
     @Inject
     private ConfigurationManager configurationManager;
 
+    @Inject
+    private RemoteRepositoryAlivenessService remoteRepositoryAlivenessCacheManager;
+
     public ResponseResult doGet(String storageId, String repositoryId, String targetUrl, MultivaluedMap<String, Object> headers) {
         log.debug("StorageId [{}] repositoryId [{}] targetUrl [{}] headers [{}]", storageId, repositoryId, targetUrl, MapUtils.isNotEmpty(headers) ? JSONObject.toJSONString(headers) : null);
         Response response = null;
@@ -50,6 +54,10 @@ public class ClientComponent {
                 if (Objects.nonNull(repository)) {
                     RemoteRepository remoteRepository = repository.getRemoteRepository();
                     if (Objects.nonNull(remoteRepository)) {
+                        if (!remoteRepositoryAlivenessCacheManager.isAlive(remoteRepository)) {
+                            log.warn("Remote storageId [{}] repositoryId [{}] url [{}] is down.", storageId, repositoryId, remoteRepository.getUrl());
+                            return null;
+                        }
                         if (StringUtils.isNotBlank(remoteRepository.getUsername())) {
                             username = remoteRepository.getUsername();
                         }
@@ -58,8 +66,10 @@ public class ClientComponent {
                         }
                     }
                 }
+                client = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
+            } else {
+                client = proxyRepositoryConnectionPoolConfigurationService.getRestClient();
             }
-            client = proxyRepositoryConnectionPoolConfigurationService.getRestClient(storageId, repositoryId);
             //连接建立超时时间
             client.property(ClientProperties.CONNECT_TIMEOUT, 10000);
             //读取内容超时时间
@@ -76,7 +86,7 @@ public class ClientComponent {
             response = builder.get();
             String responseBody = response.readEntity(String.class);
             if (HttpStatus.SC_OK != response.getStatus()) {
-                log.debug("Url response error [{}] [{}] [{}] [{}]", targetUrl, headers, response.getStatus(), responseBody);
+                log.error("Url response error [{}] [{}] [{}] [{}]", targetUrl, headers, response.getStatus(), responseBody);
             }
             ResponseResult responseResult = ResponseResult.builder().build();
             responseResult.setHttpStatus(response.getStatus());

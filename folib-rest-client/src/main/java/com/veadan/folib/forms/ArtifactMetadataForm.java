@@ -31,6 +31,11 @@ public class ArtifactMetadataForm {
     private String value;
 
     /**
+     * 展示位置
+     */
+    private String location;
+
+    /**
      * 存储空间名称
      */
     private String storageId;

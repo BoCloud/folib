@@ -9,12 +9,17 @@ import com.veadan.folib.users.domain.Privileges;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @author 
  * @author Veadan
  * @author veadan
  */
+@Data
+@AllArgsConstructor
 public class RepositoryPrivilegesDto
         implements Serializable, RepositoryPrivileges
 {

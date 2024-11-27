@@ -181,6 +181,34 @@ export function convertToBytes(size, unit) {
   }
 }
 
+// 防抖
+export const debounce = (fn, delay) => {
+  const t = delay || 750;
+  let timer;
+  return function () {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      // 改变this指向并传递参数
+      fn.apply(this, arguments)
+    }, t);
+  }
+}
+
+export const download = (blob, fileName) => {
+  if (window.navigator.msSaveOrOpenBlob) {
+    //兼容IE10
+    navigator.msSaveBlob(blob, fileName)
+  } else {
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', fileName)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  }
+}
 
 
 

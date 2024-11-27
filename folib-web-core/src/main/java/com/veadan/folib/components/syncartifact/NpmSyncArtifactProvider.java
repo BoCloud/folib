@@ -193,6 +193,10 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
                     HttpUtil.get(absUrl);
                     THREAD_LOCAL.set(THREAD_LOCAL.get() + 1);
                 } else {
+                    // 非子目录
+                    if (!absUrl.contains(url) || url.equals(absUrl)) {
+                        continue;
+                    }
                     absUrl = absUrl.substring(rootUrl.length());
                     if (separator.equals(absUrl)) {
                         continue;

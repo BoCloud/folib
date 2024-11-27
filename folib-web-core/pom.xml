@@ -120,6 +120,11 @@
     </build>
 
     <dependencies>
+        <dependency>
+            <groupId>com.veadan.folib</groupId>
+            <artifactId>folib-core</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
         <!-- Strongbox dependencies -->
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -252,8 +257,19 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>folib-storage-pub-layout-provider</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>folib-storage-debian-layout-provider</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>folib-client</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>1.1.1-RELEASE</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -263,13 +279,13 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-rest-client</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>1.1.1-RELEASE</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-rest-client</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>1.1.1-RELEASE</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -352,6 +368,7 @@
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.20</version>
         </dependency>
 
         <dependency>
@@ -679,6 +696,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>folib-storage-go-layout-provider</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.jfrog.artifactory.client</groupId>
             <artifactId>artifactory-java-client-services</artifactId>
             <version>2.12.0</version>
@@ -687,6 +709,33 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>folib-storage-gitlfs-layout-provider</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>folib-storage-huggingface-layout-provider</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.cloud.tools</groupId>
+            <artifactId>jib-core</artifactId>
+            <version>0.27.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.junrar</groupId>
+            <artifactId>junrar</artifactId>
+            <version>7.5.5</version>
+        </dependency>
+        <!-- Project Reactor -->
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+        </dependency>
+
     </dependencies>
 
     <profiles>

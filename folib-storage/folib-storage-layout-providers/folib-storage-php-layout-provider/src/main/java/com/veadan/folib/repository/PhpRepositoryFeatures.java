@@ -12,6 +12,7 @@ import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
+import com.veadan.folib.storage.repository.remote.heartbeat.RemoteRepositoryAlivenessService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.config.RequestConfig;
@@ -58,6 +59,9 @@ public class PhpRepositoryFeatures
 
     @Inject
     protected ArtifactResolutionService artifactResolutionService;
+
+    @Inject
+    private RemoteRepositoryAlivenessService remoteRepositoryAlivenessCacheManager;
 
     private Set<String> defaultArtifactCoordinateValidators = new LinkedHashSet<>();
 
@@ -122,6 +126,10 @@ public class PhpRepositoryFeatures
         Repository repository = storage.getRepository(repositoryId);
         RemoteRepository remoteRepository = repository.getRemoteRepository();
         if (remoteRepository == null) {
+            return;
+        }
+        if (!remoteRepositoryAlivenessCacheManager.isAlive(remoteRepository)) {
+            log.warn("Remote storageId [{}] repositoryId [{}] url [{}] is down.", storageId, repositoryId, remoteRepository.getUrl());
             return;
         }
         String targetUrl = phpSearchRequest.getTargetUrl();

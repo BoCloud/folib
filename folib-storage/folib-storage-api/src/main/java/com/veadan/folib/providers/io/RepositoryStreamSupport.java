@@ -2,6 +2,7 @@ package com.veadan.folib.providers.io;
 
 import com.veadan.folib.artifact.ArtifactNotFoundException;
 import com.veadan.folib.io.*;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.CommonUtils;
 import org.apache.commons.io.input.CountingInputStream;
 import org.apache.commons.io.input.ProxyInputStream;
@@ -18,6 +19,7 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 
@@ -105,19 +107,25 @@ public class RepositoryStreamSupport {
             if (!ctx.isOpened()) {
                 return;
             }
+            RepositoryPath repositoryPath = (RepositoryPath) ctx.getPath();
             TransactionStatus transaction = ctx.getTransaction();
             if (transaction != null && (transaction.isRollbackOnly() || !transaction.isCompleted())) {
                 logger.warn("Rollback [{}]", getContext().getPath());
                 transactionManager.rollback(transaction);
                 logger.warn("Rolled back [{}]", getContext().getPath());
+                if (RepositoryTypeEnum.PROXY.getType().equalsIgnoreCase(repositoryPath.getRepository().getType()) && Files.exists(repositoryPath)) {
+                    logger.info("Rollback back file path [{}] size [{}] store size [{}]", getContext().getPath(), repositoryPath.getSize(), Files.size(repositoryPath));
+                    RepositoryFiles.delete(repositoryPath);
+                    logger.warn("Rolled back file path [{}]", getContext().getPath());
+                }
             }
         } finally {
             if (Objects.nonNull(ctx.getLocked())) {
                 unLock();
-                logger.debug("Unlocked [{}].", path);
+                logger.info("Unlocked [{}].", path);
             }
             clearContext();
-            logger.debug("Close [{}] take time [{}] ms", path, System.currentTimeMillis() - startTime);
+            logger.info("Close [{}] take time [{}] ms", path, System.currentTimeMillis() - startTime);
         }
     }
 
@@ -162,6 +170,8 @@ public class RepositoryStreamSupport {
         @Override
         public void flush()
                 throws IOException {
+            long allStartTime = System.currentTimeMillis();
+            long startTime;
             logger.debug("Flushing [{}]", getContext().getPath());
 
             super.flush();
@@ -172,8 +182,12 @@ public class RepositoryStreamSupport {
             if (transaction != null && !transaction.isRollbackOnly()) {
                 logger.info("Commit [{}]", getContext().getPath());
                 try {
+                    startTime = System.currentTimeMillis();
                     RepositoryStreamSupport.this.commit();
+                    logger.info("Flush db commit [{}] take time [{}] ms." , getContext().getPath(), System.currentTimeMillis() - startTime);
+                    startTime = System.currentTimeMillis();
                     transactionManager.commit(transaction);
+                    logger.info("Flush transaction commit [{}] take time [{}] ms." , getContext().getPath(), System.currentTimeMillis() - startTime);
                     logger.info("Commited [{}]", getContext().getPath());
                 } catch (Exception ex) {
                     String realMessage = CommonUtils.getRealMessage(ex);
@@ -189,16 +203,21 @@ public class RepositoryStreamSupport {
             } else {
                 logger.warn("Skip commit [{}]", getContext().getPath());
             }
+            logger.info("Flush [{}] take time [{}] ms." , getContext().getPath(), System.currentTimeMillis() - allStartTime);
         }
 
         @Override
         public void close()
                 throws IOException {
             try {
+                long startTime = System.currentTimeMillis();
                 super.close();
+                logger.info("IOUtils close [{}] take time [{}] ms." , getContext().getPath(), System.currentTimeMillis() - startTime);
+                startTime = System.currentTimeMillis();
                 if (((CountingOutputStream) out).getByteCount() > 0) {
                     callback.onAfterWrite((RepositoryStreamWriteContext) ctx);
                 }
+                logger.info("OnAfterWrite [{}] take time [{}] ms." , getContext().getPath(), System.currentTimeMillis() - startTime);
             } catch (Exception e) {
                 logger.error("Failed to close [{}].", getContext().getPath(), e);
 

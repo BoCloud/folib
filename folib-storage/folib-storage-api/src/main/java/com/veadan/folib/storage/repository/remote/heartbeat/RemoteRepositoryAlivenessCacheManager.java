@@ -33,6 +33,7 @@ public class RemoteRepositoryAlivenessCacheManager
         Objects.requireNonNull(cache, "remoteRepositoryAliveness cache configuration was not provided");
     }
 
+    @Override
     public boolean isAlive(RemoteRepository remoteRepository)
     {
         Boolean aliveness = cache.get(remoteRepository.getUrl(), Boolean.class);
@@ -43,6 +44,7 @@ public class RemoteRepositoryAlivenessCacheManager
         return BooleanUtils.isNotFalse(aliveness);
     }
 
+    @Override
     public void put(RemoteRepository remoteRepository,
                     boolean aliveness)
     {

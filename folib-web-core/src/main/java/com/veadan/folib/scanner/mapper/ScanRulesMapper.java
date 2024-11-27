@@ -1,6 +1,6 @@
 package com.veadan.folib.scanner.mapper;
 
-import com.veadan.folib.scanner.common.base.CommonMapper;
+import com.veadan.folib.common.base.CommonMapper;
 import com.veadan.folib.scanner.entity.ScanRules;
 import org.springframework.stereotype.Component;
 

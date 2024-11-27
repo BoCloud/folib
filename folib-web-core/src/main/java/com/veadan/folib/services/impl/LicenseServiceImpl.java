@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSONObject;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.google.common.collect.Maps;
+import com.hazelcast.core.HazelcastInstance;
+import com.veadan.folib.domain.license.LicenseBlackWhite;
 import com.veadan.folib.entity.License;
 import com.veadan.folib.forms.license.LicenseTableForm;
 import com.veadan.folib.mapper.LicenseMapper;
@@ -13,8 +15,10 @@ import com.veadan.folib.services.LicenseService;
 import com.veadan.folib.utils.Translate;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -28,9 +32,8 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-//import com.veadan.folib.utils.Translate;
 
 /**
  * @author leipenghui
@@ -39,12 +42,45 @@ import java.util.stream.Collectors;
 @Service
 public class LicenseServiceImpl implements LicenseService {
 
+    private final static String LICENSE_CACHE = "LICENSE_CACHE";
+
+    private final static String LICENSE_CACHE_KEY = "LICENSE_CACHE_KEY";
+
     @Autowired
     private LicenseMapper licenseMapper;
 
     @Autowired
     @Lazy
     private ProxyRepositoryConnectionPoolConfigurationService clientPool;
+
+    @Autowired
+    private HazelcastInstance hazelcastInstance;
+
+    /**
+     * 将字符串按照指定长度分割成字符串数组
+     *
+     * @param src
+     * @param length
+     * @return
+     */
+    public static String[] stringToStringArray(String src, int length) {
+        int len = src.length();
+        int startIndex = 0;
+        int endIndex = length;
+        int numChunks = (int) Math.ceil((double) len / length); // 计算需要的子字符串数量
+        String[] chunks = new String[numChunks];
+        for (int i = 0; i < numChunks; i++) {
+            if (endIndex > len) {
+                endIndex = len;
+            }
+            String substring = src.substring(startIndex, endIndex);
+            chunks[i] = substring;
+            startIndex = endIndex;
+            endIndex += length;
+        }
+        return chunks;
+
+    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -55,6 +91,7 @@ public class LicenseServiceImpl implements LicenseService {
         } else {
             licenseMapper.insertSelective(license);
         }
+        clearCache();
     }
 
     @Override
@@ -67,6 +104,7 @@ public class LicenseServiceImpl implements LicenseService {
             criteria.andEqualTo("licenseId", license.getLicenseId());
             licenseMapper.updateByExampleSelective(license, example);
         }
+        clearCache();
     }
 
     @Override
@@ -79,7 +117,7 @@ public class LicenseServiceImpl implements LicenseService {
             }
         }
         example.selectProperties("id", "licenseId", "licenseUrl");
-        example.setOrderByClause("create_time");
+        example.setOrderByClause("id");
         return licenseMapper.selectByExample(example);
     }
 
@@ -178,22 +216,15 @@ public class LicenseServiceImpl implements LicenseService {
     }
 
     @Override
-    public TableResultResponse<LicenseTableForm> queryLicensePage(Integer page, Integer limit, String searchKeyword) {
+    public TableResultResponse<LicenseTableForm> queryLicensePage(Integer page, Integer limit, String searchKeyword, String licenseId, Integer blackWhiteType) {
         if (Objects.isNull(page)) {
             page = 1;
         }
         if (Objects.isNull(limit)) {
             limit = 10;
         }
-        Example example = Example.builder(License.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        if (StringUtils.isNotBlank(searchKeyword)) {
-            searchKeyword = "%" + searchKeyword + "%";
-            criteria.andLike("licenseName", searchKeyword);
-        }
-        example.setOrderByClause("create_time");
         Page<Object> result = PageHelper.startPage(page, limit);
-        List<License> licenseList = licenseMapper.selectByExample(example);
+        List<License> licenseList = licenseMapper.selectLicense(searchKeyword, licenseId, blackWhiteType, null, null);
         return new TableResultResponse<LicenseTableForm>(result.getTotal(), Optional.ofNullable(licenseList).orElse(Collections.emptyList()).stream().map(license -> {
             LicenseTableForm licenseTableForm = LicenseTableForm.builder().build();
             BeanUtils.copyProperties(license, licenseTableForm);
@@ -201,30 +232,38 @@ public class LicenseServiceImpl implements LicenseService {
         }).collect(Collectors.toList()));
     }
 
-    /**
-     * 将字符串按照指定长度分割成字符串数组
-     *
-     * @param src
-     * @param length
-     * @return
-     */
-    public static String[] stringToStringArray(String src, int length) {
-        int len = src.length();
-        int startIndex = 0;
-        int endIndex = length;
-        int numChunks = (int) Math.ceil((double) len / length); // 计算需要的子字符串数量
-        String[] chunks = new String[numChunks];
-        for (int i = 0; i < numChunks; i++) {
-            if (endIndex > len) {
-                endIndex = len;
-            }
-            String substring = src.substring(startIndex, endIndex);
-            chunks[i] = substring;
-            startIndex = endIndex;
-            endIndex += length;
-        }
-        return chunks;
+    @Override
+    public List<LicenseTableForm> queryLicense(String searchKeyword, String licenseId, Integer blackWhiteType, Integer excludeBlackWhiteType) {
+        List<License> licenseList = licenseMapper.selectLicense(searchKeyword, licenseId, blackWhiteType, excludeBlackWhiteType, null);
+        return Optional.ofNullable(licenseList).orElse(Collections.emptyList()).stream().map(license -> {
+            LicenseTableForm licenseTableForm = LicenseTableForm.builder().build();
+            BeanUtils.copyProperties(license, licenseTableForm);
+            return licenseTableForm;
+        }).collect(Collectors.toList());
+    }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void blackWhite(LicenseBlackWhite licenseBlackWhite) {
+        License license = selectOneLicense(License.builder().licenseId(licenseBlackWhite.getLicenseId()).build());
+        if (Objects.isNull(license)) {
+            return;
+        }
+        Example example = Example.builder(License.class).build();
+        Example.Criteria criteria = example.createCriteria();
+        criteria.andEqualTo("licenseId", license.getLicenseId());
+        licenseMapper.updateByExampleSelective(License.builder().blackWhiteType(licenseBlackWhite.getBlackWhiteType()).build(), example);
+        clearCache();
+    }
+
+    @Override
+    public List<License> getLicenseCache() {
+        List<License> licenses = getCache();
+        if (CollectionUtils.isEmpty(licenses)) {
+            licenses = licenseMapper.selectLicense(null, null, null, null, 0);
+            putCache(licenses, 8);
+        }
+        return licenses;
     }
 
     /**
@@ -242,5 +281,41 @@ public class LicenseServiceImpl implements LicenseService {
             builder = builder.header(entry.getKey(), entry.getValue());
         }
         return builder.get();
+    }
+
+    /**
+     * 刷新缓存
+     */
+    private void clearCache() {
+        Map<String, List<License>> hazelcastMap = hazelcastInstance.getMap(LICENSE_CACHE_KEY);
+        hazelcastMap.remove(LICENSE_CACHE);
+    }
+
+    /**
+     * 加入缓存
+     *
+     * @param cacheValue 缓存值
+     * @param ttl        缓存时间，小时
+     */
+    private void putCache(List<License> cacheValue, long ttl) {
+        if (CollectionUtils.isEmpty(cacheValue)) {
+            return;
+        }
+        hazelcastInstance.getMap(LICENSE_CACHE_KEY).put(LICENSE_CACHE, cacheValue, ttl, TimeUnit.HOURS);
+    }
+
+    /**
+     * 获取缓存
+     *
+     * @return 缓存值
+     */
+    private List<License> getCache() {
+        try {
+            Map<String, List<License>> hazelcastMap = hazelcastInstance.getMap(LICENSE_CACHE_KEY);
+            return hazelcastMap.get(LICENSE_CACHE);
+        } catch (Exception ex) {
+            log.warn(ExceptionUtils.getStackTrace(ex));
+            return null;
+        }
     }
 }

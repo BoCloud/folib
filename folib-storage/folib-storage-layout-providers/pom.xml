@@ -43,9 +43,19 @@
         <module>folib-storage-helm-layout-provider</module>
         <module>folib-storage-conan-layout-provider</module>
         <module>folib-storage-cocoapods-layout-provider</module>
+        <module>folib-storage-go-layout-provider</module>
+        <module>folib-storage-gitlfs-layout-provider</module>
+        <module>folib-storage-huggingface-layout-provider</module>
+        <module>folib-storage-pub-layout-provider</module>
+        <module>folib-storage-debian-layout-provider</module>
     </modules>
 
     <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>folib-client</artifactId>
+            <version>1.1.1-RELEASE</version>
+        </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-commons</artifactId>

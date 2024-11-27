@@ -3,20 +3,20 @@
     <div class="mx-25 mb-50">
       <a-col :span="24" class="text-right">
         <a-tooltip @click="externalNodeHandler(1)">
-          <template slot="title">新增</template>
+          <template slot="title">{{ $t('ExternalNode.Create') }}</template>
           <a-icon type="plus-circle" theme="filled" class="cursor-pointer"
             :style="{ fontSize: '28px', color: '#1890FF' }" />
         </a-tooltip>
       </a-col>
     </div>
-    <a-table :columns="externalNodeColumns" :data-source="externalNodeList" :scroll="{ x: true }"
+    <a-table :columns="i18nExternalNodeColumns" :data-source="externalNodeList" :scroll="{ x: true }"
       @change="handleChangeTable"
       :loading="loading"
       :pagination="{ pageSize: externalNodeQuery.limit, current: externalNodeQuery.page, total: externalNodeQuery.total, showLessItems: true }"
       :row-key="(r, i) => i.toString()">
       <div slot="operation" slot-scope="text, record">
         <div class="col-action">
-          <a-popconfirm title="确定要删除吗？" okType="danger" ok-text="确定" cancel-text="取消"
+          <a-popconfirm :title="$t('ExternalNode.SureDelete')" okType="danger" :ok-text="$t('ExternalNode.Confirm')" :cancel-text="$t('ExternalNode.Cancel')"
             @confirm="externalNodeHandlerDelete(record)">
             <a-button type="link" size="small">
               <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -60,6 +60,7 @@ export default {
       externalNodeColumns: [
         {
           title: '外部节点名称',
+          i18nKey: 'ExternalNode.ExternalNodeName',
           dataIndex: 'nodeName',
           key: 'nodeName',
           width: 150,
@@ -67,13 +68,15 @@ export default {
         },
         {
           title: '外部节点类型',
+          i18nKey: 'ExternalNode.ExternalNodeType',
           dataIndex: 'type',
           key: 'type',
-          width: 100,
+          width: 120,
           scopedSlots: { customRender: 'type' },
         },
         {
           title: '外部节点地址',
+          i18nKey: 'ExternalNode.ExternalNodeAddress',
           dataIndex: 'address',
           key: 'address',
           width: 200,
@@ -81,6 +84,7 @@ export default {
         },
         {
           title: '用户名',
+          i18nKey: 'ExternalNode.Username',
           dataIndex: 'username',
           key: 'username',
           width: 100,
@@ -88,6 +92,7 @@ export default {
         },
         {
           title: '创建时间',
+          i18nKey: 'ExternalNode.CreationTime',
           dataIndex: 'createTime',
           key: 'createTime',
           width: 200,
@@ -95,6 +100,7 @@ export default {
         },
         {
           title: '操作',
+          i18nKey: 'ExternalNode.Operation',
           dataIndex: 'operation',
           width: 100,
           scopedSlots: { customRender: 'operation' },
@@ -113,6 +119,16 @@ export default {
       externalNode: undefined,
     }
   },
+  computed: {
+    i18nExternalNodeColumns() {
+      return this.externalNodeColumns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    }
+  },
   created() {
     this.getExternalNodeList()
   },
@@ -120,7 +136,7 @@ export default {
   methods: {
     successMsg(message) {
       if (!message) {
-        message = "操作成功"
+        message = this.$t('ExternalNode.OperateSuccess')
       }
       this.$notification["success"]({
         message: message,
@@ -133,7 +149,7 @@ export default {
           this.externalNodeList = res.data.rows
           this.externalNodeQuery.total = res.data.total
         }
-      }).finally(() => { 
+      }).finally(() => {
         this.loading = false
       })
     },
@@ -164,7 +180,7 @@ export default {
     },
     externalNodeHandlerDelete(record) {
       deleteExternalNode(record.id).then((res) => {
-        this.successMsg("删除外部节点成功")
+        this.successMsg(this.$t('ExternalNode.deleteExternalNodeSuccess'))
         this.externalNodeTableReflesh()
       }).catch((err) => {
         this.$notification["error"]({

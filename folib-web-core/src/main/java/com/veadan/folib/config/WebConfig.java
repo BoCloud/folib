@@ -13,7 +13,6 @@ import com.veadan.folib.converters.storage.routing.RoutingRuleFormToMutableConve
 import com.veadan.folib.converters.users.AccessModelFormToUserAccessModelDtoConverter;
 import com.veadan.folib.converters.users.UserFormToUserDtoConverter;
 import com.veadan.folib.cron.config.CronTasksConfig;
-import com.veadan.folib.filter.WrapperRequestFilter;
 import com.veadan.folib.interceptors.PermissionCheckInterceptor;
 import com.veadan.folib.jtwig.extensions.ByteSizeConversionExtension;
 import com.veadan.folib.mapper.WebObjectMapperSubtypes;
@@ -32,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -81,7 +81,8 @@ import java.util.List;
         "com.veadan.folib.promotion",
         "com.veadan.folib.task",
         "com.veadan.folib.aop",
-        "com.veadan.folib.ws"})
+        "com.veadan.folib.ws",
+        "com.veadan.folib.filter"})
 @Import({CommonConfig.class,
         FolibSecurityConfig.class,
         StorageApiConfig.class,
@@ -95,6 +96,7 @@ import java.util.List;
         MapperAutoConfiguration.class,
         SwaggerConfig.class})
 @EnableCaching(order = 105)
+@ServletComponentScan(basePackages = {"com.veadan.folib.filter"})
 public class WebConfig
         extends WebMvcConfigurationSupport {
 
@@ -153,11 +155,6 @@ public class WebConfig
     @Bean
     DirectoryTraversalFilter directoryTraversalFilter() {
         return new DirectoryTraversalFilter();
-    }
-
-    @Bean
-    WrapperRequestFilter wrapperRequestFilter() {
-        return new WrapperRequestFilter();
     }
 
     @Override
@@ -325,6 +322,8 @@ public class WebConfig
 
     @Bean(name = "multipartResolver")
     public MultipartResolver multipartResolver() {
-        return new CustomMultipartResolver();
+        CustomMultipartResolver resolver = new CustomMultipartResolver();
+        resolver.setMaxInMemorySize(1024*1024*10);
+        return resolver;
     }
 }

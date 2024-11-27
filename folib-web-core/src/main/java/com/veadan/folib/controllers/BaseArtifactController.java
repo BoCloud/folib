@@ -2,6 +2,7 @@ package com.veadan.folib.controllers;
 
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.components.block.ArtifactBlockComponent;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.CacheSettings;
@@ -13,12 +14,14 @@ import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.DictService;
 import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.utils.ArtifactControllerHelper;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,7 +41,11 @@ import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.TimeZone;
 
 public abstract class BaseArtifactController
         extends BaseController {
@@ -54,6 +61,9 @@ public abstract class BaseArtifactController
 
     @Autowired
     private ArtifactComponent artifactComponent;
+
+    @Autowired
+    private ArtifactBlockComponent artifactBlockComponent;
 
     @Autowired
     private DictService dictService;
@@ -79,6 +89,9 @@ public abstract class BaseArtifactController
         if (RequestMethod.HEAD.name().equals(request.getMethod())) {
             return true;
         }
+        SimpleDateFormat sdf = new SimpleDateFormat("E, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
+        sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
+        response.setHeader("Last-Modified", sdf.format(new Date()));
         long startTime = System.currentTimeMillis();
         logger.debug("Download [{}] 开始时间 [{}]", repositoryPath.toString(), startTime);
         if (ArtifactControllerHelper.isRangedRequest(httpHeaders)) {
@@ -128,7 +141,7 @@ public abstract class BaseArtifactController
         if (Objects.isNull(artifact)) {
             return null;
         }
-        boolean block = artifactComponent.vulnerabilityBlock(artifact, repositoryPath.getRepository().getLayout());
+        boolean block = artifactBlockComponent.artifactBlockStrategy(artifact, repositoryPath.getRepository().getLayout());
         if (block) {
             httpServletResponse.setContentType(org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
             httpServletResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
@@ -198,6 +211,9 @@ public abstract class BaseArtifactController
 
     private Artifact getArtifact(RepositoryPath repositoryPath) throws IOException {
         Artifact artifact = null;
+        if (Files.isSameFile(repositoryPath.getRoot(), repositoryPath)) {
+            return null;
+        }
         String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
         if (repositoryPath.getTarget() instanceof S3Path) {
             CacheUtil<String, String> cacheUtil = CacheUtil.getInstance();
@@ -261,5 +277,26 @@ public abstract class BaseArtifactController
         String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
         String bestMatchPattern = (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
         return new AntPathMatcher().extractPathWithinPattern(bestMatchPattern, path);
+    }
+
+    /**
+     * 用户制品上传过程
+     * 获取仓库id方法 如果是组合库且配置了默认库 获取的是配置的默认id 否则获取的为仓库id
+     * @param repository 仓库对象
+     * @return 仓库id
+     */
+    @Deprecated
+    private String ifIsGroupAndStoreToDefault(Repository repository){
+        if(RepositoryTypeEnum.GROUP.getType().equals(repository.getType())&&StringUtils.isNotBlank(repository.getGroupDefaultRepository())){
+            String defaultRepository = repository.getGroupDefaultRepository();
+            String[] split = defaultRepository.split(":");
+            if(split.length==2){
+                return split[1];
+            }else {
+                return repository.getId();
+            }
+        }else {
+            return repository.getId();
+        }
     }
 }

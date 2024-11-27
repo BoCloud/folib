@@ -3,7 +3,7 @@
   <a-row :gutter="24" type="flex" align="stretch">
           <a-col :span="24" class="text-left mb-10" v-if="repair">
             <a-button type="primary" @click="cassandraRepair()">
-              数据修复
+              {{ $t('Setting.DataRepair') }}
             </a-button>
           </a-col>
           <a-col :span="24" :xl="24" class="mb-24" v-for="(dc, dcKey, dcIndex) in cassandraClusterInfo.dcsMap"
@@ -14,11 +14,11 @@
                   :class="item.endpointWithPort.hostAddressAndPort == cassandraClusterInfo.endpoint ? 'header-solid h-full card-profile-information current-node' : 'header-solid h-full card-profile-information'"
                   :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }" :headStyle="{ paddingRight: 0, }">
                   <template #title>
-                    <a-card-meta title="节点信息" :description="'IP：' + item.endpoint">
+                    <a-card-meta :title="$t('Setting.NodeInformation')" :description="'IP：' + item.endpoint">
                       <a-avatar slot="avatar" src="images/folib/cluster_node.svg" />
                     </a-card-meta>
                   </template>
-                  <a-popconfirm slot="extra" title="危险操作！！！确定要移除此节点吗？" okType="danger" ok-text="确定" cancel-text="取消"
+                  <a-popconfirm slot="extra" :title="$t('Setting.DangerousOperation')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
                     v-if="cassandraClusterInfo.unreachableNodeList.indexOf(item.endpointWithPort.hostAddressAndPort) != -1"
                     class="remove-node-popconfirm"
                     @confirm="removeNode(cassandraClusterInfo.hostIDMap[item.endpointWithPort.hostAddressAndPort], item.endpointWithPort.hostAddressAndPort)">
@@ -27,26 +27,26 @@
                   <p class="text-dark">
                   </p>
                   <hr class="my-25">
-                  <a-descriptions title="基本信息" :column="1">
-                    <a-descriptions-item label="状态">
+                  <a-descriptions :title="$t('Setting.BasicInformation')" :column="1">
+                    <a-descriptions-item :label="$t('Setting.Status')">
                       <a-badge
                         v-if="cassandraClusterInfo.liveNodeList.indexOf(item.endpointWithPort.hostAddressAndPort) != -1"
-                        color="#87d068" text="在线" />
+                        color="#87d068" :text="$t('Setting.Online')" />
                       <a-badge
                         v-if="cassandraClusterInfo.unreachableNodeList.indexOf(item.endpointWithPort.hostAddressAndPort) != -1"
-                        color="#f50" text="离线" />
+                        color="#f50" :text="$t('Setting.Offline')" />
                     </a-descriptions-item>
-                    <a-descriptions-item label="使用端口">
+                    <a-descriptions-item :label="$t('Setting.UsingPorts')">
                       {{ item.endpointWithPort.port }}
                     </a-descriptions-item>
-                    <a-descriptions-item label="数据表总数">
+                    <a-descriptions-item :label="$t('Setting.TotalNumberOfDataTables')">
                       {{ cassandraClusterInfo.statsHolderMap.total_number_of_tables }}
                     </a-descriptions-item>
-                    <a-descriptions-item label="数据所有权">
+                    <a-descriptions-item :label="$t('Setting.DataOwnership')">
                       <span v-if="item.owns">{{ (item.owns * 100).toFixed(2) + '%' }}</span>
                       <span v-else>{{ '100.00%' }}</span>
                     </a-descriptions-item>
-                    <a-descriptions-item label="预估数据量">
+                    <a-descriptions-item :label="$t('Setting.EstimatedDataSize')">
                       {{ cassandraClusterInfo.loadMap[item.endpointWithPort.hostAddressAndPort] }}
                     </a-descriptions-item>
                   </a-descriptions>
@@ -115,7 +115,7 @@ export default {
     },
     successMsg(message) {
       if (!message) {
-        message = "操作成功"
+        message = this.$t('Setting.OperationSuccessful')
       }
       this.$notification["success"]({
         message: message,
@@ -144,16 +144,16 @@ export default {
         return
       }
       Storage.prototype.setCanExpireLocal(key, true, 30 * 1000)
-      this.successMsg("正在移除节点 " + endpoint + "，请稍候刷新页面查看")
+      this.successMsg(this.$t('Setting.RemovingNodes') + endpoint + this.$t('Setting.refreshThePageToCheck'))
       cassandraRemoveNode(hostId).then(res => {
-        this.successMsg("成功移除节点：" + endpoint)
+        this.successMsg(this.$t('Setting.SuccessRemovedNode') + endpoint)
       }).catch((err) => {
 
       })
     },
     cassandraRepair() {
       cassandraRepair().then(res => {
-        this.successMsg("集群数据修复完成");
+        this.successMsg(this.$t('Setting.clusterDataIsRepaired'));
       }).catch((err) => {
         this.$notification["error"]({
           message: err.response.data.error,

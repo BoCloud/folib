@@ -147,3 +147,44 @@ export function conanPackageInfo (data) {
     data: data
   })
 }
+
+export function getLayouts () {
+  return axios({
+    url: '/api/artifact/getLayouts',
+    method: 'get',
+  })
+}
+
+export function retryNodeOption (syncNo) {
+  return axios({
+    url: '/api/artifact/folib/promotion/retryNodeOption/'+syncNo,
+    method: 'post'
+  })
+}
+
+export function retryArtifactDispatch (syncNo,type) {
+  return axios({
+    url: '/api/artifact/folib/promotion/retryArtifactDispatch/'+syncNo+'/'+type,
+    method: 'post'
+  })
+}
+
+export function updateTaskQueuePriority (syncNo,priority) {
+  return axios({
+    url: '/api/artifact/folib/promotion/updateTaskQueuePriority/'+syncNo+'/'+priority,
+    method: 'post'
+  })
+}
+
+export function getRawPathSize (storageId,repositoryId,path) {
+  return axios({
+    url: '/api/artifact/rawPathSize/'+storageId+'/'+repositoryId+'/'+path,
+    method: 'get'
+  })
+}
+export function deleteTask (syncNo,priority) {
+  return axios({
+    url: '/api/artifact/folib/promotion/deleteTask/'+syncNo,
+    method: 'delete'
+  })
+}

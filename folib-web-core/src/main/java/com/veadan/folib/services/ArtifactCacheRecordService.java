@@ -58,6 +58,15 @@ public interface ArtifactCacheRecordService {
     List<ArtifactCacheRecord> getArtifactCacheRecord(ArtifactCacheRecord artifactCacheRecord, Integer page, Integer limit);
 
     /**
+     * 游标制品缓存记录
+     *
+     * @param lastId              最新的id
+     * @param limit               数量
+     * @return 制品缓存记录
+     */
+    List<ArtifactCacheRecord> getArtifactCacheRecordByCursor(Long lastId, Integer limit);
+
+    /**
      * 获取制品缓存记录数量
      *
      * @param artifactCacheRecord 参数
@@ -92,7 +101,15 @@ public interface ArtifactCacheRecordService {
 
     /**
      * 校验制品
+     *
      * @param repositoryPath 制品
      */
     void verifySourceRepositoryPath(RepositoryPath repositoryPath);
+
+    /**
+     * 批量删除制品缓存记录
+     *
+     * @param records 制品缓存记录
+     */
+    void batchDeleteArtifactCacheRecord(List<ArtifactCacheRecord> records);
 }

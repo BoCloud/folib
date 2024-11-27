@@ -6,7 +6,6 @@ import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.data.criteria.Selector;
-import com.veadan.folib.dependency.snippet.CodeSnippet;
 import com.veadan.folib.dependency.snippet.SnippetGenerator;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactEntity;
@@ -29,7 +28,6 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.search.SearchResult;
 import com.veadan.folib.storage.search.SearchResults;
-import com.veadan.folib.utils.TreeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -101,6 +99,8 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
                                        String sortOrder,
                                        List<String> repositoryIds,
                                        String safeLevel,
+                                       String digestAlgorithm,
+                                       String digest,
                                        Integer limit, Integer page) throws IOException {
 
         Pageable pageable = null;
@@ -128,7 +128,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
         if (SafeLevelEnum.SCAN_COMPLETE.getLevel().equalsIgnoreCase(safeLevel)) {
             storageIdAndRepositoryIdList = getAllRepository();
         }
-        Page<Artifact> artifacts = artifactRepository.findMatchingByIndex(pageable, regex, artifactName, metadataSearch, storageId, repositoryId, repositoryIds, storageIdAndRepositoryIdList, beginDate, endDate, safeLevel, sortField, sortOrder);
+        Page<Artifact> artifacts = artifactRepository.findMatchingByIndex(pageable, regex, artifactName, metadataSearch, storageId, repositoryId, repositoryIds, storageIdAndRepositoryIdList, beginDate, endDate, safeLevel, digestAlgorithm, digest, sortField, sortOrder);
         List<Artifact> artifactEntityList = artifacts.getContent();
 
         SearchResults result = new SearchResults();

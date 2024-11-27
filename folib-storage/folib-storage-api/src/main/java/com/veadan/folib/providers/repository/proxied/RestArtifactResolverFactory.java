@@ -1,13 +1,8 @@
 package com.veadan.folib.providers.repository.proxied;
 
-import java.util.Objects;
-
-import javax.inject.Inject;
-import javax.ws.rs.client.Client;
-
-import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.client.RemoteRepositoryRetryArtifactDownloadConfiguration;
 import com.veadan.folib.client.RestArtifactResolver;
+import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
@@ -15,6 +10,10 @@ import com.veadan.folib.storage.repository.remote.heartbeat.RemoteRepositoryAliv
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+import javax.ws.rs.client.Client;
+import java.util.Objects;
 
 /**
  * @author veadan
@@ -45,17 +44,18 @@ public class RestArtifactResolverFactory
         String url = repository.getUrl();
 
         final HttpAuthenticationFeature authenticationFeature = (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) ? HttpAuthenticationFeature.basic(username, password) : null;
-
+        final BearerTokenAuthFilter bearerTokenAuthFilter = (StringUtils.isEmpty(username) && StringUtils.isNotBlank(password))  ? new BearerTokenAuthFilter( password) : null;
         Client client  = proxyRepositoryConnectionPoolConfigurationService.getRestClient(repositoryPath.getStorageId(),repositoryPath.getRepositoryId());
         return new RestArtifactResolver(client , url, repositoryPath.getTargetUrl(), repositoryPath.getHeaders(),
                                         configuration,
-                                        authenticationFeature)
+                                        authenticationFeature,
+                                        bearerTokenAuthFilter)
                                 {
 
             @Override
             public boolean isAlive()
             {
-                return true;
+                return remoteRepositoryAlivenessCacheManager.isAlive(repository);
             }
 
         };

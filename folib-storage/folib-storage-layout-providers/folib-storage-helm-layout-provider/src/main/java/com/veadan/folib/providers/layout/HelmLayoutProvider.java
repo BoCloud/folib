@@ -2,6 +2,7 @@ package com.veadan.folib.providers.layout;
 
 import com.veadan.folib.artifact.coordinates.HelmArtifactCoordinates;
 import com.veadan.folib.providers.header.HeaderMappingRegistry;
+import com.veadan.folib.providers.io.RepositoryFileAttributeType;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.repository.HelmRepositoryFeatures;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Set;
 
 @Component
@@ -53,7 +55,7 @@ public class HelmLayoutProvider  extends AbstractLayoutProvider<HelmArtifactCoor
 
     @Override
     public HelmArtifactCoordinates getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException {
-        return HelmArtifactCoordinates.parse(RepositoryFiles.relativizePath(repositoryPath));
+        return HelmArtifactCoordinates.parse(RepositoryFiles.relativizePath(repositoryPath),repositoryPath.getFileName().toString());
     }
 
     @PostConstruct
@@ -61,6 +63,46 @@ public class HelmLayoutProvider  extends AbstractLayoutProvider<HelmArtifactCoor
     {
         logger.info("Registered layout provider '{}' with alias '{}'.",
                 getClass().getCanonicalName(), ALIAS);
+    }
+
+    @Override
+    protected Map<RepositoryFileAttributeType, Object> getRepositoryFileAttributes(RepositoryPath repositoryPath,
+                                                                                   RepositoryFileAttributeType... attributeTypes)
+            throws IOException {
+        Map<RepositoryFileAttributeType, Object> result = super.getRepositoryFileAttributes(repositoryPath,
+                attributeTypes);
+
+        for (RepositoryFileAttributeType attributeType : attributeTypes) {
+            Object value = result.get(attributeType);
+            switch (attributeType) {
+                case ARTIFACT:
+                    value = (Boolean) value && !isHelmMetadata(repositoryPath);
+
+                    if (value != null) {
+                        result.put(attributeType, value);
+                    }
+
+                    break;
+                case METADATA:
+                    value = (Boolean) value || isHelmMetadata(repositoryPath);
+
+                    if (value != null) {
+                        result.put(attributeType, value);
+                    }
+
+                    break;
+
+                default:
+
+                    break;
+            }
+        }
+
+        return result;
+    }
+
+    public boolean isHelmMetadata(RepositoryPath repositoryPath) {
+        return !repositoryPath.getFileName().toString().endsWith(".tgz");
     }
 
 }

@@ -8,10 +8,14 @@ import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.event.repository.RepositoryEvent;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
 import com.veadan.folib.event.repository.RepositoryEventTypeEnum;
+import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.LayoutProvider;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.services.RepositoryManagementService;
+import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.*;
 import com.veadan.folib.storage.routing.MutableRoutingRule;
@@ -25,6 +29,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -34,6 +39,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -67,6 +73,12 @@ public class ConfigurationManagementServiceImpl
     @Inject
     @Lazy
     private PlatformTransactionManager transactionManager;
+    @Inject
+    protected RepositoryPathResolver repositoryPathResolver;
+    @Inject
+    private RepositoryManagementService repositoryManagementService;
+    @Inject
+    private ConversionService conversionService;
 
     /**
      * Yes, this is a state object.
@@ -172,6 +184,10 @@ public class ConfigurationManagementServiceImpl
     public void setAdvancedConfiguration(MutableAdvancedConfiguration advancedConfiguration) throws IOException {
         modifyInLock(configuration ->
         {
+            String globalS3Bucket = configuration.getAdvancedConfiguration().getGlobalS3Bucket();
+            if (StringUtils.isNotBlank(globalS3Bucket)) {
+                advancedConfiguration.setGlobalS3Bucket(globalS3Bucket);
+            }
             configuration.setAdvancedConfiguration(advancedConfiguration);
         });
     }
@@ -195,18 +211,39 @@ public class ConfigurationManagementServiceImpl
     @Override
     public void updateStorage(StorageDto storage) throws IOException {
         StorageDto storageDto = configuration.getStorage(storage.getId());
-        storageDto.setUsers(storage.getUsers());
+//        storageDto.setUsers(storage.getUsers());
         storageDto.setAdmin(storage.getAdmin());
         if (StringUtils.isBlank(storageDto.getStorageProvider()) && StringUtils.isNotBlank(storage.getStorageProvider())) {
             storageDto.setStorageProvider(storage.getStorageProvider());
         }
-        checkUsersContainsAdmin(storageDto);
+        if (Objects.nonNull(storage.getStorageMaxSize()) && storage.getStorageMaxSize() > 0) {
+            storageDto.setStorageMaxSize(storage.getStorageMaxSize());
+        } else {
+            storageDto.setStorageMaxSize(0L);
+        }
+        storageDto.setSyncEnabled(storage.isSyncEnabled());
+        if (!storage.getRepositories().isEmpty()) {
+            storage.getRepositories().values().forEach(repository -> {
+                RepositoryDto repositoryDto = conversionService.convert(repository, RepositoryDto.class);
+                storageDto.addRepository(repositoryDto);
+            });
+        }
+//        checkUsersContainsAdmin(storageDto);
         modifyInLock(configuration -> configuration.addStorage(storageDto));
     }
 
     @Override
+    public void updateStorageBasedir(StorageDto storage) throws IOException {
+        StorageDto storageDto = configuration.getStorage(storage.getId());
+        if (StringUtils.isNotBlank(storage.getBasedir())) {
+            storageDto.setBasedir(storage.getBasedir());
+            modifyInLock(configuration -> configuration.addStorage(storageDto));
+        }
+    }
+
+    @Override
     public void createStorage(StorageDto storage) throws IOException {
-        checkUsersContainsAdmin(storage);
+//        checkUsersContainsAdmin(storage);
         modifyInLock(configuration -> configuration.addStorage(storage));
     }
 
@@ -236,6 +273,11 @@ public class ConfigurationManagementServiceImpl
         modifyInLock(configuration ->
         {
             final StorageDto storage = configuration.getStorage(storageId);
+            Repository oldRepository = storage.getRepository(repository.getId());
+            if (Objects.nonNull(oldRepository)) {
+                repository.setBasedir(oldRepository.getBasedir());
+                repository.setStorageProvider(oldRepository.getStorageProvider());
+            }
             repository.setStorage(storage);
             LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(
                     repository.getLayout());
@@ -253,6 +295,20 @@ public class ConfigurationManagementServiceImpl
                         repository.getHttpConnectionPool().getAllocatedConnections());
             }
             clearCacheRepository(storageId, repository.getId());
+        });
+    }
+
+    @Override
+    public void setRepositoryBasedir(String storageId, RepositoryDto repository) throws IOException {
+        modifyInLock(configuration ->
+        {
+            final StorageDto storage = configuration.getStorage(storageId);
+            RepositoryDto repositoryDto = storage.getRepository(repository.getId());
+            if (StringUtils.isNotBlank(repository.getBasedir())) {
+                repositoryDto.setBasedir(repository.getBasedir());
+                storage.addRepository(repositoryDto);
+                clearCacheRepository(storageId, repositoryDto.getId());
+            }
         });
     }
 
@@ -801,6 +857,52 @@ public class ConfigurationManagementServiceImpl
                         .setUnionRepositoryConfiguration(mutableUnionRepositoryConfiguration);
             }
         });
+    }
+
+    @Override
+    public void addOrUpdateRepository(String storageId, RepositoryDto repository) {
+        Storage storage = getConfiguration().getStorage(storageId);
+        if (storage != null) {
+            if (repository.getArtifactMaxSize() == 0) {
+                repository.setArtifactMaxSize(107374182400L);
+            }
+            String repositoryId = repository.getId();
+            Repository existRepository = storage.getRepository(repositoryId);
+            boolean result = Objects.nonNull(existRepository) && (!repository.getLayout().equals(existRepository.getLayout()) || (Objects.nonNull(existRepository.getSubLayout()) && !existRepository.getSubLayout().equals(repository.getSubLayout())));
+            if (result) {
+                //判断重复
+                throw new RuntimeException("The repository id already exists");
+            }
+            try {
+                log.info("Creating repository {}:{}...", storageId, repositoryId);
+                saveRepository(storageId, repository);
+                RepositoryDto repositoryDto = getMutableConfigurationClone().getStorage(storageId)
+                        .getRepository(repositoryId);
+                final RepositoryPath repositoryPath = repositoryPathResolver.resolve(new RepositoryData(repository));
+                try {
+                    if (!Files.exists(repositoryPath)) {
+                        repositoryManagementService.createRepository(storageId, repositoryId);
+                    }
+                } catch (Exception ex) {
+                    log.error("Failed to create the repository path {}!", repositoryId, ex);
+                    try {
+                        removeRepository(storageId, repositoryId);
+                    } catch (Exception e) {
+                        log.error("Failed to remove the repository {}!", repositoryId, e);
+                    }
+                    throw new RuntimeException(ex.getMessage());
+                }
+                if (Objects.isNull(existRepository) && !RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
+                    //初始化仓库数据
+                    LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(repositoryDto.getLayout());
+                    layoutProvider.initData(storageId, repositoryId);
+                }
+            } catch (Exception e) {
+                log.error("Failed to save the repository {}!", repositoryId, e);
+            }
+        } else {
+            throw new IllegalArgumentException(String.format("storage %s not exist", storageId));
+        }
     }
 
     private void setProxyRepositoryConnectionPoolConfigurations() throws IOException {

@@ -1,5 +1,6 @@
 package com.veadan.folib.cron.jobs.cleanup;
 
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.veadan.folib.domain.Artifact;
@@ -19,8 +20,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.FileTime;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -106,7 +107,7 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
             return;
         }
         RepositoryPath repositoryPath, manifestRepositoryPath;
-        Map<RepositoryPath, Long> map = Maps.newHashMap();
+        Map<RepositoryPath, Long> sortMap = Maps.newHashMap();
         Artifact artifact = null;
         for (Path path : tagRepositoryPathList) {
             log.info("Cleanup artifact job storageId [{}] repositoryId [{}] storageCondition [{}] storage quantity [{}] imagePath [{}] tag [{}]", storageId, repositoryId, storageCondition, storageQuantity, imageRepositoryPath, path);
@@ -121,15 +122,14 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
                 log.warn("Cleanup storageId [{}] repositoryId [{}] path [{}] artifact not found", storageId, repositoryId, manifestRepositoryPath);
                 continue;
             }
-            Map<String, Object> fileAttributes = Files.readAttributes(manifestRepositoryPath, "*");
-            map.put(manifestRepositoryPath, ((FileTime) fileAttributes.get("creationTime")).toMillis());
+            sortMap.put(manifestRepositoryPath, artifact.getCreated().toInstant(ZoneOffset.of("+8")).toEpochMilli());
         }
-        map = map.entrySet().stream()
+        sortMap = sortMap.entrySet().stream()
                 .sorted(Map.Entry.comparingByValue())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
                         (oldValue, newValue) -> oldValue, LinkedHashMap::new));
-        log.info("Cleanup artifact job storageId [{}] repositoryId [{}] storageCondition [{}] storage quantity [{}] imagePath [{}] tag quantity [{}] order tags [{}]", storageId, repositoryId, storageCondition, storageQuantity, imageRepositoryPath, tagRepositoryPathList.size(), map.keySet().toString());
-        for (Map.Entry<RepositoryPath, Long> manifestEntry : map.entrySet()) {
+        log.info("Cleanup artifact job storageId [{}] repositoryId [{}] storageCondition [{}] storage quantity [{}] imagePath [{}] tag quantity [{}] order tags [{}]", storageId, repositoryId, storageCondition, storageQuantity, imageRepositoryPath, tagRepositoryPathList.size(), JSONObject.toJSONString(sortMap));
+        for (Map.Entry<RepositoryPath, Long> manifestEntry : sortMap.entrySet()) {
             Long currentTagSize = getTagSize(imageRepositoryPath, excludeList);
             log.info("Cleanup artifact job storageId [{}] repositoryId [{}] storageCondition [{}] storage quantity [{}] imagePath [{}] tag [{}] currentTagSize [{}]", storageId, repositoryId, storageCondition, storageQuantity, imageRepositoryPath, manifestEntry.getKey(), currentTagSize);
             if (currentTagSize > storageQuantity) {

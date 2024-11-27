@@ -1,22 +1,16 @@
 package com.veadan.folib.controllers.configuration.security.authorization;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.function.Supplier;
-
-import javax.inject.Inject;
-import javax.xml.bind.JAXBException;
-
-import com.veadan.folib.forms.PrivilegeListForm;
-import com.veadan.folib.forms.RoleForm;
 import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.controllers.BaseController;
+import com.veadan.folib.forms.PrivilegeListForm;
+import com.veadan.folib.forms.RoleForm;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.service.UserService;
-import com.veadan.folib.users.service.impl.DatabaseUserService.Database;
+import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.validation.RequestBodyValidationException;
+import io.swagger.annotations.*;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -27,19 +21,13 @@ import org.springframework.security.web.authentication.AnonymousAuthenticationFi
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import javax.inject.Inject;
+import javax.xml.bind.JAXBException;
+import java.io.IOException;
+import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * @author Veadan
@@ -70,7 +58,7 @@ public class AuthorizationConfigController
     private AuthorizationConfigService authorizationConfigService;
 
     @Inject
-    @Database
+    @RelationalDatabaseUserService.RelationalDatabase
     private UserService userService;
 
     @Inject

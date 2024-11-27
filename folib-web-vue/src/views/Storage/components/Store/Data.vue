@@ -1,103 +1,114 @@
 <template>
   <div class="artifact-base-data">
     <a-tabs default-active-key="1" @change="artifactTabChange">
-      <a-tab-pane key="1" tab="基本信息">
-        <a-descriptions
-          v-if="folibRepository.layout !== 'Docker'"
-          title=""
-          :column="1"
-          style="word-break: break-all;word-wrap: break-word;"
-        >
-          <a-descriptions-item label="所属空间">
-            {{ currentTreeNode.storageId }}
-          </a-descriptions-item>
-          <a-descriptions-item label="所属仓库">
-            {{ currentTreeNode.repositoryId }}
-          </a-descriptions-item>
-          <a-descriptions-item label="名称">
-            {{ currentTreeNode.name }}
-          </a-descriptions-item>
-          <a-descriptions-item label="路径">
-            {{ currentTreeNode.artifactPath }}
-          </a-descriptions-item>
-          <a-descriptions-item label="文件大小">
-            {{ fileSizeConver(currentTreeNode.size) }}
-          </a-descriptions-item>
-          <a-descriptions-item label="修改时间">
-            {{ formateDate(currentTreeNode.lastModified) }}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="最近使用时间">
-            {{ currentFileDetial.lastUsedTime }}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="下载次数">
-            {{ currentFileDetial.downloadCount }}
-          </a-descriptions-item>
-          <template v-if="currentFileDetial && currentFileDetial.artifact && currentFileDetial.artifact.checksums" >
-            <a-descriptions-item :label="key" v-for="(value, key, index) in currentFileDetial.artifact.checksums" :key="index" span="2">
-              {{ value }}
-            </a-descriptions-item>
-          </template>
-        </a-descriptions>
-        <div v-if="currentFileDetial && currentFileDetial.manifest && currentFileDetial.manifest.manifests">
-          <a-tag class="mb-10" :color="index === selectedTag? selectedColor : ''" v-for="(item, index) in currentFileDetial.manifest.manifests" :key="index" @click="clickTag(item, index)">
-            <a> {{ item.platform.os + '/' + item.platform.architecture + (item.platform.variant? '/' + item.platform.variant : '') }} </a>
-          </a-tag>
+      <a-tab-pane key="1" :tab="$t('Store.BasicInformation')">
+        <div v-if="newDetailPage || Object.entries(currentTreeNode).length===0">
+            <detailPage :folibRepository="folibRepository" :isStoreView="Object.entries(currentTreeNode).length===0"/>
         </div>
-        <a-descriptions
-          v-if="folibRepository.layout === 'Docker'"
-          title=""
-          :column="1"
-        >
-          <a-descriptions-item label="所属空间">
-            {{ currentTreeNode.storageId }}
-          </a-descriptions-item>
-          <a-descriptions-item label="所属仓库">
-            {{ currentTreeNode.repositoryId }}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="镜像名称">
-            {{ currentFileDetial.imageName }}
-          </a-descriptions-item>
-          <a-descriptions-item :label="currentFileDetial ? '版本号' : '名称'">
-            {{ currentTreeNode.name }}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="文件大小">
-            {{ fileSizeConver(currentFileDetial.size) }}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="SHA-256">
-            {{ currentFileDetial.sha256 }}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial" label="修改时间">
-            {{ currentFileDetial.lastModified }}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifest.layers" label="层数">
-            {{ currentFileDetial.manifest.layers.length }}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" label="制作Docker版本">
-            {{ currentFileDetial.manifestConfig.docker_version }}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" label="镜像OS">
-            <a-tag> {{ currentFileDetial.manifestConfig.os }}</a-tag>
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" label="基础架构">
-            {{ currentFileDetial.manifestConfig.architecture }}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig && currentFileDetial.manifestConfig.variant" label="版本">
-            {{ currentFileDetial.manifestConfig.variant || ''}}
-          </a-descriptions-item>
-          <a-descriptions-item v-if="currentFileDetial && !currentFileDetial.manifestConfig" label="缓存状态">
-            {{ '未缓存' }}
-          </a-descriptions-item>
-        </a-descriptions>
+        <div v-else>
+          <a-descriptions
+            v-if="folibRepository.layout !== 'Docker'"
+            title=""
+            :column="1"
+            style="word-break: break-all;word-wrap: break-word;"
+          >
+            <a-descriptions-item :label="$t('Store.OwningSpace')">
+              {{ currentTreeNode.storageId }}
+            </a-descriptions-item>
+            <a-descriptions-item :label="$t('Store.OwnedWarehouse')">
+              {{ currentTreeNode.repositoryId }}
+            </a-descriptions-item>
+            <a-descriptions-item :label="$t('Store.Name')">
+              {{ currentTreeNode.name }}
+            </a-descriptions-item>
+            <a-descriptions-item :label="$t('Store.ThePath')">
+              <span v-if="isChecked">{{ currentTreeNode.repositoryId }}/</span>{{ currentTreeNode.artifactPath }}
+            </a-descriptions-item>
+            <a-descriptions-item :label="$t('Store.FileSize')">
+              {{ fileSizeConver(currentTreeNode.size) }}
+            </a-descriptions-item>
+            <a-descriptions-item :label="$t('Store.ModifyTheTime')">
+              {{ formateDate(currentTreeNode.lastModified) }}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.LastUsedTime')">
+              {{ currentFileDetial.lastUsedTime }}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.ScanTime')">
+              {{ currentFileDetial.scanTime }}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.DownloadTimes')">
+              {{ currentFileDetial.downloadCount }}
+            </a-descriptions-item>
+            <template v-if="currentFileDetial && currentFileDetial.artifact && currentFileDetial.artifact.checksums" >
+              <a-descriptions-item :label="key" v-for="(value, key, index) in currentFileDetial.artifact.checksums" :key="index" span="2">
+                {{ value }}
+              </a-descriptions-item>
+            </template>
+          </a-descriptions>
+          <div v-if="currentFileDetial && currentFileDetial.manifest && currentFileDetial.manifest.manifests">
+            <a-tag class="mb-10" :color="index === selectedTag? selectedColor : ''" v-for="(item, index) in currentFileDetial.manifest.manifests" :key="index" @click="clickTag(item, index)">
+              <a> {{ item.platform.os + '/' + item.platform.architecture + (item.platform.variant? '/' + item.platform.variant : '') }} </a>
+            </a-tag>
+          </div>
+          <a-descriptions
+            v-if="folibRepository.layout === 'Docker'"
+            title=""
+            :column="1"
+          >
+            <a-descriptions-item :label="$t('Store.OwningSpace')">
+              {{ currentTreeNode.storageId}}
+            </a-descriptions-item>
+            <a-descriptions-item :label="$t('Store.OwningSpace')">
+              {{ currentTreeNode.repositoryId}}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.ImageName')">
+              {{ currentFileDetial.imageName }}
+            </a-descriptions-item>
+            <a-descriptions-item :label="currentFileDetial ? $t('Store.VersionNumber') : $t('Store.Name')">
+              {{ currentTreeNode.name }}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.FileSize')">
+              {{ fileSizeConver(currentFileDetial.size) }}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial" label="SHA-256">
+              {{ currentFileDetial.sha256 }}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.ModifyTheTime')">
+              {{ currentFileDetial.lastModified }}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.ScanTime')">
+              {{ currentFileDetial.scanTime }}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifest.layers" :label="$t('Store.NumberOfFloors')">
+              {{ currentFileDetial.manifest.layers.length }}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" :label="$t('Store.MakeADockerVersion')">
+              {{ currentFileDetial.manifestConfig.docker_version }}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" :label="$t('Store.MirrorOS')">
+              <a-tag> {{ currentFileDetial.manifestConfig.os }}</a-tag>
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig" :label="$t('Store.TheInfrastructure')">
+              {{ currentFileDetial.manifestConfig.architecture }}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial && currentFileDetial.manifestConfig && currentFileDetial.manifestConfig.variant" :label="$t('Store.Version')">
+              {{ currentFileDetial.manifestConfig.variant || ''}}
+            </a-descriptions-item>
+            <a-descriptions-item v-if="currentFileDetial && !currentFileDetial.manifestConfig" :label="$t('Store.CacheStatus')">
+              {{ $t('Store.Uncached') }}
+            </a-descriptions-item>
+          </a-descriptions>
+        </div>
       </a-tab-pane>
-      <a-tab-pane key="2" tab="元数据">
+      <a-tab-pane key="2" :tab="$t('Store.Metadata')">
         <a v-if="metadataEnabled" @click="metadataHandler()">
           <a-tooltip>
-            <template slot="title">新增</template>
+            <template slot="title">{{ $t('Store.Create') }}</template>
             <a-icon type="plus-circle" theme="filled" class="ml-30"
               :style="{ fontSize: '28px', color: '#1890FF' }" />
           </a-tooltip>
         </a>
-        <a-table :columns="metadataColumns" :data-source="metadataList" rowKey="key" :scroll="{ x: true }">
+        <a-table :columns="i18nMetadataColumns" :data-source="metadataList" rowKey="key" :scroll="{ x: true }">
           <div slot="type" slot-scope="type">
             <span v-for="(item, index) in metadataTypes" :key="index">
               <span v-if="type === item.value">
@@ -125,7 +136,7 @@
               v-if="record.type === 'TEXT' || record.type === 'MD'"
               @click="metadataEditorDrawerShow(record)"
             >
-              查看
+              {{ $t('Store.View') }}
             </a-button>
             <a-button
               type="link"
@@ -133,16 +144,16 @@
               v-if="record.type === 'JSON'"
               @click="metadataPrismEditorDrawerShow(record)"
             >
-              查看
+              {{ $t('Store.View') }}
             </a-button>
           </div>
           <div slot="operation" slot-scope="text, record">
             <div class="col-action" v-if="metadataEnabled">
               <a-popconfirm
-                title="确定要删除吗？"
+                :title="$t('Store.SuerDelete')"
                 okType="danger"
-                ok-text="确定"
-                cancel-text="取消"
+                :ok-text="$t('Store.Confirm')"
+                :cancel-text="$t('Store.Cancel')"
                 @confirm="deleteArtifactMetadata(record.key)"
               >
                 <a-button type="link" size="small">
@@ -193,48 +204,48 @@
           </div>
         </a-table>
       </a-tab-pane>
-      <a-tab-pane key="3" tab="Conan信息" v-if="conanInfoVisible">
+      <a-tab-pane key="3" :tab="$t('Store.ConanInformation')" v-if="conanInfoVisible">
         <a-descriptions
-          title="配置"
+          :title="$t('Store.Configure')"
           :column="1"
           style="word-break: break-all;word-wrap: break-word;"
         >
-          <a-descriptions-item label="包名">
+          <a-descriptions-item :label="$t('Store.PackageName')">
             {{ conanInfo.recipeInfo.name }}
           </a-descriptions-item>
-          <a-descriptions-item label="版本">
+          <a-descriptions-item :label="$t('Store.Version')">
             {{ conanInfo.recipeInfo.version }}
           </a-descriptions-item>
-          <a-descriptions-item label="用户">
+          <a-descriptions-item :label="$t('Store.User')">
             {{ conanInfo.recipeInfo.user }}
           </a-descriptions-item>
-          <a-descriptions-item label="频道">
+          <a-descriptions-item :label="$t('Store.Channel')">
             {{ conanInfo.recipeInfo.channel }}
           </a-descriptions-item>
-          <a-descriptions-item label="引用">
+          <a-descriptions-item :label="$t('Store.Quote')">
             {{ conanInfo.recipeInfo.reference }}
           </a-descriptions-item>
-          <a-descriptions-item label="作者">
+          <a-descriptions-item :label="$t('Store.TheAuthor')">
             {{ conanInfo.recipeInfo.author }}
           </a-descriptions-item>
-          <a-descriptions-item label="许可">
+          <a-descriptions-item :label="$t('Store.Permission')">
             {{ conanInfo.recipeInfo.license }}
           </a-descriptions-item>
-          <a-descriptions-item label="URL">
+          <a-descriptions-item :label="URL">
             {{ conanInfo.recipeInfo.url }}
           </a-descriptions-item>
         </a-descriptions>
         <a-descriptions
-          title="包信息"
+          :title="$t('Store.PackageInformation')"
           :column="1"
           style="word-break: break-all;word-wrap: break-word;"
         >
-          <a-descriptions-item label="包个数">
+          <a-descriptions-item :label="$t('Store.NumberOfPackets')">
             {{ conanInfo.packageCount }}
           </a-descriptions-item>
         </a-descriptions>
       </a-tab-pane>
-      <a-tab-pane key="4" tab="Conan包信息" v-if="conanPackageInfoVisible">
+      <a-tab-pane key="4" :tab="$t('Store.ConanBagInfo')" v-if="conanPackageInfoVisible">
         <a-descriptions
           title="Settings"
           :column="1"
@@ -264,23 +275,106 @@
           </a-descriptions-item>
         </a-descriptions>
       </a-tab-pane>
+      <a-tab-pane key="5" :tab="$t('Store.BomInformation')" v-if="currentFileDetial && currentFileDetial.artifact && currentFileDetial.bom">
+        <div class="ml-20 mb-10">          
+          <a @click="handleGoDetail()"><a-icon type="link" /> {{ $t('Store.ViewDetail') }}</a>
+        </div>
+        <div class="bar" v-if="projectInfo && projectInfo.metrics">
+          <div class="card-inner">
+            <div class="bar-card">
+              <div class="callout b-severity-critical">
+                <div class="text">
+                  <div class="text-muted">{{ $t("Store.Seriousness") }}</div>
+                  <strong>{{ projectInfo.metrics.critical }}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="bar-card">
+              <div class="callout b-severity-high">
+                <div class="text">
+                  <div class="text-muted">{{ $t("Store.HighRisk") }}</div>
+                  <strong>{{ projectInfo.metrics.high }}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="bar-card">
+              <div class="callout b-severity-medium">
+                <div class="text">
+                  <div class="text-muted">{{ $t("Store.MediumRisk") }}</div>
+                  <strong>{{ projectInfo.metrics.medium }}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="bar-card">
+              <div class="callout b-severity-low">
+                <div class="text">
+                  <div class="text-muted">{{ $t("Store.LowRisk") }}</div>
+                  <strong>{{ projectInfo.metrics.low }}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="bar-card">
+              <div class="callout b-severity-unassigned">
+                <div class="text">
+                  <div class="text-muted">{{ $t("Store.Unassigned") }}</div>
+                  <strong>{{ projectInfo.metrics.unassigned }}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="bar-card">
+              <div class="callout b-severity-info">
+                <div class="text">
+                  <div class="text-muted">{{ $t("Store.RiskScore") }}</div>
+                  <strong>{{ projectInfo.metrics.inheritedRiskScore }}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="bar-card">
+              <div class="callout b-number-of-components">
+                <div class="text">
+                  <div class="text-muted">{{ $t("Store.NumberOfComponents") }}</div>
+                  <strong>{{ projectInfo.metrics.components }}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="wrapper-com">
+          <a-card :bordered="true" class="header-solid h-full" :bodyStyle="{ padding: 10 }">
+            <ChartPolicyViolationBreakdown :metrics="vulnerabilitiesData"></ChartPolicyViolationBreakdown>
+          </a-card>
+        </div>
+      </a-tab-pane>
+      <a-tab-pane key="6" :tab="$t('Store.SubsidiaryFiles')" v-if="currentFileDetial && currentFileDetial.subsidiaryFiles">
+        <a-list item-layout="horizontal" :data-source="currentFileDetial.subsidiaryFiles" :pagination="currentFileDetial.subsidiaryFiles.length === 0 ? false : { pageSize: 5, total: currentFileDetial.subsidiaryFiles.length, showLessItems: true }" >
+          <a-list-item slot="renderItem" :key="index" slot-scope="item, index">
+            <a slot="actions" :href="item.url" target="_blank">{{$t('Store.DownLoad')}}</a>
+            <a slot="actions" v-if="deleteEnabled" @click="deleteSubsidiaryHandle(index, item)" >{{$t('Store.Delete')}}</a>
+            <a-list-item-meta
+              :description="item.url"
+            >
+              <a slot="title" :href="item.url" target="_blank">{{ item.name }}</a>
+            </a-list-item-meta>
+          </a-list-item>
+        </a-list>
+      </a-tab-pane>
     </a-tabs>
 
-    <hr class="my-25" />
+    <hr class="gradient-line" />
 
     <a-col
       :span="24"
       v-if="
         currentFileDetial &&
         currentFileDetial.snippets &&
-        currentFileDetial.snippets.length > 0 && 
+        currentFileDetial.snippets.length > 0 &&
         currentFileDetial.snippets.map(e => e.code).filter(e => e).length > 0
       "
     >
       <a-card :bordered="false" class="card-billing-info">
         <div class="col-info">
           <a-descriptions
-            :title="'使用示例(' + codeParam.type + ')'"
+            :title="$t('Store.UseExamples') + '(' + codeParam.type + ')'"
             :column="1"
           >
             <a-descriptions-item v-if="currentFileDetial">
@@ -353,9 +447,11 @@
 <script>
 import store from "store";
 import { fileSizeConver, formateDate } from "@/utils/layoutUtil";
-import { getArtifact } from "@/api/folib";
-import {  deleteArtifactMetadata, conanInfo, conanPackageInfo } from "@/api/artifact";
+import { getArtifact, deleteArtifact, getStorageAndRepositoryPermission, getArtifactPermission } from "@/api/folib";
+import { getProjectInfo, getCacheConfig } from "@/api/foEyes";
+import { deleteArtifactMetadata, conanInfo, conanPackageInfo } from "@/api/artifact";
 import { getMetadataConfiguration } from '@/api/settings'
+import { getProjectsVulnerabilities } from "@/api/projects.js"
 import { PrismEditor } from "vue-prism-editor";
 import "vue-prism-editor/dist/prismeditor.min.css"; // import the styles somewhere
 // import highlighting library (you can use any library you want just return html string)
@@ -367,6 +463,8 @@ import "quill/dist/quill.core.css";
 import "quill/dist/quill.snow.css";
 import { quillEditor } from "vue-quill-editor";
 import { hasRole, isAdmin, isAnonymous, isLogin } from "@/utils/permission";
+import ChartPolicyViolationBreakdown from "../../../ComponentAnalysis/Projects/Components/ChartPolicyViolationBreakdown.vue"
+import detailPage from "./detailPage.vue";
 
 export default {
   name: "BaseData",
@@ -376,10 +474,13 @@ export default {
     "currentFileDetial",
     "folibRepository",
     "successMsg",
+    'isChecked',
   ],
   components: {
     PrismEditor,
     quillEditor,
+    ChartPolicyViolationBreakdown,
+    detailPage
   },
   data() {
     return {
@@ -387,15 +488,15 @@ export default {
       metadataConfigList: [],
       metadataTypes: [
         {
-          label: "数字",
+          label: this.$t('Store.Number'),
           value: "NUMERICAL",
         },
         {
-          label: "字符串",
+          label: this.$t('Store.String'),
           value: "STRING",
         },
         {
-          label: "文本",
+          label: this.$t('Store.Text'),
           value: "TEXT",
         },
         {
@@ -409,12 +510,14 @@ export default {
       ],
       metadataColumns: [
         {
+          i18nKey: 'Store.MetadataKey',
           title: "元数据KEY",
           dataIndex: "key",
           key: "key",
           width: 150,
         },
         {
+          i18nKey: 'Store.MetadataType',
           title: "元数据类型",
           dataIndex: "type",
           key: "type",
@@ -422,6 +525,7 @@ export default {
           scopedSlots: { customRender: "type" },
         },
         {
+          i18nKey: 'Store.MetadataValues',
           title: "元数据值",
           dataIndex: "value",
           key: "value",
@@ -429,6 +533,7 @@ export default {
           scopedSlots: { customRender: "value" },
         },
         {
+          i18nKey: 'Store.Operations',
           title: "操作",
           dataIndex: "operation",
           width: 250,
@@ -491,8 +596,38 @@ export default {
       },
       conanPackageInfoVisible: false,
       selectedTag: 0,
-      selectedColor: "#2db7f5"
+      selectedColor: "#2db7f5",
+      projectInfo: {
+        uuid:'',
+        metrics: {
+          critical: 0,
+          high: 0,
+          medium: 0,
+          low: 0,
+          unassigned: 0,
+          vulnerabilities: 0,
+          vulnerableComponents: 0,
+          components: 0,
+          suppressed: 0,
+          inheritedRiskScore: 0,
+        }
+      },
+      vulnerabilitiesData: [],
+      deleteEnabled: false,
     };
+  },
+  computed: {
+    newDetailPage(){
+      return this.$store.state.newDetailPage
+    },
+    i18nMetadataColumns() {
+      return this.metadataColumns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    },
   },
   created() {
     if (isLogin()){
@@ -507,10 +642,16 @@ export default {
         this.changeCodeType(val.snippets[0])
       }
       this.metadataShow()
+      this.queryProjectInfo()
+      this.handlerDataPermission()
+      this.$emit('handlerPermission')
     },
     'currentTreeNode.artifactPath': function (newval, oldVal) {
+      this.$emit('addPageKey')
+      this.$emit('handlerPermission')
       this.conanInfoReset()
       this.conanPackageInfoReset()
+      this.handlerDataPermission()
       this.metadataList = []
       if (this.currentTreeNode.type === 'file') {
         this.getMetadata()
@@ -523,6 +664,30 @@ export default {
         this.getConanPackageInfo()
       }
     },
+    '$i18n.locale': function (newValue, oldValue) {
+      this.metadataTypes = [
+        {
+          label: this.$t('Store.Number'),
+          value: "NUMERICAL",
+        },
+        {
+          label: this.$t('Store.String'),
+          value: "STRING",
+        },
+        {
+          label: this.$t('Store.Text'),
+          value: "TEXT",
+        },
+        {
+          label: "Markdown",
+          value: "MD",
+        },
+        {
+          label: "JSON",
+          value: "JSON",
+        },
+      ]
+    },
   },
   methods: {
     getMetadataConfiguration () {
@@ -533,13 +698,15 @@ export default {
         .finally(() => { })
     },
     metadataShow() {
-      this.metadataEnabled = isLogin() && this.folibRepository.type !== 'group' &&
-                          this.currentFileDetial &&
-                          this.currentFileDetial.artifact &&
-                          this.currentFileDetial.artifact.artifactFileExists   
       if (!(typeof(this.metadataEnabled) == 'boolean')) {
         this.metadataEnabled = false
       }
+        if(this.currentFileDetial && this.currentFileDetial.manifest && this.currentFileDetial.manifest.manifests){
+            const item = this.currentFileDetial.manifest.manifests[this.selectedTag];
+            this.$emit('messageArchitectureChild', item.platform.os + '/' + item.platform.architecture + (item.platform.variant? '/' + item.platform.variant : ''));
+        }else {
+            this.$emit('messageArchitectureChild', null);
+        }
     },
     metadataHandler() {
       this.$emit("metadataHandler", 1)
@@ -548,6 +715,8 @@ export default {
       this.metadataShow()
       if (activeKey === "2") {
         this.getMetadata()
+      } else if (activeKey === "5") {
+        this.getProjectsVulnerabilities()
       }
     },
     getMetadata() {
@@ -562,7 +731,7 @@ export default {
           this.handlerRespMetadata(res)
           this.$forceUpdate()
         })
-      }      
+      }
     },
     handlerRespMetadata(res) {
       let metadataList = []
@@ -611,12 +780,18 @@ export default {
         repositoryId: this.currentTreeNode.repositoryId,
         artifactPath: this.currentTreeNode.artifactPath,
       };
-      deleteArtifactMetadata(data)
-        .then((res) => {
-          this.successMsg("删除制品元数据成功");
-          this.getMetadata();
-        })
-        .finally(() => {});
+      deleteArtifactMetadata(data).then((res) => {
+        this.successMsg(this.$t('Store.DeletedProductSuccess'));
+        this.getMetadata();
+      }).catch((err) => {
+        let msg = err.response.data.message ? err.response.data.message : err.response.data.error ? err.response.data.error : err.response.data
+        if (msg && msg.length > 0) {
+          this.$notification.error({
+            message: msg,
+            description: ""
+          })
+        }
+      }).finally(() => {});
     },
     metadataEditHandler(metadata) {
       this.$emit("metadataEditHandler", metadata);
@@ -673,8 +848,8 @@ export default {
     },
     getConanInfo() {
       let data = {
-        storageId: this.currentTreeNode.storageId, 
-        repositoryId: this.currentTreeNode.repositoryId, 
+        storageId: this.currentTreeNode.storageId,
+        repositoryId: this.currentTreeNode.repositoryId,
         artifactPath: this.currentTreeNode.artifactPath
       }
       conanInfo(data).then((res) => {
@@ -697,12 +872,12 @@ export default {
               url: ""
           },
           packageCount: 0
-      }      
+      }
     },
     getConanPackageInfo() {
       let data = {
-        storageId: this.currentTreeNode.storageId, 
-        repositoryId: this.currentTreeNode.repositoryId, 
+        storageId: this.currentTreeNode.storageId,
+        repositoryId: this.currentTreeNode.repositoryId,
         artifactPath: this.currentTreeNode.artifactPath
       }
       conanPackageInfo(data).then((res) => {
@@ -719,6 +894,7 @@ export default {
         requires: {}
       }
     },
+
     clickTag(item, index) {
       this.selectedTag = 0
       getArtifact(
@@ -733,6 +909,159 @@ export default {
         this.$forceUpdate()
       })
     },
+    getFoEyesEnable () {
+      const cacheConfig = getCacheConfig()
+      if (cacheConfig) {
+        return cacheConfig.enable
+      }
+      return false
+    },
+    queryProjectInfo() {
+      if (!this.getFoEyesEnable()) {
+        return false
+      }
+      if (!this.currentFileDetial || !this.currentFileDetial.artifact) {
+        return false
+      }
+      let artifact = this.currentFileDetial.artifact
+      getProjectInfo(artifact.storageId, artifact.repositoryId, artifact.artifactPath).then((res) => {
+        this.projectInfo = res
+        this.getProjectsVulnerabilities()
+      })
+    },
+    handleGoDetail() {
+      const routeUrl = this.$router.resolve({path: `/projectsDetail/${this.projectInfo.uuid}`})
+      window.open(routeUrl.href, '_blank')
+    },
+    getProjectsVulnerabilities() {
+      const uuid = this.projectInfo.uuid
+      if (!uuid) {
+        return false
+      }
+      getProjectsVulnerabilities(uuid).then((res) => {
+        this.vulnerabilitiesData = res.data
+      })
+    },
+    handlerDataPermission () {
+      this.deleteEnabled = false
+      let storageId = null,repositoryId = null,artifactPath = null
+      if (this.currentFileDetial && this.currentFileDetial.artifact) {
+        //制品
+        let artifact = this.currentFileDetial.artifact
+        storageId = artifact.storageId
+        repositoryId = artifact.repositoryId
+        artifactPath = artifact.artifactPath
+      } else  if (this.currentTreeNode && this.currentTreeNode.artifactPath) {
+        //目录
+        storageId = this.currentTreeNode.storageId,
+        repositoryId = this.currentTreeNode.repositoryId,
+        artifactPath = this.currentTreeNode.artifactPath
+      }
+      if (!storageId || !repositoryId || !artifactPath) {
+        return false
+      }
+      let permissions = []
+      getArtifactPermission(
+        storageId,
+        repositoryId,
+        artifactPath
+      ).then(res => {
+        permissions = res
+        this.deleteEnabled =
+          this.folibRepository.type !== 'group' &&
+          (hasRole('ARTIFACTS_MANAGER') ||
+          permissions.includes('ARTIFACTS_DELETE'))
+        this.metadataEnabled = this.folibRepository.type !== 'group' &&
+        (hasRole('ARTIFACTS_MANAGER') ||
+        permissions.includes('CONFIGURATION_ADD_UPDATE_METADATA'))
+        debugger
+      })
+    },
+    deleteSubsidiaryHandle(index, item) {
+      if (!this.currentFileDetial || !this.currentFileDetial.artifact) {
+        return false
+      }
+      let artifact = this.currentFileDetial.artifact
+      deleteArtifact(
+        artifact.storageId,
+        artifact.repositoryId,
+        item.path
+      ).then(res => {
+        this.currentFileDetial.subsidiaryFiles.splice(index, 1)
+        setTimeout(() => {
+          this.$notification.success({
+            message: this.$t('Store.DeletionSuccessful')
+          })
+        }, 100)
+      }).catch(err => {
+        let errStatusArr = [403, 401]
+        if (errStatusArr.includes(err.response.status)) {
+          return false
+        }
+        let msg = err.response.data.message
+          ? err.response.data.message
+          : err.response.data.error
+            ? err.response.data.error
+            : err.response.data
+        if (!msg || msg.length === 0 || typeof msg === 'object')
+        {
+          msg = this.$t('Store.DeletionFailed')
+        }
+        this.$notification.error({
+          message: msg,
+          description: ''
+        })
+      }).finally(() => { })
+    },
   },
 };
 </script>
+
+<style lang="scss" scoped>
+::v-deep .part-title {
+    font-size: 18px;
+    font-weight: 600;
+}
+::v-deep .part-sub-title {
+    font-size: 11px;
+    color: rgba(115, 129, 143, 0.7);
+}
+.callout {
+  height: 50px;
+  position: relative;
+  padding: 0 1rem;
+  margin: 1rem 0;
+  border-left: 4px solid #0b1015;
+  border-radius: 0.25rem;
+  border-left-color: #6dd9ff;
+}
+strong {
+  font-size: 20px;
+}
+.bar {
+  width: 100%;
+  .card-inner {
+    width: 100%;
+    display: flex;
+    justify-content: space-evenly;
+  }
+}
+.bar {
+  width: 100%;
+  .card-inner {
+    width: 100%;
+    display: flex;
+    justify-content: space-evenly;
+  }
+}
+.bar-card {
+  height: 100px;
+}
+.wrapper-com {
+  width: 100%;
+  display: block;
+  .header-solid {
+    margin: 10px 10px 0px 10px;
+  }
+}
+</style>

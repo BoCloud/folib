@@ -3,7 +3,6 @@ package com.veadan.folib.io;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
@@ -13,6 +12,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.util.MessageDigestUtils;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.io.input.ProxyInputStream;
@@ -30,6 +30,8 @@ import org.apache.commons.io.input.ProxyInputStream;
  * @author mtodorov
  *
  */
+
+
 public class LayoutInputStream
         extends ProxyInputStream
 {
@@ -99,7 +101,7 @@ public class LayoutInputStream
             // This method will invoke MessageDigest.digest() which will reset the bytes when it's done
             // and thus this data will no longer be available, so we'll need to cache the calculated digest
             String hexDigest;
-            if ("npm".equals(layout) && MessageDigestAlgorithms.SHA_512.equals(algorithm)) {
+            if (ProductTypeEnum.Npm.getFoLibraryName().equalsIgnoreCase(layout) && MessageDigestAlgorithms.SHA_512.equals(algorithm)) {
                 hexDigest = printBase64Binary(getMessageDigest(algorithm).digest());
             } else {
                 hexDigest = MessageDigestUtils.convertToHexadecimalString(getMessageDigest(algorithm));

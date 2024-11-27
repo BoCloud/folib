@@ -4,13 +4,18 @@
     <a-card :bordered="false" style="margin-top: 20px; margin-bottom: 20px; overflow-y: auto" class="header-solid" >
       <div class="mx-25 search">
         <a-col :span="24" class="text-right">
-          <a-input-search placeholder="输入制品路径查询" class="v-search" v-model="queryParams.artifactName" @search="handheTableSearch()" />
+          <a-cascader :placeholder="$t('Artifacts.RepositorySelect')" class="repository-query"
+                        v-model="selectRepository"
+                        :showSearch="{ repositoryFilter }"
+                        :allowClear="true"
+                        :options="repositoryList" @change="repositoryChange"/>
+          <a-input-search :placeholder="$t('Artifacts.ArtifactPathQuery')" class="v-search" v-model="queryParams.artifactName" @search="handheTableSearch()" />
         </a-col>
       </div>
       <a-table
         rowKey="uuid"
         class="mt-20"
-        :columns="columns"
+        :columns="i18nColumns"
         :data-source="artifactsData"
         @change="handleChangeTable"
         :scroll="{ x: true }"
@@ -53,6 +58,7 @@ import { getProjectsList } from "@/api/projects.js";
 import { formatTimestamp } from "@/utils/util.js";
 import {
   fql,
+  queryOnScanTree
 } from "@/api/folib";
 import {
   getFileImage,
@@ -124,18 +130,21 @@ export default {
         // },
         {
           title: "存储空间",
+          i18nKey: 'Artifacts.StorageSpace',
           dataIndex: "storageId",
           scopedSlots: { customRender: "storageId" },
           width: 130,
         },
         {
           title: "所属仓库",
+          i18nKey: 'Artifacts.OwnedWarehouse',
           dataIndex: "repositoryId",
           scopedSlots: { customRender: "repositoryId" },
-          width: 130,
+          width: 160,
         },
         {
           title: "制品路径",
+          i18nKey: 'Artifacts.ProductPath',
           dataIndex: "artifactPath",
           scopedSlots: { customRender: "artifactPath" },
           width: 550,
@@ -150,6 +159,7 @@ export default {
         // },
         {
           title: "最近使用时间",
+          i18nKey: 'Artifacts.LastUsedTime',
           dataIndex: "lastUsed",
           sorter: true,
           scopedSlots: { customRender: "lastUsed" },
@@ -157,20 +167,23 @@ export default {
         },
         {
           title: "下载次数",
+          i18nKey: 'Artifacts.DownloadTimes',
           dataIndex: "downloadCount",
           sorter: true,
           scopedSlots: { customRender: "created" },
-          width: 120,
+          width: 160,
         },
         {
           title: "制品大小",
+          i18nKey: 'Artifacts.ProductSize',
           dataIndex: "sizeInBytes",
           sorter: true,
           scopedSlots: { customRender: "sizeInBytes" },
-          width: 120,
+          width: 150,
         },
         {
           title: "漏洞",
+          i18nKey: 'Artifacts.Vulnerability',
           dataIndex: "vulnerabilitiesCount",
           sorter: true,
           scopedSlots: { customRender: "vulnerabilitiesCount" },
@@ -192,7 +205,7 @@ export default {
         metadataSearch: null,
         storageId: null,
         repositoryId: null,
-        limit: 5,
+        limit: 10,
         page: 1,
         total: 0,
         sortField: null,
@@ -200,13 +213,50 @@ export default {
         beginDate: null,
         endDate: null,
       },
+      selectRepository: [],
+      repositoryList: []
     };
   },
+  computed: {
+    i18nColumns() {
+      return this.columns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    },
+  },
   created() {
+    this.queryOnScanTreeList()
     this.getData()
   },
   methods: {
     formatTimestamp,
+    queryOnScanTreeList() {
+      this.repositoryList = []
+      queryOnScanTree().then((res) => {
+        if (res) {
+          this.repositoryList = res
+        }
+      })
+    },
+    repositoryChange(value) {
+      if (value && value.length > 0) {
+        this.selectRepository = value
+        this.queryParams.storageId = value[0]
+        this.queryParams.repositoryId = value[1]
+      } else {
+        this.selectRepository = []
+        this.queryParams.storageId = null
+        this.queryParams.repositoryId = null
+      }
+      this.queryParams.page = 1
+      this.getData()
+    },
+    repositoryFilter(inputValue, path) {
+      return path.some(option => option.label.toLowerCase().indexOf(inputValue.toLowerCase()) > -1);
+    },
     // 获取表格数据
     fileSizeConver(size) {
       if (size) {
@@ -247,7 +297,7 @@ export default {
         artifactPath: row.layout.toLowerCase() === "docker" ?row.artifactPath:row.path,
         layout: row.layout
       })
-      this.$router.push({ 
+      this.$router.push({
         path: '/artifacts/artifactsDetail',
         query: {
           data: data
@@ -275,5 +325,11 @@ export default {
   min-width: 150px;
   margin-left: 5px;
   margin-bottom: 8px;
+}
+.repository-query {
+    min-width: 220px;
+}
+.repository-query::v-deep .ant-cascader-picker-label {
+    padding: 0 30px 0 12px;
 }
 </style>

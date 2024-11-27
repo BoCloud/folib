@@ -64,7 +64,14 @@ public class ConanArtifactController extends BaseArtifactController {
     @Inject
     private ConanService conanService;
 
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @Override
+    @PreAuthorize("authenticated")
+    @GetMapping(value = "/{storageId}/{repositoryId}")
+    public ResponseEntity<String> checkRepositoryAccess() {
+        return super.checkRepositoryAccess();
+    }
+
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping(value = "{storageId}/{repositoryId}/v1/ping")
     public ResponseEntity ping(@RequestHeader HttpHeaders httpHeaders,
                                HttpServletRequest request, HttpServletResponse response) {
@@ -195,7 +202,7 @@ public class ConanArtifactController extends BaseArtifactController {
         return ResponseEntity.ok(dataMap);
     }
 
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @PostMapping(value = "{storageId}/{repositoryId}/v1/conans/{name}/{version}/{user}/{channel}/upload_urls")
     public ResponseEntity getExportUploadUrls(@RepositoryMapping Repository repository,
                                               @PathVariable("name") String name,
@@ -232,7 +239,7 @@ public class ConanArtifactController extends BaseArtifactController {
         return new ResponseEntity<>(HttpStatus.NOT_FOUND.getReasonPhrase(), HttpStatus.NOT_FOUND);
     }
 
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @PostMapping(value = "{storageId}/{repositoryId}/v1/conans/{name}/{version}/{user}/{channel}/packages/{packageId}/upload_urls")
     public ResponseEntity getPackagesUploadUrls(@RepositoryMapping Repository repository,
                                                 @PathVariable("name") String name,

@@ -6,6 +6,7 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.PathUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.File;
@@ -54,6 +55,8 @@ public class RepositoryPath
     protected String path;
 
     private String artifactPath;
+
+    private Long size;
 
     public RepositoryPath(Path target,
                           LayoutFileSystem fileSystem) {
@@ -239,7 +242,7 @@ public class RepositoryPath
         }
 
         RepositoryPath result = getFileSystem().getRootDirectory().relativize(this);
-        if (result.startsWith(LayoutFileSystem.TRASH) || result.startsWith(LayoutFileSystem.TEMP)) {
+        if (result.startsWith(LayoutFileSystem.TEMP)) {
             result = result.subpath(1, result.getNameCount());
         }
 
@@ -381,6 +384,13 @@ public class RepositoryPath
         return artifactPath;
     }
 
+    public String getPath() {
+        if (StringUtils.isBlank(path)) {
+            path = FilenameUtils.separatorsToUnix(relativize().toString());
+        }
+        return path;
+    }
+
     public void setArtifactPath(String artifactPath) {
         this.artifactPath = artifactPath;
     }
@@ -391,5 +401,13 @@ public class RepositoryPath
 
     public void setDisableRemote(Boolean disableRemote) {
         this.disableRemote = disableRemote;
+    }
+
+    public Long getSize() {
+        return size;
+    }
+
+    public void setSize(Long size) {
+        this.size = size;
     }
 }

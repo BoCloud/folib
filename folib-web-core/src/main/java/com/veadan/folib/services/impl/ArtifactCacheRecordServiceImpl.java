@@ -19,10 +19,13 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
 import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
 import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -150,7 +153,7 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
             criteria.andEqualTo("storageId", artifactCacheRecord.getStorageId());
             criteria.andEqualTo("repositoryId", artifactCacheRecord.getRepositoryId());
             criteria.andEqualTo("artifactPath", artifactCacheRecord.getArtifactPath());
-            example.setOrderByClause("create_time desc");
+            example.setOrderByClause("id desc");
             List<ArtifactCacheRecord> packageNameBlockList = artifactCacheRecordMapper.selectByExample(example);
             if (CollectionUtils.isNotEmpty(packageNameBlockList)) {
                 resultArtifactCacheRecord = packageNameBlockList.get(0);
@@ -181,9 +184,18 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
             Example.Criteria criteria = example.createCriteria();
             criteria.andEqualTo("nodeId", getHostname());
         }
-        example.setOrderByClause("latest_download_time asc, size desc");
         PageHelper.startPage(page, limit);
-        return artifactCacheRecordMapper.selectByExample(example);
+        List<ArtifactCacheRecord> list = artifactCacheRecordMapper.selectByExample(example);
+        log.info("page {} limit {} list {}", page, limit, list.stream().map(ArtifactCacheRecord::getId).collect(Collectors.toList()).toString());
+        return list;
+    }
+
+    @Override
+    public List<ArtifactCacheRecord> getArtifactCacheRecordByCursor(Long lastId, Integer limit) {
+        if (Objects.isNull(limit)) {
+            limit = 1000;
+        }
+        return artifactCacheRecordMapper.selectArtifactCacheRecordByCursor(getHostname(), lastId, limit);
     }
 
     @Override
@@ -276,6 +288,9 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
     private boolean handlerArtifactCacheDelete(Path artifactCachePath) {
         boolean flag = true;
         String fileName = artifactCachePath.getFileName().toString();
+        if (artifactCachePath.getParent() == null) {
+            return flag;
+        }
         try {
             String checksumMd5FileName = FilenameUtils.getName(fileName) + ".md5";
             Path checksumMd5CachePath = artifactCachePath.getParent().resolve(checksumMd5FileName);
@@ -324,5 +339,95 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
 
     private String getHostname() {
         return IpUtils.getHostname();
+    }
+
+    /**
+     * 批量删除构建物缓存记录
+     * 本方法通过接收一个构建物缓存记录列表，对其进行批量删除操作
+     * 采用Flux进行响应式编程，以提高处理效率和弹性
+     *
+     * @param records 待删除的构建物缓存记录列表如果列表为空或为null，则方法不执行任何操作
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchDeleteArtifactCacheRecord(List<ArtifactCacheRecord> records) {
+        // 检查记录列表是否为空，如果为空则直接返回，不执行任何操作
+        if (CollectionUtils.isEmpty(records)) {
+            return;
+        }
+        // 使用Flux从records列表创建一个响应式流
+        // 过滤出需要处理的记录（通过handlerDeleteArtifacte方法决定是否处理某个记录）
+        // 每次缓冲100个元素，以批处理方式提高效率
+        // 在弹性线程池调度器上发布，以异步方式处理数据
+        // 对每个缓冲区内的记录列表，提取它们的ID，并调用artifactCacheRecordMapper的batchDelete方法进行批量删除
+        // 最后，通过subscribe方法订阅这个响应式流，启动数据处理
+        Flux.fromIterable(records)
+                // 过滤掉不符合处理条件的记录
+                .filter(this::handlerDeleteArtifact)
+                // 将过滤后的记录收集到一个列表中
+                .buffer()
+                // 在弹性线程池调度器上异步执行操作
+                .publishOn(Schedulers.boundedElastic())
+                .parallel(2)
+                // 对收集到的每一批记录执行以下操作
+                .doOnNext(re -> {
+                    // 提取所有记录的ID
+                    List<Long> ids = re.stream().map(ArtifactCacheRecord::getId).collect(Collectors.toList());
+                    // 批量删除数据库中对应ID的记录
+                    artifactCacheRecordMapper.batchDelete(ids);
+                })
+                // 订阅Flux以触发操作，但不直接使用返回的Subscription对象
+                .subscribe();
+    }
+
+    /**
+     * 删除构建物缓存记录
+     * 本方法接收一个构建物缓存记录，并删除该记录对应的缓存文件
+     * 如果缓存文件不存在，则尝试删除对应的checksum文件
+     *
+     * @param record 待删除的构建物缓存记录
+     * @return 如果删除成功，则返回true，否则返回false
+     */
+    public boolean handlerDeleteArtifact(ArtifactCacheRecord record) {
+        boolean flag = false;
+        Path artifactCachePath = Path.of(record.getCachePath());
+        try {
+            if (!Files.exists(artifactCachePath)) {
+                // 缓存制品文件不存在，删除缓存checksum文件
+                flag = handlerArtifactCacheDelete(artifactCachePath);
+                //log.info("File does not exist, attempting to delete checksum file: {}", artifactCachePath);
+            } else {
+                flag = deleteFileAndLog(artifactCachePath);
+            }
+        } catch (NoSuchFileException e) {
+            log.info("File not found, which is considered a successful operation: {}", artifactCachePath);
+            flag = true;
+        } catch (Exception e) {
+            log.error("An unexpected error occurred: ", e);
+            // 不需要修改flag，保持为false表示失败
+        }
+        return flag;
+    }
+
+    /**
+     * 删除缓存文件
+     * 本方法接收一个Path对象，表示要删除的文件路径
+     * 如果文件存在，则尝试删除文件，并记录删除操作
+     * 如果文件不存在，则记录删除操作
+     *
+     * @param path 要删除的文件路径
+     * @return 如果删除成功，则返回true，否则返回false
+     * @throws IOException 如果删除过程中发生IO异常，则抛出IOException
+     */
+    private boolean deleteFileAndLog(Path path) throws IOException {
+        boolean deleted = Files.deleteIfExists(path);
+        if (deleted) {
+            log.info("File successfully deleted: {}", path);
+            // 删除缓存checksum文件
+            handlerArtifactCacheDelete(path);
+        } else {
+            log.error("Failed to delete file: {}", path);
+        }
+        return deleted;
     }
 }

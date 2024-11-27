@@ -124,6 +124,24 @@ public class AsyncPoolConfig {
     @Value("${folib.threadPool.asyncWsCommand.awaitTerminationSeconds}")
     private Integer asyncWsCommandArtifactAwaitTerminationSeconds;
 
+    @Value("${folib.threadPool.asyncApiBrowse.corePoolSize:#{T(java.lang.Runtime).getRuntime().availableProcessors()}}")
+    private Integer asyncApiBrowseArtifactCorePoolSize ;
+
+    @Value("${folib.threadPool.asyncApiBrowse.maxPoolSize:#{T(java.lang.Runtime).getRuntime().availableProcessors()*2}}")
+    private Integer asyncApiBrowseArtifactMaxPoolSize ;
+
+    @Value("${folib.threadPool.asyncApiBrowse.queueCapacity}")
+    private Integer asyncApiBrowseArtifactQueueCapacity;
+
+    @Value("${folib.threadPool.asyncApiBrowse.keepAliveSeconds}")
+    private Integer asyncApiBrowseArtifactKeepAliveSeconds;
+
+    @Value("${folib.threadPool.asyncApiBrowse.threadNamePrefix}")
+    private String asyncApiBrowseArtifactThreadNamePrefix;
+
+    @Value("${folib.threadPool.asyncApiBrowse.awaitTerminationSeconds}")
+    private Integer asyncApiBrowseArtifactAwaitTerminationSeconds;
+
     @Value("${folib.threadPool.asyncCopy.corePoolSize}")
     private Integer asyncCopyCorePoolSize;
 
@@ -160,6 +178,24 @@ public class AsyncPoolConfig {
     @Value("${folib.threadPool.asyncEventLog.awaitTerminationSeconds}")
     private Integer asyncEventLogAwaitTerminationSeconds;
 
+    @Value("${folib.threadPool.asyncWsHeartbeat.corePoolSize}")
+    private Integer asyncWsHeartbeatCorePoolSize;
+
+    @Value("${folib.threadPool.asyncWsHeartbeat.maxPoolSize}")
+    private Integer asyncWsHeartbeatMaxPoolSize;
+
+    @Value("${folib.threadPool.asyncWsHeartbeat.queueCapacity}")
+    private Integer asyncWsHeartbeatQueueCapacity;
+
+    @Value("${folib.threadPool.asyncWsHeartbeat.keepAliveSeconds}")
+    private Integer asyncWsHeartbeatKeepAliveSeconds;
+
+    @Value("${folib.threadPool.asyncWsHeartbeat.threadNamePrefix}")
+    private String asyncWsHeartbeatThreadNamePrefix;
+
+    @Value("${folib.threadPool.asyncWsHeartbeat.awaitTerminationSeconds}")
+    private Integer asyncWsHeartbeatAwaitTerminationSeconds;
+    
     @Value("${folib.threadPool.asyncPromotion.corePoolSize}")
     private Integer asyncPromotionCorePoolSize;
 
@@ -177,6 +213,24 @@ public class AsyncPoolConfig {
 
     @Value("${folib.threadPool.asyncPromotion.awaitTerminationSeconds}")
     private Integer asyncPromotionAwaitTerminationSeconds;
+
+    @Value("${folib.threadPool.asyncDeleteArtifact.corePoolSize}")
+    private Integer asyncDeleteArtifactCorePoolSize;
+
+    @Value("${folib.threadPool.asyncDeleteArtifact.maxPoolSize}")
+    private Integer asyncDeleteArtifactMaxPoolSize;
+
+    @Value("${folib.threadPool.asyncDeleteArtifact.queueCapacity}")
+    private Integer asyncDeleteArtifactQueueCapacity;
+
+    @Value("${folib.threadPool.asyncDeleteArtifact.keepAliveSeconds}")
+    private Integer asyncDeleteArtifactKeepAliveSeconds;
+
+    @Value("${folib.threadPool.asyncDeleteArtifact.threadNamePrefix}")
+    private String asyncDeleteArtifactThreadNamePrefix;
+
+    @Value("${folib.threadPool.asyncDeleteArtifact.awaitTerminationSeconds}")
+    private Integer asyncDeleteArtifactAwaitTerminationSeconds;
 
     @Bean
     public ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor() {
@@ -218,13 +272,34 @@ public class AsyncPoolConfig {
 
     @Bean
     public ThreadPoolTaskExecutor asyncWsCommandThreadPoolTaskExecutor() {
-        return buildThreadPoolTaskExecutor(
+        return buildThreadPoolTaskExecutorV2(
                 asyncWsCommandArtifactCorePoolSize,
                 asyncWsCommandArtifactMaxPoolSize,
                 asyncWsCommandArtifactQueueCapacity,
                 asyncWsCommandArtifactKeepAliveSeconds,
                 asyncWsCommandArtifactThreadNamePrefix,
-                asyncWsCommandArtifactAwaitTerminationSeconds);
+                asyncWsCommandArtifactAwaitTerminationSeconds,
+                null);
+    }
+
+    @Bean
+    public ThreadPoolTaskExecutor asyncApiBrowseThreadPoolExecutor() {
+        ThreadPoolTaskExecutor threadPoolTaskExecutor = new ThreadPoolTaskExecutor();
+        threadPoolTaskExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
+        if (asyncApiBrowseArtifactCorePoolSize == null || asyncApiBrowseArtifactCorePoolSize == 0) {
+            asyncApiBrowseArtifactCorePoolSize = Runtime.getRuntime().availableProcessors();
+        }
+        threadPoolTaskExecutor.setCorePoolSize(asyncApiBrowseArtifactCorePoolSize);
+        if (asyncApiBrowseArtifactMaxPoolSize == null || asyncApiBrowseArtifactMaxPoolSize == 0) {
+            asyncApiBrowseArtifactMaxPoolSize = Runtime.getRuntime().availableProcessors() * 2;
+        }
+        threadPoolTaskExecutor.setMaxPoolSize(asyncApiBrowseArtifactMaxPoolSize);
+        threadPoolTaskExecutor.setQueueCapacity(asyncApiBrowseArtifactQueueCapacity);
+        threadPoolTaskExecutor.setThreadNamePrefix(asyncApiBrowseArtifactThreadNamePrefix);
+        threadPoolTaskExecutor.setKeepAliveSeconds(asyncApiBrowseArtifactKeepAliveSeconds);
+        threadPoolTaskExecutor.setAwaitTerminationSeconds(asyncApiBrowseArtifactAwaitTerminationSeconds);
+        threadPoolTaskExecutor.initialize();
+        return threadPoolTaskExecutor;
     }
 
     @Bean
@@ -241,12 +316,23 @@ public class AsyncPoolConfig {
     @Bean
     public ThreadPoolTaskExecutor asyncEventLogThreadPoolTaskExecutor() {
         return buildThreadPoolTaskExecutor(
-                2,
-                2,
-                60,
+                asyncEventLogCorePoolSize,
+                asyncEventLogMaxPoolSize,
+                asyncEventLogQueueCapacity,
                 asyncEventLogKeepAliveSeconds,
                 asyncEventLogThreadNamePrefix,
                 asyncEventLogAwaitTerminationSeconds);
+    }
+
+    @Bean
+    public ThreadPoolTaskExecutor asyncWsHeartbeatThreadPoolTaskExecutor() {
+        return buildThreadPoolTaskExecutor(
+                asyncWsHeartbeatCorePoolSize,
+                asyncWsHeartbeatMaxPoolSize,
+                asyncWsHeartbeatQueueCapacity,
+                asyncWsHeartbeatKeepAliveSeconds,
+                asyncWsHeartbeatThreadNamePrefix,
+                asyncWsHeartbeatAwaitTerminationSeconds);
     }
 
     @Bean
@@ -260,17 +346,15 @@ public class AsyncPoolConfig {
                 asyncPromotionAwaitTerminationSeconds);
     }
 
-    @PreDestroy
-    public void shutdown() {
-        asyncThreadPoolTaskExecutor().shutdown();
-        asyncEventListenerExecutor().shutdown();
-        asyncConfigThreadPoolExecutor().shutdown();
-        asyncFetchRemotePackageThreadPoolTaskExecutor().shutdown();
-        asyncScanThreadPoolTaskExecutor().shutdown();
-        asyncWsCommandThreadPoolTaskExecutor().shutdown();
-        asyncCopyThreadPoolTaskExecutor().shutdown();
-        asyncEventLogThreadPoolTaskExecutor().shutdown();
-        asyncPromotionPoolTaskExecutor().shutdown();
+    @Bean
+    public ThreadPoolTaskExecutor asyncDeleteArtifactTaskExecutor() {
+        return buildThreadPoolTaskExecutor(
+                asyncDeleteArtifactCorePoolSize,
+                asyncDeleteArtifactMaxPoolSize,
+                asyncDeleteArtifactQueueCapacity,
+                asyncDeleteArtifactKeepAliveSeconds,
+                asyncDeleteArtifactThreadNamePrefix,
+                asyncDeleteArtifactAwaitTerminationSeconds);
     }
 
     /**
@@ -315,6 +399,29 @@ public class AsyncPoolConfig {
             executor.setCorePoolSize(corePoolSize);
             executor.setMaxPoolSize(maxPoolSize);
         }
+        Integer maxQueueCapacity = 100000000;
+        if (queueCapacity > maxQueueCapacity) {
+            queueCapacity = maxQueueCapacity;
+        }
+        executor.setQueueCapacity(queueCapacity);
+        executor.setKeepAliveSeconds(keepAliveSeconds);
+        executor.setThreadNamePrefix(threadNamePrefix);
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(awaitTerminationSeconds);
+        if (Objects.isNull(rejectedExecutionHandler)) {
+            rejectedExecutionHandler = new ThreadPoolExecutor.CallerRunsPolicy();
+        }
+        executor.setRejectedExecutionHandler(rejectedExecutionHandler);
+        executor.initialize();
+        log.info("Thread pool name [{}] core size [{}] max size [{}] queue capacity [{}]", executor.getThreadNamePrefix(), executor.getCorePoolSize(), executor.getMaxPoolSize(), queueCapacity);
+        return executor;
+    }
+
+    private ThreadPoolTaskExecutor buildThreadPoolTaskExecutorV2(Integer corePoolSize, Integer maxPoolSize, Integer queueCapacity, Integer keepAliveSeconds, String threadNamePrefix, Integer awaitTerminationSeconds, RejectedExecutionHandler rejectedExecutionHandler) {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+
+        executor.setCorePoolSize(corePoolSize);
+        executor.setMaxPoolSize(maxPoolSize);
         Integer maxQueueCapacity = 100000000;
         if (queueCapacity > maxQueueCapacity) {
             queueCapacity = maxQueueCapacity;

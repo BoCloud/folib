@@ -6,6 +6,7 @@ import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.ArtifactEntity;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.service.CocoapodsIndexService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.CocoapodsArtifactUtil;
@@ -15,6 +16,11 @@ import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -27,12 +33,11 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.inject.Inject;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -52,6 +57,16 @@ public class CocoapodsArtifactController extends BaseArtifactController
 {
     @Value("${folib.temp}")
     private String tempPath;
+
+    @Inject
+    private CocoapodsIndexService cocoapodsIndexService;
+
+    @Override
+    @PreAuthorize("authenticated")
+    @GetMapping(value = "/{storageId}/{repositoryId}")
+    public ResponseEntity<String> checkRepositoryAccess() {
+        return super.checkRepositoryAccess();
+    }
     
     @ApiOperation(value = "Used to deploy an artifact")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
@@ -81,22 +96,29 @@ public class CocoapodsArtifactController extends BaseArtifactController
                 podArtifactCoordinates.setBaseName(podSpec.getName());
                 podArtifactCoordinates.setVersion(podSpec.getVersion());
                 podRepositoryPath.setArtifact(podArtifactEntity);
-                artifactManagementService.validateAndStore(podRepositoryPath, new ByteArrayInputStream(cacheBytes));
+
                 
                 // 存储索引文件
-                final ByteArrayInputStream podspecContentByteArrayInputStream = new ByteArrayInputStream(podspecSourceContent.getBytes(StandardCharsets.UTF_8));
-                final String uri = podRepositoryPath.toUri().getPath();
-                final RepositoryPath podSpecRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, String.format(".specs/%s/%s/%s.podspec", podSpec.getName(), podSpec.getVersion(), podSpec.getName()));
-                final ArtifactEntity podSpecArtifactEntity = new ArtifactEntity(storageId, repositoryId, RepositoryFiles.readCoordinates(podSpecRepositoryPath));
-                final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) podSpecArtifactEntity.getArtifactCoordinates();
-                artifactCoordinates.setPath(uri);
-                artifactCoordinates.setBaseName(podSpec.getName());
-                artifactCoordinates.setVersion(podSpec.getVersion());
-                podSpecRepositoryPath.setArtifact(podSpecArtifactEntity);
-                artifactManagementService.validateAndStore(podSpecRepositoryPath, podspecContentByteArrayInputStream);
+                try (final ByteArrayInputStream podspecContentByteArrayInputStream = new ByteArrayInputStream(podspecSourceContent.getBytes(StandardCharsets.UTF_8)); ByteArrayInputStream inputStream =new ByteArrayInputStream(cacheBytes)) {
+                    artifactManagementService.validateAndStore(podRepositoryPath, inputStream);
+                    final String uri = podRepositoryPath.toUri().getPath();
+                    final RepositoryPath podSpecRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, String.format(".specs/%s/%s/%s.podspec", podSpec.getName(), podSpec.getVersion(), podSpec.getName()));
+                    final ArtifactEntity podSpecArtifactEntity = new ArtifactEntity(storageId, repositoryId, RepositoryFiles.readCoordinates(podSpecRepositoryPath));
+                    final CocoapodsArtifactCoordinates artifactCoordinates = (CocoapodsArtifactCoordinates) podSpecArtifactEntity.getArtifactCoordinates();
+                    artifactCoordinates.setPath(uri);
+                    artifactCoordinates.setBaseName(podSpec.getName());
+                    artifactCoordinates.setVersion(podSpec.getVersion());
+                    podSpecRepositoryPath.setArtifact(podSpecArtifactEntity);
+                    artifactManagementService.validateAndStore(podSpecRepositoryPath, podspecContentByteArrayInputStream);
+                }
+
             }
             else
-            { artifactManagementService.validateAndStore(podRepositoryPath, new ByteArrayInputStream(cacheBytes)); }
+            {
+                try(ByteArrayInputStream  is = new ByteArrayInputStream(cacheBytes)){
+                    artifactManagementService.validateAndStore(podRepositoryPath, is);
+                }
+            }
 
             return ResponseEntity.ok("The artifact was deployed successfully.");
         } catch (Exception e) {
@@ -123,6 +145,25 @@ public class CocoapodsArtifactController extends BaseArtifactController
         { this.downloadHosted(repository, httpHeaders, path, request, response); }
         else if (type.equals(RepositoryTypeEnum.PROXY.getType()))
         { this.downloadProxy(repository, httpHeaders, path, request, response);}
+    }
+
+    @ApiOperation(value = "Used to retrieve an artifact")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = ""),
+            @ApiResponse(code = 400, message = "An error occurred.") })
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @GetMapping(value = { "{storageId}/{repositoryId}/archive/refs/heads/{path:.+}" })
+    public void downloadBranchZip(@RepositoryMapping Repository repository,
+                               @RequestHeader HttpHeaders httpHeaders,
+                               @PathVariable String path,
+                               HttpServletRequest request,
+                               HttpServletResponse response)
+            throws Exception {
+        final String type = repository.getType();
+        if (type.equals(RepositoryTypeEnum.HOSTED.getType())) {
+
+        } else if (type.equals(RepositoryTypeEnum.PROXY.getType())) {
+            this.downloadBranch(repository, httpHeaders, path, request, response);
+        }
     }
 
 
@@ -219,4 +260,45 @@ public class CocoapodsArtifactController extends BaseArtifactController
             { FileUtil.del(artifact2TarGzLocalTempFile); }
         }
     }
+
+    public void downloadBranch(Repository repository,
+                               HttpHeaders httpHeaders,
+                               String path,
+                               HttpServletRequest request,
+                               HttpServletResponse response) throws Exception {
+
+
+        final String storageId = repository.getStorage().getId();
+        final String repositoryId = repository.getId();
+
+        final RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, ".specs/master.tar.gz");
+
+        if (!Files.exists(repositoryPath)) { // 如果未发现索引文件，进行索引同步
+            try {
+                final boolean syncProxyIndexResult = cocoapodsIndexService.syncProxyIndex(repository);
+                logger.info("同步远程仓库（{}）{}", String.format("%s:%s", storageId, repositoryId), syncProxyIndexResult ? "成功" : "失败");
+            } catch (Exception e) {
+                logger.error("同步远程仓库（{}）{}", String.format("%s:%s", storageId, repositoryId), "异常");
+                logger.error(e.getMessage());
+                response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+                return;
+            }
+        } else {
+            logger.info("仓库（{}）复用已存在索引文件，跳过同步索引逻辑", String.format("%s:%s", storageId, repositoryId));
+        }
+
+        response.setHeader("Content-Disposition", "attachment;filename="+path);
+        response.setContentType("application/x-gzip");
+        try (final ServletOutputStream outputStream = response.getOutputStream();
+             final InputStream fileInputStream = new BufferedInputStream(Files.newInputStream(repositoryPath));
+        ) {
+            int len = 0;
+            byte[] buffer = new byte[8192];
+            while ((len = fileInputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, len);
+            }
+        }
+
+    }
+
 }

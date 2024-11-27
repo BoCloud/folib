@@ -1,5 +1,7 @@
 package com.veadan.folib.providers.layout;
 
+import cn.hutool.core.date.DatePattern;
+import cn.hutool.core.date.DateUtil;
 import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.ArtifactNotFoundException;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
@@ -23,6 +25,7 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.util.LocalDateTimeInstance;
+import com.veadan.folib.util.RepositoryPathUtil;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -36,9 +39,8 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.OpenOption;
-import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.spi.FileSystemProvider;
@@ -47,7 +49,6 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
-import java.util.stream.Stream;
 
 /**
  * This class decorates {@link StorageFileSystemProvider} with common layout specific
@@ -193,62 +194,96 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
     public void storeChecksum(RepositoryPath basePath, String lastModifiedTime,
                               boolean forceRegeneration)
             throws IOException {
-        try (Stream<Path> pathStream = Files.walk(basePath)) {
-            pathStream
-                    .filter(p -> {
-                        try {
-                            boolean flag = !Files.isDirectory(p) && !Boolean.TRUE.equals(RepositoryFiles.isChecksum((RepositoryPath) p)) && !RepositoryFiles.isArtifactMetadata((RepositoryPath) p);
-                            if (flag && StringUtils.isNotBlank(lastModifiedTime)) {
-                                LocalDateTime lastModifiedDateTime = getFileUpdateTime((RepositoryPath) p);
-                                if (Objects.nonNull(lastModifiedDateTime)) {
-                                    flag = LocalDateTime.now().minusDays(Integer.parseInt(lastModifiedTime)).isBefore(lastModifiedDateTime);
+        final boolean isDockerLayout = ProductTypeEnum.Docker.getFoLibraryName().equalsIgnoreCase(basePath.getRepository().getLayout());
+        try {
+            Files.walkFileTree(basePath, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file,
+                                                 BasicFileAttributes attrs)
+                        throws IOException {
+                    try {
+                        RepositoryPath itemPath = (RepositoryPath) file;
+                        if (RepositoryPathUtil.include(1, itemPath, isDockerLayout, false, "")) {
+                            if (StringUtils.isNotBlank(lastModifiedTime)) {
+                                LocalDateTime lastModifiedDateTime = getFileUpdateTime(itemPath);
+                                if (Objects.isNull(lastModifiedDateTime) || !LocalDateTime.now().minusDays(Integer.parseInt(lastModifiedTime)).isBefore(lastModifiedDateTime)) {
+                                    logger.info("RepositoryPath path [{}] lastModifiedDateTime [{}] is before lastModifiedTime [{}] skip...", itemPath.toString(), lastModifiedTime, DateUtil.format(lastModifiedDateTime, DatePattern.NORM_DATETIME_PATTERN));
+                                    return FileVisitResult.SKIP_SUBTREE;
                                 }
                             }
-                            return flag;
-                        } catch (Exception e) {
-                            logger.error("Failed to read attributes for [{}]", p, e);
+                            logger.info("Find path [{}]", itemPath);
+                            writeChecksum(itemPath, forceRegeneration);
                         }
-                        return false;
-                    })
-                    .forEach(p -> {
-                        try {
-                            writeChecksum((RepositoryPath) p, forceRegeneration);
-                        } catch (IOException e) {
-                            logger.error("Failed to write checksum for [{}]", p, e);
+                    } catch (Exception e) {
+                        logger.error("Failed to write checksum for [{}]", file, e);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+                    try {
+                        RepositoryPath itemPath = (RepositoryPath) dir;
+                        logger.info("RepositoryPath directory [{}] ", itemPath.toString());
+                        if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !RepositoryPathUtil.include(2, itemPath, isDockerLayout, "")) {
+                            logger.info("RepositoryPath directory [{}] skip...", itemPath.toString());
+                            return FileVisitResult.SKIP_SUBTREE;
                         }
-                    });
+                    } catch (Exception e) {
+                        logger.error("Failed to directory for [{}]", dir, e);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir,
+                                                          IOException exc)
+                        throws IOException {
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (Exception ex) {
+            logger.error(ExceptionUtils.getStackTrace(ex));
         }
     }
 
     protected void writeChecksum(RepositoryPath path,
                                  boolean force)
             throws IOException {
+        long startTime = System.currentTimeMillis();
         try (InputStream is = newInputStream(path)) {
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[8192];
+            long readStartTime = System.currentTimeMillis();
             while (is.read(buffer) > 0) {
                 //calculate checksum while reading the stream
             }
+            logger.info("RepositoryPath [{}] calculate digest take time [{}] ms", path, System.currentTimeMillis() - readStartTime);
             String layout = path.getRepository().getLayout();
             final Artifact artifact = artifactEntityRepository.findOneArtifact(path.getStorageId(), path.getRepositoryId(), RepositoryFiles.relativizePath(path));
             Set<String> digestAlgorithmSet = path.getFileSystem().getDigestAlgorithmSet();
             final Map<String, String> checksumMap = Maps.newHashMap();
-            digestAlgorithmSet.stream()
-                    .forEach(p ->
-                    {
-                        String checksum = StreamUtils.findSource(LayoutInputStream.class, is)
-                                .getMessageDigestAsHexadecimalString(p, layout);
-                        RepositoryPath checksumPath = getChecksumPath(path, p);
-                        if (Files.exists(checksumPath) && !force) {
-                            return;
-                        }
-                        try {
-                            Files.write(checksumPath, checksum.getBytes());
-                            checksumMap.put(p, checksum);
-                        } catch (IOException e) {
-                            logger.error("Failed to write checksum for [{}]",
-                                    checksumPath.toString(), e);
-                        }
-                    });
+            digestAlgorithmSet.forEach(p ->
+            {
+                String checksum = StreamUtils.findSource(LayoutInputStream.class, is).getMessageDigestAsHexadecimalString(p, layout);
+                RepositoryPath checksumPath = getChecksumPath(path, p);
+                boolean checksumPathExists = Files.exists(checksumPath);
+                if (checksumPathExists && !force) {
+                    return;
+                }
+                try {
+                    String oldDigest = "";
+                    if (checksumPathExists) {
+                        oldDigest = Files.readString(checksumPath);
+                    }
+                    long digestWriteStartTime = System.currentTimeMillis();
+                    Files.write(checksumPath, checksum.getBytes());
+                    checksumMap.put(p, checksum);
+                    logger.info("RepositoryPath [{}] algorithm [{}] digest [{}] oldDigest [{}] equals {} write take time [{}] ms", path, p, checksum, oldDigest, checksum.equals(oldDigest), System.currentTimeMillis() - digestWriteStartTime);
+                } catch (IOException e) {
+                    logger.error("Failed to write checksum for [{}]",
+                            checksumPath.toString(), e);
+                }
+            });
             try {
                 if (Objects.nonNull(artifact) && MapUtils.isNotEmpty(checksumMap) && !CommonUtils.areMapsEqual(artifact.getChecksums(), checksumMap)) {
                     logger.info("Artifact storageId [{}] repositoryId [{}] path [{}] checksums update old checksums [{}] new checksums [{}]", artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), artifact.getChecksums(), checksumMap);
@@ -261,6 +296,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
                 logger.error("Update artifact checksums for [{}] error [{}]",
                         path.toString(), ExceptionUtils.getStackTrace(ex));
             }
+            logger.info("RepositoryPath [{}] new checksums [{}] take time [{}] ms", path, checksumMap, System.currentTimeMillis() - startTime);
         }
     }
 

@@ -4,12 +4,14 @@ import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.artifact.locator.ArtifactDirectoryLocator;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.locator.handlers.RemoveMavenArtifactOperation;
 import com.veadan.folib.locator.handlers.RemoveTimestampedSnapshotOperation;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.storage.ArtifactStorageException;
 import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.metadata.MavenArtifactManager;
 import com.veadan.folib.storage.metadata.MavenSnapshotManager;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryPolicyEnum;
@@ -48,6 +50,9 @@ public class MavenRepositoryFeatures
 
     @Inject
     private MavenSnapshotManager mavenSnapshotManager;
+
+    @Inject
+    private MavenArtifactManager mavenArtifactManager;
 
     @Inject
     private RedeploymentValidator redeploymentValidator;
@@ -97,6 +102,27 @@ public class MavenRepositoryFeatures
         } else {
             throw new ArtifactStorageException("Type of repository is invalid: repositoryId - " + repositoryId);
         }
+    }
+
+    public void removeMavenArtifact(String storageId,
+                                           String repositoryId,
+                                           String artifactPath,
+                                           int numberToKeep,
+                                           int keepPeriod)
+            throws IOException {
+        Storage storage = getConfiguration().getStorage(storageId);
+        Repository repository = storage.getRepository(repositoryId);
+
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, artifactPath);
+
+        RemoveMavenArtifactOperation operation = new RemoveMavenArtifactOperation(mavenArtifactManager);
+        operation.setBasePath(repositoryPath);
+        operation.setNumberToKeep(numberToKeep);
+        operation.setKeepPeriod(keepPeriod);
+
+        ArtifactDirectoryLocator locator = new ArtifactDirectoryLocator();
+        locator.setOperation(operation);
+        locator.locateArtifactDirectories();
     }
 
     public Configuration getConfiguration() {

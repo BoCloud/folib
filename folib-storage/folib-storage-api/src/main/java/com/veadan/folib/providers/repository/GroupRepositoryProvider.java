@@ -19,6 +19,7 @@ import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.ThrowingFunction;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.index.artifact.M2ArtifactRecognizer;
@@ -102,7 +103,9 @@ public class GroupRepositoryProvider
 
         // Iterate over the `repositories` collection.
         RepositoryPath subRepositoryPath = null;
-        for (String storageAndRepositoryId : groupRepository.getGroupRepositories()) {
+        List<String> storageAndRepositoryIdList = Lists.newArrayList();
+        configurationManager.resolveGroupRepository(groupRepository, storageAndRepositoryIdList);
+        for (String storageAndRepositoryId : storageAndRepositoryIdList) {
             try {
                 String sId = ConfigurationUtils.getStorageId(storage.getId(), storageAndRepositoryId);
                 String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);

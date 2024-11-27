@@ -7,14 +7,14 @@
             <a-col :span="10">
               <a-row :gutter="[24]">
                 <a-col :span="24">
-                  <a-form-item label="备份仓库">
+                  <a-form-item :label="$t('Setting.BackupRepository')">
                     <gb-ant-select-two-cascader v-decorator="[
                       'repositoryIds',
                       {
                         initialValue: undefined,
-                        rules: [{ required: true, message: '请选择备份仓库', type: 'array', }]
+                        rules: [{ required: true, message: $t('Setting.selectTheBackupRepository'), type: 'array', }]
                       }
-                    ]" allowClear style="width:80%;" :maxTagCount="4" :maxTagTextLength="12" placeholder="请选择备份仓库"
+                    ]" allowClear style="width:80%;" :maxTagCount="4" :maxTagTextLength="12" :placeholder="$t('Setting.selectTheBackupRepository')"
                       :selectOptionsConfig="{
                         key: 'key',
                         value: 'key',
@@ -24,29 +24,29 @@
                   </a-form-item>
                 </a-col>
                 <a-col :span="24">
-                  <a-form-item class="mb-10" label="备份目录" :colon="false" prop="repositoryId">
+                  <a-form-item class="mb-10" :label="$t('Setting.BackupDirectory')" :colon="false" prop="repositoryId">
                     <a-tree-select v-if="directoryPathShow" v-decorator="[
                       'directoryPath',
                       {
                         initialValue: undefined,
-                        rules: [{ required: true, message: '请选择备份目录', }]
+                        rules: [{ required: true, message: $t('Setting.selectTheBackupDirectory'), }]
                       }
                     ]" style="width:80%" :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }"
-                      :tree-data="directoryPaths" placeholder="请选择备份目录" :load-data="onLoadData" />
+                      :tree-data="directoryPaths" :placeholder="$t('Setting.selectTheBackupDirectory')" :load-data="onLoadData" />
                   </a-form-item>
                 </a-col>
               </a-row>
               <a-row :gutter="[24]">
                 <a-col :span="12">
-                  <a-form-item :wrapper-col="{ span: 14, offset: 6 }">
-                    <a-popconfirm title="确定要开启备份吗？" okType="danger" ok-text="确定" cancel-text="取消"
+                  <a-form-item :wrapper-col="{ span: 16, offset: 6 }">
+                    <a-popconfirm :title="$t('Setting.sureEnableBackup')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
                       @confirm="backupFormSubmit">
                       <a-button type="danger">
-                        保存
+                        {{ $t('Setting.Save') }}
                       </a-button>
                     </a-popconfirm>
                     <a-button class="ml-10" @click="backupFormReset">
-                      取消
+                      {{ $t('Setting.Cancel') }}
                     </a-button>
                   </a-form-item>
                 </a-col>
@@ -58,17 +58,17 @@
                 <a-card class="header-solid mr-10">
                   <div class="mx-25 search">
                     <a-col :span="24" class="text-right">
-                      <a-input-search placeholder="输入存储空间查询" class="v-search" v-model="artifactsBackupQuery.storageId"
+                      <a-input-search :placeholder="$t('Setting.EnterStorageSpace')" class="v-search" v-model="artifactsBackupQuery.storageId"
                         @search="getArtifactsBackupList()" />
-                      <a-input-search placeholder="输入所属仓库查询" class="v-search" v-model="artifactsBackupQuery.repositoryId"
+                      <a-input-search :placeholder="$t('Setting.EnterTheRepositoryQuery')" class="v-search" v-model="artifactsBackupQuery.repositoryId"
                         @search="getArtifactsBackupList()" />
                     </a-col>
                   </div>
-                  <a-table :columns="artifactsBackupColumns" :data-source="backupInfo.repositories" :scroll="{ x: true }"
+                  <a-table :columns="i18nArtifactsBackupColumns" :data-source="backupInfo.repositories" :scroll="{ x: true }"
                     :loading="loading" :row-key="(r, i) => i.toString()">
                     <div slot="operation" slot-scope="text, record">
                       <div class="col-action">
-                        <a-popconfirm title="确定要删除吗？" okType="danger" ok-text="确定" cancel-text="取消"
+                        <a-popconfirm :title="$t('Setting.SureDelete')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
                           @confirm="artifactsBackupHandlerDelete(record)">
                           <a-button type="link" size="small">
                             <svg width="16" height="16" viewBox="0 0 20 20" fill="none"
@@ -119,6 +119,7 @@ export default {
       artifactsBackupColumns: [
         {
           title: '存储空间',
+          i18nKey: 'Setting.StorageSpace',
           dataIndex: 'storageId',
           key: 'storageId',
           width: 200,
@@ -126,6 +127,7 @@ export default {
         },
         {
           title: '所属仓库',
+          i18nKey: 'Setting.OwnedWarehouse',
           dataIndex: 'repositoryId',
           key: 'repositoryId',
           width: 200,
@@ -133,6 +135,7 @@ export default {
         },
         {
           title: '备份目录',
+          i18nKey: 'Setting.BackupDirectory',
           dataIndex: 'directoryPath',
           key: 'directoryPath',
           width: 200,
@@ -140,6 +143,7 @@ export default {
         },
         {
           title: '操作',
+          i18nKey: 'Setting.Operation',
           dataIndex: 'operation',
           width: 100,
           scopedSlots: { customRender: 'operation' },
@@ -156,10 +160,15 @@ export default {
       directoryPathShow: true,
     }
   },
-  components: {
-  },
   computed: {
-
+    i18nArtifactsBackupColumns() {
+      return this.artifactsBackupColumns.map(column => {
+        if (column.i18nKey) {
+          column.title = this.$t(column.i18nKey);
+        }
+        return column;
+      })
+    },
   },
   created() {
     this.initData()
@@ -171,7 +180,7 @@ export default {
   methods: {
     message(type, message) {
       if (!message) {
-        message = "操作成功"
+        message = this.$t('Setting.OperationSuccessful')
       }
       this.$notification[type]({
         message: message,
@@ -289,7 +298,7 @@ export default {
     },
     artifactsBackupHandlerDelete(record) {
       deleteDict({ id : record.id }).then(res => {
-        this.message("success", "删除成功")
+        this.message("success", this.$t('Setting.DeleteSuccess'))
       }).catch(err => {
         this.$notification['error']({
           message: err.response.data.error,
@@ -315,12 +324,12 @@ export default {
           })
           saveBackup(data).then(res => {
             this.directoryPathShow = false
-            this.message("success", "备份策略设置成功")
+            this.message("success", this.$t('Setting.backupPolicyIsSetSuccessful'))
             setTimeout(() => {
               this.directoryPathShow = true
             }, 50)
           }).catch((err) => {
-            this.message("error", "备份策略设置失败")
+            this.message("error", this.$t('Setting.FailedToSetBackupPolicy'))
           }).finally(() => {
             this.backupFormReset()
           })

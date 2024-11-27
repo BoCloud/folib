@@ -60,7 +60,7 @@ public class ArtifactEventPromotionListener {
             if (Objects.isNull(artifactEventTypeEnum)) {
                 return;
             }
-            if (validateArtifactEvent(artifactEventTypeEnum) && artifactComponent.layoutSupports(repositoryPath)) {
+            if (validateArtifactEvent(artifactEventTypeEnum) && artifactComponent.layoutSupportsForPromotion(repositoryPath)) {
 
                 Repository repository = artifactComponent.getRepository(repositoryPath.getStorageId(), repositoryPath.getRepositoryId());
                 if (Objects.isNull(repository)) {

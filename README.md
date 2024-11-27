@@ -48,7 +48,7 @@ folib-commons/src/main/resources/application.yaml
 - 在该目录下利用Dockerfile进行build
 ```shell
 docker build -t folib-1.0 .
- docker buildx build --platform linux/amd64 -t folib-server:1.2.4-dev .
+ docker buildx build --platform linux/amd64 -t folib-server:1.2.3.12-dev .
 ```
 - docker启动
 ```shell
@@ -83,7 +83,7 @@ folib-1.0:latest
 | FOLIB_MYSQL_DB               | MySQL数据库名称                    | folib_scanner | 是       |                     |
 | FOLIB_MYSQL_USER             | MySQL数据库账号                    |               | 是       |                     |
 | FOLIB_MYSQL_PASSWORD         | MySQL数据库密码                    |               | 是       |                     |
-| FOLIB_NVD                    | 安全策略镜像地址                   | nvd.folib.com | 否       |                     |
+| FOLIB_NVD                    | 安全策略镜像地址                   | nvd.folib.com/feeds/json/cve/1.1 | 否       |                     |
 | FOLIB_JMX_PORT               | JMX监控端口                        | 7199          | 是       |                     |
 | FOLIB_REMOTE_DB_HOST         | 外置图数据库持久化地址             | 127.0.0.1     | 否       | db_REMOTE模式下有效 |
 | FOLIB_REMOTE_DB_PORT         | 外置图数据库持久化端口             | 49142         | 否       | db_REMOTE模式下有效 |
@@ -342,3 +342,32 @@ ArtifactCoorsinates默认支持一些API。大多数工具都使用 HTTP 进行�
 
 #### 流程时序图
 ![flow](uploads/dfff7b25cbbb9668adb4602b8587475e/flow.png)
+
+## 权角色限说明
+ADMIN角色：
+- 描述：管理员，拥有所有权限
+- 限制：不可删除（isDefault=1）,不可选择资源
+
+ANONYMOUS：
+- 描述：匿名用户，未登录用户
+- 限制：此角色不可删除（isDefault=1）,不能添加用户、用户组，权限直接和角色或指定资源关联，可选择资源
+
+GENERAL：
+- 描述：普通用户，拥有部分权限，拥有除下载以外的所有api权限
+- 限制：不可删除（isDefault=1）,不可选择资源
+
+OPEN_SOURCE_MANAGE：
+- 描述：开源项目管理员，拥有开源项目管理权限
+- 限制：不可删除（isDefault=1）,不可选择资源
+
+READERS：
+- 描述：只读用户，拥有只读权限，只读权限包含：下载、查询
+- 限制：不可删除（isDefault=1）,不可选择资源
+
+STORAGE_ADMIN_开头角色：
+- 描述：存储空间管理员，创建存储空间时同步创建
+- 限制：只能选择一个用户作为管理员，不可选择资源、权限
+
+STORAGE_USER_开头角色：
+- 描述：存储空间普通用户角色，创建存储空间时同步创建
+- 限制：不可选择资源

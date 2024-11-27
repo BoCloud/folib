@@ -10,16 +10,22 @@ import com.veadan.folib.components.node.NodeComponent;
 import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
 import com.veadan.folib.controllers.cluster.dto.*;
 import com.veadan.folib.entity.ClusterDataSyncTaskPo;
+import com.veadan.folib.entity.Dict;
+import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.forms.node.CassandraClusterForm;
 import com.veadan.folib.mapper.ClusterDataSyncTaskMapper;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ClusterSyncService;
+import com.veadan.folib.services.DictService;
 import org.apache.cassandra.tools.nodetool.HostStatWithPort;
 import org.apache.cassandra.tools.nodetool.SetHostStatWithPort;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -65,6 +71,10 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
 
     @Inject
     private PropertiesBooter propertiesBooter;
+
+    @Autowired
+    @Lazy
+    private DictService dictService;
 
     @Inject
     private ObjectMapper objectMapper;
@@ -137,6 +147,31 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
             logger.error("Get host node list error {}", ExceptionUtils.getStackTrace(ex));
         }
         return Collections.emptySet();
+    }
+
+    @Override
+    public Set<String> getHostNodeListV2() {
+        List<Dict> dictList = dictService.selectDict(Dict.builder().dictType(DictTypeEnum.CLUSTER_NODES.getType()).build());
+        if (CollectionUtils.isEmpty(dictList)) {
+            return Collections.emptySet();
+        }
+        Set<String> nodeSet = Sets.newLinkedHashSet();
+        String node = "", currentNode = ipProperties.getFolibLockIp();
+        for (Dict dict : dictList) {
+            node = dict.getDictKey();
+            if (StringUtils.isBlank(node)) {
+                continue;
+            }
+            if (currentNode.equalsIgnoreCase(node)) {
+                logger.info("集群节点为 [{}] 当前节点为 [{}]，跳过同步配置", node, currentNode);
+                continue;
+            }
+            node = String.format("%s%s%s%s", "http://", node, ":", propertiesBooter.getPort());
+            nodeSet.add(node);
+            logger.info("集群节点为 [{}]，加入到节点列表 [{}]", node, String.join(",", nodeSet));
+        }
+        logger.info("集群节点列表为 [{}]", String.join(",", nodeSet));
+        return nodeSet;
     }
 
     @Override

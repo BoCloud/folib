@@ -1,0 +1,18 @@
+export default {
+    'EnterLicenseNameQuery': '输入许可证名称查询',
+    'EnterLicenseQuery': '输入许可证查询',
+    'Name': '名称',
+    'LicenseName': '许可证名称',
+    'LicenseNumber': '许可证编号',
+    'Overview': '概览',
+    'SPDXLicenseID': 'SPDX许可证ID',
+    'OSIAuthorized': 'OSI已授权',
+    'FreeSoftware': '自由软件',
+    'Abandon': '废弃',
+    'CustomLicenses': '自定义许可证',
+    'remark': '备注',
+    'originalLicenseText': '许可证文本（原文）',
+    'ChineseLicenseText': '许可证文本（中文）',
+    'Template': '模板',
+    'SourceHeader': '源标头',
+}

@@ -61,6 +61,8 @@ public class ArtifactSearchController extends JFrogBaseController {
 
     private static final String DOCKER_MANIFEST_NOT_FOUND_MESSAGE = "Unable to find Docker manifest under '%s'.";
 
+    private static final String INCLUDE_CANNOT_BE_EMPTY = "Include cannot be empty.";
+
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
 
@@ -92,16 +94,18 @@ public class ArtifactSearchController extends JFrogBaseController {
             return ResponseEntity.ok(artifactSearchResult);
         }
         List<String> includeFields = Lists.newArrayList();
-        String repoKey = "repo", pathKey = "path", typeKey = "type";
+        String repoKey = "repo", pathKey = "path", typeKey = "type", storageId = "";
         String repositoryId = findJson.getString(repoKey);
-        // 提取 "repo", "path" 和 "include" 字段
-        String storageId = getDefaultStorageId(repositoryId);
-        Storage storage = getStorage(storageId);
-        if (Objects.isNull(storage)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, STORAGE_NOT_FOUND_MESSAGE));
-        }
-        if (Objects.isNull(storage.getRepository(repositoryId))) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, REPOSITORY_NOT_FOUND_MESSAGE));
+        if (StringUtils.isNotBlank(repositoryId)) {
+            // 提取 "repo", "path" 和 "include" 字段
+            storageId = getDefaultStorageId(repositoryId);
+            Storage storage = getStorage(storageId);
+            if (Objects.isNull(storage)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, STORAGE_NOT_FOUND_MESSAGE));
+            }
+            if (Objects.isNull(storage.getRepository(repositoryId))) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, REPOSITORY_NOT_FOUND_MESSAGE));
+            }
         }
         List<ArtifactConditionGroup> artifactConditionGroups = Lists.newArrayList();
         ArtifactConditionGroup orArtifactConditionGroup = ArtifactConditionGroup.builder().artifactSearchConditionTypeEnum(ArtifactSearchConditionTypeEnum.OR)
@@ -159,9 +163,16 @@ public class ArtifactSearchController extends JFrogBaseController {
         Matcher includeMatcher = includePattern.matcher(query);
         if (includeMatcher.find()) {
             String includeText = includeMatcher.group(1);
+            if (StringUtils.isBlank(includeText)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(handlerErrors(HttpStatus.BAD_REQUEST.value(), INCLUDE_CANNOT_BE_EMPTY));
+            }
+            String none = "\"\"";
             String[] includeFieldArray = includeText.split(",");
             List<String> unIncludeList = Lists.newArrayList("\"*\"");
             for (String includeField : includeFieldArray) {
+                if (StringUtils.isBlank(includeField) || none.equals(includeField)) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(handlerErrors(HttpStatus.BAD_REQUEST.value(), INCLUDE_CANNOT_BE_EMPTY));
+                }
                 if (unIncludeList.stream().anyMatch(includeField::equals)) {
                     continue;
                 }
@@ -191,6 +202,9 @@ public class ArtifactSearchController extends JFrogBaseController {
         String path = "";
         if (StringUtils.isNotBlank(content) && JSONUtil.isJson(content)) {
             json = JSONObject.parseObject(content);
+        } else if (StringUtils.isNotBlank(content) && !JSONUtil.isJson(content)) {
+            json = new JSONObject();
+            json.put("$eq", content);
         }
         if (Objects.isNull(json) || json.isEmpty()) {
             return path;

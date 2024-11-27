@@ -30,7 +30,7 @@ public class CronJobSchedulerServiceImpl
     private Scheduler scheduler;
 
     @Override
-    public void scheduleJob(CronTaskConfigurationDto cronTaskConfiguration)
+    public void scheduleJob(CronTaskConfigurationDto cronTaskConfiguration, boolean serviceStartup)
     {
         String jobClassName = cronTaskConfiguration.getJobClass();
         Class<? extends Job> jobClass;
@@ -71,7 +71,7 @@ public class CronJobSchedulerServiceImpl
 
         boolean scheduleJob = true;
 
-        if (cronTaskConfiguration.shouldExecuteImmediately())
+        if (!serviceStartup && cronTaskConfiguration.shouldExecuteImmediately())
         {
             try
             {

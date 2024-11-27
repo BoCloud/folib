@@ -2,7 +2,7 @@
   <a-drawer
     placement="right"
     width="65%"
-    title="仓库设置"
+    :title="$t('Storage.WarehouseSetup')"
     :visible="settingVisible"
     @close="settingDrawerClose"
     :zIndex="100"
@@ -19,14 +19,17 @@
         :activeKey="settingTabActiveKey"
         @change="settingTabChange($event)"
       >
-      <a-tab-pane :key="1" tab="权限设置">
+      <a-tab-pane :key="1" :tab="$t('Storage.PermissionSetting')">
         <Permission :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></Permission>
       </a-tab-pane>
-      <a-tab-pane :key="2" tab="定时策略">
+      <a-tab-pane :key="2" :tab="$t('Storage.TimingPolicy')">
         <CronTask :folibRepository="this.folibRepository" @settingDrawerClose="settingDrawerClose"></CronTask>
       </a-tab-pane>
-      <a-tab-pane :key="3" tab="联邦仓库" v-if="this.folibRepository.type === 'hosted'">
+      <a-tab-pane :key="3" :tab="$t('Storage.FederatedRepository')" v-if="this.folibRepository.type === 'hosted'">
         <UnionRepository :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></UnionRepository>
+      </a-tab-pane>
+      <a-tab-pane :key="4" :tab="$t('Storage.Scan')" v-if="(isAdmin() || (storageAdmin && storageAdmin === $store.state.user.name)) && this.folibRepository.type !== 'group' && this.folibRepository.layout !== 'HuggingFace' ">
+        <Scan :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></Scan>
       </a-tab-pane>
       </a-tabs>
     </a-card>
@@ -34,13 +37,16 @@
 </template>
 <script>
 import {
+  getStorageAndRepositoryPermission
 } from "@/api/folib"
+import { hasRole, isAdmin, isAnonymous, isLogin } from '@/utils/permission'
 import Permission from '../Permission/index.vue'
 import CronTask from "../Cron/index.vue"
 import UnionRepository from "../UnionRepository/index.vue"
+import Scan from "../Scan/index.vue"
 
 export default {
-  props: { 
+  props: {
 		folibRepository: {
 			type: Object,
 			default: {},
@@ -53,28 +59,50 @@ export default {
   data() {
     return {
       settingTabActiveKey: 1,
+      storageAdmin: '',
     }
   },
   components: {
     CronTask,
     Permission,
     UnionRepository,
+    Scan,
   },
   created() {
 
   },
-  mounted() {},
+  mounted() {
+      // console.log("user:",this.$store.state.user.name)
+      // console.log('folibRepository:', this.folibRepository);
+      // console.log('settingVisible:', this.settingVisible);
+  },
   watch: {
     settingVisible: function (val) {
-      this.settingTabActiveKey = 1
+      this.initData()
     },
   },
   methods: {
+    initData() {
+      this.settingTabActiveKey = 1
+      this.queryStorageAdmin()
+    },
     settingTabChange(activeKey) {
       this.settingTabActiveKey = activeKey
     },
     settingDrawerClose() {
       this.$emit('settingDrawerClose')
+    },
+    isAdmin() {
+      return isAdmin()
+    },
+    queryStorageAdmin () {
+      this.storageAdmin = ''
+      getStorageAndRepositoryPermission(
+        this.folibRepository.storageId,
+        this.folibRepository.id
+      ).then(res => {
+        this.storageAdmin = res.storageAdmin
+      })
     },
   },
 };

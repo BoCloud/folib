@@ -19,6 +19,8 @@ import javax.inject.Inject;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
+import java.util.function.Function;
 
 /**
  * @author veadan
@@ -47,6 +49,8 @@ public class ProxyRepositoryArtifactResolver {
 
     @Inject
     private HelmRepoUtil helmRepoUtil;
+    @Inject
+    private List<FallbackRemoteArtifactInputStreamFactory> fallbackRemoteArtifactInputStreamRegistry;
 
     /**
      * This method has been developed to force fetch resource from remote.
@@ -60,11 +64,24 @@ public class ProxyRepositoryArtifactResolver {
         Repository repository = repositoryPath.getFileSystem().getRepository();
         final RemoteRepository remoteRepository = repository.getRemoteRepository();
         if (!remoteRepositoryAlivenessCacheManager.isAlive(remoteRepository)) {
-            logger.debug("Remote repository '{}' is down.", remoteRepository.getUrl());
+            logger.warn("Remote repository '{}' is down.", remoteRepository.getUrl());
+            return null;
         }
 
-        RestArtifactResolver client = restArtifactResolverFactory.newInstance(remoteRepository, repositoryPath);
-        try (InputStream is = new BufferedInputStream(new ProxyRepositoryInputStream(client, repositoryPath))) {
+        RestArtifactResolver client = restArtifactResolverFactory.newInstance(remoteRepository,repositoryPath);
+        Function<Exception, InputStream> fallback = null;
+        for (FallbackRemoteArtifactInputStreamFactory fallbackRemoteArtifactInputStreamFactory : fallbackRemoteArtifactInputStreamRegistry) {
+            if (repositoryPath.getRepository().getLayout().equals(fallbackRemoteArtifactInputStreamFactory.getLayout())){
+                fallback = fallbackRemoteArtifactInputStreamFactory.getFallbackRemoteArtifactInputStream(repositoryPath);
+                break;
+            }
+        }
+        InputStream inputStream = new ProxyRepositoryInputStream(client, repositoryPath);
+        if (fallback != null) {
+            inputStream = new FallbackRemoteArtifactInputStream(inputStream, fallback);
+        }
+
+        try (InputStream is = new BufferedInputStream(inputStream)) {
             return doFetch(repositoryPath, is);
         }
     }
@@ -87,13 +104,6 @@ public class ProxyRepositoryArtifactResolver {
                                                                  RepositoryPath repositoryPath)
             throws IOException {
         artifactManagementService.store(repositoryPath, is);
-        // helm 代理修改索引
-        boolean indexFlag = repositoryPath.getRepository().getLayout().equalsIgnoreCase("helm")
-                && repositoryPath.toString().endsWith("index.yaml");
-        if (indexFlag) {
-            helmRepoUtil.reloadIndex(repositoryPath);
-            logger.info("Reload helm index");
-        }
         // TODO: Add a policy for validating the checksums of downloaded artifacts
         // TODO: Validate the local checksum against the remote's checksums    徐新平
         // Serve the downloaded artifact

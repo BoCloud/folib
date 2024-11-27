@@ -79,5 +79,18 @@ public class UrlUtils {
             return null;
         }
     }
+    
+    public static String addQuery(String urlStr, String key, String value) {
+        final StringBuilder builder = new StringBuilder(urlStr);
+        if (!urlStr.contains("?")) {
+            builder.append("?");
+        }
+        if (!builder.toString().endsWith("?")) {
+            builder.append("&");
+        }
+        
+        builder.append(key).append("=").append(value);
+        return builder.toString();
+    }
 
 }

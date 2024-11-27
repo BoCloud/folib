@@ -82,6 +82,10 @@
   border-left-color: #777777 !important;
 }
 
+.b-number-of-components {
+  border-left-color: #0599FE !important;
+}
+
 .b-notification-fail {
   border-left-color: #f86c6b !important;
 }

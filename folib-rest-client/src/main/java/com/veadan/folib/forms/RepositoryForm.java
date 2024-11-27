@@ -41,6 +41,11 @@ public class RepositoryForm {
     private String layout;
 
     /**
+     * 子布局类型
+     */
+    private String subLayout;
+
+    /**
      * 仓库类型 默认 hosted
      */
     private String type;
@@ -54,7 +59,7 @@ public class RepositoryForm {
      * 单个制品最大值
      */
     @Builder.Default
-    private long artifactMaxSize = 214748364800L;
+    private long artifactMaxSize = 107374182400L;
 
     /**
      * 回收站

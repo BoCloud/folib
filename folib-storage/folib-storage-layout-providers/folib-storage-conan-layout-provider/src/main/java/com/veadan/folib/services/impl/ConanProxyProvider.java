@@ -1,7 +1,7 @@
 package com.veadan.folib.services.impl;
 
 import com.alibaba.fastjson.JSONObject;
-import com.veadan.folib.component.StorageClientComponent;
+import com.veadan.folib.components.StorageClientComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.SearchResults;
@@ -13,6 +13,8 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ConanProvider;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.remote.RemoteRepository;
+import com.veadan.folib.storage.repository.remote.heartbeat.RemoteRepositoryAlivenessService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -43,6 +45,9 @@ public class ConanProxyProvider implements ConanProvider {
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
 
+    @Inject
+    private RemoteRepositoryAlivenessService remoteRepositoryAlivenessCacheManager;
+
     @PostConstruct
     @Override
     public void register() {
@@ -57,7 +62,12 @@ public class ConanProxyProvider implements ConanProvider {
             query = "";
         }
         SearchResults searchResults = null;
-        String prefixUrl = repository.getRemoteRepository().getUrl();
+        RemoteRepository remoteRepository = repository.getRemoteRepository();
+        if (!remoteRepositoryAlivenessCacheManager.isAlive(remoteRepository)) {
+            log.warn("Remote storageId [{}] repositoryId [{}] url [{}] is down.", repository.getStorage().getId(), repository.getId(), remoteRepository.getUrl());
+            return null;
+        }
+        String prefixUrl = remoteRepository.getUrl();
         String suffixUrl = String.format("/%s/conans/search?q=%s", version, query);
         String targetUrl = StringUtils.removeEnd(prefixUrl, GlobalConstants.SEPARATOR) + suffixUrl;
         ResponseResult responseResult = clientComponent.doGet(repository.getStorage().getId(), repository.getId(), targetUrl);
@@ -86,6 +96,9 @@ public class ConanProxyProvider implements ConanProvider {
                 }
                 indexData = commonUrlJSONData(repository, targetUrl);
                 if (Objects.isNull(indexData)) {
+                    if (Files.exists(indexJsonRepositoryPath)) {
+                        return JSONObject.parseObject(Files.readString(indexJsonRepositoryPath));
+                    }
                     return null;
                 }
                 try {
@@ -142,7 +155,12 @@ public class ConanProxyProvider implements ConanProvider {
 
     private JSONObject commonUrlJSONData(Repository repository, String url) {
         JSONObject data = null;
-        String prefixUrl = repository.getRemoteRepository().getUrl();
+        RemoteRepository remoteRepository = repository.getRemoteRepository();
+        if (!remoteRepositoryAlivenessCacheManager.isAlive(remoteRepository)) {
+            log.warn("Remote storageId [{}] repositoryId [{}] url [{}] is down.", repository.getStorage().getId(), repository.getId(), remoteRepository.getUrl());
+            return null;
+        }
+        String prefixUrl = remoteRepository.getUrl();
         String suffixUrl = url;
         if (!suffixUrl.startsWith(GlobalConstants.SEPARATOR)) {
             suffixUrl = GlobalConstants.SEPARATOR + suffixUrl;
@@ -160,6 +178,11 @@ public class ConanProxyProvider implements ConanProvider {
 
     private JSONObject commonJSONData(Repository repository, String targetUrl) {
         JSONObject data = null;
+        RemoteRepository remoteRepository = repository.getRemoteRepository();
+        if (!remoteRepositoryAlivenessCacheManager.isAlive(remoteRepository)) {
+            log.warn("Remote storageId [{}] repositoryId [{}] url [{}] is down.", repository.getStorage().getId(), repository.getId(), remoteRepository.getUrl());
+            return null;
+        }
         ResponseResult responseResult = clientComponent.doGet(repository.getStorage().getId(), repository.getId(), targetUrl);
         if (Objects.isNull(responseResult)) {
             return null;

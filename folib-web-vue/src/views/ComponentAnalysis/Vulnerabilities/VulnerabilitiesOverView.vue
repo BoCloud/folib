@@ -1,22 +1,22 @@
 <template>
   <div class="wrapper">
     <div v-if="vulnerability.description" style="margin-bottom: 20px">
-      <a-card title="概览">
+      <a-card :title="$t('Vulnerabilities.Overview')">
         <div v-html="vulnerability.description" style="margin-bottom: 20px"></div>
         <div v-if="cvssBaseScore > 0">
           <a-row class="text-center">
             <a-col class="mb-sm-2 mb-0" :xs="{ span: 5, offset: 1 }" :lg="{ span: 6, offset: 1 }">
-              <div class="text-muted">CVSS基本得分</div>
+              <div class="text-muted">{{ $t('Vulnerabilities.basicScore') }}</div>
               <strong>{{ cvssBaseScore }}</strong>
               <a-progress :percent="(cvssBaseScore / 10) * 100" :show-info="false" strokeColor="#fd8c00"></a-progress>
             </a-col>
             <a-col class="mb-sm-2 mb-0 d-sm-down-none" :xs="{ span: 5, offset: 1 }" :lg="{ span: 6, offset: 2 }">
-              <div class="text-muted">CVSS影响性得分</div>
+              <div class="text-muted">{{ $t('Vulnerabilities.impactScore') }}</div>
               <strong>{{ cvssImpactScore }}</strong>
               <a-progress :percent="(cvssImpactScore / 10) * 100" :show-info="false" strokeColor="#20a8d8"></a-progress>
             </a-col>
             <a-col class="mb-sm-2 mb-0 d-sm-down-none" :xs="{ span: 5, offset: 1 }" :lg="{ span: 6, offset: 2 }">
-              <div class="text-muted">CVSS可利用性得分</div>
+              <div class="text-muted">{{ $t('Vulnerabilities.availabilityScore') }}</div>
               <strong>{{ cvssExploitScore }}</strong>
               <a-progress :percent="(cvssExploitScore / 10) * 100" :show-info="false" strokeColor="#20a8d8"></a-progress>
             </a-col>
@@ -25,7 +25,7 @@
       </a-card>
     </div>
     <div v-if="vulnerability.cweList" style="margin-bottom: 20px">
-      <a-card title="漏洞类型">
+      <a-card :title="$t('Vulnerabilities.VulnerabilityType')">
         <div v-for="(item, index) in vulnerability.cweList" :key="index">
           <a :href="cweLink(item)" target="_blank">{{ item }}</a>
         </div>
@@ -33,7 +33,7 @@
     </div>
 
     <div v-if="vulnerability.references" style="margin-bottom: 20px">
-      <a-card title="参考">
+      <a-card :title="$t('Vulnerabilities.Reference')">
         <div v-for="(item, index) in vulnerability.references" :key="index">
           <a :href="item" target="_blank" > {{ item }} </a>
         </div>

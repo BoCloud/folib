@@ -1,13 +1,14 @@
 package com.veadan.folib.util;
 
 import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.PypiPackageInfo;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FilenameUtils;
 
 /**
  * Class to handle parsing of PyPi filename string
@@ -15,14 +16,13 @@ import org.apache.commons.io.FilenameUtils;
  * @author alecg956
  */
 @Slf4j
-public class PypiArtifactCoordinatesUtils
-{
+public class PypiArtifactCoordinatesUtils {
 
     private static Pattern PACKAGE_VERSION_PATTERN = Pattern.compile(PypiPackageInfo.VERSION_FORMAT,
-                                                                     Pattern.CASE_INSENSITIVE);
+            Pattern.CASE_INSENSITIVE);
 
     private static Pattern PACKAGE_DISTRIBUTION_NAME_PATTERN = Pattern.compile(PypiPackageInfo.DISTRIBUTION_NAME_FORMAT,
-                                                                               Pattern.CASE_INSENSITIVE);
+            Pattern.CASE_INSENSITIVE);
 
     /**
      * If optional build parameter is not found in the wheel package filename the empty string is specified for build_tag
@@ -34,100 +34,102 @@ public class PypiArtifactCoordinatesUtils
      * @param path The filename of the PyPi artifact
      * @return Returns a PypiArtifactCoordinate object with all coordinates in the filename set
      */
-    public static PypiArtifactCoordinates parse(String path)
-    {
-        if (!path.endsWith(".tar.gz") && !path.endsWith(".whl"))
-        {
-            log.info("The artifact packaging can be only 'tar.gz' or '.whl' path [{}]", path);
-            throw new IllegalArgumentException("The artifact packaging can be only 'tar.gz' or '.whl'");
+    public static PypiArtifactCoordinates parse(String path) {
+        if (PypiArtifactCoordinates.EXTENSION_LIST.stream().noneMatch(path::endsWith)) {
+            String message = String.format("The artifact packaging can be only %s path [%s]", String.join(" or ", PypiArtifactCoordinates.EXTENSION_LIST), path);
+            log.info(message);
+            throw new IllegalArgumentException(message);
         }
 
         String fileName = FilenameUtils.getName(path);
-
-        return path.endsWith(".tar.gz") ? parseSourcePackage(fileName) :
-               parseWheelPackage(fileName);
+        PypiArtifactCoordinates pypiArtifactCoordinates = PypiArtifactCoordinates.WHEEL_EXTENSION_LIST.stream().noneMatch(path::endsWith) ? parseSourcePackage(fileName) :
+                parseWheelPackage(fileName);
+        pypiArtifactCoordinates.setPath(path);
+        return pypiArtifactCoordinates;
     }
 
-    private static PypiArtifactCoordinates parseSourcePackage(String path)
-    {
-        try
-        {
-            String packageNameWithoutExtension = path.substring(0, path.lastIndexOf(".tar.gz"));
+
+    private static PypiArtifactCoordinates parseSourcePackage(String path) {
+        try {
+            String extension = FilenameUtils.getExtension(path);
+            if (path.endsWith(PypiArtifactCoordinates.FULL_TAR_GZ_SUFFIX)) {
+                extension = PypiArtifactCoordinates.TAR_GZ_SUFFIX;
+            }
+            String fullExtension = GlobalConstants.POINT + extension;
+            String packageNameWithoutExtension = path.substring(0, path.lastIndexOf(fullExtension));
             String distribution = packageNameWithoutExtension.substring(0,
-                                                                        packageNameWithoutExtension.lastIndexOf("-"));
-            String version = packageNameWithoutExtension.substring(packageNameWithoutExtension.lastIndexOf("-") + 1);
+                    packageNameWithoutExtension.lastIndexOf("-"));
+            String version = packageNameWithoutExtension.substring(packageNameWithoutExtension.indexOf("-") + 1);
 
             Matcher matcher = PACKAGE_VERSION_PATTERN.matcher(version);
-            if (!matcher.matches())
-            {
+            if (!matcher.matches()) {
                 log.warn(String.format("Invalid version [%s] for source package.", version));
             }
 
             matcher = PACKAGE_DISTRIBUTION_NAME_PATTERN.matcher(distribution);
-            if (!matcher.matches())
-            {
+            if (!matcher.matches()) {
                 throw new IllegalArgumentException(String.format("Invalid name [%s] for source package.", distribution));
             }
 
-            return new PypiArtifactCoordinates(distribution, version, PypiArtifactCoordinates.SOURCE_EXTENSION);
-        }
-        catch (IllegalArgumentException iae)
-        {
+            return new PypiArtifactCoordinates(distribution, version, extension);
+        } catch (IllegalArgumentException iae) {
             throw iae;
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             throw new IllegalArgumentException("Invalid source package name.");
         }
     }
 
-    private static PypiArtifactCoordinates parseWheelPackage(String path)
-    {
+    private static PypiArtifactCoordinates parseWheelPackage(String path) {
+        String extension = FilenameUtils.getExtension(path);
+        String fullExtension = GlobalConstants.POINT + extension;
         String[] splitArray = path.split("-");
-
+        boolean isWhl = PypiArtifactCoordinates.WHL.equalsIgnoreCase(extension);
         // check for invalid file format
-        if (splitArray.length != 5 && splitArray.length != 6)
-        {
-            throw new IllegalArgumentException("Invalid wheel package name specified");
+        if (isWhl && splitArray.length != 5 && splitArray.length != 6) {
+            throw new IllegalArgumentException(String.format("Invalid wheel package name specified path [%s]", path));
         }
 
         String distribution = splitArray[0];
         String version = splitArray[1];
         String build = null;
-        String languageImplementationVersion;
-        String abi;
-        String platform;
+        String languageImplementationVersion = null;
+        String abi = null;
+        String platform = null;
 
         // build tag not included
-        if (splitArray.length == 5)
-        {
-            languageImplementationVersion = splitArray[2];
-            abi = splitArray[3];
-            platform = splitArray[4].substring(0, splitArray[4].indexOf(".whl"));
+        if (isWhl) {
+            if (splitArray.length == 5) {
+                languageImplementationVersion = splitArray[2];
+                abi = splitArray[3];
+                platform = splitArray[4].substring(0, splitArray[4].indexOf(fullExtension));
 
-        }
-        // build tag is included
-        else
-        {
-            build = splitArray[2];
-            languageImplementationVersion = splitArray[3];
-            abi = splitArray[4];
-            platform = splitArray[5].substring(0, splitArray[5].indexOf(".whl"));
+            }
+            // build tag is included
+            else if (splitArray.length == 6) {
+                build = splitArray[2];
+                languageImplementationVersion = splitArray[3];
+                abi = splitArray[4];
+                platform = splitArray[5].substring(0, splitArray[5].indexOf(fullExtension));
+            }
+        } else {
+            languageImplementationVersion = StringUtils.removeEnd(splitArray[2], PypiArtifactCoordinates.EGG);
+            if (splitArray.length >= 4) {
+                platform = StringUtils.removeEnd(splitArray[3], PypiArtifactCoordinates.EGG);
+            }
         }
 
         return new PypiArtifactCoordinates(distribution,
-                                           version,
-                                           build,
-                                           languageImplementationVersion,
-                                           abi,
-                                           platform, PypiArtifactCoordinates.WHEEL_EXTENSION);
+                version,
+                build,
+                languageImplementationVersion,
+                abi,
+                platform, extension);
     }
 
     public static void main(String[] args) {
         String version = "2005e";
         Matcher matcher = PACKAGE_VERSION_PATTERN.matcher(version);
-        if (!matcher.matches())
-        {
+        if (!matcher.matches()) {
             throw new IllegalArgumentException(String.format("Invalid version [%s] for source package.", version));
         }
     }

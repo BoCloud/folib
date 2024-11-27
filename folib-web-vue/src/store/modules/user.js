@@ -109,7 +109,8 @@ const user = {
         localStorage.clear()
         sessionStorage.clear()
         const home = 'storagesHome'
-        if (router.currentRoute.name !== 'login') {
+        const currentRoute = router.currentRoute.name
+        if (currentRoute !== home && currentRoute !== 'login') {
           router.push({ name: home , query: { t: Date.now() } })
         }      
       })
