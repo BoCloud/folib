@@ -40,23 +40,23 @@
             <if test="attributeValue != null and attributeValue != ''">
                 and attribute_value = #{attributeValue}
             </if>
-            <if test="updateTime != null and updateTime != ''">
+            <if test="updateTime != null ">
                 and update_time = #{updateTime}
             </if>
-            <if test="createdTime != null and createdTime != ''">
+            <if test="createdTime != null ">
                 and created_time = #{createdTime}
             </if>
         </where>
     </select>
 
     <!--新增数据-->
-    <insert id="insert" keyProperty="rule_id" useGeneratedKeys="true">
+    <insert id="insert" keyProperty="ruleId" useGeneratedKeys="true" keyColumn="rule_id">
         insert into promotion_rule(rule_id,policy_id,rule_type,attribute_key,attribute_value,update_time,created_time)
         values (#{ruleId},#{policyId},#{ruleType},#{attributeKey},#{attributeValue},#{updateTime},#{createdTime})
     </insert>
 
     <!-- 批量新增数据 -->
-    <insert id="insertBatch" keyProperty="rule_id" useGeneratedKeys="true">
+    <insert id="insertBatch" keyProperty="ruleId" useGeneratedKeys="true" keyColumn="rule_id">
         insert into promotion_rule(rule_id,policy_id,rule_type,attribute_key,attribute_value,update_time,created_time)
         values
         <foreach collection="entities" item="entity" separator=",">
@@ -65,7 +65,7 @@
     </insert>
 
     <!-- 批量新增或按主键更新数据 -->
-    <insert id="insertOrUpdateBatch" keyProperty="rule_id" useGeneratedKeys="true">
+    <insert id="insertOrUpdateBatch" keyProperty="ruleId" useGeneratedKeys="true" keyColumn="rule_id">
         insert into promotion_rule(rule_id,policy_id,rule_type,attribute_key,attribute_value,update_time,created_time)
         values
         <foreach collection="entities" item="entity" separator=",">
@@ -100,10 +100,10 @@
             <if test="attributeValue != null and attributeValue != ''">
                 attribute_value = #{attributeValue},
             </if>
-            <if test="updateTime != null and updateTime != ''">
+            <if test="updateTime != null ">
                 update_time = #{updateTime},
             </if>
-            <if test="createdTime != null and createdTime != ''">
+            <if test="createdTime != null ">
                 created_time = #{createdTime},
             </if>
         </set>
@@ -114,4 +114,15 @@
     <delete id="deleteById">
         delete from promotion_rule where rule_id = #{ruleId}
     </delete>
+
+    <delete id="deleteByPolicyId">
+        delete from promotion_rule where policy_id = #{policyId}
+    </delete>
+
+    <select id="queryByPolicyId" resultMap="PromotionRuleMap">
+        select
+            rule_id,policy_id,rule_type,attribute_key,attribute_value,update_time,created_time
+        from promotion_rule
+        where policy_id = #{policyId}
+    </select>
 </mapper>

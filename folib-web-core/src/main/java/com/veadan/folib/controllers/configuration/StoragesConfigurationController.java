@@ -838,7 +838,7 @@ public class StoragesConfigurationController
             @ApiResponse(code = 404, message = "The storage ${storageId} was not found.")})
     @PreAuthorize("hasAnyAuthority('CONFIGURATION_VIEW_STORAGE_CONFIGURATION', 'ARTIFACTS_VIEW')")
     @GetMapping(value = "/{storageId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity getStorageResponseEntity(@ApiParam(value = "The storageId", required = true)
+    public ResponseEntity etStorageResponseEntity(@ApiParam(value = "The storageId", required = true)
                                                    @PathVariable final String storageId,
                                                    @ApiParam(value = "The filter")
                                                    @RequestParam(value = "filter", required = false) Boolean filter,

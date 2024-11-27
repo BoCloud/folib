@@ -64,4 +64,18 @@ public interface FederalRepositoryMapper{
      * @return 影响行数
      */
     int deleteById(long id);
+
+     /**
+      * 根据策略id删除规则
+      * @param policyId 策略ID
+      * @return 影响行数
+      */
+     int deleteByPolicyId(@Param("policyId")long policyId);
+
+     /**
+      * 根据策略ID查询规则
+      * @param policyId 策略ID
+      * @return 联邦仓库列表
+      */
+     List<FederalRepository> queryByPolicyId(@Param("policyId")long policyId);
 }

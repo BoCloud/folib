@@ -36,10 +36,10 @@
             <if test="tag != null and tag != ''">
                 and tag = #{tag}
             </if>
-            <if test="createdTime != null and createdTime != ''">
+            <if test="createdTime != null ">
                 and created_time = #{createdTime}
             </if>
-            <if test="updateTime != null and updateTime != ''">
+            <if test="updateTime != null ">
                 and update_time = #{updateTime}
             </if>
             <if test="createdBy != null and createdBy != ''">
@@ -52,14 +52,14 @@
     </select>
 
     <!--新增数据-->
-    <insert id="insert" keyProperty="policy_id" useGeneratedKeys="true">
+    <insert id="insert" keyProperty="policyId" useGeneratedKeys="true" keyColumn="policy_id">
         insert into
         federal_promotion_policy(policy_id,name,is_enabled,tag,created_time,update_time,created_by,updated_by)
         values (#{policyId},#{name},#{isEnabled},#{tag},#{createdTime},#{updateTime},#{createdBy},#{updatedBy})
     </insert>
 
     <!-- 批量新增数据 -->
-    <insert id="insertBatch" keyProperty="policy_id" useGeneratedKeys="true">
+    <insert id="insertBatch" keyProperty="policyId" useGeneratedKeys="true" keyColumn="policy_id">
         insert into
         federal_promotion_policy(policy_id,name,is_enabled,tag,created_time,update_time,created_by,updated_by)
         values
@@ -69,7 +69,7 @@
     </insert>
 
     <!-- 批量新增或按主键更新数据 -->
-    <insert id="insertOrUpdateBatch" keyProperty="policy_id" useGeneratedKeys="true">
+    <insert id="insertOrUpdateBatch" keyProperty="policyId" useGeneratedKeys="true" keyColumn="policy_id">
         insert into
         federal_promotion_policy(policy_id,name,is_enabled,tag,created_time,update_time,created_by,updated_by)
         values
@@ -97,16 +97,16 @@
             <if test="name != null and name != ''">
                 name = #{name},
             </if>
-            <if test="isEnabled != null and isEnabled != ''">
+            <if test="isEnabled != null ">
                 is_enabled = #{isEnabled},
             </if>
             <if test="tag != null and tag != ''">
                 tag = #{tag},
             </if>
-            <if test="createdTime != null and createdTime != ''">
+            <if test="createdTime != null">
                 created_time = #{createdTime},
             </if>
-            <if test="updateTime != null and updateTime != ''">
+            <if test="updateTime != null ">
                 update_time = #{updateTime},
             </if>
             <if test="createdBy != null and createdBy != ''">
@@ -123,4 +123,48 @@
     <delete id="deleteById">
         delete from federal_promotion_policy where policy_id = #{policyId}
     </delete>
+
+    <select id="queryByName" resultType="com.veadan.folib.entity.FederalPromotionPolicy">
+        select * from federal_promotion_policy
+        <where>
+            <if test="name != null and name != ''">
+                and name = #{name}
+            </if>
+        </where>
+    </select>
+
+    <!--分页查询指定行数据-->
+    <select id="queryAllByLimit" resultMap="FederalPromotionPolicyMap">
+        select
+        policy_id,name,is_enabled,tag,created_time,update_time,created_by,updated_by
+        from federal_promotion_policy
+        <where>
+            <if test="policy.policyId != null and policy.policyId != ''">
+                and policy_id = #{policy.policyId}
+            </if>
+            <if test="policy.name != null and policy.name != ''">
+                and name = #{policy.name}
+            </if>
+            <if test="policy.isEnabled != null and policy.isEnabled != ''">
+                and is_enabled = #{policy.isEnabled}
+            </if>
+            <if test="policy.tag != null and policy.tag != ''">
+                and tag = #{policy.tag}
+            </if>
+            <if test="policy.createdTime != null ">
+                and created_time = #{policy.createdTime}
+            </if>
+            <if test="policy.updateTime != null ">
+                and update_time = #{policy.updateTime}
+            </if>
+            <if test="policy.createdBy != null and policy.createdBy != ''">
+                and created_by = #{policy.createdBy}
+            </if>
+            <if test="policy.updatedBy != null and policy.updatedBy != ''">
+                and updated_by = #{policy.updatedBy}
+            </if>
+        </where>
+        limit #{pageable.offset}, #{pageable.pageSize}
+    </select>
+
 </mapper>

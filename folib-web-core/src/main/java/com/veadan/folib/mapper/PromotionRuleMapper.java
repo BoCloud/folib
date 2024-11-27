@@ -1,9 +1,10 @@
 package com.veadan.folib.mapper;
 
 import com.veadan.folib.common.base.CommonMapper;
+import com.veadan.folib.entity.FederalRepository;
 import com.veadan.folib.entity.PromotionRule;
 import org.apache.ibatis.annotations.Mapper;
-import org.springframework.data.repository.query.Param;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -72,4 +73,18 @@ public interface PromotionRuleMapper  {
      * @return 影响行数
      */
     int deleteById(long ruleId);
+
+    /**
+     * 根据策略id删除规则
+     * @param policyId 策略ID
+     * @return 影响行数
+     */
+    int deleteByPolicyId(@Param("policyId")long policyId);
+
+    /**
+     * 根据策略ID查询规则
+     * @param policyId 策略ID
+     * @return 联邦晋级策略规则列表
+     */
+    List<PromotionRule> queryByPolicyId(@Param("policyId")long policyId);
 }

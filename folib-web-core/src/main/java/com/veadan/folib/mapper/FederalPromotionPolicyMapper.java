@@ -3,9 +3,10 @@ package com.veadan.folib.mapper;
 
 import com.veadan.folib.common.base.CommonMapper;
 import com.veadan.folib.entity.FederalPromotionPolicy;
+import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Component;
+import org.apache.ibatis.annotations.Param;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -71,4 +72,20 @@ public interface FederalPromotionPolicyMapper  {
      * @return 影响行数
      */
     int deleteById(long policyId);
+
+    /**
+     * 根据名称查询
+     * @param name 策略名
+     * @return List<FederalPromotionPolicy>
+     */
+    List<FederalPromotionPolicy> queryByName(@Param("name") String name);
+
+    /**
+     * 分页查询指定行数据
+     *
+     * @param federalPromotionPolicy 查询条件
+     * @param pageable 分页对象
+     * @return 对象列表
+     */
+    List<FederalPromotionPolicy> queryAllByLimit(@Param("policy") FederalPromotionPolicy federalPromotionPolicy, @Param("pageable") Pageable pageable);
 }
