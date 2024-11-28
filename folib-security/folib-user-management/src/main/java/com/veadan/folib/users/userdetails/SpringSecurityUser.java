@@ -136,12 +136,6 @@ public class SpringSecurityUser
                 .collect(Collectors.toSet());
     }
 
-    public Collection<Privileges> getAllAuthorities(String storageId, String repositoryId, List<String> paths) {
-        Collection<Privileges> privilegesCollection = getAuthorities();
-        privilegesCollection.addAll(getStorageAuthorities(storageId, repositoryId, paths));
-        return privilegesCollection;
-    }
-
     public String getUrl() {
         return url;
     }

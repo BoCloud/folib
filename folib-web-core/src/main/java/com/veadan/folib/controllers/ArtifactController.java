@@ -248,7 +248,7 @@ public class ArtifactController extends BaseController {
         if (Objects.isNull(storage.getRepository(repositoryId))) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(GlobalConstants.REPOSITORY_NOT_FOUND_MESSAGE);
         }
-        if (!hasAdmin() && needValidatePathPrivileges(storageId, repositoryId)) {
+        if (!hasAdmin()) {
             if (StringUtils.isBlank(path)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("在此仓库中您的操作受限，请填写目标目录后再上传");
             } else {

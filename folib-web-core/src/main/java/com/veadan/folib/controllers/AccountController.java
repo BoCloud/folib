@@ -153,7 +153,7 @@ public class AccountController
     @GetMapping(value = "/permission/{storageId}/{repositoryId}",
             produces = { MediaType.APPLICATION_JSON_VALUE })
     @ResponseBody
-    public ResponseEntity<UserRepositoryPermission> getStorageAndRepositoryPermission(Authentication authentication, @ApiParam(value = "The storageId", required = true) @PathVariable String storageId, @ApiParam(value = "The repositoryId", required = true) @PathVariable String repositoryId) {
+    public ResponseEntity<UserRepositoryPermission> getStorageAndRepositoryPermission(@ApiParam(value = "The storageId", required = true) @PathVariable String storageId, @ApiParam(value = "The repositoryId", required = true) @PathVariable String repositoryId) {
         Storage storage = configurationManager.getStorage(storageId);
         UserRepositoryPermission userRepositoryPermission = UserRepositoryPermission.builder().storageAdmin(storage.getAdmin()).permissions(Collections.emptySet()).build();
         userRepositoryPermission.setPermissions(authComponent.getAllPrivileges(storageId, repositoryId));
@@ -166,7 +166,7 @@ public class AccountController
     @GetMapping(value = "/permission/{storageId}/{repositoryId}/{artifactPath:.+}",
             produces = { MediaType.APPLICATION_JSON_VALUE })
     @ResponseBody
-    public ResponseEntity<Set<String>> getArtifactPermission(Authentication authentication, @ApiParam(value = "The storageId", required = true) @PathVariable String storageId, @ApiParam(value = "The repositoryId", required = true) @PathVariable String repositoryId, @ApiParam(value = "The artifactPath", required = true) @PathVariable String artifactPath) {
+    public ResponseEntity<Set<String>> getArtifactPermission(@ApiParam(value = "The storageId", required = true) @PathVariable String storageId, @ApiParam(value = "The repositoryId", required = true) @PathVariable String repositoryId, @ApiParam(value = "The artifactPath", required = true) @PathVariable String artifactPath) {
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
         return ResponseEntity.ok(authComponent.getPrivileges(repositoryPath));
     }

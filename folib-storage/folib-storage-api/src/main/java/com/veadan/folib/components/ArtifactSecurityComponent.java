@@ -2,6 +2,7 @@ package com.veadan.folib.components;
 
 import com.google.common.collect.Lists;
 import com.veadan.folib.authorization.dto.Role;
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.users.domain.AccessModelData;
@@ -33,6 +34,10 @@ import java.util.Set;
 @Component
 public class ArtifactSecurityComponent {
 
+    public static final String MANIFESTS = "manifest/";
+
+    public static final String BLOBS = "blobs/";
+
     @Autowired
     @Lazy
     private AuthoritiesProvider authoritiesProvider;
@@ -43,8 +48,11 @@ public class ArtifactSecurityComponent {
             if (Objects.isNull(authentication)) {
                 return false;
             }
+            String path = RepositoryFiles.relativizePath(repositoryPath);
+            if (ProductTypeEnum.Docker.getFoLibraryName().equalsIgnoreCase(repositoryPath.getRepository().getLayout()) && (path.startsWith(MANIFESTS) || path.startsWith(BLOBS))) {
+                return true;
+            }
             String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId();
-            String prefix = String.format("/storages/%s/%s/", storageId, repositoryId);
             Object principal = authentication.getPrincipal();
             String anonymousUser = "anonymousUser";
             if (anonymousUser.equals(principal.toString())) {

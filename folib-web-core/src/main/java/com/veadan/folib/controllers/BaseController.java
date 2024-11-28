@@ -1,11 +1,9 @@
 package com.veadan.folib.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.authorization.dto.Role;
-import com.veadan.folib.authorization.dto.RoleDto;
-import com.veadan.folib.authorization.service.AuthorizationConfigService;
+import com.veadan.folib.components.auth.AuthComponent;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
@@ -31,9 +29,6 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
-import com.veadan.folib.users.dto.AccessModelDto;
-import com.veadan.folib.users.dto.RepositoryPrivilegesDto;
-import com.veadan.folib.users.dto.StoragePrivilegesDto;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.IteratorUtils;
@@ -101,7 +96,7 @@ public abstract class BaseController {
 
     @Inject
     @Lazy
-    private AuthorizationConfigService authorizationConfigService;
+    private AuthComponent authComponent;
 
     protected Configuration getConfiguration() {
         return configurationManagementService.getConfiguration();
@@ -350,7 +345,7 @@ public abstract class BaseController {
     }
 
     public boolean hasRepositoryResolve(Repository repository) {
-       return validatePathPrivileges(repository, null, Privileges.ARTIFACTS_RESOLVE.name());
+        return validatePathPrivileges(repository, null, Privileges.ARTIFACTS_RESOLVE.name());
     }
 
     public SpringSecurityUser loginUser() {
@@ -448,50 +443,27 @@ public abstract class BaseController {
         return artifactRepository.findOneArtifact(storageId, repositoryId, artifactPath);
     }
 
-    public boolean needValidatePathPrivileges(String storageId, String repositoryId) {
-        final List<RoleDto> roles = authorizationConfigService.getDto().getRoles().stream().filter(item -> item.getName().equals(loginUsername().toUpperCase())).collect(Collectors.toList());
-        if (CollectionUtils.isNotEmpty(roles)) {
-            final RoleDto roleDto = roles.get(0);
-            final AccessModelDto accessModelDto = roleDto.getAccessModel();
-            if (Objects.nonNull(accessModelDto)) {
-                Optional<StoragePrivilegesDto> storageOptional = accessModelDto.getStorageAuthorities(storageId);
-                if (storageOptional.isPresent()) {
-                    final StoragePrivilegesDto storagePrivilegesDto = storageOptional.get();
-                    Optional<RepositoryPrivilegesDto> repositoryOptional = storagePrivilegesDto.getRepositoryPrivileges(repositoryId);
-                    if (repositoryOptional.isPresent()) {
-                        return CollectionUtils.isNotEmpty(repositoryOptional.get().getPathPrivileges());
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
     public boolean validatePathPrivileges(String storageId, String repositoryId, List<String> paths, String authority) {
-        Collection<Privileges> storageAuthorities = loginUser().getStorageAuthorities(storageId, repositoryId, paths);
-        return storageAuthorities.stream().anyMatch(item -> item.getAuthority().equals(authority));
+        return authComponent.getAllPrivileges(storageId, repositoryId, paths).contains(authority);
     }
 
     // 根据仓库验证 增加组合仓库过滤
-    public boolean validatePathPrivileges(Repository repository, List<String> paths, String authority){
-        if(RepositoryTypeEnum.GROUP.getType().equals(repository.getType())){
+    public boolean validatePathPrivileges(Repository repository, List<String> paths, String authority) {
+        if (RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
             List<String> storageAndRepositoryIds = new LinkedList<>();
             configurationManager.resolveGroupRepository(repository, storageAndRepositoryIds);
             for (String storageAndRepositoryId : storageAndRepositoryIds) {
                 String subStorageId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
                 String subRepositoryId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
                 Repository subRepository = configurationManagementService.getConfiguration().getRepository(subStorageId, subRepositoryId);
-                if(RepositoryScopeEnum.OPEN.getType().equals(subRepository.getScope())||validatePathPrivileges(subRepository,paths,authority)){
+                if (RepositoryScopeEnum.OPEN.getType().equals(subRepository.getScope()) || validatePathPrivileges(subRepository, paths, authority)) {
                     return true;
                 }
             }
             return false;
-        }
-        else {
-            return validatePathPrivileges(repository.getStorage().getId(),repository.getId(),paths,authority);
+        } else {
+            return validatePathPrivileges(repository.getStorage().getId(), repository.getId(), paths, authority);
         }
     }
-
-
 
 }
