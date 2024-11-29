@@ -29,8 +29,8 @@
                             {{ id }}
                         </span>
                         <span v-else>
-                            <a-icon class="tree_icon" v-if="type === 'dir' || type === 'DIR'" :type="expanded ? 'folder-open' : 'folder'" />
-                            <a-icon class="tree_icon" v-else :type="getIconType(name,type)"></a-icon>
+                            <a-icon class="tree_icon" style="margin-left: 5px;" v-if="type === 'dir' || type === 'DIR'" :type="expanded ? 'folder-open' : 'folder'" />
+                            <a-icon class="tree_icon" style="margin-left: 10px;" v-else :type="getIconType(name,type)"></a-icon>
                             <span class="tree_title">
                                 {{ name }}
                             </span>
@@ -497,7 +497,11 @@ export default {
 }
 
 .repositoryTree .tree_icon{
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 500;
 }
+</style>
+
+<style lang="less" scoped>
+    @import url('./repository-tree.less');
 </style>
