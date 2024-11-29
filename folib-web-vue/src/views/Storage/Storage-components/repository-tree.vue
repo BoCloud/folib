@@ -6,7 +6,7 @@
 <template>
     <div>
         <div ref="tree_container" class="tree_container" @scroll="handleScroll">
-            <a-tree 
+            <a-tree
                 :key="key"
                 class="repositoryTree"
                 ref="tree"
@@ -481,6 +481,7 @@ export default {
     width: 90% !important;
     height: 32px !important;
     line-height: 32px !important;
+    border-radius: 8px !important;
 }
 
 .repositoryTree .ant-tree-switcher_close,
