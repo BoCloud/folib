@@ -21,14 +21,19 @@ import com.veadan.folib.controllers.cluster.dto.SyncAuthorizationDto;
 import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
 import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
 import com.veadan.folib.controllers.cluster.dto.SyncUnionRepositoryDto;
+import com.veadan.folib.controllers.federal.req.FederalPromotionPolicyCreateReq;
+import com.veadan.folib.controllers.federal.req.FederalRepositoryCreateReq;
+import com.veadan.folib.controllers.federal.req.PromotionRuleCreateReq;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.DispatchStorageTree;
 import com.veadan.folib.domain.RepositoryPermission;
 import com.veadan.folib.domain.RepositoryUser;
 import com.veadan.folib.domain.User;
+import com.veadan.folib.domain.policy.FederalPromotionPolicyService;
 import com.veadan.folib.dto.ArtifactDispatchRepositoryDto;
 import com.veadan.folib.dto.PermissionsDTO;
 import com.veadan.folib.dto.UserDTO;
+import com.veadan.folib.entity.FederalPromotionPolicy;
 import com.veadan.folib.entity.Resource;
 import com.veadan.folib.enums.*;
 import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
@@ -85,6 +90,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
@@ -186,7 +193,8 @@ public class StoragesConfigurationController
     private ResourceService resourceService;
     @Inject
     private RemoteRepositoryAlivenessService remoteRepositoryAlivenessCacheManager;
-
+    @Autowired
+    private FederalPromotionPolicyService policyService;
 
     public StoragesConfigurationController(ConfigurationManagementService configurationManagementService,
                                            StorageManagementService storageManagementService,
@@ -1705,13 +1713,14 @@ public class StoragesConfigurationController
                     return getFailedResponseEntity(HttpStatus.NOT_FOUND, STORAGE_NOT_FOUND, accept);
                 }
                 logger.info("设置仓库的联邦仓库 {}:{}...", storageId, repositoryId);
-                configurationManagementService.setUnionRepositoryConfiguration(storageId, repositoryId, unionRepositoryConfigurationForm.getMutableUnionRepositoryConfiguration());
-                //同步联邦仓库
-                SyncUnionRepositoryDto syncUnionRepositoryDto = SyncUnionRepositoryDto.builder().storageId(storageId).repositoryId(repositoryId)
-                        .syncUnionRepositoryEnum(SyncUnionRepositoryEnum.ADD_OR_UPDATE).unionRepositoryConfigurationForm(unionRepositoryConfigurationForm).build();
-                clusterSyncService.syncUnionRepositoryConfiguration(syncUnionRepositoryDto);
+                //configurationManagementService.setUnionRepositoryConfiguration(storageId, repositoryId, unionRepositoryConfigurationForm.getMutableUnionRepositoryConfiguration());
+                ////同步联邦仓库
+                //SyncUnionRepositoryDto syncUnionRepositoryDto = SyncUnionRepositoryDto.builder().storageId(storageId).repositoryId(repositoryId)
+                //        .syncUnionRepositoryEnum(SyncUnionRepositoryEnum.ADD_OR_UPDATE).unionRepositoryConfigurationForm(unionRepositoryConfigurationForm).build();
+                //clusterSyncService.syncUnionRepositoryConfiguration(syncUnionRepositoryDto);
+                policyService.addPolicy(convertPolicy( unionRepositoryConfigurationForm, storageId, repositoryId));
                 return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_SAVE, accept);
-            } catch (IOException | ConfigurationException e) {
+            } catch (ConfigurationException e) {
                 return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_REPOSITORY_SAVE, e, accept);
             }
         } else {
@@ -1727,6 +1736,57 @@ public class StoragesConfigurationController
         if (repository.getGroupRepositories().contains(storageIdAndRepositoryId)) {
             throw new IllegalArgumentException("The combination repository cannot contain itself");
         }
+    }
+
+    public FederalPromotionPolicyCreateReq convertPolicy(UnionRepositoryConfigurationForm unionRepositoryConfigurationForm,String storageId,String repositoryId) {
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+        Authentication authentication = securityContext.getAuthentication();
+        SpringSecurityUser user = (SpringSecurityUser) authentication.getPrincipal();
+        String username = user.getUsername();
+
+        FederalPromotionPolicyCreateReq createReq = new FederalPromotionPolicyCreateReq();
+        createReq.setName(String.format("federal-%s-%s", storageId, repositoryId));
+        createReq.setIsEnabled(unionRepositoryConfigurationForm.getEnable());
+        createReq.setCreatedBy("system");
+        createReq.setTag("default");
+        createReq.setCreatedBy(username);
+        FederalRepositoryCreateReq sourceRepository = new FederalRepositoryCreateReq();
+        sourceRepository.setStorageId(storageId);
+        sourceRepository.setRepositoryId(repositoryId);
+        sourceRepository.setType("source");
+        List<FederalRepositoryCreateReq> sourceRepositories = List.of(sourceRepository);
+        createReq.setSourceRepositories(sourceRepositories);
+        if(!unionRepositoryConfigurationForm.getUnionTargetRepositories().isEmpty()){
+          List<FederalRepositoryCreateReq>  targetList = unionRepositoryConfigurationForm.getUnionTargetRepositories().stream().map(unionRepo -> {
+                FederalRepositoryCreateReq targetRepo = new FederalRepositoryCreateReq();
+                targetRepo.setStorageId(unionRepo.getStorageId());
+                targetRepo.setRepositoryId(unionRepo.getRepositoryId());
+                targetRepo.setType("target");
+                targetRepo.setNodeType(unionRepo.getType());
+                targetRepo.setNodeName(unionRepo.getNode());
+                return targetRepo;
+            }).collect(Collectors.toList()) ;
+          createReq.setTargetRepositories(targetList);
+        }
+
+        if(unionRepositoryConfigurationForm.getSyncType()==1 && !unionRepositoryConfigurationForm.getArtifactPaths().isEmpty()){
+            List<PromotionRuleCreateReq> pathRules = unionRepositoryConfigurationForm.getArtifactPaths().stream().map(artifactPath -> {
+                PromotionRuleCreateReq pathRule = new PromotionRuleCreateReq();
+                pathRule.setRuleType("path");
+                pathRule.setAttributeValue(artifactPath);
+                return pathRule;
+            }).collect(Collectors.toList());
+            createReq.setPathRules(pathRules);
+        }
+
+        if(unionRepositoryConfigurationForm.getSyncType()==2 && !unionRepositoryConfigurationForm.getMetadataKey().isEmpty() && !unionRepositoryConfigurationForm.getMetadataValue().isEmpty()){
+            PromotionRuleCreateReq metadataRule = new PromotionRuleCreateReq();
+            metadataRule.setRuleType("metadata");
+            metadataRule.setAttributeKey(unionRepositoryConfigurationForm.getMetadataKey());
+            metadataRule.setAttributeValue(unionRepositoryConfigurationForm.getMetadataValue());
+            createReq.setMetadataRules(List.of(metadataRule));
+        }
+        return createReq;
     }
 }
 

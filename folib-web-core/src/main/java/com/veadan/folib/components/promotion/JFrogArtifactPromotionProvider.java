@@ -3,6 +3,7 @@ package com.veadan.folib.components.promotion;
 import com.alibaba.fastjson.JSON;
 import com.veadan.folib.components.layout.DockerComponent;
 import com.veadan.folib.configuration.UnionTargetRepositoryConfiguration;
+import com.veadan.folib.controllers.federal.res.FederalRepositoryRes;
 import com.veadan.folib.domain.ArtifactDispatch;
 import com.veadan.folib.dto.TargetDispatchRepositoryDto;
 import com.veadan.folib.entity.ArtifactSyncRecord;
@@ -142,5 +143,23 @@ public class JFrogArtifactPromotionProvider implements ArtifactPromotionProvider
                 log.error("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 分发错误：{}", storageId, repositoryId, artifactPath, item.getDispatchClusterEnName(), item.getArtifactoryRepositoryType(), item.getTargetRepositoryId(), ExceptionUtils.getStackTrace(ex));
             }
         }
+    }
+
+    /**
+     * 联邦仓库制品晋级
+     *
+     * @param repositoryPath      需要晋级的源制品
+     * @param artifactPath        需要晋级的源制品路径
+     * @param targetRepositoryRes 要晋级到的目标仓库信息
+     * @return 晋级编号
+     */
+    @Override
+    public List<String> promotion(RepositoryPath repositoryPath, String artifactPath, FederalRepositoryRes targetRepositoryRes) {
+        String storageId = repositoryPath.getStorageId();
+        String repositoryId = repositoryPath.getRepositoryId();
+        artifactPath = artifactPath.replace(String.format("%s/%s/", storageId, repositoryId), "");
+        log.info("晋级策略编号：{} 存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 目标路径：{} 满足晋级条件，开始晋级",targetRepositoryRes.getPolicyId(), storageId, repositoryId, artifactPath, targetRepositoryRes.getNodeName(), targetRepositoryRes.getNodeType(), targetRepositoryRes.getRepositoryId(), artifactPath);
+        jFrogService.uploadItem(targetRepositoryRes.getNodeName(),targetRepositoryRes.getRepositoryId(), repositoryPath, artifactPath, true);
+        return List.of();
     }
 }

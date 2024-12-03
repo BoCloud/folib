@@ -4,9 +4,12 @@ import com.veadan.folib.controllers.federal.req.FederalPromotionPolicyCreateReq;
 import com.veadan.folib.controllers.federal.req.FederalPromotionPolicyQueryReq;
 import com.veadan.folib.controllers.federal.req.FederalPromotionPolicyUpdateReq;
 import com.veadan.folib.controllers.federal.res.FederalPromotionPolicyRes;
+import com.veadan.folib.controllers.federal.res.FederalRepositoryRes;
 import com.veadan.folib.entity.FederalPromotionPolicy;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Page;
+
+import java.util.List;
 
 public interface FederalPromotionPolicyService {
 
@@ -50,4 +53,12 @@ public interface FederalPromotionPolicyService {
      * 重置旧数据
      */
     void restOldData();
+
+    /**
+     * 根据存储空间id和仓库id查询
+     * @param storageId  存储空间ID
+     * @param repositoryId 仓库ID
+     * @return FederalRepositoryRes
+     */
+    List<FederalRepositoryRes> queryByStorageIdAndRepositoryId(String storageId, String repositoryId);
 }

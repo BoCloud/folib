@@ -139,4 +139,21 @@
         from federal_repository
         where policy_id = #{policyId}
     </select>
+
+    <select id="queryByStorageIdAndRepositoryId" resultMap="FederalRepositoryMap">
+        select
+            id,policy_id,type,storage_id,repository_id,node_name,node_type,created_time,update_time
+        from federal_repository
+        <where>
+            <if test="storageId != null and storageId != ''">
+                and storage_id = #{storageId}
+            </if>
+            <if test="repositoryId != null and repositoryId != ''">
+                and repository_id = #{repositoryId}
+            </if>
+            <if test="type != null and type != ''">
+                and type = #{type}
+            </if>
+        </where>
+    </select>
 </mapper>

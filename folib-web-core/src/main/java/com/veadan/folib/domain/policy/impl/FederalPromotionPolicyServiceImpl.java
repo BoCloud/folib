@@ -57,8 +57,14 @@ public class FederalPromotionPolicyServiceImpl implements FederalPromotionPolicy
 
         // 2. 创建源仓库
         List<FederalRepositoryCreateReq> createReqList = new ArrayList<>();
-        createReqList.addAll(createReq.getSourceRepositories());
-        createReqList.addAll(createReq.getTargetRepositories());
+        if (createReq.getSourceRepositories() != null && !createReq.getSourceRepositories().isEmpty()) {
+            createReqList.addAll(createReq.getSourceRepositories());
+        }
+
+        if (createReq.getTargetRepositories() != null && !createReq.getTargetRepositories().isEmpty()) {
+            createReqList.addAll(createReq.getTargetRepositories());
+        }
+
         List<FederalRepository> repositories = createReqList.stream().map(data -> {
             FederalRepository federalRepository = toFederalRepositoryEntity.apply(data);
             if (federalRepository != null) {
@@ -66,13 +72,18 @@ public class FederalPromotionPolicyServiceImpl implements FederalPromotionPolicy
             }
             return federalRepository;
         }).filter(Objects::nonNull).collect(Collectors.toList());
-
-        federalRepositoryMapper.insertBatch(repositories);
+        if (!repositories.isEmpty()) {
+            federalRepositoryMapper.insertBatch(repositories);
+        }
 
         // 3. 创建规则
         List<PromotionRuleCreateReq> ruleReqs = new ArrayList<>();
-        ruleReqs.addAll(createReq.getPathRules());
-        ruleReqs.addAll(createReq.getMetadataRules());
+        if (createReq.getPathRules() != null && !createReq.getPathRules().isEmpty()) {
+            ruleReqs.addAll(createReq.getPathRules());
+        }
+        if (createReq.getMetadataRules() != null && !createReq.getMetadataRules().isEmpty()) {
+            ruleReqs.addAll(createReq.getMetadataRules());
+        }
 
         List<PromotionRule> rules = ruleReqs.stream().map(data -> {
             PromotionRule rule = toPromotionRuleEntity.apply(data);
@@ -81,7 +92,9 @@ public class FederalPromotionPolicyServiceImpl implements FederalPromotionPolicy
             }
             return rule;
         }).filter(Objects::nonNull).collect(Collectors.toList());
-        promotionRuleMapper.insertBatch(rules);
+        if (!rules.isEmpty()) {
+            promotionRuleMapper.insertBatch(rules);
+        }
     }
 
     @Override
@@ -108,8 +121,12 @@ public class FederalPromotionPolicyServiceImpl implements FederalPromotionPolicy
         //2.删除仓库
         federalRepositoryMapper.deleteByPolicyId(updateReq.getPolicyId());
         List<FederalRepositoryUpdateReq> updateReqList = new ArrayList<>();
-        updateReqList.addAll(updateReq.getSourceRepositories());
-        updateReqList.addAll(updateReq.getTargetRepositories());
+        if (updateReq.getSourceRepositories() != null && !updateReq.getSourceRepositories().isEmpty()) {
+            updateReqList.addAll(updateReq.getSourceRepositories());
+        }
+        if (updateReq.getTargetRepositories() != null && !updateReq.getTargetRepositories().isEmpty()) {
+            updateReqList.addAll(updateReq.getTargetRepositories());
+        }
         List<FederalRepository> repositories = updateReqList.stream().map(toFederalRepositoryEntityUpdate).filter(Objects::nonNull).collect(Collectors.toList());
 
         if (!repositories.isEmpty()) {
@@ -118,9 +135,17 @@ public class FederalPromotionPolicyServiceImpl implements FederalPromotionPolicy
         //3. 删除规则
         promotionRuleMapper.deleteByPolicyId(updateReq.getPolicyId());
         List<PromotionRuleUpdateReq> ruleReqs = new ArrayList<>();
-        ruleReqs.addAll(updateReq.getPathRules());
-        ruleReqs.addAll(updateReq.getMetadataRules());
-        List<PromotionRule> rules = ruleReqs.stream().map(toPromotionRuleEntityUpdate).filter(Objects::nonNull).collect(Collectors.toList());
+        if (updateReq.getPathRules() != null && !updateReq.getPathRules().isEmpty()) {
+            ruleReqs.addAll(updateReq.getPathRules());
+        }
+
+        if (updateReq.getMetadataRules() != null && !updateReq.getMetadataRules().isEmpty()) {
+            ruleReqs.addAll(updateReq.getMetadataRules());
+        }
+
+        List<PromotionRule> rules = ruleReqs.stream().filter(item -> {
+            return item.getAttributeValue() != null && !item.getAttributeValue().isEmpty();
+        }).map(toPromotionRuleEntityUpdate).filter(Objects::nonNull).collect(Collectors.toList());
         if (!rules.isEmpty()) {
             promotionRuleMapper.insertBatch(rules);
         }
@@ -130,8 +155,22 @@ public class FederalPromotionPolicyServiceImpl implements FederalPromotionPolicy
     public Page<FederalPromotionPolicyRes> paginQuery(FederalPromotionPolicyQueryReq queryReq) {
         FederalPromotionPolicy federalPromotionPolicy = toFederalPromotionPolicyEntityQuery.apply(queryReq);
         long total = federalPromotionPolicyMapper.count(federalPromotionPolicy);
-        PageRequest pageRequest = PageRequest.of(queryReq.getPageNumber(), queryReq.getPageSize());
-        return new PageImpl<>(federalPromotionPolicyMapper.queryAllByLimit(federalPromotionPolicy, pageRequest).stream().map(toFederalPromotionPolicyRes).filter(Objects::nonNull).collect(Collectors.toList()), pageRequest, total);
+        PageRequest pageRequest = PageRequest.of(queryReq.getPageNumber() - 1, queryReq.getPageSize());
+        List<FederalPromotionPolicyRes> list = federalPromotionPolicyMapper.queryAllByLimit(federalPromotionPolicy, pageRequest).stream().map(toFederalPromotionPolicyRes).filter(Objects::nonNull).collect(Collectors.toList());
+
+        for (FederalPromotionPolicyRes entity : list) {
+            List<FederalRepositoryRes> repositories = federalRepositoryMapper.queryByPolicyId(entity.getPolicyId()).stream().map(toFederalRepositoryRes).collect(Collectors.toList());
+            if (!repositories.isEmpty()) {
+                entity.setSourceRepositories(repositories.stream().filter(data -> data.getType().equals("source")).collect(Collectors.toList()));
+                entity.setTargetRepositories(repositories.stream().filter(data -> data.getType().equals("target")).collect(Collectors.toList()));
+            }
+            List<PromotionRuleRes> rules = promotionRuleMapper.queryByPolicyId(entity.getPolicyId()).stream().map(toPromotionRuleRes).collect(Collectors.toList());
+            if (!rules.isEmpty()) {
+                entity.setPathRules(rules.stream().filter(data -> data.getRuleType().equals("path")).collect(Collectors.toList()));
+                entity.setMetadataRules(rules.stream().filter(data -> data.getRuleType().equals("metadata")).collect(Collectors.toList()));
+            }
+        }
+        return new PageImpl<>(list, pageRequest, total);
     }
 
 
@@ -166,6 +205,18 @@ public class FederalPromotionPolicyServiceImpl implements FederalPromotionPolicy
         return res;
     }
 
+    /**
+     * 根据存储空间id和仓库id查询
+     *
+     * @param storageId    存储空间ID
+     * @param repositoryId 仓库ID
+     * @return FederalPromotionPolicyRes
+     */
+    @Override
+    public List<FederalRepositoryRes> queryByStorageIdAndRepositoryId(String storageId, String repositoryId) {
+        return federalRepositoryMapper.queryByStorageIdAndRepositoryId(storageId, repositoryId, "source").stream().map(data -> toFederalRepositoryRes.apply(data)).collect(Collectors.toList());
+    }
+
     @PostConstruct
     public void initData() {
         FederalPromotionPolicy federalPromotionPolicy = new FederalPromotionPolicy();
@@ -190,7 +241,7 @@ public class FederalPromotionPolicyServiceImpl implements FederalPromotionPolicy
         federalPromotionPolicy.setTag("default");
         long total = federalPromotionPolicyMapper.count(federalPromotionPolicy);
         PageRequest pageRequest = PageRequest.of(0, Integer.parseInt(String.valueOf(total)));
-        List<FederalPromotionPolicy>  policies =  federalPromotionPolicyMapper.queryAllByLimit(federalPromotionPolicy, pageRequest);
+        List<FederalPromotionPolicy> policies = federalPromotionPolicyMapper.queryAllByLimit(federalPromotionPolicy, pageRequest);
         if (!policies.isEmpty()) {
             for (FederalPromotionPolicy policy : policies) {
                 deletePolicy(policy.getPolicyId());
@@ -223,6 +274,8 @@ public class FederalPromotionPolicyServiceImpl implements FederalPromotionPolicy
         FederalPromotionPolicy entity = new FederalPromotionPolicy();
         entity.setName(String.format("federal-%s-%s", storageId, repository.getId()));
         entity.setIsEnabled(repository.getUnionRepositoryConfiguration().getEnable());
+        entity.setCreatedBy("system");
+        entity.setCreatedTime(new Date());
         entity.setTag("default");
         federalPromotionPolicyMapper.insert(entity);
         List<FederalRepository> repositories = new ArrayList<>();
@@ -234,7 +287,7 @@ public class FederalPromotionPolicyServiceImpl implements FederalPromotionPolicy
         sourceRepository.setRepositoryId(repository.getId());
         sourceRepository.setCreatedTime(new Date());
         repositories.add(sourceRepository);
-        for (MutableUnionTargetRepositoryConfiguration data : repository.getUnionRepositoryConfiguration().getUnionTargetRepositories()){
+        for (MutableUnionTargetRepositoryConfiguration data : repository.getUnionRepositoryConfiguration().getUnionTargetRepositories()) {
             FederalRepository targetRepository = new FederalRepository();
             targetRepository.setPolicyId(entity.getPolicyId());
             targetRepository.setType("target");

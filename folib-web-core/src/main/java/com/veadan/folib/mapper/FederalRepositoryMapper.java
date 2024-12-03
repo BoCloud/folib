@@ -78,4 +78,13 @@ public interface FederalRepositoryMapper{
       * @return 联邦仓库列表
       */
      List<FederalRepository> queryByPolicyId(@Param("policyId")long policyId);
+
+     /**
+      * 根据仓库ID查询
+      * @param storageId 空间ID
+      * @param repositoryId 仓库ID
+      * @param type 类型
+      * @return 联邦仓库列表
+      */
+     List<FederalRepository> queryByStorageIdAndRepositoryId(@Param("storageId") String storageId,@Param("repositoryId")  String repositoryId,@Param("type")  String type);
 }
