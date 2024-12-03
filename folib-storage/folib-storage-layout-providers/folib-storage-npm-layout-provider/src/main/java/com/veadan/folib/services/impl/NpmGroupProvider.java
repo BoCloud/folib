@@ -8,6 +8,7 @@ import com.veadan.folib.npm.metadata.PackageVersion;
 import com.veadan.folib.services.NpmProvider;
 import com.veadan.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -83,7 +84,8 @@ public class NpmGroupProvider implements NpmProvider {
                 }
                 NpmProvider npmProvider = npmProviderRegistry.getProvider(NpmRepositoryTypeEnum.resolveType(subRepository.getType()));
                 subData = npmProvider.packageFeed(subRepository, packageName, targetUrl);
-                if (Objects.nonNull(subData) && subData.getVersions().getAdditionalProperties().size() > 0) {
+                if (Objects.nonNull(subData) && (
+                        (Objects.nonNull(subData.getVersions()) && subData.getVersions().getAdditionalProperties().size() > 0) || MapUtils.isNotEmpty(subData.getAdditionalProperties()))) {
                     packageJson = subData;
                     break;
                 }

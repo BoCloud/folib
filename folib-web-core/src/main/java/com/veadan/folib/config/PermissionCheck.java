@@ -25,4 +25,9 @@ public @interface PermissionCheck {
      * repositoryKey
      */
     String repositoryKey() default "";
+
+    /**
+     * pathKey
+     */
+    String pathKey() default "";
 }

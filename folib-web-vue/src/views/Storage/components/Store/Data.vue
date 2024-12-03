@@ -447,7 +447,7 @@
 <script>
 import store from "store";
 import { fileSizeConver, formateDate } from "@/utils/layoutUtil";
-import { getArtifact, deleteArtifact, getStorageAndRepositoryPermission } from "@/api/folib";
+import { getArtifact, deleteArtifact, getStorageAndRepositoryPermission, getArtifactPermission } from "@/api/folib";
 import { getProjectInfo, getCacheConfig } from "@/api/foEyes";
 import { deleteArtifactMetadata, conanInfo, conanPackageInfo } from "@/api/artifact";
 import { getMetadataConfiguration } from '@/api/settings'
@@ -643,11 +643,15 @@ export default {
       }
       this.metadataShow()
       this.queryProjectInfo()
-      this.queryStorageAndRepositoryPermission()
+      this.handlerDataPermission()
+      this.$emit('handlerPermission')
     },
     'currentTreeNode.artifactPath': function (newval, oldVal) {
+      this.$emit('addPageKey')
+      this.$emit('handlerPermission')
       this.conanInfoReset()
       this.conanPackageInfoReset()
+      this.handlerDataPermission()
       this.metadataList = []
       if (this.currentTreeNode.type === 'file') {
         this.getMetadata()
@@ -694,10 +698,6 @@ export default {
         .finally(() => { })
     },
     metadataShow() {
-      this.metadataEnabled = isLogin() && this.folibRepository.type !== 'group' &&
-                          this.currentFileDetial &&
-                          this.currentFileDetial.artifact &&
-                          this.currentFileDetial.artifact.artifactFileExists
       if (!(typeof(this.metadataEnabled) == 'boolean')) {
         this.metadataEnabled = false
       }
@@ -780,12 +780,18 @@ export default {
         repositoryId: this.currentTreeNode.repositoryId,
         artifactPath: this.currentTreeNode.artifactPath,
       };
-      deleteArtifactMetadata(data)
-        .then((res) => {
-          this.successMsg(this.$t('Store.DeletedProductSuccess'));
-          this.getMetadata();
-        })
-        .finally(() => {});
+      deleteArtifactMetadata(data).then((res) => {
+        this.successMsg(this.$t('Store.DeletedProductSuccess'));
+        this.getMetadata();
+      }).catch((err) => {
+        let msg = err.response.data.message ? err.response.data.message : err.response.data.error ? err.response.data.error : err.response.data
+        if (msg && msg.length > 0) {
+          this.$notification.error({
+            message: msg,
+            description: ""
+          })
+        }
+      }).finally(() => {});
     },
     metadataEditHandler(metadata) {
       this.$emit("metadataEditHandler", metadata);
@@ -936,21 +942,39 @@ export default {
         this.vulnerabilitiesData = res.data
       })
     },
-    queryStorageAndRepositoryPermission () {
-      if (!this.currentFileDetial || !this.currentFileDetial.artifact) {
+    handlerDataPermission () {
+      this.deleteEnabled = false
+      let storageId = null,repositoryId = null,artifactPath = null
+      if (this.currentFileDetial && this.currentFileDetial.artifact) {
+        //制品
+        let artifact = this.currentFileDetial.artifact
+        storageId = artifact.storageId
+        repositoryId = artifact.repositoryId
+        artifactPath = artifact.artifactPath
+      } else  if (this.currentTreeNode && this.currentTreeNode.artifactPath) {
+        //目录
+        storageId = this.currentTreeNode.storageId,
+        repositoryId = this.currentTreeNode.repositoryId,
+        artifactPath = this.currentTreeNode.artifactPath
+      }
+      if (!storageId || !repositoryId || !artifactPath) {
         return false
       }
-      let artifact = this.currentFileDetial.artifact
       let permissions = []
-      getStorageAndRepositoryPermission(
-        artifact.storageId,
-        artifact.repositoryId
+      getArtifactPermission(
+        storageId,
+        repositoryId,
+        artifactPath
       ).then(res => {
-        permissions = res.permissions
+        permissions = res
         this.deleteEnabled =
           this.folibRepository.type !== 'group' &&
           (hasRole('ARTIFACTS_MANAGER') ||
           permissions.includes('ARTIFACTS_DELETE'))
+        this.metadataEnabled = this.folibRepository.type !== 'group' &&
+        (hasRole('ARTIFACTS_MANAGER') ||
+        permissions.includes('CONFIGURATION_ADD_UPDATE_METADATA'))
+        debugger
       })
     },
     deleteSubsidiaryHandle(index, item) {

@@ -43,17 +43,17 @@ public class HelmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<Hel
     public HelmArtifactCoordinates(String relativizePath,String packageName) {
 
         // 正则表达式匹配 Helm 包名
-        String regex = "^(?<name>[a-z0-9-]+)-(\\d+(?:\\.\\d+)+(?:-[a-zA-Z0-9]+)?)\\.tgz$";
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(packageName);
+//        String regex = "^(?<name>[a-z0-9-]+)-(\\d+(?:\\.\\d+)+(?:-[a-zA-Z0-9]+)?)\\.tgz$";
+//        Pattern pattern = Pattern.compile(regex);
+//        Matcher matcher = pattern.matcher(packageName);
         setId(relativizePath);
-        if (matcher.find()) {
-            String name = matcher.group("name");
-            String version = matcher.group(2);
-            setVersion(version);
-        } else {
-           throw new RuntimeException("Invalid Helm package name format.");
-        }
+//        if (matcher.find()) {
+//            String name = matcher.group("name");
+//            String version = matcher.group(2);
+//            setVersion(version);
+//        } else {
+//           throw new RuntimeException("Invalid Helm package name format.");
+//        }
 
     }
 

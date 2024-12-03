@@ -293,7 +293,7 @@ public class CocoapodsArtifactController extends BaseArtifactController
              final InputStream fileInputStream = new BufferedInputStream(Files.newInputStream(repositoryPath));
         ) {
             int len = 0;
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[8192];
             while ((len = fileInputStream.read(buffer)) != -1) {
                 outputStream.write(buffer, 0, len);
             }

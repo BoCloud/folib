@@ -10,6 +10,7 @@ import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.components.DistributedCacheComponent;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.dto.AccessModelDto;
 import org.apache.commons.collections4.CollectionUtils;
@@ -25,6 +26,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -88,7 +90,7 @@ public class AuthoritiesProvider
                 roles = authorizationConfigService.get(username)
                         .getRoles();
 
-                distributedCacheComponent.put(roleKey, objectMapper.writeValueAsString(roles));
+                distributedCacheComponent.put(roleKey, objectMapper.writeValueAsString(roles), 30, TimeUnit.MINUTES);
             } else {
                 List<RoleDto> roleDtos = objectMapper.readValue(roleStr, objectMapper.getTypeFactory().constructCollectionType(List.class, RoleDto.class));
                 roles = roleDtos.stream().map(RoleData::new).collect(Collectors.toSet());

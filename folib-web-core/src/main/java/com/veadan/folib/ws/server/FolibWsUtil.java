@@ -97,7 +97,24 @@ public class FolibWsUtil {
          */
         LinkedBlockingQueue<ByteBuffer> queue1 = queueMap.computeIfAbsent(messageId, k -> {
             LinkedBlockingQueue<ByteBuffer> queue = new LinkedBlockingQueue<>();
-            asyncWsCommandThreadPoolTaskExecutor.execute(() -> {
+            //asyncWsCommandThreadPoolTaskExecutor.execute(() -> {
+            //    while (true) {
+            //        ByteBuffer take = null;
+            //        try {
+            //            take = queue.take();
+            //        } catch (Exception e) {
+            //            throw new RuntimeException(e);
+            //        }
+            //
+            //        boolean finish = consumerMsg(nodeName, take, session, messageId, messageSize);
+            //        if (finish) {
+            //            queue.clear();
+            //            queueMap.remove(messageId);
+            //            break;
+            //        }
+            //    }
+            //});
+            CompletableFuture.runAsync(() -> {
                 while (true) {
                     ByteBuffer take = null;
                     try {
@@ -113,6 +130,9 @@ public class FolibWsUtil {
                         break;
                     }
                 }
+            }, asyncWsCommandThreadPoolTaskExecutor).exceptionally(e -> {
+                log.error("Exception in consumerMsg: {}", e.getMessage(), e);
+                throw new RuntimeException(e);
             });
             return queue;
         });

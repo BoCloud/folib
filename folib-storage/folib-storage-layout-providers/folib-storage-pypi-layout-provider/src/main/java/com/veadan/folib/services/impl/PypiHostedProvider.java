@@ -49,9 +49,9 @@ public class PypiHostedProvider implements PypiProvider {
         try {
             if (Objects.isNull(packageMetadataRepositoryPath) || !Files.exists(packageMetadataRepositoryPath) || RepositoryFiles.hasRefreshContent(packageMetadataRepositoryPath)) {
                 RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, packageName);
-                if (!Files.exists(repositoryPath)) {
-                    return null;
-                }
+//                if (!Files.exists(repositoryPath)) {
+//                    return null;
+//                }
                 pypiPackageMetadataIndexer.indexAsSystem(repositoryPath, PypiIndexTypeEnum.REINDEX);
                 packageMetadataRepositoryPath = repositoryPathResolver.resolve(repository, packageMetadataFilePath);
                 if (Objects.isNull(packageMetadataRepositoryPath) || !Files.exists(packageMetadataRepositoryPath)) {

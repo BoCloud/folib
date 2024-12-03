@@ -151,7 +151,7 @@ public class ArtifactController extends BaseController {
     @ApiOperation(value = "新增制品元数据")
     @AuditLog(value = AuditEventNameEnum.UPDATE_META, target = "#artifactMetadataForm.storageId + '-'+ #artifactMetadataForm.repositoryId+ '-'+ #artifactMetadataForm.key ")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
-    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_METADATA')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @PutMapping(value = "/artifactMetadata")
     public ResponseEntity<String> saveArtifactMetadata(@RequestBody @Validated({ArtifactMetadataForm.AddOrUpdateGroup.class}) ArtifactMetadataForm artifactMetadataForm, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -162,7 +162,7 @@ public class ArtifactController extends BaseController {
 
     @ApiOperation(value = "修改制品元数据")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
-    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_METADATA')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @PostMapping(value = "/artifactMetadata")
     public ResponseEntity<String> updateArtifactMetadata(@RequestBody @Validated({ArtifactMetadataForm.AddOrUpdateGroup.class}) ArtifactMetadataForm artifactMetadataForm, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -173,7 +173,7 @@ public class ArtifactController extends BaseController {
 
     @ApiOperation(value = "删除制品元数据")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
-    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_METADATA')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @PostMapping(value = "/deleteArtifactMetadata")
     public ResponseEntity<ResponseMessage> deleteArtifactMetadata(@RequestBody @Validated({ArtifactMetadataForm.DeleteGroup.class}) ArtifactMetadataForm artifactMetadataForm, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -185,7 +185,7 @@ public class ArtifactController extends BaseController {
 
     @ApiOperation(value = "批量新增制品元数据")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
-    @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_METADATA')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @PostMapping(value = "/batchArtifactMetadata")
     public ResponseEntity<String> batchArtifactMetadata(@RequestBody @Validated({ArtifactMetadataForm.DeleteGroup.class}) List<ArtifactMetadataForm> list, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -486,5 +486,12 @@ public class ArtifactController extends BaseController {
         } else {
             return fileSize.divide(GIGABYTE, 3, RoundingMode.HALF_UP).toString() + " GB";
         }
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @DeleteMapping(value = "/artifactsResolve")
+    public ResponseEntity<String> deleteArtifactsResolve(@RequestParam(required = false, name = "roleId") String roleId, @RequestParam(required = false, name = "resourceId") String resourceId) throws Exception {
+        artifactWebService.deleteArtifactsResolve(roleId, resourceId);
+        return ResponseEntity.ok("");
     }
 }

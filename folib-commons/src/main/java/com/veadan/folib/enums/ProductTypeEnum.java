@@ -20,7 +20,7 @@ public enum ProductTypeEnum {
      */
     SBT(3, "maven", "Maven 2", "sbt"),
     /**
-     * SBT
+     * Gradle
      */
     Gradle(4, "maven", "Maven 2", "gradle"),
     /**
@@ -70,7 +70,7 @@ public enum ProductTypeEnum {
     /**
      * NuGet
      */
-    NuGet(16, "nuget", "nuget", "nuget"),
+    NuGet(16, "nuget", "NuGet", "nuget"),
     /**
      * Rpm
      */

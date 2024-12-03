@@ -20,12 +20,14 @@ import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.service.*;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
+import com.veadan.folib.util.UserUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
@@ -244,8 +246,17 @@ public class StorageManagementServiceImpl implements StorageManagementService {
                     }
             );
         });
+        //查询有规则的资源角色信息
         List<PermissionsDTO> permissions = roleResourceRefService.queryPermissionsByResourceIds(repResourceIds);
-        List<PermissionsDTO> repResolveList = permissions.stream().filter(permission -> Privileges.ARTIFACTS_RESOLVE.name().equals(permission.getRepositoryPrivilege())).collect(Collectors.toList());
+        //查询用户的资源角色信息
+        String username = UserUtils.getUsername();
+        if (StringUtils.isNotBlank(username)) {
+            List<PermissionsDTO> roleResourceRefs = roleResourceRefService.queryPermissions(null, username, null, null, false);
+            if (CollectionUtils.isNotEmpty(roleResourceRefs)) {
+                permissions.addAll(roleResourceRefs);
+            }
+        }
+        List<PermissionsDTO> repResolveList = permissions.stream().filter(permission -> Privileges.ARTIFACTS_RESOLVE.name().equals(permission.getRepositoryPrivilege()) || Privileges.ARTIFACTS_RESOLVE.name().equals(permission.getPathPrivilege())).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(repResolveList)) {
             return Collections.emptyMap();
         }

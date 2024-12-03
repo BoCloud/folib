@@ -86,6 +86,7 @@ public class PubArtifactController
     @GetMapping(path = "{storageId}/{repositoryId}/api/packages/{packageName}/versions/{version}")
     @ApiOperation(value = "Inspect the version of a PUB package.", nickname = "inspectSpecificVersion", notes = "Deprecated as of Dart 2.8, use \"listAllVersions\" instead.")
     @ApiResponses({@ApiResponse(code = 200, message = "OK", response = PubPackageVersionMetadata.class), @ApiResponse(code = 403, message = "Forbidden. User has no read permission"), @ApiResponse(code = 404, message = "Package Not Found")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public ResponseEntity inspectVersion(@RepositoryMapping Repository repository, @PathVariable(name = "storageId") String storageId, @PathVariable(name = "repositoryId") String repositoryId,
                                          @PathVariable("packageName") String packageName, @PathVariable("version") String version, HttpServletRequest request, HttpServletResponse response) {
         PubPackageVersionMetadata inspectedVersionMetadata = pubService.inspectVersion(repository, packageName, version, PACKAGES_ENDPOINT + packageName);

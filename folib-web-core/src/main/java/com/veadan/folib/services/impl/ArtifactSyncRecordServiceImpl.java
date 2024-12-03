@@ -88,9 +88,9 @@ public class ArtifactSyncRecordServiceImpl implements ArtifactSyncRecordService 
                     if (successCount > 0) {
                         final double syncProgress = BigDecimal.valueOf(successCount).divide(new BigDecimal(sumCount), 2, RoundingMode.HALF_UP).setScale(2).doubleValue();
                         e.setSyncProgress(syncProgress);
-                        if (syncProgress >= 1.0D) {
-                            e.setStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal());
-                        }
+                        //if (syncProgress >= 1.0D) {
+                        //    e.setStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal());
+                        //}
                     }
                 }
             });

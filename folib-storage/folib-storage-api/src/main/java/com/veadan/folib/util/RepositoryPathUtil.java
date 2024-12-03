@@ -122,7 +122,7 @@ public class RepositoryPathUtil {
                                                  BasicFileAttributes attrs)
                         throws IOException {
                     RepositoryPath itemPath = (RepositoryPath) file;
-                    if (include(1, itemPath, isDockerLayout) && withinTimeFrame(itemPath, beginDate, endDate)) {
+                    if (include(1, itemPath, isDockerLayout, layout) && withinTimeFrame(itemPath, beginDate, endDate)) {
                         log.info("Find path [{}]", itemPath);
                         pathList.add(repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath)));
                     }
@@ -132,7 +132,7 @@ public class RepositoryPathUtil {
                 @Override
                 public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
                     RepositoryPath itemPath = (RepositoryPath) dir;
-                    if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !include(2, itemPath, isDockerLayout) || (CollectionUtils.isNotEmpty(excludeDirectoryList) && excludeDirectoryList.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
+                    if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !include(2, itemPath, isDockerLayout, layout) || (CollectionUtils.isNotEmpty(excludeDirectoryList) && excludeDirectoryList.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
                         log.info("RepositoryPath [{}] skip...", itemPath.toString());
                         return FileVisitResult.SKIP_SUBTREE;
                     }
@@ -193,7 +193,7 @@ public class RepositoryPathUtil {
                         throws IOException {
                     RepositoryPath itemPath = (RepositoryPath) file;
                     log.debug("Current path [{}]", itemPath);
-                    if (include(1, itemPath, true) && !pathList.contains(itemPath.getParent().getParent())) {
+                    if (include(1, itemPath, true, ProductTypeEnum.Docker.getFoLibraryName()) && !pathList.contains(itemPath.getParent().getParent())) {
                         log.info("Find image path [{}]", itemPath);
                         pathList.add(repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath.getParent().getParent())));
                     }
@@ -204,7 +204,7 @@ public class RepositoryPathUtil {
                 public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
                     RepositoryPath itemPath = (RepositoryPath) dir;
                     log.debug("Current directory path [{}]", itemPath);
-                    if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !include(2, itemPath, true) || (CollectionUtils.isNotEmpty(excludeList) && excludeList.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
+                    if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !include(2, itemPath, true, ProductTypeEnum.Docker.getFoLibraryName()) || (CollectionUtils.isNotEmpty(excludeList) && excludeList.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
                         log.debug("RepositoryPath [{}] skip...", itemPath.toString());
                         return FileVisitResult.SKIP_SUBTREE;
                     }
@@ -243,11 +243,11 @@ public class RepositoryPathUtil {
         return false;
     }
 
-    public static boolean include(int type, RepositoryPath repositoryPath, boolean isDockerLayout) throws IOException {
-       return include(type, repositoryPath, isDockerLayout, true);
+    public static boolean include(int type, RepositoryPath repositoryPath, boolean isDockerLayout, String layout) throws IOException {
+       return include(type, repositoryPath, isDockerLayout, true, layout);
     }
 
-    public static boolean include(int type, RepositoryPath repositoryPath, boolean isDockerLayout, boolean filterArtifact) throws IOException {
+    public static boolean include(int type, RepositoryPath repositoryPath, boolean isDockerLayout, boolean filterArtifact, String layout) throws IOException {
         String name = repositoryPath.getFileName().toString();
         if (StringUtils.isBlank(name)) {
             return false;
@@ -267,6 +267,9 @@ public class RepositoryPathUtil {
         }
         if (type == 1 && isDockerLayout && !name.startsWith("sha256")) {
             return false;
+        }
+        if (type == 1 && ProductTypeEnum.Npm.getFoLibraryName().equals(layout)) {
+            return name.endsWith(".tgz") || name.endsWith(".har");
         }
         if (filterArtifact && type == 1 && !RepositoryFiles.isArtifact(repositoryPath)) {
             return false;

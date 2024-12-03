@@ -69,8 +69,7 @@ public class GoArtifactController extends BaseArtifactController {
         logger.info("Requested /{}/{}/{}.", storageId, repositoryId, artifactPath);
 
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
-        //vulnerabilityBlock(repositoryPath);
-
+        vulnerabilityBlock(repositoryPath);
         provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
         return null;
     }

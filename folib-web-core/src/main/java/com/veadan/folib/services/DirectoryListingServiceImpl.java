@@ -2,20 +2,25 @@ package com.veadan.folib.services;
 
 import cn.hutool.core.date.StopWatch;
 import com.alibaba.fastjson.JSONObject;
+import cn.hutool.extra.spring.SpringUtil;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.booters.PropertiesBooter;
 import com.veadan.folib.cloud.storage.s3fs.S3FileSystemProvider;
+import com.veadan.folib.components.DistributedCacheComponent;
+import com.veadan.folib.components.auth.AuthComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
 import com.veadan.folib.providers.io.*;
-import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
+import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.scanner.common.util.SpringContextUtil;
+import com.veadan.folib.security.vote.ExtendedAuthoritiesVoter;
 import com.veadan.folib.services.support.ArtifactRoutingRulesChecker;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
@@ -31,6 +36,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -59,10 +66,17 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
     private static final Logger logger = LoggerFactory.getLogger(DirectoryListingService.class);
 
     private String baseUrl;
+    @Inject
+    private DistributedCacheComponent distributedCacheComponent;
 
     @Inject()
     @Named("asyncApiBrowseThreadPoolExecutor")
-    private ThreadPoolTaskExecutor asyncApiBrowseThreadPoolExecutor ;
+    private ThreadPoolTaskExecutor asyncApiBrowseThreadPoolExecutor;
+
+    @Autowired
+    @Lazy
+    private AuthComponent authComponent;
+
     public DirectoryListingServiceImpl(String baseUrl) {
         super();
         this.baseUrl = StringUtils.chomp(baseUrl.toString(), "/");
@@ -122,7 +136,7 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
             String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
             String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
             Repository subRepository = configurationManagementService.getConfiguration().getRepository(sId, rId);
-            if(!groupSubPrivileges(subRepository,path,Privileges.ARTIFACTS_RESOLVE.getAuthority())){
+            if (!authComponent.validatePrivilegesSplitPath(subRepository, path, Privileges.ARTIFACTS_RESOLVE.getAuthority())) {
                 continue;
             }
             if (!subRepository.isInService()) {
@@ -326,10 +340,10 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
         return listPaths(path)
                 //.filter(this::isValidPath)
                 .collectList()
-                .flatMapMany(contentPaths -> Flux.fromIterable(ListUtils.partition(contentPaths, 20)))
+                .flatMapMany(contentPaths -> Flux.fromIterable(ListUtils.partition(contentPaths, this.getRepositoryPathBatchSize())))
                 // 使用并行处理提高效率 在多个 Flux 中使用 .publishOn(Schedulers.boundedElastic()) 时，Schedulers.boundedElastic() 是共享的，而不是为每个 Flux 创建独立的线程池。
                 .publishOn(Schedulers.boundedElastic())
-                .parallel(16)
+                .parallel(this.getRepositoryPathThread())
                 // 根据路径构建文件内容任务
                 .flatMap(paths -> buildFileContentTask(paths, showChecksum))
                 // 将并行处理的结果序列化
@@ -338,9 +352,10 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
                 // 合并处理结果
                 .map(this::mergeResults);
     }
+
     /**
      * 使用Reactive Streams API处理文件列表。
-     *
+     * <p>
      * 此段代码利用Flux.using方法来管理文件目录的流式处理。它在反应式流中封装了文件系统的操作，
      * 以便以非阻塞方式遍历指定路径下的文件列表。这种方式特别适用于需要处理大量文件或目录的情况，
      * 可以提高程序的并发性和效率。
@@ -349,13 +364,12 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
      * @return 返回一个Flux实例，该实例用于异步遍历并处理目录中的文件。
      */
     private Flux<Path> listPaths(Path path) {
-        Flux<Path> pathFlux =  Flux.using(
+        Flux<Path> pathFlux = Flux.using(
                 //Files.list 无法保证所有文件系统中的顺序一致性,需要自定义顺序，必须显式调用 .sorted() 自然排序
                 () -> Files.list(path).filter(this::isValidPath).sorted(),
                 Flux::fromStream, // 将列出的文件转换为Flux流，以便进行反应式处理。
                 Stream::close // 指定在不再需要流时如何关闭它，确保资源的正确释放。
         ); // 指定在哪个线程上订阅和处理事件，这里选择使用bounded
-
         return pathFlux;
     }
 
@@ -370,20 +384,30 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
         // 检查路径字符串是否以点(.)开头，或者文件名是否为MANIFEST或BLOBS，这些都不被认为是有效的层文件。
         // 同时检查路径中是否包含'/.'但不包含'.specs'，或者文件是隐藏文件但路径中不包含'.specs'，这些情况都会被认为是无效路径。
         try {
-        return (!p.toString().startsWith(".")) &&
-                !DockerLayoutProvider.MANIFEST.equalsIgnoreCase(p.getFileName().toString()) &&
-                !DockerLayoutProvider.BLOBS.equalsIgnoreCase(p.getFileName().toString()) &&
-                (!p.toString().contains("/.") || p.toString().contains(".specs")||isTrashNotHiddenPath(p)) &&
-                (!Files.isHidden(p) || p.toString().contains(".specs")||isTrashNotHiddenPath(p));
+            boolean isValid = (!p.toString().startsWith(".")) &&
+                    !DockerLayoutProvider.MANIFEST.equalsIgnoreCase(p.getFileName().toString()) &&
+                    !DockerLayoutProvider.BLOBS.equalsIgnoreCase(p.getFileName().toString()) &&
+                    (!p.toString().contains("/.") || p.toString().contains(".specs") || isTrashNotHiddenPath(p)) &&
+                    (!Files.isHidden(p) || p.toString().contains(".specs") || isTrashNotHiddenPath(p));
+            if (isValid) {
+                //校验权限
+                if (p instanceof RepositoryPath) {
+                    RepositoryPath repositoryPath = (RepositoryPath) p;
+                    if (!authComponent.validatePrivilegesSplitPath(repositoryPath.getRepository(), repositoryPath, Privileges.ARTIFACTS_RESOLVE.getAuthority())) {
+                        return false;
+                    }
+                }
+            }
+            return isValid;
         } catch (IOException e) {
             logger.info("Error accessing path {}", p);
             return false;
         }
     }
 
-    private boolean isTrashNotHiddenPath(Path p){
-        String path=p.toString();
-        if(path.contains(LayoutFileSystem.TRASH)){
+    private boolean isTrashNotHiddenPath(Path p) {
+        String path = p.toString();
+        if (path.contains(LayoutFileSystem.TRASH)) {
             path = path.replace(LayoutFileSystem.TRASH, "");
             return !path.contains("/.");
         }
@@ -392,7 +416,7 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
 
     /**
      * 构建文件内容任务结果。
-     *
+     * <p>
      * 该方法通过遍历给定的文件路径列表，收集每个文件或目录的信息，并包装成FileContent对象。
      * 根据是否显示校验和，决定是否忽略某些文件。最终返回包含所有文件内容信息的结果对象。
      *
@@ -420,11 +444,11 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
                 //StopWatch stopWatch = new StopWatch();
                 //stopWatch.start();
                 // 读取文件或目录的属性。
-                FileSystemProvider provider =  contentPath.getFileSystem().provider();
+                FileSystemProvider provider = contentPath.getFileSystem().provider();
                 Map<String, Object> fileAttributes = null;
-                if( provider instanceof StorageFileSystemProvider){
+                if (provider instanceof StorageFileSystemProvider) {
                     fileAttributes = Files.readAttributes(contentPath, "folib:repositoryId,folib:storageId,folib:artifactPath,folib:resourceUrl,lastModifiedTime,size,isDirectory");
-                }else {
+                } else {
                     fileAttributes = Files.readAttributes(contentPath, "*");
                 }
                 //if(contentPath.toString().startsWith("s3://") || contentPath.toString().startsWith("https://s3.")){
@@ -482,12 +506,11 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
     }
 
 
-
     private BuildFileContentTaskResult buildFileContentTask(List<Path> contentPaths,
                                                             PropertiesBooter propertiesBooter,
                                                             boolean showChecksum,
                                                             RepositoryPathResolver repositoryPathResolver
-    ) throws IOException  {
+    ) throws IOException {
         BuildFileContentTaskResult result = new BuildFileContentTaskResult();
         List<FileContent> directories = result.getDirectories();
         List<FileContent> files = result.getFiles();
@@ -590,28 +613,23 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
         }
     }
 
-    private boolean groupSubPrivileges(Repository repository,RepositoryPath repositoryPath,String authority ){
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (Objects.isNull(authentication)) {
-            return false;
+    public int getRepositoryPathThread() {
+        int thread = GlobalConstants.REPOSITORY_PATH_THREAD;
+        String cacheKey = distributedCacheComponent.get(GlobalConstants.REPOSITORY_PATH_THREAD_KEY);
+        if (StringUtils.isNotBlank(cacheKey)) {
+            thread = Integer.parseInt(cacheKey);
         }
-        String absolutePath = repositoryPath.getTarget().toString();
-        String storeAndRep= repositoryPath.getRepository().getStorage().getId()+"/"+repositoryPath.getRepositoryId()+"/";
-        int index = absolutePath.indexOf(storeAndRep);
-        String relativePath="";
-        if(index!=-1){
-            relativePath=absolutePath.substring(index+storeAndRep.length());
-        }
-        List<String> paths=null;
-        if(StringUtils.isNotBlank(relativePath)){
-            paths=Collections.singletonList(relativePath);
-        }
-        SpringSecurityUser user=(SpringSecurityUser) authentication.getPrincipal();
-        Collection<Privileges> storageAuthorities =user.getStorageAuthorities(repository.getStorage().getId(), repository.getId(),paths);
-        return storageAuthorities.stream().anyMatch(item -> item.getAuthority().equals(authority));
+        return thread;
+
     }
 
-
-
-
+    public int getRepositoryPathBatchSize() {
+        int batchSize = GlobalConstants.REPOSITORY_PATH_BATCH_SIZE;
+        String cacheKey = distributedCacheComponent.get(GlobalConstants.REPOSITORY_PATH_BATCH_SIZE_KEY);
+        if (StringUtils.isNotBlank(cacheKey)) {
+            batchSize = Integer.parseInt(cacheKey);
+        }
+        return batchSize;
+    }
+    
 }

@@ -3,6 +3,7 @@ package com.veadan.folib.providers.layout;
 import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.components.DockerLayoutComponent;
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -128,7 +129,7 @@ public class DockerFileSystemProvider
                                                           IOException exc)
                         throws IOException {
                     RepositoryPath itemPath = (RepositoryPath) dir;
-                    if (!RepositoryPathUtil.include(2, itemPath, true)) {
+                    if (!RepositoryPathUtil.include(2, itemPath, true, ProductTypeEnum.Docker.getFoLibraryName())) {
                         logger.debug("RepositoryPath [{}] skip...", itemPath.toString());
                         return FileVisitResult.SKIP_SUBTREE;
                     }

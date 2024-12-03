@@ -60,6 +60,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
         return null;
     }
 
+    @Override
     public void syncYamlAuthorizationConfig() {
         try {
             AuthorizationConfigDto read = authorizationConfigFileManager.read();

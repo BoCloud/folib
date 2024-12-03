@@ -844,10 +844,10 @@
                       slot-scope="text, record">
                     {{ record.kbps && record.kbps > 0 ? record.kbps+' KB/s' : $t('Setting.NoSpeedLimit') }}
                   </div>
-                  <template slot="syncStrategy" slot-scope="syncStrategy">
-                    <span v-if="syncStrategy === 'sourceToTarget'"> {{ $t('StorageMonitoring.SourceToTarget') }}</span>
-                    <span v-else-if="syncStrategy === 'targetToSource'">{{ $t('StorageMonitoring.TargetToSource') }}</span>
-                    <span v-else-if="syncStrategy === 'twoWaySync'">{{ $t('StorageMonitoring.TwoWaySync') }}</span>
+                  <template slot="syncStrategy" slot-scope="syncStrategy, record">
+                    <span v-if="record.isSyncPrivilege && syncStrategy === 'sourceToTarget'"> {{ $t('StorageMonitoring.SourceToTarget') }}</span>
+                    <span v-else-if="record.isSyncPrivilege && syncStrategy === 'targetToSource'">{{ $t('StorageMonitoring.TargetToSource') }}</span>
+                    <span v-else-if="record.isSyncPrivilege && syncStrategy === 'twoWaySync'">{{ $t('StorageMonitoring.TwoWaySync') }}</span>
                     <span v-else>N/A</span>
                   </template>
                   <div slot="operation"
@@ -1005,7 +1005,7 @@
               <a-input :placeholder="$t('Setting.EnterTransmissionLimitOfNode')" v-model="artifactDispatchForm.kbps" />
             </a-form-model-item>
           </a-col>
-          <a-col :span="24">
+          <!-- <a-col :span="24">
             <a-form-model-item class="mb-10" :label="$t('Setting.distributeType')" :colon="false" prop="dispatchType">
               <a-select v-model="artifactDispatchForm.dispatchType" :placeholder="$t('Setting.SelectDistributeType')"
                 show-search optionFilterProp="label">
@@ -1015,12 +1015,12 @@
                 </a-select-option>
               </a-select>
             </a-form-model-item>
-          </a-col>
-          <a-col :span="24">
+          </a-col> -->
+          <!-- <a-col :span="24">
             <a-form-model-item class="mb-10" :label="$t('Setting.LocalCluster')" :colon="false" prop="isThisCluster">
               <a-switch v-model="artifactDispatchForm.isThisCluster" />
             </a-form-model-item>
-          </a-col>
+          </a-col> -->
           <a-col :span="24">
             <a-form-model-item class="mb-10" :label="$t('Setting.SyncData')" :colon="false" style="position: relative"
               prop="isSyncPrivilege">
@@ -1366,9 +1366,10 @@ export default {
       userList: [],
       artifactDispatchColumns: [
         {
-          title: '集群节点英文名',
+          title: '集群英文名',
           i18nKey: 'Setting.ClusterNodeEnglish',
           dataIndex: 'clusterEnName',
+          width: '120px',
           customCell: () => {
             return {
               style: {
@@ -1386,6 +1387,7 @@ export default {
           title: '集群中文名',
           i18nKey: 'Setting.ClusterChineseName',
           dataIndex: 'clusterCnName',
+          width: '120px',
           key: 'clusterCnName',
           customCell: () => {
             return {
@@ -1404,6 +1406,7 @@ export default {
           title: '节点',
           i18nKey: 'Setting.Node',
           dataIndex: 'clusterNodeHost',
+          width: '150px',
           key: 'clusterNodeHost',
           customCell: () => {
             return {
@@ -1419,9 +1422,18 @@ export default {
           customRender: (text, record) => <a-tooltip placement="topLeft" title={record.clusterNodeHost} >{record.clusterNodeHost}</a-tooltip>
         },
         {
+          title: '在线状态',
+          i18nKey: 'Setting.OnlineStatus',
+          dataIndex: 'wsClientOnline',
+          key: 'wsClientOnline',
+          width: 100,
+          scopedSlots: { customRender: 'wsClientOnline' }
+        },
+        {
           title: '描述',
           i18nKey: 'Setting.describe',
           dataIndex: 'clusterNodeDesc',
+          width: 100,
           key: 'clusterNodeDesc',
           customCell: () => {
             return {
@@ -1437,35 +1449,37 @@ export default {
           customRender: (text, record) => <a-tooltip placement="topLeft" title={record.clusterNodeDesc} >{record.clusterNodeDesc}</a-tooltip>
         },
         {
-          title: '节点传输限速',
+          title: '节点限速(KB/s)',
           i18nKey: 'Setting.NodeTransmissionRateLimit',
           dataIndex: 'kbps',
           key: 'kbps',
-          width: 180,
+          width: 140,
           scopedSlots: { customRender: 'kbps' }
         },
+        // {
+        //   title: '分发方式',
+        //   i18nKey: 'Setting.distributeMethod',
+        //   dataIndex: 'dispatchType',
+        //   key: 'dispatchType',
+        //   width: 140
+        // },
+        // {
+        //   title: '本集群',
+        //   i18nKey: 'Setting.LocalCluster',
+        //   dataIndex: 'isThisCluster',
+        //   key: 'isThisCluster',
+        //   width: 140,
+        //   scopedSlots: { customRender: 'isThisCluster' }
+        // }
+        // ,{
+        //   title: '同步数据',
+        //   i18nKey: 'Setting.SyncData',
+        //   dataIndex: 'isSyncPrivilege',
+        //   key: 'isSyncPrivilege',
+        //   width: 100,
+        //   scopedSlots: { customRender: 'isSyncPrivilege' }
+        // },
         {
-          title: '分发方式',
-          i18nKey: 'Setting.distributeMethod',
-          dataIndex: 'dispatchType',
-          key: 'dispatchType',
-          width: 140
-        },
-        {
-          title: '本集群',
-          i18nKey: 'Setting.LocalCluster',
-          dataIndex: 'isThisCluster',
-          key: 'isThisCluster',
-          width: 140,
-          scopedSlots: { customRender: 'isThisCluster' }
-        },{
-          title: '同步数据',
-          i18nKey: 'Setting.SyncData',
-          dataIndex: 'isSyncPrivilege',
-          key: 'isSyncPrivilege',
-          width: 140,
-          scopedSlots: { customRender: 'isSyncPrivilege' }
-        },{
           title: '权限同步策略',
           i18nKey: 'Setting.syncStrategy',
           dataIndex: 'syncStrategy',
@@ -1473,22 +1487,14 @@ export default {
           width: 140,
           scopedSlots: { customRender: 'syncStrategy' }
         },
-        {
-          title: '在线状态',
-          i18nKey: 'Setting.OnlineStatus',
-          dataIndex: 'wsClientOnline',
-          key: 'wsClientOnline',
-          width: 140,
-          scopedSlots: { customRender: 'wsClientOnline' }
-        },
-        {
-          title: '添加方式',
-          i18nKey: 'Setting.AddMethod',
-          dataIndex: 'autoRegister',
-          key: 'autoRegister',
-          width: 160,
-          scopedSlots: { customRender: 'autoRegister' }
-        },
+        // {
+        //   title: '添加方式',
+        //   i18nKey: 'Setting.AddMethod',
+        //   dataIndex: 'autoRegister',
+        //   key: 'autoRegister',
+        //   width: 160,
+        //   scopedSlots: { customRender: 'autoRegister' }
+        // },
         {
           title: '操作',
           i18nKey: 'Setting.Operation',
@@ -1539,7 +1545,7 @@ export default {
         clusterCnName: undefined,
         clusterNodeDesc: undefined,
         clusterNodeHost: undefined,
-        dispatchType: undefined,
+        dispatchType: 'push',
         isThisCluster: undefined,
         syncStrategy: undefined,
         kbps: 0
@@ -2095,7 +2101,7 @@ export default {
         clusterCnName: undefined,
         clusterNodeDesc: undefined,
         clusterNodeHost: undefined,
-        dispatchType: undefined,
+        dispatchType: 'push',
         isThisCluster: undefined
       }
     },

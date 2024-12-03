@@ -180,7 +180,7 @@ public class RemoveNpmArtifactCronJob extends JavaCronJob {
                         return FileVisitResult.CONTINUE;
                     }
                     String artifactPath = RepositoryFiles.relativizePath(parentRepositoryPath);
-                    if (StringUtils.isNotBlank(artifactPath) && RepositoryPathUtil.include(1, itemPath, false) && !pathList.contains(artifactPath)) {
+                    if (StringUtils.isNotBlank(artifactPath) && RepositoryPathUtil.include(1, itemPath, false, "") && !pathList.contains(artifactPath)) {
                         log.debug("Find npm path [{}]", itemPath);
                         pathList.add(artifactPath);
                     }
@@ -191,7 +191,7 @@ public class RemoveNpmArtifactCronJob extends JavaCronJob {
                 public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
                     RepositoryPath itemPath = (RepositoryPath) dir;
                     log.debug("Current directory path [{}]", itemPath);
-                    if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !RepositoryPathUtil.include(2, itemPath, false)) {
+                    if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !RepositoryPathUtil.include(2, itemPath, false, "")) {
                         log.debug("RepositoryPath [{}] skip...", itemPath.toString());
                         return FileVisitResult.SKIP_SUBTREE;
                     }

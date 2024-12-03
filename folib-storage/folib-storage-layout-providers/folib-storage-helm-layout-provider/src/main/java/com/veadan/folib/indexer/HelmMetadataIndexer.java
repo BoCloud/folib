@@ -20,11 +20,7 @@ import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
@@ -33,10 +29,12 @@ import com.veadan.folib.model.HelmChartMetadata;
 import com.veadan.folib.model.HelmDependencyMetadata;
 import com.veadan.folib.model.HelmIndexYamlMetadata;
 import com.veadan.folib.model.HelmMetadata;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
 import com.veadan.folib.services.ArtifactManagementService;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.CollectionHelmUtils;
 import com.veadan.folib.util.CollectionUtils;
 import com.veadan.folib.util.HelmUtils;
@@ -92,7 +90,7 @@ public class HelmMetadataIndexer {
             if (metadata.helmChart != null) {
                 writeAttributes(path, metadata);
                 log.debug("Updating index.yaml for repository {}", this.repositoryId);
-                updateIndexYaml(metadata, repositoryPath.getTarget().toString(), helmIndexYamlMetadata, this.baseUrl);
+                updateIndexYaml(metadata, repositoryPath, helmIndexYamlMetadata, this.baseUrl);
             }
             timer.stop();
             log.trace("Indexing Helm metadata for repo '{}' on path '{}' took '{}'", this.repositoryId, path, timer);
@@ -152,13 +150,13 @@ public class HelmMetadataIndexer {
         //this.repositoryService.setAttributes(this.repoKey, path, (Multimap)hashMultimap);
     }
 
-    private void updateIndexYaml(HelmMetadata metadata, String path, HelmIndexYamlMetadata indexYaml, String baseUrl) throws IOException {
+    private void updateIndexYaml(HelmMetadata metadata, RepositoryPath repositoryPath, HelmIndexYamlMetadata indexYaml, String baseUrl) throws IOException {
         String chartName = metadata.helmChart.name;
         if (StringUtils.isBlank(chartName) || StringUtils.isBlank(metadata.helmChart.version)) {
-            log.error("Cannot add Chart {} to index.yaml - Chart name or version is empty!", path);
+            log.error("Cannot add Chart {} to index.yaml - Chart name or version is empty!", repositoryPath);
             return;
         }
-        fillIndexChartMetadata(metadata, path, baseUrl);
+        fillIndexChartMetadata(metadata, repositoryPath, baseUrl);
         if (isValidChart(metadata)) {
             log.trace("Adding the chart:{}, version:{} into the index.yaml", chartName, metadata.helmChart.version);
             indexYaml.entries.compute(chartName, (key, charts) -> {
@@ -204,13 +202,13 @@ public class HelmMetadataIndexer {
         }
     }
 
-    private void fillIndexChartMetadata(HelmMetadata metadata, String path, String baseUrl) throws IOException {
-        if (path != null) {
-
-            Path filePath = Paths.get(String.join(".", path, "sha256"));
+    private void fillIndexChartMetadata(HelmMetadata metadata, RepositoryPath repositoryPath, String baseUrl) throws IOException {
+        if (Objects.nonNull(repositoryPath)) {
+            Path filePath = Paths.get(String.join(".", repositoryPath.getTarget().toString(), "sha256"));
             metadata.helmChart.digest = readSHA256FileContent(filePath);
-            String pathPrefix = StringUtils.defaultIfBlank(baseUrl, "local://");
-            metadata.helmChart.urls = Lists.newArrayList(String.join("", pathPrefix, Paths.get(path).getFileName().toString()));
+            if (!RepositoryTypeEnum.PROXY.getType().equals(repositoryPath.getRepository().getType())) {
+                metadata.helmChart.urls = Lists.newArrayList(RepositoryFiles.relativizePath(repositoryPath));
+            }
         }
         metadata.helmChart.created = Instant.now().toString();
     }
