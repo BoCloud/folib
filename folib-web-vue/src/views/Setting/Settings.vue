@@ -904,6 +904,12 @@
             </a-tab-pane>
         </a-tabs>
       </a-tab-pane>
+
+      <a-tab-pane key="10"
+                    tab="联邦晋级策略">
+          <FederalPromotionPolicy></FederalPromotionPolicy>
+      </a-tab-pane>
+
       <a-tab-pane key="7" tab="Webhook">
         <Webhook :activeKey="activeKey"></Webhook>
       </a-tab-pane>
@@ -1234,6 +1240,7 @@ import AddPackageName from "./components/Package/add.vue"
 import AuditConfig from "./components/AuditConfig.vue";
 import BlockStrategy from './components/BlockStrategy/index.vue'
 import BlackWhite from './components/BlackWhite/index.vue'
+import FederalPromotionPolicy from './components/FederalPromotionPolicy/index.vue'
 
 export default {
   props: ['navbarFixed'],
@@ -1245,6 +1252,7 @@ export default {
     AuditConfig,
     BlockStrategy,
     BlackWhite,
+    FederalPromotionPolicy,
   },
   data() {
     const checkClusterEnName = (rule, value, callback) => {
