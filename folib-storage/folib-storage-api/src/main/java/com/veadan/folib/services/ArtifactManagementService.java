@@ -2,6 +2,7 @@ package com.veadan.folib.services;
 
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.components.ArtifactSecurityComponent;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
@@ -96,6 +97,9 @@ public class ArtifactManagementService {
     @Autowired
     @Lazy
     protected ArtifactSecurityComponent artifactSecurityComponent;
+
+    @Autowired
+    private DistributedCacheComponent distributedCacheComponent;
 
     @Value("${folib.uploadRestrictions:false}")
     private boolean artifactUploadRestrictions;
@@ -618,8 +622,19 @@ public class ArtifactManagementService {
         return repositoryPath;
     }
 
+    private boolean enableValidateInputStreamEmpty() {
+        String value = distributedCacheComponent.get("ENABLE_VALIDATE_INPUT_STREAM_EMPTY");
+        if (StringUtils.isNotBlank(value)) {
+            return Boolean.parseBoolean(value);
+        }
+        return true;
+    }
+
     private boolean validateInputStreamEmpty(RepositoryPath repositoryPath, InputStream inputStream) {
         try {
+            if (!enableValidateInputStreamEmpty()) {
+                return true;
+            }
             return Objects.nonNull(inputStream) && inputStream.available() != 0;
         } catch (Exception ex) {
             logger.error("Validate inputStream empty [{}] error [{}]", repositoryPath, ExceptionUtils.getStackTrace(ex));
