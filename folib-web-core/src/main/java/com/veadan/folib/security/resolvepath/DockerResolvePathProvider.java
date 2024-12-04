@@ -42,7 +42,9 @@ public class DockerResolvePathProvider implements ResolvePathProvider {
             return "";
         }
         if (relativePath.startsWith(V2) || relativePath.startsWith(STORAGES)) {
-            relativePath = relativePath.replace(V2, STORAGES);
+            if (relativePath.startsWith(V2)) {
+                relativePath = relativePath.replaceFirst(V2, STORAGES);
+            }
             if (relativePath.contains(MANIFESTS)) {
                 if (!relativePath.contains(GlobalConstants.SHA_256)) {
                     //tag号开头的

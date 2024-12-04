@@ -244,6 +244,36 @@ public class HelmMetadataIndexer {
         }
     }
 
+    public HelmIndexYamlMetadata readFromIndexYaml(RepositoryPath repositoryPath) {
+        try {
+            HelmIndexYamlMetadata indexYaml;
+            if (Files.exists(repositoryPath)) {
+                InputStream indexStream = Files.newInputStream(repositoryPath);
+                try {
+                    indexYaml = (HelmIndexYamlMetadata) this.yamlObjectMapper.readValue(indexStream, HelmIndexYamlMetadata.class);
+                    indexStream.close();
+                } catch (Throwable throwable) {
+                    try {
+                        indexStream.close();
+                    } catch (Throwable throwable1) {
+                        throwable.addSuppressed(throwable1);
+                    }
+                    throw throwable;
+                }
+            } else {
+                indexYaml = HelmUtils.emptyIndexYaml();
+            }
+            if (indexYaml.entries == null) {
+                indexYaml.entries = Maps.newConcurrentMap();
+            }
+            return indexYaml;
+        } catch (Exception e) {
+            log.error("Metadata indexing failing on helm repository {} : {}", this.repositoryId, e.getMessage());
+            log.debug("Metadata indexing failing on helm repository " + this.repositoryId + ":", e);
+            return null;
+        }
+    }
+
     private void writeToIndexYaml(HelmIndexYamlMetadata indexYaml) {
         try {
 

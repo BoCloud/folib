@@ -6,7 +6,6 @@ import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.controllers.BrowseController;
 import com.veadan.folib.enums.RepositoryScopeEnum;
-import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.security.enums.ResolvePathTypeEnum;
@@ -26,7 +25,6 @@ import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.utils.UrlUtils;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -41,7 +39,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 
-import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -93,12 +90,12 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
 
     public Collection<String> getExtendedAuthorities(Authentication authentication, String storageId, String repositoryId, String path, Boolean enableSplitPath) {
         ExtendedAuthorityAuthentication extendedAuth = new ExtendedAuthorityAuthentication(authentication);
-        return extendedAuth.calculateExtendedAuthorities(authentication, storageId, repositoryId, path, true, enableSplitPath).stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
+        return extendedAuth.calculateExtendedAuthorities(authentication, storageId, repositoryId, path, enableSplitPath).stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
     }
 
     public Collection<String> getExtendedAuthorities(Authentication authentication, String storageId, String repositoryId, String path) {
         ExtendedAuthorityAuthentication extendedAuth = new ExtendedAuthorityAuthentication(authentication);
-        return extendedAuth.calculateExtendedAuthorities(authentication, storageId, repositoryId, path, true, false).stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
+        return extendedAuth.calculateExtendedAuthorities(authentication, storageId, repositoryId, path, false).stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
     }
 
     @SuppressWarnings("serial")
@@ -151,7 +148,7 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
             return repository;
         }
 
-        public Collection<? extends GrantedAuthority> calculateExtendedAuthorities(Authentication authentication, String storageId, String repositoryId, String path, Boolean enableResolvePath, Boolean enableSplitPath) {
+        public Collection<? extends GrantedAuthority> calculateExtendedAuthorities(Authentication authentication, String storageId, String repositoryId, String path, Boolean enableSplitPath) {
             storageId = storageId == null ? UrlUtils.getCurrentStorageId() : storageId;
             repositoryId = repositoryId == null ? UrlUtils.getCurrentRepositoryId() : repositoryId;
             Object principal = authentication.getPrincipal();
@@ -185,19 +182,13 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
                         String subRepositoryId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
                         String newPath = rewriteByStoreAndRepo(requestUri, subStorageId, subRepositoryId);
                         if (StringUtils.isNotBlank(relativePath)) {
-                            RepositoryPath repositoryPath = repositoryPathResolver.resolve(subStorageId, subRepositoryId, relativePath);
-                            if (RepositoryTypeEnum.HOSTED.getType().equals(repositoryPath.getRepository().getType()) && !Files.exists(repositoryPath)) {
-                                continue;
-                            }
                             newPath = String.format("/storages/%s/%s/%s", subStorageId, subRepositoryId, sourceRelativePath);
                         }
-                        Collection<? extends GrantedAuthority> grantedAuthorities = calculateExtendedAuthorities(authentication, subStorageId, subRepositoryId, newPath, true, enableSplitPath);
+                        Collection<? extends GrantedAuthority> grantedAuthorities = calculateExtendedAuthorities(authentication, subStorageId, subRepositoryId, newPath, enableSplitPath);
                         extendedAuthorities.addAll(grantedAuthorities);
                     }
                     return extendedAuthorities;
                 }
-            }
-            if (Boolean.TRUE.equals(enableResolvePath) && Objects.nonNull(repository)) {
                 String resolvePathType = ResolvePathTypeEnum.getResolvePathType(repository.getLayout());
                 if (StringUtils.isNotBlank(resolvePathType)) {
                     ResolvePathProvider resolvePathProvider = resolvePathProviderRegistry.getProvider(resolvePathType);
@@ -227,9 +218,6 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
                 if (StringUtils.isNotBlank(requestUri) && paths.stream().noneMatch(requestUri::startsWith)) {
                     return authorities;
                 }
-                if (storageId == null || repositoryId == null) {
-                    return authorities;
-                }
                 Set<Privileges> storageAuthorities = anonymousRole.getAccessModel().getPathAuthorities(requestUri, enableSplitPath);
                 if (storageAuthorities.isEmpty()) {
                     return authorities;
@@ -246,9 +234,6 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
             }
             List<String> paths = Arrays.asList(ARTIFACT_ROOT_PATH, DOCKER_ROOT_PATH, BrowseController.ROOT_CONTEXT, STORAGE_ROOT_PATH);
             if (StringUtils.isNotBlank(requestUri) && paths.stream().noneMatch(requestUri::startsWith)) {
-                return extendedAuthorities;
-            }
-            if (storageId == null || repositoryId == null) {
                 return extendedAuthorities;
             }
             SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
@@ -268,7 +253,7 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
 
         @Override
         public Collection<? extends GrantedAuthority> getAuthorities() {
-            return calculateExtendedAuthorities(getSourceAuthentication(), null, null, null, true, false);
+            return calculateExtendedAuthorities(getSourceAuthentication(), null, null, null, false);
         }
 
         @Override

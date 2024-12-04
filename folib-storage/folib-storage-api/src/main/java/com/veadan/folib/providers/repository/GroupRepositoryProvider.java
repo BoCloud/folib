@@ -1,7 +1,9 @@
 package com.veadan.folib.providers.repository;
 
 
+import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
+import com.veadan.folib.components.ArtifactSecurityComponent;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.enums.ProductTypeEnum;
@@ -17,14 +19,16 @@ import com.veadan.folib.services.support.ArtifactRoutingRulesChecker;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.util.ThrowingFunction;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.index.artifact.M2ArtifactRecognizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -63,6 +67,10 @@ public class GroupRepositoryProvider
 
     @Inject
     private ArtifactResolutionService artifactResolutionService;
+
+    @Autowired
+    @Lazy
+    private ArtifactSecurityComponent artifactSecurityComponent;
 
     @Override
     public String getAlias() {
@@ -114,6 +122,9 @@ public class GroupRepositoryProvider
 
                 subRepositoryPath = repositoryPathResolver.resolve(subRepository, repositoryPath);
                 if (!isRepositoryResolvable(groupRepository, subRepository, subRepositoryPath)) {
+                    continue;
+                }
+                if (!artifactSecurityComponent.validatePrivileges(subRepositoryPath, Privileges.ARTIFACTS_RESOLVE.getAuthority())) {
                     continue;
                 }
                 if (Objects.nonNull(repositoryPath.getDisableRemote())) {
@@ -302,5 +313,4 @@ public class GroupRepositoryProvider
         }
         return count;
     }
-
 }

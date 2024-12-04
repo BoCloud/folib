@@ -1,0 +1,90 @@
+package com.veadan.folib.components;
+
+import com.google.common.collect.Lists;
+import com.veadan.folib.authorization.dto.Role;
+import com.veadan.folib.enums.ProductTypeEnum;
+import com.veadan.folib.providers.io.RepositoryFiles;
+import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.users.domain.AccessModelData;
+import com.veadan.folib.users.domain.Privileges;
+import com.veadan.folib.users.domain.SystemRole;
+import com.veadan.folib.users.security.AnonymousAccessModel;
+import com.veadan.folib.users.security.AuthoritiesProvider;
+import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+
+/**
+ * @author leipenghui
+ * @date 2024/11/27
+ **/
+@Slf4j
+@Component
+public class ArtifactSecurityComponent {
+
+    public static final String MANIFESTS = "manifest/";
+
+    public static final String BLOBS = "blobs/";
+
+    @Autowired
+    @Lazy
+    private AuthoritiesProvider authoritiesProvider;
+
+    public boolean validatePrivileges(RepositoryPath repositoryPath, String authority) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (Objects.isNull(authentication)) {
+                return false;
+            }
+            String path = RepositoryFiles.relativizePath(repositoryPath);
+            if (ProductTypeEnum.Docker.getFoLibraryName().equalsIgnoreCase(repositoryPath.getRepository().getLayout()) && (path.startsWith(MANIFESTS) || path.startsWith(BLOBS))) {
+                return true;
+            }
+            String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId();
+            Object principal = authentication.getPrincipal();
+            String anonymousUser = "anonymousUser";
+            if (anonymousUser.equals(principal.toString())) {
+                //匿名角色
+                Role anonymousRole = authoritiesProvider.getRuntimeRole(SystemRole.ANONYMOUS.name());
+                Set<Privileges> anonymousApiAuthorities = anonymousRole.getAccessModel().getApiAuthorities();
+                List<GrantedAuthority> authorities = Lists.newArrayList(anonymousApiAuthorities);
+                AnonymousAccessModel anonymousAccessModel = (AnonymousAccessModel) anonymousRole.getAccessModel();
+                AccessModelData accessModelData = (AccessModelData) anonymousAccessModel.getAccessModelTarget();
+                if (CollectionUtils.isNotEmpty(accessModelData.getStorageAuthorities())) {
+                    authorities.remove(Privileges.ARTIFACTS_RESOLVE);
+                }
+                Set<Privileges> storageAuthorities = anonymousRole.getAccessModel().getPathAuthorities(storageId, repositoryId, Lists.newArrayList(RepositoryFiles.relativizePath(repositoryPath)));
+                if (!storageAuthorities.isEmpty()) {
+                    authorities.addAll(storageAuthorities);
+                }
+                return authorities.stream().anyMatch(item -> item.getAuthority().equals(authority));
+            }
+            if (!(principal instanceof SpringSecurityUser)) {
+                return false;
+            }
+            SpringSecurityUser userDetails = (SpringSecurityUser) principal;
+            Collection<? extends GrantedAuthority> grantedAuthorities = authentication.getAuthorities();
+            List<GrantedAuthority> authorities = Lists.newArrayList(grantedAuthorities);
+            Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(storageId, repositoryId, Lists.newArrayList(RepositoryFiles.relativizePath(repositoryPath)));
+            if (!storageAuthorities.isEmpty()) {
+                authorities.addAll(storageAuthorities);
+            }
+            return authorities.stream().anyMatch(item -> item.getAuthority().equals(authority));
+        } catch (Exception ex) {
+            log.error("Validate privileges repositoryPath [{}] error [{}]", repositoryPath, ExceptionUtils.getStackTrace(ex));
+        }
+        return false;
+    }
+}

@@ -37,7 +37,7 @@ import java.util.stream.Stream;
  */
 @Slf4j
 @Service
-@Transactional
+@Transactional(rollbackFor=Exception.class)
 public class FolibRoleServiceImpl implements FolibRoleService {
     @Autowired
     private FolibRoleMapper folibRoleMapper;
@@ -283,6 +283,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
      * @param id 主键
      * @return 实例对象
      */
+    @Override
     public FolibRole queryById(String id){
         return folibRoleMapper.queryById(id);
     }
@@ -294,6 +295,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
      * @param pageRequest 分页对象
      * @return 查询结果
      */
+    @Override
     public PageInfo<FolibRoleDTO> paginQuery(FolibRole folibRole, PageRequest pageRequest){
         PageHelper.startPage(pageRequest.getPageNumber(), pageRequest.getPageSize());
         List<FolibRoleDTO> folibRoleDTOS = folibRoleMapper.queryAllByLimit(folibRole);
@@ -306,6 +308,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
      * @param folibRole 实例对象
      * @return 实例对象
      */
+    @Override
     public FolibRole insert(FolibRole folibRole){
         folibRoleMapper.insert(folibRole);
         return folibRole;
@@ -317,6 +320,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
      * @param folibRole 实例对象
      * @return 实例对象
      */
+    @Override
     public FolibRole update(FolibRole folibRole){
         folibRoleMapper.update(folibRole);
         return queryById(folibRole.getId());
@@ -328,6 +332,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
      * @param id 主键
      * @return 是否成功
      */
+    @Override
     public boolean deleteById(String id){
 
         if (SystemRole.ADMIN.name().equalsIgnoreCase(id)) {

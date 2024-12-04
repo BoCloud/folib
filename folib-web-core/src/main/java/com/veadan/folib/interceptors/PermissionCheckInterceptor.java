@@ -7,6 +7,7 @@ import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.components.auth.AuthComponent;
 import com.veadan.folib.config.PermissionCheck;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
@@ -140,15 +141,13 @@ public class PermissionCheckInterceptor implements HandlerInterceptor {
                 storageId = jsonObject.getString(storageKey);
                 repositoryId = jsonObject.getString(repositoryKey);
             }
-            if (authentication.getPrincipal() instanceof SpringSecurityUser) {
-                SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
-                Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(storageId, repositoryId, filePaths);
-                boolean flag = storageAuthorities.stream().anyMatch(item -> item.getAuthority().equals(resourceKey));
-                if (!flag) {
-                    handlerResponse(response);
-                }
-                return flag;
+            AuthComponent authComponent = SpringUtil.getBean(AuthComponent.class);
+            Set<String> privileges = authComponent.getAllPrivileges(storageId, repositoryId, filePaths);
+            boolean flag = privileges.contains(resourceKey);
+            if (!flag) {
+                handlerResponse(response);
             }
+            return flag;
         }
         handlerResponse(response);
         return false;
