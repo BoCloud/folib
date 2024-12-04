@@ -6,7 +6,7 @@
 <template>
     <div>
         <div ref="tree_container" class="tree_container" @scroll="handleScroll">
-            <a-tree 
+            <a-tree
                 :key="key"
                 class="repositoryTree"
                 ref="tree"
@@ -29,8 +29,8 @@
                             {{ id }}
                         </span>
                         <span v-else>
-                            <a-icon class="tree_icon" v-if="type === 'dir' || type === 'DIR'" :type="expanded ? 'folder-open' : 'folder'" />
-                            <a-icon class="tree_icon" v-else :type="getIconType(name,type)"></a-icon>
+                            <a-icon class="tree_icon" style="margin-left: 5px;" v-if="type === 'dir' || type === 'DIR'" :type="expanded ? 'folder-open' : 'folder'" />
+                            <a-icon class="tree_icon" style="margin-left: 10px;" v-else :type="getIconType(name,type)"></a-icon>
                             <span class="tree_title">
                                 {{ name }}
                             </span>
@@ -479,6 +479,7 @@ export default {
     width: 90% !important;
     height: 32px !important;
     line-height: 32px !important;
+    border-radius: 8px !important;
 }
 
 .repositoryTree .ant-tree-switcher_close,
@@ -495,7 +496,11 @@ export default {
 }
 
 .repositoryTree .tree_icon{
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 500;
 }
+</style>
+
+<style lang="less" scoped>
+    @import url('./repository-tree.less');
 </style>
