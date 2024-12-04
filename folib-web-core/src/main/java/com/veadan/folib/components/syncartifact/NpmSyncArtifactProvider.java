@@ -312,7 +312,7 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
         ThreadPoolTaskExecutor threadPoolTaskExecutor = commonComponent.buildThreadPoolTaskExecutor("browseNpmSync", availableCores, availableCores);
         try (Stream<Path> pathStream = Files.list(path)) {
             int finalBatch = batch;
-            pathStream.forEach(item -> {
+            pathStream.sorted().forEach(item -> {
                 String currentLine = "";
                 long lines = 0, startTime = System.currentTimeMillis();
                 try {
