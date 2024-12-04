@@ -614,6 +614,9 @@ public class ArtifactManagementService {
                 }
             }
         } else if (!repository.isGroupRepository()) {
+            if (!artifactSecurityComponent.anonymousValidatePrivilege(repositoryPath)) {
+                return repositoryPath;
+            }
             boolean result = artifactSecurityComponent.validatePrivileges(repositoryPath, Privileges.ARTIFACTS_DEPLOY.getAuthority());
             if (!result) {
                 throw new ArtifactStorageException(String.format("No permission to deploy repositoryPath [%s]", repositoryPath));
