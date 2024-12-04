@@ -5,6 +5,7 @@ import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.users.domain.AccessModelData;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
@@ -21,10 +22,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author leipenghui
@@ -87,4 +85,25 @@ public class ArtifactSecurityComponent {
         }
         return false;
     }
+
+    public boolean anonymousValidatePrivilege(RepositoryPath repositoryPath) {
+        String repositoryType = repositoryPath.getRepository().getType();
+        if (RepositoryTypeEnum.HOSTED.getType().equals(repositoryType)) {
+            return true;
+        }
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (Objects.isNull(authentication)) {
+            return true;
+        }
+        Object principal = authentication.getPrincipal();
+        String anonymousUser = "anonymousUser";
+        if (anonymousUser.equals(principal.toString())) {
+            Role anonymousRole = authoritiesProvider.getRuntimeRole(SystemRole.ANONYMOUS.name());
+            AnonymousAccessModel anonymousAccessModel = (AnonymousAccessModel) anonymousRole.getAccessModel();
+            AccessModelData accessModelData = (AccessModelData) anonymousAccessModel.getAccessModelTarget();
+            return RepositoryTypeEnum.PROXY.getType().equals(repositoryType) && CollectionUtils.isNotEmpty(accessModelData.getStorageAuthorities());
+        }
+        return true;
+    }
+
 }
