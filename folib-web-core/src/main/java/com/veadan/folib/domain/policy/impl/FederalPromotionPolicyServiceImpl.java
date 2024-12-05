@@ -8,17 +8,25 @@ import com.veadan.folib.controllers.federal.res.FederalPromotionPolicyRes;
 import com.veadan.folib.controllers.federal.res.FederalRepositoryRes;
 import com.veadan.folib.controllers.federal.res.PromotionRuleRes;
 import com.veadan.folib.domain.policy.FederalPromotionPolicyService;
+import com.veadan.folib.domain.policy.dto.SyncArtifatDTO;
 import com.veadan.folib.entity.FederalPromotionPolicy;
 import com.veadan.folib.entity.FederalRepository;
 import com.veadan.folib.entity.PromotionRule;
 import com.veadan.folib.mapper.FederalPromotionPolicyMapper;
 import com.veadan.folib.mapper.FederalRepositoryMapper;
 import com.veadan.folib.mapper.PromotionRuleMapper;
+import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.storage.ArtifactStorageException;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryDto;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.PageImpl;
@@ -26,10 +34,15 @@ import org.springframework.data.domain.PageRequest;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+import javax.inject.Inject;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+@Slf4j
 @Service
 public class FederalPromotionPolicyServiceImpl implements FederalPromotionPolicyService {
 
@@ -41,6 +54,10 @@ public class FederalPromotionPolicyServiceImpl implements FederalPromotionPolicy
     private PromotionRuleMapper promotionRuleMapper;
     @Resource
     private ConfigurationManagementService configurationManagementService;
+    @Inject
+    protected RepositoryPathResolver repositoryPathResolver;
+    @Inject
+    protected ArtifactManagementService artifactManagementService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -217,6 +234,34 @@ public class FederalPromotionPolicyServiceImpl implements FederalPromotionPolicy
         return federalRepositoryMapper.queryByStorageIdAndRepositoryId(storageId, repositoryId, "source").stream().map(data -> toFederalRepositoryRes.apply(data)).collect(Collectors.toList());
     }
 
+    /**
+     * 联邦制品删除同步
+     *
+     * @param syncArtifatDTOS 同步参数
+     */
+    @Override
+    public void federalDeleteArtifatSync(List<SyncArtifatDTO> syncArtifatDTOS) {
+        if (syncArtifatDTOS== null || syncArtifatDTOS.isEmpty()) {
+            return;
+        }
+        for (SyncArtifatDTO syncArtifatDTO : syncArtifatDTOS) {
+            final String storageId = syncArtifatDTO.getStorageId();
+            final String repositoryId = syncArtifatDTO.getRepositoryId();
+            final String artifactPath = syncArtifatDTO.getArtifactPath();
+            log.info("federalDeleteArtifatSync 联邦策略ID：{} path {}:{}/{}...",syncArtifatDTO.getPolicyId(), storageId, repositoryId, artifactPath);
+            try {
+                final RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+                if (!Files.exists(repositoryPath)) {
+                    break;
+                }
+                artifactManagementService.delete(repositoryPath, false);
+            } catch (IOException e) {
+                log.error("federalDeleteArtifatSync 删除失败：联邦策略ID：{} path {}:{}/{}...",syncArtifatDTO.getPolicyId(), storageId, repositoryId, artifactPath);
+                log.error(e.getMessage(), e);
+            }
+        }
+    }
+
     @PostConstruct
     public void initData() {
         FederalPromotionPolicy federalPromotionPolicy = new FederalPromotionPolicy();
@@ -337,6 +382,7 @@ public class FederalPromotionPolicyServiceImpl implements FederalPromotionPolicy
         policy.setName(req.getName());
         policy.setIsEnabled(req.getIsEnabled());
         policy.setTag(req.getTag());
+        policy.setIsDeleteSync(req.getIsDeleteSync());
         policy.setCreatedTime(new Date());
         policy.setCreatedBy(req.getCreatedBy());
         return policy;
@@ -375,6 +421,7 @@ public class FederalPromotionPolicyServiceImpl implements FederalPromotionPolicy
         return new FederalPromotionPolicyRes().setPolicyId(entity.getPolicyId())
                 .setName(entity.getName())
                 .setIsEnabled(entity.getIsEnabled())
+                .setIsDeleteSync(entity.getIsDeleteSync())
                 .setTag(entity.getTag())
                 .setCreatedTime(entity.getCreatedTime())
                 .setUpdateTime(entity.getUpdateTime())
@@ -419,6 +466,7 @@ public class FederalPromotionPolicyServiceImpl implements FederalPromotionPolicy
                 .policyId(req.getPolicyId())
                 .name(req.getName())
                 .isEnabled(req.getIsEnabled())
+                .isDeleteSync(req.getIsDeleteSync())
                 .tag(req.getTag())
                 .updateTime(new Date())
                 .updatedBy(req.getUpdatedBy())

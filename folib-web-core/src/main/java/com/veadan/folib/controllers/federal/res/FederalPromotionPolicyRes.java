@@ -44,6 +44,11 @@ public class FederalPromotionPolicyRes {
     private String updatedBy;
 
     /**
+     * 是否删除同步
+     */
+    private Boolean isDeleteSync;
+
+    /**
      * 路径规则
      */
     private List<PromotionRuleRes> pathRules = new ArrayList<>();

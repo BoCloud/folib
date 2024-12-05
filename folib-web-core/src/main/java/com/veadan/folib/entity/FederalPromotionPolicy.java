@@ -54,6 +54,12 @@ public class FederalPromotionPolicy implements Serializable {
     @Column(name = "update_by")
     private String updatedBy;
 
+    /**
+     * 是否同步删除
+     */
+    @Column(name = "is_delete_sync")
+    private Boolean isDeleteSync;
+
     public void setPolicyId(Long policyId) {
         this.policyId = policyId;
     }
@@ -116,6 +122,14 @@ public class FederalPromotionPolicy implements Serializable {
 
     public String getUpdatedBy() {
         return updatedBy;
+    }
+
+    public void setIsDeleteSync(Boolean isDeleteSync) {
+        this.isDeleteSync = isDeleteSync;
+    }
+
+    public Boolean getIsDeleteSync() {
+        return isDeleteSync;
     }
 
 

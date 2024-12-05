@@ -9,8 +9,10 @@ import com.veadan.folib.configuration.UnionTargetRepositoryConfiguration;
 import com.veadan.folib.controllers.federal.res.FederalPromotionPolicyRes;
 import com.veadan.folib.controllers.federal.res.FederalRepositoryRes;
 import com.veadan.folib.controllers.federal.res.PromotionRuleRes;
+import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.policy.FederalPromotionPolicyService;
+import com.veadan.folib.domain.policy.dto.SyncArtifatDTO;
 import com.veadan.folib.enums.PromotionStatusEnum;
 import com.veadan.folib.enums.UnionRepositorySyncTypeEnum;
 import com.veadan.folib.event.artifact.ArtifactEvent;
@@ -20,16 +22,25 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.DockerFileSystem;
 import com.veadan.folib.scanner.entity.ScanRules;
 import com.veadan.folib.scanner.mapper.ScanRulesMapper;
+import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.ws.common.FolibWsRunManageUtil;
+import com.veadan.folib.ws.common.FolibWsRunManageV2;
+import com.veadan.folib.ws.server.Command;
+import com.veadan.folib.ws.server.WSMessageRequest;
+import com.veadan.folib.ws.server.WSMessageResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
+import javax.websocket.Session;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -54,6 +65,12 @@ public class ArtifactEventPromotionListener {
 
     @Inject
     private FederalPromotionPolicyService federalPromotionPolicyService;
+
+    @Autowired
+    private FolibWsRunManageV2 folibWsRunManageV2;
+    @Autowired
+    @Lazy
+    protected ConfigurationManagementService configurationManagementService;
 
     //@EventListener
     public void handle(final ArtifactEvent<RepositoryPath> event) {
@@ -163,6 +180,11 @@ public class ArtifactEventPromotionListener {
         return list.contains(artifactEventTypeEnum.getType());
     }
 
+    private boolean validateArtifactDeleteEvent(ArtifactEventTypeEnum artifactEventTypeEnum) {
+        List<Integer> list = Arrays.asList(ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType(), ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType());
+        return list.contains(artifactEventTypeEnum.getType());
+    }
+
     /**
      * 获取制品路径
      *
@@ -189,7 +211,7 @@ public class ArtifactEventPromotionListener {
             if (Objects.isNull(artifactEventTypeEnum)) {
                 return;
             }
-            if (validateArtifactEvent(artifactEventTypeEnum) && artifactComponent.layoutSupportsForPromotion(repositoryPath)) {
+            if ((validateArtifactEvent(artifactEventTypeEnum) || validateArtifactDeleteEvent(artifactEventTypeEnum)) && artifactComponent.layoutSupportsForPromotion(repositoryPath)) {
 
                 Repository repository = artifactComponent.getRepository(repositoryPath.getStorageId(), repositoryPath.getRepositoryId());
                 if (Objects.isNull(repository)) {
@@ -209,8 +231,8 @@ public class ArtifactEventPromotionListener {
                     log.debug("存储空间 [{}] 仓库 [{}] 未设置联邦仓库，无后续操作", storageId, repositoryId);
                     return;
                 }
-                for (FederalRepositoryRes federalRepositoryRes : repositoryRes){
-                    handleFederPromotionPolicy(repositoryPath, artifact,federalRepositoryRes);
+                for (FederalRepositoryRes federalRepositoryRes : repositoryRes) {
+                    handleFederPromotionPolicy(repositoryPath, artifact, federalRepositoryRes, artifactEventTypeEnum);
                 }
             }
         } catch (Exception ex) {
@@ -218,7 +240,7 @@ public class ArtifactEventPromotionListener {
         }
     }
 
-    public void handleFederPromotionPolicy(RepositoryPath repositoryPath , Artifact artifact,FederalRepositoryRes federalRepositoryRes){
+    public void handleFederPromotionPolicy(RepositoryPath repositoryPath, Artifact artifact, FederalRepositoryRes federalRepositoryRes, ArtifactEventTypeEnum artifactEventTypeEnum) {
         FederalPromotionPolicyRes policyDetail = federalPromotionPolicyService.policyDetail(federalRepositoryRes.getPolicyId());
         String storageId = federalRepositoryRes.getStorageId();
         String repositoryId = federalRepositoryRes.getRepositoryId();
@@ -234,11 +256,30 @@ public class ArtifactEventPromotionListener {
             return;
         }
         String artifactPath = getArtifactPath(repositoryPath, artifact);
-        //Integer syncType = unionRepositoryConfiguration.getSyncType();
-        boolean promotionFlag = false;
+        boolean promotionFlag = validatePath(repositoryPath, artifactPath, policyDetail);
+
+        boolean promotionMataDataFlag = validateMetadata(repositoryPath, artifact, artifactPath, policyDetail);
+        if (promotionFlag || promotionMataDataFlag) {
+            //联邦仓库晋级
+            if (validateArtifactEvent(artifactEventTypeEnum)) {
+                handleFederalPromotion(repositoryPath, artifact, policyDetail);
+                return;
+            }
+            //联邦仓库删除同步
+            if (policyDetail.getIsDeleteSync()  && validateArtifactDeleteEvent(artifactEventTypeEnum)) {
+                handleFederalDeleteSync(repositoryPath,artifact, policyDetail);
+            }
+
+        }
+    }
+
+    public boolean validatePath(RepositoryPath repositoryPath, String artifactPath, FederalPromotionPolicyRes policyDetail) {
+        boolean promotionFlag = true;
+
         if (!policyDetail.getPathRules().isEmpty()) {
+            String storageId = repositoryPath.getStorageId();
+            String repositoryId = repositoryPath.getRepositoryId();
             //制品路径
-            //Set<String> artifactPaths = unionRepositoryConfiguration.getArtifactPaths();
             Set<String> pathRules = policyDetail.getPathRules().stream().map(PromotionRuleRes::getAttributeValue).collect(Collectors.toSet());
             log.debug("存储空间 [{}] 仓库 [{}] 制品配置路径 [{}]，制品路径 [{}]", storageId, repositoryId, pathRules, artifactPath);
             promotionFlag = pathRules.stream().allMatch("*"::equals) || pathRules.stream().anyMatch(artifactPath::contains);
@@ -246,58 +287,98 @@ public class ArtifactEventPromotionListener {
                 //使用正则再匹配一次
                 promotionFlag = pathRules.stream().anyMatch(regex -> Pattern.matches(regex, artifactPath));
             }
-        } else {
-            promotionFlag = true;
         }
-        boolean promotionMataDataFlag = false;
+        return promotionFlag;
+    }
+
+    public boolean validateMetadata(RepositoryPath repositoryPath, Artifact artifact, String artifactPath, FederalPromotionPolicyRes policyDetail) {
+        boolean promotionMataDataFlag = true;
+
         if (!policyDetail.getMetadataRules().isEmpty()) {
+            String storageId = repositoryPath.getStorageId();
+            String repositoryId = repositoryPath.getRepositoryId();
             //元数据
             JSONObject metadataJson = artifactComponent.getMetadata(artifact);
             if (Objects.isNull(metadataJson)) {
                 log.debug("存储空间 [{}] 仓库 [{}] 制品 [{}] 未找到元数据，无后续操作", storageId, repositoryId, artifactPath);
-                return;
+                return promotionMataDataFlag;
             }
             for (PromotionRuleRes metadataRule : policyDetail.getMetadataRules()) {
                 String metadataKey = metadataRule.getAttributeKey();
                 String metadataValue = metadataRule.getAttributeValue();
                 String valueKey = "value";
-                log.debug("晋级策略编号：{} 存储空间 [{}] 仓库 [{}] 制品 [{}] 配置元数据key [{}] 配置元数据value [{}] 元数据 [{}]", federalRepositoryRes.getPolicyId(), storageId, repositoryId, artifactPath, metadataKey, metadataValue, metadataJson);
-                promotionFlag = metadataJson.containsKey(metadataKey) && metadataJson.getJSONObject(metadataKey).get(valueKey).equals(metadataValue);
-                if (promotionFlag) {
+                log.debug("晋级策略编号：{} 存储空间 [{}] 仓库 [{}] 制品 [{}] 配置元数据key [{}] 配置元数据value [{}] 元数据 [{}]", policyDetail.getPolicyId(), storageId, repositoryId, artifactPath, metadataKey, metadataValue, metadataJson);
+                promotionMataDataFlag = metadataJson.containsKey(metadataKey) && metadataJson.getJSONObject(metadataKey).get(valueKey).equals(metadataValue);
+                if (promotionMataDataFlag) {
                     break;
                 }
             }
-        } else {
-            promotionMataDataFlag = true;
         }
+        return promotionMataDataFlag;
+    }
 
-        if (promotionFlag || promotionMataDataFlag) {
-            boolean promotionBlock = artifactComponent.promotionBlock();
-            Example example = new Example(ScanRules.class);
-            example.createCriteria().andEqualTo("onScan", 1).andEqualTo("storage", storageId)
-                    .andEqualTo("repository", repositoryId);
-            List<ScanRules> scanRulesList = scanRulesMapper.selectByExample(example);
-            boolean scanEnable = CollectionUtils.isNotEmpty(scanRulesList);
-            log.debug("自动晋级阻断开关状态 [{}]，仓库扫描状态 [{}]", promotionBlock, scanEnable);
-            if (promotionBlock && scanEnable) {
-                //加入晋级
-                log.debug("晋级策略编号：{} 存储空间 [{}] 仓库 [{}] 制品 [{}] 满足初步晋级条件，晋级状态为待晋级",federalRepositoryRes.getPolicyId(), storageId, repositoryId, artifactPath);
-                for (FederalRepositoryRes targetRepository : targetRepositories){
-                    artifactComponent.handlerArtifactPromotion(targetRepository.getNodeName(), artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), PromotionStatusEnum.WAIT.getStatus());
-                }
-            } else {
-                //开始晋级
-                for (FederalRepositoryRes targetRepository : targetRepositories){
-                    try {
-                        ArtifactPromotionProvider artifactPromotionProvider = artifactPromotionProviderRegistry.getProvider(targetRepository.getNodeType());
-                        artifactPromotionProvider.promotion(repositoryPath, artifact.getArtifactPath(), targetRepository);
-                    } catch (Exception ex) {
-                        log.error("晋级策略编号：{} 存储空间 [{}] 仓库 [{}] 处理自动晋级，repositoryPath [{}] 联邦仓库 [{}] 错误 [{}]", federalRepositoryRes.getPolicyId(),storageId, repositoryId, repositoryPath, JSONObject.toJSONString(targetRepository), ExceptionUtils.getStackTrace(ex));
-                        artifactComponent.handlerArtifactPromotion(targetRepository.getNodeName(), artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), PromotionStatusEnum.FAIL.getStatus());
-                    }
+    public void handleFederalPromotion(RepositoryPath repositoryPath, Artifact artifact, FederalPromotionPolicyRes policyDetail) {
+        boolean promotionBlock = artifactComponent.promotionBlock();
+        String artifactPath = getArtifactPath(repositoryPath, artifact);
+        Example example = new Example(ScanRules.class);
+        example.createCriteria().andEqualTo("onScan", 1).andEqualTo("storage", repositoryPath.getStorageId())
+                .andEqualTo("repository", repositoryPath.getRepositoryId());
+        List<ScanRules> scanRulesList = scanRulesMapper.selectByExample(example);
+        boolean scanEnable = CollectionUtils.isNotEmpty(scanRulesList);
+        List<FederalRepositoryRes> targetRepositories = policyDetail.getTargetRepositories();
+        log.debug("自动晋级阻断开关状态 [{}]，仓库扫描状态 [{}]", promotionBlock, scanEnable);
+        if (promotionBlock && scanEnable) {
+            //加入晋级
+            log.debug("晋级策略编号：{} 存储空间 [{}] 仓库 [{}] 制品 [{}] 满足初步晋级条件，晋级状态为待晋级", policyDetail.getPolicyId(), repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), artifactPath);
+            for (FederalRepositoryRes targetRepository : targetRepositories) {
+                artifactComponent.handlerArtifactPromotion(targetRepository.getNodeName(), artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), PromotionStatusEnum.WAIT.getStatus());
+            }
+        } else {
+            //开始晋级
+            for (FederalRepositoryRes targetRepository : targetRepositories) {
+                try {
+                    ArtifactPromotionProvider artifactPromotionProvider = artifactPromotionProviderRegistry.getProvider(targetRepository.getNodeType());
+                    artifactPromotionProvider.promotion(repositoryPath, artifact.getArtifactPath(), targetRepository);
+                } catch (Exception ex) {
+                    log.error("晋级策略编号：{} 存储空间 [{}] 仓库 [{}] 处理自动晋级，repositoryPath [{}] 联邦仓库 [{}] 错误 [{}]", policyDetail.getPolicyId(), repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), repositoryPath, JSONObject.toJSONString(targetRepository), ExceptionUtils.getStackTrace(ex));
+                    artifactComponent.handlerArtifactPromotion(targetRepository.getNodeName(), artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), PromotionStatusEnum.FAIL.getStatus());
                 }
             }
         }
     }
 
+    public void handleFederalDeleteSync(RepositoryPath repositoryPath ,Artifact artifact, FederalPromotionPolicyRes policyDetail) {
+        Map<String, ClusterDispatchNodeDto> map = configurationManagementService.
+                getMutableConfigurationClone().getClusterDispatchNode();
+        if (MapUtils.isEmpty(map)) {
+            return;
+        }
+        FederalRepositoryRes federalRepositoryRes = policyDetail.getTargetRepositories().get(0);
+        ClusterDispatchNodeDto nodeDto = map.get(federalRepositoryRes.getNodeName());
+        String targetHostName = FolibWsRunManageUtil.getSimpleTargetHostName(nodeDto);
+        Session session = folibWsRunManageV2.getSession(targetHostName);
+        nodeDto.setWsClientOnline(session != null && session.isOpen());
+
+
+        WSMessageRequest wsMessageRequest = null;
+        WSMessageResponse messageResponse = null;
+
+        log.info("联邦仓库策略同步删除 晋级策略编号：{} 存储空间 [{}] 仓库 [{}]",policyDetail.getPolicyId(), repositoryPath.getStorageId(), repositoryPath.getRepositoryId());
+        List<SyncArtifatDTO> artifatDTOList = policyDetail.getTargetRepositories().stream()
+                .map(item -> new SyncArtifatDTO(item.getPolicyId(),
+                        item.getStorageId(),
+                        item.getRepositoryId(),
+                        artifact.getArtifactPath())
+                ).collect(Collectors.toList());
+
+        try {
+            //查询请求参数
+            wsMessageRequest = new WSMessageRequest(Command.FEDERAL_DELETE_SYNC, artifatDTOList);
+            messageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
+            log.info("联邦仓库策略同步删除 发送请求,请求参数:{}", JSONObject.toJSONString(artifatDTOList));
+            log.debug("联邦仓库策略同步删除  result,wsMessageRequest:{},messageResponse:{}", wsMessageRequest, messageResponse);
+        } catch (Exception e) {
+            log.error("联邦仓库策略同步删除 fail,wsMessageRequest:{}", wsMessageRequest, e);
+        }
+    }
 }

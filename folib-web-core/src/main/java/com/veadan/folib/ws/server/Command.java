@@ -14,5 +14,7 @@ public enum Command {
     CHECK_TARGET_NODE_REPOSITORY,
     UNKNOWN,
     SERVER_INFO,
-    USER_AUTH_SYNC;
+    USER_AUTH_SYNC,
+    FEDERAL_DELETE_SYNC;
+
 }

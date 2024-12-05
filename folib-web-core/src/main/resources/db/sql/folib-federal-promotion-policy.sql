@@ -10,6 +10,7 @@ create table federal_promotion_policy
     update_time  DATETIME   DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     created_by   varchar(32) null comment '创建人',
     updated_by   varchar(32) null comment '更新人',
+    is_delete_sync   VARCHAR(1) DEFAULT 0 COMMENT '是否开启删除同步',
     PRIMARY KEY (policy_id),
     KEY          idx_is_enabled (is_enabled),
     KEY          idx_created_time (created_time),

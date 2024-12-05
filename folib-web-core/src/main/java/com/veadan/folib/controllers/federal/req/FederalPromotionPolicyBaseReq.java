@@ -22,4 +22,9 @@ public class FederalPromotionPolicyBaseReq {
      * 标签[default:标记为老数据适配，latest:标记新建的]
      */
     private String tag;
+
+    /**
+     * 是否同步删除
+     */
+    private Boolean isDeleteSync;
 }

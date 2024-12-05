@@ -1,7 +1,7 @@
 export default {
     "PolicyId": "policy id",
     "PolicyName": "policy name",
-    "IsEnabled": "is Enabled",
+    "IsEnabled": "Whether or not to enable the federal promotion strategy",
     "CreatedTime": "created Time",
     "UpdateTime": "update Time",
     "CreatedBy": "created By",
@@ -27,5 +27,6 @@ export default {
     'SelectedRepositories':'Selected repositories',
     'OperationSuccessful': 'Operation successful',
     'OperationFailure':'Operation Failure',
+    'IsDeleteSync':'Whether to enable delete synchronization',
     
 }

@@ -95,7 +95,7 @@
                               :rules="federalPromotionPolicyFormRules"
                 >
                     <a-row :gutter="24">
-                        <a-col :md="12" :sm="24">
+                        <a-col :md="10" :sm="24">
                             <a-form-model-item :label="$t('FederalPromotionPolicy.PolicyName')"
                                                class="no-colon"
                                                prop="name"
@@ -107,12 +107,18 @@
                             </a-form-model-item>
 
                         </a-col>
-                        <a-col :md="12" :sm="24">
+                        <a-col :md="6" :sm="24">
                             <a-form-model-item  :label="$t('FederalPromotionPolicy.IsEnabled')"
                                                style="padding-bottom: 0;margin-bottom: 0">
                                 <a-switch v-model="federalPromotionPolicyForm.isEnabled" />
                             </a-form-model-item>
                         </a-col>
+                      <a-col :md="6" :sm="24">
+                        <a-form-model-item  :label="$t('FederalPromotionPolicy.IsDeleteSync')"
+                                            style="padding-bottom: 0;margin-bottom: 0">
+                          <a-switch v-model="federalPromotionPolicyForm.isDeleteSync" />
+                        </a-form-model-item>
+                      </a-col>
                     </a-row>
 
                     <a-row :gutter="24">
@@ -362,38 +368,7 @@ export default {
 
         return {
 
-            federalPromotionPolicyData: [
-                {
-                    key: '1',
-                    name: 'John Brown',
-                    isEnabled: 32,
-                    sourceRepositories: 'New York No. 1 Lake Park, New York No. 1 Lake Park',
-                    targetRepositories: 'New York No. 1 Lake Park, New York No. 1 Lake Park',
-                    createdTime: '2021-08-09 10:10:10',
-                    createdBy: 'Joe Black',
-                    tags: ['nice', 'developer'],
-                },
-                {
-                    key: '2',
-                    name: 'Jim Green',
-                    isEnabled: 42,
-                    sourceRepositories: 'London No. 2 Lake Park, London No. 2 Lake Park',
-                    targetRepositories: 'New York No. 1 Lake Park, New York No. 1 Lake Park',
-                    createdTime: '2021-08-09 10:10:10',
-                    createdBy: 'Joe Black',
-                    tags: ['loser'],
-                },
-                {
-                    key: '3',
-                    name: 'Joe Black',
-                    isEnabled: 32,
-                    sourceRepositories: 'Sidney No. 1 Lake Park, Sidney No. 1 Lake Park',
-                    targetRepositories: 'New York No. 1 Lake Park, New York No. 1 Lake Park',
-                    createdTime: '2021-08-09 10:10:10',
-                    createdBy: 'Joe Black',
-                    tags: ['cool', 'teacher'],
-                },
-            ],
+            federalPromotionPolicyData: [],
             columns: [
                 {
                     title: '策略名',
@@ -499,6 +474,7 @@ export default {
                     }
                 ]],
                 isEnabled: false,
+                isDeleteSync: false,
                 sourceRepositories: [],
                 targetRepositories: [],
                 nodeType: 1,
@@ -543,7 +519,7 @@ export default {
         'layout': function (newval,oldVal) {
           if(this.federalPromotionPolicyForm.nodeType === 1){
             this.getTargetRepositories(this.type, newval, this.policy);
-            if(this.targetNodesOptions){
+            if(this.targetNodesOptions && this.targetNodesOptions.length>0){
               this.handleDefNode({ value: this.targetNodesOptions[0].key,
                 key: this.targetNodesOptions[0].key});
               this.handleTargetRepositories(this.targetNodesOptions[0].key);
@@ -555,7 +531,7 @@ export default {
         'policy': function (newval,oldVal) {
           if(this.federalPromotionPolicyForm.nodeType === 1){
             this.getTargetRepositories(this.type, this.layout, newval);
-            if(this.targetNodesOptions){
+            if(this.targetNodesOptions && this.targetNodesOptions.length>0){
               this.handleDefNode({ value: this.targetNodesOptions[0].key,
                 key: this.targetNodesOptions[0].key});
               this.handleTargetRepositories(this.targetNodesOptions[0].key);
@@ -567,9 +543,7 @@ export default {
           this.subLayout= undefined;
           this.layout= undefined;
           this.policy=undefined;
-          console.log("aaa",this.layout)
         }
-        console.log("aaa6",this.layout)
       },
 
     },
@@ -676,7 +650,6 @@ export default {
                 })
 
               if(this.targetNodesOptions){
-                console.log(this.targetNodesOptions)
                 this.handleDefNode({ value: this.targetNodesOptions[0].key,
                   key: this.targetNodesOptions[0].key});
                 this.handleTargetRepositories(this.targetNodesOptions[0].key);
@@ -805,9 +778,6 @@ export default {
         },
 
         targetRepositoriesOnChange(nextTargetKeys, direction, moveKeys) {
-          console.log('nextTargetKeys', nextTargetKeys)
-          console.log('direction', direction)
-          console.log('moveKeys', moveKeys)
           this.selectedTargetRepositoriesKeys = nextTargetKeys;
           if (this.layout === undefined && nextTargetKeys.length>0) {
             if (nextTargetKeys.length > 0) {
@@ -850,6 +820,7 @@ export default {
                     let data = {}
                     data.name= dataForm.name;
                     data.isEnabled = dataForm.isEnabled;
+                    data.isDeleteSync = dataForm.isDeleteSync;
                     data.sourceRepositories = this.selectedSourceRepositoriesKeys.map(item => {
                         return {
                             storageId: item.split(':')[0],
@@ -885,7 +856,7 @@ export default {
                     });
                     if(dataForm.policyId){
                         data.policyId = dataForm.policyId
-                        console.log(data)
+
                         federalPromotionPolicyEdit(data).then(res => {
                             this.successMsg(this.$t('FederalPromotionPolicy.OperationSuccessful'))
                             this.queryFederalPromotionPolicy();
@@ -940,6 +911,7 @@ export default {
                     }
                 ]],
                 isEnabled: false,
+                isDeleteSync: false,
                 sourceRepositories: [],
                 targetRepositories: [],
             };
@@ -963,7 +935,6 @@ export default {
         },
 
         federalPromotionPolicyDelete(item){
-            console.log(item)
             federalPromotionPolicyDelete(item.policyId).then(res => {
                 this.successMsg(this.$t('FederalPromotionPolicy.OperationSuccessful'))
                 this.queryFederalPromotionPolicy();
@@ -984,6 +955,7 @@ export default {
                 this.federalPromotionPolicyForm.policyId = res.policyId;
                 this.federalPromotionPolicyForm.name = res.name;
                 this.federalPromotionPolicyForm.isEnabled = res.isEnabled;
+                this.federalPromotionPolicyForm.isDeleteSync = res.isDeleteSync;
                 if (res.pathRules && res.pathRules.length > 0) {
                     this.federalPromotionPolicyForm.paths = res.pathRules.map(path => {
                         return {

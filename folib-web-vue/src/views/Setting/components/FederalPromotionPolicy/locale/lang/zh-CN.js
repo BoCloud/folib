@@ -1,7 +1,7 @@
 export default {
     "PolicyId": "策略编号",
     "PolicyName": "策略名",
-    "IsEnabled": "是否开启",
+    "IsEnabled": "是否启用联邦晋级策略",
     "CreatedTime": "创建时间",
     "UpdateTime": "修改时间",
     "CreatedBy": "创建人",
@@ -29,6 +29,7 @@ export default {
     'SelectedRepositories':'已选择的仓库',
     'OperationSuccessful': '操作成功',
     'OperationFailure':'操作失败',
+    'IsDeleteSync':'是否开启删除同步',
 
     
 }

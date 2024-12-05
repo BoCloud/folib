@@ -17,4 +17,5 @@ public class FederalPromotionPolicyQueryReq {
     private Integer pageNumber;
     private Integer pageSize;
 
+
 }

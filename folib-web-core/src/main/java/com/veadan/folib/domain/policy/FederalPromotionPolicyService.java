@@ -5,6 +5,7 @@ import com.veadan.folib.controllers.federal.req.FederalPromotionPolicyQueryReq;
 import com.veadan.folib.controllers.federal.req.FederalPromotionPolicyUpdateReq;
 import com.veadan.folib.controllers.federal.res.FederalPromotionPolicyRes;
 import com.veadan.folib.controllers.federal.res.FederalRepositoryRes;
+import com.veadan.folib.domain.policy.dto.SyncArtifatDTO;
 import com.veadan.folib.entity.FederalPromotionPolicy;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Page;
@@ -61,4 +62,10 @@ public interface FederalPromotionPolicyService {
      * @return FederalRepositoryRes
      */
     List<FederalRepositoryRes> queryByStorageIdAndRepositoryId(String storageId, String repositoryId);
+
+    /**
+     * 联邦制品删除同步
+     * @param syncArtifatDTOS 同步参数
+     */
+    void federalDeleteArtifatSync(List<SyncArtifatDTO> syncArtifatDTOS);
 }

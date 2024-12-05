@@ -10,12 +10,13 @@
         <result property="updateTime" column="update_time"/>
         <result property="createdBy" column="created_by"/>
         <result property="updatedBy" column="updated_by"/>
+        <result property="isDeleteSync" column="is_delete_sync"/>
     </resultMap>
 
     <!-- 通过ID查询单条数据 -->
     <select id="queryById" resultMap="FederalPromotionPolicyMap">
         select
-        policy_id,name,is_enabled,tag,created_time,update_time,created_by,updated_by
+        policy_id,name,is_enabled,tag,created_time,update_time,created_by,updated_by,is_delete_sync
         from federal_promotion_policy
         where policy_id = #{policyId}
     </select>
@@ -48,33 +49,36 @@
             <if test="updatedBy != null and updatedBy != ''">
                 and updated_by = #{updatedBy}
             </if>
+            <if test="isDeleteSync != null">
+                and is_delete_sync = #{isDeleteSync}
+            </if>
         </where>
     </select>
 
     <!--新增数据-->
     <insert id="insert" keyProperty="policyId" useGeneratedKeys="true" keyColumn="policy_id">
         insert into
-        federal_promotion_policy(policy_id,name,is_enabled,tag,created_time,update_time,created_by,updated_by)
-        values (#{policyId},#{name},#{isEnabled},#{tag},#{createdTime},#{updateTime},#{createdBy},#{updatedBy})
+        federal_promotion_policy(policy_id,name,is_enabled,tag,created_time,update_time,created_by,updated_by,is_delete_sync)
+        values (#{policyId},#{name},#{isEnabled},#{tag},#{createdTime},#{updateTime},#{createdBy},#{updatedBy},#{isDeleteSync})
     </insert>
 
     <!-- 批量新增数据 -->
     <insert id="insertBatch" keyProperty="policyId" useGeneratedKeys="true" keyColumn="policy_id">
         insert into
-        federal_promotion_policy(policy_id,name,is_enabled,tag,created_time,update_time,created_by,updated_by)
+        federal_promotion_policy(policy_id,name,is_enabled,tag,created_time,update_time,created_by,updated_by,is_delete_sync)
         values
         <foreach collection="entities" item="entity" separator=",">
-            (#{entity.policyId},#{entity.name},#{entity.isEnabled},#{entity.tag},#{entity.createdTime},#{entity.updateTime},#{entity.createdBy},#{entity.updatedBy})
+            (#{entity.policyId},#{entity.name},#{entity.isEnabled},#{entity.tag},#{entity.createdTime},#{entity.updateTime},#{entity.createdBy},#{entity.updatedBy},#{entity.isDeleteSync})
         </foreach>
     </insert>
 
     <!-- 批量新增或按主键更新数据 -->
     <insert id="insertOrUpdateBatch" keyProperty="policyId" useGeneratedKeys="true" keyColumn="policy_id">
         insert into
-        federal_promotion_policy(policy_id,name,is_enabled,tag,created_time,update_time,created_by,updated_by)
+        federal_promotion_policy(policy_id,name,is_enabled,tag,created_time,update_time,created_by,updated_by,is_delete_sync)
         values
         <foreach collection="entities" item="entity" separator=",">
-            (#{entity.policyId},#{entity.name},#{entity.isEnabled},#{entity.tag},#{entity.createdTime},#{entity.updateTime},#{entity.createdBy},#{entity.updatedBy})
+            (#{entity.policyId},#{entity.name},#{entity.isEnabled},#{entity.tag},#{entity.createdTime},#{entity.updateTime},#{entity.createdBy},#{entity.updatedBy},#{entity.isDeleteSync})
         </foreach>
         on duplicate key update
         policy_id=values(policy_id),
@@ -84,7 +88,8 @@
         created_time=values(created_time),
         update_time=values(update_time),
         created_by=values(created_by),
-        updated_by=values(updated_by)
+        updated_by=values(updated_by),
+        is_delete_sync=values(is_delete_sync)
     </insert>
 
     <!-- 更新数据 -->
@@ -115,6 +120,9 @@
             <if test="updatedBy != null and updatedBy != ''">
                 updated_by = #{updatedBy},
             </if>
+            <if test="isDeleteSync != null">
+                is_delete_sync = #{isDeleteSync},
+            </if>
         </set>
         where policy_id = #{policyId}
     </update>
@@ -136,7 +144,7 @@
     <!--分页查询指定行数据-->
     <select id="queryAllByLimit" resultMap="FederalPromotionPolicyMap">
         select
-        policy_id,name,is_enabled,tag,created_time,update_time,created_by,updated_by
+        policy_id,name,is_enabled,tag,created_time,update_time,created_by,updated_by,is_delete_sync
         from federal_promotion_policy
         <where>
             <if test="policy.policyId != null and policy.policyId != ''">
@@ -162,6 +170,9 @@
             </if>
             <if test="policy.updatedBy != null and policy.updatedBy != ''">
                 and updated_by = #{policy.updatedBy}
+            </if>
+            <if test="policy.isDeleteSync != null">
+                and is_delete_sync = #{policy.isDeleteSync}
             </if>
         </where>
         limit #{pageable.offset}, #{pageable.pageSize}
