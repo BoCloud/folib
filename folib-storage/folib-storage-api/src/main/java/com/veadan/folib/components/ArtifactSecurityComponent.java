@@ -12,6 +12,7 @@ import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.security.AnonymousAccessModel;
 import com.veadan.folib.users.security.AuthoritiesProvider;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import com.veadan.folib.util.UserUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -22,7 +23,10 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * @author leipenghui
@@ -43,6 +47,7 @@ public class ArtifactSecurityComponent {
     public boolean validatePrivileges(RepositoryPath repositoryPath, String authority) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            log.debug("当前线程：[{}] 用户：[{}]", Thread.currentThread().getName(), UserUtils.getUsername());
             if (Objects.isNull(authentication)) {
                 return false;
             }
@@ -87,6 +92,10 @@ public class ArtifactSecurityComponent {
     }
 
     public boolean anonymousValidatePrivilege(RepositoryPath repositoryPath) {
+        String threadName = Thread.currentThread().getName(), ignoreThreadName = "asyncWsCommand";
+        if (threadName.contains(ignoreThreadName)) {
+            return false;
+        }
         String repositoryType = repositoryPath.getRepository().getType();
         if (RepositoryTypeEnum.HOSTED.getType().equals(repositoryType)) {
             return true;

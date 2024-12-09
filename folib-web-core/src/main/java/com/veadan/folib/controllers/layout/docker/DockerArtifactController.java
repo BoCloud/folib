@@ -41,6 +41,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -115,6 +116,9 @@ public class DockerArtifactController extends BaseArtifactController {
 
     @Inject
     private StorageManagementService storageManagementService;
+
+    @Value("${server.ssl.enabled}")
+    private boolean sslEnabled;
 
     /**
      * 文件进度
@@ -1148,7 +1152,7 @@ public class DockerArtifactController extends BaseArtifactController {
 
     private void setTokenUrl(HttpServletRequest request, HttpServletResponse response) {
         String originalProtocol = request.getHeader("X-Forwarded-Proto"), https = "https";
-        if (https.equals(originalProtocol)) {
+        if (sslEnabled || https.equals(originalProtocol)) {
             // 使用HTTPS协议
             response.setHeader("WWW-Authenticate", String.format("Bearer realm=\"%stoken\",service=\"%s\"", "https://" + request.getServerName() + "/v2/", request.getServerName()));
         } else {
