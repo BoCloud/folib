@@ -3,6 +3,7 @@ package com.veadan.folib.cron.jobs.cleanup;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -11,6 +12,8 @@ import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.util.RepositoryPathUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.stereotype.Component;
 
@@ -62,7 +65,7 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
     }
 
     @Override
-    public void cleanup(String storageId, String repositoryId, String path, String storageDay, String storageCondition) throws Exception {
+    public void cleanup(String storageId, String repositoryId, String path, String storageDay, String storageCondition, Map<String, String> cleanupArtifactPathMap) throws Exception {
         try {
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
             String blobs = "blobs", manifest = "manifest", tag = "tag";
@@ -81,10 +84,10 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
                     log.info("Cleanup artifact job storageId [{}] repositoryId [{}] storageCondition [{}] storageDay [{}] imagePath [{}]", storageId, repositoryId, storageCondition, storageDay, imageRepositoryPath);
                     if (tag.equalsIgnoreCase(storageCondition)) {
                         //按照tag保留
-                        handlerTag(storageId, repositoryId, storageDay, storageCondition, imageRepositoryPath, excludeList, resultList);
+                        handlerTag(storageId, repositoryId, storageDay, storageCondition, imageRepositoryPath, excludeList, resultList, cleanupArtifactPathMap);
                     } else {
                         //按照天数保留
-                        handlerDay(storageId, repositoryId, storageDay, storageCondition, imageRepositoryPath, excludeList, resultList);
+                        handlerDay(storageId, repositoryId, storageDay, storageCondition, imageRepositoryPath, excludeList, resultList, cleanupArtifactPathMap);
                     }
                 } catch (Exception ex) {
                     log.error("Cleanup artifact job storageId [{}] repositoryId [{}] storageCondition [{}] storageDay [{}] path [{}] error [{}]", storageId, repositoryId, storageCondition, storageDay, path, ExceptionUtils.getStackTrace(ex));
@@ -98,8 +101,8 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
         }
     }
 
-    private void handlerTag(String storageId, String repositoryId, String storageDay, String storageCondition, RepositoryPath imageRepositoryPath, List<String> excludeList, List<Integer> resultList) throws Exception {
-        Long storageQuantity = Long.parseLong(storageDay);
+    private void handlerTag(String storageId, String repositoryId, String storageDay, String storageCondition, RepositoryPath imageRepositoryPath, List<String> excludeList, List<Integer> resultList, Map<String, String> cleanupArtifactPathMap) throws Exception {
+        Long storageQuantity = Long.parseLong(getCleanupDay(RepositoryFiles.relativizePath(imageRepositoryPath), storageDay, cleanupArtifactPathMap));
         List<Path> tagRepositoryPathList = getTags(imageRepositoryPath, excludeList);
         log.info("Cleanup artifact job storageId [{}] repositoryId [{}] storageCondition [{}] storage quantity [{}] imagePath [{}] tag quantity [{}] tags [{}]", storageId, repositoryId, storageCondition, storageQuantity, imageRepositoryPath, tagRepositoryPathList.size(), tagRepositoryPathList.stream().map(p -> p.getFileName().toString()).collect(Collectors.joining(",")));
         if (CollectionUtils.isEmpty(tagRepositoryPathList) || tagRepositoryPathList.size() <= storageQuantity) {
@@ -133,7 +136,7 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
             Long currentTagSize = getTagSize(imageRepositoryPath, excludeList);
             log.info("Cleanup artifact job storageId [{}] repositoryId [{}] storageCondition [{}] storage quantity [{}] imagePath [{}] tag [{}] currentTagSize [{}]", storageId, repositoryId, storageCondition, storageQuantity, imageRepositoryPath, manifestEntry.getKey(), currentTagSize);
             if (currentTagSize > storageQuantity) {
-                Integer result = cleanupArtifact(manifestEntry.getKey(), storageId, repositoryId, MINUS_ONE.toString());
+                Integer result = cleanupArtifact(manifestEntry.getKey(), storageId, repositoryId, MINUS_ONE.toString(), null);
                 if (Objects.nonNull(result)) {
                     resultList.add(result);
                 }
@@ -144,7 +147,7 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
         }
     }
 
-    private void handlerDay(String storageId, String repositoryId, String storageDay, String storageCondition, RepositoryPath imageRepositoryPath, List<String> excludeList, List<Integer> resultList) throws Exception {
+    private void handlerDay(String storageId, String repositoryId, String storageDay, String storageCondition, RepositoryPath imageRepositoryPath, List<String> excludeList, List<Integer> resultList, Map<String, String> cleanupArtifactPathMap) throws Exception {
         List<Path> tagRepositoryPathList = getTags(imageRepositoryPath, excludeList);
         log.info("Cleanup artifact job storageId [{}] repositoryId [{}] storageCondition [{}] storage quantity [{}] imagePath [{}] tags [{}]", storageId, repositoryId, storageCondition, storageDay, imageRepositoryPath, tagRepositoryPathList.stream().map(p -> p.getFileName().toString()).collect(Collectors.joining(",")));
         if (CollectionUtils.isEmpty(tagRepositoryPathList)) {
@@ -155,7 +158,7 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
             tagRepositoryPath = (RepositoryPath) tagPath;
             log.info("Cleanup artifact job storageId [{}] repositoryId [{}] storageCondition [{}] storageDay [{}] imagePath [{}] tagPath [{}]", storageId, repositoryId, storageCondition, storageDay, imageRepositoryPath, tagPath);
             try {
-                Integer result = cleanupArtifact(getManifestPath(tagRepositoryPath), storageId, repositoryId, storageDay);
+                Integer result = cleanupArtifact(getManifestPath(tagRepositoryPath), storageId, repositoryId, storageDay, cleanupArtifactPathMap);
                 if (Objects.nonNull(result)) {
                     resultList.add(result);
                 }
@@ -165,12 +168,13 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
         }
     }
 
-    private Integer cleanupArtifact(RepositoryPath repositoryPath, String storageId, String repositoryId, String storageDay) throws Exception {
-        long tempDay = Long.parseLong(storageDay);
+    private Integer cleanupArtifact(RepositoryPath repositoryPath, String storageId, String repositoryId, String storageDay, Map<String, String> cleanupArtifactPathMap) throws Exception {
         if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
             log.warn("Cleanup storageId [{}] repositoryId [{}] path [{}] file not exists", storageId, repositoryId, repositoryPath);
             return null;
         }
+        String artifactPath = RepositoryFiles.relativizePath(repositoryPath);
+        long cleanupDay = Long.parseLong(getCleanupDay(artifactPath, storageDay, cleanupArtifactPathMap));
         if (Files.isDirectory(repositoryPath)) {
             log.warn("Cleanup storageId [{}] repositoryId [{}] path [{}] is directory skip", storageId, repositoryId, repositoryPath);
             return null;
@@ -216,8 +220,8 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
         //获取仓库下制品最近使用时间做比较
         LocalDateTime tagTime = artifact.getLastUsed();
         LocalDateTime manifestTime = manifestArtifact.getLastUsed();
-        log.info("Cleanup docker storageId [{}] repositoryId [{}] storageDay [{}] path [{}] time [{}] manifest time [{}] current time [{}]", storageId, repositoryId, storageDay, artifact.getArtifactPath(), tagTime, manifestTime, LocalDateTime.now());
-        boolean canDelete = (!LocalDateTime.now().minusDays(tempDay).isBefore(tagTime) && !LocalDateTime.now().minusDays(tempDay).isBefore(manifestTime)) || MINUS_ONE.equals(tempDay);
+        log.info("Cleanup docker storageId [{}] repositoryId [{}] storageDay [{}] path [{}] time [{}] manifest time [{}] current time [{}]", storageId, repositoryId, cleanupDay, artifact.getArtifactPath(), tagTime, manifestTime, LocalDateTime.now());
+        boolean canDelete = (!LocalDateTime.now().minusDays(cleanupDay).isBefore(tagTime) && !LocalDateTime.now().minusDays(cleanupDay).isBefore(manifestTime)) || MINUS_ONE.equals(cleanupDay);
         if (canDelete) {
             try {
                 RepositoryPath deleteRepositoryPath = repositoryPath.getParent();
@@ -322,5 +326,27 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
             log.info("Tag [{}] manifestRepositoryPath [{}]", repositoryPath, path);
         }
         return path;
+    }
+
+    private String getCleanupDay(String artifactPath, String cleanupDay, Map<String, String> cleanupArtifactPathMap) {
+        if (MINUS_ONE.toString().equals(cleanupDay)) {
+            return cleanupDay;
+        }
+        if (MapUtils.isEmpty(cleanupArtifactPathMap)) {
+            return cleanupDay;
+        }
+        String cleanupArtifactPath, cleanupArtifactPathValue, cleanupArtifactPathPrefix;
+        for (Map.Entry<String, String> entry : cleanupArtifactPathMap.entrySet()) {
+            cleanupArtifactPath = entry.getKey();
+            cleanupArtifactPathValue = entry.getValue();
+            if (StringUtils.isBlank(cleanupArtifactPath) || StringUtils.isBlank(cleanupArtifactPathValue)) {
+                continue;
+            }
+            cleanupArtifactPathPrefix = cleanupArtifactPath + GlobalConstants.SEPARATOR;
+            if (artifactPath.equals(cleanupArtifactPath) || artifactPath.startsWith(cleanupArtifactPathPrefix) || artifactPath.matches(cleanupArtifactPath)) {
+                return entry.getValue();
+            }
+        }
+        return cleanupDay;
     }
 }
