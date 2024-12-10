@@ -1,5 +1,6 @@
 package com.veadan.folib.cron.jobs.cleanup;
 
+import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -102,7 +103,7 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
     }
 
     private void handlerTag(String storageId, String repositoryId, String storageDay, String storageCondition, RepositoryPath imageRepositoryPath, List<String> excludeList, List<Integer> resultList, Map<String, String> cleanupArtifactPathMap) throws Exception {
-        Long storageQuantity = Long.parseLong(getCleanupDay(RepositoryFiles.relativizePath(imageRepositoryPath), storageDay, cleanupArtifactPathMap));
+        Long storageQuantity = Long.parseLong(getCleanupDay(RepositoryFiles.relativizePath(imageRepositoryPath), "", storageDay, cleanupArtifactPathMap));
         List<Path> tagRepositoryPathList = getTags(imageRepositoryPath, excludeList);
         log.info("Cleanup artifact job storageId [{}] repositoryId [{}] storageCondition [{}] storage quantity [{}] imagePath [{}] tag quantity [{}] tags [{}]", storageId, repositoryId, storageCondition, storageQuantity, imageRepositoryPath, tagRepositoryPathList.size(), tagRepositoryPathList.stream().map(p -> p.getFileName().toString()).collect(Collectors.joining(",")));
         if (CollectionUtils.isEmpty(tagRepositoryPathList) || tagRepositoryPathList.size() <= storageQuantity) {
@@ -174,7 +175,6 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
             return null;
         }
         String artifactPath = RepositoryFiles.relativizePath(repositoryPath);
-        long cleanupDay = Long.parseLong(getCleanupDay(artifactPath, storageDay, cleanupArtifactPathMap));
         if (Files.isDirectory(repositoryPath)) {
             log.warn("Cleanup storageId [{}] repositoryId [{}] path [{}] is directory skip", storageId, repositoryId, repositoryPath);
             return null;
@@ -217,6 +217,7 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
             log.warn("Cleanup storageId [{}] repositoryId [{}] path [{}] manifest artifact not found", storageId, repositoryId, manifestRepositoryPath.toString());
             return null;
         }
+        long cleanupDay = Long.parseLong(getCleanupDay(artifactPath, artifact.getMetadata(), storageDay, cleanupArtifactPathMap));
         //获取仓库下制品最近使用时间做比较
         LocalDateTime tagTime = artifact.getLastUsed();
         LocalDateTime manifestTime = manifestArtifact.getLastUsed();
@@ -328,9 +329,23 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
         return path;
     }
 
-    private String getCleanupDay(String artifactPath, String cleanupDay, Map<String, String> cleanupArtifactPathMap) {
+    private String getCleanupDay(String artifactPath, String metadata, String cleanupDay, Map<String, String> cleanupArtifactPathMap) {
         if (MINUS_ONE.toString().equals(cleanupDay)) {
             return cleanupDay;
+        }
+        if (StringUtils.isNotBlank(metadata) && JSONUtil.isJson(metadata)) {
+            JSONObject metadataJson = JSONObject.parseObject(metadata);
+            if (metadataJson.containsKey(GlobalConstants.ARTIFACT_LIFE_CYCLE_KEY)) {
+                String artifactLifeCycleData = metadataJson.getString(GlobalConstants.ARTIFACT_LIFE_CYCLE_KEY);
+                if (StringUtils.isNotBlank(artifactLifeCycleData) && JSONUtil.isJson(artifactLifeCycleData)) {
+                    JSONObject artifactLifeCycleJson = JSONObject.parseObject(artifactLifeCycleData);
+                    String artifactLifeCycle = artifactLifeCycleJson.getString("value");
+                    if (StringUtils.isNotBlank(artifactLifeCycle) && StringUtils.isNumeric(artifactLifeCycle)) {
+                        //制品元数据级别生命周期
+                        return artifactLifeCycle;
+                    }
+                }
+            }
         }
         if (MapUtils.isEmpty(cleanupArtifactPathMap)) {
             return cleanupDay;

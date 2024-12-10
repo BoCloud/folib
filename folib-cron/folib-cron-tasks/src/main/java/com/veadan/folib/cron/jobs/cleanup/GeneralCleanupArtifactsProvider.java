@@ -1,5 +1,7 @@
 package com.veadan.folib.cron.jobs.cleanup;
 
+import cn.hutool.json.JSONUtil;
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.constant.GlobalConstants;
@@ -86,7 +88,6 @@ public class GeneralCleanupArtifactsProvider implements CleanupArtifactsProvider
 
     private Integer cleanupArtifact(String storageId, String repositoryId, RepositoryPath repositoryPath, String storageDay, Map<String, String> cleanupArtifactPathMap) throws Exception {
         String path = RepositoryFiles.relativizePath(repositoryPath);
-        long cleanupDay = Long.parseLong(getCleanupDay(path, storageDay, cleanupArtifactPathMap));
         if (!Files.exists(repositoryPath)) {
             log.warn("Cleanup storageId [{}] repositoryId [{}] path [{}] file not exists", storageId, repositoryId, repositoryPath);
             return null;
@@ -112,6 +113,7 @@ public class GeneralCleanupArtifactsProvider implements CleanupArtifactsProvider
             log.warn("Cleanup storageId [{}] repositoryId [{}] path [{}] artifact not found", storageId, repositoryId, path);
             return null;
         }
+        long cleanupDay = Long.parseLong(getCleanupDay(path, artifact.getMetadata(), storageDay, cleanupArtifactPathMap));
         //获取仓库下制品最近使用时间做比较
         LocalDateTime lastUsedTime = artifact.getLastUsed();
         log.info("Cleanup storageId [{}] repositoryId [{}] storageDay [{}] path [{}] lastUsedTime [{}] current time [{}]", storageId, repositoryId, cleanupDay, artifact.getArtifactPath(), lastUsedTime, LocalDateTime.now());
@@ -134,7 +136,21 @@ public class GeneralCleanupArtifactsProvider implements CleanupArtifactsProvider
         return null;
     }
 
-    private String getCleanupDay(String artifactPath, String cleanupDay, Map<String, String> cleanupArtifactPathMap) {
+    private String getCleanupDay(String artifactPath, String metadata, String cleanupDay, Map<String, String> cleanupArtifactPathMap) {
+        if (StringUtils.isNotBlank(metadata) && JSONUtil.isJson(metadata)) {
+            JSONObject metadataJson = JSONObject.parseObject(metadata);
+            if (metadataJson.containsKey(GlobalConstants.ARTIFACT_LIFE_CYCLE_KEY)) {
+                String artifactLifeCycleData = metadataJson.getString(GlobalConstants.ARTIFACT_LIFE_CYCLE_KEY);
+                if (StringUtils.isNotBlank(artifactLifeCycleData) && JSONUtil.isJson(artifactLifeCycleData)) {
+                    JSONObject artifactLifeCycleJson = JSONObject.parseObject(artifactLifeCycleData);
+                    String artifactLifeCycle = artifactLifeCycleJson.getString("value");
+                    if (StringUtils.isNotBlank(artifactLifeCycle) && StringUtils.isNumeric(artifactLifeCycle)) {
+                        //制品元数据级别生命周期
+                        return artifactLifeCycle;
+                    }
+                }
+            }
+        }
         if (MapUtils.isEmpty(cleanupArtifactPathMap)) {
             return cleanupDay;
         }

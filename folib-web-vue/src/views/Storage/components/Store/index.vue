@@ -1998,7 +1998,7 @@ export default {
                 this.currentTreeNode.repositoryId,
                 this.currentTreeNode.artifactPath
               ).then(res => {
-                if (res.artifact && res.artifact.safeLevel === "scanComplete") {
+                if (res.artifact && res.artifact.safeLevel === "scanComplete" && res.artifact.report) {
                   this.scanReport.report = JSON.parse(
                     res.artifact.report
                   )
