@@ -138,6 +138,7 @@ public class GeneralCleanupArtifactsProvider implements CleanupArtifactsProvider
 
     private String getCleanupDay(String artifactPath, String metadata, String cleanupDay, Map<String, String> cleanupArtifactPathMap) {
         if (StringUtils.isNotBlank(metadata) && JSONUtil.isJson(metadata)) {
+            //获取元数据级别生命周期，优先级最高
             JSONObject metadataJson = JSONObject.parseObject(metadata);
             if (metadataJson.containsKey(GlobalConstants.ARTIFACT_LIFE_CYCLE_KEY)) {
                 String artifactLifeCycleData = metadataJson.getString(GlobalConstants.ARTIFACT_LIFE_CYCLE_KEY);
@@ -161,11 +162,13 @@ public class GeneralCleanupArtifactsProvider implements CleanupArtifactsProvider
             if (StringUtils.isBlank(cleanupArtifactPath) || StringUtils.isBlank(cleanupArtifactPathValue)) {
                 continue;
             }
+            //获取目录、制品级别生命周期，优先级第二
             cleanupArtifactPathPrefix = cleanupArtifactPath + GlobalConstants.SEPARATOR;
             if (artifactPath.equals(cleanupArtifactPath) || artifactPath.startsWith(cleanupArtifactPathPrefix) || artifactPath.matches(cleanupArtifactPath)) {
                 return entry.getValue();
             }
         }
+        //仓库级别生命周期，优先级最低
         return cleanupDay;
     }
 
