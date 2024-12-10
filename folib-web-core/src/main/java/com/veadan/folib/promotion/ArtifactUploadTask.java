@@ -15,6 +15,7 @@ import com.google.cloud.tools.jib.api.TarImage;
 import com.veadan.folib.artifact.MavenArtifactUtils;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.PubArtifactCoordinates;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.domain.ArtifactParse;
@@ -822,17 +823,23 @@ public class ArtifactUploadTask implements Callable<String> {
     private void handlerDockerImage(final String storageId, final String repositoryId, final String path, final MultipartFile multipartFile, String baseUrl) throws IOException {
         log.info("Requested get docker application file {}/{}/{}.", storageId, repositoryId, path);
         String url = String.join("/", baseUrl, storageId, repositoryId, path);
-
-        //final String prefix1 = "http://";
-        //final String prefix2 = "https://";
-        //String tag = url.replaceAll("^" + prefix1, "");
-        //if (url.contains(prefix1)) {
-        //    tag = url.replaceAll("^" + prefix1, "");
-        //} else if (url.contains(prefix2)) {
-        //    tag = url.replaceAll("^" + prefix2, "");
-        //}
-        String port = SpringContextUtil.getApplicationContext().getEnvironment().getProperty("server.port");
-        String tag = String.join("/", String.format("%s:%s","127.0.0.1",port), storageId, repositoryId, path);
+        DistributedCacheComponent distributedCacheComponent = SpringContextUtil.getApplicationContext().getBean(DistributedCacheComponent.class);
+        String tag ;
+        String value = distributedCacheComponent.get("DOCKER_UPLOAD_TAR_USE_BASE_URL");
+        int isUseBaseUrl = value != null ? Integer.parseInt(value):0;
+        if (isUseBaseUrl == 1) {
+            final String prefix1 = "http://";
+            final String prefix2 = "https://";
+            tag = url.replaceAll("^" + prefix1, "");
+            if (url.contains(prefix1)) {
+                tag = url.replaceAll("^" + prefix1, "");
+            } else if (url.contains(prefix2)) {
+                tag = url.replaceAll("^" + prefix2, "");
+            }
+        } else {
+            String port = SpringContextUtil.getApplicationContext().getEnvironment().getProperty("server.port");
+            tag = String.join("/", String.format("%s:%s", "127.0.0.1", port), storageId, repositoryId, path);
+        }
 
         Path tempDirectory =null;
         try (InputStream inputStream = multipartFile.getInputStream()) {
