@@ -823,14 +823,17 @@ public class ArtifactUploadTask implements Callable<String> {
         log.info("Requested get docker application file {}/{}/{}.", storageId, repositoryId, path);
         String url = String.join("/", baseUrl, storageId, repositoryId, path);
 
-        final String prefix1 = "http://";
-        final String prefix2 = "https://";
-        String tag = url.replaceAll("^" + prefix1, "");
-        if (url.contains(prefix1)) {
-            tag = url.replaceAll("^" + prefix1, "");
-        } else if (url.contains(prefix2)) {
-            tag = url.replaceAll("^" + prefix2, "");
-        }
+        //final String prefix1 = "http://";
+        //final String prefix2 = "https://";
+        //String tag = url.replaceAll("^" + prefix1, "");
+        //if (url.contains(prefix1)) {
+        //    tag = url.replaceAll("^" + prefix1, "");
+        //} else if (url.contains(prefix2)) {
+        //    tag = url.replaceAll("^" + prefix2, "");
+        //}
+        String port = SpringContextUtil.getApplicationContext().getEnvironment().getProperty("server.port");
+        String tag = String.join("/", String.format("%s:%s","127.0.0.1",port), storageId, repositoryId, path);
+
         Path tempDirectory =null;
         try (InputStream inputStream = multipartFile.getInputStream()) {
             String token = this.token;
