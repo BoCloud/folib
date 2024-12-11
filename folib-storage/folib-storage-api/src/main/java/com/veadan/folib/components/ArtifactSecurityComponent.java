@@ -92,8 +92,9 @@ public class ArtifactSecurityComponent {
     }
 
     public boolean anonymousValidatePrivilege(RepositoryPath repositoryPath) {
-        String threadName = Thread.currentThread().getName(), ignoreThreadName = "asyncWsCommand";
-        if (threadName.contains(ignoreThreadName)) {
+        String threadName = Thread.currentThread().getName();
+        List<String> ignoreThreadNameList = Lists.newArrayList("asyncWsCommand", "cron-task-pool-");
+        if (ignoreThreadNameList.stream().anyMatch(threadName::startsWith)) {
             return false;
         }
         String repositoryType = repositoryPath.getRepository().getType();
