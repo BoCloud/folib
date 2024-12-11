@@ -45,6 +45,7 @@ import com.veadan.folib.entity.Dict;
 import com.veadan.folib.entity.RoleResourceRef;
 import com.veadan.folib.enums.ArtifactMetadataEnum;
 import com.veadan.folib.enums.DictTypeEnum;
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.enums.RepositoryScopeEnum;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
@@ -53,6 +54,7 @@ import com.veadan.folib.forms.scanner.*;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
 import com.veadan.folib.gremlin.entity.vo.ArtifactVo;
 import com.veadan.folib.mapper.RoleResourceRefMapper;
+import com.veadan.folib.metadata.indexer.RpmRepoIndexer;
 import com.veadan.folib.promotion.PromotionUtil;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -77,7 +79,6 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
-import com.veadan.folib.users.service.RoleResourceRefService;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.*;
 import com.veadan.folib.utils.TreeUtil;
@@ -100,7 +101,6 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.web.authentication.preauth.PreAuthenticatedCredentialsNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
@@ -1912,7 +1912,12 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             if (Objects.isNull(batch)) {
                 batch = 500;
             }
-            handleArtifacts(repositoryPath, repositoryPath.getRepository(), metadata, batch, beginDate, endDate, force);
+            Repository repository = repositoryPath.getRepository();
+            handleArtifacts(repositoryPath, repository, metadata, batch, beginDate, endDate, force);
+            if (ProductTypeEnum.Rpm.getFoLibraryName().equals(repository.getLayout())) {
+                RpmRepoIndexer rpmRepoIndexer = new RpmRepoIndexer(repositoryPathResolver, artifactManagementService, tempPath);
+                rpmRepoIndexer.indexWriter(repository);
+            }
             log.info("StorageId [{}] repositoryId [{}] is finished", storageId, repositoryId);
         } catch (Exception ex) {
             log.error("StorageId [{}] repositoryId [{}] error [{}]", storageId, repositoryId, ExceptionUtils.getStackTrace(ex));

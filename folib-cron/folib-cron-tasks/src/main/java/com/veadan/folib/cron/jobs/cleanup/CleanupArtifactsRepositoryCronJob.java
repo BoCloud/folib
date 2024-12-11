@@ -1,6 +1,7 @@
 package com.veadan.folib.cron.jobs.cleanup;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
 import com.veadan.folib.cron.jobs.CronJobDefinition;
@@ -14,6 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import javax.inject.Inject;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -60,6 +62,20 @@ public class CleanupArtifactsRepositoryCronJob extends JavaCronJob {
         String repositoryId = config.getProperty(PROPERTY_REPOSITORY_ID);
         String storageDay = config.getProperty(PROPERTY_STORAGE_DAY);
         String storageCondition = config.getProperty(PROPERTY_STORAGE_CONDITION);
+        Map<String, String> properties = config.getProperties();
+        String artifactPathPrefix = "artifactPath:";
+        Map<String, String> cleanupArtifactPathMap = Maps.newLinkedHashMap();
+        for (Map.Entry<String, String> entry : properties.entrySet()) {
+            String key = entry.getKey();
+            if (!key.startsWith(artifactPathPrefix)) {
+                continue;
+            }
+            key = key.replace(artifactPathPrefix, "");
+            if (StringUtils.isBlank(key) || StringUtils.isBlank(entry.getValue())) {
+                continue;
+            }
+            cleanupArtifactPathMap.put(key, entry.getValue());
+        }
         log.info("Start clean artifact job storageId [{}] repositoryId [{}] storageCondition [{}] storageDay [{}]", storageId, repositoryId, storageCondition, storageDay);
         if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId) && StringUtils.isNotBlank(storageDay)) {
             Repository repository = configurationManager.getRepository(storageId, repositoryId);
@@ -80,7 +96,7 @@ public class CleanupArtifactsRepositoryCronJob extends JavaCronJob {
                 cleanupRepositoryType = "DOCKER";
             }
             CleanupArtifactsProvider cleanupArtifactsProvider = cleanupArtifactsProviderRegistry.getProvider(cleanupRepositoryType);
-            cleanupArtifactsProvider.cleanup(storageId, repositoryId, "", storageDay, storageCondition);
+            cleanupArtifactsProvider.cleanup(storageId, repositoryId, "", storageDay, storageCondition, cleanupArtifactPathMap);
         } else {
             log.warn("Repository storageId repositoryId storageDay should not be null");
         }
