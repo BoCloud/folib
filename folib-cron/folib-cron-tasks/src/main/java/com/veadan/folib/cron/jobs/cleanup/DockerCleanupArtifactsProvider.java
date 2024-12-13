@@ -227,7 +227,7 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
             try {
                 RepositoryPath deleteRepositoryPath = repositoryPath.getParent();
                 log.info("Cleanup docker tag storageId [{}] repositoryId [{}] path [{}] do delete", storageId, repositoryId, deleteRepositoryPath.toString());
-                artifactManagementService.delete(deleteRepositoryPath, true);
+                artifactManagementService.delete(deleteRepositoryPath, repositoryPath.getRepository().isAllowsForceDeletion());
                 RepositoryPath dockerImageRepositoryPath = deleteRepositoryPath.getParent();
                 if (Files.exists(dockerImageRepositoryPath) && !Files.isSameFile(repositoryPath.getRoot(), dockerImageRepositoryPath) && Files.list(dockerImageRepositoryPath).count() == 0) {
                     Files.deleteIfExists(dockerImageRepositoryPath);

@@ -7,6 +7,7 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.RepositoryPermissionDto;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * @author mtodorov
@@ -21,7 +22,7 @@ public interface RepositoryManagementService {
                           String repositoryId)
             throws IOException;
 
-    void deleteTrash(String storageId, String repositoryId)
+    void deleteTrash(String storageId, String repositoryId, String storageDay, Map<String, String> cleanupArtifactPathMap)
             throws IOException;
 
     void deleteTrash()

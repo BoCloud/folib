@@ -52,20 +52,13 @@ public class ArtifactServiceImpl implements ArtifactService {
 
     @Override
     public void saveOrUpdateArtifact(Artifact artifact) {
-        saveOrUpdateArtifact(artifact, false);
+        saveOrUpdateArtifact(artifact, true);
     }
 
     @Override
     public void saveOrUpdateArtifact(Artifact artifact, Boolean immediately) {
         if (distributedLockComponent.lock(artifact.getUuid(), GlobalConstants.WAIT_LOCK_TIME, TimeUnit.SECONDS)) {
             try {
-                if (!Boolean.TRUE.equals(immediately)) {
-                    try {
-                        Thread.sleep(100L);
-                    } catch (Exception ex) {
-
-                    }
-                }
                 Graph g = janusGraph.tx().createThreadedTx();
                 try {
                     artifact.setLastUpdated(LocalDateTimeInstance.now());

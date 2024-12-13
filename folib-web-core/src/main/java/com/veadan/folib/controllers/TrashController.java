@@ -57,7 +57,7 @@ public class TrashController
 
         try
         {
-            repositoryManagementService.deleteTrash(storageId, repositoryId);
+            repositoryManagementService.deleteTrash(storageId, repositoryId, null, null);
 
             logger.info("Deleted trash for repository {}.", repositoryId);
         }
