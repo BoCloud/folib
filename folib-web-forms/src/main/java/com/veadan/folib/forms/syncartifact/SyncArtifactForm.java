@@ -52,4 +52,9 @@ public class SyncArtifactForm {
      * 每批数量
      */
     private Integer batch;
+
+    /**
+     * 索引路径
+     */
+    private String indexPath;
 }

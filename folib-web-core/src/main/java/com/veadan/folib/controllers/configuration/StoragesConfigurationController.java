@@ -1084,6 +1084,7 @@ public class StoragesConfigurationController
                 repository.setArtifactMaxSize(107374182400L);
             }
             Repository existRepository = storage.getRepository(repositoryId);
+            //TODO (存储空间+仓库) 唯一性判断
             boolean result = Objects.nonNull(existRepository) && (!repository.getLayout().equals(existRepository.getLayout()) || (Objects.nonNull(existRepository.getSubLayout()) && !existRepository.getSubLayout().equals(repository.getSubLayout())));
             if (result) {
                 //判断重复

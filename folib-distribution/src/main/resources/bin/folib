@@ -116,6 +116,18 @@ FOLIB_WRITE_BUFFER_LOW_WATER_MARK="${FOLIB_WRITE_BUFFER_LOW_WATER_MARK:-32768}"
 #artifact上传限制开关
 FOLIB_ARTIFACT_UPLOAD_RESTRICTIONS="${FOLIB_ARTIFACT_UPLOAD_RESTRICTIONS:-false}"
 
+#SSL相关配置
+FOLIB_HTTP_PORT="${FOLIB_HTTP_PORT:-}"
+FOLIB_SSL_ENABLED="${FOLIB_SSL_ENABLED:-false}"
+FOLIB_SSL_KEY_STORE="${FOLIB_SSL_KEY_STORE:-}"
+FOLIB_SSL_KEY_STORE_TYPE="${FOLIB_SSL_KEY_STORE_TYPE:-}"
+FOLIB_SSL_KEY_STORE_PASSWORD="${FOLIB_SSL_KEY_STORE_PASSWORD:-}"
+FOLIB_SSL_KEY_ALIAS="${FOLIB_SSL_KEY_ALIAS:-}"
+FOLIB_SSL_KEY_PASSWORD="${FOLIB_SSL_KEY_PASSWORD:-}"
+FOLIB_SSL_TRUST_STORE="${FOLIB_SSL_TRUST_STORE:-}"
+FOLIB_SSL_TRUST_STORE_PASSWORD="${FOLIB_SSL_TRUST_STORE_PASSWORD:-}"
+FOLIB_SSL_TRUST_STORE_TYPE="${FOLIB_SSL_TRUST_STORE_TYPE:-}"
+
 print_banner()
 {
     echo "  _____ ___  _     ___ ____  ";
@@ -269,6 +281,34 @@ run()
     JAVA_OPTS+=" -Dfolib.write.buffer.low.water.mark=${FOLIB_WRITE_BUFFER_LOW_WATER_MARK}"
     #artifact上传限制开关
     JAVA_OPTS+=" -Dfolib.uploadRestrictions=${FOLIB_ARTIFACT_UPLOAD_RESTRICTIONS}"
+
+    #SSL相关配置
+    JAVA_OPTS+=" -Dhttp.port=${FOLIB_HTTP_PORT}"
+    JAVA_OPTS+=" -Dserver.ssl.enabled=${FOLIB_SSL_ENABLED}"
+    if [[ ${FOLIB_SSL_KEY_STORE} ]];then
+    JAVA_OPTS+=" -Dserver.ssl.key-store=/opt/folib/folib-1.0-SNAPSHOT/etc/ssl/${FOLIB_SSL_KEY_STORE}"
+    fi
+    if [[ ${FOLIB_SSL_KEY_STORE_TYPE} ]];then
+    JAVA_OPTS+=" -Dserver.ssl.key-store-type=${FOLIB_SSL_KEY_STORE_TYPE}"
+    fi
+    if [[ ${FOLIB_SSL_KEY_STORE_PASSWORD} ]];then
+    JAVA_OPTS+=" -Dserver.ssl.key-store-password=${FOLIB_SSL_KEY_STORE_PASSWORD}"
+    fi
+    if [[ ${FOLIB_SSL_KEY_ALIAS} ]];then
+    JAVA_OPTS+=" -Dserver.ssl.key-alias=${FOLIB_SSL_KEY_ALIAS}"
+    fi
+    if [[ ${FOLIB_SSL_KEY_PASSWORD} ]];then
+    JAVA_OPTS+=" -Dserver.ssl.key-password=${FOLIB_SSL_KEY_PASSWORD}"
+    fi
+    if [[ ${FOLIB_SSL_TRUST_STORE} ]];then
+    JAVA_OPTS+=" -Dserver.ssl.trust-store=/opt/folib/folib-1.0-SNAPSHOT/etc/ssl/${FOLIB_SSL_TRUST_STORE}"
+    fi
+    if [[ ${FOLIB_SSL_TRUST_STORE_PASSWORD} ]];then
+    JAVA_OPTS+=" -Dserver.ssl.trust-store-password=${FOLIB_SSL_TRUST_STORE_PASSWORD}"
+    fi
+    if [[ ${FOLIB_SSL_TRUST_STORE_TYPE} ]];then
+    JAVA_OPTS+=" -Dserver.ssl.trust-store-type=${FOLIB_SSL_TRUST_STORE_TYPE}"
+    fi
 
     #s3fs:
     #  protocol: http

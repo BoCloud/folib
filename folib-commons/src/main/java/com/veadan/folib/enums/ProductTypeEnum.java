@@ -86,7 +86,11 @@ public enum ProductTypeEnum {
     /**
      * Pub
      */
-    Pub(20, "pub", "pub", "pub");
+    Pub(20, "pub", "pub", "pub"),
+    /**
+     * Debian
+     */
+    Debian(21, "debian", "debian", "debian");
 
     private Integer value;
     private String name;

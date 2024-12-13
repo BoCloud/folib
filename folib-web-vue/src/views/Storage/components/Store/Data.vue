@@ -447,7 +447,7 @@
 <script>
 import store from "store";
 import { fileSizeConver, formateDate } from "@/utils/layoutUtil";
-import { getArtifact, deleteArtifact, getStorageAndRepositoryPermission, getArtifactPermission } from "@/api/folib";
+import { getArtifact, deleteArtifact, getArtifactPermission } from "@/api/folib";
 import { getProjectInfo, getCacheConfig } from "@/api/foEyes";
 import { deleteArtifactMetadata, conanInfo, conanPackageInfo } from "@/api/artifact";
 import { getMetadataConfiguration } from '@/api/settings'
@@ -974,7 +974,6 @@ export default {
         this.metadataEnabled = this.folibRepository.type !== 'group' &&
         (hasRole('ARTIFACTS_MANAGER') ||
         permissions.includes('CONFIGURATION_ADD_UPDATE_METADATA'))
-        debugger
       })
     },
     deleteSubsidiaryHandle(index, item) {

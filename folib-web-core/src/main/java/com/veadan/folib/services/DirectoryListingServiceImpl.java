@@ -77,6 +77,9 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
     @Lazy
     private AuthComponent authComponent;
 
+    @Inject
+    private RepositoryPathResolver repositoryPathResolver;
+
     public DirectoryListingServiceImpl(String baseUrl) {
         super();
         this.baseUrl = StringUtils.chomp(baseUrl.toString(), "/");
@@ -88,6 +91,10 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
         DirectoryListing directoryListing = new DirectoryListing();
 
         for (Storage storage : storages.values()) {
+            boolean result = authComponent.validateStoragePrivileges(storage.getId(), Privileges.ARTIFACTS_RESOLVE.getAuthority());
+            if (!result) {
+                continue;
+            }
             FileContent fileContent = new FileContent(storage.getId());
             directoryListing.getDirectories().add(fileContent);
 
@@ -104,6 +111,11 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
         DirectoryListing directoryListing = new DirectoryListing();
 
         for (Repository repository : repositories.values()) {
+            RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(repository);
+            boolean result = authComponent.validatePrivileges(repository, rootRepositoryPath, Privileges.ARTIFACTS_RESOLVE.getAuthority());
+            if (!result) {
+                continue;
+            }
             FileContent fileContent = new FileContent(repository.getId());
             directoryListing.getDirectories().add(fileContent);
 

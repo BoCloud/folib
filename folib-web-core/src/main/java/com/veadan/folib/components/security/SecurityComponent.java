@@ -1,9 +1,14 @@
 package com.veadan.folib.components.security;
 
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.security.authentication.JwtTokenFetcher;
+import com.veadan.folib.users.security.JwtAuthenticationClaimsProvider;
+import com.veadan.folib.users.security.JwtClaimsProvider;
 import com.veadan.folib.users.security.SecurityTokenProvider;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
+import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import com.veadan.folib.utils.UserUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -12,6 +17,9 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.ws.rs.client.Invocation;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author leipenghui
@@ -26,6 +34,10 @@ public class SecurityComponent {
 
     @Inject
     private SecurityTokenProvider securityTokenProvider;
+
+    @Inject
+    @JwtAuthenticationClaimsProvider.JwtAuthentication
+    private JwtClaimsProvider jwtClaimsProvider;
 
     private String securityToken;
 
@@ -67,5 +79,24 @@ public class SecurityComponent {
         builder.header(JwtTokenFetcher.AUTHORIZATION_HEADER, JwtTokenFetcher.BEARER_AUTHORIZATION_PREFIX + " " + getSecurityToken());
         return builder;
     }
+
+    public String generateUserToken() {
+        try {
+            int expireSeconds = 7200;
+            String username = UserUtils.getUsername();
+            SpringSecurityUser springSecurityUser = UserUtils.getSpringSecurityUser();
+            if (Objects.nonNull(springSecurityUser)) {
+                Map<String, String> claimMap = jwtClaimsProvider.getClaims(springSecurityUser);
+                return securityTokenProvider.getToken(springSecurityUser.getUsername(), claimMap, expireSeconds, null);
+            } else if (GlobalConstants.ANONYMOUS_TOKEN_KEY.equals(username)) {
+                Map<String, String> claimMap = Collections.singletonMap(GlobalConstants.ANONYMOUS_TOKEN_KEY, username);
+                return securityTokenProvider.getToken(username, claimMap, expireSeconds, null);
+            }
+        } catch (Exception ex) {
+            log.info("Generate user token error [{}]", ExceptionUtils.getStackTrace(ex));
+        }
+        return "";
+    }
+
 
 }

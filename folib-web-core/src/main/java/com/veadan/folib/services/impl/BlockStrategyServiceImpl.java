@@ -299,16 +299,10 @@ public class BlockStrategyServiceImpl implements BlockStrategyService {
                 blockStrategyRepository = BlockStrategyRepository.builder().id(idGenerateUtils.generateId("blockStrategyRepositoryId"))
                         .blockStrategyId(blockStrategyId).createBy(username).createTime(now).storageId(storageId).repositoryId(repositoryId).build();
                 blockStrategyRepositoryList.add(blockStrategyRepository);
+                //清理当前传入的仓库缓存
                 clearCache(storageId, repositoryId);
             }
-            Example blockStrategyRepositoryExample = new Example(BlockStrategyRepository.class);
-            blockStrategyRepositoryExample.createCriteria().andEqualTo("blockStrategyId", existsBlockStrategy.getId());
-            List<BlockStrategyRepository> existsBlockStrategyRepositories = blockStrategyRepositoryMapper.selectByExample(blockStrategyRepositoryExample);
-            if (CollectionUtils.isNotEmpty(existsBlockStrategyRepositories)) {
-                for (BlockStrategyRepository existsBlockStrategyRepository : existsBlockStrategyRepositories) {
-                    clearCache(existsBlockStrategyRepository.getStorageId(), existsBlockStrategyRepository.getRepositoryId());
-                }
-            }
+            clearBlockStrategyRepositoryCache(existsBlockStrategy.getId());
             Example example = new Example(BlockStrategyRepository.class);
             example.createCriteria().andEqualTo("blockStrategyId", blockStrategyId);
             blockStrategyRepositoryMapper.deleteByExample(example);
@@ -365,6 +359,7 @@ public class BlockStrategyServiceImpl implements BlockStrategyService {
         if (Objects.isNull(existsBlockStrategy)) {
             return;
         }
+        clearBlockStrategyRepositoryCache(existsBlockStrategy.getId());
         Long blockStrategyId = existsBlockStrategy.getId();
         blockStrategyMapper.deleteByPrimaryKey(blockStrategyId);
         //删除仓库
@@ -439,6 +434,23 @@ public class BlockStrategyServiceImpl implements BlockStrategyService {
             putCache(repositoryCacheKey, blockStrategyRecordList, 8);
         }
         return blockStrategyRecordList;
+    }
+
+    /**
+     * 清理阻断策略缓存
+     *
+     * @param id 阻断策略id
+     */
+    private void clearBlockStrategyRepositoryCache(Long id) {
+        Example blockStrategyRepositoryExample = new Example(BlockStrategyRepository.class);
+        blockStrategyRepositoryExample.createCriteria().andEqualTo("blockStrategyId", id);
+        List<BlockStrategyRepository> existsBlockStrategyRepositories = blockStrategyRepositoryMapper.selectByExample(blockStrategyRepositoryExample);
+        if (CollectionUtils.isNotEmpty(existsBlockStrategyRepositories)) {
+            for (BlockStrategyRepository existsBlockStrategyRepository : existsBlockStrategyRepositories) {
+                //清理上次保存的仓库缓存
+                clearCache(existsBlockStrategyRepository.getStorageId(), existsBlockStrategyRepository.getRepositoryId());
+            }
+        }
     }
 
 }

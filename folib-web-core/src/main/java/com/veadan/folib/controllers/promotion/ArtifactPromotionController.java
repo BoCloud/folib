@@ -412,7 +412,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
         try {
             synchronized (fileMd5){
                 String baseUrl = getBaseUrl();
-                String token = securityComponent.getSecurityToken();
+                String token = securityComponent.generateUserToken();
                 if (currentChunkSize != chunkSize) {
                     // 记录异常日志或抛出异常
                     throw new IllegalArgumentException("Chunk size does not match!");

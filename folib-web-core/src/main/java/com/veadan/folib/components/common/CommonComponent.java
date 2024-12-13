@@ -382,4 +382,26 @@ public class CommonComponent {
         }
         return readTimeout * 1000;
     }
+
+    /**
+     * build ThreadPoolTaskExecutor
+     *
+     * @param threadNamePrefix threadNamePrefix
+     * @param corePoolSize     corePoolSize
+     * @param maxPoolSize      maxPoolSize
+     * @return ThreadPoolTaskExecutor
+     */
+    public ThreadPoolTaskExecutor buildThreadPoolTaskExecutor(String threadNamePrefix, Integer corePoolSize, Integer maxPoolSize) {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(corePoolSize);
+        executor.setMaxPoolSize(maxPoolSize);
+        executor.setQueueCapacity(10000);
+        executor.setKeepAliveSeconds(120);
+        executor.setThreadNamePrefix(threadNamePrefix + "_");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(6);
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.initialize();
+        return executor;
+    }
 }

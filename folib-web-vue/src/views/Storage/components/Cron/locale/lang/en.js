@@ -14,4 +14,5 @@ export default {
     'TheOperationIsIncorrect': 'The operation is incorrect',
     'FillInTheCronExpression': 'Please fill in the cron expression',
     'Failure': 'Failure',
+    'AddArtifactPath': 'Add artifact path',
 }

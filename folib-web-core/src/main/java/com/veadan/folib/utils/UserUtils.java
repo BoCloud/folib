@@ -48,4 +48,35 @@ public class UserUtils {
         }
         return username;
     }
+
+    /**
+     * 获取登录用户
+     *
+     * @return 用户
+     */
+    public static SpringSecurityUser getSpringSecurityUser() {
+        SpringSecurityUser springSecurityUser = null;
+        try {
+            SecurityContext securityContext = SecurityContextHolder.getContext();
+            if (Objects.isNull(securityContext)) {
+                return null;
+            }
+            Authentication authentication = securityContext.getAuthentication();
+            if (Objects.isNull(authentication)) {
+                return null;
+            }
+            Object o = authentication.getPrincipal();
+            String anonymousUser = "anonymousUser";
+            if (anonymousUser.equals(o.toString())) {
+                return null;
+            }
+            if (!(o instanceof SpringSecurityUser)) {
+                return null;
+            }
+            return (SpringSecurityUser) o;
+        } catch (Exception ex) {
+            log.warn("获取登录用户错误 [{}]", ExceptionUtils.getStackTrace(ex));
+        }
+        return null;
+    }
 }
