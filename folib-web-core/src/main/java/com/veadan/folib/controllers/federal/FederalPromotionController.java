@@ -4,6 +4,7 @@ import com.veadan.folib.controllers.federal.req.FederalPromotionPolicyCreateReq;
 import com.veadan.folib.controllers.federal.req.FederalPromotionPolicyQueryReq;
 import com.veadan.folib.controllers.federal.req.FederalPromotionPolicyUpdateReq;
 import com.veadan.folib.domain.policy.FederalPromotionPolicyService;
+import com.veadan.folib.enums.TagEnum;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -40,7 +41,7 @@ public class FederalPromotionController {
         SpringSecurityUser user = (SpringSecurityUser) authentication.getPrincipal();
         String username = user.getUsername();
         createReq.setCreatedBy(username);
-        createReq.setTag("latest");
+        createReq.setTag(TagEnum.LATEST.toString());
         policyService.addPolicy(createReq);
         return ResponseEntity.ok().build();
     }

@@ -12,6 +12,7 @@ import com.veadan.folib.domain.policy.dto.SyncArtifatDTO;
 import com.veadan.folib.entity.FederalPromotionPolicy;
 import com.veadan.folib.entity.FederalRepository;
 import com.veadan.folib.entity.PromotionRule;
+import com.veadan.folib.enums.TagEnum;
 import com.veadan.folib.mapper.FederalPromotionPolicyMapper;
 import com.veadan.folib.mapper.FederalRepositoryMapper;
 import com.veadan.folib.mapper.PromotionRuleMapper;
@@ -265,7 +266,7 @@ public class FederalPromotionPolicyServiceImpl implements FederalPromotionPolicy
     @PostConstruct
     public void initData() {
         FederalPromotionPolicy federalPromotionPolicy = new FederalPromotionPolicy();
-        federalPromotionPolicy.setTag("default");
+        federalPromotionPolicy.setTag(TagEnum.DEFAULT.toString());
         long total = federalPromotionPolicyMapper.count(federalPromotionPolicy);
         if (total == 0) {
             MutableConfiguration storage = configurationManagementService.getMutableConfigurationClone();
@@ -283,7 +284,7 @@ public class FederalPromotionPolicyServiceImpl implements FederalPromotionPolicy
 
     public void restOldData() {
         FederalPromotionPolicy federalPromotionPolicy = new FederalPromotionPolicy();
-        federalPromotionPolicy.setTag("default");
+        federalPromotionPolicy.setTag(TagEnum.DEFAULT.toString());
         long total = federalPromotionPolicyMapper.count(federalPromotionPolicy);
         PageRequest pageRequest = PageRequest.of(0, Integer.parseInt(String.valueOf(total)));
         List<FederalPromotionPolicy> policies = federalPromotionPolicyMapper.queryAllByLimit(federalPromotionPolicy, pageRequest);
@@ -321,7 +322,7 @@ public class FederalPromotionPolicyServiceImpl implements FederalPromotionPolicy
         entity.setIsEnabled(repository.getUnionRepositoryConfiguration().getEnable());
         entity.setCreatedBy("system");
         entity.setCreatedTime(new Date());
-        entity.setTag("default");
+        entity.setTag(TagEnum.DEFAULT.toString());
         federalPromotionPolicyMapper.insert(entity);
         List<FederalRepository> repositories = new ArrayList<>();
 

@@ -82,7 +82,7 @@
         <a-drawer
             :title="$t('FederalPromotionPolicy.DrawerTitle')"
             placement="right"
-            width="45%"
+            width="60%"
             :visible="visibleDrawer"
             :body-style="{ paddingBottom: '80px' }"
             @close="onClose"
@@ -188,10 +188,10 @@
                             <a-form-item style="padding-bottom: 0;margin-bottom: 0"
                                          v-for="(metaData,index) in federalPromotionPolicyForm.metaDatas"
                                          :key="index">
-                                <a-input style="width: 40%;margin: 0 8px 8px 0;"
+                                <a-input style="width: 30%;margin: 0 8px 8px 0;"
                                          :placeholder="$t('FederalPromotionPolicy.PleaseInput')+''+$t('FederalPromotionPolicy.MetaDataRule')+'key'"
                                          v-model="metaData[0].value"/>
-                                <a-input style="width: 40%;margin: 0 8px 8px 0; left: 102px;"
+                                <a-input style="width: 30%;margin: 0 8px 8px 0; left: 102px;"
                                          :placeholder="$t('FederalPromotionPolicy.PleaseInput')+''+$t('FederalPromotionPolicy.MetaDataRule')+'value'"
                                          v-model="metaData[1].value"/>
                                 <a-icon
@@ -229,7 +229,7 @@
                         </a-col>
                     </a-row>
                     <a-row :gutter="24">
-                        <a-col :md="12" :sm="24">
+                        <a-col :md="8" :sm="24">
                             <a-form-model-item :label="$t('FederalPromotionPolicy.SelectNodeType')"
                                                style="padding-bottom: 0;margin-bottom: 0">
                                 <a-radio-group v-model="federalPromotionPolicyForm.nodeType" @change="onNodeChange">
@@ -263,7 +263,7 @@
                             </a-form-model-item>
 
                         </a-col>
-                        <a-col :md="12" :sm="24">
+                        <a-col :md="16" :sm="24">
                             <a-form-item :label="$t('FederalPromotionPolicy.SelectingTargetStorage')"
                                          :colon="false"
                                          prop="selectTargetNodes"
@@ -272,7 +272,7 @@
                                     label-in-value
                                     v-model="federalPromotionPolicyForm.selectTargetNodes"
                                     :options="targetNodesOptions"
-                                    style="width: 81%"
+                                    style="width: 52%"
                                     :placeholder="$t('FederalPromotionPolicy.SelectingTargetStorage')"
                                     @change="handleNodeChange"
                                 >
@@ -422,6 +422,7 @@ export default {
                     i18nKey: 'Operate',
                     dataIndex: 'operation',
                     width: 180,
+                    align: 'right',
                     scopedSlots: {customRender: 'operation'},
                 }
             ],
