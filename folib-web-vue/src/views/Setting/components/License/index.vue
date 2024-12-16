@@ -149,9 +149,9 @@ export default {
       //   this.licenseTableLoading = false
       // })
       if(this.blackWhiteType === 1){
-        this.getAllowlistDenylistData( {type: 'WHITES',category:'LICENSE',page:this.queryParams.page,size:this.queryParams.limit,identifier:this.queryParams.searchKeyword});
+        this.getAllowlistDenylistData( {type: 'WHITES',category:'LICENSE',domain: 'PLATFORM',page:this.queryParams.page,size:this.queryParams.limit,identifier:this.queryParams.searchKeyword});
       }else {
-        this.getAllowlistDenylistData({type: 'BLACKLIST',category:'LICENSE',page:this.queryParams.page,size:this.queryParams.limit,identifier:this.queryParams.searchKeyword});
+        this.getAllowlistDenylistData({type: 'BLACKLIST',category:'LICENSE',domain: 'PLATFORM',page:this.queryParams.page,size:this.queryParams.limit,identifier:this.queryParams.searchKeyword});
       }
 
 

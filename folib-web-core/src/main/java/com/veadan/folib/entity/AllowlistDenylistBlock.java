@@ -49,6 +49,15 @@ public class AllowlistDenylistBlock implements Serializable {
      * '标签[default:标记为老数据适配，latest:标记新建的]',
      */
     private String tag;
+    /**
+     * 业务域[PLATFORM:平台，REPOSITORY:仓库]
+     */
+    private String domain;
+
+    /**
+     * 关联ID[仓库ID]
+     */
+    private String correlationId;
 
     /**
      * 创建人

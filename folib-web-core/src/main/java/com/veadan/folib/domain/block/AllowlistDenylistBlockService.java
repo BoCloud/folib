@@ -7,6 +7,8 @@ import com.veadan.folib.entity.AllowlistDenylistBlock;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
+import java.util.List;
+
 
 /**
  * 黑白名单阻断;(allowlist_denylist_block)表服务接口
@@ -49,4 +51,12 @@ public interface AllowlistDenylistBlockService{
      * @return 是否成功
      */
     boolean deleteAllowlistDenylistBlock(AllowlistDenylistBlockReq req);
+
+
+    /**
+     * 查询数据列表
+     * @param block 查询条件
+     * @return List<AllowlistDenylistBlock>
+     */
+    List<AllowlistDenylistBlock> queryAllowlistDenylistBlockList(AllowlistDenylistBlock block);
 }

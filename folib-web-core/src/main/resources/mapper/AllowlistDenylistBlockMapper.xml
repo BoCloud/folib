@@ -7,6 +7,8 @@
         <result property="type" column="type" />
         <result property="validFrom" column="valid_from" />
         <result property="tag" column="tag" />
+        <result property="domain" column="domain" />
+        <result property="correlationId" column="correlation_id" />
         <result property="createdBy" column="created_by" />
         <result property="createdTime" column="created_time" />
         <result property="updatedBy" column="updated_by" />
@@ -17,7 +19,7 @@
     <!-- 通过ID查询单条数据 -->
     <select id="queryById" resultMap="AllowlistDenylistBlockMap">
         select
-        id,identifier,type,valid_from,tag,category,created_by,created_time,updated_by,update_time
+        id,identifier,type,valid_from,tag,category,domain,correlation_id,created_by,created_time,updated_by,update_time
         from allowlist_denylist_block
         where id = #{id}
     </select>
@@ -33,8 +35,8 @@
             <if test="type != null and type != ''">
                 and type = #{type}
             </if>
-            <if test="valid_from != null">
-                and valid_from = #{valid_from}
+            <if test="validFrom != null">
+                and valid_from = #{validFrom}
             </if>
             <if test="tag != null and tag != ''">
                 and tag = #{tag}
@@ -42,13 +44,21 @@
             <if test="category != null ">
                 and category = #{category}
             </if>
+            <if test="domain !=null and domain!=''">
+                and domain = #{domain}
+            </if>
+            <if test="correlationId != null and correlationId != ''">
+                and correlation_id = #{correlationId}
+            </if>
+
+
         </where>
     </select>
 
     <!--分页查询指定行数据-->
     <select id="queryAllByLimit" resultMap="AllowlistDenylistBlockMap">
         select
-        id,identifier,type,valid_from,tag,category,created_by,created_time,updated_by,update_time
+        id,identifier,type,valid_from,tag,category,domain,correlation_id,created_by,created_time,updated_by,update_time
         from allowlist_denylist_block
         <where>
             <if test="entity.id != null and entity.id != ''">
@@ -68,6 +78,12 @@
             </if>
             <if test="entity.category != null and entity.category != ''">
                 and category = #{entity.category}
+            </if>
+            <if test="entity.domain !=null and entity.domain!=''">
+                and domain = #{entity.domain}
+            </if>
+            <if test="entity.correlationId != null and entity.correlationId != ''">
+                and correlation_id = #{entity.correlationId}
             </if>
             <if test="entity.createdBy != null and entity.createdBy != ''">
                 and created_by = #{entity.createdBy}
@@ -105,6 +121,15 @@
             <if test="category != null and category != ''">
                 and category = #{category}
             </if>
+            <if test="tag != null and tag != ''">
+                and tag = #{tag}
+            </if>
+            <if test="domain != null and domain != ''">
+                and domain = #{domain}
+            </if>
+            <if test="correlationId !=null and correlationId !=''">
+                and correlation_id = #{correlationId}
+            </if>
             <if test="createdBy != null and createdBy != ''">
                 and created_by = #{createdBy}
             </if>
@@ -122,25 +147,25 @@
 
     <!--新增数据-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
-        insert into allowlist_denylist_block(id,identifier,type,valid_from,tag,category,created_by,created_time,updated_by,update_time)
-        values (#{id},#{identifier},#{type},#{validFrom},#{tag},#{category},#{createdBy},#{createdTime},#{updatedBy},#{updateTime})
+        insert into allowlist_denylist_block(id,identifier,type,valid_from,tag,category,domain,correlation_id,created_by,created_time,updated_by,update_time)
+        values (#{id},#{identifier},#{type},#{validFrom},#{tag},#{category},#{domain},#{correlationId},#{createdBy},#{createdTime},#{updatedBy},#{updateTime})
     </insert>
 
     <!-- 批量新增数据 -->
     <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into allowlist_denylist_block(id,identifier,type,valid_from,tag,category,created_by,created_time,updated_by,update_time)
+        insert into allowlist_denylist_block(id,identifier,type,valid_from,tag,category,domain,correlation_id,created_by,created_time,updated_by,update_time)
         values
         <foreach collection="entities" item="entity" separator=",">
-            (#{entity.id},#{entity.identifier},#{entity.type},#{entity.validFrom},#{entity.tag},#{entity.category},#{entity.createdBy},#{entity.createdTime},#{entity.updatedBy},#{entity.updateTime})
+            (#{entity.id},#{entity.identifier},#{entity.type},#{entity.validFrom},#{entity.tag},#{entity.category},#{entity.domain},#{entity.correlationId},#{entity.createdBy},#{entity.createdTime},#{entity.updatedBy},#{entity.updateTime})
         </foreach>
     </insert>
 
     <!-- 批量新增或按主键更新数据 -->
     <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into allowlist_denylist_block(id,identifier,type,valid_from,tag,category,created_by,created_time,updated_by,update_time)
+        insert into allowlist_denylist_block(id,identifier,type,valid_from,tag,category,domain,correlation_id,created_by,created_time,updated_by,update_time)
         values
         <foreach collection="entities" item="entity" separator=",">
-            (#{entity.id},#{entity.identifier},#{entity.type},#{entity.validFrom},#{entity.tag},#{entity.category},#{entity.createdBy},#{entity.createdTime},#{entity.updatedBy},#{entity.updateTime})
+            (#{entity.id},#{entity.identifier},#{entity.type},#{entity.validFrom},#{entity.tag},#{entity.category},#{entity.domain},#{entity.correlationId},#{entity.createdBy},#{entity.createdTime},#{entity.updatedBy},#{entity.updateTime})
         </foreach>
         on duplicate key update
         id=values(id),
@@ -149,6 +174,8 @@
         valid_from=values(valid_from),
         tag = values(tag),
         category=values(category),
+        domain=values(domain),
+        correlation_id=values(correlation_id),
         created_by=values(created_by),
         created_time=values(created_time),
         updated_by=values(updated_by),
@@ -176,6 +203,12 @@
             </if>
             <if test="category != null and category != ''">
                 category = #{category},
+            </if>
+            <if test="domain != null and domain != ''">
+                domain = #{domain},
+            </if>
+            <if test="correlationId != null and correlationId != ''">
+                correlation_id = #{correlationId},
             </if>
             <if test="createdBy != null and createdBy != ''">
                 created_by = #{createdBy},

@@ -437,16 +437,17 @@ export default {
               let data = {
                 id:this.vulnerabilitiesForm.id,
                 type: undefined,
+                domain: 'PLATFORM',
+                tag: 'LATEST',
                 category: 'VULNERABILITY',
                 identifier: this.vulnerabilitiesForm.identifier,
-                validFrom: moment(this.vulnerabilitiesForm.validFrom).format('YYYY-MM-DD HH:mm:ss')
+                validFrom: this.vulnerabilitiesForm.validFrom ? moment(this.vulnerabilitiesForm.validFrom).format('YYYY-MM-DD HH:mm:ss') : undefined,
               }
               if (this.isEdit){
                 this.updateVulnerabilities(data)
               }else {
                 this.addVulnerabilities(data)
               }
-
             }
           });
     },
@@ -464,7 +465,7 @@ export default {
         }).finally(()=>{
           this.resetVulnerabilitiesForm()
           this.showVulnerabilitiesModal = false
-          this. getVulnAllowlistData( {type: 'WHITES',category:'VULNERABILITY',page:this.vulnWhiteData.pageNumber,size:this.vulnWhiteData.pageSize});
+          this. getVulnAllowlistData( {type: 'WHITES',category:'VULNERABILITY',domain: 'PLATFORM',page:this.vulnWhiteData.pageNumber,size:this.vulnWhiteData.pageSize});
         })
       } else if (this.vulnerabilitiesType === 2) {
         //this.addBlack(this.vulnerabilitiesForm.uuid)
@@ -479,7 +480,7 @@ export default {
         }).finally(()=>{
           this.resetVulnerabilitiesForm()
           this.showVulnerabilitiesModal = false
-          this. getVulnDenylistData( {type: 'BLACKLIST',category:'VULNERABILITY',page:this.vulnWhiteData.pageNumber,size:this.vulnWhiteData.pageSize});
+          this. getVulnDenylistData( {type: 'BLACKLIST',category:'VULNERABILITY',domain: 'PLATFORM',page:this.vulnWhiteData.pageNumber,size:this.vulnWhiteData.pageSize});
         })
       }
     },
@@ -497,7 +498,7 @@ export default {
         }).finally(()=>{
           this.resetVulnerabilitiesForm()
           this.showVulnerabilitiesModal = false
-          this. getVulnAllowlistData( {type: 'WHITES',category:'VULNERABILITY',page:this.vulnWhiteData.pageNumber,size:this.vulnWhiteData.pageSize});
+          this. getVulnAllowlistData( {type: 'WHITES',category:'VULNERABILITY',domain: 'PLATFORM',page:this.vulnWhiteData.pageNumber,size:this.vulnWhiteData.pageSize});
         })
       } else if (this.vulnerabilitiesType === 2) {
         //this.addBlack(this.vulnerabilitiesForm.uuid)
@@ -512,27 +513,27 @@ export default {
         }).finally(()=>{
           this.resetVulnerabilitiesForm()
           this.showVulnerabilitiesModal = false
-          this. getVulnDenylistData( {type: 'BLACKLIST',category:'VULNERABILITY',page:this.vulnWhiteData.pageNumber,size:this.vulnWhiteData.pageSize});
+          this. getVulnDenylistData( {type: 'BLACKLIST',category:'VULNERABILITY',domain: 'PLATFORM',page:this.vulnWhiteData.pageNumber,size:this.vulnWhiteData.pageSize});
         })
       }
     },
     handheWhiteListSearch() {
-      this.getVulnAllowlistData( {type: 'WHITES',category:'VULNERABILITY',page:this.vulnWhiteData.pageNumber,size:this.vulnWhiteData.pageSize,identifier:this.searchWhiteList});
+      this.getVulnAllowlistData( {type: 'WHITES',category:'VULNERABILITY',domain: 'PLATFORM',page:this.vulnWhiteData.pageNumber,size:this.vulnWhiteData.pageSize,identifier:this.searchWhiteList});
     },
     handheBlackListSearch() {
-      this.getVulnDenylistData({type: 'BLACKLIST',category:'VULNERABILITY',page:this.vulnDenylistData.pageNumber,size:this.vulnDenylistData.pageSize,identifier:this.searchBlackList});
+      this.getVulnDenylistData({type: 'BLACKLIST',category:'VULNERABILITY',domain: 'PLATFORM',page:this.vulnDenylistData.pageNumber,size:this.vulnDenylistData.pageSize,identifier:this.searchBlackList});
     },
     handleChangevulnWhiteListTable(pagination, filters, sorter) {
         if (pagination) {
           this.vulnWhiteData.pageNumber = pagination.current
         }
-      this. getVulnAllowlistData( {type: 'WHITES',category:'VULNERABILITY',page:this.vulnWhiteData.pageNumber,size:this.vulnWhiteData.pageSize});
+      this. getVulnAllowlistData( {type: 'WHITES',category:'VULNERABILITY',domain: 'PLATFORM',page:this.vulnWhiteData.pageNumber,size:this.vulnWhiteData.pageSize});
     },
     handleChangevulnDenylistTable(pagination, filters, sorter){
       if (pagination) {
         this.vulnDenylistData.pageNumber = pagination.current
       }
-      this. getVulnDenylistData( {type: 'BLACKLIST',category:'VULNERABILITY',page:this.vulnWhiteData.pageNumber,size:this.vulnWhiteData.pageSize});
+      this. getVulnDenylistData( {type: 'BLACKLIST',category:'VULNERABILITY',domain: 'PLATFORM',page:this.vulnWhiteData.pageNumber,size:this.vulnWhiteData.pageSize});
     },
     showVulnWhiteDatils(data) {
       this.resetVulnerabilitiesForm()

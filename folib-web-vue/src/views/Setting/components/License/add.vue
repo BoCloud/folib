@@ -132,6 +132,8 @@ export default {
             id:this.licenseForm.id,
             type: undefined,
             category: 'LICENSE',
+            domain: 'PLATFORM',
+            tag: 'LATEST',
             identifier: this.licenseForm.identifier,
             validFrom: this.licenseForm.validFrom ? moment(this.licenseForm.validFrom).format('YYYY-MM-DD HH:mm:ss') : undefined,
           }

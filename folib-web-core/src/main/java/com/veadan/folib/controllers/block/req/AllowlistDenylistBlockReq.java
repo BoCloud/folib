@@ -32,9 +32,24 @@ public class AllowlistDenylistBlockReq {
     @ApiModelProperty(name = "有效期", notes = "")
     private Date validFrom;
 
+
+    @ApiModelProperty(name = "类别", notes = "")
     private String category;
 
+
+    @ApiModelProperty(name = "标识", notes = "")
     private String tag;
+    /**
+     * 业务域[SYSTEM:系统，REPOSITORY:仓库]
+     */
+    @ApiModelProperty(name = "业务域", notes = "[PLATFORM:平台，REPOSITORY:仓库]")
+    private String domain;
+
+    /**
+     * 关联ID[仓库ID]
+     */
+    @ApiModelProperty(name = "关联ID", notes = "[仓库ID]")
+    private String correlationId;
 
     /**
      * 创建人

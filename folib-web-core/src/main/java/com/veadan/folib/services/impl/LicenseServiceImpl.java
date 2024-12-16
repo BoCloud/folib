@@ -5,8 +5,13 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.google.common.collect.Maps;
 import com.hazelcast.core.HazelcastInstance;
+import com.veadan.folib.domain.block.AllowlistDenylistBlockService;
 import com.veadan.folib.domain.license.LicenseBlackWhite;
+import com.veadan.folib.entity.AllowlistDenylistBlock;
 import com.veadan.folib.entity.License;
+import com.veadan.folib.enums.BlockDomainEnum;
+import com.veadan.folib.enums.CategoryEnum;
+import com.veadan.folib.enums.RuleEnum;
 import com.veadan.folib.forms.license.LicenseTableForm;
 import com.veadan.folib.mapper.LicenseMapper;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
@@ -26,6 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tk.mybatis.mapper.entity.Example;
 
+import javax.inject.Inject;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
@@ -55,6 +61,9 @@ public class LicenseServiceImpl implements LicenseService {
 
     @Autowired
     private HazelcastInstance hazelcastInstance;
+
+    @Inject
+    private AllowlistDenylistBlockService allowlistDenylistBlockService;
 
     /**
      * 将字符串按照指定长度分割成字符串数组
@@ -225,6 +234,26 @@ public class LicenseServiceImpl implements LicenseService {
         }
         Page<Object> result = PageHelper.startPage(page, limit);
         List<License> licenseList = licenseMapper.selectLicense(searchKeyword, licenseId, blackWhiteType, null, null);
+
+        AllowlistDenylistBlock block = AllowlistDenylistBlock.builder()
+                .category(CategoryEnum.LICENSE.toString())
+                .domain(BlockDomainEnum.PLATFORM.toString())
+                .build();
+
+        List<AllowlistDenylistBlock>  list = allowlistDenylistBlockService.queryAllowlistDenylistBlockList(block);
+        Set<String>  blackList = list.stream().filter(item-> RuleEnum.BLACKLIST.toString().equals(item.getType())).map(AllowlistDenylistBlock::getIdentifier).collect(Collectors.toSet());
+        Set<String>  whiteList = list.stream().filter(item-> RuleEnum.WHITES.toString().equals(item.getType())).map(AllowlistDenylistBlock::getIdentifier).collect(Collectors.toSet());
+
+        for (License  item : licenseList){
+           if(blackList.stream().anyMatch(data-> item.getLicenseId().equals(data))){
+               item.setBlackWhiteType(2);
+           }else if(whiteList.stream().anyMatch(data-> item.getLicenseId().equals(data))){
+               item.setBlackWhiteType(1);
+           }else{
+               item.setBlackWhiteType(0);
+           }
+        }
+
         return new TableResultResponse<LicenseTableForm>(result.getTotal(), Optional.ofNullable(licenseList).orElse(Collections.emptyList()).stream().map(license -> {
             LicenseTableForm licenseTableForm = LicenseTableForm.builder().build();
             BeanUtils.copyProperties(license, licenseTableForm);
