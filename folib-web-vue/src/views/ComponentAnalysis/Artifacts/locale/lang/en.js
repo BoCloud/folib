@@ -55,4 +55,5 @@ export default {
     'ComponentInformation': 'Component information',
     'ComponentOverview': 'Component Overview',
     'ScanTime': 'Scan time',
+    'exportExcel':'Export excel'
 }

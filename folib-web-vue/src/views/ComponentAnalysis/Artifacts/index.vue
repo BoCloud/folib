@@ -1,27 +1,29 @@
 <template>
   <div class="wrapper">
     <!-- <HeaderEcharts></HeaderEcharts> -->
-    <a-card :bordered="false" style="margin-top: 20px; margin-bottom: 20px; overflow-y: auto" class="header-solid" >
+    <a-card :bordered="false" style="margin-top: 20px; margin-bottom: 20px; overflow-y: auto" class="header-solid">
       <div class="mx-25 search">
-        <a-col :span="24" class="text-right">
-          <a-cascader :placeholder="$t('Artifacts.RepositorySelect')" class="repository-query"
-                        v-model="selectRepository"
-                        :showSearch="{ repositoryFilter }"
-                        :allowClear="true"
-                        :options="repositoryList" @change="repositoryChange"/>
-          <a-input-search :placeholder="$t('Artifacts.ArtifactPathQuery')" class="v-search" v-model="queryParams.artifactName" @search="handheTableSearch()" />
-        </a-col>
+        <a-row type="flex" justify="end">
+          <a-col :span="3" class="ml-16">
+            <a-cascader :placeholder="$t('Artifacts.RepositorySelect')" v-model="selectRepository"
+              :showSearch="{ repositoryFilter }" :allowClear="true" :options="repositoryList"
+              @change="repositoryChange" />
+          </a-col>
+          <a-col :span="3">
+            <a-input-search :placeholder="$t('Artifacts.ArtifactPathQuery')" class="v-search"
+              v-model="queryParams.artifactName" @search="handheTableSearch()" />
+          </a-col>
+          <a-col :span="1">
+            <a-button type="primary" @click="exportExcelFn">
+              <!-- <template #icon><SearchOutlined /></template> -->
+              {{ $t('Artifacts.exportExcel') }}
+            </a-button>
+          </a-col>
+        </a-row>
       </div>
-      <a-table
-        rowKey="uuid"
-        class="mt-20"
-        :columns="i18nColumns"
-        :data-source="artifactsData"
-        @change="handleChangeTable"
-        :scroll="{ x: true }"
-        :loading="artifactsTableLoading"
-        :pagination="{ pageSize: queryParams.limit, current: queryParams.page, total: queryParams.total, showLessItems: true }"
-      >
+      <a-table rowKey="uuid" class="mt-20" :columns="i18nColumns" :data-source="artifactsData"
+        @change="handleChangeTable" :scroll="{ x: true }" :loading="artifactsTableLoading"
+        :pagination="{ pageSize: queryParams.limit, current: queryParams.page, total: queryParams.total, showLessItems: true }">
         <template slot="artifactPath" slot-scope="artifactPath, row">
           <a-button type="link" @click="handleGoDetail(row)">
             {{ artifactPath }}
@@ -42,7 +44,7 @@
           <a-tag color="#f86c6b">{{ row.criticalVulnerabilitiesCount }} </a-tag>
           <a-tag color="#fd8c00">{{ row.highVulnerabilitiesCount }} </a-tag>
           <a-tag color="#ffc107">{{ row.mediumVulnerabilitiesCount }} </a-tag>
-          <a-tag color="#4dbd74"> {{ row.lowVulnerabilitiesCount}}</a-tag>
+          <a-tag color="#4dbd74"> {{ row.lowVulnerabilitiesCount }}</a-tag>
         </template>
         <!-- <template slot="lastBomImportFormat" slot-scope="lastBomImportFormat">
           {{ !lastBomImportFormat ? "-" : lastBomImportFormat }}
@@ -233,6 +235,58 @@ export default {
   },
   methods: {
     formatTimestamp,
+    // 导出execl表格
+    exportExcelFn(){
+      const artifactsData = JSON.parse(JSON.stringify(this.artifactsData))
+
+      // 数据封装
+      artifactsData.forEach(row => {
+        if(row.layout.toLowerCase() !== "docker"){
+          row.artifactPath = row.path
+        }
+        row.sizeInBytes = this.fileSizeConver(row.sizeInBytes)
+        row.vulnerabilitiesCount = [
+          {
+            key: this.$t('Artifacts.Seriously'),
+            value: row.criticalVulnerabilitiesCount,
+            color:'f86c6b',
+            bold:false
+          },
+          {
+            key: this.$t('Artifacts.MediumRisk'),
+            value: row.highVulnerabilitiesCount,
+            color:'fd8c00',
+            bold:false
+          },
+          {
+            key: this.$t('Artifacts.HighRisk'),
+            value: row.mediumVulnerabilitiesCount,
+            color:'ffc107',
+            bold:false
+          },
+          {
+            key: this.$t('Artifacts.LowRisk'),
+            value: row.lowVulnerabilitiesCount,
+            color:'4dbd74',
+            bold:false
+          }
+        ]
+      })
+
+      // 定义表头
+      const headers = [
+          { header: this.$t('Artifacts.StorageSpace'), key: 'storageId', width: 25 },
+          { header: this.$t('Artifacts.OwnedWarehouse'), key: 'repositoryId', width: 25 },
+          { header: this.$t('Artifacts.ProductPath'), key: 'artifactPath', width: 70 },
+          { header: this.$t('Artifacts.LastUsedTime'), key: 'lastUsed', width: 22 },
+          { header: this.$t('Artifacts.DownloadTimes'), key: 'downloadCount', width: 15 },
+          { header: this.$t('Artifacts.ProductSize'), key: 'sizeInBytes', width: 15 },
+          { header: this.$t('Artifacts.Vulnerability'), key: 'vulnerabilitiesCount', width: 35 },
+      ]
+      // 定义文件名称
+      const fileName = '制品扫描.xlsx'
+      this.$exportExcel(artifactsData, headers, fileName)
+    },
     queryOnScanTreeList() {
       this.repositoryList = []
       queryOnScanTree().then((res) => {
@@ -294,7 +348,7 @@ export default {
       let data = JSON.stringify({
         storageId: row.storageId,
         repositoryId: row.repositoryId,
-        artifactPath: row.layout.toLowerCase() === "docker" ?row.artifactPath:row.path,
+        artifactPath: row.layout.toLowerCase() === "docker" ? row.artifactPath : row.path,
         layout: row.layout
       })
       this.$router.push({
@@ -316,9 +370,11 @@ export default {
 .search {
   height: 50px;
 }
+
 .mx-25 .ant-row-flex {
   flex-wrap: wrap;
 }
+
 .v-search {
   max-width: 200px;
   width: 170px;
@@ -326,10 +382,12 @@ export default {
   margin-left: 5px;
   margin-bottom: 8px;
 }
+
 .repository-query {
-    min-width: 220px;
+  min-width: 220px;
 }
+
 .repository-query::v-deep .ant-cascader-picker-label {
-    padding: 0 30px 0 12px;
+  padding: 0 30px 0 12px;
 }
 </style>

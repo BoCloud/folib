@@ -55,4 +55,5 @@ export default {
     'ComponentInformation': '组件信息',
     'ComponentOverview': '组件概览',
     'ScanTime': '扫描时间',
+    'exportExcel':'导出execl'
 }
