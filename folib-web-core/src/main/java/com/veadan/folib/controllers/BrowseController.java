@@ -421,8 +421,8 @@ public class BrowseController
     @ApiOperation(value = "recover a path from a repository.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was restore"),
             @ApiResponse(code = 400, message = "Bad request.")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_DELETE')")
-    @PostMapping(value = "/restore/{storageId}/{repositoryId}/{artifactPath:.+}")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
+    @PostMapping(value = "/{storageId}/{repositoryId}/{artifactPath:.+}")
     public ResponseEntity restore(@PathVariable String storageId,@PathVariable String repositoryId,@PathVariable String artifactPath)
             throws IOException {
         logger.info("restore {}:{}/{}...", storageId, repositoryId, artifactPath);

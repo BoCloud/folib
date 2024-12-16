@@ -7,12 +7,13 @@ import com.veadan.folib.configuration.SecurityPolicyConfiguration;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.Vulnerability;
+import com.veadan.folib.domain.block.AllowlistDenylistBlockService;
 import com.veadan.folib.domain.blockstrategy.BlockStrategyRecord;
+import com.veadan.folib.entity.AllowlistDenylistBlock;
 import com.veadan.folib.entity.BlockStrategyInfo;
 import com.veadan.folib.entity.License;
 import com.veadan.folib.entity.PackageNameBlock;
-import com.veadan.folib.enums.ConditionTypeEnum;
-import com.veadan.folib.enums.SafeLevelEnum;
+import com.veadan.folib.enums.*;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
@@ -34,6 +35,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import tk.mybatis.mapper.entity.Example;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -74,6 +76,9 @@ public class ArtifactBlockComponent {
 
     @Autowired
     private DistributedCacheComponent distributedCacheComponent;
+    @Autowired
+    @Lazy
+    private AllowlistDenylistBlockService allowlistDenylistBlockService;
 
     /**
      * 判断是否需要阻断
@@ -195,27 +200,55 @@ public class ArtifactBlockComponent {
         if (CollectionUtils.isEmpty(vulnerabilities)) {
             return false;
         }
-        final Repository repositoryDto = configurationManagementService.getConfiguration().getStorage(artifact.getStorageId()).getRepository(artifact.getRepositoryId());
-        Set<String> repositoryBlacks = repositoryDto.getVulnerabilityBlacks();
-        Set<String> repositoryWhites = repositoryDto.getVulnerabilityWhites();
-        final SecurityPolicyConfiguration mutableSecurityPolicyConfiguration = configurationManagementService.getConfiguration().getSecurityPolicyConfiguration();
-        Set<String> platformBlacks = mutableSecurityPolicyConfiguration.getBlacks();
-        Set<String> platformWhites = mutableSecurityPolicyConfiguration.getWhites();
+        Date localDate = new Date();
+        String correlationId = String.format("%s:%s",artifact.getStorageId(), artifact.getRepositoryId());
+        //查询漏洞白名单和黑名单
+        List<AllowlistDenylistBlock> repositoryList = allowlistDenylistBlockService.queryAllowlistDenylistBlockList(AllowlistDenylistBlock.builder().category(CategoryEnum.VULNERABILITY.toString())
+                .domain(BlockDomainEnum.REPOSITORY.toString()).correlationId(correlationId).build());
+        List<AllowlistDenylistBlock>  repositoryBlackList = repositoryList.stream().filter(allowlistDenylistBlock -> RuleEnum.BLACKLIST.toString().equals(allowlistDenylistBlock.getType())).collect(Collectors.toList());
+        List<AllowlistDenylistBlock>  repositoryWhiteList = repositoryList.stream().filter(allowlistDenylistBlock -> RuleEnum.WHITES.toString().equals(allowlistDenylistBlock.getType())).collect(Collectors.toList());
+
+
+        //final Repository repositoryDto = configurationManagementService.getConfiguration().getStorage(artifact.getStorageId()).getRepository(artifact.getRepositoryId());
+        //Set<String> repositoryBlacks = repositoryDto.getVulnerabilityBlacks();
+        //Set<String> repositoryWhites = repositoryDto.getVulnerabilityWhites();
+        //final SecurityPolicyConfiguration mutableSecurityPolicyConfiguration = configurationManagementService.getConfiguration().getSecurityPolicyConfiguration();
+        //Set<String> platformBlacks = mutableSecurityPolicyConfiguration.getBlacks();
+        //Set<String> platformWhites = mutableSecurityPolicyConfiguration.getWhites();
+
+        List<AllowlistDenylistBlock> vulnerabilityList = allowlistDenylistBlockService.queryAllowlistDenylistBlockList(AllowlistDenylistBlock.builder().category(CategoryEnum.VULNERABILITY.toString()).domain(BlockDomainEnum.PLATFORM.toString()).build());
+        List<AllowlistDenylistBlock>  platformBlackList = vulnerabilityList.stream().filter(item->RuleEnum.BLACKLIST.toString().equals(item.getType())).collect(Collectors.toList());
+        List<AllowlistDenylistBlock>  platformWhiteList = vulnerabilityList.stream().filter(item->RuleEnum.WHITES.toString().equals(item.getType())).collect(Collectors.toList());
         //是否存在仓库级别漏洞黑名单
-        if (filterVulnerabilityBlacks && vulnerabilities.stream().anyMatch(repositoryBlacks::contains)) {
+        //if (filterVulnerabilityBlacks && vulnerabilities.stream().anyMatch(repositoryBlacks::contains)) {
+        //    log.warn("Artifact [{}] there is a repository level blacklist", artifact.getUuid());
+        //    return true;
+        //}
+        if (filterVulnerabilityBlacks && isVulnerabilityBlock(repositoryBlackList,vulnerabilities,localDate)) {
             log.warn("Artifact [{}] there is a repository level blacklist", artifact.getUuid());
             return true;
         }
+
         //是否存在平台级别漏洞黑名单
-        if (filterVulnerabilityBlacks && vulnerabilities.stream().anyMatch(platformBlacks::contains)) {
+        //if (filterVulnerabilityBlacks && vulnerabilities.stream().anyMatch(platformBlacks::contains)) {
+        //    log.warn("Artifact [{}] there is a platform level blacklist", artifact.getUuid());
+        //    return true;
+        //}
+        if (filterVulnerabilityBlacks && isVulnerabilityBlock(platformBlackList, vulnerabilities,localDate)) {
             log.warn("Artifact [{}] there is a platform level blacklist", artifact.getUuid());
             return true;
         }
+
         for (Vulnerability vulnerability : vulnerabilitySet) {
             //开启漏洞白名单过滤
             if (filterVulnerabilityWhites) {
                 //过滤仓库级别白名单、平台级别白名单
-                if (repositoryWhites.contains(vulnerability.getUuid()) || platformWhites.contains(vulnerability.getUuid())) {
+                //if (repositoryWhites.contains(vulnerability.getUuid()) || platformWhites.contains(vulnerability.getUuid())) {
+                //    continue;
+                //}
+                List<AllowlistDenylistBlock> repoList = repositoryWhiteList.stream().filter(item-> vulnerability.getUuid().equals(item.getIdentifier())).collect(Collectors.toList());
+                List<AllowlistDenylistBlock> platformList = platformWhiteList.stream().filter(item-> vulnerability.getUuid().equals(item.getIdentifier())).collect(Collectors.toList());
+                if (isVulnerabilityWhite(repoList,vulnerability,localDate) || isVulnerabilityWhite(platformList,vulnerability,localDate)) {
                     continue;
                 }
             }
@@ -295,29 +328,35 @@ public class ArtifactBlockComponent {
         if (CollectionUtils.isEmpty(artifact.getComponentSet()) || (!filterLicenseBlacks && CollectionUtils.isEmpty(licenseIds))) {
             return false;
         }
+        Date localDate = new Date();
         //license库
         List<License> licenses = licenseService.getLicenseCache();
+        List<AllowlistDenylistBlock> licensesList  = allowlistDenylistBlockService.queryAllowlistDenylistBlockList(AllowlistDenylistBlock.builder().category(CategoryEnum.LICENSE.toString())
+                .domain(BlockDomainEnum.PLATFORM.toString()).build());
         Integer white = 1, black = 2;
         //license黑、白名单
-        List<String> whiteLicenses = Lists.newArrayList(), blackLicenses = Lists.newArrayList();
-        licenses.forEach(license -> {
-            if (white.equals(license.getBlackWhiteType())) {
-                whiteLicenses.add(license.getLicenseId());
-            } else if (black.equals(license.getBlackWhiteType())) {
-                blackLicenses.add(license.getLicenseId());
-            }
-        });
+        //List<String> whiteLicenses = Lists.newArrayList(), blackLicenses = Lists.newArrayList();
+        //licenses.forEach(license -> {
+        //    if (white.equals(license.getBlackWhiteType())) {
+        //        whiteLicenses.add(license.getLicenseId());
+        //    } else if (black.equals(license.getBlackWhiteType())) {
+        //        blackLicenses.add(license.getLicenseId());
+        //    }
+        //});
+        List<AllowlistDenylistBlock> whiteLicenses = Lists.newArrayList(), blackLicenses = Lists.newArrayList();
+        whiteLicenses = licensesList.stream().filter(item-> RuleEnum.WHITES.toString().equals(item.getType())).collect(Collectors.toList());
+        blackLicenses = licensesList.stream().filter(item-> RuleEnum.BLACKLIST.toString().equals(item.getType())).collect(Collectors.toList());
         //制品的license
         for (com.veadan.folib.domain.Component component : artifact.getComponentSet()) {
             if (CollectionUtils.isNotEmpty(component.getLicense())) {
                 for (String license : component.getLicense()) {
                     //license黒名单
-                    if (filterLicenseBlacks && blackLicenses.contains(license)) {
+                    if (filterLicenseBlacks && isLicenseBlacks(license, blackLicenses,localDate) ) {
                         log.warn("Artifact [{}] there is a blacklist of license [{}]", artifact.getUuid(), license);
                         return true;
                     }
                     //license白名单
-                    if (filterLicenseWhites && whiteLicenses.contains(license)) {
+                    if (filterLicenseWhites && isLicenseWhite(license, whiteLicenses,localDate)) {
                         continue;
                     }
                     if (licenseIds.contains(license)) {
@@ -328,6 +367,47 @@ public class ArtifactBlockComponent {
             }
         }
         return false;
+    }
+
+    private boolean isVulnerabilityBlock(List<AllowlistDenylistBlock> blackList, Set<String> vulnerabilities, Date localDate) {
+        List<AllowlistDenylistBlock> platformBlack = blackList.stream().filter(item -> vulnerabilities.contains(item.getIdentifier())).collect(Collectors.toList());
+        if (platformBlack.isEmpty()) {
+            return false;
+        }
+        if (platformBlack.stream().anyMatch(item -> Objects.isNull(item.getValidFrom()))) {
+            return true;
+        }
+        return platformBlack.stream().anyMatch(item -> Objects.nonNull(item.getValidFrom()) && localDate.before(item.getValidFrom()));
+    }
+
+    private boolean isVulnerabilityWhite(List<AllowlistDenylistBlock> whiteList, Vulnerability vulnerability,Date localDate){
+        List<AllowlistDenylistBlock> list  = whiteList.stream().filter(item-> vulnerability.getUuid().equals(item.getIdentifier())).collect(Collectors.toList());
+        if(list.isEmpty()){
+            return false;
+        }
+        if(list.stream().anyMatch(item-> Objects.isNull(item.getValidFrom()))){
+            return true;
+        }
+        return list.stream().anyMatch(item -> Objects.nonNull(item.getValidFrom()) &&  localDate.before(item.getValidFrom()));
+    }
+
+    private boolean isLicenseBlacks(String license, List<AllowlistDenylistBlock> blackLicenses, Date localDate) {
+        if (license == null || blackLicenses == null || blackLicenses.isEmpty()) {
+            return false;
+        }
+
+        return blackLicenses.stream()
+                .anyMatch(item -> Objects.equals(item.getIdentifier(), license) &&
+                        (item.getValidFrom() == null ||  localDate.before(item.getValidFrom())));
+    }
+
+    private boolean isLicenseWhite(String license, List<AllowlistDenylistBlock> whiteLicenses, Date localDate){
+        if (license == null || whiteLicenses == null || whiteLicenses.isEmpty()) {
+            return false;
+        }
+        return whiteLicenses.stream()
+                .anyMatch(item -> Objects.equals(item.getIdentifier(), license) &&
+                        (item.getValidFrom() == null ||  localDate.before(item.getValidFrom())));
     }
 
     private boolean noScanResultBlock(Artifact artifact) {

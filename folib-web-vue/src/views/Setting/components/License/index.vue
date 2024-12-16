@@ -13,15 +13,18 @@
       <a-table rowKey="uuid" class="mt-20" :columns="i18nColumns2" :data-source="licenseData"
         @change="handleChangeTable" :scroll="{ x: true }" :loading="licenseTableLoading"
         :pagination="{ pageSize: queryParams.limit, current: queryParams.page, total: queryParams.total, showLessItems: true }">
-        <template slot="licenseId" slot-scope="licenseId, row">
-          <a-button type="link" @click="handleGoDetail(row)">
-            {{ licenseId }}
+        <template slot="identifier" slot-scope="identifier, row">
+          <a-button type="link" @click="handleGoDetail(row.identifier)">
+            {{ identifier }}
           </a-button>
         </template>
+        <div slot="validFrom" slot-scope="text, record">
+          <span>{{ formatDate(record.validFrom)}}</span>
+        </div>
         <div slot="operation" slot-scope="text, record">
           <div class="col-action">
             <a-popconfirm :title="$t('Package.SureDelete')" okType="danger" :ok-text="$t('Package.Confirm')"
-              :cancel-text="$t('Package.Cancel')" @confirm="blackWhite(record, 0)">
+              :cancel-text="$t('Package.Cancel')" @confirm="removeAllowlistDenylistBlock(record)">
               <a-button type="link" size="small">
                 <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path class="fill-danger" fill-rule="evenodd" clip-rule="evenodd"
@@ -31,10 +34,22 @@
                 <span class="text-danger">DELETE</span>
               </a-button>
             </a-popconfirm>
+            <a-button type="link" size="small" @click="enditLicense(record)">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none"
+                   xmlns="http://www.w3.org/2000/svg">
+                <path class="fill-muted"
+                      d="M13.5858 3.58579C14.3668 2.80474 15.6332 2.80474 16.4142 3.58579C17.1953 4.36683 17.1953 5.63316 16.4142 6.41421L15.6213 7.20711L12.7929 4.37868L13.5858 3.58579Z"
+                      fill="#111827"/>
+                <path class="fill-muted"
+                      d="M11.3787 5.79289L3 14.1716V17H5.82842L14.2071 8.62132L11.3787 5.79289Z"
+                      fill="#111827"/>
+              </svg>
+              <span class="text-dark" >EDIT</span>
+            </a-button>
           </div>
         </div>
       </a-table>
-      <AddLicense v-if="showLicenseModal" :modelVisible="showLicenseModal" :blackWhiteType="blackWhiteType"
+      <AddLicense v-if="showLicenseModal" :modelVisible="showLicenseModal" :blackWhiteType="blackWhiteType" :recordData="recordData"
         @licenseModalCancel="licenseModalCancel" @licenseRefresh="handheTableSearch" />
     </a-card>
   </div>
@@ -45,6 +60,8 @@ import { hasRole, isAdmin, hasPermission } from "@/utils/permission";
 import { getLicensesList, blackWhite } from "@/api/licenses.js";
 import { formatTimestamp } from "@/utils/util.js";
 import AddLicense from "./add"
+import {deleteAllowlistDenylistBlock, queryAllowlistDenylistBlock} from "@/api/AllowlistDenylistBlock";
+import moment from "moment/moment";
 export default {
   props: {
     blackWhiteType: {
@@ -58,19 +75,36 @@ export default {
   data() {
     return {
       columns2: [
+        // {
+        //   title: "许可证编号",
+        //   i18nKey: 'Licenses.LicenseNumber',
+        //   dataIndex: "licenseId",
+        //   scopedSlots: { customRender: "licenseId" },
+        // },
         {
-          title: "许可证编号",
+          title: '许可证编号',
           i18nKey: 'Licenses.LicenseNumber',
-          dataIndex: "licenseId",
-          scopedSlots: { customRender: "licenseId" },
+          dataIndex: 'identifier',
+          key: 'identifier',
+          width: '40%',
+          scopedSlots: {customRender: 'identifier'},
+        },
+        {
+          title: '有效期',
+          i18nKey: 'BlackWhite.validFrom',
+          dataIndex: 'validFrom',
+          width: '40%',
+          scopedSlots: {customRender: 'validFrom'},
+          key: 'validFrom'
         },
         {
           title: '操作',
-          i18nKey: 'Package.Operate',
+          i18nKey: 'BlackWhite.Operate',
           dataIndex: 'operation',
-          width: 80,
-          scopedSlots: { customRender: 'operation' },
-        },
+          width: '20%',
+          align: 'right',
+          scopedSlots: {customRender: 'operation'},
+        }
       ],
       licenseData: [],
       licenseTableLoading: false,
@@ -83,6 +117,7 @@ export default {
       },
       operatorEnabled: false,
       showLicenseModal: false,
+      recordData: undefined,
     };
   },
   computed: {
@@ -106,13 +141,20 @@ export default {
     formatTimestamp,
     // 获取表格数据
     getData() {
-      this.licenseTableLoading = true
-      getLicensesList(this.queryParams).then((res) => {
-        this.queryParams.total = res.data.total
-        this.licenseData = res.data.rows
-      }).finally(() => {
-        this.licenseTableLoading = false
-      })
+      //this.licenseTableLoading = true
+      // getLicensesList(this.queryParams).then((res) => {
+      //   this.queryParams.total = res.data.total
+      //   this.licenseData = res.data.rows
+      // }).finally(() => {
+      //   this.licenseTableLoading = false
+      // })
+      if(this.blackWhiteType === 1){
+        this.getAllowlistDenylistData( {type: 'WHITES',category:'LICENSE',domain: 'PLATFORM',page:this.queryParams.page,size:this.queryParams.limit,identifier:this.queryParams.searchKeyword});
+      }else {
+        this.getAllowlistDenylistData({type: 'BLACKLIST',category:'LICENSE',domain: 'PLATFORM',page:this.queryParams.page,size:this.queryParams.limit,identifier:this.queryParams.searchKeyword});
+      }
+
+
     },
     handleChangeTable(pagination, filters, sorter) {
       if (pagination) {
@@ -128,8 +170,8 @@ export default {
       }
       this.getData()
     },
-    handleGoDetail(row) {
-      this.$router.push(`/licenses/licensesDetail/${row.licenseId}`)
+    handleGoDetail(licenseId) {
+      this.$router.push(`/licenses/licensesDetail/${licenseId}`)
     },
     handheTableSearch() {
       this.queryParams.page = 1
@@ -144,12 +186,44 @@ export default {
       }).finally(() => {
       })
     },
+
+    removeAllowlistDenylistBlock(data) {
+      deleteAllowlistDenylistBlock(data).then(res => {
+        this.$notification["success"]({
+          message: this.$t('Package.OperateSuccess'),
+        })
+      }).finally(() => {
+        this.handheTableSearch()
+      })
+    },
+    enditLicense(data){
+      this.recordData = data;
+      this.showLicenseModal = true
+    },
     licenseModalCancel() {
       this.showLicenseModal = false
     },
     addLicenseShow() {
       this.showLicenseModal = true
     },
+
+    getAllowlistDenylistData(data){
+      this.licenseTableLoading = true;
+      queryAllowlistDenylistBlock(data).then(res=>{
+        this.licenseData = res.data.content;
+        this.queryParams.total = res.data.totalElements;
+      }).finally(()=>{
+        this.licenseTableLoading = false
+      })
+    },
+
+    formatDate(date) {
+      console.log('date',date)
+      if(date){
+        return moment(date).format('YYYY-MM-DD');
+      }
+     return "";
+    }
   },
 };
 </script>

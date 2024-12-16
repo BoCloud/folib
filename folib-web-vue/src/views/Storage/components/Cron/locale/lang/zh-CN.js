@@ -14,4 +14,5 @@ export default {
     'TheOperationIsIncorrect': '操作不正确',
     'FillInTheCronExpression': '请填写cron表达式',
     'Failure': '失败',
+    'AddArtifactPath': '添加制品目录',
 }

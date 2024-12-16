@@ -7,15 +7,16 @@ import com.veadan.folib.dto.RoleDTO;
 import com.veadan.folib.dto.UserRoleDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import com.veadan.folib.entity.RoleResourceRef;
+import org.springframework.stereotype.Component;
 
- /**
+/**
  * 权限表;(role_resource_ref)表数据库访问层
  * @author : Fengmaogen
  * @date : 2024-7-17
  */
+@Component
 @Mapper
 public interface RoleResourceRefMapper extends CommonMapper<RoleResourceRef> {
     /** 
@@ -46,6 +47,7 @@ public interface RoleResourceRefMapper extends CommonMapper<RoleResourceRef> {
      * @param roleResourceRef 实例对象
      * @return 影响行数
      */
+    @Override
     int insert(RoleResourceRef roleResourceRef);
     /** 
      * 批量新增数据

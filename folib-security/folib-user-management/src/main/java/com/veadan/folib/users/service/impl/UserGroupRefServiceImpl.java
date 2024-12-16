@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  * @date : 2024-7-18
  */
 @Service
-@Transactional
+@Transactional(rollbackFor=Exception.class)
 public class UserGroupRefServiceImpl implements UserGroupRefService {
     @Autowired
     private UserGroupRefMapper userGroupRefMapper;

@@ -39,5 +39,8 @@
     <include file="classpath:db/changelog/changelog_user_auth_update.xml"/>
     <include file="classpath:db/changelog/changelog_block_strategy_init.xml"/>
     <include file="classpath:db/changelog/changelog_dict_update_1.xml"/>
+    <include file="classpath:db/changelog/changelog_dict_update_1.xml"/>
+    <include file="classpath:db/changelog/changelog_federal_promotion_policy_init.xml"/>
+    <include file="classpath:db/changelog/changelog_allowlist-denylist-block-init.xml"/>
     <!--后续增加的按照写对应的sql与changelog-->
 </databaseChangeLog>

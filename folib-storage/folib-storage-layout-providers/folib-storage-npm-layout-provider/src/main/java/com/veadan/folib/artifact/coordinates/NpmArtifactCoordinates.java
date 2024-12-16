@@ -1,6 +1,8 @@
 package com.veadan.folib.artifact.coordinates;
 
+import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.versioning.SemanticVersion;
+import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
@@ -17,6 +19,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.net.URI;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -71,6 +74,8 @@ public class NpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<NpmA
     private static final String EXTENSION = "extension";
 
     private static final String DISTRIBUTION = "distribution";
+
+    public static final List<String> NPM_EXTENSION_LIST = Lists.newArrayList(".tgz", ".har");
 
     public NpmArtifactCoordinates() {
         resetCoordinates(SCOPE, NAME, VERSION, EXTENSION);
@@ -283,6 +288,7 @@ public class NpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<NpmA
 
     public static NpmArtifactCoordinates parseByResolvePath(String path) {
         try {
+            path = UriUtils.decode(path);
             path = path.replace("/-/", "/");
             String[] arr = path.split("/");
             String packageScope = "", packageName = "", packageNameWithVersion = "", version = "";

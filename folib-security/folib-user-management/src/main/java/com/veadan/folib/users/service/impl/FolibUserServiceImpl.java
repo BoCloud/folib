@@ -39,7 +39,7 @@ import java.util.stream.Stream;
  */
 @Slf4j
 @Component
-@Transactional
+@Transactional(rollbackFor=Exception.class)
 public class FolibUserServiceImpl implements FolibUserService {
 
     @Inject

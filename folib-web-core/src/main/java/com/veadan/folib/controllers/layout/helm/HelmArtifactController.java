@@ -109,7 +109,7 @@ public class HelmArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(value = "{storageId}/{repositoryId}/charts", method = {RequestMethod.POST})
+    @RequestMapping(value = {"{storageId}/{repositoryId}/charts"}, method = {RequestMethod.POST})
     public ResponseEntity upload(@RepositoryMapping Repository repository,
                                  @RequestHeader HttpHeaders httpHeaders,
                                  HttpServletRequest request,
@@ -128,8 +128,7 @@ public class HelmArtifactController extends BaseArtifactController {
             RepositoryPath repoPath = repositoryPathResolver.resolve(repository, "");
             String absolutePath = repoPath.toAbsolutePath().toString();
             //helmRepoUtil.createIndex(absolutePath, repository);
-            HelmMetadataIndexer indexer = new HelmMetadataIndexer(storageId, repositoryId,
-                    getBaseUrl()+"/"+ storageId + "/" + repositoryId + "/", artifactManagementService, repositoryPathResolver);
+            HelmMetadataIndexer indexer = new HelmMetadataIndexer(storageId, repositoryId, artifactManagementService, repositoryPathResolver);
             indexer.reindexAsSystem();
             return ResponseEntity.status(HttpStatus.CREATED).build();
         } catch (Exception e) {
@@ -144,7 +143,8 @@ public class HelmArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(value = "{storageId}/{repositoryId}/index.yaml", method = {RequestMethod.GET})
+    @RequestMapping(value ="{storageId}/{repositoryId}/index.yaml",
+            method = {RequestMethod.GET})
     public void downloadIndex(@RepositoryMapping Repository repository,
                               @RequestHeader HttpHeaders httpHeaders,
                               HttpServletRequest request,
@@ -159,6 +159,9 @@ public class HelmArtifactController extends BaseArtifactController {
                 RepositoryPath repoPath = repositoryPathResolver.resolve(repository, "");
                 String absolutePath = repoPath.toAbsolutePath().toString();
                 helmRepoUtil.createIndex(absolutePath, repository);
+            }
+            if(repositoryPath == null && RepositoryTypeEnum.PROXY.getType().equals(repository.getType())){
+                repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, "charts/index.yaml");
             }
             vulnerabilityBlock(repositoryPath);
             provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);

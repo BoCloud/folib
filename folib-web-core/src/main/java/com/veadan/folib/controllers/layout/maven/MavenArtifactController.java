@@ -84,14 +84,17 @@ public class MavenArtifactController
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
 
-        try (InputStream is = request.getInputStream()){
+        try (InputStream is = request.getInputStream()) {
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-            artifactManagementService.validateAndStore(repositoryPath,is);
+            artifactManagementService.validateAndStore(repositoryPath, is);
 
             return ResponseEntity.ok("The artifact was deployed successfully.");
+        } catch (ArtifactStorageException e) {
+            logger.error("Unable to copy artifact due to ArtifactStorageException", e);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(e.getMessage());
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
-
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }

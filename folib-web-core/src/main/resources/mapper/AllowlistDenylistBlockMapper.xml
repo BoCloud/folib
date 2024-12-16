@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.veadan.folib.mapper.AllowlistDenylistBlockMapper">
+    <resultMap type="com.veadan.folib.entity.AllowlistDenylistBlock" id="AllowlistDenylistBlockMap">
+        <result property="id" column="id" />
+        <result property="identifier" column="identifier" />
+        <result property="type" column="type" />
+        <result property="validFrom" column="valid_from" />
+        <result property="tag" column="tag" />
+        <result property="domain" column="domain" />
+        <result property="correlationId" column="correlation_id" />
+        <result property="createdBy" column="created_by" />
+        <result property="createdTime" column="created_time" />
+        <result property="updatedBy" column="updated_by" />
+        <result property="updateTime" column="update_time" />
+        <result property="category" column="category" />
+    </resultMap>
+
+    <!-- 通过ID查询单条数据 -->
+    <select id="queryById" resultMap="AllowlistDenylistBlockMap">
+        select
+        id,identifier,type,valid_from,tag,category,domain,correlation_id,created_by,created_time,updated_by,update_time
+        from allowlist_denylist_block
+        where id = #{id}
+    </select>
+    <select id="queryAllowlistDenylistBlock" resultMap="AllowlistDenylistBlockMap">
+      select * from allowlist_denylist_block
+        <where>
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="identifier != null and identifier != ''">
+                and identifier = #{identifier}
+            </if>
+            <if test="type != null and type != ''">
+                and type = #{type}
+            </if>
+            <if test="validFrom != null">
+                and valid_from = #{validFrom}
+            </if>
+            <if test="tag != null and tag != ''">
+                and tag = #{tag}
+            </if>
+            <if test="category != null ">
+                and category = #{category}
+            </if>
+            <if test="domain !=null and domain!=''">
+                and domain = #{domain}
+            </if>
+            <if test="correlationId != null and correlationId != ''">
+                and correlation_id = #{correlationId}
+            </if>
+
+
+        </where>
+    </select>
+
+    <!--分页查询指定行数据-->
+    <select id="queryAllByLimit" resultMap="AllowlistDenylistBlockMap">
+        select
+        id,identifier,type,valid_from,tag,category,domain,correlation_id,created_by,created_time,updated_by,update_time
+        from allowlist_denylist_block
+        <where>
+            <if test="entity.id != null and entity.id != ''">
+                and id = #{entity.id}
+            </if>
+            <if test="entity.identifier != null and entity.identifier != ''">
+                and identifier = #{entity.identifier}
+            </if>
+            <if test="entity.type != null and entity.type != ''">
+                and type = #{entity.type}
+            </if>
+            <if test="entity.validFrom != null and entity.validFrom != ''">
+                and valid_from = #{entity.validFrom}
+            </if>
+            <if test="entity.tag != null and entity.tag != ''">
+                and tag = #{entity.tag}
+            </if>
+            <if test="entity.category != null and entity.category != ''">
+                and category = #{entity.category}
+            </if>
+            <if test="entity.domain !=null and entity.domain!=''">
+                and domain = #{entity.domain}
+            </if>
+            <if test="entity.correlationId != null and entity.correlationId != ''">
+                and correlation_id = #{entity.correlationId}
+            </if>
+            <if test="entity.createdBy != null and entity.createdBy != ''">
+                and created_by = #{entity.createdBy}
+            </if>
+            <if test="entity.createdTime != null and entity.createdTime != ''">
+                and created_time = #{entity.createdTime}
+            </if>
+            <if test="entity.updatedBy != null and entity.updatedBy != ''">
+                and updated_by = #{entity.updatedBy}
+            </if>
+            <if test="entity.updateTime != null and entity.updateTime != ''">
+                and update_time = #{entity.updateTime}
+            </if>
+        </where>
+        limit #{pageable.offset}, #{pageable.pageSize}
+    </select>
+
+    <!--统计总行数-->
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from allowlist_denylist_block
+        <where>
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="identifier != null and identifier != ''">
+                and identifier = #{identifier}
+            </if>
+            <if test="type != null and type != ''">
+                and type = #{type}
+            </if>
+            <if test="validFrom != null ">
+                and valid_from = #{validFrom}
+            </if>
+            <if test="category != null and category != ''">
+                and category = #{category}
+            </if>
+            <if test="tag != null and tag != ''">
+                and tag = #{tag}
+            </if>
+            <if test="domain != null and domain != ''">
+                and domain = #{domain}
+            </if>
+            <if test="correlationId !=null and correlationId !=''">
+                and correlation_id = #{correlationId}
+            </if>
+            <if test="createdBy != null and createdBy != ''">
+                and created_by = #{createdBy}
+            </if>
+            <if test="createdTime != null ">
+                and created_time = #{createdTime}
+            </if>
+            <if test="updatedBy != null and updatedBy != ''">
+                and updated_by = #{updatedBy}
+            </if>
+            <if test="updateTime != null ">
+                and update_time = #{updateTime}
+            </if>
+        </where>
+    </select>
+
+    <!--新增数据-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into allowlist_denylist_block(id,identifier,type,valid_from,tag,category,domain,correlation_id,created_by,created_time,updated_by,update_time)
+        values (#{id},#{identifier},#{type},#{validFrom},#{tag},#{category},#{domain},#{correlationId},#{createdBy},#{createdTime},#{updatedBy},#{updateTime})
+    </insert>
+
+    <!-- 批量新增数据 -->
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into allowlist_denylist_block(id,identifier,type,valid_from,tag,category,domain,correlation_id,created_by,created_time,updated_by,update_time)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.identifier},#{entity.type},#{entity.validFrom},#{entity.tag},#{entity.category},#{entity.domain},#{entity.correlationId},#{entity.createdBy},#{entity.createdTime},#{entity.updatedBy},#{entity.updateTime})
+        </foreach>
+    </insert>
+
+    <!-- 批量新增或按主键更新数据 -->
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into allowlist_denylist_block(id,identifier,type,valid_from,tag,category,domain,correlation_id,created_by,created_time,updated_by,update_time)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.identifier},#{entity.type},#{entity.validFrom},#{entity.tag},#{entity.category},#{entity.domain},#{entity.correlationId},#{entity.createdBy},#{entity.createdTime},#{entity.updatedBy},#{entity.updateTime})
+        </foreach>
+        on duplicate key update
+        id=values(id),
+        identifier=values(identifier),
+        type=values(type),
+        valid_from=values(valid_from),
+        tag = values(tag),
+        category=values(category),
+        domain=values(domain),
+        correlation_id=values(correlation_id),
+        created_by=values(created_by),
+        created_time=values(created_time),
+        updated_by=values(updated_by),
+        update_time=values(update_time)
+    </insert>
+
+    <!-- 更新数据 -->
+    <update id="update">
+        update allowlist_denylist_block
+        <set>
+            <if test="id != null">
+                id = #{id},
+            </if>
+            <if test="identifier != null and identifier != ''">
+                identifier = #{identifier},
+            </if>
+            <if test="type != null and type != ''">
+                type = #{type},
+            </if>
+            <if test="validFrom != null ">
+                valid_from = #{validFrom},
+            </if>
+            <if test="tag !=null and tag !=''">
+                tag = #{tag},
+            </if>
+            <if test="category != null and category != ''">
+                category = #{category},
+            </if>
+            <if test="domain != null and domain != ''">
+                domain = #{domain},
+            </if>
+            <if test="correlationId != null and correlationId != ''">
+                correlation_id = #{correlationId},
+            </if>
+            <if test="createdBy != null and createdBy != ''">
+                created_by = #{createdBy},
+            </if>
+            <if test="createdTime != null ">
+                created_time = #{createdTime},
+            </if>
+            <if test="updatedBy != null and updatedBy != ''">
+                updated_by = #{updatedBy},
+            </if>
+            <if test="updateTime != null ">
+                update_time = #{updateTime},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteById">
+        delete from allowlist_denylist_block where id = #{id}
+    </delete>
+    <delete id="deleteAllowlistDenylistBloc" parameterType="com.veadan.folib.entity.AllowlistDenylistBlock">
+        <!-- 删除 allowlist_denylist_block 表中的记录 -->
+        delete from allowlist_denylist_block
+        <where>
+            <!-- 根据 id 进行删除 -->
+            <if test="entity.id != null">
+                and id = #{entity.id}
+            </if>
+            <!-- 根据 identifier 进行删除 -->
+            <if test="entity.identifier != null and entity.identifier.trim() != ''">
+                and identifier = #{entity.identifier}
+            </if>
+            <!-- 根据 type 进行删除 -->
+            <if test="entity.type != null and entity.type.trim() != ''">
+                and type = #{entity.type}
+            </if>
+            <if test="entity.category != null">
+                and category = #{entity.category}
+            </if>
+        </where>
+    </delete>
+</mapper>

@@ -26,6 +26,7 @@ import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -249,6 +250,7 @@ public class AuthorizationConfigServiceImpl
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void addPrivilegesToAnonymous(final List<Privileges> privilegeList) throws IOException
     {
         if (CollectionUtils.isNotEmpty(privilegeList)) {
@@ -256,6 +258,7 @@ public class AuthorizationConfigServiceImpl
                     RoleResourceRef.builder().roleId(SystemRole.ANONYMOUS.name()).resourceId(privileges.name().toUpperCase()).resourceType(GlobalConstants.RESOURCE_TYPE_API).build()
             ).collect(Collectors.toList());
             if (CollectionUtils.isNotEmpty(anonymousPrivileges)) {
+                clearPrivilegesAnonymous();
                 roleResourceRefService.saveBath(anonymousPrivileges);
             }
         }
