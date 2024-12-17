@@ -971,9 +971,11 @@ export default {
           this.folibRepository.type !== 'group' &&
           (hasRole('ARTIFACTS_MANAGER') ||
           permissions.includes('ARTIFACTS_DELETE'))
-        this.metadataEnabled = this.folibRepository.type !== 'group' &&
-        (hasRole('ARTIFACTS_MANAGER') ||
-        permissions.includes('CONFIGURATION_ADD_UPDATE_METADATA'))
+        if (this.currentFileDetial && this.currentFileDetial.artifact) {
+          this.metadataEnabled = this.folibRepository.type !== 'group' &&
+          (hasRole('ARTIFACTS_MANAGER') ||
+          permissions.includes('CONFIGURATION_ADD_UPDATE_METADATA'))
+        }
       })
     },
     deleteSubsidiaryHandle(index, item) {

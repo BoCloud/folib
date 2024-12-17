@@ -26,6 +26,7 @@
     "dompurify": "2.4.0",
     "exceljs": "^4.4.0",
     "file-saver": "^2.0.5",
+    "html2canvas": "^1.4.1",
     "js-cookie": "^2.2.0",
     "jsencrypt": "^3.3.1",
     "jwt-decode": "^3.1.2",

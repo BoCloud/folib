@@ -120,7 +120,7 @@ public class GeneralCleanupArtifactsProvider implements CleanupArtifactsProvider
         if (!LocalDateTime.now().minusDays(cleanupDay).isBefore(lastUsedTime)) {
             try {
                 log.info("Cleanup storageId [{}] repositoryId [{}] path [{}] do delete", storageId, repositoryId, repositoryPath.toString());
-                artifactManagementService.delete(repositoryPath, true);
+                artifactManagementService.delete(repositoryPath, repositoryPath.getRepository().isAllowsForceDeletion());
                 RepositoryPath parentRepositoryPath = null;
                 parentRepositoryPath = repositoryPath.getParent();
                 if (Files.exists(parentRepositoryPath) && !Files.isSameFile(repositoryPath.getRoot(), parentRepositoryPath) && Files.list(parentRepositoryPath).count() == 0) {

@@ -18,9 +18,7 @@ import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
 import com.veadan.folib.event.privilege.PrivilegeEventTypeEnum;
 import com.veadan.folib.forms.users.auth.RoleForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
-import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.StorageDto;
-import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.dto.UserAuthDTO;
@@ -38,7 +36,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -133,6 +130,7 @@ public class RoleController extends BaseController {
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
+    @AuditLog(value = AuditEventNameEnum.USER_MANAGEMENT, target = " '删除权限:'+#roleId")
     public ResponseEntity delete(@ApiParam(value = "The name of the role") @PathVariable String roleId,
                                  Authentication authentication,
                                  @RequestBody  FolibRoleDTO dto,
@@ -166,6 +164,7 @@ public class RoleController extends BaseController {
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
+    @AuditLog(value = AuditEventNameEnum.USER_MANAGEMENT, target = "'创建权限:'+#roleForm.name")
     public ResponseEntity create(@RequestBody @Validated(RoleForm.NewRole.class) RoleForm roleForm,
                                       BindingResult bindingResult,
                                       Authentication authentication,
@@ -214,6 +213,7 @@ public class RoleController extends BaseController {
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
+    @AuditLog(value = AuditEventNameEnum.USER_MANAGEMENT, target = "'更新权限:'+#roleForm.name")
     public ResponseEntity update(@ApiParam(value = "角色id必填", required = true)
                                  @PathVariable String roleId,
                                  @RequestBody @Validated(RoleForm.UpdateRole.class) RoleForm roleForm,
