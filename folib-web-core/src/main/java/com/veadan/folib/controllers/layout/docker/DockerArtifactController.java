@@ -8,8 +8,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.authentication.api.password.PasswordAuthentication;
-import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
-import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.layout.DockerComponent;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.BaseArtifactController;
@@ -745,29 +743,10 @@ public class DockerArtifactController extends BaseArtifactController {
         if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
             return null;
         }
-        Path path = repositoryPath.getTarget();
-        String artifactPath = "";
-        if (path instanceof S3Path) {
-            //S3存储
-            S3Path s3Path = (S3Path) path;
-            S3Iterator iterators = new S3Iterator(s3Path);
-            S3Path imagePath = null;
-            while (iterators.hasNext()) {
-                S3Path itemS3Path = iterators.next();
-                if (DockerArtifactCoordinates.include(itemS3Path.getFileName().toString())) {
-                    imagePath = itemS3Path;
-                    break;
-                }
-            }
-            if (Objects.nonNull(imagePath)) {
-                artifactPath = imagePath.getKey().replace(String.format("%s/%s/", repositoryPath.getStorageId(), repositoryPath.getRepositoryId()), "");
-            }
-        } else {
-            DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-            List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
-            FileContent fileContent = fileContents.get(0);
-            artifactPath = fileContent.getArtifactPath();
-        }
+        DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+        List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
+        FileContent fileContent = fileContents.get(0);
+        String artifactPath = fileContent.getArtifactPath();
         return artifactRepository.findOneArtifact(storageId, repositoryId, artifactPath);
     }
 
