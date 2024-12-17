@@ -31,10 +31,11 @@ export function updatePermission (params) {
     })
 }
 
-export function deletePermission (id) {
+export function deletePermission (data) {
     return axios({
-        url: `/api/auth/${id}`,
-        method: 'delete'
+        url: `/api/auth/${data.id}`,
+        method: 'delete',
+        data
     })
 }
 

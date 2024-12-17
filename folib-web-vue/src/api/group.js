@@ -40,9 +40,10 @@ export function getGroupDetail (id) {
     })
 }
 
-export function deleteGroup (id) {
+export function deleteGroup (data) {
     return axios({
-        url: `/api/groups/${id}`,
-        method: 'delete'
+        url: `/api/groups/${data.id}`,
+        method: 'delete',
+        data
     })
 }

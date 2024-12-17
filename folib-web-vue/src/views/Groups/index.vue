@@ -65,7 +65,7 @@
                             </svg>
                         </a-button>
                         <a-popconfirm :title="$t('Setting.SureDelete')" okType="danger" :ok-text="$t('Setting.BeSure')" :cancel-text="$t('Setting.Cancel')"
-                                      @confirm="handleDelete(record.id)">
+                                      @confirm="handleDelete(record)">
                             <a-button type="link" size="small">
                                 <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path class="fill-danger" fill-rule="evenodd" clip-rule="evenodd"
@@ -207,8 +207,8 @@ export default {
             if (pagination) this.page = pagination.current
             this.queryList()
         },
-        handleDelete(id) {
-            deleteGroup(id).then(res => {
+        handleDelete(data) {
+            deleteGroup(data).then(res => {
                 this.queryList()
             })
         },

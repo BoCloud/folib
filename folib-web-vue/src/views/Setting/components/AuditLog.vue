@@ -62,7 +62,7 @@
           <a-descriptions-item label="操作用户">{{logDetail.username}}</a-descriptions-item>
           <a-descriptions-item label="操作结果">
             <a-tag v-if="logDetail.result===1" color="green">成功</a-tag>
-            <a-tag v-if="logDetail.result===0" color="red">成功</a-tag>
+            <a-tag v-if="logDetail.result===0" color="red">失败</a-tag>
           </a-descriptions-item>
         </a-descriptions>
 

@@ -1,6 +1,7 @@
 package com.veadan.folib.controllers.users;
 
 import com.github.pagehelper.PageInfo;
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.users.support.UserGroupResponseEntity;
@@ -10,6 +11,7 @@ import com.veadan.folib.dto.UserGroupDTO;
 import com.veadan.folib.dto.UserGroupListDTO;
 import com.veadan.folib.entity.UserGroup;
 import com.veadan.folib.entity.UserGroupRef;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
 import com.veadan.folib.forms.users.UserGroupForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
@@ -81,11 +83,13 @@ public class UserGroupController
             @ApiResponse(code = 403, message = USER_GROUP_DELETE_FORBIDDEN),
             @ApiResponse(code = 404, message = NOT_FOUND_USER_GROUP)})
     @PreAuthorize("hasAuthority('DELETE_USER_GROUP')")
+    @AuditLog(value = AuditEventNameEnum.DELETE_USER_GROUP, target = "#userGroupForm.getGroupName")
     @DeleteMapping(value = "{groupId}",
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     public ResponseEntity delete(@ApiParam(value = "The name of the user group") @PathVariable Long groupId,
+                                 @RequestBody @Validated(UserGroupForm.NewUserGroup.class) UserGroupForm userGroupForm,
                                  Authentication authentication,
                                  @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (!(authentication.getPrincipal() instanceof UserDetails)) {
@@ -108,6 +112,7 @@ public class UserGroupController
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_CREATE_USER_GROUP),
             @ApiResponse(code = 400, message = FAILED_CREATE_USER_GROUP)})
     @PreAuthorize("hasAuthority('CREATE_USER_GROUP')")
+    @AuditLog(value = AuditEventNameEnum.ADD_USER_GROUP, target = "#userGroupForm.getGroupName")
     @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
@@ -177,6 +182,7 @@ public class UserGroupController
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_UPDATE_USER_GROUP),
             @ApiResponse(code = 400, message = FAILED_UPDATE_USER_GROUP)})
     @PreAuthorize("hasAuthority('UPDATE_USER_GROUP')")
+    @AuditLog(value = AuditEventNameEnum.UPDATE_USER_GROUP, target = "#userGroupToUpdate.getGroupName")
     @PutMapping(value = "{groupId}",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = {MediaType.TEXT_PLAIN_VALUE,

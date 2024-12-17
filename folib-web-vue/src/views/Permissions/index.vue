@@ -62,7 +62,7 @@
                             </svg>
                         </a-button>
                         <a-popconfirm :title="$t('Setting.SureDelete')" okType="danger" :ok-text="$t('Setting.BeSure')"
-                            :cancel-text="$t('Setting.Cancel')" @confirm="handleDelete(record.id)">
+                            :cancel-text="$t('Setting.Cancel')" @confirm="handleDelete(record)">
                             <a-button v-if="record.isDefault === '0' && record.enName !== 'ANONYMOUS'" type="link"
                                 size="small">
                                 <svg width="16" height="16" viewBox="0 0 20 20" fill="none"
@@ -115,8 +115,8 @@ export default {
                 {
                     title: '权限名称',
                     i18nKey: 'Permissions.Description',
-                    dataIndex: 'cnName',
-                    key: 'cnName',
+                    dataIndex: 'description',
+                    key: 'description',
                     width: 400,
                     scopedSlots: { customRender: 'cnName' },
                 },
@@ -167,8 +167,8 @@ export default {
             this.page = 1
             this.queryList()
         },
-        handleDelete(id) {
-            deletePermission(id).then(res => {
+        handleDelete(data) {
+            deletePermission(data).then(res => {
                 this.queryList()
             })
         },

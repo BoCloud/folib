@@ -2,6 +2,7 @@ package com.veadan.folib.controllers;
 
 import cn.hutool.core.date.DateUtil;
 import com.github.pagehelper.PageInfo;
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.users.UserController;
 import com.veadan.folib.converters.users.RoleConvert;
@@ -11,6 +12,7 @@ import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.PrivilegeDispatch;
 import com.veadan.folib.dto.*;
 import com.veadan.folib.entity.*;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.enums.SyncStrategyEnum;
 import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
 import com.veadan.folib.event.privilege.PrivilegeEventTypeEnum;
@@ -126,12 +128,14 @@ public class RoleController extends BaseController {
             @ApiResponse(code = 403, message = ROLE_DELETE_FORBIDDEN),
             @ApiResponse(code = 404, message = NOT_FOUND_ROLE)})
     @PreAuthorize("hasAuthority('DELETE_ROLE')")
+    @AuditLog(value = AuditEventNameEnum.DELETE_PERMISSIONS, target = "#dto.enName")
     @DeleteMapping(value = "{roleId}",
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     public ResponseEntity delete(@ApiParam(value = "The name of the role") @PathVariable String roleId,
                                  Authentication authentication,
+                                 @RequestBody  FolibRoleDTO dto,
                                  @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (!(authentication.getPrincipal() instanceof UserDetails)) {
             String message = "Unsupported logged user principal type: " + authentication.getPrincipal().getClass();
@@ -157,6 +161,7 @@ public class RoleController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_CREATE_ROLE),
             @ApiResponse(code = 400, message = FAILED_CREATE_ROLE)})
     @PreAuthorize("hasAuthority('CREATE_ROLE')")
+    @AuditLog(value = AuditEventNameEnum.ADD_PERMISSIONS, target = "#roleForm.name")
     @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
@@ -203,6 +208,7 @@ public class RoleController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_UPDATE_ROLE),
             @ApiResponse(code = 400, message = FAILED_UPDATE_ROLE)})
     @PreAuthorize("hasAuthority('UPDATE_ROLE')")
+    @AuditLog(value = AuditEventNameEnum.UPDATE_PERMISSIONS, target = "#roleForm.name")
     @PutMapping(value = "{roleId}",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = {MediaType.TEXT_PLAIN_VALUE,

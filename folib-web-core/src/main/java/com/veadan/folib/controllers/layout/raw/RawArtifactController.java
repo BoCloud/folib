@@ -95,7 +95,6 @@ public class RawArtifactController
                          HttpServletResponse response)
             throws Exception
     {
-        int a =1/0;
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
         logger.info("Requested /{}/{}/{}.", storageId, repositoryId, path);
