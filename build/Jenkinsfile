@@ -36,6 +36,7 @@ pipeline {
                                     export NVM_DIR="/var/jenkins_home/buildEnv/nvm-0.38.0"
                                      [ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh"
                                      [ -s "$NVM_DIR/bash_completion" ] && \\. "$NVM_DIR/bash_completion"
+                                     export https_proxy=http://10.8.3.218:7890 http_proxy=http://10.8.3.218:7890 all_proxy=socks5://10.8.3.218:7890
                                      nvm install v14.21.1
                                      nvm use v14.21.1
                                      npm install -g yarn
