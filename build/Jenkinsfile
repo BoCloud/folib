@@ -30,7 +30,8 @@ pipeline {
         stage('mvn install') {
                      steps {
                          withEnv(['JAVA_HOME=/var/jenkins_home/buildEnv/jdk-11']) {
-                             withMaven(globalMavenSettingsConfig: "${params.maven_settings_id}") {
+                             withMaven(globalMavenSettingsConfig: "${params.maven_settings_id}",publishers: [artifactsPublisher()]) {
+
                                  sh '''
                                     export NVM_DIR="/var/jenkins_home/buildEnv/nvm-0.38.0"
                                      [ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh"
