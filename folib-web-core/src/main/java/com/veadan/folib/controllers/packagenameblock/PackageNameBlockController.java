@@ -1,7 +1,9 @@
 package com.veadan.folib.controllers.packagenameblock;
 
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.domain.PackageNameBlockInfo;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.forms.packagenameblock.PackageNameBlockForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.PackageNameBlockService;
@@ -48,6 +50,7 @@ public class PackageNameBlockController extends BaseController {
     @ApiOperation(value = "保存包名阻断信息")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_SECURITY_POLICY')")
+    @AuditLog(value = AuditEventNameEnum.SAFE_STRATEGY, target = "'新增包名黑名单:' + #packageNameBlockForm.getPackageName()")
     @PutMapping
     public ResponseEntity<Void> savePackageNameBlock(@RequestBody PackageNameBlockForm packageNameBlockForm) {
         packageNameBlockService.savePackageNameBlock(packageNameBlockForm);
@@ -57,6 +60,7 @@ public class PackageNameBlockController extends BaseController {
     @ApiOperation(value = "更新包名阻断信息")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_SECURITY_POLICY')")
+    @AuditLog(value = AuditEventNameEnum.SAFE_STRATEGY, target = "'修改包名黑名单:' + #packageNameBlockForm.getPackageName()")
     @PostMapping
     public ResponseEntity<Void> updatePackageNameBlock(@RequestBody PackageNameBlockForm packageNameBlockForm) {
         packageNameBlockService.updatePackageNameBlock(packageNameBlockForm);
@@ -66,6 +70,7 @@ public class PackageNameBlockController extends BaseController {
     @ApiOperation(value = "删除包名阻断信息")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_SECURITY_POLICY')")
+    @AuditLog(value = AuditEventNameEnum.SAFE_STRATEGY, target = "'删除包名黑名单:' + #packageNameBlockForm.getPackageName()")
     @DeleteMapping
     public ResponseEntity<Void> deletePackageNameBlock(@RequestBody PackageNameBlockForm packageNameBlockForm) {
         packageNameBlockService.deletePackageNameBlock(packageNameBlockForm);

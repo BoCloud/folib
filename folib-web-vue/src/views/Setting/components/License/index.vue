@@ -205,6 +205,7 @@ export default {
     },
     addLicenseShow() {
       this.showLicenseModal = true
+      this.recordData =undefined;
     },
 
     getAllowlistDenylistData(data){
@@ -218,7 +219,6 @@ export default {
     },
 
     formatDate(date) {
-      console.log('date',date)
       if(date){
         return moment(date).format('YYYY-MM-DD');
       }
