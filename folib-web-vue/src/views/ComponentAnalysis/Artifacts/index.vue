@@ -14,10 +14,25 @@
               v-model="queryParams.artifactName" @search="handheTableSearch()" />
           </a-col>
           <a-col :span="1">
-            <a-button type="primary" @click="exportExcelFn">
-              <!-- <template #icon><SearchOutlined /></template> -->
-              {{ $t('Artifacts.exportExcel') }}
-            </a-button>
+            <a-popconfirm :ok-text="$t('Artifacts.OK')" :cancel-text="$t('Artifacts.CANCEL')" @confirm="getExportData">
+              <template #title>
+                  <span style="font-weight: 600;font-size:14px;">{{ $t('Artifacts.printExportCount') }}</span>
+                  <div style="padding-top: 10px;padding-bottom: 10px;">
+                    <a-input
+                      v-model:value="exportCount"
+                      :placeholder="$t('Artifacts.printExportCount')"
+                      style="width: 120px"
+                      :max="1000"
+                      :min="0"
+                      @input="handleInput"
+                      size="small"
+                    />
+                  </div>
+              </template>
+              <div class="export_excel_sty" :title="$t('Artifacts.exportExcel')"> 
+                <img src="./export-excel.svg" width="20" />
+              </div>
+            </a-popconfirm>
           </a-col>
         </a-row>
       </div>
@@ -71,6 +86,8 @@ export default {
   components: { HeaderEcharts },
   data() {
     return {
+      exportCount:50,
+      confirmLoading:false,
       columns: [
         // {
         //   title: "项目名称",
@@ -235,10 +252,35 @@ export default {
   },
   methods: {
     formatTimestamp,
-    // 导出execl表格
-    exportExcelFn(){
-      const artifactsData = JSON.parse(JSON.stringify(this.artifactsData))
+    handleInput(event) {
+      const value = event.target.value;
+      const numericValue = parseInt(value, 10);
+      if (isNaN(numericValue) || numericValue < 0 || numericValue > 1000) {
+        this.exportCount = numericValue < 0 ? 0 : numericValue > 1000 ? 1000 : value;
+      }
+    },
+    getExportData(){
+      this.$notification.open({
+        class: 'ant-notification-success',
+        message: this.$t('Artifacts.exporting'),
+      });
+      const queryParams = JSON.parse(JSON.stringify(this.queryParams))
+      queryParams.page = 1
 
+      // 如果用户没有输入导出数量默认导出50条
+      if(!this.exportCount){
+        queryParams.limit = 50
+      }else{
+        queryParams.limit = parseInt(this.exportCount)
+      }
+      fql(queryParams).then((res) => {
+        this.confirmLoading = false
+        this.exportExcelFn(res.artifact)
+      })
+    },
+    // 导出execl表格
+    exportExcelFn(list){
+      const artifactsData = list
       // 数据封装
       artifactsData.forEach(row => {
         if(row.layout.toLowerCase() !== "docker"){
@@ -284,7 +326,7 @@ export default {
           { header: this.$t('Artifacts.Vulnerability'), key: 'vulnerabilitiesCount', width: 35 },
       ]
       // 定义文件名称
-      const fileName = '制品扫描.xlsx'
+      const fileName = '制品扫描报告.xlsx'
       this.$exportExcel(artifactsData, headers, fileName)
     },
     queryOnScanTreeList() {
@@ -389,5 +431,19 @@ export default {
 
 .repository-query::v-deep .ant-cascader-picker-label {
   padding: 0 30px 0 12px;
+}
+
+.export_excel_sty{
+  background: #fff;
+  width: 38px;
+  height: 38px;
+  padding: 9px;
+  border-radius: 6px;
+  box-shadow: 0px 0px 6px 2px rgba(0, 0, 0, 0.1);
+
+  &:hover{
+    box-shadow: 0px 1px 6px 2px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+  }
 }
 </style>
