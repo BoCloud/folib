@@ -36,8 +36,6 @@ pipeline {
                                     export NVM_DIR="/var/jenkins_home/buildEnv/nvm-0.38.0"
                                      [ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh"
                                      [ -s "$NVM_DIR/bash_completion" ] && \\. "$NVM_DIR/bash_completion"
-
-                                     nvm install 14.21.1
                                      nvm use 14.21.1
                                      npm install -g yarn
                                      yarn -v
