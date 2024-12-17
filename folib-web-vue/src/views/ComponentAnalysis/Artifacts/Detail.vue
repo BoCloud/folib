@@ -200,7 +200,7 @@ export default {
           
           // 将图像添加到 PDF 中
           pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight); 
-          pdf.save('制品扫描详情.pdf'); // 导出 PDF 文件
+          pdf.save( `${this.$t('Artifacts.ProductScanDetail')}.pdf`); // 导出 PDF 文件
           // 显示按钮
           this.showBtn = true
           this.confirmLoading = false

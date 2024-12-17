@@ -328,7 +328,7 @@ export default {
           { header: this.$t('Artifacts.Vulnerability'), key: 'vulnerabilitiesCount', width: 35 },
       ]
       // 定义文件名称
-      const fileName = '制品扫描报告.xlsx'
+      const fileName = `${this.$t('Artifacts.ProductScan')}.xlsx`
       this.$exportExcel(artifactsData, headers, fileName)
       this.confirmLoading = false
     },
