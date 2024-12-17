@@ -130,7 +130,6 @@ public class RoleController extends BaseController {
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    @AuditLog(value = AuditEventNameEnum.USER_MANAGEMENT, target = " '删除权限:'+#roleId")
     public ResponseEntity delete(@ApiParam(value = "The name of the role") @PathVariable String roleId,
                                  Authentication authentication,
                                  @RequestBody  FolibRoleDTO dto,
@@ -164,7 +163,6 @@ public class RoleController extends BaseController {
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    @AuditLog(value = AuditEventNameEnum.USER_MANAGEMENT, target = "'创建权限:'+#roleForm.name")
     public ResponseEntity create(@RequestBody @Validated(RoleForm.NewRole.class) RoleForm roleForm,
                                       BindingResult bindingResult,
                                       Authentication authentication,
@@ -213,7 +211,6 @@ public class RoleController extends BaseController {
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    @AuditLog(value = AuditEventNameEnum.USER_MANAGEMENT, target = "'更新权限:'+#roleForm.name")
     public ResponseEntity update(@ApiParam(value = "角色id必填", required = true)
                                  @PathVariable String roleId,
                                  @RequestBody @Validated(RoleForm.UpdateRole.class) RoleForm roleForm,

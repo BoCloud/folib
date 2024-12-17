@@ -88,7 +88,6 @@ public class UserGroupController
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    @AuditLog(value = AuditEventNameEnum.USER_GROUP, target = " '删除用户组:'+#groupId")
     public ResponseEntity delete(@ApiParam(value = "The name of the user group") @PathVariable Long groupId,
                                  @RequestBody @Validated(UserGroupForm.NewUserGroup.class) UserGroupForm userGroupForm,
                                  Authentication authentication,
@@ -118,7 +117,6 @@ public class UserGroupController
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    @AuditLog(value = AuditEventNameEnum.USER_GROUP, target = " '创建用户组:'+ #userGroupForm.groupName")
     public ResponseEntity createGroup(@RequestBody @Validated(UserGroupForm.NewUserGroup.class) UserGroupForm userGroupForm,
                                       BindingResult bindingResult,
                                       @RequestHeader(HttpHeaders.ACCEPT) String accept) {
@@ -190,7 +188,6 @@ public class UserGroupController
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    @AuditLog(value = AuditEventNameEnum.USER_GROUP, target = " '更新用户组:'+#userGroupToUpdate.groupName")
     public ResponseEntity update(@ApiParam(value = "The name of the user", required = true)
                                  @PathVariable Long groupId,
                                  @RequestBody @Validated(UserGroupForm.ExistingUserGroup.class) UserGroupForm userGroupToUpdate,
