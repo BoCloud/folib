@@ -33,13 +33,12 @@ pipeline {
                              withMaven(globalMavenSettingsConfig: "${params.maven_settings_id}") {
 
                                  sh '''
-                                    export https_proxy=http://10.8.3.218:7890 http_proxy=http://10.8.3.218:7890 all_proxy=socks5://10.8.3.218:7890
                                     export NVM_DIR="/var/jenkins_home/buildEnv/nvm-0.38.0"
                                      [ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh"
                                      [ -s "$NVM_DIR/bash_completion" ] && \\. "$NVM_DIR/bash_completion"
 
-                                     nvm install v14.21.1
-                                     nvm use v14.21.1
+                                     nvm install 14.21.1
+                                     nvm use 14.21.1
                                      npm install -g yarn
                                      yarn -v
                                      mvn clean -U --settings folib-settings.xml -Dmaven.test.skip=true -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true -Dmaven.wagon.http.ssl.ignore.validity.dates=true
