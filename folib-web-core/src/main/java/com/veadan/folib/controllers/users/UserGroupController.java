@@ -1,6 +1,7 @@
 package com.veadan.folib.controllers.users;
 
 import com.github.pagehelper.PageInfo;
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.users.support.UserGroupResponseEntity;
@@ -10,6 +11,7 @@ import com.veadan.folib.dto.UserGroupDTO;
 import com.veadan.folib.dto.UserGroupListDTO;
 import com.veadan.folib.entity.UserGroup;
 import com.veadan.folib.entity.UserGroupRef;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
 import com.veadan.folib.forms.users.UserGroupForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
@@ -85,6 +87,7 @@ public class UserGroupController
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
+    @AuditLog(value = AuditEventNameEnum.USER_GROUP, target = " '删除用户组:'+#groupId")
     public ResponseEntity delete(@ApiParam(value = "The name of the user group") @PathVariable Long groupId,
                                  Authentication authentication,
                                  @RequestHeader(HttpHeaders.ACCEPT) String accept) {
@@ -112,6 +115,7 @@ public class UserGroupController
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
+    @AuditLog(value = AuditEventNameEnum.USER_GROUP, target = " '创建用户组:'+ #userGroupForm.groupName")
     public ResponseEntity createGroup(@RequestBody @Validated(UserGroupForm.NewUserGroup.class) UserGroupForm userGroupForm,
                                       BindingResult bindingResult,
                                       @RequestHeader(HttpHeaders.ACCEPT) String accept) {
@@ -182,6 +186,7 @@ public class UserGroupController
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
+    @AuditLog(value = AuditEventNameEnum.USER_GROUP, target = " '更新用户组:'+#userGroupToUpdate.groupName")
     public ResponseEntity update(@ApiParam(value = "The name of the user", required = true)
                                  @PathVariable Long groupId,
                                  @RequestBody @Validated(UserGroupForm.ExistingUserGroup.class) UserGroupForm userGroupToUpdate,
