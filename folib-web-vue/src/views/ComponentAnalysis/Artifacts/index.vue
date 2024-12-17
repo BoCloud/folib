@@ -14,7 +14,7 @@
               v-model="queryParams.artifactName" @search="handheTableSearch()" />
           </a-col>
           <a-col :span="1">
-            <a-popconfirm :ok-text="$t('Artifacts.OK')" :cancel-text="$t('Artifacts.CANCEL')" @confirm="getExportData">
+            <a-popconfirm :disabled="confirmLoading" :ok-text="$t('Artifacts.OK')" :cancel-text="$t('Artifacts.CANCEL')" @confirm="getExportData">
               <template #title>
                   <span style="font-weight: 600;font-size:14px;">{{ $t('Artifacts.printExportCount') }}</span>
                   <div style="padding-top: 10px;padding-bottom: 10px;">
@@ -30,7 +30,9 @@
                   </div>
               </template>
               <div class="export_excel_sty" :title="$t('Artifacts.exportExcel')"> 
-                <img src="./export-excel.svg" width="20" />
+                <a-spin :spinning="confirmLoading">
+                  <img src="./export-excel.svg" width="20" />
+                </a-spin>
               </div>
             </a-popconfirm>
           </a-col>
@@ -260,10 +262,11 @@ export default {
       }
     },
     getExportData(){
-      this.$notification.open({
-        class: 'ant-notification-success',
-        message: this.$t('Artifacts.exporting'),
-      });
+      this.confirmLoading = true
+      // this.$notification.open({
+      //   class: 'ant-notification-success',
+      //   message: this.$t('Artifacts.exporting'),
+      // });
       const queryParams = JSON.parse(JSON.stringify(this.queryParams))
       queryParams.page = 1
 
@@ -274,7 +277,6 @@ export default {
         queryParams.limit = parseInt(this.exportCount)
       }
       fql(queryParams).then((res) => {
-        this.confirmLoading = false
         this.exportExcelFn(res.artifact)
       })
     },
@@ -328,6 +330,7 @@ export default {
       // 定义文件名称
       const fileName = '制品扫描报告.xlsx'
       this.$exportExcel(artifactsData, headers, fileName)
+      this.confirmLoading = false
     },
     queryOnScanTreeList() {
       this.repositoryList = []
@@ -439,8 +442,7 @@ export default {
   height: 38px;
   padding: 9px;
   border-radius: 6px;
-  box-shadow: 0px 0px 6px 2px rgba(0, 0, 0, 0.1);
-
+  box-shadow: 0px 1px 6px 2px rgba(0, 0, 0, 0.1);
   &:hover{
     box-shadow: 0px 1px 6px 2px rgba(0, 0, 0, 0.15);
     cursor: pointer;

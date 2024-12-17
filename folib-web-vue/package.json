@@ -29,6 +29,7 @@
     "html2canvas": "^1.4.1",
     "js-cookie": "^2.2.0",
     "jsencrypt": "^3.3.1",
+    "jspdf": "^2.5.2",
     "jwt-decode": "^3.1.2",
     "lodash": "^4.17.21",
     "moment": "^2.29.2",
