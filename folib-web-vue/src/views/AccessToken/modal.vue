@@ -13,6 +13,14 @@
       </a-form-item>
       <!-- 用户名 -->
       <a-form-item :label="$t('AccessToken.Username')" required>
+          <a-radio-group v-model="userType" @change="userTypeChange">
+              <a-radio :value="1">
+                  {{$t('AccessToken.Administrator')}}
+              </a-radio>
+              <a-radio :value="2">
+                  {{$t('AccessToken.OrdinaryUser')}}
+              </a-radio>
+          </a-radio-group>
         <a-select
             style="width: 100%"
             v-model="form.username"
@@ -53,8 +61,10 @@ export default {
   data() {
     return {
       visible: false,
+      userType:2,
       form: {},
       users: [],
+      userList:[],
       tokenInfo: {}
     }
   },
@@ -79,12 +89,18 @@ export default {
     },
     getUsers() {
       getUsers().then(res => {
-        this.users = res.users.filter(user => user.enabled).map(item => ({
+        this.userList = res.users.filter(user => user.enabled).map(item => ({
           label: item.username,
-          value: item.username
+          value: item.username,
+          isAdmin:  item.roles.includes("ADMIN")
         }));
+          this.users = this.userList.filter(item => item.isAdmin === (this.userType===1))
       })
     },
+    userTypeChange(e){
+        this.users = this.userList.filter(item => item.isAdmin === (this.userType===1))
+        this.form.username = undefined;
+    }
   },
   mounted() {
     this.getUsers();
