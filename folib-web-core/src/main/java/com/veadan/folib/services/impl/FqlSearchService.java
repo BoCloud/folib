@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.components.common.CommonComponent;
+import com.veadan.folib.controllers.unicom.UnicomAdapter;
 import com.veadan.folib.data.criteria.Selector;
 import com.veadan.folib.dependency.snippet.SnippetGenerator;
 import com.veadan.folib.domain.Artifact;
@@ -76,6 +77,12 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
     @Inject
     @Lazy
     private CommonComponent commonComponent;
+
+    @Inject
+    @Lazy
+    private UnicomAdapter unicomAdapter;
+
+
 
     @Override
     public SearchResults search(Selector<ArtifactEntity> selector) throws IOException {
@@ -240,7 +247,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
     }
 
     private List<String> resolveRepository() {
-        List<String> repositoryIdList = Lists.newArrayList();
+        List<String> repositoryIdList = unicomAdapter.unicomResolveRepository();;
         if (!commonComponent.hasAdmin()) {
             String username = commonComponent.loginUsername();
             final List<Storage> storageList = new ArrayList<>(configurationManagementService.getConfiguration()

@@ -87,4 +87,6 @@ public interface Repository {
 
     Boolean getHealthStatus();
 
+    String getProjectId();
+
 }

@@ -131,6 +131,11 @@ export default {
     },
 
     getAccount(){
+      // 判断是否为回调接口
+      if(this.$route.code!==undefined&&Object.keys(this.$route.code).length !== 0){
+        // 调用回调接口
+
+      }
       let token=this.getCookie("token");
       if(token!=null){
         console.log(token);

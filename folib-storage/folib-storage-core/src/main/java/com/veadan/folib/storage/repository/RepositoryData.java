@@ -39,6 +39,18 @@ public class RepositoryData
 
     private String id;
 
+
+    @Override
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
+    }
+
+    private String projectId;
+
     private String basedir;
 
     private String policy;
@@ -161,6 +173,7 @@ public class RepositoryData
         this.allowsDirectoryBrowsing = delegate.isAllowsDirectoryBrowsing();
         this.checksumHeadersEnabled = delegate.isChecksumHeadersEnabled();
         this.groupDefaultRepository=delegate.getGroupDefaultRepository();
+        this.projectId=delegate.getProjectId();
 
         RepositoryDto mutableRepository = (RepositoryDto) delegate;
         this.proxyConfiguration = immuteProxyConfiguration(mutableRepository.getProxyConfiguration());

@@ -49,6 +49,15 @@ public class FolibUserServiceImpl implements FolibUserService {
     @Autowired
     private RoleResourceRefService roleResourceRefService;
 
+    private static final Set<String> VALID_SOURCE_ID=new HashSet<>();
+
+    static {
+        VALID_SOURCE_ID.add("ldapUserDetailsService");
+        VALID_SOURCE_ID.add("unicomUserDetailService");
+    }
+
+
+
     @Override
     public void deleteByUserName(String username) {
         folibUserMapper.deleteById(username);
@@ -87,7 +96,7 @@ public class FolibUserServiceImpl implements FolibUserService {
         FolibUser folibUser = UserConvert.INSTANCE.UserEntityToFolibUser(userEntity);
         FolibUser folibUserInfo = folibUserMapper.selectOne(FolibUser.builder().id(folibUser.getId()).build());
         if (Objects.equals(folibUserInfo, null)) {
-            if (StringUtils.isBlank(folibUser.getSourceId()) || !"ldapUserDetailsService".equalsIgnoreCase(folibUser.getSourceId())) {
+            if (StringUtils.isBlank(folibUser.getSourceId()) || !VALID_SOURCE_ID.contains(folibUser.getSourceId()) ) {
                 folibUser.setSourceId("dataBaseUserDetailService");
             }
             folibUserMapper.insert(folibUser);

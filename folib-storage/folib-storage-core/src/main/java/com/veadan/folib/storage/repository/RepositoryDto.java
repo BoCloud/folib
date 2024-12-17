@@ -26,6 +26,17 @@ public class RepositoryDto
 
     private String id;
 
+    // 将项目关联到仓库上
+    private String projectId;
+
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
+    }
+
     private String basedir;
 
     private String policy = RepositoryPolicyEnum.MIXED.getPolicy();

@@ -172,7 +172,7 @@ public class ConfigurableProviderManager extends ProviderManager implements User
         FolibUser folibUser = folibUserMapper.selectByPrimaryKey(username);
         if (Objects.nonNull(folibUser) && StringUtils.isNotBlank(folibUser.getSourceId())) {
             String sourceId = folibUser.getSourceId();
-            UserDetailsService userDetailsService = userProviderMap.get(sourceId);
+            UserDetailsService userDetailsService = userProviderMap.get(sourceId)==null?userProviderMap.get("dataBaseUserDetailService"):userProviderMap.get(sourceId);
             UserDetails externalUser = null;
             try {
                 externalUser = userDetailsService.loadUserByUsername(username);

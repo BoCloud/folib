@@ -20,7 +20,7 @@
       @change="tabChange($event)"
     >
       <a-tab-pane :key="1" :tab="$t('Storage.Details')">
-        <store
+        <store v-if="isready"
           :style="isChecked ? 'margin-top:-50px;' : ''"
           ref="store"
           :isChecked="isChecked"
@@ -146,7 +146,9 @@ import {
 } from "@/utils/layoutUtil";
 import {
   viewArtifactFile,
-  getLibraryFilter
+  getLibraryFilter,
+  queryRepositoriesByStorage,
+  getBaseUrl 
 } from "@/api/folib";
 import { PrismEditor } from "vue-prism-editor";
 import "vue-prism-editor/dist/prismeditor.min.css"; // import the styles somewhere
@@ -416,7 +418,8 @@ export default {
       settingVisible: false,
       eventSettingEnabled: false,
       eventPageVisible: false,
-      key:0
+      key:0,
+      isready:false
     }
   },
   computed: {
@@ -447,9 +450,9 @@ export default {
     myMounted(){
       this.key ++
       this.createData()
-      this.getStorage(this.folibRepository.storageId)
-      this.isShowEdit = (isAdmin() || this.storageAdmin === this.$store.state.user.name)
-      this.isShowDelete = (isAdmin() || this.storageAdmin === this.$store.state.user.name) && (this.folibRepository.allowsDeletion || this.folibRepository.allowsForceDeletion)
+      // this.getStorage(this.folibRepository.storageId)
+      // this.isShowEdit = (isAdmin() || this.storageAdmin === this.$store.state.user.name)
+      // this.isShowDelete = (isAdmin() || this.storageAdmin === this.$store.state.user.name) && (this.folibRepository.allowsDeletion || this.folibRepository.allowsForceDeletion)
     },
     handleMenuClickTree(active,currentTreeNode){
       console.log(active)
@@ -465,15 +468,47 @@ export default {
       this.tabActiveKey = 1
       this.$refs.store.search(value, searchType, type)
     },
-    createData() {
+    async createData() {
       //上个页面通过缓存传参，目的防止页面刷新，路由数据消失
-      const params = storage.get("libView_repository");
-      this.folibRepository = params.item;
+      if(this.$route.query!==undefined&&Object.keys(this.$route.query).length !== 0){
+        this.isready=false;
+        const query = {}
+        query.storageId = this.$route.query.storageId;
+        query.name = this.$route.query.name;
+        const token = this.$route.query.token;
+        if(token){
+          this.$store.dispatch("Token", token);
+          await this.$store.dispatch("GetInfo");
+        }
+        query.page = 1;
+        query.limit = 10;
+        const [repo, baseUrl] = await Promise.all([
+          queryRepositoriesByStorage(query),
+          getBaseUrl()
+        ]);
+           // 存储数据
+        const data = { 
+          item: repo.data.rows[0], 
+          baseUrl: baseUrl
+        };
+        storage.set("libView_repository", data);
+        this.isready=true;
+        // 使用存储的数据
+        this.folibRepository = data.item;
+        this.baseUrl = data.baseUrl;
+      }else{
+        this.isready=true;
+        const params = storage.get("libView_repository");
+        this.folibRepository = params.item;
+        this.baseUrl = params.baseUrl;
+      }
       if (!this.folibRepository || this.folibRepository.type !== "hosted") {
         this.enabled = false;
       }
-      this.baseUrl = params.baseUrl;
       this.repositoryType = this.getLayoutTypeHandle();
+      this.getStorage(this.folibRepository.storageId)
+      this.isShowEdit = (isAdmin() || this.storageAdmin === this.$store.state.user.name)
+      this.isShowDelete = (isAdmin() || this.storageAdmin === this.$store.state.user.name) && (this.folibRepository.allowsDeletion || this.folibRepository.allowsForceDeletion)
     },
     getLayoutTypeHandle() {
       return getLayoutType(this.folibRepository);

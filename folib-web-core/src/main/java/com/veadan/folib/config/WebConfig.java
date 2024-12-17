@@ -305,10 +305,10 @@ public class WebConfig
 //        return new MavenArtifactRequestInterceptor(repositoryPathResolver);
 //    }
 
-    @Bean
-    PermissionCheckInterceptor permissionCheckInterceptor() {
-        return new PermissionCheckInterceptor();
-    }
+//    @Bean
+//    PermissionCheckInterceptor permissionCheckInterceptor() {
+//        return new PermissionCheckInterceptor();
+//    }
 
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> argumentResolvers) {

@@ -25,6 +25,8 @@ public class RepositoryForm {
     @Pattern(regexp = "[a-zA-Z0-9\\-\\_\\.]+")
     private String id;
 
+    private String projectId;
+
     private String basedir;
 
     @NotEmpty(message = "A policy must be specified.")
@@ -346,6 +348,14 @@ public class RepositoryForm {
 
     public void setAllowAnonymous(boolean allowAnonymous) {
         this.allowAnonymous = allowAnonymous;
+    }
+
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
     }
 
     public interface WhiteGroup

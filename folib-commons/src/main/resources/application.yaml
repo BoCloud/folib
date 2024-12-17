@@ -291,4 +291,6 @@ custom:
     appSecret: "f95b5715436954c87bef2a27d688b24f"
     appName: "博云"
     verifyUrl: "https://testdevops.chinaunicom.cn/openapi_view/common/domain/user/verification"
-    userDetailUrl: "https://tianti.test.tg.unicom.local/openapi_view/api/v1/commonDomain/orgs/userGenericNew "
+    userDetailUrl: "http://tianti-test-openapiview.test.svc.cluster.local:8080/openapi/module/findRolesByEmails"
+    sendEmailUrl: "http://tianti-test-openapiview.test.svc.cluster.local:8080/notice/send"
+    redirectUrl: "https://testdevops.chinaunicom.cn/#/login"

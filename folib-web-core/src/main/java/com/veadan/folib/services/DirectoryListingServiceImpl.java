@@ -122,9 +122,9 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
             String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
             String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
             Repository subRepository = configurationManagementService.getConfiguration().getRepository(sId, rId);
-            if(!groupSubPrivileges(subRepository,path,Privileges.ARTIFACTS_RESOLVE.getAuthority())){
-                continue;
-            }
+//            if(!groupSubPrivileges(subRepository,path,Privileges.ARTIFACTS_RESOLVE.getAuthority())){
+//                continue;
+//            }
             if (!subRepository.isInService()) {
                 continue;
             }

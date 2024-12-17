@@ -37,6 +37,7 @@ public enum RepositoryFormConverter
         result.setAllowsDirectoryBrowsing(source.isAllowsDirectoryBrowsing());
         result.setChecksumHeadersEnabled(source.isChecksumHeadersEnabled());
         result.setGroupDefaultRepository(source.getGroupDefaultRepository());
+        result.setProjectId(source.getProjectId());
         if (source.getRepositoryConfiguration() != null)
         {
             result.setRepositoryConfiguration(

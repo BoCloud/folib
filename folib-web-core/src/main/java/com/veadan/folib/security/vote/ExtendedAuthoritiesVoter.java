@@ -5,6 +5,7 @@ import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.controllers.BrowseController;
+import com.veadan.folib.controllers.unicom.UnicomAdapter;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.Storage;
@@ -69,6 +70,10 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
     @Lazy
     private ArtifactRepository artifactRepository;
 
+    @Autowired
+    @Lazy
+    private UnicomAdapter unicomAdapter;
+
 
     public ExtendedAuthoritiesVoter() {
         super(new ExpressionBasedPreInvocationAdvice());
@@ -119,7 +124,7 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
             Object principal = authentication.getPrincipal();
             Collection<? extends GrantedAuthority> apiAuthorities = authentication.getAuthorities();
             logger.debug("Privileges for [{}] are [{}]", principal, apiAuthorities);
-            String requestUri =  path == null ? parseRequestUri(UrlUtils.getRequestUri()):path;
+            String requestUri = path == null ? parseRequestUri(UrlUtils.getRequestUri()) : path;
             if (!authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
                 if (!configurationManagementService.getConfiguration().getAdvancedConfiguration().isAllowAnonymous()) {
                     return Collections.emptySet();
@@ -158,9 +163,18 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
             if (storageId == null || repositoryId == null) {
                 return apiAuthorities;
             }
+            SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
             // 资源权限
             if (configurationManager.getStorage(storageId) == null || configurationManager.getRepository(storageId, repositoryId) == null) {
-                return apiAuthorities;
+                if (UnicomAdapter.UNICOM_SOURCE_ID.equals(userDetails.getSourceId())) {
+                    Set<GrantedAuthority> unicomAuthorities = new HashSet<>();
+                    unicomAuthorities.add(Privileges.ARTIFACTS_DEPLOY);
+                    unicomAuthorities.addAll(apiAuthorities);
+                    return unicomAuthorities;
+                } else {
+                    return apiAuthorities;
+                }
+
             }
 
             Repository repository = configurationManager.getRepository(storageId, repositoryId);
@@ -194,7 +208,19 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
                 }
                 return extendedAuthorities;
             } else {
-                SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
+
+                if (UnicomAdapter.UNICOM_SOURCE_ID.equals(userDetails.getSourceId())) {
+                    String email = userDetails.getEmail();
+                    Set<String> projects = unicomAdapter.getUserDetail(email).ownProject();
+                    Repository repo = configurationManager.getRepository(storageId, repositoryId);
+                    if (projects.contains(repo.getProjectId())) {
+                        List<GrantedAuthority> authorities = new ArrayList<>(apiAuthorities);
+                        authorities.addAll(Privileges.artifactsAll());
+                        return authorities;
+                    } else {
+                        return apiAuthorities;
+                    }
+                }
                 Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(requestUri);
                 if (storageAuthorities.isEmpty()) {
                     return apiAuthorities;

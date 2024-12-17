@@ -21,6 +21,7 @@ import com.veadan.folib.controllers.cluster.dto.SyncAuthorizationDto;
 import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
 import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
 import com.veadan.folib.controllers.cluster.dto.SyncUnionRepositoryDto;
+import com.veadan.folib.controllers.unicom.UnicomAdapter;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.DispatchStorageTree;
 import com.veadan.folib.domain.RepositoryPermission;
@@ -61,6 +62,7 @@ import com.veadan.folib.users.service.RoleResourceRefService;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import com.veadan.folib.utils.UserUtils;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import com.veadan.folib.web.RepositoryMapping;
 import com.veadan.folib.ws.common.FolibWsRunManageUtil;
@@ -186,6 +188,9 @@ public class StoragesConfigurationController
     private ResourceService resourceService;
     @Inject
     private RemoteRepositoryAlivenessService remoteRepositoryAlivenessCacheManager;
+
+    @Autowired
+    private UnicomAdapter unicomAdapter;
 
 
     public StoragesConfigurationController(ConfigurationManagementService configurationManagementService,
@@ -339,13 +344,13 @@ public class StoragesConfigurationController
             username = loggedUser.getUsername();
         }
         List<Storage> storagesList = storages;
-        if (!hasAdmin()) {
-            String finalUsername = username;
-            storagesList = storages.stream().filter(s ->
-                    (CollectionUtil.isNotEmpty(s.getUsers()) && s.getUsers().contains(finalUsername)) ||
-                            (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())))
-            ).collect(Collectors.toList());
-        }
+//        if (!hasAdmin()) {
+//            String finalUsername = username;
+//            storagesList = storages.stream().filter(s ->
+//                    (CollectionUtil.isNotEmpty(s.getUsers()) && s.getUsers().contains(finalUsername)) ||
+//                            (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())))
+//            ).collect(Collectors.toList());
+//        }
         List<Storage> pageStorages = storagesList.stream().skip((long) (page - 1) * limit).limit(limit).collect(Collectors.toList());
         return new TableResultResponse<>(storagesList.size(), pageStorages);
 
@@ -400,15 +405,15 @@ public class StoragesConfigurationController
             username = loggedUser.getUsername();
         }
         StoragesOutput storagesOutput = new StoragesOutput(storages);
-        if (!hasAdmin()) {
-            List<Storage> list = storagesOutput.getStorages();
-            String finalUsername = username;
-            List<Storage> collect = list.stream().filter(s ->
-                    (CollectionUtil.isNotEmpty(s.getUsers()) && s.getUsers().contains(finalUsername)) ||
-                            (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())))
-            ).collect(Collectors.toList());
-            storagesOutput.setStorages(collect);
-        }
+//        if (!hasAdmin()) {
+//            List<Storage> list = storagesOutput.getStorages();
+//            String finalUsername = username;
+//            List<Storage> collect = list.stream().filter(s ->
+//                    (CollectionUtil.isNotEmpty(s.getUsers()) && s.getUsers().contains(finalUsername)) ||
+//                            (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())))
+//            ).collect(Collectors.toList());
+//            storagesOutput.setStorages(collect);
+//        }
         return ResponseEntity.ok(storagesOutput);
     }
 
@@ -460,7 +465,16 @@ public class StoragesConfigurationController
             return new TableResultResponse<>(repositorieList.size(), pageRepository);
         }
 
+        // 特殊处理联通权限逻辑
+        SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
+        if(UnicomAdapter.UNICOM_SOURCE_ID.equals(userDetails.getSourceId())){
+           return unicomAdapter.getStoragesAndRepositories(storageId,  name,  type,  excludeType,  excludeRepositoryId,  layout,
+                    policy,  authentication,  page,  limit);
+
+        }
+
         final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
+
         String username = loggedUser.getUsername();
         if (CollectionUtil.isNotEmpty(storages)) {
             //查询数据库中存储空间绑定的用户

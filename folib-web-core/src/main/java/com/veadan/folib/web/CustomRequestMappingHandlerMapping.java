@@ -28,12 +28,15 @@ public class CustomRequestMappingHandlerMapping
 
     @Inject
     private StoragesConfigurationManager configurationManager;
+
+    @Inject
+    private PermissionCheckInterceptor permissionCheckInterceptor;
     
     @Override
     protected void detectMappedInterceptors(List<HandlerInterceptor> mappedInterceptors)
     {
         mappedInterceptors.add(new RepositoryRequestInterceptor());
-        mappedInterceptors.add(new PermissionCheckInterceptor());
+        mappedInterceptors.add(permissionCheckInterceptor);
         mappedInterceptors.addAll(BeanFactoryUtils.beansOfTypeIncludingAncestors(obtainApplicationContext(),
                                                                                  ArtifactRequestInterceptor.class, true,
                                                                                  false)

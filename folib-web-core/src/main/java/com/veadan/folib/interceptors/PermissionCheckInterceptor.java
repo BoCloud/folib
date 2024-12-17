@@ -8,6 +8,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.config.PermissionCheck;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
+import com.veadan.folib.controllers.unicom.UnicomAdapter;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.scanner.common.util.IPUtil;
@@ -21,12 +22,20 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * 自定义权限拦截器 校验节点间请求的白名单
@@ -34,8 +43,11 @@ import java.util.*;
  * @author qijianping
  */
 @Slf4j
+@Component
 public class PermissionCheckInterceptor implements HandlerInterceptor {
     private final Set<String> currentWhiteList = new HashSet<>();
+    @Resource
+    private UnicomAdapter unicomAdapter;
 
     public Set<String> getWhiteList(String ipAddr) {
         if (currentWhiteList.contains(ipAddr)) {
@@ -98,6 +110,8 @@ public class PermissionCheckInterceptor implements HandlerInterceptor {
         if (StringUtils.isNotBlank(storageKey) && StringUtils.isNotBlank(repositoryKey)) {
             String storageId = request.getParameter(storageKey);
             String repositoryId = request.getParameter(repositoryKey);
+
+
             String filePathMap = request.getParameter("filePathMap");
             List<String> filePaths = null;
             if (StringUtils.isNotBlank(filePathMap)) {
@@ -134,9 +148,15 @@ public class PermissionCheckInterceptor implements HandlerInterceptor {
                 repositoryId = jsonObject.getString(repositoryKey);
             }
             if (authentication.getPrincipal() instanceof SpringSecurityUser) {
+                // 如果是联通用户则特殊的鉴权
                 SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
-                Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(storageId, repositoryId, filePaths);
-                boolean flag = storageAuthorities.stream().anyMatch(item -> item.getAuthority().equals(resourceKey));
+                boolean flag;
+                if (UnicomAdapter.UNICOM_SOURCE_ID.equals(userDetails.getSourceId())) {
+                    flag = unicomAdapter.hasRepoAuth(storageId, repositoryId);
+                } else {
+                    Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(storageId, repositoryId, filePaths);
+                    flag = storageAuthorities.stream().anyMatch(item -> item.getAuthority().equals(resourceKey));
+                }
                 if (!flag) {
                     handlerResponse(response);
                 }

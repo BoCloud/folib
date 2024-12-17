@@ -2613,9 +2613,7 @@ export default {
         this.uploadEnabled =
           this.folibRepository.status.indexOf('Out of Service') === -1 &&
           this.enablUploadedLayout.includes(this.folibRepository.layout) &&
-          (this.folibRepository.type === 'hosted' || (this.folibRepository.type === 'group' && this.folibRepository.groupDefaultRepository)) &&
-          (hasRole('ARTIFACTS_MANAGER') ||
-            this.permissions.includes('ARTIFACTS_DEPLOY'))
+          (this.folibRepository.type === 'hosted' || (this.folibRepository.type === 'group' && this.folibRepository.groupDefaultRepository))
         console.log("this.uploadEnabled", this.uploadEnabled)
         this.copyEnabled =
           this.folibRepository.type === 'hosted' &&

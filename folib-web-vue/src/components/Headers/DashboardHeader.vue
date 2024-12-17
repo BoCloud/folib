@@ -250,6 +250,7 @@ import {
 } from "@/api/artifact"
 import { hasRole, isAdmin, isAnonymous, isLogin } from "@/utils/permission"
 import {setLanguage} from "@/locale"
+import {getRedirect} from "@/api/unicom"
 
 export default {
   props: {
@@ -385,7 +386,12 @@ export default {
       this.$router.push('/personal')
     },
     toLogin() {
-      this.$router.push({ name: 'login' })
+      // this.$router.push({ name: 'login' })
+      getRedirect().then((res)=>{
+        console.log("跳转到这个地址"+res);
+        window.location.href = res;
+      })
+      
     }
   },
   mounted: function () {
