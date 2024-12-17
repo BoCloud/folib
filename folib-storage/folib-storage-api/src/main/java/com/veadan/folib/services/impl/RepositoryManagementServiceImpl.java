@@ -7,7 +7,10 @@ import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.converters.RoleModelToRoleConverter;
+import com.veadan.folib.cron.domain.CronTasksConfigurationDto;
+import com.veadan.folib.cron.services.CronTaskConfigurationService;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.event.Event;
 import com.veadan.folib.event.RepositoryBasedEvent;
@@ -83,6 +86,10 @@ public class RepositoryManagementServiceImpl
     private AuthorizationConfigService authorizationConfigService;
 
     @Inject
+    @Lazy
+    private CronTaskConfigurationService cronTaskConfigurationService;
+
+    @Inject
     @RelationalDatabaseUserService.RelationalDatabase
     @Lazy
     private UserService userService;
@@ -131,7 +138,7 @@ public class RepositoryManagementServiceImpl
     }
 
     @Override
-    public void deleteTrash(String storageId, String repositoryId)
+    public void deleteTrash(String storageId, String repositoryId, String storageDay, Map<String, String> cleanupArtifactPathMap)
             throws IOException {
         artifactOperationsValidator.checkStorageExists(storageId);
         artifactOperationsValidator.checkRepositoryExists(storageId, repositoryId);
@@ -144,7 +151,7 @@ public class RepositoryManagementServiceImpl
 
 
             RootRepositoryPath repositoryPath = repositoryPathResolver.resolve(repository);
-            RepositoryFiles.deleteTrash(repositoryPath);
+            RepositoryFiles.deleteTrash(repositoryPath, storageDay, cleanupArtifactPathMap);
 
             RepositoryEvent event = new RepositoryEvent(storageId,
                     repositoryId,
@@ -157,7 +164,7 @@ public class RepositoryManagementServiceImpl
     }
 
     @Override
-    public void deleteTrash()
+    public void deleteTrash(boolean checkTask)
             throws ArtifactStorageException {
         try {
             for (Map.Entry<String, Storage> entry : getConfiguration().getStorages().entrySet()) {
@@ -165,12 +172,16 @@ public class RepositoryManagementServiceImpl
 
                 final Map<String, ? extends Repository> repositories = storage.getRepositories();
                 for (Repository repository : repositories.values()) {
+                    if (checkTask && existsRepositoryTask(storage.getId(), repository.getId())) {
+                        logger.info("Emptying trash for repository {} exists custom cron task skip...", ConfigurationUtils.getStorageIdAndRepositoryId(storage.getId(), repository.getId()));
+                        continue;
+                    }
                     if (repository.isAllowsDeletion()) {
-                        logger.info("Emptying trash for repository {}...", repository.getId());
+                        logger.info("Emptying trash for repository {}...", ConfigurationUtils.getStorageIdAndRepositoryId(storage.getId(), repository.getId()));
 
-                        deleteTrash(repository.getStorage().getId(), repository.getId());
+                        deleteTrash(repository.getStorage().getId(), repository.getId(), null, null);
                     } else {
-                        logger.warn("Repository {} does not support removal of trash.", repository.getId());
+                        logger.warn("Repository {} does not support removal of trash.", ConfigurationUtils.getStorageIdAndRepositoryId(storage.getId(), repository.getId()));
                     }
                 }
             }
@@ -578,4 +589,14 @@ public class RepositoryManagementServiceImpl
             throw new RuntimeException(ex);
         }
     }
+
+    private boolean existsRepositoryTask(String storageId, String repositoryId) {
+        CronTasksConfigurationDto config = cronTaskConfigurationService.getTasksConfigurationDto();
+        if (CollectionUtils.isEmpty(config.getCronTaskConfigurations())) {
+            return false;
+        }
+        String clearRepositoryTrashCronJob = "com.veadan.folib.cron.jobs.ClearRepositoryTrashCronJob";
+        return config.getCronTaskConfigurations().stream().anyMatch(cron -> storageId.equals(cron.getProperty("storageId")) && repositoryId.equals(cron.getProperty("repositoryId")) && clearRepositoryTrashCronJob.equals(cron.getJobClass()));
+    }
+
 }

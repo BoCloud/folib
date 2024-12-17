@@ -1,10 +1,13 @@
 package com.veadan.folib.providers.io;
 
-import cn.hutool.core.date.StopWatch;
-import cn.hutool.core.util.StrUtil;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.util.RepositoryPathUtil;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.output.ProxyOutputStream;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileSystemUtils;
@@ -19,7 +22,9 @@ import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
+import java.nio.file.attribute.FileTime;
 import java.nio.file.spi.FileSystemProvider;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -35,6 +40,7 @@ import java.util.stream.Stream;
  *
  * @author @author veadan
  */
+@Slf4j
 public abstract class StorageFileSystemProvider
         extends FileSystemProvider {
 
@@ -217,7 +223,7 @@ public abstract class StorageFileSystemProvider
                 } catch (DirectoryNotEmptyException e) {
                     try (Stream<Path> pathStream = Files.list(unwrap(dir))) {
                         String message = pathStream
-                            .map(p -> p.getFileName().toString())
+                                .map(p -> p.getFileName().toString())
                                 .reduce((p1,
                                          p2) -> String.format("%s%n%s", p1, p2))
                                 .get();
@@ -275,14 +281,18 @@ public abstract class StorageFileSystemProvider
             Files.move(repositoryPath.getTarget(),
                     trashPath.getTarget(),
                     StandardCopyOption.REPLACE_EXISTING);
+            FileTime newTime = FileTime.fromMillis(System.currentTimeMillis());
+            Files.setLastModifiedTime(trashPath.getTarget(), newTime);
         } catch (Exception e) {
             Files.move(repositoryPath.getTarget(),
                     trashPath.getTarget(),
                     StandardCopyOption.REPLACE_EXISTING);
+            FileTime newTime = FileTime.fromMillis(System.currentTimeMillis());
+            Files.setLastModifiedTime(trashPath.getTarget(), newTime);
         }
 
         if (force && repository.isAllowsForceDeletion()) {
-            deleteTrash(repositoryPath);
+            deleteTrash(repositoryPath, null, null);
         }
     }
 
@@ -336,7 +346,7 @@ public abstract class StorageFileSystemProvider
         return path;
     }
 
-    public void deleteTrash(RepositoryPath path)
+    public void deleteTrash(RepositoryPath path, String storageDay, Map<String, String> cleanupArtifactPathMap)
             throws IOException {
         Repository repository = path.getFileSystem().getRepository();
         if (!repository.isTrashEnabled()) {
@@ -346,10 +356,74 @@ public abstract class StorageFileSystemProvider
         RepositoryPath trashPath = getTrashPath(path);
         if (!Files.exists(trashPath.getTarget())) {
             return;
-        } else {
-            FileSystemUtils.deleteRecursively(trashPath.getTarget());
-            Files.createDirectories(trashPath);
         }
+        if (StringUtils.isBlank(storageDay)) {
+            boolean isTrash = Files.isSameFile(trashPath, trashPath.getRoot().resolve(LayoutFileSystem.TRASH));
+            FileSystemUtils.deleteRecursively(trashPath.getTarget());
+            if (isTrash) {
+                Files.createDirectories(trashPath);
+            }
+            return;
+        }
+        Files.walkFileTree(trashPath, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file,
+                                             BasicFileAttributes attrs)
+                    throws IOException {
+                try {
+                    RepositoryPath itemPath = (RepositoryPath) file;
+                    if (RepositoryFiles.isChecksum(itemPath) || RepositoryFiles.isArtifactMetadata(itemPath)) {
+                        return FileVisitResult.CONTINUE;
+                    }
+                    String artifactTrashPath = RepositoryFiles.relativizePath(itemPath);
+                    artifactTrashPath = StringUtils.removeStart(artifactTrashPath.replace(LayoutFileSystem.TRASH, ""), GlobalConstants.SEPARATOR);
+                    String cleanupDay = getCleanupDay(artifactTrashPath, storageDay, cleanupArtifactPathMap);
+                    LocalDateTime createTime = RepositoryPathUtil.getFileLastModifiedTime(itemPath);
+                    log.info("Delete trash storageId [{}] repositoryId [{}] path [{}] storageDay [{}] time [{}] current time [{}]", path.getStorageId(), path.getRepositoryId(), artifactTrashPath, cleanupDay, createTime, LocalDateTime.now());
+                    if (!LocalDateTime.now().minusDays(Integer.parseInt(cleanupDay)).isBefore(createTime)) {
+                        boolean result = Files.deleteIfExists(itemPath);
+                        log.info("Delete trash storageId [{}] repositoryId [{}] path [{}] result [{}]", path.getStorageId(), path.getRepositoryId(), artifactTrashPath, result);
+                    }
+                } catch (NoSuchFileException e) {
+                    // 文件已删除，跳过处理
+                    return FileVisitResult.CONTINUE;
+                }
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                if (exc instanceof NoSuchFileException) {
+                    // 目录或文件已删除，继续遍历
+                    return FileVisitResult.CONTINUE;
+                }
+                return super.visitFileFailed(file, exc);
+            }
+
+            @Override
+            public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+                RepositoryPath dirPath = (RepositoryPath) dir;
+                if (RepositoryFiles.isArtifactMetadata(dirPath)) {
+                    return FileVisitResult.SKIP_SUBTREE;
+                }
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir,
+                                                      IOException exc)
+                    throws IOException {
+                RepositoryPath dirPath = (RepositoryPath) dir;
+                if (Files.isSameFile(dirPath, trashPath)) {
+                    return FileVisitResult.CONTINUE;
+                }
+                if (Files.list(dirPath).count() == 0) {
+                    boolean result = Files.deleteIfExists(dirPath);
+                    log.info("Delete trash storageId [{}] repositoryId [{}] directory path [{}] result [{}]", path.getStorageId(), path.getRepositoryId(), dirPath.getFileName().toString(), result);
+                }
+                return FileVisitResult.CONTINUE;
+            }
+        });
     }
 
     protected RepositoryPath getTrashPath(RepositoryPath path)
@@ -481,23 +555,23 @@ public abstract class StorageFileSystemProvider
         RepositoryPath repositoryPath = (RepositoryPath) path;
 
         Map<String, Object> result = new HashMap<>();
-        String attributes1 = attributes.equals("*") ? "*" : Arrays.stream(attributes.split(",")).filter(d->d.startsWith(FOLIB_SCHEME)).collect(Collectors.joining(","));
-        String attributes2= attributes.equals("*") ? "*" : Arrays.stream(attributes.split(",")).filter(d->!d.startsWith(FOLIB_SCHEME)).collect(Collectors.joining(","));
+        String attributes1 = attributes.equals("*") ? "*" : Arrays.stream(attributes.split(",")).filter(d -> d.startsWith(FOLIB_SCHEME)).collect(Collectors.joining(","));
+        String attributes2 = attributes.equals("*") ? "*" : Arrays.stream(attributes.split(",")).filter(d -> !d.startsWith(FOLIB_SCHEME)).collect(Collectors.joining(","));
 
         if (!attributes2.isEmpty()) {
             result.putAll(getTarget().readAttributes(unwrap(path), attributes2, options));
         }
         //if (!attributes.startsWith(FOLIB_SCHEME)) {
-           // result.putAll(getTarget().readAttributes(unwrap(path), attributes2, options));
-            //if (!attributes.equals("*")) {
-            //    return result;
-            //}
+        // result.putAll(getTarget().readAttributes(unwrap(path), attributes2, options));
+        //if (!attributes.equals("*")) {
+        //    return result;
+        //}
         //}
 
         Set<RepositoryFileAttributeType> targetRepositoryAttributes = new HashSet<>(
                 RepositoryFiles.parseAttributes(attributes1));
 
-        final Map<RepositoryFileAttributeType, Object> repositoryFileAttributes = new HashMap<>(targetRepositoryAttributes.size()*2);
+        final Map<RepositoryFileAttributeType, Object> repositoryFileAttributes = new HashMap<>(targetRepositoryAttributes.size() * 2);
         for (Iterator<RepositoryFileAttributeType> iterator = targetRepositoryAttributes.iterator(); iterator.hasNext(); ) {
             RepositoryFileAttributeType repositoryFileAttributeType = iterator.next();
             Optional.ofNullable(repositoryPath.cachedAttributes.get(repositoryFileAttributeType))
@@ -636,6 +710,27 @@ public abstract class StorageFileSystemProvider
             return false;
         }
 
+    }
+
+    private String getCleanupDay(String artifactPath, String cleanupDay, Map<String, String> cleanupArtifactPathMap) {
+        if (MapUtils.isEmpty(cleanupArtifactPathMap)) {
+            return cleanupDay;
+        }
+        String cleanupArtifactPath, cleanupArtifactPathValue, cleanupArtifactPathPrefix;
+        for (Map.Entry<String, String> entry : cleanupArtifactPathMap.entrySet()) {
+            cleanupArtifactPath = entry.getKey();
+            cleanupArtifactPathValue = entry.getValue();
+            if (StringUtils.isBlank(cleanupArtifactPath) || StringUtils.isBlank(cleanupArtifactPathValue)) {
+                continue;
+            }
+            //获取目录、制品级别生命周期，优先级第一
+            cleanupArtifactPathPrefix = cleanupArtifactPath + GlobalConstants.SEPARATOR;
+            if (artifactPath.equals(cleanupArtifactPath) || artifactPath.startsWith(cleanupArtifactPathPrefix) || artifactPath.matches(cleanupArtifactPath)) {
+                return entry.getValue();
+            }
+        }
+        //仓库级别生命周期，优先级最低
+        return cleanupDay;
     }
 
 }

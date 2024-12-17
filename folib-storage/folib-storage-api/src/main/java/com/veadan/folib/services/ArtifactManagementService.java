@@ -630,7 +630,7 @@ public class ArtifactManagementService {
         if (StringUtils.isNotBlank(value)) {
             return Boolean.parseBoolean(value);
         }
-        return true;
+        return false;
     }
 
     private boolean validateInputStreamEmpty(RepositoryPath repositoryPath, InputStream inputStream) {

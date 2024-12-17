@@ -317,7 +317,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
         }
 
         boolean directory = Files.isDirectory(path);
-        deleteArtifactMedataFile(repositoryPath);
+        deleteArtifactMedataFile(repositoryPath, force);
         super.delete(path, force);
         if (!directory) {
             artifactEventListenerRegistry.dispatchArtifactPathDeletedEvent(path);
@@ -374,14 +374,14 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
     }
 
     @Override
-    public void deleteTrash(RepositoryPath path)
+    public void deleteTrash(RepositoryPath path, String storageDay, Map<String, String> cleanupArtifactPathMap)
             throws IOException {
         Repository repository = path.getRepository();
         Storage storage = repository.getStorage();
 
         logger.info("Emptying trash for {}:{}...", storage.getId(), repository.getId());
 
-        super.deleteTrash(path);
+        super.deleteTrash(path, storageDay, cleanupArtifactPathMap);
 
         repositoryEventListenerRegistry.dispatchEmptyTrashEvent(storage.getId(), repository.getId());
 
@@ -434,7 +434,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
 
     }
 
-    private void deleteArtifactMedataFile(RepositoryPath repositoryPath) {
+    private void deleteArtifactMedataFile(RepositoryPath repositoryPath, boolean force) {
         try {
             if (Files.exists(repositoryPath) && Files.isSameFile(repositoryPath.getRoot(), repositoryPath)) {
                 return;
@@ -442,12 +442,12 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
             String artifactMetadataFileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
             RepositoryPath artifactRepositoryPath = repositoryPath.getParent().resolve(artifactMetadataFileName);
             if (Files.exists(artifactRepositoryPath)) {
-                super.delete(artifactRepositoryPath, true);
+                super.delete(artifactRepositoryPath, force);
             }
             String artifactMetadataDirectoryName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".foLibrary-metadata";
             RepositoryPath artifactMetadataDirectoryPath = repositoryPath.getParent().resolve(artifactMetadataDirectoryName);
             if (Files.exists(artifactMetadataDirectoryPath)) {
-                super.delete(artifactMetadataDirectoryPath, true);
+                super.delete(artifactMetadataDirectoryPath, force);
             }
         } catch (Exception ex) {
             logger.error("删除制品缓存元数据文件 [{}] 失败：[{}]", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
