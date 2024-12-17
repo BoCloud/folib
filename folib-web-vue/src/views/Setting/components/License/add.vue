@@ -78,6 +78,7 @@ export default {
       this.getLicenses()
       this.showLicenseModal = this.modelVisible
     }
+
     if(this.recordData){
       this.licenseForm.identifier = this.recordData.identifier
       this.licenseForm.validFrom = this.recordData.validFrom
@@ -203,7 +204,6 @@ export default {
         }).finally()
       }
     },
-
     calculateOneMonthLater() {
       const currentDate = new Date();
       const oneMonthLater = new Date(currentDate);
