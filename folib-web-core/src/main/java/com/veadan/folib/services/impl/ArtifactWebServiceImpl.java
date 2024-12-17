@@ -430,7 +430,6 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         String lockKey = String.format("%s-%s-%s-%s", "metadata", artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
         if (distributedLockComponent.lock(lockKey, GlobalConstants.WAIT_LOCK_TIME)) {
             try {
-                Thread.sleep(20L);
                 log.debug("Locked for [{}]", lockKey);
                 Artifact artifact = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
                 if (Objects.isNull(artifact)) {
@@ -454,6 +453,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 artifactService.saveOrUpdateArtifact(artifact);
                 repositoryPath.setArtifact(artifact);
                 artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
+                cacheMetadata(repositoryPath);
             } catch (Exception e) {
                 log.error("Save artifact metadata error [{}]", ExceptionUtils.getStackTrace(e));
                 if (e instanceof BusinessException) {
@@ -476,7 +476,6 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         String lockKey = String.format("%s-%s-%s-%s", "metadata", artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
         if (distributedLockComponent.lock(lockKey, GlobalConstants.WAIT_LOCK_TIME)) {
             try {
-                Thread.sleep(20L);
                 log.debug("Locked for [{}]", lockKey);
                 Artifact artifact = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
                 if (Objects.isNull(artifact)) {
@@ -495,6 +494,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     artifactService.saveOrUpdateArtifact(artifact);
                     repositoryPath.setArtifact(artifact);
                     artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
+                    cacheMetadata(repositoryPath);
                 }
             } catch (Exception e) {
                 log.error("Update artifact metadata error [{}]", ExceptionUtils.getStackTrace(e));
@@ -518,7 +518,6 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         String lockKey = String.format("%s-%s-%s-%s", "metadata", artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
         if (distributedLockComponent.lock(lockKey, GlobalConstants.WAIT_LOCK_TIME)) {
             try {
-                Thread.sleep(20L);
                 log.debug("Locked for [{}]", lockKey);
                 Artifact artifact = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
                 if (Objects.isNull(artifact)) {
@@ -533,6 +532,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     artifactService.saveOrUpdateArtifact(artifact);
                     repositoryPath.setArtifact(artifact);
                     artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
+                    cacheMetadata(repositoryPath);
                 }
             } catch (Exception e) {
                 log.error("Delete artifact metadata error [{}]", ExceptionUtils.getStackTrace(e));
@@ -717,7 +717,6 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             String lockKey = String.format("%s-%s-%s-%s", "metadata", artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath());
             if (distributedLockComponent.lock(lockKey, GlobalConstants.WAIT_LOCK_TIME)) {
                 try {
-                    Thread.sleep(20L);
                     log.debug("Locked for [{}]", lockKey);
                     artifact = resolvePath(artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath());
                     if (Objects.isNull(artifact)) {
@@ -737,6 +736,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     artifactService.saveOrUpdateArtifact(artifact);
                     repositoryPath.setArtifact(artifact);
                     artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
+                    cacheMetadata(repositoryPath);
                 } catch (Exception e) {
                     log.error("Batch handle artifact metadata error [{}]", ExceptionUtils.getStackTrace(e));
                     if (e instanceof BusinessException) {
@@ -2349,6 +2349,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         if (!authComponent.validatePrivileges(repositoryPath.getRepository(), repositoryPath, Privileges.CONFIGURATION_ADD_UPDATE_METADATA.getAuthority())) {
             throw new BusinessException("没有操作元数据权限");
         }
+    }
+
+    private void cacheMetadata(RepositoryPath repositoryPath) {
+        artifactComponent.storeArtifactMetadataFile(repositoryPath);
     }
 
 

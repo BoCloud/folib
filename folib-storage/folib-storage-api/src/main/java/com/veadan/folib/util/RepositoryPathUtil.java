@@ -345,4 +345,19 @@ public class RepositoryPathUtil {
         }
         return lastModifiedDateTime;
     }
+
+    public static LocalDateTime getFileLastModifiedTime(Path path) {
+        LocalDateTime lastModifiedDateTime = null;
+        try {
+            BasicFileAttributes attributes = Files.readAttributes(path, BasicFileAttributes.class);
+            FileTime fileTime = attributes.lastModifiedTime();
+            // 将FileTime转换为Instant
+            Instant instant = fileTime.toInstant();
+            // 将Instant转换为LocalDateTime
+            lastModifiedDateTime = instant.atZone(ZoneId.of("Asia/Shanghai")).toLocalDateTime();
+        } catch (IOException ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
+        return lastModifiedDateTime;
+    }
 }
