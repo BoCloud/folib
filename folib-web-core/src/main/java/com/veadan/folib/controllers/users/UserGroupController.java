@@ -83,12 +83,13 @@ public class UserGroupController
             @ApiResponse(code = 403, message = USER_GROUP_DELETE_FORBIDDEN),
             @ApiResponse(code = 404, message = NOT_FOUND_USER_GROUP)})
     @PreAuthorize("hasAuthority('DELETE_USER_GROUP')")
+    @AuditLog(value = AuditEventNameEnum.DELETE_USER_GROUP, target = "#userGroupForm.getGroupName")
     @DeleteMapping(value = "{groupId}",
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    @AuditLog(value = AuditEventNameEnum.USER_GROUP, target = " '删除用户组:'+#groupId")
     public ResponseEntity delete(@ApiParam(value = "The name of the user group") @PathVariable Long groupId,
+                                 @RequestBody @Validated(UserGroupForm.NewUserGroup.class) UserGroupForm userGroupForm,
                                  Authentication authentication,
                                  @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (!(authentication.getPrincipal() instanceof UserDetails)) {
@@ -111,11 +112,11 @@ public class UserGroupController
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_CREATE_USER_GROUP),
             @ApiResponse(code = 400, message = FAILED_CREATE_USER_GROUP)})
     @PreAuthorize("hasAuthority('CREATE_USER_GROUP')")
+    @AuditLog(value = AuditEventNameEnum.ADD_USER_GROUP, target = "#userGroupForm.getGroupName")
     @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    @AuditLog(value = AuditEventNameEnum.USER_GROUP, target = " '创建用户组:'+ #userGroupForm.groupName")
     public ResponseEntity createGroup(@RequestBody @Validated(UserGroupForm.NewUserGroup.class) UserGroupForm userGroupForm,
                                       BindingResult bindingResult,
                                       @RequestHeader(HttpHeaders.ACCEPT) String accept) {
@@ -181,12 +182,12 @@ public class UserGroupController
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_UPDATE_USER_GROUP),
             @ApiResponse(code = 400, message = FAILED_UPDATE_USER_GROUP)})
     @PreAuthorize("hasAuthority('UPDATE_USER_GROUP')")
+    @AuditLog(value = AuditEventNameEnum.UPDATE_USER_GROUP, target = "#userGroupToUpdate.getGroupName")
     @PutMapping(value = "{groupId}",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    @AuditLog(value = AuditEventNameEnum.USER_GROUP, target = " '更新用户组:'+#userGroupToUpdate.groupName")
     public ResponseEntity update(@ApiParam(value = "The name of the user", required = true)
                                  @PathVariable Long groupId,
                                  @RequestBody @Validated(UserGroupForm.ExistingUserGroup.class) UserGroupForm userGroupToUpdate,

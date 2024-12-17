@@ -1,9 +1,11 @@
 package com.veadan.folib.controllers.layout.rpm;
 
 
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.config.RepodataUtil;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.entity.Dict;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.metadata.indexer.RpmRepoIndexer;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.RpmLayoutProvider;
@@ -181,17 +183,17 @@ public class RpmArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#storageId + '/' + #repositoryId + '/' + #path")
     @GetMapping(value = {"{storageId}/{repositoryId}/{path:.+}"})
     public void download(@RepositoryMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,
                          @PathVariable String path,
+                         @PathVariable String storageId,
+                         @PathVariable String repositoryId,
                          HttpServletRequest request,
                          HttpServletResponse response)
             throws Exception {
-        final String storageId = repository.getStorage().getId();
-        final String repositoryId = repository.getId();
         logger.info("Requested /{}/{}/{}.", storageId, repositoryId, path);
-
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
         vulnerabilityBlock(repositoryPath);
         provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);

@@ -18,5 +18,7 @@ export default {
     'DescriptionPlaceholder':'请输入令牌描述',
     'ExpireTimePlaceholder':'请选择过期时间',
     'UsernamePlaceholder':'请输入所属用户',
-    'NewTokenWarning':'新令牌已创建。请确保现在复制它，因为之后您将无法再次看到它！'
+    'NewTokenWarning':'新令牌已创建。请确保现在复制它，因为之后您将无法再次看到它！',
+    'Administrator':'管理员',
+    'OrdinaryUser': '普通用户',
 }

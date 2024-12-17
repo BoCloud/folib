@@ -125,13 +125,14 @@ public class RoleController extends BaseController {
             @ApiResponse(code = 403, message = ROLE_DELETE_FORBIDDEN),
             @ApiResponse(code = 404, message = NOT_FOUND_ROLE)})
     @PreAuthorize("hasAuthority('DELETE_ROLE')")
+    @AuditLog(value = AuditEventNameEnum.DELETE_PERMISSIONS, target = "#dto.enName")
     @DeleteMapping(value = "{roleId}",
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    @AuditLog(value = AuditEventNameEnum.USER_MANAGEMENT, target = " '删除权限:'+#roleId")
     public ResponseEntity delete(@ApiParam(value = "The name of the role") @PathVariable String roleId,
                                  Authentication authentication,
+                                 @RequestBody  FolibRoleDTO dto,
                                  @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (!(authentication.getPrincipal() instanceof UserDetails)) {
             String message = "Unsupported logged user principal type: " + authentication.getPrincipal().getClass();
@@ -157,11 +158,11 @@ public class RoleController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_CREATE_ROLE),
             @ApiResponse(code = 400, message = FAILED_CREATE_ROLE)})
     @PreAuthorize("hasAuthority('CREATE_ROLE')")
+    @AuditLog(value = AuditEventNameEnum.ADD_PERMISSIONS, target = "#roleForm.name")
     @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    @AuditLog(value = AuditEventNameEnum.USER_MANAGEMENT, target = "'创建权限:'+#roleForm.name")
     public ResponseEntity create(@RequestBody @Validated(RoleForm.NewRole.class) RoleForm roleForm,
                                       BindingResult bindingResult,
                                       Authentication authentication,
@@ -204,12 +205,12 @@ public class RoleController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_UPDATE_ROLE),
             @ApiResponse(code = 400, message = FAILED_UPDATE_ROLE)})
     @PreAuthorize("hasAuthority('UPDATE_ROLE')")
+    @AuditLog(value = AuditEventNameEnum.UPDATE_PERMISSIONS, target = "#roleForm.name")
     @PutMapping(value = "{roleId}",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    @AuditLog(value = AuditEventNameEnum.USER_MANAGEMENT, target = "'更新权限:'+#roleForm.name")
     public ResponseEntity update(@ApiParam(value = "角色id必填", required = true)
                                  @PathVariable String roleId,
                                  @RequestBody @Validated(RoleForm.UpdateRole.class) RoleForm roleForm,

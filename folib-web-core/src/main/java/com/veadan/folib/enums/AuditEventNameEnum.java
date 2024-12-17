@@ -5,6 +5,7 @@ import lombok.Getter;
 import static com.veadan.folib.enums.AuditEventModuleEnum.ADVANCE_SETTING;
 import static com.veadan.folib.enums.AuditEventModuleEnum.ARTIFACT_REPOSITORY;
 import static com.veadan.folib.enums.AuditEventModuleEnum.SYSTEM_SETTING;
+import static com.veadan.folib.enums.AuditEventModuleEnum.USER_MANAGEMENT;
 
 /**
  * @author huayanjun
@@ -33,16 +34,21 @@ public enum AuditEventNameEnum {
     SCAN_ARTIfFACT(ARTIFACT_REPOSITORY, "制品扫描"),
     DELETE_ARTIfFACT(ARTIFACT_REPOSITORY, "删除制品"),
     UPLOAD_ARTIfFACT(ARTIFACT_REPOSITORY, "制品上传"),
+    DOWNLOAD_EXCEPTION(ARTIFACT_REPOSITORY, "下载异常"),
 //    UPDATE_META(SYSTEM_SETTING, "更新元数据"),
 
 
-    CREATE_USER(AuditEventModuleEnum.USER_MANAGEMENT, "用户管理"),
-    DELETE_USER(AuditEventModuleEnum.USER_MANAGEMENT, "删除用户"),
-    USER_GROUP(AuditEventModuleEnum.USER_MANAGEMENT, "用户组"),
-    USER_MANAGEMENT(AuditEventModuleEnum.USER_MANAGEMENT, "用户权限"),
+    CREATE_USER(USER_MANAGEMENT, "用户管理"),
+    DELETE_USER(USER_MANAGEMENT, "删除用户"),
+    ADD_USER_GROUP(USER_MANAGEMENT, "新增用户组"),
+    UPDATE_USER_GROUP(USER_MANAGEMENT, "修改用户组"),
+    DELETE_USER_GROUP(USER_MANAGEMENT, "删除用户组"),
+    ADD_PERMISSIONS(USER_MANAGEMENT, "新增权限"),
+    UPDATE_PERMISSIONS(USER_MANAGEMENT, "修改权限"),
+    DELETE_PERMISSIONS(USER_MANAGEMENT, "删除权限"),
 
-    WEB_LOGIN(AuditEventModuleEnum.USER_MANAGEMENT, "web登录"),
-    SSO_LOGIN(AuditEventModuleEnum.USER_MANAGEMENT, "sso登录"),
+    WEB_LOGIN(USER_MANAGEMENT, "web登录"),
+    SSO_LOGIN(USER_MANAGEMENT, "sso登录"),
 
     BASE_SETTING(SYSTEM_SETTING, "基础信息配置"),
     SAFE_STRATEGY(SYSTEM_SETTING, "安全策略"),
