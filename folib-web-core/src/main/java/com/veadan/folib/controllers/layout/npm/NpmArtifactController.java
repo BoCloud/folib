@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
 import com.veadan.folib.authentication.api.password.PasswordAuthentication;
 import com.veadan.folib.components.NpmComponent;
@@ -12,6 +13,7 @@ import com.veadan.folib.config.NpmLayoutProviderConfig.NpmObjectMapper;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.data.criteria.Paginator;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.enums.NpmPacketSuffix;
 import com.veadan.folib.enums.NpmSubLayout;
 import com.veadan.folib.model.request.OhpmLoginReq;
@@ -310,9 +312,9 @@ public class NpmArtifactController
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #packageScope + '/' + #packageName + '/-/' + #packageNameWithVersion + '.' + #packageExtension")
     @RequestMapping(path = "{storageId}/{repositoryId}/{packageScope}/{packageName}/-/{packageNameWithVersion}.{packageExtension}",
-            method = {RequestMethod.GET,
-                    RequestMethod.HEAD})
+            method = {RequestMethod.GET, RequestMethod.HEAD})
     public ResponseEntity<Object> downloadPackageWithScope(@RepositoryMapping Repository repository,
                                                            @PathVariable(name = "packageScope") String packageScope,
                                                            @PathVariable(name = "packageName") String packageName,
@@ -365,6 +367,7 @@ public class NpmArtifactController
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #packageName + '/-/' + #packageNameWithVersion + '.' + #packageExtension")
     @RequestMapping(path = "{storageId}/{repositoryId}/{packageName}/-/{packageNameWithVersion}.{packageExtension}",
             method = {RequestMethod.GET,
                     RequestMethod.HEAD})
@@ -419,6 +422,7 @@ public class NpmArtifactController
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #packageScope + '/' + #packageName + '/' +#packageVersion '/' + #fileName + '.' + #fileExtension")
     @GetMapping(path = "{storageId}/{repositoryId}/{packageScope}/{packageName}/{packageVersion}/{fileName}.{fileExtension}")
     public void downloadPackageWithScopeFile(@RepositoryMapping Repository repository,
                                              @PathVariable(name = "packageScope") String packageScope,

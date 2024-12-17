@@ -1,7 +1,9 @@
 package com.veadan.folib.controllers.layout.docker;
 
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.controllers.BaseArtifactController;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.utils.DockerUtils;
@@ -91,6 +93,7 @@ public class DockerStorageController extends BaseArtifactController {
             @ApiResponse(code = 500, message = "Server error."),
             @ApiResponse(code = 503, message = "Repository currently not in service.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + # repository.getId() + '/' + #artifactPath")
     @RequestMapping(value = {"/{storageId}/{repositoryId}/{artifactPath:.+}"}, method = {RequestMethod.GET, RequestMethod.HEAD})
     public void download(@RepositoryMapping Repository repository,
                          @PathVariable String artifactPath,
@@ -114,6 +117,7 @@ public class DockerStorageController extends BaseArtifactController {
             @ApiResponse(code = 500, message = "Server error."),
             @ApiResponse(code = 503, message = "Repository currently not in service.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #artifactPath")
     @RequestMapping(value = {"/{storageId}/{repositoryId}/download/{artifactPath:.+}"}, method = {RequestMethod.GET, RequestMethod.HEAD})
     public void downloadImage(@RepositoryMapping Repository repository,
                               @PathVariable String artifactPath,

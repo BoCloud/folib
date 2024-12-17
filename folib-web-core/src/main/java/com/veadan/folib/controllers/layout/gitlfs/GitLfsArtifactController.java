@@ -1,10 +1,12 @@
 package com.veadan.folib.controllers.layout.gitlfs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.config.GitLfsLayoutProviderConfig.GitLfsObjectMapper;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.gitls.model.*;
 import com.veadan.folib.domain.gitls.service.GitLfsLocalService;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.model.request.GitLfsBatchReq;
 import com.veadan.folib.model.response.GitLfsBatchRes;
 
@@ -138,6 +140,7 @@ public class GitLfsArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
     @GetMapping(value = {"{storageId}/{repositoryId}/{path:.+}"}, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public void download(@RepositoryMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,

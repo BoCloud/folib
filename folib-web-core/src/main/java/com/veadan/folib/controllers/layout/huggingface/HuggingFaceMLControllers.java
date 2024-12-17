@@ -9,12 +9,14 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.gitls.model.GitLfsBatchJson;
 import com.veadan.folib.domain.gitls.model.GitLfsJson;
 import com.veadan.folib.domain.gitls.utils.GitLfsHelper;
 import com.veadan.folib.constant.MlModelSystemProperties;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.index.MlModelIndexUtils;
 import com.veadan.folib.model.CardData;
 import com.veadan.folib.model.RevisionData;
@@ -124,6 +126,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
     @ApiOperation(value = "从没有组织名称的特定修订中获取文件头响应", nickname = "getFileHeaderWithoutOrganizationParam")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#storageId + '/' + #repository.getId() + '/' + #modelName + '/' + #revision + '/' + #filename")
     @RequestMapping(path = "{storageId}/{repositoryId}/{modelName}/resolve/{revision}/{filename:.+}",
             method = RequestMethod.HEAD
     )
@@ -149,6 +152,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
     @ApiOperation(value = "从具有组织名称的特定修订版中获取文件", nickname = "getFileWithOrganizationParam")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #organization + '/' + #modelName + '/' + #revision + '/' + #filename")
     @RequestMapping(path = "{storageId}/{repositoryId}/{organization}/{modelName}/resolve/{revision}/{filename:.+}",
             method = RequestMethod.GET
     )
@@ -176,6 +180,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
     @ApiOperation(value = "从没有组织名称的特定修订版本中获取文件", nickname = "getFileWithoutOrganizationParam")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #modelName + '/' + #revision + '/' + #filename")
     @RequestMapping(path = "{storageId}/{repositoryId}/{modelName}/resolve/{revision}/{filename:.+}",
             method = RequestMethod.GET
     )
@@ -535,6 +540,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             @ApiResponse(code = 500, message = "Server error."),
             @ApiResponse(code = 503, message = "Repository currently not in service.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/models/' + #artifactPath")
     @RequestMapping(value = {"/{storageId}/{repositoryId}/models/{artifactPath:.+}"}, method = {RequestMethod.GET, RequestMethod.HEAD})
     public void download(@RepositoryMapping Repository repository,
                          @PathVariable String artifactPath,

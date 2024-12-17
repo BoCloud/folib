@@ -1,7 +1,9 @@
 package com.veadan.folib.controllers.layout.maven;
 
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.artifact.coordinates.MavenArtifactCoordinates;
 import com.veadan.folib.controllers.BaseArtifactController;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.storage.ArtifactStorageException;
 import com.veadan.folib.storage.repository.Repository;
@@ -55,6 +57,7 @@ public class MavenArtifactController
             @ApiResponse(code = 500, message = "Server error."),
             @ApiResponse(code = 503, message = "Repository currently not in service.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#storageId + '/' + #repositoryId + '/' + #artifactPath")
     @RequestMapping(value = {"/{storageId}/{repositoryId}/{artifactPath:.+}"}, method = {RequestMethod.GET, RequestMethod.HEAD})
     public void download(
             @RequestHeader HttpHeaders httpHeaders,

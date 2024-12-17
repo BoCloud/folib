@@ -1,7 +1,9 @@
 package com.veadan.folib.controllers.layout.debian;
 
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.constant.DebianConstant;
 import com.veadan.folib.controllers.BaseArtifactController;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.web.LayoutRequestMapping;
 import io.swagger.annotations.Api;
@@ -42,6 +44,7 @@ public class DebianArtifactController extends BaseArtifactController {
             @ApiResponse(code = 500, message = "Server error."),
             @ApiResponse(code = 503, message = "Repository currently not in service.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#storageId + '/' + #repositoryId + '/' + #artifactPath")
     @RequestMapping(value = {"/{storageId}/{repositoryId}/{artifactPath:.+}"}, method = {RequestMethod.GET, RequestMethod.HEAD})
     public void download(
             @RequestHeader HttpHeaders httpHeaders,
