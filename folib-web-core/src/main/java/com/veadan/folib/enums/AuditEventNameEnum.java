@@ -5,7 +5,6 @@ import lombok.Getter;
 import static com.veadan.folib.enums.AuditEventModuleEnum.ADVANCE_SETTING;
 import static com.veadan.folib.enums.AuditEventModuleEnum.ARTIFACT_REPOSITORY;
 import static com.veadan.folib.enums.AuditEventModuleEnum.SYSTEM_SETTING;
-import static com.veadan.folib.enums.AuditEventModuleEnum.USER_MANAGEMENT;
 
 /**
  * @author huayanjun
@@ -37,13 +36,13 @@ public enum AuditEventNameEnum {
 //    UPDATE_META(SYSTEM_SETTING, "更新元数据"),
 
 
-    CREATE_USER(USER_MANAGEMENT, "用户管理"),
-    DELETE_USER(USER_MANAGEMENT, "删除用户"),
-    USER_GROUP(USER_MANAGEMENT, "用户组"),
-    USER_PERMISSION(USER_MANAGEMENT, "用户权限"),
+    CREATE_USER(AuditEventModuleEnum.USER_MANAGEMENT, "用户管理"),
+    DELETE_USER(AuditEventModuleEnum.USER_MANAGEMENT, "删除用户"),
+    USER_GROUP(AuditEventModuleEnum.USER_MANAGEMENT, "用户组"),
+    USER_MANAGEMENT(AuditEventModuleEnum.USER_MANAGEMENT, "用户权限"),
 
-    WEB_LOGIN(USER_MANAGEMENT, "web登录"),
-    SSO_LOGIN(USER_MANAGEMENT, "sso登录"),
+    WEB_LOGIN(AuditEventModuleEnum.USER_MANAGEMENT, "web登录"),
+    SSO_LOGIN(AuditEventModuleEnum.USER_MANAGEMENT, "sso登录"),
 
     BASE_SETTING(SYSTEM_SETTING, "基础信息配置"),
     SAFE_STRATEGY(SYSTEM_SETTING, "安全策略"),
