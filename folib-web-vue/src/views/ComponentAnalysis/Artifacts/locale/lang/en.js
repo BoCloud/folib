@@ -60,5 +60,7 @@ export default {
     'printExportCount':'Please enter export quantity',
     'OK':'OK',
     'CANCEL':'CANCEL',
-    'exporting':'E#xporting...'
+    'exporting':'E#xporting...',
+    'ProductScanDetail':'Product scan detail',
+    'ProductScan':'Product scan'
 }
