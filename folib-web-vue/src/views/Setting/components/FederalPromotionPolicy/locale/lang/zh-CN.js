@@ -21,7 +21,7 @@ export default {
     "SelectNodeType":"选择目标节点类型",
     "InternalNode":"内部节点",
     "ExternalNode":"外部节点",
-    "SelectingTargetStorage":"选择目标存储空间",
+    "SelectingTargetNode":"选择目标节点",
     "SelectionTargetRepositories":"选择联邦晋级目标仓库",
     "PleaseInput":"请输入",
     "PleaseSelect":"请选择",

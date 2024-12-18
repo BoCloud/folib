@@ -237,10 +237,7 @@
                                         {{ $t('FederalPromotionPolicy.InternalNode') }}
                                         <a-popover placement="topLeft">
                                             <template slot="content">
-                                                <p class="mb-0">{{ $t('UnionRepository.ArtifactPathTips1') }}</p>
-                                                <p class="mb-0">{{ $t('UnionRepository.ArtifactPathTips2') }}</p>
-                                                <p class="mb-0">{{ $t('UnionRepository.ArtifactPathTips3') }}</p>
-                                                <p class="mb-0">{{ $t('UnionRepository.ArtifactPathTips4') }}</p>
+                                                <p class="mb-0">{{instanceName + $t('UnionRepository.ArtifactRepositoryNode')}}</p>
                                             </template>
                                             <a class="ml-5">
                                                 <a-icon type="question-circle" theme="filled"/>
@@ -251,8 +248,7 @@
                                         {{ $t('FederalPromotionPolicy.ExternalNode') }}
                                         <a-popover placement="topLeft">
                                             <template slot="content">
-                                                <p class="mb-0">{{ $t('UnionRepository.MetadataTips1') }}</p>
-                                                <p class="mb-0">{{ $t('UnionRepository.MetadataTips2') }}</p>
+                                                <p class="mb-0">{{ $t('UnionRepository.OtherType')  + $t('UnionRepository.ArtifactRepositoryNode') }}</p>
                                             </template>
                                             <a class="ml-5">
                                                 <a-icon type="question-circle" theme="filled"/>
@@ -264,7 +260,7 @@
 
                         </a-col>
                         <a-col :md="16" :sm="24">
-                            <a-form-item :label="$t('FederalPromotionPolicy.SelectingTargetStorage')"
+                            <a-form-item :label="$t('FederalPromotionPolicy.SelectingTargetNode')"
                                          :colon="false"
                                          prop="selectTargetNodes"
                                          style="padding-bottom: 0;margin-bottom: 0">
@@ -273,7 +269,7 @@
                                     v-model="federalPromotionPolicyForm.selectTargetNodes"
                                     :options="targetNodesOptions"
                                     style="width: 52%"
-                                    :placeholder="$t('FederalPromotionPolicy.SelectingTargetStorage')"
+                                    :placeholder="$t('FederalPromotionPolicy.SelectingTargetNode')"
                                     @change="handleNodeChange"
                                 >
                                     <a-select-option v-for="item in targetNodesOptions" :key="item.key"
@@ -501,6 +497,7 @@ export default {
             layout: undefined,
             policy: undefined,
             type: 'hosted',
+            instanceName:'',
         }
     },
     computed: {
@@ -562,23 +559,24 @@ export default {
             this.queryFederalPromotionPolicy();
             this.queryRepositoriesByStorage();
             this.getTargetRepositories(this.type, this.layout, this.policy);
-
+            this.instanceName = sessionStorage.getItem("instanceName")
         },
 
         handleChangeTable(pagination, filters, sorter) {
             if (pagination) {
-                this.federalPromotionPolicyQuery.page = pagination.current
+                this.federalPromotionPolicyLoading = true
+                this.federalPromotionPolicyQuery.pageNumber = pagination.current
             }
             this.queryFederalPromotionPolicy()
         },
 
         queryFederalPromotionPolicy() {
-            this.federalPromotionPolicyLoading = true
+
             federalPromotionPolicyQuery(this.federalPromotionPolicyQuery).then(res => {
                 this.federalPromotionPolicyData = []
                 if (res) {
-                    this.federalPromotionPolicyData = res.content
-                    this.federalPromotionPolicyQuery.total = res.totalElements
+                    this.federalPromotionPolicyData = res.data.rows
+                    this.federalPromotionPolicyQuery.total = res.data.total
                 }
             }).finally(() => {
                 this.federalPromotionPolicyLoading = false

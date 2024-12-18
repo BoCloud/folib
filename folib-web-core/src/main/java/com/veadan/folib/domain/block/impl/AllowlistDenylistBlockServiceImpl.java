@@ -14,6 +14,7 @@ import com.veadan.folib.enums.TagEnum;
 import com.veadan.folib.forms.configuration.SecurityPolicyConfigurationForm;
 import com.veadan.folib.mapper.AllowlistDenylistBlockMapper;
 import com.veadan.folib.mapper.LicenseMapper;
+import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.SecurityPolicyConfigurationService;
 import com.veadan.folib.storage.repository.RepositoryDto;
@@ -54,13 +55,12 @@ public class AllowlistDenylistBlockServiceImpl implements AllowlistDenylistBlock
     }
 
     @Override
-    public Page<AllowlistDenylistBlockRes> paginQuery(AllowlistDenylistBlockQueryReq req) {
+    public TableResultResponse<AllowlistDenylistBlockRes> paginQuery(AllowlistDenylistBlockQueryReq req) {
         AllowlistDenylistBlock entity = queryReqToAllowlistDenylistBlock.apply(req);
         long total = allowlistDenylistBlockMapper.count(entity);
         PageRequest pageRequest = PageRequest.of(req.getPage() - 1, req.getSize());
         List<AllowlistDenylistBlock> list = allowlistDenylistBlockMapper.queryAllByLimit(entity, pageRequest);
-        return new PageImpl<>(list.stream().map(toAllowlistDenylistBlockRes).collect(Collectors.toList()), pageRequest, total);
-
+        return new TableResultResponse<>(total, list.stream().map(toAllowlistDenylistBlockRes).collect(Collectors.toList()));
     }
 
 

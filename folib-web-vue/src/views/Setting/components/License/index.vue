@@ -110,7 +110,7 @@ export default {
       licenseTableLoading: false,
       queryParams: {
         page: 1,
-        limit: 5,
+        limit:5,
         total: 0,
         searchKeyword: '',
         blackWhiteType: undefined,
@@ -211,8 +211,8 @@ export default {
     getAllowlistDenylistData(data){
       this.licenseTableLoading = true;
       queryAllowlistDenylistBlock(data).then(res=>{
-        this.licenseData = res.data.content;
-        this.queryParams.total = res.data.totalElements;
+        this.licenseData = res.data.rows;
+        this.queryParams.total = res.data.total;
       }).finally(()=>{
         this.licenseTableLoading = false
       })

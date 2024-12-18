@@ -4,6 +4,7 @@ import com.veadan.folib.controllers.block.req.AllowlistDenylistBlockQueryReq;
 import com.veadan.folib.controllers.block.req.AllowlistDenylistBlockReq;
 import com.veadan.folib.controllers.block.res.AllowlistDenylistBlockRes;
 import com.veadan.folib.entity.AllowlistDenylistBlock;
+import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
@@ -29,7 +30,7 @@ public interface AllowlistDenylistBlockService{
      * @param allowlistDenylistBlock 筛选条件
      * @return 查询结果
      */
-    Page<AllowlistDenylistBlockRes> paginQuery(AllowlistDenylistBlockQueryReq allowlistDenylistBlock);
+    TableResultResponse<AllowlistDenylistBlockRes> paginQuery(AllowlistDenylistBlockQueryReq allowlistDenylistBlock);
     /**
      * 新增数据
      *
