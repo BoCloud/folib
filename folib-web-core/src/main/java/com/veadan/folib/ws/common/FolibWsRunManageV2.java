@@ -16,6 +16,7 @@ import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.util.FileSizeConvertUtils;
 import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.ws.server.*;
+import com.veadan.folib.ws.server.config.WsConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -76,6 +77,8 @@ public class FolibWsRunManageV2 {
 
     @Autowired
     private DistributedCacheComponent distributedCacheComponent;
+    @Autowired
+    private WsConfig wsConfig;
 
     private WebSocketContainer webSocketContainer;
 
@@ -268,7 +271,8 @@ public class FolibWsRunManageV2 {
     }
 
     public WSMessageResponse sendRequest(String targetHostName, WSMessageRequest wsMessageRequest) throws FolibWsRequestException {
-        return sendRequest(targetHostName, wsMessageRequest, promotionConfig.getWsRequestTimout());
+        //return sendRequest(targetHostName, wsMessageRequest, promotionConfig.getWsRequestTimout());
+        return sendRequest(targetHostName, wsMessageRequest, wsConfig.getWsRequestTimout());
     }
 
     public WSMessageResponse sendRequest(String targetHostName, WSMessageRequest wsMessageRequest, int timeout) throws FolibWsRequestException {
@@ -339,7 +343,7 @@ public class FolibWsRunManageV2 {
     private final Map<Session, Long> sessionBytesSent = new ConcurrentHashMap<>();
     private final Map<Session, ReentrantLock> sessionLocks = new ConcurrentHashMap<>();
 
-    private final String PROMOTION_CHUNK_SIZE_KEY = "PROMOTION_CHUNK_SIZE";
+    //private final String PROMOTION_CHUNK_SIZE_KEY = "PROMOTION_CHUNK_SIZE";
 
 
     public void sendBinaryV2(String targetNode, Session session, ByteBuffer data, long finalKbps) throws IOException {
@@ -360,12 +364,12 @@ public class FolibWsRunManageV2 {
 
         ReentrantLock reentrantLock = sessionLocks.computeIfAbsent(session, session1 -> new ReentrantLock(true));
         int sendBytesCount = 0;
-        String  cacheChunkSize = distributedCacheComponent.get(PROMOTION_CHUNK_SIZE_KEY);
-        int minimumPacketSize = cacheChunkSize == null ? 10*1024 * 1024 : Integer.parseInt(cacheChunkSize);
+        //String  cacheChunkSize = distributedCacheComponent.get(PROMOTION_CHUNK_SIZE_KEY);
+        int minimumPacketSize = (int)finalKbps;
         //TCP通道一次只能处理一个消息，每次发送1M数据，为了解决TCP  队头阻塞，如果实际网络较小，发送过大的数据，会导致时间变长，比如发送20M，实际网络1M，则需要20S，在这个时间内会阻碍其他WS消息处理，心跳超时，会导致主动断开WS通道
-        if (minimumPacketSize > finalKbps) {
-            minimumPacketSize = (int) finalKbps;
-        }
+        //if (minimumPacketSize > finalKbps) {
+        //    minimumPacketSize = (int) finalKbps;
+        //}
 
         // 将ByteBuffer转换为InputStream
         byte[] dataArray = new byte[data.remaining()];
@@ -404,7 +408,7 @@ public class FolibWsRunManageV2 {
 
                 CompletableFuture<Void> completableFuture = new CompletableFuture<>();
                 RemoteEndpoint.Async asyncRemote = session.getAsyncRemote();
-                asyncRemote.setSendTimeout(3);
+                asyncRemote.setSendTimeout(wsConfig.getWsSendTimeout());
                 asyncRemote.sendBinary(chunk, result -> {
                     if (result.isOK()) {
                         // 完成Future

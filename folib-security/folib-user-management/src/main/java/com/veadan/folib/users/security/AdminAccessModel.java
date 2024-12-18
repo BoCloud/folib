@@ -26,6 +26,16 @@ public class AdminAccessModel implements AccessModel
     }
 
     @Override
+    public Set<Privileges> getPathAuthorities(String path, boolean enableSplitPath) {
+        return Privileges.all();
+    }
+
+    @Override
+    public Set<Privileges> getPathAuthorities(String storageId, String repositoryId, List<String> paths, boolean enableSplitPath) {
+        return Privileges.all();
+    }
+
+    @Override
     public Set<Privileges> getPathAuthorities(String storageId, String repositoryId, List<String> paths) {
         return Privileges.all();
     }

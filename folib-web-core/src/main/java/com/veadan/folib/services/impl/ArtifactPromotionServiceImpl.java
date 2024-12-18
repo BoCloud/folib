@@ -1391,7 +1391,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         final String artifactFileSliceUploadFilePathStr = String.format("%s/chunkFile_%s", artifactFileSliceUploadRootFolderPathStr, chunkNo);
         final File artifactFileSliceUploadFile = new File(artifactFileSliceUploadFilePathStr);
         boolean allSliceFileUploadCompleted = false;
-
+        boolean consistencyMd5 = false;
         try {
 
             // 记录已上传的切片状态
@@ -1462,7 +1462,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 }
                 final String uploadArtifactFileMd5 = MessageDigestUtils.calculateChecksum(new File(mergeFilePath).toPath(), MessageDigestAlgorithms.MD5);
                 // 校验MD5
-                if (!originFileMd5.equals(uploadArtifactFileMd5)) {
+                consistencyMd5 = originFileMd5.equals(uploadArtifactFileMd5);
+                if (!consistencyMd5) {
                     throw new BusinessException(String.format("%s , originFileMd5:%s , uploadArtifactFileMd5:%s", BusinessCodeEnum.ARTIFACT_SLICE_UPLOAD_MD5_CHECK_FAILED.getMessage(), originFileMd5, uploadArtifactFileMd5));
                 }
 
@@ -1486,7 +1487,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             log.error("切片上传失败", e);
             throw new BusinessException(e.getMessage());
         } finally {
-            if (allSliceFileUploadCompleted) {
+            if (consistencyMd5) {
                 FileUtil.del(new File(artifactFileSliceUploadRootFolderPathStr));
             }
         }
@@ -1621,10 +1622,12 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     @Override
     public ResponseEntity<?> deleteTask(String syncNo) {
         ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectBySyncNo(syncNo);
-        if (artifactSyncRecord.getStatus() >= 3) {
+        if (artifactSyncRecord.getStatus() == 3) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("任务已经结束不能删除");
         }
-        promotionUtil.deleteTask(syncNo);
+        if(artifactSyncRecord.getStatus()<3){
+             promotionUtil.deleteTask(syncNo);
+        }
         artifactSyncSlaveRecordMapper.deleteBySyncNo(syncNo);
         artifactSyncRecordMapper.delete(artifactSyncRecord);
         return ResponseEntity.ok().build();

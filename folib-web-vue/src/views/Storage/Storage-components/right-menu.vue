@@ -44,12 +44,13 @@
 </template>
 
 <script>
-import {deleteArtifact} from '@/api/folib'
+import {deleteArtifact, getArtifactPermission} from '@/api/folib'
+import { hasRole, isAdmin, isAnonymous, isLogin } from '@/utils/permission'
 export default {
-    props:['currentTreeNode','folibRepository','repositoryType','currentFileDetial','isTrashView','uploadEnabled','dispatchEnabled','moveEnabled','copyEnabled','deleteEnabled','rightClickTop','rightClickLeft'],
+    props:['currentTreeNode','folibRepository','repositoryType','currentFileDetial','isTrashView','uploadEnabled','dispatchEnabled','moveEnabled','copyEnabled','rightClickTop','rightClickLeft'],
     data() {
         return {
-
+            deleteEnabled: false
         }
     },
     inject:['reload'],
@@ -102,6 +103,24 @@ export default {
                 })
             })
             .finally(() => { })
+        },
+        handlerDataPermission (currentTreeNode) {
+            this.deleteEnabled = false
+            if (!currentTreeNode.storageId || !currentTreeNode.repositoryId || !currentTreeNode.artifactPath) {
+                return false
+            }
+            let permissions = []
+            getArtifactPermission(
+                currentTreeNode.storageId,
+                currentTreeNode.repositoryId,
+                currentTreeNode.artifactPath
+            ).then(res => {
+                permissions = res
+                this.deleteEnabled =
+                this.folibRepository.type !== 'group' &&
+                (hasRole('ARTIFACTS_MANAGER') ||
+                permissions.includes('ARTIFACTS_DELETE'))
+            })
         },
     }
 }

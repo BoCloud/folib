@@ -122,6 +122,7 @@ public class BrowseController
     @Resource
     private ArtifactMetadataService artifactMetadataService;
 
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping(value = "/getArtifact/{storageId}/{repositoryId}/{artifactPath:.+}")
     public ResponseEntity getArtifact(@PathVariable String artifactPath,
                                       @PathVariable String storageId,
@@ -249,7 +250,7 @@ public class BrowseController
     }
 
 
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @ApiOperation(value = "List the contents for a docker.")
     @GetMapping(value = "/getDockerArtifact/{storageId}/{repositoryId}/{path:.+}")
     public Object getDockerArtifact(@PathVariable("storageId") String storageId,
@@ -420,8 +421,8 @@ public class BrowseController
     @ApiOperation(value = "recover a path from a repository.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was restore"),
             @ApiResponse(code = 400, message = "Bad request.")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_DELETE')")
-    @PostMapping(value = "/restore/{storageId}/{repositoryId}/{artifactPath:.+}")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
+    @PostMapping(value = "/{storageId}/{repositoryId}/{artifactPath:.+}")
     public ResponseEntity restore(@PathVariable String storageId,@PathVariable String repositoryId,@PathVariable String artifactPath)
             throws IOException {
         logger.info("restore {}:{}/{}...", storageId, repositoryId, artifactPath);

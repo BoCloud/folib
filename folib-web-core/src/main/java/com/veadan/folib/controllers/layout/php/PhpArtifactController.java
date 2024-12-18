@@ -3,10 +3,12 @@ package com.veadan.folib.controllers.layout.php;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.artifact.coordinates.PhpArtifactCoordinates;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.data.criteria.Paginator;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.php.PhpSearchPackage;
 import com.veadan.folib.php.PhpSearchRequest;
 import com.veadan.folib.php.PhpSearchResult;
@@ -39,6 +41,7 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
@@ -123,16 +126,19 @@ public class PhpArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = {"{storageId}/{repositoryId}/dists/{path:.+}"})
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
     public ResponseEntity<Object> distDownload(@RepositoryMapping Repository repository,
                                                @RequestHeader HttpHeaders httpHeaders,
                                                @PathVariable String path,
                                                HttpServletRequest request,
                                                HttpServletResponse response)
             throws Exception {
-        final String storageId = repository.getStorage().getId();
-        final String repositoryId = repository.getId();
+        String storageId = repository.getStorage().getId();
+        String repositoryId = repository.getId();
         logger.info("Requested /{}/{}/{}.", storageId, repositoryId, path);
-        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, PhpArtifactCoordinates.DEFAULT_PACKAGES);
+        RepositoryPath repositoryPath = getLocalRepositoryPath(storageId, repositoryId, PhpArtifactCoordinates.DEFAULT_PACKAGES);
+        storageId = repositoryPath.getStorageId();
+        repositoryId = repositoryPath.getRepositoryId();
         JSONObject packageJson = getSourcePackagesJson(repositoryPath);
         String mirrorsKey = "mirrors";
         if (packageJson.containsKey(mirrorsKey)) {
@@ -163,6 +169,7 @@ public class PhpArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = {"{storageId}/{repositoryId}/{path:.+}"})
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
     public ResponseEntity<Object> download(@RepositoryMapping Repository repository,
                                            @RequestHeader HttpHeaders httpHeaders,
                                            @PathVariable String path,
@@ -189,6 +196,9 @@ public class PhpArtifactController extends BaseArtifactController {
      * @return 原packages.json文件信息
      */
     private JSONObject getSourcePackagesJson(RepositoryPath repositoryPath) throws IOException {
+        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+            return new JSONObject();
+        }
         String packages = artifactComponent.readRepositoryPathContent(repositoryPath);
         return JSONObject.parseObject(packages);
     }
@@ -247,6 +257,9 @@ public class PhpArtifactController extends BaseArtifactController {
      */
     private String getTargetUrl(String storageId, String repositoryId, String artifactPath, String name, String reference) throws IOException {
         String artifactContent = artifactComponent.readRepositoryPathContent(storageId, repositoryId, artifactPath);
+        if (StringUtils.isBlank(artifactContent)) {
+            return "";
+        }
         JSONObject artifactJson = JSONObject.parseObject(artifactContent);
         JSONObject packagesJson = artifactJson.getJSONObject("packages");
         JSONArray packagesJsonArray = packagesJson.getJSONArray(name);
@@ -265,5 +278,16 @@ public class PhpArtifactController extends BaseArtifactController {
             }
         }
         return url;
+    }
+
+    private RepositoryPath getLocalRepositoryPath(String storageId, String repositoryId, String artifactPath) throws IOException {
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        repositoryPath.setDisableRemote(Boolean.TRUE);
+        RepositoryPath cacheRepositoryPath = artifactResolutionService.resolvePath(repositoryPath);
+        if (Objects.nonNull(cacheRepositoryPath) && Files.exists(cacheRepositoryPath)) {
+            return cacheRepositoryPath;
+        }
+        repositoryPath.setDisableRemote(null);
+        return repositoryPath;
     }
 }

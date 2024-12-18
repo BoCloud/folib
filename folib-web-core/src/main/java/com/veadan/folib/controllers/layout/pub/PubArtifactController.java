@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.google.common.collect.Maps;
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.artifact.coordinates.PubArtifactCoordinates;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.constants.PubConstants;
@@ -14,6 +15,7 @@ import com.veadan.folib.domain.PubUpload;
 import com.veadan.folib.domain.Pubspec;
 import com.veadan.folib.domain.common.StandardError;
 import com.veadan.folib.domain.common.StandardResponse;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.enums.PubIndexTypeEnum;
 import com.veadan.folib.indexer.PubMetadataExtractor;
 import com.veadan.folib.indexer.PubPackageMetadataIndexer;
@@ -86,6 +88,7 @@ public class PubArtifactController
     @GetMapping(path = "{storageId}/{repositoryId}/api/packages/{packageName}/versions/{version}")
     @ApiOperation(value = "Inspect the version of a PUB package.", nickname = "inspectSpecificVersion", notes = "Deprecated as of Dart 2.8, use \"listAllVersions\" instead.")
     @ApiResponses({@ApiResponse(code = 200, message = "OK", response = PubPackageVersionMetadata.class), @ApiResponse(code = 403, message = "Forbidden. User has no read permission"), @ApiResponse(code = 404, message = "Package Not Found")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public ResponseEntity inspectVersion(@RepositoryMapping Repository repository, @PathVariable(name = "storageId") String storageId, @PathVariable(name = "repositoryId") String repositoryId,
                                          @PathVariable("packageName") String packageName, @PathVariable("version") String version, HttpServletRequest request, HttpServletResponse response) {
         PubPackageVersionMetadata inspectedVersionMetadata = pubService.inspectVersion(repository, packageName, version, PACKAGES_ENDPOINT + packageName);
@@ -120,6 +123,7 @@ public class PubArtifactController
     @RequestMapping(path = "{storageId}/{repositoryId}/packages/{packageName}/versions/{artifactName}",
             method = {RequestMethod.GET,
                     RequestMethod.HEAD})
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#storageId + '/' + #repositoryId + '/' + #packageName + '/' + #artifactName")
     public void download(@RepositoryMapping Repository repository,
                          @PathVariable(name = "storageId") String storageId,
                          @PathVariable(name = "repositoryId") String repositoryId,
@@ -201,6 +205,7 @@ public class PubArtifactController
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(path = "{storageId}/{repositoryId}/{packageName}/{artifactName}")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #packageName + '/' + #artifactName")
     public void download(@RepositoryMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,
                          @PathVariable String packageName,

@@ -212,9 +212,9 @@ public abstract class RepositoryFiles {
         return exists;
     }
 
-    public static void deleteTrash(RepositoryPath repositoryPath)
+    public static void deleteTrash(RepositoryPath repositoryPath, String storageDay, Map<String, String> cleanupArtifactPathMap)
             throws IOException {
-        repositoryPath.getFileSystem().provider().deleteTrash(repositoryPath);
+        repositoryPath.getFileSystem().provider().deleteTrash(repositoryPath, storageDay, cleanupArtifactPathMap);
     }
 
     public static void undeleteTrash(RepositoryPath repositoryPath)

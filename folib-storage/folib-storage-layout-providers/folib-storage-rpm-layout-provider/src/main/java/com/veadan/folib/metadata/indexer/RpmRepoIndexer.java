@@ -106,7 +106,7 @@ public class RpmRepoIndexer {
         String primaryXmlOpenSha = getSHA1(primaryXmlPath);
         String otherXmlOpenSha = getSHA1(otherXmlPath);
         long primaryOpenSize = Files.size(primaryXmlPath);
-        long otherSize = Files.size(otherXmlPath);
+
         long primaryTimestamp = Files.getLastModifiedTime(primaryXmlPath).toMillis();
         long otherTimestamp = Files.getLastModifiedTime(otherXmlPath).toMillis();
 
@@ -115,6 +115,7 @@ public class RpmRepoIndexer {
 
         Path primaryXmlGzPath = Path.of(String.join("/", temp,  primaryXmlGz));
         Path otherXmlGzPath = Path.of(String.join("/", temp,  otherXmlGz));
+
 
         compressXMLToFile(primaryXmlPath, primaryXmlGzPath);
         compressXMLToFile(otherXmlPath, otherXmlGzPath);
@@ -125,7 +126,7 @@ public class RpmRepoIndexer {
         String primaryXmlSha = getSHA1(primaryXmlGzPath);
         String otherXmlSha = getSHA1(otherXmlGzPath);
         long primarySize = Files.size(primaryXmlGzPath);
-        long otherOpenSize = Files.size(otherXmlGzPath);
+        long otherOpenSize = Files.size(otherXmlPath);
 
         RepomdMetadata repomdMetadata = new RepomdMetadata();
         RepomdMetadata.XmlData primary = new RepomdMetadata.XmlData();
@@ -136,6 +137,7 @@ public class RpmRepoIndexer {
         primary.setOpenChecksum(primaryXmlOpenSha);
         primary.setOpenSize(primaryOpenSize);
 
+        long otherSize = Files.size(otherXmlGzPath);
         RepomdMetadata.XmlData other = new RepomdMetadata.XmlData();
         other.setHref(String.join("/", "repodata", String.join("-", otherXmlSha , otherXmlGz)));
         other.setSize(otherSize);

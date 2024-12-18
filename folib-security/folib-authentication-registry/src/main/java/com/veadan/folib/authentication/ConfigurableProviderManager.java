@@ -51,6 +51,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -141,7 +142,7 @@ public class ConfigurableProviderManager extends ProviderManager implements User
             Optional<User> optionalUser = Optional.ofNullable(folibExternalUsersCacheManager.findByUsername(username)).filter(this::isInternalOrValidExternalUser);
             if (optionalUser.isPresent()) {
                 try {
-                    distributedCacheComponent.put(userKey, objectMapper.writeValueAsString(optionalUser.get()));
+                    distributedCacheComponent.put(userKey, objectMapper.writeValueAsString(optionalUser.get()), 30, TimeUnit.MINUTES);
                 } catch (JsonProcessingException e) {
                     throw new RuntimeException(e);
                 }
@@ -182,7 +183,7 @@ public class ConfigurableProviderManager extends ProviderManager implements User
             try {
                 User user = folibExternalUsersCacheManager.cacheExternalUserDetails(sourceId, externalUser);
                 try {
-                    distributedCacheComponent.put(userKey, objectMapper.writeValueAsString(user));
+                    distributedCacheComponent.put(userKey, objectMapper.writeValueAsString(user), 30, TimeUnit.MINUTES);
                 } catch (JsonProcessingException e) {
                     throw new RuntimeException(e);
                 }
@@ -213,7 +214,7 @@ public class ConfigurableProviderManager extends ProviderManager implements User
                 try {
                     User user = folibExternalUsersCacheManager.cacheExternalUserDetails(sourceId, externalUser);
                     try {
-                        distributedCacheComponent.put(userKey, objectMapper.writeValueAsString(user));
+                        distributedCacheComponent.put(userKey, objectMapper.writeValueAsString(user), 30, TimeUnit.MINUTES);
                     } catch (JsonProcessingException e) {
                         throw new RuntimeException(e);
                     }

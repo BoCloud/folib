@@ -12,5 +12,9 @@ public interface AccessModel extends Serializable
 
     Set<Privileges> getPathAuthorities(String path);
 
+    Set<Privileges> getPathAuthorities(String path, boolean enableSplitPath);
+
+    Set<Privileges> getPathAuthorities(String storageId, String repositoryId, List<String> paths, boolean enableSplitPath);
+
     Set<Privileges> getPathAuthorities(String storageId, String repositoryId, List<String> paths);
 }

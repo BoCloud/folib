@@ -125,6 +125,7 @@
 	}
   .barChartRadialGradient{
       //background-image: radial-gradient(circle at center, #ff69b4,#f7c6c7);
-      background-image: radial-gradient(circle at center,#f39c12, #e74c3c);
+      background-color: #0093E9;
+      background-image: linear-gradient(160deg, #0093E9 0%, #80D0C7 100%);
   }
 </style>

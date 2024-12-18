@@ -2,8 +2,7 @@ package com.veadan.folib.ws.server;
 
 import cn.hutool.core.collection.CollectionUtil;
 import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
-import com.veadan.folib.util.CollectionUtils;
-import com.veadan.folib.ws.server.config.SemaphoreConfig;
+import com.veadan.folib.ws.server.config.WsConfig;
 import com.veadan.folib.ws.task.DistributionTask;
 import com.veadan.folib.ws.task.OptimizedDynamicPriorityBlockingQueue;
 import org.slf4j.Logger;
@@ -13,7 +12,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.Semaphore;
 
 @Service
 public class DistributionService {
@@ -28,7 +26,7 @@ public class DistributionService {
 
     //public static final Semaphore semaphore = new Semaphore(4);
     @Autowired
-    private SemaphoreConfig semaphoreConfig;
+    private WsConfig semaphoreConfig;
 
     /**
      * 创建优先级队列，使用自然排序

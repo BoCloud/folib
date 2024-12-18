@@ -140,7 +140,7 @@ export default {
       this.getPackageNameList()
     },
     packageNameHandlerDelete(record) {
-      deletePackageNameBlock({ id: record.id }).then(res => {
+      deletePackageNameBlock(record).then(res => {
         this.successMsg(this.$t('Package.DeletePackage') + ' ' + record.packageName + this.$t('Package.Success'))
       }).catch(err => {
         this.$notification['error']({

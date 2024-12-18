@@ -9,7 +9,7 @@ pipeline {
         string(name: 'hub_certificate', defaultValue: 'public-folib-key', description: 'Hub凭证')
         string(name: 'docker_repo', defaultValue: 'mufan/mufan-docker', description: '镜像仓库名称')
         string(name: 'docker_name', defaultValue: 'folib-server', description: '镜像名称')
-        string(name: 'dockerTag', defaultValue: '1.2.7', description: '镜像版本')
+        string(name: 'dockerTag', defaultValue: '1.2.8.1', description: '镜像版本')
         string(name: 'buildPackageType', defaultValue: 'k8s', description: '部署包名称')
         string(name: 'platform', defaultValue: 'linux/amd64', description: '支持linux/amd64')
         string(name: 'maven_settings_id', defaultValue: 'devops-settings-folib', description: 'maven-settings的id')
@@ -31,11 +31,12 @@ pipeline {
                      steps {
                          withEnv(['JAVA_HOME=/var/jenkins_home/buildEnv/jdk-11']) {
                              withMaven(globalMavenSettingsConfig: "${params.maven_settings_id}") {
+
                                  sh '''
                                     export NVM_DIR="/var/jenkins_home/buildEnv/nvm-0.38.0"
                                      [ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh"
                                      [ -s "$NVM_DIR/bash_completion" ] && \\. "$NVM_DIR/bash_completion"
-                                     nvm use 14.6.0
+                                     nvm use 14.21.1
                                      npm install -g yarn
                                      yarn -v
                                      mvn clean -U --settings folib-settings.xml -Dmaven.test.skip=true -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true -Dmaven.wagon.http.ssl.ignore.validity.dates=true

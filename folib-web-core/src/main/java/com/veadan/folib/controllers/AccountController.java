@@ -3,12 +3,14 @@ package com.veadan.folib.controllers;
 import javax.inject.Inject;
 
 import com.veadan.folib.authorization.dto.Role;
+import com.veadan.folib.components.auth.AuthComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.controllers.users.UserController;
 import com.veadan.folib.controllers.users.support.UserOutput;
 import com.veadan.folib.domain.UserRepositoryPermission;
 import com.veadan.folib.forms.users.UserForm;
 import com.veadan.folib.domain.User;
+import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
@@ -40,6 +42,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -68,6 +71,10 @@ public class AccountController
     @Autowired
     @Lazy
     private AuthoritiesProvider authoritiesProvider;
+
+    @Autowired
+    @Lazy
+    private AuthComponent authComponent;
 
     @ApiOperation(value = "获取当前登录用户的帐户详细信息")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "Returns account details"),
@@ -142,26 +149,25 @@ public class AccountController
 
     @ApiOperation(value = "获取当前用户对指定存储空间和仓库的权限信息")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "Returns permissions details")})
-    @PreAuthorize("hasAuthority('AUTHENTICATED_USER')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping(value = "/permission/{storageId}/{repositoryId}",
             produces = { MediaType.APPLICATION_JSON_VALUE })
     @ResponseBody
-    public ResponseEntity<UserRepositoryPermission> getStorageAndRepositoryPermission(Authentication authentication, @ApiParam(value = "The storageId", required = true) @PathVariable String storageId, @ApiParam(value = "The repositoryId", required = true) @PathVariable String repositoryId) {
+    public ResponseEntity<UserRepositoryPermission> getStorageAndRepositoryPermission(@ApiParam(value = "The storageId", required = true) @PathVariable String storageId, @ApiParam(value = "The repositoryId", required = true) @PathVariable String repositoryId) {
         Storage storage = configurationManager.getStorage(storageId);
-        UserRepositoryPermission userRepositoryPermission = null;
-        if (authentication == null) {
-            Authentication authentication1 = SecurityContextHolder.getContext().getAuthentication();
-            if (!authentication1.isAuthenticated() || authentication1 instanceof AnonymousAuthenticationToken) {
-                Role anonymousRole = authoritiesProvider.getRuntimeRole(SystemRole.ANONYMOUS.name());
-                Set<Privileges> pathAuthorities = anonymousRole.getAccessModel().getPathAuthorities(storageId, repositoryId, null);
-                userRepositoryPermission = UserRepositoryPermission.builder().storageAdmin(storage.getAdmin()).permissions(pathAuthorities.stream().map(Privileges::getAuthority).collect(Collectors.toSet())).build();
-            }
-        }else {
-            SpringSecurityUser userDetails = (SpringSecurityUser)authentication.getPrincipal();
-            Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(storageId, repositoryId, null);
-            userRepositoryPermission = UserRepositoryPermission.builder().storageAdmin(storage.getAdmin()).permissions(storageAuthorities.stream().map(Privileges::getAuthority).collect(Collectors.toSet())).build();
-        }
-
+        UserRepositoryPermission userRepositoryPermission = UserRepositoryPermission.builder().storageAdmin(storage.getAdmin()).permissions(Collections.emptySet()).build();
+        userRepositoryPermission.setPermissions(authComponent.getAllPrivileges(storageId, repositoryId));
         return ResponseEntity.ok(userRepositoryPermission);
+    }
+
+    @ApiOperation(value = "获取当前用户对指定制品的权限信息")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "Returns permissions details")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @GetMapping(value = "/permission/{storageId}/{repositoryId}/{artifactPath:.+}",
+            produces = { MediaType.APPLICATION_JSON_VALUE })
+    @ResponseBody
+    public ResponseEntity<Set<String>> getArtifactPermission(@ApiParam(value = "The storageId", required = true) @PathVariable String storageId, @ApiParam(value = "The repositoryId", required = true) @PathVariable String repositoryId, @ApiParam(value = "The artifactPath", required = true) @PathVariable String artifactPath) {
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        return ResponseEntity.ok(authComponent.getPrivileges(repositoryPath));
     }
 }

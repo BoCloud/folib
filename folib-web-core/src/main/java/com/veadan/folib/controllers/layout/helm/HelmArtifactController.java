@@ -1,12 +1,16 @@
 package com.veadan.folib.controllers.layout.helm;
 
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.config.HelmRepoUtil;
 import com.veadan.folib.controllers.BaseArtifactController;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.indexer.HelmMetadataIndexer;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.repository.proxied.ProxyRepositoryArtifactResolver;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.HelmIndexUtil;
+import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +26,7 @@ import javax.ws.rs.HEAD;
 import javax.ws.rs.Path;
 import java.io.*;
 import java.nio.file.Files;
+import java.util.Objects;
 
 
 /**
@@ -29,7 +34,7 @@ import java.nio.file.Files;
  *
  * @author qijianping
  */
-//@LayoutRequestMapping("helm")
+@LayoutRequestMapping("helm")
 @RestController
 @Api(description = "Helm坐标控制器",tags = "Helm坐标控制器")
 public class HelmArtifactController extends BaseArtifactController {
@@ -51,7 +56,8 @@ public class HelmArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @GetMapping(value = {"{storageId}/{repositoryId}/{path}"})
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
+    @RequestMapping(value = {"/{storageId}/{repositoryId}/{path:.+}"}, method = {RequestMethod.GET, RequestMethod.HEAD})
     public void download(@RepositoryMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,
                          @PathVariable String path,
@@ -85,7 +91,7 @@ public class HelmArtifactController extends BaseArtifactController {
                     // 设置文件头：设置下载文件名
                     response.setHeader("Content-Disposition", "attachment;" + " filename=index.yaml");
                     int byteRead = 0;
-                    byte[] buffer = new byte[1024];
+                    byte[] buffer = new byte[8192];
                     while ((byteRead = in.read(buffer)) != -1) {
                         out.write(buffer, 0, byteRead);
                     }
@@ -95,10 +101,6 @@ public class HelmArtifactController extends BaseArtifactController {
             }
             vulnerabilityBlock(repositoryPath);
             provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
-//            else {
-//                vulnerabilityBlock(repositoryPath);
-//                provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
-//            }
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("download helm artifact error {}", e.getMessage());
@@ -110,7 +112,7 @@ public class HelmArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(value = "api/{storageId}/{repositoryId}/charts", method = {RequestMethod.POST})
+    @RequestMapping(value = {"{storageId}/{repositoryId}/charts"}, method = {RequestMethod.POST})
     public ResponseEntity upload(@RepositoryMapping Repository repository,
                                  @RequestHeader HttpHeaders httpHeaders,
                                  HttpServletRequest request,
@@ -129,8 +131,7 @@ public class HelmArtifactController extends BaseArtifactController {
             RepositoryPath repoPath = repositoryPathResolver.resolve(repository, "");
             String absolutePath = repoPath.toAbsolutePath().toString();
             //helmRepoUtil.createIndex(absolutePath, repository);
-            HelmMetadataIndexer indexer = new HelmMetadataIndexer(storageId, repositoryId,
-                    getBaseUrl()+"/"+ storageId + "/" + repositoryId + "/", artifactManagementService, repositoryPathResolver);
+            HelmMetadataIndexer indexer = new HelmMetadataIndexer(storageId, repositoryId, artifactManagementService, repositoryPathResolver);
             indexer.reindexAsSystem();
             return ResponseEntity.status(HttpStatus.CREATED).build();
         } catch (Exception e) {
@@ -145,7 +146,8 @@ public class HelmArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(value = "api/{storageId}/{repositoryId}/index.yaml", method = {RequestMethod.GET})
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/index.yaml'")
+    @RequestMapping(value ="{storageId}/{repositoryId}/index.yaml", method = {RequestMethod.GET})
     public void downloadIndex(@RepositoryMapping Repository repository,
                               @RequestHeader HttpHeaders httpHeaders,
                               HttpServletRequest request,
@@ -154,12 +156,15 @@ public class HelmArtifactController extends BaseArtifactController {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
         try {
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, "index.yaml");
-            if (!Files.exists(repositoryPath)) {
+            RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, "index.yaml");
+            if (Objects.nonNull(repositoryPath) && RepositoryTypeEnum.HOSTED.getType().equals(repositoryPath.getRepository().getType()) && !Files.exists(repositoryPath)) {
                 // 创建刷新索引
                 RepositoryPath repoPath = repositoryPathResolver.resolve(repository, "");
                 String absolutePath = repoPath.toAbsolutePath().toString();
                 helmRepoUtil.createIndex(absolutePath, repository);
+            }
+            if(repositoryPath == null && RepositoryTypeEnum.PROXY.getType().equals(repository.getType())){
+                repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, "charts/index.yaml");
             }
             vulnerabilityBlock(repositoryPath);
             provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);

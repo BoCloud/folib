@@ -8,7 +8,10 @@ import { VueAxios } from './utils/request'
 import store from './store/'
 import './assets/font_user/iconfont.css'
 import './assets/font_user/iconfont.js'
+import exportExcel from './exportExcel.js'
+console.log(exportExcel);
 
+Vue.prototype.$exportExcel = exportExcel
 Vue.use(Antd)
 
 import doitUIWeb from 'doit-ui-web'

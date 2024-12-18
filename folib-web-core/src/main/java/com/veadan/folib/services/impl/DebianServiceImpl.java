@@ -31,6 +31,7 @@ import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -71,7 +72,14 @@ public class DebianServiceImpl implements DebianService {
         String parentPath  = tempPath + File.separator + "parseArtifact" + File.separator;
         String artifactPath = parentPath + fileOriginalName;
         File artifactFile = new File(artifactPath);
+
         try {
+            if (!artifactFile.exists()) {
+                boolean dirCreated = artifactFile.mkdirs();
+                if (!dirCreated) {
+                    throw new IOException("Failed to create directory: " + parentPath);
+                }
+            }
             file.transferTo(artifactFile);
         } catch (Exception e) {
             throw new RuntimeException("制品解析失败" + e.getMessage());
@@ -79,11 +87,13 @@ public class DebianServiceImpl implements DebianService {
         Assert.isTrue(fileOriginalName.endsWith(DebianConstant.DEFAULT_EXTENSION), "无效的文件类型");
         try (InputStream extraMeta = Files.newInputStream(Paths.get(artifactFile.getAbsolutePath()))) {
             DebianMetadata extract = DebianUtils.extract(extraMeta);
-            Assert.notNull(extract, "无效的制品");
-            artifactParse.setVersion(extract.getVersion());
-            artifactParse.setArchitecture(extract.getArchitecture());
-            artifactParse.setPath(artifactFile.getAbsolutePath());
-            artifactParse.setFileName(extract.getPackageName());
+            //Assert.notNull(extract, "无效的制品");
+            if(extract !=null){
+                artifactParse.setVersion(extract.getVersion());
+                artifactParse.setArchitecture(extract.getArchitecture());
+                artifactParse.setPath(artifactFile.getAbsolutePath());
+                artifactParse.setFileName(extract.getPackageName());
+            }
             return artifactParse;
         } catch (Exception e) {
             log.error("extra metadata failed{},", e.getMessage(), e);

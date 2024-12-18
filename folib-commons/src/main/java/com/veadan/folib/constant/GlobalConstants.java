@@ -179,7 +179,7 @@ public interface GlobalConstants {
      */
     String DEFALUT = "1";
     /**
-     *  非默认
+     * 非默认
      */
     String NOT_DEFAULT = "0";
     /**
@@ -215,7 +215,7 @@ public interface GlobalConstants {
      * 用户禁用
      */
     String USER_NOT_ENABL = "false";
-    
+
     /**
      * 扫描重试
      */
@@ -265,4 +265,61 @@ public interface GlobalConstants {
      * 扫描仓库key
      */
     String SCAN_ENABLE_REPOSITORY_KEY = "SCAN_ENABLE_REPOSITORY_KEY_%s";
+    /**
+     * 制品晋级并发线程数量
+     */
+    int FOLIB_PROMOTION_THREAD = 4;
+
+    /**
+     * 制品晋级并发线程数key
+     */
+    String FOLIB_PROMOTION_THREAD_KEY = "FOLIB_PROMOTION_THREAD";
+    /**
+     * websocket响应超时时间 秒单位
+     */
+    int WS_REQUEST_TIMOUT = 5;
+    /**
+     * websocket响应超时时间key
+     */
+    String WS_REQUEST_TIMOUT_KEY = "WS_REQUEST_TIMOUT";
+
+    /**
+     * websocket发送超时时间单位秒
+     */
+    int WS_SEND_TIMEOUT = 3;
+
+    /**
+     * websocket发送超时时间key
+     */
+    String WS_SEND_TIMEOUT_KEY = "WS_SEND_TIMEOUT";
+
+    /**
+     * 制品晋级websocket请求超时时间 单位秒
+     */
+    int WS_REQUEST_TIMOUT_OF_ARTIFACT_UPLOAD = 600;
+    /**
+     * 制品晋级websocket请求超时时间key
+     */
+    String WS_REQUEST_TIMOUT_OF_ARTIFACT_UPLOAD_KEY = "WS_REQUEST_TIMOUT_OF_ARTIFACT_UPLOAD";
+
+    /**
+     * 仓库路径查询线程数
+     */
+    int REPOSITORY_PATH_THREAD = 16;
+    /**
+     * 仓库路径查询线程数key
+     */
+    String REPOSITORY_PATH_THREAD_KEY = "REPOSITORY_PATH_THREAD";
+    /**
+     * 仓库路径查询批量大小
+     */
+    int REPOSITORY_PATH_BATCH_SIZE = 40;
+    /**
+     * 仓库路径查询批量大小key
+     */
+    String REPOSITORY_PATH_BATCH_SIZE_KEY = "REPOSITORY_PATH_BATCH_SIZE";
+    /**
+     * 元数据级别制品生命周期
+     */
+    String ARTIFACT_LIFE_CYCLE_KEY = "ARTIFACT_LIFE_CYCLE";
 }

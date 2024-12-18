@@ -699,6 +699,8 @@ export default {
                 this.vulnerabilityTableLoading = true
                 this.$message.success("success");
                 this.getData();
+            }).catch(errorReason => {
+                this.$message.error(errorReason.response.data)
             }).finally(() => {
                 this.vulnerabilityTableLoading = false
                 this.stopVisible = false;
@@ -707,10 +709,11 @@ export default {
         },
         getCountData() {
             getArtifactSyncRecordCount().then(res => {
-                console.log("data", res)
                 this.artifactSyncRecordCountData = res
+            }).catch(errorReason => {
+                this.$message.error(errorReason.response.data)
             }).finally(() => {
-                console.log("artifactSyncRecordCountData", this.artifactSyncRecordCountData)
+
             })
         },
         removeTask(v){
@@ -719,6 +722,8 @@ export default {
             deleteTask(sycnNo, 0).then(res => {
                 this.$message.success("success");
                 this.getData();
+            }).catch(errorReason => {
+                this.$message.error(errorReason.response.data)
             }).finally(() => {
                 this.vulnerabilityTableLoading = false
                 this.removeVisible = false;

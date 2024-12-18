@@ -5,7 +5,9 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Lists;
 import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.components.auth.AuthComponent;
 import com.veadan.folib.config.PermissionCheck;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.controllers.unicom.UnicomAdapter;
@@ -17,7 +19,6 @@ import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.wrapper.RequestWrapper;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.security.core.Authentication;
@@ -107,6 +108,7 @@ public class PermissionCheckInterceptor implements HandlerInterceptor {
         }
         String storageKey = permission.storageKey();
         String repositoryKey = permission.repositoryKey();
+        String pathKey = permission.pathKey();
         if (StringUtils.isNotBlank(storageKey) && StringUtils.isNotBlank(repositoryKey)) {
             String storageId = request.getParameter(storageKey);
             String repositoryId = request.getParameter(repositoryKey);
@@ -125,6 +127,12 @@ public class PermissionCheckInterceptor implements HandlerInterceptor {
                     if (StringUtils.isNotBlank(filePath)) {
                         filePaths.add(filePath);
                     }
+                }
+            }
+            if (StringUtils.isNotBlank(pathKey)) {
+                String path = request.getParameter(pathKey);
+                if (StringUtils.isNotBlank(path)) {
+                    filePaths = Lists.newArrayList(path);
                 }
             }
             String parseArtifact = request.getParameter("parseArtifact");
@@ -147,6 +155,13 @@ public class PermissionCheckInterceptor implements HandlerInterceptor {
                 storageId = jsonObject.getString(storageKey);
                 repositoryId = jsonObject.getString(repositoryKey);
             }
+            AuthComponent authComponent = SpringUtil.getBean(AuthComponent.class);
+            Set<String> privileges = authComponent.getAllPrivileges(storageId, repositoryId, filePaths);
+            boolean flag = privileges.contains(resourceKey);
+            if (!flag) {
+                handlerResponse(response);
+            }
+            return flag;
             if (authentication.getPrincipal() instanceof SpringSecurityUser) {
                 // 如果是联通用户则特殊的鉴权
                 SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();

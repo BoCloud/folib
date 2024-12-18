@@ -422,6 +422,20 @@ export default {
           remark: '下载被安全策略阻断时触发 URL',
           i18nRemark: 'Setting.downloadIsBlockedBySecurityPolicy',
         },
+        {
+            label: '制品晋级',
+            i18nLabel: 'Setting.ArtifactFilePromotion',
+            value: 'EVENT_ARTIFACT_FILE_PROMOTION',
+            remark: '制品晋级成功时触发 URL',
+            i18nRemark: 'Setting.triggeredWhenProductPromotionIsSuccessful',
+        },
+        {
+            label: '制品分发',
+            i18nLabel: 'Setting.ArtifactFileDispense',
+            value: 'EVENT_ARTIFACT_FILE_DISPENSE',
+            remark: '制品分发成功时触发 URL',
+            i18nRemark: 'Setting.triggeredWhenProductDistributionIsSuccessful',
+     },
       ],
       webhookForm: {
         uuid: '',

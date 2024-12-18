@@ -12,8 +12,6 @@ export default {
     'Metadata': '元数据',
     'MetadataTips1': '输入元数据KEY及元数据值，字符相等匹配',
     'MetadataTips2': '用于匹配制品元数据中包含该KEY及值的制品',
-    'MetadataTips2': '用于匹配制品元数据中包含该KEY及值的制品',
-    'MetadataTips2': '用于匹配制品元数据中包含该KEY及值的制品',
     'PleaseEnter': '请输入',
     'ArtifactPaths': '包路径',
     'MetadataKey': '元数据KEY',

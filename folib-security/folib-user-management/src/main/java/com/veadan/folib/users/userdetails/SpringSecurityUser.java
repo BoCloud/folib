@@ -120,18 +120,20 @@ public class SpringSecurityUser
                 .collect(Collectors.toSet());
     }
 
+    public Collection<Privileges> getStorageAuthorities(String path, boolean enableSplitPath) {
+        return getRoles().stream()
+                .flatMap(r -> r.getAccessModel()
+                        .getPathAuthorities(path, enableSplitPath)
+                        .stream())
+                .collect(Collectors.toSet());
+    }
+
     public Collection<Privileges> getStorageAuthorities(String storageId, String repositoryId, List<String> paths) {
         return getRoles().stream()
                 .flatMap(r -> r.getAccessModel()
                         .getPathAuthorities(storageId, repositoryId, paths)
                         .stream())
                 .collect(Collectors.toSet());
-    }
-
-    public Collection<Privileges> getAllAuthorities(String storageId, String repositoryId, List<String> paths) {
-        Collection<Privileges> privilegesCollection = getAuthorities();
-        privilegesCollection.addAll(getStorageAuthorities(storageId, repositoryId, paths));
-        return privilegesCollection;
     }
 
     public String getUrl() {

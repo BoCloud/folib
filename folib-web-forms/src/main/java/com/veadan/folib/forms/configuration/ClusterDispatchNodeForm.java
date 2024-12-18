@@ -17,7 +17,7 @@ public class ClusterDispatchNodeForm {
     private String clusterCnName;
     private String clusterNodeDesc;
     private String clusterNodeHost;
-    private String dispatchType;
+    private String dispatchType = "push";
     private Boolean isThisCluster = false;
     private String createTime;
     /**

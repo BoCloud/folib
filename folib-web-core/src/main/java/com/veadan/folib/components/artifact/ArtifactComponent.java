@@ -194,6 +194,9 @@ public class ArtifactComponent {
      */
     public String readRepositoryPathContent(String storageId, String repositoryId, String path) throws IOException {
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+        if (!Files.exists(repositoryPath)) {
+            return "";
+        }
         return readRepositoryPathContent(repositoryPath);
     }
 
@@ -921,9 +924,11 @@ public class ArtifactComponent {
                     url = url + separator;
                 }
                 document = Jsoup.parse(data, url);
+            } else {
+                log.error("Get document url [{}] error response statusCode [{}]", url, statusCode);
             }
         } catch (Exception ex) {
-            log.error("[{}] getDoc url [{}] response statusCode [{}] error [{}]", this.getClass().getSimpleName(), url, statusCode, ExceptionUtils.getStackTrace(ex));
+            log.error("Get document url [{}] response statusCode [{}] error [{}]", url, statusCode, ExceptionUtils.getStackTrace(ex));
         } finally {
             if (Objects.nonNull(response)) {
                 response.close();
@@ -931,7 +936,6 @@ public class ArtifactComponent {
         }
         return document;
     }
-
     /**
      * 存储制品元数据文件
      *

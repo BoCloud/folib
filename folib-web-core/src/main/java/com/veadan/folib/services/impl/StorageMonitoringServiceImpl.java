@@ -8,8 +8,10 @@ import com.github.pagehelper.PageHelper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.IdGenerateUtils;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.domain.StorageDevice;
 import com.veadan.folib.entity.StorageMonitoring;
@@ -68,6 +70,9 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
 
     @Autowired
     private ArtifactRepository artifactRepository;
+
+    @Autowired
+    private DistributedCacheComponent distributedCacheComponent;
 
     @Inject
     @Lazy
@@ -258,6 +263,9 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
         StorageDevice storageDevice;
         StorageMonitoring storageMonitoring;
         long start;
+        List<String> includeRepositories = getIncludeRepositories();
+        List<String> excludeRepositories = getExcludeRepositories();
+        String storageIdAndRepositoryId;
         for (String storageId : storageMap.keySet()) {
             storage = storageMap.get(storageId);
             Map<String, ? extends Repository> repositoryMap = storage.getRepositories();
@@ -269,6 +277,13 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
                     }
                     rootRepositoryPath = repositoryPathResolver.resolve(repository);
                     if (!Files.exists(rootRepositoryPath)) {
+                        continue;
+                    }
+                    storageIdAndRepositoryId = ConfigurationUtils.getStorageIdAndRepositoryId(storageId, repositoryId);
+                    if (CollectionUtils.isNotEmpty(includeRepositories) && !includeRepositories.contains(storageIdAndRepositoryId)) {
+                        continue;
+                    }
+                    if (CollectionUtils.isNotEmpty(excludeRepositories) && excludeRepositories.contains(storageIdAndRepositoryId)) {
                         continue;
                     }
                     fileStore = Files.getFileStore(rootRepositoryPath);
@@ -509,6 +524,24 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
 
         storageMonitoringList.add(trashStorageMonitoring);
         trashStorageMonitoringList.add(trashStorageMonitoring);
+    }
+
+    private List<String> getIncludeRepositories() {
+        String cacheKey = "STORAGE_MONITORING_INCLUDE_REPOSITORIES";
+        String cacheValue = distributedCacheComponent.get(cacheKey);
+        if (StringUtils.isNotBlank(cacheValue)) {
+            return Arrays.asList(cacheValue.split(","));
+        }
+        return null;
+    }
+
+    private List<String> getExcludeRepositories() {
+        String cacheKey = "STORAGE_MONITORING_EXCLUDE_REPOSITORIES";
+        String cacheValue = distributedCacheComponent.get(cacheKey);
+        if (StringUtils.isNotBlank(cacheValue)) {
+            return Arrays.asList(cacheValue.split(","));
+        }
+        return null;
     }
 
 }

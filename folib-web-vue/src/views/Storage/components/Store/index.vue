@@ -277,7 +277,7 @@
                 </a-row>
               </a-col>
               <a-col :span="8" class="text-right">
-                <a-dropdown v-if="$store.state.user.token && currentTreeNode.url" class="mr-30"
+                <a-dropdown v-if="currentTreeNode.url" class="mr-30"
                   placement="bottomCenter">
                   <span style="font-size: 16px; cursor: pointer">
                     {{ $t('Store.More') }}
@@ -406,7 +406,7 @@
 
 
               <a-col :span="8" class="text-right">
-                <a-dropdown v-if="$store.state.user.token && currentTreeNode.url" class="mr-45">
+                <a-dropdown v-if="currentTreeNode.url" class="mr-45">
                   <span style="font-size: 16px; cursor: pointer">
                     {{ $t('Store.More') }}
                     <a-icon type="more" class="text-muted" style="font-size: 16px" />
@@ -483,6 +483,8 @@
               :currentFileDetial="currentFileDetial" 
               :successMsg="successMsg" 
               :folibRepository="folibRepository" 
+              @addPageKey="addPageKey"
+              @handlerPermission="handlerPermission"
               @messageArchitectureChild="handleArchitectureMessage"
               @metadataEditHandler="metadataEditHandler" 
               @metadataHandler="metadataHandler" 
@@ -1018,6 +1020,7 @@ import {
   deleteArtifact,
   getPermissionStoragesAndRepositories,
   getStorageAndRepositoryPermission,
+  getArtifactPermission,
   getStoragesAndRepositories,
   getArtifactDispatchStoragesAndRepositories,
 } from '@/api/folib'
@@ -1049,7 +1052,7 @@ import Search from '../Search/index.vue'
 import { PrismEditor } from 'vue-prism-editor'
 import 'vue-prism-editor/dist/prismeditor.min.css' // import the styles somewhere
 // import highlighting library (you can use any library you want just return html string)
-import { highlight, languages } from 'prismjs/components/prism-core'
+import { highlight, languages, Token } from 'prismjs/components/prism-core'
 import 'prismjs/components/prism-clike'
 import 'prismjs/components/prism-javascript'
 import 'prismjs/themes/prism-tomorrow.css'
@@ -1316,10 +1319,10 @@ export default {
     },
   },
   watch:{
-    currentTreeNode(val){
-      console.log(val,'watch currentTreeNode');
-      this.pageKey ++
-    } 
+    // currentTreeNode(val){
+    //   console.log(val,'watch currentTreeNode');
+    //   this.pageKey ++
+    // }
   },
   created () {
     this.initData()
@@ -1342,9 +1345,13 @@ export default {
       {
         this.scannerRules()
         this.scanReport = Object.assign({}, this.propScanReport)
-        this.queryStorageAndRepositoryPermission()
-        this.getUploadMaxSize()
+
       }
+      this.getUploadMaxSize()
+      this.queryStorageAndRepositoryPermission()
+    },
+    addPageKey() {
+      this.pageKey++
     },
     scannerRules() {
       scannerRules(
@@ -1991,7 +1998,7 @@ export default {
                 this.currentTreeNode.repositoryId,
                 this.currentTreeNode.artifactPath
               ).then(res => {
-                if (res.artifact && res.artifact.safeLevel === "scanComplete") {
+                if (res.artifact && res.artifact.safeLevel === "scanComplete" && res.artifact.report) {
                   this.scanReport.report = JSON.parse(
                     res.artifact.report
                   )
@@ -2601,6 +2608,37 @@ export default {
     isAdmin() {
       return isAdmin()
     },
+    handlerPermission () {
+      this.deleteEnabled = false
+      let storageId = null,repositoryId = null,artifactPath = null
+      if (this.currentFileDetial && this.currentFileDetial.artifact) {
+        //制品
+        let artifact = this.currentFileDetial.artifact
+        storageId = artifact.storageId
+        repositoryId = artifact.repositoryId
+        artifactPath = artifact.artifactPath
+      } else  if (this.currentTreeNode && this.currentTreeNode.artifactPath) {
+        //目录
+        storageId = this.currentTreeNode.storageId,
+        repositoryId = this.currentTreeNode.repositoryId,
+        artifactPath = this.currentTreeNode.artifactPath
+      }
+      if (!storageId || !repositoryId || !artifactPath) {
+        return false
+      }
+      let permissions = []
+      getArtifactPermission(
+        storageId,
+        repositoryId,
+        artifactPath
+      ).then(res => {
+        permissions = res
+        this.deleteEnabled =
+          this.folibRepository.type !== 'group' &&
+          (hasRole('ARTIFACTS_MANAGER') ||
+          permissions.includes('ARTIFACTS_DELETE'))
+      })
+    },
     queryStorageAndRepositoryPermission() {
       this.storageAdmin = ""
       this.permissions = []
@@ -2613,8 +2651,9 @@ export default {
         this.uploadEnabled =
           this.folibRepository.status.indexOf('Out of Service') === -1 &&
           this.enablUploadedLayout.includes(this.folibRepository.layout) &&
-          (this.folibRepository.type === 'hosted' || (this.folibRepository.type === 'group' && this.folibRepository.groupDefaultRepository))
-        console.log("this.uploadEnabled", this.uploadEnabled)
+          (this.folibRepository.type === 'hosted' || (this.folibRepository.type === 'group' && this.folibRepository.groupDefaultRepository)) &&
+          (hasRole('ARTIFACTS_MANAGER') ||
+            this.permissions.includes('ARTIFACTS_DEPLOY'))
         this.copyEnabled =
           this.folibRepository.type === 'hosted' &&
           (hasRole('ARTIFACTS_MANAGER') ||
@@ -2625,13 +2664,7 @@ export default {
           this.folibRepository.type === 'hosted' &&
           (hasRole('ARTIFACTS_MANAGER') ||
             this.permissions.includes('ARTIFACTS_MOVE'))
-        this.deleteEnabled =
-          this.folibRepository.type !== 'group' &&
-          (hasRole('ARTIFACTS_MANAGER') ||
-            this.permissions.includes('ARTIFACTS_DELETE'))
-
       })
-
     },
     getRepositoryUrl() {
       let repositoryUrl = ''
@@ -2864,7 +2897,7 @@ export default {
               formData.append('fileId', this.fileIds[fileIndex]);
               formData.append('storageId', this.folibRepository.storageId);
               formData.append('repositoryId', this.folibRepository.id);
-              formData.append('path', path);
+              formData.append('path', path == undefined || path == 'undefined' ? '' : path);
               formData.append('totalChunks', this.totalChunks[fileIndex]);
               formData.append('currentChunk', chunkIndex + 1);
               formData.append('currentChunkSize', chunk.size); // 添加当前分片大小
@@ -2898,7 +2931,9 @@ export default {
               const xhr = new XMLHttpRequest();
               xhr.open('POST', '/api/artifact/folib/promotion/slice/upload-web');
               const token = storage.get(ACCESS_TOKEN) ? storage.get(ACCESS_TOKEN) : Cookies.get("access_token");
-              xhr.setRequestHeader('Authorization', 'Bearer '+token);
+              if (token) {
+                xhr.setRequestHeader('Authorization', 'Bearer '+token);
+              }
               xhr.upload.onprogress = (event) => {
                   if (event.lengthComputable) {
                       this.isClose = true;

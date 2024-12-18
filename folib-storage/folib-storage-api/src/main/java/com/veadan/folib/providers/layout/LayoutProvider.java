@@ -6,11 +6,15 @@ import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.ArtifactGroup;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.repository.RepositoryManagementStrategy;
+import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -41,7 +45,16 @@ public interface LayoutProvider<T extends ArtifactCoordinates> {
     }
 
     default void targetUrl(RepositoryPath path) throws IOException {
-
+        if (Objects.isNull(path) || StringUtils.isBlank(path.getTargetUrl())) {
+            return;
+        }
+        Repository repository = path.getRepository();
+        if (!RepositoryTypeEnum.PROXY.getType().equals(repository.getType())) {
+            return;
+        }
+        String remoteUrl = repository.getRemoteRepository().getUrl();
+        remoteUrl = StringUtils.removeEnd(remoteUrl, GlobalConstants.SEPARATOR);
+        path.setTargetUrl(String.format("%s/%s", remoteUrl, StringUtils.removeStart(path.getTargetUrl(), GlobalConstants.SEPARATOR)));
     }
 
     default int refreshContentInterval(RepositoryPath repositoryPath) {

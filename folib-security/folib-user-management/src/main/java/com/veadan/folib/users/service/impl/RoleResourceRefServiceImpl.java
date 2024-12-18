@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  * @date : 2024-7-18
  */
 @Service
-@Transactional
+@Transactional(rollbackFor=Exception.class)
 public class RoleResourceRefServiceImpl implements RoleResourceRefService {
     @Autowired
     private RoleResourceRefMapper roleResourceRefMapper;
@@ -158,7 +158,8 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         }
 
         List<Long> refIds;
-        if (SystemRole.READERS.name().equalsIgnoreCase(roleId)){
+        List<String> roleNames = Lists.newArrayList(SystemRole.READERS.name(), SystemRole.ARTIFACTS_MANAGER.name(), SystemRole.GENERAL.name(), SystemRole.OPEN_SOURCE_MANAGE.name());
+        if (roleNames.stream().anyMatch(item -> item.equalsIgnoreCase(roleId))) {
             refIds = roleResourceRefs.stream().filter(r -> StringUtils.isNotEmpty(r.getRefType())).map(RoleResourceRef::getId).collect(Collectors.toList());
         } else if (SystemRole.ANONYMOUS.name().equalsIgnoreCase(roleId)) {
             ArrayList<String> privileges = Lists.newArrayList(Privileges.ARTIFACTS_RESOLVE.name(), Privileges.SEARCH_ARTIFACTS.name(), Privileges.ARTIFACTS_VIEW.name(), Privileges.CONFIGURATION_VIEW_METADATA_CONFIGURATION.name());

@@ -388,7 +388,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
 
 
     @PostMapping(value = "/slice/upload-web",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
+    @PermissionCheck(resourceKey = "ARTIFACTS_DEPLOY", storageKey = "storageId", repositoryKey = "repositoryId", pathKey = "path")
     public ResponseEntity<?> sliceUploadWeb3(MultipartHttpServletRequest request,
                                              @RequestParam("storageId") String storageId,
                                              @RequestParam("repositoryId") String repositoryId,
@@ -412,7 +412,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
         try {
             synchronized (fileMd5){
                 String baseUrl = getBaseUrl();
-                String token = securityComponent.getSecurityToken();
+                String token = securityComponent.generateUserToken();
                 if (currentChunkSize != chunkSize) {
                     // 记录异常日志或抛出异常
                     throw new IllegalArgumentException("Chunk size does not match!");

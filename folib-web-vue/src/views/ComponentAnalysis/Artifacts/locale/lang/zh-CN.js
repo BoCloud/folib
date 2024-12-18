@@ -55,4 +55,13 @@ export default {
     'ComponentInformation': '组件信息',
     'ComponentOverview': '组件概览',
     'ScanTime': '扫描时间',
+    'exportExcel':'导出execl',
+    'exportPdf':'导出PDF',
+    'printExportCount':'请输入导出数量',
+    'OK':'确定',
+    'CANCEL':'取消',
+    'exporting':'正在导出...',
+    'ProductScanDetail':'制品扫描详情',
+    'ProductScan':'制品扫描'
+
 }

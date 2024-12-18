@@ -51,7 +51,14 @@
             <div v-for="(f, index) in i.fields" :key="index" class="mt-10">
               <a-col v-if="f.name !== 'storageId' && f.name !== 'repositoryId' && f.name !=='storageCondition'" class="ml-auto">
                 <span style="margin-left: 15px" class="mr-15" v-if="f.aliasName && f.aliasName.length > 0">{{ f.aliasName }}</span>
-                <span style="margin-left: 15px" class="mr-15" v-else>{{ f.name }}</span>
+                <span style="margin-left: 15px" class="mr-15" v-else-if="!f.name.includes(artifactPathKey)">{{ f.name }}</span>
+                <span style="margin-left: 15px" class="mr-15" v-else-if="f.name.includes(artifactPathKey)">{{ '制品目录'}}</span>
+                <a-input :min="1" v-if="f.name.includes(artifactPathKey)" v-model="f.label"
+                size="small" class="font-regular text-sm text-dark mr-10" style="width: 120px;"/>
+                <a-input-number :min="1" v-if="f.name.includes(artifactPathKey)" v-model="f.value"
+                size="small" class="font-regular text-sm text-dark" style="width: 120px;" />
+                <a-button v-if="f.name.includes(artifactPathKey)" @click="deleteArtifactPath(i.fields, index)" style="margin-left: 15px"
+                type="danger" size="small" shape="circle" icon="delete" />
                 <a-input v-if="f.type === 'string'" v-model="f.value" size="small"
                   class="font-regular text-sm text-dark" style="width: 250px;" />
                 <a-input-number :min="1" v-if="f.type === 'int' && f.name === 'numberToKeep'" v-model="f.value"
@@ -76,6 +83,13 @@
                   </a-select-option>
                 </a-select>
               </a-col>
+            </div>
+            <div class="mt-10 ml-15" v-if="i.isSetted.jobClass.includes('CleanupArtifactsRepositoryCronJob') || i.isSetted.jobClass.includes('ClearRepositoryTrashCronJob')">
+              <a-tooltip @click="addArtifactPath(i.fields)">
+                <template slot="title">{{ $t('Cron.AddArtifactPath') }}</template>
+                <a-icon type="plus-circle" theme="filled" class="cursor-pointer package-name-add mr-20"
+                  :style="{ fontSize: '28px', color: '#1890FF' }" />
+              </a-tooltip>
             </div>
           </div>
         </a-row>
@@ -126,6 +140,7 @@ export default {
           value: "day"
         }
       ],
+      artifactPathKey: "artifactPath:"
     }
   },
   computed: {
@@ -193,6 +208,9 @@ export default {
                       o.value = s.properties[key] === 'true' ? true : s.properties[key] === 'false' ? false : s.properties[key]
                     }
                   })
+                  if (key.includes(this.artifactPathKey)) {
+                    c.fields.push({name: key, value: s.properties[key], label: key.replace(this.artifactPathKey, "")})
+                  }
                 }
               }
             })
@@ -245,7 +263,13 @@ export default {
         let fiedsNew = []
         i.fields.forEach(f => {
           if (f.value !== null && f.value !== undefined) {
-            fiedsNew.push({ name: f.name, value: f.value })
+            if (f.label) {
+              if (f.value !== '') {
+                fiedsNew.push({ name: this.artifactPathKey + f.label, value: f.value })
+              }
+            } else {
+              fiedsNew.push({ name: f.name, value: f.value })
+            }
           }
         })
         i.isSetted.fields = fiedsNew
@@ -307,6 +331,12 @@ export default {
       }
       this.$forceUpdate()
     },
+    addArtifactPath(data) {
+      data.push({name: this.artifactPathKey, value: "", label: ""})
+    },
+    deleteArtifactPath(data, index) {
+      data.splice(index, 1)
+    }
   },
 };
 </script>

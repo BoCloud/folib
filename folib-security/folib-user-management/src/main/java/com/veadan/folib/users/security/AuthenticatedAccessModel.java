@@ -38,6 +38,16 @@ public class AuthenticatedAccessModel implements AccessModel
     }
 
     @Override
+    public Set<Privileges> getPathAuthorities(String path, boolean enableSplitPath) {
+        return target.getPathAuthorities(path, enableSplitPath);
+    }
+
+    @Override
+    public Set<Privileges> getPathAuthorities(String storageId, String repositoryId, List<String> paths, boolean enableSplitPath) {
+        return target.getPathAuthorities(storageId, repositoryId, paths, enableSplitPath);
+    }
+
+    @Override
     public Set<Privileges> getPathAuthorities(String storageId, String repositoryId, List<String> paths) {
         return target.getPathAuthorities(storageId, repositoryId, paths);
     }

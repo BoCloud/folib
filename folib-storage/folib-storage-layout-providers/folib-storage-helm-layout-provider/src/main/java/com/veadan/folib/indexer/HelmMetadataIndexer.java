@@ -20,11 +20,7 @@ import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
@@ -33,10 +29,12 @@ import com.veadan.folib.model.HelmChartMetadata;
 import com.veadan.folib.model.HelmDependencyMetadata;
 import com.veadan.folib.model.HelmIndexYamlMetadata;
 import com.veadan.folib.model.HelmMetadata;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
 import com.veadan.folib.services.ArtifactManagementService;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.CollectionHelmUtils;
 import com.veadan.folib.util.CollectionUtils;
 import com.veadan.folib.util.HelmUtils;
@@ -49,7 +47,7 @@ import org.springframework.util.StopWatch;
 public class HelmMetadataIndexer {
     @Generated
     private static final Logger log = LoggerFactory.getLogger(HelmMetadataIndexer.class);
-    private final String baseUrl;
+    //private final String baseUrl;
     private final HelmMetadataExtractor helmMetadataExtractor;
     protected ArtifactManagementService artifactManagementService;
     protected RepositoryPathResolver repositoryPathResolver;
@@ -58,10 +56,10 @@ public class HelmMetadataIndexer {
     private String repositoryId;
 
 
-    public HelmMetadataIndexer(String storageId, String repositoryId, String baseUrl, ArtifactManagementService artifactManagementService, RepositoryPathResolver repositoryPathResolver) {
+    public HelmMetadataIndexer(String storageId, String repositoryId, ArtifactManagementService artifactManagementService, RepositoryPathResolver repositoryPathResolver) {
         this.storageId = storageId;
         this.repositoryId = repositoryId;
-        this.baseUrl = baseUrl;
+        //this.baseUrl = baseUrl;
 
         this.helmMetadataExtractor = new HelmMetadataExtractor();
         this.artifactManagementService = artifactManagementService;
@@ -92,7 +90,7 @@ public class HelmMetadataIndexer {
             if (metadata.helmChart != null) {
                 writeAttributes(path, metadata);
                 log.debug("Updating index.yaml for repository {}", this.repositoryId);
-                updateIndexYaml(metadata, repositoryPath.getTarget().toString(), helmIndexYamlMetadata, this.baseUrl);
+                updateIndexYaml(metadata, repositoryPath, helmIndexYamlMetadata);
             }
             timer.stop();
             log.trace("Indexing Helm metadata for repo '{}' on path '{}' took '{}'", this.repositoryId, path, timer);
@@ -152,13 +150,13 @@ public class HelmMetadataIndexer {
         //this.repositoryService.setAttributes(this.repoKey, path, (Multimap)hashMultimap);
     }
 
-    private void updateIndexYaml(HelmMetadata metadata, String path, HelmIndexYamlMetadata indexYaml, String baseUrl) throws IOException {
+    private void updateIndexYaml(HelmMetadata metadata, RepositoryPath repositoryPath, HelmIndexYamlMetadata indexYaml) throws IOException {
         String chartName = metadata.helmChart.name;
         if (StringUtils.isBlank(chartName) || StringUtils.isBlank(metadata.helmChart.version)) {
-            log.error("Cannot add Chart {} to index.yaml - Chart name or version is empty!", path);
+            log.error("Cannot add Chart {} to index.yaml - Chart name or version is empty!", repositoryPath);
             return;
         }
-        fillIndexChartMetadata(metadata, path, baseUrl);
+        fillIndexChartMetadata(metadata, repositoryPath);
         if (isValidChart(metadata)) {
             log.trace("Adding the chart:{}, version:{} into the index.yaml", chartName, metadata.helmChart.version);
             indexYaml.entries.compute(chartName, (key, charts) -> {
@@ -204,13 +202,13 @@ public class HelmMetadataIndexer {
         }
     }
 
-    private void fillIndexChartMetadata(HelmMetadata metadata, String path, String baseUrl) throws IOException {
-        if (path != null) {
-
-            Path filePath = Paths.get(String.join(".", path, "sha256"));
+    private void fillIndexChartMetadata(HelmMetadata metadata, RepositoryPath repositoryPath) throws IOException {
+        if (Objects.nonNull(repositoryPath)) {
+            Path filePath = Paths.get(String.join(".", repositoryPath.getTarget().toString(), "sha256"));
             metadata.helmChart.digest = readSHA256FileContent(filePath);
-            String pathPrefix = StringUtils.defaultIfBlank(baseUrl, "local://");
-            metadata.helmChart.urls = Lists.newArrayList(String.join("", pathPrefix, Paths.get(path).getFileName().toString()));
+            if (!RepositoryTypeEnum.PROXY.getType().equals(repositoryPath.getRepository().getType())) {
+                metadata.helmChart.urls = Lists.newArrayList(RepositoryFiles.relativizePath(repositoryPath));
+            }
         }
         metadata.helmChart.created = Instant.now().toString();
     }
@@ -219,6 +217,36 @@ public class HelmMetadataIndexer {
         try {
             HelmIndexYamlMetadata indexYaml;
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, "index.yaml");
+            if (Files.exists(repositoryPath)) {
+                InputStream indexStream = Files.newInputStream(repositoryPath);
+                try {
+                    indexYaml = (HelmIndexYamlMetadata) this.yamlObjectMapper.readValue(indexStream, HelmIndexYamlMetadata.class);
+                    indexStream.close();
+                } catch (Throwable throwable) {
+                    try {
+                        indexStream.close();
+                    } catch (Throwable throwable1) {
+                        throwable.addSuppressed(throwable1);
+                    }
+                    throw throwable;
+                }
+            } else {
+                indexYaml = HelmUtils.emptyIndexYaml();
+            }
+            if (indexYaml.entries == null) {
+                indexYaml.entries = Maps.newConcurrentMap();
+            }
+            return indexYaml;
+        } catch (Exception e) {
+            log.error("Metadata indexing failing on helm repository {} : {}", this.repositoryId, e.getMessage());
+            log.debug("Metadata indexing failing on helm repository " + this.repositoryId + ":", e);
+            return null;
+        }
+    }
+
+    public HelmIndexYamlMetadata readFromIndexYaml(RepositoryPath repositoryPath) {
+        try {
+            HelmIndexYamlMetadata indexYaml;
             if (Files.exists(repositoryPath)) {
                 InputStream indexStream = Files.newInputStream(repositoryPath);
                 try {

@@ -39,6 +39,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
@@ -202,8 +203,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
                         throws IOException {
                     try {
                         RepositoryPath itemPath = (RepositoryPath) file;
-                        logger.info("RepositoryPath path [{}] ", itemPath.toString());
-                        if (RepositoryPathUtil.include(1, itemPath, isDockerLayout, false)) {
+                        if (RepositoryPathUtil.include(1, itemPath, isDockerLayout, false, "")) {
                             if (StringUtils.isNotBlank(lastModifiedTime)) {
                                 LocalDateTime lastModifiedDateTime = getFileUpdateTime(itemPath);
                                 if (Objects.isNull(lastModifiedDateTime) || !LocalDateTime.now().minusDays(Integer.parseInt(lastModifiedTime)).isBefore(lastModifiedDateTime)) {
@@ -225,7 +225,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
                     try {
                         RepositoryPath itemPath = (RepositoryPath) dir;
                         logger.info("RepositoryPath directory [{}] ", itemPath.toString());
-                        if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !RepositoryPathUtil.include(2, itemPath, isDockerLayout)) {
+                        if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !RepositoryPathUtil.include(2, itemPath, isDockerLayout, "")) {
                             logger.info("RepositoryPath directory [{}] skip...", itemPath.toString());
                             return FileVisitResult.SKIP_SUBTREE;
                         }
@@ -250,32 +250,40 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
     protected void writeChecksum(RepositoryPath path,
                                  boolean force)
             throws IOException {
+        long startTime = System.currentTimeMillis();
         try (InputStream is = newInputStream(path)) {
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[8192];
+            long readStartTime = System.currentTimeMillis();
             while (is.read(buffer) > 0) {
                 //calculate checksum while reading the stream
             }
+            logger.info("RepositoryPath [{}] calculate digest take time [{}] ms", path, System.currentTimeMillis() - readStartTime);
             String layout = path.getRepository().getLayout();
             final Artifact artifact = artifactEntityRepository.findOneArtifact(path.getStorageId(), path.getRepositoryId(), RepositoryFiles.relativizePath(path));
             Set<String> digestAlgorithmSet = path.getFileSystem().getDigestAlgorithmSet();
             final Map<String, String> checksumMap = Maps.newHashMap();
-            digestAlgorithmSet.stream()
-                    .forEach(p ->
-                    {
-                        String checksum = StreamUtils.findSource(LayoutInputStream.class, is)
-                                .getMessageDigestAsHexadecimalString(p, layout);
-                        RepositoryPath checksumPath = getChecksumPath(path, p);
-                        if (Files.exists(checksumPath) && !force) {
-                            return;
-                        }
-                        try {
-                            Files.write(checksumPath, checksum.getBytes());
-                            checksumMap.put(p, checksum);
-                        } catch (IOException e) {
-                            logger.error("Failed to write checksum for [{}]",
-                                    checksumPath.toString(), e);
-                        }
-                    });
+            digestAlgorithmSet.forEach(p ->
+            {
+                String checksum = StreamUtils.findSource(LayoutInputStream.class, is).getMessageDigestAsHexadecimalString(p, layout);
+                RepositoryPath checksumPath = getChecksumPath(path, p);
+                boolean checksumPathExists = Files.exists(checksumPath);
+                if (checksumPathExists && !force) {
+                    return;
+                }
+                try {
+                    String oldDigest = "";
+                    if (checksumPathExists) {
+                        oldDigest = Files.readString(checksumPath);
+                    }
+                    long digestWriteStartTime = System.currentTimeMillis();
+                    Files.write(checksumPath, checksum.getBytes());
+                    checksumMap.put(p, checksum);
+                    logger.info("RepositoryPath [{}] algorithm [{}] digest [{}] oldDigest [{}] equals {} write take time [{}] ms", path, p, checksum, oldDigest, checksum.equals(oldDigest), System.currentTimeMillis() - digestWriteStartTime);
+                } catch (IOException e) {
+                    logger.error("Failed to write checksum for [{}]",
+                            checksumPath.toString(), e);
+                }
+            });
             try {
                 if (Objects.nonNull(artifact) && MapUtils.isNotEmpty(checksumMap) && !CommonUtils.areMapsEqual(artifact.getChecksums(), checksumMap)) {
                     logger.info("Artifact storageId [{}] repositoryId [{}] path [{}] checksums update old checksums [{}] new checksums [{}]", artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), artifact.getChecksums(), checksumMap);
@@ -288,7 +296,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
                 logger.error("Update artifact checksums for [{}] error [{}]",
                         path.toString(), ExceptionUtils.getStackTrace(ex));
             }
-            logger.info("RepositoryPath [{}] new checksums [{}]", path, checksumMap);
+            logger.info("RepositoryPath [{}] new checksums [{}] take time [{}] ms", path, checksumMap, System.currentTimeMillis() - startTime);
         }
     }
 
@@ -309,7 +317,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
         }
 
         boolean directory = Files.isDirectory(path);
-        deleteArtifactMedataFile(repositoryPath);
+        deleteArtifactMedataFile(repositoryPath, force);
         super.delete(path, force);
         if (!directory) {
             artifactEventListenerRegistry.dispatchArtifactPathDeletedEvent(path);
@@ -366,14 +374,14 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
     }
 
     @Override
-    public void deleteTrash(RepositoryPath path)
+    public void deleteTrash(RepositoryPath path, String storageDay, Map<String, String> cleanupArtifactPathMap)
             throws IOException {
         Repository repository = path.getRepository();
         Storage storage = repository.getStorage();
 
         logger.info("Emptying trash for {}:{}...", storage.getId(), repository.getId());
 
-        super.deleteTrash(path);
+        super.deleteTrash(path, storageDay, cleanupArtifactPathMap);
 
         repositoryEventListenerRegistry.dispatchEmptyTrashEvent(storage.getId(), repository.getId());
 
@@ -426,7 +434,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
 
     }
 
-    private void deleteArtifactMedataFile(RepositoryPath repositoryPath) {
+    private void deleteArtifactMedataFile(RepositoryPath repositoryPath, boolean force) {
         try {
             if (Files.exists(repositoryPath) && Files.isSameFile(repositoryPath.getRoot(), repositoryPath)) {
                 return;
@@ -434,12 +442,12 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
             String artifactMetadataFileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
             RepositoryPath artifactRepositoryPath = repositoryPath.getParent().resolve(artifactMetadataFileName);
             if (Files.exists(artifactRepositoryPath)) {
-                super.delete(artifactRepositoryPath, true);
+                super.delete(artifactRepositoryPath, force);
             }
             String artifactMetadataDirectoryName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".foLibrary-metadata";
             RepositoryPath artifactMetadataDirectoryPath = repositoryPath.getParent().resolve(artifactMetadataDirectoryName);
             if (Files.exists(artifactMetadataDirectoryPath)) {
-                super.delete(artifactMetadataDirectoryPath, true);
+                super.delete(artifactMetadataDirectoryPath, force);
             }
         } catch (Exception ex) {
             logger.error("删除制品缓存元数据文件 [{}] 失败：[{}]", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));

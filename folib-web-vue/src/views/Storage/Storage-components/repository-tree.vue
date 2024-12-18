@@ -6,7 +6,7 @@
 <template>
     <div>
         <div ref="tree_container" class="tree_container" @scroll="handleScroll">
-            <a-tree 
+            <a-tree
                 :key="key"
                 class="repositoryTree"
                 ref="tree"
@@ -29,8 +29,8 @@
                             {{ id }}
                         </span>
                         <span v-else>
-                            <a-icon class="tree_icon" v-if="type === 'dir' || type === 'DIR'" :type="expanded ? 'folder-open' : 'folder'" />
-                            <a-icon class="tree_icon" v-else :type="getIconType(name,type)"></a-icon>
+                            <a-icon class="tree_icon" style="margin-left: 5px;" v-if="type === 'dir' || type === 'DIR'" :type="expanded ? 'folder-open' : 'folder'" />
+                            <a-icon class="tree_icon" style="margin-left: 10px;" v-else :type="getIconType(name,type)"></a-icon>
                             <span class="tree_title">
                                 {{ name }}
                             </span>
@@ -45,6 +45,7 @@
         </div>
         <!-- v-if='showContextMenu'  -->
         <rightMenu
+            ref="rightMenu"
             v-show="showContextMenu"
             :style="contextMenuStyle"
             :folibRepository="folibRepository" 
@@ -54,7 +55,6 @@
             :copyEnabled='copyEnabled'
             :dispatchEnabled="dispatchEnabled"
             :moveEnabled="moveEnabled"
-            :deleteEnabled="deleteEnabled"
             :currentTreeNode="currentTreeNode"
             :isTrashView="isTrashView"
             @reload="reload"
@@ -69,7 +69,7 @@ import remote from './images/remote.svg'
 import remoteCheck from './images/remote-check.svg'
 import virtual from './images/virtual.svg'
 import virtualCheck from './images/virtual-check.svg'
-import { getDockerArtifact, browse, getArtifact, getStorageAndRepositoryPermission } from '@/api/folib'
+import { getDockerArtifact, browse, getArtifact, getStorageAndRepositoryPermission, getArtifactPermission } from '@/api/folib'
 import { getLayoutType } from '@/utils/layoutUtil'
 import rightMenu from './right-menu.vue'
 import { hasRole, isAdmin } from '@/utils/permission'
@@ -98,7 +98,6 @@ export default {
             copyEnabled: false,
             dispatchEnabled: false,
             moveEnabled: false,
-            deleteEnabled: false,
             showContextMenu: false,
             currentTreeNode:{},
             rightClickTop:'0px',
@@ -228,6 +227,7 @@ export default {
                 this.rightClickTop = `${e.event.clientY}px`;
                 this.rightClickLeft = `${e.event.clientX}px`;
                 this.currentTreeNode = e.node.dataRef;
+                this.$refs.rightMenu.handlerDataPermission(e.node.dataRef)
             }
         },
         closeContextMenu() {
@@ -297,7 +297,6 @@ export default {
             this.$emit('onExpand')
         },
         onLoadData(treeNode) {
-            console.log(treeNode,'treeNodetreeNodetreeNode')
             if(treeNode.dataRef.fileType === 'document'){
                 this.folibRepository = treeNode.dataRef
                 this.repositoryType = getLayoutType(this.folibRepository)
@@ -457,7 +456,6 @@ export default {
                 this.copyEnabled = this.folibRepository.type === 'hosted' && (hasRole('ARTIFACTS_MANAGER') || this.permissions.includes('ARTIFACTS_COPY'))
                 this.dispatchEnabled = this.folibRepository.type === 'hosted' && isAdmin()
                 this.moveEnabled = this.folibRepository.type === 'hosted' && (hasRole('ARTIFACTS_MANAGER') || this.permissions.includes('ARTIFACTS_MOVE'))
-                this.deleteEnabled = this.folibRepository.type !== 'group' && (hasRole('ARTIFACTS_MANAGER') || this.permissions.includes('ARTIFACTS_DELETE'))
             })
         },
     },
@@ -481,6 +479,7 @@ export default {
     width: 90% !important;
     height: 32px !important;
     line-height: 32px !important;
+    border-radius: 8px !important;
 }
 
 .repositoryTree .ant-tree-switcher_close,
@@ -497,7 +496,11 @@ export default {
 }
 
 .repositoryTree .tree_icon{
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 500;
 }
+</style>
+
+<style lang="less" scoped>
+    @import url('./repository-tree.less');
 </style>

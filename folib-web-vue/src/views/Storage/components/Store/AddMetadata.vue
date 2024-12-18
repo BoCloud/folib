@@ -320,15 +320,28 @@ export default {
                 }
                 this.successMsg(this.$t('Store.Create')+this.$t('Store.MetadataSuccess'));
                 this.$emit("metadataReflesh");
-              })
-              .finally(() => {});
+              }).catch((err) => {
+                let msg = err.response.data.message ? err.response.data.message : err.response.data.error ? err.response.data.error : err.response.data
+                if (msg && msg.length > 0) {
+                  this.$notification.error({
+                    message: msg,
+                    description: ""
+                  })
+                }
+              }).finally(() => {});
           } else {
-            updateArtifactMetadata(data)
-              .then((res) => {
-                this.successMsg(this.$t('Store.Modify')+this.$t('Store.MetadataSuccess'));
-                this.$emit("metadataReflesh");
-              })
-              .finally(() => {});
+            updateArtifactMetadata(data).then((res) => {
+              this.successMsg(this.$t('Store.Modify')+this.$t('Store.MetadataSuccess'));
+              this.$emit("metadataReflesh");
+            }).catch((err) => {
+              let msg = err.response.data.message ? err.response.data.message : err.response.data.error ? err.response.data.error : err.response.data
+              if (msg && msg.length > 0) {
+                this.$notification.error({
+                  message: msg,
+                  description: ""
+                })
+              }
+            }).finally(() => {});
           }
         } else {
           return false;

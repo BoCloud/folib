@@ -61,7 +61,7 @@ class HttpGetRemoteRepositoryCheckStrategy
     }
 
     private List<Integer> getAllowAccessList() {
-        List<Integer> allowAccessList = Lists.newArrayList(HttpStatus.SC_OK, HttpStatus.SC_MOVED_PERMANENTLY, HttpStatus.SC_MOVED_TEMPORARILY, HttpStatus.SC_UNAUTHORIZED, HttpStatus.SC_NOT_FOUND);
+        List<Integer> allowAccessList = Lists.newArrayList(HttpStatus.SC_OK, HttpStatus.SC_MOVED_PERMANENTLY, HttpStatus.SC_MOVED_TEMPORARILY, HttpStatus.SC_UNAUTHORIZED, HttpStatus.SC_NOT_FOUND, HttpStatus.SC_BAD_REQUEST, HttpStatus.SC_FORBIDDEN);
         String key = "REMOTE_REPOSITORY_ALLOW_ACCESS_CODE";
         String values = distributedCacheComponent.get(key);
         if (StringUtils.isNotBlank(values)) {
