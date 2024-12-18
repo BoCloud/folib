@@ -21,7 +21,7 @@
           />
         </a-col>
     </a-row>
-    <a-row :style="isChecked ? 'margin-top:0;' : 'margin-top:-150px;'" style="transition: all 0.5s ease;" v-if="!isShowOverview" type="flex" :gutter="[24, 24]">
+    <a-row :style="isChecked ? 'margin-top:0;' : 'margin-top:-120px;'" style="transition: all 0.5s ease;" v-if="!isShowOverview" type="flex" :gutter="[24, 24]">
       <a-col :span="24" :lg="6">
         <!-- Page Anchors -->
 <!--        <a-affix :offset-top="navbarFixed ? 100 : 10">-->
@@ -32,12 +32,13 @@
                   <h6 class="font-semibold m-0">{{ isChecked ? $t('Storage.RepositoryList') : $t('Storage.StorageList')}}</h6>
                 </a-col>
                 <a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
-                  <a-switch 
+                  <!-- <a-switch 
                     :disabled="switchDisabled"
                     style="margin-right:10px;"
                     v-model="isChecked"
+                    class="switch-position"
                     @change="getDetailInfo"
-                  ></a-switch>
+                  ></a-switch> -->
                   <a class="text-center text-muted font-bold" v-if="!isChecked">
                     <h3 v-if="$store.state.user.roles.indexOf('ADMIN') > -1" class="font-semibold text-muted mb-0"
                       @click="createHandleView">+</h3>
@@ -94,7 +95,7 @@
           @updateHandleView="updateHandleView"
           :type="'noFilter'"
         />
-        <a-tabs v-if="!isChecked" class="tabs-sliding" default-active-key="1">
+        <a-tabs v-if="!isChecked" class="tabs-sliding" style="margin-top:-20px;" default-active-key="1">
           <a-tab-pane key="1" :tab="$t('Storage.RepositoryList')">
             <div style="min-height:calc(100vh - 150px)">
               <a-row type="flex" :gutter="24">
@@ -146,7 +147,7 @@
           ref="libview" 
           @handleMenuClick="handleMenuClick"
           :storageAdmin="currentStorage.admin" 
-          :style="isChecked ? 'margin-top:-135px;' : ''" style="border:none;transition: all 0.5s ease;" 
+          :style="isChecked ? 'margin-top:-105px;' : ''" style="border:none;transition: all 0.5s ease;" 
           :isChecked="isChecked" 
         />
       </a-col>
@@ -1305,7 +1306,7 @@ export default {
         total:0,
       },
       layoutType:'isFilter',
-      isChecked: false,
+      // isChecked: false,
       isShowOverview: false,
      permissionForm: {
         allowAnonymous: true,
@@ -1323,11 +1324,13 @@ export default {
         matchUsername: undefined,
       },
       libViewKey:0,
-      switchDisabled:true,
       groupDefaultRepository:undefined,
     };
   },
   watch: {
+    isChecked(val){
+      this.getDetailInfo(val)
+    },
     '$i18n.locale'() {
       this.$forceUpdate();
     },
@@ -1370,6 +1373,9 @@ export default {
     this.getStorage(this.currentStorage.id)
   },
   computed: {
+    isChecked(){
+      return this.$store.state.isChecked
+    },
     isLogin() {
       return isLogin()
     },
@@ -1388,6 +1394,7 @@ export default {
   mounted(){
     this.$store.commit('setNewDetailPage',true)
     this.$store.commit('setNewDetailPage',false)
+    this.$store.commit('setSwitchDisabled',true)
   },
   methods: {
     // 展示存储概览
@@ -1395,7 +1402,8 @@ export default {
       this.isShowOverview = val == 2
     },
     changeMoudles(){
-      this.isChecked = !this.isChecked
+      // this.isChecked = !this.isChecked
+      this.$store.commit('setIsChecked',!this.isChecked)
       if(this.isChecked){
         this.$refs.libview.myMounted()
       }
@@ -1828,7 +1836,7 @@ export default {
     },
     getQueryStorage(queryParams,type){
       queryRepositoriesByStorage(queryParams).then(res => {
-        this.switchDisabled = false
+        this.$store.commit('setSwitchDisabled',false)
         if(res.status === 200){
           this.queryParams.total = res.data.total
           this.repositories = res.data.rows || []
@@ -1842,7 +1850,7 @@ export default {
     },
     getStorage(id) {
       if (id) {
-        this.switchDisabled = true
+        this.$store.commit('setSwitchDisabled',true)
         getLibraryFilter(id).then(response => {
           this.currentStorage.id = response.id
           this.currentStorage.basedir = response.basedir
@@ -2724,5 +2732,11 @@ export default {
   background:#1890ff ;
   border-radius: 50%;
   scale: (1.3);
+}
+
+.switch-position{
+  // position: fixed;
+  // top: 40px;
+  // left: 340px;
 }
 </style>

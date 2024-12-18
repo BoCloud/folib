@@ -10,7 +10,7 @@
             :affix="false">
             <template #title>
               <a-row type="flex" align="middle">
-                <a-col :span="24" :md="12" class="col-info">
+                <a-col :span="14" class="col-info">
                   <a v-if="!isChecked">
                     <a-icon type="backward" :style="{
                       fontSize: '32px',
@@ -97,18 +97,17 @@
                     </a-descriptions>
                   </div>
                 </a-col>
-                  <a-col :span="16" :md="7" class="col-info">
-
-                          <div style="width: 85%">
-                              <a-progress
-                                  v-if="isClose"
-                                  :stroke-color="{from: '#108ee9',to: '#87d068',}"
-                                  :percent="totalUploadProgress"
-                                  :status="progressStatus"
-                              />
-                          </div>
-                  </a-col>
-                <a-col :span="8" :md="5" style="
+                <a-col :span="5" class="col-info">
+                        <div style="width: 85%">
+                            <a-progress
+                                v-if="isClose"
+                                :stroke-color="{from: '#108ee9',to: '#87d068',}"
+                                :percent="totalUploadProgress"
+                                :status="progressStatus"
+                            />
+                        </div>
+                </a-col>
+                <a-col :span="5" style="
                     display: flex;
                     align-items: center;
                     justify-content: flex-end;

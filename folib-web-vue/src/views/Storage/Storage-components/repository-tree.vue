@@ -155,6 +155,7 @@ export default {
             handler(val) {
                 if (val) {
                     this.loadingMore = false
+                    this.loadingMoreShow(false)
                     this.treeData = this.treeData.concat(JSON.parse(JSON.stringify(val)))
                     // function uniqueById(arr) {
                     //     const unique = [];
@@ -239,6 +240,8 @@ export default {
         // 设置loading状态
         loadingMoreShow(key){
             this.loadingMore = key
+            // 设置只有在请求结束后才可以切换模式，方式快速切换导致数据渲染错误
+            this.$store.commit('setSwitchDisabled',key)
             console.log(this.loadingMore)
         },
         handleScroll(event){
