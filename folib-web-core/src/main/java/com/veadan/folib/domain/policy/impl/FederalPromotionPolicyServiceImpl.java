@@ -18,6 +18,7 @@ import com.veadan.folib.mapper.FederalRepositoryMapper;
 import com.veadan.folib.mapper.PromotionRuleMapper;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.ArtifactStorageException;
@@ -170,7 +171,7 @@ public class FederalPromotionPolicyServiceImpl implements FederalPromotionPolicy
     }
 
     @Override
-    public Page<FederalPromotionPolicyRes> paginQuery(FederalPromotionPolicyQueryReq queryReq) {
+    public TableResultResponse<FederalPromotionPolicyRes> paginQuery(FederalPromotionPolicyQueryReq queryReq) {
         FederalPromotionPolicy federalPromotionPolicy = toFederalPromotionPolicyEntityQuery.apply(queryReq);
         long total = federalPromotionPolicyMapper.count(federalPromotionPolicy);
         PageRequest pageRequest = PageRequest.of(queryReq.getPageNumber() - 1, queryReq.getPageSize());
@@ -188,7 +189,7 @@ public class FederalPromotionPolicyServiceImpl implements FederalPromotionPolicy
                 entity.setMetadataRules(rules.stream().filter(data -> data.getRuleType().equals("metadata")).collect(Collectors.toList()));
             }
         }
-        return new PageImpl<>(list, pageRequest, total);
+        return new TableResultResponse<>(total,list);
     }
 
 

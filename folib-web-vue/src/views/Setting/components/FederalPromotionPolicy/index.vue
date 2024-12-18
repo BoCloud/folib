@@ -577,8 +577,8 @@ export default {
             federalPromotionPolicyQuery(this.federalPromotionPolicyQuery).then(res => {
                 this.federalPromotionPolicyData = []
                 if (res) {
-                    this.federalPromotionPolicyData = res.content
-                    this.federalPromotionPolicyQuery.total = res.totalElements
+                    this.federalPromotionPolicyData = res.data.rows
+                    this.federalPromotionPolicyQuery.total = res.data.total
                 }
             }).finally(() => {
                 this.federalPromotionPolicyLoading = false

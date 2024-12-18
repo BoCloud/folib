@@ -340,8 +340,8 @@ export default {
     getVulnAllowlistData(data){
       this.vulnWhiteListLoading = true;
       queryAllowlistDenylistBlock(data).then(res=>{
-        this.vulnWhiteList = res.data.content;
-        this.vulnWhiteData.total = res.data.totalElements;
+        this.vulnWhiteList = res.data.rows;
+        this.vulnWhiteData.total = res.data.total;
       }).finally(()=>{
         this.vulnWhiteListLoading = false
       })
@@ -349,8 +349,8 @@ export default {
 
     getVulnDenylistData(data){
       queryAllowlistDenylistBlock(data).then(res=>{
-        this.vulnDenylist = res.data.content;
-        this.vulnDenylistData.total = res.data.totalElements;
+        this.vulnDenylist = res.data.rows;
+        this.vulnDenylistData.total = res.data.total;
       }).finally(()=>{
         this.vulnDenylistLoading = false
       })

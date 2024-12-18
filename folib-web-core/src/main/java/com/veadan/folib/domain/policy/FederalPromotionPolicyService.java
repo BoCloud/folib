@@ -7,6 +7,7 @@ import com.veadan.folib.controllers.federal.res.FederalPromotionPolicyRes;
 import com.veadan.folib.controllers.federal.res.FederalRepositoryRes;
 import com.veadan.folib.domain.policy.dto.SyncArtifatDTO;
 import com.veadan.folib.entity.FederalPromotionPolicy;
+import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Page;
 
@@ -40,7 +41,7 @@ public interface FederalPromotionPolicyService {
      * @param queryReq 筛选条件
      * @return 查询结果
      */
-    Page<FederalPromotionPolicyRes> paginQuery(FederalPromotionPolicyQueryReq queryReq);
+    TableResultResponse<FederalPromotionPolicyRes> paginQuery(FederalPromotionPolicyQueryReq queryReq);
 
     /**
      * 查看联邦晋级策略详情
