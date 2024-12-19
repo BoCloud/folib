@@ -1,5 +1,6 @@
 package com.veadan.folib.services.impl;
 
+import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.cluster.SyncRepositoryEnum;
 import com.veadan.folib.cluster.SyncStorageEnum;
@@ -52,6 +53,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jfrog.artifactory.client.Artifactory;
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder;
 import org.jfrog.artifactory.client.Repositories;
 import org.jfrog.artifactory.client.model.Group;
 import org.jfrog.artifactory.client.model.LightweightRepository;
@@ -67,9 +69,11 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.inject.Inject;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -139,43 +143,98 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
     private final static String DEFAULT_STORAGE = "jfrog-storage";
 
 
-    private static final String USER="USER";
-    private static final String GROUP="GROUP";
-    private static final String PERMISSION="PERMISSION";
+    private static final String USER = "USER";
+    private static final String GROUP = "GROUP";
+    private static final String PERMISSION = "PERMISSION";
 
-    private static final String REPOSITORY="REPOSITORY";
+    private static final String REPOSITORY = "REPOSITORY";
+    private final static String JFROG_PREFIX = "/artifactory";
+
+    private final static String MIGRATE="migrate_jfrog_data";
+
+    @Resource
+    private DictServiceImpl dictService;
 
 
     @Async
     @Override
-    public void migrate(Artifactory artifactory, JfrogMigrateForm form) {
-        try {
-            Map<String, Long> groupMap=null;
+    public void migrate(JfrogMigrateForm form) {
+        try (Artifactory artifactory = ArtifactoryClientBuilder.create().setUrl(form.getUrl() + JFROG_PREFIX).setUsername(form.getUsername()).setPassword(form.getPassword()).build()) {
+            Map<String, Long> groupMap = null;
             // 先更新用户组
-            if(form.getContents().contains(GROUP)){
-               groupMap = groupMigrate(artifactory);
+            if (form.getContents().contains(GROUP)) {
+                groupMap = groupMigrate(artifactory);
             }
             // 同步用户及用户组关联关系
-            if(form.getContents().contains(USER)){
+            if (form.getContents().contains(USER)) {
                 userMigrate(artifactory, groupMap);
             }
-            if(form.getContents().contains(REPOSITORY)){
+            if (form.getContents().contains(REPOSITORY)) {
                 // 创建存储空间
                 String storageId = StringUtils.isBlank(form.getStorageId()) ? DEFAULT_STORAGE : form.getStorageId();
                 form.setStorageId(storageId);
                 // 判断存储空间是否存在，不存在新建
                 Assert.isTrue(createStorageIfNotExist(form), "failed to create storage");
                 // 同步仓库
-                repositoryMigrate(storageId, artifactory);
+                repositoryMigrate(storageId, artifactory, form);
                 // 同步权限
-                if(form.getContents().contains(GROUP)&&form.getContents().contains(USER)&&form.getContents().contains(REPOSITORY)){
+                if (form.getContents().contains(GROUP) && form.getContents().contains(USER) && form.getContents().contains(REPOSITORY)) {
                     permissionMigrate(artifactory, storageId, groupMap);
                 }
             }
+
         } catch (Exception e) {
             log.error(e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
+
+    }
+
+    @Override
+    public void changeRepositoryType(MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("文件不能为空");
+        }
+//        try {
+//            BatchChangeListener listener = new BatchChangeListener();
+//            EasyExcel.read(file.getInputStream(), BatchChangeRepository.class, listener).sheet().doRead();
+//            List<BatchChangeRepository> repositories = listener.getDoneRepositories();
+//            for (BatchChangeRepository doneRepository : repositories) {
+//                String storageId = doneRepository.getStorage();
+//                Storage storage = configurationManagementService.getConfiguration().getStorage(storageId);
+//                if (storage != null) {
+//                    RepositoryDto existRepository = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(doneRepository.getRepository());
+//                    if (existRepository == null) {
+//                        log.info("无效的仓库名称{}", doneRepository.getRepository());
+//                        continue;
+//                    }
+//                    // 判断仓库类型是否为代理类型
+//                    if (RepositoryTypeEnum.PROXY.getType().equals(existRepository.getType())) {
+//                        existRepository.setType(RepositoryTypeEnum.HOSTED.getType());
+//                        existRepository.setTrashEnabled(true);
+//                        existRepository.setAllowsDeletion(true);
+//                        existRepository.setAllowsDeployment(true);
+//                        existRepository.setAllowsDirectoryBrowsing(true);
+//                        existRepository.setRemoteRepository(null);
+//                        try {
+//                            configurationManagementService.saveRepository(storageId, existRepository);
+//                            SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(existRepository, storageId, doneRepository.getRepository(), SyncRepositoryEnum.ADD_OR_UPDATE);
+//                            clusterSyncService.syncRepository(syncRepositoryDto);
+//                        } catch (Exception e) {
+//                            log.info("仓库{}更新失败",doneRepository.getRepository(),e);
+//                        }
+//                    } else {
+//                        log.info("{}仓库类型不是代理类型，无需转化", doneRepository.getRepository());
+//                    }
+//                } else {
+//                    log.info("{}无效的存储空间", doneRepository.getStorage());
+//                }
+//            }
+//        } catch (IOException e) {
+//            log.info("仓库类型修改异常{}", e.getMessage(), e);
+//            throw new RuntimeException(e.getMessage());
+//        }
+
 
     }
 
@@ -219,7 +278,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             log.info("group info sync edn");
             return groupMap;
         } catch (Exception e) {
-            log.info("failed to sync group {}",e.getMessage(),e);
+            log.info("failed to sync group {}", e.getMessage(), e);
             throw new RuntimeException(e.getMessage());
         }
     }
@@ -246,7 +305,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 continue;
             }
             // 同步用户组信息 如果groupMap为null代表没有同步用户组
-            if(groupMap!=null){
+            if (groupMap != null) {
                 Collection<String> groups = user.getGroups();
                 if (groups != null && !groups.isEmpty()) {
                     for (String group : groups) {
@@ -256,14 +315,15 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 }
             }
             // 设置默认密码等于用户名
-            newUser.setPassword(userName);
+            newUser.setPassword("DayeKJjeRQ$4N3z");
             userService.save(new EncodedPasswordUser(newUser, passwordEncoder));
         }
     }
 
-    private void repositoryMigrate(String storageId, Artifactory artifactory) {
+    private void repositoryMigrate(String storageId, Artifactory artifactory, JfrogMigrateForm form) {
         Repositories repositories = artifactory.repositories();
         Storage storage = configurationManagementService.getConfiguration().getStorage(storageId);
+
         List<LightweightRepository> repoList = new LinkedList<>();
         repoList.addAll(repositories.list(LOCAL));
         repoList.addAll(repositories.list(REMOTE));
@@ -281,8 +341,16 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 continue;
             }
             repositoryDto.setId(repositoryId);
+            if("s3".equals(storage.getStorageProvider())){
+                String basedir=storage.getBasedir()+"/"+repositoryId;
+                repositoryDto.setBasedir(basedir);
+            }
             repositoryDto.setStorageProvider(storage.getStorageProvider());
-            setRepositoryInfo(repository, repositoryDto, artifactory, storageId);
+            repositoryDto.setTrashEnabled(true);
+            repositoryDto.setAllowsDeletion(true);
+            repositoryDto.setAllowsDeployment(true);
+            repositoryDto.setAllowsDirectoryBrowsing(true);
+            setRepositoryInfo(repository, repositoryDto, artifactory, storageId, form);
             groupRepositoryValid(storageId, repositoryDto);
             RepositoryDto newRepo;
             try {
@@ -325,9 +393,25 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
 
     }
 
-    void setRepositoryInfo(LightweightRepository repository, RepositoryDto repositoryDto, Artifactory artifactory, String storageId) {
+    void setRepositoryInfo(LightweightRepository repository, RepositoryDto repositoryDto, Artifactory
+            artifactory, String storageId, JfrogMigrateForm form) {
         if (repository.getType() == LOCAL) {
-            repositoryDto.setType(RepositoryTypeEnum.HOSTED.getType());
+            if ("2".equals(form.getArtifactType())) {
+                repositoryDto.setType(RepositoryTypeEnum.PROXY.getType());
+                RemoteRepositoryDto remoteDTO = new RemoteRepositoryDto();
+                artifactory.repository(repository.getKey()).get();
+                remoteDTO.setUrl(repository.getUrl());
+                remoteDTO.setUsername(form.getUsername());
+                remoteDTO.setPassword(form.getPassword());
+                remoteDTO.setAutoBlocking(true);
+                remoteDTO.setDownloadRemoteIndexes(true);
+                remoteDTO.setChecksumValidation(true);
+                remoteDTO.setAllowsDirectoryBrowsing(true);
+                repositoryDto.setRemoteRepository(remoteDTO);
+            } else {
+                repositoryDto.setType(RepositoryTypeEnum.HOSTED.getType());
+            }
+
         } else if (repository.getType() == REMOTE) {
             // 代理库要获取远程地址
             repositoryDto.setType(RepositoryTypeEnum.PROXY.getType());

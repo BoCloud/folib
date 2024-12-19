@@ -32,4 +32,6 @@ public class JfrogMigrateForm {
     private String storageProvider;
 
     private String basedir;
+
+    private String artifactType;
 }
