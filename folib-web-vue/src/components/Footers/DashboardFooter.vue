@@ -46,3 +46,8 @@
 	})
 
 </script>
+<style lang="scss">
+.layout-dashboard .ant-layout-footer{
+	margin: 0 10px !important;
+}
+</style>

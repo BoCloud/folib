@@ -187,3 +187,10 @@
 	})
 
 </script>
+<style lang="scss">
+	.layout-dashboard{
+		.ant-layout{
+			overflow: hidden !important;
+		}
+	}
+</style>

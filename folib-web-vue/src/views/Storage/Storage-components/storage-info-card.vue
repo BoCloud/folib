@@ -88,7 +88,7 @@
                                 <a-select-option value="hosted" :label="$t('Storage.Local')">
                                     <div style="width:100%;display: flex;justify-content: space-between;align-items: center;">
                                         <div class="img-back-sty">
-                                            <img src="./images/local-check.svg" style="width: 100%;" alt="">
+                                            <img src="./images/local.svg" style="width: 100%;" alt="">
                                         </div>
                                         {{ $t('Storage.Local') }}
                                     </div>
@@ -96,7 +96,7 @@
                                 <a-select-option value="proxy" :label="$t('Storage.Agent')">
                                     <div style="width:100%;display: flex;justify-content: space-between;align-items: center;">
                                         <div class="img-back-sty">
-                                            <img src="./images/remote-check.svg" style="width: 100%;" alt="">
+                                            <img src="./images/remote.svg" style="width: 100%;" alt="">
                                         </div>        
                                         {{ $t('Storage.Agent') }}
                                     </div>
@@ -104,7 +104,7 @@
                                 <a-select-option value="group" :label="$t('Storage.Combination')">
                                     <div style="width:100%;display: flex;justify-content: space-between;align-items: center;">
                                         <div class="img-back-sty">
-                                            <img src="./images/virtual-check.svg" style="width: 100%;" alt="">
+                                            <img src="./images/virtual.svg" style="width: 100%;" alt="">
                                         </div>   
                                         {{ $t('Storage.Combination') }}
                                     </div>
@@ -245,8 +245,10 @@ export default {
 </script>
 <style lang="scss">
     .overlayClassName{
-        height:500px;
-        overflow: auto;
+        .ant-dropdown-menu-vertical{
+            max-height:500px;
+            overflow: auto;
+        }
     }
     .active{
         background: #bae7ff;
@@ -271,7 +273,7 @@ export default {
     .info-card.ant-card{
         padding: 0 !important;
         background: #fff;
-
+        box-shadow: 0px 1px 6px 2px rgba(214, 214, 214, 0.1);
         .ant-card-head-title{
             padding: 0;
         }
@@ -296,6 +298,6 @@ export default {
         height: 25px;
         border-radius: 4px;
         padding: 1px;
-        background: linear-gradient( 310deg,#d0e1f7,#e2ecf7 );
+        background: #1890ff;
     }
 </style>

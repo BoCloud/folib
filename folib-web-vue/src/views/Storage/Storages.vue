@@ -21,11 +21,11 @@
           />
         </a-col>
     </a-row>
-    <a-row :style="isChecked ? 'margin-top:0;' : 'margin-top:-120px;'" style="transition: all 0.5s ease;" v-if="!isShowOverview" type="flex" :gutter="[24, 24]">
+    <a-row :style="isChecked ? 'margin-top:0;' : 'margin-top:-120px;'" style="transition: all 0.5s ease;margin-bottom:-30px;" v-if="!isShowOverview" type="flex" :gutter="[24, 24]">
       <a-col :span="24" :lg="6">
         <!-- Page Anchors -->
 <!--        <a-affix :offset-top="navbarFixed ? 100 : 10">-->
-          <a-card :bordered="false" :style="isChecked ? 'height:780px;' : ''" class="header-solid mb-24">
+          <a-card :bordered="false" :style="isChecked ? 'height:calc(100vh - 230px);margin-bottom:0px;' : ''" class="header-solid mb-24 left_menu">
             <template #title>
               <a-row type="flex" align="middle">
                 <a-col :span="24" :md="12" class="col-info">
@@ -46,7 +46,7 @@
                   <a class="text-center text-muted font-bold" v-if="isChecked" style="margin-right:8px;">
                     <h5 class="font-semibold text-muted mb-0"
                       @click="toggleTree">
-                        <a-icon v-if="isTrashView" type="delete" />
+                        <a-icon v-if="!isTrashView" type="delete" />
                         <a-icon v-else type="file-zip" />
                     </h5>
                   </a>
@@ -95,11 +95,11 @@
           @updateHandleView="updateHandleView"
           :type="'noFilter'"
         />
-        <a-tabs v-if="!isChecked" class="tabs-sliding" style="margin-top:-20px;" default-active-key="1">
+        <a-tabs v-if="!isChecked" class="tabs-sliding self_tabs" style="margin-top:-20px;" default-active-key="1">
           <a-tab-pane key="1" :tab="$t('Storage.RepositoryList')">
-            <div style="min-height:calc(100vh - 150px)">
-              <a-row type="flex" :gutter="24">
-                <a-col :span="8" class="mb-24" v-if="hasStoragePermission()">
+            <div style="height:calc(100vh - 270px);overflow-y: auto;overflow-x: hidden;border-radius: 12px;margin-top:0px;padding-left:4px;padding-right: 10px;">
+              <a-row type="flex" :gutter="20">
+                <a-col :span="8" style="margin-bottom:20px;" v-if="hasStoragePermission()">
                   <a-card @click="folibVisibleShow()" class="crm-bar-line header-solid h-full xinjian"
                     :bodyStyle="{ padding: 0, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }">
                     <a class="text-center text-muted font-bold">
@@ -108,7 +108,7 @@
                     </a>
                   </a-card>
                 </a-col>
-                <a-col :span="8" class="mb-24" v-for="(item, index) in repositories" :key="index">
+                <a-col :span="8" style="margin-bottom:20px;" v-for="(item, index) in repositories" :key="index">
                   <!-- Project Card -->
                   <CardProjectFolib :title=item.id :logo="'images/folib/' + getLayoutType(item) + '.svg'"
                     :team="['images/folib/' + item.type + '.svg']" :participants="item.type" :due="item.policy"
@@ -117,7 +117,7 @@
                       <template slot="title">
                         {{ getRepositoryUrl(item) }}
                       </template>
-                      <p>http://..../{{ item.id }} <a>
+                      <p style="margin-left: 75px;">http://..../{{ item.id }} <a>
                           <a-icon type="copy" @click="copy(getRepositoryUrl(item))" />
                         </a></p>
                     </a-tooltip>
@@ -127,12 +127,12 @@
               </a-row>
             </div>
             <!-- 分页 -->
-            <div style="display: flex; align-items: center; justify-content: flex-end;margin-bottom:40px;">
+            <div class="fenye">
               <a-pagination @change="handlerPageNum" @showSizeChange="handlerPageSize" :total="queryParams.total" show-size-changer />
             </div>
           </a-tab-pane>
           <a-tab-pane key="2" v-if="isLogin" :tab="$t('Storage.StorageOverview')">
-            <a-row type="flex" :gutter="24">
+            <a-row type="flex" :gutter="24" style="height: calc(100vh - 270px);overflow:auto;margin-top:0px;padding-left:4px;margin-right: 4px;">
               <a-col :span="24">
                 <Overview :storageId="currentStorage.id"/>
                 <StorageInfo class="mt-20" :storageId="currentStorage.id"/>
@@ -1451,7 +1451,8 @@ export default {
     repositorySelect(item){
       storage.set("libView_repository", { item, baseUrl: this.baseUrl })
       this.$nextTick(() => {
-          this.$refs.libview.myMounted()
+        this.libViewKey ++
+        this.$refs.libview.myMounted()
       })
     },  
     // 点击仓库下的文件
@@ -2597,8 +2598,10 @@ export default {
   border: 1px solid #4299e1;
 }
 
-.xinjian {
+.xinjian.ant-card {
   min-height: 203px;
+  border:none;
+  box-shadow: 0px 1px 6px 2px rgba(214, 214, 214, 0.1);
 }
 
 #storages::v-deep {
@@ -2625,19 +2628,28 @@ export default {
   .ant-anchor-link {
     padding: 0;
     margin-top: 8px;
+
+    &.slectActive{
+      background-color: #bae7ff !important;
+    } 
+
+    &:hover{
+      background-color: #e6f7ff;
+      border-radius: 8px;
+    }
   }
 
   .ant-anchor-link a {
     width: 100%;
     border-radius: 8px;
     color: #67748e !important;
-    padding: 10px 16px;
+    padding: 5px 16px;
     background-color: transparent;
     transition: background-color 0.3s ease-in;
   }
 
   .ant-anchor-link a:hover {
-    background-color: #eeeeee;
+    // background-color: #e6f7ff;
     cursor: pointer;
   }
 
@@ -2739,4 +2751,66 @@ export default {
   // top: 40px;
   // left: 340px;
 }
+</style>
+<style lang="scss">
+.left_menu.ant-card{
+  box-shadow: 0px 1px 6px 2px rgba(214, 214, 214, 0.1);
+
+  .ant-card-head-wrapper{
+    min-height: 50px;
+
+    .ant-card-head-title{
+      padding: 4px 0px;
+    }
+  }
+
+  .ant-card-body{
+    padding: 12px;
+    padding-top: 0px;
+  }
+}
+.self_tabs.tabs-sliding{
+  position: relative;
+  .ant-tabs-bar{
+    margin: 0;
+  }
+  .ant-tabs-nav-wrap{
+    margin-bottom: -4px;
+  }
+}
+.fenye{
+  position: absolute;
+  top: 9px;
+  right: 10px;
+  display: flex; 
+  -items: center; 
+  justify-content: flex-end;
+  margin-bottom:40px;
+  * {
+    border: none !important;
+  }
+  li{
+    box-shadow: 0px 1px 6px 1px rgba(194, 193, 193, 0.1);
+  }
+  .ant-pagination-item-active{
+    font-weight: 600;
+    font-size: 15px;
+  }
+  .ant-select-selection--single{
+    height: 32px;
+
+    *{
+      line-height: 30px;
+    }
+  }
+
+  .ant-select-arrow{
+    top: 10px;
+  }
+
+  .ant-pagination-options-size-changer.ant-select{
+    margin-right: 0px;
+  }
+}
+
 </style>
