@@ -5,6 +5,7 @@ import com.google.common.collect.Sets;
 import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
+import com.veadan.folib.controllers.unicom.UnicomAdapter;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.security.vote.ExtendedAuthoritiesVoter;
@@ -22,11 +23,13 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Primary;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.util.*;
@@ -50,10 +53,17 @@ public class AuthComponent {
     @Inject
     private ConfigurationManager configurationManager;
 
+    @Resource
+    private UnicomAdapter unicomAdapter;
+
     public boolean validatePrivilegesSplitPath(Repository repository, RepositoryPath repositoryPath, String authority) throws IOException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (Objects.isNull(authentication)) {
             return false;
+        }
+        if(unicomAdapter.isUnicomUser()){
+//            return unicomAdapter.hasRepoAuth(repository.getStorage().getId(),repository.getId());
+            return true;
         }
         String relativePath = RepositoryFiles.relativizePath(repositoryPath);
         String storageId = repository.getStorage().getId(), repositoryId = repository.getId();
@@ -68,6 +78,10 @@ public class AuthComponent {
         if (Objects.isNull(authentication)) {
             return false;
         }
+        if(unicomAdapter.isUnicomUser()){
+            return true;
+//            return unicomAdapter.hasRepoAuth(repository.getStorage().getId(),repository.getId());
+        }
         String relativePath = RepositoryFiles.relativizePath(repositoryPath);
         String storageId = repository.getStorage().getId(), repositoryId = repository.getId();
         String prefix = String.format("/storages/%s/%s/", storageId, repositoryId);
@@ -80,6 +94,9 @@ public class AuthComponent {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (Objects.isNull(authentication)) {
             return false;
+        }
+        if(unicomAdapter.isUnicomUser()){
+            return true;
         }
         String prefix = String.format("/storages/%s/", storageId);
         Collection<String> storageAuthorities = extendedAuthoritiesVoter.getExtendedAuthorities(authentication, storageId, "", prefix);
@@ -98,6 +115,13 @@ public class AuthComponent {
             Repository repository = repositoryPath.getRepository();
             String relativePath = RepositoryFiles.relativizePath(repositoryPath);
             String storageId = repository.getStorage().getId(), repositoryId = repository.getId();
+            if(unicomAdapter.isUnicomUser()){
+                if (unicomAdapter.hasRepoAuth(storageId,repositoryId)) {
+                    return unicomAdapter.getArtifactoryPrivileges();
+                }else {
+                    return new HashSet<>();
+                }
+            }
             String prefix = String.format("/storages/%s/%s/", storageId, repositoryId);
             relativePath = prefix + relativePath;
             return Sets.newLinkedHashSet(extendedAuthoritiesVoter.getExtendedAuthorities(authentication, storageId, repositoryId, relativePath));
@@ -158,6 +182,13 @@ public class AuthComponent {
             }
             if (!(principal instanceof SpringSecurityUser)) {
                 return Collections.emptySet();
+            }
+            if(unicomAdapter.isUnicomUser()){
+                if (unicomAdapter.hasRepoAuth(storageId,repositoryId)) {
+                    return unicomAdapter.getArtifactoryPrivileges();
+                }else {
+                    return new HashSet<>();
+                }
             }
             SpringSecurityUser userDetails = (SpringSecurityUser) principal;
             Collection<? extends GrantedAuthority> grantedAuthorities = authentication.getAuthorities();

@@ -44,6 +44,10 @@ public class ArtifactSecurityComponent {
     @Lazy
     private AuthoritiesProvider authoritiesProvider;
 
+    @Autowired
+    @Lazy
+    private CostumeSecurityAdapter costumeSecurityAdapter;
+
     public boolean validatePrivileges(RepositoryPath repositoryPath, String authority) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -78,13 +82,20 @@ public class ArtifactSecurityComponent {
                 return false;
             }
             SpringSecurityUser userDetails = (SpringSecurityUser) principal;
-            Collection<? extends GrantedAuthority> grantedAuthorities = authentication.getAuthorities();
-            List<GrantedAuthority> authorities = Lists.newArrayList(grantedAuthorities);
-            Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(storageId, repositoryId, Lists.newArrayList(RepositoryFiles.relativizePath(repositoryPath)));
-            if (!storageAuthorities.isEmpty()) {
-                authorities.addAll(storageAuthorities);
+            // 联通适配
+            if("unicomUserDetailService".equals(userDetails.getSourceId())){
+                Collection<Privileges> storageAuthorities = costumeSecurityAdapter.getStorageAuthorities(storageId, repositoryId, Lists.newArrayList(RepositoryFiles.relativizePath(repositoryPath)));
+                return storageAuthorities.stream().anyMatch(item -> item.getAuthority().equals(authority));
+            }else {
+                Collection<? extends GrantedAuthority> grantedAuthorities = authentication.getAuthorities();
+                List<GrantedAuthority> authorities = Lists.newArrayList(grantedAuthorities);
+                Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(storageId, repositoryId, Lists.newArrayList(RepositoryFiles.relativizePath(repositoryPath)));
+                if (!storageAuthorities.isEmpty()) {
+                    authorities.addAll(storageAuthorities);
+                }
+                return authorities.stream().anyMatch(item -> item.getAuthority().equals(authority));
             }
-            return authorities.stream().anyMatch(item -> item.getAuthority().equals(authority));
+
         } catch (Exception ex) {
             log.error("Validate privileges repositoryPath [{}] error [{}]", repositoryPath, ExceptionUtils.getStackTrace(ex));
         }

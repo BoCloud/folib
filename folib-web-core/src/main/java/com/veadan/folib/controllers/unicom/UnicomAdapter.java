@@ -2,6 +2,7 @@ package com.veadan.folib.controllers.unicom;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
+import com.veadan.folib.components.CostumeSecurityAdapter;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.enums.RepositoryScopeEnum;
@@ -10,6 +11,7 @@ import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -33,6 +35,7 @@ import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -48,7 +51,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Component
-public class UnicomAdapter {
+public class UnicomAdapter implements CostumeSecurityAdapter {
 
     public static HashSet<String> adminRole;
 
@@ -277,6 +280,26 @@ public class UnicomAdapter {
             }
         }
         return repositoryIdList;
+    }
+
+    @Override
+    public Collection<Privileges> getStorageAuthorities(String storageId, String repositoryId, List<String> paths) {
+        if (hasRepoAuth(storageId, repositoryId)) {
+            return Privileges.artifactsAll();
+        } else {
+            return Collections.emptyList();
+        }
+    }
+
+    public Set<String> getArtifactoryPrivileges() {
+        return Set.of("ARTIFACTS_DEPLOY", "ARTIFACTS_DELETE", "ARTIFACTS_VIEW", "ARTIFACTS_RESOLVE");
+    }
+
+    public boolean isUnicomUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
+        return UNICOM_SOURCE_ID.equals(userDetails.getSourceId());
+
     }
 }
 

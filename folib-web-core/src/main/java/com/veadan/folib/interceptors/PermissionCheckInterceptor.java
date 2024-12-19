@@ -155,13 +155,7 @@ public class PermissionCheckInterceptor implements HandlerInterceptor {
                 storageId = jsonObject.getString(storageKey);
                 repositoryId = jsonObject.getString(repositoryKey);
             }
-            AuthComponent authComponent = SpringUtil.getBean(AuthComponent.class);
-            Set<String> privileges = authComponent.getAllPrivileges(storageId, repositoryId, filePaths);
-            boolean flag = privileges.contains(resourceKey);
-            if (!flag) {
-                handlerResponse(response);
-            }
-            return flag;
+
             if (authentication.getPrincipal() instanceof SpringSecurityUser) {
                 // 如果是联通用户则特殊的鉴权
                 SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
@@ -169,8 +163,9 @@ public class PermissionCheckInterceptor implements HandlerInterceptor {
                 if (UnicomAdapter.UNICOM_SOURCE_ID.equals(userDetails.getSourceId())) {
                     flag = unicomAdapter.hasRepoAuth(storageId, repositoryId);
                 } else {
-                    Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(storageId, repositoryId, filePaths);
-                    flag = storageAuthorities.stream().anyMatch(item -> item.getAuthority().equals(resourceKey));
+                    AuthComponent authComponent = SpringUtil.getBean(AuthComponent.class);
+                    Set<String> privileges = authComponent.getAllPrivileges(storageId, repositoryId, filePaths);
+                    flag = privileges.contains(resourceKey);
                 }
                 if (!flag) {
                     handlerResponse(response);
