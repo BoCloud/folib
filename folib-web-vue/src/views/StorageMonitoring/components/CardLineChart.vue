@@ -1,6 +1,6 @@
 <template>
 
-	<a-card :bordered="false" class="dashboard-bar-line header-solid">
+	<a-card :bordered="false" class="dashboard-bar-line header-solid card-shadow">
 		<template #title>
 			<h6>{{$t('StorageMonitoring.ArtifactsCount')}}</h6>
 			<p>

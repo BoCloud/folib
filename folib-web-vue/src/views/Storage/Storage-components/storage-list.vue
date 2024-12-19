@@ -4,7 +4,7 @@
 日期：
 **/
 <template>
-    <div class=''>
+    <div class='storage_list'>
         <a-anchor :targetOffset="navbarFixed ? 100 : 10" :affix="false">
             <a-anchor-link 
                 v-for="(item, index) in storageData" 
@@ -70,5 +70,9 @@ export default {
 .slectActive {
   background-color: #eeeeee !important;
   border-radius: 8px;
+}
+.storage_list{
+    height: calc(100vh - 205px);
+    overflow-y: auto;
 }
 </style>

@@ -6,7 +6,7 @@
             <!-- 进度球-->
 <!--            <CircleProgress :progress="totalUploadProgress" :closeGlobe="isClose" :waveClassName="waveClassName" :containerClassName="containerClassName"/>-->
           <!-- User Profile Card -->
-          <a-card :bordered="false" class="card-profile-head" :bodyStyle="{ padding: 0 }" :targetOffset="0"
+          <a-card :bordered="false" style="height: 100px;" class="card-profile-head card-shadow top-card" :bodyStyle="{ padding: 0 }" :targetOffset="0"
             :affix="false">
             <template #title>
               <a-row type="flex" align="middle">
@@ -20,10 +20,10 @@
                     }" @click="goBack()" />
                   </a>
                   <a style="justify-content: center;align-items: center;display: flex;">
-                    <a-avatar @click="createData" :size="84" shape="square"
-                      style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );   "
+                    <a-avatar @click="createData" :size="64" shape="square"
+                      style="border-radius: 8px; background-image: linear-gradient( 310deg, #fafbfc, #ddd);   "
                                 >
-                        <img :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" style="width: 150%;margin-left: -13.5px;" alt=""></img>
+                        <img :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" style="width: 150%;margin-left: -11px;" alt=""></img>
                     </a-avatar>
                   </a>
                   <div class="avatar-info">
@@ -36,12 +36,12 @@
                         folibRepository.storageId +
                         '/' +
                         folibRepository.id" target="_blank">
-                        <h4 class="font-semibold m-0" @click="createData">
+                        <h6 class="font-semibold m-0" @click="createData">
                           {{ folibRepository.id }}
-                        </h4>
+                        </h6>
                       </a>
                     </a-tooltip>
-                    <a-descriptions title="" :column="1" class="repo-address">
+                    <a-descriptions title="" :column="1" class="repo-address" style="margin-top:5px;">
                       <a-descriptions-item :label="$t('Store.BrowseAddress')">
                         <a-tooltip placement="topLeft">
                           <template slot="title">
@@ -72,7 +72,7 @@
                             )" />
                         </a>
                       </a-descriptions-item>
-                      <a-descriptions-item :label="$t('Store.UseAddress')">
+                      <a-descriptions-item :label="$t('Store.UseAddress')" style="margin-top: -5px;">
                         <a-tooltip>
                           <template slot="title">
                             {{ $t('Store.WarehouseUsageAddress') }}
@@ -168,7 +168,7 @@
     <a-row v-if="isSearch === false" type="flex" :gutter="24">
       <!-- Platform Settings Column -->
       <a-col style="margin-top:-20px;" v-if="!isChecked" :span="24" :md="10" class="mb-24">
-        <a-card :bordered="false" style="max-height: 1024px; min-height: 554px; overflow-y: auto" class="header-solid"
+        <a-card :bordered="false" style="max-height: 1024px; min-height: 554px; overflow-y: auto" class="header-solid card-shadow"
           :bodyStyle="{ paddingTop: 0, paddingBottom: 0 }">
           <template #title>
             <h6 class="font-semibold m-0">{{ isTrashView ? $t('Store.TrashCan') : $t('Store.PacketList') }} <a
@@ -199,9 +199,11 @@
           </a-directory-tree>
         </a-card>
       </a-col>
-      <a-col style="margin-top:-20px;" :span="24" :md="!isChecked ? 14 : 24" class="mb-24">
-        <a-card :bordered="false" class="header-solid h-full card-profile-information"
-          :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }" :headStyle="{ paddingRight: 0 }">
+      <a-col style="margin-top:-30px;" :span="24" :md="!isChecked ? 14 : 24" class="mb-24">
+        <a-card :bordered="false" class="header-solid h-full card-shadow card-profile-information"
+          :bodyStyle="{ paddingTop: 0, paddingBottom: '0' }" :headStyle="{ paddingRight: 0 }"
+          :style="isChecked?'height:calc(100vh - 392px);overflow-y:auto;':''"
+          >
           <template #title v-if="isChecked ? !newDetailPage : true ">
             <a-row type="flex" align="middle" v-if="folibRepository.layout !== 'Docker'">
               <a-col :span="16" class="font-semibold m-0">
@@ -3054,4 +3056,9 @@ export default {
 .view-switch {
   cursor: pointer;
 }
+</style>
+<style lang="scss">
+ .top-card .ant-card-head-title{
+    padding: 5px 5px;
+  }
 </style>

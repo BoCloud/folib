@@ -285,10 +285,20 @@ export default {
                 }
                 this.$emit('repositorySelect', e.node.dataRef)
             }else{
-                this.$emit('treeSelect', key, e)
+                // let data = null
+                // this.treeData.forEach(ele => {
+                //     if(ele.id === e.node.dataRef.repositoryId){
+                //         data = ele
+                //     }
+                // })
+                // this.$emit('repositorySelect', data) // 用户只展开文件夹，未点击文件夹时的顶部信息需刷新
+                this.$nextTick(() => {
+                    setTimeout(() => {
+                        this.$emit('treeSelect', key, e)
+                    }, 0);
+                })
             }
             if(!!newDetailPage){
-                console.log(e.node.dataRef)
                 const {id, storageId} = this.folibRepository
                 let params = e.node.dataRef
                 params.repositoryId = id
@@ -477,7 +487,7 @@ export default {
     color: #67748e;
 }
 </style>
-<style>
+<style lang="scss">
 .repositoryTree .ant-tree-node-content-wrapper {
     width: 90% !important;
     height: 32px !important;
@@ -491,8 +501,12 @@ export default {
     line-height: 32px !important;
 }
 .tree_container{
-    max-height: 650px;
-    overflow: auto;
+    height: 620px;
+    overflow: hidden;
+
+    &:hover{
+        overflow: auto;
+    }
 }
 .repositoryTree .ant-tree-switcher-noop{
     display: none !important;

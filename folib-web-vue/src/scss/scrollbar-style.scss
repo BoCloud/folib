@@ -1,0 +1,47 @@
+/* Webkit 滚动条样式 */
+::-webkit-scrollbar {
+    width: 8px; /* 滚动条宽度 */
+    height: 8px; /* 水平滚动条高度 */
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background-color: #e6e8e9; /* 默认滚动条颜色 */
+    border-radius: 5px; /* 滚动条圆角 */
+    transition: background-color 0.3s, cursor 0.3s; /* 平滑过渡效果 */
+    cursor: pointer; /* 鼠标悬停时的指针样式 */
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: #d6d7d8; /* 鼠标悬浮时滚动条颜色 */
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent; /* 滚动条轨道背景透明 */
+  }
+  
+  /* 添加滚动条右侧间距 */
+  .scrollable-container {
+    position: relative; /* 让子元素可以使用绝对定位 */
+    padding-right: 5px; /* 给内容添加右侧内边距以避免被滚动条覆盖 */
+  }
+  
+  .scrollable-container::-webkit-scrollbar {
+    right: 5px; /* 滚动条距离容器右侧的间距 */
+  }
+  
+  /* 默认隐藏滚动条 */
+  .scrollable:not(.scrolling) ::-webkit-scrollbar {
+    display: none; /* 隐藏滚动条 */
+  }
+  
+  /* Firefox 滚动条样式 */
+  .scrollable {
+    scrollbar-width: thin; /* 滚动条宽度 */
+    scrollbar-color: #e6e8e9 transparent; /* 滚动条颜色 */
+  }
+  
+  .scrollable.scrolling {
+    scrollbar-width: thin; /* 滚动时显示滚动条 */
+    scrollbar-color: #e6e8e9 transparent;
+  }
+  
