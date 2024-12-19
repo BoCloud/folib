@@ -30,6 +30,9 @@ export default {
     'OperationSuccessful': '操作成功',
     'OperationFailure':'操作失败',
     'IsDeleteSync':'是否开启删除同步',
+    "StorageId": "存储空间",
+    "RepositoryId": "仓库名称",
+    "Total": "个",
 
     
 }

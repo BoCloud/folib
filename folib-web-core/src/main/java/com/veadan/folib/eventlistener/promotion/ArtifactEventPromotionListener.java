@@ -13,6 +13,7 @@ import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.policy.FederalPromotionPolicyService;
 import com.veadan.folib.domain.policy.dto.SyncArtifatDTO;
+import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
 import com.veadan.folib.enums.PromotionStatusEnum;
 import com.veadan.folib.enums.UnionRepositorySyncTypeEnum;
 import com.veadan.folib.event.artifact.ArtifactEvent;
@@ -23,6 +24,7 @@ import com.veadan.folib.providers.layout.DockerFileSystem;
 import com.veadan.folib.scanner.entity.ScanRules;
 import com.veadan.folib.scanner.mapper.ScanRulesMapper;
 import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.services.JFrogService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.ws.common.FolibWsRunManageUtil;
 import com.veadan.folib.ws.common.FolibWsRunManageV2;
@@ -72,6 +74,9 @@ public class ArtifactEventPromotionListener {
     @Autowired
     @Lazy
     protected ConfigurationManagementService configurationManagementService;
+    @Autowired
+    @Lazy
+    private JFrogService jFrogService;
 
     //@EventListener
     public void handle(final ArtifactEvent<RepositoryPath> event) {
@@ -363,6 +368,13 @@ public class ArtifactEventPromotionListener {
             return;
         }
         FederalRepositoryRes federalRepositoryRes = policyDetail.getTargetRepositories().get(0);
+        if(ArtifactoryRepositoryTypeEnum.JFROG.getType().equals(federalRepositoryRes.getNodeType())) {
+            for (FederalRepositoryRes targetRepository : policyDetail.getTargetRepositories()){
+                jFrogService.deletePat(targetRepository.getNodeName(),targetRepository.getRepositoryId(),artifactPath);
+            }
+            return;
+        }
+
         ClusterDispatchNodeDto nodeDto = map.get(federalRepositoryRes.getNodeName());
         String targetHostName = FolibWsRunManageUtil.getSimpleTargetHostName(nodeDto);
         Session session = folibWsRunManageV2.getSession(targetHostName);

@@ -531,4 +531,22 @@ public class JFrogServiceImpl implements JFrogService {
         }
     }
 
+    /**
+     * 删除制品
+     *
+     * @param nodeName       节点名称
+     * @param repositoryName 仓库名称
+     * @param artifactPath   制品路径
+     */
+    @Override
+    public void deletePat(String nodeName, String repositoryName, String artifactPath) {
+        log.info("Delete nodeName [{}]  repositoryName [{}] artifact [{}]",nodeName, repositoryName ,artifactPath);
+        ExternalNodeForm externalNodeForm = getExternalNodeForm(nodeName);
+        String address = externalNodeForm.getAddress(), username = externalNodeForm.getUsername(), password = externalNodeForm.getPassword();
+        Artifactory artifactory = getArtifactory(address, username, password);
+        if(artifactory!=null){
+            artifactory.repository(repositoryName).delete(artifactPath);
+        }
+
+    }
 }

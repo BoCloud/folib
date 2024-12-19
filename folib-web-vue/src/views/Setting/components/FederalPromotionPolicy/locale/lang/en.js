@@ -28,5 +28,8 @@ export default {
     'OperationSuccessful': 'Operation successful',
     'OperationFailure':'Operation Failure',
     'IsDeleteSync':'Whether to enable delete synchronization',
+    "StorageId": "Storage",
+    "RepositoryId": "Repository name",
+    "Total": "Total",
     
 }

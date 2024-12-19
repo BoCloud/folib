@@ -71,4 +71,12 @@ public interface JFrogService {
      * @param recordStatus   是否记录状态 true（记录）其他（不记录）
      */
     void uploadItem(String nodeName, String repositoryName, RepositoryPath repositoryPath, String artifactPath, Boolean recordStatus);
+
+    /**
+     * 删除制品
+     * @param nodeName 节点名称
+     * @param repositoryName 仓库名称
+     * @param artifactPath 制品路径
+     */
+    void deletePat(String nodeName, String repositoryName,String artifactPath);
 }
