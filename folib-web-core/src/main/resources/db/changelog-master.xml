@@ -42,5 +42,6 @@
     <include file="classpath:db/changelog/changelog_federal_promotion_policy_init.xml"/>
     <include file="classpath:db/changelog/changelog_allowlist-denylist-block-init.xml"/>
     <include file="classpath:db/changelog/changelog_audit-update.xml"/>
+    <include file="classpath:db/changelog/changelog_backup_strategy_init.xml"/>
     <!--后续增加的按照写对应的sql与changelog-->
 </databaseChangeLog>

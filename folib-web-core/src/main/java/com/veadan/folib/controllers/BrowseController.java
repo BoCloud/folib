@@ -60,6 +60,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.annotation.Resource;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -85,7 +86,7 @@ import static org.springframework.http.HttpStatus.OK;
 @RequestMapping(path = BrowseController.ROOT_CONTEXT)
 @Api(description = "浏览存储/存储库/文件系统结构 控制器", tags = "浏览存储/存储库/文件系统结构 控制器")
 public class BrowseController
-        extends BaseController {
+        extends BaseArtifactController {
 
     private static final Logger logger = LoggerFactory.getLogger(BrowseController.class);
 
@@ -525,6 +526,8 @@ public class BrowseController
     public Object repositoryContent(@RepositoryMapping Repository repository,
                                     @PathVariable("path") String rawPath,
                                     HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    @RequestHeader HttpHeaders httpHeaders,
                                     ModelMap model,
                                     @RequestHeader(value = HttpHeaders.ACCEPT, required = false) String acceptHeader) {
         final String storageId = repository.getStorage().getId();
@@ -535,6 +538,11 @@ public class BrowseController
                 return getDockerArtifact(storageId, repositoryId, rawPath);
             }
             final RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, rawPath);
+            if (RepositoryFiles.isArtifact(repositoryPath) && Files.exists(repositoryPath)) {
+                vulnerabilityBlock(repositoryPath);
+                provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+                return null;
+            }
             DirectoryListing directoryListing = null;
             if (RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
                 directoryListing = directoryListingService.fromGroupRepositoryPath(repository, repositoryPath);

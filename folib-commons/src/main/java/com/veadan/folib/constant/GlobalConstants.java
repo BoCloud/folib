@@ -322,4 +322,14 @@ public interface GlobalConstants {
      * 元数据级别制品生命周期
      */
     String ARTIFACT_LIFE_CYCLE_KEY = "ARTIFACT_LIFE_CYCLE";
+
+    /**
+     * 可忽略的线程前缀
+     */
+    List<String> IGNORE_THREAD_NAME_LIST = Lists.newArrayList("asyncWsCommand", "cron-task-pool-", "scheduled-pool-");
+
+    /**
+     * 0
+     */
+    Integer ZERO = 0;
 }

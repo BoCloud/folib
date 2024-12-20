@@ -88,7 +88,7 @@ public class DockerAuthComponent {
             return;
         }
         AuthInfo authInfo = JSONObject.parseObject(responseResult.getData(), AuthInfo.class);
-        if (StringUtils.isBlank(authInfo.getToken()) || Objects.isNull(authInfo.getExpiresIn())) {
+        if (StringUtils.isBlank(authInfo.getToken())) {
             return;
         }
         if (MapUtils.isEmpty(requestHeaders)) {
