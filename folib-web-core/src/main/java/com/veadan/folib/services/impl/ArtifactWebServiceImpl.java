@@ -2346,6 +2346,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
     private void validateAuth(RepositoryPath repositoryPath) throws Exception {
+        String threadName = Thread.currentThread().getName();
+        List<String> ignoreThreadNameList = GlobalConstants.IGNORE_THREAD_NAME_LIST;
+        if (ignoreThreadNameList.stream().anyMatch(threadName::startsWith)) {
+            return;
+        }
         if (!authComponent.validatePrivileges(repositoryPath.getRepository(), repositoryPath, Privileges.CONFIGURATION_ADD_UPDATE_METADATA.getAuthority())) {
             throw new BusinessException("没有操作元数据权限");
         }
