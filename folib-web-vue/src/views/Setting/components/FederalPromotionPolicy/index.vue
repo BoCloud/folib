@@ -1184,7 +1184,7 @@ export default {
 
 .container {
     display: flex;
-    justify-content: end; /* 右对齐 */
+    justify-content: flex-end; /* 右对齐 */
     align-items: center;
     padding-top: 6.5px;
 }
