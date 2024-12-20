@@ -17,20 +17,20 @@
                             {{ $t('Storage.NextVersion') }}🤝
                         </template>
                         <a-avatar 
-                            :size="44" 
+                            :size="64" 
                             shape="square"
-                            style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
+                            class="icon_sty"
                         >
-                            <img :src="item.src" style="width: 100%;" alt="">
+                            <img :src="item.src" width="52" alt="">
                         </a-avatar>
                     </a-tooltip>
                     <a-avatar 
                         v-else
-                        :size="44" 
+                        :size="64" 
                         shape="square"
-                        style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
+                        class="icon_sty"
                     >
-                        <img :src="item.src" style="width: 100%;" alt="">
+                        <img :src="item.src" width="52" alt="">
                     </a-avatar>
                 </div>
                 <h6>{{ item.name }}</h6>
@@ -60,9 +60,12 @@ export default {
     }
 }
 </script>
-<style>
+<style lang="scss">
     .checkbox-group{
         position: relative;
+    }
+    .checkbox-label{
+        border: none !important;
     }
     .disabled_box{
         position: absolute;
@@ -72,5 +75,10 @@ export default {
         background: #fff;
         opacity: 0.1;
         cursor: not-allowed;
+    }
+    .icon_sty{
+        border-radius: 8px; 
+        background-image: linear-gradient(310deg, rgb(250, 251, 252), rgb(221, 221, 221));
+        box-shadow: 0px 0px 6px 2px rgba(0, 0, 0, 0.1);
     }
 </style>

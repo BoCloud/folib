@@ -446,8 +446,11 @@ export default {
     handleMenuClick(type){
       this.$emit("handleMenuClick",type,this.folibRepository.id)
     },
-    async myMounted(){
+    myMounted(){
       this.key ++
+      this.getDataInfo()
+    },
+    async getDataInfo(){
       await this.createData()
       await this.getStorage(this.folibRepository.storageId)
       this.isShowEdit = (isAdmin() || this.storageAdmin === this.$store.state.user.name)
@@ -458,6 +461,7 @@ export default {
       this.$refs.store.handleMenuClickTree(active,currentTreeNode)
     },
     treeSelect(key,e){
+      this.getDataInfo()
       this.$refs.store.treeSelect(key, e)
     },
     searchBoxMouseStatus(bool) {
