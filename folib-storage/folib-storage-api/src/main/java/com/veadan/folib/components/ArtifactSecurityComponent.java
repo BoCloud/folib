@@ -2,6 +2,7 @@ package com.veadan.folib.components;
 
 import com.google.common.collect.Lists;
 import com.veadan.folib.authorization.dto.Role;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -93,7 +94,7 @@ public class ArtifactSecurityComponent {
 
     public boolean anonymousValidatePrivilege(RepositoryPath repositoryPath) {
         String threadName = Thread.currentThread().getName();
-        List<String> ignoreThreadNameList = Lists.newArrayList("asyncWsCommand", "cron-task-pool-");
+        List<String> ignoreThreadNameList = GlobalConstants.IGNORE_THREAD_NAME_LIST;
         if (ignoreThreadNameList.stream().anyMatch(threadName::startsWith)) {
             return false;
         }

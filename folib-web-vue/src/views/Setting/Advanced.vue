@@ -217,13 +217,7 @@
             </a-row>
           </a-tab-pane>
           <a-tab-pane :key="4" :tab="$t('Setting.BackupStrategy')">
-            <a-card :bordered="false" class="header-solid">
-              <template #title>
-                <h6>{{ $t('Setting.BackupStrategy') }}</h6>
-                <p>{{ $t('Setting.setTheBackupPolicy') }}</p>
-              </template>
-              <ArtifactsBackup/>
-            </a-card>
+            <BackupStrategy/>
           </a-tab-pane>
           <a-tab-pane :key="5" :tab="$t('Setting.CachingStrategy')">
             <a-card :bordered="false" class="header-solid">
@@ -348,6 +342,7 @@ import "prismjs/components/prism-javascript"
 import "prismjs/themes/prism-tomorrow.css"
 import DataMigration from "./components/DataMigration.vue"
 import ArtifactsBackup from "./components/ArtifactsBackup.vue";
+import BackupStrategy from "./components/BackupStrategy/index.vue";
 import ArtifactsCache from "./components/Cache/index.vue";
 import JfrogMigration from "./components/JfrogMigration.vue"
 
@@ -434,6 +429,7 @@ export default {
     ArtifactsBackup,
     ArtifactsCache,
     JfrogMigration,
+    BackupStrategy,
   },
   computed: {
 

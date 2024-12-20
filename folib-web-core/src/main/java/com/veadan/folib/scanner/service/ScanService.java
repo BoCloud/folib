@@ -14,6 +14,7 @@ import com.veadan.folib.cluster.SyncCornJobEnum;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.components.cron.CronComponent;
 import com.veadan.folib.components.license.LicenseComponent;
 import com.veadan.folib.components.sbom.BomComponent;
 import com.veadan.folib.components.sbom.SbomComponent;
@@ -139,10 +140,7 @@ public class ScanService {
     private ScanComponent scanComponent;
 
     @Inject
-    private CronTaskConfigurationService cronTaskConfigurationService;
-
-    @Inject
-    private ClusterSyncService clusterSyncService;
+    private CronComponent cronComponent;
 
     @Inject
     private ArtifactRepository artifactRepository;
@@ -752,7 +750,7 @@ public class ScanService {
     public void vulnerabilityRefreshData(String username, String cron) {
         if (StringUtils.isNotBlank(cron)) {
             String cronName = "Vulnerability refresh";
-            configCronTask(cronName, VulnerabilityRefreshCronJob.class.getName(), cron);
+            cronComponent.configCronTask(cronName, VulnerabilityRefreshCronJob.class.getName(), cron);
         } else {
             vulnerabilityRefresh(username);
         }
@@ -793,7 +791,7 @@ public class ScanService {
     public void artifactScan(String username, String cron) {
         if (StringUtils.isNotBlank(cron)) {
             String cronName = "Artifact full scan";
-            configCronTask(cronName, ArtifactScanCronJob.class.getName(), cron);
+            cronComponent.configCronTask(cronName, ArtifactScanCronJob.class.getName(), cron);
         } else {
             artifactScan(username);
         }
@@ -807,31 +805,6 @@ public class ScanService {
             artifactsFullScan(LocalDateTime.now());
         } catch (Exception e) {
             log.error("Artifact scan error [{}]", ExceptionUtils.getStackTrace(e));
-        }
-    }
-
-    private void configCronTask(String cronName, String className, String cron) {
-        CronTaskConfigurationDto cronTaskConfiguration = new CronTaskConfigurationDto();
-        cronTaskConfiguration.setName(cronName);
-        cronTaskConfiguration.setJobClass(className);
-        cronTaskConfiguration.setCronExpression(cron);
-        cronTaskConfiguration.setOneTimeExecution(false);
-        cronTaskConfiguration.setImmediateExecution(false);
-        try {
-            Optional<CronTaskConfigurationDto> cronTaskConfigurationOptional = cronTaskConfigurationService.getTasksConfigurationDto().getCronTaskConfigurations().stream().filter(item -> item.getJobClass().equals(className)).findFirst();
-            if (cronTaskConfigurationOptional.isPresent()) {
-                CronTaskConfigurationDto cronTaskConfigurationDto = cronTaskConfigurationOptional.get();
-                cronTaskConfigurationService.deleteConfiguration(cronTaskConfigurationDto.getUuid());
-                SyncCronJobDto syncCronJobDto = new SyncCronJobDto(cronTaskConfiguration, SyncCornJobEnum.DELETE);
-                clusterSyncService.syncCronJob(syncCronJobDto);
-            }
-            UUID uuid = cronTaskConfigurationService.saveConfiguration(cronTaskConfiguration);
-            cronTaskConfiguration.setUuid(uuid);
-            SyncCronJobDto syncCronJobDto = new SyncCronJobDto(cronTaskConfiguration, SyncCornJobEnum.ADD_OR_UPDATE);
-            clusterSyncService.syncCronJob(syncCronJobDto);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e.getMessage(), e);
         }
     }
 
