@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.veadan.folib.mapper.BackupStrategyMapper">
+
+    <resultMap id="selectListMap" type="com.veadan.folib.domain.backupstrategy.BackupStrategyRecord">
+        <result column="id" property="id"/>
+        <result column="enabled" property="enabled"/>
+        <result column="strategy_name" property="strategyName"/>
+        <result column="cron_expression" property="cronExpression"/>
+        <result column="backup_path" property="backupPath"/>
+        <result column="incremental" property="incremental"/>
+        <result column="retention_period" property="retentionPeriod"/>
+        <collection property="backupStrategyRepositories" ofType="com.veadan.folib.entity.BackupStrategyRepository" column="backupStrategyId=id" select="selectRepositoryByBackupStrategyId">
+            <result property="id" column="id"/>
+            <result property="storageId" column="storage_id"/>
+            <result property="repositoryId" column="repository_id"/>
+        </collection>
+    </resultMap>
+
+    <select id="selectRepositoryByBackupStrategyId" resultType="com.veadan.folib.entity.BackupStrategyRepository">
+        select id,storage_id,repository_id from backup_strategy_repository where backup_strategy_id = #{backupStrategyId}
+    </select>
+
+    <select id="selectList" resultMap="selectListMap">
+        SELECT
+            DISTINCT
+            bs.id,
+            bs.enabled,
+            bs.strategy_name,
+            bs.cron_expression,
+            bs.backup_path,
+            bs.incremental,
+            bs.retention_period
+        FROM
+            backup_strategy bs
+        LEFT JOIN backup_strategy_repository bsr ON bs.id = bsr.backup_strategy_id
+        <where>
+            bs.id > 0
+            <if test="backupStrategy.strategyName != null and backupStrategy.strategyName != ''">
+                AND bs.strategy_name = #{backupStrategy.strategyName}
+            </if>
+            <if test="backupStrategy.matchStrategyName != null and backupStrategy.matchStrategyName != ''">
+                AND bs.strategy_name LIKE concat(#{backupStrategy.matchStrategyName}, '%')
+            </if>
+            <if test="backupStrategy.storageId != null and backupStrategy.storageId != ''">
+                AND bsr.storage_id = #{backupStrategy.storageId}
+            </if>
+            <if test="backupStrategy.matchStorageId != null and backupStrategy.matchStorageId != ''">
+                AND bsr.storage_id LIKE concat(#{backupStrategy.matchStorageId}, '%')
+            </if>
+            <if test="backupStrategy.repositoryId != null and backupStrategy.repositoryId != ''">
+                AND bsr.repository_id = #{backupStrategy.repositoryId}
+            </if>
+            <if test="backupStrategy.matchRepositoryId != null and backupStrategy.matchRepositoryId != ''">
+                AND bsr.repository_id LIKE concat(#{backupStrategy.matchRepositoryId}, '%')
+            </if>
+        </where>
+        ORDER BY bs.id
+    </select>
+
+    <resultMap id="selectInfoListMap" type="com.veadan.folib.domain.backupstrategy.BackupStrategyRecord">
+        <result column="id" property="id"/>
+        <result column="enabled" property="enabled"/>
+        <result column="strategy_name" property="strategyName"/>
+        <result column="cron_expression" property="cronExpression"/>
+        <result column="backup_path" property="backupPath"/>
+        <result column="incremental" property="incremental"/>
+        <result column="retention_period" property="retentionPeriod"/>
+    </resultMap>
+
+    <select id="selectInfoList" resultMap="selectInfoListMap">
+        SELECT
+            bs.id,
+            bs.enabled,
+            bs.strategy_name,
+            bs.cron_expression,
+            bs.backup_path,
+            bs.incremental,
+            bs.retention_period
+        FROM
+        backup_strategy bs
+        LEFT JOIN backup_strategy_repository bsr ON bs.id = bsr.backup_strategy_id
+        <where>
+            bs.id > 0
+            <if test="backupStrategy.strategyName != null and backupStrategy.strategyName != ''">
+                AND bs.strategy_name = #{backupStrategy.strategyName}
+            </if>
+            <if test="backupStrategy.matchStrategyName != null and backupStrategy.matchStrategyName != ''">
+                AND bs.strategy_name LIKE concat(#{backupStrategy.matchStrategyName}, '%')
+            </if>
+            <if test="backupStrategy.storageId != null and backupStrategy.storageId != ''">
+                AND bsr.storage_id = #{backupStrategy.storageId}
+            </if>
+            <if test="backupStrategy.matchStorageId != null and backupStrategy.matchStorageId != ''">
+                AND bsr.storage_id LIKE concat(#{backupStrategy.matchStorageId}, '%')
+            </if>
+            <if test="backupStrategy.repositoryId != null and backupStrategy.repositoryId != ''">
+                AND bsr.repository_id = #{backupStrategy.repositoryId}
+            </if>
+            <if test="backupStrategy.matchRepositoryId != null and backupStrategy.matchRepositoryId != ''">
+                AND bsr.repository_id LIKE concat(#{backupStrategy.matchRepositoryId}, '%')
+            </if>
+        </where>
+        ORDER BY bs.id
+    </select>
+</mapper>

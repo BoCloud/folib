@@ -50,9 +50,9 @@
 			</template>
 			<template slot="repositoryLayout" slot-scope="repositoryLayout, row">
 				<span v-if="repositoryLayout">
-					<a-avatar :size="48" shape="square"
-						style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
-						:src="'images/folib/' + getLayoutType({ layout: row.repositoryLayout, subLayout: row.repositorySubLayout }) + '.svg'" />
+					<a-avatar :size="48" shape="square" class="icon_sty">
+						<img :src="'images/folib/' + getLayoutType({ layout: row.repositoryLayout, subLayout: row.repositorySubLayout }) + '.svg'" width="36" alt="">
+					</a-avatar>
 					<span class="ml-10">{{ showLayout(row.repositorySubLayout) }}</span>
 				</span>
 				<span v-else>N/A</span>
@@ -388,6 +388,12 @@ export default ({
 		min-width: 150px;
 		margin-left: 5px;
 		margin-bottom: 8px;
+	}
+
+	.icon_sty{
+		border-radius: 8px; 
+		background-image: linear-gradient(310deg, rgb(250, 251, 252), rgb(221, 221, 221));
+		box-shadow: 0px 0px 6px 2px rgba(0, 0, 0, 0.1);
 	}
 }
 </style>

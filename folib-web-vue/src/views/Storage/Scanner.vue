@@ -205,8 +205,8 @@
                         <div @click="goToDetial(record)">
                           <a>
                             <h6 class="m-0">
-                              <a-avatar :size="42" shape="square" style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );" class="mr-10">
-                                  <img :src="'images/folib/' +  LayoutTypeBuild(record) + '.svg'" style="width: 150%;margin-left: -10px;" alt=""></img>
+                              <a-avatar :size="48" shape="square" class="icon_sty">
+                                <img :src="'images/folib/' +LayoutTypeBuild(record) + '.svg'" width="36" style="width: 150%;margin-left: -10px;" alt="">
                               </a-avatar>
                               {{ record.repository }}
                             </h6>
@@ -543,5 +543,10 @@ $md: 768px;
     }
   }
 
+	.icon_sty {
+		border-radius: 8px; 
+		background-image: linear-gradient(310deg, rgb(250, 251, 252), rgb(221, 221, 221));
+		box-shadow: 0px 0px 6px 2px rgba(0, 0, 0, 0.1);
+	}
 }
 </style>

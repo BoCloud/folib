@@ -193,6 +193,9 @@ export default {
             typeList,
         }
     },
+    computed:{
+        
+    },
     watch:{
         currentStorage: {
             handler(val){
@@ -264,8 +267,9 @@ export default {
     .image_item{
         border-radius: 4px; 
         width:25px;
-        padding: 1px;
-        background-image: linear-gradient( 310deg, #020202, #5c6391 );
+        padding: 2px;
+        // background-image: linear-gradient(310deg, rgb(250, 251, 252), rgb(221, 221, 221));
+        box-shadow: 0px 1px 6px 2px rgba(0, 0, 0, 0.1);
     }
     .ant-dropdown-link{
         font-size: 16px !important;
@@ -298,6 +302,7 @@ export default {
         height: 25px;
         border-radius: 4px;
         padding: 1px;
-        background: #1890ff;
+        background: #fff;
+        box-shadow: 0px 0px 6px 2px rgba(0, 0, 0, 0.1);
     }
 </style>

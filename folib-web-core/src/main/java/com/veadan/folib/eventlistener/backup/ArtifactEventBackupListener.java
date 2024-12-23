@@ -27,7 +27,8 @@ import java.util.Objects;
  * 事件监听，处理备份
  **/
 @Slf4j
-@Component
+//@Component
+@Deprecated
 public class ArtifactEventBackupListener {
 
     @Inject
@@ -36,7 +37,7 @@ public class ArtifactEventBackupListener {
     @Inject
     private ArtifactComponent artifactComponent;
 
-    @AsyncEventListener
+//    @AsyncEventListener
     public void handle(final ArtifactEvent<RepositoryPath> event) {
         int source = (int) event.getSource();
         RepositoryPath repositoryPath = event.getPath();

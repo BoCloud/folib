@@ -6,6 +6,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.boot.web.servlet.error.ErrorController;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.servlet.view.RedirectView;
@@ -18,6 +19,11 @@ import javax.servlet.http.HttpServletResponse;
 @Controller
 @Api(description = "跳转首页/错误页控制", tags = "跳转首页/错误页控制")
 public class UiController implements ErrorController {
+
+    @GetMapping(path = {"/robots.txt"})
+    public ResponseEntity robots(HttpServletResponse response) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND.value()).build();
+    }
 
     @GetMapping(path = {"/**", "/error"}, produces = {MediaType.TEXT_HTML_VALUE})
     public RedirectView indexWithRoute(HttpServletResponse response) {

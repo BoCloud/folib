@@ -1455,9 +1455,10 @@ export default {
         this.$refs.libview.myMounted()
       })
     },  
-    // 点击仓库下的文件
-    treeSelect(key, e) {
+    // 点击仓库下的文件,item为当前点击节点的最顶层父节点（仓库）
+    treeSelect(key, e, item) {
       this.libViewKey ++
+      storage.set("libView_repository", { item, baseUrl: this.baseUrl })
       this.$nextTick(() => {
           this.$refs.libview.treeSelect(key, e)
       })
