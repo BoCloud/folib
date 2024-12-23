@@ -12,4 +12,8 @@
         </foreach>
     </insert>
 
+    <select id="getTodayData" resultType="com.veadan.folib.entity.StorageMonitoring">
+        select * from storage_monitoring
+        where create_time >= CURDATE() and data_type in (1,3)
+    </select>
 </mapper>

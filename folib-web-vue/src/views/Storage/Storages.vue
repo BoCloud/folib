@@ -535,8 +535,8 @@
                   </a-form-item>
                 </a-col>
                 <a-col :span="12">
-                  <a-form-item class="mb-10" :label="$t('Storage.WarehousePath')" :colon="false">
-                    <a-input disabled :placeholder="$t('Storage.DistributedRemain')" v-model="folibRepository.basedir" />
+                  <a-form-item class="mb-10" :label="$t('Storage.RepositorySizeLimit')" :colon="false">
+                    <a-input  :placeholder="$t('Storage.RepositorySizeLimit')" addon-after="TB" v-model="folibRepository.storageMaxSize" />
                   </a-form-item>
                 </a-col>
                 <a-col :span="6">
@@ -1232,6 +1232,7 @@ export default {
         artifactCoordinateValidators: null,
         artifactMaxSize: 100,
         basedir: null,
+        storageMaxSize: 0,
         checksumHeadersEnabled: true,
         groupRepositories: [],
         httpConnectionPool: null,
@@ -1508,6 +1509,7 @@ export default {
         allowsRedeployment: false,
         artifactCoordinateValidators: null,
         artifactMaxSize: 100,
+        storageMaxSize: 0,
         basedir: null,
         checksumHeadersEnabled: true,
         groupRepositories: [],
@@ -2191,6 +2193,7 @@ export default {
       this.folibRepositoryData.layout = this.folibRepository.layout;
 
       this.folibRepository.artifactMaxSize = this.artifactMaxSize * 1024 * 1024
+      this.folibRepository.storageMaxSize =  this.setRepoMaxSize(this.folibRepository.storageMaxSize);
       addOrUpdateRepository(this.currentStorage.id, this.folibRepository.id, this.folibRepository).then(res => {
         if (!res.error) {
           setTimeout(() => {
@@ -2303,6 +2306,7 @@ export default {
           this.folibRepositoryIds = this.folibRepository.id
           this.folibRepositoryEditDisabled = true
           this.folibVisible = true
+          this.folibRepository.storageMaxSize = this.getRepoMaxSize(this.folibRepository.storageMaxSize);
         }
       })
 
@@ -2552,7 +2556,19 @@ export default {
       this.$refs.kanbanBoard.forEach(item=>{
         item.$forceUpdate();
       });
-    }
+    },
+    getRepoMaxSize(maxSize){
+          if(maxSize){
+              return (maxSize /(1024*1024*1024*1024)).toFixed(3)
+          }
+          return 0;
+    } ,
+    setRepoMaxSize(maxSize){
+          if(maxSize){
+              return maxSize *1024*1024*1024*1024
+          }
+          return 0;
+   }
 
   },
     provide() {

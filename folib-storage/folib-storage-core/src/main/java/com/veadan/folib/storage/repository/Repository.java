@@ -44,6 +44,8 @@ public interface Repository {
 
     boolean isChecksumHeadersEnabled();
 
+    long getStorageMaxSize();
+
     Set<String> getGroupRepositories();
 
     String getGroupDefaultRepository();
