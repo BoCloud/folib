@@ -21,7 +21,7 @@
     >
       <a-tab-pane :key="1" :tab="$t('Storage.Details')">
         <store
-          :style="isChecked ? 'margin-top:-50px;' : ''"
+          :style="isChecked ? 'margin-top:-70px;' : ''"
           ref="store"
           :isChecked="isChecked"
           :metadataTypes="i18nMetadataTypes"
@@ -35,6 +35,8 @@
       <a-tab-pane :key="2" :tab="$t('Storage.Statistics')" v-if="$store.state.user.token">
         <safe
           v-if="tabActiveKey == 2"
+          :style="isChecked ? 'margin-top:-20px;' : ''"
+          :isChecked="isChecked"
           :folibRepository="folibRepository"
           :vulnerabilityColumns="i18nVulnerabilityColumns"
         />
@@ -446,8 +448,11 @@ export default {
     },
     myMounted(){
       this.key ++
-      this.createData()
-      this.getStorage(this.folibRepository.storageId)
+      this.getDataInfo()
+    },
+    async getDataInfo(){
+      await this.createData()
+      await this.getStorage(this.folibRepository.storageId)
       this.isShowEdit = (isAdmin() || this.storageAdmin === this.$store.state.user.name)
       this.isShowDelete = (isAdmin() || this.storageAdmin === this.$store.state.user.name) && (this.folibRepository.allowsDeletion || this.folibRepository.allowsForceDeletion)
     },
@@ -456,6 +461,7 @@ export default {
       this.$refs.store.handleMenuClickTree(active,currentTreeNode)
     },
     treeSelect(key,e){
+      this.getDataInfo()
       this.$refs.store.treeSelect(key, e)
     },
     searchBoxMouseStatus(bool) {
@@ -739,5 +745,11 @@ $md: 768px;
 .repository-setting {
   margin: 0 5px;
   margin-top: 12px;
+}
+
+</style>
+<style lang="scss">
+.card-shadow.ant-card{
+  box-shadow: 0px 1px 6px 2px rgba(214, 214, 214, 0.1) !important;
 }
 </style>

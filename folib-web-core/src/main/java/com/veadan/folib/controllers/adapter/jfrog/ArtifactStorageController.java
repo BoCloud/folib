@@ -385,7 +385,7 @@ public class ArtifactStorageController extends JFrogBaseController {
 
         String storageId = getDefaultStorageId(repositoryId);
         Storage storage = getStorage(storageId);
-        if (customProperties!=null) {
+        if (customProperties==null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(handlerErrors(HttpStatus.BAD_REQUEST.value(), PROPERTIES_VALUE_CANNOT_BE_EMPTY));
         }
         if (Objects.isNull(storage)) {

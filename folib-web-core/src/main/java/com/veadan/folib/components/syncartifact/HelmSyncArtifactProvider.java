@@ -113,7 +113,7 @@ public class HelmSyncArtifactProvider implements SyncArtifactProvider {
     private void handlerIndex(RepositoryPath repositoryPath, SyncArtifactForm syncArtifactForm) {
         long startTime = System.currentTimeMillis();
         String storageId = syncArtifactForm.getStorageId(), repositoryId = syncArtifactForm.getRepositoryId();
-        HelmMetadataIndexer helmMetadataIndexer = new HelmMetadataIndexer(storageId, repositoryId, null, null, null);
+        HelmMetadataIndexer helmMetadataIndexer = new HelmMetadataIndexer(storageId, repositoryId, null, null);
         HelmIndexYamlMetadata helmIndexYamlMetadata = helmMetadataIndexer.readFromIndexYaml(repositoryPath);
         if (Objects.isNull(helmIndexYamlMetadata)) {
             return;

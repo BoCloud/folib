@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.veadan.folib.mapper.PromotionRuleMapper">
+    <resultMap type="com.veadan.folib.entity.PromotionRule" id="PromotionRuleMap">
+        <result property="ruleId" column="rule_id" />
+        <result property="policyId" column="policy_id"/>
+        <result property="ruleType" column="rule_type" />
+        <result property="attributeKey" column="attribute_key" />
+        <result property="attributeValue" column="attribute_value" />
+        <result property="updateTime" column="update_time"/>
+        <result property="createdTime" column="created_time"/>
+    </resultMap>
+
+    <!-- 通过ID查询单条数据 -->
+    <select id="queryById" resultMap="PromotionRuleMap">
+        select
+            rule_id,policy_id,rule_type,attribute_key,attribute_value,update_time,created_time
+        from promotion_rule
+        where rule_id = #{ruleId}
+    </select>
+    
+
+    <!--统计总行数-->
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from promotion_rule
+        <where>
+            <if test="ruleId != null and ruleId != ''">
+                and rule_id = #{ruleId}
+            </if>
+            <if test="policyId != null and policyId != ''">
+                and policy_id = #{policyId}
+            </if>
+            <if test="ruleType != null and ruleType != ''">
+                and rule_type = #{ruleType}
+            </if>
+            <if test="attributeKey != null and attributeKey != ''">
+                and attribute_key = #{attributeKey}
+            </if>
+            <if test="attributeValue != null and attributeValue != ''">
+                and attribute_value = #{attributeValue}
+            </if>
+            <if test="updateTime != null ">
+                and update_time = #{updateTime}
+            </if>
+            <if test="createdTime != null ">
+                and created_time = #{createdTime}
+            </if>
+        </where>
+    </select>
+
+    <!--新增数据-->
+    <insert id="insert" keyProperty="ruleId" useGeneratedKeys="true" keyColumn="rule_id">
+        insert into promotion_rule(rule_id,policy_id,rule_type,attribute_key,attribute_value,update_time,created_time)
+        values (#{ruleId},#{policyId},#{ruleType},#{attributeKey},#{attributeValue},#{updateTime},#{createdTime})
+    </insert>
+
+    <!-- 批量新增数据 -->
+    <insert id="insertBatch" keyProperty="ruleId" useGeneratedKeys="true" keyColumn="rule_id">
+        insert into promotion_rule(rule_id,policy_id,rule_type,attribute_key,attribute_value,update_time,created_time)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.ruleId},#{entity.policyId},#{entity.ruleType},#{entity.attributeKey},#{entity.attributeValue},#{entity.updateTime},#{entity.createdTime})
+        </foreach>
+    </insert>
+
+    <!-- 批量新增或按主键更新数据 -->
+    <insert id="insertOrUpdateBatch" keyProperty="ruleId" useGeneratedKeys="true" keyColumn="rule_id">
+        insert into promotion_rule(rule_id,policy_id,rule_type,attribute_key,attribute_value,update_time,created_time)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.ruleId},#{entity.policyId},#{entity.ruleType},#{entity.attributeKey},#{entity.attributeValue},#{entity.updateTime},#{entity.createdTime})
+        </foreach>
+        on duplicate key update
+        rule_id=values(rule_id),
+		policy_id=values(policy_id),
+		rule_type=values(rule_type),
+		attribute_key=values(attribute_key),
+		attribute_value=values(attribute_value),
+		update_time=values(update_time),
+		created_time=values(created_time)
+    </insert>
+
+    <!-- 更新数据 -->
+    <update id="update">
+        update promotion_rule
+        <set>
+            <if test="ruleId != null and ruleId != ''">
+                rule_id = #{ruleId},
+            </if>
+            <if test="policyId != null and policyId != ''">
+                policy_id = #{policyId},
+            </if>
+            <if test="ruleType != null and ruleType != ''">
+                rule_type = #{ruleType},
+            </if>
+            <if test="attributeKey != null and attributeKey != ''">
+                attribute_key = #{attributeKey},
+            </if>
+            <if test="attributeValue != null and attributeValue != ''">
+                attribute_value = #{attributeValue},
+            </if>
+            <if test="updateTime != null ">
+                update_time = #{updateTime},
+            </if>
+            <if test="createdTime != null ">
+                created_time = #{createdTime},
+            </if>
+        </set>
+        where rule_id = #{ruleId}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteById">
+        delete from promotion_rule where rule_id = #{ruleId}
+    </delete>
+
+    <delete id="deleteByPolicyId">
+        delete from promotion_rule where policy_id = #{policyId}
+    </delete>
+
+    <select id="queryByPolicyId" resultMap="PromotionRuleMap">
+        select
+            rule_id,policy_id,rule_type,attribute_key,attribute_value,update_time,created_time
+        from promotion_rule
+        where policy_id = #{policyId}
+    </select>
+</mapper>

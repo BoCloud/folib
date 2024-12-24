@@ -55,4 +55,12 @@ export default {
     'ComponentInformation': 'Component information',
     'ComponentOverview': 'Component Overview',
     'ScanTime': 'Scan time',
+    'exportExcel':'Export excel',
+    'exportPdf':'Export PDF',
+    'printExportCount':'Please enter export quantity',
+    'OK':'OK',
+    'CANCEL':'CANCEL',
+    'exporting':'E#xporting...',
+    'ProductScanDetail':'Product scan detail',
+    'ProductScan':'Product scan'
 }

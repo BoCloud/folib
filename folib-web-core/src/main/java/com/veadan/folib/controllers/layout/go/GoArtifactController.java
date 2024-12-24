@@ -1,7 +1,9 @@
 package com.veadan.folib.controllers.layout.go;
 
 
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.controllers.BaseArtifactController;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.GoLayoutProvider;
 import com.veadan.folib.storage.repository.Repository;
@@ -58,6 +60,7 @@ public class GoArtifactController extends BaseArtifactController {
     @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = {"{storageId}/{repositoryId}/{artifactPath:.+}"})
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #artifactPath")
     public ResponseEntity<Object> download(@RepositoryMapping Repository repository,
                                            @RequestHeader HttpHeaders httpHeaders,
                                            @PathVariable String artifactPath,

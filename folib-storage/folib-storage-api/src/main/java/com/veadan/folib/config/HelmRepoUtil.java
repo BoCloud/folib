@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * helm 仓库工具类
@@ -84,8 +86,7 @@ public class HelmRepoUtil {
                 chartList.forEach(j -> {
                     Map chartMap = (Map) j;
                     List urlList = (ArrayList) chartMap.get("urls");
-                    String url = urlList.get(0).toString();
-                    String newUrl = getRepositoryBaseUrl(repositoryPath.getRepository()) + "/" + url.split("/")[url.split("/").length - 1];
+                    String newUrl = getUrls(urlList.get(0).toString());
                     urlList.clear();
                     urlList.add(newUrl);
                 });
@@ -101,6 +102,25 @@ public class HelmRepoUtil {
     protected static String getRepositoryBaseUrl(Repository repository) {
         ConfigurationManager configurationManager = SpringUtil.getBean(ConfigurationManager.class);
         return String.format("%s/%s/%s", StringUtils.removeEnd(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
+    }
+
+    public String getUrls(String url){
+        String regex = "https?://[^/]+/(.*)";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(url);
+
+
+        String regex2 = "local://(.+)";
+        Pattern pattern2 = Pattern.compile(regex2);
+        Matcher matcher2 = pattern2.matcher(url);
+
+        if (matcher.find()) {
+            return  matcher.group(1);
+        }else if(matcher2.find()){
+            return  matcher2.group(1);
+        }else  {
+            return url;
+        }
     }
 
 }

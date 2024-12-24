@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
+import java.util.Date;
 import java.util.Optional;
 import java.util.Set;
 
@@ -77,6 +78,11 @@ public class SecurityPolicyConfigurationForm
      * 包名
      */
     private Set<String> packageNames;
+
+    /**
+     * 过期时间
+     */
+    private Date sellByDate;
 
     public SecurityPolicyConfigurationForm(SecurityPolicyConfiguration securityPolicyConfiguration) {
         this.levels = securityPolicyConfiguration.getLevels();

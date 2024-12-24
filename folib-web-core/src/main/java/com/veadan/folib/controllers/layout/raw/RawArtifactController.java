@@ -1,5 +1,7 @@
 package com.veadan.folib.controllers.layout.raw;
 
+import com.veadan.folib.annotation.AuditLog;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.exception.ExceptionHandlingOutputStream;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.controllers.BaseArtifactController;
@@ -84,6 +86,7 @@ public class RawArtifactController
     @ApiResponses(value = { @ApiResponse(code = 200, message = ""),
                             @ApiResponse(code = 400, message = "An error occurred.") })
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
     @GetMapping(value = { "{storageId}/{repositoryId}/{path:.+}" })
     public void download(@RepositoryMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,

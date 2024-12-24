@@ -32,14 +32,14 @@
                 {{ $t('Vulnerabilities.TheWhiteList') }}
               </template>
               <a-popconfirm :title="$t('Vulnerabilities.SureAddedWhitelist')" okType="danger" :ok-text="$t('Vulnerabilities.BeSure')" :cancel-text="$t('Vulnerabilities.Cancel')"
-                            @confirm="blackWhite(record, 1)"
+                            @confirm="addBlackWhite(record, 'WHITES')"
                             v-if="operatorEnabled && record.blackWhiteType == 0">
                 <div class="o-btn">
                   <img src="images/folib/white.svg" />
                 </div>
               </a-popconfirm>
               <a-popconfirm :title="$t('Vulnerabilities.SureRemovedWhitelist')" okType="danger" :ok-text="$t('Vulnerabilities.BeSure')" :cancel-text="$t('Vulnerabilities.Cancel')"
-                            @confirm="blackWhite(record, 0)"
+                            @confirm="removeBlackWhite(record, 'WHITES')"
                             v-if="operatorEnabled && record.blackWhiteType == 1">
                 <div class="o-btn o-rm">
                   <img src="images/folib/white.svg" />
@@ -51,14 +51,14 @@
                 {{ $t('Vulnerabilities.Blacklist') }}
               </template>
               <a-popconfirm :title="$t('Vulnerabilities.SureAddedBlacklisted')" okType="danger" :ok-text="$t('Vulnerabilities.BeSure')" :cancel-text="$t('Vulnerabilities.Cancel')"
-                            @confirm="blackWhite(record, 2)"
+                            @confirm="addBlackWhite(record, 'BLACKLIST')"
                             v-if="operatorEnabled && record.blackWhiteType == 0">
                 <div class="o-btn o-black">
                   <img src="images/folib/black.svg" />
                 </div>
               </a-popconfirm>
               <a-popconfirm :title="$t('Vulnerabilities.SureRemovedBlacklisted')" okType="danger" :ok-text="$t('Vulnerabilities.BeSure')" :cancel-text="$t('Vulnerabilities.Cancel')"
-                            @confirm="blackWhite(record, 0)"
+                            @confirm="removeBlackWhite(record, 'BLACKLIST')"
                             v-if="operatorEnabled && record.blackWhiteType == 2">
                 <div class="o-btn o-rm">
                   <img src="images/folib/black.svg" />
@@ -76,6 +76,8 @@
 import { hasRole, isAdmin, hasPermission } from "@/utils/permission";
 import { getLicensesList, blackWhite } from "@/api/licenses.js";
 import { formatTimestamp } from "@/utils/util.js";
+import {addAllowlistDenylistBlock, deleteAllowlistDenylistBlock} from "@/api/AllowlistDenylistBlock";
+import moment from "moment";
 export default {
   components: {  },
   data() {
@@ -159,14 +161,64 @@ export default {
       this.queryParams.page = 1
       this.getData()
     },
-    blackWhite(item, blackWhiteType) {
-      blackWhite({licenseId: item.licenseId, blackWhiteType: blackWhiteType}).then((res) => {
-        this.$notification["success"]({
-          message : this.$t('Setting.OperationSuccessful')
-        })
-        this.handheTableSearch()
-      }).finally(() => {
-      })
+      addBlackWhite(item, blackWhiteType) {
+      // blackWhite({licenseId: item.licenseId, blackWhiteType: blackWhiteType}).then((res) => {
+      //   this.$notification["success"]({
+      //     message : this.$t('Setting.OperationSuccessful')
+      //   })
+      //   this.handheTableSearch()
+      // }).finally(() => {
+      // })
+          if(blackWhiteType){
+              let data = {
+                  id: undefined,
+                  type: blackWhiteType,
+                  category: 'LICENSE',
+                  domain: 'PLATFORM',
+                  tag: 'LATEST',
+                  identifier: item.licenseId,
+                  validFrom: undefined,
+              }
+              addAllowlistDenylistBlock(data).then(res=>{
+                  this.$notification["success"]({
+                      message : this.$t('Setting.OperationSuccessful')
+                  })
+              }).catch(err=>{
+                  this.$notification['error']({
+                      message: err.response.data.error,
+                      description: ''
+                  })
+              }).finally(()=>{
+                  this.handheTableSearch()
+              })
+          }
+    },
+
+    removeBlackWhite(item, blackWhiteType){
+        if(blackWhiteType){
+            let data = {
+                id: undefined,
+                type: blackWhiteType,
+                category: 'LICENSE',
+                domain: 'PLATFORM',
+                tag: 'LATEST',
+                identifier: item.licenseId,
+                correlationId:undefined,
+                validFrom: undefined,
+            }
+            deleteAllowlistDenylistBlock(data).then(res => {
+                this.$notification["success"]({
+                    message : this.$t('Setting.OperationSuccessful')
+                })
+            }).catch((err) => {
+                this.$notification["error"]({
+                    message: err.response.data.error,
+                })
+            }).finally(() => {
+                this.handheTableSearch()
+            })
+        }
+
     },
   },
 };

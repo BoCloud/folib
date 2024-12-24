@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.configuration.UnionTargetRepositoryConfiguration;
 import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
+import com.veadan.folib.controllers.federal.res.FederalRepositoryRes;
 import com.veadan.folib.domain.ArtifactDispatch;
 import com.veadan.folib.dto.TargetDispatchRepositoryDto;
 import com.veadan.folib.entity.ArtifactSyncRecord;
@@ -71,5 +72,28 @@ public class InnerArtifactPromotionProvider implements ArtifactPromotionProvider
     public void retryDispatch(String syncNo) {
         log.info("重试分发 分发编号:{} 目标节点类型 inner 准备重试分发 ", syncNo);
         promotionUtil.executeHandleRetryDispatch(syncNo);
+    }
+
+    /**
+     * 联邦仓库制品晋级
+     *
+     * @param repositoryPath      需要晋级的源制品
+     * @param artifactPath        需要晋级的源制品路径
+     * @param targetRepositoryRes 要晋级到的目标仓库信息
+     * @return 晋级编号
+     */
+    @Override
+    public List<String> promotion(RepositoryPath repositoryPath, String artifactPath, FederalRepositoryRes targetRepositoryRes) {
+        String storageId = repositoryPath.getStorageId();
+        String repositoryId = repositoryPath.getRepositoryId();
+        TargetDispatchRepositoryDto targetDispatchRepository = TargetDispatchRepositoryDto.builder().dispatchClusterEnName(targetRepositoryRes.getNodeName()).targetStorageId(targetRepositoryRes.getStorageId()).targetRepositoryId(targetRepositoryRes.getRepositoryId()).build();
+        ArtifactDispatch artifactDispatch = ArtifactDispatch.builder()
+                .srcStorageId(storageId)
+                .srcRepositoryId(repositoryId)
+                .path(artifactPath)
+                .targetDispatchRepositoryList(Collections.singletonList(targetDispatchRepository))
+                .recordStatus(false).build();
+        log.info("策略ID：{} 存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标存储空间：{} 目标仓库：{} 满足晋级条件，开始晋级",targetRepositoryRes.getPolicyId(), storageId, repositoryId, artifactPath, targetRepositoryRes.getNodeName(), targetRepositoryRes.getNodeType(), targetRepositoryRes.getStorageId(), targetRepositoryRes.getRepositoryId());
+        return promotionUtil.executeHandleDispatch(artifactDispatch);
     }
 }

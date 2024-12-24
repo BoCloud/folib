@@ -9,7 +9,7 @@
         <a-avatar
             :size="48"
             shape="square"
-            style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
+            class="icon_sty"
         >
           <img :src="'images/folib/'+getLayoutType(task)+'.svg'" style="width: 100%;" alt="">
         </a-avatar>
@@ -77,5 +77,11 @@ import {getLayoutType }from "@/utils/layoutUtil"
 
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
+
+.icon_sty {
+  border-radius: 8px; 
+  background-image: linear-gradient(310deg, rgb(250, 251, 252), rgb(221, 221, 221));
+  box-shadow: 0px 0px 6px 2px rgba(0, 0, 0, 0.1);
+}
 </style>

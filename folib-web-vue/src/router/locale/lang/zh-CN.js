@@ -20,7 +20,7 @@ export default {
     'CertificateStore': '证书库',
     'StorageAnalysis': '存储分析',
     'Homepage': '首页',
-    'RepositoryList': '仓库列表',
+    'RepositoryList': '存储仓库',
     'WarehouseBrowsing': '仓库浏览',
     'ScanTheHomePage': '扫描首页',
     'ScanDetails': '扫描详情',

@@ -18,6 +18,8 @@ export default {
     'DescriptionPlaceholder':'please input token description',
     'ExpireTimePlaceholder':'please select token expire time',
     'UsernamePlaceholder':'please select a user',
-    'NewTokenWarning':'New token has been created. Make sure you copy it now, you won\'t be able to see it again!'
+    'NewTokenWarning':'New token has been created. Make sure you copy it now, you won\'t be able to see it again!',
+    'Administrator': 'Administrator',
+    'OrdinaryUser': 'Ordinary user',
 
 }

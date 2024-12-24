@@ -6,13 +6,16 @@
         :hideRequiredMark="false">
         <a-row :gutter="[24]">
           <a-col :span="24">
-            <a-form-model-item class="mb-10" :colon="false" prop="licenseId">
-              <a-select v-model="licenseForm.licenseId" :placeholder="$t('Setting.PleaseSelectLicense')" show-search allowClear optionFilterProp="label">
+            <a-form-model-item class="mb-10" :colon="false" prop="identifier"  label="License">
+              <a-select v-model="licenseForm.identifier" :placeholder="$t('Setting.PleaseSelectLicense')" :disabled="isEdit" show-search allowClear optionFilterProp="label">
                 <a-select-option v-for="(item, index) in licenseList" :label="item.licenseId" :key="index"
                   :value="item.licenseId">
                   {{ item.licenseId }}
                 </a-select-option>
               </a-select>
+            </a-form-model-item>
+            <a-form-model-item class="mb-10" :colon="false" :label="$t('Setting.validFrom')" >
+              <a-date-picker  :default-value="monthLater" v-model="licenseForm.validFrom" style="width: 100%" />
             </a-form-model-item>
           </a-col>
         </a-row>
@@ -23,6 +26,8 @@
 <script>
 import { getLicenses, blackWhite } from "@/api/licenses.js"
 import { message } from "ant-design-vue";
+import moment from "moment/moment";
+import {addAllowlistDenylistBlock, updateAllowlistDenylistBlock} from "@/api/AllowlistDenylistBlock";
 
 export default {
   props: {
@@ -34,6 +39,10 @@ export default {
       type: Number,
       default: 1,
     },
+    recordData:{
+      type: Object,
+      default: undefined,
+    }
   },
   components: {
 
@@ -48,15 +57,19 @@ export default {
     }
     return {
       licenseRules: {
-        licenseId: [
+        identifier: [
           { required: true, trigger: ['blur'], validator: checkLicense},
         ],
       },
       licenseForm: {
-        licenseId: undefined,
+        identifier: undefined,
+        validFrom: undefined,
+        id: undefined,
       },
       showLicenseModal: false,
       licenseList: [],
+      monthLater: undefined,//this.calculateOneMonthLater(),
+      isEdit: false,
     };
   },
   created() {
@@ -64,6 +77,13 @@ export default {
       this.resetLicenseForm()
       this.getLicenses()
       this.showLicenseModal = this.modelVisible
+    }
+
+    if(this.recordData){
+      this.licenseForm.identifier = this.recordData.identifier
+      this.licenseForm.validFrom = this.recordData.validFrom
+      this.licenseForm.id = this.recordData.id
+      this.isEdit = true
     }
   },
   watch: {
@@ -87,8 +107,11 @@ export default {
     },
     resetLicenseForm() {
       this.licenseForm =  {
-        licenseId: undefined,
+        identifier: undefined,
+        validFrom: undefined,
+        id: undefined,
       }
+      this.isEdit = false;
       if (this.$refs.licenseForm) {
         this.$refs.licenseForm.resetFields()
       }
@@ -100,14 +123,92 @@ export default {
     licenseHandlerConfirm() {
       this.$refs.licenseForm.validate((valid) => {
         if (valid) {
-          blackWhite({licenseId: this.licenseForm.licenseId, blackWhiteType: this.blackWhiteType}).then((res) => {
-            this.successMsg(this.$t('Package.OperateSuccess'))
-            this.licenseModalCancel()
-            this.$emit("licenseRefresh")
-          }).finally(() => {
-          })
+          // blackWhite({licenseId: this.licenseForm.licenseId, blackWhiteType: this.blackWhiteType}).then((res) => {
+          //   this.successMsg(this.$t('Package.OperateSuccess'))
+          //   this.licenseModalCancel()
+          //   this.$emit("licenseRefresh")
+          // }).finally(() => {
+          // })
+          let data = {
+            id:this.licenseForm.id,
+            type: undefined,
+            category: 'LICENSE',
+            domain: 'PLATFORM',
+            tag: 'LATEST',
+            identifier: this.licenseForm.identifier,
+            validFrom: this.licenseForm.validFrom ? moment(this.licenseForm.validFrom).format('YYYY-MM-DD HH:mm:ss') : undefined,
+          }
+          if (this.isEdit){
+            this.updateLicense(data)
+          }else {
+            this.addLicense(data)
+          }
+
         }
       })
+    },
+
+
+    updateLicense(data) {
+      if (this.blackWhiteType === 1) {
+        data.type='WHITES';
+        updateAllowlistDenylistBlock(data).then(res=>{
+          this.successMsg(this.$t('Package.OperateSuccess'))
+          this.licenseModalCancel()
+          this.$emit("licenseRefresh")
+        }).catch(err=>{
+          this.$notification['error']({
+            message: err.response.data.error,
+            description: ''
+          })
+        }).finally();
+      } else if (this.blackWhiteType === 2) {
+        data.type='BLACKLIST';
+        updateAllowlistDenylistBlock(data).then(res=>{
+          this.successMsg(this.$t('Package.OperateSuccess'))
+          this.licenseModalCancel()
+          this.$emit("licenseRefresh")
+        }).catch(err=>{
+          this.$notification['error']({
+            message: err.response.data.error,
+            description: ''
+          })
+        }).finally();
+      }
+    },
+
+    addLicense(data) {
+      if (this.blackWhiteType === 1) {
+        data.type='WHITES';
+        addAllowlistDenylistBlock(data).then(res=>{
+          this.successMsg(this.$t('Package.OperateSuccess'))
+          this.licenseModalCancel()
+          this.$emit("licenseRefresh")
+        }).catch(err=>{
+          this.$notification['error']({
+            message: err.response.data.error,
+            description: ''
+          })
+        }).finally()
+      } else if (this.blackWhiteType === 2) {
+        data.type='BLACKLIST';
+        addAllowlistDenylistBlock(data).then(res=>{
+          this.successMsg(this.$t('Package.OperateSuccess'))
+          this.licenseModalCancel()
+          this.$emit("licenseRefresh")
+        }).catch(err=>{
+          this.$notification['error']({
+            message: err.response.data.error,
+            description: ''
+          })
+        }).finally()
+      }
+    },
+    calculateOneMonthLater() {
+      const currentDate = new Date();
+      const oneMonthLater = new Date(currentDate);
+      oneMonthLater.setMonth(currentDate.getMonth() + 6);
+      return moment(oneMonthLater).startOf('day');
     },
   },
 }

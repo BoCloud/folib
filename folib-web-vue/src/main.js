@@ -8,7 +8,11 @@ import { VueAxios } from './utils/request'
 import store from './store/'
 import './assets/font_user/iconfont.css'
 import './assets/font_user/iconfont.js'
+import exportExcel from './exportExcel.js'
+import scrollable from './directives/scrollable.js'
+console.log(exportExcel);
 
+Vue.prototype.$exportExcel = exportExcel
 Vue.use(Antd)
 
 import doitUIWeb from 'doit-ui-web'
@@ -47,7 +51,7 @@ import i18n from './locale'
 import Vue2OrgTree from 'vue2-org-tree'
 import 'vue2-org-tree/dist/style.css'
 Vue.use(Vue2OrgTree)
-
+Vue.directive('scrollable', scrollable);
 // Initialize Vue
 new Vue({
   router,

@@ -1,9 +1,11 @@
 package com.veadan.folib.controllers.layout.cocoapods;
 
 import cn.hutool.core.io.FileUtil;
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.artifact.coordinates.CocoapodsArtifactCoordinates;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.ArtifactEntity;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.service.CocoapodsIndexService;
@@ -132,6 +134,7 @@ public class CocoapodsArtifactController extends BaseArtifactController
     @ApiResponses(value = { @ApiResponse(code = 200, message = ""),
             @ApiResponse(code = 400, message = "An error occurred.") })
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
     @GetMapping(value = { "{storageId}/{repositoryId}/{path:.+}" })
     public void download(@RepositoryMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,
@@ -151,6 +154,7 @@ public class CocoapodsArtifactController extends BaseArtifactController
     @ApiResponses(value = { @ApiResponse(code = 200, message = ""),
             @ApiResponse(code = 400, message = "An error occurred.") })
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
     @GetMapping(value = { "{storageId}/{repositoryId}/archive/refs/heads/{path:.+}" })
     public void downloadBranchZip(@RepositoryMapping Repository repository,
                                @RequestHeader HttpHeaders httpHeaders,

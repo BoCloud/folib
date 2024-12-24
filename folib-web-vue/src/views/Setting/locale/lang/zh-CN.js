@@ -18,7 +18,9 @@ export default {
     'RemovedWhitelistSuccess': '从白名单移除成功',
     'RemovedBlacklistSuccess': '从黑名单移除成功',
     'AddWhitelistSuccess': '添加到白名单成功',
+    'UpdateWhitelistSuccess': '更新到白名单成功',
     'AddBlacklistSuccess': '添加到黑名单成功',
+    'UpdateBlacklistSuccess': '更新到黑名单成功',
     'OperationSuccessful': '操作成功',
     'GlobalConfig': '全局配置',
     'BasicInfoConfig': '基础信息配置',
@@ -490,4 +492,6 @@ export default {
     'AddLicenseBlacklist':'新增License黑名单',
     'PleaseSelectLicense':'请选择License',
     'EnterVulnerabilityQuery': '输入漏洞编号查询',
+    'vulnerabilityId': '漏洞编号',
+    'validFrom': '有效期',
 }

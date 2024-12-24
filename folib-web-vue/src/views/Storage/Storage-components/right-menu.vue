@@ -69,19 +69,19 @@ export default {
             this.$emit('handleMenuClick',active)
         },
         deletePackageHandle() {
+            const {storageId, repositoryId, artifactPath} = this.currentTreeNode
             deleteArtifact(
-                this.currentTreeNode.storageId,
-                this.currentTreeNode.repositoryId,
-                this.currentTreeNode.artifactPath
+                storageId,
+                repositoryId,
+                artifactPath
             )
                 .then(res => {
                     setTimeout(() => {
                         this.$notification.success({
                             message: this.$t('Store.DeletionSuccessful')
                         })
-                        this.$emit('reload')
-                        console.log(123123123);
-                        
+                        // this.$emit('reload')
+                        this.$emit('localDelNode', {storageId, repositoryId, artifactPath})
                     }, 100)
                 })
                 .catch(err => {

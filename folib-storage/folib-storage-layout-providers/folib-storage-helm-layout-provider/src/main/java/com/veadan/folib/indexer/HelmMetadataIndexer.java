@@ -47,7 +47,7 @@ import org.springframework.util.StopWatch;
 public class HelmMetadataIndexer {
     @Generated
     private static final Logger log = LoggerFactory.getLogger(HelmMetadataIndexer.class);
-    private final String baseUrl;
+    //private final String baseUrl;
     private final HelmMetadataExtractor helmMetadataExtractor;
     protected ArtifactManagementService artifactManagementService;
     protected RepositoryPathResolver repositoryPathResolver;
@@ -56,10 +56,10 @@ public class HelmMetadataIndexer {
     private String repositoryId;
 
 
-    public HelmMetadataIndexer(String storageId, String repositoryId, String baseUrl, ArtifactManagementService artifactManagementService, RepositoryPathResolver repositoryPathResolver) {
+    public HelmMetadataIndexer(String storageId, String repositoryId, ArtifactManagementService artifactManagementService, RepositoryPathResolver repositoryPathResolver) {
         this.storageId = storageId;
         this.repositoryId = repositoryId;
-        this.baseUrl = baseUrl;
+        //this.baseUrl = baseUrl;
 
         this.helmMetadataExtractor = new HelmMetadataExtractor();
         this.artifactManagementService = artifactManagementService;
@@ -90,7 +90,7 @@ public class HelmMetadataIndexer {
             if (metadata.helmChart != null) {
                 writeAttributes(path, metadata);
                 log.debug("Updating index.yaml for repository {}", this.repositoryId);
-                updateIndexYaml(metadata, repositoryPath, helmIndexYamlMetadata, this.baseUrl);
+                updateIndexYaml(metadata, repositoryPath, helmIndexYamlMetadata);
             }
             timer.stop();
             log.trace("Indexing Helm metadata for repo '{}' on path '{}' took '{}'", this.repositoryId, path, timer);
@@ -150,13 +150,13 @@ public class HelmMetadataIndexer {
         //this.repositoryService.setAttributes(this.repoKey, path, (Multimap)hashMultimap);
     }
 
-    private void updateIndexYaml(HelmMetadata metadata, RepositoryPath repositoryPath, HelmIndexYamlMetadata indexYaml, String baseUrl) throws IOException {
+    private void updateIndexYaml(HelmMetadata metadata, RepositoryPath repositoryPath, HelmIndexYamlMetadata indexYaml) throws IOException {
         String chartName = metadata.helmChart.name;
         if (StringUtils.isBlank(chartName) || StringUtils.isBlank(metadata.helmChart.version)) {
             log.error("Cannot add Chart {} to index.yaml - Chart name or version is empty!", repositoryPath);
             return;
         }
-        fillIndexChartMetadata(metadata, repositoryPath, baseUrl);
+        fillIndexChartMetadata(metadata, repositoryPath);
         if (isValidChart(metadata)) {
             log.trace("Adding the chart:{}, version:{} into the index.yaml", chartName, metadata.helmChart.version);
             indexYaml.entries.compute(chartName, (key, charts) -> {
@@ -202,7 +202,7 @@ public class HelmMetadataIndexer {
         }
     }
 
-    private void fillIndexChartMetadata(HelmMetadata metadata, RepositoryPath repositoryPath, String baseUrl) throws IOException {
+    private void fillIndexChartMetadata(HelmMetadata metadata, RepositoryPath repositoryPath) throws IOException {
         if (Objects.nonNull(repositoryPath)) {
             Path filePath = Paths.get(String.join(".", repositoryPath.getTarget().toString(), "sha256"));
             metadata.helmChart.digest = readSHA256FileContent(filePath);
