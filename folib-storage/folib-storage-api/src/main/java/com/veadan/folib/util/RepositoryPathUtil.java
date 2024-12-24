@@ -14,11 +14,9 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
@@ -28,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -158,6 +157,134 @@ public class RepositoryPathUtil {
      * 获取绝对路径下的所有文件
      *
      * @param layout               布局
+     * @param rootRepositoryPath   仓库路径
+     * @param pattern              匹配路径
+     * @param recursive            是否递归子目录
+     * @param excludeDirectoryList 排除的目录列表
+     * @return 列表
+     * @throws IOException 异常
+     */
+    public static List<RepositoryPath> getGlobPaths(String layout, RepositoryPath rootRepositoryPath, String pattern, Boolean recursive, List<String> excludeDirectoryList) throws IOException {
+        List<RepositoryPath> pathList = Lists.newArrayList();
+        if (!Files.exists(rootRepositoryPath)) {
+            log.warn("Path [{}] not exists", rootRepositoryPath);
+            return pathList;
+        }
+        if (StringUtils.isBlank(pattern)) {
+            log.warn("Pattern is blank");
+            return pathList;
+        }
+        String storageId = rootRepositoryPath.getStorageId(), repositoryId = rootRepositoryPath.getRepositoryId();
+        pattern = StringUtils.removeStart(pattern, File.separator);
+        pattern = StringUtils.removeEnd(pattern, File.separator);
+        String[] arr = pattern.split(File.separator);
+        String fileNamePattern = arr[arr.length - 1];
+        String repositoryPrefix = String.format("%s%s%s%s", storageId, File.separator, repositoryId, File.separator);
+        String artifactPath = pattern.replace(repositoryPrefix, "");
+        RepositoryPath targetRepositoryPath = rootRepositoryPath.resolve(artifactPath);
+        RepositoryPath parentRepositoryPath = targetRepositoryPath.getParent();
+        if (!Files.exists(parentRepositoryPath)) {
+            log.warn("Path [{}] not exists", parentRepositoryPath);
+            return pathList;
+        }
+        boolean targetIsDirectory = Files.isDirectory(targetRepositoryPath);
+        RepositoryPathResolver repositoryPathResolver = SpringUtil.getBean(RepositoryPathResolver.class);
+        RepositoryPath fileNamePatternRepositoryPath = rootRepositoryPath.resolve(fileNamePattern);
+        if (!Files.isDirectory(fileNamePatternRepositoryPath) && Files.exists(fileNamePatternRepositoryPath)) {
+            //是一个文件
+            pathList.add(repositoryPathResolver.resolve(fileNamePatternRepositoryPath.getStorageId(), fileNamePatternRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(fileNamePatternRepositoryPath)));
+            log.info("Path [{}] find paths [{}]", fileNamePatternRepositoryPath, pathList.size());
+            return pathList;
+        }
+        final boolean isDockerLayout = ProductTypeEnum.Docker.getFoLibraryName().equalsIgnoreCase(layout);
+        if (Boolean.TRUE.equals(recursive)) {
+            try {
+                Files.walkFileTree(parentRepositoryPath, new SimpleFileVisitor<Path>() {
+
+                    @Override
+                    public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                        if (exc instanceof NoSuchFileException) {
+                            // 目录或文件已删除，继续遍历
+                            return FileVisitResult.CONTINUE;
+                        }
+                        return super.visitFileFailed(file, exc);
+                    }
+
+                    @Override
+                    public FileVisitResult visitFile(Path file,
+                                                     BasicFileAttributes attrs)
+                            throws IOException {
+                        RepositoryPath itemPath = (RepositoryPath) file;
+                        String filePattern = StringUtils.removeEnd(itemPath.getParent().toString(), File.separator) + File.separator + fileNamePattern;
+                        if (include(1, itemPath, isDockerLayout, layout)) {
+                            if (targetIsDirectory) {
+                                log.info("Find path [{}]", itemPath);
+                                pathList.add(repositoryPathResolver.resolve(storageId, repositoryId, RepositoryFiles.relativizePath(itemPath)));
+                            } else if (globPathMatcher(filePattern, itemPath)){
+                                log.info("Find path [{}]", itemPath);
+                                pathList.add(repositoryPathResolver.resolve(storageId, repositoryId, RepositoryFiles.relativizePath(itemPath)));
+                            }
+                        }
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+                        try {
+                            RepositoryPath itemPath = (RepositoryPath) dir;
+                            if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !include(2, itemPath, isDockerLayout, layout) || (CollectionUtils.isNotEmpty(excludeDirectoryList) && excludeDirectoryList.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
+                                log.info("RepositoryPath [{}] skip...", itemPath.toString());
+                                return FileVisitResult.SKIP_SUBTREE;
+                            }
+                        } catch (NoSuchFileException e) {
+                            // 文件已删除，跳过处理
+                            return FileVisitResult.CONTINUE;
+                        }
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult postVisitDirectory(Path dir,
+                                                              IOException exc)
+                            throws IOException {
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+            } catch (Exception ex) {
+                log.error(ExceptionUtils.getStackTrace(ex));
+                throw new RuntimeException(ex);
+            }
+        } else {
+            try (Stream<Path> pathStream = Files.list(parentRepositoryPath)) {
+                pathList.addAll(pathStream.filter(p -> {
+                    try {
+                        if (Files.isHidden(p) || Files.isDirectory(p)) {
+                            return false;
+                        }
+                        RepositoryPath itemPath = (RepositoryPath) p;
+                        if (include(1, itemPath, isDockerLayout, layout)) {
+                            if (targetIsDirectory) {
+                                return true;
+                            }
+                            String filePattern = StringUtils.removeEnd(itemPath.getParent().toString(), File.separator) + File.separator + fileNamePattern;
+                            return globPathMatcher(filePattern, itemPath);
+                        }
+                        return false;
+                    } catch (IOException e) {
+                        log.warn("Error accessing path [{}] error [{}]", p, ExceptionUtils.getStackTrace(e));
+                        return false;
+                    }
+                }).map(item -> (RepositoryPath) item).collect(Collectors.toList()));
+            }
+        }
+        log.info("Path [{}] find paths [{}]", rootRepositoryPath, pathList.size());
+        return pathList;
+    }
+
+    /**
+     * 获取绝对路径下的所有文件
+     *
+     * @param layout               布局
      * @param repositoryPath       路径
      * @param excludeDirectoryList 排除的目录列表
      * @return 列表
@@ -244,7 +371,7 @@ public class RepositoryPathUtil {
     }
 
     public static boolean include(int type, RepositoryPath repositoryPath, boolean isDockerLayout, String layout) throws IOException {
-       return include(type, repositoryPath, isDockerLayout, true, layout);
+        return include(type, repositoryPath, isDockerLayout, true, layout);
     }
 
     public static boolean include(int type, RepositoryPath repositoryPath, boolean isDockerLayout, boolean filterArtifact, String layout) throws IOException {
@@ -359,5 +486,10 @@ public class RepositoryPathUtil {
             log.error(ExceptionUtils.getStackTrace(ex));
         }
         return lastModifiedDateTime;
+    }
+
+    public static boolean globPathMatcher(String pattern, RepositoryPath repositoryPath) {
+        PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:" + pattern);
+        return pathMatcher.matches(repositoryPath);
     }
 }
