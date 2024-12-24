@@ -990,7 +990,7 @@ public class DockerArtifactController extends BaseArtifactController {
                                     if (GlobalConstants.DOCKER_LEVEL_SINGLE.equals(dockerLevel)) {
                                         DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
                                         if (Objects.nonNull(directoryListing) && CollectionUtils.isNotEmpty(directoryListing.getDirectories())) {
-                                            dataList.addAll(directoryListing.getDirectories().stream().filter(item -> StringUtils.isNotBlank(item.getName())).map(item -> String.format("%s/%s", prefix, item.getName())).collect(Collectors.toList()));
+                                            dataList.addAll(directoryListing.getDirectories().stream().filter(item -> StringUtils.isNotBlank(item.getName()) && !item.getName().startsWith(".")).map(item -> String.format("%s/%s", prefix, item.getName())).collect(Collectors.toList()));
                                         }
                                     } else {
                                         List<RepositoryPath> repositoryPathList = RepositoryPathUtil.getDockerImagePaths(repositoryPath);
