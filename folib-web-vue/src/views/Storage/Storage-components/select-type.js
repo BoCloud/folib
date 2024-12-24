@@ -137,6 +137,24 @@ const typeList = [
         name:'Rust',
         disabled:true,
     },
+    {
+        src:'images/folib/conda.svg',
+        type:'conda',
+        name:'Conda',
+        disabled:true,
+    },
+    {
+        src:'images/folib/opkg.svg',
+        type:'opkg',
+        name:'Opkg',
+        disabled:true,
+    },
+    {
+        src:'images/folib/swift.svg',
+        type:'swift',
+        name:'Swift',
+        disabled:true,
+    },
 ]
 
 export default typeList
