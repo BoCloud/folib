@@ -464,16 +464,29 @@
           <a-card
             v-if="step === 0"
             :bordered="false" class="header-solid">
-
-            <h5 class="font-regular text-center">{{ folibRepositoryEditDisabled ? $t('Storage.ClickNext') : $t('Storage.HowToChoose') }} </h5>
-            <p class="text-center">
-              {{ folibRepositoryEditDisabled ? $t('Storage.WarehouseTypeRemain') : $t('Storage.IdentifyWarehouseType') }}
-            </p>
+            <div v-if="folibRepositoryEditDisabled">
+              <h5 class="font-regular text-center">{{ $t('Storage.ClickNext') }} </h5>
+                <p class="text-center">
+                  {{ $t('Storage.WarehouseTypeRemain')}}
+                </p>
+            </div>
+            <div v-if="folibRepositoryEditDisabled ? layoutChecked : layoutCheckedNow" class="text-desc">
+              <h5 class="font-regular text-center">{{ layoutName }} </h5>
+              <p class="text-center" style="text-align: left; text-indent:28px;">
+                {{ $t(`Storage.${folibRepositoryEditDisabled ? layoutChecked : layoutCheckedNow}`) }}
+              </p>
+            </div>
+            <div v-else>
+                <h5 class="font-regular text-center">{{ folibRepositoryEditDisabled ? $t('Storage.ClickNext') : $t('Storage.HowToChoose') }} </h5>
+                <p class="text-center">
+                  {{ folibRepositoryEditDisabled ? $t('Storage.WarehouseTypeRemain') : $t('Storage.IdentifyWarehouseType') }}
+                </p>
+            </div>
 
             <a-form :form="form" class="mt-30" :hideRequiredMark="true">
               <a-row type="flex" :gutter="[24]">
                 <a-col :span="24" :md="10" :lg="20" class="mx-auto">
-                  <select-type @toggleCheckbox="toggleCheckbox" :layoutChecked="layoutChecked" :isEdit="folibRepositoryEditDisabled" />
+                  <select-type @toggleCheckbox="toggleCheckbox" :layoutChecked="folibRepositoryEditDisabled ? layoutChecked : layoutCheckedNow" :isEdit="folibRepositoryEditDisabled" />
                   <a-checkbox-group class="d-none" v-model="checkedList" :options="checkboxOptions" />
                 </a-col>
               </a-row>
@@ -1202,6 +1215,8 @@ export default {
       },
       //抽屉相关
       layoutChecked: null,
+      layoutCheckedNow:null,
+      layoutName:null,
       enableHostProxy: false,
       step: 0,
       // Checkbox'es array of checked options.
@@ -1986,6 +2001,8 @@ export default {
               this.resetFolibRepository()
               this.folibRepositoryEditDisabled = false
               this.layoutChecked = null
+              this.layoutCheckedNow = null
+              this.layoutName = null
               this.step = 0
               this.enableHostProxy = false
               this.folibRepositoryIds = ""
@@ -2025,9 +2042,16 @@ export default {
 
     // Toggle an item from the checkbox.
     toggleCheckbox(item) {
-      this.layoutChecked = item
+      this.layoutName = item.name
+      if(item.disabled){
+        this.layoutChecked = null
+        this.layoutCheckedNow = item.type
+      }else{
+        this.layoutChecked = item.type
+        this.layoutCheckedNow = item.type
+      }
       if(!this.folibRepositoryEditDisabled){
-        this.moveStep(1);
+        // this.moveStep(1);
       }
       
     },
@@ -2812,6 +2836,14 @@ export default {
   .ant-pagination-options-size-changer.ant-select{
     margin-right: 0px;
   }
+}
+.text-desc{
+  padding: 10px;
+  padding-left: 20px;
+  padding-right: 20px;
+  border-radius: 8px;
+  box-shadow: rgba(9, 25, 64, 0.08) 0px 2px 16px -2px, rgba(9, 25, 64, 0.1) 0px 0px 2px 0px;
+  background: rgb(250, 251, 251);
 }
 
 </style>

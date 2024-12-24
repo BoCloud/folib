@@ -6,7 +6,7 @@
 <template>
     <div class="checkbox-group">
         <div v-if="isEdit" class="disabled_box" />
-        <a-row type="flex" :gutter="[50]">
+        <a-row type="flex" :gutter="[40]">
             <a-col :span="4" v-for="(item,index) in typeList" :key="index">
                 <div class="checkbox-label" 
                     :class="[layoutChecked === item.type ? 'active' : '']"
@@ -53,9 +53,7 @@ export default {
     },
     methods:{
         toggleCheckbox(item) {
-            if(!item.disabled){
-                this.$emit('toggleCheckbox',item.type)
-            }
+            this.$emit('toggleCheckbox',item)
         },
     }
 }
