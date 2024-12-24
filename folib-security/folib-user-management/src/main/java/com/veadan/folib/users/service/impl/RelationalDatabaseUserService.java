@@ -32,6 +32,7 @@ import com.veadan.folib.util.LocalDateTimeInstance;
 import com.veadan.folib.util.RSAUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.jose4j.lang.JoseException;
 import org.springframework.cache.annotation.CacheEvict;
@@ -247,9 +248,17 @@ public class RelationalDatabaseUserService implements UserService
 
         //维护用户组
         Set<String> groupIds = user.getUserGroupIds();
+        if (CollectionUtils.isEmpty(groupIds)) {
+            if (!"admin".equalsIgnoreCase(user.getUuid())) {
+                userGroupRefService.deleteByUserId(user.getUuid());
+                List<UserGroup> userGroups = userGroupService.queryUserGroupList(UserGroup.builder().joinGroup(GlobalConstants.DEFALUT).deleted(GlobalConstants.NOT_DELETED).build());
+                groupIds = Optional.ofNullable(userGroups).orElse(Lists.newArrayList()).stream().map(item -> String.valueOf(item.getId())).collect(Collectors.toSet());
+            }
+        }
         if (!CollectionUtils.isEmpty(groupIds)) {
             List<UserGroupRef> userGroupRefs = userGroupRefService.queryByUserId(user.getUuid());
-            List<Long> removeGroupRefIds = userGroupRefs.stream().filter(item -> !groupIds.contains(item.getUserGroupId().toString())).map(UserGroupRef::getId).collect(Collectors.toList());
+            Set<String> finalGroupIds = groupIds;
+            List<Long> removeGroupRefIds = userGroupRefs.stream().filter(item -> !finalGroupIds.contains(item.getUserGroupId().toString())).map(UserGroupRef::getId).collect(Collectors.toList());
             if (!CollectionUtils.isEmpty(removeGroupRefIds)) {
                 userGroupRefService.deleteByIds(removeGroupRefIds);
             }
@@ -260,10 +269,6 @@ public class RelationalDatabaseUserService implements UserService
                 groupIds.forEach(item ->
                         ref.add(UserGroupRef.builder().userGroupId(Long.valueOf(item)).userId(user.getUuid()).createTime(date).build()));
                 userGroupRefService.saveBath(ref);
-            }
-        }else {
-            if (!"admin".equalsIgnoreCase(user.getUuid())) {
-                userGroupRefService.deleteByUserId(user.getUuid());
             }
         }
 
