@@ -20,4 +20,9 @@ public interface StorageMonitoringMapper extends CommonMapper<StorageMonitoring>
      */
     void batchInsertStorageMonitoring(@Param("storageMonitoringList") List<StorageMonitoring> storageMonitoringList);
 
+    /**
+     * 获取今天的数据
+     * @return List<StorageMonitoring>
+     */
+    List<StorageMonitoring>  getTodayData();
 }

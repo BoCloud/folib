@@ -69,6 +69,8 @@ public class RepositoryForm {
 
     private boolean checksumHeadersEnabled;
 
+    private long storageMaxSize;
+
     @Valid
     private ProxyConfigurationForm proxyConfiguration;
 
@@ -249,6 +251,14 @@ public class RepositoryForm {
 
     public void setChecksumHeadersEnabled(final boolean checksumHeadersEnabled) {
         this.checksumHeadersEnabled = checksumHeadersEnabled;
+    }
+
+    public long getStorageMaxSize() {
+        return storageMaxSize;
+    }
+
+    public void setStorageMaxSize(final long storageMaxSize) {
+        this.storageMaxSize = storageMaxSize;
     }
 
     public ProxyConfigurationForm getProxyConfiguration() {

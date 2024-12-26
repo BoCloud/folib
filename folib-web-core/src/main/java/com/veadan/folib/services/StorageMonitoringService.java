@@ -5,7 +5,9 @@ import com.veadan.folib.model.request.StorageMonitoringReq;
 import com.veadan.folib.model.response.StorageMonitoringRes;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author leipenghui
@@ -54,4 +56,11 @@ public interface StorageMonitoringService {
      * @return 存储监控列表
      */
     TableResultResponse<StorageMonitoringRes> queryStorageMonitoringPage(StorageMonitoringReq storageMonitoringReq);
+
+    /**
+     * 获取今日数据
+     *
+     * @return 今日数据
+     */
+    Map<String, String> getTodayData();
 }

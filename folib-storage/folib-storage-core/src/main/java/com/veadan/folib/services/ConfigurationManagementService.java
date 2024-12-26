@@ -301,4 +301,11 @@ public interface ConfigurationManagementService {
      * @param repository    仓库
      */
     void addOrUpdateRepository(String storageId, RepositoryDto repository);
+
+    /**
+     * 设置告警配置
+     *
+     * @param alarmConfiguration 告警配置
+     */
+    void setAlarmConfiguration(MutableAlarmConfiguration alarmConfiguration) throws IOException;
 }

@@ -87,6 +87,9 @@
                       <a-input-search class="v-search" v-model="userQuery.email" :placeholder="$t('Users.EnterTheEmailQuery')" @search="searchUser()"/>
                     </a-col>
                     <a-col :span="8" class="" :sm="24" :md="12" :lg="12" :xl="currentUser?8:5">
+                          <a-input-search class="v-search" v-model="userQuery.nickname" :placeholder="$t('Users.EnterTheNicknameQuery')" @search="searchUser()"/>
+                    </a-col>
+                    <a-col :span="8" class="" :sm="24" :md="12" :lg="12" :xl="currentUser?8:5">
                       <a-select
                         class="v-search"
                         v-model="userQuery.userRole"
@@ -116,11 +119,14 @@
                           <a-card :bordered="false" class="card-billing-info" @click.prevent="getUserDetial(item.username)">
                             <div class="col-info">
                               <a-descriptions :title="item.username" :column="1">
-                                <a-descriptions-item :label="$t('Users.IsItAvailable')">
-                                  {{ item.enabled ? $t('Users.Available') : $t('Users.NotAvailable') }}
+                                <a-descriptions-item :label="$t('Users.Nickname')">
+                                      {{ item.nickname }}
                                 </a-descriptions-item>
                                 <a-descriptions-item label="Email">
                                   {{ item.email ? item.email : "" }}
+                                </a-descriptions-item>
+                                <a-descriptions-item :label="$t('Users.IsItAvailable')">
+                                 {{ item.enabled ? $t('Users.Available') : $t('Users.NotAvailable') }}
                                 </a-descriptions-item>
                                 <a-descriptions-item :label="$t('Users.RoleInformation')">
                                   {{ item.roles }}
@@ -203,15 +209,20 @@
                     </a-form-model-item>
                   </a-col>
                   <a-col :span="12">
+                        <a-form-model-item class="mb-10" :label="$t('Users.Nickname')" :colon="false">
+                            <a-input :disabled="userNotEdit" v-model="currentUser.user.nickname" :placeholder="$t('Users.PleaseEnterNickname')" />
+                        </a-form-model-item>
+                  </a-col>
+                  <a-col :span="12">
                     <a-form-model-item class="mb-10" label="EMAIL" :colon="false">
                       <a-input :disabled="userNotEdit" v-model="currentUser.user.email" :placeholder="$t('Users.PleaseEnterEmail')" />
                     </a-form-model-item>
                   </a-col>
                   <a-col :span="12">
-                    <a-form-model-item class="mb-10" :label="$t('Users.ActivatedOrNot')" :colon="false">
-                      <span class="mr-15">{{ true ? $t('Users.TurnOn') : $t('Users.ShutDown') }}</span>
-                      <a-switch :disabled="userNotEdit" default-checked v-model="currentUser.user.enabled" />
-                    </a-form-model-item>
+                        <a-form-model-item class="mb-10" :label="$t('Users.ActivatedOrNot')" :colon="false">
+                            <span class="mr-15">{{ true ? $t('Users.TurnOn') : $t('Users.ShutDown') }}</span>
+                            <a-switch :disabled="userNotEdit" default-checked v-model="currentUser.user.enabled" />
+                        </a-form-model-item>
                   </a-col>
                 </a-row>
               </a-form-model>

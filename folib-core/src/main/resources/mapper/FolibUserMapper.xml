@@ -16,12 +16,13 @@
         <result property="createTime" column="create_time"/>
         <result property="updateBy" column="update_by"/>
         <result property="updateTime" column="update_time"/>
+        <result property="nickname" column="nickname"/>
     </resultMap>
 
     <!-- 通过ID查询单条数据 -->
     <select id="queryById" resultMap="FolibUserMap">
         select
-            id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,CREATE_BY,CREATE_TIME,UPDATE_BY,UPDATE_TIME
+        id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,nickname,CREATE_BY,CREATE_TIME,UPDATE_BY,UPDATE_TIME
         from folib_user
         where id = #{id}
     </select>
@@ -58,6 +59,9 @@
         </if>
         <if test="user.sourceId != null and user.sourceId != ''">
             and source_id = #{user.sourceId}
+        </if>
+        <if test="user.nickname != null and user.nickname != ''">
+            and nickname = #{user.nickname}
         </if>
         <if test="user.roles != null and user.roles.size() > 0">
             and rrr.role_id in
@@ -99,6 +103,9 @@
         </if>
         <if test="user.sourceId != null and user.sourceId != ''">
             and source_id = #{user.sourceId}
+        </if>
+        <if test="user.nickname != null and user.nickname != ''">
+            and nickname = #{user.nickname}
         </if>
         <if test="user.roles != null and user.roles.size() > 0">
             and rrr.role_id in
@@ -162,6 +169,9 @@
         <if test="user.sourceId != null and user.sourceId != ''">
             and source_id = #{user.sourceId}
         </if>
+        <if test="user.nickname != null and user.nickname != ''">
+            and nickname = #{user.nickname}
+        </if>
         group by fu.id
         <if test="user.roles != null and user.roles.size() > 0">
             having
@@ -216,6 +226,9 @@
         <if test="user.sourceId != null and user.sourceId != ''">
             and source_id = #{user.sourceId}
         </if>
+        <if test="user.nickname != null and user.nickname != ''">
+            and nickname = #{user.nickname}
+        </if>
         group by fu.id
         <if test="user.roles != null and user.roles.size() > 0">
             having
@@ -226,7 +239,7 @@
     </sql>
     <!--分页查询指定行数据-->
     <select id="queryAllUserRoleByLimit" resultType="com.veadan.folib.dto.UserDTO">
-        SELECT id, username, `password`, original_password, avatar, email, user_type, enabled, source_id, deleted, create_by, create_time, update_by, update_time,
+        SELECT id, username, `password`, original_password, avatar, email, user_type, enabled, source_id, deleted, create_by, create_time, update_by, update_time,nickname,
         GROUP_CONCAT(distinct NULLIF(userGroups, ''))  AS userGroups,
         GROUP_CONCAT(distinct NULLIF(userGroupIds, '')) AS userGroupIds,
         GROUP_CONCAT(distinct NULLIF(roles, '')) AS roles
@@ -248,7 +261,8 @@
         tmp.create_by,
         tmp.create_time,
         tmp.update_by,
-        tmp.update_time
+        tmp.update_time,
+        tmp.nickname
     </select>
 
     <!--分页查询指定行数据-->
@@ -299,6 +313,9 @@
             <if test="user.updateBy != null and user.updateBy != ''">
                 and user.update_by = #{user.updateBy}
             </if>
+            <if test="user.nickname != null and user.nickname != ''">
+                and user.nickname = #{user.nickname}
+            </if>
         </where>
     </select>
 
@@ -307,96 +324,99 @@
         select count(1)
         from folib_user
         where 1=1
-            <if test="id != null and id != ''">
-                and id = #{id}
-            </if>
-            <if test="username != null and username != ''">
-                and username = #{username}
-            </if>
-            <if test="password != null and password != ''">
-                and password = #{password}
-            </if>
-            <if test="originalPassword != null and originalPassword != ''">
-                and original_password = #{originalPassword}
-            </if>
-            <if test="avatar != null and avatar != ''">
-                and avatar = #{avatar}
-            </if>
-            <if test="email != null and email != ''">
-                and email = #{email}
-            </if>
-            <if test="userType != null and userType != ''">
-                and user_type = #{userType}
-            </if>
-            <if test="enabled != null and enabled != ''">
-                and enabled = #{enabled}
-            </if>
-            <if test="sourceId != null and sourceId != ''">
-                and source_id = #{sourceId}
-            </if>
-            <if test="deleted != null and deleted != ''">
-                and deleted = #{deleted}
-            </if>
-            <if test="createBy != null and createBy != ''">
-                and CREATE_BY = #{createBy}
-            </if>
-            <if test="createTime != null and createTime != ''">
-                and CREATE_TIME = #{createTime}
-            </if>
-            <if test="updateBy != null and updateBy != ''">
-                and UPDATE_BY = #{updateBy}
-            </if>
-            <if test="updateTime != null and updateTime != ''">
-                and UPDATE_TIME = #{updateTime}
-            </if>
+        <if test="id != null and id != ''">
+            and id = #{id}
+        </if>
+        <if test="username != null and username != ''">
+            and username = #{username}
+        </if>
+        <if test="password != null and password != ''">
+            and password = #{password}
+        </if>
+        <if test="originalPassword != null and originalPassword != ''">
+            and original_password = #{originalPassword}
+        </if>
+        <if test="avatar != null and avatar != ''">
+            and avatar = #{avatar}
+        </if>
+        <if test="email != null and email != ''">
+            and email = #{email}
+        </if>
+        <if test="userType != null and userType != ''">
+            and user_type = #{userType}
+        </if>
+        <if test="enabled != null and enabled != ''">
+            and enabled = #{enabled}
+        </if>
+        <if test="sourceId != null and sourceId != ''">
+            and source_id = #{sourceId}
+        </if>
+        <if test="deleted != null and deleted != ''">
+            and deleted = #{deleted}
+        </if>
+        <if test="createBy != null and createBy != ''">
+            and CREATE_BY = #{createBy}
+        </if>
+        <if test="createTime != null and createTime != ''">
+            and CREATE_TIME = #{createTime}
+        </if>
+        <if test="updateBy != null and updateBy != ''">
+            and UPDATE_BY = #{updateBy}
+        </if>
+        <if test="updateTime != null and updateTime != ''">
+            and UPDATE_TIME = #{updateTime}
+        </if>
+        <if test="nickname != null and nickname != ''">
+            and nickname = #{nickname}
+        </if>
     </select>
     <select id="queryUserRoleByRepositoryAndPrivilege" resultType="com.veadan.folib.dto.UserDTO">
         select
-            user.*,
-            GROUP_CONCAT(distinct user.roles) as roles,
-            GROUP_CONCAT(distinct user.authorities) as authorities
+        user.*,
+        GROUP_CONCAT(distinct user.roles) as roles,
+        GROUP_CONCAT(distinct user.authorities) as authorities
         from (
-                 select
-                     fu.*,
-                     GROUP_CONCAT(distinct rrr.role_id) as roles,
-                     GROUP_CONCAT(distinct CONCAT_WS('', rrr.storage_privilege, rrr.repository_privilege, rrr.path_privilege)) as authorities
-                 from
-                     folib_user fu
-                         left join role_resource_ref rrr on
-                         fu.id = rrr.entity_id
-                             and rrr.ref_type = 1
-                         left join resource r on
-                         r.id = rrr.resource_id
-                 where
-                     <foreach collection="repositoryPrivilegeDTOS" item="repositoryPrivilegeDTO" open="(" separator="or" close=")">
-                        ( r.storage_id = #{repositoryPrivilegeDTO.storage}
-                         and r.repository_id = #{repositoryPrivilegeDTO.repository}
-                         and rrr.repository_privilege = #{repositoryPrivilegeDTO.privilege} )
-                     </foreach>
-                 group by
-                     fu.id
-                 union
-                 select
-                     fu.*,
-                     GROUP_CONCAT(distinct rrr.role_id) as roles,
-                     GROUP_CONCAT(distinct CONCAT_WS('', rrr.storage_privilege, rrr.repository_privilege, rrr.path_privilege)) as authorities
-                 from
-                     folib_user fu
-                         right join user_group_ref ugr on
-                         ugr.user_id = fu.id
-                         left join role_resource_ref rrr on
-                         ugr.user_group_id = rrr.entity_id
-                             and rrr.ref_type = 2
-                         left join resource r on
-                         r.id = rrr.resource_id
-                 where
-                    <foreach collection="repositoryPrivilegeDTOS" item="repositoryPrivilegeDTO" open="(" separator="or" close=")">
-                        ( r.storage_id = #{repositoryPrivilegeDTO.storage}
-                        and r.repository_id = #{repositoryPrivilegeDTO.repository}
-                        and rrr.repository_privilege = #{repositoryPrivilegeDTO.privilege} )
-                    </foreach>
-                 group by
-                     fu.id) user group by user.id
+        select
+        fu.*,
+        GROUP_CONCAT(distinct rrr.role_id) as roles,
+        GROUP_CONCAT(distinct CONCAT_WS('', rrr.storage_privilege, rrr.repository_privilege, rrr.path_privilege)) as authorities
+        from
+        folib_user fu
+        left join role_resource_ref rrr on
+        fu.id = rrr.entity_id
+        and rrr.ref_type = 1
+        left join resource r on
+        r.id = rrr.resource_id
+        where
+        <foreach collection="repositoryPrivilegeDTOS" item="repositoryPrivilegeDTO" open="(" separator="or" close=")">
+            ( r.storage_id = #{repositoryPrivilegeDTO.storage}
+            and r.repository_id = #{repositoryPrivilegeDTO.repository}
+            and rrr.repository_privilege = #{repositoryPrivilegeDTO.privilege} )
+        </foreach>
+        group by
+        fu.id
+        union
+        select
+        fu.*,
+        GROUP_CONCAT(distinct rrr.role_id) as roles,
+        GROUP_CONCAT(distinct CONCAT_WS('', rrr.storage_privilege, rrr.repository_privilege, rrr.path_privilege)) as authorities
+        from
+        folib_user fu
+        right join user_group_ref ugr on
+        ugr.user_id = fu.id
+        left join role_resource_ref rrr on
+        ugr.user_group_id = rrr.entity_id
+        and rrr.ref_type = 2
+        left join resource r on
+        r.id = rrr.resource_id
+        where
+        <foreach collection="repositoryPrivilegeDTOS" item="repositoryPrivilegeDTO" open="(" separator="or" close=")">
+            ( r.storage_id = #{repositoryPrivilegeDTO.storage}
+            and r.repository_id = #{repositoryPrivilegeDTO.repository}
+            and rrr.repository_privilege = #{repositoryPrivilegeDTO.privilege} )
+        </foreach>
+        group by
+        fu.id) user group by user.id
     </select>
     <select id="queryUsersNameResource" resultType="com.veadan.folib.dto.UserDTO">
         SELECT
@@ -415,30 +435,30 @@
         FROM folib_user fu
         LEFT JOIN
         (
-            SELECT rrr1.role_id,
-            rrr1.storage_privilege,
-            rrr1.repository_privilege,
-            rrr1.path_privilege,
-            rrr1.entity_id AS user_id,
-            r.id ,
-            r.storage_id,
-            r.repository_id,
-            r.`path`
-            FROM role_resource_ref rrr1 left join resource r on r.id = rrr1.resource_id WHERE rrr1.ref_type = 1
-            UNION
-            all SELECT rrr2.role_id,
-            rrr2.storage_privilege,
-            rrr2.repository_privilege,
-            rrr2.path_privilege,
-            ugr.user_id AS user_id,
-            r.id ,
-            r.storage_id,
-            r.repository_id,
-            r.`path`
-            FROM user_group_ref ugr
-            JOIN role_resource_ref rrr2
-            ON ugr.user_group_id = rrr2.entity_id left join resource r on r.id = rrr2.resource_id
-            WHERE rrr2.ref_type = 2
+        SELECT rrr1.role_id,
+        rrr1.storage_privilege,
+        rrr1.repository_privilege,
+        rrr1.path_privilege,
+        rrr1.entity_id AS user_id,
+        r.id ,
+        r.storage_id,
+        r.repository_id,
+        r.`path`
+        FROM role_resource_ref rrr1 left join resource r on r.id = rrr1.resource_id WHERE rrr1.ref_type = 1
+        UNION
+        all SELECT rrr2.role_id,
+        rrr2.storage_privilege,
+        rrr2.repository_privilege,
+        rrr2.path_privilege,
+        ugr.user_id AS user_id,
+        r.id ,
+        r.storage_id,
+        r.repository_id,
+        r.`path`
+        FROM user_group_ref ugr
+        JOIN role_resource_ref rrr2
+        ON ugr.user_group_id = rrr2.entity_id left join resource r on r.id = rrr2.resource_id
+        WHERE rrr2.ref_type = 2
         ) rrr
         ON fu.id = rrr.user_id
         left join user_group_ref ugr on fu.id = ugr.user_id
@@ -465,25 +485,25 @@
 
     <!--新增数据-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
-        insert into folib_user(id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,create_by,update_by)
-        values (#{id},#{username},#{password},#{originalPassword},#{avatar},#{email},#{userType},#{enabled},#{sourceId},#{deleted},#{createBy},#{updateBy})
+        insert into folib_user(id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,create_by,update_by,nickname)
+        values (#{id},#{username},#{password},#{originalPassword},#{avatar},#{email},#{userType},#{enabled},#{sourceId},#{deleted},#{createBy},#{updateBy},#{nickname})
     </insert>
 
     <!-- 批量新增数据 -->
     <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into folib_user(id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,create_by,create_time,update_by,update_time)
+        insert into folib_user(id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,create_by,create_time,update_by,update_time,nickname)
         values
         <foreach collection="entities" item="entity" separator=",">
-            (#{entity.id},#{entity.username},#{entity.password},#{entity.originalPassword},#{entity.avatar},#{entity.email},#{entity.userType},#{entity.enabled},#{entity.sourceId},#{entity.deleted},#{entity.createBy},#{entity.createTime},#{entity.updateBy},#{entity.updateTime})
+            (#{entity.id},#{entity.username},#{entity.password},#{entity.originalPassword},#{entity.avatar},#{entity.email},#{entity.userType},#{entity.enabled},#{entity.sourceId},#{entity.deleted},#{entity.createBy},#{entity.createTime},#{entity.updateBy},#{entity.updateTime},#{entity.nickname})
         </foreach>
     </insert>
 
     <!-- 批量新增或按主键更新数据 -->
     <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into folib_user(id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,create_by,update_by)
+        insert into folib_user(id,username,password,original_password,avatar,email,user_type,enabled,source_id,deleted,create_by,update_by,nickname)
         values
         <foreach collection="entities" item="entity" separator=",">
-            (#{entity.id},#{entity.username},#{entity.password},#{entity.originalPassword},#{entity.avatar},#{entity.email},#{entity.userType},#{entity.enabled},#{entity.sourceId},#{entity.deleted},#{entity.createBy},#{entity.updateBy})
+            (#{entity.id},#{entity.username},#{entity.password},#{entity.originalPassword},#{entity.avatar},#{entity.email},#{entity.userType},#{entity.enabled},#{entity.sourceId},#{entity.deleted},#{entity.createBy},#{entity.updateBy},#{entity.nickname})
         </foreach>
         on duplicate key update
         id=values(id),
@@ -497,7 +517,8 @@
         source_id=values(source_id),
         deleted=values(deleted),
         create_by=values(create_by),
-        update_by=values(update_by)
+        update_by=values(update_by),
+        nickname=values(nickname)
     </insert>
 
     <!-- 更新数据 -->
@@ -545,6 +566,9 @@
             </if>
             <if test="updateTime != null">
                 UPDATE_TIME = #{updateTime},
+            </if>
+            <if test="nickname != null and nickname != ''">
+                nickname = #{nickname},
             </if>
         </set>
         where id = #{id}

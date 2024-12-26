@@ -7,6 +7,7 @@ export default {
     'UserList': 'User list',
     'EnterTheUsernameQuery': 'Enter the username query',
     'EnterTheEmailQuery': 'Enter the email query',
+    'EnterTheNicknameQuery': 'Enter the nickname query',
     'IsItAvailable': 'Is it available',
     'Available': 'Available',
     'NotAvailable': 'Not available',
@@ -54,4 +55,6 @@ export default {
     'UserRole':'Please select a user role',
     'Administrators': 'Administrators',
     'GeneralUsers': 'General users',
+    'Nickname': 'nickname',
+    'PleaseEnterNickname': 'Please enter Nickname, not required',
 }
