@@ -35,6 +35,8 @@ public class UserForm
 
     private boolean enabled;
 
+    private String nickname;
+
     private Set<String> roles;
     private Set<String> userGroupIds;
 
@@ -110,6 +112,14 @@ public class UserForm
     public interface UpdateAccount
             extends Serializable {
         // validation group marker interface for existing users.
+    }
+
+    public String getNickname() {
+        return nickname;
+    }
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
     }
 
     public String getAvatar() {

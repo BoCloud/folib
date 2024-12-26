@@ -57,6 +57,8 @@ public class UserDto
 
     private String sourceId;
 
+    private String nickname;
+
     @Override
     public String getUuid()
     {
@@ -262,5 +264,14 @@ public class UserDto
 
     public void setUserGroups(Set<String> userGroups) {
         this.userGroups = userGroups;
+    }
+
+    @Override
+    public String getNickname() {
+        return  this.nickname;
+    }
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
     }
 }

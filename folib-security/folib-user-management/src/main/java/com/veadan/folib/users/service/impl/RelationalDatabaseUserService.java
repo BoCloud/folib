@@ -238,6 +238,7 @@ public class RelationalDatabaseUserService implements UserService
         userEntity.setLastUpdated(now);
         userEntity.setUserType("general");
         userEntity.setAvatar(user.getAvatar());
+        userEntity.setNickname(user.getNickname());
 
         Set<SecurityRole> rolesList = user.getRoles();
         if ("admin".equalsIgnoreCase(user.getUuid()) && (!rolesList.stream().map(SecurityRole::getRoleName).collect(Collectors.toList()).contains(SystemRole.ADMIN.name())

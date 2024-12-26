@@ -34,6 +34,8 @@ public class UserOutput
 
     private String avatar;
 
+    private String nickname;
+
     private Set<String> roles;
 
     private String securityTokenKey;
@@ -105,6 +107,7 @@ public class UserOutput
         output.setEmail(user.getEmail());
         output.setSecurityTokenKey(user.getSecurityTokenKey());
         output.setAvatar(user.getAvatar());
+        output.setNickname(user.getNickname());
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (Objects.nonNull(authentication)) {
             output.setAuthorities(authentication.getAuthorities().stream()
@@ -158,4 +161,12 @@ public class UserOutput
     public void setUserGroupIds(Set<String> userGroupIds) {
         this.userGroupIds = userGroupIds;
     }
+
+    public String getNickname() {
+		return nickname;
+	}
+
+    public void setNickname(String nickname) {
+		this.nickname = nickname;
+	}
 }

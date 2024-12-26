@@ -50,6 +50,8 @@ public class UserData implements Serializable, User
 
     private String sourceId;
 
+    private String nickname;
+
     public UserData(final UserDetails source)
     {
         this.username = source.getUsername();
@@ -65,6 +67,7 @@ public class UserData implements Serializable, User
         this.email=null;
         this.userType=null;
         this.avatar = null;
+        this.nickname = null;
     }
 
     public UserData(final UserDto source)
@@ -80,6 +83,7 @@ public class UserData implements Serializable, User
         this.email=source.getEmail();
         this.userType=source.getUserType();
         this.avatar = source.getAvatar();
+        this.nickname = source.getNickname();
     }
 
     private Set<SecurityRole> immuteRoles(final Set<SecurityRole> source)
@@ -171,6 +175,11 @@ public class UserData implements Serializable, User
     @Override
     public String getAvatar() {
         return avatar;
+    }
+
+    @Override
+    public String getNickname() {
+        return this.nickname;
     }
 
     @Override
