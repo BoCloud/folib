@@ -1,5 +1,5 @@
 export function getLayoutType(item) {
-    const layout = item.layout
+    const layout = item?.layout
     let layoutCast
     if (layout === "Maven 2") {
         layoutCast = item.subLayout ? item.subLayout : 'maven'

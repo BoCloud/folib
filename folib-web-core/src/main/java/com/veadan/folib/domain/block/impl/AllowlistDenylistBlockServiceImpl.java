@@ -68,7 +68,7 @@ public class AllowlistDenylistBlockServiceImpl implements AllowlistDenylistBlock
     @Transactional(rollbackFor = Exception.class)
     public AllowlistDenylistBlockRes insert(AllowlistDenylistBlockReq allowlistDenylistBlock) {
         AllowlistDenylistBlock entity = toAllowlistDenylistBlock.apply(allowlistDenylistBlock);
-        AllowlistDenylistBlock block = allowlistDenylistBlockMapper.queryAllowlistDenylistBlock(new AllowlistDenylistBlock().setIdentifier(allowlistDenylistBlock.getIdentifier()));
+        AllowlistDenylistBlock block = allowlistDenylistBlockMapper.queryAllowlistDenylistBlock(new AllowlistDenylistBlock().setIdentifier(allowlistDenylistBlock.getIdentifier()).setDomain(allowlistDenylistBlock.getDomain()));
         if (block == null) {
             allowlistDenylistBlockMapper.insert(entity);
         } else if (RuleEnum.WHITES.toString().equals(allowlistDenylistBlock.getType()) && block.getType().equals(RuleEnum.WHITES.toString())) {

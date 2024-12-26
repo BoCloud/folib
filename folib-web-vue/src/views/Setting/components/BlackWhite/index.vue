@@ -262,7 +262,7 @@ export default {
         total:0,
       },
       vulnDenylistData:{
-        pageSize:1,
+        pageSize:5,
         pageNumber:1,
         total:0,
       },

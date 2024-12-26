@@ -1,8 +1,8 @@
 <template>
 
-	<a-row :gutter="[24, 24]" class="storage-monitoring-overview">
+	<a-row :gutter="[20, 20]" class="storage-monitoring-overview">
 		<a-col :span="24">
-			<a-card :bordered="false" class="header-solid h-full" :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }">
+			<a-card :bordered="false" class="header-solid h-full card-shadow" :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }">
 				<template #title>
 					<h6 class="font-semibold m-0">
 						{{ $t('StorageMonitoring.StorageOverview') }}
@@ -27,14 +27,14 @@
 		</a-col>
 
 		<a-col :span="24">
-			<a-row :gutter="[24, 24]" type="flex" align="stretch">
-				<a-col :span="24" :lg="10" class="mb-24">
+			<a-row :gutter="[20, 20]" type="flex" align="stretch">
+				<a-col :span="24" :lg="10">
 					<CardChartMixed :data="mixedChartData" :storageMonitoringData="storageMonitoringData"
 					:storageDeviceCount="storageDeviceCount" />
 					<!-- <CardBarChart :data="barChartData" :storageMonitoringData="storageMonitoringData"
 						:storageDeviceCount="storageDeviceCount" /> -->
 				</a-col>
-				<a-col :span="24" :lg="14" class="mb-24">
+				<a-col :span="24" :lg="14">
 					<CardLineChart :data="lineChartData" :storageMonitoringData="storageMonitoringData" />
 				</a-col>
 			</a-row>

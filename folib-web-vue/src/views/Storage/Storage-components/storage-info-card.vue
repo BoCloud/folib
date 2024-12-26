@@ -4,51 +4,51 @@
 日期：
 **/
 <template>
-    <a-card :bordered="false" id="profile" class="card-profile-head" :bodyStyle="{ padding: 0, }">
+    <a-card :bordered="false" id="profile" class="card-profile-head info-card" :bodyStyle="{ padding: 0, }">
         <template #title>
             <a-row type="flex" align="middle">
                 <a-col :span="layoutType === 'isFilter' ? 8 : 20" class="col-info">
-                    <a-avatar :title="layoutType === 'isFilter' ? $t('Storage.CreateStorageSpace') :''" :style="layoutType === 'isFilter' ? 'cursor:pointer':''" :size="74" shape="square" @click="createHandleView" src="images/folib/storage.svg" />
-                    <div class="avatar-info">
-                    <h4 class="font-semibold m-0">
-                        <span v-if="layoutType !== 'isFilter'">{{ currentStorage.id }}</span>
-                        <a-dropdown overlayClassName="overlayClassName" v-else :trigger="['click']">
-                            <a style="color: #141414;" class="ant-dropdown-link" @click="e => e.preventDefault()">
-                                {{ currentStorage.id }} <a-icon style="font-size:20px;" type="down" />
+                    <a-avatar :title="layoutType === 'isFilter' ? $t('Storage.CreateStorageSpace') :''" :style="layoutType === 'isFilter' ? 'cursor:pointer':''" :size="40" shape="square" @click="createHandleView" src="images/folib/storage.svg" />
+                    <div class="avatar-info" style="margin-top:-8px;">
+                        <h4 class="font-semibold m-0">
+                            <span style="font-size:16px;" v-if="layoutType !== 'isFilter'">{{ currentStorage.id }}</span>
+                            <a-dropdown overlayClassName="overlayClassName" v-else :trigger="['click']">
+                                <a style="color: #141414;" class="ant-dropdown-link" @click="e => e.preventDefault()">
+                                    {{ currentStorage.id }} <a-icon style="font-size:16px;" type="down" />
+                                </a>
+                                <a-menu slot="overlay" @click="handheTableSearch($event,'storageId')">
+                                    <a-menu-item v-for="item in storageData" :key="item.id" :class="{active:currentStorage.id === item.id }">
+                                        {{ item.id }}
+                                    </a-menu-item>
+                                </a-menu>
+                            </a-dropdown>
+                            <a-tooltip placement="topLeft">
+                                <template slot="title">
+                                    <span>{{ $t('Storage.s3Storage') }}</span>
+                                </template>
+                                <a-icon style="margin-left: 15px" v-if="currentStorage.storageProvider === 's3'" type="cloud"
+                                    theme="filled" class="text-gray-6 text-lg" />
+                            </a-tooltip>
+                        </h4>
+                        <p>
+                            {{ baseUrl }}api/browse/{{ currentStorage.id }}
+                            <a>
+                                <a-tooltip placement="topLeft">
+                                    <template slot="title">
+                                    <span>{{ $t('Storage.CopyStorageSpacePath') }}</span>
+                                    </template>
+                                    <a-icon type="copy" @click="copy(baseUrl + 'api/browse/' + currentStorage.id)" />
+                                </a-tooltip>
                             </a>
-                            <a-menu slot="overlay" @click="handheTableSearch($event,'storageId')">
-                                <a-menu-item v-for="item in storageData" :key="item.id" :class="{active:currentStorage.id === item.id }">
-                                    {{ item.id }}
-                                </a-menu-item>
-                            </a-menu>
-                        </a-dropdown>
-                        <a-tooltip placement="topLeft">
-                            <template slot="title">
-                                <span>{{ $t('Storage.s3Storage') }}</span>
-                            </template>
-                            <a-icon style="margin-left: 15px" v-if="currentStorage.storageProvider === 's3'" type="cloud"
-                                theme="filled" class="text-gray-6 text-lg" />
-                        </a-tooltip>
-                    </h4>
-                    <p>{{ baseUrl }}api/browse/{{ currentStorage.id }} <a>
-                        <a-tooltip placement="topLeft">
-                            <template slot="title">
-                            <span>{{ $t('Storage.CopyStorageSpacePath') }}</span>
-                            </template>
-                            <a-icon type="copy" @click="copy(baseUrl + 'api/browse/' + currentStorage.id)" />
-                        </a-tooltip>
-                        </a></p>
+                        </p>
                     </div>
                 </a-col>
                 <a-col v-if="layoutType === 'isFilter'" :span="12" style="display: flex;align-items: center;">
                     <a-form layout="inline">
-                        <a-form-item style="margin-top:-2px;">
-                            <a-button type="primary" v-if="$store.state.user.roles.indexOf('ADMIN') > -1" @click="createHandleView"><a-icon type="plus" />{{ $t('Storage.CreateStorageSpace') }}</a-button>
-                        </a-form-item>
                         <a-form-item>
                             <a-select
                                 class="v-search self-icon_search"
-                                style="width:160px;"
+                                style="width:180px;"
                                 v-model="queryParams.layout"
                                 :placeholder="$t('Storage.packageTypeQuery')"
                                 @change="search"
@@ -77,28 +77,44 @@
                         <a-form-item>
                             <a-select 
                                 class="v-search"
-                                style="width:160px;"
+                                style="width:180px;"
                                 v-model="queryParams.type" 
                                 show-search
                                 allowClear
                                 @change="search"
+                                option-label-prop="label"
                                 :placeholder="$t('Storage.StrategyTypeQuery')"
                             >
-                                <a-select-option value="hosted">
-                                    {{ $t('Storage.Local') }}
+                                <a-select-option value="hosted" :label="$t('Storage.Local')">
+                                    <div style="width:100%;display: flex;justify-content: space-between;align-items: center;">
+                                        <div class="img-back-sty">
+                                            <img src="./images/local.svg" style="width: 100%;" alt="">
+                                        </div>
+                                        {{ $t('Storage.Local') }}
+                                    </div>
                                 </a-select-option>
-                                <a-select-option value="proxy">
-                                    {{ $t('Storage.Agent') }}
+                                <a-select-option value="proxy" :label="$t('Storage.Agent')">
+                                    <div style="width:100%;display: flex;justify-content: space-between;align-items: center;">
+                                        <div class="img-back-sty">
+                                            <img src="./images/remote.svg" style="width: 100%;" alt="">
+                                        </div>        
+                                        {{ $t('Storage.Agent') }}
+                                    </div>
                                 </a-select-option>
-                                <a-select-option value="group">
-                                    {{ $t('Storage.Combination') }}
+                                <a-select-option value="group" :label="$t('Storage.Combination')">
+                                    <div style="width:100%;display: flex;justify-content: space-between;align-items: center;">
+                                        <div class="img-back-sty">
+                                            <img src="./images/virtual.svg" style="width: 100%;" alt="">
+                                        </div>   
+                                        {{ $t('Storage.Combination') }}
+                                    </div>
                                 </a-select-option>
                             </a-select>
                         </a-form-item>
                         <a-form-item>
                             <a-input-search
                                 class="v-search"
-                                style="width:160px;"
+                                style="width:180px;"
                                 v-model="queryParams.name" 
                                 @search="search"
                                 :placeholder="$t('Storage.RepositoryNameQuery')"
@@ -113,12 +129,19 @@
                     </a-tabs>
                     <a-tooltip placement="topLeft">
                         <template slot="title">
+                            <span>{{ $t('Storage.CreateStorageSpace') }}</span>
+                        </template>
+                        <div class="add-sty" @click="createHandleView" v-if="$store.state.user.roles.indexOf('ADMIN') > -1 && layoutType === 'isFilter'">
+                            <img src="./images/add.svg" width="28" alt="">
+                        </div>
+                    </a-tooltip>
+                    <a-tooltip placement="topLeft">
+                        <template slot="title">
                             <span>{{ $t('Storage.ModifyStorageSpace') }}</span>
                         </template>
-                        <div style="margin-top:4px;" v-if="hasStoragePermission()" @click="updateHandleView">
+                        <div style="margin-top:4px;cursor:pointer;" v-if="hasStoragePermission()" @click="updateHandleView">
                             <svg width="20px" height="20px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg"
                                 xmlns:xlink="http://www.w3.org/1999/xlink">
-                            <title>settings</title>
                             <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                                 <g transform="translate(-2020.000000, -442.000000)" class="fill-dark" fill="#FFFFFF"
                                 fill-rule="nonzero">
@@ -170,6 +193,9 @@ export default {
             typeList,
         }
     },
+    computed:{
+        
+    },
     watch:{
         currentStorage: {
             handler(val){
@@ -222,8 +248,10 @@ export default {
 </script>
 <style lang="scss">
     .overlayClassName{
-        height:500px;
-        overflow: auto;
+        .ant-dropdown-menu-vertical{
+            max-height:500px;
+            overflow: auto;
+        }
     }
     .active{
         background: #bae7ff;
@@ -239,7 +267,42 @@ export default {
     .image_item{
         border-radius: 4px; 
         width:25px;
+        padding: 2px;
+        // background-image: linear-gradient(310deg, rgb(250, 251, 252), rgb(221, 221, 221));
+        box-shadow: 0px 1px 6px 2px rgba(0, 0, 0, 0.1);
+    }
+    .ant-dropdown-link{
+        font-size: 16px !important;
+    }
+    .info-card.ant-card{
+        padding: 0 !important;
+        background: #fff;
+        box-shadow: 0px 1px 6px 2px rgba(214, 214, 214, 0.1);
+        .ant-card-head-title{
+            padding: 0;
+        }
+
+        .ant-avatar{
+            box-shadow: 0px 0px 6px 1px rgba(0, 0, 0, 0.12);
+        }
+    }
+
+    .add-sty{
+        margin-right:20px;
+        box-shadow: 0px 0px 6px 2px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        opacity: 0.9;
+
+        &:hover{
+            opacity: 1;
+        }
+    }
+    .img-back-sty{
+        width: 25px;
+        height: 25px;
+        border-radius: 4px;
         padding: 1px;
-        background-image: linear-gradient( 310deg, #020202, #5c6391 );
+        background: #fff;
+        box-shadow: 0px 0px 6px 2px rgba(0, 0, 0, 0.1);
     }
 </style>

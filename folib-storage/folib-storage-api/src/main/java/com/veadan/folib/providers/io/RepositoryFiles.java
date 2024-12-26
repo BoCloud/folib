@@ -236,16 +236,22 @@ public abstract class RepositoryFiles {
     public static boolean validateChecksum(RepositoryPath repositoryPath, Path cachePath) {
         try {
             //对比checksum
-            String sourceSha1 = "sourceSha1", cacheSha1 = "cacheSha1";
-            RepositoryPath sha1RepositoryPath = repositoryPath.resolveSibling(repositoryPath.getFileName() + ".sha1");
-            if (Files.exists(sha1RepositoryPath)) {
-                sourceSha1 = Files.readString(sha1RepositoryPath);
+            Set<String> digestAlgorithmSet = repositoryPath.getFileSystem().getDigestAlgorithmSet();
+            String sourceDigest = "sourceDigest", cacheDigest = "cacheDigest";
+            String digestAlgorithm = "sha1";
+            if (CollectionUtils.isNotEmpty(digestAlgorithmSet)) {
+                digestAlgorithm = digestAlgorithmSet.stream().findFirst().orElse("");
             }
-            Path sha1CachePath = cachePath.resolveSibling(cachePath.getFileName() + ".sha1");
-            if (Files.exists(sha1CachePath)) {
-                cacheSha1 = Files.readString(sha1CachePath);
+            String extension = GlobalConstants.POINT + digestAlgorithm.replaceAll("-", "").toLowerCase();
+            RepositoryPath digestRepositoryPath = repositoryPath.resolveSibling(repositoryPath.getFileName() + extension);
+            if (Files.exists(digestRepositoryPath)) {
+                sourceDigest = Files.readString(digestRepositoryPath);
             }
-            return sourceSha1.equals(cacheSha1);
+            Path digestCachePath = cachePath.resolveSibling(cachePath.getFileName() + extension);
+            if (Files.exists(digestCachePath)) {
+                cacheDigest = Files.readString(digestCachePath);
+            }
+            return sourceDigest.equals(cacheDigest);
         } catch (Exception ex) {
             log.warn(ExceptionUtils.getStackTrace(ex));
         }

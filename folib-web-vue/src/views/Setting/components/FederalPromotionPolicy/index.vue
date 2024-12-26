@@ -28,20 +28,25 @@
                             </a-tag>
                         </span>
                         <span slot="sourceRepositories" slot-scope="text, record">
-                            <a-tag
-                                v-for="tag in record.sourceRepositories"
-                                :key="tag.id"
-                            >
-                                {{ tag.storageId }}:{{ tag.repositoryId }}
-                            </a-tag>
+
+                            <span v-if="record.sourceRepositories" @click="showTargetRepositories(record.sourceRepositories)">
+                                {{record.sourceRepositories.length + ' ' + $t('FederalPromotionPolicy.Total')}}
+                                |
+                                <span v-for="(item, i) in record.sourceRepositories" :key="i">
+                                  {{ item.storageId + ':' + item.repositoryId}}
+                                  <span v-if="i!=record.sourceRepositories.length-1">,</span>
+                                </span>
+                             </span>
                         </span>
                         <span slot="targetRepositories" slot-scope="text, record">
-                            <a-tag
-                                v-for="tag in record.targetRepositories"
-                                :key="tag.id"
-                            >
-                                {{ tag.storageId }}:{{ tag.repositoryId }}
-                            </a-tag>
+                              <span v-if="record.targetRepositories" @click="showTargetRepositories(record.targetRepositories)">
+                                {{record.targetRepositories.length + ' ' + $t('FederalPromotionPolicy.Total')}}
+                                |
+                                <span v-for="(item, i) in record.targetRepositories" :key="i">
+                                  {{ item.storageId + ':' + item.repositoryId}}
+                                  <span v-if="i!=record.targetRepositories.length-1">,</span>
+                                </span>
+                             </span>
                         </span>
                         <div slot="operation" slot-scope="text, record">
                             <div class="col-action">
@@ -79,6 +84,23 @@
                 </a-card>
             </a-col>
         </a-row>
+
+        <a-modal v-model="showTargetRepositoriesModal" :footer="null" :forceRender="true" on-ok="showTargetRepositoriesModal = false">
+            <a-list item-layout="vertical" size="large" :data-source="targetRepositoriesList"
+                    :pagination="targetRepositoriesList.length === 0 ? false : { pageSize: 8, total: targetRepositoriesList.length, showLessItems: true, showTotal:total =>  ` ${total} ` + ' '+ $t('FederalPromotionPolicy.Total')}">
+                <a-list-item slot="renderItem" :key="index" slot-scope="item, index">
+                    <div>
+                        <a-tag class="mb-5 bg-warning">{{$t('FederalPromotionPolicy.StorageId')}}</a-tag>
+                        <span>{{ item.storageId }}</span>
+                    </div>
+                    <div>
+                        <a-tag class="mb-5 bg-success">{{$t('FederalPromotionPolicy.RepositoryId')}}</a-tag>
+                        <span>{{ item.repositoryId }}</span>
+                    </div>
+                </a-list-item>
+            </a-list>
+        </a-modal>
+
         <a-drawer
             :title="$t('FederalPromotionPolicy.DrawerTitle')"
             placement="right"
@@ -389,6 +411,17 @@ export default {
                     ellipsis: true,
                     width: 160,
                     scopedSlots: {customRender: 'sourceRepositories'},
+                    customCell: () => {
+                        return {
+                            style: {
+                                maxWidth: '220px',
+                                overflow: 'hidden',
+                                whiteSpace: 'nowrap',
+                                textOverflow: 'ellipsis',
+                                cursor: 'pointer'
+                            }
+                        }
+                    },
                 },
                 {
                     title: '目标仓库信息',
@@ -398,6 +431,17 @@ export default {
                     ellipsis: true,
                     width: 160,
                     scopedSlots: {customRender: 'targetRepositories'},
+                    customCell: () => {
+                        return {
+                            style: {
+                                maxWidth: '220px',
+                                overflow: 'hidden',
+                                whiteSpace: 'nowrap',
+                                textOverflow: 'ellipsis',
+                                cursor: 'pointer'
+                            }
+                        }
+                    },
                 },
                 {
                     title: '创建时间',
@@ -498,6 +542,8 @@ export default {
             policy: undefined,
             type: 'hosted',
             instanceName:'',
+            showTargetRepositoriesModal: false,
+            targetRepositoriesList:[],
         }
     },
     computed: {
@@ -833,7 +879,7 @@ export default {
                             storageId: item.split(':')[0],
                             repositoryId: item.split(':')[1],
                             nodeName: this.federalPromotionPolicyForm.selectTargetNodes.key,
-                            nodeType: this.federalPromotionPolicyForm.nodeType === 1 ? "inner" : "external",
+                            nodeType: this.federalPromotionPolicyForm.nodeType === 1 ? "inner" : "JFrog",
                             type:"target",
                             policyId: dataForm.policyId,
                         }
@@ -909,15 +955,17 @@ export default {
                         key: Date.now(),
                     }
                 ]],
+                nodeType:1,
                 isEnabled: false,
                 isDeleteSync: false,
                 sourceRepositories: [],
                 targetRepositories: [],
             };
             this.federalPromotionPolicyForm.selectTargetNodes = '';
-            this.targetNodesOptions = [];
+            //this.targetNodesOptions = [];
+            console.log("this.targetNodesOptions",this.targetNodesOptions)
             this.selectedSourceRepositoriesKeys = [];
-            this.targetNodesRepositories = [];
+           // this.targetNodesRepositories = [];
             this.selectedTargetRepositories = [];
             this.selectedTargetRepositoriesKeys = [];
             this.repositoriesLoading = false;
@@ -1015,6 +1063,7 @@ export default {
         },
 
         onNodeChange(e){
+            this.federalPromotionPolicyForm.selectTargetNodes='';
           //外部节点
           if(e.target.value === 2){
             this.handleExternalNode({type: this.layout})
@@ -1088,6 +1137,11 @@ export default {
               });
             }
         },
+
+        showTargetRepositories(data){
+            this.targetRepositoriesList = data;
+            this.showTargetRepositoriesModal = true;
+        }
     }
 }
 
@@ -1130,7 +1184,7 @@ export default {
 
 .container {
     display: flex;
-    justify-content: end; /* 右对齐 */
+    justify-content: flex-end; /* 右对齐 */
     align-items: center;
     padding-top: 6.5px;
 }

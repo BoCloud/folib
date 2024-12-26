@@ -17,6 +17,7 @@
                 @select="treeSelect" 
                 @expand="onExpand" 
                 @rightClick="rightClick"
+                :expandedKeys="expandedKeys"
                 show-icon
                 :selectedKeys="selectedKeys"
             >
@@ -58,6 +59,7 @@
             :currentTreeNode="currentTreeNode"
             :isTrashView="isTrashView"
             @reload="reload"
+            @localDelNode="localDelNode"
             @handleMenuClick="handleMenuClick"
         />
     </div>
@@ -103,6 +105,7 @@ export default {
             rightClickTop:'0px',
             rightClickLeft:'0px',
             enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm', 'go','GitLfs', 'pub','debian'],
+            expandedKeys:[]
         };
     },
     computed: {
@@ -149,12 +152,16 @@ export default {
                 left: this.rightClickLeft,
             }
         },
+        treeClickKey(){
+            return this.$store.state.treeClickKey
+        }
     },
     watch: {
         repositories: {
             handler(val) {
                 if (val) {
                     this.loadingMore = false
+                    this.loadingMoreShow(false)
                     this.treeData = this.treeData.concat(JSON.parse(JSON.stringify(val)))
                     // function uniqueById(arr) {
                     //     const unique = [];
@@ -200,7 +207,7 @@ export default {
         },
         isTrashView(){
             this.reload()
-        }
+        },
     },
     mounted() {
         document.addEventListener('click', this.closeContextMenu);
@@ -213,6 +220,26 @@ export default {
             this.treeData = []
             this.$emit('getDetailInfo',true,'repositoryTree')
         },
+        // 远程节点删除成功后，调用本地删除节点方法（实现删除后树表展开结构不变）
+        localDelNode(tarNode){
+            const { storageId, repositoryId, artifactPath } = tarNode
+            console.log(storageId, repositoryId, artifactPath)
+            const arr = artifactPath.split('/')
+            const length = arr.length
+            const keyToDelete = arr[length - 1]       
+            console.log(this.treeData,keyToDelete)
+            // 从 treeData 中递归删除节点
+            const removeNode = (nodes, key) => {
+                return nodes.filter((node) => {
+                if (node.name == key) return false // 移除目标节点
+                if (node.children) {
+                    node.children = removeNode(node.children, key)
+                }
+                return true
+                })
+            }
+            this.treeData = removeNode(this.treeData, keyToDelete)
+        },
         // 右键菜单选择操作
         handleMenuClick(active){
             this.$emit('handleMenuClick',active,this.currentTreeNode)
@@ -220,6 +247,7 @@ export default {
         setKeyValue(){
             this.key ++
         },
+        // 鼠标右键
         rightClick(e){
             const {treeType} = e.node.dataRef
             if(treeType !== 'root' && treeType !== 'lastRoot'){
@@ -239,8 +267,11 @@ export default {
         // 设置loading状态
         loadingMoreShow(key){
             this.loadingMore = key
+            // 设置只有在请求结束后才可以切换模式，方式快速切换导致数据渲染错误
+            this.$store.commit('setSwitchDisabled',key)
             console.log(this.loadingMore)
         },
+        // 滚动条滚动
         handleScroll(event){
             const { scrollTop, clientHeight, scrollHeight } = event.target;
             // 当滚动到底部时加载更多
@@ -261,6 +292,7 @@ export default {
             })
             return key
         },
+        // 树节点点击
         treeSelect(key, e) {
             const {newDetailPage} = e.node.dataRef
             this.selectedKeys = [e.node.dataRef.key]
@@ -282,10 +314,23 @@ export default {
                 }
                 this.$emit('repositorySelect', e.node.dataRef)
             }else{
-                this.$emit('treeSelect', key, e)
+                let data = null
+                // 获取当前子节点的最顶层父节点（仓库节点）
+                this.treeData.forEach(ele => {
+                    if(ele.id === e.node.dataRef.repositoryId){
+                        data = ele
+                    }
+                })
+                this.folibRepository = data
+                // this.$emit('repositorySelect', data) 
+                this.$nextTick(() => {
+                    setTimeout(() => {
+                        this.$emit('treeSelect', key, e, data)
+                    }, 0);
+                })
             }
+            // 如果为新页面（jar包下面的文件夹），更新右侧展示页面数据
             if(!!newDetailPage){
-                console.log(e.node.dataRef)
                 const {id, storageId} = this.folibRepository
                 let params = e.node.dataRef
                 params.repositoryId = id
@@ -293,9 +338,12 @@ export default {
                 this.$store.commit('setCurrentTreeNode', params)
             }
         },
-        onExpand() {
-            this.$emit('onExpand')
+        // 获取当前已展开节点的key
+        onExpand(expandedKeys) {
+            this.expandedKeys = expandedKeys
+            // this.$emit('onExpand')
         },
+        // 懒加载获取节点
         onLoadData(treeNode) {
             if(treeNode.dataRef.fileType === 'document'){
                 this.folibRepository = treeNode.dataRef
@@ -421,6 +469,8 @@ export default {
                         arr.forEach(ele => {
                             ele.newDetailPage = true
                             ele.treeType = 'lastRoot'
+                            ele.storageId = storageId
+                            ele.repositoryId = id
                             ele.key = ele.name
                             ele.artifactPath = `${id}/${artifactPath}/${ele.name}`
                             if(ele?.children?.length){
@@ -474,7 +524,7 @@ export default {
     color: #67748e;
 }
 </style>
-<style>
+<style lang="scss">
 .repositoryTree .ant-tree-node-content-wrapper {
     width: 90% !important;
     height: 32px !important;
@@ -488,8 +538,12 @@ export default {
     line-height: 32px !important;
 }
 .tree_container{
-    max-height: 650px;
-    overflow: auto;
+    height: 620px;
+    overflow: hidden;
+
+    &:hover{
+        overflow: auto;
+    }
 }
 .repositoryTree .ant-tree-switcher-noop{
     display: none !important;

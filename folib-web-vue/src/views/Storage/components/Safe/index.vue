@@ -1,8 +1,8 @@
 <template>
-  <div>
+  <div :style="isChecked ? 'padding-left: 3px;padding-right: 3px;height:calc(100vh - 270px);overflow-y: auto;overflow-x: hidden;':''">
     <a-row  type="flex" :gutter="24">
       <a-col :span="24" :xl="4" class="mb-24 statistics">
-        <a-card :bordered="false" class="widget-2">
+        <a-card :bordered="false" class="widget-2 card-shadow">
           <a-statistic :value="vulnerabilityStatistics.artifactCount">
             <template #title>
               <div class="icon">
@@ -22,7 +22,7 @@
         </a-card>
       </a-col>
       <a-col :span="24" :xl="4" class="mb-24 statistics">
-        <a-card :bordered="false" class="widget-2">
+        <a-card :bordered="false" class="widget-2 card-shadow">
           <a-statistic :value="vulnerabilityStatistics.downloadCount">
             <template #title>
               <div class="icon">
@@ -38,7 +38,7 @@
         </a-card>
       </a-col>
       <a-col :span="24" :xl="4" class="mb-24 statistics">
-        <a-card :bordered="false" class="widget-2">
+        <a-card :bordered="false" class="widget-2 card-shadow">
           <a-statistic :value="vulnerabilityStatistics.dependencyCount">
             <template #title>
               <div class="icon">
@@ -58,7 +58,7 @@
         </a-card>
       </a-col>
       <a-col :span="24" :xl="4" class="mb-24 statistics">
-        <a-card :bordered="false" class="widget-2">
+        <a-card :bordered="false" class="widget-2 card-shadow">
           <a-statistic :value="vulnerabilityStatistics.vulnerabilityCount">
             <template #title>
               <div class="icon">
@@ -80,7 +80,7 @@
       <a-col :span="24" :xl="4" class="mb-24 statistics">
         <a-card
           :bordered="false"
-          class="widget-2 vulnerability-count"
+          class="widget-2 card-shadow vulnerability-count"
           @click="vulnerabilityDrawerShow(1)"
         >
           <a-statistic
@@ -106,7 +106,7 @@
       <a-col :span="24" :xl="4" class="mb-24 statistics">
         <a-card
           :bordered="false"
-          class="widget-2 vulnerability-count"
+          class="widget-2 card-shadow vulnerability-count"
           @click="vulnerabilityDrawerShow(2)"
         >
           <a-statistic
@@ -130,7 +130,7 @@
         </a-card>
       </a-col>
     </a-row>
-    <a-card>
+    <a-card :bordered="false" class="card-shadow">
       <Vulnerability
         :vulnerabilityColumns="vulnerabilityColumns"
         :queryStorageId="false"
@@ -183,7 +183,7 @@ import { repositoryVulnerabilityStatistics,  getRepositoryResponseEntity} from '
 import TextOver from "@/components/Tools/textOver";
 
 export default {
-  props: ["folibRepository","vulnerabilityColumns"],
+  props: ["folibRepository","vulnerabilityColumns",'isChecked'],
   data() {
     return {
       vulnerabilityStatistics: {

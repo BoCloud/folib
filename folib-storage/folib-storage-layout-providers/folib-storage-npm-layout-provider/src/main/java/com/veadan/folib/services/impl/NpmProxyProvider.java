@@ -110,12 +110,14 @@ public class NpmProxyProvider implements NpmProvider {
                     }
                     log.info("转换 package 耗时[{}] ms", System.currentTimeMillis() - startTime);
                     Versions versions = packageFeed.getVersions();
+                    if (Objects.isNull(versions)) {
+                        log.warn("Npm indexJsonRepositoryPath [{}] [{}] [{}] versions is null", storageId, repositoryId, packageName);
+                        return null;
+                    }
                     final String packageSuffix = NpmSubLayout.OHPM.getValue().equals(repository.getSubLayout()) ? NpmPacketSuffix.HAR.getValue() : NpmPacketSuffix.TGZ.getValue();
                     startTime = System.currentTimeMillis();
-                    if (Objects.nonNull(versions)) {
-                        for (Map.Entry<String, PackageVersion> versionEntry : versions.getAdditionalProperties().entrySet()) {
-                            handleVersion(storageId, repositoryId, repositoryBaseUrl, versionEntry, packageSuffix);
-                        }
+                    for (Map.Entry<String, PackageVersion> versionEntry : versions.getAdditionalProperties().entrySet()) {
+                        handleVersion(storageId, repositoryId, repositoryBaseUrl, versionEntry, packageSuffix);
                     }
                     log.info("处理 tarball 耗时[{}] ms", System.currentTimeMillis() - startTime);
                     startTime = System.currentTimeMillis();
