@@ -1964,6 +1964,9 @@ export default {
       })
     },
     treeSelect(key, e) {
+      if(e.isRecycle){
+        this.isTrashView = true
+      }
       this.currentTreeNode = e.node.dataRef
       this.scanReport = {
         show: false,
@@ -2022,6 +2025,7 @@ export default {
       this.handleMenuClick(active)
     },
     handleMenuClick(active) {
+      console.log(active)
       this.operationForm.resetFields()
       this.isTargetPatDisabled = this.folibRepository.layout !== 'Raw';
       this.$nextTick(() => {
@@ -2124,7 +2128,11 @@ export default {
                 self.$notification.success({
                   message: self.$t('Store.RestoreSuccessful')
                 })
-                self.reload()
+                if(self.isChecked){
+                  self.$emit('reload')
+                }else{
+                  self.reload()
+                }
                 resolve();
               }
             }).catch(error => {
