@@ -88,11 +88,23 @@
                 </a-tree>
             </div>
         </a-spin>
-        <rightMenu ref="rightMenu" v-show="showContextMenu" :style="contextMenuStyle" :folibRepository="folibRepository"
-            :repositoryType="repositoryType" :currentFileDetial="currentFileDetial" :uploadEnabled="uploadEnabled"
-            :copyEnabled='copyEnabled' :dispatchEnabled="dispatchEnabled" :moveEnabled="moveEnabled"
-            :currentTreeNode="currentTreeNode" :isTrashView="isTrashView" @reload="reload" @localDelNode="localDelNode"
-            @handleMenuClick="handleMenuClick" />
+        <rightMenu 
+            ref="rightMenu" 
+            v-show="showContextMenu" 
+            :style="contextMenuStyle" 
+            :folibRepository="folibRepository"
+            :repositoryType="repositoryType" 
+            :currentFileDetial="currentFileDetial" 
+            :uploadEnabled="uploadEnabled"
+            :copyEnabled='copyEnabled' 
+            :dispatchEnabled="dispatchEnabled" 
+            :moveEnabled="moveEnabled"
+            :currentTreeNode="isTrashView ? currentTreeNodeRecycle : currentTreeNode" 
+            :isTrashView="isTrashView" 
+            @reload="reload" 
+            @localDelNode="localDelNode"
+            @handleMenuClick="handleMenuClick" 
+        />
     </div>
 </template>
 <script>
@@ -135,6 +147,7 @@ export default {
             moveEnabled: false,
             showContextMenu: false,
             currentTreeNode: {},
+            currentTreeNodeRecycle: {},
             rightClickTop: '0px',
             rightClickLeft: '0px',
             enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm', 'go', 'GitLfs', 'pub', 'debian'],
@@ -317,7 +330,7 @@ export default {
         },
         // 右键菜单选择操作
         handleMenuClick(active) {
-            this.$emit('handleMenuClick', active, this.currentTreeNode)
+            this.$emit('handleMenuClick', active, this.isTrashView ? this.currentTreeNodeRecycle : this.currentTreeNode)
         },
         setKeyValue() {
             this.key++
@@ -330,7 +343,11 @@ export default {
                 this.showContextMenu = true
                 this.rightClickTop = `${e.event.clientY}px`;
                 this.rightClickLeft = `${e.event.clientX}px`;
-                this.currentTreeNode = e.node.dataRef;
+                if(this.isTrashView){
+                    this.currentTreeNodeRecycle = e.node.dataRef
+                }else{
+                    this.currentTreeNode = e.node.dataRef;
+                }
                 this.$refs.rightMenu.handlerDataPermission(e.node.dataRef,type)
             }
         },
@@ -379,11 +396,24 @@ export default {
         },
         // 树节点点击
         treeSelect(key, e, isRecycle) {
-            const { newDetailPage } = e.node.dataRef
+            const { newDetailPage,name } = e.node.dataRef
             if(isRecycle){
-                this.selectRecycleKeys = [e.node.dataRef.key]
+                if(name == '制品回收站'){
+                    if(this.expandedRecycleKeys.length){
+                        this.expandedRecycleKeys = []
+                        this.getPosition()
+                    }else{
+                        this.expandedRecycleKeys = [this.storageId]
+                        this.getPosition(320)
+                    }
+                    this.treeSelect('',this.recycleRepositryList[0],true)
+                }else{
+                    this.selectRecycleKeys = [e.node.dataRef.key]
+                }
+                this.selectedKeys = []
             }else{
                 this.selectedKeys = [e.node.dataRef.key]
+                this.selectRecycleKeys = []
             }
             this.$store.commit('setNewDetailPage', !!newDetailPage)
             if (e.node.dataRef.fileType == 'document') {
