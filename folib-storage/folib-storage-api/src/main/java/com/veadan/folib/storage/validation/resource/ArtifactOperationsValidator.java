@@ -63,7 +63,7 @@ public class ArtifactOperationsValidator {
 
     private final String STORAGE_SIZE_VERIFICATION_LAST_TIME_KEY = "STORAGE_SIZE_VERIFICATION_LAST_TIME";
 
-    private static final long MINUTES_TO_MILLIS = 60_000L;
+    private static final long MINUTES_TO_MILLIS = 1L;
 
     public ArtifactOperationsValidator() {
     }
@@ -348,6 +348,34 @@ public class ArtifactOperationsValidator {
     public long getFileSize(String filePath) throws IOException {
         try (FileChannel fileChannel = new FileInputStream(filePath).getChannel()) {
             return fileChannel.size();
+        }
+    }
+
+    /**
+     * 检查仓库存储大小
+     * @param repositoryPath 仓库路径
+     * @throws IOException 异常
+     */
+    public void checkRepositorySize(RepositoryPath repositoryPath)
+            throws IOException {
+        String storageId = repositoryPath.getStorageId();
+        Repository repository = getConfiguration().getStorage(storageId).getRepository(repositoryPath.getRepositoryId());
+        Long storageMaxSize = repository.getStorageMaxSize();
+        if (Objects.isNull(storageMaxSize) || storageMaxSize <= 0) {
+            return;
+        }
+        if (!isRefresh()) {
+            return;
+        }
+        long storageBytesSize = artifactRepository.artifactsBytesStatistics(Collections.singletonList(String.format("%s-%s", storageId, repositoryPath.getRepositoryId())));
+
+        log.info("The size [{}] of the repository [{}/{}]", storageBytesSize, storageId,repositoryPath.getRepositoryId());
+        BigDecimal storageMaxTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageMaxSize, FileUnitTypeEnum.TB.getUnit());
+        BigDecimal storageRealTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageBytesSize, FileUnitTypeEnum.TB.getUnit());
+        if (storageRealTbSize.compareTo(storageMaxTbSize) >= 0) {
+            removeLastTime();
+            throw new ArtifactResolutionException(String.format("The size of the repository [%s/%s] artifact [%s] exceeds the maximum size accepted by " +
+                    "this storage (%s/%s) unit %s.", storageId,repositoryPath.getRepositoryId(), repositoryPath, storageRealTbSize, storageMaxTbSize, FileUnitTypeEnum.TB.getUnit()));
         }
     }
 }
