@@ -574,6 +574,25 @@
               </a-row>
               <a-row :gutter="[24]">
                 <a-col :span="3">
+                  <a-form-item class="mb-10" :label="$t('Storage.EnableCustomLayout')" :colon="false">
+                    <a-switch v-model="folibRepository.enableCustomLayout" @change="enableCustomLayoutChange"></a-switch>
+                  </a-form-item>
+                </a-col>
+                <a-col :span="9" v-if="folibRepository.enableCustomLayout">
+                  <a-form-item class="mb-10" :label="$t('Storage.CustomLayout')" :colon="false">
+                    <a-select v-model="folibRepository.customLayout" style="width: 100%" model="default" show-search allowClear
+                      :dropdown-style="{ maxHeight: '240px', overflow: 'auto' }"
+                      :filter-option="true"
+                      :placeholder="$t('Storage.CustomLayoutTip')">
+                      <a-select-option v-for="(layout, index) in customLayoutList" :key="index" :value="layout.artifactPathPattern">
+                        {{ layout.layoutName }}
+                      </a-select-option>
+                    </a-select>
+                  </a-form-item>
+                </a-col>
+              </a-row>
+              <a-row :gutter="[24]">
+                <a-col :span="3">
                   <a-form-item class="mb-10" :label="$t('Storage.RecycleBin')" :colon="false">
                     <a-checkbox v-model="folibRepository.trashEnabled">
                       {{ folibRepository.trashEnabled ? $t('Storage.On') : $t('Storage.Off') }}
@@ -1077,6 +1096,9 @@ import {
     aliveRepository, repositoryEnableUsers,
     queryRepositoriesByStorage
 } from "@/api/folib"
+import {
+  queryCustomLayoutList,
+} from "@/api/customLayout"
 import { getUsers, queryUser } from "@/api/users"
 import CardProjectFolib from "@/components/Cards/CardProjectFolib"
 import { getLayoutType, genLayoutType, groupRepositoriesBuild, objectToGroupRepositories } from "@/utils/layoutUtil"
@@ -1340,6 +1362,7 @@ export default {
       },
       libViewKey:0,
       groupDefaultRepository:undefined,
+      customLayoutList: [],
     };
   },
   watch: {
@@ -1386,6 +1409,7 @@ export default {
       this.currentStorage.id = this.storageData[0].id
     }
     this.getStorage(this.currentStorage.id)
+    this.queryCustomLayoutList()
   },
   computed: {
     isChecked(){
@@ -2586,7 +2610,21 @@ export default {
       this.$refs.kanbanBoard.forEach(item=>{
         item.$forceUpdate();
       });
-    }
+    },
+    enableCustomLayoutChange(val) {
+      if (this.customLayoutList && val && !this.folibRepository.customLayout) {
+        this.folibRepository.customLayout = this.customLayoutList[0].artifactPathPattern
+      }
+    },
+    queryCustomLayoutList() {
+      queryCustomLayoutList().then(res => {
+        this.customLayoutList = []
+        if (res) {
+          this.customLayoutList = res
+        }
+      }).finally(() => {
+      })
+    },
 
   },
     provide() {

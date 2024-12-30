@@ -495,4 +495,6 @@ export default {
     'EnterVulnerabilityQuery': 'Enter vulnerability query',
     'vulnerabilityId': 'Vulnerability id',
     'validFrom': 'valid From',
+    'FederalPromotionPolicy':'Federal promotion policy',
+    'CustomLayout': 'Custom layout',
 }

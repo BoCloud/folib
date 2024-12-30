@@ -36,6 +36,16 @@ public class RepositoryDto
 
     private String subLayout;
 
+    /**
+     * 是否启用自定义布局
+     */
+    private boolean enableCustomLayout = false;
+
+    /**
+     * 自定义布局
+     */
+    private String customLayout;
+
     private String type = RepositoryTypeEnum.HOSTED.getType();
 
     private boolean secured;
@@ -175,6 +185,24 @@ public class RepositoryDto
 
     public void setLayout(String layout) {
         this.layout = layout;
+    }
+
+    @Override
+    public boolean getEnableCustomLayout() {
+        return enableCustomLayout;
+    }
+
+    public void setEnableCustomLayout(boolean enableCustomLayout) {
+        this.enableCustomLayout = enableCustomLayout;
+    }
+
+    @Override
+    public String getCustomLayout() {
+        return customLayout;
+    }
+
+    public void setCustomLayout(String customLayout) {
+        this.customLayout = customLayout;
     }
 
     @Override

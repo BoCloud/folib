@@ -41,6 +41,16 @@ public class RepositoryForm {
 
     private String subLayout;
 
+    /**
+     * 是否启用自定义布局
+     */
+    private boolean enableCustomLayout;
+
+    /**
+     * 自定义布局
+     */
+    private String customLayout;
+
     @NotEmpty(message = "A type must be specified.")
     @DescribableEnumValue(message = "The type value is invalid.", type = RepositoryTypeEnum.class)
     private String type;
@@ -161,6 +171,22 @@ public class RepositoryForm {
 
     public void setLayout(final String layout) {
         this.layout = layout;
+    }
+
+    public boolean getEnableCustomLayout() {
+        return enableCustomLayout;
+    }
+
+    public void setEnableCustomLayout(boolean enableCustomLayout) {
+        this.enableCustomLayout = enableCustomLayout;
+    }
+
+    public String getCustomLayout() {
+        return customLayout;
+    }
+
+    public void setCustomLayout(String customLayout) {
+        this.customLayout = customLayout;
     }
 
     public String getType() {

@@ -98,6 +98,9 @@ public class ArtifactComponent {
     @Value("${folib.temp}")
     private String tempPath;
 
+    @Value("${folib.artifactDownloadImmediatelyUpdate:false}")
+    private boolean artifactDownloadImmediatelyUpdate;
+
     @Inject
     @Lazy
     protected RepositoryPathResolver repositoryPathResolver;
@@ -1048,6 +1051,10 @@ public class ArtifactComponent {
     public void afterRead(RepositoryPath repositoryPath) {
         try {
             if (Objects.isNull(repositoryPath) || !RepositoryFiles.isArtifact(repositoryPath)) {
+                return;
+            }
+            if (artifactDownloadImmediatelyUpdate) {
+                artifactEventListenerRegistry.dispatchArtifactDownloadedEvent(repositoryPath);
                 return;
             }
             long startTime = System.currentTimeMillis();

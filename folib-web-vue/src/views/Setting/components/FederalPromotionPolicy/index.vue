@@ -5,7 +5,7 @@
                 <a-card :bordered="false" class="header-solid" :body-style="{padding:0,paddingBottom:'16px'}"
                         :title="$t('FederalPromotionPolicy.CardTitle')">
                     <div slot="extra">
-                        <a-tooltip @click="showBlockStrategyInfo()">
+                        <a-tooltip @click="showFederalPromotionPolicyInfo()">
                             <template slot="title">
                                 <span>{{ $t('FederalPromotionPolicy.AddTitle') }}</span>
                             </template>
@@ -15,7 +15,7 @@
                         <a-input-search class="v-search" v-model="federalPromotionPolicyQuery.name"
                                         @search="handeSearch"/>
                     </div>
-                    <a-table :columns="columns" :data-source="federalPromotionPolicyData" :scroll="{ x: true }"
+                    <a-table :columns="i18nFederalPromotionPolicyColumns" :data-source="federalPromotionPolicyData" :scroll="{ x: true }"
 
                              @change="handleChangeTable" :loading="federalPromotionPolicyLoading"
                              :row-key="(r, i) => i.toString()"
@@ -547,7 +547,7 @@ export default {
         }
     },
     computed: {
-        i18nBlockStrategyColumns() {
+        i18nFederalPromotionPolicyColumns() {
             return this.columns.map(column => {
                 if (column.i18nKey) {
                     column.title = this.$t(column.i18nKey);
@@ -638,7 +638,7 @@ export default {
             this.federalPromotionPolicyClose();
         },
 
-        showBlockStrategyInfo() {
+        showFederalPromotionPolicyInfo() {
             this.visibleDrawer = true
         },
 
@@ -694,7 +694,7 @@ export default {
                     this.targetNodesOptions.push(temp);
                 })
 
-              if(this.targetNodesOptions){
+              if(this.targetNodesOptions && this.targetNodesOptions.length > 0){
                 this.handleDefNode({ value: this.targetNodesOptions[0].key,
                   key: this.targetNodesOptions[0].key});
                 this.handleTargetRepositories(this.targetNodesOptions[0].key);

@@ -79,6 +79,7 @@ folib:
   vault: ${folib.basedir}/folib-vault
   etc: ${folib.home}/etc
   temp: ${folib.vault}/tmp
+  artifactDownloadImmediatelyUpdate: false
   multipart:
     maxFileSize: 2048             # 单个上传文件大小 （MB）
     maxRequestSize: 2048        # 单次个上传文件总大小 （MB）

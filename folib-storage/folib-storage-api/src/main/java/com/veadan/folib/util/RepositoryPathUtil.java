@@ -116,6 +116,17 @@ public class RepositoryPathUtil {
         final boolean isDockerLayout = ProductTypeEnum.Docker.getFoLibraryName().equalsIgnoreCase(layout);
         try {
             Files.walkFileTree(repositoryPath, new SimpleFileVisitor<Path>() {
+
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                    if (exc instanceof NoSuchFileException) {
+                        // 目录或文件已删除，继续遍历
+                        log.warn("Find path [{}] no such file skip...", file);
+                        return FileVisitResult.CONTINUE;
+                    }
+                    return super.visitFileFailed(file, exc);
+                }
+
                 @Override
                 public FileVisitResult visitFile(Path file,
                                                  BasicFileAttributes attrs)
@@ -130,19 +141,18 @@ public class RepositoryPathUtil {
 
                 @Override
                 public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
-                    RepositoryPath itemPath = (RepositoryPath) dir;
-                    if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !include(2, itemPath, isDockerLayout, layout) || (CollectionUtils.isNotEmpty(excludeDirectoryList) && excludeDirectoryList.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
-                        log.info("RepositoryPath [{}] skip...", itemPath.toString());
-                        return FileVisitResult.SKIP_SUBTREE;
+                    try {
+                        RepositoryPath itemPath = (RepositoryPath) dir;
+                        if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !include(2, itemPath, isDockerLayout, layout) || (CollectionUtils.isNotEmpty(excludeDirectoryList) && excludeDirectoryList.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
+                            log.info("RepositoryPath [{}] skip...", itemPath.toString());
+                            return FileVisitResult.SKIP_SUBTREE;
+                        }
+                        return FileVisitResult.CONTINUE;
+                    } catch (NoSuchFileException e) {
+                        // 文件已删除，跳过处理
+                        log.warn("Find path directory [{}] no such directory skip...", dir);
+                        return FileVisitResult.CONTINUE;
                     }
-                    return FileVisitResult.CONTINUE;
-                }
-
-                @Override
-                public FileVisitResult postVisitDirectory(Path dir,
-                                                          IOException exc)
-                        throws IOException {
-                    return FileVisitResult.CONTINUE;
                 }
             });
         } catch (Exception ex) {
@@ -220,7 +230,7 @@ public class RepositoryPathUtil {
                             if (targetIsDirectory) {
                                 log.info("Find path [{}]", itemPath);
                                 pathList.add(repositoryPathResolver.resolve(storageId, repositoryId, RepositoryFiles.relativizePath(itemPath)));
-                            } else if (globPathMatcher(filePattern, itemPath)){
+                            } else if (globPathMatcher(filePattern, itemPath)) {
                                 log.info("Find path [{}]", itemPath);
                                 pathList.add(repositoryPathResolver.resolve(storageId, repositoryId, RepositoryFiles.relativizePath(itemPath)));
                             }
@@ -240,13 +250,6 @@ public class RepositoryPathUtil {
                             // 文件已删除，跳过处理
                             return FileVisitResult.CONTINUE;
                         }
-                        return FileVisitResult.CONTINUE;
-                    }
-
-                    @Override
-                    public FileVisitResult postVisitDirectory(Path dir,
-                                                              IOException exc)
-                            throws IOException {
                         return FileVisitResult.CONTINUE;
                     }
                 });
@@ -314,6 +317,17 @@ public class RepositoryPathUtil {
         try {
             RepositoryPathResolver repositoryPathResolver = SpringUtil.getBean(RepositoryPathResolver.class);
             Files.walkFileTree(repositoryPath, new SimpleFileVisitor<Path>() {
+
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                    if (exc instanceof NoSuchFileException) {
+                        // 目录或文件已删除，继续遍历
+                        log.warn("Find image path [{}] no such file skip...", file);
+                        return FileVisitResult.CONTINUE;
+                    }
+                    return super.visitFileFailed(file, exc);
+                }
+
                 @Override
                 public FileVisitResult visitFile(Path file,
                                                  BasicFileAttributes attrs)
@@ -329,20 +343,19 @@ public class RepositoryPathUtil {
 
                 @Override
                 public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
-                    RepositoryPath itemPath = (RepositoryPath) dir;
-                    log.debug("Current directory path [{}]", itemPath);
-                    if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !include(2, itemPath, true, ProductTypeEnum.Docker.getFoLibraryName()) || (CollectionUtils.isNotEmpty(excludeList) && excludeList.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
-                        log.debug("RepositoryPath [{}] skip...", itemPath.toString());
-                        return FileVisitResult.SKIP_SUBTREE;
+                    try {
+                        RepositoryPath itemPath = (RepositoryPath) dir;
+                        log.debug("Current directory path [{}]", itemPath);
+                        if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !include(2, itemPath, true, ProductTypeEnum.Docker.getFoLibraryName()) || (CollectionUtils.isNotEmpty(excludeList) && excludeList.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
+                            log.debug("RepositoryPath [{}] skip...", itemPath.toString());
+                            return FileVisitResult.SKIP_SUBTREE;
+                        }
+                        return FileVisitResult.CONTINUE;
+                    } catch (NoSuchFileException e) {
+                        // 文件已删除，跳过处理
+                        log.warn("Find image path directory [{}] no such directory skip...", dir);
+                        return FileVisitResult.CONTINUE;
                     }
-                    return FileVisitResult.CONTINUE;
-                }
-
-                @Override
-                public FileVisitResult postVisitDirectory(Path dir,
-                                                          IOException exc)
-                        throws IOException {
-                    return FileVisitResult.CONTINUE;
                 }
             });
         } catch (Exception ex) {

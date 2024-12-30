@@ -22,6 +22,10 @@ public interface Repository {
 
     String getSubLayout();
 
+    boolean getEnableCustomLayout();
+
+    String getCustomLayout();
+
     String getType();
 
     boolean isSecured();

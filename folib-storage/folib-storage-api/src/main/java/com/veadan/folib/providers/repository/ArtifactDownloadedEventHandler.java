@@ -46,7 +46,7 @@ public class ArtifactDownloadedEventHandler extends AsyncArtifactEntryHandler {
 
     @Override
     protected Artifact handleEvent(RepositoryPath repositoryPath) throws IOException {
-        return handleEventRecord(repositoryPath, 1L, false);
+        return handleEventRecord(repositoryPath, 1L, true);
     }
 
 

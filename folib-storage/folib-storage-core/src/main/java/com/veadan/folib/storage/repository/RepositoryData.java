@@ -49,6 +49,16 @@ public class RepositoryData
 
     private String subLayout;
 
+    /**
+     * 是否启用自定义布局
+     */
+    private boolean enableCustomLayout;
+
+    /**
+     * 自定义布局
+     */
+    private String customLayout;
+
     private String type;
 
     private boolean secured;
@@ -179,6 +189,8 @@ public class RepositoryData
         this.storage = storage != null ? storage : immuteStorage(delegate.getStorage());
         this.basedir = delegate.getBasedir();
         this.subLayout = delegate.getSubLayout();
+        this.enableCustomLayout = delegate.getEnableCustomLayout();
+        this.customLayout = delegate.getCustomLayout();
         this.scope = delegate.getScope();
         this.allowAnonymous = delegate.isAllowAnonymous();
         this.syncEnabled = delegate.isSyncEnabled();
@@ -260,6 +272,16 @@ public class RepositoryData
     @Override
     public String getLayout() {
         return layout;
+    }
+
+    @Override
+    public boolean getEnableCustomLayout() {
+        return enableCustomLayout;
+    }
+
+    @Override
+    public String getCustomLayout() {
+        return customLayout;
     }
 
     @Override
