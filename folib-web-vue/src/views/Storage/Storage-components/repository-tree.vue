@@ -648,18 +648,18 @@ export default {
         },
         startDragging(event) {
             event.preventDefault()
-            this.isDragging = true;
-            document.addEventListener("mousemove", this.onMouseMove);
-            document.addEventListener("mouseup", this.stopDragging);
+            this.isDragging = true
+            document.addEventListener("mousemove", this.onMouseMove)
+            document.addEventListener("mouseup", this.stopDragging)
         },
         onMouseMove(event) {
-            if (!this.isDragging) return;
+            if (!this.isDragging) return
 
-            const containerRect = this.$el.getBoundingClientRect();
-            const offsetY = event.clientY - containerRect.top;
+            const containerRect = this.$el.getBoundingClientRect()
+            const offsetY = event.clientY - containerRect.top
 
             // 限制顶部和底部高度不能小于 40px
-            const newTopHeight = Math.max(40, offsetY);
+            const newTopHeight = Math.max(40, offsetY)
             const newBottomHeight = Math.max(
                 40,
                 this.containerHeight - newTopHeight - 5 // 计算底部 div 高度
@@ -667,17 +667,19 @@ export default {
 
             // 如果顶部和底部高度都满足条件，则更新高度
             if (newTopHeight + newBottomHeight + 5 === this.containerHeight) {
-                this.topHeight = newTopHeight;
-                this.bottomHeight = newBottomHeight;
+                this.topHeight = newTopHeight
+                this.bottomHeight = newBottomHeight
             }
         },
         stopDragging() {
-            this.isDragging = false;
-            document.removeEventListener("mousemove", this.onMouseMove);
-            document.removeEventListener("mouseup", this.stopDragging);
+            this.isDragging = false
+            document.removeEventListener("mousemove", this.onMouseMove)
+            document.removeEventListener("mouseup", this.stopDragging)
         },
         getPosition(bottomHeight = 40){
-            this.bottomHeight = bottomHeight
+            if(bottomHeight > this.bottomHeight || bottomHeight == 40){
+                this.bottomHeight = bottomHeight
+            }
             this.containerHeight = this.$refs.container.clientHeight - 5
             this.topHeight = this.containerHeight - this.bottomHeight - 5
         }
