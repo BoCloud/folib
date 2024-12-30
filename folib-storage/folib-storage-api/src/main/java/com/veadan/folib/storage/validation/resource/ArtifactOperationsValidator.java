@@ -5,6 +5,9 @@ import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.enums.FileUnitTypeEnum;
+import com.veadan.folib.event.validator.ValidatorEvent;
+import com.veadan.folib.event.validator.ValidatorEventListenerRegistry;
+import com.veadan.folib.event.validator.ValidatorEventTypeEnum;
 import com.veadan.folib.providers.ProviderImplementationException;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -34,6 +37,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Objects;
 
@@ -58,6 +62,9 @@ public class ArtifactOperationsValidator {
 
     @Inject
     private DistributedCacheComponent distributedCacheComponent;
+
+    @Inject
+    private ValidatorEventListenerRegistry validatorEventListenerRegistry;
 
     private static final long MINUTES_TO_MILLIS = 1L;
 
@@ -185,6 +192,7 @@ public class ArtifactOperationsValidator {
         BigDecimal storageRealTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageBytesSize, FileUnitTypeEnum.TB.getUnit());
         if (storageRealTbSize.compareTo(storageMaxTbSize) >= 0) {
             removeLastTime(STORAGE_SIZE_VERIFICATION_LAST_TIME_KEY);
+            alarmNotification();
             throw new ArtifactResolutionException(String.format("The size of the storage [%s] artifact [%s] exceeds the maximum size accepted by " +
                     "this storage (%s/%s) unit %s.", storageId, repositoryPath, storageRealTbSize, storageMaxTbSize, FileUnitTypeEnum.TB.getUnit()));
         }
@@ -368,12 +376,50 @@ public class ArtifactOperationsValidator {
         long storageBytesSize = artifactRepository.artifactsBytesStatistics(Collections.singletonList(String.format("%s-%s", storageId, repositoryPath.getRepositoryId())));
 
         log.info("The size [{}] of the repository [{}/{}]", storageBytesSize, storageId,repositoryPath.getRepositoryId());
-        BigDecimal storageMaxTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageMaxSize, FileUnitTypeEnum.TB.getUnit());
-        BigDecimal storageRealTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageBytesSize, FileUnitTypeEnum.TB.getUnit());
+        BigDecimal storageMaxTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageMaxSize, FileUnitTypeEnum.GB.getUnit());
+        BigDecimal storageRealTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageBytesSize, FileUnitTypeEnum.GB.getUnit());
         if (storageRealTbSize.compareTo(storageMaxTbSize) >= 0) {
             removeLastTime(REPOSITORY_SIZE_VERIFICATION_LAST_TIME_KEY);
+            alarmNotification();
             throw new ArtifactResolutionException(String.format("The size of the repository [%s/%s] artifact [%s] exceeds the maximum size accepted by " +
                     "this storage (%s/%s) unit %s.", storageId,repositoryPath.getRepositoryId(), repositoryPath, storageRealTbSize, storageMaxTbSize, FileUnitTypeEnum.TB.getUnit()));
         }
+    }
+
+    /**
+     * 告警通知
+     */
+    public void alarmNotification() {
+        String key = "NOTIFICATION_VALID_FROM";
+        Long validFrom = this.getNotificationValidFrom(key);
+        boolean flag = false;
+        Instant now = Instant.now();
+        if (validFrom == null) {
+            flag = true;
+        } else if (validFrom < now.getEpochSecond()) {
+            flag = true;
+        }
+        if (flag) {
+            setNotificationValidFrom(key, now);
+            validatorEventListenerRegistry.dispatchEvent(new ValidatorEvent(ValidatorEventTypeEnum.STORAGE_VALIDATOR.getType()));
+        }
+    }
+
+    /**
+     * 设置通知有效时间
+     * @param key
+     * @param now
+     */
+    public void setNotificationValidFrom(String key, Instant now){
+        distributedCacheComponent.put(key, Long.toString(now.plus(4, ChronoUnit.HOURS).getEpochSecond()));
+        //distributedCacheComponent.put(key, Long.toString(now.plus(1, ChronoUnit.MINUTES).getEpochSecond()));
+    }
+
+    public Long getNotificationValidFrom(String key){
+        String value = distributedCacheComponent.get(key);
+        if(Objects.isNull(value)){
+            return null;
+        }
+        return Long.valueOf(value);
     }
 }

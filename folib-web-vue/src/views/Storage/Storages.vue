@@ -551,7 +551,7 @@
                 </a-col>
                 <a-col :span="12">
                   <a-form-item class="mb-10" :label="$t('Storage.RepositorySizeLimit')" :colon="false">
-                    <a-input  :placeholder="$t('Storage.RepositorySizeLimit')" addon-after="TB" v-model="folibRepository.storageMaxSize" />
+                    <a-input  :placeholder="$t('Storage.RepositorySizeLimit')" addon-after="GB" v-model="repositoryStorageMaxSize" />
                   </a-form-item>
                 </a-col>
                 <a-col :span="6">
@@ -1240,6 +1240,7 @@ export default {
           storageId:"",
           layout: "",
       },
+      repositoryStorageMaxSize: 0,
       folibRepository: {
         allowsDeletion: true,
         allowsDeployment: true,
@@ -2236,7 +2237,7 @@ export default {
       this.folibRepositoryData.layout = this.folibRepository.layout;
 
       this.folibRepository.artifactMaxSize = this.artifactMaxSize * 1024 * 1024
-      this.folibRepository.storageMaxSize =  this.setRepoMaxSize(this.folibRepository.storageMaxSize);
+      this.folibRepository.storageMaxSize =  this.setRepoMaxSize(this.repositoryStorageMaxSize);
       addOrUpdateRepository(this.currentStorage.id, this.folibRepository.id, this.folibRepository).then(res => {
         if (!res.error) {
           setTimeout(() => {
@@ -2349,7 +2350,7 @@ export default {
           this.folibRepositoryIds = this.folibRepository.id
           this.folibRepositoryEditDisabled = true
           this.folibVisible = true
-          this.folibRepository.storageMaxSize = this.getRepoMaxSize(this.folibRepository.storageMaxSize);
+          this.repositoryStorageMaxSize = this.getRepoMaxSize(this.folibRepository.storageMaxSize);
         }
       })
 
@@ -2602,13 +2603,16 @@ export default {
     },
     getRepoMaxSize(maxSize){
           if(maxSize){
-              return (maxSize /(1024*1024*1024*1024)).toFixed(3)
+              return (maxSize /(1024*1024*1024)).toFixed(3)
           }
           return 0;
     } ,
     setRepoMaxSize(maxSize){
           if(maxSize){
-              return maxSize *1024*1024*1024*1024
+              console.log("maxSize:",maxSize)
+              let size = (maxSize *1024*1024*1024).toFixed(0)
+              console.log("size:",size)
+              return size;
           }
           return 0;
    }
