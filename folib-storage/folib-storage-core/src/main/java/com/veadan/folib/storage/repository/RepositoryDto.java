@@ -68,6 +68,8 @@ public class RepositoryDto
 
     private boolean checksumHeadersEnabled;
 
+    private long storageMaxSize;
+
     /**
      * The per-repository proxy settings that override the overall global proxy settings.
      */
@@ -282,6 +284,15 @@ public class RepositoryDto
     @Override
     public boolean isChecksumHeadersEnabled() {
         return checksumHeadersEnabled;
+    }
+
+    @Override
+    public long getStorageMaxSize() {
+        return this.storageMaxSize;
+    }
+
+    public void setStorageMaxSize(long storageMaxSize) {
+        this.storageMaxSize = storageMaxSize;
     }
 
     public void setChecksumHeadersEnabled(boolean checksumHeadersEnabled) {

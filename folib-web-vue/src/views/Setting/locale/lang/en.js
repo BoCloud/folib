@@ -27,6 +27,7 @@ export default {
     'configuration': 'configuration',
     'NetworkAgentConfig': 'Network agent configuration',
     'AdvancedConfig': 'Advanced configuration',
+    'AlarmConfiguration':'Alarm configuration',
     'BasicConfig': 'Basic configuration',
     'ApplicationName': 'Application name',
     'NodeTransmissionRateLimit': 'Node Transmission Rate Limit(KB/s)',
@@ -495,6 +496,7 @@ export default {
     'EnterVulnerabilityQuery': 'Enter vulnerability query',
     'vulnerabilityId': 'Vulnerability id',
     'validFrom': 'valid From',
+    'TimingNotifying':'timing notifying',
     'FederalPromotionPolicy':'Federal promotion policy',
     'CustomLayout': 'Custom layout',
 }

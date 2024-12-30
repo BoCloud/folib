@@ -106,4 +106,8 @@ public class EncodedPasswordUser implements User {
         return user.getAvatar();
     }
 
+    @Override
+    public String getNickname() {
+        return user.getNickname();
+    }
 }

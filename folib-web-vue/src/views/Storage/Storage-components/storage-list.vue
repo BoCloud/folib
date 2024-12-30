@@ -74,5 +74,7 @@ export default {
 .storage_list{
     height: calc(100vh - 205px);
     overflow-y: auto;
+    padding:12px;
+    padding-top: 0;
 }
 </style>

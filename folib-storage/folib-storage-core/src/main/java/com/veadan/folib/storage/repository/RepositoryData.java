@@ -81,6 +81,8 @@ public class RepositoryData
 
     private boolean checksumHeadersEnabled;
 
+    private long storageMaxSize;
+
     private ProxyConfiguration proxyConfiguration;
 
     private RemoteRepositoryData remoteRepository;
@@ -198,6 +200,7 @@ public class RepositoryData
         if (delegate.getHealthStatus() != null) {
             this.healthStatus = delegate.getHealthStatus();
         }
+        this.storageMaxSize = delegate.getStorageMaxSize();
     }
 
     private ProxyConfiguration immuteProxyConfiguration(final MutableProxyConfiguration source) {
@@ -337,6 +340,11 @@ public class RepositoryData
     @Override
     public boolean isChecksumHeadersEnabled() {
         return checksumHeadersEnabled;
+    }
+
+    @Override
+    public long getStorageMaxSize() {
+        return this.storageMaxSize;
     }
 
     public ProxyConfiguration getProxyConfiguration() {

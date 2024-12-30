@@ -38,6 +38,7 @@ public enum RepositoryFormConverter
         result.setAllowsDeletion(source.isAllowsDeletion());
         result.setAllowsDirectoryBrowsing(source.isAllowsDirectoryBrowsing());
         result.setChecksumHeadersEnabled(source.isChecksumHeadersEnabled());
+        result.setStorageMaxSize(source.getStorageMaxSize());
         result.setGroupDefaultRepository(source.getGroupDefaultRepository());
         if (source.getRepositoryConfiguration() != null)
         {

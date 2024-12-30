@@ -48,6 +48,15 @@
                       </h4>
                     </div>
                   </a-anchor-link>
+                    <a-anchor-link href="#alarm">
+                        <div slot="title" class="ant-list-item-meta">
+<!--                            <a-icon type="setting" theme="filled" class="text-gray-6 text-lg"/>-->
+                            <a-icon type="alert"  theme="filled" class="text-gray-6 text-lg" />
+                            <h4 class="ant-list-item-meta-title">
+                                <span class="font-regular">{{ $t('Setting.AlarmConfiguration') }}</span>
+                            </h4>
+                        </div>
+                    </a-anchor-link>
                 </a-anchor>
               </a-card>
             </a-affix>
@@ -277,6 +286,72 @@
                 </ul>
               </a-form>
             </a-card>
+
+              <a-card :bordered="false" id="alarm" class="header-solid mb-24">
+                  <template #title>
+                      <h5 class="mb-0 font-semibold">{{ $t('Setting.AlarmConfiguration') }}</h5>
+                  </template>
+                  <a-form :hideRequiredMark="true">
+                      <a-row :gutter="[24]">
+                          <a-col :span="24" :lg="8">
+                              <a-form-item class="mb-10" :label="$t('Setting.TimingNotifying')" :colon="false">
+                                  <a-input v-model="serverSettings.alarmConfigurationForm.cronExpression"
+                                      :placeholder="$t('Setting.CronRules')">
+                                      <a-icon slot="suffix" type="clock-circle"/>
+                                  </a-input>
+                              </a-form-item>
+                          </a-col>
+                      </a-row>
+                      <a-row :gutter="[24]">
+                          <a-col :span="24">
+                              <a-form-item class="mb-10" :label="$t('Setting.NotificationPolicy')"  :colon="false">
+                                  <a-checkbox-group v-model="serverSettings.alarmConfigurationForm.notificationPolicy" style="width: 100%">
+                                      <a-col  :lg="8">
+                                          <a-checkbox value="admin">
+                                              {{ $t('Setting.NotifyPlatformAdministrator') }}
+                                          </a-checkbox>
+                                      </a-col>
+                                      <a-col  :lg="8">
+                                          <a-checkbox value="storageAdmin">
+                                              {{ $t('Setting.NotifyStorageAdministrator') }}
+                                          </a-checkbox>
+                                      </a-col>
+                                  </a-checkbox-group>
+
+                              </a-form-item>
+                          </a-col>
+                      </a-row>
+
+                      <a-row :gutter="[24]">
+                         <a-col :span="24" :lg="8">
+                             <a-form-item class="mb-10" :label="$t('Setting.DesignatedUser')" :colon="false">
+                                 <a-select
+                                     mode="multiple"
+                                     show-search
+                                     style="width: 100%"
+                                     v-model="serverSettings.alarmConfigurationForm.recipients"
+                                     :placeholder="$t('Setting.selectUser')"
+                                 >
+                                     <a-select-option v-for="(user , index ) in userList" :key="user.username">
+                                         {{ user.username }}
+                                     </a-select-option>
+                                 </a-select>
+                             </a-form-item>
+                         </a-col>
+                          <a-col :span="24" :lg="8">
+                              <a-form-item class="mb-10" :label="$t('Setting.SpecifyEmailAddress')" :colon="false">
+                                  <a-select
+                                      mode="tags"
+                                      style="width: 100%"
+                                      :placeholder="$t('Setting.EnterEmail')"
+                                      v-model="serverSettings.alarmConfigurationForm.emails"
+                                  >
+                                  </a-select>
+                              </a-form-item>
+                          </a-col>
+                      </a-row>
+                  </a-form>
+              </a-card>
 
             <a-card :bordered="false" id="delete-account" class="header-solid mb-24">
               <a-form id="components-form-demo-normal-login" class="login-form list-settings-sessions"
@@ -1199,20 +1274,20 @@
 
 <script>
 import {
-  getServerSettings,
-  postServerSettings,
-  getLdap,
-  putLdap,
-  getMachineCode,
-  postActivate,
-  checkMachineCode,
-  getMetadataConfiguration,
-  globalSettingAddOrUpdateMetadata,
-  globalSettingDeleteMetadata,
-  getArtifactDispatchConfig,
-  globalSettingArtifactDispatchConfig,
-  globalSettingDelArtifactDispatchConfig,
-  uploadLicenseFile
+    getServerSettings,
+    postServerSettings,
+    getLdap,
+    putLdap,
+    getMachineCode,
+    postActivate,
+    checkMachineCode,
+    getMetadataConfiguration,
+    globalSettingAddOrUpdateMetadata,
+    globalSettingDeleteMetadata,
+    getArtifactDispatchConfig,
+    globalSettingArtifactDispatchConfig,
+    globalSettingDelArtifactDispatchConfig,
+    uploadLicenseFile, getCrontaskByClass
 } from '@/api/settings'
 import { getUsersCreateFields, getUsers } from '@/api/users'
 import {
@@ -1334,6 +1409,12 @@ export default {
           username: null,
           password: null,
           nonProxyHosts: []
+        },
+        alarmConfigurationForm:{
+            notificationPolicy: [],
+            recipients: [],
+            emails: [],
+            cronExpression: undefined,
         }
       },
       assignableRoles: [],
@@ -1690,7 +1771,10 @@ export default {
       ssoList: [],
       globalS3BucketDisabled: false,
       fileList: [],
-      securityPolicyActiveKey: undefined
+      securityPolicyActiveKey: undefined,
+      alarmConfigurationCron: {
+            cronExpression: undefined, uuid: undefined
+        },
     }
   },
   computed: {
@@ -1736,6 +1820,8 @@ export default {
     this.getArtifactDispatchConfig()
     this.getSsoList()
     this.getSyncStrategyDefaultValue()
+    this.getUsersList();
+   this.getCrontaskByClass();
   },
   methods: {
     upperCase,
@@ -1810,13 +1896,13 @@ export default {
       e.preventDefault()
     },
     // Languages select field search method.
-    filterOption(input, option) {
-      return (
-        option.componentOptions.children[0].text
-          .toLowerCase()
-          .indexOf(input.toLowerCase()) >= 0
-      )
-    },
+    // filterOption(input, option) {
+    //   return (
+    //     option.componentOptions.children[0].text
+    //       .toLowerCase()
+    //       .indexOf(input.toLowerCase()) >= 0
+    //   )
+    // },
     getLdap() {
       getLdap().then(res => {
         this.ldap = res
@@ -2396,7 +2482,16 @@ export default {
             message: err.response.data.error,
         })
       });
-    },  
+    },
+
+    getCrontaskByClass() {
+          getCrontaskByClass({ className: 'com.veadan.folib.cron.jobs.AlarmNoticeCronJob' }).then(res => {
+              if (res && res.cronTaskConfigurations && res.cronTaskConfigurations.length > 0) {
+                  this.alarmConfigurationCron.uuid = res.cronTaskConfigurations[0].uuid
+                  this.alarmConfigurationCron.cronExpression = res.cronTaskConfigurations[0].cronExpression
+              }
+          })
+     },
   }
 }
 </script>

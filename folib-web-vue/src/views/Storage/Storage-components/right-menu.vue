@@ -50,7 +50,8 @@ export default {
     props:['currentTreeNode','folibRepository','repositoryType','currentFileDetial','isTrashView','uploadEnabled','dispatchEnabled','moveEnabled','copyEnabled','rightClickTop','rightClickLeft'],
     data() {
         return {
-            deleteEnabled: false
+            deleteEnabled: false,
+            type:''
         }
     },
     inject:['reload'],
@@ -81,7 +82,7 @@ export default {
                             message: this.$t('Store.DeletionSuccessful')
                         })
                         // this.$emit('reload')
-                        this.$emit('localDelNode', {storageId, repositoryId, artifactPath})
+                        this.$emit('localDelNode', {storageId, repositoryId, artifactPath,type:this.type})
                     }, 100)
                 })
                 .catch(err => {
@@ -104,7 +105,8 @@ export default {
             })
             .finally(() => { })
         },
-        handlerDataPermission (currentTreeNode) {
+        handlerDataPermission (currentTreeNode,type) {
+            this.type = type
             this.deleteEnabled = false
             if (!currentTreeNode.storageId || !currentTreeNode.repositoryId || !currentTreeNode.artifactPath) {
                 return false

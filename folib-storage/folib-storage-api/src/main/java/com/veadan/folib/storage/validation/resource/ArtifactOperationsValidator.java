@@ -5,6 +5,9 @@ import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.enums.FileUnitTypeEnum;
+import com.veadan.folib.event.validator.ValidatorEvent;
+import com.veadan.folib.event.validator.ValidatorEventListenerRegistry;
+import com.veadan.folib.event.validator.ValidatorEventTypeEnum;
 import com.veadan.folib.providers.ProviderImplementationException;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -34,6 +37,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Objects;
 
@@ -59,11 +63,10 @@ public class ArtifactOperationsValidator {
     @Inject
     private DistributedCacheComponent distributedCacheComponent;
 
-    private final String STORAGE_SIZE_VERIFICATION_INTERVAL_KEY = "STORAGE_SIZE_VERIFICATION_INTERVAL";
+    @Inject
+    private ValidatorEventListenerRegistry validatorEventListenerRegistry;
 
-    private final String STORAGE_SIZE_VERIFICATION_LAST_TIME_KEY = "STORAGE_SIZE_VERIFICATION_LAST_TIME";
-
-    private static final long MINUTES_TO_MILLIS = 60_000L;
+    private static final long MINUTES_TO_MILLIS = 1L;
 
     public ArtifactOperationsValidator() {
     }
@@ -170,10 +173,6 @@ public class ArtifactOperationsValidator {
         }
     }
 
-
-
-
-
     public void checkStorageSize(RepositoryPath repositoryPath)
             throws IOException {
         String storageId = repositoryPath.getStorageId();
@@ -182,7 +181,9 @@ public class ArtifactOperationsValidator {
         if (Objects.isNull(storageMaxSize) || storageMaxSize <= 0) {
             return;
         }
-        if (!isRefresh()) {
+        String STORAGE_SIZE_VERIFICATION_INTERVAL_KEY = "STORAGE_SIZE_VERIFICATION_INTERVAL";
+        String STORAGE_SIZE_VERIFICATION_LAST_TIME_KEY = "STORAGE_SIZE_VERIFICATION_LAST_TIME";
+        if (!isRefresh(STORAGE_SIZE_VERIFICATION_LAST_TIME_KEY, STORAGE_SIZE_VERIFICATION_INTERVAL_KEY)) {
             return;
         }
         long storageBytesSize = artifactRepository.artifactsBytesStatisticsByStorageIds(Collections.singletonList(storageId));
@@ -190,7 +191,8 @@ public class ArtifactOperationsValidator {
         BigDecimal storageMaxTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageMaxSize, FileUnitTypeEnum.TB.getUnit());
         BigDecimal storageRealTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageBytesSize, FileUnitTypeEnum.TB.getUnit());
         if (storageRealTbSize.compareTo(storageMaxTbSize) >= 0) {
-            removeLastTime();
+            removeLastTime(STORAGE_SIZE_VERIFICATION_LAST_TIME_KEY);
+            alarmNotification();
             throw new ArtifactResolutionException(String.format("The size of the storage [%s] artifact [%s] exceeds the maximum size accepted by " +
                     "this storage (%s/%s) unit %s.", storageId, repositoryPath, storageRealTbSize, storageMaxTbSize, FileUnitTypeEnum.TB.getUnit()));
         }
@@ -208,7 +210,7 @@ public class ArtifactOperationsValidator {
         String refreshContentInterval = distributedCacheComponent.get(key);
         // 如果获取的刷新间隔为空或仅为空白字符，则返回预设的默认刷新间隔
         if (StringUtils.isBlank(refreshContentInterval)) {
-            return 360;
+            return 1;
         }
         // 将获取的刷新间隔字符串解析为整数并返回
         return Integer.parseInt(refreshContentInterval);
@@ -216,27 +218,28 @@ public class ArtifactOperationsValidator {
 
     /**
      * 设置最后一次刷新时间
-     *
+     * @param key key
      * @param lastTime 最后一次刷新时间
      */
-    public void setLastTime(long lastTime) {
-        distributedCacheComponent.put(STORAGE_SIZE_VERIFICATION_LAST_TIME_KEY, Long.toString(lastTime));
+    public void setLastTime(String key, long lastTime) {
+        distributedCacheComponent.put(key, Long.toString(lastTime));
     }
 
     /**
      * 删除最后一次刷新时间
+     * @param key key
      */
-    public void removeLastTime() {
-        distributedCacheComponent.delete(STORAGE_SIZE_VERIFICATION_LAST_TIME_KEY);
+    public void removeLastTime(String key) {
+        distributedCacheComponent.delete(key);
     }
 
     /**
      * 获取最后一次刷新时间
-     *
+     * @param key key
      * @return 最后一次刷新时间
      */
-    public Long getLastTime() {
-        String lastTime = distributedCacheComponent.get(STORAGE_SIZE_VERIFICATION_LAST_TIME_KEY);
+    public Long getLastTime(String key) {
+        String lastTime = distributedCacheComponent.get(key);
         if (StringUtils.isBlank(lastTime)) {
             return null;
         }
@@ -249,17 +252,18 @@ public class ArtifactOperationsValidator {
      * 如果上次刷新时间为空，则自动设置当前时间为新的刷新时间，并返回true表示需要刷新
      * 如果当前时间与上次刷新时间的时间差大于等于预设的刷新间隔时间，则进行刷新并更新刷新时间
      * 否则，返回false表示不需要刷新
-     *
+     * @param key key
+     * @param intervalKey intervalKey
      * @return true，如果需要刷新缓存统计数据；否则返回false
      */
-    public boolean isRefresh() {
+    public boolean isRefresh(String key, String intervalKey) {
         // 获取当前时间的瞬时值
         Instant now = Instant.now();
         // 获取上次刷新时间的毫秒值
-        Long pastTimeMilli = getLastTime();
+        Long pastTimeMilli = getLastTime(key);
         // 如果上次刷新时间为空，则设置当前时间为新的刷新时间，并返回true表示需要刷新
         if (pastTimeMilli == null) {
-            setLastTime(now.toEpochMilli());
+            setLastTime(key, now.toEpochMilli());
             return true;
         }
         // 将上次刷新时间的毫秒值转换为瞬时值
@@ -267,10 +271,10 @@ public class ArtifactOperationsValidator {
         // 计算当前时间与上次刷新时间之间的时间差
         Duration duration = Duration.between(pastTime, now);
         // 计算刷新间隔时间的毫秒值
-        long requiredMillis = refreshContentInterval(STORAGE_SIZE_VERIFICATION_INTERVAL_KEY) * MINUTES_TO_MILLIS;
+        long requiredMillis = refreshContentInterval(intervalKey) * MINUTES_TO_MILLIS;
         // 如果时间差大于等于刷新间隔时间，则进行刷新并更新刷新时间
         if (duration.compareTo(Duration.ofMillis(requiredMillis)) >= 0) {
-            setLastTime(now.toEpochMilli());
+            setLastTime(key, now.toEpochMilli());
             return true;
         }
         // 不需要刷新，返回false
@@ -349,5 +353,73 @@ public class ArtifactOperationsValidator {
         try (FileChannel fileChannel = new FileInputStream(filePath).getChannel()) {
             return fileChannel.size();
         }
+    }
+
+    /**
+     * 检查仓库存储大小
+     * @param repositoryPath 仓库路径
+     * @throws IOException 异常
+     */
+    public void checkRepositorySize(RepositoryPath repositoryPath)
+            throws IOException {
+        String storageId = repositoryPath.getStorageId();
+        Repository repository = getConfiguration().getStorage(storageId).getRepository(repositoryPath.getRepositoryId());
+        Long storageMaxSize = repository.getStorageMaxSize();
+        if (Objects.isNull(storageMaxSize) || storageMaxSize <= 0) {
+            return;
+        }
+        String REPOSITORY_SIZE_VERIFICATION_INTERVAL_KEY = "REPOSITORY_SIZE_VERIFICATION_INTERVAL";
+        String REPOSITORY_SIZE_VERIFICATION_LAST_TIME_KEY = "REPOSITORY_SIZE_VERIFICATION_LAST_TIME";
+        if (!isRefresh(REPOSITORY_SIZE_VERIFICATION_LAST_TIME_KEY, REPOSITORY_SIZE_VERIFICATION_INTERVAL_KEY)) {
+            return;
+        }
+        long storageBytesSize = artifactRepository.artifactsBytesStatistics(Collections.singletonList(String.format("%s-%s", storageId, repositoryPath.getRepositoryId())));
+
+        log.info("The size [{}] of the repository [{}/{}]", storageBytesSize, storageId,repositoryPath.getRepositoryId());
+        BigDecimal storageMaxTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageMaxSize, FileUnitTypeEnum.GB.getUnit());
+        BigDecimal storageRealTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageBytesSize, FileUnitTypeEnum.GB.getUnit());
+        if (storageRealTbSize.compareTo(storageMaxTbSize) >= 0) {
+            removeLastTime(REPOSITORY_SIZE_VERIFICATION_LAST_TIME_KEY);
+            alarmNotification();
+            throw new ArtifactResolutionException(String.format("The size of the repository [%s/%s] artifact [%s] exceeds the maximum size accepted by " +
+                    "this storage (%s/%s) unit %s.", storageId,repositoryPath.getRepositoryId(), repositoryPath, storageRealTbSize, storageMaxTbSize, FileUnitTypeEnum.TB.getUnit()));
+        }
+    }
+
+    /**
+     * 告警通知
+     */
+    public void alarmNotification() {
+        String key = "NOTIFICATION_VALID_FROM";
+        Long validFrom = this.getNotificationValidFrom(key);
+        boolean flag = false;
+        Instant now = Instant.now();
+        if (validFrom == null) {
+            flag = true;
+        } else if (validFrom < now.getEpochSecond()) {
+            flag = true;
+        }
+        if (flag) {
+            setNotificationValidFrom(key, now);
+            validatorEventListenerRegistry.dispatchEvent(new ValidatorEvent(ValidatorEventTypeEnum.STORAGE_VALIDATOR.getType()));
+        }
+    }
+
+    /**
+     * 设置通知有效时间
+     * @param key
+     * @param now
+     */
+    public void setNotificationValidFrom(String key, Instant now){
+        distributedCacheComponent.put(key, Long.toString(now.plus(4, ChronoUnit.HOURS).getEpochSecond()));
+        //distributedCacheComponent.put(key, Long.toString(now.plus(1, ChronoUnit.MINUTES).getEpochSecond()));
+    }
+
+    public Long getNotificationValidFrom(String key){
+        String value = distributedCacheComponent.get(key);
+        if(Objects.isNull(value)){
+            return null;
+        }
+        return Long.valueOf(value);
     }
 }

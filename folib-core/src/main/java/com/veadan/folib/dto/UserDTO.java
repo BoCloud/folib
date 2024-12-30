@@ -54,6 +54,8 @@ public class UserDTO
 
     private Date updateTime;
 
+    private String nickname;
+
     public void setRepositoryPrivilege(String repositoryPrivilege) {
         this.repositoryPrivilege =  new HashSet<>(Arrays.asList(repositoryPrivilege.split(",")));;
     }

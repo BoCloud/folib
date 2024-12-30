@@ -229,6 +229,7 @@ public class UserController
         }
         UserDto user = conversionService.convert(userForm, UserDto.class);
         user.setUserGroupIds(userForm.getUserGroupIds());
+        user.setNickname(userForm.getNickname());
         if (StringUtils.isNotBlank(user.getPassword())) {
             user.setOriginalPassword(user.getPassword());
             String password = rsaUtils.decrypt(user.getPassword());
@@ -280,6 +281,7 @@ public class UserController
 
         UserDto user = conversionService.convert(userToUpdate, UserDto.class);
         user.setUserGroupIds(userToUpdate.getUserGroupIds());
+        user.setNickname(userToUpdate.getNickname());
         if (StringUtils.isNotBlank(user.getPassword())) {
             user.setOriginalPassword(user.getPassword());
             String password = rsaUtils.decrypt(user.getPassword());

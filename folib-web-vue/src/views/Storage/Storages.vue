@@ -43,13 +43,13 @@
                     <h3 v-if="$store.state.user.roles.indexOf('ADMIN') > -1" class="font-semibold text-muted mb-0"
                       @click="createHandleView">+</h3>
                   </a>
-                  <a class="text-center text-muted font-bold" v-if="isChecked" style="margin-right:8px;">
+                  <!-- <a class="text-center text-muted font-bold" v-if="isChecked" style="margin-right:8px;">
                     <h5 class="font-semibold text-muted mb-0"
                       @click="toggleTree">
                         <a-icon v-if="!isTrashView" type="delete" />
                         <a-icon v-else type="file-zip" />
                     </h5>
-                  </a>
+                  </a> -->
                   <a class="text-center text-muted font-bold" v-if="isChecked">
                     <h3 class="font-semibold text-muted mb-0"
                       @click="folibVisibleShow">+</h3>
@@ -59,17 +59,17 @@
             </template>
             <!-- 仓库列表树 -->
             <repositoryTree 
-                ref="repositoryTree" 
-                v-if="isChecked" 
-                @loadMore="loadMore" 
-                @handleMenuClick="handleMenuClickTree"
-                @treeSelect="treeSelect" 
-                @repositorySelect="repositorySelect" 
-                @expand="onExpand" 
-                @getDetailInfo="getDetailInfo"
-                :repositories="repositories" 
-                :isTrashView="isTrashView"
-                :storageId="currentStorage.id" 
+              v-if="isChecked"
+              ref="repositoryTree" 
+              @loadMore="loadMore" 
+              @handleMenuClick="handleMenuClickTree"
+              @treeSelect="treeSelect" 
+              @repositorySelect="repositorySelect" 
+              @expand="onExpand" 
+              @getDetailInfo="getDetailInfo"
+              :repositories="repositories" 
+              :isTrashView="isTrashView"
+              :storageId="currentStorage.id" 
             />
             <!-- 存储列表 -->
             <storageList 
@@ -145,6 +145,7 @@
           v-else
           :key="libViewKey"
           ref="libview" 
+          @reloadTree="reloadTree"
           @handleMenuClick="handleMenuClick"
           :storageAdmin="currentStorage.admin" 
           :style="isChecked ? 'margin-top:-105px;' : ''" style="border:none;transition: all 0.5s ease;" 
@@ -549,8 +550,8 @@
                   </a-form-item>
                 </a-col>
                 <a-col :span="12">
-                  <a-form-item class="mb-10" :label="$t('Storage.WarehousePath')" :colon="false">
-                    <a-input disabled :placeholder="$t('Storage.DistributedRemain')" v-model="folibRepository.basedir" />
+                  <a-form-item class="mb-10" :label="$t('Storage.RepositorySizeLimit')" :colon="false">
+                    <a-input  :placeholder="$t('Storage.RepositorySizeLimit')" addon-after="GB" v-model="repositoryStorageMaxSize" />
                   </a-form-item>
                 </a-col>
                 <a-col :span="6">
@@ -1261,6 +1262,7 @@ export default {
           storageId:"",
           layout: "",
       },
+      repositoryStorageMaxSize: 0,
       folibRepository: {
         allowsDeletion: true,
         allowsDeployment: true,
@@ -1270,6 +1272,7 @@ export default {
         artifactCoordinateValidators: null,
         artifactMaxSize: 100,
         basedir: null,
+        storageMaxSize: 0,
         checksumHeadersEnabled: true,
         groupRepositories: [],
         httpConnectionPool: null,
@@ -1486,6 +1489,9 @@ export default {
           this.$refs.libview.handleMenuClickTree(active,currentTreeNode)
       })
     },
+    reloadTree(){
+      this.$refs.repositoryTree.reload(false)
+    },
     // 点击仓库
     repositorySelect(item){
       storage.set("libView_repository", { item, baseUrl: this.baseUrl })
@@ -1512,6 +1518,11 @@ export default {
         this.$refs.repositoryTree.loadingMoreShow(true)
       })
       this.queryParams.page = 1
+      if(this.isChecked){
+        this.queryParams.limit = 20
+      }else{
+        this.queryParams.limit = 10
+      }
       if(type === 'storageId'){
         const params = JSON.parse(JSON.stringify(queryParams))
         // 给当前页面搜索条赋值
@@ -1557,6 +1568,7 @@ export default {
         allowsRedeployment: false,
         artifactCoordinateValidators: null,
         artifactMaxSize: 100,
+        storageMaxSize: 0,
         basedir: null,
         checksumHeadersEnabled: true,
         groupRepositories: [],
@@ -2249,6 +2261,7 @@ export default {
       this.folibRepositoryData.layout = this.folibRepository.layout;
 
       this.folibRepository.artifactMaxSize = this.artifactMaxSize * 1024 * 1024
+      this.folibRepository.storageMaxSize =  this.setRepoMaxSize(this.repositoryStorageMaxSize);
       addOrUpdateRepository(this.currentStorage.id, this.folibRepository.id, this.folibRepository).then(res => {
         if (!res.error) {
           setTimeout(() => {
@@ -2361,6 +2374,7 @@ export default {
           this.folibRepositoryIds = this.folibRepository.id
           this.folibRepositoryEditDisabled = true
           this.folibVisible = true
+          this.repositoryStorageMaxSize = this.getRepoMaxSize(this.folibRepository.storageMaxSize);
         }
       })
 
@@ -2611,6 +2625,21 @@ export default {
         item.$forceUpdate();
       });
     },
+    getRepoMaxSize(maxSize){
+          if(maxSize){
+              return (maxSize /(1024*1024*1024)).toFixed(3)
+          }
+          return 0;
+    },
+    setRepoMaxSize(maxSize){
+          if(maxSize){
+              console.log("maxSize:",maxSize)
+              let size = (maxSize *1024*1024*1024).toFixed(0)
+              console.log("size:",size)
+              return size;
+          }
+          return 0;
+   },
     enableCustomLayoutChange(val) {
       if (this.customLayoutList && val && !this.folibRepository.customLayout) {
         this.folibRepository.customLayout = this.customLayoutList[0].artifactPathPattern
@@ -2828,7 +2857,7 @@ export default {
   }
 
   .ant-card-body{
-    padding: 12px;
+    padding: 0px;
     padding-top: 0px;
   }
 }
@@ -2880,8 +2909,9 @@ export default {
   padding-left: 20px;
   padding-right: 20px;
   border-radius: 8px;
-  box-shadow: rgba(9, 25, 64, 0.08) 0px 2px 16px -2px, rgba(9, 25, 64, 0.1) 0px 0px 2px 0px;
-  background: rgb(250, 251, 251);
+  border: 1px dashed #aaa;
+  // box-shadow: rgba(9, 25, 64, 0.08) 0px 2px 16px -2px, rgba(9, 25, 64, 0.1) 0px 0px 2px 0px;
+  // background: rgb(250, 251, 251);
 }
 
 </style>

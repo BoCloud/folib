@@ -218,6 +218,9 @@ ehcache:
     store:
       dir: ${folib.vault}/cache
 management:
+  metrics:
+    tags:
+      application: folib-server
   health:
     neo4j:
       enabled: false
@@ -231,8 +234,11 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,beans,metrics,trace,scheduledtasks,threaddump,loggers,startup
+        include: health,info,beans,metrics,trace,scheduledtasks,threaddump,loggers,startup,prometheus
       base-path: /api/monitoring
+  prometheus:
+    enabled: true
+    path: /api/monitoring/prometheus
 cacheManagerConfiguration:
   groupConfig:
     name: folib

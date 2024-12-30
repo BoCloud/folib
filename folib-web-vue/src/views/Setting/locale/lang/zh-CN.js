@@ -27,6 +27,7 @@ export default {
     'configuration': '配置',
     'NetworkAgentConfig': '网络代理配置',
     'AdvancedConfig': '高级配置',
+    'AlarmConfiguration':'告警配置',
     'BasicConfig': '基础配置',
     'ApplicationName': '应用名称',
     'NodeTransmissionRateLimit': '节点限速(KB/s)',
@@ -494,6 +495,7 @@ export default {
     'EnterVulnerabilityQuery': '输入漏洞编号查询',
     'vulnerabilityId': '漏洞编号',
     'validFrom': '有效期',
+    'TimingNotifying':'定时通知',
     'FederalPromotionPolicy':'联邦晋级策略',
     'CustomLayout': '自定义布局',
 }

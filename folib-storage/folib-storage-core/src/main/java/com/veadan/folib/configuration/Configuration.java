@@ -80,6 +80,17 @@ public class Configuration {
      */
     private final AdvancedConfiguration advancedConfiguration;
 
+    /**
+     * 报警配置
+     */
+    private final AlarmConfiguration alarmConfiguration;
+
+    /**
+     * 构造函数
+     *
+     * @param delegate 配置代理
+     */
+
     public Configuration(final MutableConfiguration delegate) {
 
         id = delegate.getId();
@@ -102,6 +113,7 @@ public class Configuration {
         metadataConfiguration = immuteMetadataConfiguration(delegate.getMetadataConfiguration());
         webhookConfiguration = immuteWebhookConfiguration(delegate.getWebhookConfiguration());
         advancedConfiguration = immuteAdvancedConfiguration(delegate.getAdvancedConfiguration());
+        alarmConfiguration = immuteAlarmConfiguration(delegate.getAlarmConfiguration());
     }
 
     private ProxyConfiguration immuteProxyConfiguration(final MutableProxyConfiguration source) {
@@ -149,6 +161,10 @@ public class Configuration {
 
     private AdvancedConfiguration immuteAdvancedConfiguration(final MutableAdvancedConfiguration source) {
         return source != null ? new AdvancedConfiguration(source) : null;
+    }
+
+    public AlarmConfiguration immuteAlarmConfiguration(MutableAlarmConfiguration source){
+        return source != null ? new AlarmConfiguration(source) : null;
     }
 
     public String getId() {
@@ -323,5 +339,9 @@ public class Configuration {
 
     public AdvancedConfiguration getAdvancedConfiguration() {
         return advancedConfiguration;
+    }
+
+    public AlarmConfiguration getAlarmConfiguration() {
+        return alarmConfiguration;
     }
 }

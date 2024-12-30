@@ -1964,6 +1964,9 @@ export default {
       })
     },
     treeSelect(key, e) {
+      if(e.isRecycle){
+        this.isTrashView = true
+      }
       this.currentTreeNode = e.node.dataRef
       this.scanReport = {
         show: false,
@@ -2022,6 +2025,7 @@ export default {
       this.handleMenuClick(active)
     },
     handleMenuClick(active) {
+      console.log(active)
       this.operationForm.resetFields()
       this.isTargetPatDisabled = this.folibRepository.layout !== 'Raw';
       this.$nextTick(() => {
@@ -2114,17 +2118,21 @@ export default {
         const targetFile = this.currentTreeNode.artifactPath.replace(".trash/", "");
         this.$confirm({
           title: this.$t('Store.Restore') + ": " + file,
-          content: this.$t('Store.RestoreConfirm', { targetRepositories: this.folibRepository.id, path: targetFile }),
+          content: this.$t('Store.RestoreConfirm', { targetRepositories: this.currentTreeNode.repositoryId, path: targetFile }),
           okText: this.$t('Store.Confirm'),
           cancelText: this.$t('Store.Cancel'),
           onOk() {
-            return new Promise((resolve, reject) => {
-              const response = self.restorePackageHandle()
+            return new Promise(async(resolve, reject) => {
+              const response = await self.restorePackageHandle()
               if (response) {
                 self.$notification.success({
                   message: self.$t('Store.RestoreSuccessful')
                 })
-                self.reload()
+                if(self.isChecked){
+                  self.$emit('reload')
+                }else{
+                  self.reload()
+                }
                 resolve();
               }
             }).catch(error => {

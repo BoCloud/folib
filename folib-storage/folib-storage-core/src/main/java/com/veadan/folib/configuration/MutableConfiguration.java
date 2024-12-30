@@ -87,6 +87,8 @@ public class MutableConfiguration
 
     private MutableAdvancedConfiguration advancedConfiguration = new MutableAdvancedConfiguration();
 
+    private MutableAlarmConfiguration alarmConfiguration = new MutableAlarmConfiguration();
+
     public String getId() {
         return id;
     }
@@ -373,6 +375,14 @@ public class MutableConfiguration
 
     public void setAdvancedConfiguration(MutableAdvancedConfiguration advancedConfiguration) {
         this.advancedConfiguration = advancedConfiguration;
+    }
+
+    public MutableAlarmConfiguration getAlarmConfiguration() {
+        return alarmConfiguration;
+    }
+
+    public void setAlarmConfiguration(MutableAlarmConfiguration alarmConfiguration) {
+        this.alarmConfiguration = alarmConfiguration;
     }
 
     @Override

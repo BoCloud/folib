@@ -51,4 +51,6 @@ public interface User extends DomainObject
 
     String getAvatar();
 
+    String getNickname();
+
 }

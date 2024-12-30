@@ -57,6 +57,10 @@ public class ServerSettingsForm
     @JsonProperty
     private ProxyConfigurationForm proxyConfigurationForm = new ProxyConfigurationForm();
 
+    @Valid
+    @JsonProperty
+    private AlarmConfigurationForm alarmConfigurationForm = new AlarmConfigurationForm();
+
     public ServerSettingsForm()
     {
     }
@@ -75,7 +79,8 @@ public class ServerSettingsForm
                               String instanceName,
                               CorsConfigurationForm corsConfigurationForm,
                               SmtpConfigurationForm smtpConfigurationForm,
-                              ProxyConfigurationForm proxyConfigurationForm)
+                              ProxyConfigurationForm proxyConfigurationForm,
+                              AlarmConfigurationForm alarmConfigurationForm)
     {
         this.baseUrl = baseUrl;
         this.port = port;
@@ -83,6 +88,7 @@ public class ServerSettingsForm
         this.corsConfigurationForm = corsConfigurationForm;
         this.smtpConfigurationForm = smtpConfigurationForm;
         this.proxyConfigurationForm = proxyConfigurationForm;
+        this.alarmConfigurationForm = alarmConfigurationForm;
     }
 
     public String getBaseUrl()
@@ -168,4 +174,11 @@ public class ServerSettingsForm
     public void setAdvancedConfigurationForm(AdvancedConfigurationForm advancedConfigurationForm) {
         this.advancedConfigurationForm = advancedConfigurationForm;
     }
+
+    public AlarmConfigurationForm getAlarmConfigurationForm() {
+		return alarmConfigurationForm;
+	}
+    public void setAlarmConfigurationForm(AlarmConfigurationForm alarmConfigurationForm) {
+		this.alarmConfigurationForm = alarmConfigurationForm;
+	}
 }
