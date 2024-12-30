@@ -152,8 +152,6 @@ public class RawArtifactController
         }
     }
 
-
-
     private  String getLastDirectoryDirect(Path path) {
         int nameCount = path.getNameCount();
         if (nameCount > 0) {
@@ -163,6 +161,5 @@ public class RawArtifactController
             return null; // 或者你可以返回一个表示根目录的Path，例如 Paths.get("/")
         }
     }
-
 
 }

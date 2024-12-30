@@ -25,6 +25,8 @@ public enum RepositoryFormConverter
         result.setStorageProvider(source.getStorageProvider());
         result.setLayout(source.getLayout());
         result.setSubLayout(source.getSubLayout());
+        result.setEnableCustomLayout(source.getEnableCustomLayout());
+        result.setCustomLayout(source.getCustomLayout());
         result.setType(source.getType());
         result.setSecured(source.isSecured());
         result.setStatus(source.getStatus());

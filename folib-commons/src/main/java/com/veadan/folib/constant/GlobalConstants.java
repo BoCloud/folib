@@ -332,4 +332,9 @@ public interface GlobalConstants {
      * 0
      */
     Integer ZERO = 0;
+
+    /**
+     * 最新版本关键字
+     */
+    List<String> LATEST_ARTIFACT_KEY_LIST = Lists.newArrayList("[RELEASE]", "[LATEST]");
 }
