@@ -57,4 +57,20 @@ public class SyncArtifactForm {
      * 索引路径
      */
     private String indexPath;
+
+    /*
+        最大线程数
+     */
+    private Integer maxThreadNum;
+
+
+    private int totalArtifact;
+
+    private String migrateId;
+
+    public String getStoreAndRepo(){
+        return this.storageId+":"+repositoryId;
+    }
+
+
 }

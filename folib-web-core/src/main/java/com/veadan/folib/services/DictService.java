@@ -99,4 +99,9 @@ public interface DictService {
      * @param dictList 字典数据
      */
     void batchInsertDict(List<Dict> dictList);
+
+
+    void updateById(Dict dict);
+
+    Dict getById(Long id);
 }

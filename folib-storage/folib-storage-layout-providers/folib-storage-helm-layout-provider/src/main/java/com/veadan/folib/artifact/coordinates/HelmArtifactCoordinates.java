@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 @Slf4j
 @Data
 public class HelmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<HelmArtifactCoordinates, ComparableVersion> {
-    private String LAYOUT_NAME = "helm";
+    public static String LAYOUT_NAME = "helm";
     private String LAYOUT_ALIAS = "helm";
     private String BASE_NAME = "base_name";
     private String PACKAGE_TYPE = "Chart";

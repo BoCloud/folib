@@ -526,3 +526,19 @@ export function jfrogMigrate (data) {
     method: 'post'
   })
 }
+
+export function importJfrog (data) {
+  return axios({
+    url: '/api/migrate/jfrog/import',
+    method: 'post',
+    data: data
+  })
+}
+
+export function downloadTemplate () {
+  return axios({
+    url: '/api/migrate/jfrog/download',
+    method: 'get',
+    responseType: 'blob',
+  })
+}
