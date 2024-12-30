@@ -497,4 +497,6 @@ export default {
     'vulnerabilityId': 'Vulnerability id',
     'validFrom': 'valid From',
     'TimingNotifying':'timing notifying',
+    'FederalPromotionPolicy':'Federal promotion policy',
+    'CustomLayout': 'Custom layout',
 }

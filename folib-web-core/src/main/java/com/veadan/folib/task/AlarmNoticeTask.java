@@ -159,7 +159,7 @@ public class AlarmNoticeTask {
                     repoStorage.setStorageId(storeData.getId());
                     repoStorage.setStorageSize(BigDecimal.valueOf(repositoryDto.getStorageMaxSize()));
                     repoStorage.setUseStorageSize(BigDecimal.valueOf(Double.parseDouble(dataMap.get(String.join(":", storeData.getId(), repositoryId)))));
-                    storageVerification(repoStorage);
+                    repositoriesVerification(repoStorage);
                     stroageList.add(repoStorage);
                 }
             }
@@ -169,7 +169,7 @@ public class AlarmNoticeTask {
         List<UserDTO> users = pageInfo.getList();
 
         if (isAdmin) {
-            emaiList.addAll(users.stream().filter(user -> user.getRoles().contains("admin")).map(UserDTO::getEmail).collect(Collectors.toList()));
+            emaiList.addAll(users.stream().filter(user -> user.getRoles().contains("ADMIN")).map(UserDTO::getEmail).collect(Collectors.toList()));
         }
         if (isStorageAdmin) {
             emaiList.addAll(users.stream().filter(user -> userList.contains(user.getUsername())).map(UserDTO::getEmail).collect(Collectors.toList()));
@@ -206,9 +206,32 @@ public class AlarmNoticeTask {
         }
 
         // 将最大存储尺寸从字节转换为太字节（TB）
-        BigDecimal storageMaxTbSize = FileSizeConvertUtils.convertBytesWithDecimal(capacityStorage.getStorageSize().longValue(), FileUnitTypeEnum.TB.getUnit());
+        BigDecimal storageMaxTbSize = FileSizeConvertUtils.convertBytesWithDecimal(capacityStorage.getStorageSize().longValue(), FileUnitTypeEnum.GB.getUnit());
         // 将实际存储尺寸从字节转换为太字节（TB）
-        BigDecimal storageRealTbSize = FileSizeConvertUtils.convertBytesWithDecimal(capacityStorage.getUseStorageSize().longValue(), FileUnitTypeEnum.TB.getUnit());
+        BigDecimal storageRealTbSize = FileSizeConvertUtils.convertBytesWithDecimal(capacityStorage.getUseStorageSize().longValue(), FileUnitTypeEnum.GB.getUnit());
+        // 计算存储使用比例
+        BigDecimal useStorageProportion = storageRealTbSize.divide(storageMaxTbSize, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+        // 如果存储使用比例大于或等于95%，则记录警告日志并创建ExceedsSizeStorage对象
+        if (useStorageProportion.compareTo(BigDecimal.valueOf(95)) >= 0) {
+            log.warn("The size of the storage [{}] exceeds the maximum size accepted by " +
+                    "this repository ({}/{}/{}) unit {}.", capacityStorage.getStorageId(), capacityStorage.getRepositoryId(), storageRealTbSize, storageMaxTbSize, FileUnitTypeEnum.TB.getUnit());
+            capacityStorage.setNotice(true);
+       }
+        capacityStorage.setStorageSize(storageMaxTbSize);
+        capacityStorage.setUseStorageProportion(useStorageProportion);
+        capacityStorage.setUseStorageSize(storageRealTbSize);
+
+    }
+
+    public void repositoriesVerification(CapacityStorage capacityStorage) {
+        if (Objects.isNull(capacityStorage.getStorageSize()) || capacityStorage.getStorageSize().compareTo(BigDecimal.ZERO) <= 0) {
+            capacityStorage.setNotice(false);
+        }
+
+        // 将最大存储尺寸从字节转换为太字节（TB）
+        BigDecimal storageMaxTbSize = FileSizeConvertUtils.convertBytesWithDecimal(capacityStorage.getStorageSize().longValue(), FileUnitTypeEnum.GB.getUnit());
+        // 将实际存储尺寸从字节转换为太字节（TB）
+        BigDecimal storageRealTbSize = FileSizeConvertUtils.convertBytesWithDecimal(capacityStorage.getUseStorageSize().longValue(), FileUnitTypeEnum.GB.getUnit());
         // 计算存储使用比例
         BigDecimal useStorageProportion = storageRealTbSize.divide(storageMaxTbSize, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
         // 如果存储使用比例大于或等于95%，则记录警告日志并创建ExceedsSizeStorage对象

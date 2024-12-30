@@ -84,7 +84,7 @@
                 </a-select>
               </a-col>
             </div>
-            <div class="mt-10 ml-15" v-if="i.isSetted.jobClass.includes('CleanupArtifactsRepositoryCronJob') || i.isSetted.jobClass.includes('ClearRepositoryTrashCronJob')">
+            <div class="mt-10 ml-15" v-if="i.isSetted.jobClass.includes('CleanupArtifactsRepositoryCronJob') || i.isSetted.jobClass.includes('ClearRepositoryTrashCronJob') || i.isSetted.jobClass.includes('RemoveRawArtifactCronJob')">
               <a-tooltip @click="addArtifactPath(i.fields)">
                 <template slot="title">{{ $t('Cron.AddArtifactPath') }}</template>
                 <a-icon type="plus-circle" theme="filled" class="cursor-pointer package-name-add mr-20"

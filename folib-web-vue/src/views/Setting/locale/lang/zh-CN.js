@@ -495,5 +495,7 @@ export default {
     'EnterVulnerabilityQuery': '输入漏洞编号查询',
     'vulnerabilityId': '漏洞编号',
     'validFrom': '有效期',
-    'TimingNotifying':'定时通知'
+    'TimingNotifying':'定时通知',
+    'FederalPromotionPolicy':'联邦晋级策略',
+    'CustomLayout': '自定义布局',
 }

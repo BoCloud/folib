@@ -1,13 +1,20 @@
 package com.veadan.folib.providers.repository;
 
 import com.veadan.folib.artifact.ArtifactNotFoundException;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.providers.io.*;
 import com.veadan.folib.repositories.ArtifactIdGroupRepository;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.compress.utils.Lists;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -18,7 +25,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * @author Veadan
@@ -105,6 +118,7 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider {
     protected RepositoryPath fetchPath(RepositoryPath repositoryPath)
             throws IOException {
         logger.debug(" -> Checking local cache for {} ...", repositoryPath);
+        repositoryPath = resolveRealPath(repositoryPath);
         if (artifactNotExists(repositoryPath)) {
             logger.info("The artifact {} was not found in the local cache", repositoryPath);
             return null;
@@ -115,6 +129,82 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider {
 
     private boolean artifactNotExists(RepositoryPath repositoryPath) throws IOException {
         return !RepositoryFiles.artifactExists(repositoryPath);
+    }
+
+    private RepositoryPath resolveRealPath(RepositoryPath repositoryPath) {
+        try {
+            Repository repository = repositoryPath.getRepository();
+            if (!ProductTypeEnum.Raw.getFoLibraryName().equals(repository.getLayout()) || Boolean.FALSE.equals(repository.getEnableCustomLayout()) || StringUtils.isBlank(repository.getCustomLayout())) {
+                return repositoryPath;
+            }
+            String artifactPath = RepositoryFiles.relativizePath(repositoryPath);
+            if (GlobalConstants.LATEST_ARTIFACT_KEY_LIST.stream().noneMatch(artifactPath::contains)) {
+                return repositoryPath;
+            }
+            final Pattern pattern = Pattern.compile(repository.getCustomLayout());
+            RepositoryPath repositoryParentPath = getParentPath(pattern, repositoryPath);
+            if (Objects.isNull(repositoryParentPath) || !Files.exists(repositoryParentPath)) {
+                return repositoryPath;
+            }
+            List<RepositoryPath> repositoryPathList = Lists.newArrayList();
+            try (Stream<Path> pathStream = Files.walk(repositoryParentPath)) {
+                pathStream.forEach(p -> {
+                    try {
+                        RepositoryPath matcherRepositoryPath = matcherPath(pattern, p);
+                        if (Objects.nonNull(matcherRepositoryPath) && !repositoryPathList.contains(matcherRepositoryPath)) {
+                            repositoryPathList.add(matcherRepositoryPath);
+                            repositoryPathList.sort(Comparator.comparing(o -> new ComparableVersion(o.getFileName().toString())));
+                        }
+                    } catch (Exception ex) {
+                        logger.error("Handler repositoryPath list error [{}]", ExceptionUtils.getStackTrace(ex));
+                    }
+                });
+            }
+            if (CollectionUtils.isNotEmpty(repositoryPathList)) {
+                return repositoryPathList.get(repositoryPathList.size() - 1);
+            }
+        } catch (Exception ex) {
+            logger.error(ExceptionUtils.getStackTrace(ex));
+        }
+        return repositoryPath;
+    }
+
+    private RepositoryPath getParentPath(Pattern pattern, RepositoryPath repositoryPath) {
+        try {
+            if (RepositoryFiles.isTrash(repositoryPath) || RepositoryFiles.isHidden(repositoryPath) || !RepositoryFiles.isArtifact(repositoryPath)) {
+                return null;
+            }
+            String artifactPath = RepositoryFiles.relativizePath(repositoryPath);
+            Matcher matcher = pattern.matcher(artifactPath);
+            if (matcher.matches()) {
+                String orgPath = matcher.group("orgPath");
+                String module = matcher.group("module");
+                RootRepositoryPath rootRepositoryPath = repositoryPath.getFileSystem().getRootDirectory();
+                return rootRepositoryPath.resolve(orgPath).resolve(module);
+            }
+            return null;
+        } catch (Exception ex) {
+            logger.error("Path [{}] getParentPath error [{}]", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
+        }
+        return null;
+    }
+
+    private RepositoryPath matcherPath(Pattern pattern, Path path) {
+        try {
+            RepositoryPath repositoryPath = (RepositoryPath) path;
+            if (RepositoryFiles.isTrash(repositoryPath) || RepositoryFiles.isHidden(repositoryPath) || !RepositoryFiles.isArtifact(repositoryPath)) {
+                return null;
+            }
+            String artifactPath = RepositoryFiles.relativizePath(repositoryPath);
+            Matcher matcher = pattern.matcher(artifactPath);
+            if (matcher.matches()) {
+                return repositoryPath;
+            }
+            return null;
+        } catch (Exception ex) {
+            logger.error("Path [{}] isMatcher error [{}]", path.toString(), ExceptionUtils.getStackTrace(ex));
+        }
+        return null;
     }
 
 }
