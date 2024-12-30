@@ -87,4 +87,16 @@ public interface Repository {
 
     Boolean getHealthStatus();
 
+    boolean getSyncJfrog();
+
+    String getMigrateId();
+
+    String getUsedSpace();
+
+    int getSyncStatus();
+
+    String getSyncDirPath();
+
+    int getTotalArtifact();
+
 }

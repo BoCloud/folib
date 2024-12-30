@@ -1,7 +1,17 @@
 package com.veadan.folib.controllers;
 
+import com.veadan.folib.components.syncartifact.DebianSyncArtifactProvider;
+import com.veadan.folib.components.syncartifact.DockerSyncArtifactProvider;
+import com.veadan.folib.domain.migrate.AddRepositoryForm;
+import com.veadan.folib.domain.migrate.ArtifactMigrateInfo;
+import com.veadan.folib.entity.Dict;
 import com.veadan.folib.forms.JfrogMigrateForm;
+import com.veadan.folib.forms.dict.DictForm;
+import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
+import com.veadan.folib.scanner.common.msg.TableResultResponse;
+import com.veadan.folib.services.DictService;
 import com.veadan.folib.services.JfrogMigrateService;
+import com.veadan.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.HttpResponseException;
 import org.jfrog.artifactory.client.Artifactory;
@@ -9,17 +19,17 @@ import org.jfrog.artifactory.client.ArtifactoryClientBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
-import javax.servlet.http.HttpServletResponse;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author huayanjun
@@ -32,7 +42,10 @@ public class JfrogMigrateController {
 
     @Resource
     private JfrogMigrateService jfrogMigrateService;
+
     private final static String JFROG_PREFIX = "/artifactory";
+
+
 
 
     @PostMapping("")
@@ -50,33 +63,72 @@ public class JfrogMigrateController {
         }
     }
 
+    @GetMapping("/task")
+    public ResponseEntity<List<Dict>> getMigrateTask() {
+        List<Dict> migrateTask = jfrogMigrateService.getMigrateTask();
+        return ResponseEntity.ok(migrateTask);
 
-    @PostMapping("/import")
-    public ResponseEntity<String> changeRepositoryType(@RequestParam("file") MultipartFile file) {
-        jfrogMigrateService.changeRepositoryType(file);
-        return ResponseEntity.ok("the repository is changed");
+    }
+
+    @PutMapping("/task/{id}")
+    public ResponseEntity<String> updateTask(@PathVariable Long id, @RequestBody ArtifactMigrateInfo info) {
+        jfrogMigrateService.updateTask(id,info);
+        return ResponseEntity.ok("update success");
+    }
+
+    @PostMapping("/task")
+    public ResponseEntity<String> AddTask(@RequestBody ArtifactMigrateInfo info) {
+        jfrogMigrateService.addTask(info);
+        return ResponseEntity.ok("update success");
+    }
+
+    @GetMapping("/repository")
+    public TableResultResponse<Repository> getRepositoryByMigrateId(@RequestParam(name = "page",defaultValue = "1") Integer page,
+                                                                    @RequestParam(name = "limit",defaultValue = "10") Integer limit,
+                                                                    String migrateId, String status) {
+      return jfrogMigrateService.getRepositoryByMigrateId(page,limit,migrateId, status);
+
+
+    }
+
+    // 添加迁移仓库
+    @PostMapping("/repository")
+    public ResponseEntity<String> addRepos(@RequestBody  AddRepositoryForm form){
+        jfrogMigrateService.addSyncRepository(form);
+        return ResponseEntity.ok("Success");
     }
 
 
-    @GetMapping("/download")
-    public void download(HttpServletResponse response) {
-        try (InputStream inputStream = this.getClass().getResourceAsStream("/template/syncRepositoryType.xlsx");
-             OutputStream outputStream = response.getOutputStream()) {
-            response.setContentType("application/octet-stream");
-            response.setHeader("Content-Disposition", "attachment; filename=\"syncRepositoryType.xlsx\"");
-            // 将 InputStream 内容写入到 Response 的 OutputStream
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, bytesRead);
-            }
-            outputStream.flush();
-        } catch (Exception e) {
-            log.error("download failed",e);
-            throw new RuntimeException("File download failed.");
-
-        }
+    // 将待迁移仓库迁移至迁移中
+    @PostMapping("/start")
+    public ResponseEntity<String> startSync(@RequestBody  AddRepositoryForm form){
+        jfrogMigrateService.startMigrate(form.getMigrateId(),form.getStoreAndRepos());
+        return ResponseEntity.ok("Success");
     }
 
+    @PostMapping("/repository/pause")
+    public ResponseEntity<String> pauseMigrate(@RequestBody  AddRepositoryForm form){
+        jfrogMigrateService.pauseMigrate(form.getMigrateId(),form.getStoreAndRepos());
+        return ResponseEntity.ok("Success");
+    }
+
+
+    @GetMapping("/repository/progress")
+    public ResponseEntity<Map<String,Long>> getCountByRepo(@RequestBody AddRepositoryForm form){
+        Map<String, Long> cnt = jfrogMigrateService.getFinishedCount(form.getStoreAndRepos());
+        return ResponseEntity.ok(cnt);
+    }
+
+    @PutMapping("/repository/continue")
+    public ResponseEntity<String> repoContinue(@RequestBody AddRepositoryForm form){
+        jfrogMigrateService.repoContinue(form.getStoreAndRepos());
+        return ResponseEntity.ok("continue");
+    }
+
+    @PutMapping("/repository/finish")
+    public ResponseEntity<String> repoFinish(@RequestBody AddRepositoryForm form){
+       jfrogMigrateService.repoFinish(form.getStoreAndRepos());
+        return ResponseEntity.ok("finished");
+    }
 
 }

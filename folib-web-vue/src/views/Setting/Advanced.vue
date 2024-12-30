@@ -333,6 +333,14 @@
               </template>
               <jfrog-migration/>
             </a-card>
+            <a-card :bordered="false" class="header-solid mt-10" >
+              <template #title>
+                <h6>{{ $t('Setting.JforgArtifactMigrate') }}</h6>
+                <p>{{ $t('Setting.JforgArtifactMigrateInfo') }}
+                </p>
+              </template>
+              <migrate-artifact/>
+            </a-card>
           </a-tab-pane>
         </a-tabs>
       </a-col>
@@ -350,6 +358,7 @@ import DataMigration from "./components/DataMigration.vue"
 import ArtifactsBackup from "./components/ArtifactsBackup.vue";
 import ArtifactsCache from "./components/Cache/index.vue";
 import JfrogMigration from "./components/JfrogMigration.vue"
+import MigrateArtifact from "./components/MigrateArtifact.vue"
 
 import {
   getStoragesAndRepositories,
@@ -434,6 +443,7 @@ export default {
     ArtifactsBackup,
     ArtifactsCache,
     JfrogMigration,
+    MigrateArtifact,
   },
   computed: {
 

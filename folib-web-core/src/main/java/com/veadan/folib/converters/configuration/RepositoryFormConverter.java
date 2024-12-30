@@ -37,6 +37,14 @@ public enum RepositoryFormConverter
         result.setAllowsDirectoryBrowsing(source.isAllowsDirectoryBrowsing());
         result.setChecksumHeadersEnabled(source.isChecksumHeadersEnabled());
         result.setGroupDefaultRepository(source.getGroupDefaultRepository());
+
+        result.setMigrateId(source.getMigrateId());
+        result.setSyncStatus(source.getSyncStatus());
+        result.setTotalArtifact(source.getTotalArtifact());
+        result.setSyncJfrog(source.getSyncJfrog());
+        result.setSyncDirPath(source.getSyncDirPath());
+
+
         if (source.getRepositoryConfiguration() != null)
         {
             result.setRepositoryConfiguration(

@@ -8,6 +8,7 @@ import com.veadan.folib.components.DistributedCounterComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.components.files.FilesCommonComponent;
+import com.veadan.folib.components.layout.DockerComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.configuration.MutableConfiguration;
@@ -18,6 +19,11 @@ import com.veadan.folib.enums.MigrateStatusEnum;
 import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.providers.io.RootRepositoryPath;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
+import com.veadan.folib.schema2.ContainerConfigurationManifest;
+import com.veadan.folib.schema2.ImageManifest;
+import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
@@ -52,14 +58,28 @@ import java.util.Objects;
 import java.util.Scanner;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
- * @author leipenghui
- **/
+ * @author huayanjun
+ * @since 2024-12-27 22:11
+ */
 @Slf4j
 @Component
-public class RpmSyncArtifactProvider implements SyncArtifactProvider {
+public class DockerSyncArtifactProvider implements SyncArtifactProvider{
+
+
+    /**
+     * 计数
+     */
+    private static final ThreadLocal<Integer> THREAD_LOCAL = ThreadLocal.withInitial(() -> 0);
+
+    /**
+     * 计数
+     */
+    private static final AtomicLong COUNT = new AtomicLong(0);
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -74,29 +94,17 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
     private ArtifactComponent artifactComponent;
 
     @Inject
-    protected ArtifactResolutionService artifactResolutionService;
-
-    @Inject
-    private RepositoryPathResolver repositoryPathResolver;
-
-    @Inject
     private FilesCommonComponent filesCommonComponent;
 
     @Inject
     @Lazy
     private CommonComponent commonComponent;
 
+    @Inject
+    protected ArtifactResolutionService artifactResolutionService;
 
-    /**
-     * 计数
-     */
-    private static final ThreadLocal<Integer> THREAD_LOCAL = ThreadLocal.withInitial(() -> 0);
-
-    /**
-     * 计数
-     */
-    private static final AtomicLong COUNT = new AtomicLong(0);
-
+    @Inject
+    private RepositoryPathResolver repositoryPathResolver;
     @Resource
     private ClusterSyncService clusterSyncService;
 
@@ -108,21 +116,22 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
     @Resource
     private ConfigurationManagementService configurationManagementService;
 
+    @Resource
+    protected DockerComponent dockerComponent;
+
+    private final static Pattern pattern = Pattern.compile("^(.*?)/([^/]+)/manifest\\.json$");
+
+
     @PostConstruct
     @Override
     public void register() {
-        syncArtifactProviderRegistry.addProvider(ArtifactSyncTypeEnum.RPM.getType(), this);
+        syncArtifactProviderRegistry.addProvider(ArtifactSyncTypeEnum.DOCKER.getType(), this);
         log.info("Registered sync artifact '{}' with alias '{}'.",
-                getClass().getCanonicalName(), ArtifactSyncTypeEnum.RPM.getType());
+                getClass().getCanonicalName(), ArtifactSyncTypeEnum.DOCKER.getType());
     }
 
     @Override
     public void browseFullSync(SyncArtifactForm syncArtifactForm) {
-        String dirPath = syncPackageIndex(syncArtifactForm);
-        if (StringUtils.isBlank(dirPath)) {
-            return;
-        }
-        handlerPath(dirPath, syncArtifactForm);
 
     }
 
@@ -131,41 +140,63 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
 
     }
 
-    @Override
-    public void batchBrowseSync(SyncArtifactForm syncArtifactForm) {
-        // 获取仓库信息
-        String storageId = syncArtifactForm.getStorageId(), repositoryId = syncArtifactForm.getRepositoryId();
-        MutableConfiguration mutableConfigurationClone = configurationManagementService.getMutableConfigurationClone();
-        RepositoryDto repository = mutableConfigurationClone.getStorage(storageId).getRepository(repositoryId);
-        if(MigrateStatusEnum.QUEUING.getStatus()==repository.getSyncStatus()||MigrateStatusEnum.INDEX_FAILED.getStatus()==repository.getSyncStatus()){
-            updateAndSyncRepoStatus(syncArtifactForm.getStoreAndRepo(),MigrateStatusEnum.FETCHING_INDEX.getStatus());
-            String dirPath = syncPackageIndex(syncArtifactForm);
-            if(dirPath==null){
-                log.info("同步索引失败,请稍后重试");
-                updateAndSyncRepoStatus(syncArtifactForm.getStoreAndRepo(),MigrateStatusEnum.INDEX_FAILED.getStatus());
-                return;
-            }
-            repository.setSyncDirPath(dirPath);
-            repository.setTotalArtifact(syncArtifactForm.getTotalArtifact());
-            repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
-            // 更新状态
-            try {
-                configurationManagementService.saveRepository(storageId,repository);
-                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
-                clusterSyncService.syncRepository(syncRepositoryDto);
-            } catch (IOException e) {
-                log.info("更新数据失败");
-            }
-        }
-        String path=repository.getSyncDirPath();
-        distributedCacheComponent.put(JfrogMigrateService.PAUSED_FLAG_PRE+syncArtifactForm.getStoreAndRepo(),"1");
-        if (handlerPath(path, syncArtifactForm)) {
-            updateAndSyncRepoStatus(syncArtifactForm.getStoreAndRepo(),MigrateStatusEnum.COMPLETED.getStatus());
-        }else {
-            updateAndSyncRepoStatus(syncArtifactForm.getStoreAndRepo(),MigrateStatusEnum.PAUSED.getStatus());
-        }
+    /**
+     * 获取文件
+     *
+     * @param dir   目录
+     * @param level 等级
+     * @return 文件
+     */
+    private File getLevelFile(File dir, int level) {
+        return new File(dir.getAbsolutePath() + File.separator + "level_" + level + ".txt");
     }
 
+    /**
+     * 查询子url
+     *
+     * @param repository  repository
+     * @param rootUrl     rootUrl
+     * @param url         当前url
+     * @param remoteUrl   remoteUrl
+     * @param sleepMillis 睡眠毫秒数
+     * @param dom         页面元素
+     * @param file        file
+     * @param writer      writer
+     */
+    private boolean findSubUrl(Repository repository, String rootUrl, String url, String remoteUrl, Integer sleepMillis, String dom, File file, FileWriter writer) {
+        try {
+            if (Objects.nonNull(sleepMillis)) {
+                Thread.sleep(sleepMillis);
+            }
+            Document doc = artifactComponent.getDocument(repository, url);
+            if(Objects.isNull(doc)){
+                log.error("获取文件失败");
+                return false;
+            }
+            Elements links = doc.select(dom);
+            for (Element link : links) {
+                String absUrl = link.absUrl("href");
+                if (absUrl.endsWith("manifest.json")) {
+                    absUrl = StringUtils.removeStart(absUrl.replace(rootUrl, ""), GlobalConstants.SEPARATOR);
+                    filesCommonComponent.storeContent(absUrl, file.getParent() + "/artifact");
+                    THREAD_LOCAL.set(THREAD_LOCAL.get() + 1);
+                    break;
+                } else if (absUrl.endsWith(GlobalConstants.SEPARATOR)){
+                    // 非子目录
+                    if (!absUrl.contains(url) || url.equals(absUrl)) {
+                        continue;
+                    }
+                    String path = absUrl.substring(rootUrl.length());
+                    writer.write(path + "\n");
+                    writer.flush();
+                }
+            }
+        } catch (Exception e) {
+            log.error("docker包索引同步制品，错误 [{}]", ExceptionUtils.getStackTrace(e));
+            return false;
+        }
+        return true;
+    }
 
     private String syncPackageIndex(SyncArtifactForm syncArtifactForm) {
         try {
@@ -195,11 +226,11 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
                 rootUrl = rootUrl.substring(0, rootUrl.lastIndexOf(separator));
             }
             String dirPath = tempPath + File.separator + "syncArtifact" + File.separator + syncArtifactForm.getStorageId() + File.separator + syncArtifactForm.getRepositoryId();
-            log.info("rpm包索引同步，仓库地址 [{}] 存放爬取信息的目录 [{}]", repositoryBaseUri, dirPath);
+            log.info("docker包索引同步， 仓库地址 [{}] 存放爬取信息的目录 [{}]", repositoryBaseUri, dirPath);
             File dir = new File(dirPath);
             if (!dir.exists()) {
                 boolean flag = dir.mkdirs();
-                log.info("rpm包索引同步存放爬取信息的目录 [{}] 不存在，创建状态 [{}]", dirPath, flag);
+                log.info("Raw包索引同步存放爬取信息的目录 [{}] 不存在，创建状态 [{}]", dirPath, flag);
             } else {
                 FileUtil.clean(dir);
             }
@@ -211,7 +242,7 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
             File rootFile = getLevelFile(dir, level);
             if (!rootFile.exists()) {
                 boolean flag = rootFile.createNewFile();
-                log.info("rpm包索引同步存放爬取信息的文件 [{}] 不存在，创建状态 [{}]", rootFile.getAbsolutePath(), flag);
+                log.info("docker镜像索引同步存放爬取信息的文件 [{}] 不存在，创建状态 [{}]", rootFile.getAbsolutePath(), flag);
                 try (FileWriter writer = new FileWriter(rootFile)) {
                     writer.write("/\n");
                     writer.flush();
@@ -238,8 +269,9 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
                             }
                         }
                     }
+
                 } catch (IOException e) {
-                    log.error("rpm包索引同步错误 [{}]", ExceptionUtils.getStackTrace(e));
+                    log.error("docker镜像索引同步错误 [{}]", ExceptionUtils.getStackTrace(e));
                     return null;
                 }
                 if (fileEmpty) {
@@ -248,15 +280,15 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
                     break;
                 }
             }
-            log.info("rpm包索引同步完成耗时 [{}] ms, 同步制品总个数 [{}]", System.currentTimeMillis() - startTime, THREAD_LOCAL.get());
             syncArtifactForm.setTotalArtifact(THREAD_LOCAL.get());
+            log.info("docker包索引同步完成耗时 [{}] ms, 同步制品总个数 [{}]", System.currentTimeMillis() - startTime, THREAD_LOCAL.get());
             return dirPath;
         } catch (Exception e) {
-            log.error("rpm包索引同步，错误 [{}]", ExceptionUtils.getStackTrace(e));
+            log.error("docker 包索引同步，错误 [{}]", ExceptionUtils.getStackTrace(e));
         } finally {
             THREAD_LOCAL.remove();
         }
-        return null;
+        return "";
     }
 
     private boolean handlerPath(String dirPath, SyncArtifactForm syncArtifactForm) {
@@ -271,11 +303,11 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
         }
         COUNT.set(0L);
         int availableCores = syncArtifactForm.getMaxThreadNum()==null?commonComponent.getAvailableCores() * 2:syncArtifactForm.getMaxThreadNum();
-        ThreadPoolTaskExecutor threadPoolTaskExecutor = commonComponent.buildThreadPoolTaskExecutor("browserpmSync", availableCores, availableCores);
+        ThreadPoolTaskExecutor threadPoolTaskExecutor = commonComponent.buildThreadPoolTaskExecutor("browseRawSync", availableCores, availableCores);
         boolean ispaused=false;
         try (Stream<Path> pathStream = Files.list(path)) {
             int finalBatch = batch;
-            ispaused=pathStream.sorted().anyMatch(item -> {
+            ispaused=pathStream.anyMatch(item -> {
                 String currentLine = "";
                 long lines = 0, startTime = System.currentTimeMillis();
                 boolean flag=true;
@@ -286,7 +318,7 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
                             if("0".equals(distributedCacheComponent.get(JfrogMigrateService.PAUSED_FLAG_PRE+syncArtifactForm.getStoreAndRepo()))){
                                 //
                                 log.info("仓库{}同步任务暂停",syncArtifactForm.getStoreAndRepo());
-                                updateAndSyncRepoStatus(syncArtifactForm.getStoreAndRepo(), MigrateStatusEnum.PAUSED.getStatus());
+                                updateAndSyncRepoStatus(syncArtifactForm.getStoreAndRepo(),MigrateStatusEnum.PAUSED.getStatus());
                                 distributedCacheComponent.delete(JfrogMigrateService.PAUSED_FLAG_PRE+syncArtifactForm.getStoreAndRepo());
                                 return true;
                             }
@@ -322,50 +354,8 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
         } catch (Exception ex) {
             log.error("Error [{}]", ExceptionUtils.getStackTrace(ex));
         }
-        log.info("rpm包同步完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个制品，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), COUNT.get(), System.currentTimeMillis() - allStartTime);
+        log.info("Raw包同步完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个制品，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), COUNT.get(), System.currentTimeMillis() - allStartTime);
         return !ispaused;
-    }
-
-
-    private File getLevelFile(File dir, int level) {
-        return new File(dir.getAbsolutePath() + File.separator + "level_" + level + ".txt");
-    }
-
-    private boolean findSubUrl(Repository repository, String rootUrl, String url, String remoteUrl, Integer sleepMillis, String dom, File file, FileWriter writer) {
-        try {
-            if (url.equals(".rpm")) {
-                return true;
-            }
-            if (Objects.nonNull(sleepMillis)) {
-                Thread.sleep(sleepMillis);
-            }
-            Document doc = artifactComponent.getDocument(repository, url);
-            if(Objects.isNull(doc)){
-                log.error("获取文件失败");
-                return false;
-            }
-            Elements links = doc.select(dom);
-            for (Element link : links) {
-                String absUrl = link.absUrl("href");
-                if (absUrl.endsWith(".rpm")) {
-                    absUrl = StringUtils.removeStart(absUrl.replace(remoteUrl, ""), GlobalConstants.SEPARATOR);
-                    filesCommonComponent.storeContent(absUrl, file.getParent() + "/artifact");
-                    THREAD_LOCAL.set(THREAD_LOCAL.get() + 1);
-                } else {
-                    // 非子目录
-                    if (!absUrl.contains(url) || url.equals(absUrl)) {
-                        continue;
-                    }
-                    String path = absUrl.substring(rootUrl.length());
-                    writer.write(path + "\n");
-                    writer.flush();
-                }
-            }
-        } catch (Exception e) {
-            log.error("rpm包索引，错误 [{}]", ExceptionUtils.getStackTrace(e));
-            return false;
-        }
-        return true;
     }
 
     private void batchDownload(Path path, String storageId, String repositoryId, List<String> artifactPathList, ThreadPoolTaskExecutor threadPoolTaskExecutor) {
@@ -376,20 +366,51 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
         List<FutureTask<String>> futureTasks = Lists.newArrayList();
         FutureTask<String> futureTask = null;
         for (List<String> itemArtifactPathList : artifactPathLists) {
+            RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
             futureTask = new FutureTask<String>(() -> {
                 for (String artifactPath : itemArtifactPathList) {
                     try {
                         if (StringUtils.isNotBlank(artifactPath)) {
-                            //制品
-                            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-                            if (Files.exists(repositoryPath)) {
-                                COUNT.incrementAndGet();
-                                log.debug("Batch download storageId [{}] repositoryId [{}] artifactPath [{}] exists skip..", storageId, repositoryId, artifactPath);
+                            Matcher matcher = pattern.matcher(artifactPath);
+                            if (!matcher.matches()) {
+                                log.info("无效的路径");
                                 continue;
                             }
-                            artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
-                            if (Files.exists(repositoryPath)) {
-                                COUNT.incrementAndGet();
+                            String imagePath = matcher.group(1); // 捕获镜像路径
+                            String tag = matcher.group(2);      // 捕获标签
+                            log.info("Image Path: " + imagePath + ", Tag: " + tag);
+                            RepositoryPath manifestRepositoryPath = dockerComponent.resolveManifest(storageId, repositoryId, imagePath, tag);
+                            List<ImageManifest> imageManifestList = dockerComponent.getImageManifests(manifestRepositoryPath);
+                            // 判断是否存在
+                            RepositoryPath imageRepoPath = repositoryPathResolver.resolve(storageId, repositoryId, imagePath + "/" + tag);
+                            if(Files.exists(imageRepoPath)){
+                                continue;
+                            }
+                            if (CollectionUtils.isNotEmpty(imageManifestList)) {
+                                RepositoryPath blobsRepositoryPath;
+                                for (ImageManifest imageManifest : imageManifestList) {
+                                    ContainerConfigurationManifest containerConfigurationManifest = imageManifest.getConfig();
+                                    if (Objects.nonNull(containerConfigurationManifest) && StringUtils.isNotBlank(containerConfigurationManifest.getDigest())) {
+                                        blobsRepositoryPath = rootRepositoryPath.resolve(DockerLayoutProvider.BLOBS + File.separator + containerConfigurationManifest.getDigest());
+                                        String targetUrl = String.format("%s/blobs/%s", StringUtils.removeEnd(imagePath, "/"), containerConfigurationManifest.getDigest());
+                                        blobsRepositoryPath.setTargetUrl(targetUrl);
+                                        blobsRepositoryPath.setArtifactPath(imagePath);
+                                        artifactResolutionService.resolvePath(blobsRepositoryPath);
+                                    }
+                                    if (CollectionUtils.isNotEmpty(imageManifest.getLayers())) {
+                                        for (LayerManifest layerManifest : imageManifest.getLayers()) {
+                                            if (StringUtils.isNotBlank(layerManifest.getDigest())) {
+                                                blobsRepositoryPath = rootRepositoryPath.resolve(DockerLayoutProvider.BLOBS + File.separator + layerManifest.getDigest());
+                                                String targetUrl = String.format("%s/blobs/%s", StringUtils.removeEnd(imagePath, "/"), layerManifest.getDigest());
+                                                blobsRepositoryPath.setTargetUrl(targetUrl);
+                                                blobsRepositoryPath.setArtifactPath(imagePath);
+                                                artifactResolutionService.resolvePath(blobsRepositoryPath);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            if (Files.exists(imageRepoPath)) {
                                 // 添加成功 计数
                                 distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT+storageId+":"+repositoryId).addAndGet(1L);
                             }
@@ -414,6 +435,43 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
         artifactPathList.clear();
     }
 
+    @Override
+    public void batchBrowseSync(SyncArtifactForm syncArtifactForm) {
+        // 获取仓库信息
+        String storageId = syncArtifactForm.getStorageId(), repositoryId = syncArtifactForm.getRepositoryId();
+        MutableConfiguration mutableConfigurationClone = configurationManagementService.getMutableConfigurationClone();
+        RepositoryDto repository = mutableConfigurationClone.getStorage(storageId).getRepository(repositoryId);
+        if(MigrateStatusEnum.QUEUING.getStatus()==repository.getSyncStatus()||MigrateStatusEnum.INDEX_FAILED.getStatus()==repository.getSyncStatus()){
+            updateAndSyncRepoStatus(syncArtifactForm.getStoreAndRepo(),MigrateStatusEnum.FETCHING_INDEX.getStatus());
+            String dirPath = syncPackageIndex(syncArtifactForm);
+            if(dirPath==null){
+                log.info("同步索引失败,请稍后重试");
+                updateAndSyncRepoStatus(syncArtifactForm.getStoreAndRepo(),MigrateStatusEnum.INDEX_FAILED.getStatus());
+                return;
+            }
+            repository.setSyncDirPath(dirPath);
+            repository.setTotalArtifact(syncArtifactForm.getTotalArtifact());
+            repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
+            // 更新状态
+            try {
+                configurationManagementService.saveRepository(storageId,repository);
+                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
+                clusterSyncService.syncRepository(syncRepositoryDto);
+            } catch (IOException e) {
+                log.info("更新数据失败");
+            }
+        }
+        String path=repository.getSyncDirPath();
+        distributedCacheComponent.put(JfrogMigrateService.PAUSED_FLAG_PRE+syncArtifactForm.getStoreAndRepo(),"1");
+        if (handlerPath(path, syncArtifactForm)) {
+            updateAndSyncRepoStatus(syncArtifactForm.getStoreAndRepo(),MigrateStatusEnum.COMPLETED.getStatus());
+        }else {
+            updateAndSyncRepoStatus(syncArtifactForm.getStoreAndRepo(),MigrateStatusEnum.PAUSED.getStatus());
+        }
+
+    }
+
+
     private void updateAndSyncRepoStatus(String storeAndRepo, int status) {
         String storageId = ConfigurationUtils.getStorageId(storeAndRepo,storeAndRepo);
         String repositoryId=ConfigurationUtils.getRepositoryId(storeAndRepo);
@@ -428,6 +486,4 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
             log.info("更新数据失败");
         }
     }
-
-
 }

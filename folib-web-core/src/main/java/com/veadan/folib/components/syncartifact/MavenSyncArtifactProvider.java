@@ -2,22 +2,33 @@ package com.veadan.folib.components.syncartifact;
 
 import cn.hutool.core.io.FileUtil;
 import com.google.common.collect.Lists;
+import com.veadan.folib.cluster.SyncRepositoryEnum;
+import com.veadan.folib.components.DistributedCacheComponent;
+import com.veadan.folib.components.DistributedCounterComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.components.files.FilesCommonComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.configuration.ConfigurationUtils;
+import com.veadan.folib.configuration.MutableConfiguration;
 import com.veadan.folib.constant.GlobalConstants;
+import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.ArtifactSyncTypeEnum;
 import com.veadan.folib.enums.DictTypeEnum;
+import com.veadan.folib.enums.MigrateStatusEnum;
 import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ArtifactResolutionService;
+import com.veadan.folib.services.ClusterSyncService;
+import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.DictService;
+import com.veadan.folib.services.JfrogMigrateService;
 import com.veadan.folib.services.MavenIndexerService;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
@@ -42,6 +53,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import javax.inject.Inject;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
@@ -114,6 +126,17 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
 
+    @Resource
+    private ClusterSyncService clusterSyncService;
+
+    @Resource
+    private DistributedCounterComponent distributedCounterComponent;
+
+    @Resource
+    private DistributedCacheComponent distributedCacheComponent;
+    @Resource
+    private ConfigurationManagementService configurationManagementService;
+
     @PostConstruct
     @Override
     public void register() {
@@ -183,6 +206,41 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
         }
     }
 
+    @Override
+    public void batchBrowseSync(SyncArtifactForm syncArtifactForm) {
+        // 获取仓库信息
+        String storageId = syncArtifactForm.getStorageId(), repositoryId = syncArtifactForm.getRepositoryId();
+        MutableConfiguration mutableConfigurationClone = configurationManagementService.getMutableConfigurationClone();
+        RepositoryDto repository = mutableConfigurationClone.getStorage(storageId).getRepository(repositoryId);
+        if(MigrateStatusEnum.QUEUING.getStatus()==repository.getSyncStatus()||MigrateStatusEnum.INDEX_FAILED.getStatus()==repository.getSyncStatus()){
+            updateAndSyncRepoStatus(syncArtifactForm.getStoreAndRepo(),MigrateStatusEnum.FETCHING_INDEX.getStatus());
+            String dirPath = syncPackageIndex(syncArtifactForm);
+            if(dirPath==null){
+                log.info("同步索引失败,请稍后重试");
+                updateAndSyncRepoStatus(syncArtifactForm.getStoreAndRepo(),MigrateStatusEnum.INDEX_FAILED.getStatus());
+                return;
+            }
+            repository.setSyncDirPath(dirPath);
+            repository.setTotalArtifact(syncArtifactForm.getTotalArtifact());
+            repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
+            // 更新状态
+            try {
+                configurationManagementService.saveRepository(storageId,repository);
+                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
+                clusterSyncService.syncRepository(syncRepositoryDto);
+            } catch (IOException e) {
+                log.info("更新数据失败");
+            }
+        }
+        String path=repository.getSyncDirPath();
+        distributedCacheComponent.put(JfrogMigrateService.PAUSED_FLAG_PRE+syncArtifactForm.getStoreAndRepo(),"1");
+        if (handlerPath(path, syncArtifactForm)) {
+            updateAndSyncRepoStatus(syncArtifactForm.getStoreAndRepo(),MigrateStatusEnum.COMPLETED.getStatus());
+        }else {
+            updateAndSyncRepoStatus(syncArtifactForm.getStoreAndRepo(),MigrateStatusEnum.PAUSED.getStatus());
+        }
+    }
+
     /**
      * Client WebTarget 构建认证信息
      *
@@ -239,15 +297,19 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
      * @param file        文件
      * @param writer      writer
      */
-    private void findSubUrl(Repository repository, String rootUrl, String url, String remoteUrl, Integer sleepMillis, String dom, File file, FileWriter writer) {
+    private boolean findSubUrl(Repository repository, String rootUrl, String url, String remoteUrl, Integer sleepMillis, String dom, File file, FileWriter writer) {
         try {
             if (isSuffix(url)) {
-                return;
+                return true;
             }
             if (Objects.nonNull(sleepMillis)) {
                 Thread.sleep(sleepMillis);
             }
             Document doc = artifactComponent.getDocument(repository, url);
+            if(Objects.isNull(doc)){
+                log.error("获取文件失败");
+                return false;
+            }
             Elements links = doc.select(dom);
             for (Element link : links) {
                 String absUrl = link.absUrl("href");
@@ -267,7 +329,9 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
             }
         } catch (Exception e) {
             log.error("Maven包索引，错误 [{}]", ExceptionUtils.getStackTrace(e));
+            return false;
         }
+        return true;
     }
 
     private String syncPackageIndex(SyncArtifactForm syncArtifactForm) {
@@ -323,6 +387,7 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
             File urlFile;
             while ((urlFile = getLevelFile(dir, level)).exists()) {
                 level++;
+                log.info("开始检索{}下的目录",urlFile);
                 boolean fileEmpty = true;
                 File subFile = getLevelFile(dir, level);
                 try (Scanner scanner = new Scanner(urlFile);
@@ -335,11 +400,14 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
                             }
                             fileEmpty = false;
                             String url = rootUrl + line;
-                            findSubUrl(repository, rootUrl, url, remoteUrl, sleepMillis, syncArtifactForm.getDom(), subFile, writer);
+                            if (!findSubUrl(repository, rootUrl, url, remoteUrl, sleepMillis, syncArtifactForm.getDom(), subFile, writer)) {
+                                return null;
+                            }
                         }
                     }
                 } catch (IOException e) {
                     log.error("Maven包索引同步错误 [{}]", ExceptionUtils.getStackTrace(e));
+                    return null;
                 }
                 if (fileEmpty) {
                     FileUtil.del(urlFile);
@@ -348,6 +416,7 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
                 }
             }
             log.info("Maven包索引同步完成耗时 [{}] ms, 同步制品总个数 [{}]", System.currentTimeMillis() - startTime, THREAD_LOCAL.get());
+            syncArtifactForm.setTotalArtifact(THREAD_LOCAL.get());
             return dirPath;
         } catch (Exception e) {
             log.error("Maven包索引同步，错误 [{}]", ExceptionUtils.getStackTrace(e));
@@ -367,28 +436,37 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
         return suffixList.stream().anyMatch(url::endsWith);
     }
 
-    private void handlerPath(String dirPath, SyncArtifactForm syncArtifactForm) {
+    private boolean handlerPath(String dirPath, SyncArtifactForm syncArtifactForm) {
         long allStartTime = System.currentTimeMillis();
         Path path = Path.of(dirPath + "/artifact");
         if (!Files.exists(path) || !Files.isDirectory(path)) {
-            return;
+            return false;
         }
         int batch = 100;
         if (Objects.nonNull(syncArtifactForm.getBatch())) {
             batch = syncArtifactForm.getBatch();
         }
         COUNT.set(0L);
-        int availableCores = commonComponent.getAvailableCores() * 2;
+        int availableCores = syncArtifactForm.getMaxThreadNum()==null?commonComponent.getAvailableCores() * 2:syncArtifactForm.getMaxThreadNum();
         ThreadPoolTaskExecutor threadPoolTaskExecutor = commonComponent.buildThreadPoolTaskExecutor("browseMavenSync", availableCores, availableCores);
+        boolean ispaused=false;
         try (Stream<Path> pathStream = Files.list(path)) {
             int finalBatch = batch;
-            pathStream.sorted().forEach(item -> {
+            ispaused=pathStream.anyMatch(item -> {
                 String currentLine = "";
                 long lines = 0, startTime = System.currentTimeMillis();
+                boolean flag=true;
                 try {
                     List<String> pathList = Lists.newArrayList();
                     try (LineIterator lineIterator = FileUtils.lineIterator(item.toFile(), "UTF-8")) {
                         while (lineIterator.hasNext()) {
+                            if("0".equals(distributedCacheComponent.get(JfrogMigrateService.PAUSED_FLAG_PRE+syncArtifactForm.getStoreAndRepo()))){
+                                //
+                                log.info("仓库{}同步任务暂停",syncArtifactForm.getStoreAndRepo());
+                                updateAndSyncRepoStatus(syncArtifactForm.getStoreAndRepo(),MigrateStatusEnum.PAUSED.getStatus());
+                                distributedCacheComponent.delete(JfrogMigrateService.PAUSED_FLAG_PRE+syncArtifactForm.getStoreAndRepo());
+                                return true;
+                            }
                             try {
                                 lines++;
                                 currentLine = lineIterator.nextLine();
@@ -401,21 +479,28 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
                                 }
                             } catch (Exception ex) {
                                 log.error(ExceptionUtils.getStackTrace(ex));
+                                flag=false;
                             }
                         }
                         if (CollectionUtils.isNotEmpty(pathList)) {
                             batchDownload(item, syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), pathList, threadPoolTaskExecutor);
                         }
                     }
+                    // 清除已完成的文件
+                    if(flag){
+                        Files.delete(item);
+                    }
                 } catch (Exception ex) {
                     log.error("Handle path [{}] lines [{}] error [{}] ms", item.toString(), lines, ExceptionUtils.getStackTrace(ex));
                 }
                 log.info("Handle path [{}] lines [{}] finished take time [{}] ms", item.toString(), lines, System.currentTimeMillis() - startTime);
+                return false;
             });
         } catch (Exception ex) {
             log.error("Error [{}]", ExceptionUtils.getStackTrace(ex));
         }
         log.info("Maven包同步完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个制品，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), COUNT.get(), System.currentTimeMillis() - allStartTime);
+        return !ispaused;
     }
 
     private void batchDownload(Path path, String storageId, String repositoryId, List<String> artifactPathList, ThreadPoolTaskExecutor threadPoolTaskExecutor) {
@@ -440,6 +525,8 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
                             artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
                             if (Files.exists(repositoryPath)) {
                                 COUNT.incrementAndGet();
+                                // 添加成功 计数
+                                distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT+storageId+":"+repositoryId).addAndGet(1L);
                             }
                         }
                     } catch (Exception ex) {
@@ -461,4 +548,21 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
         //清理
         artifactPathList.clear();
     }
+
+    private void updateAndSyncRepoStatus(String storeAndRepo, int status) {
+        String storageId = ConfigurationUtils.getStorageId(storeAndRepo,storeAndRepo);
+        String repositoryId=ConfigurationUtils.getRepositoryId(storeAndRepo);
+        MutableConfiguration mutableConfigurationClone = configurationManagementService.getMutableConfigurationClone();
+        RepositoryDto repository = mutableConfigurationClone.getStorage(storageId).getRepository(repositoryId);
+        repository.setSyncStatus(status);
+        try {
+            configurationManagementService.saveRepository(storageId,repository);
+            SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
+            clusterSyncService.syncRepository(syncRepositoryDto);
+        } catch (IOException e) {
+            log.info("更新数据失败");
+        }
+    }
+
+
 }
