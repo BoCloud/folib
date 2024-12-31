@@ -33,7 +33,6 @@ public class CustomLayoutController extends BaseController {
 
     @ApiOperation(value = "查询自定义布局分页列表", response = CustomLayoutRecord.class)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
-    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping(value = "/page")
     public TableResultResponse<CustomLayoutRecord> page(@RequestParam(name = "page", required = false) Integer page,
                                                         @RequestParam(name = "limit", required = false) Integer limit,
@@ -43,7 +42,6 @@ public class CustomLayoutController extends BaseController {
 
     @ApiOperation(value = "查询自定义布局列表", response = CustomLayoutRecord.class)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
-    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping(value = "/list")
     public ResponseEntity<List<CustomLayoutRecord>> list(CustomLayoutForm customLayoutForm) {
         return ResponseEntity.ok(customLayoutService.queryCustomLayoutList(customLayoutForm));
@@ -51,7 +49,6 @@ public class CustomLayoutController extends BaseController {
 
     @ApiOperation(value = "查询自定义布局信息", response = CustomLayoutForm.class)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
-    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping(value = "/info")
     public ResponseEntity<Object> customLayoutInfo(CustomLayout customLayout) {
         CustomLayoutForm customLayoutForm = customLayoutService.queryCustomLayout(customLayout);
