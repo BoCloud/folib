@@ -22,7 +22,6 @@ public class SyncSubscriber {
     private JfrogMigrateService jfrogMigrateService;
 
 
-
     @PostConstruct
     public void subscribeQueue() {
         ITopic<String> topic = distributedTopicComponent.getTopic(jfrogMigrateService.TOPIC_QUEUE);

@@ -263,7 +263,9 @@ public class RepositoryData
         this.migrateId=delegate.getMigrateId();
         this.usedSpace=delegate.getUsedSpace();
         this.syncStatus=delegate.getSyncStatus();
+        this.totalArtifact=delegate.getTotalArtifact();
         this.syncDirPath=delegate.getSyncDirPath();
+
     }
 
     private ProxyConfiguration immuteProxyConfiguration(final MutableProxyConfiguration source) {

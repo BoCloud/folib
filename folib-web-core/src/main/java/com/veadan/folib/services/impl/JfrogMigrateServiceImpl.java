@@ -12,7 +12,6 @@ import com.veadan.folib.components.IdGenerateUtils;
 import com.veadan.folib.components.syncartifact.SyncArtifactProvider;
 import com.veadan.folib.components.syncartifact.SyncArtifactProviderRegistry;
 import com.veadan.folib.configuration.ConfigurationUtils;
-import com.veadan.folib.configuration.MutableConfiguration;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
@@ -65,6 +64,7 @@ import com.veadan.folib.users.service.UserGroupService;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.EncodedPasswordUser;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
+import com.veadan.folib.utils.SecurityUtils;
 import com.veadan.folib.utils.UserUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -89,6 +89,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import javax.inject.Inject;
 import java.io.IOException;
@@ -105,6 +106,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -124,6 +128,9 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
     @Inject
     @RelationalDatabaseUserService.RelationalDatabase
     private UserService userService;
+
+    @Resource
+    private SecurityUtils securityUtils;
 
     @Resource
     private UserGroupService userGroupService;
@@ -183,17 +190,18 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
     private final static String QUEUE_NAME = "artifact_migrate_queue";
 
 
-
     private final static Map<String, Set<Integer>> STATUS_MAPPING = new HashMap<>();
 
     private final AtomicInteger BATH_COUNT = new AtomicInteger(0);
 
     // 0-初始 1-排队 2-获取索引 3-同步制品 4-暂停 5-完成
     static {
-        STATUS_MAPPING.put("pending", Set.of(0, 4));
-        STATUS_MAPPING.put("migrating", Set.of(1, 2, 3));
-        STATUS_MAPPING.put("completed", Set.of(5));
+        STATUS_MAPPING.put("pending", Set.of(MigrateStatusEnum.INITIAL.getStatus()));
+        STATUS_MAPPING.put("migrating", Set.of(MigrateStatusEnum.PAUSED.getStatus(), MigrateStatusEnum.QUEUING.getStatus(), MigrateStatusEnum.FETCHING_INDEX.getStatus(), MigrateStatusEnum.SYNCING_ARTIFACT.getStatus(), MigrateStatusEnum.INDEX_FAILED.getStatus(), MigrateStatusEnum.SYNCING_FAILED.getStatus()));
+        STATUS_MAPPING.put("completed", Set.of(MigrateStatusEnum.COMPLETED.getStatus()));
     }
+
+    private final ExecutorService executorService = Executors.newFixedThreadPool(10);
 
     @Resource
     private DictServiceImpl dictService;
@@ -321,7 +329,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             if (repository == null) {
                 continue;
             }
-            repository.setSyncStatus(1);
+            repository.setSyncStatus(MigrateStatusEnum.QUEUING.getStatus());
             try {
                 configurationManagementService.saveRepository(storageId, repository);
                 SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
@@ -336,15 +344,15 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 throw new RuntimeException(e);
             }
             // 通知其他实例处理
-            distributedTopicComponent.publishMessage(TOPIC_QUEUE,migrateId);
+            distributedTopicComponent.publishMessage(TOPIC_QUEUE, migrateId);
         }
     }
 
     @Override
     public void pauseMigrate(String migrateId, List<String> storeAndRepos) {
         for (String storeAndRepo : storeAndRepos) {
-            String keyName=PAUSED_FLAG_PRE+storeAndRepo;
-            distributedCacheComponent.put(keyName,"0");
+            String keyName = PAUSED_FLAG_PRE + storeAndRepo;
+            distributedCacheComponent.put(keyName, "0");
         }
     }
 
@@ -362,9 +370,16 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             BATH_COUNT.decrementAndGet();
             return;
         }
+        executorService.submit(() -> {
+            taskHandler(migrateId, info);
+        });
+    }
+
+    void taskHandler(String migrateId, ArtifactMigrateInfo info) {
         try {
+            securityUtils.setAdminAuthentication();
             String pausedTask = PAUSED_QUEUE.poll();
-            String storeAndRepo =pausedTask==null? distributedQueueComponent.takeFromQueue(QUEUE_NAME):pausedTask;
+            String storeAndRepo = pausedTask == null ? distributedQueueComponent.takeFromQueue(QUEUE_NAME) : pausedTask;
             String storageId = ConfigurationUtils.getStorageId(storeAndRepo, storeAndRepo);
             String repositoryId = ConfigurationUtils.getRepositoryId(storeAndRepo);
             Storage storage = configurationManager.getConfiguration().getStorage(storageId);
@@ -380,7 +395,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             form.setDom("a");
             form.setRepositoryId(repositoryId);
             form.setStorageId(storageId);
-            form.setBrowseUrl(StringUtils.removeEnd(info.getBrowsePrefix(),GlobalConstants.SEPARATOR)+GlobalConstants.SEPARATOR+repositoryId);
+            form.setBrowseUrl(StringUtils.removeEnd(info.getBrowsePrefix(), GlobalConstants.SEPARATOR) + GlobalConstants.SEPARATOR + repositoryId);
             form.setMaxThreadNum(info.getThreadNumber());
             syncArtifactProvider.batchBrowseSync(form);
             // 完成之后
@@ -389,15 +404,16 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             listenTask(migrateId);
         } catch (InterruptedException e) {
             BATH_COUNT.decrementAndGet();
-
+        } finally {
+            securityUtils.clearAuthentication();
         }
     }
 
-    public Map<String,Long> getFinishedCount(List<String> storeAndRepos){
+    public Map<String, Long> getFinishedCount(List<String> storeAndRepos) {
         HashMap<String, Long> result = new HashMap<>();
         for (String storeAndRepo : storeAndRepos) {
             long count = distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + storeAndRepo).get();
-            result.put(storeAndRepo,count);
+            result.put(storeAndRepo, count);
         }
         return result;
     }
@@ -415,20 +431,20 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             if (repository == null) {
                 continue;
             }
-            //
-            if(MigrateStatusEnum.INDEX_FAILED.getStatus()==repository.getSyncStatus()){
+            if (MigrateStatusEnum.INDEX_FAILED.getStatus() == repository.getSyncStatus()) {
                 repository.setSyncStatus(MigrateStatusEnum.QUEUING.getStatus());
                 // 制品失败和暂停都要去原实例
-            }else if(MigrateStatusEnum.SYNCING_FAILED.getStatus()==repository.getSyncStatus()){
+            } else if (MigrateStatusEnum.SYNCING_FAILED.getStatus() == repository.getSyncStatus()) {
                 repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
-                distributedTopicComponent.publishMessage(TOPIC_PAUSED,repository.getStorageIdAndRepositoryId());
-            }else if(MigrateStatusEnum.PAUSED.getStatus()==repository.getSyncStatus()){
+                distributedTopicComponent.publishMessage(TOPIC_PAUSED, repository.getStorageIdAndRepositoryId());
+            } else if (MigrateStatusEnum.PAUSED.getStatus() == repository.getSyncStatus()) {
                 repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
-                distributedTopicComponent.publishMessage(TOPIC_PAUSED,repository.getStorageIdAndRepositoryId());
+                distributedTopicComponent.publishMessage(TOPIC_PAUSED, repository.getStorageIdAndRepositoryId());
             }
-            // 通知各个节点
-            distributedTopicComponent.publishMessage(TOPIC_QUEUE,repository.getMigrateId());
             try {
+                // 通知各个节点
+                distributedQueueComponent.putToQueue(QUEUE_NAME, storeAndRepo);
+                distributedTopicComponent.publishMessage(TOPIC_QUEUE, repository.getMigrateId());
                 configurationManagementService.saveRepository(storageId, repository);
                 SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
                 clusterSyncService.syncRepository(syncRepositoryDto);
@@ -675,7 +691,6 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 info.increaseCount();
                 // 获取同步仓库的
                 RemoteRepositoryDto remoteDTO = new RemoteRepositoryDto();
-
                 remoteDTO.setUsername(form.getUsername());
                 remoteDTO.setPassword(form.getPassword());
                 remoteDTO.setAutoBlocking(true);
@@ -683,11 +698,11 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 remoteDTO.setChecksumValidation(true);
                 remoteDTO.setAllowsDirectoryBrowsing(true);
                 // 如果是docker
-                if("Docker".equals(repository.getPackageType())){
-                    String remoteUrl=repository.getUrl();
+                if ("Docker".equals(repository.getPackageType())) {
+                    String remoteUrl = repository.getUrl();
                     String replace = remoteUrl.replace(repository.getKey(), "v2/" + repository.getKey());
                     remoteDTO.setUrl(replace);
-                }else {
+                } else {
                     remoteDTO.setUrl(repository.getUrl());
                 }
                 repositoryDto.setRemoteRepository(remoteDTO);
@@ -867,6 +882,19 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         String storageIdAndRepositoryId = ConfigurationUtils.getStorageIdAndRepositoryId(storageId, repository.getId());
         if (repository.getGroupRepositories().contains(storageIdAndRepositoryId)) {
             throw new IllegalArgumentException("The combination repository cannot contain itself");
+        }
+    }
+
+    @PreDestroy
+    public void shutdownExecutor() {
+        executorService.shutdown();
+        try {
+            if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
+                executorService.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executorService.shutdownNow();
+            Thread.currentThread().interrupt();
         }
     }
 
