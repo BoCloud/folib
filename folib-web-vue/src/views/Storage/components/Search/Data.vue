@@ -683,7 +683,7 @@ export default {
       }
     },
     getCodeImg(item) {
-      return item.name === "Maven 2" ? "maven_black" : item.name.toLowerCase();
+      return item.name === "Maven 2" ? "maven" : item.name.toLowerCase();
     },
     fileSizeConver(size) {
       if (size) {
