@@ -86,7 +86,7 @@
             <a-button 
               type="primary" 
               :disabled="!canContinueMigration"
-              @click="handleStartMigration"
+              @click="handleContinueMigration"
             >
               {{ $t('Setting.ContinueMigration') }}
             </a-button>
@@ -175,7 +175,7 @@
 
 
 <script>
-import { getRepositories, addMigrateRepo ,startMigrate, pauseMigrate, finishMigrate } from '@/api/migrate'
+import { getRepositories, addMigrateRepo ,startMigrate, pauseMigrate, finishMigrate ,continueMigrate,getMigrateProgress} from '@/api/migrate'
 import { getStorages,queryRepositoriesByStorage } from '@/api/folib'
 
 export default {
@@ -327,8 +327,8 @@ export default {
     canContinueMigration() {
       if (this.activeTab !== 2 || this.selectedMigratingRows.length === 0) return false;
       
-      // 检查是否所有选中的行都是失败或暂停状态
-      const validStatus = [4, 6, 7]; // 暂停、同步索引失败、同步制品失败
+      // 检查是否所有选中的行都是失败、暂停或排队状态
+      const validStatus = [1, 4, 6, 7]; // 排队、暂停、同步索引失败、同步制品失败
       const allRowsValid = this.selectedMigratingRows.every(row => validStatus.includes(row.syncStatus));
       const anyOtherStatus = this.selectedMigratingRows.some(row => !validStatus.includes(row.syncStatus));
       
@@ -389,6 +389,9 @@ export default {
       this.selectedCompletedRows = [];
     },
     async loadData(tab) {
+      // 清空之前的数据
+      this.clearData();
+      
       switch (tab) {
         case 1:
           await this.loadPendingData();
@@ -400,6 +403,19 @@ export default {
           await this.loadCompletedData();
           break;
       }
+    },
+    // 清空数据的方法
+    clearData() {
+      // 清空选中状态
+      this.clearSelection();
+      // 清空表格数据
+      this.pendingData = [];
+      this.migratingData = [];
+      this.completedData = [];
+      // 重置分页
+      this.pendingPagination.current = 1;
+      this.migratingPagination.current = 1;
+      this.completedPagination.current = 1;
     },
     async loadPendingData() {
       this.pendingLoading = true;
@@ -553,34 +569,40 @@ export default {
       {
           title: this.$t('Setting.StorageId'),
           dataIndex: 'storageId',
+          align: 'center',
           key: 'storageId'
         },
         {
           title: this.$t('Setting.RepositoryId'),
           dataIndex: 'id',
+          align: 'center',
           key: 'id'
         },
         {
           title: this.$t('Setting.TotalArtifact'),
           dataIndex: 'totalArtifact',
           key: 'totalArtifact',
+          align: 'center',
           scopedSlots: { customRender: 'totalArtifact' }
         },
         {
             title: this.$t('Setting.Layout'),
             dataIndex: 'subLayout',
+            align: 'center',
             key: 'subLayout'
         },
         {
           title: this.$t('Setting.Status'),
           dataIndex: 'syncStatus',
           key: 'syncStatus',
+          align: 'center',
           scopedSlots: { customRender: 'status' }
         },
         {
           title: this.$t('Setting.Progress'),
           dataIndex: 'progress',
           key: 'progress',
+          align: 'center',
           scopedSlots: { customRender: 'progress' }
         }
       ]
@@ -591,35 +613,34 @@ export default {
       {
           title: this.$t('Setting.StorageId'),
           dataIndex: 'storageId',
+          align: 'center',
           key: 'storageId'
         },
         {
           title: this.$t('Setting.RepositoryId'),
           dataIndex: 'id',
+          align: 'center',
           key: 'id'
         },
         {
           title: this.$t('Setting.UsedSpace'),
           dataIndex: 'usedSpace',
           key: 'usedSpace',
+          align: 'center',
           scopedSlots: { customRender: 'usedSpace' }
         },
         {
             title: this.$t('Setting.Layout'),
             dataIndex: 'layout',
+            align: 'center',
             key: 'layout'
         },
         {
           title: this.$t('Setting.Status'),
           dataIndex: 'status',
           key: 'status',
+          align: 'center',
           scopedSlots: { customRender: 'status' }
-        },
-        {
-          title: this.$t('Setting.Progress'),
-          dataIndex: 'progress',
-          key: 'progress',
-          scopedSlots: { customRender: 'progress' }
         }
       ]
     },
@@ -731,7 +752,6 @@ export default {
           migrateId: this.migrateId,
           storeAndRepos: selectedRows.map(row => (row.storageId+":"+row.id))
         }
-        console.log("开始迁移："+data);
         await startMigrate(data);
         this.$notification.success({
           message: this.$t('Setting.Success'),
@@ -826,6 +846,22 @@ export default {
           description: this.$t('Setting.PauseSuccess')
         });
         this.loadMigratingData();
+      } catch (error) {
+        this.$notification.error({
+          message: this.$t('Setting.Error'),
+          description: error.message
+        });
+      }
+    },
+
+    // 继续迁移
+    async handleContinueMigration() {
+      try {
+        const data = {
+          migrateId: this.migrateId,
+          storeAndRepos: this.selectedMigratingRows.map(row => `${row.storageId}:${row.id}`)
+        };
+        await continueMigrate(data);
       } catch (error) {
         this.$notification.error({
           message: this.$t('Setting.Error'),

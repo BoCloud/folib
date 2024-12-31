@@ -49,32 +49,32 @@ export function task () {
   // 获取迁移进度 - 修改为批量获取
   export function getMigrateProgress(data) {
     return request({
-      url: '/api/migrate/repository/progress',
-      method: 'get',
+      url: '/api/migrate/jfrog/repository/progress',
+      method: 'post',
       data: data
     })
   }
 
   export function continueMigrate(data) {
     return request({
-      url: '/api/migrate/repository/continue',
-      method: 'put',
+      url: '/api/migrate/jfrog/repository/continue',
+      method: 'post',
       data: data
     })
   }
   
   export function finishMigrate(data) {
     return request({
-      url: '/api/migrate/repository/finish',
-      method: 'put',
+      url: '/api/migrate/jfrog/repository/finish',
+      method: 'post',
       data: data
     })
   }
 
   export function pauseMigrate(data) {
     return request({
-      url: '/api/migrate/repository/pause',
-      method: 'put',
+      url: '/api/migrate/jfrog/repository/pause',
+      method: 'post',
       data: data
     })
   }
