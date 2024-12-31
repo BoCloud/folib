@@ -153,7 +153,7 @@ public class CommonComponent {
                 updateAnonymous();
             }
         }
-        if(serverSettingsForm.getAlarmConfigurationForm()!=null){
+        if(serverSettingsForm.getAlarmConfigurationForm()!=null && StringUtils.isNotBlank(serverSettingsForm.getAlarmConfigurationForm().getCronExpression())){
             configurationManagementService.setAlarmConfiguration(serverSettingsForm.getAlarmConfigurationForm().getMutableAlarmConfiguration());
             final String className = AlarmNoticeCronJob.class.getName();;
             final String cronName = "Alarm NoticeCron Job";

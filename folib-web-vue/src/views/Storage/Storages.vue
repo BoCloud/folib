@@ -2640,7 +2640,7 @@ export default {
    },
     enableCustomLayoutChange(val) {
       if (this.customLayoutList && val && !this.folibRepository.customLayout) {
-        this.folibRepository.customLayout = this.customLayoutList[0].artifactPathPattern
+        // this.folibRepository.customLayout = this.customLayoutList[0].artifactPathPattern
       }
     },
     queryCustomLayoutList() {
