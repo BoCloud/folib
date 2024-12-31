@@ -73,7 +73,7 @@ export default {
     'CustomLayoutTip': '请选择您需要自定义布局',
     'DistributedRemain': '当前存储为分布式，不支持存储路径定义',
     'ItemLimit': '制品大小限制(MB)',
-    'RepositorySizeLimit': '仓库存储限制(TB)',
+    'RepositorySizeLimit': '仓库存储限制(GB)',
     'StorageSizeLimit': '存储限制(TB)',
     'ServiceStatus': '服务状态',
     'OpenService': '开放服务',

@@ -42,6 +42,11 @@ public enum ArtifactSyncTypeEnum {
      * DEBIAN
      */
     DEBIAN("SYNC_DEBIAN", ProductTypeEnum.Debian.getFoLibraryName()),
+
+
+    DOCKER("SYNC_DOCKER", ProductTypeEnum.Docker.getFoLibraryName()),
+
+    GO("SYNC_GO",ProductTypeEnum.Go.getFoLibraryName())
     ;
 
     /**

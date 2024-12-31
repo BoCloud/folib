@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 import com.veadan.folib.artifact.coordinates.DebianArtifactCoordinates;
+import com.veadan.folib.constant.DebianConstant;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactEntity;
 import com.veadan.folib.domain.DebianMetadata;
@@ -375,6 +376,14 @@ public class DebianUtils {
         event.setArchitecture(coordinates.getArchitecture());
         return event;
 
+    }
+
+    public static String getArrtString(String distribution,String component,String architecture){
+        StringBuilder sb=new StringBuilder();
+        sb.append(DebianConstant.ATTR_DISTRIBUTION).append("=").append(distribution).append(";");
+        sb.append(DebianConstant.ATTR_COMPONENT).append("=").append(component).append(";");
+        sb.append(DebianConstant.ATTR_ARCHITECTURE).append("=").append(architecture);
+        return sb.toString();
     }
 
 

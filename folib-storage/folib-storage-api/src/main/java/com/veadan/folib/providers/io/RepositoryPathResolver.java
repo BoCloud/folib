@@ -112,6 +112,7 @@ public class RepositoryPathResolver {
             super(target.getTarget(), target.getFileSystem());
             this.artifact = target.artifact;
             this.artifactExist = target.artifactExist;
+            this.extAttribute=target.extAttribute;
         }
 
         @Override

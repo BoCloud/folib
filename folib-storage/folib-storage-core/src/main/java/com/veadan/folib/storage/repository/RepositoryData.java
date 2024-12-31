@@ -20,6 +20,7 @@ import com.veadan.folib.yaml.repository.CustomRepositoryConfigurationDto;
 import com.veadan.folib.yaml.repository.RepositoryConfiguration;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.StringUtils;
+import org.stringtemplate.v4.ST;
 
 import javax.annotation.concurrent.Immutable;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -141,6 +142,63 @@ public class RepositoryData
      */
     private boolean healthStatus;
 
+    /**
+     * 是否在迁移
+     */
+    private boolean syncJfrog;
+
+    /**
+     *  迁移id
+     */
+    private String migrateId;
+
+    private int syncStatus;
+
+    private String syncDirPath;
+
+    private int totalArtifact;
+
+    public int getTotalArtifact() {
+        return totalArtifact;
+    }
+
+    public void setTotalArtifact(int totalArtifact) {
+        this.totalArtifact = totalArtifact;
+    }
+
+    @Override
+    public String getSyncDirPath() {
+        return syncDirPath;
+    }
+
+    public void setSyncDirPath(String syncDirPath) {
+        this.syncDirPath = syncDirPath;
+    }
+
+
+
+    @Override
+    public int getSyncStatus() {
+        return syncStatus;
+    }
+
+    public void setSyncStatus(int syncStatus) {
+        this.syncStatus = syncStatus;
+    }
+
+
+
+    @Override
+    public String getUsedSpace() {
+        return usedSpace;
+    }
+
+    public void setUsedSpace(String usedSpace) {
+        this.usedSpace = usedSpace;
+    }
+
+    private String usedSpace;
+
     @JsonIgnore
     private Storage storage;
 
@@ -201,6 +259,11 @@ public class RepositoryData
             this.healthStatus = delegate.getHealthStatus();
         }
         this.storageMaxSize = delegate.getStorageMaxSize();
+        this.syncJfrog=delegate.getSyncJfrog();
+        this.migrateId=delegate.getMigrateId();
+        this.usedSpace=delegate.getUsedSpace();
+        this.syncStatus=delegate.getSyncStatus();
+        this.syncDirPath=delegate.getSyncDirPath();
     }
 
     private ProxyConfiguration immuteProxyConfiguration(final MutableProxyConfiguration source) {
@@ -490,5 +553,17 @@ public class RepositoryData
     @Override
     public Boolean getHealthStatus() {
         return healthStatus;
+    }
+
+    @Override
+    public boolean getSyncJfrog() {
+        return this.syncJfrog;
+    }
+
+
+
+    @Override
+    public String getMigrateId() {
+        return this.migrateId;
     }
 }

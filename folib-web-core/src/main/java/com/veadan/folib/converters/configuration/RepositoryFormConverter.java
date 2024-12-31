@@ -40,6 +40,14 @@ public enum RepositoryFormConverter
         result.setChecksumHeadersEnabled(source.isChecksumHeadersEnabled());
         result.setStorageMaxSize(source.getStorageMaxSize());
         result.setGroupDefaultRepository(source.getGroupDefaultRepository());
+
+        result.setMigrateId(source.getMigrateId());
+        result.setSyncStatus(source.getSyncStatus());
+        result.setTotalArtifact(source.getTotalArtifact());
+        result.setSyncJfrog(source.getSyncJfrog());
+        result.setSyncDirPath(source.getSyncDirPath());
+
+
         if (source.getRepositoryConfiguration() != null)
         {
             result.setRepositoryConfiguration(

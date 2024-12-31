@@ -1,7 +1,16 @@
 package com.veadan.folib.services;
 
+import com.veadan.folib.domain.migrate.AddRepositoryForm;
+import com.veadan.folib.domain.migrate.ArtifactMigrateInfo;
+import com.veadan.folib.entity.Dict;
 import com.veadan.folib.forms.JfrogMigrateForm;
-import org.jfrog.artifactory.client.Artifactory;
+import com.veadan.folib.scanner.common.msg.TableResultResponse;
+import com.veadan.folib.storage.repository.Repository;
+
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 
 /**
  * @author huayanjun
@@ -9,5 +18,40 @@ import org.jfrog.artifactory.client.Artifactory;
  */
 public interface JfrogMigrateService {
 
-    void migrate(Artifactory artifactory,JfrogMigrateForm form);
+    String TOPIC_QUEUE = "artifact_migrate_topic_queue";
+
+    String TOPIC_PAUSED = "artifact_migrate_topic_paused";
+
+    // 0-暂停 1-继续
+    String PAUSED_FLAG_PRE="migrate:pause:";
+
+   String ARTIFACT_COUNT="migrate:artifact:count:";
+    Queue<String> PAUSED_QUEUE = new LinkedList<>();
+
+
+    void migrate(JfrogMigrateForm form);
+
+    List<Dict> getMigrateTask();
+
+    TableResultResponse<Repository> getRepositoryByMigrateId(int page, int limit,String migrateId, String status);
+
+    void addSyncRepository(AddRepositoryForm form);
+
+    void startMigrate(String migrateId,List<String> storeAndRepo);
+    void pauseMigrate(String migrateId,List<String> storeAndRepo);
+
+    void addTask(ArtifactMigrateInfo info);
+
+    void updateTask(Long id,ArtifactMigrateInfo info);
+    void listenTask(String migrateId);
+
+     Map<String,Long> getFinishedCount(List<String> storeAndRepos);
+
+     void repoContinue(List<String> storeAndRepos);
+
+     void repoFinish(List<String> storeAndRepos);
+
+
+
+
 }

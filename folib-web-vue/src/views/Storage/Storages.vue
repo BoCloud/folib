@@ -2633,9 +2633,7 @@ export default {
     },
     setRepoMaxSize(maxSize){
           if(maxSize){
-              console.log("maxSize:",maxSize)
               let size = (maxSize *1024*1024*1024).toFixed(0)
-              console.log("size:",size)
               return size;
           }
           return 0;

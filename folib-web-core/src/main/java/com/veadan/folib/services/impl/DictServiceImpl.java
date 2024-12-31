@@ -240,4 +240,15 @@ public class DictServiceImpl implements DictService {
         dictMapper.deleteHistoryDataForUploadProcessBySeconds(seconds);
     }
 
+    @Override
+    public void updateById(Dict dict) {
+        dictMapper.updateByPrimaryKey(dict);
+    }
+
+    @Override
+    public Dict getById(Long id) {
+        return dictMapper.selectByPrimaryKey(id);
+    }
+
+
 }

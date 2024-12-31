@@ -18,34 +18,10 @@
           </a-form-model-item>
         </a-col>
       </a-row>
-      <a-row :gutter="24">
-        <a-col :span="24">
-          <a-form-model-item 
-          :label="$t('Setting.MigrateContent')" 
-          prop="contents"
-          :colon="false" 
-        >
-          <a-checkbox-group 
-            v-model="jfrogMigrationForm.contents" 
-            style="width: 50%;" 
-            @change="handleContentChange"
-          >
-            <a-row :gutter="24">
-              <a-col :span="6" v-for="content in contentOptions" :key="content.value">
-                <a-checkbox :value="content.value">
-                  {{ $t(content.i18nKey) }}
-                </a-checkbox>
-              </a-col>
-            </a-row>
-          </a-checkbox-group>
-          </a-form-model-item>
-
-        </a-col>
-      </a-row>
+      
       <a-row :gutter="24">
         <a-col :span="7">
-          <a-form-model-item :colon="false" prop="targetStorage">
-            <!-- <a-input v-model="jfrogMigrationForm.targetStorage" /> -->
+          <a-form-model-item :colon="false" prop="storageId">
             <template slot="label">
               {{ $t('Setting.StorageSpace') }}
               <a-popover placement="topLeft">
@@ -56,7 +32,7 @@
               </a-popover>
             </template>
 
-            <a-select v-model="jfrogMigrationForm.targetStorage" mode="combobox"
+            <a-select v-model="jfrogMigrationForm.storageId" mode="combobox"
               :placeholder="$t('Setting.selectTheStorageSpace')" @change="handleStorageChange" clearable>
               <a-select-option v-for="storage in storages" :key="storage.id">
                 {{ storage.id }}
@@ -92,8 +68,39 @@
           </a-form-model-item>
         </a-col>
       </a-row>
+      <a-row :gutter="24">
+        <a-col :span="7">
+          <a-form-model-item :label="$t('Setting.ArtifactType')" :colon="false" prop="artifactType">
+            <a-select v-model="jfrogMigrationForm.artifactType" :placeholder="$t('Setting.PleaseSelectArtifactType')">
+                <a-select-option value="1">{{ $t('Setting.BaseOnJfrog') }}</a-select-option>
+                <a-select-option value="2">{{ $t('Setting.BaseOnBrowse') }}</a-select-option>
+            </a-select>
+          </a-form-model-item>
+        </a-col>
+        <a-col :span="14">
+          <a-form-model-item 
+          :label="$t('Setting.MigrateContent')" 
+          prop="contents"
+          :colon="false" 
+        >
+          <a-checkbox-group 
+            v-model="jfrogMigrationForm.contents" 
+            style="width: 100%;" 
+            @change="handleContentChange"
+          >
+            <a-row :gutter="24">
+              <a-col :span="6" v-for="content in contentOptions" :key="content.value">
+                <a-checkbox :value="content.value">
+                  {{ $t(content.i18nKey) }}
+                </a-checkbox>
+              </a-col>
+            </a-row>
+          </a-checkbox-group>
+          </a-form-model-item>
+        </a-col>
+      </a-row>
       <a-row>
-        <a-col :span="24">
+        <a-col :span="18">
           <a-button type="danger" :loading="loading" @click="handleSubmit" >
             {{ $t('Setting.BeSure') }}
           </a-button>
@@ -101,14 +108,59 @@
             {{ $t('Setting.Cancel') }}
           </a-button>
         </a-col>
+        <!-- <a-col :span="4">
+         <a-button type="primary" class="ml-10" @click="showRestoreModal">
+          <a-icon type="upload" />
+          {{ $t('Setting.RestoreRepo') }}
+        </a-button>
+        </a-col> -->
       </a-row>
     </a-form-model>
+
+    <a-modal
+      :title="$t('Setting.RestoreRepo')"
+      :visible="restoreModalVisible"
+      @cancel="handleRestoreCancel"
+      @ok="handleRestoreOk"
+      :confirmLoading="restoreLoading"
+    >
+      <a-form-model>
+        <p class="warning-text">{{ $t('Setting.RestoreWarning') }}</p>
+        <a-row>
+          <a-col :span="6">
+            <a-form-model-item>
+              <a-button type="download" @click="downloadTemplate">
+            <a-icon type="download" />
+            {{ $t('Setting.DownloadTemplate') }}
+            </a-button>
+          </a-form-model-item>
+          </a-col>
+          <a-col :span="6">
+            <a-form-model-item>
+              <a-upload
+                :multiple="false"
+                accept=".xls,.xlsx"
+                :customRequest="customUploadRequest"
+                :fileList="fileList"
+                :remove="removeFile"
+          >
+            <a-button>
+              <a-icon type="upload" />
+              {{ $t('Setting.SelectFile') }}
+            </a-button>
+          </a-upload>
+        </a-form-model-item>
+        </a-col>
+        
+      </a-row>
+      </a-form-model>
+    </a-modal>
 
   </div>
 </template>
 <script>
 
-import { getStorages, jfrogMigrate } from '@/api/folib'
+import { getStorages, jfrogMigrate,importJfrog,downloadTemplate } from '@/api/folib'
 
 
 
@@ -131,15 +183,16 @@ export default {
         password: undefined,
         storageId: undefined,
         storageProvider: undefined,
-        basedir: undefined,
+        basedir: "",
+        artifactType:undefined,
         contents: [],
-        previousCheckedValues:[]
-        
+        previousCheckedValues:[],        
       },
       jfrogMigrationRules: {
         url: [{ required: true, trigger: 'blur', message: this.$t('Setting.PleaseEnterTheJfrogAddress') }],
         username: [{ required: true, trigger: 'blur', message: this.$t('Setting.PleaseEnterTheJfrogUsername') }],
         password: [{ required: true, trigger: 'blur', message: this.$t('Setting.PleaseEnterTheJfrogPassword') }],
+        artifactType: [{ required: true, trigger: 'blur', message: this.$t('Setting.PleaseSelectArtifactType') }],
         contents: [
           { 
             required: true, 
@@ -156,7 +209,10 @@ export default {
         { value: 'USER', i18nKey: 'Setting.User' },
         { value: 'GROUP', i18nKey: 'Setting.Group' },
         { value: 'PERMISSION', i18nKey: 'Setting.Permission' }
-      ]
+      ],
+      restoreModalVisible: false,
+      restoreLoading: false,
+      fileList: [],
     }
   },
 
@@ -247,6 +303,69 @@ export default {
         return allValues.indexOf(a) - allValues.indexOf(b);
       });
       this.previousCheckedValues = [...this.jfrogMigrationForm.contents];
+    },
+    // 显示重置 Modal
+    showRestoreModal() {
+      this.restoreModalVisible = true;
+      this.fileList = [];
+      this.uploadedFile = null;
+    },
+
+    // 关闭重置 Modal
+    handleRestoreCancel() {
+      this.restoreModalVisible = false;
+      this.fileList = [];
+      this.uploadedFile = null;
+    },
+    // 确认重置
+    handleRestoreOk() {
+      if (!this.fileList[0]) {
+        this.$message.warning(this.$t('Setting.PleaseSelectFile'));
+        return;
+      }
+
+      this.restoreLoading = true;
+      const formData = new FormData();
+      formData.append('file', this.fileList[0]);
+
+      importJfrog(formData)
+        .then(response => {
+          this.$message.success(this.$t('Setting.RestoreSuccess'));
+          this.handleRestoreCancel();
+        })
+        .catch(error => {
+          const errMsg = error.response ? error.response.data.error : error.message;
+          this.$notification.error({
+            message: errMsg,
+            description: ''
+          });
+        })
+        .finally(() => {
+          this.restoreLoading = false;
+        });
+    },
+
+    // 处理文件上传
+    customUploadRequest({ file, onSuccess }) {
+      console.log('file',file);
+      this.fileList=[];
+      this.fileList.push(file);
+      onSuccess();
+    },
+
+    removeFile(){
+      this.fileList=[];
+    },
+      
+    downloadTemplate() {
+      downloadTemplate().then(res => {
+        const url = window.URL.createObjectURL(new Blob([res]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'syncRepositoryType.xlsx');
+        document.body.appendChild(link);
+        link.click();
+      })
     }
   },
  
