@@ -571,5 +571,6 @@ export default {
     Pause: '暂停',
     ContinueMigration: '继续迁移',
     FinishMigration: '完成迁移',
-    PauseMigration: '暂停迁移'
+    PauseMigration: '暂停迁移',
+    CompleteSuccess: '完成成功'
 }

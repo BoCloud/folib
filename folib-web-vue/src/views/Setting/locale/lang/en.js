@@ -565,5 +565,6 @@ export default {
     Pause: 'Pause',
     ContinueMigration: 'Continue Migration',
     FinishMigration: 'Finish Migration',
-    PauseMigration: 'Pause Migration'
+    PauseMigration: 'Pause Migration',
+    CompleteSuccess: 'Complete Success'
 }

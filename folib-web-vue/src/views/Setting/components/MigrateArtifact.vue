@@ -130,12 +130,12 @@ export default {
                     key: 'threadNumber',
                     scopedSlots: { customRender: 'threadNumber' },
                 },
-                {
-                    title: this.$t('Setting.Status'),
-                    dataIndex: 'status',
-                    align: 'center',
-                    key: 'status',
-                },
+                // {
+                //     title: this.$t('Setting.Status'),
+                //     dataIndex: 'status',
+                //     align: 'center',
+                //     key: 'status',
+                // },
                 {
                     title: this.$t('Setting.Actions'),
                     dataIndex: 'action',
