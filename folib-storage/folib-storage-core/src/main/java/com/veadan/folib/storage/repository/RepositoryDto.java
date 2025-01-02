@@ -70,6 +70,8 @@ public class RepositoryDto
 
     private long storageMaxSize;
 
+    private double storageThreshold;
+
     /**
      * The per-repository proxy settings that override the overall global proxy settings.
      */
@@ -348,8 +350,18 @@ public class RepositoryDto
         this.storageMaxSize = storageMaxSize;
     }
 
+
+
     public void setChecksumHeadersEnabled(boolean checksumHeadersEnabled) {
         this.checksumHeadersEnabled = checksumHeadersEnabled;
+    }
+
+    public double getStorageThreshold() {
+        return storageThreshold;
+    }
+
+    public void setStorageThreshold(double storageThreshold) {
+        this.storageThreshold = storageThreshold;
     }
 
     public MutableProxyConfiguration getProxyConfiguration() {

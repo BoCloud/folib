@@ -81,6 +81,8 @@ public class RepositoryForm {
 
     private long storageMaxSize;
 
+    private double storageThreshold;
+
     @Valid
     private ProxyConfigurationForm proxyConfiguration;
 
@@ -339,6 +341,14 @@ public class RepositoryForm {
 
     public void setStorageMaxSize(final long storageMaxSize) {
         this.storageMaxSize = storageMaxSize;
+    }
+
+    public double getStorageThreshold() {
+        return storageThreshold;
+    }
+
+    public void setStorageThreshold(final double storageThreshold) {
+        this.storageThreshold = storageThreshold;
     }
 
     public ProxyConfigurationForm getProxyConfiguration() {

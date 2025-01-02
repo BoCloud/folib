@@ -84,6 +84,8 @@ public class RepositoryData
 
     private long storageMaxSize;
 
+    private double storageThreshold;
+
     private ProxyConfiguration proxyConfiguration;
 
     private RemoteRepositoryData remoteRepository;
@@ -259,6 +261,7 @@ public class RepositoryData
             this.healthStatus = delegate.getHealthStatus();
         }
         this.storageMaxSize = delegate.getStorageMaxSize();
+        this.storageThreshold = delegate.getStorageThreshold();
         this.syncJfrog=delegate.getSyncJfrog();
         this.migrateId=delegate.getMigrateId();
         this.usedSpace=delegate.getUsedSpace();
@@ -410,6 +413,11 @@ public class RepositoryData
     @Override
     public long getStorageMaxSize() {
         return this.storageMaxSize;
+    }
+
+    @Override
+    public double getStorageThreshold() {
+        return this.storageThreshold;
     }
 
     public ProxyConfiguration getProxyConfiguration() {

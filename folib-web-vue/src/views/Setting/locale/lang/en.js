@@ -511,6 +511,7 @@ export default {
     'TimingNotifying':'timing notifying',
     'FederalPromotionPolicy':'Federal promotion policy',
     'CustomLayout': 'Custom layout',
+    'StorageThreshold': 'Storage Threshold',
 
     RepositoryMigration: 'Repository Migration',
     PendingMigration: 'Pending',

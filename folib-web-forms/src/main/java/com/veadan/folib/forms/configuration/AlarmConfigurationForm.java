@@ -37,25 +37,28 @@ public class AlarmConfigurationForm {
 
     private String cronExpression;
 
-    public AlarmConfigurationForm(List<String> notificationPolicy, List<String> recipients, List<String> emails) {
+    private double storageThreshold;
+
+    public AlarmConfigurationForm(List<String> notificationPolicy, List<String> recipients, List<String> emails, double storageThreshold) {
         this.notificationPolicy = notificationPolicy;
         this.recipients = recipients;
         this.emails = emails;
+        this.storageThreshold = storageThreshold;
     }
 
     @JsonIgnore()
     public AlarmConfiguration toAlarmConfiguration() {
-        return new AlarmConfiguration(new MutableAlarmConfiguration(notificationPolicy, recipients, emails));
+        return new AlarmConfiguration(new MutableAlarmConfiguration(notificationPolicy, recipients, emails, storageThreshold));
     }
 
     @JsonIgnore()
     public MutableAlarmConfiguration getMutableAlarmConfiguration() {
-        return new MutableAlarmConfiguration(notificationPolicy, recipients, emails);
+        return new MutableAlarmConfiguration(notificationPolicy, recipients, emails,storageThreshold);
     }
     @JsonIgnore()
     public static AlarmConfigurationForm formConfiguration(AlarmConfiguration source) {
         AlarmConfiguration configuration = Optional.ofNullable(source).orElse(new AlarmConfiguration(new MutableAlarmConfiguration()));
-        return new AlarmConfigurationForm(configuration.getNotificationPolicy(), configuration.getRecipients(), configuration.getEmails());
+        return new AlarmConfigurationForm(configuration.getNotificationPolicy(), configuration.getRecipients(), configuration.getEmails(), configuration.getStorageThreshold());
 
     }
 

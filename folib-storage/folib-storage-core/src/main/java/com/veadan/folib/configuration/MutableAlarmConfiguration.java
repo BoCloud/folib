@@ -18,6 +18,8 @@ public class MutableAlarmConfiguration implements Serializable {
     //指定邮箱列表
     private List<String>  emails;
 
+    private double storageThreshold;
+
     @JsonCreator
     public MutableAlarmConfiguration(){
     }
@@ -25,10 +27,12 @@ public class MutableAlarmConfiguration implements Serializable {
     @JsonCreator
     public MutableAlarmConfiguration(@JsonProperty("notificationPolicy") List<String> notificationPolicy,
                                      @JsonProperty("recipients") List<String> recipients,
-                                     @JsonProperty("emails") List<String> emails) {
+                                     @JsonProperty("emails") List<String> emails,
+                                     @JsonProperty("storageThreshold") double storageThreshold) {
         this.notificationPolicy = notificationPolicy;
         this.recipients = recipients;
         this.emails = emails;
+        this.storageThreshold = storageThreshold;
     }
 
     public List<String> getNotificationPolicy() {
@@ -53,5 +57,13 @@ public class MutableAlarmConfiguration implements Serializable {
 
     public void setEmails(List<String> emails) {
         this.emails = emails;
+    }
+
+    public double getStorageThreshold() {
+        return storageThreshold;
+    }
+
+    public void setStorageThreshold(double storageThreshold) {
+        this.storageThreshold = storageThreshold;
     }
 }

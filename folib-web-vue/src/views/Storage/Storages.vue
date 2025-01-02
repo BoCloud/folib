@@ -583,12 +583,24 @@
                 </a-col>
               </a-row>
               <a-row :gutter="[24]">
-                <a-col :span="3">
+                  <a-col :span="12">
+                      <a-form-item class="mb-10" :label="$t('Storage.StorageThreshold')" :colon="false">
+                          <a-input-number style="width: 100%"
+                              :default-value="100"
+                              :min="0"
+                              :max="100"
+                              :formatter="value => `${value}%`"
+                              :parser="value => value.replace('%', '')"
+                              v-model="repositoryStorageThreshold"
+                          />
+                      </a-form-item>
+                  </a-col>
+                <a-col :span="6">
                   <a-form-item class="mb-10" :label="$t('Storage.EnableCustomLayout')" :colon="false">
                     <a-switch v-model="folibRepository.enableCustomLayout" @change="enableCustomLayoutChange"></a-switch>
                   </a-form-item>
                 </a-col>
-                <a-col :span="9" v-if="folibRepository.enableCustomLayout">
+                <a-col :span="6" v-if="folibRepository.enableCustomLayout">
                   <a-form-item class="mb-10" :label="$t('Storage.CustomLayout')" :colon="false">
                     <a-select v-model="folibRepository.customLayout" style="width: 100%" model="default" show-search allowClear
                       :dropdown-style="{ maxHeight: '240px', overflow: 'auto' }"
@@ -600,6 +612,11 @@
                     </a-select>
                   </a-form-item>
                 </a-col>
+<!--                <a-col :span="6">-->
+<!--                    <a-form-item class="mb-10" :label="$t('Storage.StorageThreshold')" :colon="false">-->
+<!--                        <a-input  addon-after="%" v-model="repositoryStorageThreshold" />-->
+<!--                    </a-form-item>-->
+<!--                </a-col>-->
               </a-row>
               <a-row :gutter="[24]">
                 <a-col :span="3">
@@ -1272,6 +1289,7 @@ export default {
           layout: "",
       },
       repositoryStorageMaxSize: 0,
+      repositoryStorageThreshold:0,
       folibRepository: {
         allowsDeletion: true,
         allowsDeployment: true,
@@ -1282,6 +1300,7 @@ export default {
         artifactMaxSize: 100,
         basedir: null,
         storageMaxSize: 0,
+        storageThreshold:0,
         checksumHeadersEnabled: true,
         groupRepositories: [],
         httpConnectionPool: null,
@@ -2297,6 +2316,7 @@ export default {
 
       this.folibRepository.artifactMaxSize = this.artifactMaxSize * 1024 * 1024
       this.folibRepository.storageMaxSize =  this.setRepoMaxSize(this.repositoryStorageMaxSize);
+      this.folibRepository.storageThreshold = this.setRepoThreshold(this.repositoryStorageThreshold);
       addOrUpdateRepository(this.currentStorage.id, this.folibRepository.id, this.folibRepository).then(res => {
         if (!res.error) {
           setTimeout(() => {
@@ -2410,6 +2430,7 @@ export default {
           this.folibRepositoryEditDisabled = true
           this.folibVisible = true
           this.repositoryStorageMaxSize = this.getRepoMaxSize(this.folibRepository.storageMaxSize);
+          this.repositoryStorageThreshold = this.getRepoThreshold(this.folibRepository.storageThreshold);
         }
       })
 
@@ -2670,6 +2691,18 @@ export default {
           if(maxSize){
               let size = (maxSize *1024*1024*1024).toFixed(0)
               return size;
+          }
+          return 0;
+   },
+   setRepoThreshold(threshold){
+      if(threshold){
+          return  (threshold/100).toFixed(3)
+      }
+       return 0;
+   },
+   getRepoThreshold(threshold) {
+          if (threshold) {
+              return (threshold * 100).toFixed(3)
           }
           return 0;
    },
