@@ -664,7 +664,7 @@
                   <a-col :span="3" class="text-right">
                       <a-button v-if="folibRepository.type === 'hosted'" type="primary"
                                 @click="addOrUpdateRepositorySecond(true)" class="px-25">
-                          {{ $t('Storage.Next') }}123
+                          {{ $t('Storage.Next') }}
                       </a-button>
 
                       <!-- <a-button v-if="folibRepository.type === 'hosted'" style="margin-left: 20px"
@@ -2971,7 +2971,7 @@ export default {
   }
 
   .isActive{
-    background: #4b84f0;
+    background: #a5cafc;
     box-shadow: 0px 1px 6px 1px rgba(0,0,0,0.2);
   }
   .disabled_sty{
