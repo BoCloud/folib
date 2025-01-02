@@ -21,7 +21,7 @@
                   </a>
                   <a style="justify-content: center;align-items: center;display: flex;">
                     <a-avatar @click="createData" :size="64" shape="square"
-                      style="border-radius: 8px; background-image: linear-gradient( 310deg, #fafbfc, #ddd);   "
+                      style="border-radius: 8px; background-image: linear-gradient(310deg, #f1f7ff, #f9fbff);"
                                 >
                         <img :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" style="width: 150%;margin-left: -11px;" alt=""></img>
                     </a-avatar>
