@@ -2,10 +2,12 @@ package com.veadan.folib.components.syncartifact;
 
 import com.veadan.folib.enums.ArtifactSyncTypeEnum;
 import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
+import com.veadan.folib.services.MigrateInfoService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import javax.inject.Inject;
 
 /**
@@ -19,6 +21,8 @@ public class GoSyncArtifactProvider implements SyncArtifactProvider{
 
     @Inject
     private SyncArtifactProviderRegistry syncArtifactProviderRegistry;
+    @Resource
+    private MigrateInfoService migrateInfoService;
 
     @Override
     @PostConstruct

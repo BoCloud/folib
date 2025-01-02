@@ -10,6 +10,7 @@ import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.configuration.MutableConfiguration;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
+import com.veadan.folib.entity.MigrateInfo;
 import com.veadan.folib.enums.ArtifactSyncTypeEnum;
 import com.veadan.folib.enums.MigrateStatusEnum;
 import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
@@ -22,6 +23,7 @@ import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.JfrogMigrateService;
+import com.veadan.folib.services.MigrateInfoService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
@@ -87,6 +89,9 @@ public class HelmSyncArtifactProvider implements SyncArtifactProvider {
     private DistributedCacheComponent distributedCacheComponent;
     @Resource
     private ConfigurationManagementService configurationManagementService;
+
+    @Resource
+    private MigrateInfoService migrateInfoService;
 
     @PostConstruct
     @Override
@@ -161,7 +166,7 @@ public class HelmSyncArtifactProvider implements SyncArtifactProvider {
             if("0".equals(distributedCacheComponent.get(JfrogMigrateService.PAUSED_FLAG_PRE+syncArtifactForm.getStoreAndRepo()))){
                 //
                 log.info("仓库{}同步任务暂停",syncArtifactForm.getStoreAndRepo());
-                updateAndSyncRepoStatus(syncArtifactForm.getStoreAndRepo(),MigrateStatusEnum.PAUSED.getStatus());
+                migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm,MigrateStatusEnum.PAUSED.getStatus());
                 distributedCacheComponent.delete(JfrogMigrateService.PAUSED_FLAG_PRE+syncArtifactForm.getStoreAndRepo());
                 return;
             }
@@ -236,39 +241,17 @@ public class HelmSyncArtifactProvider implements SyncArtifactProvider {
     @Override
     public void batchBrowseSync(SyncArtifactForm syncArtifactForm) {
         // 获取仓库信息
-        String storageId = syncArtifactForm.getStorageId(), repositoryId = syncArtifactForm.getRepositoryId();
-        MutableConfiguration mutableConfigurationClone = configurationManagementService.getMutableConfigurationClone();
-        RepositoryDto repository = mutableConfigurationClone.getStorage(storageId).getRepository(repositoryId);
+        MigrateInfo repository = migrateInfoService.getByMigrateIdAndRepoInfo(syncArtifactForm.getMigrateId(),syncArtifactForm.getStorageId(),syncArtifactForm.getRepositoryId());
         if(MigrateStatusEnum.QUEUING.getStatus()==repository.getSyncStatus()){
             syncPackageIndex(syncArtifactForm);
             repository.setTotalArtifact(syncArtifactForm.getTotalArtifact());
             repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
             // 更新状态
-            try {
-                configurationManagementService.saveRepository(storageId,repository);
-                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
-                clusterSyncService.syncRepository(syncRepositoryDto);
-            } catch (IOException e) {
-                log.info("更新数据失败");
-            }
+            migrateInfoService.updateById(repository);
         }
-        RepositoryPath indexRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, "index.yaml");
+        RepositoryPath indexRepositoryPath = repositoryPathResolver.resolve(syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), "index.yaml");
         distributedCacheComponent.put(JfrogMigrateService.PAUSED_FLAG_PRE+syncArtifactForm.getStoreAndRepo(),"1");
         handlerIndex(indexRepositoryPath, syncArtifactForm);
 
-    }
-    private void updateAndSyncRepoStatus(String storeAndRepo, int status) {
-        String storageId = ConfigurationUtils.getStorageId(storeAndRepo,storeAndRepo);
-        String repositoryId=ConfigurationUtils.getRepositoryId(storeAndRepo);
-        MutableConfiguration mutableConfigurationClone = configurationManagementService.getMutableConfigurationClone();
-        RepositoryDto repository = mutableConfigurationClone.getStorage(storageId).getRepository(repositoryId);
-        repository.setSyncStatus(status);
-        try {
-            configurationManagementService.saveRepository(storageId,repository);
-            SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
-            clusterSyncService.syncRepository(syncRepositoryDto);
-        } catch (IOException e) {
-            log.info("更新数据失败");
-        }
     }
 }

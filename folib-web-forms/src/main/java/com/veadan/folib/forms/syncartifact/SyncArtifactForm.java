@@ -68,6 +68,15 @@ public class SyncArtifactForm {
 
     private String migrateId;
 
+    private String username;
+
+    private String password;
+
+    private Integer syncMeta;
+
+    private String apiUrl;
+
+
     public String getStoreAndRepo(){
         return this.storageId+":"+repositoryId;
     }

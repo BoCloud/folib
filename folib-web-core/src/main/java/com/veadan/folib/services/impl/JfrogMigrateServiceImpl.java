@@ -2,6 +2,7 @@ package com.veadan.folib.services.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.github.pagehelper.PageInfo;
 import com.veadan.folib.cluster.SyncRepositoryEnum;
 import com.veadan.folib.cluster.SyncStorageEnum;
 import com.veadan.folib.components.DistributedCacheComponent;
@@ -29,6 +30,7 @@ import com.veadan.folib.dto.AccessUsersDTO;
 import com.veadan.folib.dto.RoleDTO;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.entity.FolibRole;
+import com.veadan.folib.entity.MigrateInfo;
 import com.veadan.folib.entity.UserGroup;
 import com.veadan.folib.enums.ArtifactSyncTypeEnum;
 import com.veadan.folib.enums.MigrateStatusEnum;
@@ -47,6 +49,7 @@ import com.veadan.folib.scanner.common.util.UUIDUtils;
 import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.JfrogMigrateService;
+import com.veadan.folib.services.MigrateInfoService;
 import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.services.StorageManagementService;
 import com.veadan.folib.storage.Storage;
@@ -177,6 +180,9 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
     @Resource
     private DistributedCounterComponent distributedCounterComponent;
 
+    @Resource
+    private MigrateInfoService migrateInfoService;
+
     private final static String DEFAULT_STORAGE = "jfrog-storage";
 
     private static final String USER = "USER";
@@ -190,15 +196,15 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
     private final static String QUEUE_NAME = "artifact_migrate_queue";
 
 
-    private final static Map<String, Set<Integer>> STATUS_MAPPING = new HashMap<>();
+    private final static Map<String, List<Integer>> STATUS_MAPPING = new HashMap<>();
 
     private final AtomicInteger BATH_COUNT = new AtomicInteger(0);
 
     // 0-初始 1-排队 2-获取索引 3-同步制品 4-暂停 5-完成
     static {
-        STATUS_MAPPING.put("pending", Set.of(MigrateStatusEnum.INITIAL.getStatus()));
-        STATUS_MAPPING.put("migrating", Set.of(MigrateStatusEnum.PAUSED.getStatus(), MigrateStatusEnum.QUEUING.getStatus(), MigrateStatusEnum.FETCHING_INDEX.getStatus(), MigrateStatusEnum.SYNCING_ARTIFACT.getStatus(), MigrateStatusEnum.INDEX_FAILED.getStatus(), MigrateStatusEnum.SYNCING_FAILED.getStatus()));
-        STATUS_MAPPING.put("completed", Set.of(MigrateStatusEnum.COMPLETED.getStatus()));
+        STATUS_MAPPING.put("pending", List.of(MigrateStatusEnum.INITIAL.getStatus()));
+        STATUS_MAPPING.put("migrating", List.of(MigrateStatusEnum.PAUSED.getStatus(), MigrateStatusEnum.QUEUING.getStatus(), MigrateStatusEnum.FETCHING_INDEX.getStatus(), MigrateStatusEnum.SYNCING_ARTIFACT.getStatus(), MigrateStatusEnum.INDEX_FAILED.getStatus(), MigrateStatusEnum.SYNCING_FAILED.getStatus()));
+        STATUS_MAPPING.put("completed", List.of(MigrateStatusEnum.COMPLETED.getStatus()));
     }
 
     private final ExecutorService executorService = Executors.newFixedThreadPool(10);
@@ -257,17 +263,11 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
     }
 
     @Override
-    public TableResultResponse<Repository> getRepositoryByMigrateId(int page, int limit, String migrateId, String status) {
-        Collection<Storage> values = configurationManagementService.getConfiguration().getStorages().values();
-        List<Repository> repos = new LinkedList<>();
-        Set<Integer> statuses = STATUS_MAPPING.get(status);
+    public TableResultResponse<MigrateInfo> getRepositoryByMigrateId(int page, int limit, String migrateId, String status) {
+        List<Integer> statuses = STATUS_MAPPING.get(status);
         Assert.notNull(statuses, "无效的状态标识");
-        for (Storage storage : values) {
-            List<? extends Repository> collect = storage.getRepositories().values().stream().filter(e -> migrateId.equals(e.getMigrateId()) && statuses.contains(e.getSyncStatus())).collect(Collectors.toList());
-            repos.addAll(collect);
-        }
-        List<Repository> pageRepository = repos.stream().skip((long) (page - 1) * limit).limit(limit).collect(Collectors.toList());
-        return new TableResultResponse<>(repos.size(), pageRepository);
+        PageInfo<MigrateInfo> pages = migrateInfoService.selectByMigrateIdAndStatus(migrateId, statuses, page, limit);
+        return new TableResultResponse<>(pages.getTotal(), pages.getList());
     }
 
     @Override
@@ -286,9 +286,6 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             if (repository == null) {
                 continue;
             }
-            repository.setMigrateId(migrateId);
-            repository.setSyncJfrog(true);
-            repository.setSyncStatus(0);
             repository.setType(RepositoryTypeEnum.PROXY.getType());
             RemoteRepositoryDto remoteDTO = new RemoteRepositoryDto();
             remoteDTO.setUsername(info.getUsername());
@@ -321,23 +318,13 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         for (String storeAndRepo : storeAndRepos) {
             String storageId = ConfigurationUtils.getStorageId(storeAndRepo, storeAndRepo);
             String repositoryId = ConfigurationUtils.getRepositoryId(storeAndRepo);
-            StorageDto storage = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
-            if (storage == null) {
-                continue;
+            MigrateInfo info = migrateInfoService.getByMigrateIdAndRepoInfo(migrateId, storageId, repositoryId);
+            if(info==null){
+                return;
             }
-            RepositoryDto repository = storage.getRepository(repositoryId);
-            if (repository == null) {
-                continue;
-            }
-            repository.setSyncStatus(MigrateStatusEnum.QUEUING.getStatus());
-            try {
-                configurationManagementService.saveRepository(storageId, repository);
-                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
-                clusterSyncService.syncRepository(syncRepositoryDto);
-            } catch (Exception e) {
-                log.error("更新状态失败");
-            }
-            // 将仓库放入
+            // 修改状态
+            info.setSyncStatus(MigrateStatusEnum.QUEUING.getStatus());
+            migrateInfoService.updateById(info);
             try {
                 distributedQueueComponent.putToQueue(QUEUE_NAME, storeAndRepo);
             } catch (InterruptedException e) {
@@ -397,6 +384,10 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             form.setStorageId(storageId);
             form.setBrowseUrl(StringUtils.removeEnd(info.getBrowsePrefix(), GlobalConstants.SEPARATOR) + GlobalConstants.SEPARATOR + repositoryId);
             form.setMaxThreadNum(info.getThreadNumber());
+            form.setApiUrl(info.getRemotePreUrl());
+            form.setUsername(info.getUsername());
+            form.setPassword(info.getPassword());
+            form.setSyncMeta(info.getSyncMeta());
             syncArtifactProvider.batchBrowseSync(form);
             // 完成之后
             // 递归
@@ -409,7 +400,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         }
     }
 
-    public Map<String, Long> getFinishedCount(List<String> storeAndRepos) {
+    public Map<String, Long> getFinishedCount(String migrateId,List<String> storeAndRepos) {
         HashMap<String, Long> result = new HashMap<>();
         for (String storeAndRepo : storeAndRepos) {
             long count = distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + storeAndRepo).get();
@@ -419,18 +410,11 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
     }
 
     @Override
-    public void repoContinue(List<String> storeAndRepos) {
+    public void repoContinue(String migrateId,List<String> storeAndRepos) {
         for (String storeAndRepo : storeAndRepos) {
             String storageId = ConfigurationUtils.getStorageId(storeAndRepo, storeAndRepo);
             String repositoryId = ConfigurationUtils.getRepositoryId(storeAndRepo);
-            StorageDto storage = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
-            if (storage == null) {
-                continue;
-            }
-            RepositoryDto repository = storage.getRepository(repositoryId);
-            if (repository == null) {
-                continue;
-            }
+            MigrateInfo repository = migrateInfoService.getByMigrateIdAndRepoInfo(migrateId, storageId, repositoryId);
             if (MigrateStatusEnum.INDEX_FAILED.getStatus() == repository.getSyncStatus()) {
                 repository.setSyncStatus(MigrateStatusEnum.QUEUING.getStatus());
                 // 制品失败和暂停都要去原实例
@@ -445,9 +429,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 // 通知各个节点
                 distributedQueueComponent.putToQueue(QUEUE_NAME, storeAndRepo);
                 distributedTopicComponent.publishMessage(TOPIC_QUEUE, repository.getMigrateId());
-                configurationManagementService.saveRepository(storageId, repository);
-                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
-                clusterSyncService.syncRepository(syncRepositoryDto);
+                migrateInfoService.save(repository);
             } catch (Exception e) {
                 log.error("更新状态失败");
             }
@@ -456,7 +438,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
     }
 
     @Override
-    public void repoFinish(List<String> storeAndRepos) {
+    public void repoFinish(String migrateId,List<String> storeAndRepos) {
         for (String storeAndRepo : storeAndRepos) {
             String storageId = ConfigurationUtils.getStorageId(storeAndRepo, storeAndRepo);
             String repositoryId = ConfigurationUtils.getRepositoryId(storeAndRepo);
@@ -600,7 +582,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         Repositories repositories = artifactory.repositories();
         Storage storage = configurationManagementService.getConfiguration().getStorage(storageId);
         // 生成迁移信息
-        ArtifactMigrateInfo migrateInfo = getMigrateInfo();
+        ArtifactMigrateInfo migrateInfo = getMigrateInfo(form);
         List<LightweightRepository> repoList = new LinkedList<>();
         repoList.addAll(repositories.list(LOCAL));
         repoList.addAll(repositories.list(REMOTE));
@@ -668,14 +650,14 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             //同步资源信息到其他节点
             privilegeEventListenerRegistry.dispatchResourceSyncEvent(storageId + "_" + repositoryId);
         }
-        // 保存迁移字典信息 默认地址是请求地址
-        if (migrateInfo.getTotal() > 0) {
-            migrateInfo.setBrowsePrefix(form.getUrl());
+        // 查看是否有对应的迁移id
+        int cnt = migrateInfoService.countByMigrateId(migrateInfo.getMigrateId());
+        if(cnt>0){
+            migrateInfo.setTotal(cnt);
+            migrateInfo.setSyncMeta(1);
             Dict dict = createDictByMigrate(migrateInfo);
-            dictService.saveDict(dict);
+            dictService.saveOrUpdateByTypeAndKey(dict);
         }
-
-
     }
 
     void setRepositoryInfo(LightweightRepository repository, RepositoryDto repositoryDto, Artifactory
@@ -683,12 +665,6 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         if (repository.getType() == LOCAL) {
             if ("2".equals(form.getArtifactType())) {
                 repositoryDto.setType(RepositoryTypeEnum.PROXY.getType());
-                // 增加同步标识
-                repositoryDto.setSyncJfrog(true);
-                repositoryDto.setMigrateId(info.getMigrateId());
-                repositoryDto.setUsedSpace(spaceInfo.get(repository.getKey()));
-                repositoryDto.setSyncStatus(0);
-                info.increaseCount();
                 // 获取同步仓库的
                 RemoteRepositoryDto remoteDTO = new RemoteRepositoryDto();
                 remoteDTO.setUsername(form.getUsername());
@@ -707,6 +683,17 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 }
                 repositoryDto.setRemoteRepository(remoteDTO);
 
+                //新建同步数据入库
+                MigrateInfo migrateInfo = new MigrateInfo();
+                migrateInfo.setMigrateType("jfrog");
+                migrateInfo.setMigrateId(info.getMigrateId());
+                migrateInfo.setStorageId(storageId);
+                migrateInfo.setSyncProperty(1);
+                migrateInfo.setRepositoryId(repository.getKey());
+                migrateInfo.setUsedSpace(spaceInfo.get(repository.getKey()));
+                migrateInfo.setSyncStatus(0);
+                migrateInfo.setLayout(repository.getPackageType());
+                migrateInfoService.save(migrateInfo);
             } else {
                 repositoryDto.setType(RepositoryTypeEnum.HOSTED.getType());
             }
@@ -733,13 +720,17 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         }
     }
 
-    private ArtifactMigrateInfo getMigrateInfo() {
+    private ArtifactMigrateInfo getMigrateInfo(JfrogMigrateForm form) {
         ArtifactMigrateInfo info = new ArtifactMigrateInfo();
         // 生成迁移id
-        info.setMigrateId(UUIDUtils.generateUuid());
-        info.setTotal(0);
+        info.setMigrateId("jfrog-migrate");;
         info.setStatus(0);
         info.setBatchSize(1);
+        String url = StringUtils.removeEnd(form.getUrl(), GlobalConstants.SEPARATOR)+GlobalConstants.SEPARATOR+"artifactory";
+        info.setBrowsePrefix(url);
+        info.setRemotePreUrl(url);
+        info.setUsername(form.getUsername());
+        info.setPassword(form.getPassword());
         return info;
     }
 
