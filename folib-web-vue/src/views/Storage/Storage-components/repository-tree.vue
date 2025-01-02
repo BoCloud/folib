@@ -227,42 +227,54 @@ export default {
                     this.isTrashView = false
                     this.loadingMore = false
                     this.loadingMoreShow(false)
-                    this.treeData = this.treeData.concat(JSON.parse(JSON.stringify(val)))
-                    this.recycleRepositryList = this.recycleRepositryList.concat(JSON.parse(JSON.stringify(val)))
-                    // function uniqueById(arr) {
-                    //     const unique = [];
-                    //     const seen = new Set();
-                    //     arr.forEach(item => {
-                    //         if (!seen.has(item.id)) {
-                    //         unique.push(item);
-                    //         seen.add(item.id);
-                    //         }
-                    //     });
-                    //     return unique;
-                    // }
-                    // this.treeData = uniqueById(this.treeData)
-                    const objs = ['treeData','recycleRepositryList']
-                    objs.forEach(key => {
-                        this[key].forEach(ele => {
-                            ele.fileType = 'document'
-                            ele.key = ele.id
-                            ele.name = ele.id
-                            ele.artifactPath = ''
-                            ele.newDetailPage = true
-                            ele.treeType = 'root'
+                    let key = true
+                    if(this.treeData.length){
+                        this.treeData.forEach(ele => {
+                            val.forEach(el => {
+                                if(ele.id === el.id){
+                                    key = false
+                                }
+                            })
                         })
-                    })
-                    if (!this.treeData.length) {
-                        return
                     }
-                    this.getRecycleTreeData()
-                    this.selectedKeys = [this.treeData[0].id]
-                    const e = {
-                        node: {
-                            dataRef: this.treeData[0]
+                    if(key){
+                        this.treeData = this.treeData.concat(JSON.parse(JSON.stringify(val)))
+                        this.recycleRepositryList = this.recycleRepositryList.concat(JSON.parse(JSON.stringify(val)))
+                        // function uniqueById(arr) {
+                        //     const unique = [];
+                        //     const seen = new Set();
+                        //     arr.forEach(item => {
+                        //         if (!seen.has(item.id)) {
+                        //         unique.push(item);
+                        //         seen.add(item.id);
+                        //         }
+                        //     });
+                        //     return unique;
+                        // }
+                        // this.treeData = uniqueById(this.treeData)
+                        const objs = ['treeData','recycleRepositryList']
+                        objs.forEach(key => {
+                            this[key].forEach(ele => {
+                                ele.fileType = 'document'
+                                ele.key = ele.id
+                                ele.name = ele.id
+                                ele.artifactPath = ''
+                                ele.newDetailPage = true
+                                ele.treeType = 'root'
+                            })
+                        })
+                        if (!this.treeData.length) {
+                            return
                         }
+                        this.getRecycleTreeData()
+                        this.selectedKeys = [this.treeData[0].id]
+                        const e = {
+                            node: {
+                                dataRef: this.treeData[0]
+                            }
+                        }
+                        this.treeSelect('', e)
                     }
-                    this.treeSelect('', e)
                 }
             },
             immediate: true

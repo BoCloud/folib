@@ -27,7 +27,7 @@
 <!--        <a-affix :offset-top="navbarFixed ? 100 : 10">-->
           <a-card :bordered="false" :style="isChecked ? 'height:calc(100vh - 230px);margin-bottom:0px;' : ''" class="header-solid mb-24 left_menu">
             <template #title>
-              <a-row type="flex" align="middle">
+              <a-row type="flex" align="middle" class="position:relative;">
                 <a-col :span="24" :md="12" class="col-info">
                   <h6 class="font-semibold m-0">{{ isChecked ? $t('Storage.RepositoryList') : $t('Storage.StorageList')}}</h6>
                 </a-col>
@@ -39,6 +39,15 @@
                     class="switch-position"
                     @change="getDetailInfo"
                   ></a-switch> -->
+                  <div class="switch_mode">
+                    <div @click="checkMode(false)" class="img-sty" :class="isChecked ? '' : 'isActive'">
+                      <img src="./images/list.svg" width="20" alt="">
+                    </div>
+                    <div @click="checkMode(true)" class="img-sty" :class="isChecked ? 'isActive' : ''">
+                      <img src="./images/tree.svg" width="20" alt="">
+                    </div>
+                    <div :style="switchDisabled?'display:block;':'display:none;'" class="disabled_sty"></div>
+                  </div>
                   <a class="text-center text-muted font-bold" v-if="!isChecked">
                     <h3 v-if="$store.state.user.roles.indexOf('ADMIN') > -1" class="font-semibold text-muted mb-0"
                       @click="createHandleView">+</h3>
@@ -521,7 +530,7 @@
                 <a-col :span="6">
                   <a-form-item class="mb-10" :label="$t('Storage.Strategy')" :colon="false">
                     <a-select :disabled="folibRepositoryEditDisabled"
-                      default-value="hosted" v-model="folibRepository.type">
+                      default-value="hosted" v-model="folibRepository.type" @change="getRemote">
                       <a-select-option value="hosted">
                         {{ $t('Storage.Local') }}
                       </a-select-option>
@@ -655,7 +664,7 @@
                   <a-col :span="3" class="text-right">
                       <a-button v-if="folibRepository.type === 'hosted'" type="primary"
                                 @click="addOrUpdateRepositorySecond(true)" class="px-25">
-                          {{ $t('Storage.Next') }}
+                          {{ $t('Storage.Next') }}123
                       </a-button>
 
                       <!-- <a-button v-if="folibRepository.type === 'hosted'" style="margin-left: 20px"
@@ -675,7 +684,7 @@
           <a-card v-else-if="step === 2 && (folibRepository.type === 'proxy')" :bordered="false" class="header-solid">
             <h5 class="font-regular text-center">{{ $t('Storage.WarehouseConfig') }}</h5>
             <p class="text-center">
-              {{ $t('Storage.RemoteLibraryAddress') }}</p>
+              {{ $t('Storage.RemoteLibraryAddress') }}</p
             <a-form :form="form" :hideRequiredMark="true">
               <a-row :gutter="[24]">
                 <a-col :span="12">
@@ -1346,7 +1355,7 @@ export default {
         total:0,
       },
       layoutType:'isFilter',
-      // isChecked: false,
+      isChecked: false,
       isShowOverview: false,
      permissionForm: {
         allowAnonymous: true,
@@ -1415,9 +1424,9 @@ export default {
     this.queryCustomLayoutList()
   },
   computed: {
-    isChecked(){
-      return this.$store.state.isChecked
-    },
+    // isChecked(){
+    //   return this.$store.state.isChecked
+    // },
     isLogin() {
       return isLogin()
     },
@@ -1439,6 +1448,32 @@ export default {
     this.$store.commit('setSwitchDisabled',true)
   },
   methods: {
+    // 制品仓库页面专属。用于切换仓库和存储空间的展示模式
+    checkMode(key){
+      if(this.switchDisabled){
+        return
+      }
+      setTimeout(() => {
+        this.isChecked = key
+        // this.$store.commit('setIsChecked',key)
+      }, 0);
+    },
+    getRemote(val){
+      if(val == 'proxy'){
+          this.folibRepository.remoteRepository = {
+            allowsDirectoryBrowsing: true,
+            autoBlocking: true,
+            autoImportRemoteSSLCertificate: false,
+            checkIntervalSeconds: 60,
+            checksumPolicy: 'None',
+            checksumValidation: true,
+            downloadRemoteIndexes: true,
+            password: "",
+            url: "",
+            username: ""
+          }
+      }
+    },
     // 展示存储概览
     showOverview(val){
       this.isShowOverview = val == 2
@@ -1930,7 +1965,7 @@ export default {
             storageId: this.currentStorage.id,
             layout: this.queryParams.layout,
             type: this.queryParams.type,
-            limit: this.queryParams.limit,
+            limit: this.isChecked ? 20 : this.queryParams.limit,
             page: this.queryParams.page
           }
           this.getQueryStorage(params)
@@ -2276,7 +2311,7 @@ export default {
           }, 1000);
         }
 
-
+        this.queryParams.page = 1
         this.getStorage(this.currentStorage.id)
         if (!isNotSetCron) {
           this.step = 0
@@ -2914,4 +2949,39 @@ export default {
   // background: rgb(250, 251, 251);
 }
 
+.switch_mode{
+  // position: absolute;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 80px;
+  background: rgba(255,255,255,0.5);
+    box-shadow: 0px 1px 6px 1px rgba(0,0,0,0.1);
+  padding: 3px;
+  border-radius: 4px;
+  // left: 0px;
+  margin-right: 10px;
+  
+  .img-sty{
+    opacity: 1 !important;
+    cursor: pointer;
+    background: rgba(255,255,255,0.5);
+    border-radius: 4px;
+    box-shadow: 0px 1px 6px 1px rgba(0,0,0,0.1);
+    padding: 3px 5px;
+    transition: all 0.3s;
+  }
+
+  .isActive{
+    background: #4b84f0;
+    box-shadow: 0px 1px 6px 1px rgba(0,0,0,0.2);
+  }
+  .disabled_sty{
+    width: 80px;
+    height: 40px;
+    position: absolute;
+    cursor: not-allowed;
+    z-index: 9999;
+  }
+}
 </style>

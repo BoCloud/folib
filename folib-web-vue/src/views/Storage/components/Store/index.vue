@@ -168,7 +168,7 @@
     <a-row v-if="isSearch === false" type="flex" :gutter="24">
       <!-- Platform Settings Column -->
       <a-col style="margin-top:-30px;" v-if="!isChecked" :span="9" class="mb-24">
-        <a-card :bordered="false" style="height: 608px; min-height: 554px; overflow-y: auto;margin-bottom:-22px;" class="header-solid card-shadow left_tree_sty"
+        <a-card :bordered="false" style="height:calc(100vh - 312px); overflow-y: auto;margin-bottom:-22px;" class="header-solid card-shadow left_tree_sty"
           :bodyStyle="{ paddingTop: 0, paddingBottom: 0 }">
           <template #title>
             <h6 class="font-semibold m-0">{{ $t('Store.PacketList') }} <a
@@ -197,7 +197,7 @@
       <a-col style="margin-top:-30px;" :span="24" :md="!isChecked ? 15 : 24" class="mb-24">
         <a-card :bordered="false" class="header-solid h-full card-shadow card-profile-information"
           :bodyStyle="{ paddingTop: 0, paddingBottom: '0' }" :headStyle="{ paddingRight: 0 }"
-          :style="isChecked?'height:calc(100vh - 392px);overflow-y:auto;':'height: 608px; min-height: 554px; overflow-y: auto;margin-bottom:-22px;'"
+          :style="isChecked?'height:calc(100vh - 392px);overflow-y:auto;':'height:calc(100vh - 312px); overflow-y: auto;margin-bottom:-22px;'"
           >
           <template #title v-if="isChecked ? !newDetailPage : true ">
             <a-row type="flex" align="middle" v-if="folibRepository.layout !== 'Docker'">
@@ -3114,56 +3114,4 @@ export default {
       padding: 0 !important;
     }
   }
-  .left_tree_container {
-    position: relative;
-    height: 537px;
-    display: flex;
-    flex-direction: column;
-
-    .cover-box {
-        height: 100%;
-        width: 100%;
-        position: absolute;
-        cursor: s-resize;
-        left: 0;
-        top: 0;
-        z-index: 10;
-    }
-
-    .line-box {
-        position: relative;
-        z-index: 11;
-        height: 5px;
-        transition: all 0.5s;
-        background: transparent;
-        transition-delay: 0.2s;
-        border-bottom: 1px solid #ccc;
-        cursor: s-resize;
-
-        &:hover {
-            border-bottom: 1px solid transparent;
-            background: #1890ff;
-        }
-
-        &.line-drag {
-            border-bottom: 1px solid transparent;
-            background: #1890ff;
-        }
-    }
-}
-
-.recycle {
-    margin-top: 5px;
-}
-
-.tree_container_sty {
-    margin-left: 12px;
-    margin-right: 12px;
-    padding-top: 0px;
-    overflow: hidden;
-
-    &:hover {
-        overflow: auto;
-    }
-}
 </style>
