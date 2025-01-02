@@ -74,7 +74,7 @@ export default {
     'CustomLayoutTip': 'Please select the layout you need to customize',
     'DistributedRemain': 'The current storage is distributed, and storage path definition is not supported',
     'ItemLimit': 'Item Size Limit (MB)',
-    'RepositorySizeLimit': 'Repository Size Limit (TB)',
+    'RepositorySizeLimit': 'Repository Size Limit (GB)',
     'StorageSizeLimit': 'Storage Size Limit (TB)',
     'ServiceStatus': 'Service status',
     'OpenService': 'In Service',

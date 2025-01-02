@@ -58,6 +58,16 @@ public class RepositoryPath
 
     private Long size;
 
+    public Map<String,String>  getExtAttribute() {
+        return extAttribute;
+    }
+
+    public void setExtAttribute(Map<String,String> extAttribute) {
+        this.extAttribute = extAttribute;
+    }
+
+    protected Map<String,String> extAttribute;
+
     public RepositoryPath(Path target,
                           LayoutFileSystem fileSystem) {
         this.target = target;
@@ -184,10 +194,24 @@ public class RepositoryPath
         if (other == null) {
             return this;
         }
+        Map<String,String> extAttribute=null;
+        if(other.contains(";")){
+            String[] split = other.split(";");
+            other=split[0];
+            extAttribute=new HashMap<>();
+            for (int i = 1; i <split.length ; i++) {
+                String item = split[i];
+                String[] keyAndValue = item.split("=");
 
+                if(keyAndValue.length==2){
+                    extAttribute.put(keyAndValue[0],keyAndValue[1]);
+                }
+            }
+        }
         validateStringPathRelativized(other);
-
-        return wrap(getTarget().resolve(other));
+        RepositoryPath wrap = wrap(getTarget().resolve(other));
+        wrap.setExtAttribute(extAttribute);
+        return wrap ;
     }
 
     @Override

@@ -2668,16 +2668,14 @@ export default {
     },
     setRepoMaxSize(maxSize){
           if(maxSize){
-              console.log("maxSize:",maxSize)
               let size = (maxSize *1024*1024*1024).toFixed(0)
-              console.log("size:",size)
               return size;
           }
           return 0;
    },
     enableCustomLayoutChange(val) {
       if (this.customLayoutList && val && !this.folibRepository.customLayout) {
-        this.folibRepository.customLayout = this.customLayoutList[0].artifactPathPattern
+        // this.folibRepository.customLayout = this.customLayoutList[0].artifactPathPattern
       }
     },
     queryCustomLayoutList() {
