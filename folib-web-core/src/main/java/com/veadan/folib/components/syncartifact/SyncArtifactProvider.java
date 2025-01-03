@@ -1,6 +1,7 @@
 package com.veadan.folib.components.syncartifact;
 
-import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
+
+import com.veadan.folib.domain.migrate.SyncArtifactForm;
 
 /**
  * @author leipenghui

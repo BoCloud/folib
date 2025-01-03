@@ -76,7 +76,7 @@ export default {
     }
     .icon_sty{
         border-radius: 8px; 
-        background-image: linear-gradient(310deg, rgb(250, 251, 252), rgb(221, 221, 221));
-        box-shadow: 0px 0px 6px 2px rgba(0, 0, 0, 0.1);
+        background-image: linear-gradient(310deg, #f1f7ff, #f9fbff);
+        box-shadow: 0px 2px 18px -6px #728ABC;
     }
 </style>

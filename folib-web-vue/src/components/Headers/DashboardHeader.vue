@@ -240,7 +240,7 @@
         <template slot="title">
             <span>{{ $t('Storage.ModifyStorageSpace') }}</span>
         </template> -->
-    <div class="switch_mode" v-if="this.$route.name === 'storagesHome'">
+    <!-- <div class="switch_mode" v-if="this.$route.name === 'storagesHome'">
       <div @click="checkMode(false)" class="img-sty" :class="isChecked ? '' : 'isActive'">
         <img src="./images/list.svg" width="20" alt="">
       </div>
@@ -248,7 +248,7 @@
         <img src="./images/tree.svg" width="20" alt="">
       </div>
       <div :style="switchDisabled?'display:block;':'display:none;'" class="disabled_sty"></div>
-  </div>
+    </div> -->
     <!-- </a-tooltip> -->
   </component>
   <!-- / Main Sidebar -->
@@ -344,16 +344,16 @@ export default {
     };
   },
   methods: {
-    // 制品仓库页面专属。用于切换仓库和存储空间的展示模式
-    checkMode(key){
-      if(this.switchDisabled){
-        return
-      }
-      setTimeout(() => {
-        this.isChecked = key
-        this.$store.commit('setIsChecked',key)
-      }, 0);
-    },
+    // // 制品仓库页面专属。用于切换仓库和存储空间的展示模式
+    // checkMode(key){
+    //   if(this.switchDisabled){
+    //     return
+    //   }
+    //   setTimeout(() => {
+    //     this.isChecked = key
+    //     this.$store.commit('setIsChecked',key)
+    //   }, 0);
+    // },
     changeLanguage(val) {
       setLanguage(val)
       this.$forceUpdate()

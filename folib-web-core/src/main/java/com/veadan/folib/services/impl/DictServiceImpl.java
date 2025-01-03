@@ -250,5 +250,18 @@ public class DictServiceImpl implements DictService {
         return dictMapper.selectByPrimaryKey(id);
     }
 
+    public void  saveOrUpdateByTypeAndKey(Dict dict){
+        Example example = Example.builder(Dict.class).build();
+        Example.Criteria criteria = example.createCriteria();
+        criteria.andEqualTo("dictType", dict.getDictType());
+        criteria.andEqualTo("dictKey", dict.getDictKey());
+        List<Dict> dicts = dictMapper.selectByExample(example);
+        if(dicts.isEmpty()){
+            dictMapper.insert(dict);
+        }else {
+            dictMapper.updateByExample(dict,example);
+        }
+    }
+
 
 }

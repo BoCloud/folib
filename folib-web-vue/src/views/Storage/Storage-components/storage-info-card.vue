@@ -132,7 +132,7 @@
                             <span>{{ $t('Storage.CreateStorageSpace') }}</span>
                         </template>
                         <div class="add-sty" @click="createHandleView" v-if="$store.state.user.roles.indexOf('ADMIN') > -1 && layoutType === 'isFilter'">
-                            <img src="./images/add.svg" width="28" alt="">
+                            <img src="./images/add.svg" width="30" alt="">
                         </div>
                     </a-tooltip>
                     <a-tooltip placement="topLeft">
@@ -289,13 +289,8 @@ export default {
 
     .add-sty{
         margin-right:20px;
-        box-shadow: 0px 0px 6px 2px rgba(0, 0, 0, 0.1);
+        // box-shadow: 0px 0px 6px 2px rgba(0, 0, 0, 0.1);
         cursor: pointer;
-        opacity: 0.9;
-
-        &:hover{
-            opacity: 1;
-        }
     }
     .img-back-sty{
         width: 25px;

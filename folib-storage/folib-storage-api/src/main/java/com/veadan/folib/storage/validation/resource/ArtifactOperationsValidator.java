@@ -2,6 +2,7 @@ package com.veadan.folib.storage.validation.resource;
 
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.components.DistributedCacheComponent;
+import com.veadan.folib.configuration.AlarmConfiguration;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.enums.FileUnitTypeEnum;
@@ -32,6 +33,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -190,7 +192,13 @@ public class ArtifactOperationsValidator {
         log.info("The size [{}] of the storage [{}]", storageBytesSize, storageId);
         BigDecimal storageMaxTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageMaxSize, FileUnitTypeEnum.TB.getUnit());
         BigDecimal storageRealTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageBytesSize, FileUnitTypeEnum.TB.getUnit());
-        if (storageRealTbSize.compareTo(storageMaxTbSize) >= 0) {
+        double threshold = 0.90;
+        AlarmConfiguration alarmConfiguration = getConfiguration().getAlarmConfiguration();
+        if(alarmConfiguration.getStorageThreshold()>0){
+            threshold = alarmConfiguration.getStorageThreshold();
+        }
+        BigDecimal useStorageProportion = storageRealTbSize.divide(storageMaxTbSize, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+        if (useStorageProportion.compareTo(BigDecimal.valueOf(threshold*100)) >= 0) {
             removeLastTime(STORAGE_SIZE_VERIFICATION_LAST_TIME_KEY);
             alarmNotification();
             throw new ArtifactResolutionException(String.format("The size of the storage [%s] artifact [%s] exceeds the maximum size accepted by " +
@@ -363,6 +371,7 @@ public class ArtifactOperationsValidator {
     public void checkRepositorySize(RepositoryPath repositoryPath)
             throws IOException {
         String storageId = repositoryPath.getStorageId();
+        AlarmConfiguration alarmConfiguration = getConfiguration().getAlarmConfiguration();
         Repository repository = getConfiguration().getStorage(storageId).getRepository(repositoryPath.getRepositoryId());
         Long storageMaxSize = repository.getStorageMaxSize();
         if (Objects.isNull(storageMaxSize) || storageMaxSize <= 0) {
@@ -376,13 +385,20 @@ public class ArtifactOperationsValidator {
         long storageBytesSize = artifactRepository.artifactsBytesStatistics(Collections.singletonList(String.format("%s-%s", storageId, repositoryPath.getRepositoryId())));
 
         log.info("The size [{}] of the repository [{}/{}]", storageBytesSize, storageId,repositoryPath.getRepositoryId());
-        BigDecimal storageMaxTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageMaxSize, FileUnitTypeEnum.GB.getUnit());
-        BigDecimal storageRealTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageBytesSize, FileUnitTypeEnum.GB.getUnit());
-        if (storageRealTbSize.compareTo(storageMaxTbSize) >= 0) {
+        BigDecimal storageMaxGbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageMaxSize, FileUnitTypeEnum.GB.getUnit());
+        BigDecimal storageRealGbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageBytesSize, FileUnitTypeEnum.GB.getUnit());
+        double threshold = 0.90;
+        if(repository.getStorageThreshold() > 0 ){
+            threshold = repository.getStorageThreshold();
+        }else if(alarmConfiguration.getStorageThreshold()>0){
+            threshold = alarmConfiguration.getStorageThreshold();
+        }
+        BigDecimal useStorageProportion = storageRealGbSize.divide(storageMaxGbSize, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+        if (useStorageProportion.compareTo(BigDecimal.valueOf(threshold*100)) >= 0) {
             removeLastTime(REPOSITORY_SIZE_VERIFICATION_LAST_TIME_KEY);
             alarmNotification();
             throw new ArtifactResolutionException(String.format("The size of the repository [%s/%s] artifact [%s] exceeds the maximum size accepted by " +
-                    "this storage (%s/%s) unit %s.", storageId,repositoryPath.getRepositoryId(), repositoryPath, storageRealTbSize, storageMaxTbSize, FileUnitTypeEnum.TB.getUnit()));
+                    "this storage (%s/%s) unit %s.", storageId,repositoryPath.getRepositoryId(), repositoryPath, storageRealGbSize, storageMaxGbSize, FileUnitTypeEnum.GB.getUnit()));
         }
     }
 

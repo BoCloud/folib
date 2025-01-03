@@ -70,6 +70,8 @@ public class RepositoryDto
 
     private long storageMaxSize;
 
+    private double storageThreshold;
+
     /**
      * The per-repository proxy settings that override the overall global proxy settings.
      */
@@ -134,60 +136,6 @@ public class RepositoryDto
 
     /**是否同步存储空间到其他节点*/
     private boolean syncEnabled;
-
-    private boolean syncJfrog;
-
-    private String migrateId;
-
-    private int syncStatus;
-
-    private int totalArtifact;
-
-    public boolean isSyncJfrog() {
-        return syncJfrog;
-    }
-
-    public int getTotalArtifact() {
-        return totalArtifact;
-    }
-
-    public void setTotalArtifact(int totalArtifact) {
-        this.totalArtifact = totalArtifact;
-    }
-
-
-    @Override
-    public int getSyncStatus() {
-        return syncStatus;
-    }
-
-    public void setSyncStatus(int syncStatus) {
-        this.syncStatus = syncStatus;
-    }
-
-
-    @Override
-    public String getUsedSpace() {
-        return usedSpace;
-    }
-
-    public void setUsedSpace(String usedSpace) {
-        this.usedSpace = usedSpace;
-    }
-
-    private String usedSpace;
-
-    private String syncDirPath;
-
-    @Override
-    public String getSyncDirPath() {
-        return syncDirPath;
-    }
-
-    public void setSyncDirPath(String syncDirPath) {
-        this.syncDirPath = syncDirPath;
-    }
-
 
     public RepositoryDto() {
     }
@@ -348,8 +296,18 @@ public class RepositoryDto
         this.storageMaxSize = storageMaxSize;
     }
 
+
+
     public void setChecksumHeadersEnabled(boolean checksumHeadersEnabled) {
         this.checksumHeadersEnabled = checksumHeadersEnabled;
+    }
+
+    public double getStorageThreshold() {
+        return storageThreshold;
+    }
+
+    public void setStorageThreshold(double storageThreshold) {
+        this.storageThreshold = storageThreshold;
     }
 
     public MutableProxyConfiguration getProxyConfiguration() {
@@ -601,27 +559,6 @@ public class RepositoryDto
     public boolean isSyncEnabled() {
         return syncEnabled;
     }
-
-    @Override
-    public boolean getSyncJfrog() {
-        return this.syncJfrog;
-    }
-
-    @Override
-    public String getMigrateId() {
-        return this.migrateId;
-    }
-
-
-    public void setSyncJfrog(boolean syncJfrog){
-        this.syncJfrog=syncJfrog;
-    }
-
-    public void setMigrateId(String migrateId){
-        this.migrateId=migrateId;
-    }
-
-
 
     public void setSyncEnabled(boolean syncEnabled) {
         this.syncEnabled = syncEnabled;
