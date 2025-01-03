@@ -2,30 +2,26 @@ package com.veadan.folib.components.syncartifact;
 
 import cn.hutool.core.io.FileUtil;
 import com.google.common.collect.Lists;
-import com.veadan.folib.cluster.SyncRepositoryEnum;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.DistributedCounterComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.components.files.FilesCommonComponent;
+import com.veadan.folib.components.jfrogArtifactSync.JfrogPropertySyncer;
 import com.veadan.folib.configuration.ConfigurationManager;
-import com.veadan.folib.configuration.ConfigurationUtils;
-import com.veadan.folib.configuration.MutableConfiguration;
 import com.veadan.folib.constant.GlobalConstants;
-import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
+import com.veadan.folib.domain.migrate.SyncArtifactForm;
+import com.veadan.folib.entity.MigrateInfo;
 import com.veadan.folib.enums.ArtifactSyncTypeEnum;
 import com.veadan.folib.enums.MigrateStatusEnum;
-import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.PypiLayoutProvider;
-import com.veadan.folib.providers.layout.PypiLayoutProvider;
 import com.veadan.folib.services.ArtifactResolutionService;
-import com.veadan.folib.services.ClusterSyncService;
-import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.services.ArtifactWebService;
 import com.veadan.folib.services.JfrogMigrateService;
+import com.veadan.folib.services.MigrateInfoService;
 import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -86,7 +82,6 @@ public class PypiSyncArtifactProvider implements SyncArtifactProvider {
     private PypiLayoutProvider pypiLayoutProvider;
 
 
-
     @Inject
     private FilesCommonComponent filesCommonComponent;
 
@@ -101,15 +96,16 @@ public class PypiSyncArtifactProvider implements SyncArtifactProvider {
     private RepositoryPathResolver repositoryPathResolver;
 
     @Resource
-    private ClusterSyncService clusterSyncService;
-
-    @Resource
     private DistributedCounterComponent distributedCounterComponent;
 
     @Resource
     private DistributedCacheComponent distributedCacheComponent;
+
     @Resource
-    private ConfigurationManagementService configurationManagementService;
+    private MigrateInfoService migrateInfoService;
+
+    @Resource
+    private ArtifactWebService artifactWebService;
 
     @PostConstruct
     @Override
@@ -163,7 +159,7 @@ public class PypiSyncArtifactProvider implements SyncArtifactProvider {
             }
             String separator = "/";
             Document doc = artifactComponent.getDocument(repository, url);
-            if(Objects.isNull(doc)){
+            if (Objects.isNull(doc)) {
                 log.error("获取文件失败");
                 return false;
             }
@@ -247,7 +243,7 @@ public class PypiSyncArtifactProvider implements SyncArtifactProvider {
             File urlFile;
             while ((urlFile = getLevelFile(dir, level)).exists()) {
                 level++;
-                log.info("开始检索{}下的目录",urlFile);
+                log.info("开始检索{}下的目录", urlFile);
                 boolean fileEmpty = true;
                 File subFile = getLevelFile(dir, level);
                 try (Scanner scanner = new Scanner(urlFile);
@@ -266,8 +262,8 @@ public class PypiSyncArtifactProvider implements SyncArtifactProvider {
                         }
                     }
                 } catch (IOException e) {
-                      log.error("Pypi包索引同步错误 [{}]", ExceptionUtils.getStackTrace(e));
-                      return null;
+                    log.error("Pypi包索引同步错误 [{}]", ExceptionUtils.getStackTrace(e));
+                    return null;
                 }
                 if (fileEmpty) {
                     FileUtil.del(urlFile);
@@ -297,24 +293,24 @@ public class PypiSyncArtifactProvider implements SyncArtifactProvider {
             batch = syncArtifactForm.getBatch();
         }
         COUNT.set(0L);
-        int availableCores = syncArtifactForm.getMaxThreadNum()==null?commonComponent.getAvailableCores() * 2:syncArtifactForm.getMaxThreadNum();
-        boolean ispaused=false;
+        int availableCores = syncArtifactForm.getMaxThreadNum() == null ? commonComponent.getAvailableCores() * 2 : syncArtifactForm.getMaxThreadNum();
+        boolean ispaused = false;
         ThreadPoolTaskExecutor threadPoolTaskExecutor = commonComponent.buildThreadPoolTaskExecutor("browsePypiSync", availableCores, availableCores);
         try (Stream<Path> pathStream = Files.list(path)) {
             int finalBatch = batch;
-            ispaused=pathStream.anyMatch(item -> {
+            ispaused = pathStream.anyMatch(item -> {
                 String currentLine = "";
                 long lines = 0, startTime = System.currentTimeMillis();
-                boolean flag=true;
+                boolean flag = true;
                 try {
                     List<String> pathList = Lists.newArrayList();
                     try (LineIterator lineIterator = FileUtils.lineIterator(item.toFile(), "UTF-8")) {
                         while (lineIterator.hasNext()) {
-                            if("0".equals(distributedCacheComponent.get(JfrogMigrateService.PAUSED_FLAG_PRE+syncArtifactForm.getStoreAndRepo()))){
+                            if ("0".equals(distributedCacheComponent.get(JfrogMigrateService.PAUSED_FLAG_PRE + syncArtifactForm.getStoreAndRepo()))) {
                                 //
-                                log.info("仓库{}同步任务暂停",syncArtifactForm.getStoreAndRepo());
-                                updateAndSyncRepoStatus(syncArtifactForm.getStoreAndRepo(), MigrateStatusEnum.PAUSED.getStatus());
-                                distributedCacheComponent.delete(JfrogMigrateService.PAUSED_FLAG_PRE+syncArtifactForm.getStoreAndRepo());
+                                log.info("仓库{}同步任务暂停", syncArtifactForm.getStoreAndRepo());
+                                migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.PAUSED.getStatus());
+                                distributedCacheComponent.delete(JfrogMigrateService.PAUSED_FLAG_PRE + syncArtifactForm.getStoreAndRepo());
                                 return true;
                             }
                             try {
@@ -325,19 +321,19 @@ public class PypiSyncArtifactProvider implements SyncArtifactProvider {
                                 }
                                 pathList.add(currentLine);
                                 if (pathList.size() == finalBatch) {
-                                    batchDownload(item, syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), pathList, threadPoolTaskExecutor);
+                                    batchDownload(item, syncArtifactForm, pathList, threadPoolTaskExecutor);
                                 }
                             } catch (Exception ex) {
                                 log.error(ExceptionUtils.getStackTrace(ex));
-                                flag=false;
+                                flag = false;
                             }
                         }
                         if (CollectionUtils.isNotEmpty(pathList)) {
-                            batchDownload(item, syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), pathList, threadPoolTaskExecutor);
+                            batchDownload(item, syncArtifactForm, pathList, threadPoolTaskExecutor);
                         }
                     }
                     // 清除已完成的文件
-                    if(flag){
+                    if (flag) {
                         Files.delete(item);
                     }
                 } catch (Exception ex) {
@@ -349,14 +345,17 @@ public class PypiSyncArtifactProvider implements SyncArtifactProvider {
         } catch (Exception ex) {
             log.error("Error [{}]", ExceptionUtils.getStackTrace(ex));
         }
+        syncArtifactForm.setSyncMount((int) COUNT.get());
         log.info("Pypi包 同步完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个制品，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), COUNT.get(), System.currentTimeMillis() - allStartTime);
         return !ispaused;
     }
 
-    private void batchDownload(Path path, String storageId, String repositoryId, List<String> artifactPathList, ThreadPoolTaskExecutor threadPoolTaskExecutor) {
+    private void batchDownload(Path path, SyncArtifactForm form, List<String> artifactPathList, ThreadPoolTaskExecutor threadPoolTaskExecutor) {
         if (CollectionUtils.isEmpty(artifactPathList)) {
             return;
         }
+        String storageId=form.getStorageId();
+        String repositoryId=form.getRepositoryId();
         List<List<String>> artifactPathLists = Lists.partition(artifactPathList, 5);
         List<FutureTask<String>> futureTasks = Lists.newArrayList();
         FutureTask<String> futureTask = null;
@@ -369,6 +368,7 @@ public class PypiSyncArtifactProvider implements SyncArtifactProvider {
                             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
                             if (Files.exists(repositoryPath)) {
                                 COUNT.incrementAndGet();
+                                distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + storageId + ":" + repositoryId).addAndGet(1L);
                                 log.debug("Batch download storageId [{}] repositoryId [{}] artifactPath [{}] exists skip..", storageId, repositoryId, artifactPath);
                                 continue;
                             }
@@ -376,7 +376,15 @@ public class PypiSyncArtifactProvider implements SyncArtifactProvider {
                             if (Files.exists(repositoryPath)) {
                                 COUNT.incrementAndGet();
                                 // 添加成功 计数
-                                distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT+storageId+":"+repositoryId).addAndGet(1L);
+                                distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + storageId + ":" + repositoryId).addAndGet(1L);
+
+                                JfrogPropertySyncer syncer = form.getSyncer();
+                                if(syncer!=null){
+                                    String  properties = syncer.getPropertiesByKeyAndPath(repositoryId, artifactPath);
+                                    if(properties!=null){
+                                        artifactWebService.saveArtifactMetaByString(storageId,repositoryId,artifactPath, properties);
+                                    }
+                                }
                             }
                         }
                     } catch (Exception ex) {
@@ -402,52 +410,42 @@ public class PypiSyncArtifactProvider implements SyncArtifactProvider {
     @Override
     public void batchBrowseSync(SyncArtifactForm syncArtifactForm) {
         // 获取仓库信息
-        String storageId = syncArtifactForm.getStorageId(), repositoryId = syncArtifactForm.getRepositoryId();
-        MutableConfiguration mutableConfigurationClone = configurationManagementService.getMutableConfigurationClone();
-        RepositoryDto repository = mutableConfigurationClone.getStorage(storageId).getRepository(repositoryId);
-        if(MigrateStatusEnum.QUEUING.getStatus()==repository.getSyncStatus()||MigrateStatusEnum.INDEX_FAILED.getStatus()==repository.getSyncStatus()){
-            updateAndSyncRepoStatus(syncArtifactForm.getStoreAndRepo(),MigrateStatusEnum.FETCHING_INDEX.getStatus());
-            String dirPath = syncPackageIndex(syncArtifactForm);
-            if(dirPath==null){
-                log.info("同步索引失败,请稍后重试");
-                updateAndSyncRepoStatus(syncArtifactForm.getStoreAndRepo(),MigrateStatusEnum.INDEX_FAILED.getStatus());
-                return;
-            }
-            repository.setSyncDirPath(dirPath);
-            repository.setTotalArtifact(syncArtifactForm.getTotalArtifact());
-            repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
-            // 更新状态
-            try {
-                configurationManagementService.saveRepository(storageId,repository);
-                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
-                clusterSyncService.syncRepository(syncRepositoryDto);
-            } catch (IOException e) {
-                log.info("更新数据失败");
-            }
-        }
-        String path=repository.getSyncDirPath();
-        distributedCacheComponent.put(JfrogMigrateService.PAUSED_FLAG_PRE+syncArtifactForm.getStoreAndRepo(),"1");
-        if (handlerPath(path, syncArtifactForm)) {
-            updateAndSyncRepoStatus(syncArtifactForm.getStoreAndRepo(),MigrateStatusEnum.COMPLETED.getStatus());
-        }else {
-            updateAndSyncRepoStatus(syncArtifactForm.getStoreAndRepo(),MigrateStatusEnum.PAUSED.getStatus());
-        }
-
-    }
-
-
-    private void updateAndSyncRepoStatus(String storeAndRepo, int status) {
-        String storageId = ConfigurationUtils.getStorageId(storeAndRepo,storeAndRepo);
-        String repositoryId=ConfigurationUtils.getRepositoryId(storeAndRepo);
-        MutableConfiguration mutableConfigurationClone = configurationManagementService.getMutableConfigurationClone();
-        RepositoryDto repository = mutableConfigurationClone.getStorage(storageId).getRepository(repositoryId);
-        repository.setSyncStatus(status);
         try {
-            configurationManagementService.saveRepository(storageId,repository);
-            SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
-            clusterSyncService.syncRepository(syncRepositoryDto);
-        } catch (IOException e) {
-            log.info("更新数据失败");
+            MigrateInfo repository = migrateInfoService.getByMigrateIdAndRepoInfo(syncArtifactForm.getMigrateId(), syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
+            if (MigrateStatusEnum.QUEUING.getStatus() == repository.getSyncStatus() || MigrateStatusEnum.INDEX_FAILED.getStatus() == repository.getSyncStatus()) {
+                migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.FETCHING_INDEX.getStatus());
+                String dirPath = syncPackageIndex(syncArtifactForm);
+                if (dirPath == null) {
+                    log.info("同步索引失败,请稍后重试");
+                    migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.INDEX_FAILED.getStatus());
+                    return;
+                }
+                repository.setSyncDirPath(dirPath);
+                repository.setTotalArtifact(syncArtifactForm.getTotalArtifact());
+                repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
+                // 更新状态
+                migrateInfoService.updateById(repository);
+                distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
+            }
+            String path = repository.getSyncDirPath();
+            if (syncArtifactForm.getSyncMeta() == 1) {
+                JfrogPropertySyncer syncer = new JfrogPropertySyncer(syncArtifactForm.getApiUrl(), syncArtifactForm.getUsername(), syncArtifactForm.getPassword());
+                syncArtifactForm.setSyncer(syncer);
+            }
+            distributedCacheComponent.put(JfrogMigrateService.PAUSED_FLAG_PRE + syncArtifactForm.getStoreAndRepo(), "1");
+            if (handlerPath(path, syncArtifactForm)) {
+                migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.COMPLETED.getStatus());
+            } else {
+                migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.PAUSED.getStatus());
+            }
+        } finally {
+            if(syncArtifactForm.getSyncer()!=null){
+                syncArtifactForm.getSyncer().close();
+            }
         }
+
+
     }
+
+
 }

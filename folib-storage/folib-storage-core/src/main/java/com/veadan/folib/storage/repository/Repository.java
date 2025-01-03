@@ -94,17 +94,4 @@ public interface Repository {
     boolean isSyncEnabled();
 
     Boolean getHealthStatus();
-
-    boolean getSyncJfrog();
-
-    String getMigrateId();
-
-    String getUsedSpace();
-
-    int getSyncStatus();
-
-    String getSyncDirPath();
-
-    int getTotalArtifact();
-
 }
