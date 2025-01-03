@@ -29,6 +29,8 @@ public class ArtifactMigrateInfo {
 
     private String remotePreUrl;
 
+    private Integer syncMeta;
+
     public void increaseCount(){
         this.total++;
     }

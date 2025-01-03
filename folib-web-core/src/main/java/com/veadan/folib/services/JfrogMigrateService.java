@@ -3,6 +3,7 @@ package com.veadan.folib.services;
 import com.veadan.folib.domain.migrate.AddRepositoryForm;
 import com.veadan.folib.domain.migrate.ArtifactMigrateInfo;
 import com.veadan.folib.entity.Dict;
+import com.veadan.folib.entity.MigrateInfo;
 import com.veadan.folib.forms.JfrogMigrateForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.storage.repository.Repository;
@@ -33,7 +34,7 @@ public interface JfrogMigrateService {
 
     List<Dict> getMigrateTask();
 
-    TableResultResponse<Repository> getRepositoryByMigrateId(int page, int limit,String migrateId, String status);
+    TableResultResponse<MigrateInfo> getRepositoryByMigrateId(int page, int limit, String migrateId, String status);
 
     void addSyncRepository(AddRepositoryForm form);
 
@@ -45,11 +46,11 @@ public interface JfrogMigrateService {
     void updateTask(Long id,ArtifactMigrateInfo info);
     void listenTask(String migrateId);
 
-     Map<String,Long> getFinishedCount(List<String> storeAndRepos);
+     Map<String,Long> getFinishedCount(String migrateId,List<String> storeAndRepos);
 
-     void repoContinue(List<String> storeAndRepos);
+     void repoContinue(String migrateId,List<String> storeAndRepos);
 
-     void repoFinish(List<String> storeAndRepos);
+     void repoFinish(String migrateId,List<String> storeAndRepos);
 
 
 

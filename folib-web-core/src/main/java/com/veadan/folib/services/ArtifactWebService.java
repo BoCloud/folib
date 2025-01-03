@@ -299,4 +299,6 @@ public interface ArtifactWebService {
      * @param resourceId 资源id
      */
     void deleteArtifactsResolve(String roleId, String resourceId);
+
+    void saveArtifactMetaByString(String storageId,String repositoryId,String path,String metaData);
 }
