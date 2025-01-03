@@ -2,14 +2,12 @@ package com.veadan.folib.services.impl;
 
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import com.veadan.folib.entity.AccessToken;
+import com.veadan.folib.domain.migrate.SyncArtifactForm;
 import com.veadan.folib.entity.MigrateInfo;
-import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
+
 import com.veadan.folib.mapper.MigrateInfoMapper;
 import com.veadan.folib.services.MigrateInfoService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import tk.mybatis.mapper.entity.Example;
 
 import java.util.List;
@@ -23,9 +21,10 @@ public class MigrateInfoServiceImpl implements MigrateInfoService {
 
     private final MigrateInfoMapper migrateInfoMapper;
 
-    public MigrateInfoServiceImpl(MigrateInfoMapper migrateInfoMapper){
-        this.migrateInfoMapper=migrateInfoMapper;
+    public MigrateInfoServiceImpl(MigrateInfoMapper migrateInfoMapper) {
+        this.migrateInfoMapper = migrateInfoMapper;
     }
+
     @Override
     public void save(MigrateInfo migrateInfo) {
         migrateInfoMapper.insert(migrateInfo);
@@ -41,8 +40,8 @@ public class MigrateInfoServiceImpl implements MigrateInfoService {
         PageHelper.startPage(pageNum, pageSize);
         Example example = Example.builder(MigrateInfo.class).build();
         Example.Criteria where = example.createCriteria();
-        where.andEqualTo("migrateId",migrateId);
-        where.andIn("syncStatus",status);
+        where.andEqualTo("migrateId", migrateId);
+        where.andIn("syncStatus", status);
         return PageInfo.of(migrateInfoMapper.selectByExample(example));
     }
 
@@ -50,7 +49,7 @@ public class MigrateInfoServiceImpl implements MigrateInfoService {
     public int countByMigrateId(String migrateId) {
         Example example = Example.builder(MigrateInfo.class).build();
         Example.Criteria where = example.createCriteria();
-        where.andEqualTo("migrateId",migrateId);
+        where.andEqualTo("migrateId", migrateId);
         return migrateInfoMapper.selectCountByExample(example);
     }
 
@@ -58,13 +57,13 @@ public class MigrateInfoServiceImpl implements MigrateInfoService {
     public MigrateInfo getByMigrateIdAndRepoInfo(String migrateId, String storageId, String repositoryId) {
         Example example = Example.builder(MigrateInfo.class).build();
         Example.Criteria where = example.createCriteria();
-        where.andEqualTo("migrateId",migrateId);
-        where.andEqualTo("storageId",storageId);
-        where.andEqualTo("repositoryId",repositoryId);
+        where.andEqualTo("migrateId", migrateId);
+        where.andEqualTo("storageId", storageId);
+        where.andEqualTo("repositoryId", repositoryId);
         List<MigrateInfo> migrateInfos = migrateInfoMapper.selectByExample(example);
-        if(migrateInfos.size()<1){
+        if (migrateInfos.size() < 1) {
             return null;
-        }else {
+        } else {
             return migrateInfos.get(0);
         }
     }
@@ -73,6 +72,7 @@ public class MigrateInfoServiceImpl implements MigrateInfoService {
     public void updateAndSyncRepoStatus(SyncArtifactForm syncArtifactForm, int status) {
         MigrateInfo record = getByMigrateIdAndRepoInfo(syncArtifactForm.getMigrateId(), syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
         record.setSyncStatus(status);
+        record.setSuccessMount(syncArtifactForm.getSyncMount());
         updateById(record);
 
     }

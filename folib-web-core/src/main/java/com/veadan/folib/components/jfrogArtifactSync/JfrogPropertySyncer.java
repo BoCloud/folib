@@ -48,5 +48,11 @@ public class JfrogPropertySyncer {
 
     }
 
+    public void close(){
+        if(this.artifactory!=null){
+            this.artifactory.close();
+        }
+    }
+
 
 }

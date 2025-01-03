@@ -1480,13 +1480,19 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
     @Override
-    public void saveArtifactMetaByString(RepositoryPath repositoryPath,String metaData) {
-        Artifact artifact=resolvePath(repositoryPath.getStorageId(),repositoryPath.getRepositoryId(),repositoryPath.getArtifactPath());
-        artifact.setMetadata(metaData);
-        artifactService.saveOrUpdateArtifact(artifact);
-        repositoryPath.setArtifact(artifact);
-        artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
-        cacheMetadata(repositoryPath);
+    public void saveArtifactMetaByString(String storageId,String repositoryId,String path,String metaData) {
+        try{
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+            Artifact artifact = resolvePath(storageId, repositoryId, path);
+            artifact.setMetadata(metaData);
+            artifactService.saveOrUpdateArtifact(artifact);
+            repositoryPath.setArtifact(artifact);
+            artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
+            cacheMetadata(repositoryPath);
+        }catch (Exception e){
+            log.info("添加元数据失败");
+        }
+
     }
 
     private void handleDockerRepo(RepositoryPath rootRepositoryPath, RepositoryPath blobsRootRepositoryPath, RepositoryPath manifestRootRepositoryPath) {

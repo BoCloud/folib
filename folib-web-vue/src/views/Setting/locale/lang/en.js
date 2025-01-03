@@ -566,5 +566,7 @@ export default {
     ContinueMigration: 'Continue Migration',
     FinishMigration: 'Finish Migration',
     PauseMigration: 'Pause Migration',
-    CompleteSuccess: 'Complete Success'
+    CompleteSuccess: 'Complete Success',
+    SyncMetadata: 'Sync Metadata',
+    MigratedArtifact: 'Migrated Artifact',
 }

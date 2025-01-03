@@ -300,5 +300,5 @@ public interface ArtifactWebService {
      */
     void deleteArtifactsResolve(String roleId, String resourceId);
 
-    void saveArtifactMetaByString(RepositoryPath repositoryPath,String metaData);
+    void saveArtifactMetaByString(String storageId,String repositoryId,String path,String metaData);
 }

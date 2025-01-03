@@ -1,8 +1,9 @@
 package com.veadan.folib.services;
 
 import com.github.pagehelper.PageInfo;
+import com.veadan.folib.domain.migrate.SyncArtifactForm;
 import com.veadan.folib.entity.MigrateInfo;
-import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
+
 
 import java.util.List;
 

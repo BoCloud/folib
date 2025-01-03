@@ -73,6 +73,12 @@
                 <a-form-model-item :label="$t('Setting.Password')" prop="password">
                     <a-input-password v-model="form.password" />
                 </a-form-model-item>
+                <a-form-model-item :label="$t('Setting.SyncMetadata')" prop="syncMeta">
+                    <a-switch 
+                        :checked="form.syncMeta === 1"
+                        @change="val => form.syncMeta = val ? 1 : 0"
+                    />
+                </a-form-model-item>
             </a-form-model>
         </a-modal>
     </div>
@@ -161,10 +167,11 @@ export default {
                 id: null,
                 browsePrefix: '',
                 batchSize: 1,
-                threadNumber: 1,
+                threadNumber: 4,
                 remotePreUrl: '',
                 username: '',
-                password: ''
+                password: '',
+                syncMeta: 1
             },
             formRules: {
                 browsePrefix: [
@@ -223,7 +230,8 @@ export default {
                 threadNumber: record.threadNumber,
                 remotePreUrl: record.remotePreUrl,
                 username: record.username,
-                password: record.password
+                password: record.password,
+                syncMeta: record.syncMeta ?? 1
             };
             this.modalVisible = true;
         },
@@ -293,7 +301,8 @@ export default {
                 threadNumber: 1,
                 remotePreUrl: '',
                 username: '',
-                password: ''
+                password: '',
+                syncMeta: 1
             };
             this.modalVisible = true;
         }

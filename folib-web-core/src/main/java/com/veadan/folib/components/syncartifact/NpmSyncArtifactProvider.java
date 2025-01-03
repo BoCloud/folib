@@ -12,10 +12,10 @@ import com.veadan.folib.components.files.FilesCommonComponent;
 import com.veadan.folib.components.jfrogArtifactSync.JfrogPropertySyncer;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.constant.GlobalConstants;
+import com.veadan.folib.domain.migrate.SyncArtifactForm;
 import com.veadan.folib.entity.MigrateInfo;
 import com.veadan.folib.enums.ArtifactSyncTypeEnum;
 import com.veadan.folib.enums.MigrateStatusEnum;
-import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ArtifactResolutionService;
@@ -65,8 +65,6 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
      * 计数
      */
     private static final AtomicLong COUNT = new AtomicLong(0);
-
-    private static final ThreadLocal<JfrogPropertySyncer> META_SYNCER = new ThreadLocal<>();
 
     /**
      * 计数
@@ -345,7 +343,7 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
         boolean ispaused = false;
         try (Stream<Path> pathStream = Files.list(path)) {
             int finalBatch = batch;
-            ispaused = pathStream.sorted().anyMatch(item -> {
+            ispaused = pathStream.anyMatch(item -> {
                 String currentLine = "";
                 long lines = 0, startTime = System.currentTimeMillis();
                 boolean flag = true;
@@ -368,7 +366,7 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
                                 }
                                 pathList.add(currentLine);
                                 if (pathList.size() == finalBatch) {
-                                    batchDownload(item, syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), pathList, threadPoolTaskExecutor);
+                                    batchDownload(item, syncArtifactForm, pathList, threadPoolTaskExecutor);
                                 }
                             } catch (Exception ex) {
                                 log.error(ExceptionUtils.getStackTrace(ex));
@@ -376,7 +374,7 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
                             }
                         }
                         if (CollectionUtils.isNotEmpty(pathList)) {
-                            batchDownload(item, syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), pathList, threadPoolTaskExecutor);
+                            batchDownload(item, syncArtifactForm, pathList, threadPoolTaskExecutor);
                         }
                     }
                     // 清除已完成的文件
@@ -392,14 +390,17 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
         } catch (Exception ex) {
             log.error("Error [{}]", ExceptionUtils.getStackTrace(ex));
         }
+        syncArtifactForm.setSyncMount((int) COUNT.get());
         log.info("Npm包同步完成，存储空间 [{}]  仓库 [{}] 同步 [{}] 个制品，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), COUNT.get(), System.currentTimeMillis() - allStartTime);
         return !ispaused;
     }
 
-    private void batchDownload(Path path, String storageId, String repositoryId, List<String> artifactPathList, ThreadPoolTaskExecutor threadPoolTaskExecutor) {
+    private void batchDownload(Path path, SyncArtifactForm form, List<String> artifactPathList, ThreadPoolTaskExecutor threadPoolTaskExecutor) {
         if (CollectionUtils.isEmpty(artifactPathList)) {
             return;
         }
+        String storageId=form.getStorageId();
+        String repositoryId=form.getRepositoryId();
         RepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
         List<List<String>> artifactPathLists = Lists.partition(artifactPathList, 5);
         List<FutureTask<String>> futureTasks = Lists.newArrayList();
@@ -413,6 +414,7 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
                             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
                             if (Files.exists(repositoryPath)) {
                                 COUNT.incrementAndGet();
+                                distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + storageId + ":" + repositoryId).addAndGet(1L);
                                 log.debug("Batch download storageId [{}] repositoryId [{}] artifactPath [{}] exists skip..", storageId, repositoryId, artifactPath);
                                 continue;
                             }
@@ -420,13 +422,11 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
                             if (Files.exists(repositoryPath)) {
                                 COUNT.incrementAndGet();
                                 distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + storageId + ":" + repositoryId).addAndGet(1L);
-
-                                JfrogPropertySyncer syncer = META_SYNCER.get();
-                                if(Objects.nonNull(syncer)){
-                                    String  properties = syncer.getPropertiesByKeyAndPath(repositoryId, artifactPath);
-                                    if(Objects.nonNull(properties)){
-                                        RepositoryPath repoPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-                                        artifactWebService.saveArtifactMetaByString(repoPath,properties);
+                                JfrogPropertySyncer syncer = form.getSyncer();
+                                if (syncer!=null) {
+                                    String properties = syncer.getPropertiesByKeyAndPath(repositoryId, artifactPath);
+                                    if (properties!=null) {
+                                        artifactWebService.saveArtifactMetaByString(storageId, repositoryId, artifactPath, properties);
                                     }
                                 }
                             }
@@ -474,11 +474,12 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
                 repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
                 // 更新状态
                 migrateInfoService.updateById(repository);
+                distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
             }
             String path = repository.getSyncDirPath();
             if (syncArtifactForm.getSyncMeta() == 1) {
                 JfrogPropertySyncer syncer = new JfrogPropertySyncer(syncArtifactForm.getApiUrl(), syncArtifactForm.getUsername(), syncArtifactForm.getPassword());
-                META_SYNCER.set(syncer);
+                syncArtifactForm.setSyncer(syncer);
             }
             distributedCacheComponent.put(JfrogMigrateService.PAUSED_FLAG_PRE + syncArtifactForm.getStoreAndRepo(), "1");
             if (handlerPath(path, syncArtifactForm)) {
@@ -487,7 +488,9 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
                 migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.PAUSED.getStatus());
             }
         } finally {
-            META_SYNCER.remove();
+            if(syncArtifactForm.getSyncer()!=null){
+                syncArtifactForm.getSyncer().close();
+            }
         }
 
     }

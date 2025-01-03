@@ -23,6 +23,7 @@ import com.veadan.folib.domain.SecurityRoleEntity;
 import com.veadan.folib.domain.adapter.jfrog.JfrogMapping;
 import com.veadan.folib.domain.migrate.AddRepositoryForm;
 import com.veadan.folib.domain.migrate.ArtifactMigrateInfo;
+import com.veadan.folib.domain.migrate.SyncArtifactForm;
 import com.veadan.folib.dto.AccessModelDTO;
 import com.veadan.folib.dto.AccessResourcesDTO;
 import com.veadan.folib.dto.AccessUserGroupsDTO;
@@ -39,7 +40,6 @@ import com.veadan.folib.enums.StorageProviderEnum;
 import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
 import com.veadan.folib.forms.JfrogMigrateForm;
 import com.veadan.folib.forms.dict.DictForm;
-import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
 import com.veadan.folib.mapper.UserGroupMapper;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.LayoutProvider;
@@ -304,8 +304,18 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 log.error("存储空间{},仓库{}修改失败", storageId, repositoryId);
                 continue;
             }
-            info.increaseCount();
+            MigrateInfo migrateInfo = new MigrateInfo();
+            migrateInfo.setMigrateId(migrateId);
+            migrateInfo.setLayout(repository.getLayout());
+            migrateInfo.setSyncStatus(0);
+            migrateInfo.setStorageId(storageId);
+            migrateInfo.setRepositoryId(repositoryId);
+            migrateInfo.setSyncProperty(info.getSyncMeta());
+            migrateInfoService.save(migrateInfo);
         }
+
+        int count = migrateInfoService.countByMigrateId(migrateId);
+        info.setTotal(count);
         Dict dict = createDictByMigrate(info);
         DictForm dictForm = DictForm.builder().build();
         BeanUtils.copyProperties(dict, dictForm);
@@ -377,10 +387,12 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             if (Objects.isNull(repository)) {
                 log.info("无效的仓库{}", storageId);
             }
+
             SyncArtifactProvider syncArtifactProvider = syncArtifactProviderRegistry.getProvider(ArtifactSyncTypeEnum.resolveType(repository.getLayout()));
             SyncArtifactForm form = new SyncArtifactForm();
             form.setDom("a");
             form.setRepositoryId(repositoryId);
+            form.setMigrateId(migrateId);
             form.setStorageId(storageId);
             form.setBrowseUrl(StringUtils.removeEnd(info.getBrowsePrefix(), GlobalConstants.SEPARATOR) + GlobalConstants.SEPARATOR + repositoryId);
             form.setMaxThreadNum(info.getThreadNumber());
