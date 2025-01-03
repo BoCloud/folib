@@ -510,6 +510,7 @@ export default {
     'TimingNotifying':'定时通知',
     'FederalPromotionPolicy':'联邦晋级策略',
     'CustomLayout': '自定义布局',
+    'StorageThreshold': '存储阈值',
 
     RepositoryMigration: '仓库迁移',
     PendingMigration: '待迁移',

@@ -1009,6 +1009,7 @@ public class ConfigurationManagementServiceImpl
             configuration.getAlarmConfiguration().setNotificationPolicy(alarmConfiguration.getNotificationPolicy());
             configuration.getAlarmConfiguration().setRecipients(alarmConfiguration.getRecipients());
             configuration.getAlarmConfiguration().setEmails(alarmConfiguration.getEmails());
+            configuration.getAlarmConfiguration().setStorageThreshold(alarmConfiguration.getStorageThreshold());
 
         });
     }

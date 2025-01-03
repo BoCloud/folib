@@ -50,6 +50,8 @@ public interface Repository {
 
     long getStorageMaxSize();
 
+    double getStorageThreshold();
+
     Set<String> getGroupRepositories();
 
     String getGroupDefaultRepository();
