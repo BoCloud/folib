@@ -358,6 +358,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
     public void listenTask(String migrateId) {
         Dict dict = getDictByMigrateId(migrateId);
         if (Objects.isNull(dict)) {
+            BATH_COUNT.decrementAndGet();
             return;
         }
         ArtifactMigrateInfo info = JSON.parseObject(dict.getAlias(), ArtifactMigrateInfo.class);
@@ -470,6 +471,10 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             } catch (Exception e) {
                 log.error("更新状态失败");
             }
+            // 同步更新
+            MigrateInfo info = migrateInfoService.getByMigrateIdAndRepoInfo(migrateId, storageId, repositoryId);
+            info.setSyncStatus(MigrateStatusEnum.END.getStatus());
+            migrateInfoService.save(info);
         }
     }
 
