@@ -6,6 +6,7 @@ export default {
     'ModifyStorageSpace': '修改存储空间',
     'createModal': '新 建',
     'CreateStorageSpace': '新建存储空间',
+    'CreateRepository':'新建制品仓库',
     'StorageSpaceName': '存储空间名称',
     'StorageType': '存储类型',
     'SyncStorage': '同步存储空间',

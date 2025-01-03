@@ -48,9 +48,11 @@
                     </div>
                     <div :style="switchDisabled?'display:block;':'display:none;'" class="disabled_sty"></div>
                   </div>
-                  <a class="text-center text-muted font-bold" v-if="!isChecked">
-                    <h3 v-if="$store.state.user.roles.indexOf('ADMIN') > -1" class="font-semibold text-muted mb-0"
-                      @click="createHandleView">+</h3>
+                  <a class="text-center text-muted font-bold" v-if="!isChecked" :title="$t('Storage.CreateStorageSpace')">
+                    <div v-if="$store.state.user.roles.indexOf('ADMIN') > -1" class="font-semibold text-muted mb-0"
+                      @click="createHandleView">
+                      <img src="./Storage-components/images/add.svg" width="30" alt="">
+                    </div>
                   </a>
                   <!-- <a class="text-center text-muted font-bold" v-if="isChecked" style="margin-right:8px;">
                     <h5 class="font-semibold text-muted mb-0"
@@ -59,9 +61,11 @@
                         <a-icon v-else type="file-zip" />
                     </h5>
                   </a> -->
-                  <a class="text-center text-muted font-bold" v-if="isChecked">
-                    <h3 class="font-semibold text-muted mb-0"
-                      @click="folibVisibleShow">+</h3>
+                  <a class="text-center text-muted font-bold" v-if="isChecked" :title="$t('Storage.CreateRepository')">
+                    <div class="font-semibold text-muted mb-0"
+                      @click="folibVisibleShow">
+                      <img src="./Storage-components/images/create-repository.svg" width="24" alt="">
+                    </div>
                   </a>
                 </a-col>
               </a-row>
@@ -602,52 +606,59 @@
                 </a-col>
               </a-row>
               <a-row :gutter="[24]">
-                <a-col :span="3">
-                  <a-form-item class="mb-10" :label="$t('Storage.RecycleBin')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.trashEnabled">
-                      {{ folibRepository.trashEnabled ? $t('Storage.On') : $t('Storage.Off') }}
+                      {{$t('Storage.On')}}{{$t('Storage.RecycleBin')}}
+                      <!-- {{ folibRepository.trashEnabled ? $t('Storage.On')  : $t('Storage.Off') }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="3">
-                  <a-form-item class="mb-10" :label="$t('Storage.Delete')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsDeletion">
-                      {{ folibRepository.allowsDeletion ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
+                      {{ $t('Storage.Allowed') }}{{ $t('Storage.Delete') }}
+                      <!-- {{ folibRepository.allowsDeletion ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="3">
-                  <a-form-item class="mb-10" :label="$t('Storage.ForcedDeletion')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsForceDeletion">
-                      {{ folibRepository.allowsForceDeletion ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
+                      {{ $t('Storage.Allowed') }}{{ $t('Storage.ForcedDeletion') }}
+                      <!-- {{ folibRepository.allowsForceDeletion ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="3">
-                  <a-form-item class="mb-10" :label="$t('Storage.UploadDeploy')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsDeployment">
-                      {{ folibRepository.allowsDeployment ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
+                      {{ $t('Storage.Allowed') }}{{ $t('Storage.UploadDeploy') }}
+                      <!-- {{ folibRepository.allowsDeployment ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="3">
-                  <a-form-item class="mb-10" :label="$t('Storage.UploadOverlay')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsRedeployment">
-                      {{ folibRepository.allowsRedeployment ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
+                      {{ $t('Storage.Allowed') }}{{ $t('Storage.UploadOverlay') }}
+                      <!-- {{ folibRepository.allowsRedeployment ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="3">
-                  <a-form-item class="mb-10" :label="$t('Storage.DirectoryBrowsing')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsDirectoryBrowsing">
-                      {{ folibRepository.allowsDirectoryBrowsing ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
+                      {{ $t('Storage.Allowed') }}{{ $t('Storage.DirectoryBrowsing') }} 
+                      <!-- {{ folibRepository.allowsDirectoryBrowsing ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="3">
-                  <a-form-item class="mb-10" :label="$t('Storage.SyncRepository')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.syncEnabled">
-                      {{ folibRepository.syncEnabled ?  $t('Storage.On') : $t('Storage.Off')  }}
+                      {{ $t('Storage.On') }}{{ $t('Storage.SyncRepository') }}
+                      <!-- {{ folibRepository.syncEnabled ?  $t('Storage.On') : $t('Storage.Off')  }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
@@ -747,15 +758,15 @@
                     </a-col>
 
                 </div>
-                <a-col :span="4">
+                <a-col :span="12">
                   <a-form-item class="mb-10" :label="$t('Storage.TimedCheck')" :colon="false">
                     <a-input :placeholder="$t('Storage.DefaultTime')" v-model="folibRepository.remoteRepository.checkIntervalSeconds"
                       addon-after="s" />
                   </a-form-item>
                 </a-col>
-                <a-col :span="4">
+                <a-col :span="12">
                   <a-form-item class="mb-10" :label="$t('Storage.InspectionMechanism')" :colon="false">
-                    <a-select default-value="None" v-model="folibRepository.remoteRepository.checksumPolicy">
+                    <a-select default-value="None" style="width:100%;text-align: start;vertical-align: top;" v-model="folibRepository.remoteRepository.checksumPolicy">
                       <a-select-option value="None">
                         {{ $t('Storage.None') }}
                       </a-select-option>
@@ -771,45 +782,51 @@
                     </a-select>
                   </a-form-item>
                 </a-col>
-                <a-col :span="4">
-                  <a-form-item class="mb-10" :label="$t('Storage.LocalAgent')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="enableHostProxy" @change="proxyConfigurationHandle">
-                      {{ enableHostProxy ? $t('Storage.On') : $t('Storage.Off') }}
+                      {{ $t('Storage.On') }}{{ $t('Storage.LocalAgent') }}
+                      <!-- {{ enableHostProxy ? $t('Storage.On') : $t('Storage.Off') }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="3">
-                  <a-form-item class="mb-10" :label="$t('Storage.DirectoryBrowsing')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.remoteRepository.allowsDirectoryBrowsing">
-                      {{ folibRepository.remoteRepository.allowsDirectoryBrowsing ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
+                      {{ $t('Storage.Allowed') }}{{ $t('Storage.NotAllowed') }}
+                      <!-- {{ folibRepository.remoteRepository.allowsDirectoryBrowsing ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="3">
-                  <a-form-item class="mb-10" :label="$t('Storage.AutomaticLock')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.remoteRepository.autoBlocking">
-                      {{ folibRepository.remoteRepository.autoBlocking ? $t('Storage.On') : $t('Storage.Off') }}
+                      {{ $t('Storage.On') }}{{$t('Storage.AutomaticLock')}}
+                      <!-- {{ folibRepository.remoteRepository.autoBlocking ? $t('Storage.On') : $t('Storage.Off') }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="3">
-                  <a-form-item class="mb-10" :label="$t('Storage.ChecksumCheck')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.remoteRepository.checksumValidation">
-                      {{ folibRepository.remoteRepository.checksumValidation ? $t('Storage.On') : $t('Storage.Off') }}
+                      {{$t('Storage.On')}}{{ $t('Storage.ChecksumCheck') }}
+                      <!-- {{ folibRepository.remoteRepository.checksumValidation ? $t('Storage.On') : $t('Storage.Off') }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="3">
-                  <a-form-item class="mb-10" :label="$t('Storage.RemoteIndexDownload')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.remoteRepository.downloadRemoteIndexes">
-                      {{ folibRepository.remoteRepository.downloadRemoteIndexes ? $t('Storage.Download') : $t('Storage.NoDownload') }}
+                      {{ $t('Storage.Download') }}{{ $t('Storage.RemoteIndexDownload') }}
+                      <!-- {{ folibRepository.remoteRepository.downloadRemoteIndexes ? $t('Storage.Download') : $t('Storage.NoDownload') }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="3">
-                  <a-form-item class="mb-10" :label="$t('Storage.SyncRepository')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.syncEnabled">
-                      {{ folibRepository.syncEnabled ?  $t('Storage.On') : $t('Storage.Off')  }}
+                      {{ $t('Storage.On') }}{{ $t('Storage.SyncRepository') }}
+                      <!-- {{ folibRepository.syncEnabled ?  $t('Storage.On') : $t('Storage.Off')  }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
@@ -1375,6 +1392,7 @@ export default {
       libViewKey:0,
       groupDefaultRepository:undefined,
       customLayoutList: [],
+      switchDisabled:true,
     };
   },
   watch: {
@@ -1445,7 +1463,8 @@ export default {
   mounted(){
     this.$store.commit('setNewDetailPage',true)
     this.$store.commit('setNewDetailPage',false)
-    this.$store.commit('setSwitchDisabled',true)
+    // this.$store.commit('setSwitchDisabled',true)
+    this.switchDisabled = true
   },
   methods: {
     // 制品仓库页面专属。用于切换仓库和存储空间的展示模式
@@ -1924,7 +1943,8 @@ export default {
     },
     getQueryStorage(queryParams,type){
       queryRepositoriesByStorage(queryParams).then(res => {
-        this.$store.commit('setSwitchDisabled',false)
+        // this.$store.commit('setSwitchDisabled',false)
+        this.switchDisabled = false
         if(res.status === 200){
           this.queryParams.total = res.data.total
           this.repositories = res.data.rows || []
@@ -1938,7 +1958,8 @@ export default {
     },
     getStorage(id) {
       if (id) {
-        this.$store.commit('setSwitchDisabled',true)
+        // this.$store.commit('setSwitchDisabled',true)
+        this.switchDisabled = true
         getLibraryFilter(id).then(response => {
           this.currentStorage.id = response.id
           this.currentStorage.basedir = response.basedir
