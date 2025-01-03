@@ -86,11 +86,21 @@ public class ArtifactWebHookController {
             String repositoryHeaderKey = "X-repository";
             String repositoryHeader = request.getHeader(repositoryHeaderKey);
             log.info("JFrog event header repository [{}] [{}]", repositoryHeaderKey, repositoryHeader);
-            if (StringUtils.isBlank(repositoryHeader)) {
+            // 存储空间固定且仓库同名
+            String storageKey = "X-storage";
+            String storageHeader = request.getHeader(storageKey);
+            String storageId ;
+            String repositoryId;
+            if (StringUtils.isNotBlank(repositoryHeader)) {
+                storageId=ConfigurationUtils.getStorageId(repositoryHeader,repositoryHeader);
+                repositoryId=ConfigurationUtils.getRepositoryId(repositoryHeader);
+            }else if(StringUtils.isNotBlank(storageHeader)){
+                storageId=storageHeader;
+                repositoryId=webhookDto.getData().getRepoKey();
+            }else {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(String.format("The header parameter [%s] is required", repositoryHeaderKey));
             }
-            String storageId = ConfigurationUtils.getStorageId(repositoryHeader, repositoryHeader);
-            String repositoryId = ConfigurationUtils.getRepositoryId(repositoryHeader);
+
             Storage storage = configurationManager.getStorage(storageId);
             if (Objects.isNull(storage)) {
                 log.warn("JFrog event storage [{}] not found", storageId);

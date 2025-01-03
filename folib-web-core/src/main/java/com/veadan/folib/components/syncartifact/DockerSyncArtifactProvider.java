@@ -132,7 +132,11 @@ public class DockerSyncArtifactProvider implements SyncArtifactProvider {
 
     @Override
     public void browseFullSync(SyncArtifactForm syncArtifactForm) {
-
+        String dirPath = syncPackageIndex(syncArtifactForm);
+        if (StringUtils.isBlank(dirPath)) {
+            return;
+        }
+        handlerPath(dirPath, syncArtifactForm);
     }
 
     @Override
