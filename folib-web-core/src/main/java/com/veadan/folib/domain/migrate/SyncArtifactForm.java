@@ -1,5 +1,6 @@
-package com.veadan.folib.forms.syncartifact;
+package com.veadan.folib.domain.migrate;
 
+import com.veadan.folib.components.jfrogArtifactSync.JfrogPropertySyncer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -66,7 +67,20 @@ public class SyncArtifactForm {
 
     private int totalArtifact;
 
+    private int syncMount;
+
     private String migrateId;
+
+    private String username;
+
+    private String password;
+
+    private Integer syncMeta;
+
+    private String apiUrl;
+
+    private JfrogPropertySyncer syncer;
+
 
     public String getStoreAndRepo(){
         return this.storageId+":"+repositoryId;
