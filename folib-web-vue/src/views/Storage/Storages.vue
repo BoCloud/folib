@@ -810,7 +810,7 @@
                 <a-col :span="6">
                   <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.remoteRepository.allowsDirectoryBrowsing">
-                      {{ $t('Storage.Allowed') }}{{ $t('Storage.NotAllowed') }}
+                      {{ $t('Storage.Allowed') }}{{ $t('Storage.DirectoryBrowsing') }}
                       <!-- {{ folibRepository.remoteRepository.allowsDirectoryBrowsing ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }} -->
                     </a-checkbox>
                   </a-form-item>
