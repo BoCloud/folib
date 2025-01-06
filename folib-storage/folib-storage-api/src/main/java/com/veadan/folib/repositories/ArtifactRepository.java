@@ -1020,4 +1020,8 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         return count;
     }
 
+    public long countByUUidPrefix(String uuid) {
+        return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.UUID, Text.textPrefix(uuid)).count().tryNext().orElse(0L);
+    }
+
 }
