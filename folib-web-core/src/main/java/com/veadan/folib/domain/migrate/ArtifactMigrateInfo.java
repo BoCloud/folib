@@ -1,6 +1,8 @@
 package com.veadan.folib.domain.migrate;
 
+import com.veadan.folib.constant.GlobalConstants;
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
 
 import java.time.LocalDate;
 
@@ -29,8 +31,15 @@ public class ArtifactMigrateInfo {
 
     private String remotePreUrl;
 
-    public void increaseCount(){
-        this.total++;
+    private Integer syncMeta;
+
+    public void setBrowsePrefix(String browsePrefix){
+        this.browsePrefix= StringUtils.removeEnd(browsePrefix, GlobalConstants.SEPARATOR);
     }
+
+    public void setRemotePreUrl(String remotePreUrl){
+        this.remotePreUrl= StringUtils.removeEnd(remotePreUrl, GlobalConstants.SEPARATOR);
+    }
+
 
 }

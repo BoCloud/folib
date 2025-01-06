@@ -27,7 +27,7 @@
 <!--        <a-affix :offset-top="navbarFixed ? 100 : 10">-->
           <a-card :bordered="false" :style="isChecked ? 'height:calc(100vh - 230px);margin-bottom:0px;' : ''" class="header-solid mb-24 left_menu">
             <template #title>
-              <a-row type="flex" align="middle">
+              <a-row type="flex" align="middle" class="position:relative;">
                 <a-col :span="24" :md="12" class="col-info">
                   <h6 class="font-semibold m-0">{{ isChecked ? $t('Storage.RepositoryList') : $t('Storage.StorageList')}}</h6>
                 </a-col>
@@ -39,9 +39,20 @@
                     class="switch-position"
                     @change="getDetailInfo"
                   ></a-switch> -->
-                  <a class="text-center text-muted font-bold" v-if="!isChecked">
-                    <h3 v-if="$store.state.user.roles.indexOf('ADMIN') > -1" class="font-semibold text-muted mb-0"
-                      @click="createHandleView">+</h3>
+                  <div class="switch_mode">
+                    <div @click="checkMode(false)" class="img-sty" :class="isChecked ? '' : 'isActive'">
+                      <img src="./images/list.svg" width="20" alt="">
+                    </div>
+                    <div @click="checkMode(true)" class="img-sty" :class="isChecked ? 'isActive' : ''">
+                      <img src="./images/tree.svg" width="20" alt="">
+                    </div>
+                    <div :style="switchDisabled?'display:block;':'display:none;'" class="disabled_sty"></div>
+                  </div>
+                  <a class="text-center text-muted font-bold" v-if="!isChecked" :title="$t('Storage.CreateStorageSpace')">
+                    <div v-if="$store.state.user.roles.indexOf('ADMIN') > -1" class="font-semibold text-muted mb-0"
+                      @click="createHandleView">
+                      <img src="./Storage-components/images/add.svg" width="30" alt="">
+                    </div>
                   </a>
                   <!-- <a class="text-center text-muted font-bold" v-if="isChecked" style="margin-right:8px;">
                     <h5 class="font-semibold text-muted mb-0"
@@ -50,9 +61,11 @@
                         <a-icon v-else type="file-zip" />
                     </h5>
                   </a> -->
-                  <a class="text-center text-muted font-bold" v-if="isChecked">
-                    <h3 class="font-semibold text-muted mb-0"
-                      @click="folibVisibleShow">+</h3>
+                  <a class="text-center text-muted font-bold" v-if="isChecked" :title="$t('Storage.CreateRepository')">
+                    <div class="font-semibold text-muted mb-0"
+                      @click="folibVisibleShow">
+                      <img src="./Storage-components/images/create-repository.svg" width="24" alt="">
+                    </div>
                   </a>
                 </a-col>
               </a-row>
@@ -521,7 +534,7 @@
                 <a-col :span="6">
                   <a-form-item class="mb-10" :label="$t('Storage.Strategy')" :colon="false">
                     <a-select :disabled="folibRepositoryEditDisabled"
-                      default-value="hosted" v-model="folibRepository.type">
+                      default-value="hosted" v-model="folibRepository.type" @change="getRemote">
                       <a-select-option value="hosted">
                         {{ $t('Storage.Local') }}
                       </a-select-option>
@@ -574,12 +587,24 @@
                 </a-col>
               </a-row>
               <a-row :gutter="[24]">
-                <a-col :span="3">
+                  <a-col :span="12">
+                      <a-form-item class="mb-10" :label="$t('Storage.StorageThreshold')" :colon="false">
+                          <a-input-number style="width: 100%"
+                              :default-value="100"
+                              :min="0"
+                              :max="100"
+                              :formatter="value => `${value}%`"
+                              :parser="value => value.replace('%', '')"
+                              v-model="repositoryStorageThreshold"
+                          />
+                      </a-form-item>
+                  </a-col>
+                <a-col :span="6">
                   <a-form-item class="mb-10" :label="$t('Storage.EnableCustomLayout')" :colon="false">
                     <a-switch v-model="folibRepository.enableCustomLayout" @change="enableCustomLayoutChange"></a-switch>
                   </a-form-item>
                 </a-col>
-                <a-col :span="9" v-if="folibRepository.enableCustomLayout">
+                <a-col :span="6" v-if="folibRepository.enableCustomLayout">
                   <a-form-item class="mb-10" :label="$t('Storage.CustomLayout')" :colon="false">
                     <a-select v-model="folibRepository.customLayout" style="width: 100%" model="default" show-search allowClear
                       :dropdown-style="{ maxHeight: '240px', overflow: 'auto' }"
@@ -591,54 +616,66 @@
                     </a-select>
                   </a-form-item>
                 </a-col>
+<!--                <a-col :span="6">-->
+<!--                    <a-form-item class="mb-10" :label="$t('Storage.StorageThreshold')" :colon="false">-->
+<!--                        <a-input  addon-after="%" v-model="repositoryStorageThreshold" />-->
+<!--                    </a-form-item>-->
+<!--                </a-col>-->
               </a-row>
               <a-row :gutter="[24]">
-                <a-col :span="3">
-                  <a-form-item class="mb-10" :label="$t('Storage.RecycleBin')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.trashEnabled">
-                      {{ folibRepository.trashEnabled ? $t('Storage.On') : $t('Storage.Off') }}
+                      {{$t('Storage.On')}}{{$t('Storage.RecycleBin')}}
+                      <!-- {{ folibRepository.trashEnabled ? $t('Storage.On')  : $t('Storage.Off') }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="3">
-                  <a-form-item class="mb-10" :label="$t('Storage.Delete')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsDeletion">
-                      {{ folibRepository.allowsDeletion ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
+                      {{ $t('Storage.Allowed') }}{{ $t('Storage.Delete') }}
+                      <!-- {{ folibRepository.allowsDeletion ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="3">
-                  <a-form-item class="mb-10" :label="$t('Storage.ForcedDeletion')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsForceDeletion">
-                      {{ folibRepository.allowsForceDeletion ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
+                      {{ $t('Storage.Allowed') }}{{ $t('Storage.ForcedDeletion') }}
+                      <!-- {{ folibRepository.allowsForceDeletion ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="3">
-                  <a-form-item class="mb-10" :label="$t('Storage.UploadDeploy')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsDeployment">
-                      {{ folibRepository.allowsDeployment ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
+                      {{ $t('Storage.Allowed') }}{{ $t('Storage.UploadDeploy') }}
+                      <!-- {{ folibRepository.allowsDeployment ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="3">
-                  <a-form-item class="mb-10" :label="$t('Storage.UploadOverlay')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsRedeployment">
-                      {{ folibRepository.allowsRedeployment ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
+                      {{ $t('Storage.Allowed') }}{{ $t('Storage.UploadOverlay') }}
+                      <!-- {{ folibRepository.allowsRedeployment ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="3">
-                  <a-form-item class="mb-10" :label="$t('Storage.DirectoryBrowsing')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsDirectoryBrowsing">
-                      {{ folibRepository.allowsDirectoryBrowsing ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
+                      {{ $t('Storage.Allowed') }}{{ $t('Storage.DirectoryBrowsing') }} 
+                      <!-- {{ folibRepository.allowsDirectoryBrowsing ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="3">
-                  <a-form-item class="mb-10" :label="$t('Storage.SyncRepository')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.syncEnabled">
-                      {{ folibRepository.syncEnabled ?  $t('Storage.On') : $t('Storage.Off')  }}
+                      {{ $t('Storage.On') }}{{ $t('Storage.SyncRepository') }}
+                      <!-- {{ folibRepository.syncEnabled ?  $t('Storage.On') : $t('Storage.Off')  }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
@@ -675,7 +712,7 @@
           <a-card v-else-if="step === 2 && (folibRepository.type === 'proxy')" :bordered="false" class="header-solid">
             <h5 class="font-regular text-center">{{ $t('Storage.WarehouseConfig') }}</h5>
             <p class="text-center">
-              {{ $t('Storage.RemoteLibraryAddress') }}</p>
+              {{ $t('Storage.RemoteLibraryAddress') }}</p
             <a-form :form="form" :hideRequiredMark="true">
               <a-row :gutter="[24]">
                 <a-col :span="12">
@@ -738,15 +775,15 @@
                     </a-col>
 
                 </div>
-                <a-col :span="4">
+                <a-col :span="12">
                   <a-form-item class="mb-10" :label="$t('Storage.TimedCheck')" :colon="false">
                     <a-input :placeholder="$t('Storage.DefaultTime')" v-model="folibRepository.remoteRepository.checkIntervalSeconds"
                       addon-after="s" />
                   </a-form-item>
                 </a-col>
-                <a-col :span="4">
+                <a-col :span="12">
                   <a-form-item class="mb-10" :label="$t('Storage.InspectionMechanism')" :colon="false">
-                    <a-select default-value="None" v-model="folibRepository.remoteRepository.checksumPolicy">
+                    <a-select default-value="None" style="width:100%;text-align: start;vertical-align: top;" v-model="folibRepository.remoteRepository.checksumPolicy">
                       <a-select-option value="None">
                         {{ $t('Storage.None') }}
                       </a-select-option>
@@ -762,45 +799,51 @@
                     </a-select>
                   </a-form-item>
                 </a-col>
-                <a-col :span="4">
-                  <a-form-item class="mb-10" :label="$t('Storage.LocalAgent')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="enableHostProxy" @change="proxyConfigurationHandle">
-                      {{ enableHostProxy ? $t('Storage.On') : $t('Storage.Off') }}
+                      {{ $t('Storage.On') }}{{ $t('Storage.LocalAgent') }}
+                      <!-- {{ enableHostProxy ? $t('Storage.On') : $t('Storage.Off') }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="3">
-                  <a-form-item class="mb-10" :label="$t('Storage.DirectoryBrowsing')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.remoteRepository.allowsDirectoryBrowsing">
-                      {{ folibRepository.remoteRepository.allowsDirectoryBrowsing ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }}
+                      {{ $t('Storage.Allowed') }}{{ $t('Storage.DirectoryBrowsing') }}
+                      <!-- {{ folibRepository.remoteRepository.allowsDirectoryBrowsing ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="3">
-                  <a-form-item class="mb-10" :label="$t('Storage.AutomaticLock')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.remoteRepository.autoBlocking">
-                      {{ folibRepository.remoteRepository.autoBlocking ? $t('Storage.On') : $t('Storage.Off') }}
+                      {{ $t('Storage.On') }}{{$t('Storage.AutomaticLock')}}
+                      <!-- {{ folibRepository.remoteRepository.autoBlocking ? $t('Storage.On') : $t('Storage.Off') }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="3">
-                  <a-form-item class="mb-10" :label="$t('Storage.ChecksumCheck')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.remoteRepository.checksumValidation">
-                      {{ folibRepository.remoteRepository.checksumValidation ? $t('Storage.On') : $t('Storage.Off') }}
+                      {{$t('Storage.On')}}{{ $t('Storage.ChecksumCheck') }}
+                      <!-- {{ folibRepository.remoteRepository.checksumValidation ? $t('Storage.On') : $t('Storage.Off') }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="3">
-                  <a-form-item class="mb-10" :label="$t('Storage.RemoteIndexDownload')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.remoteRepository.downloadRemoteIndexes">
-                      {{ folibRepository.remoteRepository.downloadRemoteIndexes ? $t('Storage.Download') : $t('Storage.NoDownload') }}
+                      {{ $t('Storage.Download') }}{{ $t('Storage.RemoteIndexDownload') }}
+                      <!-- {{ folibRepository.remoteRepository.downloadRemoteIndexes ? $t('Storage.Download') : $t('Storage.NoDownload') }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="3">
-                  <a-form-item class="mb-10" :label="$t('Storage.SyncRepository')" :colon="false">
+                <a-col :span="6">
+                  <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.syncEnabled">
-                      {{ folibRepository.syncEnabled ?  $t('Storage.On') : $t('Storage.Off')  }}
+                      {{ $t('Storage.On') }}{{ $t('Storage.SyncRepository') }}
+                      <!-- {{ folibRepository.syncEnabled ?  $t('Storage.On') : $t('Storage.Off')  }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
@@ -1263,6 +1306,7 @@ export default {
           layout: "",
       },
       repositoryStorageMaxSize: 0,
+      repositoryStorageThreshold:0,
       folibRepository: {
         allowsDeletion: true,
         allowsDeployment: true,
@@ -1273,6 +1317,7 @@ export default {
         artifactMaxSize: 100,
         basedir: null,
         storageMaxSize: 0,
+        storageThreshold:0,
         checksumHeadersEnabled: true,
         groupRepositories: [],
         httpConnectionPool: null,
@@ -1346,7 +1391,7 @@ export default {
         total:0,
       },
       layoutType:'isFilter',
-      // isChecked: false,
+      isChecked: false,
       isShowOverview: false,
      permissionForm: {
         allowAnonymous: true,
@@ -1366,6 +1411,7 @@ export default {
       libViewKey:0,
       groupDefaultRepository:undefined,
       customLayoutList: [],
+      switchDisabled:true,
     };
   },
   watch: {
@@ -1415,9 +1461,9 @@ export default {
     this.queryCustomLayoutList()
   },
   computed: {
-    isChecked(){
-      return this.$store.state.isChecked
-    },
+    // isChecked(){
+    //   return this.$store.state.isChecked
+    // },
     isLogin() {
       return isLogin()
     },
@@ -1436,9 +1482,36 @@ export default {
   mounted(){
     this.$store.commit('setNewDetailPage',true)
     this.$store.commit('setNewDetailPage',false)
-    this.$store.commit('setSwitchDisabled',true)
+    // this.$store.commit('setSwitchDisabled',true)
+    this.switchDisabled = true
   },
   methods: {
+    // 制品仓库页面专属。用于切换仓库和存储空间的展示模式
+    checkMode(key){
+      if(this.switchDisabled){
+        return
+      }
+      setTimeout(() => {
+        this.isChecked = key
+        // this.$store.commit('setIsChecked',key)
+      }, 0);
+    },
+    getRemote(val){
+      if(val == 'proxy'){
+          this.folibRepository.remoteRepository = {
+            allowsDirectoryBrowsing: true,
+            autoBlocking: true,
+            autoImportRemoteSSLCertificate: false,
+            checkIntervalSeconds: 60,
+            checksumPolicy: 'None',
+            checksumValidation: true,
+            downloadRemoteIndexes: true,
+            password: "",
+            url: "",
+            username: ""
+          }
+      }
+    },
     // 展示存储概览
     showOverview(val){
       this.isShowOverview = val == 2
@@ -1889,7 +1962,8 @@ export default {
     },
     getQueryStorage(queryParams,type){
       queryRepositoriesByStorage(queryParams).then(res => {
-        this.$store.commit('setSwitchDisabled',false)
+        // this.$store.commit('setSwitchDisabled',false)
+        this.switchDisabled = false
         if(res.status === 200){
           this.queryParams.total = res.data.total
           this.repositories = res.data.rows || []
@@ -1903,7 +1977,8 @@ export default {
     },
     getStorage(id) {
       if (id) {
-        this.$store.commit('setSwitchDisabled',true)
+        // this.$store.commit('setSwitchDisabled',true)
+        this.switchDisabled = true
         getLibraryFilter(id).then(response => {
           this.currentStorage.id = response.id
           this.currentStorage.basedir = response.basedir
@@ -1930,7 +2005,7 @@ export default {
             storageId: this.currentStorage.id,
             layout: this.queryParams.layout,
             type: this.queryParams.type,
-            limit: this.queryParams.limit,
+            limit: this.isChecked ? 20 : this.queryParams.limit,
             page: this.queryParams.page
           }
           this.getQueryStorage(params)
@@ -2262,6 +2337,7 @@ export default {
 
       this.folibRepository.artifactMaxSize = this.artifactMaxSize * 1024 * 1024
       this.folibRepository.storageMaxSize =  this.setRepoMaxSize(this.repositoryStorageMaxSize);
+      this.folibRepository.storageThreshold = this.setRepoThreshold(this.repositoryStorageThreshold);
       addOrUpdateRepository(this.currentStorage.id, this.folibRepository.id, this.folibRepository).then(res => {
         if (!res.error) {
           setTimeout(() => {
@@ -2276,7 +2352,7 @@ export default {
           }, 1000);
         }
 
-
+        this.queryParams.page = 1
         this.getStorage(this.currentStorage.id)
         if (!isNotSetCron) {
           this.step = 0
@@ -2375,6 +2451,7 @@ export default {
           this.folibRepositoryEditDisabled = true
           this.folibVisible = true
           this.repositoryStorageMaxSize = this.getRepoMaxSize(this.folibRepository.storageMaxSize);
+          this.repositoryStorageThreshold = this.getRepoThreshold(this.folibRepository.storageThreshold);
         }
       })
 
@@ -2635,6 +2712,18 @@ export default {
           if(maxSize){
               let size = (maxSize *1024*1024*1024).toFixed(0)
               return size;
+          }
+          return 0;
+   },
+   setRepoThreshold(threshold){
+      if(threshold){
+          return  (threshold/100).toFixed(3)
+      }
+       return 0;
+   },
+   getRepoThreshold(threshold) {
+          if (threshold) {
+              return (threshold * 100).toFixed(3)
           }
           return 0;
    },
@@ -2912,4 +3001,39 @@ export default {
   // background: rgb(250, 251, 251);
 }
 
+.switch_mode{
+  // position: absolute;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 80px;
+  background: rgba(255,255,255,0.5);
+    box-shadow: 0px 1px 6px 1px rgba(0,0,0,0.1);
+  padding: 3px;
+  border-radius: 4px;
+  // left: 0px;
+  margin-right: 10px;
+  
+  .img-sty{
+    opacity: 1 !important;
+    cursor: pointer;
+    background: rgba(255,255,255,0.5);
+    border-radius: 4px;
+    box-shadow: 0px 1px 6px 1px rgba(0,0,0,0.1);
+    padding: 3px 5px;
+    transition: all 0.3s;
+  }
+
+  .isActive{
+    background: #a5cafc;
+    box-shadow: 0px 1px 6px 1px rgba(0,0,0,0.2);
+  }
+  .disabled_sty{
+    width: 80px;
+    height: 40px;
+    position: absolute;
+    cursor: not-allowed;
+    z-index: 9999;
+  }
+}
 </style>

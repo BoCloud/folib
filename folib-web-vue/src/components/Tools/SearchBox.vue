@@ -136,6 +136,7 @@ input:not(:placeholder-shown) {
     display: block;
     color: $colorLight;
     cursor: pointer;
+    background: $colorBrand;
   }
 }
 

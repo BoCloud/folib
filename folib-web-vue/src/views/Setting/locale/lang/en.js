@@ -511,6 +511,7 @@ export default {
     'TimingNotifying':'timing notifying',
     'FederalPromotionPolicy':'Federal promotion policy',
     'CustomLayout': 'Custom layout',
+    'StorageThreshold': 'Storage Threshold',
 
     RepositoryMigration: 'Repository Migration',
     PendingMigration: 'Pending',
@@ -566,5 +567,7 @@ export default {
     ContinueMigration: 'Continue Migration',
     FinishMigration: 'Finish Migration',
     PauseMigration: 'Pause Migration',
-    CompleteSuccess: 'Complete Success'
+    CompleteSuccess: 'Complete Success',
+    SyncMetadata: 'Sync Metadata',
+    MigratedArtifact: 'Migrated Artifact',
 }

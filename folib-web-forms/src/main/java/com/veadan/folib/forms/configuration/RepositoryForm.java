@@ -81,6 +81,8 @@ public class RepositoryForm {
 
     private long storageMaxSize;
 
+    private double storageThreshold;
+
     @Valid
     private ProxyConfigurationForm proxyConfiguration;
 
@@ -106,61 +108,6 @@ public class RepositoryForm {
     private String groupDefaultRepository;
 
     private Set<String> artifactCoordinateValidators;
-
-    private boolean syncJfrog;
-
-    private String migrateId;
-
-    public boolean getSyncJfrog() {
-        return syncJfrog;
-    }
-
-    public void setSyncJfrog(boolean syncJfrog) {
-        this.syncJfrog = syncJfrog;
-    }
-
-    public String getMigrateId() {
-        return migrateId;
-    }
-
-    public void setMigrateId(String migrateId) {
-        this.migrateId = migrateId;
-    }
-
-    public int getSyncStatus() {
-        return syncStatus;
-    }
-
-    public void setSyncStatus(int syncStatus) {
-        this.syncStatus = syncStatus;
-    }
-
-    public int getTotalArtifact() {
-        return totalArtifact;
-    }
-
-    public void setTotalArtifact(int totalArtifact) {
-        this.totalArtifact = totalArtifact;
-    }
-
-    private int syncStatus;
-
-    private int totalArtifact;
-
-    public boolean isSyncJfrog() {
-        return syncJfrog;
-    }
-
-    public String getSyncDirPath() {
-        return syncDirPath;
-    }
-
-    public void setSyncDirPath(String syncDirPath) {
-        this.syncDirPath = syncDirPath;
-    }
-
-    private String syncDirPath;
-
     /**
      * 白名单列表
      */
@@ -339,6 +286,14 @@ public class RepositoryForm {
 
     public void setStorageMaxSize(final long storageMaxSize) {
         this.storageMaxSize = storageMaxSize;
+    }
+
+    public double getStorageThreshold() {
+        return storageThreshold;
+    }
+
+    public void setStorageThreshold(final double storageThreshold) {
+        this.storageThreshold = storageThreshold;
     }
 
     public ProxyConfigurationForm getProxyConfiguration() {

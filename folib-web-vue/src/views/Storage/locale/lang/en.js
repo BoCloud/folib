@@ -7,6 +7,7 @@ export default {
     'createModal': 'create',
     'create': 'create ',
     'CreateStorageSpace': 'Create storage space',
+    'CreateRepository':'Create Repository',
     'StorageSpaceName': 'Storage space name',
     'StorageType': 'Storage type',
     'SyncStorage': 'Sync Storage',
@@ -276,4 +277,5 @@ export default {
     'swift':'Swift is a modern programming language introduced by Apple for the development of iOS and macOS apps. Swift Package Manager (SPM) is Swift‘s official package management tool. The Swift repository can store and distribute SPM packages, proxy external Swift package sources, cache them on demand, and support local upload and virtual combination to meet development teams requirements for dependency management and distribution.',
     // 'rust':'rust',
     // 'php':'php',
+    'StorageThreshold': 'Storage Threshold',
 }

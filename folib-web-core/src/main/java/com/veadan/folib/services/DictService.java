@@ -104,4 +104,6 @@ public interface DictService {
     void updateById(Dict dict);
 
     Dict getById(Long id);
+
+    void saveOrUpdateByTypeAndKey(Dict dict);
 }

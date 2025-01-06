@@ -20,6 +20,9 @@ public class AlarmConfiguration {
     @XmlAttribute
     private List<String>  emails;
 
+    @XmlAttribute
+    private double storageThreshold;
+
     public AlarmConfiguration() {
         // Default constructor
     }
@@ -54,6 +57,14 @@ public class AlarmConfiguration {
 
     public void setEmails(List<String> emails) {
         this.emails = emails;
+    }
+
+    public double getStorageThreshold() {
+        return storageThreshold;
+    }
+
+    public void setStorageThreshold(double storageThreshold) {
+        this.storageThreshold = storageThreshold;
     }
 }
 

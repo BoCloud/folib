@@ -20,7 +20,8 @@ public enum MigrateStatusEnum {
     PAUSED(4, "暂停"),
     COMPLETED(5, "完成"),
     INDEX_FAILED(6, "同步索引失败"),
-    SYNCING_FAILED(7,"同步制品失败");
+    SYNCING_FAILED(7,"同步制品失败"),
+    END(8, "结束");
 
 
     private int status;

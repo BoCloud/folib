@@ -24,7 +24,7 @@
           :row-selection="pendingRowSelection"
           @change="(pagination) => handleTableChange(pagination, 'pending')"
           :loading="pendingLoading"
-          :row-key="record => `${record.storageId}:${record.id}`"
+          :row-key="record => `${record.storageId}:${record.repositoryId}`"
         >
           <template slot="status" slot-scope="text, record">
             <a-tag :color="getStatusColor(record.syncStatus)">
@@ -83,7 +83,7 @@
       <a-tab-pane :key="2" :tab="$t('Setting.Migrating')">
         <div class="table-operations-container">
           <div class="table-operations">
-            <a-button 
+            <!-- <a-button 
               type="primary" 
               :disabled="!canContinueMigration"
               @click="handleContinueMigration"
@@ -96,7 +96,7 @@
               @click="handlePauseMigration"
             >
               {{ $t('Setting.PauseMigration') }}
-            </a-button>
+            </a-button> -->
           </div>
         </div>
         
@@ -107,7 +107,7 @@
           :row-selection="migratingRowSelection"
           @change="(pagination) => handleTableChange(pagination, 'migrating')"
           :loading="migratingLoading"
-          :row-key="record => `${record.storageId}:${record.id}`"
+          :row-key="record => `${record.storageId}:${record.repositoryId}`"
         >
           <template slot="status" slot-scope="text, record">
             <a-tag :color="getStatusColor(record.syncStatus)">
@@ -146,7 +146,7 @@
           :row-selection="completedRowSelection"
           @change="(pagination) => handleTableChange(pagination, 'completed')"
           :loading="completedLoading"
-          :row-key="record => `${record.storageId}:${record.id}`"
+          :row-key="record => `${record.storageId}:${record.repositoryId}`"
         >
           <template slot="status" slot-scope="text, record">
             <a-tag :color="getStatusColor(record.syncStatus)">
@@ -261,13 +261,13 @@ export default {
           this.selectedPendingKeys = selectedRowKeys;
           const newSelectedRows = [...this.selectedPendingRows];
           selectedRows.forEach(row => {
-            const rowKey = `${row.storageId}:${row.id}`;
-            if (!newSelectedRows.find(item => `${item.storageId}:${item.id}` === rowKey)) {
+            const rowKey = `${row.storageId}:${row.repositoryId}`;
+            if (!newSelectedRows.find(item => `${item.storageId}:${item.repositoryId}` === rowKey)) {
               newSelectedRows.push(row);
             }
           });
           this.selectedPendingRows = newSelectedRows.filter(row => 
-            selectedRowKeys.includes(`${row.storageId}:${row.id}`)
+            selectedRowKeys.includes(`${row.storageId}:${row.repositoryId}`)
           );
         }
       }
@@ -279,13 +279,13 @@ export default {
           this.selectedMigratingKeys = selectedRowKeys;
           const newSelectedRows = [...this.selectedMigratingRows];
           selectedRows.forEach(row => {
-            const rowKey = `${row.storageId}:${row.id}`;
-            if (!newSelectedRows.find(item => `${item.storageId}:${item.id}` === rowKey)) {
+            const rowKey = `${row.storageId}:${row.repositoryId}`;
+            if (!newSelectedRows.find(item => `${item.storageId}:${item.repositoryId}` === rowKey)) {
               newSelectedRows.push(row);
             }
           });
           this.selectedMigratingRows = newSelectedRows.filter(row => 
-            selectedRowKeys.includes(`${row.storageId}:${row.id}`)
+            selectedRowKeys.includes(`${row.storageId}:${row.repositoryId}`)
           );
         }
       }
@@ -297,13 +297,13 @@ export default {
           this.selectedCompletedKeys = selectedRowKeys;
           const newSelectedRows = [...this.selectedCompletedRows];
           selectedRows.forEach(row => {
-            const rowKey = `${row.storageId}:${row.id}`;
-            if (!newSelectedRows.find(item => `${item.storageId}:${item.id}` === rowKey)) {
+            const rowKey = `${row.storageId}:${row.repositoryId}`;
+            if (!newSelectedRows.find(item => `${item.storageId}:${item.repositoryId}` === rowKey)) {
               newSelectedRows.push(row);
             }
           });
           this.selectedCompletedRows = newSelectedRows.filter(row => 
-            selectedRowKeys.includes(`${row.storageId}:${row.id}`)
+            selectedRowKeys.includes(`${row.storageId}:${row.repositoryId}`)
           );
         }
       }
@@ -439,8 +439,10 @@ export default {
         this.pendingLoading = false;
       }
     },
-    async loadMigratingData() {
-      this.migratingLoading = true;
+    async loadMigratingData(showLoading = true) {
+      if (showLoading) {
+        this.migratingLoading = true;
+      }
       try {
         const response = await getRepositories({
           page: this.migratingPagination.current,
@@ -458,7 +460,9 @@ export default {
           description: error.message
         });
       } finally {
-        this.migratingLoading = false;
+        if (showLoading) {
+          this.migratingLoading = false;
+        }
       }
     },
     async loadCompletedData() {
@@ -537,9 +541,9 @@ export default {
         },
         {
           title: this.$t('Setting.RepositoryId'),
-          dataIndex: 'id',
+          dataIndex: 'repositoryId',
           align: 'center',
-          key: 'id'
+          key: 'repositoryId'
         },
         {
           title: this.$t('Setting.UsedSpace'),
@@ -550,9 +554,9 @@ export default {
         },
         {
             title: this.$t('Setting.Layout'),
-            dataIndex: 'subLayout',
+            dataIndex: 'layout',
             align: 'center',
-            key: 'subLayout'
+            key: 'layout'
         },
         {
           title: this.$t('Setting.Status'),
@@ -574,9 +578,9 @@ export default {
         },
         {
           title: this.$t('Setting.RepositoryId'),
-          dataIndex: 'id',
+          dataIndex: 'repositoryId',
           align: 'center',
-          key: 'id'
+          key: 'repositoryId'
         },
         {
           title: this.$t('Setting.TotalArtifact'),
@@ -587,9 +591,9 @@ export default {
         },
         {
             title: this.$t('Setting.Layout'),
-            dataIndex: 'subLayout',
+            dataIndex: 'layout',
             align: 'center',
-            key: 'subLayout'
+            key: 'layout'
         },
         {
           title: this.$t('Setting.Status'),
@@ -618,16 +622,21 @@ export default {
         },
         {
           title: this.$t('Setting.RepositoryId'),
-          dataIndex: 'id',
+          dataIndex: 'repositoryId',
           align: 'center',
-          key: 'id'
+          key: 'repositoryId'
         },
         {
-          title: this.$t('Setting.UsedSpace'),
-          dataIndex: 'usedSpace',
-          key: 'usedSpace',
+          title: this.$t('Setting.TotalArtifact'),
+          dataIndex: 'totalArtifact',
+          key: 'totalArtifact',
           align: 'center',
-          scopedSlots: { customRender: 'usedSpace' }
+        },
+        {
+          title: this.$t('Setting.MigratedArtifact'),
+          dataIndex: 'successMount',
+          key: 'successMount',
+          align: 'center',
         },
         {
             title: this.$t('Setting.Layout'),
@@ -742,6 +751,7 @@ export default {
       }
     },
     async handleStartMigration() {
+      console.log("selectedRows",this.getSelectedRows());
       const selectedRows = this.getSelectedRows();
       if (!selectedRows.length) {
         return;
@@ -750,7 +760,7 @@ export default {
       try {
         const data = {
           migrateId: this.migrateId,
-          storeAndRepos: selectedRows.map(row => (row.storageId+":"+row.id))
+          storeAndRepos: selectedRows.map(row => (row.storageId+":"+row.repositoryId))
         }
         await startMigrate(data);
         this.$notification.success({
@@ -794,40 +804,42 @@ export default {
 
     // 更新迁移进度
     async updateMigratingProgress() {
-      // 获取所有 syncStatus 为 3 的记录
-      const migratingRecords = this.migratingData.filter(record => record.syncStatus === 3);
-      if (!migratingRecords.length) {
-        return;
-      }
       try {
-        // 构造请求参数
-        const data = {
+        // 1. 先重新获取迁移中的列表数据，不显示loading
+        await this.loadMigratingData(false);
+        // 2. 获取正在同步制品的记录
+        const syncingRecords = this.migratingData.filter(record => record.syncStatus === 3);
+        if (!syncingRecords.length) {
+          return;
+        }
+
+        // 3. 获取同步进度
+        const progressData = {
           migrateId: this.migrateId,
-          storeAndRepos: migratingRecords.map(record => `${record.storageId}:${record.id}`)
+          storeAndRepos: syncingRecords.map(record => `${record.storageId}:${record.repositoryId}`)
         };
 
-        const response = await getMigrateProgress(data);
-        if (response?.data) {
-          // 使用 Map 存储进度数据，方便查找
-          const progressMap = new Map(
-            response.data.map(item => [`${item.storageId}:${item.repositoryId}`, item])
-          );
-
-          // 更新现有数据的进度
+        const progressResponse = await getMigrateProgress(progressData);
+        if (progressResponse) {
+          // 4. 更新数据
           this.migratingData = this.migratingData.map(record => {
-            const key = `${record.storageId}:${record.id}`;
-            const currentArtifact = response.data[key];
-            if (currentArtifact !== undefined) {
-              return {
-              ...record,
-            migratedArtifact: currentArtifact,
-            progress: record.totalArtifact ? (currentArtifact / record.totalArtifact) * 100 : 0
-          };
-        }
-            
+            // 只更新状态为同步制品(3)的记录的进度
+            if (record.syncStatus === 3||record.syncStatus === 4) {
+              const key = `${record.storageId}:${record.repositoryId}`;
+              const migratedArtifact = progressResponse[key];
+              
+              if (migratedArtifact !== undefined) {
+                return {
+                  ...record,
+                  migratedArtifact: migratedArtifact,
+                  progress: record.totalArtifact > 0 
+                    ? Number((migratedArtifact / record.totalArtifact * 100).toFixed(2))
+                    : 0
+                };
+              }
+            }
             return record;
           });
-
         }
       } catch (error) {
         console.error('Failed to update progress:', error);
@@ -838,7 +850,7 @@ export default {
       try {
         const data = {
           migrateId: this.migrateId,
-          storeAndRepos: this.selectedMigratingRows.map(row => `${row.storageId}:${row.id}`)
+          storeAndRepos: this.selectedMigratingRows.map(row => `${row.storageId}:${row.repositoryId}`)
         };
         await pauseMigrate(data);
         this.$notification.success({
@@ -859,7 +871,7 @@ export default {
       try {
         const data = {
           migrateId: this.migrateId,
-          storeAndRepos: this.selectedMigratingRows.map(row => `${row.storageId}:${row.id}`)
+          storeAndRepos: this.selectedMigratingRows.map(row => `${row.storageId}:${row.repositoryId}`)
         };
         await continueMigrate(data);
       } catch (error) {
@@ -873,7 +885,7 @@ export default {
       try {
         const data = {
           migrateId: this.migrateId,
-          storeAndRepos: this.selectedCompletedRows.map(row => `${row.storageId}:${row.id}`)
+          storeAndRepos: this.selectedCompletedRows.map(row => `${row.storageId}:${row.repositoryId}`)
         };
         await finishMigrate(data);
         this.$notification.success({

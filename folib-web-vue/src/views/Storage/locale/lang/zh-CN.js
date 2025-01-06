@@ -6,6 +6,7 @@ export default {
     'ModifyStorageSpace': '修改存储空间',
     'createModal': '新 建',
     'CreateStorageSpace': '新建存储空间',
+    'CreateRepository':'新建制品仓库',
     'StorageSpaceName': '存储空间名称',
     'StorageType': '存储类型',
     'SyncStorage': '同步存储空间',
@@ -276,4 +277,6 @@ export default {
     'swift':'Swift 是 Apple 推出的现代编程语言，用于开发 iOS 和 macOS 应用。Swift Package Manager（SPM）是 Swift 的官方包管理工具。Swift 仓库支持存储和分发 SPM 包，可代理外部 Swift 包源并按需缓存，支持本地上传与虚拟组合使用，满足开发团队对依赖管理和分发的需求。',
     // 'rust':'rust',
     // 'php':'php',
+    
+    'StorageThreshold': '存储阈值',
 }
