@@ -1,6 +1,6 @@
 <template>
 
-	<a-card :bordered="false" class="dashboard-mixed-chart">
+	<a-card :bordered="false" class="dashboard-mixed-chart card-shadow">
 		<ChartMixed :height="220" :data="data"/>
 		<div class="chart-tips">{{ $t('StorageMonitoring.LastTenUpdates') }}</div>
 		<div class="card-title">

@@ -19,7 +19,7 @@ export default {
     "SelectNodeType":"Select the target node type",
     "InternalNode":"Internal Node",
     "ExternalNode":"External Node",
-    "SelectingTargetStorage":"Selecting the target storage",
+    "SelectingTargetNode":"Selecting the target node",
     "SelectionTargetRepositories":"Selection of Federal Advancement Target Repositories",
     "PleaseInput":"Please Input",
     "PleaseSelect":"Please Select",
@@ -28,5 +28,8 @@ export default {
     'OperationSuccessful': 'Operation successful',
     'OperationFailure':'Operation Failure',
     'IsDeleteSync':'Whether to enable delete synchronization',
+    "StorageId": "Storage",
+    "RepositoryId": "Repository name",
+    "Total": "Total",
     
 }

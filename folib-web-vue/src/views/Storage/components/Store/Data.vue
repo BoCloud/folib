@@ -1,5 +1,5 @@
 <template>
-  <div class="artifact-base-data">
+  <div class="artifact-base-data" style="margin-top:-20px;">
     <a-tabs default-active-key="1" @change="artifactTabChange">
       <a-tab-pane key="1" :tab="$t('Store.BasicInformation')">
         <div v-if="newDetailPage || Object.entries(currentTreeNode).length===0">
@@ -808,7 +808,7 @@ export default {
       }
     },
     getCodeImg(item) {
-      return item.name === "Maven 2" ? "maven_black" : item.name.toLowerCase();
+      return item.name === "Maven 2" ? "maven" : item.name.toLowerCase();
     },
     fileSizeConver(size) {
       if (size) {

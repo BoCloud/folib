@@ -257,12 +257,12 @@ export default {
         }
       ],
       vulnWhiteData:{
-        pageSize:10,
+        pageSize:5,
         pageNumber:1,
         total:0,
       },
       vulnDenylistData:{
-        pageSize:10,
+        pageSize:5,
         pageNumber:1,
         total:0,
       },
@@ -361,14 +361,14 @@ export default {
       deleteAllowlistDenylistBlock(data).then(res => {
         this.successMsg(data.identifier + this.$t('Setting.RemovedWhitelistSuccess'))
       }).finally(() => {
-        this. getVulnAllowlistData( {type: 'WHITES',category:'VULNERABILITY',page:this.vulnWhiteData.pageNumber,size:this.vulnWhiteData.pageSize});
+        this. getVulnAllowlistData( {type: 'WHITES',category:'VULNERABILITY',pageNumber:this.vulnWhiteData.pageNumber,pageSize:this.vulnWhiteData.pageSize});
       })
     },
     removeBlack(data) {
       deleteAllowlistDenylistBlock(data).then(res => {
         this.successMsg(data.identifier + this.$t('Setting.RemovedBlacklistSuccess'))
       }).finally(() => {
-        this.getVulnDenylistData( {type: 'BLACKLIST',category:'VULNERABILITY',page:this.vulnWhiteData.pageNumber,size:this.vulnWhiteData.pageSize});
+        this.getVulnDenylistData( {type: 'BLACKLIST',category:'VULNERABILITY',pageNumber:this.vulnWhiteData.pageNumber,pageSize:this.vulnWhiteData.pageSize});
       })
     },
     addWhite(uuid) {
@@ -533,7 +533,7 @@ export default {
       if (pagination) {
         this.vulnDenylistData.pageNumber = pagination.current
       }
-      this. getVulnDenylistData( {type: 'BLACKLIST',category:'VULNERABILITY',domain: 'PLATFORM',page:this.vulnWhiteData.pageNumber,size:this.vulnWhiteData.pageSize});
+      this. getVulnDenylistData( {type: 'BLACKLIST',category:'VULNERABILITY',domain: 'PLATFORM',page:this.vulnDenylistData.pageNumber,size:this.vulnDenylistData.pageSize});
     },
     showVulnWhiteDatils(data) {
       this.resetVulnerabilitiesForm()

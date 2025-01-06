@@ -2,6 +2,7 @@ package com.veadan.folib.services.impl;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson.JSONObject;
 import com.beust.jcommander.internal.Sets;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
@@ -49,6 +50,7 @@ import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -542,6 +544,34 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
             return Arrays.asList(cacheValue.split(","));
         }
         return null;
+    }
+
+    //获取当天数据
+    public Map<String, String>  getTodayData(){
+        String cacheKey = "STORAGE_MONITORING_DATA";
+        String cacheValue = distributedCacheComponent.get(cacheKey);
+        if (StringUtils.isNotBlank(cacheValue)) {
+            return JSONObject.parseObject(cacheValue, Map.class);
+        }
+
+        List<StorageMonitoring> storageMonitoringList = storageMonitoringMapper.getTodayData();
+        if(storageMonitoringList.isEmpty()){
+            return null;
+        }
+
+        Map<String, String> map = Maps.newConcurrentMap();
+        for (StorageMonitoring item : storageMonitoringList){
+            BigDecimal usedFilesSizePercentage = item.getFilesSize() == null ? BigDecimal.ZERO : item.getFilesSize();
+            if(item.getDataType() == 1){
+                map.put(String.join(":",item.getStorageId(),item.getRepositoryId()),usedFilesSizePercentage.toEngineeringString());
+            }else  if(item.getDataType() == 3){
+                map.put(item.getStorageId(),usedFilesSizePercentage.toEngineeringString());
+            }
+        }
+        if(!map.isEmpty()){
+            distributedCacheComponent.put(cacheKey, JSONObject.toJSONString(map),4, TimeUnit.HOURS);
+        }
+        return map;
     }
 
 }

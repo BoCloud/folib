@@ -6,6 +6,7 @@ import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.controllers.unicom.UnicomAdapter;
+import com.veadan.folib.components.repository.RepositoryComponent;
 import com.veadan.folib.data.criteria.Selector;
 import com.veadan.folib.dependency.snippet.SnippetGenerator;
 import com.veadan.folib.domain.Artifact;
@@ -83,6 +84,10 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
     private UnicomAdapter unicomAdapter;
 
 
+
+    @Inject
+    @Lazy
+    private RepositoryComponent repositoryComponent;
 
     @Override
     public SearchResults search(Selector<ArtifactEntity> selector) throws IOException {

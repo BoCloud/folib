@@ -80,6 +80,11 @@ public class FolibUser implements Serializable,Cloneable{
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
     private Date updateTime ;
 
+    /**
+     * 昵称
+     */
+    private String nickname;
+
     private transient String refType;
     private transient Set<String> roles = new HashSet<>();
 }

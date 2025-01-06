@@ -54,7 +54,7 @@
 
         {% for file in files %}
         <tr>
-            <td><a href="{{ file.url }}">{{ file.name }}</a></td>
+            <td><a href="{{ file.name | url_encode }}">{{ file.name }}</a></td>
             <td>{% if file.lastModified %}{{ file.lastModified }}{% else %}-{% endif %}</td>
             <td>{{ file.size | default("-") | humanReadableSize  }}</td>
             <td>{% if file.description %}{{ file.description }}{% else %}-{% endif %}</td>

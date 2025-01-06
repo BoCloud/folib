@@ -30,7 +30,7 @@ public class FederalRepositoryBaseReq {
      */
     private String nodeName;
     /**
-     * 节点类型[inner:内部节点,external:外部节点]
+     * 节点类型[inner:内部节点,JFrog:外部节点]
      */
     private String nodeType;
 }

@@ -45,7 +45,7 @@ import java.util.*;
  */
 @Slf4j
 @Component
-@EnableScheduling
+//@EnableScheduling
 public class StorageSizeVerificationTask {
 
     @Inject
@@ -70,7 +70,7 @@ public class StorageSizeVerificationTask {
     /**
      * 每天8点
      */
-    @Scheduled(cron = "0 0 8 * * ? ")
+    //@Scheduled(cron = "0 0 8 * * ? ")
     public void run() {
         String lockName = "StorageSizeVerificationTask";
         long waitTime = 1L;

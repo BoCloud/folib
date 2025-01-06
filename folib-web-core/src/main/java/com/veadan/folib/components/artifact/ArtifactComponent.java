@@ -81,6 +81,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -97,6 +98,9 @@ public class ArtifactComponent {
 
     @Value("${folib.temp}")
     private String tempPath;
+
+    @Value("${folib.artifactDownloadImmediatelyUpdate:false}")
+    private boolean artifactDownloadImmediatelyUpdate;
 
     @Inject
     @Lazy
@@ -1050,6 +1054,10 @@ public class ArtifactComponent {
             if (Objects.isNull(repositoryPath) || !RepositoryFiles.isArtifact(repositoryPath)) {
                 return;
             }
+            if (artifactDownloadImmediatelyUpdate) {
+                artifactEventListenerRegistry.dispatchArtifactDownloadedEvent(repositoryPath);
+                return;
+            }
             long startTime = System.currentTimeMillis();
             storeEvent(repositoryPath, ArtifactEventTypeEnum.EVENT_ARTIFACT_FILE_DOWNLOADED);
             log.debug("Write EVENT_ARTIFACT_FILE_DOWNLOADED take time [{}] ms", System.currentTimeMillis() - startTime);
@@ -1297,6 +1305,43 @@ public class ArtifactComponent {
             }
         } catch (Exception ex) {
             log.error("StoreArtifactMetadata error [{}]", ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
+
+    public void getArtifactByUrl(Repository repository, String url,String dist) {
+        Response response = null;
+        int statusCode = 0;
+        try {
+            Client client = clientPool.getRestClient(repository.getStorage().getId(), repository.getId());
+            WebTarget target = client.target(url);
+            commonComponent.authentication(target, repository.getRemoteRepository().getUsername(), repository.getRemoteRepository().getPassword());
+            response = target.request().get();
+            statusCode = response.getStatus();
+            if (statusCode == HttpStatus.OK.value()) {
+                Path path = Paths.get(dist);
+                Path parentDir = path.getParent();
+
+                if (parentDir != null && !Files.exists(parentDir)) {
+                    Files.createDirectories(parentDir); // 创建父目录
+                }
+                try(InputStream is=response.readEntity(InputStream.class);
+                    FileOutputStream os = new FileOutputStream(dist)){
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = is.read(buffer)) != -1) {
+                        os.write(buffer, 0, bytesRead);
+                    }
+                }
+            } else {
+                log.error("Get artifact url [{}] error response statusCode [{}]", url, statusCode);
+            }
+        } catch (Exception ex) {
+            log.error("Get artifact url [{}] response statusCode [{}] error [{}]", url, statusCode, ExceptionUtils.getStackTrace(ex));
+        } finally {
+            if (Objects.nonNull(response)) {
+                response.close();
+            }
         }
     }
 

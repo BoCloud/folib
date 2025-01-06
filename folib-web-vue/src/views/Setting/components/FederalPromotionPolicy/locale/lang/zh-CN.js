@@ -21,7 +21,7 @@ export default {
     "SelectNodeType":"选择目标节点类型",
     "InternalNode":"内部节点",
     "ExternalNode":"外部节点",
-    "SelectingTargetStorage":"选择目标存储空间",
+    "SelectingTargetNode":"选择目标节点",
     "SelectionTargetRepositories":"选择联邦晋级目标仓库",
     "PleaseInput":"请输入",
     "PleaseSelect":"请选择",
@@ -30,6 +30,9 @@ export default {
     'OperationSuccessful': '操作成功',
     'OperationFailure':'操作失败',
     'IsDeleteSync':'是否开启删除同步',
+    "StorageId": "存储空间",
+    "RepositoryId": "仓库名称",
+    "Total": "个",
 
     
 }

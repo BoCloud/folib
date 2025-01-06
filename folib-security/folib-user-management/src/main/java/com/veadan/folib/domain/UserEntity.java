@@ -79,6 +79,8 @@ public class UserEntity extends DomainEntity implements User
 
     private String userType="general";
 
+    private String nickname;
+
     @Override
     public String getUserType() {
         return userType;
@@ -228,5 +230,13 @@ public class UserEntity extends DomainEntity implements User
 
     public void setUserGroupIds(Set<String> userGroupIds) {
         this.userGroupIds = userGroupIds;
+    }
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
+    }
+    @Override
+    public String getNickname() {
+        return this.nickname;
     }
 }

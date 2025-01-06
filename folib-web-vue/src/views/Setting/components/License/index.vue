@@ -110,7 +110,7 @@ export default {
       licenseTableLoading: false,
       queryParams: {
         page: 1,
-        limit: 5,
+        limit:5,
         total: 0,
         searchKeyword: '',
         blackWhiteType: undefined,

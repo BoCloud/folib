@@ -8,12 +8,18 @@ import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.cluster.FolibLockProperties;
 import com.veadan.folib.cluster.SyncAuthorizationEnum;
+import com.veadan.folib.cluster.SyncCornJobEnum;
 import com.veadan.folib.cluster.SyncStorageEnum;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.configuration.AdvancedConfiguration;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.cluster.dto.SyncAuthorizationDto;
+import com.veadan.folib.controllers.cluster.dto.SyncCronJobDto;
 import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
+import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
+import com.veadan.folib.cron.domain.CronTasksConfigurationDto;
+import com.veadan.folib.cron.jobs.AlarmNoticeCronJob;
+import com.veadan.folib.cron.services.CronTaskConfigurationService;
 import com.veadan.folib.enums.StorageProviderEnum;
 import com.veadan.folib.forms.configuration.ServerSettingsForm;
 import com.veadan.folib.services.ClusterSyncService;
@@ -45,11 +51,10 @@ import org.springframework.stereotype.Component;
 import javax.inject.Inject;
 import javax.ws.rs.client.WebTarget;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.stream.Collectors;
 
 /**
  * @author leipenghui
@@ -89,6 +94,9 @@ public class CommonComponent {
 
     @Inject
     private AnonymousAuthenticationFilter anonymousAuthenticationFilter;
+
+    @Inject
+    private CronTaskConfigurationService cronTaskConfigurationService;
 
     /**
      * Client WebTarget 构建认证信息
@@ -144,6 +152,13 @@ public class CommonComponent {
                 authorizationConfigService.addPrivilegesToAnonymous(Lists.newArrayList(Privileges.ARTIFACTS_RESOLVE, Privileges.SEARCH_ARTIFACTS, Privileges.ARTIFACTS_VIEW, Privileges.CONFIGURATION_VIEW_METADATA_CONFIGURATION));
                 updateAnonymous();
             }
+        }
+        if(serverSettingsForm.getAlarmConfigurationForm()!=null && StringUtils.isNotBlank(serverSettingsForm.getAlarmConfigurationForm().getCronExpression())){
+            configurationManagementService.setAlarmConfiguration(serverSettingsForm.getAlarmConfigurationForm().getMutableAlarmConfiguration());
+            final String className = AlarmNoticeCronJob.class.getName();;
+            final String cronName = "Alarm NoticeCron Job";
+            configCronTask(cronName, className, serverSettingsForm.getAlarmConfigurationForm().getCronExpression());
+
         }
     }
 
@@ -403,5 +418,30 @@ public class CommonComponent {
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         executor.initialize();
         return executor;
+    }
+
+    private void configCronTask(String cronName, String className, String cron) {
+        CronTaskConfigurationDto cronTaskConfiguration = new CronTaskConfigurationDto();
+        cronTaskConfiguration.setName(cronName);
+        cronTaskConfiguration.setJobClass(className);
+        cronTaskConfiguration.setCronExpression(cron);
+        cronTaskConfiguration.setOneTimeExecution(false);
+        cronTaskConfiguration.setImmediateExecution(false);
+        try {
+            Optional<CronTaskConfigurationDto> cronTaskConfigurationOptional = cronTaskConfigurationService.getTasksConfigurationDto().getCronTaskConfigurations().stream().filter(item -> item.getJobClass().equals(className)).findFirst();
+            if (cronTaskConfigurationOptional.isPresent()) {
+                CronTaskConfigurationDto cronTaskConfigurationDto = cronTaskConfigurationOptional.get();
+                cronTaskConfigurationService.deleteConfiguration(cronTaskConfigurationDto.getUuid());
+                SyncCronJobDto syncCronJobDto = new SyncCronJobDto(cronTaskConfiguration, SyncCornJobEnum.DELETE);
+                clusterSyncService.syncCronJob(syncCronJobDto);
+            }
+            UUID uuid = cronTaskConfigurationService.saveConfiguration(cronTaskConfiguration);
+            cronTaskConfiguration.setUuid(uuid);
+            SyncCronJobDto syncCronJobDto = new SyncCronJobDto(cronTaskConfiguration, SyncCornJobEnum.ADD_OR_UPDATE);
+            clusterSyncService.syncCronJob(syncCronJobDto);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e.getMessage(), e);
+        }
     }
 }

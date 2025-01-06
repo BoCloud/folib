@@ -24,7 +24,7 @@ import com.veadan.folib.utils.compatator.DirectoryNameCompatator;
 import lombok.Data;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -573,11 +573,11 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
 
     private URL calculateDirectoryUrl(FileContent file)
             throws MalformedURLException {
-        if (file.getRepositoryId() == null) {
+        if (StringUtils.isBlank(file.getRepositoryId())) {
 
             return new URL(String.format("%s/%s", baseUrl, file.getStorageId()));
 
-        } else if (file.getArtifactPath() == null) {
+        } else if (StringUtils.isBlank(file.getArtifactPath())) {
 
             return new URL(String.format("%s/%s/%s", baseUrl, file.getStorageId(),
                     file.getRepositoryId()));

@@ -47,6 +47,16 @@ public class RepositoryDto
 
     private String subLayout;
 
+    /**
+     * 是否启用自定义布局
+     */
+    private boolean enableCustomLayout = false;
+
+    /**
+     * 自定义布局
+     */
+    private String customLayout;
+
     private String type = RepositoryTypeEnum.HOSTED.getType();
 
     private boolean secured;
@@ -68,6 +78,10 @@ public class RepositoryDto
     private boolean allowsDirectoryBrowsing = true;
 
     private boolean checksumHeadersEnabled;
+
+    private long storageMaxSize;
+
+    private double storageThreshold;
 
     /**
      * The per-repository proxy settings that override the overall global proxy settings.
@@ -134,7 +148,6 @@ public class RepositoryDto
     /**是否同步存储空间到其他节点*/
     private boolean syncEnabled;
 
-
     public RepositoryDto() {
     }
 
@@ -186,6 +199,24 @@ public class RepositoryDto
 
     public void setLayout(String layout) {
         this.layout = layout;
+    }
+
+    @Override
+    public boolean getEnableCustomLayout() {
+        return enableCustomLayout;
+    }
+
+    public void setEnableCustomLayout(boolean enableCustomLayout) {
+        this.enableCustomLayout = enableCustomLayout;
+    }
+
+    @Override
+    public String getCustomLayout() {
+        return customLayout;
+    }
+
+    public void setCustomLayout(String customLayout) {
+        this.customLayout = customLayout;
     }
 
     @Override
@@ -267,8 +298,27 @@ public class RepositoryDto
         return checksumHeadersEnabled;
     }
 
+    @Override
+    public long getStorageMaxSize() {
+        return this.storageMaxSize;
+    }
+
+    public void setStorageMaxSize(long storageMaxSize) {
+        this.storageMaxSize = storageMaxSize;
+    }
+
+
+
     public void setChecksumHeadersEnabled(boolean checksumHeadersEnabled) {
         this.checksumHeadersEnabled = checksumHeadersEnabled;
+    }
+
+    public double getStorageThreshold() {
+        return storageThreshold;
+    }
+
+    public void setStorageThreshold(double storageThreshold) {
+        this.storageThreshold = storageThreshold;
     }
 
     public MutableProxyConfiguration getProxyConfiguration() {

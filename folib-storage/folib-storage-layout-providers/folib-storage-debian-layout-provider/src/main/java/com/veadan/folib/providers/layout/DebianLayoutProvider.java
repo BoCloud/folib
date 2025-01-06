@@ -9,6 +9,7 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.repository.DebianRepositoryFeatures;
 import com.veadan.folib.repository.DebianRepositoryManagementStrategy;
 import com.veadan.folib.repository.RepositoryManagementStrategy;
+import com.veadan.folib.util.DebianUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.springframework.stereotype.Component;
@@ -46,11 +47,27 @@ public class DebianLayoutProvider extends AbstractLayoutProvider<DebianArtifactC
 
     }
 
-    // 解析路径
+    // 解析路径 增加自定义解析路径 与jfrog 一致deb.distribution=123;deb.component=123;deb.architecture=123
     @Override
     public DebianArtifactCoordinates getArtifactCoordinates(RepositoryPath path)
             throws IOException {
-        return DebianArtifactCoordinates.parse(RepositoryFiles.relativizePath(path));
+        DebianArtifactCoordinates coordinates = DebianArtifactCoordinates.parse(RepositoryFiles.relativizePath(path));
+        Map<String, String> extAttribute = path.getExtAttribute();
+        if(extAttribute!=null){
+            String distribution=extAttribute.get(DebianConstant.ATTR_DISTRIBUTION);
+            String component=extAttribute.get(DebianConstant.ATTR_COMPONENT);
+            String architecture=extAttribute.get(DebianConstant.ATTR_ARCHITECTURE);
+            if(distribution!=null){
+                coordinates.setDistribution(distribution);
+            }
+            if(component!=null){
+                coordinates.setComponent(component);
+            }
+            if(distribution!=null){
+                coordinates.setArchitecture(architecture);
+            }
+        }
+        return coordinates;
     }
 
 

@@ -2,7 +2,7 @@
   <!-- Main Sidebar -->
   <component :is="navbarFixed ? 'a-affix' : 'div'" :offset-top="top" class="header">
     <!-- Layout Header -->
-    <a-layout-header>
+    <a-layout-header style="margin-bottom: 5px;margin-top: 15px;">
       <a-row type="flex">
         <!-- Header Breadcrumbs & Title Column -->
         <a-col :span="4" :md="1" class="sidebar-toggler-col">
@@ -236,6 +236,20 @@
       </a-row>
     </a-layout-header>
     <!--  /Layout Header -->
+    <!-- <a-tooltip placement="topLeft">
+        <template slot="title">
+            <span>{{ $t('Storage.ModifyStorageSpace') }}</span>
+        </template> -->
+    <!-- <div class="switch_mode" v-if="this.$route.name === 'storagesHome'">
+      <div @click="checkMode(false)" class="img-sty" :class="isChecked ? '' : 'isActive'">
+        <img src="./images/list.svg" width="20" alt="">
+      </div>
+      <div @click="checkMode(true)" class="img-sty" :class="isChecked ? 'isActive' : ''">
+        <img src="./images/tree.svg" width="20" alt="">
+      </div>
+      <div :style="switchDisabled?'display:block;':'display:none;'" class="disabled_sty"></div>
+    </div> -->
+    <!-- </a-tooltip> -->
   </component>
   <!-- / Main Sidebar -->
 </template>
@@ -326,10 +340,21 @@ export default {
       notFinishUploadList: [],
       visible: false,
       delSvg: `<svg t="1678377092023" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4541" width="36" height="36"><path d="M0 0m136.533333 0l750.933334 0q136.533333 0 136.533333 136.533333l0 750.933334q0 136.533333-136.533333 136.533333l-750.933334 0q-136.533333 0-136.533333-136.533333l0-750.933334q0-136.533333 136.533333-136.533333Z" fill="#d81e06" opacity=".08" p-id="4542"></path><path d="M592.145067 690.8928l22.186666-276.1728H391.509333l22.186667 276.1728c0.273067 3.3792 2.833067 5.905067 5.973333 5.905067h166.468267c3.140267 0 5.7344-2.525867 6.007467-5.905067z m-130.286934-322.218667c0 1.092267-0.4096 2.048-0.6144 3.140267h83.319467c-0.170667-1.058133-0.580267-2.048-0.580267-3.140267 0-24.337067-18.432-44.1344-41.0624-44.1344s-41.0624 19.797333-41.0624 44.1344z m216.814934 3.140267c11.025067 0 19.968 9.591467 19.968 21.435733 0 11.8784-8.942933 21.469867-19.968 21.469867h-24.2688l-22.493867 279.893333c-2.048 25.7024-21.742933 45.090133-45.7728 45.090134h-166.468267c-23.995733 0-43.690667-19.387733-45.738666-45.124267l-22.528-279.893333h-24.234667c-11.025067 0-19.968-9.557333-19.968-21.435734 0-11.844267 8.942933-21.435733 19.968-21.435733H427.861333c-0.2048-1.058133-0.6144-2.048-0.6144-3.140267 0-44.8512 33.928533-81.3056 75.6736-81.3056 41.710933 0 75.6736 36.4544 75.6736 81.3056 0 1.092267-0.443733 2.048-0.6144 3.140267H678.673067z m-206.9504 276.343467c-9.557333 0-17.3056-8.328533-17.3056-18.602667v-127.5904c0-10.24 7.748267-18.602667 17.3056-18.602667s17.3056 8.362667 17.3056 18.602667v127.5904c0 10.24-7.748267 18.602667-17.3056 18.602667z m65.4336 3.242666c-9.557333 0-17.3056-8.328533-17.3056-18.602666V498.688c0-10.24 7.748267-18.602667 17.3056-18.602667s17.3056 8.328533 17.3056 18.602667v134.075733c0 10.24-7.748267 18.602667-17.3056 18.602667z" fill="#d81e06" p-id="4543"></path></svg>`,
-      clearSvg: `<svg t="1678379444252" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="6076" width="16" height="16"><path d="M433.664 250.88L773.12 590.336 599.466667 837.162667a42.666667 42.666667 0 0 1-65.066667 5.632l-61.333333-61.333334v-130.88h-130.858667L181.205333 489.6a42.666667 42.666667 0 0 1 5.632-65.066667l246.826667-173.632z m38.378667-26.986667l66.133333-46.528a42.666667 42.666667 0 0 1 54.72 4.714667l89.130667 89.152 93.781333-93.781333a21.333333 21.333333 0 0 1 30.165333 0l35.2 35.2a21.333333 21.333333 0 0 1 0 30.186666l-93.76 93.76 94.506667 94.506667a42.666667 42.666667 0 0 1 4.714667 54.72l-46.506667 66.133333-328.106667-328.064z" fill="#2A2A37" p-id="6077"></path></svg>`
+      clearSvg: `<svg t="1678379444252" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="6076" width="16" height="16"><path d="M433.664 250.88L773.12 590.336 599.466667 837.162667a42.666667 42.666667 0 0 1-65.066667 5.632l-61.333333-61.333334v-130.88h-130.858667L181.205333 489.6a42.666667 42.666667 0 0 1 5.632-65.066667l246.826667-173.632z m38.378667-26.986667l66.133333-46.528a42.666667 42.666667 0 0 1 54.72 4.714667l89.130667 89.152 93.781333-93.781333a21.333333 21.333333 0 0 1 30.165333 0l35.2 35.2a21.333333 21.333333 0 0 1 0 30.186666l-93.76 93.76 94.506667 94.506667a42.666667 42.666667 0 0 1 4.714667 54.72l-46.506667 66.133333-328.106667-328.064z" fill="#2A2A37" p-id="6077"></path></svg>`,
+      isChecked: false,
     };
   },
   methods: {
+    // // 制品仓库页面专属。用于切换仓库和存储空间的展示模式
+    // checkMode(key){
+    //   if(this.switchDisabled){
+    //     return
+    //   }
+    //   setTimeout(() => {
+    //     this.isChecked = key
+    //     this.$store.commit('setIsChecked',key)
+    //   }, 0);
+    // },
     changeLanguage(val) {
       setLanguage(val)
       this.$forceUpdate()
@@ -397,8 +422,13 @@ export default {
   mounted: function () {
     // Set the wrapper to the proper element, layout wrapper.
     this.wrapper = document.getElementById("layout-dashboard");
+    this.$store.commit('setIsChecked',false)
+    this.isChecked = false
   },
   computed: {
+    switchDisabled(){
+      return this.$store.state.switchDisabled
+    },
     language() {
       return this.$store.state.language.lang
     },
@@ -436,6 +466,9 @@ export default {
         }
       },
       immediate:true
+    },
+    switchDisabled(val){
+      console.log(val,'switchDisabled')
     }
   },
 };
@@ -458,6 +491,7 @@ export default {
 }
 
 .header .folib-avatar {
+  position: relative;
   display: inline-block;
   width: 24px;
   height: 24px;
@@ -467,5 +501,40 @@ export default {
   color: white;
   font-size: 14px;
   vertical-align: middle;
+}
+
+.switch_mode{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 80px;
+  background: rgba(255,255,255,0.5);
+  padding:5px;
+  border-radius: 4px;
+  position: absolute;
+  top: 45px;
+  left: 250px;
+  
+  .img-sty{
+    opacity: 1 !important;
+    cursor: pointer;
+    background: rgba(255,255,255,0.5);
+    border-radius: 4px;
+    box-shadow: 0px 1px 6px 1px rgba(0,0,0,0.1);
+    padding: 4px 5px;
+    transition: all 0.3s;
+  }
+
+  .isActive{
+    background: #396ed1;
+    box-shadow: 0px 1px 6px 1px rgba(0,0,0,0.2);
+  }
+  .disabled_sty{
+    width: 80px;
+    height: 40px;
+    position: absolute;
+    cursor: not-allowed;
+    z-index: 9999;
+  }
 }
 </style>

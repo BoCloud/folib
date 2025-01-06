@@ -5,7 +5,7 @@
                 <a-card :bordered="false" class="header-solid" :body-style="{padding:0,paddingBottom:'16px'}"
                         :title="$t('FederalPromotionPolicy.CardTitle')">
                     <div slot="extra">
-                        <a-tooltip @click="showBlockStrategyInfo()">
+                        <a-tooltip @click="showFederalPromotionPolicyInfo()">
                             <template slot="title">
                                 <span>{{ $t('FederalPromotionPolicy.AddTitle') }}</span>
                             </template>
@@ -15,7 +15,7 @@
                         <a-input-search class="v-search" v-model="federalPromotionPolicyQuery.name"
                                         @search="handeSearch"/>
                     </div>
-                    <a-table :columns="columns" :data-source="federalPromotionPolicyData" :scroll="{ x: true }"
+                    <a-table :columns="i18nFederalPromotionPolicyColumns" :data-source="federalPromotionPolicyData" :scroll="{ x: true }"
 
                              @change="handleChangeTable" :loading="federalPromotionPolicyLoading"
                              :row-key="(r, i) => i.toString()"
@@ -28,20 +28,25 @@
                             </a-tag>
                         </span>
                         <span slot="sourceRepositories" slot-scope="text, record">
-                            <a-tag
-                                v-for="tag in record.sourceRepositories"
-                                :key="tag.id"
-                            >
-                                {{ tag.storageId }}:{{ tag.repositoryId }}
-                            </a-tag>
+
+                            <span v-if="record.sourceRepositories" @click="showTargetRepositories(record.sourceRepositories)">
+                                {{record.sourceRepositories.length + ' ' + $t('FederalPromotionPolicy.Total')}}
+                                |
+                                <span v-for="(item, i) in record.sourceRepositories" :key="i">
+                                  {{ item.storageId + ':' + item.repositoryId}}
+                                  <span v-if="i!=record.sourceRepositories.length-1">,</span>
+                                </span>
+                             </span>
                         </span>
                         <span slot="targetRepositories" slot-scope="text, record">
-                            <a-tag
-                                v-for="tag in record.targetRepositories"
-                                :key="tag.id"
-                            >
-                                {{ tag.storageId }}:{{ tag.repositoryId }}
-                            </a-tag>
+                              <span v-if="record.targetRepositories" @click="showTargetRepositories(record.targetRepositories)">
+                                {{record.targetRepositories.length + ' ' + $t('FederalPromotionPolicy.Total')}}
+                                |
+                                <span v-for="(item, i) in record.targetRepositories" :key="i">
+                                  {{ item.storageId + ':' + item.repositoryId}}
+                                  <span v-if="i!=record.targetRepositories.length-1">,</span>
+                                </span>
+                             </span>
                         </span>
                         <div slot="operation" slot-scope="text, record">
                             <div class="col-action">
@@ -79,6 +84,23 @@
                 </a-card>
             </a-col>
         </a-row>
+
+        <a-modal v-model="showTargetRepositoriesModal" :footer="null" :forceRender="true" on-ok="showTargetRepositoriesModal = false">
+            <a-list item-layout="vertical" size="large" :data-source="targetRepositoriesList"
+                    :pagination="targetRepositoriesList.length === 0 ? false : { pageSize: 8, total: targetRepositoriesList.length, showLessItems: true, showTotal:total =>  ` ${total} ` + ' '+ $t('FederalPromotionPolicy.Total')}">
+                <a-list-item slot="renderItem" :key="index" slot-scope="item, index">
+                    <div>
+                        <a-tag class="mb-5 bg-warning">{{$t('FederalPromotionPolicy.StorageId')}}</a-tag>
+                        <span>{{ item.storageId }}</span>
+                    </div>
+                    <div>
+                        <a-tag class="mb-5 bg-success">{{$t('FederalPromotionPolicy.RepositoryId')}}</a-tag>
+                        <span>{{ item.repositoryId }}</span>
+                    </div>
+                </a-list-item>
+            </a-list>
+        </a-modal>
+
         <a-drawer
             :title="$t('FederalPromotionPolicy.DrawerTitle')"
             placement="right"
@@ -237,10 +259,7 @@
                                         {{ $t('FederalPromotionPolicy.InternalNode') }}
                                         <a-popover placement="topLeft">
                                             <template slot="content">
-                                                <p class="mb-0">{{ $t('UnionRepository.ArtifactPathTips1') }}</p>
-                                                <p class="mb-0">{{ $t('UnionRepository.ArtifactPathTips2') }}</p>
-                                                <p class="mb-0">{{ $t('UnionRepository.ArtifactPathTips3') }}</p>
-                                                <p class="mb-0">{{ $t('UnionRepository.ArtifactPathTips4') }}</p>
+                                                <p class="mb-0">{{instanceName + $t('UnionRepository.ArtifactRepositoryNode')}}</p>
                                             </template>
                                             <a class="ml-5">
                                                 <a-icon type="question-circle" theme="filled"/>
@@ -251,8 +270,7 @@
                                         {{ $t('FederalPromotionPolicy.ExternalNode') }}
                                         <a-popover placement="topLeft">
                                             <template slot="content">
-                                                <p class="mb-0">{{ $t('UnionRepository.MetadataTips1') }}</p>
-                                                <p class="mb-0">{{ $t('UnionRepository.MetadataTips2') }}</p>
+                                                <p class="mb-0">{{ $t('UnionRepository.OtherType')  + $t('UnionRepository.ArtifactRepositoryNode') }}</p>
                                             </template>
                                             <a class="ml-5">
                                                 <a-icon type="question-circle" theme="filled"/>
@@ -264,7 +282,7 @@
 
                         </a-col>
                         <a-col :md="16" :sm="24">
-                            <a-form-item :label="$t('FederalPromotionPolicy.SelectingTargetStorage')"
+                            <a-form-item :label="$t('FederalPromotionPolicy.SelectingTargetNode')"
                                          :colon="false"
                                          prop="selectTargetNodes"
                                          style="padding-bottom: 0;margin-bottom: 0">
@@ -273,7 +291,7 @@
                                     v-model="federalPromotionPolicyForm.selectTargetNodes"
                                     :options="targetNodesOptions"
                                     style="width: 52%"
-                                    :placeholder="$t('FederalPromotionPolicy.SelectingTargetStorage')"
+                                    :placeholder="$t('FederalPromotionPolicy.SelectingTargetNode')"
                                     @change="handleNodeChange"
                                 >
                                     <a-select-option v-for="item in targetNodesOptions" :key="item.key"
@@ -393,6 +411,17 @@ export default {
                     ellipsis: true,
                     width: 160,
                     scopedSlots: {customRender: 'sourceRepositories'},
+                    customCell: () => {
+                        return {
+                            style: {
+                                maxWidth: '220px',
+                                overflow: 'hidden',
+                                whiteSpace: 'nowrap',
+                                textOverflow: 'ellipsis',
+                                cursor: 'pointer'
+                            }
+                        }
+                    },
                 },
                 {
                     title: '目标仓库信息',
@@ -402,6 +431,17 @@ export default {
                     ellipsis: true,
                     width: 160,
                     scopedSlots: {customRender: 'targetRepositories'},
+                    customCell: () => {
+                        return {
+                            style: {
+                                maxWidth: '220px',
+                                overflow: 'hidden',
+                                whiteSpace: 'nowrap',
+                                textOverflow: 'ellipsis',
+                                cursor: 'pointer'
+                            }
+                        }
+                    },
                 },
                 {
                     title: '创建时间',
@@ -501,10 +541,13 @@ export default {
             layout: undefined,
             policy: undefined,
             type: 'hosted',
+            instanceName:'',
+            showTargetRepositoriesModal: false,
+            targetRepositoriesList:[],
         }
     },
     computed: {
-        i18nBlockStrategyColumns() {
+        i18nFederalPromotionPolicyColumns() {
             return this.columns.map(column => {
                 if (column.i18nKey) {
                     column.title = this.$t(column.i18nKey);
@@ -562,18 +605,19 @@ export default {
             this.queryFederalPromotionPolicy();
             this.queryRepositoriesByStorage();
             this.getTargetRepositories(this.type, this.layout, this.policy);
-
+            this.instanceName = sessionStorage.getItem("instanceName")
         },
 
         handleChangeTable(pagination, filters, sorter) {
             if (pagination) {
-                this.federalPromotionPolicyQuery.page = pagination.current
+                this.federalPromotionPolicyLoading = true
+                this.federalPromotionPolicyQuery.pageNumber = pagination.current
             }
             this.queryFederalPromotionPolicy()
         },
 
         queryFederalPromotionPolicy() {
-            this.federalPromotionPolicyLoading = true
+
             federalPromotionPolicyQuery(this.federalPromotionPolicyQuery).then(res => {
                 this.federalPromotionPolicyData = []
                 if (res) {
@@ -594,7 +638,7 @@ export default {
             this.federalPromotionPolicyClose();
         },
 
-        showBlockStrategyInfo() {
+        showFederalPromotionPolicyInfo() {
             this.visibleDrawer = true
         },
 
@@ -650,7 +694,7 @@ export default {
                     this.targetNodesOptions.push(temp);
                 })
 
-              if(this.targetNodesOptions){
+              if(this.targetNodesOptions && this.targetNodesOptions.length > 0){
                 this.handleDefNode({ value: this.targetNodesOptions[0].key,
                   key: this.targetNodesOptions[0].key});
                 this.handleTargetRepositories(this.targetNodesOptions[0].key);
@@ -835,7 +879,7 @@ export default {
                             storageId: item.split(':')[0],
                             repositoryId: item.split(':')[1],
                             nodeName: this.federalPromotionPolicyForm.selectTargetNodes.key,
-                            nodeType: this.federalPromotionPolicyForm.nodeType === 1 ? "inner" : "external",
+                            nodeType: this.federalPromotionPolicyForm.nodeType === 1 ? "inner" : "JFrog",
                             type:"target",
                             policyId: dataForm.policyId,
                         }
@@ -911,15 +955,17 @@ export default {
                         key: Date.now(),
                     }
                 ]],
+                nodeType:1,
                 isEnabled: false,
                 isDeleteSync: false,
                 sourceRepositories: [],
                 targetRepositories: [],
             };
             this.federalPromotionPolicyForm.selectTargetNodes = '';
-            this.targetNodesOptions = [];
+            //this.targetNodesOptions = [];
+            console.log("this.targetNodesOptions",this.targetNodesOptions)
             this.selectedSourceRepositoriesKeys = [];
-            this.targetNodesRepositories = [];
+           // this.targetNodesRepositories = [];
             this.selectedTargetRepositories = [];
             this.selectedTargetRepositoriesKeys = [];
             this.repositoriesLoading = false;
@@ -1017,6 +1063,7 @@ export default {
         },
 
         onNodeChange(e){
+            this.federalPromotionPolicyForm.selectTargetNodes='';
           //外部节点
           if(e.target.value === 2){
             this.handleExternalNode({type: this.layout})
@@ -1090,6 +1137,11 @@ export default {
               });
             }
         },
+
+        showTargetRepositories(data){
+            this.targetRepositoriesList = data;
+            this.showTargetRepositoriesModal = true;
+        }
     }
 }
 
@@ -1132,7 +1184,7 @@ export default {
 
 .container {
     display: flex;
-    justify-content: end; /* 右对齐 */
+    justify-content: flex-end; /* 右对齐 */
     align-items: center;
     padding-top: 6.5px;
 }

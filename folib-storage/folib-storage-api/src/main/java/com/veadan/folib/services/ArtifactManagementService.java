@@ -468,6 +468,8 @@ public class ArtifactManagementService {
             long checkStorageSizeStartTime = System.currentTimeMillis();
             artifactOperationsValidator.checkStorageSize(path);
             logger.info("Repository checkStorageSize [{}] take time [{}] ms.", path.toString(), System.currentTimeMillis() - checkStorageSizeStartTime);
+            artifactOperationsValidator.checkRepositorySize(path);
+            logger.info("Repository checkRepositorySize [{}] take time [{}] ms.", path.toString(), System.currentTimeMillis() - checkStorageSizeStartTime);
         }
         logger.info("Repository acceptance validation [{}] take time [{}] ms.", path.toString(), System.currentTimeMillis() - startTime);
         return path;
@@ -507,6 +509,7 @@ public class ArtifactManagementService {
 //        artifactOperationsValidator.checkAllowsDeployment(repository);
         if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
             artifactOperationsValidator.checkStorageSize(path);
+            artifactOperationsValidator.checkRepositorySize(path);
         }
         return path;
     }

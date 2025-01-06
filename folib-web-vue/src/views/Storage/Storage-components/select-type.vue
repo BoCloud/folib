@@ -6,7 +6,7 @@
 <template>
     <div class="checkbox-group">
         <div v-if="isEdit" class="disabled_box" />
-        <a-row type="flex" :gutter="[50]">
+        <a-row type="flex" :gutter="[40]">
             <a-col :span="4" v-for="(item,index) in typeList" :key="index">
                 <div class="checkbox-label" 
                     :class="[layoutChecked === item.type ? 'active' : '']"
@@ -17,20 +17,20 @@
                             {{ $t('Storage.NextVersion') }}🤝
                         </template>
                         <a-avatar 
-                            :size="44" 
+                            :size="64" 
                             shape="square"
-                            style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
+                            class="icon_sty"
                         >
-                            <img :src="item.src" style="width: 100%;" alt="">
+                            <img :src="item.src" width="48" alt="">
                         </a-avatar>
                     </a-tooltip>
                     <a-avatar 
                         v-else
-                        :size="44" 
+                        :size="64" 
                         shape="square"
-                        style="border-radius: 8px; background-image: linear-gradient( 310deg, #020202, #5c6391 );"
+                        class="icon_sty"
                     >
-                        <img :src="item.src" style="width: 100%;" alt="">
+                        <img :src="item.src" width="48" alt="">
                     </a-avatar>
                 </div>
                 <h6>{{ item.name }}</h6>
@@ -53,16 +53,17 @@ export default {
     },
     methods:{
         toggleCheckbox(item) {
-            if(!item.disabled){
-                this.$emit('toggleCheckbox',item.type)
-            }
+            this.$emit('toggleCheckbox',item)
         },
     }
 }
 </script>
-<style>
+<style lang="scss">
     .checkbox-group{
         position: relative;
+    }
+    .checkbox-label{
+        border: none !important;
     }
     .disabled_box{
         position: absolute;
@@ -72,5 +73,10 @@ export default {
         background: #fff;
         opacity: 0.1;
         cursor: not-allowed;
+    }
+    .icon_sty{
+        border-radius: 8px; 
+        background-image: linear-gradient(310deg, #f1f7ff, #f9fbff);
+        box-shadow: 0px 2px 18px -6px #728ABC;
     }
 </style>

@@ -13,6 +13,7 @@ import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.policy.FederalPromotionPolicyService;
 import com.veadan.folib.domain.policy.dto.SyncArtifatDTO;
+import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
 import com.veadan.folib.enums.PromotionStatusEnum;
 import com.veadan.folib.enums.UnionRepositorySyncTypeEnum;
 import com.veadan.folib.event.artifact.ArtifactEvent;
@@ -23,6 +24,7 @@ import com.veadan.folib.providers.layout.DockerFileSystem;
 import com.veadan.folib.scanner.entity.ScanRules;
 import com.veadan.folib.scanner.mapper.ScanRulesMapper;
 import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.services.JFrogService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.ws.common.FolibWsRunManageUtil;
 import com.veadan.folib.ws.common.FolibWsRunManageV2;
@@ -41,6 +43,7 @@ import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
 import javax.websocket.Session;
+import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -71,6 +74,9 @@ public class ArtifactEventPromotionListener {
     @Autowired
     @Lazy
     protected ConfigurationManagementService configurationManagementService;
+    @Autowired
+    @Lazy
+    private JFrogService jFrogService;
 
     //@EventListener
     public void handle(final ArtifactEvent<RepositoryPath> event) {
@@ -218,11 +224,7 @@ public class ArtifactEventPromotionListener {
                     log.debug("仓库 [{}] 不存在，无后续操作", RepositoryFiles.relativizePath(repositoryPath));
                     return;
                 }
-                Artifact artifact = repositoryPath.getArtifactEntry();
-                if (Objects.isNull(artifact)) {
-                    log.debug("制品 [{}] 不存在，无后续操作", RepositoryFiles.relativizePath(repositoryPath));
-                    return;
-                }
+
                 String storageId = repository.getStorage().getId();
                 String repositoryId = repository.getId();
                 //UnionRepositoryConfiguration unionRepositoryConfiguration = repository.getUnionRepositoryConfig();
@@ -232,7 +234,7 @@ public class ArtifactEventPromotionListener {
                     return;
                 }
                 for (FederalRepositoryRes federalRepositoryRes : repositoryRes) {
-                    handleFederPromotionPolicy(repositoryPath, artifact, federalRepositoryRes, artifactEventTypeEnum);
+                    handleFederPromotionPolicy(repositoryPath, federalRepositoryRes, artifactEventTypeEnum);
                 }
             }
         } catch (Exception ex) {
@@ -240,10 +242,12 @@ public class ArtifactEventPromotionListener {
         }
     }
 
-    public void handleFederPromotionPolicy(RepositoryPath repositoryPath, Artifact artifact, FederalRepositoryRes federalRepositoryRes, ArtifactEventTypeEnum artifactEventTypeEnum) {
+    public void handleFederPromotionPolicy(RepositoryPath repositoryPath, FederalRepositoryRes federalRepositoryRes, ArtifactEventTypeEnum artifactEventTypeEnum) throws IOException {
         FederalPromotionPolicyRes policyDetail = federalPromotionPolicyService.policyDetail(federalRepositoryRes.getPolicyId());
         String storageId = federalRepositoryRes.getStorageId();
         String repositoryId = federalRepositoryRes.getRepositoryId();
+
+
         if (Boolean.FALSE.equals(policyDetail.getIsEnabled())) {
             log.debug("存储空间 [{}] 仓库 [{}] 晋级未启用，无后续操作", storageId, repositoryId);
             return;
@@ -255,22 +259,32 @@ public class ArtifactEventPromotionListener {
             log.debug("存储空间 [{}] 仓库 [{}] 未设置联邦目标仓库，无后续操作", storageId, repositoryId);
             return;
         }
-        String artifactPath = getArtifactPath(repositoryPath, artifact);
-        boolean promotionFlag = validatePath(repositoryPath, artifactPath, policyDetail);
+        Artifact artifact = repositoryPath.getArtifactEntry();
 
-        boolean promotionMataDataFlag = validateMetadata(repositoryPath, artifact, artifactPath, policyDetail);
-        if (promotionFlag || promotionMataDataFlag) {
-            //联邦仓库晋级
-            if (validateArtifactEvent(artifactEventTypeEnum)) {
-                handleFederalPromotion(repositoryPath, artifact, policyDetail);
+        //联邦仓库晋级
+        if(validateArtifactEvent(artifactEventTypeEnum)){
+            if (Objects.isNull(artifact)) {
+                log.debug("制品 [{}] 不存在，无后续操作", RepositoryFiles.relativizePath(repositoryPath));
                 return;
             }
-            //联邦仓库删除同步
-            if (policyDetail.getIsDeleteSync()  && validateArtifactDeleteEvent(artifactEventTypeEnum)) {
-                handleFederalDeleteSync(repositoryPath,artifact, policyDetail);
+            String artifactPath = getArtifactPath(repositoryPath, artifact);
+            boolean promotionFlag = validatePath(repositoryPath, artifactPath, policyDetail);
+            boolean promotionMataDataFlag = validateMetadata(repositoryPath, artifact, artifactPath, policyDetail);
+            if (promotionFlag || promotionMataDataFlag) {
+                    handleFederalPromotion(repositoryPath, artifact, policyDetail);
             }
-
+            //联邦仓库删除同步
+        }else if (policyDetail.getIsDeleteSync()  && validateArtifactDeleteEvent(artifactEventTypeEnum)) {
+            String artifactPath ;
+            if(artifact == null){
+                String path = repositoryPath.getTarget().toString();
+                artifactPath = path.substring(path.lastIndexOf(String.format("%s/",repositoryId)) + repositoryId.length() + 1);
+            }else {
+                artifactPath = artifact.getArtifactPath();
+            }
+            handleFederalDeleteSync(repositoryPath,artifactPath, policyDetail);
         }
+
     }
 
     public boolean validatePath(RepositoryPath repositoryPath, String artifactPath, FederalPromotionPolicyRes policyDetail) {
@@ -347,13 +361,20 @@ public class ArtifactEventPromotionListener {
         }
     }
 
-    public void handleFederalDeleteSync(RepositoryPath repositoryPath ,Artifact artifact, FederalPromotionPolicyRes policyDetail) {
+    public void handleFederalDeleteSync(RepositoryPath repositoryPath ,String artifactPath, FederalPromotionPolicyRes policyDetail) {
         Map<String, ClusterDispatchNodeDto> map = configurationManagementService.
                 getMutableConfigurationClone().getClusterDispatchNode();
         if (MapUtils.isEmpty(map)) {
             return;
         }
         FederalRepositoryRes federalRepositoryRes = policyDetail.getTargetRepositories().get(0);
+        if(ArtifactoryRepositoryTypeEnum.JFROG.getType().equals(federalRepositoryRes.getNodeType())) {
+            for (FederalRepositoryRes targetRepository : policyDetail.getTargetRepositories()){
+                jFrogService.deletePat(targetRepository.getNodeName(),targetRepository.getRepositoryId(),artifactPath);
+            }
+            return;
+        }
+
         ClusterDispatchNodeDto nodeDto = map.get(federalRepositoryRes.getNodeName());
         String targetHostName = FolibWsRunManageUtil.getSimpleTargetHostName(nodeDto);
         Session session = folibWsRunManageV2.getSession(targetHostName);
@@ -363,12 +384,13 @@ public class ArtifactEventPromotionListener {
         WSMessageRequest wsMessageRequest = null;
         WSMessageResponse messageResponse = null;
 
+
         log.info("联邦仓库策略同步删除 晋级策略编号：{} 存储空间 [{}] 仓库 [{}]",policyDetail.getPolicyId(), repositoryPath.getStorageId(), repositoryPath.getRepositoryId());
         List<SyncArtifatDTO> artifatDTOList = policyDetail.getTargetRepositories().stream()
                 .map(item -> new SyncArtifatDTO(item.getPolicyId(),
                         item.getStorageId(),
                         item.getRepositoryId(),
-                        artifact.getArtifactPath())
+                        artifactPath)
                 ).collect(Collectors.toList());
 
         try {

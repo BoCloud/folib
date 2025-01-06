@@ -55,7 +55,7 @@ public class RpmArtifactCoordinatesUtils
             String release = matcher.group(3);
             String type = matcher.group(4);
             RpmArtifactCoordinates artifactCoordinates;
-            if (RpmPackageType.SOURCE.equals(type))
+            if (RpmPackageType.SOURCE.getPostfix().equals(type))
             {
                 artifactCoordinates = new RpmArtifactCoordinates(baseName, version, release,path,RpmPackageType.SOURCE);
             }

@@ -42,6 +42,8 @@ public class ArtifactSliceUploadReq {
     private String originFileMd5;
     @ApiModelProperty("切片文件MD5")
     private String sliceMd5;
-    @ApiModelProperty("制品源数据")
+    @ApiModelProperty("制品元数据")
     private Map<String, Object> metaData;
+    @ApiModelProperty("制品元数据")
+    private String metaDataMap;
 }

@@ -136,6 +136,8 @@ FOLIB_SSL_TRUST_STORE="${FOLIB_SSL_TRUST_STORE:-}"
 FOLIB_SSL_TRUST_STORE_PASSWORD="${FOLIB_SSL_TRUST_STORE_PASSWORD:-}"
 FOLIB_SSL_TRUST_STORE_TYPE="${FOLIB_SSL_TRUST_STORE_TYPE:-}"
 
+FOLIB_ARTIFACT_DOWNLOAD_IMMEDIATELY_UPDATE="${FOLIB_ARTIFACT_DOWNLOAD_IMMEDIATELY_UPDATE:-false}"
+
 print_banner()
 {
     echo "  _____ ___  _     ___ ____  ";
@@ -324,6 +326,8 @@ run()
     JAVA_OPTS+=" -Dcustom.unicom.appName=${FOLIB_UNICOM_APPNAME}"
     JAVA_OPTS+=" -Dcustom.unicom.verifyUrl=${FOLIB_UNICOM_VERIFYURL}"
     JAVA_OPTS+=" -Dcustom.unicom.userDetailUrl=${FOLIB_UNICOM_DETAILURL}"
+    JAVA_OPTS+=" -Dfolib.artifactDownloadImmediatelyUpdate=${FOLIB_ARTIFACT_DOWNLOAD_IMMEDIATELY_UPDATE}"
+
     #s3fs:
     #  protocol: http
     #  region: bo-nj-cn

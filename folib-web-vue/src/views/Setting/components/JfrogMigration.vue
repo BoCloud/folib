@@ -108,12 +108,12 @@
             {{ $t('Setting.Cancel') }}
           </a-button>
         </a-col>
-        <a-col :span="4">
+        <!-- <a-col :span="4">
          <a-button type="primary" class="ml-10" @click="showRestoreModal">
           <a-icon type="upload" />
           {{ $t('Setting.RestoreRepo') }}
         </a-button>
-        </a-col>
+        </a-col> -->
       </a-row>
     </a-form-model>
 

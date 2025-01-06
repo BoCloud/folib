@@ -79,6 +79,7 @@ folib:
   vault: ${folib.basedir}/folib-vault
   etc: ${folib.home}/etc
   temp: ${folib.vault}/tmp
+  artifactDownloadImmediatelyUpdate: false
   multipart:
     maxFileSize: 2048             # 单个上传文件大小 （MB）
     maxRequestSize: 2048        # 单次个上传文件总大小 （MB）
@@ -217,6 +218,9 @@ ehcache:
     store:
       dir: ${folib.vault}/cache
 management:
+  metrics:
+    tags:
+      application: folib-server
   health:
     neo4j:
       enabled: false
@@ -230,8 +234,11 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,beans,metrics,trace,scheduledtasks,threaddump,loggers,startup
+        include: health,info,beans,metrics,trace,scheduledtasks,threaddump,loggers,startup,prometheus
       base-path: /api/monitoring
+  prometheus:
+    enabled: true
+    path: /api/monitoring/prometheus
 cacheManagerConfiguration:
   groupConfig:
     name: folib

@@ -7,6 +7,7 @@ export default {
     'UserList': '用户列表',
     'EnterTheUsernameQuery': '输入用户名查询',
     'EnterTheEmailQuery': '输入邮箱查询',
+    'EnterTheNicknameQuery': '输入昵称查询',
     'IsItAvailable': '是否可用',
     'Available': '可用',
     'NotAvailable': '不可用',
@@ -55,4 +56,6 @@ export default {
     'UserRole':'请选择用户角色',
     'Administrators': '管理员',
     'GeneralUsers': '普通用户',
+    'Nickname': '昵称',
+    'PleaseEnterNickname': '请输入昵称,非必填',
 }

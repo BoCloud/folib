@@ -20,7 +20,7 @@ export default {
     'CertificateStore': 'Certificate store',
     'StorageAnalysis': 'Storage analysis',
     'Homepage': 'Home page',
-    'RepositoryList': 'Repository list',
+    'RepositoryList': 'Storage Repository',
     'WarehouseBrowsing': 'Repository browsing',
     'ScanTheHomePage': 'Scan home page',
     'ScanDetails': 'Scan details',
