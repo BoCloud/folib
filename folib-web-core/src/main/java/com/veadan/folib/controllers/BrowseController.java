@@ -318,6 +318,8 @@ public class BrowseController
                     try {
                         long startTime = System.currentTimeMillis();
                         allOf.get(30, TimeUnit.SECONDS);
+                        imageDirList.sort(Comparator.comparing(FileContent::getArtifactPath));
+                        directories.sort(Comparator.comparing(FileContent::getArtifactPath));
                         logger.info("Docker browse finished take time [{}] ms", System.currentTimeMillis() - startTime);
                     } catch (Exception ex) {
                         logger.warn("Error occurred while waiting for tasks to complete [{}]", ExceptionUtils.getStackTrace(ex));
