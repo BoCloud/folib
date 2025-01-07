@@ -133,9 +133,9 @@ const typeList = [
     },
     {
         src:'images/folib/rust.svg',
-        type:'rust',
-        name:'Rust',
-        disabled:true,
+        type:'cargo',
+        name:'Cargo',
+        disabled:false,
     },
     {
         src:'images/folib/conda.svg',
