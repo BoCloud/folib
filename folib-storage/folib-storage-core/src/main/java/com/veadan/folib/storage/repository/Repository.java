@@ -22,6 +22,10 @@ public interface Repository {
 
     String getSubLayout();
 
+    boolean getEnableCustomLayout();
+
+    String getCustomLayout();
+
     String getType();
 
     boolean isSecured();
@@ -45,6 +49,8 @@ public interface Repository {
     boolean isChecksumHeadersEnabled();
 
     long getStorageMaxSize();
+
+    double getStorageThreshold();
 
     Set<String> getGroupRepositories();
 
@@ -88,5 +94,4 @@ public interface Repository {
     boolean isSyncEnabled();
 
     Boolean getHealthStatus();
-
 }

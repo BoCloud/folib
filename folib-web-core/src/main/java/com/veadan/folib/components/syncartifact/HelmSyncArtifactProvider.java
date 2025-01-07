@@ -1,17 +1,23 @@
 package com.veadan.folib.components.syncartifact;
 
 import com.google.common.collect.Lists;
+import com.veadan.folib.components.DistributedCacheComponent;
+import com.veadan.folib.components.DistributedCounterComponent;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.constant.GlobalConstants;
+import com.veadan.folib.domain.migrate.SyncArtifactForm;
+import com.veadan.folib.entity.MigrateInfo;
 import com.veadan.folib.enums.ArtifactSyncTypeEnum;
-import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
+import com.veadan.folib.enums.MigrateStatusEnum;
 import com.veadan.folib.indexer.HelmMetadataIndexer;
 import com.veadan.folib.model.HelmChartMetadata;
 import com.veadan.folib.model.HelmIndexYamlMetadata;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ArtifactResolutionService;
+import com.veadan.folib.services.JfrogMigrateService;
+import com.veadan.folib.services.MigrateInfoService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +30,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import javax.inject.Inject;
 import java.nio.file.Files;
 import java.util.List;
@@ -62,6 +69,16 @@ public class HelmSyncArtifactProvider implements SyncArtifactProvider {
     @Inject
     @Lazy
     private CommonComponent commonComponent;
+
+
+    @Resource
+    private DistributedCounterComponent distributedCounterComponent;
+
+    @Resource
+    private DistributedCacheComponent distributedCacheComponent;
+
+    @Resource
+    private MigrateInfoService migrateInfoService;
 
     @PostConstruct
     @Override
@@ -133,6 +150,13 @@ public class HelmSyncArtifactProvider implements SyncArtifactProvider {
         }
         List<String> artifactPathList = Lists.newArrayList(), itemArtifactPathList;
         for (Map.Entry<String, SortedSet<HelmChartMetadata>> entry : entriesMap.entrySet()) {
+            if ("0".equals(distributedCacheComponent.get(JfrogMigrateService.PAUSED_FLAG_PRE + syncArtifactForm.getStoreAndRepo()))) {
+                //
+                log.info("仓库{}同步任务暂停", syncArtifactForm.getStoreAndRepo());
+                migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.PAUSED.getStatus());
+                distributedCacheComponent.delete(JfrogMigrateService.PAUSED_FLAG_PRE + syncArtifactForm.getStoreAndRepo());
+                return;
+            }
             SortedSet<HelmChartMetadata> helmChartMetadataSortedSet = entry.getValue();
             if (CollectionUtils.isEmpty(helmChartMetadataSortedSet)) {
                 continue;
@@ -171,12 +195,14 @@ public class HelmSyncArtifactProvider implements SyncArtifactProvider {
                         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
                         if (Files.exists(repositoryPath)) {
                             COUNT.incrementAndGet();
+                            distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + storageId + ":" + repositoryId).addAndGet(1L);
                             log.debug("Batch download storageId [{}] repositoryId [{}] artifactPath [{}] exists skip..", storageId, repositoryId, artifactPath);
                             continue;
                         }
                         artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
                         if (Files.exists(repositoryPath)) {
                             COUNT.incrementAndGet();
+                            distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + storageId + ":" + repositoryId).addAndGet(1L);
                         }
                     } catch (Exception ex) {
                         log.error("Batch download storageId [{}] repositoryId [{}] artifactPath [{}] error [{}]", storageId, repositoryId, artifactPath, ExceptionUtils.getStackTrace(ex));
@@ -196,5 +222,24 @@ public class HelmSyncArtifactProvider implements SyncArtifactProvider {
         });
         //清理
         artifactPathList.clear();
+    }
+
+
+    @Override
+    public void batchBrowseSync(SyncArtifactForm syncArtifactForm) {
+        // 获取仓库信息
+        MigrateInfo repository = migrateInfoService.getByMigrateIdAndRepoInfo(syncArtifactForm.getMigrateId(), syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
+        if (MigrateStatusEnum.QUEUING.getStatus() == repository.getSyncStatus()) {
+            syncPackageIndex(syncArtifactForm);
+            repository.setTotalArtifact(syncArtifactForm.getTotalArtifact());
+            repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
+            // 更新状态
+            migrateInfoService.updateById(repository);
+            distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
+        }
+        RepositoryPath indexRepositoryPath = repositoryPathResolver.resolve(syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), "index.yaml");
+        distributedCacheComponent.put(JfrogMigrateService.PAUSED_FLAG_PRE + syncArtifactForm.getStoreAndRepo(), "1");
+        handlerIndex(indexRepositoryPath, syncArtifactForm);
+
     }
 }

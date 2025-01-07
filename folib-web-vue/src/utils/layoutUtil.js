@@ -22,7 +22,7 @@ export function getFileImage(layout, name) {
 export function getLayoutType2(layout, repository, type) {
     let layoutCast
     if (layout === "Maven 2" && type === "black") {
-        layoutCast = repository.subLayout ? repository.subLayout : 'maven_white'
+        layoutCast = repository.subLayout ? repository.subLayout : 'maven'
         return layoutCast
     }
     if (layout === "npm") {

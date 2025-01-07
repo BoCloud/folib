@@ -8,6 +8,7 @@ public abstract class JavaCronJob
 {
 
     public static final String GLOBAL="GLOBAL";
+    public static final String RAW="RAW";
     public static final String MAVEN="MAVEN";
     public static final String NPM="NPM";
     public static final String RPM="RPM";

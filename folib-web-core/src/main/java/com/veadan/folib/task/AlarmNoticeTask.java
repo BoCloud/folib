@@ -110,21 +110,20 @@ public class AlarmNoticeTask {
         Configuration configuration = configurationManagementService.getConfiguration();
         AlarmConfiguration alarmConfiguration = configuration.getAlarmConfiguration();
         boolean isAdmin = false;
-        ;
         boolean isStorageAdmin = false;
-        Set<String> emaiList = new HashSet<>() ;
-        if (!alarmConfiguration.getNotificationPolicy().isEmpty()) {
+        Set<String> emaiList = new HashSet<>();
+        if (alarmConfiguration.getNotificationPolicy() != null && !alarmConfiguration.getNotificationPolicy().isEmpty()) {
             isAdmin = alarmConfiguration.getNotificationPolicy().stream().anyMatch(policy -> policy.equals("admin"));
             isStorageAdmin = alarmConfiguration.getNotificationPolicy().stream().anyMatch(policy -> policy.equals("storageAdmin"));
         }
 
         List<String> userList = Lists.newArrayList();
 
-        if (!alarmConfiguration.getRecipients().isEmpty()) {
+        if (alarmConfiguration.getRecipients() != null && !alarmConfiguration.getRecipients().isEmpty()) {
             userList.addAll(alarmConfiguration.getRecipients());
         }
 
-        if (!alarmConfiguration.getEmails().isEmpty()) {
+        if (alarmConfiguration.getEmails() != null && !alarmConfiguration.getEmails().isEmpty()) {
             emaiList.addAll(alarmConfiguration.getEmails());
         }
 
@@ -141,7 +140,8 @@ public class AlarmNoticeTask {
                 CapacityStorage capacityStorage = new CapacityStorage();
                 capacityStorage.setStorageId(storageId);
                 capacityStorage.setStorageSize(BigDecimal.valueOf(storeData.getStorageMaxSize()));
-                capacityStorage.setUseStorageSize( BigDecimal.valueOf(Double.parseDouble(dataMap.get(storageId))));
+                capacityStorage.setUseStorageSize(BigDecimal.valueOf(Double.parseDouble(dataMap.get(storageId))));
+                capacityStorage.setPlatformStorageThreshold(alarmConfiguration.getStorageThreshold());
                 storageVerification(capacityStorage);
                 stroageList.add(capacityStorage);
 
@@ -159,7 +159,9 @@ public class AlarmNoticeTask {
                     repoStorage.setStorageId(storeData.getId());
                     repoStorage.setStorageSize(BigDecimal.valueOf(repositoryDto.getStorageMaxSize()));
                     repoStorage.setUseStorageSize(BigDecimal.valueOf(Double.parseDouble(dataMap.get(String.join(":", storeData.getId(), repositoryId)))));
-                    storageVerification(repoStorage);
+                    repoStorage.setPlatformStorageThreshold(alarmConfiguration.getStorageThreshold());
+                    repoStorage.setStorageThreshold(repositoryDto.getStorageThreshold());
+                    repositoriesVerification(repoStorage);
                     stroageList.add(repoStorage);
                 }
             }
@@ -169,24 +171,23 @@ public class AlarmNoticeTask {
         List<UserDTO> users = pageInfo.getList();
 
         if (isAdmin) {
-            emaiList.addAll(users.stream().filter(user -> user.getRoles().contains("admin")).map(UserDTO::getEmail).collect(Collectors.toList()));
+            emaiList.addAll(users.stream().filter(user -> user.getRoles().contains("ADMIN")).map(UserDTO::getEmail).collect(Collectors.toList()));
         }
         if (isStorageAdmin) {
             emaiList.addAll(users.stream().filter(user -> userList.contains(user.getUsername())).map(UserDTO::getEmail).collect(Collectors.toList()));
         }
-        if( emaiList.isEmpty()) {
+        if (emaiList.isEmpty()) {
             log.warn("存储告警:没有需要通知的用户的邮箱");
             return;
         }
 
         stroageList = stroageList.stream().filter(CapacityStorage::isNotice).collect(Collectors.toList());
-        if(!stroageList.isEmpty()){
+        if (!stroageList.isEmpty()) {
             for (String email : emaiList) {
                 //发送邮件
                 handlerDataAndSendEmail(email, stroageList);
             }
         }
-
 
 
     }
@@ -198,21 +199,56 @@ public class AlarmNoticeTask {
 
     /**
      * 验证存储容量
+     *
      * @param capacityStorage 存储容量对象
      */
     public void storageVerification(CapacityStorage capacityStorage) {
         if (Objects.isNull(capacityStorage.getStorageSize()) || capacityStorage.getStorageSize().compareTo(BigDecimal.ZERO) <= 0) {
             capacityStorage.setNotice(false);
         }
+        double threshold = 0.9;
+        if (capacityStorage.getRepositoryId() != null && capacityStorage.getStorageThreshold() > 0) {
+            threshold = capacityStorage.getStorageThreshold();
+        } else if (capacityStorage.getPlatformStorageThreshold() > 0) {
+            threshold = capacityStorage.getPlatformStorageThreshold();
+        }
 
         // 将最大存储尺寸从字节转换为太字节（TB）
-        BigDecimal storageMaxTbSize = FileSizeConvertUtils.convertBytesWithDecimal(capacityStorage.getStorageSize().longValue(), FileUnitTypeEnum.TB.getUnit());
+        BigDecimal storageMaxTbSize = FileSizeConvertUtils.convertBytesWithDecimal(capacityStorage.getStorageSize().longValue(), FileUnitTypeEnum.GB.getUnit());
         // 将实际存储尺寸从字节转换为太字节（TB）
-        BigDecimal storageRealTbSize = FileSizeConvertUtils.convertBytesWithDecimal(capacityStorage.getUseStorageSize().longValue(), FileUnitTypeEnum.TB.getUnit());
+        BigDecimal storageRealTbSize = FileSizeConvertUtils.convertBytesWithDecimal(capacityStorage.getUseStorageSize().longValue(), FileUnitTypeEnum.GB.getUnit());
         // 计算存储使用比例
         BigDecimal useStorageProportion = storageRealTbSize.divide(storageMaxTbSize, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
         // 如果存储使用比例大于或等于95%，则记录警告日志并创建ExceedsSizeStorage对象
-        if (useStorageProportion.compareTo(BigDecimal.valueOf(95)) >= 0) {
+        if (useStorageProportion.compareTo(BigDecimal.valueOf(threshold * 100)) >= 0) {
+            log.warn("The size of the storage [{}] exceeds the maximum size accepted by " +
+                    "this repository ({}/{}/{}) unit {}.", capacityStorage.getStorageId(), capacityStorage.getRepositoryId(), storageRealTbSize, storageMaxTbSize, FileUnitTypeEnum.TB.getUnit());
+            capacityStorage.setNotice(true);
+        }
+        capacityStorage.setStorageSize(storageMaxTbSize);
+        capacityStorage.setUseStorageProportion(useStorageProportion);
+        capacityStorage.setUseStorageSize(storageRealTbSize);
+
+    }
+
+    public void repositoriesVerification(CapacityStorage capacityStorage) {
+        if (Objects.isNull(capacityStorage.getStorageSize()) || capacityStorage.getStorageSize().compareTo(BigDecimal.ZERO) <= 0) {
+            capacityStorage.setNotice(false);
+        }
+        double threshold = 0.9;
+        if (capacityStorage.getRepositoryId() != null && capacityStorage.getStorageThreshold() > 0) {
+            threshold = capacityStorage.getStorageThreshold();
+        } else if (capacityStorage.getPlatformStorageThreshold() > 0) {
+            threshold = capacityStorage.getPlatformStorageThreshold();
+        }
+        // 将最大存储尺寸从字节转换为太字节（TB）
+        BigDecimal storageMaxTbSize = FileSizeConvertUtils.convertBytesWithDecimal(capacityStorage.getStorageSize().longValue(), FileUnitTypeEnum.GB.getUnit());
+        // 将实际存储尺寸从字节转换为太字节（TB）
+        BigDecimal storageRealTbSize = FileSizeConvertUtils.convertBytesWithDecimal(capacityStorage.getUseStorageSize().longValue(), FileUnitTypeEnum.GB.getUnit());
+        // 计算存储使用比例
+        BigDecimal useStorageProportion = storageRealTbSize.divide(storageMaxTbSize, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+        // 如果存储使用比例大于或等于95%，则记录警告日志并创建ExceedsSizeStorage对象
+        if (useStorageProportion.compareTo(BigDecimal.valueOf(threshold * 100)) >= 0) {
             log.warn("The size of the storage [{}] exceeds the maximum size accepted by " +
                     "this repository ({}/{}/{}) unit {}.", capacityStorage.getStorageId(), capacityStorage.getRepositoryId(), storageRealTbSize, storageMaxTbSize, FileUnitTypeEnum.TB.getUnit());
             capacityStorage.setNotice(true);

@@ -1479,6 +1479,27 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         roleResourceRefMapper.deleteByExample(example);
     }
 
+    @Override
+    public void saveArtifactMetaByString(String storageId,String repositoryId,String path,String metaData) {
+        try{
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+            Artifact artifact = resolvePath(storageId, repositoryId, path);
+            artifact.setMetadata(metaData);
+            artifactService.saveOrUpdateArtifact(artifact);
+            repositoryPath.setArtifact(artifact);
+            artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
+            cacheMetadata(repositoryPath);
+        }catch (Exception e){
+            log.info("添加元数据失败");
+        }
+
+    }
+
+    @Override
+    public long countByUUidPrefix(String uuidPrefix) {
+        return artifactRepository.countByUUidPrefix(uuidPrefix);
+    }
+
     private void handleDockerRepo(RepositoryPath rootRepositoryPath, RepositoryPath blobsRootRepositoryPath, RepositoryPath manifestRootRepositoryPath) {
         AtomicLong imageAl = new AtomicLong(0), blobAl = new AtomicLong(0), manifestAl = new AtomicLong(0), copyBlobAl = new AtomicLong(0), copyManifestAl = new AtomicLong(0), copyBlobFailAl = new AtomicLong(0), copyManifestFailAl = new AtomicLong(0), deleteBlobAl = new AtomicLong(0), deleteManifestAl = new AtomicLong(0);
         try (Stream<Path> pathStream = Files.list(rootRepositoryPath)) {

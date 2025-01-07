@@ -44,5 +44,7 @@
     <include file="classpath:db/changelog/changelog_audit-update.xml"/>
     <include file="classpath:db/changelog/changelog_backup_strategy_init.xml"/>
     <include file="classpath:db/changelog/changelog_user_auth_update_2.xml"/>
+    <include file="classpath:db/changelog/changelog_custom_layout_init.xml"/>
+    <include file="classpath:db/changelog/changelog_migrate_info_init.xml"/>
     <!--后续增加的按照写对应的sql与changelog-->
 </databaseChangeLog>

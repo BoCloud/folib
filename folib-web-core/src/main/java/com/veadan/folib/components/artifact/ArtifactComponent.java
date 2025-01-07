@@ -15,10 +15,7 @@ import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.components.PypiBrowsePackageHtmlResponseBuilder;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.config.NpmLayoutProviderConfig;
-import com.veadan.folib.configuration.ConfigurationManager;
-import com.veadan.folib.configuration.SecurityPolicyConfiguration;
-import com.veadan.folib.configuration.UnionRepositoryConfiguration;
-import com.veadan.folib.configuration.UnionTargetRepositoryConfiguration;
+import com.veadan.folib.configuration.*;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.entity.ArtifactCacheRecord;
@@ -81,6 +78,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -97,6 +95,9 @@ public class ArtifactComponent {
 
     @Value("${folib.temp}")
     private String tempPath;
+
+    @Value("${folib.artifactDownloadImmediatelyUpdate:false}")
+    private boolean artifactDownloadImmediatelyUpdate;
 
     @Inject
     @Lazy
@@ -911,6 +912,7 @@ public class ArtifactComponent {
         Response response = null;
         int statusCode = 0;
         Document document = null;
+        String parentPath = "";
         try {
             Client client = clientPool.getRestClient(repository.getStorage().getId(), repository.getId());
             WebTarget target = client.target(url);
@@ -918,12 +920,18 @@ public class ArtifactComponent {
             response = target.request().get();
             statusCode = response.getStatus();
             if (statusCode == HttpStatus.OK.value()) {
-                String data = response.readEntity(String.class);
+                InputStream inputStream = response.readEntity(InputStream.class);
+                parentPath = tempPath + File.separator + "document" + File.separator + ConfigurationUtils.getSpecialStorageIdAndRepositoryId(repository.getStorage().getId(), repository.getId())
+                        + File.separator + StringUtils.removeStart(StringUtils.removeEnd(target.getUri().getPath(), GlobalConstants.SEPARATOR), GlobalConstants.SEPARATOR);
+                String filePath = parentPath + File.separator + UUID.randomUUID().toString() + ".html";
+                File tempFile = new File(filePath);
+                FileUtil.writeFromStream(inputStream, tempFile);
                 String separator = "/";
                 if (!url.endsWith(separator)) {
                     url = url + separator;
                 }
-                document = Jsoup.parse(data, url);
+                log.info("Get document url [{}] tempFile [{}] size [{}]", url, tempFile.getAbsolutePath(), tempFile.length());
+                document = Jsoup.parse(tempFile, "UTF-8", url);
             } else {
                 log.error("Get document url [{}] error response statusCode [{}]", url, statusCode);
             }
@@ -932,6 +940,9 @@ public class ArtifactComponent {
         } finally {
             if (Objects.nonNull(response)) {
                 response.close();
+            }
+            if (StringUtils.isNotBlank(parentPath)) {
+                FileUtil.del(new File(parentPath));
             }
         }
         return document;
@@ -1048,6 +1059,10 @@ public class ArtifactComponent {
     public void afterRead(RepositoryPath repositoryPath) {
         try {
             if (Objects.isNull(repositoryPath) || !RepositoryFiles.isArtifact(repositoryPath)) {
+                return;
+            }
+            if (artifactDownloadImmediatelyUpdate) {
+                artifactEventListenerRegistry.dispatchArtifactDownloadedEvent(repositoryPath);
                 return;
             }
             long startTime = System.currentTimeMillis();
@@ -1297,6 +1312,43 @@ public class ArtifactComponent {
             }
         } catch (Exception ex) {
             log.error("StoreArtifactMetadata error [{}]", ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
+
+    public void getArtifactByUrl(Repository repository, String url,String dist) {
+        Response response = null;
+        int statusCode = 0;
+        try {
+            Client client = clientPool.getRestClient(repository.getStorage().getId(), repository.getId());
+            WebTarget target = client.target(url);
+            commonComponent.authentication(target, repository.getRemoteRepository().getUsername(), repository.getRemoteRepository().getPassword());
+            response = target.request().get();
+            statusCode = response.getStatus();
+            if (statusCode == HttpStatus.OK.value()) {
+                Path path = Paths.get(dist);
+                Path parentDir = path.getParent();
+
+                if (parentDir != null && !Files.exists(parentDir)) {
+                    Files.createDirectories(parentDir); // 创建父目录
+                }
+                try(InputStream is=response.readEntity(InputStream.class);
+                    FileOutputStream os = new FileOutputStream(dist)){
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = is.read(buffer)) != -1) {
+                        os.write(buffer, 0, bytesRead);
+                    }
+                }
+            } else {
+                log.error("Get artifact url [{}] error response statusCode [{}]", url, statusCode);
+            }
+        } catch (Exception ex) {
+            log.error("Get artifact url [{}] response statusCode [{}] error [{}]", url, statusCode, ExceptionUtils.getStackTrace(ex));
+        } finally {
+            if (Objects.nonNull(response)) {
+                response.close();
+            }
         }
     }
 

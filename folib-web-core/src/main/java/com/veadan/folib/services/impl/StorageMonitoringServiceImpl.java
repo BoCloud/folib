@@ -561,7 +561,7 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
 
         Map<String, String> map = Maps.newConcurrentMap();
         for (StorageMonitoring item : storageMonitoringList){
-            BigDecimal usedFilesSizePercentage = item.getUsedStorageDeviceSize() == null ? BigDecimal.ZERO : item.getUsedStorageDeviceSize();
+            BigDecimal usedFilesSizePercentage = item.getFilesSize() == null ? BigDecimal.ZERO : item.getFilesSize();
             if(item.getDataType() == 1){
                 map.put(String.join(":",item.getStorageId(),item.getRepositoryId()),usedFilesSizePercentage.toEngineeringString());
             }else  if(item.getDataType() == 3){
@@ -569,7 +569,7 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
             }
         }
         if(!map.isEmpty()){
-            distributedCacheComponent.put(cacheKey, JSONObject.toJSONString(map),24, TimeUnit.HOURS);
+            distributedCacheComponent.put(cacheKey, JSONObject.toJSONString(map),4, TimeUnit.HOURS);
         }
         return map;
     }

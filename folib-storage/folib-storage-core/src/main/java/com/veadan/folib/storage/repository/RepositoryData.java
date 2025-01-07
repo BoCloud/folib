@@ -20,6 +20,7 @@ import com.veadan.folib.yaml.repository.CustomRepositoryConfigurationDto;
 import com.veadan.folib.yaml.repository.RepositoryConfiguration;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.StringUtils;
+import org.stringtemplate.v4.ST;
 
 import javax.annotation.concurrent.Immutable;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -49,6 +50,16 @@ public class RepositoryData
 
     private String subLayout;
 
+    /**
+     * 是否启用自定义布局
+     */
+    private boolean enableCustomLayout;
+
+    /**
+     * 自定义布局
+     */
+    private String customLayout;
+
     private String type;
 
     private boolean secured;
@@ -72,6 +83,8 @@ public class RepositoryData
     private boolean checksumHeadersEnabled;
 
     private long storageMaxSize;
+
+    private double storageThreshold;
 
     private ProxyConfiguration proxyConfiguration;
 
@@ -181,6 +194,8 @@ public class RepositoryData
         this.storage = storage != null ? storage : immuteStorage(delegate.getStorage());
         this.basedir = delegate.getBasedir();
         this.subLayout = delegate.getSubLayout();
+        this.enableCustomLayout = delegate.getEnableCustomLayout();
+        this.customLayout = delegate.getCustomLayout();
         this.scope = delegate.getScope();
         this.allowAnonymous = delegate.isAllowAnonymous();
         this.syncEnabled = delegate.isSyncEnabled();
@@ -189,6 +204,7 @@ public class RepositoryData
             this.healthStatus = delegate.getHealthStatus();
         }
         this.storageMaxSize = delegate.getStorageMaxSize();
+        this.storageThreshold = delegate.getStorageThreshold();
     }
 
     private ProxyConfiguration immuteProxyConfiguration(final MutableProxyConfiguration source) {
@@ -266,6 +282,16 @@ public class RepositoryData
     }
 
     @Override
+    public boolean getEnableCustomLayout() {
+        return enableCustomLayout;
+    }
+
+    @Override
+    public String getCustomLayout() {
+        return customLayout;
+    }
+
+    @Override
     public String getType() {
         return type;
     }
@@ -323,6 +349,11 @@ public class RepositoryData
     @Override
     public long getStorageMaxSize() {
         return this.storageMaxSize;
+    }
+
+    @Override
+    public double getStorageThreshold() {
+        return this.storageThreshold;
     }
 
     public ProxyConfiguration getProxyConfiguration() {

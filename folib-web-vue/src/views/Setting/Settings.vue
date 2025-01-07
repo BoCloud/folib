@@ -301,6 +301,18 @@
                                   </a-input>
                               </a-form-item>
                           </a-col>
+                          <a-col :span="24" :lg="8">
+                              <a-form-item class="mb-10" :label="$t('Setting.StorageThreshold')" :colon="false">
+                                  <a-input-number style="width: 100%"
+                                                  :default-value="100"
+                                                  :min="0"
+                                                  :max="100"
+                                                  :formatter="value => `${value}%`"
+                                                  :parser="value => value.replace('%', '')"
+                                                  v-model="platformStorageThreshold"
+                                  />
+                              </a-form-item>
+                          </a-col>
                       </a-row>
                       <a-row :gutter="[24]">
                           <a-col :span="24">
@@ -981,10 +993,12 @@
       </a-tab-pane>
 
       <a-tab-pane key="10"
-                    tab="联邦晋级策略">
+                    :tab="$t('Setting.FederalPromotionPolicy')">
           <FederalPromotionPolicy></FederalPromotionPolicy>
       </a-tab-pane>
-
+      <a-tab-pane key="11" :tab="$t('Setting.CustomLayout')">
+        <CustomLayout/>
+      </a-tab-pane>
       <a-tab-pane key="7" tab="Webhook">
         <Webhook :activeKey="activeKey"></Webhook>
       </a-tab-pane>
@@ -1316,6 +1330,7 @@ import AuditConfig from "./components/AuditConfig.vue";
 import BlockStrategy from './components/BlockStrategy/index.vue'
 import BlackWhite from './components/BlackWhite/index.vue'
 import FederalPromotionPolicy from './components/FederalPromotionPolicy/index.vue'
+import CustomLayout from './components/CustomLayout/index.vue'
 
 export default {
   props: ['navbarFixed'],
@@ -1328,6 +1343,7 @@ export default {
     BlockStrategy,
     BlackWhite,
     FederalPromotionPolicy,
+    CustomLayout,
   },
   data() {
     const checkClusterEnName = (rule, value, callback) => {
@@ -1411,6 +1427,7 @@ export default {
             recipients: [],
             emails: [],
             cronExpression: undefined,
+            storageThreshold: undefined,
         }
       },
       assignableRoles: [],
@@ -1769,8 +1786,11 @@ export default {
       fileList: [],
       securityPolicyActiveKey: undefined,
       alarmConfigurationCron: {
-            cronExpression: undefined, uuid: undefined
+            cronExpression: undefined,
+            uuid: undefined,
         },
+
+      platformStorageThreshold: 90,
     }
   },
   computed: {
@@ -1874,9 +1894,15 @@ export default {
         if (this.serverSettings.advancedConfigurationForm.globalS3Bucket) {
           this.globalS3BucketDisabled = true
         }
+        if(this.serverSettings.alarmConfigurationForm){
+            if(this.serverSettings.alarmConfigurationForm.storageThreshold && this.serverSettings.alarmConfigurationForm.storageThreshold > 0){
+                this.platformStorageThreshold = this.getStorageThreshold(this.serverSettings.alarmConfigurationForm.storageThreshold);
+            }
+        }
       })
     },
     saveServerSettings() {
+        this.serverSettings.alarmConfigurationForm.storageThreshold =  this.setStorageThreshold(this.platformStorageThreshold);
       postServerSettings(this.serverSettings).then(res => {
         if (this.serverSettings.advancedConfigurationForm.globalS3Bucket) {
           this.globalS3BucketDisabled = true
@@ -2479,7 +2505,18 @@ export default {
         })
       });
     },
-
+      setStorageThreshold(threshold){
+          if(threshold){
+              return  (threshold/100).toFixed(3)
+          }
+          return 0;
+      },
+      getStorageThreshold(threshold) {
+          if (threshold) {
+              return (threshold * 100).toFixed(3)
+          }
+          return 0;
+      },
     getCrontaskByClass() {
           getCrontaskByClass({ className: 'com.veadan.folib.cron.jobs.AlarmNoticeCronJob' }).then(res => {
               if (res && res.cronTaskConfigurations && res.cronTaskConfigurations.length > 0) {

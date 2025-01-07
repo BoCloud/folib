@@ -1374,6 +1374,11 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
     @Override
     public Boolean sliceUpload(ArtifactSliceUploadReq model) {
+        return sliceUpload(model, "");
+    }
+
+    @Override
+    public Boolean sliceUpload(ArtifactSliceUploadReq model, String metaDataMap) {
         final String storageId = model.getStorageId();
         final String repositoryId = model.getRepositoryId();
         final String path = model.getPath();
@@ -1384,8 +1389,10 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         final String originFileMd5 = model.getOriginFileMd5();
         final String sliceMd5 = model.getSliceMd5();
         final Map<String, Object> metaData = Optional.ofNullable(model.getMetaData()).orElse(Collections.emptyMap());
-        final String metaDataJsonStr = JSON.toJSONString(metaData);
-
+        String metaDataJsonStr = JSON.toJSONString(metaData);
+        if (StringUtils.isNotBlank(metaDataMap)) {
+            metaDataJsonStr = metaDataMap;
+        }
         // 临时存储目录
         final String artifactFileSliceUploadRootFolderPathStr = String.format("%s/artifactSliceUpload/%s/%s/%s", StringUtils.chomp(tempPath, "/"), storageId, repositoryId, mergeId);
         final String artifactFileSliceUploadFilePathStr = String.format("%s/chunkFile_%s", artifactFileSliceUploadRootFolderPathStr, chunkNo);

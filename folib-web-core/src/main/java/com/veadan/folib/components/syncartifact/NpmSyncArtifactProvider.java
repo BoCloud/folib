@@ -4,16 +4,24 @@ import cn.hutool.core.io.FileUtil;
 import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
+import com.veadan.folib.components.DistributedCacheComponent;
+import com.veadan.folib.components.DistributedCounterComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.components.files.FilesCommonComponent;
+import com.veadan.folib.components.jfrogArtifactSync.JfrogPropertySyncer;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.constant.GlobalConstants;
+import com.veadan.folib.domain.migrate.SyncArtifactForm;
+import com.veadan.folib.entity.MigrateInfo;
 import com.veadan.folib.enums.ArtifactSyncTypeEnum;
-import com.veadan.folib.forms.syncartifact.SyncArtifactForm;
+import com.veadan.folib.enums.MigrateStatusEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ArtifactResolutionService;
+import com.veadan.folib.services.ArtifactWebService;
+import com.veadan.folib.services.JfrogMigrateService;
+import com.veadan.folib.services.MigrateInfoService;
 import com.veadan.folib.services.NpmService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
@@ -32,6 +40,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.FileWriter;
@@ -95,6 +104,17 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
     @Inject
     @Lazy
     private NpmService npmService;
+
+    @Resource
+    private DistributedCounterComponent distributedCounterComponent;
+
+    @Resource
+    private DistributedCacheComponent distributedCacheComponent;
+    @Resource
+    private MigrateInfoService migrateInfoService;
+    @Resource
+    private ArtifactWebService artifactWebService;
+
 
     @PostConstruct
     @Override
@@ -171,6 +191,7 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
             File urlFile;
             while ((urlFile = getLevelFile(dir, level)).exists()) {
                 level++;
+                log.info("开始检索{}下的目录", urlFile);
                 boolean fileEmpty = true;
                 File subFile = getLevelFile(dir, level);
                 try (Scanner scanner = new Scanner(urlFile);
@@ -183,11 +204,14 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
                             }
                             fileEmpty = false;
                             String url = rootUrl + line;
-                            findSubUrl(repository, rootUrl, url, remoteUrl, sleepMillis, syncArtifactForm.getDom(), subFile, writer, repositoryBaseUri);
+                            if (!findSubUrl(repository, rootUrl, url, remoteUrl, sleepMillis, syncArtifactForm.getDom(), subFile, writer, repositoryBaseUri)) {
+                                return null;
+                            }
                         }
                     }
                 } catch (IOException e) {
                     log.error("Npm包索引同步制品错误 [{}]", ExceptionUtils.getStackTrace(e));
+                    return null;
                 }
                 if (fileEmpty) {
                     FileUtil.del(urlFile);
@@ -229,10 +253,10 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
      * @param writer            writer
      * @param repositoryBaseUri repositoryBaseUri
      */
-    private void findSubUrl(Repository repository, String rootUrl, String url, String remoteUrl, Integer sleepMillis, String dom, File file, FileWriter writer, String repositoryBaseUri) {
+    private boolean findSubUrl(Repository repository, String rootUrl, String url, String remoteUrl, Integer sleepMillis, String dom, File file, FileWriter writer, String repositoryBaseUri) {
         try {
             if (isSuffix(url)) {
-                return;
+                return true;
             }
             if (Objects.nonNull(sleepMillis)) {
                 Thread.sleep(sleepMillis);
@@ -242,6 +266,10 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
                 remoteUrl = remoteUrl + separator;
             }
             Document doc = artifactComponent.getDocument(repository, url);
+            if (Objects.isNull(doc)) {
+                log.error("获取文件失败");
+                return false;
+            }
             Elements links = doc.select(dom);
             NpmArtifactCoordinates npmArtifactCoordinates;
             for (Element link : links) {
@@ -277,7 +305,9 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
             }
         } catch (Exception e) {
             log.error("Npm包索引同步制品，错误 [{}]", ExceptionUtils.getStackTrace(e));
+            return false;
         }
+        return true;
     }
 
     private NpmArtifactCoordinates resolveNpmArtifactCoordinates(String path, String separator) {
@@ -297,28 +327,37 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
         return NpmArtifactCoordinates.NPM_EXTENSION_LIST.stream().anyMatch(url::endsWith);
     }
 
-    private void handlerPath(String dirPath, SyncArtifactForm syncArtifactForm) {
+    private boolean handlerPath(String dirPath, SyncArtifactForm syncArtifactForm) {
         long allStartTime = System.currentTimeMillis();
         Path path = Path.of(dirPath + "/artifact");
         if (!Files.exists(path) || !Files.isDirectory(path)) {
-            return;
+            return false;
         }
         int batch = 100;
         if (Objects.nonNull(syncArtifactForm.getBatch())) {
             batch = syncArtifactForm.getBatch();
         }
         COUNT.set(0L);
-        int availableCores = commonComponent.getAvailableCores() * 2;
+        int availableCores = syncArtifactForm.getMaxThreadNum() == null ? commonComponent.getAvailableCores() * 2 : syncArtifactForm.getMaxThreadNum();
         ThreadPoolTaskExecutor threadPoolTaskExecutor = commonComponent.buildThreadPoolTaskExecutor("browseNpmSync", availableCores, availableCores);
+        boolean ispaused = false;
         try (Stream<Path> pathStream = Files.list(path)) {
             int finalBatch = batch;
-            pathStream.sorted().forEach(item -> {
+            ispaused = pathStream.anyMatch(item -> {
                 String currentLine = "";
                 long lines = 0, startTime = System.currentTimeMillis();
+                boolean flag = true;
                 try {
                     List<String> pathList = Lists.newArrayList();
                     try (LineIterator lineIterator = FileUtils.lineIterator(item.toFile(), "UTF-8")) {
                         while (lineIterator.hasNext()) {
+                            if ("0".equals(distributedCacheComponent.get(JfrogMigrateService.PAUSED_FLAG_PRE + syncArtifactForm.getStoreAndRepo()))) {
+                                //
+                                log.info("仓库{}同步任务暂停", syncArtifactForm.getStoreAndRepo());
+                                migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.PAUSED.getStatus());
+                                distributedCacheComponent.delete(JfrogMigrateService.PAUSED_FLAG_PRE + syncArtifactForm.getStoreAndRepo());
+                                return true;
+                            }
                             try {
                                 lines++;
                                 currentLine = lineIterator.nextLine();
@@ -327,31 +366,41 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
                                 }
                                 pathList.add(currentLine);
                                 if (pathList.size() == finalBatch) {
-                                    batchDownload(item, syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), pathList, threadPoolTaskExecutor);
+                                    batchDownload(item, syncArtifactForm, pathList, threadPoolTaskExecutor);
                                 }
                             } catch (Exception ex) {
                                 log.error(ExceptionUtils.getStackTrace(ex));
+                                flag = false;
                             }
                         }
                         if (CollectionUtils.isNotEmpty(pathList)) {
-                            batchDownload(item, syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), pathList, threadPoolTaskExecutor);
+                            batchDownload(item, syncArtifactForm, pathList, threadPoolTaskExecutor);
                         }
+                    }
+                    // 清除已完成的文件
+                    if (flag) {
+                        Files.delete(item);
                     }
                 } catch (Exception ex) {
                     log.error("Handle path [{}] lines [{}] error [{}] ms", item.toString(), lines, ExceptionUtils.getStackTrace(ex));
                 }
                 log.info("Handle path [{}] lines [{}] finished take time [{}] ms", item.toString(), lines, System.currentTimeMillis() - startTime);
+                return false;
             });
         } catch (Exception ex) {
             log.error("Error [{}]", ExceptionUtils.getStackTrace(ex));
         }
-        log.info("Npm包同步完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个制品，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), COUNT.get(), System.currentTimeMillis() - allStartTime);
+        syncArtifactForm.setSyncMount((int) COUNT.get());
+        log.info("Npm包同步完成，存储空间 [{}]  仓库 [{}] 同步 [{}] 个制品，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), COUNT.get(), System.currentTimeMillis() - allStartTime);
+        return !ispaused;
     }
 
-    private void batchDownload(Path path, String storageId, String repositoryId, List<String> artifactPathList, ThreadPoolTaskExecutor threadPoolTaskExecutor) {
+    private void batchDownload(Path path, SyncArtifactForm form, List<String> artifactPathList, ThreadPoolTaskExecutor threadPoolTaskExecutor) {
         if (CollectionUtils.isEmpty(artifactPathList)) {
             return;
         }
+        String storageId=form.getStorageId();
+        String repositoryId=form.getRepositoryId();
         RepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
         List<List<String>> artifactPathLists = Lists.partition(artifactPathList, 5);
         List<FutureTask<String>> futureTasks = Lists.newArrayList();
@@ -365,12 +414,21 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
                             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
                             if (Files.exists(repositoryPath)) {
                                 COUNT.incrementAndGet();
+                                distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + storageId + ":" + repositoryId).addAndGet(1L);
                                 log.debug("Batch download storageId [{}] repositoryId [{}] artifactPath [{}] exists skip..", storageId, repositoryId, artifactPath);
                                 continue;
                             }
                             artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
                             if (Files.exists(repositoryPath)) {
                                 COUNT.incrementAndGet();
+                                distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + storageId + ":" + repositoryId).addAndGet(1L);
+                                JfrogPropertySyncer syncer = form.getSyncer();
+                                if (syncer!=null) {
+                                    String properties = syncer.getPropertiesByKeyAndPath(repositoryId, artifactPath);
+                                    if (properties!=null) {
+                                        artifactWebService.saveArtifactMetaByString(storageId, repositoryId, artifactPath, properties);
+                                    }
+                                }
                             }
                         } else {
                             //索引
@@ -397,4 +455,45 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
         //清理
         artifactPathList.clear();
     }
+
+
+    @Override
+    public void batchBrowseSync(SyncArtifactForm syncArtifactForm) {
+        try {
+            MigrateInfo repository = migrateInfoService.getByMigrateIdAndRepoInfo(syncArtifactForm.getMigrateId(), syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
+            if (MigrateStatusEnum.QUEUING.getStatus() == repository.getSyncStatus() || MigrateStatusEnum.INDEX_FAILED.getStatus() == repository.getSyncStatus()) {
+                migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.FETCHING_INDEX.getStatus());
+                String dirPath = syncPackageIndex(syncArtifactForm);
+                if (dirPath == null) {
+                    log.info("同步索引失败,请稍后重试");
+                    migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.INDEX_FAILED.getStatus());
+                    return;
+                }
+                repository.setSyncDirPath(dirPath);
+                repository.setTotalArtifact(syncArtifactForm.getTotalArtifact());
+                repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
+                // 更新状态
+                migrateInfoService.updateById(repository);
+                distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
+            }
+            String path = repository.getSyncDirPath();
+            if (syncArtifactForm.getSyncMeta() == 1) {
+                JfrogPropertySyncer syncer = new JfrogPropertySyncer(syncArtifactForm.getApiUrl(), syncArtifactForm.getUsername(), syncArtifactForm.getPassword());
+                syncArtifactForm.setSyncer(syncer);
+            }
+            distributedCacheComponent.put(JfrogMigrateService.PAUSED_FLAG_PRE + syncArtifactForm.getStoreAndRepo(), "1");
+            if (handlerPath(path, syncArtifactForm)) {
+                migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.COMPLETED.getStatus());
+            } else {
+                migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.PAUSED.getStatus());
+            }
+        } finally {
+            if(syncArtifactForm.getSyncer()!=null){
+                syncArtifactForm.getSyncer().close();
+            }
+        }
+
+    }
+
+
 }

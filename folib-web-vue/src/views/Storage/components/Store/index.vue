@@ -21,7 +21,7 @@
                   </a>
                   <a style="justify-content: center;align-items: center;display: flex;">
                     <a-avatar @click="createData" :size="64" shape="square"
-                      style="border-radius: 8px; background-image: linear-gradient( 310deg, #fafbfc, #ddd);   "
+                      style="border-radius: 8px; background-image: linear-gradient(310deg, #f1f7ff, #f9fbff);"
                                 >
                         <img :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" style="width: 150%;margin-left: -11px;" alt=""></img>
                     </a-avatar>
@@ -98,14 +98,14 @@
                   </div>
                 </a-col>
                 <a-col :span="5" class="col-info">
-                        <div style="width: 85%">
-                            <a-progress
-                                v-if="isClose"
-                                :stroke-color="{from: '#108ee9',to: '#87d068',}"
-                                :percent="totalUploadProgress"
-                                :status="progressStatus"
-                            />
-                        </div>
+                  <div style="width: 85%">
+                      <a-progress
+                          v-if="isClose"
+                          :stroke-color="{from: '#108ee9',to: '#87d068',}"
+                          :percent="totalUploadProgress"
+                          :status="progressStatus"
+                      />
+                  </div>
                 </a-col>
                 <a-col :span="5" style="
                     display: flex;
@@ -167,11 +167,11 @@
     </a-affix>
     <a-row v-if="isSearch === false" type="flex" :gutter="24">
       <!-- Platform Settings Column -->
-      <a-col style="margin-top:-20px;" v-if="!isChecked" :span="24" :md="10" class="mb-24">
-        <a-card :bordered="false" style="max-height: 1024px; min-height: 554px; overflow-y: auto" class="header-solid card-shadow"
+      <a-col style="margin-top:-30px;" v-if="!isChecked" :span="9" class="mb-24">
+        <a-card :bordered="false" style="height:calc(100vh - 312px); overflow-y: auto;margin-bottom:-22px;" class="header-solid card-shadow left_tree_sty"
           :bodyStyle="{ paddingTop: 0, paddingBottom: 0 }">
           <template #title>
-            <h6 class="font-semibold m-0">{{ isTrashView ? $t('Store.TrashCan') : $t('Store.PacketList') }} <a
+            <h6 class="font-semibold m-0">{{ $t('Store.PacketList') }} <a
                 v-show="!isTrashView" class="ml-10" @click="reloadTreeData">
                 <a-icon type="reload" /></a></h6>
           </template>
@@ -180,29 +180,24 @@
             <template slot="title">
               {{ isTrashView ? $t('Store.PacketListView') : $t('Store.TrashCanView') }}
             </template>
-            <a-icon v-if="isTrashView" type="file-zip" />
-            <a-icon v-if="!isTrashView" type="delete" />
+            <!-- <a-icon v-if="isTrashView" type="file-zip" />
+            <a-icon v-if="!isTrashView" type="delete" /> -->
           </a-tooltip>
           <!-- </a-button> -->
-          <a-directory-tree v-if="!isTrashView" :replaceFields="{
-            key: 'artifactPath',
-            title: 'name',
-            children: 'children',
-          }" :tree-data="treeData" :load-data="onLoadData" @select="treeSelect" @rightClick="onRightClick">
-          </a-directory-tree>
-          <a-directory-tree v-if="isTrashView" :replaceFields="{
-            key: 'artifactPath',
-            title: 'name',
-            children: 'children',
-          }" :tree-data="trashData" :load-data="onLoadData" @select="treeSelect" @rightClick="onRightClick">
-
-          </a-directory-tree>
+          <leftTree 
+            :trashData="trashData" 
+            :treeData="treeData" 
+            :isTrashView="isTrashView"
+            @onRightClick="onRightClick" 
+            @onLoadData="onLoadData"
+            @treeSelect="treeSelect"
+          />
         </a-card>
       </a-col>
-      <a-col style="margin-top:-30px;" :span="24" :md="!isChecked ? 14 : 24" class="mb-24">
+      <a-col style="margin-top:-30px;" :span="24" :md="!isChecked ? 15 : 24" class="mb-24">
         <a-card :bordered="false" class="header-solid h-full card-shadow card-profile-information"
           :bodyStyle="{ paddingTop: 0, paddingBottom: '0' }" :headStyle="{ paddingRight: 0 }"
-          :style="isChecked?'height:calc(100vh - 392px);overflow-y:auto;':''"
+          :style="isChecked?'height:calc(100vh - 392px);overflow-y:auto;':'height:calc(100vh - 312px); overflow-y: auto;margin-bottom:-22px;'"
           >
           <template #title v-if="isChecked ? !newDetailPage : true ">
             <a-row type="flex" align="middle" v-if="folibRepository.layout !== 'Docker'">
@@ -1060,6 +1055,7 @@ import 'prismjs/themes/prism-tomorrow.css'
 import SparkMD5 from 'spark-md5';
 import {ACCESS_TOKEN} from "@/store/mutation-types";
 import CircleProgress from '@/components/Tools/CircleProgress.vue';
+import leftTree from './left-tree.vue'
 export default {
   inject: ['reload'],
   props: [
@@ -1081,7 +1077,8 @@ export default {
     Search,
     DebianUpload,
     DebianBatchUpload,
-    CircleProgress
+    CircleProgress,
+    leftTree
   },
   data() {
     return {
@@ -1296,7 +1293,11 @@ export default {
 	    packageLoadedKeys: [],
 	    restoreTitle: null,
 	    showRestoreForm: false,
-      pageKey:0
+      pageKey:0,
+      topHeight: 500, // 初始顶部 div 的高度 (容器高度 - 底部高度 - 分隔条高度)
+      bottomHeight: 40, // 初始底部 div 的高度
+      isDragging: false, // 是否正在拖拽
+      containerHeight: 0, // 容器的总高度
     }
   },
   computed: {
@@ -1412,7 +1413,21 @@ export default {
             item.type = 'file'
           })
           this.treeData = d.concat(f).filter(item => item.name !== '.trash')
-          this.trashData = d.concat(f).filter(item => item.name === '.trash')
+          const trashData = d.concat(f).filter(item => item.name === '.trash')
+
+          const setTitle = (arr) => {
+            arr.forEach(ele => {
+              ele.title = ele.name
+              if(ele.name === '.trash'){
+                ele.title = '制品回收站'
+              }
+              if(ele.children && ele.children.length){
+                setTitle(ele.children)
+              }
+            })
+          }
+          setTitle(trashData)
+          this.trashData = [...trashData]
         })
         .catch(err => { })
     },
@@ -1891,10 +1906,11 @@ export default {
     //     }, 100)
     //   })
     // },
-    onLoadData(treeNode) {
+    onLoadData(treeNode,isTrashView,resolve, reject) {
+      this.isTrashView = isTrashView
       this.currentFileDetial = null
       if (this.folibRepository.layout === 'Docker') {
-        return new Promise(resolve => {
+        // return new Promise(resolve => {
           if (treeNode.dataRef.children) {
             resolve()
             return
@@ -1923,12 +1939,25 @@ export default {
             }
             this.treeData = [...this.treeData]
             this.trashData = [...this.trashData]
+            const setTitle = (arr) => {
+              arr.forEach(ele => {
+                ele.title = ele.name
+                if(ele.name === '.trash'){
+                  ele.title = '制品回收站'
+                }
+                if(ele.children && ele.children.length){
+                  setTitle(ele.children)
+                }
+              })
+            }
+            setTitle(this.trashData)
             resolve()
           })
-        })
+        // })
+        return
       }
 
-      return new Promise(resolve => {
+      // return new Promise(resolve => {
         if (treeNode.dataRef.children) {
           resolve()
           return
@@ -1959,9 +1988,21 @@ export default {
 
           this.treeData = [...this.treeData]
           this.trashData = [...this.trashData]
+          const setTitle = (arr) => {
+            arr.forEach(ele => {
+              ele.title = ele.name
+              if(ele.name === '.trash'){
+                ele.title = '制品回收站'
+              }
+              if(ele.children && ele.children.length){
+                setTitle(ele.children)
+              }
+            })
+          }
+          setTitle(this.trashData)
           resolve()
         })
-      })
+      // })
     },
     treeSelect(key, e) {
       if(e.isRecycle){
@@ -3068,5 +3109,10 @@ export default {
 <style lang="scss">
  .top-card .ant-card-head-title{
     padding: 5px 5px;
+  }
+  .left_tree_sty{
+    .ant-card-body{
+      padding: 0 !important;
+    }
   }
 </style>
