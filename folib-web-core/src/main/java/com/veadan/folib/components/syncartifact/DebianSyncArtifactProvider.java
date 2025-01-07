@@ -130,6 +130,11 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
 
     @Override
     public void fullSync(SyncArtifactForm syncArtifactForm) {
+        String dirPath = syncPackageIndex(syncArtifactForm);
+        if (StringUtils.isBlank(dirPath)) {
+            return;
+        }
+        handlerPath(dirPath, syncArtifactForm);
     }
 
     @Override

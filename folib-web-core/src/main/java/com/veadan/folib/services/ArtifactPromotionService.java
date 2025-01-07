@@ -166,6 +166,15 @@ public interface ArtifactPromotionService {
     Boolean sliceUpload(ArtifactSliceUploadReq model);
 
     /**
+     * 文件切片上传
+     *
+     * @param model
+     * @return
+     * @since x.x.x
+     */
+    Boolean sliceUpload(ArtifactSliceUploadReq model, String metaDataMap);
+
+    /**
      * 更新任务队列优先级
      * @param syncNo 同步编号
      * @param priority 优先级

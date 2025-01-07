@@ -311,9 +311,9 @@ public class ArtifactPromotionController extends BaseArtifactController {
 
     @PostMapping(value = "/slice/upload")
     @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
-    public Result<Boolean> sliceUpload(@ModelAttribute @Validated ArtifactSliceUploadReq model) {
+    public Result<Boolean> sliceUpload(@ModelAttribute @Validated ArtifactSliceUploadReq model, String metaDataMap) {
         try {
-            return Result.success(artifactPromotionService.sliceUpload(model));
+            return Result.success(artifactPromotionService.sliceUpload(model, metaDataMap));
         } catch (Exception e) {
             return Result.error(e);
         }

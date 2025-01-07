@@ -15,10 +15,7 @@ import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.components.PypiBrowsePackageHtmlResponseBuilder;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.config.NpmLayoutProviderConfig;
-import com.veadan.folib.configuration.ConfigurationManager;
-import com.veadan.folib.configuration.SecurityPolicyConfiguration;
-import com.veadan.folib.configuration.UnionRepositoryConfiguration;
-import com.veadan.folib.configuration.UnionTargetRepositoryConfiguration;
+import com.veadan.folib.configuration.*;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.entity.ArtifactCacheRecord;
@@ -915,6 +912,7 @@ public class ArtifactComponent {
         Response response = null;
         int statusCode = 0;
         Document document = null;
+        String parentPath = "";
         try {
             Client client = clientPool.getRestClient(repository.getStorage().getId(), repository.getId());
             WebTarget target = client.target(url);
@@ -922,12 +920,18 @@ public class ArtifactComponent {
             response = target.request().get();
             statusCode = response.getStatus();
             if (statusCode == HttpStatus.OK.value()) {
-                String data = response.readEntity(String.class);
+                InputStream inputStream = response.readEntity(InputStream.class);
+                parentPath = tempPath + File.separator + "document" + File.separator + ConfigurationUtils.getSpecialStorageIdAndRepositoryId(repository.getStorage().getId(), repository.getId())
+                        + File.separator + StringUtils.removeStart(StringUtils.removeEnd(target.getUri().getPath(), GlobalConstants.SEPARATOR), GlobalConstants.SEPARATOR);
+                String filePath = parentPath + File.separator + UUID.randomUUID().toString() + ".html";
+                File tempFile = new File(filePath);
+                FileUtil.writeFromStream(inputStream, tempFile);
                 String separator = "/";
                 if (!url.endsWith(separator)) {
                     url = url + separator;
                 }
-                document = Jsoup.parse(data, url);
+                log.info("Get document url [{}] tempFile [{}] size [{}]", url, tempFile.getAbsolutePath(), tempFile.length());
+                document = Jsoup.parse(tempFile, "UTF-8", url);
             } else {
                 log.error("Get document url [{}] error response statusCode [{}]", url, statusCode);
             }
@@ -936,6 +940,9 @@ public class ArtifactComponent {
         } finally {
             if (Objects.nonNull(response)) {
                 response.close();
+            }
+            if (StringUtils.isNotBlank(parentPath)) {
+                FileUtil.del(new File(parentPath));
             }
         }
         return document;
