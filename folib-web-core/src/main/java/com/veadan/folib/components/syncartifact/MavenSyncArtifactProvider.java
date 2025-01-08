@@ -215,7 +215,7 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
         // 获取仓库信息
         try {
             MigrateInfo repository = migrateInfoService.getByMigrateIdAndRepoInfo(syncArtifactForm.getMigrateId(), syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
-            if (MigrateStatusEnum.QUEUING.getStatus() == repository.getSyncStatus() || MigrateStatusEnum.INDEX_FAILED.getStatus() == repository.getSyncStatus()) {
+            if (MigrateStatusEnum.QUEUING.getStatus() == repository.getSyncStatus()&&repository.getIndexFinish()==0) {
                 migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.FETCHING_INDEX.getStatus());
                 String dirPath = syncPackageIndex(syncArtifactForm);
                 if (dirPath == null) {
@@ -317,8 +317,9 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
             Document doc = artifactComponent.getDocument(repository, url);
             if (Objects.isNull(doc)) {
                 log.error("获取文件失败");
-                return false;
+                return true;
             }
+            List<String> paths = new ArrayList<>();
             Elements links = doc.select(dom);
             for (Element link : links) {
                 String absUrl = link.absUrl("href");
@@ -328,14 +329,17 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
                     THREAD_LOCAL.set(THREAD_LOCAL.get() + 1);
                 } else {
                     // 非子目录
-                    if (!absUrl.contains(url) || url.equals(absUrl)) {
+                    if (!absUrl.contains(url) || url.equals(absUrl)||!absUrl.endsWith("/")) {
                         continue;
                     }
                     String path = absUrl.substring(rootUrl.length());
-                    writer.write(path + "\n");
-                    writer.flush();
+                    paths.add(path);
                 }
             }
+            for (String path : paths) {
+                writer.write(path + "\n");
+            }
+            writer.flush();
         } catch (Exception e) {
             log.error("Maven包索引，错误 [{}]", ExceptionUtils.getStackTrace(e));
             return false;

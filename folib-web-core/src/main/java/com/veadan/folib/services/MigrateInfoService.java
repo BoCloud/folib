@@ -25,4 +25,6 @@ public interface MigrateInfoService {
 
     void updateAndSyncRepoStatus(SyncArtifactForm syncArtifactForm, int status);
 
+    MigrateInfo getById(Long id);
+
 }

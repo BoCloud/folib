@@ -41,6 +41,8 @@ public interface JfrogMigrateService {
     void startMigrate(String migrateId,List<String> storeAndRepo);
     void pauseMigrate(String migrateId,List<String> storeAndRepo);
 
+    void setFailed(List<Long> ids);
+
     void addTask(ArtifactMigrateInfo info);
 
     void updateTask(Long id,ArtifactMigrateInfo info);
@@ -51,6 +53,8 @@ public interface JfrogMigrateService {
      void repoContinue(String migrateId,List<String> storeAndRepos);
 
      void repoFinish(String migrateId,List<String> storeAndRepos);
+
+     void changeLayout(MigrateInfo info);
 
 
 

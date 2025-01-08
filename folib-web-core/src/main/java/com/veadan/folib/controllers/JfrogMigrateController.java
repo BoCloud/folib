@@ -1,6 +1,5 @@
 package com.veadan.folib.controllers;
 
-import com.veadan.folib.components.jfrogArtifactSync.ArtifactDownloader;
 import com.veadan.folib.components.jfrogArtifactSync.JfrogPropertySyncer;
 import com.veadan.folib.domain.migrate.AddRepositoryForm;
 import com.veadan.folib.domain.migrate.ArtifactMigrateInfo;
@@ -9,7 +8,6 @@ import com.veadan.folib.entity.MigrateInfo;
 import com.veadan.folib.forms.JfrogMigrateForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.JfrogMigrateService;
-import com.veadan.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.HttpResponseException;
 import org.jfrog.artifactory.client.Artifactory;
@@ -95,6 +93,12 @@ public class JfrogMigrateController {
         return ResponseEntity.ok("Success");
     }
 
+    @PutMapping("/repository/layout")
+    public ResponseEntity<String> addRepos(@RequestBody MigrateInfo info) {
+        jfrogMigrateService.changeLayout(info);
+        return ResponseEntity.ok("Success");
+    }
+
 
     // 将待迁移仓库迁移至迁移中
     @PostMapping("/start")
@@ -109,27 +113,33 @@ public class JfrogMigrateController {
         return ResponseEntity.ok("Success");
     }
 
+    @PostMapping("/repository/failed")
+    public ResponseEntity<String> setFailed(@RequestBody List<Long> ids) {
+        jfrogMigrateService.setFailed(ids);
+        return ResponseEntity.ok("Success");
+    }
+
 
     @PostMapping("/repository/progress")
     public ResponseEntity<Map<String, Long>> getCountByRepo(@RequestBody AddRepositoryForm form) {
-        Map<String, Long> cnt = jfrogMigrateService.getFinishedCount(form.getMigrateId(),form.getStoreAndRepos());
+        Map<String, Long> cnt = jfrogMigrateService.getFinishedCount(form.getMigrateId(), form.getStoreAndRepos());
         return ResponseEntity.ok(cnt);
     }
 
     @PostMapping("/repository/continue")
     public ResponseEntity<String> repoContinue(@RequestBody AddRepositoryForm form) {
-        jfrogMigrateService.repoContinue(form.getMigrateId(),form.getStoreAndRepos());
+        jfrogMigrateService.repoContinue(form.getMigrateId(), form.getStoreAndRepos());
         return ResponseEntity.ok("continue");
     }
 
     @PostMapping("/repository/finish")
     public ResponseEntity<String> repoFinish(@RequestBody AddRepositoryForm form) {
-        jfrogMigrateService.repoFinish(form.getMigrateId(),form.getStoreAndRepos());
+        jfrogMigrateService.repoFinish(form.getMigrateId(), form.getStoreAndRepos());
         return ResponseEntity.ok("finished");
     }
 
     @GetMapping("/test")
-    public Object downLoadTest(String name,String path) {
+    public Object downLoadTest(String name, String path) {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
 //        ArtifactDownloader artifactDownload = new ArtifactDownloader("http://10.10.33.149:8082/artifactory/", "admin", "folib@v587", "/", 5);
@@ -137,8 +147,8 @@ public class JfrogMigrateController {
 //        log.info(allArtifacts.size() + "");
 //        stopWatch.stop();
 //        return String.valueOf(stopWatch.getTotalTimeSeconds());
-        JfrogPropertySyncer jfrogPropertySyncer=new JfrogPropertySyncer("http://10.10.33.149:8082/artifactory/", "admin", "folib@v587");
-        return jfrogPropertySyncer.getPropertiesByKeyAndPath(name,path);
+        JfrogPropertySyncer jfrogPropertySyncer = new JfrogPropertySyncer("http://10.10.33.149:8082/artifactory/", "admin", "folib@v587");
+        return jfrogPropertySyncer.getPropertiesByKeyAndPath(name, path);
 
 
     }
