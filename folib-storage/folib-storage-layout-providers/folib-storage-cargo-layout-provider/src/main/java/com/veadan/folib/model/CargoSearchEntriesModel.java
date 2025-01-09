@@ -38,7 +38,7 @@ public class CargoSearchEntriesModel {
     }
 
     public int compareVersion(CargoSearchEntriesModel cargoSearchEntriesModel) {
-        return Version.valueOf(cargoSearchEntriesModel.maxVersion).compareWithBuildsTo(Version.valueOf(this.maxVersion));
+        return Version.valueOf(this.maxVersion).compareWithBuildsTo(Version.valueOf(cargoSearchEntriesModel.maxVersion));
     }
 }
 

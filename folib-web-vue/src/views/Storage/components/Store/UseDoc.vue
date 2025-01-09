@@ -1332,7 +1332,7 @@ go 1.20' :readonly="true">
               ></prism-editor>
           </a-timeline-item>
 
-          <a-timeline-item color="primary">
+          <a-timeline-item color="primary" v-if="folibRepository.type !== 'proxy'">
               Cargo {{ $t('Store.CargoDeploy') }}
               <p>{{ $t('Store.CargoDeployConfig') }}</p>
               <prism-editor
@@ -1344,7 +1344,7 @@ go 1.20' :readonly="true">
               >
               </prism-editor>
           </a-timeline-item>
-          <a-timeline-item color="primary">
+          <a-timeline-item color="primary" v-if="folibRepository.type !== 'proxy'">
               Cargo {{ $t('Store.CargoInstall') }}
               <p>{{ $t('Store.CargoInstallConfig') }}</p>
               <prism-editor
@@ -1434,7 +1434,11 @@ export default {
       return ` apt update --allow-insecure-repositories \n apt-get install <DEBIAN_PACKAGE_NAME>`
     },
       cargoConfiguration() {
-          return `[registry]\ndefault = "folib"\n\n[registries.folib]\nindex = "sparse+${this.baseDomain}storages/${this.folibRepository.storageId}/${this.folibRepository.id}/index/"`
+        if(this.folibRepository.type === "hosted"){
+            return `[registry]\ndefault = "folib"\n\n[registries.folib]\nindex = "sparse+${this.baseDomain}storages/${this.folibRepository.storageId}/${this.folibRepository.id}/index/"`
+        }else {
+            return `[source.crates-io]\nreplace-with = 'folib-remote'\n[source.folib-remote]\nregistry = "sparse+${this.baseDomain}storages/${this.folibRepository.storageId}/${this.folibRepository.id}/index/"`
+        }
       },
       cargoConfigurationToken() {
         return `[registry.folib]\ntoken = "Bearer <TOKEN>"\n#token = "Basic <BASE64>"`

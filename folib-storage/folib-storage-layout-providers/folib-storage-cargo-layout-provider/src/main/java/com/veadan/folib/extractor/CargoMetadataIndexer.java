@@ -173,7 +173,7 @@ public class CargoMetadataIndexer {
      */
     private void reindexPackage(RepositoryPath repositoryPath, String packageName, CargoMetadataExtractor cargoMetadataExtractor,CargoIndex index) throws Exception {
         List<RepositoryPath> fileList = new ArrayList<>();
-        RepositoryPath artifactPath = artifactResolutionService.resolvePath(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), "crates");
+        RepositoryPath artifactPath = artifactResolutionService.resolvePath(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), "crates/"+packageName);
         Files.walkFileTree(artifactPath, new SimpleFileVisitor<>() {
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {

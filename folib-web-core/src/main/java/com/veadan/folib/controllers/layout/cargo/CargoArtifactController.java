@@ -13,6 +13,7 @@ import com.veadan.folib.model.CargoSearchModel;
 import com.veadan.folib.model.publish.CargoPublishRes;
 import com.veadan.folib.model.req.PublishRequest;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.utils.CargoConstants;
 import com.veadan.folib.utils.CargoUtil;
@@ -31,7 +32,6 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
-
 
 
 import java.io.ByteArrayInputStream;
@@ -58,6 +58,8 @@ public class CargoArtifactController extends BaseArtifactController {
 
     @Inject
     private CargoMetadataIndexer configurationIndexer;
+    @Inject
+    private ConfigurationManagementService configurationManagementService;
 
     private static final String FORBIDDEN_MESSAGE_TEMPLATE = "Operation failed for path '%s'";
 
@@ -93,22 +95,13 @@ public class CargoArtifactController extends BaseArtifactController {
         String path = CargoConstants.CONFIG_FILE.equals(pkg) ? pkg : ("index/" + pkg);
         String ifNoneMatch = null;
         if (CargoConstants.CONFIG_FILE.equals(pkg)) {
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
-            if (!Files.exists(repositoryPath)) {
-                ObjectMapper objectMapper = new ObjectMapper();
-                Map<String, String> map = new HashMap<>();
-                map.put("dl", String.format("%s/storages/%s/%s/api/v1/crates", getBaseUrl(), storageId, repositoryId));
-                map.put("api", String.format("%s/storages/%s/%s", getBaseUrl(), storageId, repositoryId));
-                objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-                ObjectWriter writer = objectMapper.writerWithDefaultPrettyPrinter();
-                artifactManagementService.store(repositoryPath, new ByteArrayInputStream(writer.writeValueAsString(map).getBytes()));
-            }
-            response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", "config.json"));
+            response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", CargoConstants.CONFIG_FILE));
         } else {
             ifNoneMatch = httpHeaders.getFirst("If-None-Match");
         }
-
-        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+        repositoryPath.setTargetUrl(pkg);
+        repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
         if (repositoryPath != null && repositoryPath.getTarget() != null) {
             String sha1 = Files.readString(Path.of(repositoryPath.getTarget().toString() + ".sha1"));
             response.setHeader("ETag", sha1);
@@ -148,7 +141,9 @@ public class CargoArtifactController extends BaseArtifactController {
 
         String path = CargoUtil.buildCratePath(packageName, version);
         try {
-            RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+            repositoryPath.setTargetUrl(String.format("%s/%s/download", packageName, version));
+            repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
             vulnerabilityBlock(repositoryPath);
             provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
         } catch (Exception e) {
@@ -157,6 +152,22 @@ public class CargoArtifactController extends BaseArtifactController {
             throw new NotFoundException("Unable to download crate", e);
         }
     }
+
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
+    @GetMapping(value = {"/{storageId}/{repositoryId}/config.json", "/{storageId}/{repositoryId}/crates/{path:.+}"})
+    public void downloadPackage(@RepositoryMapping Repository repository,
+                                @RequestHeader HttpHeaders httpHeaders,
+                                @PathVariable("storageId") String storageId,
+                                @PathVariable("repositoryId") String repositoryId,
+                                @PathVariable(name = "path", required = false) String path,
+                                HttpServletRequest request,
+                                HttpServletResponse response) throws Exception {
+        path = path == null ? "config.json" : "crates/" + path;
+        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
+        vulnerabilityBlock(repositoryPath);
+        provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+    }
+
 
     /**
      * 上传包
@@ -269,16 +280,16 @@ public class CargoArtifactController extends BaseArtifactController {
     @GetMapping(value = "/{storageId}/{repositoryId}/api/v1/crates")
     public ResponseEntity<?> search(@PathVariable("storageId") String storageId,
                                     @PathVariable("repositoryId") String repositoryId,
-                                    @RequestParam(name = "q",required = false) String query,
-                                    @RequestParam( name = "per_page", required = false,defaultValue = "10") Integer perPage) throws Exception {
+                                    @RequestParam(name = "q", required = false) String query,
+                                    @RequestParam(name = "per_page", required = false, defaultValue = "10") Integer perPage) throws Exception {
 
         perPage = CargoUtil.getSearchPerPage(perPage);
-        if(query==null || query.isEmpty()){
+        if (query == null || query.isEmpty()) {
             return ResponseEntity.ok(new CargoSearchModel(new ArrayList<>(), 0));
         }
 
         List<String> indexNames = searchIndex(storageId, repositoryId, query);
-        if(indexNames.isEmpty()){
+        if (indexNames.isEmpty()) {
             return ResponseEntity.ok(new CargoSearchModel(new ArrayList<>(), 0));
         }
         List<CargoSearchEntriesModel> list = indexNames.stream().limit(perPage).map(indexName -> {
@@ -294,9 +305,9 @@ public class CargoArtifactController extends BaseArtifactController {
     /**
      * 搜索包
      *
-     * @param storageId 存储空间ID
+     * @param storageId    存储空间ID
      * @param repositoryId 存储库ID
-     * @param query 包名
+     * @param query        包名
      * @return 包列表
      */
     public List<String> searchIndex(String storageId, String repositoryId, String query) throws IOException {
@@ -308,6 +319,7 @@ public class CargoArtifactController extends BaseArtifactController {
                 // 在这里可以处理目录（如果需要的话）
                 return FileVisitResult.CONTINUE;
             }
+
             @Override
             public FileVisitResult visitFile(Path filePath, BasicFileAttributes attrs) {
                 if (!isHiddenFile(filePath) &&
@@ -316,6 +328,7 @@ public class CargoArtifactController extends BaseArtifactController {
                 }
                 return FileVisitResult.CONTINUE;
             }
+
             @Override
             public FileVisitResult visitFileFailed(Path file, IOException exc) {
                 // 处理无法访问的文件
@@ -329,19 +342,21 @@ public class CargoArtifactController extends BaseArtifactController {
 
     /**
      * 获取包列表
-     * @param storageId 存储空间ID
+     *
+     * @param storageId    存储空间ID
      * @param repositoryId 仓库ID
      * @param artifactName 包名
      */
     public CargoSearchEntriesModel getArtifacts(String storageId, String repositoryId, String artifactName) throws IOException {
         List<RepositoryPath> artifactPaths = new ArrayList<>();
-        RepositoryPath artifactPath = artifactResolutionService.resolvePath(storageId, repositoryId, "crates/"+artifactName);
+        RepositoryPath artifactPath = artifactResolutionService.resolvePath(storageId, repositoryId, "crates/" + artifactName);
         Files.walkFileTree(artifactPath, new SimpleFileVisitor<>() {
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                 // 在这里可以处理目录（如果需要的话）
                 return FileVisitResult.CONTINUE;
             }
+
             @Override
             public FileVisitResult visitFile(Path filePath, BasicFileAttributes attrs) {
                 if (!isHiddenFile(filePath) &&
@@ -351,6 +366,7 @@ public class CargoArtifactController extends BaseArtifactController {
                 }
                 return FileVisitResult.CONTINUE;
             }
+
             @Override
             public FileVisitResult visitFileFailed(Path file, IOException exc) {
                 // 处理无法访问的文件
@@ -387,7 +403,8 @@ public class CargoArtifactController extends BaseArtifactController {
     }
 
     /**
-     *  创建禁止响应
+     * 创建禁止响应
+     *
      * @param cratePath path
      * @return 禁止响应
      */
@@ -398,6 +415,7 @@ public class CargoArtifactController extends BaseArtifactController {
 
     /**
      * 判断是否是隐藏文件
+     *
      * @param filePath 文件路径
      * @return 是否是隐藏文件
      */
@@ -414,6 +432,7 @@ public class CargoArtifactController extends BaseArtifactController {
 
     /**
      * 提取包名与版本
+     *
      * @param path 路径
      * @return 包名与版本
      */

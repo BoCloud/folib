@@ -357,7 +357,7 @@ public final class CargoUtil {
         } else if (crateName.length() == 3) {
             ret = "3/" + crateName.charAt(0) + "/" + crateName;
         } else {
-            ret = crateName.substring(0, 2) + "/" + crateName.substring(0, 2) + "/" + crateName.substring(2, 4);
+            ret = crateName.substring(0, 2) + "/" + crateName.substring(2, 4) + "/" + crateName;
         }
         return ret;
     }
