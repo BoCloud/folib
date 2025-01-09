@@ -27,6 +27,7 @@ public interface JfrogMigrateService {
     String PAUSED_FLAG_PRE="migrate:pause:";
 
    String ARTIFACT_COUNT="migrate:artifact:count:";
+    String INDEX_COUNT="migrate:index:count:";
     Queue<String> PAUSED_QUEUE = new LinkedList<>();
 
 
@@ -49,6 +50,8 @@ public interface JfrogMigrateService {
     void listenTask(String migrateId);
 
      Map<String,Long> getFinishedCount(String migrateId,List<String> storeAndRepos);
+
+    Map<String,Long> getIndexCount(String migrateId,List<String> storeAndRepos);
 
      void repoContinue(String migrateId,List<String> storeAndRepos);
 

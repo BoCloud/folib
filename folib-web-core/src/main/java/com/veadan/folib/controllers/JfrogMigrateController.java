@@ -126,6 +126,12 @@ public class JfrogMigrateController {
         return ResponseEntity.ok(cnt);
     }
 
+    @PostMapping("/index/progress")
+    public ResponseEntity<Map<String, Long>> getIndexCountByRepo(@RequestBody AddRepositoryForm form) {
+        Map<String, Long> cnt = jfrogMigrateService.getIndexCount(form.getMigrateId(), form.getStoreAndRepos());
+        return ResponseEntity.ok(cnt);
+    }
+
     @PostMapping("/repository/continue")
     public ResponseEntity<String> repoContinue(@RequestBody AddRepositoryForm form) {
         jfrogMigrateService.repoContinue(form.getMigrateId(), form.getStoreAndRepos());

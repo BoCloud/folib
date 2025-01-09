@@ -134,7 +134,7 @@
             {{ text ? text : $t('Setting.Unknown') }}
           </template>
           <template slot="totalArtifact" slot-scope="text,record">
-            {{ record.syncStatus === 1 || record.syncStatus === 2 ? $t('Setting.Calculating'):text }}
+            {{ text }}
           </template>
         </a-table>
       </a-tab-pane>
@@ -188,7 +188,7 @@
 
 
 <script>
-import { getRepositories, addMigrateRepo ,startMigrate, pauseMigrate, finishMigrate ,continueMigrate,getMigrateProgress,changeLayout,setFailed} from '@/api/migrate'
+import { getRepositories, addMigrateRepo ,startMigrate, pauseMigrate, finishMigrate ,continueMigrate,getMigrateProgress,changeLayout,setFailed,getIndexProgress} from '@/api/migrate'
 import { getStorages,queryRepositoriesByStorage } from '@/api/folib'
 
 export default {
@@ -869,8 +869,9 @@ export default {
         // 1. 先重新获取迁移中的列表数据，不显示loading
         await this.loadMigratingData(false);
         // 2. 获取正在同步制品的记录
-        const syncingRecords = this.migratingData.filter(record => record.syncStatus === 3);
-        if (!syncingRecords.length) {
+        const syncingRecords = this.migratingData.filter(record => record.syncStatus === 3);  
+        const indexRecords = this.migratingData.filter(record => record.syncStatus === 2);
+        if (!syncingRecords.length && !indexRecords.length) {
           return;
         }
 
@@ -879,8 +880,13 @@ export default {
           migrateId: this.migrateId,
           storeAndRepos: syncingRecords.map(record => `${record.storageId}:${record.repositoryId}`)
         };
+        const indexData = {
+          migrateId: this.migrateId,
+          storeAndRepos: indexRecords.map(record => `${record.storageId}:${record.repositoryId}`)
+        };
 
         const progressResponse = await getMigrateProgress(progressData);
+        const indexResponse = await getIndexProgress(indexData);
         if (progressResponse) {
           // 4. 更新数据
           this.migratingData = this.migratingData.map(record => {
@@ -897,6 +903,20 @@ export default {
                     ? Number((migratedArtifact / record.totalArtifact * 100).toFixed(2))
                     : 0
                 };
+              }
+            }
+            return record;
+          });
+        }
+        if (indexResponse) {
+          this.migratingData = this.migratingData.map(record => {
+            if (record.syncStatus === 2) {
+              const key = `${record.storageId}:${record.repositoryId}`;
+              const indexCount = indexResponse[key];
+              console.log("indexCount",indexCount);
+              if (indexCount !== undefined) {
+                  record.totalArtifact = indexCount;
+                  return record;
               }
             }
             return record;

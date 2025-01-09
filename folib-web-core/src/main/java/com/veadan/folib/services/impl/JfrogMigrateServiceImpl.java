@@ -373,11 +373,13 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             Integer syncStatus = info.getSyncStatus();
             if(MigrateStatusEnum.FETCHING_INDEX.getStatus()==syncStatus){
                 info.setSyncStatus(MigrateStatusEnum.INDEX_FAILED.getStatus());
+                info.setIndexFinish(0);
             }else if(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus()==syncStatus){
-                info.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
+                info.setSyncStatus(MigrateStatusEnum.SYNCING_FAILED.getStatus());
                 info.setIndexFinish(1);
             }else if(MigrateStatusEnum.QUEUING.getStatus()==syncStatus){
                 info.setSyncStatus(MigrateStatusEnum.INITIAL.getStatus());
+                info.setIndexFinish(0);
             }
             migrateInfoService.updateById(info);
         }
@@ -452,6 +454,16 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
     }
 
     @Override
+    public Map<String, Long> getIndexCount(String migrateId, List<String> storeAndRepos) {
+        HashMap<String, Long> result = new HashMap<>();
+        for (String storeAndRepo : storeAndRepos) {
+            long count = distributedCounterComponent.getAtomicLong(JfrogMigrateService.INDEX_COUNT + storeAndRepo).get();
+            result.put(storeAndRepo, count);
+        }
+        return result;
+    }
+
+    @Override
     public void repoContinue(String migrateId,List<String> storeAndRepos) {
         for (String storeAndRepo : storeAndRepos) {
             String storageId = ConfigurationUtils.getStorageId(storeAndRepo, storeAndRepo);
@@ -503,7 +515,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             // 同步更新
             MigrateInfo info = migrateInfoService.getByMigrateIdAndRepoInfo(migrateId, storageId, repositoryId);
             info.setSyncStatus(MigrateStatusEnum.END.getStatus());
-            migrateInfoService.save(info);
+            migrateInfoService.updateById(info);
         }
     }
 

@@ -95,4 +95,12 @@ export function task () {
     })
   }
 
+  export function getIndexProgress(data) {
+    return request({
+      url: '/api/migrate/jfrog/index/progress',
+      method: 'post',
+      data: data
+    })
+  }
+
   

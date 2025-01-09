@@ -55,6 +55,7 @@ import javax.inject.Inject;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -215,7 +216,7 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
         // 获取仓库信息
         try {
             MigrateInfo repository = migrateInfoService.getByMigrateIdAndRepoInfo(syncArtifactForm.getMigrateId(), syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
-            if (MigrateStatusEnum.QUEUING.getStatus() == repository.getSyncStatus()&&repository.getIndexFinish()==0) {
+            if (MigrateStatusEnum.QUEUING.getStatus() == repository.getSyncStatus() && repository.getIndexFinish() == 0) {
                 migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.FETCHING_INDEX.getStatus());
                 String dirPath = syncPackageIndex(syncArtifactForm);
                 if (dirPath == null) {
@@ -243,7 +244,7 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
                 migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.PAUSED.getStatus());
             }
         } finally {
-            if(syncArtifactForm.getSyncer()!=null){
+            if (syncArtifactForm.getSyncer() != null) {
                 syncArtifactForm.getSyncer().close();
             }
 
@@ -306,7 +307,7 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
      * @param file        文件
      * @param writer      writer
      */
-    private boolean findSubUrl(Repository repository, String rootUrl, String url, String remoteUrl, Integer sleepMillis, String dom, File file, FileWriter writer) {
+    private boolean findSubUrl(Repository repository, String rootUrl, String url, String remoteUrl, Integer sleepMillis, String dom, File file, BufferedWriter writer) {
         try {
             if (isSuffix(url)) {
                 return true;
@@ -319,7 +320,7 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
                 log.error("获取文件失败");
                 return true;
             }
-            List<String> paths = new ArrayList<>();
+            StringBuilder batch = new StringBuilder();
             Elements links = doc.select(dom);
             for (Element link : links) {
                 String absUrl = link.absUrl("href");
@@ -327,19 +328,20 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
                     absUrl = StringUtils.removeStart(absUrl.replace(remoteUrl, ""), GlobalConstants.SEPARATOR);
                     filesCommonComponent.storeContent(absUrl, file.getParent() + "/artifact");
                     THREAD_LOCAL.set(THREAD_LOCAL.get() + 1);
+                    distributedCounterComponent.getAtomicLong(JfrogMigrateService.INDEX_COUNT + repository.getStorageIdAndRepositoryId()).addAndGet(1);
                 } else {
                     // 非子目录
-                    if (!absUrl.contains(url) || url.equals(absUrl)||!absUrl.endsWith("/")) {
+                    if (!absUrl.contains(url) || url.equals(absUrl) || !absUrl.endsWith("/")) {
                         continue;
                     }
                     String path = absUrl.substring(rootUrl.length());
-                    paths.add(path);
+                    batch.append(path).append("\n");
                 }
             }
-            for (String path : paths) {
-                writer.write(path + "\n");
+            if (batch.length() > 0) {
+                writer.write(batch.toString());
             }
-            writer.flush();
+
         } catch (Exception e) {
             log.error("Maven包索引，错误 [{}]", ExceptionUtils.getStackTrace(e));
             return false;
@@ -350,6 +352,7 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
     private String syncPackageIndex(SyncArtifactForm syncArtifactForm) {
         try {
             long startTime = System.currentTimeMillis();
+            distributedCounterComponent.getAtomicLong(JfrogMigrateService.INDEX_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
             Repository repository = configurationManager.getRepository(syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
             if (Objects.isNull(repository)) {
                 throw new RuntimeException(String.format("存储空间 [%s] 所属仓库 [%s}] 不存在", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId()));
@@ -403,8 +406,7 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
                 log.info("开始检索{}下的目录", urlFile);
                 boolean fileEmpty = true;
                 File subFile = getLevelFile(dir, level);
-                try (Scanner scanner = new Scanner(urlFile);
-                     FileWriter writer = new FileWriter(subFile)) {
+                try (Scanner scanner = new Scanner(urlFile); BufferedWriter writer = new BufferedWriter(new FileWriter(subFile))) {
                     while (scanner.hasNext()) {
                         String line = scanner.nextLine();
                         if (StringUtils.isNotBlank(line)) {
@@ -521,8 +523,8 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
         if (CollectionUtils.isEmpty(artifactPathList)) {
             return;
         }
-        String storageId=form.getStorageId();
-        String repositoryId=form.getRepositoryId();
+        String storageId = form.getStorageId();
+        String repositoryId = form.getRepositoryId();
         List<List<String>> artifactPathLists = Lists.partition(artifactPathList, 5);
         List<FutureTask<String>> futureTasks = Lists.newArrayList();
         FutureTask<String> futureTask = null;
@@ -545,10 +547,10 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
                                 // 添加成功 计数
                                 distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + storageId + ":" + repositoryId).addAndGet(1L);
                                 // 同步元数据
-                                JfrogPropertySyncer syncer =form.getSyncer();
-                                if (syncer!=null) {
+                                JfrogPropertySyncer syncer = form.getSyncer();
+                                if (syncer != null) {
                                     String properties = syncer.getPropertiesByKeyAndPath(repositoryId, artifactPath);
-                                    if (properties!=null) {
+                                    if (properties != null) {
                                         artifactWebService.saveArtifactMetaByString(storageId, repositoryId, artifactPath, properties);
                                     }
                                 }
