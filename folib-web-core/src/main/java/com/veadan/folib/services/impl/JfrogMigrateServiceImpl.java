@@ -661,7 +661,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         Repositories repositories = artifactory.repositories();
         Storage storage = configurationManagementService.getConfiguration().getStorage(storageId);
         // 生成迁移信息
-        ArtifactMigrateInfo migrateInfo = getMigrateInfo(form);
+        ArtifactMigrateInfo migrateInfo = getMigrateInfo(form,storageId);
         List<LightweightRepository> repoList = new LinkedList<>();
         repoList.addAll(repositories.list(LOCAL));
         repoList.addAll(repositories.list(REMOTE));
@@ -799,10 +799,10 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         }
     }
 
-    private ArtifactMigrateInfo getMigrateInfo(JfrogMigrateForm form) {
+    private ArtifactMigrateInfo getMigrateInfo(JfrogMigrateForm form,String storageId) {
         ArtifactMigrateInfo info = new ArtifactMigrateInfo();
         // 生成迁移id
-        info.setMigrateId("jfrog-migrate");;
+        info.setMigrateId("jfrog-migrate:"+storageId);;
         info.setStatus(0);
         info.setBatchSize(1);
         String url = StringUtils.removeEnd(form.getUrl(), GlobalConstants.SEPARATOR)+GlobalConstants.SEPARATOR+"artifactory";
