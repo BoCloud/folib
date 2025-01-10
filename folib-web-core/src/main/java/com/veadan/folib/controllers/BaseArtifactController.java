@@ -9,6 +9,7 @@ import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.CacheSettings;
 import com.veadan.folib.domain.DirectoryListing;
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.providers.io.LayoutFileSystem;
 import com.veadan.folib.providers.io.RepositoryFiles;
@@ -315,14 +316,9 @@ public abstract class BaseArtifactController
         logger.info("Requested browsing repository content at {}/{}/{} ", storageId, repositoryId, path);
         String acceptHeader = request.getHeader(HttpHeaders.ACCEPT);
         try {
-//            if (DockerLayoutProvider.ALIAS.equals(repository.getLayout()) && acceptHeader != null && acceptHeader.contains(MediaType.APPLICATION_JSON_VALUE)) {
-//                return getDockerArtifact(storageId, repositoryId, path);
-//            }
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, path);
-            if (RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
-                repositoryPath.setDisableRemote(true);
-                repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
-            }
+            repositoryPath.setDisableRemote(true);
+            repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
             if (Files.exists(repositoryPath) && Files.isRegularFile(repositoryPath)) {
                 vulnerabilityBlock(repositoryPath);
                 provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
@@ -362,7 +358,12 @@ public abstract class BaseArtifactController
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
         logger.info("Requested /{}/{}/{}.", storageId, repositoryId, path);
-        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, path);
+        repositoryPath.setDisableRemote(true);
+        if (ProductTypeEnum.SIMPLE_TYPE_LIST.stream().anyMatch(item -> item.equals(repository.getLayout()))) {
+            repositoryPath.setDisableRemote(null);
+        }
+        repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
         if (Objects.nonNull(repositoryPath) && ((Files.exists(repositoryPath) && Files.isDirectory(repositoryPath)) || RepositoryTypeEnum.GROUP.getType().equals(repository.getType()))) {
             return browseRepository(request, httpHeaders, response, model, repository, path);
         } else {

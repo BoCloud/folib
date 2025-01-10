@@ -199,6 +199,9 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
         path = path.normalize();
 
         DirectoryListing directoryListing = new DirectoryListing();
+        if (!Files.exists(path)) {
+            return directoryListing;
+        }
         //Map<String, List<FileContent>> content = generateDirectoryListingV2(path);
         StopWatch stopWatch = new StopWatch();
         stopWatch.start("fromPath");
