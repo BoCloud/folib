@@ -1,8 +1,6 @@
 package com.veadan.folib.controllers.layout.cargo;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.databind.SerializationFeature;
+
 import com.veadan.folib.artifact.coordinates.CargoArtifactCoordinates;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.extractor.CargoIndex;
@@ -13,7 +11,7 @@ import com.veadan.folib.model.CargoSearchModel;
 import com.veadan.folib.model.publish.CargoPublishRes;
 import com.veadan.folib.model.req.PublishRequest;
 import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.services.ConfigurationManagementService;
+
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.utils.CargoConstants;
 import com.veadan.folib.utils.CargoUtil;
@@ -58,8 +56,6 @@ public class CargoArtifactController extends BaseArtifactController {
 
     @Inject
     private CargoMetadataIndexer configurationIndexer;
-    @Inject
-    private ConfigurationManagementService configurationManagementService;
 
     private static final String FORBIDDEN_MESSAGE_TEMPLATE = "Operation failed for path '%s'";
 

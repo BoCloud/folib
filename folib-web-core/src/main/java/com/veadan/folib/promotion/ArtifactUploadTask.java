@@ -24,7 +24,14 @@ import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.NpmPacketSuffix;
 import com.veadan.folib.enums.NpmSubLayout;
 import com.veadan.folib.enums.UploadTypeEnum;
+import com.veadan.folib.extractor.CargoIndex;
+import com.veadan.folib.extractor.CargoMetadataExtractor;
+import com.veadan.folib.extractor.CargoMetadataIndexer;
+import com.veadan.folib.layout.providers.CargoLayoutProvider;
 import com.veadan.folib.metadata.indexer.RpmRepoIndexer;
+import com.veadan.folib.model.CargoMetadata;
+import com.veadan.folib.model.publish.CargoPublishRes;
+import com.veadan.folib.model.req.PublishRequest;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -41,6 +48,8 @@ import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.util.MessageDigestUtils;
+import com.veadan.folib.utils.CargoConstants;
+import com.veadan.folib.utils.CargoUtil;
 import com.veadan.folib.utils.DockerUtils;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -58,6 +67,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
+import javax.inject.Inject;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -241,6 +251,8 @@ public class ArtifactUploadTask implements Callable<String> {
                 handlerDockerUploadProcess(this.storageId, this.repositoryId, this.imageTag, fileType, this.file, this.baseUrl);
             }else if(RpmLayoutProvider.ALIAS.equals(layout)){
                 handlerRpmLayoutUpload(this.storageId, this.repositoryId,this.file);
+            }else if(CargoLayoutProvider.ALIAS.equals(layout)){
+                handlerCargoLayoutUpload(this.storageId,this.repositoryId,this.file);
             } else {
                 promotionUtil.setMetaData(repositoryPath, metaData);
                 artifactManagementService.store(repositoryPath, is);
@@ -894,6 +906,49 @@ public class ArtifactUploadTask implements Callable<String> {
             log.error(e.getMessage(), e);
         }
     }
+
+    private void handlerCargoLayoutUpload(final String storageId, final String repositoryId, final MultipartFile multipartFile) {
+        String filename = multipartFile.getOriginalFilename();
+        //写入零时目录
+        RepositoryPath tempPath = repositoryPathResolver.resolve(storageId, repositoryId, ".temp/" + filename);
+        try (InputStream is = multipartFile.getInputStream()) {
+
+            assert filename != null;
+            if (!filename.endsWith(CargoConstants.CRATE_SUFFIX)) {
+                promotionUtil.setMetaData(repositoryPath, metaData);
+                artifactManagementService.store(repositoryPath, is);
+            }
+            artifactManagementService.store(tempPath, is);
+
+            CargoMetadataExtractor extractor = new CargoMetadataExtractor();
+            CargoMetadata metadata = extractor.extract(tempPath);
+
+            String cratePath = CargoUtil.buildCratePath(metadata.getName(), metadata.getVers());
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, cratePath);
+            if (repositoryPath == null) {
+                throw new RuntimeException(String.format("[%s] directory does not exist ", cratePath));
+            }
+            //写入制品文件
+            artifactManagementService.store(repositoryPath, new BufferedInputStream(Files.newInputStream(tempPath)));
+            CargoMetadataIndexer configurationIndexer = SpringContextUtil.getBean(CargoMetadataIndexer.class);
+            //写入索引文件
+            configurationIndexer.indexAsSystem(repositoryPath, new CargoIndex(metadata.getName(), CargoIndex.EventType.ADD));
+            String metadataFilePath = CargoUtil.getLongMetadataFilePath(cratePath);
+            //写入长索引文件
+            RepositoryPath path = repositoryPathResolver.resolve(storageId, repositoryId, metadataFilePath);
+            CargoUtil.writeLongMetadata(metadata, path, artifactManagementService);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e.getMessage());
+        }finally {
+            try {
+                Files.deleteIfExists(tempPath);
+            } catch (IOException e) {
+                log.error(e.getMessage(), e);
+            }
+        }
+    }
+
 
 
 }
