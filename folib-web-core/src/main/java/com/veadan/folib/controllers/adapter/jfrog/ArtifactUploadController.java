@@ -68,7 +68,7 @@ public class ArtifactUploadController extends JFrogBaseController {
     private String tempPath;
 
     @PreAuthorize("authenticated")
-    @PutMapping(value = "/{repositoryId}/{artifactPath:.+}")
+    @PutMapping(value = "/{repositoryId:^(?!api$).+}/{artifactPath:.+}")
     public ResponseEntity<?> upload(@PathVariable String repositoryId,
                                     @PathVariable String artifactPath,
                                     @RequestParam(value = "uuid", required = false) String uuid,

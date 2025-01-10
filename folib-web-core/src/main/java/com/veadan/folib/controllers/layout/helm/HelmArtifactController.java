@@ -18,6 +18,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletRequest;
@@ -39,6 +40,8 @@ import java.util.Objects;
 @Api(description = "Helm坐标控制器",tags = "Helm坐标控制器")
 public class HelmArtifactController extends BaseArtifactController {
 
+    private static final String API_ENDPOINT = "/api/helm/";
+
     @Autowired
     private HelmRepoUtil helmRepoUtil;
 
@@ -47,7 +50,7 @@ public class HelmArtifactController extends BaseArtifactController {
 
     @Override
     @PreAuthorize("authenticated")
-    @GetMapping(value = "/{storageId}/{repositoryId}")
+    @GetMapping(value = API_ENDPOINT + "{repositoryId}/")
     public ResponseEntity<String> checkRepositoryAccess() {
         return super.checkRepositoryAccess();
     }
@@ -57,7 +60,7 @@ public class HelmArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
-    @RequestMapping(value = {"/{storageId}/{repositoryId}/{path:.+}"}, method = {RequestMethod.GET, RequestMethod.HEAD})
+    @RequestMapping(value = {API_ENDPOINT + "{repositoryId}/{path:.+}"}, method = {RequestMethod.GET, RequestMethod.HEAD})
     public void download(@RepositoryMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,
                          @PathVariable String path,
@@ -112,7 +115,7 @@ public class HelmArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(value = {"{storageId}/{repositoryId}/charts"}, method = {RequestMethod.POST})
+    @RequestMapping(value = {API_ENDPOINT + "{repositoryId}/charts"}, method = {RequestMethod.POST})
     public ResponseEntity upload(@RepositoryMapping Repository repository,
                                  @RequestHeader HttpHeaders httpHeaders,
                                  HttpServletRequest request,
@@ -147,7 +150,7 @@ public class HelmArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/index.yaml'")
-    @RequestMapping(value ="{storageId}/{repositoryId}/index.yaml", method = {RequestMethod.GET})
+    @RequestMapping(value = API_ENDPOINT + "{repositoryId}/index.yaml", method = {RequestMethod.GET})
     public void downloadIndex(@RepositoryMapping Repository repository,
                               @RequestHeader HttpHeaders httpHeaders,
                               HttpServletRequest request,
@@ -174,5 +177,21 @@ public class HelmArtifactController extends BaseArtifactController {
         }
     }
 
+    @Override
+    @ApiOperation(value = "Used to retrieve an artifact")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
+            @ApiResponse(code = 400, message = "An error occurred.")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
+    @GetMapping("/{repositoryId:^(?!api$).+}/{path:.+}")
+    public Object download(@RepositoryMapping Repository repository,
+                           @RequestHeader HttpHeaders httpHeaders,
+                           @PathVariable String path,
+                           HttpServletRequest request,
+                           HttpServletResponse response,
+                           ModelMap model)
+            throws Exception {
+        return super.download(repository, httpHeaders, path, request, response, model);
+    }
 
 }

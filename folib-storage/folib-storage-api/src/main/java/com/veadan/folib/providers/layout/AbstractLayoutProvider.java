@@ -201,11 +201,10 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
             cacheUtil.put(key, baseUri);
         }
         Repository repository = repositoryPath.getRepository();
-        Storage storage = repository.getStorage();
         URI artifactResource = RepositoryFiles.resolveResource(repositoryPath);
 
         return UriComponentsBuilder.fromUri(baseUri)
-                .pathSegment("storages", storage.getId(), repository.getId(), "/")
+                .pathSegment("artifactory", repository.getId(), "/")
                 .build()
                 .toUri()
                 .resolve(artifactResource)

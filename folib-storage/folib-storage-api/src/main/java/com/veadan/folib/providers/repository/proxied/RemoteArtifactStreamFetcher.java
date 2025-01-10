@@ -67,7 +67,7 @@ public class RemoteArtifactStreamFetcher
     private URI getRestClientResourcePath(final RepositoryPath artifactPath)
         throws IOException
     {
-        return RepositoryFiles.resolveResource(artifactPath);
+        return RepositoryFiles.resolveLayoutResource(artifactPath);
     }
 
     private CloseableRestResponse getConnection(URI resource,

@@ -23,6 +23,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -57,7 +58,7 @@ public class RpmArtifactController extends BaseArtifactController {
 
     @Override
     @PreAuthorize("authenticated")
-    @GetMapping(value = "/{storageId}/{repositoryId}")
+    @GetMapping(value = {"/{repositoryId}/"})
     public ResponseEntity<String> checkRepositoryAccess() {
         return super.checkRepositoryAccess();
     }
@@ -67,7 +68,7 @@ public class RpmArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 404, message = "The specified storageId/repositoryId/path does not exist!")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DELETE')")
-    @DeleteMapping(value = "/{storageId}/{repositoryId}/{artifactPath:.+}")
+    @DeleteMapping(value = "/{repositoryId}/{artifactPath:.+}")
     public ResponseEntity delete(@RepositoryMapping Repository repository,
                                  @ApiParam(value = "Whether to use force delete")
                                  @RequestParam(defaultValue = "false",
@@ -107,7 +108,7 @@ public class RpmArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(value = "{storageId}/{repositoryId}/{path:.+}", method = {RequestMethod.PUT, RequestMethod.POST})
+    @RequestMapping(value = "/{repositoryId}/{path:.+}", method = {RequestMethod.PUT, RequestMethod.POST})
     public ResponseEntity upload(@RepositoryMapping Repository repository,
                                  @PathVariable String path,
                                  HttpServletRequest request,
@@ -163,7 +164,7 @@ public class RpmArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @GetMapping(value = {"{storageId}/{repositoryId}/buildIndex"})
+    @GetMapping(value = {"/{repositoryId}/buildIndex"})
     public ResponseEntity buildIndex(@RepositoryMapping Repository repository) {
         try {
             RpmRepoIndexer rpmRepoIndexer = new RpmRepoIndexer(repositoryPathResolver,artifactManagementService,tempPath);
@@ -184,18 +185,14 @@ public class RpmArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#storageId + '/' + #repositoryId + '/' + #path")
-    @GetMapping(value = {"{storageId}/{repositoryId}/{path:.+}"})
-    public void download(@RepositoryMapping Repository repository,
+    @GetMapping(value = {"/{repositoryId}/{path:.+}"})
+    public Object download(@RepositoryMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,
                          @PathVariable String path,
-                         @PathVariable String storageId,
                          @PathVariable String repositoryId,
                          HttpServletRequest request,
-                         HttpServletResponse response)
+                         HttpServletResponse response, ModelMap model)
             throws Exception {
-        logger.info("Requested /{}/{}/{}.", storageId, repositoryId, path);
-        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
-        vulnerabilityBlock(repositoryPath);
-        provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+        return super.download(repository, httpHeaders, path, request, response, model);
     }
 }

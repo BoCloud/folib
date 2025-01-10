@@ -556,7 +556,6 @@ export default {
                     })
                 })
             }
-
             return new Promise(resolve => {
                 if (treeNode.dataRef.children) {
                     resolve()

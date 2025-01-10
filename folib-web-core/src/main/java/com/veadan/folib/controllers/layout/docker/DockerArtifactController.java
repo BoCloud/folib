@@ -33,7 +33,6 @@ import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.utils.FileUtils;
-import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.*;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -218,16 +217,16 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "digest", value = "digest", required = true)
     })
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/{digest}", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/{digest}"}, method = {RequestMethod.HEAD}, consumes = MediaType.ALL_VALUE)
+    @RequestMapping(value = {"/v2/{repositoryId}/{name}/blobs/{digest}", "/v2/{repositoryId}/{name}/**/blobs/{digest}"}, method = {RequestMethod.HEAD}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity existingLayers(@RequestHeader HttpHeaders httpHeaders,
                                          HttpServletRequest request,
                                          HttpServletResponse response,
-                                         @PathVariable String storageId,
                                          @PathVariable String repositoryId,
                                          @PathVariable String name,
                                          @PathVariable String digest
     ) {
         try {
+            String storageId = getDefaultStorageId(repositoryId);
             String extractPath = getExtractPath(request);
             if (StringUtils.isNotBlank(extractPath)) {
                 extractPath = extractPath.replace(String.format("/blobs/%s", digest), "");
@@ -272,11 +271,10 @@ public class DockerArtifactController extends BaseArtifactController {
     })
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 500, message = "An error occurred.")})
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/uploads/"}, method = {RequestMethod.POST}, consumes = MediaType.ALL_VALUE)
+    @RequestMapping(value = {"/v2/{repositoryId}/{name}/blobs/uploads/", "/v2/{repositoryId}/{name}/**/blobs/uploads/"}, method = {RequestMethod.POST}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity<Object> startingAnUpload(@RequestHeader HttpHeaders httpHeaders,
                                                    HttpServletRequest request,
                                                    HttpServletResponse response,
-                                                   @PathVariable String storageId,
                                                    @PathVariable String repositoryId,
                                                    @PathVariable String name,
                                                    @RequestParam(required = false) String from,
@@ -284,6 +282,7 @@ public class DockerArtifactController extends BaseArtifactController {
 
     ) {
         try {
+            String storageId = getDefaultStorageId(repositoryId);
             String extractPath = getExtractPath(request);
             if (StringUtils.isNotBlank(extractPath)) {
                 extractPath = extractPath.replace("/blobs/uploads", "");
@@ -327,19 +326,16 @@ public class DockerArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/{uuid}", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/uploads/{uuid}"}, method = {RequestMethod.PATCH}, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @RequestMapping(value = {"/v2/{repositoryId}/{name}/blobs/uploads/{uuid}", "/v2/{repositoryId}/{name}/**/blobs/uploads/{uuid}"}, method = {RequestMethod.PATCH}, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<String> chunkedUpload(
-            @RepositoryMapping Repository repository,
             @RequestHeader HttpHeaders httpHeaders,
             HttpServletRequest request,
             HttpServletResponse response,
-            @PathVariable String storageId,
             @PathVariable String repositoryId,
             @PathVariable String name,
             @PathVariable String uuid
-
-
     ) throws Exception {
+        String storageId = getDefaultStorageId(repositoryId);
         InputStream inputStream = request.getInputStream();
         response.setCharacterEncoding("utf8");
         String extractPath = getExtractPath(request);
@@ -375,11 +371,10 @@ public class DockerArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/{uuid}", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/uploads/{uuid}"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
+    @RequestMapping(value = {"/v2/{repositoryId}/{name}/blobs/uploads/{uuid}", "/v2/{repositoryId}/{name}/**/blobs/uploads/{uuid}"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity<String> uploadProgress(@RequestHeader HttpHeaders httpHeaders,
                                                  HttpServletRequest request,
                                                  HttpServletResponse response,
-                                                 @PathVariable String storageId,
                                                  @PathVariable String repositoryId,
                                                  @PathVariable String name,
                                                  @PathVariable String uuid
@@ -401,11 +396,10 @@ public class DockerArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/{uuid}", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/uploads/{uuid}"}, method = {RequestMethod.PUT}, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @RequestMapping(value = {"/v2/{repositoryId}/{name}/blobs/uploads/{uuid}", "/v2/{repositoryId}/{name}/**/blobs/uploads/{uuid}"}, method = {RequestMethod.PUT}, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<Object> monolithicUpload(@RequestHeader HttpHeaders httpHeaders,
                                                    HttpServletRequest request,
                                                    HttpServletResponse response,
-                                                   @PathVariable String storageId,
                                                    @PathVariable String repositoryId,
                                                    @PathVariable String name,
                                                    @PathVariable String uuid,
@@ -415,6 +409,7 @@ public class DockerArtifactController extends BaseArtifactController {
         ResponseEntity result = new ResponseEntity<>(HttpStatus.CREATED);
         String imagePath = "";
         InputStream inputStream = null;
+        String storageId = getDefaultStorageId(repositoryId);
         try {
             String extractPath = getExtractPath(request);
             if (StringUtils.isNotBlank(extractPath)) {
@@ -472,7 +467,6 @@ public class DockerArtifactController extends BaseArtifactController {
      * @param httpHeaders
      * @param request
      * @param response
-     * @param storageId
      * @param repositoryId
      * @param name
      * @param reference
@@ -485,11 +479,10 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "reference", value = "reference", required = true)
     })
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/manifests/{reference}", "/v2/{storageId}/{repositoryId}/{name}/**/manifests/{reference}"}, method = {RequestMethod.PUT})
+    @RequestMapping(value = {"/v2/{repositoryId}/{name}/manifests/{reference}", "/v2/{repositoryId}/{name}/**/manifests/{reference}"}, method = {RequestMethod.PUT})
     public ResponseEntity pushingAnImageManifest(@RequestHeader HttpHeaders httpHeaders,
                                                  HttpServletRequest request,
                                                  HttpServletResponse response,
-                                                 @PathVariable String storageId,
                                                  @PathVariable String repositoryId,
                                                  @PathVariable String name,
                                                  @PathVariable String reference
@@ -497,6 +490,7 @@ public class DockerArtifactController extends BaseArtifactController {
         String manifestSha256 = null;
         ResponseEntity result = ResponseEntity.status(HttpStatus.CREATED).build();
         try {
+            String storageId = getDefaultStorageId(repositoryId);
             String extractPath = getExtractPath(request);
             if (StringUtils.isNotBlank(extractPath)) {
                 extractPath = extractPath.replace(String.format("/manifests/%s", reference), "");
@@ -672,14 +666,14 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "tag", value = "tag", required = true)
     })
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/manifests/{reference}", "/v2/{storageId}/{repositoryId}/{name}/**/manifests/{reference}"}, method = {RequestMethod.HEAD}, consumes = MediaType.ALL_VALUE)
+    @RequestMapping(value = {"/v2/{repositoryId}/{name}/manifests/{reference}", "/v2/{repositoryId}/{name}/**/manifests/{reference}"}, method = {RequestMethod.HEAD}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity existingManifests(@RequestHeader HttpHeaders httpHeaders,
                                             HttpServletRequest request,
                                             HttpServletResponse response,
-                                            @PathVariable String storageId,
                                             @PathVariable String repositoryId,
                                             @PathVariable String name,
                                             @PathVariable String reference) throws Exception {
+        String storageId = getDefaultStorageId(repositoryId);
         String extractPath = getExtractPath(request);
         if (StringUtils.isNotBlank(extractPath)) {
             extractPath = extractPath.replace(String.format("/manifests/%s", reference), "");
@@ -759,14 +753,14 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "digest", value = "digest", required = true)
     })
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/manifests/{digest}", "/v2/{storageId}/{repositoryId}/{name}/**/manifests/{digest}"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
+    @RequestMapping(value = {"/v2/{repositoryId}/{name}/manifests/{digest}", "/v2/{repositoryId}/{name}/**/manifests/{digest}"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity pullingAnImageManifest(@RequestHeader HttpHeaders httpHeaders,
                                                  HttpServletRequest request,
                                                  HttpServletResponse response,
-                                                 @PathVariable String storageId,
                                                  @PathVariable String repositoryId,
                                                  @PathVariable String name,
                                                  @PathVariable String digest) {
+        String storageId = getDefaultStorageId(repositoryId);
         String extractPath = getExtractPath(request);
         if (StringUtils.isNotBlank(extractPath)) {
             extractPath = extractPath.replace(String.format("/manifests/%s", digest), "");
@@ -810,14 +804,14 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "digest", value = "digest", required = true)
     })
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/{digest}", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/{digest}"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
+    @RequestMapping(value = {"/v2/{repositoryId}/{name}/blobs/{digest}", "/v2/{repositoryId}/{name}/**/blobs/{digest}"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity pullingALayer(@RequestHeader HttpHeaders httpHeaders,
                                         HttpServletRequest request,
                                         HttpServletResponse response,
-                                        @PathVariable String storageId,
                                         @PathVariable String repositoryId,
                                         @PathVariable String name,
                                         @PathVariable String digest) {
+        String storageId = getDefaultStorageId(repositoryId);
         String extractPath = getExtractPath(request);
         if (StringUtils.isNotBlank(extractPath)) {
             extractPath = extractPath.replace(String.format("/blobs/%s", digest), "");
@@ -868,16 +862,16 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "n", value = "返回个数"),
             @ApiImplicitParam(name = "last", value = "last")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/tags/list", "/v2/{storageId}/{repositoryId}/{name}/**/tags/list"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
+    @RequestMapping(value = {"/v2/{repositoryId}/{name}/tags/list", "/v2/{repositoryId}/{name}/**/tags/list"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity<Object> listingImageTags(@RequestHeader HttpHeaders httpHeaders,
                                                    HttpServletRequest request,
                                                    HttpServletResponse response,
-                                                   @PathVariable String storageId,
                                                    @PathVariable String repositoryId,
                                                    @PathVariable String name,
                                                    @RequestParam(name = "n", required = false) Integer n,
                                                    @RequestParam(name = "last", required = false) String last) {
         String imagePath = "";
+        String storageId = getDefaultStorageId(repositoryId);
         try {
             String extractPath = getExtractPath(request);
             if (StringUtils.isNotBlank(extractPath)) {
@@ -985,7 +979,7 @@ public class DockerArtifactController extends BaseArtifactController {
                         repositories.forEach(repository -> {
                             try {
                                 RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId());
-                                String prefix = String.format("%s/%s", repository.getStorage().getId(), repository.getId());
+                                String prefix = repository.getId();
                                 if (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath)) {
                                     if (GlobalConstants.DOCKER_LEVEL_SINGLE.equals(dockerLevel)) {
                                         DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);

@@ -590,13 +590,11 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
 
         } else if (StringUtils.isBlank(file.getArtifactPath())) {
 
-            return new URL(String.format("%s/%s/%s", baseUrl, file.getStorageId(),
-                    file.getRepositoryId()));
+            return new URL(String.format("%s/%s", baseUrl, file.getRepositoryId()));
 
         }
 
-        return new URL(String.format("%s/%s/%s/%s", baseUrl, file.getStorageId(),
-                file.getRepositoryId(), file.getArtifactPath()));
+        return new URL(String.format("%s/%s/%s", baseUrl, file.getRepositoryId(), file.getArtifactPath()));
     }
 
     protected boolean probeForDirectoryListing(final RepositoryPath repositoryPath)

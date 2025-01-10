@@ -275,12 +275,6 @@ public class PypiArtifactCoordinates
         return c.getPath();
     }
 
-    @Override
-    public URI convertToResource(PypiArtifactCoordinates artifactCoordinates) {
-        String path = convertToPath(artifactCoordinates);
-        return URI.create(String.format("packages/%s", path));
-    }
-
     private String buildSourcePackageFileName() {
         return String.format("%s-%s.%s",
                 getId(),

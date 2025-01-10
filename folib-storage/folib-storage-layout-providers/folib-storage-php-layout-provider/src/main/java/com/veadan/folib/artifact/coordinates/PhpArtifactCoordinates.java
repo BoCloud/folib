@@ -227,9 +227,4 @@ public class PhpArtifactCoordinates extends LayoutArtifactCoordinatesEntity<PhpA
         return path;
     }
 
-    @Override
-    public URI convertToResource(PhpArtifactCoordinates c) {
-        return URI.create(convertToPath(c));
-    }
-
 }

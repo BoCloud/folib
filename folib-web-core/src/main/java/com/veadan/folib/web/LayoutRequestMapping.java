@@ -1,5 +1,6 @@
 package com.veadan.folib.web;
 
+import static com.veadan.folib.web.Constants.ARTIFACTORY_ARTIFACT_ROOT_PATH;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static com.veadan.folib.web.Constants.ARTIFACT_ROOT_PATH;
@@ -22,7 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Documented
 @Retention(RUNTIME)
 @Target(TYPE)
-@RequestMapping(ARTIFACT_ROOT_PATH)
+@RequestMapping(path = {ARTIFACT_ROOT_PATH, ARTIFACTORY_ARTIFACT_ROOT_PATH})
 public @interface LayoutRequestMapping
 {
 

@@ -30,7 +30,7 @@
                                     theme="filled" class="text-gray-6 text-lg" />
                             </a-tooltip>
                         </h4>
-                        <p>
+                        <!-- <p>
                             {{ baseUrl }}api/browse/{{ currentStorage.id }}
                             <a>
                                 <a-tooltip placement="topLeft">
@@ -40,7 +40,7 @@
                                     <a-icon type="copy" @click="copy(baseUrl + 'api/browse/' + currentStorage.id)" />
                                 </a-tooltip>
                             </a>
-                        </p>
+                        </p> -->
                     </div>
                 </a-col>
                 <a-col v-if="layoutType === 'isFilter'" :span="12" style="display: flex;align-items: center;">

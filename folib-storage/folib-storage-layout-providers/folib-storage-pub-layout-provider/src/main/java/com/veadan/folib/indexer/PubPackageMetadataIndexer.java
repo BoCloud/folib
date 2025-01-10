@@ -207,7 +207,7 @@ public class PubPackageMetadataIndexer {
         Pubspec artifactMetadata = pubMetadataExtractor.extractPubSpec(repositoryPath);
         if (PubUtils.isPackageMetadataValidForIndexing(packageName, artifactMetadata.getVersion())) {
             String repositoryBaseUrl = getRepositoryBaseUrl(repositoryPath.getRepository());
-            URI uri = pubArtifactCoordinates.convertToResource(pubArtifactCoordinates);
+            URI uri = pubArtifactCoordinates.convertToLayoutResource(pubArtifactCoordinates);
             PubPackageVersionMetadata versionMetadata = createPackageVersion(artifactMetadata, repositoryBaseUrl + uri.toString());
             Artifact artifact = repositoryPath.getArtifactEntry();
             if (Objects.nonNull(artifact)) {
@@ -244,7 +244,7 @@ public class PubPackageMetadataIndexer {
     }
 
     protected String getRepositoryBaseUrl(Repository repository) {
-        return String.format("%s/storages/%s/%s/", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
+        return String.format("%s/artifactory/api/pub/%s/", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getId());
     }
 
 }

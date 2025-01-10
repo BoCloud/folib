@@ -32,10 +32,7 @@
                         {{ $t('Store.GotoBrowsePage') }}
                       </template>
                       <a :href="baseUrl +
-                        'api/browse/' +
-                        folibRepository.storageId +
-                        '/' +
-                        folibRepository.id" target="_blank">
+                        'artifactory/' + folibRepository.id" target="_blank">
                         <h6 class="font-semibold m-0" @click="createData">
                           {{ folibRepository.id }}
                         </h6>
@@ -48,16 +45,10 @@
                             {{ $t('Store.WarehouseBrowseAddress') }}
                           </template>
                           <a :href="baseUrl +
-                            'api/browse/' +
-                            folibRepository.storageId +
-                            '/' +
-                            folibRepository.id" target="_blank">
+                            'artifactory/' + folibRepository.id" target="_blank">
                             <p class="copy-p">
                               {{ baseUrl +
-                                'api/browse/' +
-                                folibRepository.storageId +
-                                '/' +
-                                folibRepository.id }}
+                                'artifactory/' + folibRepository.id }}
                             </p>
                           </a>
                         </a-tooltip>
@@ -65,10 +56,7 @@
                           <a-icon type="copy" @click="
                             copy(
                               baseUrl +
-                              'api/browse/' +
-                              folibRepository.storageId +
-                              '/' +
-                              folibRepository.id
+                                'artifactory/' + folibRepository.id
                             )" />
                         </a>
                       </a-descriptions-item>
@@ -314,11 +302,11 @@
                         v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact&&!isTrashView">
                         <a-icon type="download" />{{ $t('Store.DownLoad') }}
                       </a-menu-item>
-
-                      <a-menu-item key="7"
+                      <!-- 暂时禁用目录下载 -->
+                      <!-- <a-menu-item key="7"
                         v-if="(folibRepository.layout === 'Raw' && currentTreeNode && currentTreeNode.type === 'dir'&&!isTrashView)">
                         <a-icon type="download" />{{ $t('Store.DownLoad') }}
-                      </a-menu-item>
+                      </a-menu-item> -->
                       <a-menu-item key="8" v-if="isTrashView && currentTreeNode">
                         <a-icon type="undo" />{{ $t('Store.Restore') }}
                       </a-menu-item>
@@ -995,6 +983,7 @@ import Cookies from "js-cookie";
 import uuidv4 from 'uuid/v4'
 import {
   getLayoutType,
+  getLayoutRepoPrefix,
   getFileType,
   fileSizeConver,
   formateDate,
@@ -1387,6 +1376,9 @@ export default {
     },
     getLayoutTypeHandle() {
       return getLayoutType(this.folibRepository)
+    },
+    getLayoutRepoPrefixHandle() {
+      return getLayoutRepoPrefix(this.folibRepository)
     },
     getBrowse() {
       if (this.folibRepository.status.indexOf('Out of Service') !== -1) {
@@ -1851,11 +1843,7 @@ export default {
           '" defaultConflictManager="all" />\n' +
           '   <resolvers>\n' +
           '        <ibiblio name="releases" root="' +
-          this.baseUrl +
-          'storages/' +
-          this.folibRepository.storageId +
-          '/' +
-          this.folibRepository.id +
+          this.getRepositoryUrl() +
           '" m2compatible="true" usepoms="true"/>\n' +
           '   </resolvers>\n' +
           '</ivysettings>'
@@ -1953,6 +1941,7 @@ export default {
             setTitle(this.trashData)
             resolve()
           })
+          return
         // })
       }
 
@@ -2148,7 +2137,7 @@ export default {
             // 获取端口号，如果没有指定则默认为 80（http）或 443（https）
             const port = url.port ? `:${url.port}` : '';
             const params = this.targetArchitecture === null ? '' : '?platform=' + this.targetArchitecture;
-            const baseUrl = `${protocol}//${hostname}${port}/storages/` + this.currentTreeNode.storageId + '/' + this.currentTreeNode.repositoryId + '/download/' + result + params;
+            const baseUrl = `${protocol}//${hostname}${port}/artifactory/` + this.currentTreeNode.repositoryId + '/download/' + result + params;
             window.open(baseUrl)
           }
         }
@@ -2720,18 +2709,9 @@ export default {
       if (this.baseUrl) {
         repositoryUrl =
           this.baseUrl +
-          'storages/' +
-          this.folibRepository.storageId +
-          '/' +
-          this.folibRepository.id
-        let layout = this.folibRepository.layout.toLowerCase()
-        if (layout === 'docker') {
-          let baseUrlArr = this.baseUrl.split('://')
-          repositoryUrl =
-            baseUrlArr[1] +
-            this.folibRepository.storageId +
-            '/' +
-            this.folibRepository.id
+          this.getLayoutRepoPrefixHandle() + this.folibRepository.id
+        if (this.repositoryType && this.repositoryType === 'docker') {
+          repositoryUrl = repositoryUrl.replace('http://','').replace('https://','')
         }
       }
       return repositoryUrl

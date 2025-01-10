@@ -165,3 +165,46 @@ export function artifactCheck(repository, fileName, fileSize) {
     return result
 }
 
+export function getLayoutRepoPrefix(item) {
+    let prefix = 'artifactory/'
+    let subLayout = item.subLayout
+    switch(subLayout) {
+        case 'pypi':
+            prefix = 'artifactory/api/pypi/'
+        break;
+        case 'npm':
+            prefix = 'artifactory/api/npm/'
+        break;
+        case 'ohpm':
+            prefix = 'artifactory/api/ohpm/'
+        break;
+        case 'php':
+            prefix = 'artifactory/api/composer/'
+        break;
+        case 'conan':
+            prefix = 'artifactory/api/conan/'
+        break;
+        case 'helm':
+            prefix = 'artifactory/api/helm/'
+        break;
+        case 'cocoapods':
+            prefix = 'artifactory/api/pods/'
+        break;
+        case 'go':
+            prefix = 'artifactory/api/go/'
+        break;
+        case 'gitlfs':
+            prefix = 'artifactory/api/lfs/'
+        break;
+        case 'huggingface':
+            prefix = 'artifactory/api/huggingfaceml/'
+        break;
+        case 'pub':
+            prefix = 'artifactory/api/pub/'
+        break;
+        default:
+            prefix = 'artifactory/'
+    }
+    return prefix
+}
+

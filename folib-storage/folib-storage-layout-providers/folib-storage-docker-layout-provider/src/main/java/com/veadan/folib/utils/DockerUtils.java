@@ -77,7 +77,7 @@ public class DockerUtils {
 
     protected static String getRepositoryBaseUrl(Repository repository) {
         ConfigurationManager configurationManager = SpringUtil.getBean(ConfigurationManager.class);
-        return String.format("%s/storages/%s/%s/", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
+        return String.format("%s/artifactory/%s/", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getId());
     }
 
     public static boolean isSubsidiaryFile(RepositoryPath path) {

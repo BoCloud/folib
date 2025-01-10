@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veadan.folib.artifact.ArtifactTag;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
 import com.veadan.folib.config.NpmLayoutProviderConfig;
+import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.enums.NpmSubLayout;
 import com.veadan.folib.npm.metadata.Dependency;
@@ -14,6 +15,7 @@ import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ArtifactTagService;
+import com.veadan.folib.storage.repository.Repository;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -24,6 +26,7 @@ import org.springframework.stereotype.Component;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -46,7 +49,7 @@ public class NpmPackageSupplier implements Function<Path, NpmPackageDesc> {
     private NpmLayoutProvider layoutProvider;
 
     @Inject
-    private ArtifactTagService artifactTagService;
+    private ConfigurationManager configurationManager;
 
     @Inject
     @NpmLayoutProviderConfig.NpmObjectMapper
@@ -119,8 +122,9 @@ public class NpmPackageSupplier implements Function<Path, NpmPackageDesc> {
 
         String url;
         try {
-            url = layoutProvider.resolveResource(repositoryPath).toString();
-        } catch (IOException e) {
+            URI uri = c.convertToLayoutResource(c);
+            url = getRepositoryBaseUrl(repositoryPath.getRepository()) + uri.toString();
+        } catch (Exception e) {
             throw new UndeclaredThrowableException(e);
         }
         dist.setTarball(url);
@@ -144,6 +148,11 @@ public class NpmPackageSupplier implements Function<Path, NpmPackageDesc> {
         } catch (IOException e) {
             throw new UndeclaredThrowableException(e);
         }
+    }
+
+    protected String getRepositoryBaseUrl(Repository repository) {
+        final String api = NpmSubLayout.OHPM.getValue().equals(repository.getSubLayout()) ? "ohpm" : "npm";
+        return String.format("%s/artifactory/api/%s/%s/", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), api, repository.getId());
     }
 
 }

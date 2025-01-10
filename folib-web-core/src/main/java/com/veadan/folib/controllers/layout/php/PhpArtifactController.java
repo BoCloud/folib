@@ -6,6 +6,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.artifact.coordinates.PhpArtifactCoordinates;
 import com.veadan.folib.components.artifact.ArtifactComponent;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.enums.AuditEventNameEnum;
@@ -35,6 +36,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
@@ -75,12 +77,12 @@ public class PhpArtifactController extends BaseArtifactController {
 
     @Override
     @PreAuthorize("authenticated")
-    @GetMapping(value = "/{storageId}/{repositoryId}")
+    @GetMapping(value = "/api/composer/{repositoryId}/")
     public ResponseEntity<String> checkRepositoryAccess() {
         return super.checkRepositoryAccess();
     }
 
-    @GetMapping(path = "{storageId}/{repositoryId}/search")
+    @GetMapping(path = "/api/composer/{repositoryId}/search")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public void search(@RepositoryMapping Repository repository,
                        @RequestParam(name = "q") String q,
@@ -125,7 +127,7 @@ public class PhpArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @GetMapping(value = {"{storageId}/{repositoryId}/dists/{path:.+}"})
+    @GetMapping(value = {"/api/composer/{repositoryId}/dists/{path:.+}"})
     @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
     public ResponseEntity<Object> distDownload(@RepositoryMapping Repository repository,
                                                @RequestHeader HttpHeaders httpHeaders,
@@ -168,7 +170,7 @@ public class PhpArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @GetMapping(value = {"{storageId}/{repositoryId}/{path:.+}"})
+    @GetMapping(value = {"/api/composer/{repositoryId}/{path:.+}"})
     @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
     public ResponseEntity<Object> download(@RepositoryMapping Repository repository,
                                            @RequestHeader HttpHeaders httpHeaders,
@@ -212,8 +214,8 @@ public class PhpArtifactController extends BaseArtifactController {
      */
     private JSONObject getPackagesJson(RepositoryPath repositoryPath) throws IOException {
         String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId();
-        String phpBaseUrl = "%s/%s/%s";
-        phpBaseUrl = String.format(phpBaseUrl, Constants.ARTIFACT_ROOT_PATH, storageId, repositoryId);
+        String phpBaseUrl = "%s/%s";
+        phpBaseUrl = String.format(phpBaseUrl, StringUtils.removeEnd(Constants.PHP_ARTIFACT_ROOT_PATH, GlobalConstants.SEPARATOR), repositoryId);
         JSONObject packagesJson = getSourcePackagesJson(repositoryPath);
         String metadataUrlKey = "metadata-url", providersUrlKey = "providers-url", providersLazyUrlKey = "providers-lazy-url",
                 searchKey = "search", mirrorsKey = "mirrors", distKey = "dists";
@@ -228,8 +230,8 @@ public class PhpArtifactController extends BaseArtifactController {
         }
         String baseUrl = configurationManagementService.getConfiguration().getBaseUrl();
 
-        String pathUrl = "%s/%s/%s/%s";
-        pathUrl = String.format(pathUrl, Constants.ARTIFACT_ROOT_PATH, storageId, repositoryId, distKey);
+        String pathUrl = "%s/%s/%s";
+        pathUrl = String.format(pathUrl, StringUtils.removeEnd(Constants.PHP_ARTIFACT_ROOT_PATH, GlobalConstants.SEPARATOR), repositoryId, distKey);
         String mirrors = "[" +
                 "        {" +
                 "            \"dist-url\": \"" + artifactComponent.escapeUrl(baseUrl, pathUrl + "/%package%/%reference%.%type%") + "\"," +
@@ -289,5 +291,22 @@ public class PhpArtifactController extends BaseArtifactController {
         }
         repositoryPath.setDisableRemote(null);
         return repositoryPath;
+    }
+
+    @Override
+    @ApiOperation(value = "Used to retrieve an artifact")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
+            @ApiResponse(code = 400, message = "An error occurred.")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
+    @GetMapping("/{repositoryId:^(?!api$).+}/{path:.+}")
+    public Object download(@RepositoryMapping Repository repository,
+                           @RequestHeader HttpHeaders httpHeaders,
+                           @PathVariable String path,
+                           HttpServletRequest request,
+                           HttpServletResponse response,
+                           ModelMap model)
+            throws Exception {
+        return super.download(repository, httpHeaders, path, request, response, model);
     }
 }

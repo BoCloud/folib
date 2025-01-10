@@ -1,17 +1,22 @@
 package com.veadan.folib.controllers;
 
+import cn.hutool.extra.spring.SpringUtil;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.block.ArtifactBlockComponent;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.CacheSettings;
+import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
+import com.veadan.folib.providers.io.LayoutFileSystem;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.DictService;
+import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
@@ -21,13 +26,17 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.ui.ModelMap;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.HandlerMapping;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -67,6 +76,11 @@ public abstract class BaseArtifactController
 
     @Autowired
     private DictService dictService;
+
+    @Inject
+    @Qualifier("browseRepositoryDirectoryListingService")
+    @Lazy
+    private volatile DirectoryListingService directoryListingService;
 
 
     protected boolean provideArtifactDownloadResponse(HttpServletRequest request,
@@ -279,24 +293,107 @@ public abstract class BaseArtifactController
         return new AntPathMatcher().extractPathWithinPattern(bestMatchPattern, path);
     }
 
-    /**
-     * 用户制品上传过程
-     * 获取仓库id方法 如果是组合库且配置了默认库 获取的是配置的默认id 否则获取的为仓库id
-     * @param repository 仓库对象
-     * @return 仓库id
-     */
-    @Deprecated
-    private String ifIsGroupAndStoreToDefault(Repository repository){
-        if(RepositoryTypeEnum.GROUP.getType().equals(repository.getType())&&StringUtils.isNotBlank(repository.getGroupDefaultRepository())){
-            String defaultRepository = repository.getGroupDefaultRepository();
-            String[] split = defaultRepository.split(":");
-            if(split.length==2){
-                return split[1];
-            }else {
-                return repository.getId();
+    protected boolean probeForDirectoryListing(final RepositoryPath repositoryPath)
+            throws IOException {
+        return Files.exists(repositoryPath) &&
+                repositoryPath.getRepository().getLayout().equals("helm") && repositoryPath.getTarget().toString().endsWith("index.yaml") || Files.isDirectory(repositoryPath) &&
+                isPermittedForDirectoryListing(repositoryPath);
+    }
+
+    protected boolean isPermittedForDirectoryListing(final RepositoryPath repositoryPath)
+            throws IOException {
+        //TODO: RepositoryFiles.isIndex(repositoryPath) || (
+        return (!Files.isHidden(repositoryPath)
+                // 支持Cocoapods索引目录的显示
+                || repositoryPath.toString().contains(".specs") || repositoryPath.toString().contains(LayoutFileSystem.TRASH))
+                && !RepositoryFiles.isTemp(repositoryPath);
+    }
+
+    public Object browseRepository(HttpServletRequest request, HttpHeaders httpHeaders, HttpServletResponse response, ModelMap model, Repository repository, String path) {
+        final String storageId = repository.getStorage().getId();
+        final String repositoryId = repository.getId();
+        logger.info("Requested browsing repository content at {}/{}/{} ", storageId, repositoryId, path);
+        String acceptHeader = request.getHeader(HttpHeaders.ACCEPT);
+        try {
+//            if (DockerLayoutProvider.ALIAS.equals(repository.getLayout()) && acceptHeader != null && acceptHeader.contains(MediaType.APPLICATION_JSON_VALUE)) {
+//                return getDockerArtifact(storageId, repositoryId, path);
+//            }
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, path);
+            if (RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
+                repositoryPath.setDisableRemote(true);
+                repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
             }
-        }else {
-            return repository.getId();
+            if (Files.exists(repositoryPath) && Files.isRegularFile(repositoryPath)) {
+                vulnerabilityBlock(repositoryPath);
+                provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+                return null;
+            }
+            DirectoryListing directoryListing = null;
+            if (RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
+                directoryListing = directoryListingService.fromGroupRepositoryPath(repository, repositoryPath);
+            } else {
+                if (repositoryPath == null || !Files.exists(repositoryPath)) {
+                    return getNotFoundResponseEntity("The requested repository path was not found.", acceptHeader);
+                }
+                if (!repository.isInService()) {
+                    return getServiceUnavailableResponseEntity("Repository is not in service...", acceptHeader);
+                }
+                if (!repository.isAllowsDirectoryBrowsing() || !probeForDirectoryListing(repositoryPath)) {
+                    return getNotFoundResponseEntity("Requested repository doesn't allow browsing.", acceptHeader);
+                }
+                directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+            }
+            if (acceptHeader != null && acceptHeader.contains(MediaType.APPLICATION_JSON_VALUE)) {
+                return ResponseEntity.ok(objectMapper.writer().writeValueAsString(directoryListing));
+            }
+            String currentUrl = org.apache.commons.lang.StringUtils.chomp(request.getRequestURI(), "/");
+            model.addAttribute("currentUrl", currentUrl);
+            model.addAttribute("directories", directoryListing.getDirectories());
+            model.addAttribute("files", directoryListing.getFiles());
+            return new ModelAndView("directoryListing", model);
+        } catch (Exception e) {
+            String message = "Failed to generate repository directory listing.";
+            return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, message, e, acceptHeader);
         }
     }
+
+    public Object download(Repository repository, HttpHeaders httpHeaders, String path, HttpServletRequest request, HttpServletResponse response, ModelMap model)
+            throws Exception {
+        final String storageId = repository.getStorage().getId();
+        final String repositoryId = repository.getId();
+        logger.info("Requested /{}/{}/{}.", storageId, repositoryId, path);
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+        if (Objects.nonNull(repositoryPath) && ((Files.exists(repositoryPath) && Files.isDirectory(repositoryPath)) || RepositoryTypeEnum.GROUP.getType().equals(repository.getType()))) {
+            return browseRepository(request, httpHeaders, response, model, repository, path);
+        } else {
+            vulnerabilityBlock(repositoryPath);
+            provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+        }
+        return null;
+    }
+
+    /**
+     * 获取设置默认的存储空间
+     *
+     * @param repositoryId 仓库名称
+     * @return 存储空间
+     */
+    public String getDefaultStorageId(String repositoryId) {
+        DistributedCacheComponent distributedCacheComponent = SpringUtil.getBean(DistributedCacheComponent.class);
+        if (StringUtils.isNotBlank(repositoryId)) {
+            //按照仓库查询对应的存储空间
+            String key = "JFrogAdapterStorage_" + repositoryId;
+            String jFrogAdapterStorage = distributedCacheComponent.get(key);
+            if (StringUtils.isNotBlank(jFrogAdapterStorage)) {
+                return jFrogAdapterStorage;
+            }
+        }
+        String key = "JFrogAdapterDefaultStorage";
+        String jFrogAdapterDefaultStorage = distributedCacheComponent.get(key);
+        if (StringUtils.isBlank(jFrogAdapterDefaultStorage)) {
+            throw new RuntimeException("Default storage not found,Please Set the default storageId");
+        }
+        return jFrogAdapterDefaultStorage;
+    }
+
 }

@@ -29,6 +29,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -57,6 +58,9 @@ import java.util.regex.Pattern;
 @LayoutRequestMapping(CocoapodsArtifactCoordinates.LAYOUT_NAME)
 public class CocoapodsArtifactController extends BaseArtifactController
 {
+
+    private static final String API_ENDPOINT = "/api/pods/";
+
     @Value("${folib.temp}")
     private String tempPath;
 
@@ -65,7 +69,7 @@ public class CocoapodsArtifactController extends BaseArtifactController
 
     @Override
     @PreAuthorize("authenticated")
-    @GetMapping(value = "/{storageId}/{repositoryId}")
+    @GetMapping(value = API_ENDPOINT + "{repositoryId}/")
     public ResponseEntity<String> checkRepositoryAccess() {
         return super.checkRepositoryAccess();
     }
@@ -74,7 +78,7 @@ public class CocoapodsArtifactController extends BaseArtifactController
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @PutMapping(value = "{storageId}/{repositoryId}/{artifactPath:.+}")
+    @PutMapping(value = API_ENDPOINT + "{repositoryId}/{artifactPath:.+}")
     public ResponseEntity uploadPod(@RepositoryMapping Repository repository,
                                  @PathVariable String artifactPath,
                                  HttpServletRequest request) {
@@ -135,7 +139,7 @@ public class CocoapodsArtifactController extends BaseArtifactController
             @ApiResponse(code = 400, message = "An error occurred.") })
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
-    @GetMapping(value = { "{storageId}/{repositoryId}/{path:.+}" })
+    @GetMapping(value = { API_ENDPOINT + "{repositoryId}/{path:.+}" })
     public void download(@RepositoryMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,
                          @PathVariable String path,
@@ -155,7 +159,7 @@ public class CocoapodsArtifactController extends BaseArtifactController
             @ApiResponse(code = 400, message = "An error occurred.") })
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
-    @GetMapping(value = { "{storageId}/{repositoryId}/archive/refs/heads/{path:.+}" })
+    @GetMapping(value = { API_ENDPOINT + "{repositoryId}/archive/refs/heads/{path:.+}" })
     public void downloadBranchZip(@RepositoryMapping Repository repository,
                                @RequestHeader HttpHeaders httpHeaders,
                                @PathVariable String path,
@@ -305,4 +309,20 @@ public class CocoapodsArtifactController extends BaseArtifactController
 
     }
 
+    @Override
+    @ApiOperation(value = "Used to retrieve an artifact")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
+            @ApiResponse(code = 400, message = "An error occurred.")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
+    @GetMapping("/{repositoryId:^(?!api$).+}/{path:.+}")
+    public Object download(@RepositoryMapping Repository repository,
+                           @RequestHeader HttpHeaders httpHeaders,
+                           @PathVariable String path,
+                           HttpServletRequest request,
+                           HttpServletResponse response,
+                           ModelMap model)
+            throws Exception {
+        return super.download(repository, httpHeaders, path, request, response, model);
+    }
 }

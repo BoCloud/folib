@@ -21,4 +21,5 @@ public interface ArtifactCoordinates<C extends ArtifactCoordinates<C, V>, V exte
 
     URI buildResource();
 
+    URI buildLayoutResource();
 }

@@ -18,6 +18,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -36,9 +37,11 @@ import javax.servlet.http.HttpServletResponse;
 @Api(description = "go坐标控制器",tags = "go坐标控制器")
 public class GoArtifactController extends BaseArtifactController {
 
+    private static final String API_ENDPOINT = "/api/go/";
+
     @Override
     @PreAuthorize("authenticated")
-    @GetMapping(value = "/{storageId}/{repositoryId}")
+    @GetMapping(value = API_ENDPOINT + "{repositoryId}/")
     public ResponseEntity<String> checkRepositoryAccess() {
         return super.checkRepositoryAccess();
     }
@@ -59,7 +62,7 @@ public class GoArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
     @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @GetMapping(value = {"{storageId}/{repositoryId}/{artifactPath:.+}"})
+    @GetMapping(value = {API_ENDPOINT + "{repositoryId}/{artifactPath:.+}"})
     @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #artifactPath")
     public ResponseEntity<Object> download(@RepositoryMapping Repository repository,
                                            @RequestHeader HttpHeaders httpHeaders,
@@ -75,5 +78,22 @@ public class GoArtifactController extends BaseArtifactController {
         vulnerabilityBlock(repositoryPath);
         provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
         return null;
+    }
+
+    @Override
+    @ApiOperation(value = "Used to retrieve an artifact")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
+            @ApiResponse(code = 400, message = "An error occurred.")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
+    @GetMapping("/{repositoryId:^(?!api$).+}/{path:.+}")
+    public Object download(@RepositoryMapping Repository repository,
+                           @RequestHeader HttpHeaders httpHeaders,
+                           @PathVariable String path,
+                           HttpServletRequest request,
+                           HttpServletResponse response,
+                           ModelMap model)
+            throws Exception {
+        return super.download(repository, httpHeaders, path, request, response, model);
     }
 }

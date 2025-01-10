@@ -190,6 +190,17 @@ public abstract class RepositoryFiles {
         return relativizeUri(p);
     }
 
+    public static URI resolveLayoutResource(RepositoryPath p)
+            throws IOException {
+        if (RepositoryFiles.isArtifact(p)) {
+            ArtifactCoordinates c = RepositoryFiles.readCoordinates(p);
+
+            return c.buildLayoutResource();
+        }
+
+        return relativizeUri(p);
+    }
+
     public static boolean artifactExists(RepositoryPath repositoryPath)
             throws IOException {
         boolean exists = false;

@@ -29,6 +29,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -73,7 +74,7 @@ public class PypiArtifactController extends BaseArtifactController {
 
     @Override
     @PreAuthorize("authenticated")
-    @GetMapping(value = "/{storageId}/{repositoryId}")
+    @GetMapping(value = {"/api/pypi/{repositoryId}/"})
     public ResponseEntity<String> checkRepositoryAccess() {
         return super.checkRepositoryAccess();
     }
@@ -83,7 +84,7 @@ public class PypiArtifactController extends BaseArtifactController {
             @ApiResponse(code = HttpURLConnection.HTTP_INTERNAL_ERROR, message = "An error occurred while executing request."),
             @ApiResponse(code = HttpURLConnection.HTTP_UNAVAILABLE, message = "Service Unavailable.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(path = "/{storageId}/{repositoryId}", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA)
+    @RequestMapping(path = "/api/pypi/{repositoryId}", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA)
     public ResponseEntity<String> uploadPackage(
             @RepositoryMapping Repository repository,
             @RequestParam(name = "comment", required = false) String comment,
@@ -153,7 +154,7 @@ public class PypiArtifactController extends BaseArtifactController {
             @ApiResponse(code = HttpURLConnection.HTTP_UNAVAILABLE, message = "Service Unavailable.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #packageName")
-    @RequestMapping(path = "/{storageId}/{repositoryId}/{packageName}", method = RequestMethod.GET)
+    @RequestMapping(path = "/api/pypi/{repositoryId}/{packageName}", method = RequestMethod.GET)
     public ResponseEntity<String> downloadPackage(@RepositoryMapping Repository repository,
                                                   @PathVariable(name = "packageName") String packageName,
                                                   HttpServletRequest request) {
@@ -169,7 +170,7 @@ public class PypiArtifactController extends BaseArtifactController {
 
         final URI location = ServletUriComponentsBuilder
                 .fromCurrentServletMapping()
-                .path("/storages/{storageId}/{repositoryId}/simple/{packageName}/")
+                .path("/artifactory/api/pypi/{repositoryId}/simple/{packageName}/")
                 .build()
                 .expand(uriVariables)
                 .toUri();
@@ -188,7 +189,7 @@ public class PypiArtifactController extends BaseArtifactController {
             @ApiResponse(code = HttpURLConnection.HTTP_UNAVAILABLE, message = "Service Unavailable.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #artifactName")
-    @RequestMapping(path = "/{storageId}/{repositoryId}/packages/{artifactName:.+}", method = RequestMethod.GET)
+    @RequestMapping(path = "/api/pypi/{repositoryId}/packages/{artifactName:.+}", method = RequestMethod.GET)
     public void downloadPackage(@RepositoryMapping Repository repository,
                                 @PathVariable(name = "artifactName") String artifactName,
                                 HttpServletRequest request,
@@ -242,7 +243,7 @@ public class PypiArtifactController extends BaseArtifactController {
             @ApiResponse(code = HttpURLConnection.HTTP_INTERNAL_ERROR, message = "An error occurred while executing download request."),
             @ApiResponse(code = HttpURLConnection.HTTP_UNAVAILABLE, message = "Service Unavailable.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(path = "/{storageId}/{repositoryId}/simple/{packageName}", method = RequestMethod.GET, produces = MediaType.TEXT_HTML)
+    @RequestMapping(path = "/api/pypi/{repositoryId}/simple/{packageName}", method = RequestMethod.GET, produces = MediaType.TEXT_HTML)
     public ResponseEntity<String> browsePackage(@RepositoryMapping Repository repository,
                                                 @PathVariable(name = "packageName") String packageName,
                                                 HttpServletRequest request,
@@ -257,7 +258,7 @@ public class PypiArtifactController extends BaseArtifactController {
 
             final URI location = ServletUriComponentsBuilder
                     .fromCurrentServletMapping()
-                    .path("/storages/{storageId}/{repositoryId}/simple/{packageName}/")
+                    .path("/artifactory/api/pypi/{repositoryId}/simple/{packageName}/")
                     .build()
                     .expand(uriVariables)
                     .toUri();
@@ -318,6 +319,23 @@ public class PypiArtifactController extends BaseArtifactController {
             return false;
         }
         return VALID_ACTIONS.contains(action);
+    }
+
+    @Override
+    @ApiOperation(value = "Used to retrieve an artifact")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
+            @ApiResponse(code = 400, message = "An error occurred.")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
+    @GetMapping(value = {"/{repositoryId}/{path:.+}"})
+    public Object download(@RepositoryMapping Repository repository,
+                           @RequestHeader HttpHeaders httpHeaders,
+                           @PathVariable String path,
+                           HttpServletRequest request,
+                           HttpServletResponse response,
+                           ModelMap model)
+            throws Exception {
+        return super.download(repository, httpHeaders, path, request, response, model);
     }
 
 }

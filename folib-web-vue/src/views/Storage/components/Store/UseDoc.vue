@@ -23,12 +23,8 @@
               '   <name>' +
               folibRepository.id +
               '</name>\n' +
-              '   <url>' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              '   <url>' + 
+              repositoryUrl +
               '</url>\n' +
               '   <mirrorOf>*</mirrorOf>\n' +
               '</mirror>'
@@ -69,11 +65,7 @@
               folibRepository.id +
               '</id>\n' +
               '      <url>' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+                repositoryUrl +
               '</url>\n' +
               '   </repository>\n' +
               '</repositories>\n' +
@@ -84,11 +76,7 @@
               folibRepository.id +
               '</id>\n' +
               '      <url>' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+                repositoryUrl +
               '</url>\n' +
               '   </repository>\n' +
               '</distributionManagement>'
@@ -128,11 +116,7 @@
               '  repositories {\n' +
               '    maven {\n' +
               '      url \'' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl +
               '\'\n' +
               '    }\n' +
               '    mavenLocal()\n' +
@@ -176,11 +160,7 @@
               '' +
               folibRepository.id +
               ': ' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl +
               ''
             "
             :highlight="highlighterHandle"
@@ -259,11 +239,7 @@
             class="my-editor height-300"
             :value="
               'npm config set registry ' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl +
               '\n' +
               '\n' +
               'npm config list #' + this.$t('Store.NpmConfig')
@@ -284,11 +260,7 @@
             class="my-editor height-300"
             :value="
               'registry=' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl +
               '\n' +
               'always-auth=true\n' +
               'email=yours4@example.com\n' +
@@ -338,11 +310,7 @@
               'enabled=1' +
               '\n' +
               'baseurl=' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl +
               '/' +
               '\n' +
               'gpgcheck=0'
@@ -381,19 +349,13 @@
             class="my-editor height-300"
             :value="
               'helm  registry  login  ' +
-              baseUrl +'storages/'+
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl +
               '\n' +
               '\n' +
               'helm  repo  add   ' +
               folibRepository.id +
               '   ' +
-              baseUrl +'storages/'+
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl +
               '\n'
             "
             :highlight="highlighterHandle"
@@ -474,11 +436,7 @@
               'conan remote add ' +
               folibRepository.id +
               ' ' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl +
               ' false\n' +
               '#' + this.$t('Store.ConanLogin') + ' \n' +
               'conan user -p [password] -r ' + folibRepository.id +' [username] \n\n' +
@@ -487,11 +445,7 @@
               'conan remote add ' +
               folibRepository.id +
               ' ' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl +
               ' --insecure -f\n ' +
               '#' + this.$t('Store.ConanLogin') + ' \n' +
               'conan remote login -p [password] ' + folibRepository.id + ' [username]'"
@@ -566,11 +520,7 @@
             class="my-editor height-300"
             :value="
               'yarn config set registry ' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl +
               '\n' +
               '\n' +
               'yarn config get registry #' + this.$t('Store.NpmConfig')
@@ -590,11 +540,7 @@
             class="my-editor height-300"
             :value="
               'registry=' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl +
               '\n' +
               'always-auth=true\n' +
               'email=yours4@example.com\n' +
@@ -632,11 +578,7 @@
           <small>Pypi{{ $t('Store.Configuration') }}</small>
           <prism-editor
             class="my-editor height-300"
-            :value=" 'pip config set global.index-url ' + baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+            :value=" 'pip config set global.index-url ' + repositoryUrl +
               '\npip config set install.trusted-host ' + baseUrl.replace('http://', '').replace('https://','').replace('/','')
             "
             :highlight="highlighterHandle"
@@ -658,11 +600,7 @@
               '\n' +
               '['+ folibRepository.id +']\n' +
               'repository:' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl +
               '\n' +
               'username:[username]\n' +
               'password:[password]\n'
@@ -775,10 +713,7 @@
             class="my-editor height-300"
             :value="
               'docker build -t ' +
-              baseUrl.replace('http://', '').replace('https://','') +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl +
               '/demo:latest .'
             "
             :highlight="highlighterHandle"
@@ -797,10 +732,7 @@
               class="my-editor height-300"
               :value="
               'docker buildx build --platform linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8 -t ' +
-              baseUrl.replace('http://', '').replace('https://','') +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl +
               '/demo:latest . --push'
             "
               :highlight="highlighterHandle"
@@ -818,11 +750,7 @@
             class="my-editor height-300"
             :value="
               '$ mono --runtime=v4.0 nuget.exe config -set DefaultPushSource=' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+              repositoryUrl +
               ' -ConfigFile ./.nuget/NuGet.config'
             "
             :highlight="highlighterHandle"
@@ -838,11 +766,7 @@
             class="my-editor height-300"
             :value="
               'nuget <command> -Source ' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
+                repositoryUrl +
               ''
             "
             :highlight="highlighterHandle"
@@ -872,7 +796,7 @@
           <p>
             {{ $t('Store.ExecuteCommand') }}
           </p>
-          <prism-editor class="my-editor height-300" :value="'composer config -g repo.packagist composer ' + baseUrl + 'storages/' + folibRepository.storageId + '/' + folibRepository.id"
+          <prism-editor class="my-editor height-300" :value="'composer config -g repo.packagist composer ' + repositoryUrl"
           :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
           <p>
             {{ $t('Store.Method2') }}
@@ -880,7 +804,7 @@
           <p>
             {{ $t('Store.ExecuteCommand') }}
           </p>
-          <prism-editor class="my-editor height-300" :value="'composer config repo.packagist composer ' + baseUrl + 'storages/' + folibRepository.storageId + '/' + folibRepository.id"
+          <prism-editor class="my-editor height-300" :value="'composer config repo.packagist composer ' + repositoryUrl"
           :highlight="highlighterHandle" :line-numbers="false" :readonly="true"></prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
@@ -946,7 +870,7 @@
             {{ $t('Store.addLibrary') }}
           </p>
           <prism-editor class="my-editor height-300"
-          :highlight="highlighterHandle" :line-numbers="false" :value='"pod repo-art add "+folibRepository.id+" \""+baseUrl+"storages/"+folibRepository.storageId+"/"+folibRepository.id + "\""' :readonly="true">
+          :highlight="highlighterHandle" :line-numbers="false" :value='"pod repo-art add "+folibRepository.id+" \""+repositoryUrl + "\""' :readonly="true">
           </prism-editor>
         </a-timeline-item>
         <a-timeline-item color="primary">
@@ -955,7 +879,7 @@
             {{ $t('Store.podDeployment') }}
             {{ $t('Store.podDeployExample') }}
           </p>
-          <prism-editor class="my-editor height-300" :value='"curl -u<USERNAME>:<PASSWORD> -XPUT "+baseUrl+"storages/"+folibRepository.storageId+"/"+folibRepository.id+"/<TARGET_FILE_PATH> -T <PATH_TO_FILE>"'
+          <prism-editor class="my-editor height-300" :value='"curl -u<USERNAME>:<PASSWORD> -XPUT "+repositoryUrl+"/<TARGET_FILE_PATH> -T <PATH_TO_FILE>"'
           :highlight="highlighterHandle" :line-numbers="false" :readonly="true">
           </prism-editor>
         </a-timeline-item>
@@ -1083,11 +1007,11 @@ go 1.20' :readonly="true">
               'ohpm config set publish_id {your_publish_id}  \n'+
               '#'+this.$t('Store.PublishIdTip')+'\n'+
               '#'+this.$t('Store.SetPublishingIdPlus')+'\n'+
-              ''+baseUrl.replace('http:','').replace('https:','')+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'/:_auth={token}\n'+
+              ''+repositoryUrl.replace('http:','').replace('https:','')+'/:_auth={token}\n'+
               '#'+this.$t('Store.SetRepository')+'\n'+
-              'ohpm config set registry '+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'+
+              'ohpm config set registry '+ repositoryUrl +'\n'+
               '#'+this.$t('Store.SetPublishingRepository')+'\n'+
-              'ohpm config set publish_registry '+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'+
+              'ohpm config set publish_registry '+ repositoryUrl+'\n'+
               '#'+this.$t('Store.SslCheck')+'\n'+
               'ohpm config set strict_ssl false \n'+
               '\n' +
@@ -1130,7 +1054,7 @@ go 1.20' :readonly="true">
             '#'+this.$t('Store.LfsAddFile')+'\n'+
             'git  lfs  track  *.psd  \n'+
             '#'+this.$t('Store.SetLfs')+'\n'+
-            'git  config  lfs.url  '+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'+
+            'git  config  lfs.url  '+ repositoryUrl +'\n'+
             '\n' +
             '#' +this.$t('Store.ShowLfs')+'\n'+
             'git  config  --list '
@@ -1149,7 +1073,7 @@ go 1.20' :readonly="true">
               <prism-editor
                       class="my-editor height-300"
                       :value="
-            '#'+ this.$t('Store.LfsClone')+ '\n git  clone  --config  lfs.url='+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'  [repository-url]  \n'+
+            '#'+ this.$t('Store.LfsClone')+ '\n git  clone  --config  lfs.url='+ repositoryUrl +'  [repository-url]  \n'+
             '#' + this.$t('Store.LfsPull')+'\n'+ 'git  lfs  pull \n'+
             '#' + this.$t('Store.LfsPush')+'\n'+ 'git  lfs  push  origin  master\n'+
             '#' + this.$t('Store.LfsAddLock')+'\n'+ 'git  lfs  lock  [' + this.$t('Store.LfsFilename') + '] \n'+
@@ -1170,7 +1094,7 @@ go 1.20' :readonly="true">
                       class="my-editor height-300"
                       :value="
             'export HF_HUB_ETAG_TIMEOUT=1500000000 \n'+
-            'export HF_ENDPOINT='+baseUrl+'storages/'+folibRepository.storageId+'/'+folibRepository.id+'\n'"
+            'export HF_ENDPOINT='+ repositoryUrl +'\n'"
                       :highlight="highlighterHandle"
                       :line-numbers="false"
                       :readonly="true"
@@ -1326,6 +1250,9 @@ go 1.20' :readonly="true">
   </div>
 </template>
 <script>
+import {
+  getLayoutRepoPrefix,
+} from '@/utils/layoutUtil'
 import { PrismEditor } from "vue-prism-editor";
 import "vue-prism-editor/dist/prismeditor.min.css"; // import the styles somewhere
 // import highlighting library (you can use any library you want just return html string)
@@ -1359,11 +1286,7 @@ export default {
       console.log("repositoryType",this.repositoryType )
       console.log("folibRepository",this.folibRepository )
     if (this.baseUrl) {
-      this.repositoryUrl = this.baseUrl + 'storages/' + this.folibRepository.storageId + '/' + this.folibRepository.id
-      if (this.repositoryType && this.repositoryType === 'docker') {
-        let baseUrlArr = this.baseUrl.split('://')
-        this.repositoryUrl = baseUrlArr[1] + this.folibRepository.storageId + '/' + this.folibRepository.id
-      }
+      this.repositoryUrl = this.getRepositoryUrl()
         this.baseDomain = this.baseUrl.endsWith('/') ? this.baseUrl.slice(0,this.baseUrl.length - 1):this.baseUrl
     }
   },
@@ -1372,13 +1295,13 @@ export default {
   },
   computed: {
     debianConfiguration() {
-      return  `sudo sh -c " echo  'deb ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id} <DISTRIBUTION> <COMPONENT> ' >> /etc/apt/sources.list "`
+      return  `sudo sh -c " echo  'deb ${this.repositoryUrl} <DISTRIBUTION> <COMPONENT> ' >> /etc/apt/sources.list "`
     },
     debianPermissonConfiguration() {
       const name = this.$store.getters.name;
       const url = this.baseUrl.replace('http://','').replace('https://','');
       const protocol = this.baseUrl.startsWith('http://') ? 'http://' : 'https://';
-      return  `sudo sh -c " echo  'deb  ${protocol}${name}:<PASSWORD>@${url}storages/${this.folibRepository.storageId}/${this.folibRepository.id} <DISTRIBUTION> <COMPONENT> ' >> /etc/apt/sources.list "`
+      return  `sudo sh -c " echo  'deb  ${protocol}${name}:<PASSWORD>@${url}artifactory/${this.folibRepository.id} <DISTRIBUTION> <COMPONENT> ' >> /etc/apt/sources.list "`
     },
     debianCommand(){
       return ` apt update --allow-insecure-repositories \n apt-get install <DEBIAN_PACKAGE_NAME>`
@@ -1416,7 +1339,19 @@ export default {
       generateUserSecurityToken({expireSeconds: 1892160000}).then((res) => {
         this.copy(res)
       }).finally(() => {})
-    }
+    },
+    getRepositoryUrl() {
+      let repositoryUrl = ''
+      if (this.baseUrl) {
+        repositoryUrl =
+          this.baseUrl +
+          getLayoutRepoPrefix(this.folibRepository) + this.folibRepository.id
+        if (this.repositoryType && this.repositoryType === 'docker') {
+          repositoryUrl = repositoryUrl.replace('http://','').replace('https://','')
+        }
+      }
+      return repositoryUrl
+    },
   },
 };
 </script>

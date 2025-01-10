@@ -96,6 +96,10 @@ public class RepositoryMethodArgumentResolver
                                            final NativeWebRequest nativeWebRequest,
                                            final String variableName)
             throws MissingPathVariableException {
+        final Object requestAttribute = nativeWebRequest.getAttribute(variableName, RequestAttributes.SCOPE_REQUEST);
+        if (Objects.nonNull(requestAttribute) && StringUtils.isNotBlank(requestAttribute.toString())) {
+            return requestAttribute.toString();
+        }
         // Check @PathVariable parameter.
         @SuppressWarnings("unchecked") final Map<String, String> uriTemplateVars = (Map<String, String>) nativeWebRequest.getAttribute(
                 HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE, RequestAttributes.SCOPE_REQUEST);
@@ -111,7 +115,6 @@ public class RepositoryMethodArgumentResolver
         if (StringUtils.isNotEmpty(requestParam)) {
             return requestParam;
         }
-
         throw new MissingPathVariableException(variableName, parameter);
     }
 

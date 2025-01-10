@@ -21,4 +21,14 @@ public interface ArtifactCoordinatesResourceConverter<C extends ArtifactCoordina
        }
     }
 
+    default URI convertToLayoutResource(C artifactCoordinates)
+    {
+        try {
+            return URI.create(UriUtils.encode(convertToPath(artifactCoordinates)));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException(ex.getMessage());
+        }
+    }
+
 }

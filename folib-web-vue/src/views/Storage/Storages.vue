@@ -1145,7 +1145,7 @@ import {
 } from "@/api/customLayout"
 import { getUsers, queryUser } from "@/api/users"
 import CardProjectFolib from "@/components/Cards/CardProjectFolib"
-import { getLayoutType, genLayoutType, groupRepositoriesBuild, objectToGroupRepositories } from "@/utils/layoutUtil"
+import { getLayoutType, getLayoutRepoPrefix, genLayoutType, groupRepositoriesBuild, objectToGroupRepositories } from "@/utils/layoutUtil"
 import draggable from "vuedraggable"
 import FolibKanbanBoard from "@/components/Kanban/FolibKanbanBoard"
 import FolibKanbanTask from "@/components/Kanban/FolibKanbanTask"
@@ -2571,13 +2571,13 @@ export default {
       return isAdmin() || this.currentStorage.admin === this.$store.state.user.name
     },
     getRepositoryUrl(repository) {
-      let repositoryUrl = ""
+      let repositoryUrl = ''
       if (this.baseUrl) {
-        repositoryUrl = this.baseUrl + 'storages/' + repository.storageId + '/' + repository.id
-        let layout = repository.layout.toLowerCase()
-        if (layout === 'docker') {
-          let baseUrlArr = this.baseUrl.split('://')
-          repositoryUrl = baseUrlArr[1] + repository.storageId + '/' + repository.id
+        repositoryUrl =
+          this.baseUrl +
+          getLayoutRepoPrefix(repository) + repository.id
+        if (repository.subLayout && repository.subLayout === 'docker') {
+          repositoryUrl = repositoryUrl.replace('http://','').replace('https://','')
         }
       }
       return repositoryUrl

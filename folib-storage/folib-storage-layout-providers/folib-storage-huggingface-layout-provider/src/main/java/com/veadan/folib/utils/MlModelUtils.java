@@ -140,7 +140,7 @@ public final class MlModelUtils {
         return String.join("/", "models", organization, modelName);
     }
 
-    public static String getLfsUploadEndpoint(String storageId,String repositoryId, String organization, String modelName, String oid) {
+    public static String getLfsUploadEndpoint(String repositoryId, String organization, String modelName, String oid) {
         String lfsUploadEndpoint;
         if (repositoryId == null) {
             throw new NullPointerException("repoKey is marked non-null but is null");
@@ -151,7 +151,7 @@ public final class MlModelUtils {
         if (oid == null) {
             throw new NullPointerException("oid is marked non-null but is null");
         }
-        String repoRelatedPath = String.format("/%s/%s/api/complete_multipart", storageId, repositoryId);
+        String repoRelatedPath = String.format("/%s/api/complete_multipart", repositoryId);
         if (organization == null) {
             lfsUploadEndpoint = String.join("/",repoRelatedPath, modelName, oid);
         } else {

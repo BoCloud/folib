@@ -248,7 +248,7 @@ public class NpmPackageMetadataIndexer {
             Pair<PackageVersion, Path> packageVersionPathPair = npmComponent.extractPackage(packageName, inputStream, repositoryPath.getRepository().getSubLayout());
             PackageVersion packageVersion = packageVersionPathPair.getValue0();
             String repositoryBaseUrl = getRepositoryBaseUrl(repositoryPath.getRepository());
-            URI uri = npmArtifactCoordinates.convertToResource(npmArtifactCoordinates);
+            URI uri = npmArtifactCoordinates.convertToLayoutResource(npmArtifactCoordinates);
             Dist dist = packageVersion.getDist();
             if (Objects.nonNull(dist)) {
                 dist.setTarball(repositoryBaseUrl + uri.toString());
@@ -273,7 +273,8 @@ public class NpmPackageMetadataIndexer {
     }
 
     protected String getRepositoryBaseUrl(Repository repository) {
-        return String.format("%s/storages/%s/%s/", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
+        final String api = NpmSubLayout.OHPM.getValue().equals(repository.getSubLayout()) ? "ohpm" : "npm";
+        return String.format("%s/artifactory/api/%s/%s/", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), api, repository.getId());
     }
 
     private void sort(List<String> packageVersionList) {

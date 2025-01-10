@@ -1,6 +1,7 @@
 package com.veadan.folib.controllers.layout.cocoapods;
 
 import cn.hutool.core.io.FileUtil;
+import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.CocoapodsArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.controllers.BaseArtifactController;
@@ -32,6 +33,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,12 +51,13 @@ import java.util.List;
 public class CocoapodsIndexController
         extends BaseArtifactController {
 
+    private static final String API_ENDPOINT = "/api/pods/";
+
     @Inject
     private CocoapodsIndexService cocoapodsIndexService;
-    
-    
+
     @PreAuthorize("authenticated")
-    @GetMapping(value = "/{storageId}/{repositoryId}/index/fetchIndex")
+    @GetMapping(value = API_ENDPOINT + "{repositoryId}/index/fetchIndex")
     public ResponseEntity repoArtIndex(@RepositoryMapping Repository repository, HttpServletRequest request, HttpServletResponse response) throws Exception {
         final String type = repository.getType();
 
@@ -184,8 +187,9 @@ public class CocoapodsIndexController
                     if (repositoryPath != null  && null != repositoryPath.getArtifactEntry())
                     { // 获取到有Pod源代码路径地址则替换
                         final Artifact artifactEntry = repositoryPath.getArtifactEntry();
-                        final String path = artifactEntry.getArtifactCoordinates().getPath();
-                        final String newSourceUrl = String.format("%s/%s%s", baseUrl, "storages", path);
+                        CocoapodsArtifactCoordinates cocoapodsArtifactCoordinates = (CocoapodsArtifactCoordinates) artifactEntry.getArtifactCoordinates();
+                        URI uri = cocoapodsArtifactCoordinates.convertToResource(cocoapodsArtifactCoordinates);
+                        final String newSourceUrl = getArtifactoryRepositoryBaseUrl(repository, API_ENDPOINT) + uri.toString();
                         final String newPodspecContent = CocoapodsArtifactUtil.replaceNewSourceUrlOfPodspecContent(new String(bytes), newSourceUrl);
                         if (StringUtils.isNotBlank(newPodspecContent))
                         { bytes = newPodspecContent.getBytes(StandardCharsets.UTF_8); }
@@ -215,8 +219,9 @@ public class CocoapodsIndexController
                     if (repositoryPath != null  && null != repositoryPath.getArtifactEntry())
                     { // 获取到有Pod源代码路径地址则替换
                         final Artifact artifactEntry = repositoryPath.getArtifactEntry();
-                        final String path = artifactEntry.getArtifactCoordinates().getPath();
-                        final String newSourceUrl = String.format("%s/%s%s", baseUrl, "storages", path);
+                        CocoapodsArtifactCoordinates cocoapodsArtifactCoordinates = (CocoapodsArtifactCoordinates) artifactEntry.getArtifactCoordinates();
+                        URI uri = cocoapodsArtifactCoordinates.convertToResource(cocoapodsArtifactCoordinates);
+                        final String newSourceUrl = getArtifactoryRepositoryBaseUrl(repository, API_ENDPOINT) + uri.toString();
                         final String newPodspecContent = CocoapodsArtifactUtil.replaceNewSourceUrlOfPodspecContent(new String(bytes), newSourceUrl);
                         if (StringUtils.isNotBlank(newPodspecContent))
                         { bytes = newPodspecContent.getBytes(StandardCharsets.UTF_8); }

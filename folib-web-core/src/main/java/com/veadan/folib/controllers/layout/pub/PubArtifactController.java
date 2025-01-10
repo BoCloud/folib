@@ -37,6 +37,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -44,7 +45,10 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -64,6 +68,8 @@ public class PubArtifactController
 
     private static final String PACKAGES_ENDPOINT = "/api/packages/";
 
+    private static final String API_ENDPOINT = "/api/pub/";
+
     @Inject
     @RelationalDatabaseUserService.RelationalDatabase
     private UserService userService;
@@ -80,16 +86,16 @@ public class PubArtifactController
 
     @Override
     @PreAuthorize("authenticated")
-    @GetMapping(value = "/{storageId}/{repositoryId}")
+    @GetMapping(value = API_ENDPOINT + "{repositoryId}/")
     public ResponseEntity<String> checkRepositoryAccess() {
         return super.checkRepositoryAccess();
     }
 
-    @GetMapping(path = "{storageId}/{repositoryId}/api/packages/{packageName}/versions/{version}")
+    @GetMapping(path = API_ENDPOINT + "{repositoryId}/api/packages/{packageName}/versions/{version}")
     @ApiOperation(value = "Inspect the version of a PUB package.", nickname = "inspectSpecificVersion", notes = "Deprecated as of Dart 2.8, use \"listAllVersions\" instead.")
     @ApiResponses({@ApiResponse(code = 200, message = "OK", response = PubPackageVersionMetadata.class), @ApiResponse(code = 403, message = "Forbidden. User has no read permission"), @ApiResponse(code = 404, message = "Package Not Found")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    public ResponseEntity inspectVersion(@RepositoryMapping Repository repository, @PathVariable(name = "storageId") String storageId, @PathVariable(name = "repositoryId") String repositoryId,
+    public ResponseEntity inspectVersion(@RepositoryMapping Repository repository, @PathVariable(name = "repositoryId") String repositoryId,
                                          @PathVariable("packageName") String packageName, @PathVariable("version") String version, HttpServletRequest request, HttpServletResponse response) {
         PubPackageVersionMetadata inspectedVersionMetadata = pubService.inspectVersion(repository, packageName, version, PACKAGES_ENDPOINT + packageName);
         if (Objects.isNull(inspectedVersionMetadata)) {
@@ -100,12 +106,11 @@ public class PubArtifactController
         return ResponseEntity.ok(JSON.toJSONString(inspectedVersionMetadata, SerializerFeature.PrettyFormat));
     }
 
-    @GetMapping(path = "{storageId}/{repositoryId}/api/packages/{packageName}")
+    @GetMapping(path = API_ENDPOINT + "{repositoryId}/api/packages/{packageName}")
     @ApiOperation(value = "List all the versions of a PUB package.", nickname = "listAllVersions")
     @ApiResponses({@ApiResponse(code = 200, message = "OK", response = PubPackageMetadata.class), @ApiResponse(code = 403, message = "Forbidden. User has no read permission"), @ApiResponse(code = 404, message = "Package Not Found")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public ResponseEntity packages(@RepositoryMapping Repository repository,
-                                   @PathVariable(name = "storageId") String storageId,
                                    @PathVariable(name = "repositoryId") String repositoryId,
                                    @PathVariable(name = "packageName") String packageName,
                                    HttpServletResponse response) {
@@ -120,12 +125,11 @@ public class PubArtifactController
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @ApiOperation(value = "Download a specific version of a PUB package.", nickname = "DownloadPackageVersion")
-    @RequestMapping(path = "{storageId}/{repositoryId}/packages/{packageName}/versions/{artifactName}",
+    @RequestMapping(path = API_ENDPOINT + "{repositoryId}/packages/{packageName}/versions/{artifactName}",
             method = {RequestMethod.GET,
                     RequestMethod.HEAD})
     @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#storageId + '/' + #repositoryId + '/' + #packageName + '/' + #artifactName")
     public void download(@RepositoryMapping Repository repository,
-                         @PathVariable(name = "storageId") String storageId,
                          @PathVariable(name = "repositoryId") String repositoryId,
                          @PathVariable(name = "packageName") String packageName,
                          @PathVariable(name = "artifactName") String artifactName,
@@ -133,6 +137,7 @@ public class PubArtifactController
                          HttpServletRequest request,
                          HttpServletResponse response)
             throws Exception {
+        final String storageId = repository.getStorage().getId();
         long startTime = System.currentTimeMillis();
         final String artifactPath = String.format("%s/%s", packageName, artifactName);
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
@@ -141,14 +146,13 @@ public class PubArtifactController
         logger.debug("Pub download [{}] task time [{}] ms", artifactPath, System.currentTimeMillis() - startTime);
     }
 
-    @GetMapping(path = "{storageId}/{repositoryId}/api/packages/versions/new")
+    @GetMapping(path = API_ENDPOINT + "{repositoryId}/api/packages/versions/new")
     @ApiOperation(value = "Start deploy process by retrieving the url for deployment.", nickname = "getUrlDeployment", response = PubUpload.class)
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     public ResponseEntity getUrlDeployment(@RepositoryMapping Repository repository,
-                                           @PathVariable(name = "storageId") String storageId,
                                            @PathVariable(name = "repositoryId") String repositoryId,
                                            HttpServletResponse response) {
-        String url = getRepositoryBaseUrl(repository) + "/deploy";
+        String url = getArtifactoryRepositoryBaseUrl(repository, API_ENDPOINT) + "/deploy";
         Map<String, String> fields = Maps.newHashMap();
         fields.put("file", "file");
         PubUpload pubUpload = PubUpload.builder().url(url).fields(fields).build();
@@ -156,16 +160,16 @@ public class PubArtifactController
         return ResponseEntity.ok(pubUpload);
     }
 
-    @PostMapping(path = "{storageId}/{repositoryId}/deploy", consumes = MediaType.MULTIPART_FORM_DATA)
+    @PostMapping(path = API_ENDPOINT + "{repositoryId}/deploy", consumes = MediaType.MULTIPART_FORM_DATA)
     @ApiOperation(value = "Performs deploy process by uploading the package.", nickname = "deploy")
     @ApiResponses({@ApiResponse(code = 204, message = "No Content"), @ApiResponse(code = 400, message = "Bad Request"), @ApiResponse(code = 500, message = "Internal server error")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     public ResponseEntity deploy(@RepositoryMapping Repository repository,
-                                 @PathVariable(name = "storageId") String storageId,
                                  @PathVariable(name = "repositoryId") String repositoryId,
                                  HttpServletRequest request,
                                  @RequestParam("file") MultipartFile file,
                                  HttpServletResponse response) throws Exception {
+        final String storageId = repository.getStorage().getId();
         PubMetadataExtractor extractor = new PubMetadataExtractor();
         try (InputStream fileInputStream = file.getInputStream()) {
             Pair<Pubspec, Path> pubspecPathPair = extractor.extractPubSpec(fileInputStream);
@@ -187,15 +191,14 @@ public class PubArtifactController
             logger.error(e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
-        response.setHeader("Location", getRepositoryBaseUrl(repository) + "/finalizeDeployment");
+        response.setHeader("Location", getArtifactoryRepositoryBaseUrl(repository, API_ENDPOINT) + "/finalizeDeployment");
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
-    @GetMapping(path = "{storageId}/{repositoryId}/finalizeDeployment")
+    @GetMapping(path = API_ENDPOINT + "{repositoryId}/finalizeDeployment")
     @ApiOperation(value = "Finalize the deploy process.", nickname = "finalizeDeployment")
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    public ResponseEntity finalizeDeployment(@PathVariable(name = "storageId") String storageId,
-                                             @PathVariable(name = "repositoryId") String repositoryId, HttpServletResponse response) {
+    public ResponseEntity finalizeDeployment(@PathVariable(name = "repositoryId") String repositoryId, HttpServletResponse response) {
         response.setHeader("Content-Type", PubConstants.CONTENT_TYPE);
         return ResponseEntity.ok(PubConstants.GET_FINALIZE_DEPLOYMENT_RESULT);
     }
@@ -204,7 +207,7 @@ public class PubArtifactController
     @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @GetMapping(path = "{storageId}/{repositoryId}/{packageName}/{artifactName}")
+    @GetMapping(path = API_ENDPOINT + "{repositoryId}/{packageName}/{artifactName}")
     @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #packageName + '/' + #artifactName")
     public void download(@RepositoryMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,
@@ -221,5 +224,22 @@ public class PubArtifactController
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
         vulnerabilityBlock(repositoryPath);
         provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+    }
+
+    @Override
+    @ApiOperation(value = "Used to retrieve an artifact")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
+            @ApiResponse(code = 400, message = "An error occurred.")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
+    @GetMapping("/{repositoryId:^(?!api$).+}/{path:.+}")
+    public Object download(@RepositoryMapping Repository repository,
+                           @RequestHeader HttpHeaders httpHeaders,
+                           @PathVariable String path,
+                           HttpServletRequest request,
+                           HttpServletResponse response,
+                           ModelMap model)
+            throws Exception {
+        return super.download(repository, httpHeaders, path, request, response, model);
     }
 }

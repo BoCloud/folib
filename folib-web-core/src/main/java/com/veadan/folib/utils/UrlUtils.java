@@ -1,14 +1,28 @@
 package com.veadan.folib.utils;
 
+import cn.hutool.extra.spring.SpringUtil;
+import com.veadan.folib.components.DistributedCacheComponent;
+import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.scanner.common.exception.BusinessException;
+import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.util.CacheUtil;
+import com.veadan.folib.web.Constants;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Objects;
 import java.util.Optional;
+
+import static com.veadan.folib.web.Constants.ARTIFACT_ROOT_PATH;
+import static com.veadan.folib.web.Constants.ARTIFACT_ROOT_PATHS;
 
 /**
  * @author
@@ -24,12 +38,120 @@ public class UrlUtils {
         return servletRequest.getRequestURI();
     }
 
+    public static HttpServletRequest getRequest() {
+        return ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+    }
+
     public static String getCurrentStorageId() {
         return getSubPath(getRequestUri(), 2);
     }
 
     public static String getCurrentRepositoryId() {
         return getSubPath(getRequestUri(), 3);
+    }
+
+    public static String getCurrentStorageIdAndRepositoryId() {
+        HttpServletRequest request = getRequest();
+        String servletPath = request.getServletPath();
+        // 使用直接的检查而不是Optional
+        if (servletPath == null) {
+            servletPath = request.getPathInfo();
+        } else {
+            String trimmedPath = servletPath.trim();
+            if (trimmedPath.isEmpty()) {
+                servletPath = request.getPathInfo();
+            }
+        }
+        if (servletPath.startsWith(Constants.ARTIFACT_COPY_PATH)) {
+            String storageId = request.getParameter("srcStorageId");
+            String repositoryId = request.getParameter("srcRepositoryId");
+            if (storageId == null || repositoryId == null) {
+                return null;
+            }
+            return ConfigurationUtils.getStorageIdAndRepositoryId(storageId, repositoryId);
+        }
+        String finalServletPath = servletPath;
+        if (ARTIFACT_ROOT_PATHS.stream().anyMatch(finalServletPath::startsWith)) {
+            String[] pathParts = servletPath.split("/");
+            if (servletPath.startsWith(ARTIFACT_ROOT_PATH)) {
+                if (pathParts.length < 4) {
+                    return null;
+                }
+                request.setAttribute("storageId", pathParts[2]);
+                return getStorageAndRepositoryId(pathParts[2], pathParts[3]);
+            }
+            if (pathParts.length < 3) {
+                return null;
+            }
+            for (String apiRootPath : Constants.ARTIFACT_API_ROOT_PATHS) {
+                if (servletPath.startsWith(apiRootPath)) {
+                    String path = servletPath.replace(apiRootPath, "");
+                    String[] paths = path.split("/");
+                    //获取对应的存储空间
+                    String repositoryId = paths[0];
+                    String storageId = getDefaultStorageId(repositoryId);
+                    if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
+                        request.setAttribute("storageId", storageId);
+                        request.setAttribute("repositoryId", repositoryId);
+                        return getStorageAndRepositoryId(storageId, repositoryId);
+                    }
+                    return null;
+                }
+            }
+            //获取对应的存储空间
+            String repositoryId = pathParts[2];
+            String storageId = getDefaultStorageId(repositoryId);
+            if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
+                request.setAttribute("storageId", storageId);
+                request.setAttribute("repositoryId", repositoryId);
+                return getStorageAndRepositoryId(storageId, repositoryId);
+            }
+            return null;
+        }
+        return null;
+    }
+
+    private static String getStorageAndRepositoryId(String storageId, String repositoryId) {
+        String key = String.format("%s:%s", storageId, repositoryId);
+        CacheUtil<String, Repository> cacheUtil = CacheUtil.getInstance();
+        Repository repository = cacheUtil.get(key);
+        if (repository == null) {
+            ConfigurationManager configurationManager = SpringUtil.getBean(ConfigurationManager.class);
+            Storage storage = configurationManager.getStorage(storageId);
+            if (storage == null) {
+                return null;
+            }
+            repository = storage.getRepository(repositoryId);
+            if (repository == null) {
+                return null;
+            }
+            cacheUtil.put(key, repository);
+        }
+        return ConfigurationUtils.getStorageIdAndRepositoryId(storageId, repositoryId);
+    }
+
+    /**
+     * 获取设置默认的存储空间
+     *
+     * @param repositoryId 仓库名称
+     * @return 存储空间
+     */
+    public static String getDefaultStorageId(String repositoryId) {
+        DistributedCacheComponent distributedCacheComponent = SpringUtil.getBean(DistributedCacheComponent.class);
+        if (StringUtils.isNotBlank(repositoryId)) {
+            //按照仓库查询对应的存储空间
+            String key = "JFrogAdapterStorage_" + repositoryId;
+            String jFrogAdapterStorage = distributedCacheComponent.get(key);
+            if (StringUtils.isNotBlank(jFrogAdapterStorage)) {
+                return jFrogAdapterStorage;
+            }
+        }
+        String key = "JFrogAdapterDefaultStorage";
+        String jFrogAdapterDefaultStorage = distributedCacheComponent.get(key);
+        if (StringUtils.isBlank(jFrogAdapterDefaultStorage)) {
+            throw new RuntimeException("Default storage not found,Please Set the default storageId");
+        }
+        return jFrogAdapterDefaultStorage;
     }
 
     private static String getSubPath(String url,
@@ -79,7 +201,7 @@ public class UrlUtils {
             return null;
         }
     }
-    
+
     public static String addQuery(String urlStr, String key, String value) {
         final StringBuilder builder = new StringBuilder(urlStr);
         if (!urlStr.contains("?")) {
@@ -88,7 +210,7 @@ public class UrlUtils {
         if (!builder.toString().endsWith("?")) {
             builder.append("&");
         }
-        
+
         builder.append(key).append("=").append(value);
         return builder.toString();
     }

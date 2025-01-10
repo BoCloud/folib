@@ -1,9 +1,12 @@
 package com.veadan.folib.security.vote;
 
+import cn.hutool.extra.spring.SpringUtil;
 import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.BrowseController;
 import com.veadan.folib.enums.RepositoryScopeEnum;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -98,6 +101,24 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
         return extendedAuth.calculateExtendedAuthorities(authentication, storageId, repositoryId, path, false).stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
     }
 
+    public Repository getRepositoryFromCacheOrLoad(String storageId, String repositoryId) {
+        CacheUtil<String, Repository> cacheUtil = CacheUtil.getInstance();
+        String key = String.format("%s:%s", storageId, repositoryId);
+        Repository repository = cacheUtil.get(key);
+        if (Objects.isNull(repository)) {
+            Storage storage = configurationManagementService.getConfiguration().getStorage(storageId);
+            if (Objects.isNull(storage)) {
+                return null;
+            }
+            repository = storage.getRepository(repositoryId);
+            if (Objects.isNull(repository)) {
+                return null;
+            }
+            cacheUtil.put(key, repository);
+        }
+        return repository;
+    }
+
     @SuppressWarnings("serial")
     public class ExtendedAuthorityAuthentication implements Authentication {
 
@@ -130,27 +151,16 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
             return repository.isAllowAnonymous();
         }
 
-        private Repository getRepositoryFromCacheOrLoad(String storageId, String repositoryId) {
-            CacheUtil<String, Repository> cacheUtil = CacheUtil.getInstance();
-            String key = String.format("%s:%s", storageId, repositoryId);
-            Repository repository = cacheUtil.get(key);
-            if (Objects.isNull(repository)) {
-                Storage storage = configurationManagementService.getConfiguration().getStorage(storageId);
-                if (Objects.isNull(storage)) {
-                    return null;
-                }
-                repository = storage.getRepository(repositoryId);
-                if (Objects.isNull(repository)) {
-                    return null;
-                }
-                cacheUtil.put(key, repository);
-            }
-            return repository;
-        }
-
         public Collection<? extends GrantedAuthority> calculateExtendedAuthorities(Authentication authentication, String storageId, String repositoryId, String path, Boolean enableSplitPath) {
-            storageId = storageId == null ? UrlUtils.getCurrentStorageId() : storageId;
-            repositoryId = repositoryId == null ? UrlUtils.getCurrentRepositoryId() : repositoryId;
+            String storageIdAndRepositoryId = "";
+            if (StringUtils.isBlank(storageId)) {
+                storageIdAndRepositoryId = UrlUtils.getCurrentStorageIdAndRepositoryId();
+                if (StringUtils.isBlank(storageIdAndRepositoryId)) {
+                    storageIdAndRepositoryId = ConfigurationUtils.getStorageIdAndRepositoryId(UrlUtils.getCurrentStorageId(), UrlUtils.getCurrentRepositoryId());
+                }
+            }
+            storageId = storageId == null ? ConfigurationUtils.getStorageId(storageIdAndRepositoryId, storageIdAndRepositoryId) : storageId;
+            repositoryId = repositoryId == null ? ConfigurationUtils.getRepositoryId(storageIdAndRepositoryId) : repositoryId;
             Object principal = authentication.getPrincipal();
             Collection<? extends GrantedAuthority> apiAuthorities = authentication.getAuthorities();
             logger.debug("Privileges for [{}] are [{}]", principal, apiAuthorities);
@@ -214,7 +224,7 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
                 if (CollectionUtils.isNotEmpty(accessModelData.getStorageAuthorities())) {
                     authorities.remove(Privileges.ARTIFACTS_RESOLVE);
                 }
-                List<String> paths = Arrays.asList(ARTIFACT_ROOT_PATH, DOCKER_ROOT_PATH, BrowseController.ROOT_CONTEXT, STORAGE_ROOT_PATH);
+                List<String> paths = Arrays.asList(ARTIFACT_ROOT_PATH, ARTIFACTORY_ARTIFACT_ROOT_PATH, DOCKER_ROOT_PATH, BrowseController.ROOT_CONTEXT, STORAGE_ROOT_PATH);
                 if (StringUtils.isNotBlank(requestUri) && paths.stream().noneMatch(requestUri::startsWith)) {
                     return authorities;
                 }
@@ -232,7 +242,7 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
             if (Objects.nonNull(repository) && RepositoryScopeEnum.OPEN.getType().equals(repository.getScope()) && !extendedAuthorities.contains(Privileges.ARTIFACTS_RESOLVE)) {
                 extendedAuthorities.add(Privileges.ARTIFACTS_RESOLVE);
             }
-            List<String> paths = Arrays.asList(ARTIFACT_ROOT_PATH, DOCKER_ROOT_PATH, BrowseController.ROOT_CONTEXT, STORAGE_ROOT_PATH);
+            List<String> paths = Arrays.asList(ARTIFACT_ROOT_PATH, ARTIFACTORY_ARTIFACT_ROOT_PATH, DOCKER_ROOT_PATH, BrowseController.ROOT_CONTEXT, STORAGE_ROOT_PATH);
             if (StringUtils.isNotBlank(requestUri) && paths.stream().noneMatch(requestUri::startsWith)) {
                 return extendedAuthorities;
             }
@@ -294,13 +304,74 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
         }
     }
 
+    private String parseArtifactoryRequestUri(String requestUri) {
+        if (requestUri.startsWith(ARTIFACTORY_ARTIFACT_ROOT_PATH)) {
+            for (String apiPrefix : ARTIFACT_API_ROOT_PATHS) {
+                //使用api级别
+                if (requestUri.startsWith(apiPrefix)) {
+                    apiPrefix = requestUri.replace(apiPrefix, "");
+                    String apiSuffix = StringUtils.removeStart(apiPrefix, GlobalConstants.SEPARATOR);
+                    String storageId = parseStorageId(apiSuffix);
+                    if (StringUtils.isBlank(storageId)) {
+                        return requestUri;
+                    }
+                    requestUri = ARTIFACTORY_ARTIFACT_ROOT_PATH + GlobalConstants.SEPARATOR + storageId + GlobalConstants.SEPARATOR + apiSuffix;
+                    return requestUri;
+                }
+            }
+            requestUri = StringUtils.removeStart(requestUri.replace(ARTIFACTORY_ARTIFACT_ROOT_PATH, ""), GlobalConstants.SEPARATOR);
+            String storageId = parseStorageId(requestUri);
+            if (StringUtils.isBlank(storageId)) {
+                return requestUri;
+            }
+            requestUri = ARTIFACTORY_ARTIFACT_ROOT_PATH + GlobalConstants.SEPARATOR + storageId + GlobalConstants.SEPARATOR + requestUri;
+            return requestUri;
+        }
+        return requestUri;
+    }
+
+    private String parseStorageId(String path) {
+        String repositoryId = path.split(GlobalConstants.SEPARATOR)[0];
+        String storageId = getDefaultStorageId(repositoryId);
+        if (Objects.isNull(getRepositoryFromCacheOrLoad(storageId, repositoryId))) {
+            return "";
+        }
+        return storageId;
+    }
+
+
     private String parseRequestUri(String requestUri) {
         try {
-            requestUri = UriUtils.decode(requestUri);
+            requestUri = parseArtifactoryRequestUri(UriUtils.decode(requestUri));
         } catch (Exception ex) {
             logger.error("Get requestUri error [{}]", ExceptionUtils.getStackTrace(ex));
         }
         return requestUri;
     }
+
+    /**
+     * 获取设置默认的存储空间
+     *
+     * @param repositoryId 仓库名称
+     * @return 存储空间
+     */
+    public String getDefaultStorageId(String repositoryId) {
+        DistributedCacheComponent distributedCacheComponent = SpringUtil.getBean(DistributedCacheComponent.class);
+        if (StringUtils.isNotBlank(repositoryId)) {
+            //按照仓库查询对应的存储空间
+            String key = "JFrogAdapterStorage_" + repositoryId;
+            String jFrogAdapterStorage = distributedCacheComponent.get(key);
+            if (StringUtils.isNotBlank(jFrogAdapterStorage)) {
+                return jFrogAdapterStorage;
+            }
+        }
+        String key = "JFrogAdapterDefaultStorage";
+        String jFrogAdapterDefaultStorage = distributedCacheComponent.get(key);
+        if (StringUtils.isBlank(jFrogAdapterDefaultStorage)) {
+            throw new RuntimeException("Default storage not found,Please Set the default storageId");
+        }
+        return jFrogAdapterDefaultStorage;
+    }
+
 
 }

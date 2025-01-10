@@ -8,6 +8,7 @@ import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.configuration.MutableConfiguration;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.controllers.support.ListEntityBody;
 import com.veadan.folib.controllers.support.ResponseEntityBody;
@@ -394,6 +395,10 @@ public abstract class BaseController {
 
     protected String getRepositoryBaseUrl(Repository repository) {
         return String.format("%s/storages/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
+    }
+
+    protected String getArtifactoryRepositoryBaseUrl(Repository repository, String endPoint) {
+        return String.format("%s/artifactory/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), StringUtils.removeEnd(StringUtils.removeStart(endPoint, GlobalConstants.SEPARATOR), GlobalConstants.SEPARATOR), repository.getId());
     }
 
     /***

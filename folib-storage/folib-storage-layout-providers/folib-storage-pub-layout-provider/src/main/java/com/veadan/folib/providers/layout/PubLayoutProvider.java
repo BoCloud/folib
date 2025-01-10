@@ -134,7 +134,7 @@ public class PubLayoutProvider
             pubArtifactCoordinates = PubArtifactCoordinates.parse(artifactPath);
             String packagePath = PubConstants.PACKAGE_JSON_PATH + pubArtifactCoordinates.getName() + PubConstants.PACKAGE_JSON_EXTENSION;
             RepositoryPath packageJsonRepositoryPath = repositoryPathResolver.resolve(path.getRepository(), packagePath);
-            uri = pubArtifactCoordinates.convertToResource(pubArtifactCoordinates);
+            uri = pubArtifactCoordinates.convertToLayoutResource(pubArtifactCoordinates);
             if (Objects.isNull(packageJsonRepositoryPath) || !Files.exists(packageJsonRepositoryPath)) {
                 throw new ArtifactNotFoundException(uri, String.format("Path packageName [%s] packageJsonRepositoryPath not exists", pubArtifactCoordinates.getName()));
             }

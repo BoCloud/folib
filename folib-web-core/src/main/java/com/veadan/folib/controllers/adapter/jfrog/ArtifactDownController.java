@@ -37,22 +37,22 @@ import java.util.Objects;
 @Api(description = "JFrog下载", tags = "JFrog下载")
 public class ArtifactDownController extends JFrogBaseController {
 
-    @PreAuthorize("authenticated")
-    @GetMapping(value = "/{repositoryId}/{artifactPath:.+}")
-    public ResponseEntity download(@PathVariable("repositoryId") String repositoryId, @RequestHeader HttpHeaders httpHeaders, @PathVariable String artifactPath,
-                                   HttpServletRequest request, HttpServletResponse response) throws Exception {
-        final String storageId = getDefaultStorageId(repositoryId);
-        boolean checkRepository = checkRepository(storageId, repositoryId);
-        if (!checkRepository) {
-            return repositoryNotFound();
-        }
-        logger.info("Requested /{}/{}/{}.", storageId, repositoryId, artifactPath);
-        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
-
-        vulnerabilityBlock(repositoryPath);
-        provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
-        return null;
-    }
+//    @PreAuthorize("authenticated")
+//    @GetMapping(value = "/{repositoryId}/{artifactPath:.+}")
+//    public ResponseEntity download(@PathVariable("repositoryId") String repositoryId, @RequestHeader HttpHeaders httpHeaders, @PathVariable String artifactPath,
+//                                   HttpServletRequest request, HttpServletResponse response) throws Exception {
+//        final String storageId = getDefaultStorageId(repositoryId);
+//        boolean checkRepository = checkRepository(storageId, repositoryId);
+//        if (!checkRepository) {
+//            return repositoryNotFound();
+//        }
+//        logger.info("Requested /{}/{}/{}.", storageId, repositoryId, artifactPath);
+//        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
+//
+//        vulnerabilityBlock(repositoryPath);
+//        provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+//        return null;
+//    }
 
     @PreAuthorize("authenticated")
     @PostMapping(value = "/resolveBatchPath")
