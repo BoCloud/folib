@@ -16,15 +16,27 @@ import com.veadan.folib.components.PypiBrowsePackageHtmlResponseBuilder;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.config.NpmLayoutProviderConfig;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.configuration.SecurityPolicyConfiguration;
 import com.veadan.folib.configuration.UnionRepositoryConfiguration;
 import com.veadan.folib.configuration.UnionTargetRepositoryConfiguration;
 import com.veadan.folib.constant.GlobalConstants;
-import com.veadan.folib.domain.*;
+import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.domain.ArtifactEntity;
+import com.veadan.folib.domain.ArtifactEventRecord;
+import com.veadan.folib.domain.ArtifactIdGroup;
+import com.veadan.folib.domain.CacheSettings;
+import com.veadan.folib.domain.DirectoryListing;
+import com.veadan.folib.domain.FileContent;
+import com.veadan.folib.domain.Vulnerability;
 import com.veadan.folib.entity.ArtifactCacheRecord;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.entity.PackageNameBlock;
-import com.veadan.folib.enums.*;
+import com.veadan.folib.enums.BlockTypeEnum;
+import com.veadan.folib.enums.ConditionTypeEnum;
+import com.veadan.folib.enums.DictTypeEnum;
+import com.veadan.folib.enums.FileUnitTypeEnum;
+import com.veadan.folib.enums.PromotionStatusEnum;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
 import com.veadan.folib.npm.metadata.PackageVersion;
@@ -32,14 +44,50 @@ import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
-import com.veadan.folib.providers.layout.*;
+import com.veadan.folib.providers.layout.CocoapodsFileSystem;
+import com.veadan.folib.providers.layout.CocoapodsLayoutProvider;
+import com.veadan.folib.providers.layout.ConanFileSystem;
+import com.veadan.folib.providers.layout.ConanLayoutProvider;
+import com.veadan.folib.providers.layout.DockerFileSystem;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
+import com.veadan.folib.providers.layout.GitFlsFileSystem;
+import com.veadan.folib.providers.layout.GitLfsLayoutProvider;
+import com.veadan.folib.providers.layout.GoFileSystem;
+import com.veadan.folib.providers.layout.GoLayoutProvider;
+import com.veadan.folib.providers.layout.HelmFileSystem;
+import com.veadan.folib.providers.layout.HelmLayoutProvider;
+import com.veadan.folib.providers.layout.HuggingFaceFileSystem;
+import com.veadan.folib.providers.layout.HuggingFaceLayoutProvider;
+import com.veadan.folib.providers.layout.Maven2LayoutProvider;
+import com.veadan.folib.providers.layout.MavenFileSystem;
+import com.veadan.folib.providers.layout.NpmFileSystem;
+import com.veadan.folib.providers.layout.NpmLayoutProvider;
+import com.veadan.folib.providers.layout.NpmPackageSupplier;
+import com.veadan.folib.providers.layout.NugetFileSystem;
+import com.veadan.folib.providers.layout.NugetLayoutProvider;
+import com.veadan.folib.providers.layout.PhpFileSystem;
+import com.veadan.folib.providers.layout.PhpLayoutProvider;
+import com.veadan.folib.providers.layout.PubFileSystem;
+import com.veadan.folib.providers.layout.PubLayoutProvider;
+import com.veadan.folib.providers.layout.PypiFileSystem;
+import com.veadan.folib.providers.layout.PypiLayoutProvider;
+import com.veadan.folib.providers.layout.RawFileSystem;
+import com.veadan.folib.providers.layout.RawLayoutProvider;
+import com.veadan.folib.providers.layout.RpmFileSystem;
+import com.veadan.folib.providers.layout.RpmLayoutProvider;
 import com.veadan.folib.providers.repository.RepositoryProviderRegistry;
 import com.veadan.folib.repositories.ArtifactIdGroupRepository;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repository.NpmRepositoryFeatures;
 import com.veadan.folib.repository.PypiRepositoryFeatures;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
-import com.veadan.folib.services.*;
+import com.veadan.folib.services.ArtifactCacheRecordService;
+import com.veadan.folib.services.ArtifactMetadataService;
+import com.veadan.folib.services.ArtifactService;
+import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.services.DictService;
+import com.veadan.folib.services.DirectoryListingService;
+import com.veadan.folib.services.PackageNameBlockService;
 import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.CacheUtil;
@@ -64,6 +112,8 @@ import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.folib.util.Commons;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
@@ -76,15 +126,40 @@ import javax.inject.Inject;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.ObjectOutputStream;
+import java.io.Reader;
 import java.math.BigDecimal;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -186,6 +261,9 @@ public class ArtifactComponent {
     @Inject
     @Lazy
     private ArtifactMetadataService artifactMetadataService;
+
+    private static final int BUFFER_SIZE = 8192;
+    private static final int CHUNK_SIZE = 1024 * 1024;
 
     /**
      * 读取文件内容
@@ -915,6 +993,7 @@ public class ArtifactComponent {
         Response response = null;
         int statusCode = 0;
         Document document = null;
+        String parentPath = "";
         try {
             Client client = clientPool.getRestClient(repository.getStorage().getId(), repository.getId());
             WebTarget target = client.target(url);
@@ -922,12 +1001,18 @@ public class ArtifactComponent {
             response = target.request().get();
             statusCode = response.getStatus();
             if (statusCode == HttpStatus.OK.value()) {
-                String data = response.readEntity(String.class);
+                InputStream inputStream = response.readEntity(InputStream.class);
+                parentPath = tempPath + File.separator + "document" + File.separator + ConfigurationUtils.getSpecialStorageIdAndRepositoryId(repository.getStorage().getId(), repository.getId())
+                        + File.separator + StringUtils.removeStart(StringUtils.removeEnd(target.getUri().getPath(), GlobalConstants.SEPARATOR), GlobalConstants.SEPARATOR);
+                String filePath = parentPath + File.separator + UUID.randomUUID().toString() + ".html";
+                File tempFile = new File(filePath);
+                FileUtil.writeFromStream(inputStream, tempFile);
                 String separator = "/";
                 if (!url.endsWith(separator)) {
                     url = url + separator;
                 }
-                document = Jsoup.parse(data, url);
+                log.info("Get document url [{}] tempFile [{}] size [{}]", url, tempFile.getAbsolutePath(), tempFile.length());
+                document = Jsoup.parse(tempFile, "UTF-8", url);
             } else {
                 log.error("Get document url [{}] error response statusCode [{}]", url, statusCode);
             }
@@ -937,9 +1022,13 @@ public class ArtifactComponent {
             if (Objects.nonNull(response)) {
                 response.close();
             }
+            if (StringUtils.isNotBlank(parentPath)) {
+                FileUtil.del(new File(parentPath));
+            }
         }
         return document;
     }
+
     /**
      * 存储制品元数据文件
      *
@@ -1309,7 +1398,7 @@ public class ArtifactComponent {
     }
 
 
-    public void getArtifactByUrl(Repository repository, String url,String dist) {
+    public void getArtifactByUrl(Repository repository, String url, String dist) {
         Response response = null;
         int statusCode = 0;
         try {
@@ -1325,8 +1414,8 @@ public class ArtifactComponent {
                 if (parentDir != null && !Files.exists(parentDir)) {
                     Files.createDirectories(parentDir); // 创建父目录
                 }
-                try(InputStream is=response.readEntity(InputStream.class);
-                    FileOutputStream os = new FileOutputStream(dist)){
+                try (InputStream is = response.readEntity(InputStream.class);
+                     FileOutputStream os = new FileOutputStream(dist)) {
                     byte[] buffer = new byte[4096];
                     int bytesRead;
                     while ((bytesRead = is.read(buffer)) != -1) {
@@ -1342,6 +1431,63 @@ public class ArtifactComponent {
             if (Objects.nonNull(response)) {
                 response.close();
             }
+        }
+    }
+
+    public void parseLinksStreaming(Repository repository, String url, Consumer<String> linkConsumer) {
+        Response response = null;
+        int statusCode = 0;
+        BufferedReader reader;
+        try {
+            log.info("Get document url [{}]", url);
+            Client client = clientPool.getRestClient(repository.getStorage().getId(), repository.getId());
+            WebTarget target = client.target(url);
+            commonComponent.authentication(target, repository.getRemoteRepository().getUsername(), repository.getRemoteRepository().getPassword());
+            response = target.request().get();
+            statusCode = response.getStatus();
+            if (statusCode == HttpStatus.OK.value()) {
+                InputStream inputStream = response.readEntity(InputStream.class);
+                reader = new BufferedReader(new InputStreamReader(inputStream, Charset.defaultCharset()), BUFFER_SIZE);
+                StringBuilder chunk = new StringBuilder(CHUNK_SIZE);
+                char[] buffer = new char[BUFFER_SIZE];
+                int read;
+                while ((read = reader.read(buffer)) != -1) {
+                    chunk.append(buffer, 0, read);
+                    // 当块大小达到阈值时进行处理
+                    if (chunk.length() >= CHUNK_SIZE) {
+                        processChunk(chunk.toString(), url, linkConsumer);
+                        chunk.setLength(0); // 清空缓冲区
+                    }
+                }
+                // 处理最后一个块
+                if (chunk.length() > 0) {
+                    processChunk(chunk.toString(), url, linkConsumer);
+                }
+
+            } else {
+                log.error("Get document url [{}] error response statusCode [{}]", url, statusCode);
+            }
+        } catch (Exception ex) {
+            log.error("Get document url [{}] response statusCode [{}] error [{}]", url, statusCode, ExceptionUtils.getStackTrace(ex));
+        } finally {
+            if (Objects.nonNull(response)) {
+                response.close();
+            }
+        }
+    }
+
+    private void processChunk(String html, String baseUrl, Consumer<String> linkConsumer) {
+        try {
+            Document doc = Jsoup.parse(html, baseUrl);
+            Elements links = doc.select("pre a");
+            for (Element link : links) {
+                String absUrl = link.absUrl("href");
+                linkConsumer.accept(absUrl);
+            }
+            links = null;
+            doc = null;
+        } catch (Exception e) {
+            log.error("解析处理异常{}", e.getMessage(), e);
         }
     }
 

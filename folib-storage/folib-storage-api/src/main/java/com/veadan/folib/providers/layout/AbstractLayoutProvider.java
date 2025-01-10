@@ -72,7 +72,7 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
 
     public abstract T getArtifactCoordinates(RepositoryPath repositoryPath) throws IOException;
 
-    protected Set<String> getDigestAlgorithmSet() {
+    public Set<String> getDigestAlgorithmSet() {
         return Stream.of(MessageDigestAlgorithms.MD5, MessageDigestAlgorithms.SHA_1, MessageDigestAlgorithms.SHA_256, SM3.ALGORITHM_NAME)
                 .collect(Collectors.toSet());
     }

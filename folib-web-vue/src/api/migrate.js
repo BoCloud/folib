@@ -79,4 +79,28 @@ export function task () {
     })
   }
 
+  export function changeLayout(data) {
+    return request({
+      url: '/api/migrate/jfrog/repository/layout',
+      method: 'put',
+      data: data
+    })
+  }
+
+  export function setFailed(data) {
+    return request({
+      url: '/api/migrate/jfrog/repository/failed',
+      method: 'post',
+      data: data
+    })
+  }
+
+  export function getIndexProgress(data) {
+    return request({
+      url: '/api/migrate/jfrog/index/progress',
+      method: 'post',
+      data: data
+    })
+  }
+
   

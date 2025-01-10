@@ -28,10 +28,20 @@
           <a-card :bordered="false" :style="isChecked ? 'height:calc(100vh - 230px);margin-bottom:0px;' : ''" class="header-solid mb-24 left_menu">
             <template #title>
               <a-row type="flex" align="middle" class="position:relative;">
-                <a-col :span="24" :md="12" class="col-info">
+                <a-col :span="24" :md="14" class="col-info" style="display: flex; align-items: center;">
                   <h6 class="font-semibold m-0">{{ isChecked ? $t('Storage.RepositoryList') : $t('Storage.StorageList')}}</h6>
+                  <a style="margin-left: 15px;" class="text-center text-muted font-bold" v-if="!isChecked" :title="$t('Storage.CreateStorageSpace')">
+                    <h3 v-if="$store.state.user.roles.indexOf('ADMIN') > -1" class="font-semibold text-muted mb-0"  @click="createHandleView">
+                      +
+                    </h3>
+                  </a>
+                  <a style="margin-left: 15px;" class="text-center text-muted font-bold" v-if="isChecked" :title="$t('Storage.CreateRepository')">
+                    <h3 class="font-semibold text-muted mb-0" @click="folibVisibleShow">
+                      +
+                    </h3>
+                  </a>
                 </a-col>
-                <a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
+                <a-col :span="24" :md="10" style="display: flex; align-items: center; justify-content: flex-end">
                   <!-- <a-switch 
                     :disabled="switchDisabled"
                     style="margin-right:10px;"
@@ -39,7 +49,14 @@
                     class="switch-position"
                     @change="getDetailInfo"
                   ></a-switch> -->
-                  <div class="switch_mode">
+                    <!-- <a class="text-center text-muted font-bold" v-if="isChecked" style="margin-right:8px;">
+                      <h5 class="font-semibold text-muted mb-0"
+                        @click="toggleTree">
+                          <a-icon v-if="!isTrashView" type="delete" />
+                          <a-icon v-else type="file-zip" />
+                      </h5>
+                    </a> -->
+                    <div class="switch_mode">
                     <div @click="checkMode(false)" class="img-sty" :class="isChecked ? '' : 'isActive'">
                       <img src="./images/list.svg" width="20" alt="">
                     </div>
@@ -48,25 +65,6 @@
                     </div>
                     <div :style="switchDisabled?'display:block;':'display:none;'" class="disabled_sty"></div>
                   </div>
-                  <a class="text-center text-muted font-bold" v-if="!isChecked" :title="$t('Storage.CreateStorageSpace')">
-                    <div v-if="$store.state.user.roles.indexOf('ADMIN') > -1" class="font-semibold text-muted mb-0"
-                      @click="createHandleView">
-                      <img src="./Storage-components/images/add.svg" width="30" alt="">
-                    </div>
-                  </a>
-                  <!-- <a class="text-center text-muted font-bold" v-if="isChecked" style="margin-right:8px;">
-                    <h5 class="font-semibold text-muted mb-0"
-                      @click="toggleTree">
-                        <a-icon v-if="!isTrashView" type="delete" />
-                        <a-icon v-else type="file-zip" />
-                    </h5>
-                  </a> -->
-                  <a class="text-center text-muted font-bold" v-if="isChecked" :title="$t('Storage.CreateRepository')">
-                    <div class="font-semibold text-muted mb-0"
-                      @click="folibVisibleShow">
-                      <img src="./Storage-components/images/create-repository.svg" width="24" alt="">
-                    </div>
-                  </a>
                 </a-col>
               </a-row>
             </template>
@@ -810,7 +808,7 @@
                 <a-col :span="6">
                   <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.remoteRepository.allowsDirectoryBrowsing">
-                      {{ $t('Storage.Allowed') }}{{ $t('Storage.NotAllowed') }}
+                      {{ $t('Storage.Allowed') }}{{ $t('Storage.DirectoryBrowsing') }}
                       <!-- {{ folibRepository.remoteRepository.allowsDirectoryBrowsing ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }} -->
                     </a-checkbox>
                   </a-form-item>
@@ -3006,27 +3004,27 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 80px;
-  background: rgba(255,255,255,0.5);
-    box-shadow: 0px 1px 6px 1px rgba(0,0,0,0.1);
+  width: 75px;
+  // background: rgba(255,255,255,0.5);
+  //   box-shadow: 0px 1px 6px 1px rgba(0,0,0,0.1);
   padding: 3px;
   border-radius: 4px;
   // left: 0px;
-  margin-right: 10px;
+  // margin-right: 10px;
   
   .img-sty{
     opacity: 1 !important;
     cursor: pointer;
-    background: rgba(255,255,255,0.5);
+    // background: rgba(255,255,255,0.5);
     border-radius: 4px;
-    box-shadow: 0px 1px 6px 1px rgba(0,0,0,0.1);
+    box-shadow: 0px 1px 6px 1px rgba(25, 141, 252,0.15);
     padding: 3px 5px;
     transition: all 0.3s;
   }
 
   .isActive{
-    background: #a5cafc;
-    box-shadow: 0px 1px 6px 1px rgba(0,0,0,0.2);
+    background: rgba(25, 141, 252,0.2);
+    box-shadow: 0px 1px 6px 1px rgba(25, 141, 252,0.2);
   }
   .disabled_sty{
     width: 80px;

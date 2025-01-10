@@ -150,4 +150,13 @@ public enum JfrogMappingEnum {
         }
         return null;
     }
+
+    public static JfrogMappingEnum getEnumBySubLayout(String subLayout){
+        for (JfrogMappingEnum jfrogMappingEnum : values()) {
+            if(jfrogMappingEnum.getSubLayout().equals(subLayout)){
+                return jfrogMappingEnum;
+            }
+        }
+        return null;
+    }
 }

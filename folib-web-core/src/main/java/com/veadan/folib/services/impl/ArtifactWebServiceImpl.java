@@ -1495,6 +1495,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
 
     }
 
+    @Override
+    public long countByUUidPrefix(String uuidPrefix) {
+        return artifactRepository.countByUUidPrefix(uuidPrefix);
+    }
+
     private void handleDockerRepo(RepositoryPath rootRepositoryPath, RepositoryPath blobsRootRepositoryPath, RepositoryPath manifestRootRepositoryPath) {
         AtomicLong imageAl = new AtomicLong(0), blobAl = new AtomicLong(0), manifestAl = new AtomicLong(0), copyBlobAl = new AtomicLong(0), copyManifestAl = new AtomicLong(0), copyBlobFailAl = new AtomicLong(0), copyManifestFailAl = new AtomicLong(0), deleteBlobAl = new AtomicLong(0), deleteManifestAl = new AtomicLong(0);
         try (Stream<Path> pathStream = Files.list(rootRepositoryPath)) {

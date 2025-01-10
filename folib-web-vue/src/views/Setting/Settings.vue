@@ -304,7 +304,7 @@
                           <a-col :span="24" :lg="8">
                               <a-form-item class="mb-10" :label="$t('Setting.StorageThreshold')" :colon="false">
                                   <a-input-number style="width: 100%"
-                                                  :default-value="90"
+                                                  :default-value="100"
                                                   :min="0"
                                                   :max="100"
                                                   :formatter="value => `${value}%`"
@@ -1790,7 +1790,7 @@ export default {
             uuid: undefined,
         },
 
-        platformStorageThreshold: 90,
+      platformStorageThreshold: 90,
     }
   },
   computed: {
@@ -1895,7 +1895,9 @@ export default {
           this.globalS3BucketDisabled = true
         }
         if(this.serverSettings.alarmConfigurationForm){
-            this.platformStorageThreshold = this.getStorageThreshold(this.serverSettings.alarmConfigurationForm.storageThreshold);
+            if(this.serverSettings.alarmConfigurationForm.storageThreshold && this.serverSettings.alarmConfigurationForm.storageThreshold > 0){
+                this.platformStorageThreshold = this.getStorageThreshold(this.serverSettings.alarmConfigurationForm.storageThreshold);
+            }
         }
       })
     },
