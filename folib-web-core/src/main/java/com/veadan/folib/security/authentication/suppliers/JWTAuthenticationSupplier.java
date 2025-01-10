@@ -83,7 +83,7 @@ public class JWTAuthenticationSupplier
         final String uri = request.getRequestURI();
 
         // wildcard match
-        boolean matches = uri.startsWith("/api") || uri.startsWith("/storages");
+        boolean matches = uri.startsWith("/artifactory") || uri.startsWith("/api") || uri.startsWith("/storages");
 
         // exclude `/api/ping` since it's under the wild card match, but is called to check for liveliness which
         // means it might contain the `cookie` thus triggering a basic auth (gh#1687).

@@ -337,4 +337,6 @@ public interface GlobalConstants {
      * 最新版本关键字
      */
     List<String> LATEST_ARTIFACT_KEY_LIST = Lists.newArrayList("[RELEASE]", "[LATEST]");
+
+    List<String> HTTP_PREFIX_LIST = Lists.newArrayList("http://", "https://");
 }
