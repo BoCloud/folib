@@ -132,7 +132,7 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
         // 获取仓库信息
         try {
             MigrateInfo repository = migrateInfoService.getByMigrateIdAndRepoInfo(syncArtifactForm.getMigrateId(), syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
-            if (MigrateStatusEnum.QUEUING.getStatus() == repository.getSyncStatus() || MigrateStatusEnum.INDEX_FAILED.getStatus() == repository.getSyncStatus()) {
+            if (MigrateStatusEnum.QUEUING.getStatus() == repository.getSyncStatus() &&repository.getIndexFinish()==0) {
                 migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.FETCHING_INDEX.getStatus());
                 String dirPath = syncPackageIndex(syncArtifactForm);
                 if (dirPath == null) {
@@ -170,6 +170,7 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
     private String syncPackageIndex(SyncArtifactForm syncArtifactForm) {
         try {
             long startTime = System.currentTimeMillis();
+            distributedCounterComponent.getAtomicLong(JfrogMigrateService.INDEX_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
             Repository repository = configurationManager.getRepository(syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
             if (Objects.isNull(repository)) {
                 throw new RuntimeException(String.format("存储空间 [%s] 所属仓库 [%s}] 不存在", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId()));
@@ -263,7 +264,7 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
         long allStartTime = System.currentTimeMillis();
         Path path = Path.of(dirPath + "/artifact");
         if (!Files.exists(path) || !Files.isDirectory(path)) {
-            return false;
+            return syncArtifactForm.getTotalArtifact()==0;
         }
         int batch = 100;
         if (Objects.nonNull(syncArtifactForm.getBatch())) {
@@ -351,6 +352,7 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
                 if (absUrl.endsWith(".rpm")) {
                     absUrl = StringUtils.removeStart(absUrl.replace(remoteUrl, ""), GlobalConstants.SEPARATOR);
                     filesCommonComponent.storeContent(absUrl, file.getParent() + "/artifact");
+                    distributedCounterComponent.getAtomicLong(JfrogMigrateService.INDEX_COUNT + repository.getStorageIdAndRepositoryId()).getAndAdd(1);
                     THREAD_LOCAL.set(THREAD_LOCAL.get() + 1);
                 } else {
                     // 非子目录

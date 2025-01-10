@@ -633,10 +633,16 @@ export default {
           scopedSlots: { customRender: 'totalArtifact' }
         },
         {
-            title: this.$t('Setting.Layout'),
+            title: this.$t('Setting.PreLayout'),
             dataIndex: 'layout',
             align: 'center',
             key: 'layout'
+        },
+        {
+            title: this.$t('Setting.PostLayout'),
+            dataIndex: 'postLayout',
+            align: 'center',
+            key: 'postLayout',
         },
         {
           title: this.$t('Setting.Status'),
@@ -913,7 +919,6 @@ export default {
             if (record.syncStatus === 2) {
               const key = `${record.storageId}:${record.repositoryId}`;
               const indexCount = indexResponse[key];
-              console.log("indexCount",indexCount);
               if (indexCount !== undefined) {
                   record.totalArtifact = indexCount;
                   return record;

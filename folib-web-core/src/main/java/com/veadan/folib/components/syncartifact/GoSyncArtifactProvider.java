@@ -22,9 +22,6 @@ public class GoSyncArtifactProvider implements SyncArtifactProvider{
 
     @Inject
     private SyncArtifactProviderRegistry syncArtifactProviderRegistry;
-    @Resource
-    private MigrateInfoService migrateInfoService;
-
     @Override
     @PostConstruct
     public void register() {

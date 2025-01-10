@@ -309,12 +309,10 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             migrateInfo.setMigrateId(migrateId);
             migrateInfo.setLayout(repository.getLayout());
             migrateInfo.setSyncStatus(0);
+            migrateInfo.setIndexFinish(0);
             migrateInfo.setStorageId(storageId);
             migrateInfo.setRepositoryId(repositoryId);
-            JfrogMappingEnum jfrogMappingEnum = JfrogMappingEnum.getEnumByJfrogName(repository.getLayout());
-            if(jfrogMappingEnum!=null){
-                migrateInfo.setPostLayout(jfrogMappingEnum.getSubLayout());
-            }
+            migrateInfo.setPostLayout(repository.getSubLayout());
             migrateInfo.setSyncProperty(info.getSyncMeta());
             migrateInfoService.save(migrateInfo);
         }
@@ -344,7 +342,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             // 修改状态
             migrateInfoService.updateById(info);
             try {
-                if(info.getIndexFinish()==0){
+                if(info.getIndexFinish()==null||info.getIndexFinish()==0){
                     distributedQueueComponent.putToQueue(QUEUE_NAME, storeAndRepo);
                 }
             } catch (InterruptedException e) {
@@ -768,10 +766,15 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 migrateInfo.setMigrateId(info.getMigrateId());
                 migrateInfo.setStorageId(storageId);
                 migrateInfo.setSyncProperty(1);
+                migrateInfo.setIndexFinish(0);
                 migrateInfo.setRepositoryId(repository.getKey());
                 migrateInfo.setUsedSpace(spaceInfo.get(repository.getKey()));
                 migrateInfo.setSyncStatus(0);
                 migrateInfo.setLayout(repository.getPackageType());
+                JfrogMappingEnum jfrogName = JfrogMappingEnum.getEnumByJfrogName(repository.getPackageType());
+                if(jfrogName!=null){
+                    migrateInfo.setPostLayout(jfrogName.getSubLayout());
+                }
                 migrateInfoService.save(migrateInfo);
             } else {
                 repositoryDto.setType(RepositoryTypeEnum.HOSTED.getType());
@@ -805,6 +808,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         info.setMigrateId("jfrog-migrate:"+storageId);;
         info.setStatus(0);
         info.setBatchSize(1);
+        info.setThreadNumber(4);
         String url = StringUtils.removeEnd(form.getUrl(), GlobalConstants.SEPARATOR)+GlobalConstants.SEPARATOR+"artifactory";
         info.setBrowsePrefix(url);
         info.setRemotePreUrl(url);

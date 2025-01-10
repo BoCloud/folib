@@ -1,6 +1,5 @@
 package com.veadan.folib.controllers;
 
-import com.veadan.folib.components.jfrogArtifactSync.JfrogPropertySyncer;
 import com.veadan.folib.domain.migrate.AddRepositoryForm;
 import com.veadan.folib.domain.migrate.ArtifactMigrateInfo;
 import com.veadan.folib.entity.Dict;
@@ -13,7 +12,6 @@ import org.apache.http.client.HttpResponseException;
 import org.jfrog.artifactory.client.Artifactory;
 import org.jfrog.artifactory.client.ArtifactoryClientBuilder;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.StopWatch;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,7 +39,6 @@ public class JfrogMigrateController {
     private JfrogMigrateService jfrogMigrateService;
 
     private final static String JFROG_PREFIX = "/artifactory";
-
 
     @PostMapping("")
     public ResponseEntity<String> migrate(@Validated @RequestBody JfrogMigrateForm form) {
@@ -143,20 +140,4 @@ public class JfrogMigrateController {
         jfrogMigrateService.repoFinish(form.getMigrateId(), form.getStoreAndRepos());
         return ResponseEntity.ok("finished");
     }
-
-    @GetMapping("/test")
-    public Object downLoadTest(String name, String path) {
-        StopWatch stopWatch = new StopWatch();
-        stopWatch.start();
-//        ArtifactDownloader artifactDownload = new ArtifactDownloader("http://10.10.33.149:8082/artifactory/", "admin", "folib@v587", "/", 5);
-//        List<String> allArtifacts = artifactDownload.getAllArtifacts(name);
-//        log.info(allArtifacts.size() + "");
-//        stopWatch.stop();
-//        return String.valueOf(stopWatch.getTotalTimeSeconds());
-        JfrogPropertySyncer jfrogPropertySyncer = new JfrogPropertySyncer("http://10.10.33.149:8082/artifactory/", "admin", "folib@v587");
-        return jfrogPropertySyncer.getPropertiesByKeyAndPath(name, path);
-
-
-    }
-
 }

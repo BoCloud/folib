@@ -315,15 +315,7 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
             if (Objects.nonNull(sleepMillis)) {
                 Thread.sleep(sleepMillis);
             }
-            Document doc = artifactComponent.getDocument(repository, url);
-            if (Objects.isNull(doc)) {
-                log.error("获取文件失败");
-                return true;
-            }
-            StringBuilder batch = new StringBuilder();
-            Elements links = doc.select(dom);
-            for (Element link : links) {
-                String absUrl = link.absUrl("href");
+            artifactComponent.parseLinksStreaming(repository,url,absUrl->{
                 if (isSuffix(absUrl)) {
                     absUrl = StringUtils.removeStart(absUrl.replace(remoteUrl, ""), GlobalConstants.SEPARATOR);
                     filesCommonComponent.storeContent(absUrl, file.getParent() + "/artifact");
@@ -332,16 +324,38 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
                 } else {
                     // 非子目录
                     if (!absUrl.contains(url) || url.equals(absUrl) || !absUrl.endsWith("/")) {
-                        continue;
+                        return;
                     }
                     String path = absUrl.substring(rootUrl.length());
-                    batch.append(path).append("\n");
+                    try {
+                        writer.write(path + "\n");
+                    } catch (IOException e) {
+                        log.error("路径{}写异常",path);
+                    }
                 }
-            }
-            if (batch.length() > 0) {
-                writer.write(batch.toString());
-            }
-
+            });
+//            Document doc = artifactComponent.getDocument(repository, url);
+//            if (Objects.isNull(doc)) {
+//                log.error("获取文件失败");
+//                return true;
+//            }
+//            Elements links = doc.select(dom);
+//            for (Element link : links) {
+//                String absUrl = link.absUrl("href");
+//                if (isSuffix(absUrl)) {
+//                    absUrl = StringUtils.removeStart(absUrl.replace(remoteUrl, ""), GlobalConstants.SEPARATOR);
+//                    filesCommonComponent.storeContent(absUrl, file.getParent() + "/artifact");
+//                    THREAD_LOCAL.set(THREAD_LOCAL.get() + 1);
+//                    distributedCounterComponent.getAtomicLong(JfrogMigrateService.INDEX_COUNT + repository.getStorageIdAndRepositoryId()).addAndGet(1);
+//                } else {
+//                    // 非子目录
+//                    if (!absUrl.contains(url) || url.equals(absUrl) || !absUrl.endsWith("/")) {
+//                        continue;
+//                    }
+//                    String path = absUrl.substring(rootUrl.length());
+//                    writer.write(path + "\n");
+//                }
+//            }
         } catch (Exception e) {
             log.error("Maven包索引，错误 [{}]", ExceptionUtils.getStackTrace(e));
             return false;
@@ -455,7 +469,7 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
         long allStartTime = System.currentTimeMillis();
         Path path = Path.of(dirPath + "/artifact");
         if (!Files.exists(path) || !Files.isDirectory(path)) {
-            return false;
+            return syncArtifactForm.getTotalArtifact()==0;
         }
         int batch = 100;
         if (Objects.nonNull(syncArtifactForm.getBatch())) {
