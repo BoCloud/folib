@@ -149,7 +149,7 @@ public class CargoArtifactController extends BaseArtifactController {
         }
     }
 
-    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping(value = {"/{storageId}/{repositoryId}/config.json", "/{storageId}/{repositoryId}/crates/{path:.+}"})
     public void downloadPackage(@RepositoryMapping Repository repository,
                                 @RequestHeader HttpHeaders httpHeaders,
