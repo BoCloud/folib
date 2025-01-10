@@ -202,6 +202,9 @@ export function getLayoutRepoPrefix(item) {
         case 'pub':
             prefix = 'artifactory/api/pub/'
         break;
+        case 'docker':
+            prefix = ''
+        break;
         default:
             prefix = 'artifactory/'
     }
