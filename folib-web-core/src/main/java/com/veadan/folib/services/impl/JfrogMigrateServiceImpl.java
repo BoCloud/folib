@@ -528,7 +528,12 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         Assert.notNull(repository,"未找到对应的仓库");
         repository.setLayout(subLayout.getLayout());
         repository.setSubLayout(subLayout.getSubLayout());
+        LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(subLayout.getLayout());
+        if (Objects.nonNull(layoutProvider) ) {
+            repository.setArtifactCoordinateValidators(layoutProvider.getDefaultArtifactCoordinateValidators());
+        }
         try {
+
             configurationManagementService.saveRepository(info.getStorageId(), repository);
             SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, info.getStorageId(), info.getRepositoryId(), SyncRepositoryEnum.ADD_OR_UPDATE);
             clusterSyncService.syncRepository(syncRepositoryDto);
