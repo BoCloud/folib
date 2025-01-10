@@ -136,7 +136,7 @@
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
-                  <a v-if="uploadEnabled && folibRepository.layout !== 'rpm' &&  folibRepository.layout !== 'GitLfs' && folibRepository.layout !== 'GitLfs' && folibRepository.subLayout !== 'ohpm' && folibRepository.subLayout !== 'go' && folibRepository.layout !== 'debian'"><small style="padding-right: 20px" @click="handleUpload">
+                  <a v-if="uploadEnabled && folibRepository.layout !== 'rpm' &&  folibRepository.layout !== 'GitLfs' && folibRepository.layout !== 'GitLfs' && folibRepository.subLayout !== 'ohpm' && folibRepository.subLayout !== 'go' && folibRepository.layout !== 'debian' && folibRepository.layout !== 'cargo'"><small style="padding-right: 20px" @click="handleUpload">
                       {{ $t('Store.BatchUpload') }}
                       <a-icon type="cloud-upload" />
                     </small>
@@ -144,6 +144,11 @@
                   <a v-if="uploadEnabled && folibRepository.layout === 'debian'"><small style="padding-right: 20px" @click="handleDebianBatchUpload">
                       {{ $t('Store.BatchUpload') }}
                       <a-icon type="cloud-upload" />
+                    </small>
+                  </a>
+                  <a v-if="uploadEnabled && folibRepository.layout === 'cargo'"><small style="padding-right: 20px" @click="handleCargoBatchUpload">
+                        {{ $t('Store.BatchUpload') }}
+                        <a-icon type="cloud-upload" />
                     </small>
                   </a>
                   <a v-if="folibRepository.layout !== 'Raw'">
@@ -823,6 +828,43 @@
         </a-row>
       </a-form>
     </a-modal>
+   <!-- cargo upload modal --><
+   <a-modal v-model="showCargoUploadFormModal" :footer="null" :forceRender="true" :centered="true" :title="$t('Store.Upload')"
+               on-ok="showRpmUploadFormModal = false">
+          <a-form :form="cargoUploadForm" ref="cargoUploadForm" layout="horizontal" @submit.prevent="handleCargoUploadSubmit">
+              <a-row :gutter="[24]">
+                  <a-col :span="24">
+                      <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" prop="repostoryId" :colon="false">
+                          <a-input v-decorator="[
+                'repostoryId',
+                {
+                  rules: [{ required: true, message: $t('Store.InputTargetWarehouse') }],
+                },
+              ]" :disabled="true" :placeholder="$t('Store.InputTargetWarehouse')">
+                          </a-input>
+                      </a-form-item>
+                      <a-form-item :label="$t('Store.SelectFile')">
+                          <a-upload v-decorator="[
+                'files',
+                {
+                  rules: [{ required: true, message: $t('Store.PleaseSelectFile') }],
+                  valuePropName: 'fileList',
+                  getValueFromEvent: normFile,
+                },
+              ]" name="files" :multiple="true" :beforeUpload="beforeUpload" @change="onFileChange" list-type="text" accept=".crate">
+                              <a-button>
+                                  <a-icon type="upload" />
+                                  {{ $t('Store.SelectFile') }} </a-button>
+                          </a-upload>
+                      </a-form-item>
+                  </a-col>
+                  <a-col :span="24" class="text-center">
+                      <a-button key="submit" class="px-30" size="small" type="primary" :disabled="isUploading || !md5CalculationComplete" htmlType="submit">{{ $t('Store.Upload') }}</a-button>
+                      <a-button key="back" @click="uploadCargoFormModalClose()" class="px-30 ml-10" size="small">{{ $t('Store.Cancel') }}</a-button>
+                  </a-col>
+              </a-row>
+          </a-form>
+      </a-modal>
     <!--分发 -->
     <a-modal v-model="showOperationDispatchFormModal" width="50%" :footer="null" :forceRender="true" :centered="true"
       :title="operationTitle">
@@ -936,6 +978,7 @@
       @mavenUploadClose="mavenUploadClose" />
     <DebianUpload  ref="debianmodal" :folibRepository="folibRepository"/>
     <DebianBatchUpload  ref="debianBatchModal" :folibRepository="folibRepository"/>
+
     <div v-if="showContextMenu" :style="contextMenuStyle" class="context-menu">
       <a-menu @click="handleRightClick">
         <a-menu-item key="1" v-if="currentFileDetial">
@@ -1089,11 +1132,13 @@ export default {
       folibRepository: {},
       repositoryType: null,
       rpmUploadForm: this.$form.createForm(this, { name: 'rpmUpload_form' }),
+      cargoUploadForm: this.$form.createForm(this, { name: 'cargoUpload_form' }),
       uploadForm: this.$form.createForm(this, { name: 'upload_form' }),
       dockerUploadForm: this.$form.createForm(this, { name: 'dockerUpload_form' }),
       restoreForm: this.$form.createForm(this, { name: 'restore_form' }),
       showUploadFormModal: false,
       showRpmUploadFormModal: false,
+      showCargoUploadFormModal: false,
       showDockerUploadFormModal: false,
       uploadEnabled: false,
       copyEnabled: false,
@@ -1235,7 +1280,7 @@ export default {
       showOperationDispatchFormModal: false,
       repositories: [],
       custom: false,
-      enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm', 'go','GitLfs', 'pub','debian'],
+      enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm', 'go','GitLfs', 'pub','debian','cargo'],
       targetDirectoryExcludeLayout: ['Maven 2', 'npm', 'pub'],
       storageAdmin: '',
       permissions: [],
@@ -1489,6 +1534,12 @@ export default {
       this.isUploading=false;
       this.md5CalculationComplete=false;
     },
+    uploadCargoFormModalClose() {
+          this.cargoUploadForm.resetFields()
+          this.showCargoUploadFormModal = false
+          this.isUploading=false;
+          this.md5CalculationComplete=false;
+    },
     beforeUpload(file, fileList) {
       return false
     },
@@ -1525,6 +1576,17 @@ export default {
       this.uploadType = 1
       this.showUploadFormModal = true
     },
+    handleCargoBatchUpload(){
+        this.cargoUploadForm.resetFields()
+        this.$nextTick(() => {
+            if (this.$refs.cargoUploadForm) {
+                this.cargoUploadForm.setFieldsValue({
+                    repostoryId: this.folibRepository.id
+                })
+            }
+        })
+        this.showCargoUploadFormModal = true
+      },
     message(type, message) {
       if (!message) {
         message = this.$t('Store.OperationSuccess')
@@ -1619,6 +1681,45 @@ export default {
         }
       })
     },
+    handleCargoUploadSubmit (e) {
+          e.preventDefault()
+          this.cargoUploadForm.validateFields((err, values) => {
+              if (!err) {
+                  if (values.files.length > 10) {
+                      this.$notification['warning']({
+                          message: this.$t('Store.UploadCount'),
+                          description: ''
+                      })
+                      return false
+                  }
+                  let fileList = []
+                  for (let item of values.files) {
+                      let fileName = item.name.replace(':', '/')
+                      let result = artifactCheck(
+                          this.folibRepository,
+                          fileName,
+                          item.size
+                      )
+                      if (!result.check) {
+                          this.message('warning', result.msg)
+                          return false
+                      }
+                      item.name = fileName
+                      fileList.push(item)
+                  }
+                  // fileList.forEach(item => {
+                  //   this.handlerRpmUploadFile(
+                  //     values.targetPath,
+                  //     item.name.replace(':', '/'),
+                  //     item.originFileObj
+                  //   )
+                  // })
+                  this.uploadFiles(values.targetPath,false,null,null,null)
+                  this.successMsg(this.$t('Store.CheckProgress'))
+                  this.uploadCargoFormModalClose()
+              }
+          })
+      },
     handlerDockerUploadFile (fileType, imageTag, fileName, file) {
           file = new File([file], fileName)
           let filePathMap ={};

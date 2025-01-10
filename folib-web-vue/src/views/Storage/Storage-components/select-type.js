@@ -132,10 +132,10 @@ const typeList = [
         disabled:true,
     },
     {
-        src:'images/folib/rust.svg',
-        type:'rust',
-        name:'Rust',
-        disabled:true,
+        src:'images/folib/cargo.svg',
+        type:'cargo',
+        name:'Cargo',
+        disabled:false,
     },
     {
         src:'images/folib/conda.svg',
