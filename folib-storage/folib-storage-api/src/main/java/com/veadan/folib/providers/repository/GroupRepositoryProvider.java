@@ -35,6 +35,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -101,6 +102,13 @@ public class GroupRepositoryProvider
                 return result;
             }
         }
+        if(ProductTypeEnum.Cargo.getFoLibraryName().equals(repositoryPath.getRepository().getLayout()) && repositoryPath.toString().endsWith("config.json")){
+            RepositoryPath result = resolvePathDirectlyFromGroupPathIfPossible(repositoryPath);
+            if (result != null) {
+                return result;
+            }
+        }
+
         return resolvePathTraversal(repositoryPath);
     }
 
@@ -205,11 +213,13 @@ public class GroupRepositoryProvider
     }
 
     @Override
-    protected OutputStream getOutputStreamInternal(RepositoryPath repositoryPath) {
+    protected OutputStream getOutputStreamInternal(RepositoryPath repositoryPath) throws IOException {
         // It should not be possible to write artifacts to a group repository.
         // A group repository should only serve artifacts that already exist
         // in the repositories within the group.
-
+        if(ProductTypeEnum.Cargo.getFoLibraryName().equals(repositoryPath.getRepository().getLayout()) && repositoryPath.toString().endsWith("config.json")){
+            return Files.newOutputStream(repositoryPath);
+        }
         throw new UnsupportedOperationException();
     }
 

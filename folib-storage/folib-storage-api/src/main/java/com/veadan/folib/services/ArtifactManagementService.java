@@ -7,6 +7,7 @@ import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.io.LayoutInputStream;
 import com.veadan.folib.io.LayoutOutputStream;
@@ -596,6 +597,9 @@ public class ArtifactManagementService {
             return repositoryPath;
         }
         if (repository.isGroupRepository() && StringUtils.isNotBlank(repository.getGroupDefaultRepository())) {
+            if(repository.getLayout().equals(ProductTypeEnum.Cargo.getFoLibraryName()) && repositoryPath.toString().endsWith("config.json")){
+                return repositoryPath;
+            }
             //是组合库，并且设置了默认上传仓库
             String storageId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), repository.getGroupDefaultRepository());
             String repositoryId = ConfigurationUtils.getRepositoryId(repository.getGroupDefaultRepository());

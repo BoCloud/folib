@@ -90,7 +90,11 @@ public enum ProductTypeEnum {
     /**
      * Debian
      */
-    Debian(21, "debian", "debian", "debian");
+    Debian(21, "debian", "debian", "debian"),
+    /**
+     * Cargo
+     */
+    Cargo(22, "cargo", "cargo", "cargo");;
 
     private Integer value;
     private String name;
