@@ -816,7 +816,7 @@
         </a-row>
       </a-form>
     </a-modal>
-   <!-- cargo upload modal --><
+   <!-- cargo upload modal -->
    <a-modal v-model="showCargoUploadFormModal" :footer="null" :forceRender="true" :centered="true" :title="$t('Store.Upload')"
                on-ok="showRpmUploadFormModal = false">
           <a-form :form="cargoUploadForm" ref="cargoUploadForm" layout="horizontal" @submit.prevent="handleCargoUploadSubmit">
