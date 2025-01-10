@@ -158,11 +158,11 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
             String remoteUrl = repository.getRemoteRepository().getUrl();
             if (remoteUrl.endsWith(separator)) {
                 remoteUrl = remoteUrl.substring(0, remoteUrl.lastIndexOf(separator));
-                if(syncArtifactForm.getSyncMeta()==1&&syncArtifactForm.getSyncer()==null){
-                    String apiUrl=remoteUrl.substring(0,remoteUrl.indexOf(repository.getId()));
-                    JfrogPropertySyncer syncer = new JfrogPropertySyncer(apiUrl,repository.getRemoteRepository().getUsername(), repository.getRemoteRepository().getPassword());
-                    syncArtifactForm.setSyncer(syncer);
-                }
+            }
+            if(syncArtifactForm.getSyncMeta()==1&&syncArtifactForm.getSyncer()==null){
+                String apiUrl=remoteUrl.substring(0,remoteUrl.indexOf(repository.getId()));
+                JfrogPropertySyncer syncer = new JfrogPropertySyncer(apiUrl,repository.getRemoteRepository().getUsername(), repository.getRemoteRepository().getPassword());
+                syncArtifactForm.setSyncer(syncer);
             }
             String rootUrl = remoteUrl;
             if (StringUtils.isNotBlank(syncArtifactForm.getBrowseUrl())) {
