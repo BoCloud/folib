@@ -379,9 +379,10 @@ public class StoragesConfigurationController
         final List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
                 .getStorages()
                 .values());
-
+        // 匿名用户看不到仓库
         if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
-            List<Storage> collect = repositoryComponent.getAnonymousUserStorages(storages, null);
+//            List<Storage> collect = repositoryComponent.getAnonymousUserStorages(storages, null);
+            List<Storage> collect=new LinkedList<>();
             StoragesOutput storagesOutput = new StoragesOutput(collect);
             return ResponseEntity.ok(storagesOutput);
         }
