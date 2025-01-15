@@ -14,8 +14,10 @@ import com.veadan.folib.domain.migrate.SyncArtifactForm;
 import com.veadan.folib.entity.MigrateInfo;
 import com.veadan.folib.enums.ArtifactSyncTypeEnum;
 import com.veadan.folib.enums.MigrateStatusEnum;
+import com.veadan.folib.metadata.indexer.RpmRepoIndexer;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.ArtifactWebService;
 import com.veadan.folib.services.JfrogMigrateService;
@@ -60,6 +62,9 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
 
     @Value("${folib.temp}")
     private String tempPath;
+
+    @Resource
+    private ArtifactManagementService artifactManagementService;
 
     @Inject
     private ConfigurationManager configurationManager;
@@ -132,6 +137,8 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
         // 获取仓库信息
         try {
             MigrateInfo repository = migrateInfoService.getByMigrateIdAndRepoInfo(syncArtifactForm.getMigrateId(), syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
+            int total=repository.getTotalArtifact()==null?0:repository.getTotalArtifact();
+            syncArtifactForm.setTotalArtifact(total);
             if (MigrateStatusEnum.QUEUING.getStatus() == repository.getSyncStatus() &&repository.getIndexFinish()==0) {
                 migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.FETCHING_INDEX.getStatus());
                 String dirPath = syncPackageIndex(syncArtifactForm);
@@ -175,6 +182,7 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
             if (Objects.isNull(repository)) {
                 throw new RuntimeException(String.format("存储空间 [%s] 所属仓库 [%s}] 不存在", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId()));
             }
+            syncArtifactForm.setRepository(repository);
             if (!RepositoryTypeEnum.PROXY.getType().equalsIgnoreCase(repository.getType())) {
                 throw new RuntimeException(String.format("存储空间 [%s] 所属仓库 [%s}] 不是代理库", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId()));
             }
@@ -329,6 +337,12 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
             log.error("Error [{}]", ExceptionUtils.getStackTrace(ex));
         }
         syncArtifactForm.setSyncMount((int) COUNT.get());
+        try {
+            RpmRepoIndexer rpmRepoIndexer = new RpmRepoIndexer(repositoryPathResolver, artifactManagementService, tempPath);
+            rpmRepoIndexer.indexWriter(syncArtifactForm.getRepository());
+        } catch (Exception e) {
+            log.info("创建索引异常");
+        }
         log.info("rpm包同步完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个制品，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), COUNT.get(), System.currentTimeMillis() - allStartTime);
         return !ispaused;
     }
@@ -361,7 +375,7 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
                     THREAD_LOCAL.set(THREAD_LOCAL.get() + 1);
                 } else {
                     // 非子目录
-                    if (!absUrl.contains(url) || url.equals(absUrl)) {
+                    if (!absUrl.contains(url) || url.equals(absUrl) || !absUrl.endsWith( File.separator)) {
                         continue;
                     }
                     String path = absUrl.substring(rootUrl.length());

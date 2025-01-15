@@ -305,18 +305,26 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 log.error("存储空间{},仓库{}修改失败", storageId, repositoryId);
                 continue;
             }
-            MigrateInfo migrateInfo = new MigrateInfo();
-            migrateInfo.setMigrateId(migrateId);
-            migrateInfo.setLayout(repository.getLayout());
-            migrateInfo.setSyncStatus(0);
-            migrateInfo.setIndexFinish(0);
-            migrateInfo.setStorageId(storageId);
-            migrateInfo.setRepositoryId(repositoryId);
-            migrateInfo.setPostLayout(repository.getSubLayout());
-            migrateInfo.setSyncProperty(info.getSyncMeta());
-            migrateInfoService.save(migrateInfo);
+            // 添加或更新
+            MigrateInfo exist = migrateInfoService.getByMigrateIdAndRepoInfo(migrateId, storageId, repositoryId);
+            if(exist==null){
+                MigrateInfo migrateInfo = new MigrateInfo();
+                migrateInfo.setMigrateId(migrateId);
+                migrateInfo.setLayout(repository.getLayout());
+                migrateInfo.setSyncStatus(0);
+                migrateInfo.setIndexFinish(0);
+                migrateInfo.setStorageId(storageId);
+                migrateInfo.setRepositoryId(repositoryId);
+                migrateInfo.setPostLayout(repository.getSubLayout());
+                migrateInfo.setSyncProperty(info.getSyncMeta());
+                migrateInfoService.save(migrateInfo);
+            }else {
+                exist.setSyncStatus(0);
+                exist.setTotalArtifact(0);
+                exist.setSuccessMount(0);
+                migrateInfoService.updateById(exist);
+            }
         }
-
         int count = migrateInfoService.countByMigrateId(migrateId);
         info.setTotal(count);
         Dict dict = createDictByMigrate(info);
@@ -387,13 +395,13 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
     public void listenTask(String migrateId) {
         Dict dict = getDictByMigrateId(migrateId);
         if (Objects.isNull(dict)) {
-            BATH_COUNT.decrementAndGet();
             return;
         }
         ArtifactMigrateInfo info = JSON.parseObject(dict.getAlias(), ArtifactMigrateInfo.class);
         int batchSize = info.getBatchSize();
+        log.info("当前允许并发进程【{}】,现有已执行线程【{}】",batchSize,BATH_COUNT.get());
         // 单实例控制并发
-        if (BATH_COUNT.getAndIncrement() > batchSize) {
+        if (BATH_COUNT.incrementAndGet() > batchSize) {
             BATH_COUNT.decrementAndGet();
             return;
         }
@@ -407,37 +415,41 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             securityUtils.setAdminAuthentication();
             String pausedTask = PAUSED_QUEUE.poll();
             String storeAndRepo = pausedTask == null ? distributedQueueComponent.takeFromQueue(QUEUE_NAME) : pausedTask;
-            String storageId = ConfigurationUtils.getStorageId(storeAndRepo, storeAndRepo);
-            String repositoryId = ConfigurationUtils.getRepositoryId(storeAndRepo);
-            Storage storage = configurationManager.getConfiguration().getStorage(storageId);
-            if (Objects.isNull(storage)) {
-                log.info("无效的存储空间{}", storageId);
+            while(storeAndRepo!=null){
+                String storageId = ConfigurationUtils.getStorageId(storeAndRepo, storeAndRepo);
+                String repositoryId = ConfigurationUtils.getRepositoryId(storeAndRepo);
+                Storage storage = configurationManager.getConfiguration().getStorage(storageId);
+                if (Objects.isNull(storage)) {
+                    log.info("无效的存储空间{}", storageId);
+                    continue;
+                }
+                Repository repository = storage.getRepository(repositoryId);
+                if (Objects.isNull(repository)) {
+                    log.info("无效的仓库{}", repositoryId);
+                    continue;
+                }
+                log.info("开始迁移存储空间{}的仓库{}",storageId,repositoryId);
+                SyncArtifactProvider syncArtifactProvider = syncArtifactProviderRegistry.getProvider(ArtifactSyncTypeEnum.resolveType(repository.getLayout()));
+                SyncArtifactForm form = new SyncArtifactForm();
+                form.setDom("a");
+                form.setRepositoryId(repositoryId);
+                form.setMigrateId(migrateId);
+                form.setStorageId(storageId);
+                form.setBrowseUrl(StringUtils.removeEnd(info.getBrowsePrefix(), GlobalConstants.SEPARATOR) + GlobalConstants.SEPARATOR + repositoryId);
+                form.setMaxThreadNum(info.getThreadNumber());
+                form.setApiUrl(info.getRemotePreUrl());
+                form.setUsername(info.getUsername());
+                form.setPassword(info.getPassword());
+                form.setSyncMeta(info.getSyncMeta());
+                syncArtifactProvider.batchBrowseSync(form);
+                log.info("存储空间{}的仓库{}迁移结束",storageId,repositoryId);
+                pausedTask = PAUSED_QUEUE.poll();
+                storeAndRepo = pausedTask == null ? distributedQueueComponent.takeFromQueue(QUEUE_NAME) : pausedTask;
             }
-            Repository repository = storage.getRepository(repositoryId);
-            if (Objects.isNull(repository)) {
-                log.info("无效的仓库{}", storageId);
-            }
-
-            SyncArtifactProvider syncArtifactProvider = syncArtifactProviderRegistry.getProvider(ArtifactSyncTypeEnum.resolveType(repository.getLayout()));
-            SyncArtifactForm form = new SyncArtifactForm();
-            form.setDom("pre a");
-            form.setRepositoryId(repositoryId);
-            form.setMigrateId(migrateId);
-            form.setStorageId(storageId);
-            form.setBrowseUrl(StringUtils.removeEnd(info.getBrowsePrefix(), GlobalConstants.SEPARATOR) + GlobalConstants.SEPARATOR + repositoryId);
-            form.setMaxThreadNum(info.getThreadNumber());
-            form.setApiUrl(info.getRemotePreUrl());
-            form.setUsername(info.getUsername());
-            form.setPassword(info.getPassword());
-            form.setSyncMeta(info.getSyncMeta());
-            syncArtifactProvider.batchBrowseSync(form);
-            // 完成之后
-            // 递归
-            BATH_COUNT.decrementAndGet();
-            listenTask(migrateId);
-        } catch (InterruptedException e) {
-            BATH_COUNT.decrementAndGet();
+        } catch (Exception e) {
+            log.error("迁移出现异常{}",e.getMessage(),e);
         } finally {
+            BATH_COUNT.decrementAndGet();
             securityUtils.clearAuthentication();
         }
     }

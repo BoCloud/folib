@@ -46,7 +46,7 @@ public class DebianConstant {
 
     public static final Pattern CUSTOM_PATTERN=Pattern.compile(".*/([^/]+)_([^_]+(?:[-+][^_]+)*)_([^_]+)\\.([a-zA-Z0-9]+)$|([^/]+)_([^_]+(?:[-+][^_]+)*)_([^_]+)\\.([a-zA-Z0-9]+)$");
 
-    public static final String DEBIAN_PACKAGE_REGEX="dists/(?<codename>[a-zA-Z0-9\\-_]+)/(?<component>[a-zA-Z0-9\\-_]+)/binary-(?<architecture>[a-zA-Z0-9\\-_]+)/(?<filename>Packages(?:\\.(gz|bz2|xz|lzma))?)";
+    public static final String DEBIAN_PACKAGE_REGEX="dists/(?<codename>[a-zA-Z0-9\\-_.]+)/(?<component>[a-zA-Z0-9\\-_]+)/binary-(?<architecture>[a-zA-Z0-9\\-_]+)/(?<filename>Packages(?:\\.(gz|bz2|xz|lzma))?)";
 
     public static final Pattern PACKAGE_PATTERN = Pattern.compile(DEBIAN_PACKAGE_REGEX);
 
