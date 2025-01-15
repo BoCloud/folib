@@ -34,6 +34,13 @@
           <template slot-scope="text" slot="usedSpace">
             {{ text ? text : $t('Setting.Unknown') }}
           </template>
+          <template slot-scope="text, record" slot="postLayout">
+            <a-select style="width: 120px" :value="text" @change="handlePostLayoutChange(record, $event)" >
+              <a-select-option v-for="option in layoutOptions" :key="option.value" :value="option.value">
+                {{ option.value }}
+              </a-select-option>
+            </a-select>
+          </template>
         </a-table>
 
         <a-modal
@@ -83,14 +90,20 @@
       <a-tab-pane :key="2" :tab="$t('Setting.Migrating')">
         <div class="table-operations-container">
           <div class="table-operations">
-            <!-- <a-button 
+            <a-button 
+              type="primary" 
+              @click="handleSetFailed"
+            >
+              {{ $t('Setting.setFailed') }}
+            </a-button>
+           <!-- <a-button 
               type="primary" 
               :disabled="!canContinueMigration"
               @click="handleContinueMigration"
             >
               {{ $t('Setting.ContinueMigration') }}
-            </a-button>
-            <a-button 
+            </a-button>  -->
+            <!-- <a-button 
               type="primary" 
               :disabled="!canPauseMigration"
               @click="handlePauseMigration"
@@ -121,7 +134,7 @@
             {{ text ? text : $t('Setting.Unknown') }}
           </template>
           <template slot="totalArtifact" slot-scope="text,record">
-            {{ record.syncStatus === 1 || record.syncStatus === 2 ? $t('Setting.Calculating'):text }}
+            {{ text }}
           </template>
         </a-table>
       </a-tab-pane>
@@ -175,7 +188,7 @@
 
 
 <script>
-import { getRepositories, addMigrateRepo ,startMigrate, pauseMigrate, finishMigrate ,continueMigrate,getMigrateProgress} from '@/api/migrate'
+import { getRepositories, addMigrateRepo ,startMigrate, pauseMigrate, finishMigrate ,continueMigrate,getMigrateProgress,changeLayout,setFailed,getIndexProgress} from '@/api/migrate'
 import { getStorages,queryRepositoriesByStorage } from '@/api/folib'
 
 export default {
@@ -251,6 +264,28 @@ export default {
       pollingInterval: 5000, // 轮询间隔，5秒
       selectedCompletedKeys: [],
       selectedCompletedRows: [],
+      layoutOptions: [
+        { value: 'raw' },
+        { value: 'maven' },
+        { value: 'ivy'},
+        { value: 'sbt' },
+        { value: 'gradle' },
+        { value: 'docker' },
+        { value: 'helm' },
+        { value: 'pypi' },
+        { value: 'npm' },
+        { value: 'ohpm' },
+        { value: 'cocoaPods' },
+        { value: 'go' },
+        { value: 'php' },
+        { value: 'conan' },
+        { value: 'nuget' },
+        { value: 'rpm' },
+        { value: 'gitlfs' },
+        { value: 'HuggingFace' },
+        { value: 'pub' },
+        { value: 'debian' }
+      ]
     }
   },
   computed: {
@@ -397,7 +432,7 @@ export default {
           await this.loadPendingData();
           break;
         case 2:
-          await this.loadMigratingData();
+          await this.updateMigratingProgress();
           break;
         case 3:
           await this.loadCompletedData();
@@ -495,7 +530,7 @@ export default {
           break;
         case 'migrating':
           this.migratingPagination.current = pagination.current;
-          this.loadMigratingData();
+          this.updateMigratingProgress();
           break;
         case 'completed':
           this.completedPagination.current = pagination.current;
@@ -553,10 +588,17 @@ export default {
           scopedSlots: { customRender: 'usedSpace' }
         },
         {
-            title: this.$t('Setting.Layout'),
+            title: this.$t('Setting.PreLayout'),
             dataIndex: 'layout',
             align: 'center',
             key: 'layout'
+        },
+        {
+            title: this.$t('Setting.PostLayout'),
+            dataIndex: 'postLayout',
+            align: 'center',
+            key: 'postLayout',
+            scopedSlots: { customRender: 'postLayout' }
         },
         {
           title: this.$t('Setting.Status'),
@@ -565,6 +607,7 @@ export default {
           key: 'syncStatus',
           scopedSlots: { customRender: 'status' }
         },
+        
       ]
     },
     // 迁移中列
@@ -590,10 +633,16 @@ export default {
           scopedSlots: { customRender: 'totalArtifact' }
         },
         {
-            title: this.$t('Setting.Layout'),
+            title: this.$t('Setting.PreLayout'),
             dataIndex: 'layout',
             align: 'center',
             key: 'layout'
+        },
+        {
+            title: this.$t('Setting.PostLayout'),
+            dataIndex: 'postLayout',
+            align: 'center',
+            key: 'postLayout',
         },
         {
           title: this.$t('Setting.Status'),
@@ -802,14 +851,33 @@ export default {
       }
     },
 
+    handlePostLayoutChange(record, value) {
+      const data = {...record}
+      data.postLayout = value;
+      changeLayout(data).then(() => {
+        this.$notification.success({
+          message: this.$t('Setting.Success'),
+          description: this.$t('Setting.ChangeLayoutSuccess')
+        });
+        this.loadPendingData();
+      }).catch((error) => {
+        this.$notification.error({
+          message: this.$t('Setting.Error'),
+          description: error.message
+        });
+      })  
+      
+    },
+
     // 更新迁移进度
     async updateMigratingProgress() {
       try {
         // 1. 先重新获取迁移中的列表数据，不显示loading
         await this.loadMigratingData(false);
         // 2. 获取正在同步制品的记录
-        const syncingRecords = this.migratingData.filter(record => record.syncStatus === 3);
-        if (!syncingRecords.length) {
+        const syncingRecords = this.migratingData.filter(record => record.syncStatus === 3);  
+        const indexRecords = this.migratingData.filter(record => record.syncStatus === 2);
+        if (!syncingRecords.length && !indexRecords.length) {
           return;
         }
 
@@ -818,8 +886,13 @@ export default {
           migrateId: this.migrateId,
           storeAndRepos: syncingRecords.map(record => `${record.storageId}:${record.repositoryId}`)
         };
+        const indexData = {
+          migrateId: this.migrateId,
+          storeAndRepos: indexRecords.map(record => `${record.storageId}:${record.repositoryId}`)
+        };
 
         const progressResponse = await getMigrateProgress(progressData);
+        const indexResponse = await getIndexProgress(indexData);
         if (progressResponse) {
           // 4. 更新数据
           this.migratingData = this.migratingData.map(record => {
@@ -836,6 +909,19 @@ export default {
                     ? Number((migratedArtifact / record.totalArtifact * 100).toFixed(2))
                     : 0
                 };
+              }
+            }
+            return record;
+          });
+        }
+        if (indexResponse) {
+          this.migratingData = this.migratingData.map(record => {
+            if (record.syncStatus === 2) {
+              const key = `${record.storageId}:${record.repositoryId}`;
+              const indexCount = indexResponse[key];
+              if (indexCount !== undefined) {
+                  record.totalArtifact = indexCount;
+                  return record;
               }
             }
             return record;
@@ -864,6 +950,14 @@ export default {
           description: error.message
         });
       }
+    },
+    async handleSetFailed() {
+      const data = this.selectedMigratingRows.map(r=>r.id);
+      await setFailed(data);
+      this.$notification.success({
+        message: this.$t('Setting.Success'),
+      });
+      this.loadMigratingData();
     },
 
     // 继续迁移

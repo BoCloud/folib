@@ -50,10 +50,9 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 @Slf4j
 @Controller
@@ -248,14 +247,15 @@ public class SSOController {
     private JSONObject accessToken(String code, Client client) {
         MultivaluedHashMap<String, String> map = new MultivaluedHashMap<String, String>();
         map.add("client_id", client.getClientId());
+        Map<String, String> headerMap = Maps.newHashMap();
         if (StringUtils.isNotBlank(client.getClientSecret())) {
             map.add("client_secret", client.getClientSecret());
+            headerMap.put("Authorization", "Basic " + Base64.getEncoder().encodeToString(String.format("%s:%s", client.getClientId(), client.getClientSecret()).getBytes(StandardCharsets.UTF_8)));
         }
         map.add("code", code);
         map.add("scope", "openid profile email");
         map.add("grant_type", "authorization_code");
         map.add("redirect_uri", client.getRedirectPath());
-        Map<String, String> headerMap = Maps.newHashMap();
         headerMap.put("Content-Type", "application/x-www-form-urlencoded");
         Response response = null;
         try {

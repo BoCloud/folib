@@ -21,6 +21,7 @@ import com.veadan.folib.converters.migrate.JfrogMigrateConvert;
 import com.veadan.folib.domain.SecurityRole;
 import com.veadan.folib.domain.SecurityRoleEntity;
 import com.veadan.folib.domain.adapter.jfrog.JfrogMapping;
+import com.veadan.folib.domain.adapter.jfrog.JfrogMappingEnum;
 import com.veadan.folib.domain.migrate.AddRepositoryForm;
 import com.veadan.folib.domain.migrate.ArtifactMigrateInfo;
 import com.veadan.folib.domain.migrate.SyncArtifactForm;
@@ -202,8 +203,8 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
 
     // 0-初始 1-排队 2-获取索引 3-同步制品 4-暂停 5-完成
     static {
-        STATUS_MAPPING.put("pending", List.of(MigrateStatusEnum.INITIAL.getStatus()));
-        STATUS_MAPPING.put("migrating", List.of(MigrateStatusEnum.PAUSED.getStatus(), MigrateStatusEnum.QUEUING.getStatus(), MigrateStatusEnum.FETCHING_INDEX.getStatus(), MigrateStatusEnum.SYNCING_ARTIFACT.getStatus(), MigrateStatusEnum.INDEX_FAILED.getStatus(), MigrateStatusEnum.SYNCING_FAILED.getStatus()));
+        STATUS_MAPPING.put("pending", List.of(MigrateStatusEnum.INITIAL.getStatus(),MigrateStatusEnum.INDEX_FAILED.getStatus(), MigrateStatusEnum.SYNCING_FAILED.getStatus()));
+        STATUS_MAPPING.put("migrating", List.of(MigrateStatusEnum.PAUSED.getStatus(), MigrateStatusEnum.QUEUING.getStatus(), MigrateStatusEnum.FETCHING_INDEX.getStatus(), MigrateStatusEnum.SYNCING_ARTIFACT.getStatus()));
         STATUS_MAPPING.put("completed", List.of(MigrateStatusEnum.COMPLETED.getStatus()));
     }
 
@@ -304,16 +305,26 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 log.error("存储空间{},仓库{}修改失败", storageId, repositoryId);
                 continue;
             }
-            MigrateInfo migrateInfo = new MigrateInfo();
-            migrateInfo.setMigrateId(migrateId);
-            migrateInfo.setLayout(repository.getLayout());
-            migrateInfo.setSyncStatus(0);
-            migrateInfo.setStorageId(storageId);
-            migrateInfo.setRepositoryId(repositoryId);
-            migrateInfo.setSyncProperty(info.getSyncMeta());
-            migrateInfoService.save(migrateInfo);
+            // 添加或更新
+            MigrateInfo exist = migrateInfoService.getByMigrateIdAndRepoInfo(migrateId, storageId, repositoryId);
+            if(exist==null){
+                MigrateInfo migrateInfo = new MigrateInfo();
+                migrateInfo.setMigrateId(migrateId);
+                migrateInfo.setLayout(repository.getLayout());
+                migrateInfo.setSyncStatus(0);
+                migrateInfo.setIndexFinish(0);
+                migrateInfo.setStorageId(storageId);
+                migrateInfo.setRepositoryId(repositoryId);
+                migrateInfo.setPostLayout(repository.getSubLayout());
+                migrateInfo.setSyncProperty(info.getSyncMeta());
+                migrateInfoService.save(migrateInfo);
+            }else {
+                exist.setSyncStatus(0);
+                exist.setTotalArtifact(0);
+                exist.setSuccessMount(0);
+                migrateInfoService.updateById(exist);
+            }
         }
-
         int count = migrateInfoService.countByMigrateId(migrateId);
         info.setTotal(count);
         Dict dict = createDictByMigrate(info);
@@ -332,11 +343,16 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             if(info==null){
                 return;
             }
-            // 修改状态
+            if(MigrateStatusEnum.SYNCING_FAILED.getStatus()==info.getSyncStatus()){
+                info.setIndexFinish(1);
+            }
             info.setSyncStatus(MigrateStatusEnum.QUEUING.getStatus());
+            // 修改状态
             migrateInfoService.updateById(info);
             try {
-                distributedQueueComponent.putToQueue(QUEUE_NAME, storeAndRepo);
+                if(info.getIndexFinish()==null||info.getIndexFinish()==0){
+                    distributedQueueComponent.putToQueue(QUEUE_NAME, storeAndRepo);
+                }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -353,18 +369,39 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         }
     }
 
+    @Override
+    public void setFailed(List<Long> ids) {
+        for (Long id : ids) {
+            MigrateInfo info = migrateInfoService.getById(id);
+            if(info==null){
+                continue;
+            }
+            Integer syncStatus = info.getSyncStatus();
+            if(MigrateStatusEnum.FETCHING_INDEX.getStatus()==syncStatus){
+                info.setSyncStatus(MigrateStatusEnum.INDEX_FAILED.getStatus());
+                info.setIndexFinish(0);
+            }else if(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus()==syncStatus){
+                info.setSyncStatus(MigrateStatusEnum.SYNCING_FAILED.getStatus());
+                info.setIndexFinish(1);
+            }else if(MigrateStatusEnum.QUEUING.getStatus()==syncStatus){
+                info.setSyncStatus(MigrateStatusEnum.INITIAL.getStatus());
+                info.setIndexFinish(0);
+            }
+            migrateInfoService.updateById(info);
+        }
+    }
 
     //
     public void listenTask(String migrateId) {
         Dict dict = getDictByMigrateId(migrateId);
         if (Objects.isNull(dict)) {
-            BATH_COUNT.decrementAndGet();
             return;
         }
         ArtifactMigrateInfo info = JSON.parseObject(dict.getAlias(), ArtifactMigrateInfo.class);
         int batchSize = info.getBatchSize();
+        log.info("当前允许并发进程【{}】,现有已执行线程【{}】",batchSize,BATH_COUNT.get());
         // 单实例控制并发
-        if (BATH_COUNT.getAndIncrement() > batchSize) {
+        if (BATH_COUNT.incrementAndGet() > batchSize) {
             BATH_COUNT.decrementAndGet();
             return;
         }
@@ -378,37 +415,41 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             securityUtils.setAdminAuthentication();
             String pausedTask = PAUSED_QUEUE.poll();
             String storeAndRepo = pausedTask == null ? distributedQueueComponent.takeFromQueue(QUEUE_NAME) : pausedTask;
-            String storageId = ConfigurationUtils.getStorageId(storeAndRepo, storeAndRepo);
-            String repositoryId = ConfigurationUtils.getRepositoryId(storeAndRepo);
-            Storage storage = configurationManager.getConfiguration().getStorage(storageId);
-            if (Objects.isNull(storage)) {
-                log.info("无效的存储空间{}", storageId);
+            while(storeAndRepo!=null){
+                String storageId = ConfigurationUtils.getStorageId(storeAndRepo, storeAndRepo);
+                String repositoryId = ConfigurationUtils.getRepositoryId(storeAndRepo);
+                Storage storage = configurationManager.getConfiguration().getStorage(storageId);
+                if (Objects.isNull(storage)) {
+                    log.info("无效的存储空间{}", storageId);
+                    continue;
+                }
+                Repository repository = storage.getRepository(repositoryId);
+                if (Objects.isNull(repository)) {
+                    log.info("无效的仓库{}", repositoryId);
+                    continue;
+                }
+                log.info("开始迁移存储空间{}的仓库{}",storageId,repositoryId);
+                SyncArtifactProvider syncArtifactProvider = syncArtifactProviderRegistry.getProvider(ArtifactSyncTypeEnum.resolveType(repository.getLayout()));
+                SyncArtifactForm form = new SyncArtifactForm();
+                form.setDom("a");
+                form.setRepositoryId(repositoryId);
+                form.setMigrateId(migrateId);
+                form.setStorageId(storageId);
+                form.setBrowseUrl(StringUtils.removeEnd(info.getBrowsePrefix(), GlobalConstants.SEPARATOR) + GlobalConstants.SEPARATOR + repositoryId);
+                form.setMaxThreadNum(info.getThreadNumber());
+                form.setApiUrl(info.getRemotePreUrl());
+                form.setUsername(info.getUsername());
+                form.setPassword(info.getPassword());
+                form.setSyncMeta(info.getSyncMeta());
+                syncArtifactProvider.batchBrowseSync(form);
+                log.info("存储空间{}的仓库{}迁移结束",storageId,repositoryId);
+                pausedTask = PAUSED_QUEUE.poll();
+                storeAndRepo = pausedTask == null ? distributedQueueComponent.takeFromQueue(QUEUE_NAME) : pausedTask;
             }
-            Repository repository = storage.getRepository(repositoryId);
-            if (Objects.isNull(repository)) {
-                log.info("无效的仓库{}", storageId);
-            }
-
-            SyncArtifactProvider syncArtifactProvider = syncArtifactProviderRegistry.getProvider(ArtifactSyncTypeEnum.resolveType(repository.getLayout()));
-            SyncArtifactForm form = new SyncArtifactForm();
-            form.setDom("a");
-            form.setRepositoryId(repositoryId);
-            form.setMigrateId(migrateId);
-            form.setStorageId(storageId);
-            form.setBrowseUrl(StringUtils.removeEnd(info.getBrowsePrefix(), GlobalConstants.SEPARATOR) + GlobalConstants.SEPARATOR + repositoryId);
-            form.setMaxThreadNum(info.getThreadNumber());
-            form.setApiUrl(info.getRemotePreUrl());
-            form.setUsername(info.getUsername());
-            form.setPassword(info.getPassword());
-            form.setSyncMeta(info.getSyncMeta());
-            syncArtifactProvider.batchBrowseSync(form);
-            // 完成之后
-            // 递归
-            BATH_COUNT.decrementAndGet();
-            listenTask(migrateId);
-        } catch (InterruptedException e) {
-            BATH_COUNT.decrementAndGet();
+        } catch (Exception e) {
+            log.error("迁移出现异常{}",e.getMessage(),e);
         } finally {
+            BATH_COUNT.decrementAndGet();
             securityUtils.clearAuthentication();
         }
     }
@@ -417,6 +458,16 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         HashMap<String, Long> result = new HashMap<>();
         for (String storeAndRepo : storeAndRepos) {
             long count = distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + storeAndRepo).get();
+            result.put(storeAndRepo, count);
+        }
+        return result;
+    }
+
+    @Override
+    public Map<String, Long> getIndexCount(String migrateId, List<String> storeAndRepos) {
+        HashMap<String, Long> result = new HashMap<>();
+        for (String storeAndRepo : storeAndRepos) {
+            long count = distributedCounterComponent.getAtomicLong(JfrogMigrateService.INDEX_COUNT + storeAndRepo).get();
             result.put(storeAndRepo, count);
         }
         return result;
@@ -474,8 +525,34 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             // 同步更新
             MigrateInfo info = migrateInfoService.getByMigrateIdAndRepoInfo(migrateId, storageId, repositoryId);
             info.setSyncStatus(MigrateStatusEnum.END.getStatus());
-            migrateInfoService.save(info);
+            migrateInfoService.updateById(info);
         }
+    }
+
+    @Override
+    public void changeLayout(MigrateInfo info) {
+        Assert.notNull(info.getPostLayout(),"修改后的布局不能为空");
+        JfrogMappingEnum subLayout = JfrogMappingEnum.getEnumBySubLayout(info.getPostLayout());
+        Assert.notNull(subLayout,"无效的新布局");
+        StorageDto storage = configurationManagementService.getMutableConfigurationClone().getStorage(info.getStorageId());
+        Assert.notNull(storage,"未找到对应的存储空间");
+        RepositoryDto repository = storage.getRepository(info.getRepositoryId());
+        Assert.notNull(repository,"未找到对应的仓库");
+        repository.setLayout(subLayout.getLayout());
+        repository.setSubLayout(subLayout.getSubLayout());
+        LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(subLayout.getLayout());
+        if (Objects.nonNull(layoutProvider) ) {
+            repository.setArtifactCoordinateValidators(layoutProvider.getDefaultArtifactCoordinateValidators());
+        }
+        try {
+
+            configurationManagementService.saveRepository(info.getStorageId(), repository);
+            SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, info.getStorageId(), info.getRepositoryId(), SyncRepositoryEnum.ADD_OR_UPDATE);
+            clusterSyncService.syncRepository(syncRepositoryDto);
+        } catch (Exception e) {
+            log.error("更新状态失败");
+        }
+        migrateInfoService.updateById(info);
     }
 
 
@@ -599,7 +676,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         Repositories repositories = artifactory.repositories();
         Storage storage = configurationManagementService.getConfiguration().getStorage(storageId);
         // 生成迁移信息
-        ArtifactMigrateInfo migrateInfo = getMigrateInfo(form);
+        ArtifactMigrateInfo migrateInfo = getMigrateInfo(form,storageId);
         List<LightweightRepository> repoList = new LinkedList<>();
         repoList.addAll(repositories.list(LOCAL));
         repoList.addAll(repositories.list(REMOTE));
@@ -706,10 +783,15 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 migrateInfo.setMigrateId(info.getMigrateId());
                 migrateInfo.setStorageId(storageId);
                 migrateInfo.setSyncProperty(1);
+                migrateInfo.setIndexFinish(0);
                 migrateInfo.setRepositoryId(repository.getKey());
                 migrateInfo.setUsedSpace(spaceInfo.get(repository.getKey()));
                 migrateInfo.setSyncStatus(0);
                 migrateInfo.setLayout(repository.getPackageType());
+                JfrogMappingEnum jfrogName = JfrogMappingEnum.getEnumByJfrogName(repository.getPackageType());
+                if(jfrogName!=null){
+                    migrateInfo.setPostLayout(jfrogName.getSubLayout());
+                }
                 migrateInfoService.save(migrateInfo);
             } else {
                 repositoryDto.setType(RepositoryTypeEnum.HOSTED.getType());
@@ -737,12 +819,13 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         }
     }
 
-    private ArtifactMigrateInfo getMigrateInfo(JfrogMigrateForm form) {
+    private ArtifactMigrateInfo getMigrateInfo(JfrogMigrateForm form,String storageId) {
         ArtifactMigrateInfo info = new ArtifactMigrateInfo();
         // 生成迁移id
-        info.setMigrateId("jfrog-migrate");;
+        info.setMigrateId("jfrog-migrate:"+storageId);;
         info.setStatus(0);
         info.setBatchSize(1);
+        info.setThreadNumber(4);
         String url = StringUtils.removeEnd(form.getUrl(), GlobalConstants.SEPARATOR)+GlobalConstants.SEPARATOR+"artifactory";
         info.setBrowsePrefix(url);
         info.setRemotePreUrl(url);

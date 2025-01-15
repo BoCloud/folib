@@ -566,4 +566,8 @@ export default {
     CompleteSuccess: 'Complete Success',
     SyncMetadata: 'Sync Metadata',
     MigratedArtifact: 'Migrated Artifact',
+    PreLayout: 'Pre Layout',
+    PostLayout: 'Post Layout',
+    ChangeLayoutSuccess: 'Change layout successfully',
+    setFailed: 'Set failed',
 }

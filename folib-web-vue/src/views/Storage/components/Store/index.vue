@@ -1954,6 +1954,7 @@ export default {
             resolve()
           })
         // })
+        return
       }
 
       // return new Promise(resolve => {
