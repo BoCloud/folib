@@ -157,7 +157,7 @@ public class DebianArtifactCoordinates
             coordinates.setName(path);
         }else {
             Matcher matcher = DebianConstant.PACKAGE_PATTERN.matcher(path);
-            Assert.isTrue(matcher.matches(), "Invalid debian package path");
+            Assert.isTrue(matcher.matches(), "Invalid debian package path"+path);
             String codename = matcher.group("codename");
             String component = matcher.group("component");
             String architecture = matcher.group("architecture");

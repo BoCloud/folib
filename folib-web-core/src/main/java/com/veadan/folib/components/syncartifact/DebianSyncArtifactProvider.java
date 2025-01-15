@@ -46,9 +46,10 @@ import javax.inject.Inject;
 import javax.ws.rs.client.WebTarget;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -59,6 +60,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import java.util.zip.GZIPInputStream;
 
 /**
  * @author leipenghui
@@ -69,8 +71,6 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
 
     @Value("${folib.temp}")
     private String tempPath;
-
-    private static final ThreadLocal<Integer> THREAD_LOCAL = ThreadLocal.withInitial(() -> 0);
     /**
      * 计数
      */
@@ -140,37 +140,38 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
     @Override
     public void batchBrowseSync(SyncArtifactForm syncArtifactForm) {
         // 获取仓库信息
-        try{
-        MigrateInfo repository = migrateInfoService.getByMigrateIdAndRepoInfo(syncArtifactForm.getMigrateId(),syncArtifactForm.getStorageId(),syncArtifactForm.getRepositoryId());
-        syncArtifactForm.setTotalArtifact(repository.getTotalArtifact());
-        if(MigrateStatusEnum.QUEUING.getStatus()==repository.getSyncStatus()&&repository.getIndexFinish()==0){
-            migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm,MigrateStatusEnum.FETCHING_INDEX.getStatus());
-            String dirPath = syncPackageIndex(syncArtifactForm);
-            if(dirPath==null){
-                log.info("同步索引失败,请稍后重试");
-                migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm,MigrateStatusEnum.INDEX_FAILED.getStatus());
-                return;
+        try {
+            MigrateInfo repository = migrateInfoService.getByMigrateIdAndRepoInfo(syncArtifactForm.getMigrateId(), syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
+            int total = repository.getTotalArtifact() == null ? 0 : repository.getTotalArtifact();
+            syncArtifactForm.setTotalArtifact(total);
+            if (MigrateStatusEnum.QUEUING.getStatus() == repository.getSyncStatus() && repository.getIndexFinish() == 0) {
+                migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.FETCHING_INDEX.getStatus());
+                String dirPath = syncPackageIndex(syncArtifactForm);
+                if (dirPath == null) {
+                    log.info("同步索引失败,请稍后重试");
+                    migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.INDEX_FAILED.getStatus());
+                    return;
+                }
+                repository.setSyncDirPath(dirPath);
+                if (syncArtifactForm.getSyncMeta() == 1) {
+                    JfrogPropertySyncer syncer = new JfrogPropertySyncer(syncArtifactForm.getApiUrl(), syncArtifactForm.getUsername(), syncArtifactForm.getPassword());
+                    syncArtifactForm.setSyncer(syncer);
+                }
+                repository.setTotalArtifact(syncArtifactForm.getTotalArtifact());
+                repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
+                // 更新状态
+                migrateInfoService.updateById(repository);
+                distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
             }
-            repository.setSyncDirPath(dirPath);
-            if(syncArtifactForm.getSyncMeta()==1){
-                JfrogPropertySyncer syncer = new JfrogPropertySyncer(syncArtifactForm.getApiUrl(), syncArtifactForm.getUsername(), syncArtifactForm.getPassword());
-                syncArtifactForm.setSyncer(syncer);
+            String path = repository.getSyncDirPath();
+            distributedCacheComponent.put(JfrogMigrateService.PAUSED_FLAG_PRE + syncArtifactForm.getStoreAndRepo(), "1");
+            if (handlerPath(path, syncArtifactForm)) {
+                migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.COMPLETED.getStatus());
+            } else {
+                migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.PAUSED.getStatus());
             }
-            repository.setTotalArtifact(syncArtifactForm.getTotalArtifact());
-            repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
-            // 更新状态
-            migrateInfoService.updateById(repository);
-            distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
-        }
-        String path=repository.getSyncDirPath();
-        distributedCacheComponent.put(JfrogMigrateService.PAUSED_FLAG_PRE+syncArtifactForm.getStoreAndRepo(),"1");
-        if (handlerPath(path, syncArtifactForm)) {
-            migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm,MigrateStatusEnum.COMPLETED.getStatus());
-        }else {
-            migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm,MigrateStatusEnum.PAUSED.getStatus());
-        }
-        }finally {
-            if(syncArtifactForm.getSyncer()!=null){
+        } finally {
+            if (syncArtifactForm.getSyncer() != null) {
                 syncArtifactForm.getSyncer().close();
             }
         }
@@ -200,7 +201,7 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
      * @param pattern 正则表达式
      * @return 结果
      */
-  
+
 
     /**
      * 获取文件
@@ -231,48 +232,53 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
                 Thread.sleep(sleepMillis);
             }
             Document doc = artifactComponent.getDocument(repository, url);
-            if(Objects.isNull(doc)){
+            if (Objects.isNull(doc)) {
                 log.error("获取文件失败");
                 return false;
             }
             Elements links = doc.select(dom);
             for (Element link : links) {
+
                 String absUrl = link.absUrl("href");
-                if(absUrl.endsWith("Release")||absUrl.endsWith("Packages.bz2")||absUrl.endsWith("Packages.gz")){
+                String relativeUrl = StringUtils.removeStart(absUrl.replace(remoteUrl, ""), GlobalConstants.SEPARATOR);
+                if (absUrl.endsWith("Release") || absUrl.endsWith("Packages.bz2") || absUrl.endsWith("Packages")) {
                     absUrl = StringUtils.removeStart(absUrl.replace(remoteUrl, ""), GlobalConstants.SEPARATOR);
-                    RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(),absUrl);
-                    if(!Files.exists(repositoryPath)){
+                    RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), absUrl);
+                    if (!Files.exists(repositoryPath)) {
                         artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(), absUrl);
                     }
-                }
-                else if (absUrl.endsWith("Packages")) {
+                } else if (absUrl.endsWith("Packages.gz")) {
                     // 下载这个文件
                     Matcher match = PACKAGE_REGX.matcher(url);
-                    if(match.matches()){
+                    if (match.matches()) {
                         String distribution = match.group(1);
                         String component = match.group(2);
                         String architecture = match.group(3);
-                        String path =file.getParent()+"/"+distribution+"_"+component+"_"+architecture+"/Packages";
-                        String dist=file.getParent()+"/"+"/artifact";
-                        artifactComponent.getArtifactByUrl(repository,absUrl,path);
-                        parsePackagesFile(repository,path,distribution,component,architecture,dist);
+                        String path = file.getParent() + "/" + distribution + "_" + component + "_" + architecture + "_Packages";
+                        String dist = file.getParent() + "/" + "/artifact";
+                        artifactComponent.getArtifactByUrl(repository, absUrl, path);
+                        parsePackagesFile(repository, path, distribution, component, architecture, dist);
                         absUrl = StringUtils.removeStart(absUrl.replace(remoteUrl, ""), GlobalConstants.SEPARATOR);
-                        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(),absUrl);
-                        if(!Files.exists(repositoryPath)){
+                        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), absUrl);
+                        if (!Files.exists(repositoryPath)) {
                             artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(), absUrl);
                         }
                     }
                 } else {
+                    if (!absUrl.startsWith(remoteUrl)) {
+                        continue;
+                    }
                     // 非子目录
                     if (!absUrl.contains(url) || url.equals(absUrl)) {
                         continue;
                     }
-                    if(!absUrl.endsWith(GlobalConstants.SEPARATOR)){
-                        return true;
+                    if (!absUrl.endsWith(GlobalConstants.SEPARATOR)) {
+                        continue;
                     }
                     String path = absUrl.substring(rootUrl.length());
                     writer.write(path + "\n");
                     writer.flush();
+
                 }
             }
         } catch (Exception e) {
@@ -329,14 +335,14 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
                 boolean flag = rootFile.createNewFile();
                 log.info("debian包索引同步存放爬取信息的文件 [{}] 不存在，创建状态 [{}]", rootFile.getAbsolutePath(), flag);
                 try (FileWriter writer = new FileWriter(rootFile)) {
-                    writer.write("/\n");
+                    writer.write("/dists/\n");
                     writer.flush();
                 }
             }
             File urlFile;
             while ((urlFile = getLevelFile(dir, level)).exists()) {
                 level++;
-                log.info("开始检索{}下的目录",urlFile);
+                log.info("开始检索{}下的目录", urlFile);
                 boolean fileEmpty = true;
                 File subFile = getLevelFile(dir, level);
                 try (Scanner scanner = new Scanner(urlFile);
@@ -364,26 +370,26 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
                     break;
                 }
             }
-            log.info("debian包索引同步完成耗时 [{}] ms, 同步制品总个数 [{}]", System.currentTimeMillis() - startTime, THREAD_LOCAL.get());
-            syncArtifactForm.setTotalArtifact(THREAD_LOCAL.get());
+            int mount = (int) distributedCounterComponent.getAtomicLong(JfrogMigrateService.INDEX_COUNT + repository.getStorageIdAndRepositoryId()).get();
+            log.info("debian包索引同步完成耗时 [{}] ms, 同步制品总个数 [{}]", System.currentTimeMillis() - startTime, mount);
+            syncArtifactForm.setTotalArtifact(mount);
             return dirPath;
         } catch (Exception e) {
             log.error("debian包索引同步，错误 [{}]", ExceptionUtils.getStackTrace(e));
-        } finally {
-            THREAD_LOCAL.remove();
         }
         return null;
     }
 
     /**
      * 判断后缀
+     *
      * @return true 后缀匹配 false 后缀不匹配
      */
     private boolean handlerPath(String dirPath, SyncArtifactForm syncArtifactForm) {
         long allStartTime = System.currentTimeMillis();
         Path path = Path.of(dirPath + "/artifact");
         if (!Files.exists(path) || !Files.isDirectory(path)) {
-            return syncArtifactForm.getTotalArtifact()==0;
+            return syncArtifactForm.getTotalArtifact() == 0;
         }
         int batch = 100;
         if (Objects.nonNull(syncArtifactForm.getBatch())) {
@@ -392,21 +398,21 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
         COUNT.set(0L);
         int availableCores = commonComponent.getAvailableCores() * 2;
         ThreadPoolTaskExecutor threadPoolTaskExecutor = commonComponent.buildThreadPoolTaskExecutor("browsedebianSync", availableCores, availableCores);
-        boolean isPaused=false;
+        boolean isPaused = false;
         try (Stream<Path> pathStream = Files.list(path)) {
             int finalBatch = batch;
-             isPaused= pathStream.anyMatch(item -> {
+            isPaused = pathStream.anyMatch(item -> {
                 String currentLine = "";
                 long lines = 0, startTime = System.currentTimeMillis();
-                boolean flag=true;
+                boolean flag = true;
                 try {
                     List<String> pathList = Lists.newArrayList();
                     try (LineIterator lineIterator = FileUtils.lineIterator(item.toFile(), "UTF-8")) {
                         while (lineIterator.hasNext()) {
-                            if("0".equals(distributedCacheComponent.get(JfrogMigrateService.PAUSED_FLAG_PRE+syncArtifactForm.getStoreAndRepo()))){
-                                log.info("仓库{}同步任务暂停",syncArtifactForm.getStoreAndRepo());
-                                migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm,MigrateStatusEnum.PAUSED.getStatus());
-                                distributedCacheComponent.delete(JfrogMigrateService.PAUSED_FLAG_PRE+syncArtifactForm.getStoreAndRepo());
+                            if ("0".equals(distributedCacheComponent.get(JfrogMigrateService.PAUSED_FLAG_PRE + syncArtifactForm.getStoreAndRepo()))) {
+                                log.info("仓库{}同步任务暂停", syncArtifactForm.getStoreAndRepo());
+                                migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.PAUSED.getStatus());
+                                distributedCacheComponent.delete(JfrogMigrateService.PAUSED_FLAG_PRE + syncArtifactForm.getStoreAndRepo());
                                 return true;
                             }
                             try {
@@ -421,7 +427,7 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
                                 }
                             } catch (Exception ex) {
                                 log.error(ExceptionUtils.getStackTrace(ex));
-                                flag=false;
+                                flag = false;
                             }
                         }
                         if (CollectionUtils.isNotEmpty(pathList)) {
@@ -429,7 +435,7 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
                         }
                     }
                     // 清除已完成的文件
-                    if(flag){
+                    if (flag) {
                         Files.delete(item);
                     }
                 } catch (Exception ex) {
@@ -450,8 +456,8 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
         if (CollectionUtils.isEmpty(artifactPathList)) {
             return;
         }
-        String storageId=form.getStorageId();
-        String repositoryId=form.getRepositoryId();
+        String storageId = form.getStorageId();
+        String repositoryId = form.getRepositoryId();
         List<List<String>> artifactPathLists = Lists.partition(artifactPathList, 5);
         List<FutureTask<String>> futureTasks = Lists.newArrayList();
         FutureTask<String> futureTask;
@@ -461,14 +467,14 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
                     try {
                         if (StringUtils.isNotBlank(artifactPath)) {
                             //制品
-                            String[] paths= artifactPath.split(":");
-                            String distribution=paths[0];
-                            String component=paths[1];
-                            String architecture=paths[2];
-                            artifactPath=paths[3]+";"+DebianUtils.getArrtString(distribution,component,architecture);
+                            String[] paths = artifactPath.split(":");
+                            String distribution = paths[0];
+                            String component = paths[1];
+                            String architecture = paths[2];
+                            artifactPath = paths[3] + ";" + DebianUtils.getArrtString(distribution, component, architecture);
                             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
                             if (Files.exists(repositoryPath)) {
-                                distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT+storageId+":"+repositoryId).addAndGet(1L);
+                                distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + storageId + ":" + repositoryId).addAndGet(1L);
                                 COUNT.incrementAndGet();
                                 log.debug("Batch download storageId [{}] repositoryId [{}] artifactPath [{}] exists skip..", storageId, repositoryId, artifactPath);
                                 continue;
@@ -477,12 +483,12 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
                             if (Files.exists(repositoryPath)) {
                                 COUNT.incrementAndGet();
                                 // 添加成功 计数
-                                distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT+storageId+":"+repositoryId).addAndGet(1L);
+                                distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + storageId + ":" + repositoryId).addAndGet(1L);
                                 JfrogPropertySyncer syncer = form.getSyncer();
-                                if(syncer!=null){
-                                    String  properties = syncer.getPropertiesByKeyAndPath(repositoryId, artifactPath);
-                                    if(properties!=null){
-                                        artifactWebService.saveArtifactMetaByString(storageId,repositoryId,artifactPath,properties);
+                                if (syncer != null) {
+                                    String properties = syncer.getPropertiesByKeyAndPath(repositoryId, artifactPath);
+                                    if (properties != null) {
+                                        artifactWebService.saveArtifactMetaByString(storageId, repositoryId, artifactPath, properties);
                                     }
                                 }
                             }
@@ -507,8 +513,13 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
         artifactPathList.clear();
     }
 
-    public void parsePackagesFile(Repository repository,String filePath, String distribution, String component, String architecture,String distPath) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+    public void parsePackagesFile(Repository repository, String filePath, String distribution, String component, String architecture, String distPath) throws IOException {
+
+
+        try (FileInputStream fileInputStream = new FileInputStream(filePath);
+             GZIPInputStream gzipInputStream = new GZIPInputStream(fileInputStream);
+             InputStreamReader inputStreamReader = new InputStreamReader(gzipInputStream);
+             BufferedReader reader = new BufferedReader(inputStreamReader)) {
             String line;
             String filename = null;
             while ((line = reader.readLine()) != null) {
@@ -517,7 +528,7 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
                 }
                 // 如果找到完整的 Filename，记录信息
                 if (filename != null) {
-                    String str=distribution + ":" + component + ":" + architecture + ":" + filename;
+                    String str = distribution + ":" + component + ":" + architecture + ":" + filename;
                     filesCommonComponent.storeContent(str, distPath);
                     distributedCounterComponent.getAtomicLong(JfrogMigrateService.INDEX_COUNT + repository.getStorageIdAndRepositoryId()).addAndGet(1);
                     filename = null; // 重置

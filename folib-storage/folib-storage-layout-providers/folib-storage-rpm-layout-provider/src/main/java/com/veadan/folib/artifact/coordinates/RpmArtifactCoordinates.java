@@ -234,13 +234,14 @@ public class RpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<RpmA
                     c.getPackageType(),
                     c.getExtension());
         } else {
-            path = String.format("%s%s-%s-%s.%s.%s",
-                    prefix,
-                    c.getId(),
-                    c.getVersion(),
-                    c.getRelease(),
-                    c.getArchitecture(),
-                    c.getExtension());
+            path=c.getId();
+//            path = String.format("%s%s-%s-%s.%s.%s",
+//                    prefix,
+//                    c.getBaseName(),
+//                    c.getVersion(),
+//                    c.getRelease(),
+//                    c.getArchitecture(),
+//                    c.getExtension());
         }
 
         return path;

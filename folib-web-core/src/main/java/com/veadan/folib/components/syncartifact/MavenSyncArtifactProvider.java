@@ -216,6 +216,8 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
         // 获取仓库信息
         try {
             MigrateInfo repository = migrateInfoService.getByMigrateIdAndRepoInfo(syncArtifactForm.getMigrateId(), syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
+            int total=repository.getTotalArtifact()==null?0:repository.getTotalArtifact();
+            syncArtifactForm.setTotalArtifact(total);
             if (MigrateStatusEnum.QUEUING.getStatus() == repository.getSyncStatus() && repository.getIndexFinish() == 0) {
                 migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.FETCHING_INDEX.getStatus());
                 String dirPath = syncPackageIndex(syncArtifactForm);
@@ -315,7 +317,7 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
             if (Objects.nonNull(sleepMillis)) {
                 Thread.sleep(sleepMillis);
             }
-            artifactComponent.parseLinksStreaming(repository,url,absUrl->{
+            return artifactComponent.parseLinksStreaming(repository,url,absUrl->{
                 if (isSuffix(absUrl)) {
                     absUrl = StringUtils.removeStart(absUrl.replace(remoteUrl, ""), GlobalConstants.SEPARATOR);
                     filesCommonComponent.storeContent(absUrl, file.getParent() + "/artifact");
@@ -360,7 +362,7 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
             log.error("Maven包索引，错误 [{}]", ExceptionUtils.getStackTrace(e));
             return false;
         }
-        return true;
+
     }
 
     private String syncPackageIndex(SyncArtifactForm syncArtifactForm) {
