@@ -383,7 +383,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             }else if(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus()==syncStatus){
                 info.setSyncStatus(MigrateStatusEnum.SYNCING_FAILED.getStatus());
                 info.setIndexFinish(1);
-            }else if(MigrateStatusEnum.QUEUING.getStatus()==syncStatus){
+            }else if(MigrateStatusEnum.QUEUING.getStatus()==syncStatus||MigrateStatusEnum.PAUSED.getStatus()==syncStatus){
                 info.setSyncStatus(MigrateStatusEnum.INITIAL.getStatus());
                 info.setIndexFinish(0);
             }
