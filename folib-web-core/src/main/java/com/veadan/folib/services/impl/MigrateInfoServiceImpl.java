@@ -77,5 +77,10 @@ public class MigrateInfoServiceImpl implements MigrateInfoService {
 
     }
 
+    @Override
+    public MigrateInfo getById(Long id) {
+        return migrateInfoMapper.selectByPrimaryKey(id);
+    }
+
 
 }

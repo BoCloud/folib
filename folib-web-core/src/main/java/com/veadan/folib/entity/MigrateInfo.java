@@ -38,6 +38,12 @@ public class MigrateInfo {
     private String layout;
 
     /**
+     * 修改布局
+     */
+    @Column(name = "post_layout")
+    private String postLayout;
+
+    /**
      * 迁移id
      */
     @Column(name = "migrate_id")
@@ -78,6 +84,9 @@ public class MigrateInfo {
 
     @Column(name = "sync_property")
     private Integer syncProperty;
+
+    @Column(name = "index_finish")
+    private Integer indexFinish;
 
 
     public String getStorageIdAndRepositoryId(){

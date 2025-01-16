@@ -121,6 +121,8 @@ public enum JfrogMappingEnum {
      * Rpm
      */
     Rpm("Rpm", RpmArtifactCoordinates.LAYOUT_NAME, "rpm"),
+
+    Yum("YUM",RpmArtifactCoordinates.LAYOUT_NAME,"rpm"),
     /**
      * GitLFS
      */
@@ -145,6 +147,15 @@ public enum JfrogMappingEnum {
     public static JfrogMappingEnum getEnumByJfrogName(String name){
         for (JfrogMappingEnum jfrogMappingEnum : values()) {
             if(jfrogMappingEnum.getName().equals(name)){
+                return jfrogMappingEnum;
+            }
+        }
+        return null;
+    }
+
+    public static JfrogMappingEnum getEnumBySubLayout(String subLayout){
+        for (JfrogMappingEnum jfrogMappingEnum : values()) {
+            if(jfrogMappingEnum.getSubLayout().equals(subLayout)){
                 return jfrogMappingEnum;
             }
         }
