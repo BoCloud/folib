@@ -101,7 +101,7 @@
         </div>
       </a-tab-pane>
       <a-tab-pane key="2" :tab="$t('Store.Metadata')">
-        <a v-if="metadataEnabled || this.currentTreeNode.type == 'dir'" @click="metadataHandler()">
+        <a v-if="metadataEnabled || (folibRepository.type != 'group' && currentTreeNode.type == 'dir')" @click="metadataHandler()">
           <a-tooltip>
             <template slot="title">{{ $t('Store.Create') }}</template>
             <a-icon type="plus-circle" theme="filled" class="ml-30"
@@ -148,7 +148,7 @@
             </a-button>
           </div>
           <div slot="operation" slot-scope="text, record">
-            <div class="col-action" v-if="metadataEnabled || currentTreeNode.type == 'dir'">
+            <div class="col-action" v-if="metadataEnabled || (folibRepository.type != 'group' && currentTreeNode.type == 'dir')">
               <a-popconfirm
                 :title="$t('Store.SuerDelete')"
                 okType="danger"

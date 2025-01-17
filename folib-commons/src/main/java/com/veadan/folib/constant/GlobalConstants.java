@@ -326,7 +326,7 @@ public interface GlobalConstants {
     /**
      * 可忽略的线程前缀
      */
-    List<String> IGNORE_THREAD_NAME_LIST = Lists.newArrayList("asyncWsCommand", "cron-task-pool-", "scheduled-pool-");
+    List<String> IGNORE_THREAD_NAME_LIST = Lists.newArrayList("asyncWsCommand", "cron-task-pool-", "scheduled-pool-", "async");
 
     /**
      * 0
