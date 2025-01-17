@@ -226,6 +226,9 @@ public class DockerLayoutProvider
                 throw new RuntimeException(ex.getMessage());
             }
         }
+        if (StringUtils.isBlank(path.getTargetUrl())) {
+            return;
+        }
         path.setTargetUrl(String.format("%s/%s", remoteUrl, StringUtils.removeStart(path.getTargetUrl(), GlobalConstants.SEPARATOR)));
         authToken(path);
         logger.debug("path [{}] docker headers [{}]", path, path.getHeaders());

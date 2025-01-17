@@ -440,7 +440,7 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
                     }
                     // 清除已完成的文件
                     if (flag) {
-                        Files.delete(item);
+//                        Files.delete(item);
                     }
                 } catch (Exception ex) {
                     log.error("Handle path [{}] lines [{}] error [{}] ms", item.toString(), lines, ExceptionUtils.getStackTrace(ex));

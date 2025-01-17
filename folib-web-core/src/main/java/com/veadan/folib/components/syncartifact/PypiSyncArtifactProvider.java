@@ -2,6 +2,7 @@ package com.veadan.folib.components.syncartifact;
 
 import cn.hutool.core.io.FileUtil;
 import com.google.common.collect.Lists;
+import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.DistributedCounterComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
@@ -340,7 +341,7 @@ public class PypiSyncArtifactProvider implements SyncArtifactProvider {
                     }
                     // 清除已完成的文件
                     if (flag) {
-                        Files.delete(item);
+//                        Files.delete(item);
                     }
                 } catch (Exception ex) {
                     log.error("Handle path [{}] lines [{}] error [{}] ms", item.toString(), lines, ExceptionUtils.getStackTrace(ex));
@@ -370,7 +371,6 @@ public class PypiSyncArtifactProvider implements SyncArtifactProvider {
                 for (String artifactPath : itemArtifactPathList) {
                     try {
                         if (StringUtils.isNotBlank(artifactPath)) {
-                            //制品
                             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
                             if (Files.exists(repositoryPath)) {
                                 COUNT.incrementAndGet();
@@ -383,12 +383,13 @@ public class PypiSyncArtifactProvider implements SyncArtifactProvider {
                                 COUNT.incrementAndGet();
                                 // 添加成功 计数
                                 distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + storageId + ":" + repositoryId).addAndGet(1L);
-
-                                JfrogPropertySyncer syncer = form.getSyncer();
-                                if(syncer!=null){
-                                    String  properties = syncer.getPropertiesByKeyAndPath(repositoryId, artifactPath);
-                                    if(properties!=null){
-                                        artifactWebService.saveArtifactMetaByString(storageId,repositoryId,artifactPath, properties);
+                                if (!artifactPath.endsWith(".html")) {
+                                    JfrogPropertySyncer syncer = form.getSyncer();
+                                    if(syncer!=null){
+                                        String  properties = syncer.getPropertiesByKeyAndPath(repositoryId, artifactPath);
+                                        if(properties!=null){
+                                            artifactWebService.saveArtifactMetaByString(storageId,repositoryId,artifactPath, properties);
+                                        }
                                     }
                                 }
                             }
