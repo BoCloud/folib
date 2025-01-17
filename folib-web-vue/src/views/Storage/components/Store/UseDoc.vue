@@ -1358,16 +1358,18 @@ export default {
     },
       cargoConfiguration() {
         if(this.folibRepository.type === "hosted"){
-            return `[registry]\ndefault = "folib"\n\n[registries.folib]\nindex = "sparse+${this.repositoryUrl}/index/"`
-        }else {
-            return `[source.crates-io]\nreplace-with = 'folib-remote'\n[source.folib-remote]\nregistry = "sparse+${this.repositoryUrl}/index/"`
+            return `[registry]\ndefault = "` + this.getCargoName() +`"\n\n[registries.` + this.getCargoName() +`]\nindex = "sparse+${this.repositoryUrl}/index/"`
+        } if(this.folibRepository.type === "proxy"){
+            return `[source.crates-io]\nreplace-with = '` + this.getCargoName() +`'\n[source.` + this.getCargoName() +`]\nregistry = "sparse+${this.repositoryUrl}/index/"`
+        } else {
+            return `[source.crates-io]\nreplace-with = '` + this.getCargoName() +`'\n[source.` + this.getCargoName() +`]\nregistry = "sparse+${this.repositoryUrl}/index/"`
         }
       },
       cargoConfigurationToken() {
-        return `[registry.folib]\ntoken = "Bearer <TOKEN>"\n#token = "Basic <BASE64>"`
+        return `[registry.` + this.getCargoName() +`]\ntoken = "Bearer <TOKEN>"\n#token = "Basic <BASE64>"`
       },
       cargoDeploy(){
-        return `cargo login "Bearer <TOKEN>"\ncargo publish --registry folib`
+        return `cargo login "Bearer <TOKEN>"\ncargo publish --registry ` + this.getCargoName() +``
       },
       cargoInstall(){
           return `cargo login "Bearer <TOKEN>"\ncargo install <PACKAGE_NAME>`
@@ -1418,6 +1420,15 @@ export default {
       }
       return repositoryUrl
     },
+    getCargoName() {
+      if(this.folibRepository.type === "hosted"){
+          return 'local'
+      } if(this.folibRepository.type === "proxy"){
+          return 'remote'
+      } else {
+          return 'group'
+      }
+    }
   },
 };
 </script>
