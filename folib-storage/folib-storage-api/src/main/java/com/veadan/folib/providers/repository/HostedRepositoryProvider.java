@@ -1,5 +1,6 @@
 package com.veadan.folib.providers.repository;
 
+import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.artifact.ArtifactNotFoundException;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.data.criteria.Paginator;
@@ -12,6 +13,7 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.artifact.versioning.ComparableVersion;
@@ -23,12 +25,12 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -161,7 +163,11 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider {
                 });
             }
             if (CollectionUtils.isNotEmpty(repositoryPathList)) {
-                return repositoryPathList.get(repositoryPathList.size() - 1);
+                if (artifactPath.contains(GlobalConstants.RELEASE_ARTIFACT_KEY)) {
+                    return releasePath(repositoryPathList);
+                } else {
+                    return repositoryPathList.get(repositoryPathList.size() - 1);
+                }
             }
         } catch (Exception ex) {
             logger.error(ExceptionUtils.getStackTrace(ex));
@@ -205,6 +211,27 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider {
             logger.error("Path [{}] isMatcher error [{}]", path.toString(), ExceptionUtils.getStackTrace(ex));
         }
         return null;
+    }
+
+    private RepositoryPath releasePath(List<RepositoryPath> repositoryPathList) throws IOException {
+        Map<String, RepositoryPath> releaseMap = new ConcurrentHashMap<>();
+        for (RepositoryPath paths : repositoryPathList) {
+            String metaDataPath = paths.getTarget().toString();
+            String name = paths.getFileName().toString();
+            metaDataPath = metaDataPath.replace(name, String.format(".%s.foLibrary-metadata/metadata.json", name));
+            if (Files.exists(Path.of(metaDataPath))) {
+                JSONObject data = JSONObject.parseObject(Files.readString(Path.of(metaDataPath)));
+                if (data != null && data.containsKey("RELEASE")) {
+                    JSONObject release = data.getJSONObject("RELEASE");
+                    releaseMap.put(release.getString("value"), paths);
+                }
+            }
+        }
+       if(!releaseMap.isEmpty()){
+          String key =  releaseMap.keySet().stream().max(Comparator.comparing(ComparableVersion::new)).get();
+          return releaseMap.get(key);
+       }
+       return null;
     }
 
 }

@@ -107,6 +107,7 @@ public abstract class BaseArtifactController
         SimpleDateFormat sdf = new SimpleDateFormat("E, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
         sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
         response.setHeader("Last-Modified", sdf.format(new Date()));
+        response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", repositoryPath.getFileName()));
         long startTime = System.currentTimeMillis();
         logger.debug("Download [{}] 开始时间 [{}]", repositoryPath.toString(), startTime);
         if (ArtifactControllerHelper.isRangedRequest(httpHeaders)) {
