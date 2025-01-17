@@ -544,24 +544,23 @@
           <a-col :span="24">
             <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" :colon="false"
               ref="targetRepositories" prop="targetRepositories">
-              <gb-ant-select-two-cascader allowClear :placeholder="$t('Store.SelectTargetWarehouse')" v-decorator="[
-                'targetRepositories',
-                {
-                  initialValue: [],
-                  rules: [
-                    {
-                      required: true,
-                      message: $t('Store.SelectTargetWarehouse'),
-                      type: 'array',
-                    },
-                  ],
-                },
-              ]" :selectOptionsConfig="{
-                  key: 'key',
-                  value: 'key',
-                  text: 'name',
-                  children: 'children',
-                }" dropdownClassName="customer-multiple-cascader" :treeData="repositories" />
+                <a-tree-select v-decorator="[
+                  'targetRepositories',
+                  {
+                    initialValue: [],
+                    rules: [
+                      {
+                        required: true,
+                        message: $t('Store.SelectTargetWarehouse'),
+                        type: 'array',
+                      },
+                    ],
+                  },
+                ]" style="width: 100%" treeCheckable :maxTagCount="6"
+                  :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }" :tree-data="repositories"
+                  :placeholder="$t('Store.SelectTargetWarehouse')" allow-clear show-search
+                  :replaceFields="{ children: 'children', title: 'key', key: 'key', value: 'key' }">
+                </a-tree-select>
             </a-form-item>
             <!-- <a-form-item class="tags-field mb-10" :colon="false" :label="customTitle" valuePropName="checked">
               <a-switch v-decorator="['custom',

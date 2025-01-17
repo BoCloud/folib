@@ -46,7 +46,7 @@ public class DebianArtifactController extends BaseArtifactController {
             @ApiResponse(code = 404, message = "Requested path not found."),
             @ApiResponse(code = 500, message = "Server error."),
             @ApiResponse(code = 503, message = "Repository currently not in service.")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#storageId + '/' + #repositoryId + '/' + #artifactPath")
     @RequestMapping(value = {"/{repositoryId}/{artifactPath:.+}"}, method = {RequestMethod.GET, RequestMethod.HEAD})
     public Object download(

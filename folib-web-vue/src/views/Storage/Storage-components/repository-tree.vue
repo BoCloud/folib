@@ -390,8 +390,10 @@ export default {
             const { scrollTop, clientHeight, scrollHeight } = event.target;
             // 当滚动到底部时加载更多
             if (scrollTop + clientHeight >= scrollHeight) {
-                const total = this.treeData.length
-                this.$emit('loadMore', total)
+                this.$nextTick(() => {
+                    const total = this.treeData.length
+                    this.$emit('loadMore', total)
+                })
             }
         },
         // 判断那些文件类型是可以打开的

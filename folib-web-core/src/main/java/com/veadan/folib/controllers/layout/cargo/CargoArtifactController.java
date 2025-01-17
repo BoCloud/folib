@@ -1,8 +1,10 @@
 package com.veadan.folib.controllers.layout.cargo;
 
 
+import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.artifact.coordinates.CargoArtifactCoordinates;
 import com.veadan.folib.controllers.BaseArtifactController;
+import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.extractor.CargoIndex;
 import com.veadan.folib.extractor.CargoMetadataIndexer;
 import com.veadan.folib.model.CargoMetadata;
@@ -17,6 +19,9 @@ import com.veadan.folib.utils.CargoConstants;
 import com.veadan.folib.utils.CargoUtil;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -24,6 +29,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
@@ -53,6 +59,7 @@ import java.util.stream.Collectors;
 @LayoutRequestMapping(CargoArtifactCoordinates.LAYOUT_NAME)
 public class CargoArtifactController extends BaseArtifactController {
 
+    private static final String API_ENDPOINT = "/api/cargo/";
 
     @Inject
     private CargoMetadataIndexer configurationIndexer;
@@ -67,11 +74,10 @@ public class CargoArtifactController extends BaseArtifactController {
      *
      * @return Response
      */
-    @GetMapping(value = "/{storageId}/{repositoryId}", produces = "application/json")
+    @GetMapping(value = API_ENDPOINT + "{repositoryId}", produces = "application/json")
     public ResponseEntity<?> repoInfo() {
         return ResponseEntity.ok().build();
     }
-
 
     /**
      * 下载索引文件
@@ -79,15 +85,15 @@ public class CargoArtifactController extends BaseArtifactController {
      * @param pkg
      * @return
      */
-    //@PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @GetMapping(value = "{storageId}/{repositoryId}/index/{pkg:.+}")
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @GetMapping(value = API_ENDPOINT + "{repositoryId}/index/{pkg:.+}")
     public void downloadIndex(@RepositoryMapping Repository repository,
                               @RequestHeader HttpHeaders httpHeaders,
-                              @PathVariable("storageId") String storageId,
                               @PathVariable("repositoryId") String repositoryId,
                               @PathVariable("pkg") String pkg,
                               HttpServletRequest request,
                               HttpServletResponse response) throws Exception {
+        final String storageId = repository.getStorage().getId();
         String path = CargoConstants.CONFIG_FILE.equals(pkg) ? pkg : ("index/" + pkg);
         String ifNoneMatch = null;
         if (CargoConstants.CONFIG_FILE.equals(pkg)) {
@@ -124,11 +130,10 @@ public class CargoArtifactController extends BaseArtifactController {
      * @param version     版本
      * @return
      */
-    //@PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @GetMapping(value = "/{storageId}/{repositoryId}/api/v1/crates/{packageName}/{version}/download")
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @GetMapping(value = API_ENDPOINT + "{repositoryId}/api/v1/crates/{packageName}/{version}/download")
     public void download(@RepositoryMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,
-                         @PathVariable("storageId") String storageId,
                          @PathVariable("repositoryId") String repositoryId,
                          @PathVariable("packageName") String packageName,
                          @PathVariable("version") String version,
@@ -137,6 +142,7 @@ public class CargoArtifactController extends BaseArtifactController {
 
         String path = CargoUtil.buildCratePath(packageName, version);
         try {
+            final String storageId = repository.getStorage().getId();
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
             repositoryPath.setTargetUrl(String.format("%s/%s/download", packageName, version));
             repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
@@ -149,15 +155,15 @@ public class CargoArtifactController extends BaseArtifactController {
         }
     }
 
-    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
-    @GetMapping(value = {"/{storageId}/{repositoryId}/config.json", "/{storageId}/{repositoryId}/crates/{path:.+}"})
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @GetMapping(value = {API_ENDPOINT + "{repositoryId}/config.json", API_ENDPOINT + "{repositoryId}/crates/{path:.+}"})
     public void downloadPackage(@RepositoryMapping Repository repository,
                                 @RequestHeader HttpHeaders httpHeaders,
-                                @PathVariable("storageId") String storageId,
                                 @PathVariable("repositoryId") String repositoryId,
                                 @PathVariable(name = "path", required = false) String path,
                                 HttpServletRequest request,
                                 HttpServletResponse response) throws Exception {
+        final String storageId = repository.getStorage().getId();
         path = path == null ? "config.json" : "crates/" + path;
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
         vulnerabilityBlock(repositoryPath);
@@ -169,11 +175,12 @@ public class CargoArtifactController extends BaseArtifactController {
      * 上传包
      */
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @PutMapping(value = "/{storageId}/{repositoryId}/api/v1/crates/new")
-    public ResponseEntity<?> publish(@PathVariable("storageId") String storageId,
+    @PutMapping(value = API_ENDPOINT + "{repositoryId}/api/v1/crates/new")
+    public ResponseEntity<?> publish(@RepositoryMapping Repository repository,
                                      @PathVariable("repositoryId") String repositoryId,
                                      HttpServletRequest request) {
         List<String> errors = new ArrayList<>();
+        final String storageId = repository.getStorage().getId();
         try (InputStream inputStream = request.getInputStream()) {
             PublishRequest publishRequest = extractPublishRequest(inputStream);
             String cratePath = CargoUtil.buildCratePath(publishRequest.getMetadata().getName(), publishRequest.getMetadata().getVers());
@@ -205,13 +212,13 @@ public class CargoArtifactController extends BaseArtifactController {
      * @return
      */
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @DeleteMapping(value = "/{storageId}/{repositoryId}/api/v1/crates/{crateName}/{version}/yank")
-    public ResponseEntity<?> yank(@PathVariable("storageId") String storageId,
+    @DeleteMapping(value = API_ENDPOINT + "{repositoryId}/api/v1/crates/{crateName}/{version}/yank")
+    public ResponseEntity<?> yank(@RepositoryMapping Repository repository,
                                   @PathVariable("repositoryId") String repositoryId,
                                   @PathVariable("crateName") String name,
                                   @PathVariable("version") String version) throws Exception {
-
         String cratePath = CargoUtil.buildCratePath(name, version);
+        final String storageId = repository.getStorage().getId();
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, cratePath);
         if (repositoryPath == null || !Files.exists(repositoryPath)) {
             return createForbiddenResponse(cratePath);
@@ -240,12 +247,13 @@ public class CargoArtifactController extends BaseArtifactController {
      * @return
      */
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @PutMapping(value = "/{storageId}/{repositoryId}/api/v1/crates/{crateName}/{version}/unyank")
-    public ResponseEntity<?> unyank(@PathVariable("storageId") String storageId,
+    @PutMapping(value = API_ENDPOINT + "{repositoryId}/api/v1/crates/{crateName}/{version}/unyank")
+    public ResponseEntity<?> unyank(@RepositoryMapping Repository repository,
                                     @PathVariable("repositoryId") String repositoryId,
                                     @PathVariable("crateName") String name,
                                     @PathVariable("version") String version) throws Exception {
         String cratePath = CargoUtil.buildCratePath(name, version);
+        final String storageId = repository.getStorage().getId();
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, cratePath);
         if (repositoryPath == null || !Files.exists(repositoryPath)) {
             return createForbiddenResponse(cratePath);
@@ -272,9 +280,9 @@ public class CargoArtifactController extends BaseArtifactController {
      * @param perPage
      * @return
      */
-    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
-    @GetMapping(value = "/{storageId}/{repositoryId}/api/v1/crates")
-    public ResponseEntity<?> search(@PathVariable("storageId") String storageId,
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @GetMapping(value = API_ENDPOINT + "{repositoryId}/api/v1/crates")
+    public ResponseEntity<?> search(@RepositoryMapping Repository repository,
                                     @PathVariable("repositoryId") String repositoryId,
                                     @RequestParam(name = "q", required = false) String query,
                                     @RequestParam(name = "per_page", required = false, defaultValue = "10") Integer perPage) throws Exception {
@@ -283,7 +291,7 @@ public class CargoArtifactController extends BaseArtifactController {
         if (query == null || query.isEmpty()) {
             return ResponseEntity.ok(new CargoSearchModel(new ArrayList<>(), 0));
         }
-
+        final String storageId = repository.getStorage().getId();
         List<String> indexNames = searchIndex(storageId, repositoryId, query);
         if (indexNames.isEmpty()) {
             return ResponseEntity.ok(new CargoSearchModel(new ArrayList<>(), 0));
@@ -296,6 +304,23 @@ public class CargoArtifactController extends BaseArtifactController {
             }
         }).collect(Collectors.toList());
         return ResponseEntity.ok(new CargoSearchModel(list, indexNames.size()));
+    }
+
+    @Override
+    @ApiOperation(value = "Used to retrieve an artifact")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
+            @ApiResponse(code = 400, message = "An error occurred.")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
+    @GetMapping("/{repositoryId:^(?!api$).+}/{path:.+}")
+    public Object download(@RepositoryMapping Repository repository,
+                           @RequestHeader HttpHeaders httpHeaders,
+                           @PathVariable String path,
+                           HttpServletRequest request,
+                           HttpServletResponse response,
+                           ModelMap model)
+            throws Exception {
+        return super.download(repository, httpHeaders, path, request, response, model);
     }
 
     /**

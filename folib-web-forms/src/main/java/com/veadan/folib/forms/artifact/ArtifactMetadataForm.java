@@ -65,6 +65,8 @@ public class ArtifactMetadataForm {
     @NotBlank(message = "制品路径不能为空", groups = {AddOrUpdateGroup.class, DeleteGroup.class})
     private String artifactPath;
 
+    private Boolean recursive;
+
     public interface ConfigurationAddOrUpdateGroup
             extends Serializable {
         // 配置新增组

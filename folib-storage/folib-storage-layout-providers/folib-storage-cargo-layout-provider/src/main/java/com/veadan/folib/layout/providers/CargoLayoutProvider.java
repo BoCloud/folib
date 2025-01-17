@@ -187,12 +187,12 @@ public class CargoLayoutProvider extends AbstractLayoutProvider<CargoArtifactCoo
 
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), "config.json");
         if (!Files.exists(repositoryPath)) {
-            String baseUrl = StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/");
             try {
+                String api = getRepositoryBaseUrl(repository);
                 ObjectMapper objectMapper = new ObjectMapper();
                 Map<String, String> map = new HashMap<>();
-                map.put("dl", String.format("%s/storages/%s/%s/api/v1/crates", baseUrl, repository.getStorage().getId(), repository.getId()));
-                map.put("api", String.format("%s/storages/%s/%s", baseUrl, repository.getStorage().getId(), repository.getId()));
+                map.put("dl", String.format("%s/api/v1/crates", api));
+                map.put("api", api);
                 if (!repository.isAllowAnonymous()) {
                     map.put("auth-required", "true");
                 }
@@ -205,6 +205,10 @@ public class CargoLayoutProvider extends AbstractLayoutProvider<CargoArtifactCoo
             }
         }
 
+    }
+
+    protected String getRepositoryBaseUrl(Repository repository) {
+        return String.format("%s/artifactory/api/cargo/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getId());
     }
 
 

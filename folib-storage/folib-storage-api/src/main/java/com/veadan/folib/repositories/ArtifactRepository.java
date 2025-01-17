@@ -112,6 +112,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                                               String safeLevel,
                                               String digestAlgorithm,
                                               String digest,
+                                              String query,
                                               String sortField,
                                               String sortOrder) {
         com.veadan.folib.storage.repository.Repository repository = null;
@@ -129,7 +130,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
             }
         }
         Long zero = 0L;
-        Long count = buildEntityTraversal(regex, artifactName, metadataSearch, storageIdAndRepositoryIdList, storageId, repositoryId, repositoryIds, beginDate, endDate, safeLevel, digestAlgorithm, digest, sortField, sortOrder).count().tryNext().orElse(zero);
+        Long count = buildEntityTraversal(regex, artifactName, metadataSearch, storageIdAndRepositoryIdList, storageId, repositoryId, repositoryIds, beginDate, endDate, safeLevel, digestAlgorithm, digest, query, sortField, sortOrder).count().tryNext().orElse(zero);
         if (zero.equals(count)) {
             return new PageImpl<>(Collections.emptyList(), pagination, count);
         }
@@ -137,7 +138,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         long high = (pagination.getPageNumber() + 1) * pagination.getPageSize();
 
 
-        List<Artifact> artifactList = buildEntityTraversal(regex, artifactName, metadataSearch, storageIdAndRepositoryIdList, storageId, repositoryId, repositoryIds, beginDate, endDate, safeLevel, digestAlgorithm, digest, sortField, sortOrder)
+        List<Artifact> artifactList = buildEntityTraversal(regex, artifactName, metadataSearch, storageIdAndRepositoryIdList, storageId, repositoryId, repositoryIds, beginDate, endDate, safeLevel, digestAlgorithm, digest, query, sortField, sortOrder)
                 .range(low, high)
                 .map(artifactAdapter.searchFold(Optional.ofNullable(repository)
                         .map(com.veadan.folib.storage.repository.Repository::getLayout)
@@ -559,6 +560,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                                                                  String safeLevel,
                                                                  String digestAlgorithm,
                                                                  String digest,
+                                                                 String query,
                                                                  String sortField,
                                                                  String sortOrder) {
         EntityTraversal<Vertex, Vertex> entityTraversal = g().V().hasLabel(Vertices.ARTIFACT);
@@ -584,6 +586,13 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
                 entityTraversal = entityTraversal.has(Properties.UUID, Text.textNotContains("blobs/sha256"));
                 entityTraversal = entityTraversal.has(Properties.UUID, Text.textNotContains("manifest/sha256"));
             }
+        }
+        if (StringUtils.isNotBlank(query)) {
+            List<EntityTraversal<Vertex, Vertex>> orEntityTraversalList = Lists.newArrayList();
+            orEntityTraversalList.add(__.has(Properties.ARTIFACT_NAME, Text.textContains(query)));
+            orEntityTraversalList.add(__.has(Properties.ARTIFACT_NAME, Text.textRegex(".*" + query + ".*")));
+            EntityTraversal[] orEntityTraversalArray = orEntityTraversalList.toArray(new EntityTraversal[orEntityTraversalList.size()]);
+            entityTraversal = entityTraversal.or(orEntityTraversalArray);
         }
         if (StringUtils.isNotBlank(metadataSearch)) {
             entityTraversal = entityTraversal.has(Properties.METADATA, Text.textContains(metadataSearch));

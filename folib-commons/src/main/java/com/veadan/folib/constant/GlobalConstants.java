@@ -340,5 +340,7 @@ public interface GlobalConstants {
 
     List<String> HTTP_PREFIX_LIST = Lists.newArrayList("http://", "https://");
 
+    String COLON = ":";
+
     String RELEASE_ARTIFACT_KEY ="[RELEASE]";
 }

@@ -121,6 +121,8 @@ public enum JfrogMappingEnum {
      * Rpm
      */
     Rpm("Rpm", RpmArtifactCoordinates.LAYOUT_NAME, "rpm"),
+
+    Yum("YUM",RpmArtifactCoordinates.LAYOUT_NAME,"rpm"),
     /**
      * GitLFS
      */

@@ -308,4 +308,13 @@ public interface ArtifactWebService {
      * @return 数量
      */
     long countByUUidPrefix(String uuidPrefix);
+
+    /**
+     * 获取元数据
+     * @param storageId 存储空间
+     * @param repositoryId 仓库名称
+     * @param path 路径
+     * @return 元数据
+     */
+    String getMetadata(String storageId,String repositoryId,String path);
 }
