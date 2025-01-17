@@ -149,6 +149,16 @@ public class ArtifactController extends BaseController {
         return ResponseEntity.ok(artifactWebService.getMetadataConfiguration());
     }
 
+    @ApiOperation(value = "获取元数据")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @GetMapping(value = "/metadata/{storageId}/{repositoryId}/{artifactPath:.+}")
+    public ResponseEntity<String> getMetadata(@PathVariable String storageId,
+                                              @PathVariable String repositoryId,
+                                              @PathVariable String artifactPath) {
+        return ResponseEntity.ok(artifactWebService.getMetadata(storageId, repositoryId, artifactPath));
+    }
+
     @ApiOperation(value = "新增制品元数据")
     @AuditLog(value = AuditEventNameEnum.UPDATE_META, target = "#artifactMetadataForm.storageId + '-'+ #artifactMetadataForm.repositoryId+ '-'+ #artifactMetadataForm.key ")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})

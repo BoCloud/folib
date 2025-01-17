@@ -364,4 +364,8 @@ export default {
     'CargoDeployConfig': 'To publish a crate and upload it to FoLib, use the cargo publish command.',
     'CargoInstall': 'install',
     'CargoInstallConfig': 'To install a crate, use the cargo install command.',
+    'Recursive': 'Recursive',
+    'RecursiveTip': 'The metadata will be added to the selected folder and to all of the artifacts, folders and sub-folders under this folder.',
+    'RecursiveDelete': 'Recursive Delete',
+    'Edit': 'Edit',
 }

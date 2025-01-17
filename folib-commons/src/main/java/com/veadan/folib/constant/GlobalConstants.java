@@ -339,4 +339,6 @@ public interface GlobalConstants {
     List<String> LATEST_ARTIFACT_KEY_LIST = Lists.newArrayList("[RELEASE]", "[LATEST]");
 
     List<String> HTTP_PREFIX_LIST = Lists.newArrayList("http://", "https://");
+
+    String COLON = ":";
 }

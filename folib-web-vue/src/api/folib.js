@@ -542,3 +542,11 @@ export function downloadTemplate () {
     responseType: 'blob',
   })
 }
+
+
+export function getMetadata (storageId,repositoryId,path) {
+  return axios({
+    url: '/api/artifact/metadata/'+storageId+'/'+repositoryId+'/'+path,
+    method: 'get'
+  })
+}

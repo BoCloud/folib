@@ -183,7 +183,7 @@ public class RpmArtifactController extends BaseArtifactController {
     @ApiOperation(value = "Used to retrieve an artifact")
     @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
             @ApiResponse(code = 400, message = "An error occurred.")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#storageId + '/' + #repositoryId + '/' + #path")
     @GetMapping(value = {"/{repositoryId}/{path:.+}"})
     public Object download(@RepositoryMapping Repository repository,

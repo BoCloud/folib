@@ -2,6 +2,7 @@ package com.veadan.folib.controllers;
 
 import cn.hutool.extra.spring.SpringUtil;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.components.ArtifactSecurityComponent;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.block.ArtifactBlockComponent;
@@ -14,6 +15,7 @@ import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.providers.io.LayoutFileSystem;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RootRepositoryPath;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.DictService;
@@ -21,6 +23,7 @@ import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.utils.ArtifactControllerHelper;
 import org.apache.commons.io.FilenameUtils;
@@ -82,6 +85,10 @@ public abstract class BaseArtifactController
     @Qualifier("browseRepositoryDirectoryListingService")
     @Lazy
     private volatile DirectoryListingService directoryListingService;
+
+    @Autowired
+    @Lazy
+    private ArtifactSecurityComponent artifactSecurityComponent;
 
 
     protected boolean provideArtifactDownloadResponse(HttpServletRequest request,
@@ -318,10 +325,14 @@ public abstract class BaseArtifactController
         try {
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, path);
             repositoryPath.setDisableRemote(true);
-            repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
-            if (Files.exists(repositoryPath) && Files.isRegularFile(repositoryPath)) {
-                vulnerabilityBlock(repositoryPath);
-                provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+            RepositoryPath repositoryResolvePath = artifactResolutionService.resolvePath(repositoryPath);
+            if (Objects.isNull(repositoryResolvePath) && StringUtils.isNotBlank(RepositoryFiles.relativizePath(repositoryPath))) {
+                response.setStatus(HttpStatus.NOT_FOUND.value());
+                return null;
+            }
+            if (Objects.nonNull(repositoryResolvePath) && Files.exists(repositoryResolvePath) && Files.isRegularFile(repositoryResolvePath)) {
+                vulnerabilityBlock(repositoryResolvePath);
+                provideArtifactDownloadResponse(request, response, httpHeaders, repositoryResolvePath);
                 return null;
             }
             DirectoryListing directoryListing = null;
@@ -363,8 +374,13 @@ public abstract class BaseArtifactController
         if (ProductTypeEnum.SIMPLE_TYPE_LIST.stream().anyMatch(item -> item.equals(repository.getLayout()))) {
             repositoryPath.setDisableRemote(null);
         }
+        if (StringUtils.isNotBlank(RepositoryFiles.relativizePath(repositoryPath)) && !RepositoryTypeEnum.GROUP.getType().equals(repository.getType()) && !artifactSecurityComponent.validatePrivileges(repositoryPath, Privileges.ARTIFACTS_RESOLVE.getAuthority())) {
+            response.setStatus(HttpStatus.NOT_FOUND.value());
+            return null;
+        }
         repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
-        if (Objects.nonNull(repositoryPath) && ((Files.exists(repositoryPath) && Files.isDirectory(repositoryPath)) || RepositoryTypeEnum.GROUP.getType().equals(repository.getType()))) {
+        boolean browse = RepositoryTypeEnum.GROUP.getType().equals(repository.getType()) || (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath) && Files.isDirectory(repositoryPath));
+        if (browse) {
             return browseRepository(request, httpHeaders, response, model, repository, path);
         } else {
             vulnerabilityBlock(repositoryPath);

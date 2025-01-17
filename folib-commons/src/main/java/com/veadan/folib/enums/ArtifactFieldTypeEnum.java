@@ -32,7 +32,7 @@ public enum ArtifactFieldTypeEnum {
     /**
      * artifactPath
      */
-    path("path", "artifactPath", "string"),
+    PATH("path", "artifactPath", "string"),
     ;
 
     private String artifactory;
