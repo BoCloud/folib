@@ -1358,9 +1358,9 @@ export default {
     },
       cargoConfiguration() {
         if(this.folibRepository.type === "hosted"){
-            return `[registry]\ndefault = "folib"\n\n[registries.folib]\nindex = "sparse+${this.baseDomain}storages/${this.folibRepository.storageId}/${this.folibRepository.id}/index/"`
+            return `[registry]\ndefault = "folib"\n\n[registries.folib]\nindex = "sparse+${this.repositoryUrl}/index/"`
         }else {
-            return `[source.crates-io]\nreplace-with = 'folib-remote'\n[source.folib-remote]\nregistry = "sparse+${this.baseDomain}storages/${this.folibRepository.storageId}/${this.folibRepository.id}/index/"`
+            return `[source.crates-io]\nreplace-with = 'folib-remote'\n[source.folib-remote]\nregistry = "sparse+${this.repositoryUrl}/index/"`
         }
       },
       cargoConfigurationToken() {
