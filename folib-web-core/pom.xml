@@ -748,6 +748,12 @@
             <artifactId>reactor-core</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.ccil.cowan.tagsoup</groupId>
+            <artifactId>tagsoup</artifactId>
+            <version>1.2.1</version>
+        </dependency>
+
     </dependencies>
 
     <profiles>

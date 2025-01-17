@@ -1933,7 +1933,7 @@ export default {
       this.getStorage(this.currentStorage.id)
     },
     loadMore(total){
-      if(total !== this.queryParams.total && !this.$refs.loadingMore){
+      if(total !== this.queryParams.total && !this.$refs.repositoryTree.loadingMore){
         this.$refs.repositoryTree.loadingMoreShow(true)
         this.queryParams.page ++
         console.log('滚动加载...')
@@ -1945,7 +1945,8 @@ export default {
           page: this.queryParams.page
         }
         this.getQueryStorage(params)
-      }else{
+      }
+      if(total == this.queryParams.total){
         this.$refs.repositoryTree.loadingMoreShow(false)
       }
     },

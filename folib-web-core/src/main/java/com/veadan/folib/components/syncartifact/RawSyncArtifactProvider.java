@@ -162,7 +162,7 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
                 Thread.sleep(sleepMillis);
             }
             String separator = "/";
-            artifactComponent.parseLinksStreaming(repository,url,absUrl->{
+            return artifactComponent.parseLinksStreaming(repository,url,absUrl->{
                 absUrl = URLDecoder.decode(absUrl, Charset.defaultCharset());
                 if (rawLayoutProvider.isChecksum(absUrl)) {
                     return;
@@ -217,7 +217,6 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
             log.error("Raw包索引同步制品，错误 [{}]", ExceptionUtils.getStackTrace(e));
             return false;
         }
-        return true;
     }
 
     private String syncPackageIndex(SyncArtifactForm syncArtifactForm) {
@@ -447,6 +446,8 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
         // 获取仓库信息
         try {
             MigrateInfo repository = migrateInfoService.getByMigrateIdAndRepoInfo(syncArtifactForm.getMigrateId(), syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
+            int total=repository.getTotalArtifact()==null?0:repository.getTotalArtifact();
+            syncArtifactForm.setTotalArtifact(total);
             if (MigrateStatusEnum.QUEUING.getStatus() == repository.getSyncStatus() &&repository.getIndexFinish()==0) {
                 migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.FETCHING_INDEX.getStatus());
                 String dirPath = syncPackageIndex(syncArtifactForm);
