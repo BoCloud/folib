@@ -264,7 +264,6 @@ public class PypiSyncArtifactProvider implements SyncArtifactProvider {
                             fileEmpty = false;
                             String url = rootUrl + line;
                             if (!findSubUrl(repository, rootUrl, url, remoteUrl, sleepMillis, syncArtifactForm.getDom(), subFile, writer)) {
-                                return null;
                             }
                         }
                     }

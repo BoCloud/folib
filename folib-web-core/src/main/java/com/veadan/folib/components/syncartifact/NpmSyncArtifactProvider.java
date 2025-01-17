@@ -211,7 +211,6 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
                             fileEmpty = false;
                             String url = rootUrl + line;
                             if (!findSubUrl(repository, rootUrl, url, remoteUrl, sleepMillis, syncArtifactForm.getDom(), subFile, writer, repositoryBaseUri)) {
-                                return null;
                             }
                         }
                     }
