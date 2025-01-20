@@ -352,8 +352,80 @@ public class PypiSyncArtifactProvider implements SyncArtifactProvider {
         } catch (Exception ex) {
             log.error("Error [{}]", ExceptionUtils.getStackTrace(ex));
         }
+        handlerDirectoryMetadata(dirPath, syncArtifactForm);
         syncArtifactForm.setSyncMount((int) COUNT.get());
         log.info("Pypi包 同步完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个制品，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), COUNT.get(), System.currentTimeMillis() - allStartTime);
+        return !ispaused;
+    }
+
+    private boolean handlerDirectoryMetadata(String dirPath, SyncArtifactForm syncArtifactForm) {
+        long allStartTime = System.currentTimeMillis();
+        Path path = Path.of(dirPath);
+        if (!Files.exists(path) || !Files.isDirectory(path)) {
+            return syncArtifactForm.getTotalArtifact() == 0;
+        }
+        int batch = 100;
+        if (Objects.nonNull(syncArtifactForm.getBatch())) {
+            batch = syncArtifactForm.getBatch();
+        }
+        //TODO 目录元数据统计
+        int availableCores = commonComponent.getAvailableCores() * 2;
+        ThreadPoolTaskExecutor threadPoolTaskExecutor = commonComponent.buildThreadPoolTaskExecutor("browsePypiSync", availableCores, availableCores);
+        boolean ispaused = false;
+        String levelPrefix = "level_";
+        try (Stream<Path> pathStream = Files.list(path)) {
+            int finalBatch = batch;
+            ispaused = pathStream.filter(item -> Files.isRegularFile(item) && item.getFileName().toString().startsWith(levelPrefix)).anyMatch(item -> {
+                String currentLine = "";
+                long lines = 0, startTime = System.currentTimeMillis();
+                boolean flag = true;
+                try {
+                    List<String> pathList = Lists.newArrayList();
+                    try (LineIterator lineIterator = FileUtils.lineIterator(item.toFile(), "UTF-8")) {
+                        while (lineIterator.hasNext()) {
+                            if ("0".equals(distributedCacheComponent.get(JfrogMigrateService.PAUSED_FLAG_PRE + syncArtifactForm.getStoreAndRepo()))) {
+                                //
+                                log.info("仓库{}同步任务暂停", syncArtifactForm.getStoreAndRepo());
+                                migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.PAUSED.getStatus());
+                                distributedCacheComponent.delete(JfrogMigrateService.PAUSED_FLAG_PRE + syncArtifactForm.getStoreAndRepo());
+                                return true;
+                            }
+                            try {
+                                lines++;
+                                currentLine = lineIterator.nextLine();
+                                if (StringUtils.isBlank(currentLine)) {
+                                    continue;
+                                }
+                                currentLine = StringUtils.removeEnd(StringUtils.removeStart(currentLine, GlobalConstants.SEPARATOR), GlobalConstants.SEPARATOR);
+                                if (StringUtils.isBlank(currentLine)) {
+                                    continue;
+                                }
+                                pathList.add(currentLine);
+                                if (pathList.size() == finalBatch) {
+                                    batchDownload(item, syncArtifactForm, pathList, threadPoolTaskExecutor);
+                                }
+                            } catch (Exception ex) {
+                                log.error(ExceptionUtils.getStackTrace(ex));
+                                flag = false;
+                            }
+                        }
+                        if (CollectionUtils.isNotEmpty(pathList)) {
+                            batchDownload(item, syncArtifactForm, pathList, threadPoolTaskExecutor);
+                        }
+                    }
+                } catch (Exception ex) {
+                    log.error("Handle path [{}] lines [{}] error [{}] ms", item.toString(), lines, ExceptionUtils.getStackTrace(ex));
+                }
+                log.info("Handle path [{}] lines [{}] finished take time [{}] ms", item.toString(), lines, System.currentTimeMillis() - startTime);
+                return false;
+            });
+        } catch (Exception ex) {
+            log.error("Error [{}]", ExceptionUtils.getStackTrace(ex));
+        }
+        //TODO 目录元数据统计
+        syncArtifactForm.setSyncMount((int) 0);
+        //TODO 目录元数据统计
+        log.info("Pypi包同步目录元数据完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个目录元数据，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), 0, System.currentTimeMillis() - allStartTime);
         return !ispaused;
     }
 
@@ -372,6 +444,18 @@ public class PypiSyncArtifactProvider implements SyncArtifactProvider {
                     try {
                         if (StringUtils.isNotBlank(artifactPath)) {
                             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+                            if (Files.exists(repositoryPath) && Files.isDirectory(repositoryPath)) {
+                                //目录
+                                JfrogPropertySyncer syncer = form.getSyncer();
+                                if (syncer != null) {
+                                    String properties = syncer.getPropertiesByKeyAndPath(repositoryId, artifactPath);
+                                    if (properties != null) {
+                                        //TODO 目录元数据统计
+                                        artifactWebService.saveArtifactMetaByString(storageId, repositoryId, artifactPath, properties);
+                                    }
+                                }
+                                continue;
+                            }
                             if (Files.exists(repositoryPath)) {
                                 COUNT.incrementAndGet();
                                 distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + storageId + ":" + repositoryId).addAndGet(1L);

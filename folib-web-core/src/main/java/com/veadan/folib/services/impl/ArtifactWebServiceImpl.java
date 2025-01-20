@@ -1428,6 +1428,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     public void saveArtifactMetaByString(String storageId, String repositoryId, String path, String metaData) {
         try {
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+            if (Files.isDirectory(repositoryPath)) {
+                artifactComponent.cacheArtifactMetadata(repositoryPath, metaData);
+                return;
+            }
             Artifact artifact = resolvePath(storageId, repositoryId, path);
             artifact.setMetadata(metaData);
             artifactService.saveOrUpdateArtifact(artifact);

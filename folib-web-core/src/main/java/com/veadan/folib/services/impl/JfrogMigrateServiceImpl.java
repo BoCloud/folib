@@ -515,6 +515,8 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 continue;
             }
             repository.setType(RepositoryTypeEnum.HOSTED.getType());
+            repository.setAllowsDeployment(Boolean.TRUE);
+            repository.setAllowsRedeployment(Boolean.TRUE);
             try {
                 configurationManagementService.saveRepository(storageId, repository);
                 SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
