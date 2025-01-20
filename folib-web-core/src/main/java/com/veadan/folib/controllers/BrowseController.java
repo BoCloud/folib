@@ -31,6 +31,7 @@ import com.veadan.folib.storage.ArtifactStorageException;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.utils.DockerUtils;
 import com.veadan.folib.utils.TreeUtil;
 import com.veadan.folib.web.RepositoryMapping;
@@ -576,6 +577,10 @@ public class BrowseController
             }
             final RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, rawPath);
             if (RepositoryFiles.isArtifact(repositoryPath) && Files.exists(repositoryPath)) {
+                if (!authComponent.validatePrivileges(repository,  repositoryPath, Privileges.ARTIFACTS_RESOLVE.getAuthority())) {
+                    response.setStatus(HttpStatus.FORBIDDEN.value());
+                    return null;
+                }
                 vulnerabilityBlock(repositoryPath);
                 provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
                 return null;

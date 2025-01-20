@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -56,12 +57,12 @@ public class PypiLayoutProvider
     @Override
     public boolean isArtifactMetadata(RepositoryPath path) {
         // TODO: Fix
-        return false;
+        return isPypiPackageHtml(path);
     }
 
     public boolean isMetadata(RepositoryPath path) {
         // TODO: Fix
-        return false;
+        return isPypiPackageHtml(path);
     }
 
     public boolean isPypiPackageHtml(RepositoryPath path) {
@@ -141,6 +142,9 @@ public class PypiLayoutProvider
                 logger.warn("RepositoryPath [{}] parse coordinates error [{}]", repositoryPath, ExceptionUtils.getStackTrace(ex));
                 throw new RuntimeException(ex.getMessage());
             }
+        }
+        if (StringUtils.isBlank(repositoryPath.getTargetUrl())) {
+            return;
         }
         repositoryPath.setTargetUrl(String.format("%s/%s", remoteUrl, StringUtils.removeStart(repositoryPath.getTargetUrl(), GlobalConstants.SEPARATOR)));
     }

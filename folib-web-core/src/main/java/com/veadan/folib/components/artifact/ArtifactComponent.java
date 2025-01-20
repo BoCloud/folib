@@ -12,7 +12,6 @@ import com.veadan.folib.artifact.archive.JarArchiveListingFunction;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.DistributedLockComponent;
-import com.veadan.folib.components.PypiBrowsePackageHtmlResponseBuilder;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.config.NpmLayoutProviderConfig;
 import com.veadan.folib.configuration.ConfigurationManager;
@@ -62,7 +61,6 @@ import com.veadan.folib.providers.layout.Maven2LayoutProvider;
 import com.veadan.folib.providers.layout.MavenFileSystem;
 import com.veadan.folib.providers.layout.NpmFileSystem;
 import com.veadan.folib.providers.layout.NpmLayoutProvider;
-import com.veadan.folib.providers.layout.NpmPackageSupplier;
 import com.veadan.folib.providers.layout.NugetFileSystem;
 import com.veadan.folib.providers.layout.NugetLayoutProvider;
 import com.veadan.folib.providers.layout.PhpFileSystem;
@@ -75,11 +73,8 @@ import com.veadan.folib.providers.layout.RawFileSystem;
 import com.veadan.folib.providers.layout.RawLayoutProvider;
 import com.veadan.folib.providers.layout.RpmFileSystem;
 import com.veadan.folib.providers.layout.RpmLayoutProvider;
-import com.veadan.folib.providers.repository.RepositoryProviderRegistry;
 import com.veadan.folib.repositories.ArtifactIdGroupRepository;
 import com.veadan.folib.repositories.ArtifactRepository;
-import com.veadan.folib.repository.NpmRepositoryFeatures;
-import com.veadan.folib.repository.PypiRepositoryFeatures;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ArtifactCacheRecordService;
 import com.veadan.folib.services.ArtifactMetadataService;
@@ -108,12 +103,11 @@ import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
+import org.ccil.cowan.tagsoup.jaxp.SAXFactoryImpl;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.folib.util.Commons;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
@@ -121,12 +115,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
+import org.xml.sax.Attributes;
+import org.xml.sax.helpers.DefaultHandler;
 
 import javax.inject.Inject;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
-import java.io.BufferedReader;
+import javax.xml.parsers.SAXParser;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -135,14 +131,11 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
-import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -201,9 +194,6 @@ public class ArtifactComponent {
     @Lazy
     private ArtifactIdGroupRepository artifactIdGroupRepository;
 
-    @Inject
-    @Lazy
-    private NpmRepositoryFeatures npmRepositoryFeatures;
 
     @Inject
     @Lazy
@@ -218,24 +208,8 @@ public class ArtifactComponent {
 
     @Inject
     @Lazy
-    private RepositoryProviderRegistry repositoryProviderRegistry;
-
-    @Inject
-    @Lazy
-    private NpmPackageSupplier npmPackageSupplier;
-
-    @Inject
-    @Lazy
     @NpmLayoutProviderConfig.NpmObjectMapper
     private ObjectMapper npmJacksonMapper;
-
-    @Inject
-    @Lazy
-    private PypiRepositoryFeatures pypiRepositoryFeatures;
-
-    @Inject
-    @Lazy
-    private PypiBrowsePackageHtmlResponseBuilder pypiBrowsePackageHtmlResponseBuilder;
 
     @Inject
     @Lazy
@@ -261,9 +235,6 @@ public class ArtifactComponent {
     @Inject
     @Lazy
     private ArtifactMetadataService artifactMetadataService;
-
-    private static final int BUFFER_SIZE = 8192;
-    private static final int CHUNK_SIZE = 1024 * 1024;
 
     /**
      * 读取文件内容
@@ -1434,12 +1405,13 @@ public class ArtifactComponent {
         }
     }
 
-    public void parseLinksStreaming(Repository repository, String url, Consumer<String> linkConsumer) {
+    public boolean parseLinksStreaming(Repository repository, String url, Consumer<String> linkConsumer) {
         Response response = null;
         int statusCode = 0;
-        BufferedReader reader;
         try {
             log.info("Get document url [{}]", url);
+            SAXFactoryImpl factory = new SAXFactoryImpl();
+            SAXParser saxParser = factory.newSAXParser();
             Client client = clientPool.getRestClient(repository.getStorage().getId(), repository.getId());
             WebTarget target = client.target(url);
             commonComponent.authentication(target, repository.getRemoteRepository().getUsername(), repository.getRemoteRepository().getPassword());
@@ -1447,28 +1419,36 @@ public class ArtifactComponent {
             statusCode = response.getStatus();
             if (statusCode == HttpStatus.OK.value()) {
                 InputStream inputStream = response.readEntity(InputStream.class);
-                reader = new BufferedReader(new InputStreamReader(inputStream, Charset.defaultCharset()), BUFFER_SIZE);
-                StringBuilder chunk = new StringBuilder(CHUNK_SIZE);
-                char[] buffer = new char[BUFFER_SIZE];
-                int read;
-                while ((read = reader.read(buffer)) != -1) {
-                    chunk.append(buffer, 0, read);
-                    // 当块大小达到阈值时进行处理
-                    if (chunk.length() >= CHUNK_SIZE) {
-                        processChunk(chunk.toString(), url, linkConsumer);
-                        chunk.setLength(0); // 清空缓冲区
+                DefaultHandler handler = new DefaultHandler() {
+                    @Override
+                    public void startElement(String uri, String localName, String qName, Attributes attributes) {
+                        if ("a".equalsIgnoreCase(qName)) {
+                            String href = attributes.getValue("href");
+                            log.info("StorageId [{}] repositoryId [{}] href [{}]", repository.getStorage().getId(), repository.getId(), href);
+                            if (href != null) {
+                                try {
+                                    // 检查是否是相对路径
+                                    if (isRelativePath(href)) {
+                                        // 将相对路径转换为绝对路径
+                                        URL absoluteUrl = new URL(new URL(url), href);
+                                        linkConsumer.accept(absoluteUrl.toString());
+                                    }
+                                } catch (MalformedURLException e) {
+                                    log.info("Invalid URL: " + href);
+                                }
+                            }
+                        }
                     }
-                }
-                // 处理最后一个块
-                if (chunk.length() > 0) {
-                    processChunk(chunk.toString(), url, linkConsumer);
-                }
-
+                };
+                saxParser.parse(inputStream, handler);
+                return true;
             } else {
-                log.error("Get document url [{}] error response statusCode [{}]", url, statusCode);
+                log.error("Get html url [{}] error response statusCode [{}]", url, statusCode);
+                return false;
             }
         } catch (Exception ex) {
-            log.error("Get document url [{}] response statusCode [{}] error [{}]", url, statusCode, ExceptionUtils.getStackTrace(ex));
+            log.error("Get html url [{}] response statusCode [{}] error [{}]", url, statusCode, ExceptionUtils.getStackTrace(ex));
+            return false;
         } finally {
             if (Objects.nonNull(response)) {
                 response.close();
@@ -1476,19 +1456,10 @@ public class ArtifactComponent {
         }
     }
 
-    private void processChunk(String html, String baseUrl, Consumer<String> linkConsumer) {
-        try {
-            Document doc = Jsoup.parse(html, baseUrl);
-            Elements links = doc.select("pre a");
-            for (Element link : links) {
-                String absUrl = link.absUrl("href");
-                linkConsumer.accept(absUrl);
-            }
-            links = null;
-            doc = null;
-        } catch (Exception e) {
-            log.error("解析处理异常{}", e.getMessage(), e);
-        }
+    private boolean isRelativePath(String href) {
+        // 判断是否以 "http://" 或 "https://" 开头
+        return !href.startsWith("http://") && !href.startsWith("https://");
     }
+
 
 }

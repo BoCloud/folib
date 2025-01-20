@@ -106,6 +106,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
                                        String safeLevel,
                                        String digestAlgorithm,
                                        String digest,
+                                       String query,
                                        Integer limit, Integer page) throws IOException {
 
         Pageable pageable = null;
@@ -133,7 +134,7 @@ public class FqlSearchService extends GremlinVertexRepository<Artifact> implemen
         if (SafeLevelEnum.SCAN_COMPLETE.getLevel().equalsIgnoreCase(safeLevel)) {
             storageIdAndRepositoryIdList = getAllRepository();
         }
-        Page<Artifact> artifacts = artifactRepository.findMatchingByIndex(pageable, regex, artifactName, metadataSearch, storageId, repositoryId, repositoryIds, storageIdAndRepositoryIdList, beginDate, endDate, safeLevel, digestAlgorithm, digest, sortField, sortOrder);
+        Page<Artifact> artifacts = artifactRepository.findMatchingByIndex(pageable, regex, artifactName, metadataSearch, storageId, repositoryId, repositoryIds, storageIdAndRepositoryIdList, beginDate, endDate, safeLevel, digestAlgorithm, digest, query, sortField, sortOrder);
         List<Artifact> artifactEntityList = artifacts.getContent();
 
         SearchResults result = new SearchResults();

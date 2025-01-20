@@ -93,7 +93,7 @@ public class RpmRepoIndexer {
             }
             return;
         }
-        generateXml(paths, temp);
+        generateXml(paths, temp,repositoryPath);
         //generatePrimaryXml(paths, temp);
         //generateOtherXml(paths, temp);
 
@@ -282,7 +282,7 @@ public class RpmRepoIndexer {
         }
         return hexString.toString();
     }
-    public void generateXml(List<Path> paths, String savePath){
+    public void generateXml(List<Path> paths, String savePath, RepositoryPath root){
         try {
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dbBuilder = dbFactory.newDocumentBuilder();
@@ -302,11 +302,12 @@ public class RpmRepoIndexer {
             docOther.appendChild(otherRootElement);
 
             for (Path path : paths) {
+                RepositoryPath location = root.relativize(path);
                 RpmMetadata metadata = new RpmMetadataExtractor().extract(path);
                 String fileDigests =metadata.getSha1Digest();
 
                 // 生成primary package data
-                Element packagePrimaryElement = generatePrimary(metadata, docPrimary, fileDigests);
+                Element packagePrimaryElement = generatePrimary(metadata, docPrimary, fileDigests,location.getPath());
                 primaryRootElement.appendChild(packagePrimaryElement);
 
                 // 生成other package data
@@ -337,7 +338,7 @@ public class RpmRepoIndexer {
     }
 
 
-    public Element generatePrimary(RpmMetadata metadata, Document doc, String fileDigests) {
+    public Element generatePrimary(RpmMetadata metadata, Document doc, String fileDigests,String location) {
         Element packageElement = doc.createElement("package");
         packageElement.setAttribute("type", "rpm");
 
@@ -393,7 +394,7 @@ public class RpmRepoIndexer {
 
         // Location
         Element locationElement = doc.createElement("location");
-        locationElement.setAttribute("href", String.format("Packages/%s.rpm",metadata.getHref()));
+        locationElement.setAttribute("href", location);
         packageElement.appendChild(locationElement);
 
         // Checksum
