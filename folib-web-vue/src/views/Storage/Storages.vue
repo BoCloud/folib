@@ -1766,7 +1766,7 @@ export default {
         deleteStorages(this.currentStorage, false).then(response => {
           setTimeout(() => {
             this.$notification.success({
-              message: response.message,
+              message: response.message || `${this.$t('Storage.successfulOperation')}`,
             })
           }, 100)
           this.showStorageUpdate = false
@@ -1776,7 +1776,7 @@ export default {
         }).catch(err => {
           let error = err.response.data?err.response.data:this.$t('Storage.UnknownError')
           this.$notification["error"]({
-            message: error,
+            message: error  || `${this.$t('Storage.successfulOperation')}`,
           })
         })
       }
@@ -1786,7 +1786,7 @@ export default {
         deleteStorages(this.currentStorage, true).then(response => {
           setTimeout(() => {
             this.$notification.success({
-              message: response.message,
+              message: response.message  || `${this.$t('Storage.successfulOperation')}`,
             })
           }, 100)
           this.showStorageUpdate = false;
@@ -1796,7 +1796,7 @@ export default {
         }).catch(err => {
           let error = err.response.data?err.response.data:this.$t('Storage.UnknownError')
           this.$notification["error"]({
-            message: error,
+            message: error  || `${this.$t('Storage.successfulOperation')}`,
           })
         })
       }
@@ -1816,7 +1816,7 @@ export default {
             createStorages(this.storageCreateData).then(response => {
               setTimeout(() => {
                 this.$notification.success({
-                  message: response.message,
+                  message: response.message  || `${this.$t('Storage.successfulOperation')}`,
                 })
               }, 100)
               this.showsTorageFormModal = false;
@@ -1844,7 +1844,7 @@ export default {
         updateStorages(this.currentStorage).then(response => {
           setTimeout(() => {
             this.$notification.success({
-              message: response.message,
+              message: response.message  || `${this.$t('Storage.successfulOperation')}`,
             })
           }, 100)
           this.showStorageUpdate = false

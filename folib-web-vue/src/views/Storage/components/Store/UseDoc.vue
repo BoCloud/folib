@@ -294,7 +294,7 @@
               'email=yours4@example.com\n' +
               '_auth=YWRtaW46cGFzc3dvcmQ=\n' +
               '\n' +
-              '; `_auth` ' + this.$t('Store.IS') + ' base64 token\n' +
+              '; `_auth` ' + this.$t('Store.IS') + ' base64 token'+ this.$t('Store.authDescription') + '\n' +
               '; ' + this.$t('Store.NpmAuth') + ':\n' +
               '; username=admin\n' +
               '; _password=password'
@@ -600,7 +600,7 @@
               'email=yours4@example.com\n' +
               '_auth=YWRtaW46cGFzc3dvcmQ=\n' +
               '\n' +
-              '; `_auth` ' + this.$t('Store.IS') + ' base64 token\n' +
+              '; `_auth` ' + this.$t('Store.IS') + ' base64 token'+ this.$t('Store.authDescription') + '\n' +
               '; ' + this.$t('Store.NpmAuth') + ':\n' +
               '; username=admin\n' +
               '; _password=password'

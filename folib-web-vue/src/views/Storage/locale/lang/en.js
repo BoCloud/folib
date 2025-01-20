@@ -36,6 +36,7 @@ export default {
     'HaveAccess': 'The administrator/member list you select will have access to the storage space.',
     'RegularCleaning': 'Delete: Only storage configurations are deleted. The storage configurations are deleted periodically at 00:00 every day.',
     'IfForcedDeletion': 'The repository list cannot be recovered if it is forcibly deleted.',
+    'successfulOperation':'Successful operation',
     'Edit': 'Edit',
     'Delete': 'Delete',
     'ForcedDeletion': 'Forced deletion',

@@ -35,6 +35,7 @@ export default {
     'HaveAccess': '你选择的管理员/成员列表将拥有该存储空间的使用权限',
     'RegularCleaning': '删除:只删除存储配置，每日0点会定时清理',
     'IfForcedDeletion': '若强制删除则无法恢复仓库列表',
+    'successfulOperation':'操作成功',
     'Edit': '修改',
     'Delete': '删除',
     'create': '新建',

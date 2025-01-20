@@ -225,6 +225,7 @@ export default {
     'ConanRemoteList': '查询已添加的远程仓库',
     'NpmConfig': '查看npm当前配置',
     'IS': '是',
+    'authDescription':'当前示例的auth需要重新解码编码',
     'NpmAuth': '你也可以采用用户名密码模式',
     'NpmInstall': '安装依赖',
     'NpmPublish': '上传制品',
