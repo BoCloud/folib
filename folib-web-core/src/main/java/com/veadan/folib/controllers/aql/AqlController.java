@@ -47,9 +47,10 @@ public class AqlController extends BaseController {
                                  @RequestParam(name = "safeLevel", required = false) String safeLevel,
                                  @RequestParam(name = "digestAlgorithm", required = false) String digestAlgorithm,
                                  @RequestParam(name = "digest", required = false) String digest,
+                                 @RequestParam(name = "query", required = false) String query,
                                  @RequestParam(name = "limit", required = false) Integer limit,
                                  @RequestParam(name = "page", required = false) Integer page) throws IOException {
-        SearchResults result = fqlSearchService.artifactQuery(regex, artifactName, metadataSearch, storageId, repositoryId, beginDate, endDate, sortField, sortOrder, repositoryIds, safeLevel, digestAlgorithm, digest, limit, page);
+        SearchResults result = fqlSearchService.artifactQuery(regex, artifactName, metadataSearch, storageId, repositoryId, beginDate, endDate, sortField, sortOrder, repositoryIds, safeLevel, digestAlgorithm, digest, query, limit, page);
         return ResponseEntity.ok(result);
     }
 

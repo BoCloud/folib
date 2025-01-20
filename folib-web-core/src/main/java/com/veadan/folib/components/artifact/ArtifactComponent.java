@@ -1424,6 +1424,7 @@ public class ArtifactComponent {
                     public void startElement(String uri, String localName, String qName, Attributes attributes) {
                         if ("a".equalsIgnoreCase(qName)) {
                             String href = attributes.getValue("href");
+                            log.info("StorageId [{}] repositoryId [{}] href [{}]", repository.getStorage().getId(), repository.getId(), href);
                             if (href != null) {
                                 try {
                                     // 检查是否是相对路径

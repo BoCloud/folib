@@ -101,7 +101,7 @@
         </div>
       </a-tab-pane>
       <a-tab-pane key="2" :tab="$t('Store.Metadata')">
-        <a v-if="metadataEnabled" @click="metadataHandler()">
+        <a v-if="metadataEnabled || (folibRepository.type != 'group' && currentTreeNode.type == 'dir')" @click="metadataHandler()">
           <a-tooltip>
             <template slot="title">{{ $t('Store.Create') }}</template>
             <a-icon type="plus-circle" theme="filled" class="ml-30"
@@ -148,7 +148,7 @@
             </a-button>
           </div>
           <div slot="operation" slot-scope="text, record">
-            <div class="col-action" v-if="metadataEnabled">
+            <div class="col-action" v-if="metadataEnabled || (folibRepository.type != 'group' && currentTreeNode.type == 'dir')">
               <a-popconfirm
                 :title="$t('Store.SuerDelete')"
                 okType="danger"
@@ -172,7 +172,34 @@
                       fill="#111827"
                     />
                   </svg>
-                  <span class="text-danger">DELETE</span>
+                  <span class="text-danger">{{ $t('Store.Delete') }}</span>
+                </a-button>
+              </a-popconfirm>
+              <a-popconfirm
+                v-if = "currentTreeNode.type == 'dir'"
+                :title="$t('Store.SuerDelete')"
+                okType="danger"
+                :ok-text="$t('Store.Confirm')"
+                :cancel-text="$t('Store.Cancel')"
+                @confirm="deleteArtifactMetadata(record.key, true)"
+              >
+                <a-button type="link" size="small">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      class="fill-danger"
+                      fill-rule="evenodd"
+                      clip-rule="evenodd"
+                      d="M9 2C8.62123 2 8.27497 2.214 8.10557 2.55279L7.38197 4H4C3.44772 4 3 4.44772 3 5C3 5.55228 3.44772 6 4 6L4 16C4 17.1046 4.89543 18 6 18H14C15.1046 18 16 17.1046 16 16V6C16.5523 6 17 5.55228 17 5C17 4.44772 16.5523 4 16 4H12.618L11.8944 2.55279C11.725 2.214 11.3788 2 11 2H9ZM7 8C7 7.44772 7.44772 7 8 7C8.55228 7 9 7.44772 9 8V14C9 14.5523 8.55228 15 8 15C7.44772 15 7 14.5523 7 14V8ZM12 7C11.4477 7 11 7.44772 11 8V14C11 14.5523 11.4477 15 12 15C12.5523 15 13 14.5523 13 14V8C13 7.44772 12.5523 7 12 7Z"
+                      fill="#111827"
+                    />
+                  </svg>
+                  <span class="text-danger">{{ $t('Store.RecursiveDelete') }}</span>
                 </a-button>
               </a-popconfirm>
               <a-button
@@ -198,7 +225,7 @@
                     fill="#111827"
                   />
                 </svg>
-                <span class="text-dark">EDIT</span>
+                <span class="text-dark">{{ $t('Store.Edit') }}</span>
               </a-button>
             </div>
           </div>
@@ -447,7 +474,7 @@
 <script>
 import store from "store";
 import { fileSizeConver, formateDate } from "@/utils/layoutUtil";
-import { getArtifact, deleteArtifact, getArtifactPermission } from "@/api/folib";
+import { getArtifact, deleteArtifact, getArtifactPermission, getMetadata } from "@/api/folib";
 import { getProjectInfo, getCacheConfig } from "@/api/foEyes";
 import { deleteArtifactMetadata, conanInfo, conanPackageInfo } from "@/api/artifact";
 import { getMetadataConfiguration } from '@/api/settings'
@@ -529,14 +556,14 @@ export default {
           title: "元数据值",
           dataIndex: "value",
           key: "value",
-          width: 300,
+          width: 200,
           scopedSlots: { customRender: "value" },
         },
         {
           i18nKey: 'Store.Operations',
           title: "操作",
           dataIndex: "operation",
-          width: 250,
+          width: 300,
           scopedSlots: { customRender: "operation" },
         },
       ],
@@ -720,27 +747,53 @@ export default {
       }
     },
     getMetadata() {
+      this.getMetadataConfiguration()
       if (this.currentTreeNode.type === 'file') {
-        this.getMetadataConfiguration()
         getArtifact(
           this.repositoryType,
           this.currentTreeNode.storageId,
           this.currentTreeNode.repositoryId,
           this.currentTreeNode.artifactPath
         ).then((res) => {
-          this.handlerRespMetadata(res)
+          this.handlerRespMetadata(res, 'file')
+          this.$forceUpdate()
+        })
+      } else if (this.currentTreeNode.type === 'dir') {
+        getMetadata(
+          this.currentTreeNode.storageId,
+          this.currentTreeNode.repositoryId,
+          this.currentTreeNode.artifactPath
+        ).then((res) => {
+          this.handlerRespMetadata(res, 'dir')
           this.$forceUpdate()
         })
       }
     },
-    handlerRespMetadata(res) {
+    handlerRespMetadata(res, type) {
       let metadataList = []
-      if (
+      if (type == 'file' &&
         res.artifact &&
         res.artifact.metadata &&
         res.artifact.metadata.length > 0
       ) {
         let metadataJson = JSON.parse(res.artifact.metadata)
+        for (let key in metadataJson) {
+          let flag = this.metadataConfigList.some(
+            (metadataConfig) =>
+              !metadataConfig.viewShow && metadataConfig.key === key
+          );
+          if (flag) {
+            metadataJson[key].viewShow = false;
+            continue
+          }
+          let metadata = Object.assign({}, metadataJson[key]);
+          metadata.key = key;
+          metadataList.push(metadata);
+        }
+      } else if (type == 'dir' &&
+        res != null && res != '' && res != '{}' 
+      ) {
+        let metadataJson = res
         for (let key in metadataJson) {
           let flag = this.metadataConfigList.some(
             (metadataConfig) =>
@@ -773,12 +826,16 @@ export default {
     metadataPrismEditorDrawerClose() {
       this.metadataPrismEditorDrawerVisible = false;
     },
-    deleteArtifactMetadata(metadataKey) {
+    deleteArtifactMetadata(metadataKey, recursive) {
+      if (!recursive) {
+        recursive = false
+      }
       let data = {
         key: metadataKey,
         storageId: this.currentTreeNode.storageId,
         repositoryId: this.currentTreeNode.repositoryId,
         artifactPath: this.currentTreeNode.artifactPath,
+        recursive: recursive,
       };
       deleteArtifactMetadata(data).then((res) => {
         this.successMsg(this.$t('Store.DeletedProductSuccess'));
@@ -971,7 +1028,7 @@ export default {
           this.folibRepository.type !== 'group' &&
           (hasRole('ARTIFACTS_MANAGER') ||
           permissions.includes('ARTIFACTS_DELETE'))
-        if (this.currentFileDetial && this.currentFileDetial.artifact) {
+        if ((this.currentTreeNode && this.currentTreeNode.type == 'dir') || (this.currentFileDetial && this.currentFileDetial.artifact)) {
           this.metadataEnabled = this.folibRepository.type !== 'group' &&
           (hasRole('ARTIFACTS_MANAGER') ||
           permissions.includes('CONFIGURATION_ADD_UPDATE_METADATA'))

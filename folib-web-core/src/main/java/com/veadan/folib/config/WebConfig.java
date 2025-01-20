@@ -62,6 +62,7 @@ import tk.mybatis.mapper.autoconfigure.MapperAutoConfiguration;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -161,6 +162,7 @@ public class WebConfig
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
         StringHttpMessageConverter stringConverter = new StringHttpMessageConverter();
         stringConverter.setWriteAcceptCharset(false);
+        stringConverter.setDefaultCharset(StandardCharsets.UTF_8);
         // if your argument is a byte[]
         converters.add(new ByteArrayHttpMessageConverter());
         converters.add(stringConverter);
@@ -189,7 +191,9 @@ public class WebConfig
     @Bean
     public MappingJackson2HttpMessageConverter jackson2Converter() {
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        return new MappingJackson2HttpMessageConverter(objectMapper);
+        MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter = new MappingJackson2HttpMessageConverter(objectMapper);
+        mappingJackson2HttpMessageConverter.setDefaultCharset(StandardCharsets.UTF_8);
+        return mappingJackson2HttpMessageConverter;
     }
 
     @Bean

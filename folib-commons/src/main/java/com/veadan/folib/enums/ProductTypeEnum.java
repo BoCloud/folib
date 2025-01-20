@@ -1,7 +1,10 @@
 package com.veadan.folib.enums;
 
+import com.google.common.collect.Lists;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+
+import java.util.List;
 
 @AllArgsConstructor
 @Getter
@@ -100,6 +103,8 @@ public enum ProductTypeEnum {
     private String name;
     private String foLibraryName;
     private String subLayout;
+
+    public static List<String> SIMPLE_TYPE_LIST = Lists.newArrayList(Maven.getFoLibraryName(), Raw.getFoLibraryName(), Rpm.getFoLibraryName(), Debian.getFoLibraryName());
 
     public static String queryFolibLibraryByName(String name) {
         String libraryName = "";
