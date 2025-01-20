@@ -114,6 +114,10 @@ public class GeneralCleanupArtifactsProvider implements CleanupArtifactsProvider
             return null;
         }
         long cleanupDay = Long.parseLong(getCleanupDay(path, artifact.getMetadata(), storageDay, cleanupArtifactPathMap));
+        if (Long.valueOf(ZERO).equals(cleanupDay)) {
+            log.info("Cleanup storageId [{}] repositoryId [{}] path [{}] cleanupDay is zero skip", storageId, repositoryId, path);
+            return null;
+        }
         //获取仓库下制品最近使用时间做比较
         LocalDateTime lastUsedTime = artifact.getLastUsed();
         log.info("Cleanup storageId [{}] repositoryId [{}] storageDay [{}] path [{}] lastUsedTime [{}] current time [{}]", storageId, repositoryId, cleanupDay, artifact.getArtifactPath(), lastUsedTime, LocalDateTime.now());
@@ -145,6 +149,9 @@ public class GeneralCleanupArtifactsProvider implements CleanupArtifactsProvider
                 if (StringUtils.isNotBlank(artifactLifeCycleData) && JSONUtil.isJson(artifactLifeCycleData)) {
                     JSONObject artifactLifeCycleJson = JSONObject.parseObject(artifactLifeCycleData);
                     String artifactLifeCycle = artifactLifeCycleJson.getString("value");
+                    if (GlobalConstants.ARTIFACT_RETENTION_FOREVER_KEY.equalsIgnoreCase(artifactLifeCycle)) {
+                        return "0";
+                    }
                     if (StringUtils.isNotBlank(artifactLifeCycle) && StringUtils.isNumeric(artifactLifeCycle)) {
                         //制品元数据级别生命周期
                         return artifactLifeCycle;

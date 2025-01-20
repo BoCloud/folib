@@ -321,8 +321,11 @@ public interface GlobalConstants {
     /**
      * 元数据级别制品生命周期
      */
-    String ARTIFACT_LIFE_CYCLE_KEY = "ARTIFACT_LIFE_CYCLE";
-
+    String ARTIFACT_LIFE_CYCLE_KEY = "br.retention.days";
+    /**
+     * 元数据级别制品生命周期永久保留
+     */
+    String ARTIFACT_RETENTION_FOREVER_KEY = "forever";
     /**
      * 可忽略的线程前缀
      */
