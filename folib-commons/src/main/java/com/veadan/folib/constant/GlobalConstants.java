@@ -326,7 +326,7 @@ public interface GlobalConstants {
     /**
      * 可忽略的线程前缀
      */
-    List<String> IGNORE_THREAD_NAME_LIST = Lists.newArrayList("asyncWsCommand", "cron-task-pool-", "scheduled-pool-");
+    List<String> IGNORE_THREAD_NAME_LIST = Lists.newArrayList("asyncWsCommand", "cron-task-pool-", "scheduled-pool-", "async");
 
     /**
      * 0
@@ -337,4 +337,10 @@ public interface GlobalConstants {
      * 最新版本关键字
      */
     List<String> LATEST_ARTIFACT_KEY_LIST = Lists.newArrayList("[RELEASE]", "[LATEST]");
+
+    List<String> HTTP_PREFIX_LIST = Lists.newArrayList("http://", "https://");
+
+    String COLON = ":";
+
+    String RELEASE_ARTIFACT_KEY ="[RELEASE]";
 }

@@ -362,5 +362,8 @@ export default {
     'CargoDeployConfig':'要发布一个crate并将其上传到FoLib，请使用cargo publish命令。',
     'CargoInstall': '安装',
     'CargoInstallConfig': '要安装一个crate，请使用cargo install命令。',
-
+    'Recursive': '递归',
+    'RecursiveTip': '元数据将添加到所选文件夹以及此文件夹下的所有制品、文件夹和子文件夹中。',
+    'RecursiveDelete': '递归删除',
+    'Edit': '编辑',
 }

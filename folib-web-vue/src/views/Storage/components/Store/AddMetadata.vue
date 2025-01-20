@@ -135,11 +135,20 @@
               </prism-editor>
             </a-form-model-item>
           </a-col>
-          <!-- <a-col :span="24" v-if="metadataForm.custom">
-            <a-form-model-item class="mb-10" label="是否展示" :colon="false" prop="viewShow">
-              <a-switch v-model="metadataForm.viewShow" />
+          <a-col :span="24" v-if="currentTreeNode.type == 'dir'">
+            <a-form-model-item class="mb-10" :colon="false" prop="recursive">
+              <template slot="label">
+                {{ $t('Store.Recursive') }}
+                <a-popover placement="topLeft">
+                  <template slot="content">
+                    <p class="mb-0">{{ $t('Store.RecursiveTip') }}</p>
+                  </template>
+                  <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
+                </a-popover>
+              </template>
+              <a-switch v-model="metadataForm.recursive" />
             </a-form-model-item>
-          </a-col> -->
+          </a-col>
         </a-row>
       </a-form-model>
     </a-modal>
@@ -198,6 +207,7 @@ export default {
         type: undefined,
         viewShow: true,
         value: undefined,
+        recursive: false,
       },
       metadataEditor: false,
       prismEditor: false,

@@ -52,6 +52,9 @@ public interface LayoutProvider<T extends ArtifactCoordinates> {
         if (!RepositoryTypeEnum.PROXY.getType().equals(repository.getType())) {
             return;
         }
+        if (GlobalConstants.HTTP_PREFIX_LIST.stream().anyMatch(item -> path.getTargetUrl().startsWith(item))) {
+            return;
+        }
         String remoteUrl = repository.getRemoteRepository().getUrl();
         remoteUrl = StringUtils.removeEnd(remoteUrl, GlobalConstants.SEPARATOR);
         path.setTargetUrl(String.format("%s/%s", remoteUrl, StringUtils.removeStart(path.getTargetUrl(), GlobalConstants.SEPARATOR)));

@@ -427,48 +427,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
 
     @Override
     public String saveArtifactMetadata(ArtifactMetadataForm artifactMetadataForm) {
-        String lockKey = String.format("%s-%s-%s-%s", "metadata", artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
-        if (distributedLockComponent.lock(lockKey, GlobalConstants.WAIT_LOCK_TIME)) {
-            try {
-                log.debug("Locked for [{}]", lockKey);
-                Artifact artifact = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
-                if (Objects.isNull(artifact)) {
-                    throw new BusinessException(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath()));
-                }
-                JSONObject metadataJson = getMetadata(artifact);
-                if (Objects.isNull(metadataJson)) {
-                    metadataJson = new JSONObject();
-                }
-                String key = artifactMetadataForm.getKey();
-                if (metadataJson.containsKey(key)) {
-                    //已存在
-                    return "repeat";
-                }
-                RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
-                validateAuth(repositoryPath);
-                ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
-                BeanUtils.copyProperties(artifactMetadataForm, artifactMetadata);
-                metadataJson.put(key, artifactMetadata);
-                artifact.setMetadata(metadataJson.toJSONString());
-                artifactService.saveOrUpdateArtifact(artifact);
-                repositoryPath.setArtifact(artifact);
-                artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
-                cacheMetadata(repositoryPath);
-            } catch (Exception e) {
-                log.error("Save artifact metadata error [{}]", ExceptionUtils.getStackTrace(e));
-                if (e instanceof BusinessException) {
-                    throw new RuntimeException(e.getMessage());
-                } else {
-                    log.error("保存制品元数据错误：{}", ExceptionUtils.getStackTrace(e));
-                    throw new RuntimeException("保存制品元数据错误，请稍后重试");
-                }
-            } finally {
-                distributedLockComponent.unLock(lockKey);
-            }
-        } else {
-            log.warn("Artifact [{}] was not get lock", lockKey);
-        }
-        return ResponseMessage.ok().getMessage();
+        return updateArtifactMetadata(artifactMetadataForm);
     }
 
     @Override
@@ -476,25 +435,20 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         String lockKey = String.format("%s-%s-%s-%s", "metadata", artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
         if (distributedLockComponent.lock(lockKey, GlobalConstants.WAIT_LOCK_TIME)) {
             try {
-                log.debug("Locked for [{}]", lockKey);
-                Artifact artifact = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
-                if (Objects.isNull(artifact)) {
+                RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
+                if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
                     throw new BusinessException(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath()));
                 }
-                JSONObject metadataJson = getMetadata(artifact);
-                String key = artifactMetadataForm.getKey();
-                metadataJson = metadataJson == null ? new JSONObject() : metadataJson;
-                if (metadataJson.containsKey(key)) {
-                    RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
-                    validateAuth(repositoryPath);
-                    ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
-                    BeanUtils.copyProperties(artifactMetadataForm, artifactMetadata);
-                    metadataJson.put(key, artifactMetadata);
-                    artifact.setMetadata(metadataJson.toJSONString());
-                    artifactService.saveOrUpdateArtifact(artifact);
-                    repositoryPath.setArtifact(artifact);
-                    artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
-                    cacheMetadata(repositoryPath);
+                validateAuth(repositoryPath);
+                if (Files.isDirectory(repositoryPath)) {
+                    recursiveMetadata(repositoryPath, artifactMetadataForm);
+                    return ResponseMessage.ok().getMessage();
+                } else {
+                    Artifact artifact = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
+                    if (Objects.isNull(artifact)) {
+                        throw new BusinessException(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath()));
+                    }
+                    saveOrUpdateArtifactMetadata(repositoryPath, artifact, artifactMetadataForm);
                 }
             } catch (Exception e) {
                 log.error("Update artifact metadata error [{}]", ExceptionUtils.getStackTrace(e));
@@ -518,22 +472,20 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         String lockKey = String.format("%s-%s-%s-%s", "metadata", artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
         if (distributedLockComponent.lock(lockKey, GlobalConstants.WAIT_LOCK_TIME)) {
             try {
-                log.debug("Locked for [{}]", lockKey);
+                RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
+                if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+                    throw new BusinessException(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath()));
+                }
+                validateAuth(repositoryPath);
+                if (Files.isDirectory(repositoryPath)) {
+                    recursiveDeleteMetadata(repositoryPath, artifactMetadataForm);
+                    return;
+                }
                 Artifact artifact = resolvePath(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
                 if (Objects.isNull(artifact)) {
                     throw new BusinessException(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath()));
                 }
-                JSONObject metadataJson = getMetadata(artifact);
-                if (Objects.nonNull(metadataJson) && metadataJson.containsKey(artifactMetadataForm.getKey())) {
-                    RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
-                    validateAuth(repositoryPath);
-                    metadataJson.remove(artifactMetadataForm.getKey());
-                    artifact.setMetadata(metadataJson.toJSONString());
-                    artifactService.saveOrUpdateArtifact(artifact);
-                    repositoryPath.setArtifact(artifact);
-                    artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
-                    cacheMetadata(repositoryPath);
-                }
+                deleteArtifactMetadata(repositoryPath, artifact, artifactMetadataForm);
             } catch (Exception e) {
                 log.error("Delete artifact metadata error [{}]", ExceptionUtils.getStackTrace(e));
                 if (e instanceof BusinessException) {
@@ -712,31 +664,24 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         // 批量的新增或更新 path Artifact 是一致的
         if (CollectionUtils.isNotEmpty(artifactMetadataFormList)) {
             ArtifactMetadataForm artifactMetaData = artifactMetadataFormList.get(0);
-            // 查询是否存在 path 的更新事件
             Artifact artifact = null;
             String lockKey = String.format("%s-%s-%s-%s", "metadata", artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath());
             if (distributedLockComponent.lock(lockKey, GlobalConstants.WAIT_LOCK_TIME)) {
                 try {
-                    log.debug("Locked for [{}]", lockKey);
+                    RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath());
+                    if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath)) {
+                        throw new BusinessException(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath()));
+                    }
+                    validateAuth(repositoryPath);
+                    if (Files.isDirectory(repositoryPath)) {
+                        recursiveBatchMetadata(repositoryPath, artifactMetaData, artifactMetadataFormList);
+                        return;
+                    }
                     artifact = resolvePath(artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath());
                     if (Objects.isNull(artifact)) {
                         throw new BusinessException(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath()));
                     }
-                    RepositoryPath repositoryPath = repositoryPathResolver.resolve(artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath());
-                    validateAuth(repositoryPath);
-                    JSONObject metadataJson = getMetadata(artifact);
-                    metadataJson = metadataJson == null ? new JSONObject() : metadataJson;
-                    for (ArtifactMetadataForm artifactMetadataForm : artifactMetadataFormList) {
-                        String key = artifactMetadataForm.getKey();
-                        ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
-                        BeanUtils.copyProperties(artifactMetadataForm, artifactMetadata);
-                        metadataJson.put(key, artifactMetadata);
-                    }
-                    artifact.setMetadata(metadataJson.toJSONString());
-                    artifactService.saveOrUpdateArtifact(artifact);
-                    repositoryPath.setArtifact(artifact);
-                    artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
-                    cacheMetadata(repositoryPath);
+                    saveOrUpdateArtifactBatchMetadata(repositoryPath, artifact, artifactMetadataFormList);
                 } catch (Exception e) {
                     log.error("Batch handle artifact metadata error [{}]", ExceptionUtils.getStackTrace(e));
                     if (e instanceof BusinessException) {
@@ -1480,8 +1425,8 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
     @Override
-    public void saveArtifactMetaByString(String storageId,String repositoryId,String path,String metaData) {
-        try{
+    public void saveArtifactMetaByString(String storageId, String repositoryId, String path, String metaData) {
+        try {
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
             Artifact artifact = resolvePath(storageId, repositoryId, path);
             artifact.setMetadata(metaData);
@@ -1489,7 +1434,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             repositoryPath.setArtifact(artifact);
             artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
             cacheMetadata(repositoryPath);
-        }catch (Exception e){
+        } catch (Exception e) {
             log.info("添加元数据失败");
         }
 
@@ -1498,6 +1443,29 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     @Override
     public long countByUUidPrefix(String uuidPrefix) {
         return artifactRepository.countByUUidPrefix(uuidPrefix);
+    }
+
+    @Override
+    public String getMetadata(String storageId, String repositoryId, String path) {
+        String metadata = "";
+        try {
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+            if (!Files.exists(repositoryPath)) {
+                return metadata;
+            }
+            if (Files.isDirectory(repositoryPath)) {
+                metadata = artifactComponent.getCacheArtifactMetadata(repositoryPath);
+            } else if (RepositoryFiles.isArtifact(repositoryPath)) {
+                Artifact artifact = getArtifact(repositoryPath);
+                if (Objects.isNull(artifact)) {
+                    return metadata;
+                }
+                metadata = artifact.getMetadata();
+            }
+        } catch (Exception ex) {
+            log.error("Get metadata storageId [{}] repositoryId [{}] path [{}] error [{}]", storageId, repositoryId, path, ExceptionUtils.getStackTrace(ex));
+        }
+        return metadata;
     }
 
     private void handleDockerRepo(RepositoryPath rootRepositoryPath, RepositoryPath blobsRootRepositoryPath, RepositoryPath manifestRootRepositoryPath) {
@@ -2366,20 +2334,289 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         return configurationManagementService.getConfiguration().getRepository(storageId, repositoryId);
     }
 
-    private void validateAuth(RepositoryPath repositoryPath) throws Exception {
-        String threadName = Thread.currentThread().getName();
-        List<String> ignoreThreadNameList = GlobalConstants.IGNORE_THREAD_NAME_LIST;
-        if (ignoreThreadNameList.stream().anyMatch(threadName::startsWith)) {
-            return;
-        }
-        if (!authComponent.validatePrivileges(repositoryPath.getRepository(), repositoryPath, Privileges.CONFIGURATION_ADD_UPDATE_METADATA.getAuthority())) {
+    private void validateAuth(RepositoryPath repositoryPath) {
+        if (!hasAuth(repositoryPath)) {
             throw new BusinessException("没有操作元数据权限");
         }
+    }
+
+    private boolean hasAuth(RepositoryPath repositoryPath) {
+        try {
+            String threadName = Thread.currentThread().getName();
+            List<String> ignoreThreadNameList = GlobalConstants.IGNORE_THREAD_NAME_LIST;
+            if (ignoreThreadNameList.stream().anyMatch(threadName::startsWith)) {
+                return true;
+            }
+            return authComponent.validatePrivileges(repositoryPath.getRepository(), repositoryPath, Privileges.CONFIGURATION_ADD_UPDATE_METADATA.getAuthority());
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
+        return false;
     }
 
     private void cacheMetadata(RepositoryPath repositoryPath) {
         artifactComponent.storeArtifactMetadataFile(repositoryPath);
     }
 
+    private void saveOrUpdateArtifactMetadata(RepositoryPath repositoryPath, Artifact artifact, ArtifactMetadataForm artifactMetadataForm) throws IOException {
+        JSONObject metadataJson = getMetadata(artifact);
+        metadataJson = metadataJson == null ? new JSONObject() : metadataJson;
+        ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
+        BeanUtils.copyProperties(artifactMetadataForm, artifactMetadata);
+        metadataJson.put(artifactMetadataForm.getKey(), artifactMetadata);
+        artifact.setMetadata(metadataJson.toJSONString());
+        artifactService.saveOrUpdateArtifact(artifact);
+        repositoryPath.setArtifact(artifact);
+        artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
+        cacheMetadata(repositoryPath);
+    }
 
+    private void saveOrUpdateDirectoryMetadata(RepositoryPath repositoryPath, ArtifactMetadataForm artifactMetadataForm) {
+        String metadata = artifactComponent.getCacheArtifactMetadata(repositoryPath);
+        JSONObject metadataJson = StringUtils.isNotBlank(metadata) ? JSONObject.parseObject(metadata) : new JSONObject();
+        ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
+        BeanUtils.copyProperties(artifactMetadataForm, artifactMetadata);
+        metadataJson.put(artifactMetadataForm.getKey(), artifactMetadata);
+        artifactComponent.cacheArtifactMetadata(repositoryPath, metadataJson.toJSONString());
+    }
+
+    private void recursiveMetadata(RepositoryPath repositoryPath, ArtifactMetadataForm artifactMetaData) {
+        //目录级别元数据
+        Boolean recursive = artifactMetaData.getRecursive();
+        if (Objects.isNull(recursive) || Boolean.FALSE.equals(recursive)) {
+            saveOrUpdateDirectoryMetadata(repositoryPath, artifactMetaData);
+            return;
+        }
+        try {
+            String layout = repositoryPath.getRepository().getLayout();
+            final boolean isDockerLayout = ProductTypeEnum.Docker.getFoLibraryName().equalsIgnoreCase(layout);
+            Files.walkFileTree(repositoryPath, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                    if (exc instanceof NoSuchFileException) {
+                        // 目录或文件已删除，继续遍历
+                        return FileVisitResult.CONTINUE;
+                    }
+                    return super.visitFileFailed(file, exc);
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file,
+                                                 BasicFileAttributes attrs)
+                        throws IOException {
+                    RepositoryPath itemPath = (RepositoryPath) file;
+                    try {
+                        if (RepositoryPathUtil.include(1, itemPath, isDockerLayout, layout)) {
+                            log.info("Find path [{}]", itemPath);
+                            Artifact artifact = resolvePath(itemPath.getStorageId(), itemPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath));
+                            if (Objects.isNull(artifact)) {
+                                return FileVisitResult.CONTINUE;
+                            }
+                            saveOrUpdateArtifactMetadata(itemPath, artifact, artifactMetaData);
+                        }
+                    } catch (Exception ex) {
+                        log.error("Find path [{}] metadata error [{}]", itemPath, ExceptionUtils.getStackTrace(ex));
+                        return FileVisitResult.CONTINUE;
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+                    try {
+                        RepositoryPath itemPath = (RepositoryPath) dir;
+                        if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !RepositoryPathUtil.include(2, itemPath, isDockerLayout, layout) || (CollectionUtils.isNotEmpty(RepositoryPathUtil.EXCLUDE_LIST) && RepositoryPathUtil.EXCLUDE_LIST.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
+                            log.info("RepositoryPath [{}] skip...", itemPath.toString());
+                            return FileVisitResult.SKIP_SUBTREE;
+                        }
+                        saveOrUpdateDirectoryMetadata(itemPath, artifactMetaData);
+                    } catch (NoSuchFileException e) {
+                        // 文件已删除，跳过处理
+                        return FileVisitResult.CONTINUE;
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void saveOrUpdateArtifactBatchMetadata(RepositoryPath repositoryPath, Artifact artifact, List<ArtifactMetadataForm> artifactMetadataFormList) throws IOException {
+        JSONObject metadataJson = getMetadata(artifact);
+        metadataJson = metadataJson == null ? new JSONObject() : metadataJson;
+        for (ArtifactMetadataForm artifactMetadataForm : artifactMetadataFormList) {
+            String key = artifactMetadataForm.getKey();
+            ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
+            BeanUtils.copyProperties(artifactMetadataForm, artifactMetadata);
+            metadataJson.put(key, artifactMetadata);
+        }
+        artifact.setMetadata(metadataJson.toJSONString());
+        artifactService.saveOrUpdateArtifact(artifact);
+        repositoryPath.setArtifact(artifact);
+        artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
+        cacheMetadata(repositoryPath);
+    }
+
+    private void saveOrUpdateDirectoryBatchMetadata(RepositoryPath repositoryPath, List<ArtifactMetadataForm> artifactMetadataFormList) {
+        String metadata = artifactComponent.getCacheArtifactMetadata(repositoryPath);
+        JSONObject metadataJson = StringUtils.isNotBlank(metadata) ? JSONObject.parseObject(metadata) : new JSONObject();
+        for (ArtifactMetadataForm artifactMetadataForm : artifactMetadataFormList) {
+            String key = artifactMetadataForm.getKey();
+            ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
+            BeanUtils.copyProperties(artifactMetadataForm, artifactMetadata);
+            metadataJson.put(key, artifactMetadata);
+        }
+        artifactComponent.cacheArtifactMetadata(repositoryPath, metadataJson.toJSONString());
+    }
+
+    private void recursiveBatchMetadata(RepositoryPath repositoryPath, ArtifactMetadataForm artifactMetaData, List<ArtifactMetadataForm> artifactMetadataFormList) {
+        //目录级别元数据
+        Boolean recursive = artifactMetaData.getRecursive();
+        if (Objects.isNull(recursive) || Boolean.FALSE.equals(recursive)) {
+            saveOrUpdateDirectoryBatchMetadata(repositoryPath, artifactMetadataFormList);
+            return;
+        }
+        try {
+            String layout = repositoryPath.getRepository().getLayout();
+            final boolean isDockerLayout = ProductTypeEnum.Docker.getFoLibraryName().equalsIgnoreCase(layout);
+            Files.walkFileTree(repositoryPath, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                    if (exc instanceof NoSuchFileException) {
+                        // 目录或文件已删除，继续遍历
+                        return FileVisitResult.CONTINUE;
+                    }
+                    return super.visitFileFailed(file, exc);
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file,
+                                                 BasicFileAttributes attrs)
+                        throws IOException {
+                    RepositoryPath itemPath = (RepositoryPath) file;
+                    try {
+                        if (RepositoryPathUtil.include(1, itemPath, isDockerLayout, layout)) {
+                            log.info("Find path [{}]", itemPath);
+                            Artifact artifact = resolvePath(itemPath.getStorageId(), itemPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath));
+                            if (Objects.isNull(artifact)) {
+                                return FileVisitResult.CONTINUE;
+                            }
+                            saveOrUpdateArtifactBatchMetadata(itemPath, artifact, artifactMetadataFormList);
+                        }
+                    } catch (Exception ex) {
+                        log.error("Find path [{}] metadata error [{}]", itemPath, ExceptionUtils.getStackTrace(ex));
+                        return FileVisitResult.CONTINUE;
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+                    try {
+                        RepositoryPath itemPath = (RepositoryPath) dir;
+                        if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !RepositoryPathUtil.include(2, itemPath, isDockerLayout, layout) || (CollectionUtils.isNotEmpty(RepositoryPathUtil.EXCLUDE_LIST) && RepositoryPathUtil.EXCLUDE_LIST.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
+                            log.info("RepositoryPath [{}] skip...", itemPath.toString());
+                            return FileVisitResult.SKIP_SUBTREE;
+                        }
+                        saveOrUpdateDirectoryBatchMetadata(itemPath, artifactMetadataFormList);
+                    } catch (NoSuchFileException e) {
+                        // 文件已删除，跳过处理
+                        return FileVisitResult.CONTINUE;
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void deleteArtifactMetadata(RepositoryPath repositoryPath, Artifact artifact, ArtifactMetadataForm artifactMetadataForm) throws IOException {
+        JSONObject metadataJson = getMetadata(artifact);
+        if (Objects.nonNull(metadataJson) && metadataJson.containsKey(artifactMetadataForm.getKey())) {
+            validateAuth(repositoryPath);
+            metadataJson.remove(artifactMetadataForm.getKey());
+            artifact.setMetadata(metadataJson.toJSONString());
+            artifactService.saveOrUpdateArtifact(artifact);
+            repositoryPath.setArtifact(artifact);
+            artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
+            cacheMetadata(repositoryPath);
+        }
+    }
+
+    private void deleteDirectoryMetadata(RepositoryPath repositoryPath, ArtifactMetadataForm artifactMetadataForm) {
+        String metadata = artifactComponent.getCacheArtifactMetadata(repositoryPath);
+        if (StringUtils.isBlank(metadata)) {
+            return;
+        }
+        JSONObject metadataJson = StringUtils.isNotBlank(metadata) ? JSONObject.parseObject(metadata) : new JSONObject();
+        metadataJson.remove(artifactMetadataForm.getKey());
+        artifactComponent.cacheArtifactMetadata(repositoryPath, metadataJson.toJSONString());
+    }
+
+    private void recursiveDeleteMetadata(RepositoryPath repositoryPath, ArtifactMetadataForm artifactMetaData) {
+        //目录级别元数据
+        Boolean recursive = artifactMetaData.getRecursive();
+        if (Objects.isNull(recursive) || Boolean.FALSE.equals(recursive)) {
+            deleteDirectoryMetadata(repositoryPath, artifactMetaData);
+            return;
+        }
+        try {
+            String layout = repositoryPath.getRepository().getLayout();
+            final boolean isDockerLayout = ProductTypeEnum.Docker.getFoLibraryName().equalsIgnoreCase(layout);
+            Files.walkFileTree(repositoryPath, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                    if (exc instanceof NoSuchFileException) {
+                        // 目录或文件已删除，继续遍历
+                        return FileVisitResult.CONTINUE;
+                    }
+                    return super.visitFileFailed(file, exc);
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file,
+                                                 BasicFileAttributes attrs)
+                        throws IOException {
+                    RepositoryPath itemPath = (RepositoryPath) file;
+                    try {
+                        if (RepositoryPathUtil.include(1, itemPath, isDockerLayout, layout)) {
+                            log.info("Find path [{}]", itemPath);
+                            Artifact artifact = resolvePath(itemPath.getStorageId(), itemPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath));
+                            if (Objects.isNull(artifact)) {
+                                return FileVisitResult.CONTINUE;
+                            }
+                            deleteArtifactMetadata(itemPath, artifact, artifactMetaData);
+                        }
+                    } catch (Exception ex) {
+                        log.error("Find path [{}] metadata error [{}]", itemPath, ExceptionUtils.getStackTrace(ex));
+                        return FileVisitResult.CONTINUE;
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+                    try {
+                        RepositoryPath itemPath = (RepositoryPath) dir;
+                        if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !RepositoryPathUtil.include(2, itemPath, isDockerLayout, layout) || (CollectionUtils.isNotEmpty(RepositoryPathUtil.EXCLUDE_LIST) && RepositoryPathUtil.EXCLUDE_LIST.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
+                            log.info("RepositoryPath [{}] skip...", itemPath.toString());
+                            return FileVisitResult.SKIP_SUBTREE;
+                        }
+                        deleteDirectoryMetadata(itemPath, artifactMetaData);
+                    } catch (NoSuchFileException e) {
+                        // 文件已删除，跳过处理
+                        return FileVisitResult.CONTINUE;
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException(ex);
+        }
+    }
 }
