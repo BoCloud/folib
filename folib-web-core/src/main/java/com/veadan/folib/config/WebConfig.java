@@ -217,7 +217,7 @@ public class WebConfig
     @Bean
     @Qualifier("browseRepositoryDirectoryListingService")
     public DirectoryListingService getBrowseRepositoryDirectoryListingService() {
-        return createDirectoryListingServiceForTemplate("%s/api/browse");
+        return createDirectoryListingServiceForTemplate("%s/artifactory");
     }
 
     @Override
