@@ -2,6 +2,7 @@ package com.veadan.folib.components.syncartifact;
 
 import cn.hutool.core.io.FileUtil;
 import com.google.common.collect.Lists;
+import com.hazelcast.cp.IAtomicLong;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.DistributedCounterComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
@@ -74,7 +75,6 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
     /**
      * 计数
      */
-    private static final AtomicLong COUNT = new AtomicLong(0);
 
     @Inject
     private ConfigurationManager configurationManager;
@@ -147,7 +147,7 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
         if (Objects.nonNull(syncArtifactForm.getBatch())) {
             batch = syncArtifactForm.getBatch();
         }
-        //TODO 目录元数据统计
+        distributedCounterComponent.getAtomicLong(JfrogMigrateService.DIRECTORY_COUNT + syncArtifactForm.getStoreAndRepo()).set(0L);
         int availableCores = commonComponent.getAvailableCores() * 2;
         ThreadPoolTaskExecutor threadPoolTaskExecutor = commonComponent.buildThreadPoolTaskExecutor("browseDebianSync", availableCores, availableCores);
         boolean ispaused = false;
@@ -201,10 +201,8 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
         } catch (Exception ex) {
             log.error("Error [{}]", ExceptionUtils.getStackTrace(ex));
         }
-        //TODO 目录元数据统计
-        syncArtifactForm.setSyncMount((int) 0);
-        //TODO 目录元数据统计
-        log.info("Debian包同步目录元数据完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个目录元数据，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), 0, System.currentTimeMillis() - allStartTime);
+        int directoryTotal = (int) distributedCounterComponent.getAtomicLong(JfrogMigrateService.DIRECTORY_TOTAl + syncArtifactForm.getStoreAndRepo()).get();
+        log.info("Debian包同步目录元数据完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个目录元数据，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), directoryTotal, System.currentTimeMillis() - allStartTime);
         return !ispaused;
     }
 
@@ -347,6 +345,7 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
                         continue;
                     }
                     String path = absUrl.substring(rootUrl.length());
+                    distributedCounterComponent.getAtomicLong(JfrogMigrateService.DIRECTORY_TOTAl + repository.getStorageIdAndRepositoryId()).addAndGet(1L);
                     writer.write(path + "\n");
                     writer.flush();
 
@@ -363,6 +362,7 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
         try {
             long startTime = System.currentTimeMillis();
             distributedCounterComponent.getAtomicLong(JfrogMigrateService.INDEX_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
+            distributedCounterComponent.getAtomicLong(JfrogMigrateService.DIRECTORY_TOTAl + syncArtifactForm.getStoreAndRepo()).set(0L);
             Repository repository = configurationManager.getRepository(syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
             if (Objects.isNull(repository)) {
                 throw new RuntimeException(String.format("存储空间 [%s] 所属仓库 [%s}] 不存在", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId()));
@@ -470,7 +470,6 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
         if (Objects.nonNull(syncArtifactForm.getBatch())) {
             batch = syncArtifactForm.getBatch();
         }
-        COUNT.set(0L);
         int availableCores = commonComponent.getAvailableCores() * 2;
         ThreadPoolTaskExecutor threadPoolTaskExecutor = commonComponent.buildThreadPoolTaskExecutor("browseDebianSync", availableCores, availableCores);
         boolean isPaused = false;
@@ -509,10 +508,6 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
                             batchDownload(item, syncArtifactForm, pathList, threadPoolTaskExecutor);
                         }
                     }
-                    // 清除已完成的文件
-                    if (flag) {
-//                        Files.delete(item);
-                    }
                 } catch (Exception ex) {
                     log.error("Handle path [{}] lines [{}] error [{}] ms", item.toString(), lines, ExceptionUtils.getStackTrace(ex));
                 }
@@ -523,8 +518,9 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
             log.error("Error [{}]", ExceptionUtils.getStackTrace(ex));
         }
         handlerDirectoryMetadata(dirPath, syncArtifactForm);
-        syncArtifactForm.setSyncMount((int) COUNT.get());
-        log.info("debian包同步完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个制品，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), COUNT.get(), System.currentTimeMillis() - allStartTime);
+        int total = (int) distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).get();
+        syncArtifactForm.setSyncMount(total);
+        log.info("debian包同步完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个制品，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), total, System.currentTimeMillis() - allStartTime);
         return !isPaused;
     }
 
@@ -546,10 +542,10 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
                             if (Files.exists(repositoryPath) && Files.isDirectory(repositoryPath)) {
                                 //目录
                                 JfrogPropertySyncer syncer = form.getSyncer();
+                                distributedCounterComponent.getAtomicLong(JfrogMigrateService.DIRECTORY_COUNT + form.getStoreAndRepo()).addAndGet(1L);
                                 if (syncer != null) {
                                     String properties = syncer.getPropertiesByKeyAndPath(repositoryId, artifactPath);
                                     if (properties != null) {
-                                        //TODO 目录元数据统计
                                         artifactWebService.saveArtifactMetaByString(storageId, repositoryId, artifactPath, properties);
                                     }
                                 }
@@ -564,13 +560,11 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
                             repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
                             if (Files.exists(repositoryPath)) {
                                 distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + storageId + ":" + repositoryId).addAndGet(1L);
-                                COUNT.incrementAndGet();
                                 log.debug("Batch download storageId [{}] repositoryId [{}] artifactPath [{}] exists skip..", storageId, repositoryId, artifactPath);
                                 continue;
                             }
                             artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
                             if (Files.exists(repositoryPath)) {
-                                COUNT.incrementAndGet();
                                 // 添加成功 计数
                                 distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + storageId + ":" + repositoryId).addAndGet(1L);
                                 JfrogPropertySyncer syncer = form.getSyncer();
@@ -603,8 +597,6 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
     }
 
     public void parsePackagesFile(Repository repository, String filePath, String distribution, String component, String architecture, String distPath) throws IOException {
-
-
         try (FileInputStream fileInputStream = new FileInputStream(filePath);
              GZIPInputStream gzipInputStream = new GZIPInputStream(fileInputStream);
              InputStreamReader inputStreamReader = new InputStreamReader(gzipInputStream);

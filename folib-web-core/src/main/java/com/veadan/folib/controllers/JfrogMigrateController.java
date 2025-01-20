@@ -118,8 +118,8 @@ public class JfrogMigrateController {
 
 
     @PostMapping("/repository/progress")
-    public ResponseEntity<Map<String, Long>> getCountByRepo(@RequestBody AddRepositoryForm form) {
-        Map<String, Long> cnt = jfrogMigrateService.getFinishedCount(form.getMigrateId(), form.getStoreAndRepos());
+    public ResponseEntity<Map<String, String>> getCountByRepo(@RequestBody AddRepositoryForm form) {
+        Map<String, String> cnt = jfrogMigrateService.getFinishedCount(form.getMigrateId(), form.getStoreAndRepos());
         return ResponseEntity.ok(cnt);
     }
 

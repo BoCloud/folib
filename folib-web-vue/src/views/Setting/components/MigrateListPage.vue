@@ -906,7 +906,7 @@ export default {
                   ...record,
                   migratedArtifact: migratedArtifact,
                   progress: record.totalArtifact > 0 
-                    ? Number((migratedArtifact / record.totalArtifact * 100).toFixed(2))
+                    ? Number(migratedArtifact)
                     : 0
                 };
               }

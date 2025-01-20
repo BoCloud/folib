@@ -2,6 +2,7 @@ package com.veadan.folib.components.syncartifact;
 
 import cn.hutool.core.io.FileUtil;
 import com.google.common.collect.Lists;
+import com.hazelcast.cp.IAtomicLong;
 import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.DistributedCounterComponent;
@@ -63,11 +64,6 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
      * 计数
      */
     private static final ThreadLocal<Integer> THREAD_LOCAL = ThreadLocal.withInitial(() -> 0);
-
-    /**
-     * 计数
-     */
-    private static final AtomicLong COUNT = new AtomicLong(0);
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -183,6 +179,7 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
                     String path = absUrl.substring(rootUrl.length());
                     try {
                         writer.write(path + "\n");
+                        distributedCounterComponent.getAtomicLong(JfrogMigrateService.DIRECTORY_TOTAl + repository.getStorageIdAndRepositoryId()).addAndGet(1L);
                         writer.flush();
                     } catch (IOException e) {
                         log.error("写索引文件{}异常{}", absUrl, e.getMessage(), e);
@@ -226,6 +223,7 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
         try {
             long startTime = System.currentTimeMillis();
             distributedCounterComponent.getAtomicLong(JfrogMigrateService.INDEX_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
+            distributedCounterComponent.getAtomicLong(JfrogMigrateService.DIRECTORY_TOTAl + syncArtifactForm.getStoreAndRepo()).set(0L);
             Repository repository = configurationManager.getRepository(syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
             if (Objects.isNull(repository)) {
                 throw new RuntimeException(String.format("存储空间 [%s] 所属仓库 [%s}] 不存在", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId()));
@@ -329,7 +327,6 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
         if (Objects.nonNull(syncArtifactForm.getBatch())) {
             batch = syncArtifactForm.getBatch();
         }
-        COUNT.set(0L);
         int availableCores = commonComponent.getAvailableCores() * 2;
         ThreadPoolTaskExecutor threadPoolTaskExecutor = commonComponent.buildThreadPoolTaskExecutor("browseRawSync", availableCores, availableCores);
         boolean ispaused = false;
@@ -383,8 +380,9 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
             log.error("Error [{}]", ExceptionUtils.getStackTrace(ex));
         }
         handlerDirectoryMetadata(dirPath, syncArtifactForm);
-        syncArtifactForm.setSyncMount((int) COUNT.get());
-        log.info("Raw包同步完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个制品，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), COUNT.get(), System.currentTimeMillis() - allStartTime);
+        int total = (int) distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).get();
+        syncArtifactForm.setSyncMount(total);
+        log.info("Raw包同步完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个制品，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), total, System.currentTimeMillis() - allStartTime);
         return !ispaused;
     }
 
@@ -406,25 +404,23 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
                             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
                             if (Files.exists(repositoryPath) && Files.isDirectory(repositoryPath)) {
                                 //目录
+                                distributedCounterComponent.getAtomicLong(JfrogMigrateService.DIRECTORY_COUNT + form.getStoreAndRepo()).addAndGet(1L);
                                 JfrogPropertySyncer syncer = form.getSyncer();
                                 if (syncer != null) {
                                     String properties = syncer.getPropertiesByKeyAndPath(repositoryId, artifactPath);
                                     if (properties != null) {
-                                        //TODO 目录元数据统计
                                         artifactWebService.saveArtifactMetaByString(storageId, repositoryId, artifactPath, properties);
                                     }
                                 }
                                 continue;
                             }
                             if (Files.exists(repositoryPath)) {
-                                COUNT.incrementAndGet();
                                 distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + storageId + ":" + repositoryId).addAndGet(1L);
                                 log.debug("Batch download storageId [{}] repositoryId [{}] artifactPath [{}] exists skip..", storageId, repositoryId, artifactPath);
                                 continue;
                             }
                             artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
                             if (Files.exists(repositoryPath)) {
-                                COUNT.incrementAndGet();
                                 // 添加成功 计数
                                 distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + storageId + ":" + repositoryId).addAndGet(1L);
                                 JfrogPropertySyncer syncer = form.getSyncer();
@@ -466,7 +462,7 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
         if (Objects.nonNull(syncArtifactForm.getBatch())) {
             batch = syncArtifactForm.getBatch();
         }
-        //TODO 目录元数据统计
+        distributedCounterComponent.getAtomicLong(JfrogMigrateService.DIRECTORY_COUNT + syncArtifactForm.getStoreAndRepo()).set(0L);
         int availableCores = commonComponent.getAvailableCores() * 2;
         ThreadPoolTaskExecutor threadPoolTaskExecutor = commonComponent.buildThreadPoolTaskExecutor("browseRawSync", availableCores, availableCores);
         boolean ispaused = false;
@@ -520,10 +516,9 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
         } catch (Exception ex) {
             log.error("Error [{}]", ExceptionUtils.getStackTrace(ex));
         }
-        //TODO 目录元数据统计
-        syncArtifactForm.setSyncMount((int) 0);
-        //TODO 目录元数据统计
-        log.info("Raw包同步目录元数据完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个目录元数据，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), 0, System.currentTimeMillis() - allStartTime);
+
+        int directoryTotal = (int) distributedCounterComponent.getAtomicLong(JfrogMigrateService.DIRECTORY_TOTAl + syncArtifactForm.getStoreAndRepo()).get();
+        log.info("Raw包同步目录元数据完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个目录元数据，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), directoryTotal, System.currentTimeMillis() - allStartTime);
         return !ispaused;
     }
 
