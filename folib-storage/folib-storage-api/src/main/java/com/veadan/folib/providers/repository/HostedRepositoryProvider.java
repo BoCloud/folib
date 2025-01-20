@@ -164,7 +164,11 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider {
             }
             if (CollectionUtils.isNotEmpty(repositoryPathList)) {
                 if (artifactPath.contains(GlobalConstants.RELEASE_ARTIFACT_KEY)) {
-                    return releasePath(repositoryPathList);
+                    RepositoryPath releaseRepositoryPath = releasePath(repositoryPathList);
+                    if (Objects.nonNull(releaseRepositoryPath)) {
+                        return releaseRepositoryPath;
+                    }
+                    return repositoryPath;
                 } else {
                     return repositoryPathList.get(repositoryPathList.size() - 1);
                 }
