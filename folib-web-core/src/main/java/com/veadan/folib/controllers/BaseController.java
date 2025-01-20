@@ -96,7 +96,7 @@ public abstract class BaseController {
 
     @Inject
     @Lazy
-    private AuthComponent authComponent;
+    protected AuthComponent authComponent;
 
     protected Configuration getConfiguration() {
         return configurationManagementService.getConfiguration();
