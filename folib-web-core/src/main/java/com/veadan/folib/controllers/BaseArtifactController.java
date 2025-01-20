@@ -162,6 +162,10 @@ public abstract class BaseArtifactController
         return String.format("%s/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
     }
 
+    protected String getArtifactoryRepositoryUrl(Repository repository, String endPoint) {
+        return String.format("%s/artifactory/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getId());
+    }
+
     public boolean artifactRealExists(RepositoryPath repositoryPath) {
         try {
             if (Objects.isNull(repositoryPath)) {
