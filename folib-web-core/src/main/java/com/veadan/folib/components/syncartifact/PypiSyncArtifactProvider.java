@@ -447,7 +447,6 @@ public class PypiSyncArtifactProvider implements SyncArtifactProvider {
                                 if (syncer != null) {
                                     String properties = syncer.getPropertiesByKeyAndPath(repositoryId, artifactPath);
                                     if (properties != null) {
-                                        //TODO 目录元数据统计
                                         artifactWebService.saveArtifactMetaByString(storageId, repositoryId, artifactPath, properties);
                                     }
                                 }

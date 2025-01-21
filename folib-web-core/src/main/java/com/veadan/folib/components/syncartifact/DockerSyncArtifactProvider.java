@@ -16,6 +16,7 @@ import com.veadan.folib.domain.migrate.SyncArtifactForm;
 import com.veadan.folib.entity.MigrateInfo;
 import com.veadan.folib.enums.ArtifactSyncTypeEnum;
 import com.veadan.folib.enums.MigrateStatusEnum;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
@@ -441,10 +442,11 @@ public class DockerSyncArtifactProvider implements SyncArtifactProvider {
                             if (Files.exists(imageRepoPath)) {
                                 distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + form.getStoreAndRepo()).addAndGet(1L);
                                 if (form.getSyncer() != null) {
+                                    RepositoryPath repositoryTagPath = dockerComponent.getManifestPath(imageRepoPath);
                                     String dockerPath = imagePath + "/" + tag;
                                     String properties = form.getSyncer().getPropertiesByKeyAndPath(repositoryId, dockerPath);
-                                    if (properties != null) {
-                                        artifactWebService.saveArtifactMetaByString(storageId, repositoryId, dockerPath, properties);
+                                    if (Objects.nonNull(repositoryTagPath) && properties != null) {
+                                        artifactWebService.saveArtifactMetaByString(storageId, repositoryId, RepositoryFiles.relativizePath(repositoryTagPath), properties);
                                     }
                                 }
                             }
