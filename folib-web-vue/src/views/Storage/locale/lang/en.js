@@ -65,6 +65,7 @@ export default {
     'LayoutType': 'You have selected the {layout} repository type',
     'DifferentProcess': 'The process for configuring different warehouse policies is different',
     'KeywordPrompt': 'Do not appear warehouse type keywords',
+    'nameRepeat':'Please fill in the warehouse name again',
     'Strategy': 'Strategy',
     'Local': 'Local',
     'Agent': 'Agent',

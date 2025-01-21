@@ -64,6 +64,7 @@ export default {
     'LayoutType': '你选择的是{layout}仓库类型',
     'DifferentProcess': '选择不同的仓库策略要配置的流程不太一样',
     'KeywordPrompt': '不要出现仓库类型的关键字',
+    'nameRepeat':'仓库名称重复请重新填写',
     'Strategy': '策略',
     'Local': '本地',
     'Agent': '代理',
