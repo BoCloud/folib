@@ -1,22 +1,27 @@
 package com.veadan.folib.components.syncartifact;
 
 import com.veadan.folib.components.DistributedCounterComponent;
+import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.components.files.FilesCommonComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.domain.migrate.SyncArtifactForm;
+import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.ArtifactWebService;
+import com.veadan.folib.services.MigrateInfoService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import javax.inject.Inject;
+import java.io.IOException;
 import java.util.Objects;
 
 /**
@@ -33,6 +38,13 @@ public class SyncUtils {
 
     @Resource
     private CommonComponent commonComponent;
+
+
+    @Resource
+    public ArtifactComponent artifactComponent;
+
+    @Value("${folib.temp}")
+    public String tempPath;
 
     @Resource
     private DistributedCounterComponent distributedCounterComponent;
@@ -105,5 +117,22 @@ public class SyncUtils {
 
     ThreadPoolTaskExecutor createThreadPool(String name,int corePoolSize, int maxPoolSize){
         return commonComponent.buildThreadPoolTaskExecutor(name,corePoolSize,maxPoolSize);
+    }
+
+    public String getTempPath(){
+        return this.tempPath;
+    }
+
+
+    RepositoryPath resolve(String storageId,String repositoryId, String artifactPath){
+        return repositoryPathResolver.resolve(storageId,repositoryId,artifactPath);
+    }
+
+    RepositoryPath resolvePath(String storageId,String repositoryId, String artifactPath) throws IOException {
+        return artifactResolutionService.resolvePath(storageId,repositoryId,artifactPath);
+    }
+
+    void saveArtifactMetaByString(String storageId,String repositoryId,String path,String metaData){
+        artifactWebService.saveArtifactMetaByString(storageId,repositoryId,path,metaData);
     }
 }

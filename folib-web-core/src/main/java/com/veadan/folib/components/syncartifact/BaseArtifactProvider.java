@@ -3,11 +3,13 @@ package com.veadan.folib.components.syncartifact;
 import cn.hutool.core.io.FileUtil;
 import com.google.common.collect.Lists;
 import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
-import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.jfrogArtifactSync.JfrogPropertySyncer;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.migrate.SyncArtifactForm;
+import com.veadan.folib.entity.MigrateInfo;
+import com.veadan.folib.enums.MigrateStatusEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.services.MigrateInfoService;
 import com.veadan.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -36,15 +38,14 @@ import java.util.stream.Stream;
 @Slf4j
 public abstract class BaseArtifactProvider implements SyncArtifactProvider {
 
-    private final String tempPath;
     private final SyncUtils syncUtils;
-    private final ArtifactComponent artifactComponent;
+
+    private final MigrateInfoService migrateInfoService;
 
 
-    public BaseArtifactProvider(String tempPath, SyncUtils syncUtils, ArtifactComponent artifactComponent) {
-        this.tempPath = tempPath;
+    public BaseArtifactProvider(SyncUtils syncUtils, MigrateInfoService migrateInfoService) {
         this.syncUtils = syncUtils;
-        this.artifactComponent = artifactComponent;
+        this.migrateInfoService = migrateInfoService;
     }
 
     @Override
@@ -54,7 +55,11 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider {
 
     @Override
     public void browseFullSync(SyncArtifactForm syncArtifactForm) {
-
+        String dirPath = syncPackageIndex(syncArtifactForm);
+        if (StringUtils.isBlank(dirPath)) {
+            return;
+        }
+        handlerPath(dirPath, syncArtifactForm);
     }
 
     @Override
@@ -64,7 +69,37 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider {
 
     @Override
     public void batchBrowseSync(SyncArtifactForm syncArtifactForm) {
-
+        try {
+            MigrateInfo repository = migrateInfoService.getByMigrateIdAndRepoInfo(syncArtifactForm.getMigrateId(), syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
+            int total = repository.getTotalArtifact() == null ? 0 : repository.getTotalArtifact();
+            syncArtifactForm.setTotalArtifact(total);
+            if (MigrateStatusEnum.QUEUING.getStatus() == repository.getSyncStatus() && repository.getIndexFinish() == 0) {
+                migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.FETCHING_INDEX.getStatus());
+                String dirPath = syncPackageIndex(syncArtifactForm);
+                if (dirPath == null) {
+                    log.info("同步索引失败,请稍后重试");
+                    migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.INDEX_FAILED.getStatus());
+                    return;
+                }
+                repository.setSyncDirPath(dirPath);
+                repository.setTotalArtifact(syncArtifactForm.getTotalArtifact());
+            }
+            repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
+            // 更新状态
+            migrateInfoService.updateById(repository);
+            syncUtils.resetArtifact(syncArtifactForm.getStoreAndRepo());
+            String path = repository.getSyncDirPath();
+            if (syncArtifactForm.getSyncMeta() == 1) {
+                JfrogPropertySyncer syncer = new JfrogPropertySyncer(syncArtifactForm.getApiUrl(), syncArtifactForm.getUsername(), syncArtifactForm.getPassword());
+                syncArtifactForm.setSyncer(syncer);
+            }
+            handlerPath(path, syncArtifactForm);
+            migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.COMPLETED.getStatus());
+        } finally {
+            if (Objects.nonNull(syncArtifactForm.getSyncer())) {
+                syncArtifactForm.getSyncer().close();
+            }
+        }
     }
 
     public abstract boolean isArtifact(String url);
@@ -80,22 +115,17 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider {
     }
 
 
-    protected boolean findSubUrl(Repository repository, String rootUrl, String url, String remoteUrl, Integer sleepMillis, File file, FileWriter writer) {
+    protected void findSubUrl(Repository repository, String rootUrl, String url, String remoteUrl, Integer sleepMillis, File file, FileWriter writer) {
         try {
             if (Objects.nonNull(sleepMillis)) {
                 Thread.sleep(sleepMillis);
             }
-            return artifactComponent.parseLinksStreaming(repository, url, absUrl -> {
+            syncUtils.artifactComponent.parseLinksStreaming(repository, url, absUrl -> {
                 try {
                     absUrl = UriUtils.decode(absUrl);
                 } catch (Exception ex) {
                     log.error(ExceptionUtils.getStackTrace(ex));
                     return;
-                }
-                if (isArtifact(absUrl)) {
-                    absUrl = StringUtils.removeStart(absUrl.replace(remoteUrl, ""), GlobalConstants.SEPARATOR);
-                    syncUtils.storeContent(absUrl, file.getParent() + "/artifact");
-                    syncUtils.indexIncrease(repository.getStorageIdAndRepositoryId());
                 }
                 if (isSubDirectory(absUrl, url)) {
                     String path = absUrl.substring(rootUrl.length());
@@ -105,11 +135,16 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider {
                     } catch (IOException e) {
                         log.error("写索引文件{}异常{}", absUrl, e.getMessage(), e);
                     }
+                    return;
+                }
+                if (isArtifact(absUrl)) {
+                    absUrl = StringUtils.removeStart(absUrl.replace(remoteUrl, ""), GlobalConstants.SEPARATOR);
+                    syncUtils.storeContent(absUrl, file.getParent() + "/artifact");
+                    syncUtils.indexIncrease(repository.getStorageIdAndRepositoryId());
                 }
             });
         } catch (Exception e) {
             log.error("【{}】包索引同步制品，错误 [{}]", getLayout(), ExceptionUtils.getStackTrace(e));
-            return false;
         }
     }
 
@@ -124,13 +159,13 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider {
                 return null;
             }
             String baseUri = syncUtils.getBaseUri();
-            if (baseUri.endsWith(File.separator)) {
-                baseUri = baseUri.substring(0, baseUri.lastIndexOf(File.separator));
+            if (baseUri.endsWith(GlobalConstants.SEPARATOR)) {
+                baseUri = baseUri.substring(0, baseUri.lastIndexOf(GlobalConstants.SEPARATOR));
             }
             String repositoryBaseUri = String.format("%s/storages/%s/%s", baseUri, syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
             String remoteUrl = repository.getRemoteRepository().getUrl();
-            if (remoteUrl.endsWith(File.separator)) {
-                remoteUrl = remoteUrl.substring(0, remoteUrl.lastIndexOf(File.separator));
+            if (remoteUrl.endsWith(GlobalConstants.SEPARATOR)) {
+                remoteUrl = remoteUrl.substring(0, remoteUrl.lastIndexOf(GlobalConstants.SEPARATOR));
             }
             if (syncArtifactForm.getSyncMeta() == 1 && syncArtifactForm.getSyncer() == null) {
                 String apiUrl = remoteUrl.substring(0, remoteUrl.indexOf(repository.getId()));
@@ -141,10 +176,10 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider {
             if (StringUtils.isNotBlank(syncArtifactForm.getBrowseUrl())) {
                 rootUrl = syncArtifactForm.getBrowseUrl();
             }
-            if (rootUrl.endsWith(File.separator)) {
-                rootUrl = rootUrl.substring(0, rootUrl.lastIndexOf(File.separator));
+            if (rootUrl.endsWith(GlobalConstants.SEPARATOR)) {
+                rootUrl = rootUrl.substring(0, rootUrl.lastIndexOf(GlobalConstants.SEPARATOR));
             }
-            String dirPath = tempPath + File.separator + "syncArtifact" + File.separator + syncArtifactForm.getStorageId() + File.separator + syncArtifactForm.getRepositoryId();
+            String dirPath = syncUtils.getTempPath() + File.separator + "syncArtifact" + File.separator + syncArtifactForm.getStorageId() + File.separator + syncArtifactForm.getRepositoryId();
             log.info("【{}】包索引同步， 仓库地址 [{}] 存放爬取信息的目录 [{}]", getLayout(), repositoryBaseUri, dirPath);
             File dir = new File(dirPath);
             if (!dir.exists()) {
@@ -178,8 +213,8 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider {
                     while (scanner.hasNext()) {
                         String line = scanner.nextLine();
                         if (StringUtils.isNotBlank(line)) {
-                            if (!line.startsWith(File.separator)) {
-                                line = File.separator + line;
+                            if (!line.startsWith(GlobalConstants.SEPARATOR)) {
+                                line = GlobalConstants.SEPARATOR + line;
                             }
                             fileEmpty = false;
                             String url = rootUrl + line;
@@ -197,7 +232,7 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider {
                 }
             }
             sw.stop();
-            int total = syncUtils.getArtifactCount(syncArtifactForm.getStoreAndRepo());
+            int total = syncUtils.getIndexCount(syncArtifactForm.getStoreAndRepo());
             log.info("【{}】包索引同步完成耗时 【{}】秒, 同步制品总个数 [{}]", getLayout(), sw.getTotalTimeSeconds(), total);
             syncArtifactForm.setTotalArtifact(total);
             return dirPath;
@@ -231,7 +266,6 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider {
                 swBatch.start();
                 String currentLine = "";
                 long lines = 0;
-
                 try {
                     List<String> pathList = Lists.newArrayList();
                     try (LineIterator lineIterator = FileUtils.lineIterator(item.toFile(), "UTF-8")) {
@@ -244,14 +278,14 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider {
                                 }
                                 pathList.add(currentLine);
                                 if (pathList.size() == finalBatch) {
-                                    batchDownload(item, syncArtifactForm, pathList, threadPoolTaskExecutor);
+                                    batchDownload(syncArtifactForm, pathList, threadPoolTaskExecutor);
                                 }
                             } catch (Exception ex) {
                                 log.error(ExceptionUtils.getStackTrace(ex));
                             }
                         }
                         if (CollectionUtils.isNotEmpty(pathList)) {
-                            batchDownload(item, syncArtifactForm, pathList, threadPoolTaskExecutor);
+                            batchDownload(syncArtifactForm, pathList, threadPoolTaskExecutor);
                         }
                     }
                 } catch (Exception ex) {
@@ -262,7 +296,7 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider {
             });
         } catch (Exception ex) {
             log.error("Error [{}]", ExceptionUtils.getStackTrace(ex));
-        }finally {
+        } finally {
             threadPoolTaskExecutor.shutdown();
         }
         int total = syncUtils.getArtifactCount(syncArtifactForm.getStoreAndRepo());
@@ -271,42 +305,15 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider {
         log.info("【{}】包同步完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个制品，耗时 [{}] 秒", getLayout(), syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), total, swTotal.getTotalTimeSeconds());
     }
 
-    private void batchDownload(Path path, SyncArtifactForm form, List<String> artifactPathList, ThreadPoolTaskExecutor threadPoolTaskExecutor) {
-        String storageId = form.getStorageId();
-        String repositoryId = form.getRepositoryId();
+    protected void batchDownload(SyncArtifactForm form, List<String> artifactPathList, ThreadPoolTaskExecutor threadPoolTaskExecutor) {
         if (CollectionUtils.isEmpty(artifactPathList)) {
             return;
         }
         CountDownLatch latch = new CountDownLatch(artifactPathList.size());
         for (String artifactPath : artifactPathList) {
             threadPoolTaskExecutor.submit(() -> {
-                try {
-                    if (StringUtils.isNotBlank(artifactPath)) {
-                        //制品
-                        RepositoryPath repositoryPath = syncUtils.repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-                        if (Files.exists(repositoryPath)) {
-                            syncUtils.artifactIncrease(form.getStoreAndRepo());
-                            log.debug("Batch download storageId [{}] repositoryId [{}] artifactPath [{}] exists skip..", storageId, repositoryId, artifactPath);
-                            return;
-                        }
-                        syncUtils.artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
-                        if (Files.exists(repositoryPath)) {
-                            // 添加成功 计数
-                            syncUtils.artifactIncrease(form.getStoreAndRepo());
-                            JfrogPropertySyncer syncer = form.getSyncer();
-                            if (syncer != null) {
-                                String properties = syncer.getPropertiesByKeyAndPath(repositoryId, artifactPath);
-                                if (properties != null) {
-                                    syncUtils.artifactWebService.saveArtifactMetaByString(storageId, repositoryId, artifactPath, properties);
-                                }
-                            }
-                        }
-                    }
-                } catch (Exception ex) {
-                    log.error("Batch download path [{}] storageId [{}] repositoryId [{}] artifactPath [{}] error [{}]", path.toString(), storageId, repositoryId, artifactPath, ExceptionUtils.getStackTrace(ex));
-                } finally {
-                    latch.countDown();
-                }
+                this.downloadByPath(artifactPath, form);
+                latch.countDown();
             });
         }
         try {
@@ -318,29 +325,35 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider {
         artifactPathList.clear();
     }
 
-//    public void downloadByPath(String artifactPath){
-//        if (StringUtils.isNotBlank(artifactPath)) {
-//            //制品
-//            RepositoryPath repositoryPath = syncUtils.repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-//            if (Files.exists(repositoryPath)) {
-//                syncUtils.artifactIncrease(form.getStoreAndRepo());
-//                log.debug("Batch download storageId [{}] repositoryId [{}] artifactPath [{}] exists skip..", storageId, repositoryId, artifactPath);
-//                return;
-//            }
-//            syncUtils.artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
-//            if (Files.exists(repositoryPath)) {
-//                // 添加成功 计数
-//                syncUtils.artifactIncrease(form.getStoreAndRepo());
-//                JfrogPropertySyncer syncer = form.getSyncer();
-//                if (syncer != null) {
-//                    String properties = syncer.getPropertiesByKeyAndPath(repositoryId, artifactPath);
-//                    if (properties != null) {
-//                        syncUtils.artifactWebService.saveArtifactMetaByString(storageId, repositoryId, artifactPath, properties);
-//                    }
-//                }
-//            }
-//        }
-//    }
+    public void downloadByPath(String artifactPath, SyncArtifactForm form) {
+        try {
+            String storageId = form.getStorageId();
+            String repositoryId = form.getRepositoryId();
+            if (StringUtils.isNotBlank(artifactPath)) {
+                //制品
+                RepositoryPath repositoryPath = syncUtils.resolve(storageId, repositoryId, artifactPath);
+                if (Files.exists(repositoryPath)) {
+                    syncUtils.artifactIncrease(form.getStoreAndRepo());
+                    log.debug("Batch download storageId [{}] repositoryId [{}] artifactPath [{}] exists skip..", storageId, repositoryId, artifactPath);
+                    return;
+                }
+                syncUtils.resolvePath(storageId, repositoryId, artifactPath);
+                if (Files.exists(repositoryPath)) {
+                    // 添加成功 计数
+                    syncUtils.artifactIncrease(form.getStoreAndRepo());
+                    JfrogPropertySyncer syncer = form.getSyncer();
+                    if (syncer != null) {
+                        String properties = syncer.getPropertiesByKeyAndPath(repositoryId, artifactPath);
+                        if (properties != null) {
+                            syncUtils.saveArtifactMetaByString(storageId, repositoryId, artifactPath, properties);
+                        }
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            log.error("Batch download artifactPath [{}] error [{}]", artifactPath, ExceptionUtils.getStackTrace(ex));
+        }
+    }
 
 
 }

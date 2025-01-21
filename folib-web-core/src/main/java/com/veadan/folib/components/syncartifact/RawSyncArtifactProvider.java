@@ -268,7 +268,7 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
                     break;
                 }
             }
-            int total= (int) distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).get();
+            int total= (int) distributedCounterComponent.getAtomicLong(JfrogMigrateService.INDEX_COUNT + syncArtifactForm.getStoreAndRepo()).get();
             log.info("Raw包索引同步完成耗时 [{}] ms, 同步制品总个数 [{}]", System.currentTimeMillis() - startTime, total);
             syncArtifactForm.setTotalArtifact(total);
             return dirPath;
@@ -296,7 +296,6 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
             ispaused = pathStream.anyMatch(item -> {
                 String currentLine = "";
                 long lines = 0, startTime = System.currentTimeMillis();
-                boolean flag = true;
                 try {
                     List<String> pathList = Lists.newArrayList();
                     try (LineIterator lineIterator = FileUtils.lineIterator(item.toFile(), "UTF-8")) {
@@ -320,16 +319,11 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
                                 }
                             } catch (Exception ex) {
                                 log.error(ExceptionUtils.getStackTrace(ex));
-                                flag = false;
                             }
                         }
                         if (CollectionUtils.isNotEmpty(pathList)) {
                             batchDownload(item, syncArtifactForm, pathList, threadPoolTaskExecutor);
                         }
-                    }
-                    // 清除已完成的文件
-                    if (flag) {
-//                        Files.delete(item);
                     }
                 } catch (Exception ex) {
                     log.error("Handle path [{}] lines [{}] error [{}] ms", item.toString(), lines, ExceptionUtils.getStackTrace(ex));
@@ -417,18 +411,16 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
                 }
                 repository.setSyncDirPath(dirPath);
                 repository.setTotalArtifact(syncArtifactForm.getTotalArtifact());
-                repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
-                // 更新状态
-                migrateInfoService.updateById(repository);
-                distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
             }
+            repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
+            // 更新状态
+            migrateInfoService.updateById(repository);
+            distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
             String path = repository.getSyncDirPath();
-
             if (syncArtifactForm.getSyncMeta() == 1) {
                 JfrogPropertySyncer syncer = new JfrogPropertySyncer(syncArtifactForm.getApiUrl(), syncArtifactForm.getUsername(), syncArtifactForm.getPassword());
                 syncArtifactForm.setSyncer(syncer);
             }
-
             distributedCacheComponent.put(JfrogMigrateService.PAUSED_FLAG_PRE + syncArtifactForm.getStoreAndRepo(), "1");
             if (handlerPath(path, syncArtifactForm)) {
                 migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.COMPLETED.getStatus());
