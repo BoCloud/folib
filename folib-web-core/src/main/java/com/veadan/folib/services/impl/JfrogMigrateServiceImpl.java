@@ -3,6 +3,7 @@ package com.veadan.folib.services.impl;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.github.pagehelper.PageInfo;
+import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.cluster.SyncRepositoryEnum;
 import com.veadan.folib.cluster.SyncStorageEnum;
 import com.veadan.folib.components.DistributedCacheComponent;
@@ -293,7 +294,11 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             RemoteRepositoryDto remoteDTO = new RemoteRepositoryDto();
             remoteDTO.setUsername(info.getUsername());
             remoteDTO.setPassword(info.getPassword());
-            remoteDTO.setUrl(info.getRemotePreUrl() + "/" + repositoryId);
+            if(repository.getLayout().equals(DockerArtifactCoordinates.LAYOUT_NAME)){
+                remoteDTO.setUrl(info.getRemotePreUrl() + "/v2/" + repositoryId);
+            }else {
+                remoteDTO.setUrl(info.getRemotePreUrl() + "/" + repositoryId);
+            }
             remoteDTO.setAutoBlocking(true);
             remoteDTO.setDownloadRemoteIndexes(true);
             remoteDTO.setChecksumValidation(true);
