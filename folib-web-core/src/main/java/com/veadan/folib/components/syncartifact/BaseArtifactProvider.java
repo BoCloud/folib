@@ -1,22 +1,33 @@
 package com.veadan.folib.components.syncartifact;
 
 import cn.hutool.core.io.FileUtil;
+import com.google.common.collect.Lists;
 import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.jfrogArtifactSync.JfrogPropertySyncer;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.migrate.SyncArtifactForm;
+import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.LineIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.util.StopWatch;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 import java.util.Scanner;
+import java.util.concurrent.CountDownLatch;
+import java.util.stream.Stream;
 
 /**
  * @author huayanjun
@@ -187,7 +198,7 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider {
             }
             sw.stop();
             int total = syncUtils.getArtifactCount(syncArtifactForm.getStoreAndRepo());
-            log.info("【{}】包索引同步完成耗时 【{}】 s, 同步制品总个数 [{}]", getLayout(), sw.getTotalTimeSeconds(), total);
+            log.info("【{}】包索引同步完成耗时 【{}】秒, 同步制品总个数 [{}]", getLayout(), sw.getTotalTimeSeconds(), total);
             syncArtifactForm.setTotalArtifact(total);
             return dirPath;
         } catch (Exception e) {
@@ -199,6 +210,137 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider {
     private File getLevelFile(File dir, int level) {
         return new File(dir.getAbsolutePath() + File.separator + "level_" + level + ".txt");
     }
+
+    private void handlerPath(String dirPath, SyncArtifactForm syncArtifactForm) {
+        StopWatch swTotal = new StopWatch();
+        swTotal.start();
+        Path path = Path.of(dirPath + "/artifact");
+        if (!Files.exists(path) || !Files.isDirectory(path)) {
+            return;
+        }
+        int batch = 100;
+        if (Objects.nonNull(syncArtifactForm.getBatch())) {
+            batch = syncArtifactForm.getBatch();
+        }
+        int availableCores = syncArtifactForm.getMaxThreadNum() == null ? syncUtils.getDefaultThreadNums() : syncArtifactForm.getMaxThreadNum();
+        ThreadPoolTaskExecutor threadPoolTaskExecutor = syncUtils.createThreadPool("browseSync:" + syncArtifactForm.getStoreAndRepo(), availableCores, availableCores);
+        try (Stream<Path> pathStream = Files.list(path)) {
+            int finalBatch = batch;
+            pathStream.forEach(item -> {
+                StopWatch swBatch = new StopWatch();
+                swBatch.start();
+                String currentLine = "";
+                long lines = 0;
+
+                try {
+                    List<String> pathList = Lists.newArrayList();
+                    try (LineIterator lineIterator = FileUtils.lineIterator(item.toFile(), "UTF-8")) {
+                        while (lineIterator.hasNext()) {
+                            try {
+                                lines++;
+                                currentLine = lineIterator.nextLine();
+                                if (StringUtils.isBlank(currentLine)) {
+                                    continue;
+                                }
+                                pathList.add(currentLine);
+                                if (pathList.size() == finalBatch) {
+                                    batchDownload(item, syncArtifactForm, pathList, threadPoolTaskExecutor);
+                                }
+                            } catch (Exception ex) {
+                                log.error(ExceptionUtils.getStackTrace(ex));
+                            }
+                        }
+                        if (CollectionUtils.isNotEmpty(pathList)) {
+                            batchDownload(item, syncArtifactForm, pathList, threadPoolTaskExecutor);
+                        }
+                    }
+                } catch (Exception ex) {
+                    log.error("Handle path [{}] lines [{}] error [{}] ms", item.toString(), lines, ExceptionUtils.getStackTrace(ex));
+                }
+                swBatch.stop();
+                log.info("Handle path [{}] lines [{}] finished take time [{}] s", item, lines, swBatch.getTotalTimeSeconds());
+            });
+        } catch (Exception ex) {
+            log.error("Error [{}]", ExceptionUtils.getStackTrace(ex));
+        }finally {
+            threadPoolTaskExecutor.shutdown();
+        }
+        int total = syncUtils.getArtifactCount(syncArtifactForm.getStoreAndRepo());
+        syncArtifactForm.setSyncMount(total);
+        swTotal.stop();
+        log.info("【{}】包同步完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个制品，耗时 [{}] 秒", getLayout(), syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), total, swTotal.getTotalTimeSeconds());
+    }
+
+    private void batchDownload(Path path, SyncArtifactForm form, List<String> artifactPathList, ThreadPoolTaskExecutor threadPoolTaskExecutor) {
+        String storageId = form.getStorageId();
+        String repositoryId = form.getRepositoryId();
+        if (CollectionUtils.isEmpty(artifactPathList)) {
+            return;
+        }
+        CountDownLatch latch = new CountDownLatch(artifactPathList.size());
+        for (String artifactPath : artifactPathList) {
+            threadPoolTaskExecutor.submit(() -> {
+                try {
+                    if (StringUtils.isNotBlank(artifactPath)) {
+                        //制品
+                        RepositoryPath repositoryPath = syncUtils.repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+                        if (Files.exists(repositoryPath)) {
+                            syncUtils.artifactIncrease(form.getStoreAndRepo());
+                            log.debug("Batch download storageId [{}] repositoryId [{}] artifactPath [{}] exists skip..", storageId, repositoryId, artifactPath);
+                            return;
+                        }
+                        syncUtils.artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
+                        if (Files.exists(repositoryPath)) {
+                            // 添加成功 计数
+                            syncUtils.artifactIncrease(form.getStoreAndRepo());
+                            JfrogPropertySyncer syncer = form.getSyncer();
+                            if (syncer != null) {
+                                String properties = syncer.getPropertiesByKeyAndPath(repositoryId, artifactPath);
+                                if (properties != null) {
+                                    syncUtils.artifactWebService.saveArtifactMetaByString(storageId, repositoryId, artifactPath, properties);
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception ex) {
+                    log.error("Batch download path [{}] storageId [{}] repositoryId [{}] artifactPath [{}] error [{}]", path.toString(), storageId, repositoryId, artifactPath, ExceptionUtils.getStackTrace(ex));
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            log.info("异常中断");
+        }
+        //清理
+        artifactPathList.clear();
+    }
+
+//    public void downloadByPath(String artifactPath){
+//        if (StringUtils.isNotBlank(artifactPath)) {
+//            //制品
+//            RepositoryPath repositoryPath = syncUtils.repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+//            if (Files.exists(repositoryPath)) {
+//                syncUtils.artifactIncrease(form.getStoreAndRepo());
+//                log.debug("Batch download storageId [{}] repositoryId [{}] artifactPath [{}] exists skip..", storageId, repositoryId, artifactPath);
+//                return;
+//            }
+//            syncUtils.artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
+//            if (Files.exists(repositoryPath)) {
+//                // 添加成功 计数
+//                syncUtils.artifactIncrease(form.getStoreAndRepo());
+//                JfrogPropertySyncer syncer = form.getSyncer();
+//                if (syncer != null) {
+//                    String properties = syncer.getPropertiesByKeyAndPath(repositoryId, artifactPath);
+//                    if (properties != null) {
+//                        syncUtils.artifactWebService.saveArtifactMetaByString(storageId, repositoryId, artifactPath, properties);
+//                    }
+//                }
+//            }
+//        }
+//    }
 
 
 }

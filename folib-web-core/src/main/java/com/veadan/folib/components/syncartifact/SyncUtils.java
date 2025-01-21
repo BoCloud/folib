@@ -1,15 +1,22 @@
 package com.veadan.folib.components.syncartifact;
 
 import com.veadan.folib.components.DistributedCounterComponent;
+import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.components.files.FilesCommonComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.domain.migrate.SyncArtifactForm;
+import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.services.ArtifactResolutionService;
+import com.veadan.folib.services.ArtifactWebService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import javax.inject.Inject;
 import java.util.Objects;
 
 /**
@@ -25,6 +32,9 @@ public class SyncUtils {
     final String INDEX_COUNT = "migrate:index:count:";
 
     @Resource
+    private CommonComponent commonComponent;
+
+    @Resource
     private DistributedCounterComponent distributedCounterComponent;
 
     @Resource
@@ -32,6 +42,15 @@ public class SyncUtils {
 
     @Resource
     private FilesCommonComponent filesCommonComponent;
+
+    @Resource
+    public ArtifactResolutionService artifactResolutionService;
+
+    @Resource
+    public RepositoryPathResolver repositoryPathResolver;
+
+    @Resource
+    public ArtifactWebService artifactWebService;
 
     public void resetIndex(String storeAndRepo){
         distributedCounterComponent.getAtomicLong(INDEX_COUNT + storeAndRepo).set(0L);
@@ -78,5 +97,13 @@ public class SyncUtils {
 
     public void storeContent(String absUrl, String path){
         filesCommonComponent.storeContent(absUrl,path);
+    }
+
+    public int getDefaultThreadNums(){
+        return commonComponent.getAvailableCores() * 2;
+    }
+
+    ThreadPoolTaskExecutor createThreadPool(String name,int corePoolSize, int maxPoolSize){
+        return commonComponent.buildThreadPoolTaskExecutor(name,corePoolSize,maxPoolSize);
     }
 }
