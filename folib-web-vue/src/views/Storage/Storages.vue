@@ -837,14 +837,14 @@
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="6">
-                  <a-form-item class="mb-10" label="" :colon="false">
-                    <a-checkbox v-model="folibRepository.syncEnabled">
-                      {{ $t('Storage.On') }}{{ $t('Storage.SyncRepository') }}
-                      <!-- {{ folibRepository.syncEnabled ?  $t('Storage.On') : $t('Storage.Off')  }} -->
-                    </a-checkbox>
-                  </a-form-item>
-                </a-col>
+<!--                <a-col :span="6">-->
+<!--                  <a-form-item class="mb-10" label="" :colon="false">-->
+<!--                    <a-checkbox v-model="folibRepository.syncEnabled">-->
+<!--                      {{ $t('Storage.On') }}{{ $t('Storage.SyncRepository') }}-->
+<!--                      &lt;!&ndash; {{ folibRepository.syncEnabled ?  $t('Storage.On') : $t('Storage.Off')  }} &ndash;&gt;-->
+<!--                    </a-checkbox>-->
+<!--                  </a-form-item>-->
+<!--                </a-col>-->
               </a-row>
 
               <a-row v-if="enableHostProxy" :gutter="[24]">
