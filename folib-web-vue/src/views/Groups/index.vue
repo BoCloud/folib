@@ -189,7 +189,7 @@ export default {
             getGroupList({
                 page: this.page,
                 limit: this.limit,
-                name: this.name
+                matchGroupName: this.name
             }).then(res => {
                 if (res && res.data) {
                     // 为每个组添加默认为零的计数字段
