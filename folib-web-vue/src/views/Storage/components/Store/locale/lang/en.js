@@ -369,4 +369,5 @@ export default {
     'RecursiveTip': 'The metadata will be added to the selected folder and to all of the artifacts, folders and sub-folders under this folder.',
     'RecursiveDelete': 'Recursive Delete',
     'Edit': 'Edit',
+    'GroupDefaultRepository':'Default upload repository',
 }

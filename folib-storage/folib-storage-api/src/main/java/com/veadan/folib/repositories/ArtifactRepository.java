@@ -595,7 +595,11 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
             entityTraversal = entityTraversal.or(orEntityTraversalArray);
         }
         if (StringUtils.isNotBlank(metadataSearch)) {
-            entityTraversal = entityTraversal.has(Properties.METADATA, Text.textContains(metadataSearch));
+            List<EntityTraversal<Vertex, Vertex>> orEntityTraversalList = Lists.newArrayList();
+            orEntityTraversalList.add(__.has(Properties.METADATA, Text.textContains(metadataSearch)));
+            orEntityTraversalList.add(__.has(Properties.METADATA, Text.textRegex(".*" + metadataSearch + ".*")));
+            EntityTraversal[] orEntityTraversalArray = orEntityTraversalList.toArray(new EntityTraversal[orEntityTraversalList.size()]);
+            entityTraversal = entityTraversal.or(orEntityTraversalArray);
         }
         if (StringUtils.isNotBlank(beginDate) && StringUtils.isNotBlank(endDate)) {
             LocalDateTime beginLocalDateTime = DateUtil.parseLocalDateTime(beginDate, DatePattern.NORM_DATETIME_MINUTE_PATTERN);
