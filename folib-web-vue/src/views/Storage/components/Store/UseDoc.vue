@@ -294,7 +294,7 @@
               'email=yours4@example.com\n' +
               '_auth=YWRtaW46cGFzc3dvcmQ=\n' +
               '\n' +
-              '; `_auth` ' + this.$t('Store.IS') + ' base64 token\n' +
+              '; `_auth` ' + this.$t('Store.IS') + ' base64 token'+ this.$t('Store.authDescription') + '\n' +
               '; ' + this.$t('Store.NpmAuth') + ':\n' +
               '; username=admin\n' +
               '; _password=password'
@@ -600,7 +600,7 @@
               'email=yours4@example.com\n' +
               '_auth=YWRtaW46cGFzc3dvcmQ=\n' +
               '\n' +
-              '; `_auth` ' + this.$t('Store.IS') + ' base64 token\n' +
+              '; `_auth` ' + this.$t('Store.IS') + ' base64 token'+ this.$t('Store.authDescription') + '\n' +
               '; ' + this.$t('Store.NpmAuth') + ':\n' +
               '; username=admin\n' +
               '; _password=password'
@@ -1309,6 +1309,56 @@ go 1.20' :readonly="true">
           ></prism-editor>
         </a-timeline-item>
       </a-timeline>
+        <!--cargo 使用说明 -->
+      <a-timeline v-if="folibRepository.layout === 'cargo'">
+          <a-timeline-item color="primary">
+              Cargo {{ $t('Store.GlobalConfiguration') }}
+              <p>{{ $t('Store.CargoGlobalConfiguration') }}</p>
+              <prism-editor
+                  class="my-editor height-300"
+                  :value="cargoConfiguration"
+                  :highlight="highlighterHandle"
+                  :line-numbers="false"
+                  :readonly="true"
+              >
+              </prism-editor>
+              <p>{{ $t('Store.CargoGlobalConfigurationToken') }}</p>
+              <prism-editor
+                  class="my-editor height-300"
+                  :value="cargoConfigurationToken"
+                  :highlight="highlighterHandle"
+                  :line-numbers="false"
+                  :readonly="true"
+              ></prism-editor>
+          </a-timeline-item>
+
+          <a-timeline-item color="primary" v-if="folibRepository.type !== 'proxy'">
+              Cargo {{ $t('Store.CargoDeploy') }}
+              <p>{{ $t('Store.CargoDeployConfig') }}</p>
+              <prism-editor
+                  class="my-editor height-300"
+                  :value="cargoDeploy"
+                  :highlight="highlighterHandle"
+                  :line-numbers="false"
+                  :readonly="true"
+              >
+              </prism-editor>
+          </a-timeline-item>
+          <a-timeline-item color="primary" v-if="folibRepository.type !== 'proxy'">
+              Cargo {{ $t('Store.CargoInstall') }}
+              <p>{{ $t('Store.CargoInstallConfig') }}</p>
+              <prism-editor
+                  class="my-editor height-300"
+                  :value="cargoInstall"
+                  :highlight="highlighterHandle"
+                  :line-numbers="false"
+                  :readonly="true"
+              >
+              </prism-editor>
+          </a-timeline-item>
+
+      </a-timeline>
+
       <a-timeline>
         <a-timeline-item color="primary">
           {{ $t('Store.WarehouseAddress') }}
@@ -1382,7 +1432,23 @@ export default {
     },
     debianCommand(){
       return ` apt update --allow-insecure-repositories \n apt-get install <DEBIAN_PACKAGE_NAME>`
-    }
+    },
+      cargoConfiguration() {
+        if(this.folibRepository.type === "hosted"){
+            return `[registry]\ndefault = "folib"\n\n[registries.folib]\nindex = "sparse+${this.baseDomain}storages/${this.folibRepository.storageId}/${this.folibRepository.id}/index/"`
+        }else {
+            return `[source.crates-io]\nreplace-with = 'folib-remote'\n[source.folib-remote]\nregistry = "sparse+${this.baseDomain}storages/${this.folibRepository.storageId}/${this.folibRepository.id}/index/"`
+        }
+      },
+      cargoConfigurationToken() {
+        return `[registry.folib]\ntoken = "Bearer <TOKEN>"\n#token = "Basic <BASE64>"`
+      },
+      cargoDeploy(){
+        return `cargo login "Bearer <TOKEN>"\ncargo publish --registry folib`
+      },
+      cargoInstall(){
+          return `cargo login "Bearer <TOKEN>"\ncargo install <PACKAGE_NAME>`
+      },
   },
   methods: {
     highlighterHandle(code) {

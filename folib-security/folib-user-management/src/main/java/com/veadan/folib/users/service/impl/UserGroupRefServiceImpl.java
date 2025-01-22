@@ -40,6 +40,7 @@ public class UserGroupRefServiceImpl implements UserGroupRefService {
      * @param id 主键
      * @return 实例对象
      */
+    @Override
     public UserGroupRef queryById(Long id){
         return userGroupRefMapper.queryById(id);
     }
@@ -62,6 +63,7 @@ public class UserGroupRefServiceImpl implements UserGroupRefService {
      * @param userGroupRef 实例对象
      * @return 实例对象
      */
+    @Override
     public UserGroupRef insert(UserGroupRef userGroupRef){
         updateGroupName(Collections.singletonList(userGroupRef));
         userGroupRefMapper.insert(userGroupRef);
@@ -74,6 +76,7 @@ public class UserGroupRefServiceImpl implements UserGroupRefService {
      * @param userGroupRef 实例对象
      * @return 实例对象
      */
+    @Override
     public UserGroupRef update(UserGroupRef userGroupRef){
         updateGroupName(Collections.singletonList(userGroupRef));
         userGroupRefMapper.update(userGroupRef);
@@ -86,6 +89,7 @@ public class UserGroupRefServiceImpl implements UserGroupRefService {
      * @param id 主键
      * @return 是否成功
      */
+    @Override
     public boolean deleteById(Long id){
         int total = userGroupRefMapper.deleteById(id);
         return total > 0;
@@ -96,6 +100,7 @@ public class UserGroupRefServiceImpl implements UserGroupRefService {
      * @param entities
      * @return
      */
+    @Override
     public int saveBath(List<UserGroupRef> entities) {
         updateGroupName(entities);
         return userGroupRefMapper.insertBatch(entities);

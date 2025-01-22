@@ -576,4 +576,8 @@ export default {
     CompleteSuccess: '完成成功',
     SyncMetadata: '同步元数据',
     MigratedArtifact: '已同步制品',
+    PostLayout:'对应布局',
+    PreLayout:'原布局',
+    ChangeLayoutSuccess: '修改布局成功',
+    setFailed: '置为失败'
 }

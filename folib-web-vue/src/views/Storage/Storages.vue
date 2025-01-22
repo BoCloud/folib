@@ -28,10 +28,20 @@
           <a-card :bordered="false" :style="isChecked ? 'height:calc(100vh - 230px);margin-bottom:0px;' : ''" class="header-solid mb-24 left_menu">
             <template #title>
               <a-row type="flex" align="middle" class="position:relative;">
-                <a-col :span="24" :md="12" class="col-info">
+                <a-col :span="24" :md="14" class="col-info" style="display: flex; align-items: center;">
                   <h6 class="font-semibold m-0">{{ isChecked ? $t('Storage.RepositoryList') : $t('Storage.StorageList')}}</h6>
+                  <a style="margin-left: 15px;" class="text-center text-muted font-bold" v-if="!isChecked" :title="$t('Storage.CreateStorageSpace')">
+                    <h3 v-if="$store.state.user.roles.indexOf('ADMIN') > -1" class="font-semibold text-muted mb-0"  @click="createHandleView">
+                      +
+                    </h3>
+                  </a>
+                  <a style="margin-left: 15px;" class="text-center text-muted font-bold" v-if="isChecked" :title="$t('Storage.CreateRepository')">
+                    <h3 class="font-semibold text-muted mb-0" @click="folibVisibleShow">
+                      +
+                    </h3>
+                  </a>
                 </a-col>
-                <a-col :span="24" :md="12" style="display: flex; align-items: center; justify-content: flex-end">
+                <a-col :span="24" :md="10" style="display: flex; align-items: center; justify-content: flex-end">
                   <!-- <a-switch 
                     :disabled="switchDisabled"
                     style="margin-right:10px;"
@@ -39,7 +49,14 @@
                     class="switch-position"
                     @change="getDetailInfo"
                   ></a-switch> -->
-                  <div class="switch_mode">
+                    <!-- <a class="text-center text-muted font-bold" v-if="isChecked" style="margin-right:8px;">
+                      <h5 class="font-semibold text-muted mb-0"
+                        @click="toggleTree">
+                          <a-icon v-if="!isTrashView" type="delete" />
+                          <a-icon v-else type="file-zip" />
+                      </h5>
+                    </a> -->
+                    <div class="switch_mode">
                     <div @click="checkMode(false)" class="img-sty" :class="isChecked ? '' : 'isActive'">
                       <img src="./images/list.svg" width="20" alt="">
                     </div>
@@ -48,25 +65,6 @@
                     </div>
                     <div :style="switchDisabled?'display:block;':'display:none;'" class="disabled_sty"></div>
                   </div>
-                  <a class="text-center text-muted font-bold" v-if="!isChecked" :title="$t('Storage.CreateStorageSpace')">
-                    <div v-if="$store.state.user.roles.indexOf('ADMIN') > -1" class="font-semibold text-muted mb-0"
-                      @click="createHandleView">
-                      <img src="./Storage-components/images/add.svg" width="30" alt="">
-                    </div>
-                  </a>
-                  <!-- <a class="text-center text-muted font-bold" v-if="isChecked" style="margin-right:8px;">
-                    <h5 class="font-semibold text-muted mb-0"
-                      @click="toggleTree">
-                        <a-icon v-if="!isTrashView" type="delete" />
-                        <a-icon v-else type="file-zip" />
-                    </h5>
-                  </a> -->
-                  <a class="text-center text-muted font-bold" v-if="isChecked" :title="$t('Storage.CreateRepository')">
-                    <div class="font-semibold text-muted mb-0"
-                      @click="folibVisibleShow">
-                      <img src="./Storage-components/images/create-repository.svg" width="24" alt="">
-                    </div>
-                  </a>
                 </a-col>
               </a-row>
             </template>
@@ -239,7 +237,7 @@
               </a-card>
             </a-form-model-item>
             <a-form-model-item class="mb-10" :label="$t('Storage.StorageSizeLimit')" :colon="false">
-                <a-input v-model="storageMaxSize" addon-after="TB">
+                <a-input v-model="storageMaxSize" @input="handleInput($event,'storageMaxSize')" :maxLength="6" addon-after="TB">
                 </a-input>
             </a-form-model-item>
             <a-form-model-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN') > -1" :label="$t('Storage.Administrator')"
@@ -344,7 +342,7 @@
               </a-card>
             </a-form-item>
             <a-form-item class="mb-10" :label="$t('Storage.StorageSizeLimit')" :colon="false">
-                <a-input v-model="storageMaxSize" addon-after="TB">
+                <a-input v-model="storageMaxSize" @input="handleInput($event,'storageMaxSize')"  :maxLength="6" addon-after="TB">
                 </a-input>
             </a-form-item>
             <a-form-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN') > -1" :label="$t('Storage.Administrator')"
@@ -527,8 +525,8 @@
               <a-row :gutter="[24]">
                 <a-col :span="12">
                   <a-form-item class="mb-10" :label="$t('Storage.WarehouseName')" :colon="false">
-                    <a-input :disabled="folibRepositoryEditDisabled" :placeholder="$t('Storage.KeywordPrompt')"
-                      v-model="folibRepositoryIds" />
+                    <a-input ref="inputName" :disabled="folibRepositoryEditDisabled" :placeholder="$t('Storage.KeywordPrompt')"
+                      v-model="folibRepositoryIds" @blur="getFolibRepositoryIds(folibRepositoryIds)" />
                   </a-form-item>
                 </a-col>
                 <a-col :span="6">
@@ -564,12 +562,12 @@
                 </a-col>
                 <a-col :span="12">
                   <a-form-item class="mb-10" :label="$t('Storage.RepositorySizeLimit')" :colon="false">
-                    <a-input  :placeholder="$t('Storage.RepositorySizeLimit')" addon-after="GB" v-model="repositoryStorageMaxSize" />
+                    <a-input  :placeholder="$t('Storage.RepositorySizeLimit')" :maxLength="6" @input="handleInput($event,'repositoryStorageMaxSize')" addon-after="GB" v-model="repositoryStorageMaxSize" />
                   </a-form-item>
                 </a-col>
                 <a-col :span="6">
                   <a-form-item class="mb-10" :label="$t('Storage.ItemLimit')" :colon="false">
-                    <a-input v-model="artifactMaxSize" addon-after="MB">
+                    <a-input v-model="artifactMaxSize" :maxLength="6" @input="handleInput($event,'artifactMaxSize')" addon-after="MB">
                     </a-input>
                   </a-form-item>
                 </a-col>
@@ -685,12 +683,13 @@
                   <a-button @click="moveStep(-1)" class="px-25">{{ $t('Storage.Back') }}</a-button>
                 </a-col>
                 <a-col :span="3" class="text-right">
-                    <a-button  v-if="folibRepository.type === 'hosted'" @click="addOrUpdateRepositorySecond(true,false)" class="px-25">
+                    <a-button :disabled="nameKey || loadingNameKey" v-if="folibRepository.type === 'hosted'" @click="addOrUpdateRepositorySecond(true,false)" class="px-25">
                         {{ $t('Storage.Save') }}
                     </a-button>
                 </a-col>
                   <a-col :span="3" class="text-right">
                       <a-button v-if="folibRepository.type === 'hosted'" type="primary"
+                                :disabled="nameKey || loadingNameKey"
                                 @click="addOrUpdateRepositorySecond(true)" class="px-25">
                           {{ $t('Storage.Next') }}
                       </a-button>
@@ -699,7 +698,7 @@
                         @click="addOrUpdateRepositorySecond(true)" class="px-25">
                         {{ folibRepositoryEditDisabled? '修改': '创建' }}并设置定时策略</a-button> -->
 
-                      <a-button v-else-if="folibRepository.type !== 'hosted'" type="primary" @click="moveStep(1)"
+                      <a-button :disabled="nameKey || loadingNameKey" v-else-if="folibRepository.type !== 'hosted'" type="primary" @click="moveStep(1)"
                                 class="px-25">{{ $t('Storage.Next') }}
                       </a-button>
                   </a-col>
@@ -1412,6 +1411,8 @@ export default {
       groupDefaultRepository:undefined,
       customLayoutList: [],
       switchDisabled:true,
+      nameKey:false,
+      loadingNameKey:false
     };
   },
   watch: {
@@ -1486,6 +1487,40 @@ export default {
     this.switchDisabled = true
   },
   methods: {
+    
+    getFolibRepositoryIds(val){
+      this.loadingNameKey = true
+      if(!val){
+        this.$notification.open({
+          class: 'ant-notification-warning',
+          message: this.$t('Storage.FillInErrors'),
+          description: this.$t('Storage.EnterRepository'),
+        })
+        return
+      }
+      getRepositoryResponseEntity(this.currentStorage.id, val).then(res => {
+        this.nameKey = true
+        this.$refs.inputName.select()
+        this.$notification.open({
+          class: 'ant-notification-warning',
+          message: this.$t('Storage.FillInErrors'),
+          description: this.$t('Storage.nameRepeat'),
+        })
+      }).catch(err => {
+        this.nameKey = false
+        this.loadingNameKey = false
+      })
+    },
+    handleInput(e,type) {
+      let value = e.target.value
+      // 实时过滤非法字符：只能输入数字，且首位不能为0
+      value = value.replace(/^0+/, "").replace(/[^\d]/g, "") // 移除开头的零，保留数字
+      // 限制最大值
+      if (value !== "" && Number(value) > 999999) {
+        value = "999999"
+      }
+      this[type] = value; // 更新绑定值
+    },
     // 制品仓库页面专属。用于切换仓库和存储空间的展示模式
     checkMode(key){
       if(this.switchDisabled){
@@ -1768,7 +1803,7 @@ export default {
         deleteStorages(this.currentStorage, false).then(response => {
           setTimeout(() => {
             this.$notification.success({
-              message: response.message,
+              message: response.message || `${this.$t('Storage.successfulOperation')}`,
             })
           }, 100)
           this.showStorageUpdate = false
@@ -1778,7 +1813,7 @@ export default {
         }).catch(err => {
           let error = err.response.data?err.response.data:this.$t('Storage.UnknownError')
           this.$notification["error"]({
-            message: error,
+            message: error  || `${this.$t('Storage.successfulOperation')}`,
           })
         })
       }
@@ -1788,7 +1823,7 @@ export default {
         deleteStorages(this.currentStorage, true).then(response => {
           setTimeout(() => {
             this.$notification.success({
-              message: response.message,
+              message: response.message  || `${this.$t('Storage.successfulOperation')}`,
             })
           }, 100)
           this.showStorageUpdate = false;
@@ -1798,7 +1833,7 @@ export default {
         }).catch(err => {
           let error = err.response.data?err.response.data:this.$t('Storage.UnknownError')
           this.$notification["error"]({
-            message: error,
+            message: error  || `${this.$t('Storage.successfulOperation')}`,
           })
         })
       }
@@ -1818,7 +1853,7 @@ export default {
             createStorages(this.storageCreateData).then(response => {
               setTimeout(() => {
                 this.$notification.success({
-                  message: response.message,
+                  message: response.message  || `${this.$t('Storage.successfulOperation')}`,
                 })
               }, 100)
               this.showsTorageFormModal = false;
@@ -1846,7 +1881,7 @@ export default {
         updateStorages(this.currentStorage).then(response => {
           setTimeout(() => {
             this.$notification.success({
-              message: response.message,
+              message: response.message  || `${this.$t('Storage.successfulOperation')}`,
             })
           }, 100)
           this.showStorageUpdate = false
@@ -1935,7 +1970,7 @@ export default {
       this.getStorage(this.currentStorage.id)
     },
     loadMore(total){
-      if(total !== this.queryParams.total && !this.$refs.loadingMore){
+      if(total !== this.queryParams.total && !this.$refs.repositoryTree.loadingMore){
         this.$refs.repositoryTree.loadingMoreShow(true)
         this.queryParams.page ++
         console.log('滚动加载...')
@@ -1947,7 +1982,8 @@ export default {
           page: this.queryParams.page
         }
         this.getQueryStorage(params)
-      }else{
+      }
+      if(total == this.queryParams.total){
         this.$refs.repositoryTree.loadingMoreShow(false)
       }
     },
@@ -3006,27 +3042,27 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 80px;
-  background: rgba(255,255,255,0.5);
-    box-shadow: 0px 1px 6px 1px rgba(0,0,0,0.1);
+  width: 75px;
+  // background: rgba(255,255,255,0.5);
+  //   box-shadow: 0px 1px 6px 1px rgba(0,0,0,0.1);
   padding: 3px;
   border-radius: 4px;
   // left: 0px;
-  margin-right: 10px;
+  // margin-right: 10px;
   
   .img-sty{
     opacity: 1 !important;
     cursor: pointer;
-    background: rgba(255,255,255,0.5);
+    // background: rgba(255,255,255,0.5);
     border-radius: 4px;
-    box-shadow: 0px 1px 6px 1px rgba(0,0,0,0.1);
+    box-shadow: 0px 1px 6px 1px rgba(25, 141, 252,0.15);
     padding: 3px 5px;
     transition: all 0.3s;
   }
 
   .isActive{
-    background: #a5cafc;
-    box-shadow: 0px 1px 6px 1px rgba(0,0,0,0.2);
+    background: rgba(25, 141, 252,0.2);
+    box-shadow: 0px 1px 6px 1px rgba(25, 141, 252,0.2);
   }
   .disabled_sty{
     width: 80px;

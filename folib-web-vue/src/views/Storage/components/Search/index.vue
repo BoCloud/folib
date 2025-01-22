@@ -423,7 +423,7 @@ export default {
       this.artifactQuery.storageId = this.folibRepository.storageId
       this.artifactQuery.repositoryId = this.folibRepository.id
       let params = {
-        artifactName: this.artifactQuery.artifactName,
+        query: this.artifactQuery.artifactName,
         metadataSearch: this.artifactQuery.metadataSearch,
         digest: this.artifactQuery.digest,
         storageId: this.artifactQuery.storageId,

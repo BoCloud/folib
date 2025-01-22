@@ -34,6 +34,7 @@
           </a-col>
           <a-col :span="24" v-if="!metadataForm.custom">
             <a-form-model-item
+              :key='key'
               class="mb-10"
               :label="$t('Store.Metadata')+'KEY'"
               :colon="false"
@@ -57,8 +58,9 @@
               </a-select>
             </a-form-model-item>
           </a-col>
-          <a-col :span="24" v-if="metadataForm.custom">
+          <a-col :span="24" v-else>
             <a-form-model-item
+              :key='key'
               class="mb-10"
               :label="$t('Store.Metadata')+'KEY'"
               :colon="false"
@@ -133,11 +135,20 @@
               </prism-editor>
             </a-form-model-item>
           </a-col>
-          <!-- <a-col :span="24" v-if="metadataForm.custom">
-            <a-form-model-item class="mb-10" label="是否展示" :colon="false" prop="viewShow">
-              <a-switch v-model="metadataForm.viewShow" />
+          <a-col :span="24" v-if="currentTreeNode.type == 'dir'">
+            <a-form-model-item class="mb-10" :colon="false" prop="recursive">
+              <template slot="label">
+                {{ $t('Store.Recursive') }}
+                <a-popover placement="topLeft">
+                  <template slot="content">
+                    <p class="mb-0">{{ $t('Store.RecursiveTip') }}</p>
+                  </template>
+                  <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
+                </a-popover>
+              </template>
+              <a-switch v-model="metadataForm.recursive" />
             </a-form-model-item>
-          </a-col> -->
+          </a-col>
         </a-row>
       </a-form-model>
     </a-modal>
@@ -174,9 +185,9 @@ export default {
   data() {
     return {
       metadataRules: {
-        key: [{ required: true, message: this.$t('Store.PleaseSelect')+this.$t('Store.Metadata')+'KEY', trigger: "blur" }],
+        key: [{ required: true, message: this.$t('Store.PleaseSelect')+this.$t('Store.Metadata')+'KEY',trigger: "blur" }],
         customKey: [
-          { required: true, message: this.$t('Store.PleaseSelect')+this.$t('Store.Metadata')+'KEY', trigger: "blur" },
+          { required: true, message: this.$t('Store.PleaseEnter')+this.$t('Store.Metadata')+'KEY',trigger: "blur"},
           {
             min: 1,
             max: 30,
@@ -196,12 +207,14 @@ export default {
         type: undefined,
         viewShow: true,
         value: undefined,
+        recursive: false,
       },
       metadataEditor: false,
       prismEditor: false,
       metadataInput: false,
       metadataNumber: false,
       showMetadata: false,
+      key:0
     };
   },
   computed: {
@@ -229,6 +242,7 @@ export default {
       this.$emit("metadataHandlerCancel");
     },
     metadataCustom(value) {
+      this.key ++
       if (value) {
         //开启自定义
         this.metadataForm.key = undefined;

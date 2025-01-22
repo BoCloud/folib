@@ -184,6 +184,7 @@ public class DockerSyncArtifactProvider implements SyncArtifactProvider {
                     absUrl = StringUtils.removeStart(absUrl.replace(rootUrl, ""), GlobalConstants.SEPARATOR);
                     filesCommonComponent.storeContent(absUrl, file.getParent() + "/artifact");
                     THREAD_LOCAL.set(THREAD_LOCAL.get() + 1);
+                    distributedCounterComponent.getAtomicLong(JfrogMigrateService.INDEX_COUNT + repository.getStorageIdAndRepositoryId()).getAndAdd(1);
                     break;
                 } else if (absUrl.endsWith(GlobalConstants.SEPARATOR)) {
                     // 非子目录
@@ -205,6 +206,7 @@ public class DockerSyncArtifactProvider implements SyncArtifactProvider {
     private String syncPackageIndex(SyncArtifactForm syncArtifactForm) {
         try {
             long startTime = System.currentTimeMillis();
+            distributedCounterComponent.getAtomicLong(JfrogMigrateService.INDEX_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
             Repository repository = configurationManager.getRepository(syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
             if (Objects.isNull(repository)) {
                 throw new RuntimeException(String.format("存储空间 [%s] 所属仓库 [%s}] 不存在", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId()));
@@ -221,6 +223,11 @@ public class DockerSyncArtifactProvider implements SyncArtifactProvider {
             String remoteUrl = repository.getRemoteRepository().getUrl();
             if (remoteUrl.endsWith(separator)) {
                 remoteUrl = remoteUrl.substring(0, remoteUrl.lastIndexOf(separator));
+            }
+            if(syncArtifactForm.getSyncMeta()==1&&syncArtifactForm.getSyncer()==null){
+                String apiUrl=remoteUrl.substring(0,remoteUrl.indexOf(repository.getId()));
+                JfrogPropertySyncer syncer = new JfrogPropertySyncer(apiUrl,repository.getRemoteRepository().getUsername(), repository.getRemoteRepository().getPassword());
+                syncArtifactForm.setSyncer(syncer);
             }
             String rootUrl = remoteUrl;
             if (StringUtils.isNotBlank(syncArtifactForm.getBrowseUrl())) {
@@ -299,7 +306,7 @@ public class DockerSyncArtifactProvider implements SyncArtifactProvider {
         long allStartTime = System.currentTimeMillis();
         Path path = Path.of(dirPath + "/artifact");
         if (!Files.exists(path) || !Files.isDirectory(path)) {
-            return false;
+            return syncArtifactForm.getTotalArtifact()==0;
         }
         int batch = 100;
         if (Objects.nonNull(syncArtifactForm.getBatch())) {
@@ -459,7 +466,9 @@ public class DockerSyncArtifactProvider implements SyncArtifactProvider {
         // 获取仓库信息
         try {
             MigrateInfo repository = migrateInfoService.getByMigrateIdAndRepoInfo(syncArtifactForm.getMigrateId(), syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
-            if (MigrateStatusEnum.QUEUING.getStatus() == repository.getSyncStatus() || MigrateStatusEnum.INDEX_FAILED.getStatus() == repository.getSyncStatus()) {
+            int total=repository.getTotalArtifact()==null?0:repository.getTotalArtifact();
+            syncArtifactForm.setTotalArtifact(total);
+            if (MigrateStatusEnum.QUEUING.getStatus() == repository.getSyncStatus()&&repository.getIndexFinish()==0) {
                 migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.FETCHING_INDEX.getStatus());
                 String dirPath = syncPackageIndex(syncArtifactForm);
                 if (dirPath == null) {
@@ -475,7 +484,7 @@ public class DockerSyncArtifactProvider implements SyncArtifactProvider {
                 distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
             }
             String path = repository.getSyncDirPath();
-            if (syncArtifactForm.getSyncMeta() != null && syncArtifactForm.getSyncMeta() == 1) {
+            if (syncArtifactForm.getSyncMeta() == 1) {
                 JfrogPropertySyncer syncer = new JfrogPropertySyncer(syncArtifactForm.getApiUrl(), syncArtifactForm.getUsername(), syncArtifactForm.getPassword());
                 syncArtifactForm.setSyncer(syncer);
             }

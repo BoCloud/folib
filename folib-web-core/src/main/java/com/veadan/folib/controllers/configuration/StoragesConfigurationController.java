@@ -42,6 +42,7 @@ import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
 import com.veadan.folib.forms.common.StorageTreeForm;
 import com.veadan.folib.forms.configuration.*;
+import com.veadan.folib.layout.providers.CargoLayoutProvider;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.LayoutProvider;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
@@ -978,10 +979,12 @@ public class StoragesConfigurationController
                     }
                     throw new RuntimeException(ex.getMessage());
                 }
-                if (Objects.isNull(existRepository) && !RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
+                if (Objects.isNull(existRepository)) {
                     //初始化仓库数据
                     LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(repositoryDto.getLayout());
-                    layoutProvider.initData(storageId, repositoryId);
+                    if(!RepositoryTypeEnum.GROUP.getType().equals(repository.getType()) || repositoryDto.getLayout().equals(CargoLayoutProvider.ALIAS)){
+                        layoutProvider.initData(storageId, repositoryId);
+                    }
                 }
                 String resourceId = storageId + "_" + repositoryId;
                 Resource resource = resourceService.queryById(resourceId);

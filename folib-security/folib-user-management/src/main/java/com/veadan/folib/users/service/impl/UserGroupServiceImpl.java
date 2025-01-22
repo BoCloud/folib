@@ -140,7 +140,7 @@ public class UserGroupServiceImpl implements UserGroupService {
      * @return 是否成功
      */
     public boolean deleteById(Long id){
-        int update = userGroupMapper.update(UserGroup.builder().id(id).deleted(GlobalConstants.DELETED).build());
+        int update = userGroupMapper.deleteById(id);
         //删除用户组关联用户
         userGroupRefService.deleteByUserGroupId(id);
         //删除角色关联用户组

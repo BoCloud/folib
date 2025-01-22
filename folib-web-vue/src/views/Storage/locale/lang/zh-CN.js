@@ -35,6 +35,7 @@ export default {
     'HaveAccess': '你选择的管理员/成员列表将拥有该存储空间的使用权限',
     'RegularCleaning': '删除:只删除存储配置，每日0点会定时清理',
     'IfForcedDeletion': '若强制删除则无法恢复仓库列表',
+    'successfulOperation':'操作成功',
     'Edit': '修改',
     'Delete': '删除',
     'create': '新建',
@@ -63,6 +64,7 @@ export default {
     'LayoutType': '你选择的是{layout}仓库类型',
     'DifferentProcess': '选择不同的仓库策略要配置的流程不太一样',
     'KeywordPrompt': '不要出现仓库类型的关键字',
+    'nameRepeat':'仓库名称重复请重新填写',
     'Strategy': '策略',
     'Local': '本地',
     'Agent': '代理',
@@ -275,6 +277,7 @@ export default {
     'conda':'Conda 是一个快速、跨平台的开源包管理和环境管理系统，常用于数据科学、机器学习和 AI 开发中。Conda 仓库可用于管理 Python 和其他语言的依赖包，支持代理 Anaconda 和 Miniconda 源，并可本地存储和分发自定义环境。',
     'opkg':'Opkg（Open PacKaGe Management）是一个轻量级的包管理工具，专门为嵌入式 Linux 系统设计，例如 OpenWrt 和 Yocto 项目。Opkg 仓库可用于管理嵌入式设备所需的软件包及其依赖关系，支持本地上传与代理外部源。',
     'swift':'Swift 是 Apple 推出的现代编程语言，用于开发 iOS 和 macOS 应用。Swift Package Manager（SPM）是 Swift 的官方包管理工具。Swift 仓库支持存储和分发 SPM 包，可代理外部 Swift 包源并按需缓存，支持本地上传与虚拟组合使用，满足开发团队对依赖管理和分发的需求。',
+    'cargo':'在 Rust 生态系统中，Cargo 是官方的构建系统和包管理器，支持依赖管理与构建自动化。Cargo 仓库可代理并缓存 Rust 官方依赖提高拉取速度，并可创建本地仓库存储私有 Rust 依赖或者构建后的制品包。',
     // 'rust':'rust',
     // 'php':'php',
     

@@ -17,6 +17,8 @@ export default {
     'GroupEdit': '用户组编辑',
     'UserInformation': '用户信息',
     'UserEdit': '用户编辑',
+    'EnterYourEmail':'请输入邮箱地址',
+    'EnterCorrectEmail':'请输入正确的邮箱地址',
     'Cancel': '取消',
     'Save': '保存',
     'UserName': '用户名',

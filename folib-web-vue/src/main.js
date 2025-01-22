@@ -10,6 +10,8 @@ import './assets/font_user/iconfont.css'
 import './assets/font_user/iconfont.js'
 import exportExcel from './exportExcel.js'
 import scrollable from './directives/scrollable.js'
+import getPopupContainer from './directives/getPopupContainer.js';
+
 console.log(exportExcel);
 
 Vue.prototype.$exportExcel = exportExcel
@@ -52,6 +54,7 @@ import Vue2OrgTree from 'vue2-org-tree'
 import 'vue2-org-tree/dist/style.css'
 Vue.use(Vue2OrgTree)
 Vue.directive('scrollable', scrollable);
+Vue.directive('popup-container', getPopupContainer);
 // Initialize Vue
 new Vue({
   router,
