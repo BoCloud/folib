@@ -112,7 +112,7 @@ public class HelmArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(value = {"{storageId}/{repositoryId}/charts"}, method = {RequestMethod.POST})
+    @RequestMapping(value = {"{storageId}/{repositoryId}/charts","/{storageId}/{repositoryId}/api/charts"}, method = {RequestMethod.POST})
     public ResponseEntity upload(@RepositoryMapping Repository repository,
                                  @RequestHeader HttpHeaders httpHeaders,
                                  HttpServletRequest request,
