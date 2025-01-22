@@ -46,9 +46,10 @@
                             </template>
                             <p class="ellipsis-text"> {{ currentTreeNode.groupRepositories.join('\n') }}</p>
                         </a-tooltip> -->
-                        <a-tag v-for="(repo, index) in currentTreeNode.groupRepositories" :key="index">
+                        <a-tag v-for="(repo, index) in currentTreeNode.groupRepositories" :key="index" :color="currentTreeNode.groupDefaultRepository && currentTreeNode.groupDefaultRepository == repo ? 'green': ''">
                           <a-tooltip>
                             <template slot="title">
+                              <div v-if="currentTreeNode.groupDefaultRepository && currentTreeNode.groupDefaultRepository == repo">{{ $t('Store.GroupDefaultRepository')}}</div>
                               <div>{{ $t('Store.StorageName') + ":"}}<span class="ml-10">{{ repo.split(":")[0] }}</span></div>
                               <div>{{ $t('Store.RepositoryName') + ":"}}<span class="ml-10">{{ repo.split(":")[1] }}</span></div>
                             </template>
