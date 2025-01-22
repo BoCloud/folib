@@ -46,7 +46,7 @@
 			<a-col>
 
 				<h6 class="font-semibold text-md mb-0">{{ due }}</h6>
-				<p class="font-semibold text-muted mb-0">{{ $t('Cards.WarehouseType') }}</p>
+				<p class="font-semibold text-muted mb-0">{{ $t('Storage.VersioningStrategy') }}</p>
 			</a-col>
 			<a-col class="ml-auto">
 				<a-avatar size="small" v-if="repository.type === 'proxy' && repository.healthStatus"

@@ -396,6 +396,10 @@ export default {
                     method(params).then(res => {
                         this.$emit('reset')
                         this.closeModal()
+                    }).catch((err) => {
+                        this.$notification["error"]({
+                            message: err.response.data.error,
+                        })
                     }).finally(() => {
                         this.confirmLoading = false
                     })

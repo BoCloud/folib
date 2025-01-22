@@ -5,13 +5,16 @@
       <div class="custom-input-group">
         <a-input
             v-model="tokenInfo.jwt"
+            id="directory"
             ref="tokenInput"
         />
         <a-button
             type="link"
-            class="copy-button"
-            @click="copyToken"
-            style="height: 40px "
+            class="copy-button btn"
+            style="height: 40px"
+            data-clipboard-action="copy"
+            data-clipboard-target="#directory"
+            @click="copyInput"
         >
           <a-icon type="copy"/>
         </a-button>
@@ -34,7 +37,7 @@
 
 <script>
 
-import {tokenList} from '@/api/accessToken';
+import Clipboard from 'clipboard';
 export default {
   name: "CopyModal",
   props: {
@@ -63,12 +66,12 @@ export default {
       }
 
     },
-    copyToken() {
-      navigator.clipboard.writeText(this.tokenInfo.jwt).then(() => {
-        this.$message.success('令牌已复制到剪贴板');
-      }).catch(() => {
-        this.$message.error('复制失败');
-      })
+    copyInput() {
+        const clipboard = new Clipboard('.btn')
+        clipboard.on('success', () => {
+            this.$message.success('令牌已复制到剪贴板')
+            clipboard.destroy() // 使用destroy可以清除缓存
+        })
     },
     closeModal() {
       this.visible = false;
