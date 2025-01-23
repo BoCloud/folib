@@ -1970,6 +1970,7 @@ export default {
       this.getStorage(this.currentStorage.id)
     },
     loadMore(total){
+      console.log(total,total !== this.queryParams.total)
       if(total !== this.queryParams.total && !this.$refs.repositoryTree.loadingMore){
         this.$refs.repositoryTree.loadingMoreShow(true)
         this.queryParams.page ++
