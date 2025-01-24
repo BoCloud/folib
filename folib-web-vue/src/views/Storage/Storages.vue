@@ -119,7 +119,7 @@
                     </a>
                   </a-card>
                 </a-col>
-                <a-col :span="8" style="margin-bottom:20px;" v-for="(item, index) in repositories" :key="index">
+                <a-col :span="8" style="margin-bottom:20px;" v-for="(item, index) in repositories" :key="item.id">
                   <!-- Project Card -->
                   <CardProjectFolib :title=item.id :logo="'images/folib/' + getLayoutType(item) + '.svg'"
                     :team="['images/folib/' + item.type + '.svg']" :participants="item.type" :due="item.policy"
