@@ -218,7 +218,7 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider {
     }
 
     private RepositoryPath releasePath(List<RepositoryPath> repositoryPathList) throws IOException {
-        Map<String, RepositoryPath> releaseMap = new ConcurrentHashMap<>();
+        List<RepositoryPath> releaseList = Lists.newArrayList();
         for (RepositoryPath paths : repositoryPathList) {
             String metaDataPath = paths.getTarget().toString();
             String name = paths.getFileName().toString();
@@ -226,14 +226,13 @@ public class HostedRepositoryProvider extends AbstractRepositoryProvider {
             if (Files.exists(Path.of(metaDataPath))) {
                 JSONObject data = JSONObject.parseObject(Files.readString(Path.of(metaDataPath)));
                 if (data != null && data.containsKey("RELEASE")) {
-                    JSONObject release = data.getJSONObject("RELEASE");
-                    releaseMap.put(release.getString("value"), paths);
+                    releaseList.add(paths);
+                    releaseList.sort(Comparator.comparing(o -> new ComparableVersion(o.getFileName().toString())));
                 }
             }
         }
-       if(!releaseMap.isEmpty()){
-          String key =  releaseMap.keySet().stream().max(Comparator.comparing(ComparableVersion::new)).get();
-          return releaseMap.get(key);
+       if(!releaseList.isEmpty()){
+           return releaseList.get(releaseList.size() - 1);
        }
        return null;
     }
