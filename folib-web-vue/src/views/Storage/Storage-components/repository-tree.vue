@@ -388,8 +388,7 @@ export default {
         // 滚动条滚动
         handleScroll(event) {
             const { scrollTop, clientHeight, scrollHeight } = event.target;
-            // 当滚动到底部时加载更多
-            if (scrollTop + clientHeight >= scrollHeight) {
+            if (scrollTop + clientHeight + 10 >= scrollHeight) {
                 this.$nextTick(() => {
                     const total = this.treeData.length
                     this.$emit('loadMore', total)
@@ -695,6 +694,7 @@ export default {
                 this.bottomHeight = bottomHeight
             }
             this.containerHeight = this.$refs.container.clientHeight - 5
+            console.log(this.$refs.container.clientHeight)
             this.topHeight = this.containerHeight - this.bottomHeight - 5
         }
     },

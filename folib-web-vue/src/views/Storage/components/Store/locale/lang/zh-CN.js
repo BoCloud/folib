@@ -366,4 +366,5 @@ export default {
     'RecursiveTip': '元数据将添加到所选文件夹以及此文件夹下的所有制品、文件夹和子文件夹中。',
     'RecursiveDelete': '递归删除',
     'Edit': '编辑',
+    'GroupDefaultRepository':'默认上传仓库',
 }

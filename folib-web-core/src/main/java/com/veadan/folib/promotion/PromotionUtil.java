@@ -171,6 +171,8 @@ public class PromotionUtil {
     private DistributionService distributionService;
     @Autowired
     private ArtifactEventListenerRegistry artifactEventListenerRegistry;
+    @Inject
+    private ArtifactMetadataService artifactMetadataService;
     @Autowired
     private WsConfig wsConfig;
 
@@ -745,6 +747,7 @@ public class PromotionUtil {
                 log.error("Do copy srcRepositoryPath [{}] targetManiFestPath [{}] error [{}]", srcRepositoryPath, targetRepositoryPath, ExceptionUtils.getStackTrace(e));
                 throw new Exception(e.getMessage());
             }
+            rebuildMetadata(targetRepository, targetRepositoryPath);
             if (isDocker) {
                 List<DockerSubsidiary> dockerSubsidiaries = DockerUtils.getDockerSubsidiaryFilePaths(srcRepositoryPath);
                 if (CollectionUtils.isNotEmpty(dockerSubsidiaries)) {
@@ -840,6 +843,7 @@ public class PromotionUtil {
                 log.error("Do copy srcRepositoryPath [{}] targetManiFestPath [{}] error [{}]", srcRepositoryPath, targetRepositoryPath, ExceptionUtils.getStackTrace(e));
                 throw new Exception(e.getMessage());
             }
+            rebuildMetadata(targetRepository, targetRepositoryPath);
             if (isDocker) {
                 List<DockerSubsidiary> dockerSubsidiaries = DockerUtils.getDockerSubsidiaryFilePaths(srcRepositoryPath);
                 if (CollectionUtils.isNotEmpty(dockerSubsidiaries)) {
@@ -863,6 +867,16 @@ public class PromotionUtil {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private void rebuildMetadata(Repository repository, RepositoryPath repositoryPath) {
+        if (ProductTypeEnum.Maven.getFoLibraryName().equalsIgnoreCase(repository.getLayout())) {
+            try {
+                artifactMetadataService.rebuildMetadata(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(repositoryPath));
+            } catch (Exception ex) {
+                log.error(ExceptionUtils.getStackTrace(ex));
             }
         }
     }

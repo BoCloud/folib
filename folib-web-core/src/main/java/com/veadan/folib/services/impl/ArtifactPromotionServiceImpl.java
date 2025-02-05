@@ -1769,6 +1769,18 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                 } else {
                     log.info("is Store file {}", mergeFilePath);
                     String filePath =  StrUtil.isBlankOrUndefined(path) ? fileName : path.endsWith("/") ? String.join("", path, fileName) : String.join("/", path, fileName);
+                    RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, filePath);
+                    Repository repository = repositoryPath.getRepository();
+                    if (Boolean.FALSE.equals(repository.isAllowsDeployment())) {
+                        throw new BusinessException("deployment of artifacts to " +
+                                repositoryPath.getStorageId() + ":" + repositoryPath.getRepositoryId() +
+                                " repository is not allowed!");
+                    }
+                    if (Files.exists(repositoryPath) && Boolean.FALSE.equals(repository.isAllowsRedeployment())) {
+                        throw new BusinessException("Re-deployment of artifacts to " +
+                                repositoryPath.getStorageId() + ":" + repositoryPath.getRepositoryId() +
+                                " repository is not allowed!");
+                    }
                     // 兼容原来上传逻辑
                     final ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repositoryId, fileStreamMultipartFile,
                             repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, layoutProviderRegistry, artifactMetadataService,
