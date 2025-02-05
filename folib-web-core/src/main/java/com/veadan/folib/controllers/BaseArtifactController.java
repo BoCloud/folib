@@ -12,6 +12,7 @@ import com.veadan.folib.domain.CacheSettings;
 import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
+import com.veadan.folib.io.ByteRangeInputStream;
 import com.veadan.folib.providers.io.LayoutFileSystem;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -120,7 +121,7 @@ public abstract class BaseArtifactController
         if (ArtifactControllerHelper.isRangedRequest(httpHeaders)) {
             //分片
             logger.debug("RepositoryPath [{}] Detected ranged request.", path.toString());
-            try (InputStream is = Files.newInputStream(path)) {
+            try (InputStream is = new ByteRangeInputStream(Files.newInputStream(path))) {
                 ArtifactControllerHelper.handlePartialDownload(is, httpHeaders, response);
             }
         } else if (path.toString().startsWith("s3://")) {
