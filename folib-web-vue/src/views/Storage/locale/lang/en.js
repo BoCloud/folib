@@ -278,5 +278,6 @@ export default {
     'cargo':'In the Rust ecosystem, Cargo is the official build system and package manager for dependency management and build automation, and the Cargo repository proxies and caches official Rust dependencies for faster pulling and creates local repositories for storing private Rust dependencies or built artifact packages.',
     // 'rust':'rust',
     // 'php':'php',
+    'ollama':'Ollama is a tool for rapid deployment of AI models. It enables users to effortlessly run and manage various large language models locally, significantly enhancing flexibility in usage and data privacy. It supports pulling models from Ollama via a proxy and localizing model storage, facilitating sharing within private model teams for convenient utilization.',
     'StorageThreshold': 'Storage Threshold',
 }

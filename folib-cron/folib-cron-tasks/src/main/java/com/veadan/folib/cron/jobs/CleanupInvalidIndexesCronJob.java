@@ -3,6 +3,7 @@ package com.veadan.folib.cron.jobs;
 import com.google.common.collect.ImmutableSet;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
+import com.veadan.folib.cron.domain.CronTasksConfigurationDto;
 import com.veadan.folib.cron.jobs.fields.*;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -89,7 +90,9 @@ public class CleanupInvalidIndexesCronJob
                 for (Repository repository : repositories.values()) {
                     try {
                         logger.info("Cleanup invalid index for storageId [{}] repositoryId [{}]", storage.getId(), repository.getId());
-                        cleanup(storage.getId(), repository.getId());
+                        if(!existsRepositoryTask(storage.getId(), repository.getId())){
+                            cleanup(storage.getId(), repository.getId());
+                        }
                     } catch (Exception ex) {
                         logger.warn(ExceptionUtils.getStackTrace(ex));
                     }
@@ -150,5 +153,14 @@ public class CleanupInvalidIndexesCronJob
                 }
             }
         }
+    }
+
+    private boolean existsRepositoryTask(String storageId, String repositoryId) {
+        CronTasksConfigurationDto config = cronTaskConfigurationService.getTasksConfigurationDto();
+        if (CollectionUtils.isEmpty(config.getCronTaskConfigurations())) {
+            return false;
+        }
+        String cronJob = "com.veadan.folib.cron.jobs.cleanup.CleanupInvalidIndexesCronJob";
+        return config.getCronTaskConfigurations().stream().anyMatch(cron -> storageId.equals(cron.getProperty("storageId")) && repositoryId.equals(cron.getProperty("repositoryId")) && cronJob.equals(cron.getJobClass()));
     }
 }

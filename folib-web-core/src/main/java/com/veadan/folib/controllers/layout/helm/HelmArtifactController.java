@@ -160,11 +160,12 @@ public class HelmArtifactController extends BaseArtifactController {
         final String repositoryId = repository.getId();
         try {
             RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, "index.yaml");
-            if (Objects.nonNull(repositoryPath) && RepositoryTypeEnum.HOSTED.getType().equals(repositoryPath.getRepository().getType()) && !Files.exists(repositoryPath)) {
+            if (Objects.isNull(repositoryPath) && RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
                 // 创建刷新索引
-                RepositoryPath repoPath = repositoryPathResolver.resolve(repository, "");
-                String absolutePath = repoPath.toAbsolutePath().toString();
-                helmRepoUtil.createIndex(absolutePath, repository);
+                //helmRepoUtil.createIndex(absolutePath, repository);
+                HelmMetadataIndexer indexer = new HelmMetadataIndexer(storageId, repositoryId, artifactManagementService, repositoryPathResolver);
+                indexer.reindexAsSystem();
+                repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, "index.yaml");
             }
             if(repositoryPath == null && RepositoryTypeEnum.PROXY.getType().equals(repository.getType())){
                 repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, "charts/index.yaml");
