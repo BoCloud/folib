@@ -27,39 +27,41 @@ import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.utils.ArtifactControllerHelper;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.carlspring.commons.http.range.ByteRange;
+import org.carlspring.commons.http.range.ByteRangeHeaderParser;
+import org.carlspring.commons.io.reloading.FSReloadableInputStreamHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.ui.ModelMap;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
+import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.TimeZone;
+import java.util.*;
+
+import static org.springframework.http.HttpStatus.PARTIAL_CONTENT;
 
 public abstract class BaseArtifactController
         extends BaseController {
@@ -121,8 +123,27 @@ public abstract class BaseArtifactController
         if (ArtifactControllerHelper.isRangedRequest(httpHeaders)) {
             //分片
             logger.debug("RepositoryPath [{}] Detected ranged request.", path.toString());
-            try (InputStream is = new ByteRangeInputStream(Files.newInputStream(path))) {
-                ArtifactControllerHelper.handlePartialDownload(is, httpHeaders, response);
+            //try (ByteRangeInputStream is = new ByteRangeInputStream(Files.newInputStream(path))) {
+            //    //is.setReloadableInputStreamHandler(new FSReloadableInputStreamHandler(path));
+            //    is.setLength(Files.size(path));
+            //    ArtifactControllerHelper.handlePartialDownload(is, httpHeaders, response);
+            //}
+            try (FileChannel fileChannel = FileChannel.open(path);
+                 WritableByteChannel responseChannel = Channels.newChannel(response.getOutputStream())) {
+                String contentRange = httpHeaders.getFirst(HttpHeaders.RANGE);
+                ByteRangeHeaderParser parser = new ByteRangeHeaderParser(contentRange);
+                List<ByteRange> ranges = parser.getRanges();
+                if (!CollectionUtils.isEmpty(ranges)) {
+                    //long fileSize = fileChannel.size();
+                    ByteRange byteRange = ranges.get(0);
+                    response.setHeader(HttpHeaders.CONTENT_RANGE, String.format("bytes %d-%d/%d", byteRange.getOffset(), byteRange.getLimit(), byteRange.getLimit()));
+                    response.setHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(byteRange.getLimit() - byteRange.getOffset()));
+                    response.setStatus(PARTIAL_CONTENT.value());
+                    logger.debug("ByteRange: offset={}, limit={}", byteRange.getOffset(), byteRange.getLimit());
+                    logger.debug("Starting file transfer from position {}", byteRange.getOffset());
+                    long transferred = fileChannel.transferTo(byteRange.getOffset(), byteRange.getLimit(), responseChannel);
+                    logger.debug("Transferred {} bytes", transferred);
+                }
             }
         } else if (path.toString().startsWith("s3://")) {
             //S3
