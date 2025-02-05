@@ -1,6 +1,7 @@
 package com.veadan.folib.cron.jobs;
 
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.cron.domain.CronTasksConfigurationDto;
 import com.veadan.folib.cron.jobs.fields.*;
 import com.veadan.folib.services.ChecksumService;
 import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
@@ -14,6 +15,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.google.common.collect.ImmutableSet;
+import org.apache.commons.collections4.CollectionUtils;
 
 /**
  * @author veadan
@@ -65,21 +67,15 @@ public class RegenerateChecksumCronJob
          */
         boolean forceRegeneration = Boolean.valueOf(config.getProperty(PROPERTY_FORCE_REGENERATION));
 
-        if (storageId == null)
-        {
+        if (storageId == null && repositoryId == null) {
             Map<String, Storage> storages = getStorages();
-            for (String storage : storages.keySet())
-            {
+            for (String storage : storages.keySet()) {
                 regenerateRepositoriesChecksum(storage, lastModifiedTime, forceRegeneration);
             }
-        }
-        else if (repositoryId == null)
-        {
-            regenerateRepositoriesChecksum(storageId, lastModifiedTime, forceRegeneration);
-        }
-        else
-        {
+        } else if (storageId != null && repositoryId != null) {
             checksumService.regenerateChecksum(storageId, repositoryId, basePath, lastModifiedTime, forceRegeneration);
+        } else {
+            throw new IllegalArgumentException("storageId and repositoryId can not be null");
         }
     }
 
@@ -112,7 +108,9 @@ public class RegenerateChecksumCronJob
 
         for (String repositoryId : repositories.keySet())
         {
-            checksumService.regenerateChecksum(storageId, repositoryId, null, lastModifiedTime, forceRegeneration);
+            if(!existsRepositoryTask(storageId, repositoryId)){
+                checksumService.regenerateChecksum(storageId, repositoryId, null, lastModifiedTime, forceRegeneration);
+            }
         }
     }
 
@@ -126,5 +124,13 @@ public class RegenerateChecksumCronJob
         return getStorages().get(storageId).getRepositories();
     }
 
+    private boolean existsRepositoryTask(String storageId, String repositoryId) {
+        CronTasksConfigurationDto config = cronTaskConfigurationService.getTasksConfigurationDto();
+        if (CollectionUtils.isEmpty(config.getCronTaskConfigurations())) {
+            return false;
+        }
+        String cronJob = "com.veadan.folib.cron.jobs.RegenerateChecksumCronJob";
+        return config.getCronTaskConfigurations().stream().anyMatch(cron -> storageId.equals(cron.getProperty("storageId")) && repositoryId.equals(cron.getProperty("repositoryId")) && cronJob.equals(cron.getJobClass()));
+    }
 
 }

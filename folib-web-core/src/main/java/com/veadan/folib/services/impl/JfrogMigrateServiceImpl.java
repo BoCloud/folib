@@ -654,6 +654,12 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         for (String userName : userNames) {
             User user = artifactory.security().user(userName);
             UserDto newUser = new UserDto();
+            if(user.getRealm().equals("ldap")){
+                newUser.setSourceId("ldapUserDetailsService");
+            }else {
+                // 设置默认密码等于用户名
+                newUser.setPassword("DayeKJjeRQ$4N3z");
+            }
             newUser.setUsername(userName);
             newUser.setEmail(user.getEmail());
             newUser.setId(userName);
@@ -680,8 +686,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                     }
                 }
             }
-            // 设置默认密码等于用户名
-            newUser.setPassword("DayeKJjeRQ$4N3z");
+
             userService.save(new EncodedPasswordUser(newUser, passwordEncoder));
         }
     }

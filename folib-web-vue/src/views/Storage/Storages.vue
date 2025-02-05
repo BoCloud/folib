@@ -119,7 +119,7 @@
                     </a>
                   </a-card>
                 </a-col>
-                <a-col :span="8" style="margin-bottom:20px;" v-for="(item, index) in repositories" :key="index">
+                <a-col :span="8" style="margin-bottom:20px;" v-for="(item, index) in repositories" :key="item.id">
                   <!-- Project Card -->
                   <CardProjectFolib :title=item.id :logo="'images/folib/' + getLayoutType(item) + '.svg'"
                     :team="['images/folib/' + item.type + '.svg']" :participants="item.type" :due="item.policy"
@@ -837,14 +837,14 @@
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="6">
-                  <a-form-item class="mb-10" label="" :colon="false">
-                    <a-checkbox v-model="folibRepository.syncEnabled">
-                      {{ $t('Storage.On') }}{{ $t('Storage.SyncRepository') }}
-                      <!-- {{ folibRepository.syncEnabled ?  $t('Storage.On') : $t('Storage.Off')  }} -->
-                    </a-checkbox>
-                  </a-form-item>
-                </a-col>
+<!--                <a-col :span="6">-->
+<!--                  <a-form-item class="mb-10" label="" :colon="false">-->
+<!--                    <a-checkbox v-model="folibRepository.syncEnabled">-->
+<!--                      {{ $t('Storage.On') }}{{ $t('Storage.SyncRepository') }}-->
+<!--                      &lt;!&ndash; {{ folibRepository.syncEnabled ?  $t('Storage.On') : $t('Storage.Off')  }} &ndash;&gt;-->
+<!--                    </a-checkbox>-->
+<!--                  </a-form-item>-->
+<!--                </a-col>-->
               </a-row>
 
               <a-row v-if="enableHostProxy" :gutter="[24]">
@@ -2305,14 +2305,18 @@ export default {
       this.folibRepository.subLayout = this.layoutChecked
       this.folibRepository.layout = genLayoutType(this.layoutChecked)
       //将组合好的仓库转为groupRepository
-      if (this.step === 2 && this.folibRepository.type === 'group' && this.boards[1].tasks.length > 0) {
-        this.folibRepository.groupRepositories = groupRepositoriesBuild(this.boards[1].tasks)
+      if (this.step === 2 && this.folibRepository.type === 'group') {
+        if (this.boards[1].tasks.length > 0) {
+            this.folibRepository.groupRepositories = groupRepositoriesBuild(this.boards[1].tasks)
+        } else {
+            this.folibRepository.groupRepositories = [];
+        }
         // 判断是否组合库里有默认库有则添加
-        if(this.folibRepository.groupRepositories.find(item=>item===this.groupDefaultRepository)){
-          this.folibRepository.groupDefaultRepository=this.groupDefaultRepository;
-        }else{
-          this.folibRepository.groupDefaultRepository=null;
-          this.defaultRepositoryId=null;
+        if (this.folibRepository.groupRepositories.find(item => item === this.groupDefaultRepository)) {
+            this.folibRepository.groupDefaultRepository = this.groupDefaultRepository;
+        } else {
+            this.folibRepository.groupDefaultRepository = null;
+            this.defaultRepositoryId = null;
         }
         this.folibRepository.proxyConfiguration = null
         this.folibRepository.remoteRepository = null
