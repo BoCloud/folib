@@ -2342,14 +2342,18 @@ export default {
       this.folibRepository.subLayout = this.layoutChecked
       this.folibRepository.layout = genLayoutType(this.layoutChecked)
       //将组合好的仓库转为groupRepository
-      if (this.step === 2 && this.folibRepository.type === 'group' && this.boards[1].tasks.length > 0) {
-        this.folibRepository.groupRepositories = groupRepositoriesBuild(this.boards[1].tasks)
+      if (this.step === 2 && this.folibRepository.type === 'group') {
+        if (this.boards[1].tasks.length > 0) {
+            this.folibRepository.groupRepositories = groupRepositoriesBuild(this.boards[1].tasks)
+        } else {
+            this.folibRepository.groupRepositories = [];
+        }
         // 判断是否组合库里有默认库有则添加
-        if(this.folibRepository.groupRepositories.find(item=>item===this.groupDefaultRepository)){
-          this.folibRepository.groupDefaultRepository=this.groupDefaultRepository;
-        }else{
-          this.folibRepository.groupDefaultRepository=null;
-          this.defaultRepositoryId=null;
+        if (this.folibRepository.groupRepositories.find(item => item === this.groupDefaultRepository)) {
+            this.folibRepository.groupDefaultRepository = this.groupDefaultRepository;
+        } else {
+            this.folibRepository.groupDefaultRepository = null;
+            this.defaultRepositoryId = null;
         }
         this.folibRepository.proxyConfiguration = null
         this.folibRepository.remoteRepository = null
