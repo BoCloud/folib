@@ -934,7 +934,7 @@ public class DockerArtifactController extends BaseArtifactController {
     @ApiImplicitParams({
             @ApiImplicitParam(name = "n", value = "返回个数"),
             @ApiImplicitParam(name = "last", value = "last")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @RequestMapping(value = {"/v2/_catalog"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity<Object> getCatalog(@RequestHeader HttpHeaders httpHeaders,
                                              HttpServletRequest request,

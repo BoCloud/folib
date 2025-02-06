@@ -12,6 +12,7 @@ import com.veadan.folib.enums.RepositoryScopeEnum;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.security.enums.ResolvePathTypeEnum;
+import com.veadan.folib.security.resolvepath.DockerResolvePathProvider;
 import com.veadan.folib.security.resolvepath.ResolvePathProvider;
 import com.veadan.folib.security.resolvepath.ResolvePathProviderRegistry;
 import com.veadan.folib.services.ConfigurationManagementService;
@@ -323,6 +324,15 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
                 }
             }
             requestUri = StringUtils.removeStart(requestUri.replace(ARTIFACTORY_ARTIFACT_ROOT_PATH, ""), GlobalConstants.SEPARATOR);
+            String storageId = parseStorageId(requestUri);
+            if (StringUtils.isBlank(storageId)) {
+                return requestUri;
+            }
+            requestUri = ARTIFACTORY_ARTIFACT_ROOT_PATH + GlobalConstants.SEPARATOR + storageId + GlobalConstants.SEPARATOR + requestUri;
+            return requestUri;
+        }
+        if (requestUri.startsWith(DockerResolvePathProvider.V2)) {
+            requestUri = StringUtils.removeStart(requestUri.replace(DockerResolvePathProvider.V2, ""), GlobalConstants.SEPARATOR);
             String storageId = parseStorageId(requestUri);
             if (StringUtils.isBlank(storageId)) {
                 return requestUri;

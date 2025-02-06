@@ -194,8 +194,8 @@ public class BrowseController
                 if (Objects.nonNull(artifact)) {
                     DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) artifact.getArtifactCoordinates();
                     jsonObject.put("artifact", artifact);
-                    String imageName = getBaseUrlSimple(storageId, repositoryId) + "/" + dockerArtifactCoordinates.getIMAGE_NAME();
-                    String code = "docker  pull  " + imageName;
+                    String imageName = getArtifactoryBaseUrlSimple(repositoryId) + "/" + dockerArtifactCoordinates.getIMAGE_NAME();
+                    String code = "docker pull " + imageName;
                     CodeSnippet codeSnippet = new CodeSnippet("Docker", code);
                     List<CodeSnippet> snippets = new ArrayList<>();
                     snippets.add(codeSnippet);
