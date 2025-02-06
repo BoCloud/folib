@@ -173,7 +173,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
     }
 
     @PostMapping(value = "/upload")
-    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT,target ="#storageId + '-'+ #repositoryId+'-'+ #parseArtifact.replaceAll('.*\\\"filePath\\\":\\\"([^\\\"]*)', '$1').replaceAll('^.*/', '').replaceAll('\\\".*', '')" )
+    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT,target ="#storageId + '/'+ #repositoryId+'/'+ #parseArtifact.replaceAll('.*\\\"filePath\\\":\\\"([^\\\"]*)', '$1').replaceAll('^.*/', '').replaceAll('\\\".*', '')" )
     @ApiOperation(value = "文件上传", notes = "文件上传")
     @PermissionCheck(resourceKey = "ARTIFACTS_DEPLOY", storageKey = "storageId", repositoryKey = "repositoryId")
     public ResponseEntity upload(
