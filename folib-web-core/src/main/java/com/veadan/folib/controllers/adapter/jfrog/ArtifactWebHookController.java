@@ -1,5 +1,6 @@
 package com.veadan.folib.controllers.adapter.jfrog;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.components.layout.DockerComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
@@ -7,6 +8,9 @@ import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.adapter.jfrog.dto.ArtifactData;
 import com.veadan.folib.controllers.adapter.jfrog.dto.WebhookDto;
+import com.veadan.folib.domain.migrate.ArtifactMigrateInfo;
+import com.veadan.folib.domain.migrate.MigrateInfo;
+import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.JFrogEventTypeEnum;
 import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -19,15 +23,24 @@ import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.security.exceptions.ExpiredTokenException;
 import com.veadan.folib.security.exceptions.InvalidTokenException;
+import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ArtifactResolutionService;
+import com.veadan.folib.services.DictService;
 import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import com.veadan.folib.users.security.SecurityTokenProvider;
+import com.veadan.folib.utils.SecurityUtils;
+import com.veadan.folib.utils.UserUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.jfrog.artifactory.client.Artifactory;
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder;
+import org.jfrog.artifactory.client.RepositoryHandle;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,10 +48,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.annotation.Resource;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Objects;
@@ -66,6 +82,16 @@ public class ArtifactWebHookController {
 
     @Inject
     protected DockerComponent dockerComponent;
+
+
+    @Resource
+    private DictService dictService;
+
+    @Resource
+    private ArtifactManagementService artifactManagementService;
+
+    @Resource
+    private SecurityUtils securityUtils;
 
     @PostMapping("/webhook")
     public ResponseEntity<Object> webhook(@RequestBody String data, HttpServletRequest request) {
@@ -178,7 +204,32 @@ public class ArtifactWebHookController {
                     }
                 }
             } else {
-                artifactResolutionService.resolvePath(repositoryPath);
+                //  判断是否为本地仓库
+                if(RepositoryTypeEnum.HOSTED.getType().equals(repositoryPath.getRepository().getType())){
+                    Dict dict = new Dict();
+                    dict.setDictType("artifact_migrate_task");
+                    Dict info = dictService.selectLatestOneDict(dict);
+                    if(Objects.isNull(info)){
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("cannot find jfrog info");
+                    }
+                    ArtifactMigrateInfo jfrogInfo = JSON.parseObject(info.getAlias(), ArtifactMigrateInfo.class);
+                    // 获取制品
+                    try(Artifactory artifactory = ArtifactoryClientBuilder.create().setUrl(jfrogInfo.getRemotePreUrl()).setUsername(jfrogInfo.getUsername()).setPassword(jfrogInfo.getPassword()).build()){
+                        // 访问远程仓库
+                        securityUtils.setAdminAuthentication();
+                        RepositoryHandle repository = artifactory.repository(repositoryId);
+                        InputStream artifactStream = repository.download(artifactData.getPath()).doDownload();
+                        artifactManagementService.validateAndStore(repositoryPath, artifactStream);
+                    }catch (Exception e){
+                        log.info("下载远程制品失败");
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("sync artifact failed");
+                    }finally {
+                        securityUtils.clearAuthentication();
+                    }
+                }else {
+                    artifactResolutionService.resolvePath(repositoryPath);
+                }
+
             }
             return ResponseEntity.ok("");
         } catch (Exception ex) {
