@@ -79,6 +79,8 @@ public class PypiArtifactController extends BaseArtifactController {
         return super.checkRepositoryAccess();
     }
 
+
+    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT,target ="#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #file.getOriginalFilename()")
     @ApiOperation(value = "This end point will be used to upload/deploy python package.")
     @ApiResponses(value = {@ApiResponse(code = HttpURLConnection.HTTP_OK, message = "python package was deployed successfully."),
             @ApiResponse(code = HttpURLConnection.HTTP_INTERNAL_ERROR, message = "An error occurred while executing request."),

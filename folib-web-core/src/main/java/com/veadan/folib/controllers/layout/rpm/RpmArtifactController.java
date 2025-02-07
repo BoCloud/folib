@@ -104,6 +104,7 @@ public class RpmArtifactController extends BaseArtifactController {
         return ResponseEntity.ok("The artifact was deleted.");
     }
 
+    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT,target ="#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path + '/' +  #files[0].getOriginalFilename()")
     @ApiOperation(value = "Used to deploy an artifact")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
