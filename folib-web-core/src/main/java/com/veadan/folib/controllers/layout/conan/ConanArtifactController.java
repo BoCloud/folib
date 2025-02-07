@@ -258,6 +258,7 @@ public class ConanArtifactController extends BaseArtifactController {
         return new ResponseEntity<>(obj, HttpStatus.OK);
     }
 
+    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT, target = "#storageId + '/' + #repositoryId + '/' + #user + '/' + #name + '/' + #version + '/' + #channel + '/' + #revisionId  + '/' + #filePath")
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @RequestMapping(value = "{storageId}/{repositoryId}/v1/files/{user}/{name}/{version}/{channel}/{revisionId}/export/{filePath:.+}",
             method = {RequestMethod.PUT})
@@ -297,6 +298,7 @@ public class ConanArtifactController extends BaseArtifactController {
         }
     }
 
+    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT, target = "#storageId + '/' + #repositoryId + '/' + #user + '/' + #name + '/' + #version + '/' + #channel + '/' + #revisionId + '/' + #packageRevisionId + '/' + #filePath")
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @RequestMapping(value = "{storageId}/{repositoryId}/v1/files/{user}/{name}/{version}/{channel}/{revisionId}/package/{packageId}/{packageRevisionId}/{filePath:.+}",
             method = {RequestMethod.PUT})
