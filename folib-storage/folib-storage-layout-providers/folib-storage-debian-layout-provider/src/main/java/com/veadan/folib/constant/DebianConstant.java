@@ -41,7 +41,8 @@ public class DebianConstant {
     public static final String DEB_PREFIX = "pool";
     public static final String EXTENSION = "extension";
 
-    public static final String DEBIAN_DEB_REGEX = "^pool/(main|contrib|non-free)(?:-[a-z]+)?/(?:lib[a-z0-9]?|[a-z0-9])/([a-z0-9][a-z0-9+.-]*)/(?:[a-z0-9][a-z0-9+.-]*_)([0-9][0-9a-zA-Z.+:~-]*)(?:-[0-9.+~]*)?(?:_[a-z0-9]+)?\\.(?:deb|udeb)$";
+//    public static final String DEBIAN_DEB_REGEX = "^pool/(main|contrib|non-free)(?:-[a-z]+)?/(?:lib[a-z0-9]?|[a-z0-9])/([a-z0-9][a-z0-9+.-]*)/(?:[a-z0-9][a-z0-9+.-]*_)([0-9][0-9a-zA-Z.+:~-]*)(?:-[0-9.+~]*)?(?:_[a-z0-9]+)?\\.(?:deb|udeb)$";
+    public static final String DEBIAN_DEB_REGEX = "^pool/([^/]+)/(?:lib[a-z0-9]?|[a-z0-9])/([a-z0-9][a-z0-9+.-]*)/(?:[a-z0-9][a-z0-9+.-]*_)([0-9][0-9a-zA-Z.+:~-]*)(?:-[0-9.+~]*)?(?:_[a-z0-9]+)?\\.(?:deb|udeb)$";
     public static final Pattern PATH_PATTERN = Pattern.compile(DEBIAN_DEB_REGEX);
 
     public static final Pattern CUSTOM_PATTERN=Pattern.compile(".*/([^/]+)_([^_]+(?:[-+][^_]+)*)_([^_]+)\\.([a-zA-Z0-9]+)$|([^/]+)_([^_]+(?:[-+][^_]+)*)_([^_]+)\\.([a-zA-Z0-9]+)$");
