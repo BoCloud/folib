@@ -130,6 +130,7 @@ export default {
     'Operations': 'Operations',
     'DeletedProductSuccess': 'Deleted product metadata successfully',
     'BomInformation': 'Bom information',
+    'authDescription':'The auth in the current example needs to be re-decoded and encoded',
     // UseDoc
     'Instructions': 'Instructions for use',
     'GlobalConfiguration': ' global configuration',
@@ -368,4 +369,5 @@ export default {
     'RecursiveTip': 'The metadata will be added to the selected folder and to all of the artifacts, folders and sub-folders under this folder.',
     'RecursiveDelete': 'Recursive Delete',
     'Edit': 'Edit',
+    'GroupDefaultRepository':'Default upload repository',
 }

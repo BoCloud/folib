@@ -34,6 +34,7 @@
           </a-col>
           <a-col :span="24" v-if="!metadataForm.custom">
             <a-form-model-item
+              :key='key'
               class="mb-10"
               :label="$t('Store.Metadata')+'KEY'"
               :colon="false"
@@ -57,8 +58,9 @@
               </a-select>
             </a-form-model-item>
           </a-col>
-          <a-col :span="24" v-if="metadataForm.custom">
+          <a-col :span="24" v-else>
             <a-form-model-item
+              :key='key'
               class="mb-10"
               :label="$t('Store.Metadata')+'KEY'"
               :colon="false"
@@ -183,9 +185,9 @@ export default {
   data() {
     return {
       metadataRules: {
-        key: [{ required: true, message: this.$t('Store.PleaseSelect')+this.$t('Store.Metadata')+'KEY', trigger: "blur" }],
+        key: [{ required: true, message: this.$t('Store.PleaseSelect')+this.$t('Store.Metadata')+'KEY',trigger: "blur" }],
         customKey: [
-          { required: true, message: this.$t('Store.PleaseSelect')+this.$t('Store.Metadata')+'KEY', trigger: "blur" },
+          { required: true, message: this.$t('Store.PleaseEnter')+this.$t('Store.Metadata')+'KEY',trigger: "blur"},
           {
             min: 1,
             max: 30,
@@ -212,6 +214,7 @@ export default {
       metadataInput: false,
       metadataNumber: false,
       showMetadata: false,
+      key:0
     };
   },
   computed: {
@@ -239,6 +242,7 @@ export default {
       this.$emit("metadataHandlerCancel");
     },
     metadataCustom(value) {
+      this.key ++
       if (value) {
         //开启自定义
         this.metadataForm.key = undefined;

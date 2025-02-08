@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import com.google.common.collect.ImmutableSet;
 import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
 import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
+import com.veadan.folib.cron.domain.CronTasksConfigurationDto;
 import com.veadan.folib.cron.jobs.fields.CronJobField;
 import com.veadan.folib.cron.jobs.fields.CronJobIntegerTypeField;
 import com.veadan.folib.cron.jobs.fields.CronJobNamedField;
@@ -15,6 +16,7 @@ import com.veadan.folib.entity.ArtifactSyncRecord;
 import com.veadan.folib.entity.ArtifactSyncSlaveRecord;
 import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
 import com.veadan.folib.mapper.ArtifactSyncSlaveRecordMapper;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
@@ -64,10 +66,28 @@ public class ClearArtifactSyncRecordCronJob extends JavaCronJob {
         final Instant instant = LocalDateTime.now(ZoneId.of("Asia/Shanghai")).minusSeconds(recordRetentionTime).toInstant(ZoneOffset.of("+8"));
         final Date time = Date.from(instant);
         final List<ArtifactSyncRecord> clearRecordList = artifactSyncRecordMapper.selectClearRecordList(storageId, repositoryId, time);
-        
+        regenerateRepositoriesSyncRecord(storageId, repositoryId, time);
+    }
+
+    @Override
+    public CronJobDefinition getCronJobDefinition() {
+        return CronJobDefinition.newBuilder()
+                .jobClass(ClearArtifactSyncRecordCronJob.class.getName())
+                .name("定时清除晋级/分发记录表数据任务").scope(GLOBAL)
+                .description("用于定时定时清除晋级/分发记录表数据，防止记录表数据过大（recordRetentionTime：数据保留时间，单位秒）")
+                .fields(FIELDS)
+                .build();
+    }
+
+    public void regenerateRepositoriesSyncRecord(String storageId, String repositoryId, Date time) {
+        List<ArtifactSyncRecord> clearRecordList = artifactSyncRecordMapper.selectClearRecordList(storageId, repositoryId, time);
         if (CollUtil.isNotEmpty(clearRecordList)) {
+
+            if (storageId == null && repositoryId == null) {
+                clearRecordList = clearRecordList.stream().filter(s -> !existsRepositoryTask(storageId, repositoryId)).collect(Collectors.toList());
+            }
             final List<String> clearSyncNoList = clearRecordList.stream().map(ArtifactSyncRecord::getSyncNo).collect(Collectors.toList());
-            
+
             // 持久化需要清除clearSyncNoList的进度
             final List<ArtifactSyncSlaveRecord> artifactSyncSlaveRecordList = Optional.ofNullable(artifactSyncSlaveRecordMapper.selectListBySyncNoList(clearSyncNoList))
                     .orElse(Collections.emptyList());
@@ -92,20 +112,18 @@ public class ClearArtifactSyncRecordCronJob extends JavaCronJob {
                 }
                 artifactSyncRecordMapper.updateByPrimaryKeySelective(updater);
             });
-
             artifactSyncSlaveRecordMapper.batchDeleteBySyncNoList(clearSyncNoList);
-            final int clearSlaveRecordCount = clearRecordList.size(); 
+            final int clearSlaveRecordCount = clearRecordList.size();
             logger.info("成功定时清理从记录 {} 条", clearSlaveRecordCount);
         }
     }
 
-    @Override
-    public CronJobDefinition getCronJobDefinition() {
-        return CronJobDefinition.newBuilder()
-                .jobClass(ClearArtifactSyncRecordCronJob.class.getName())
-                .name("定时清除晋级/分发记录表数据任务").scope(GLOBAL)
-                .description("用于定时定时清除晋级/分发记录表数据，防止记录表数据过大（recordRetentionTime：数据保留时间，单位秒）")
-                .fields(FIELDS)
-                .build();
+    private boolean existsRepositoryTask(String storageId, String repositoryId) {
+        CronTasksConfigurationDto config = cronTaskConfigurationService.getTasksConfigurationDto();
+        if (CollectionUtils.isEmpty(config.getCronTaskConfigurations())) {
+            return false;
+        }
+        String cronJob = "com.veadan.folib.cron.jobs.cleanup.ClearArtifactSyncRecordCronJob";
+        return config.getCronTaskConfigurations().stream().anyMatch(cron -> storageId.equals(cron.getProperty("storageId")) && repositoryId.equals(cron.getProperty("repositoryId")) && cronJob.equals(cron.getJobClass()));
     }
 }

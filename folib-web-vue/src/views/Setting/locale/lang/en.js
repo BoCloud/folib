@@ -512,7 +512,7 @@ export default {
     'FederalPromotionPolicy':'Federal promotion policy',
     'CustomLayout': 'Custom layout',
     'StorageThreshold': 'Storage Threshold',
-
+    'TimingStrategy': 'timing strategy',
     RepositoryMigration: 'Repository Migration',
     PendingMigration: 'Pending',
     Migrating: 'Migrating',

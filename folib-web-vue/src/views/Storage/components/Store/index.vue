@@ -278,7 +278,7 @@
                 </a-row>
               </a-col>
               <a-col :span="8" class="text-right">
-                <a-dropdown v-if="currentTreeNode.url" class="mr-30"
+                <a-dropdown v-if="currentTreeNode.url && getShowMore(0)" class="mr-30"
                   placement="bottomCenter">
                   <span style="font-size: 16px; cursor: pointer">
                     {{ $t('Store.More') }}
@@ -407,7 +407,7 @@
 
 
               <a-col :span="8" class="text-right">
-                <a-dropdown v-if="currentTreeNode.url" class="mr-45">
+                <a-dropdown v-if="currentTreeNode.url && getShowMore(1)" class="mr-45">
                   <span style="font-size: 16px; cursor: pointer">
                     {{ $t('Store.More') }}
                     <a-icon type="more" class="text-muted" style="font-size: 16px" />
@@ -822,7 +822,7 @@
             </a-form-item>
           </a-col>
           <a-col :span="24" class="text-center">
-            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit" :disabled="isUploading || !md5CalculationComplete">{{ $t('Store.Upload') }}</a-button>
+            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit" :loading="!md5CalculationComplete" >{{ $t('Store.Upload') }}</a-button>
             <a-button key="back" @click="uploadFormModalClose()" class="px-30 ml-10" size="small">{{ $t('Store.Cancel') }}</a-button>
           </a-col>
         </a-row>
@@ -1290,8 +1290,8 @@ export default {
       externalNodeRepositories: [],
       artifactoryType: 1,
       uploadMaxSize: {
-        size: 100,
-        unit: 'MB',
+        size: 4,
+        unit: 'GB',
       },
       enableUnionRepository: [
         "Raw",
@@ -1311,7 +1311,7 @@ export default {
           progress: 0, // md5进度
       },
         selectedFiles: [], // 保存选中的多个文件
-        chunkSize: 5 * 1024 * 1024, // 分片大小 5MB
+        chunkSize: 50 * 1024 * 1024, // 分片大小 50MB
         uploadProgresses: [], // 保存每个文件的上传进度
         currentChunks: [], // 保存每个文件的当前上传分片索引
         totalChunks: [], // 保存每个文件的总分片数
@@ -1325,7 +1325,7 @@ export default {
         totalUploadProgress: 0, // 总的上传进度
         totalUploadSize: 0, // 总的上传大小
         uploadedSize: 0, // 当前已上传的大小
-        md5CalculationComplete: false, // MD5 计算是否完成
+        md5CalculationComplete: true, // MD5 计算是否完成
         isClose: false,
         progressStatus:'active',
 
@@ -1346,6 +1346,26 @@ export default {
     }
   },
   computed: {
+    getShowMore(){
+      return (type) => {
+        const key1 = !this.currentFileDetial && !this.copyEnabled && !this.moveEnabled && !this.deleteEnabled && !this.dispatchEnabled && !this.currentTreeNode && this.isTrashView
+        && !(this.folibRepository.layout === 'Docker' && this.currentTreeNode && this.currentTreeNode.type === 'file' && this.currentFileDetial && this.currentFileDetial.artifact&&!this.isTrashView)
+        && !(this.folibRepository.layout === 'Raw' && this.currentTreeNode && this.currentTreeNode.type === 'dir'&&!this.isTrashView)
+
+        const key2 = !this.currentFileDetial && !this.copyEnabled && !this.moveEnabled && !this.deleteEnabled && !this.dispatchEnabled && !this.currentTreeNode && this.isTrashView
+        && !(this.folibRepository.layout === 'Docker' && this.currentTreeNode && this.currentTreeNode.type === 'file' && this.currentFileDetial && this.currentFileDetial.artifact&&!this.isTrashView)
+        if(type){
+          if(key1){
+            return false
+          }
+        }else{
+          if(key2){
+            return false
+          }
+        }
+        return true
+      }
+    },
     newDetailPage(){
       return this.$store.state.newDetailPage
     },
@@ -1616,7 +1636,8 @@ export default {
                       let result = artifactCheck(
                           this.folibRepository,
                           fileName,
-                          item.size
+                          item.size,
+                          this.convertToBytes(this.uploadMaxSize.size, this.uploadMaxSize.unit)
                       )
                       if (!result.check)
                       {
@@ -1659,7 +1680,8 @@ export default {
             let result = artifactCheck(
               this.folibRepository,
               fileName,
-              item.size
+              item.size,
+                this.convertToBytes(this.uploadMaxSize.size, this.uploadMaxSize.unit)
             )
             if (!result.check) {
               this.message('warning', result.msg)
@@ -1698,7 +1720,8 @@ export default {
                       let result = artifactCheck(
                           this.folibRepository,
                           fileName,
-                          item.size
+                          item.size,
+                          this.convertToBytes(this.uploadMaxSize.size, this.uploadMaxSize.unit)
                       )
                       if (!result.check) {
                           this.message('warning', result.msg)
@@ -1860,7 +1883,8 @@ export default {
               let result = artifactCheck(
                 this.folibRepository,
                 fileName,
-                item.size
+                item.size,
+                  this.convertToBytes(this.uploadMaxSize.size, this.uploadMaxSize.unit)
               )
               if (!result.check) {
                 this.message('warning', result.msg)
@@ -3120,6 +3144,7 @@ export default {
           this.totalUploadProgress = Math.floor((this.uploadedSize / this.totalUploadSize) * 100);
           if( this.totalUploadProgress ===100){
               this.progressStatus = 'success';
+              this.md5CalculationComplete = true;
           }
           //console.log("uploadedChunkSize:", uploadedChunkSize,"totalUploadProgress:", this.totalUploadProgress,"totalUploadSize:", this.totalUploadSize,"uploadedSize:", this.uploadedSize)
       },

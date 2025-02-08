@@ -158,6 +158,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
     @PostMapping(value = "/upload-files")
     @ApiOperation(value = "文件上传(支持批量)", notes = "文件上传(支持批量)")
     @PermissionCheck(resourceKey = "ARTIFACTS_DEPLOY", storageKey = "storageId", repositoryKey = "repostoryId")
+    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT,target ="#storageId + '/' + #repositoryId+ '/' + #filePathMap + '/' + #files[0].getOriginalFilename()")
     public ResponseEntity upload(@RequestParam("files") MultipartFile[] files,
                                  @RequestParam("storageId") String storageId,
                                  @RequestParam("repostoryId") String repositoryId,
@@ -173,7 +174,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
     }
 
     @PostMapping(value = "/upload")
-    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT,target ="#storageId + '-'+ #repositoryId+'-'+ #parseArtifact.replaceAll('.*\\\"filePath\\\":\\\"([^\\\"]*)', '$1').replaceAll('^.*/', '').replaceAll('\\\".*', '')" )
+    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT,target ="#storageId + '/'+ #repositoryId+'/'+ #parseArtifact.replaceAll('.*\\\"filePath\\\":\\\"([^\\\"]*)', '$1').replaceAll('^.*/', '').replaceAll('\\\".*', '')" )
     @ApiOperation(value = "文件上传", notes = "文件上传")
     @PermissionCheck(resourceKey = "ARTIFACTS_DEPLOY", storageKey = "storageId", repositoryKey = "repositoryId")
     public ResponseEntity upload(
@@ -319,6 +320,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
         }
     }
 
+    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT,target ="#storageId + '/' + #repositoryId+ '/' + #path ")
     @PostMapping(value = "/header/slice/upload", consumes = {"application/octet-stream"})
     @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
     public Result<Boolean> sliceUploadByHeader(
@@ -387,6 +389,7 @@ public class ArtifactPromotionController extends BaseArtifactController {
     }
 
 
+    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT,target ="#storageId + '/' + #repositoryId+ '/' + #path + '/' + #fileName")
     @PostMapping(value = "/slice/upload-web",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PermissionCheck(resourceKey = "ARTIFACTS_DEPLOY", storageKey = "storageId", repositoryKey = "repositoryId", pathKey = "path")
     public ResponseEntity<?> sliceUploadWeb3(MultipartHttpServletRequest request,

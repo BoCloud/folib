@@ -9,7 +9,7 @@
                 </a-col>
                 <a-col :span="3" class="ml-10">
                     <a-select v-model="storageId" :placeholder="$t('Permissions.EnterTheStorageQuery')" showSearch
-                        allowClear style="width: 100%" @change="searchPermissions()" optionFilterProp="value">
+                        allowClear style="width: 100%" @change="getRepositoryList" optionFilterProp="value">
                         <a-select-option v-for="(item, index) in storageList" :key="`${index}`" :value="item.id">
                             {{ item.id }}
                         </a-select-option>
@@ -18,7 +18,7 @@
                 <a-col :span="3" class="ml-10">
                     <a-select v-model="repositoryId" :placeholder="$t('Permissions.EnterTheRepositoryQuery')" show-search
                         allowClear @change="searchPermissions()" style="width: 100%">
-                        <a-select-option v-for="item in repositoryList" :key="item.key" :value="item.key">
+                        <a-select-option v-for="item in repositoryList" :key="item.id" :value="item.id">
                             {{ item.id }}
                         </a-select-option>
                     </a-select>
@@ -83,7 +83,7 @@
 <script>
 import CreateModal from './components/modalPermission.vue'
 import { getPermissionList, deletePermission } from "@/api/permissions";
-import { getStorages, getStoragesAndRepositories } from "@/api/folib";
+import { getStorages, getLibraryFilter, getStoragesAndRepositories} from "@/api/folib";
 
 export default {
     name: "index",
@@ -157,7 +157,6 @@ export default {
     mounted() {
         this.queryList()
         this.getStorageList()
-        this.getRepositoryList()
     },
     methods: {
         userCreate(id, isView, isAdmin) {
@@ -179,13 +178,13 @@ export default {
                 limit: this.limit,
                 matchRoleName: this.name,
                 storageId: this.storageId || '',
-                repositoryId: this.repositoryId ? this.repositoryId.split('/')[1] : '',
+                repositoryId: this.repositoryId,
                 path: this.path
             }).then(res => {
                 if (res && res.data) {
                     const sortedData = res.data.rows.sort((a, b) => {
                         return b.isDefault - a.isDefault;
-                    });
+                    })
                     this.permissionsList = sortedData
                     this.total = res.data.total
                 }
@@ -202,17 +201,14 @@ export default {
                 this.storageList = res.storages;
             })
         },
-        getRepositoryList() {
-            getStoragesAndRepositories().then(res => {
-                this.repositoryList = []
-                res.forEach(item => {
-                    item.children.forEach(ele => {
-                        ele.key = ele.key.replace(',', '/');
-                    })
-                    this.repositoryList.push(...item.children)
-                })
+        getRepositoryList(val) {
+            this.repositoryId = null
+            this.repositoryList = []
+            this.searchPermissions()
+            getLibraryFilter(val).then(res => {
+                this.repositoryList = res.repositories
             })
-        },
+        }
     }
 }
 </script>

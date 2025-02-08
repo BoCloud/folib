@@ -35,6 +35,7 @@ export default {
     'HaveAccess': '你选择的管理员/成员列表将拥有该存储空间的使用权限',
     'RegularCleaning': '删除:只删除存储配置，每日0点会定时清理',
     'IfForcedDeletion': '若强制删除则无法恢复仓库列表',
+    'successfulOperation':'操作成功',
     'Edit': '修改',
     'Delete': '删除',
     'create': '新建',
@@ -63,6 +64,7 @@ export default {
     'LayoutType': '你选择的是{layout}仓库类型',
     'DifferentProcess': '选择不同的仓库策略要配置的流程不太一样',
     'KeywordPrompt': '不要出现仓库类型的关键字',
+    'nameRepeat':'仓库名称重复请重新填写',
     'Strategy': '策略',
     'Local': '本地',
     'Agent': '代理',
@@ -278,6 +280,7 @@ export default {
     'cargo':'在 Rust 生态系统中，Cargo 是官方的构建系统和包管理器，支持依赖管理与构建自动化。Cargo 仓库可代理并缓存 Rust 官方依赖提高拉取速度，并可创建本地仓库存储私有 Rust 依赖或者构建后的制品包。',
     // 'rust':'rust',
     // 'php':'php',
+    'ollama':'Ollama 是一款AI模型快速部署工具，让用户能够在本地轻松运行和管理各类大语言模型，极大提升使用灵活性与数据隐私性。支持通过代理从 Ollama 拉取模型，还能将模型本地化存储，为用户私有化模型团队共享，便捷使用。',
     
     'StorageThreshold': '存储阈值',
 }

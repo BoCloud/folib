@@ -36,6 +36,7 @@ export default {
     'HaveAccess': 'The administrator/member list you select will have access to the storage space.',
     'RegularCleaning': 'Delete: Only storage configurations are deleted. The storage configurations are deleted periodically at 00:00 every day.',
     'IfForcedDeletion': 'The repository list cannot be recovered if it is forcibly deleted.',
+    'successfulOperation':'Successful operation',
     'Edit': 'Edit',
     'Delete': 'Delete',
     'ForcedDeletion': 'Forced deletion',
@@ -64,6 +65,7 @@ export default {
     'LayoutType': 'You have selected the {layout} repository type',
     'DifferentProcess': 'The process for configuring different warehouse policies is different',
     'KeywordPrompt': 'Do not appear warehouse type keywords',
+    'nameRepeat':'Please fill in the warehouse name again',
     'Strategy': 'Strategy',
     'Local': 'Local',
     'Agent': 'Agent',
@@ -278,5 +280,6 @@ export default {
     'cargo':'In the Rust ecosystem, Cargo is the official build system and package manager for dependency management and build automation, and the Cargo repository proxies and caches official Rust dependencies for faster pulling and creates local repositories for storing private Rust dependencies or built artifact packages.',
     // 'rust':'rust',
     // 'php':'php',
+    'ollama':'Ollama is a tool for rapid deployment of AI models. It enables users to effortlessly run and manage various large language models locally, significantly enhancing flexibility in usage and data privacy. It supports pulling models from Ollama via a proxy and localizing model storage, facilitating sharing within private model teams for convenient utilization.',
     'StorageThreshold': 'Storage Threshold',
 }

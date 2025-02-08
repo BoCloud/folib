@@ -156,6 +156,7 @@ public class PubArtifactController
         return ResponseEntity.ok(pubUpload);
     }
 
+    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT,target ="#storageId + '/' + #repositoryId + '/' + #file.getOriginalFilename()")
     @PostMapping(path = "{storageId}/{repositoryId}/deploy", consumes = MediaType.MULTIPART_FORM_DATA)
     @ApiOperation(value = "Performs deploy process by uploading the package.", nickname = "deploy")
     @ApiResponses({@ApiResponse(code = 204, message = "No Content"), @ApiResponse(code = 400, message = "Bad Request"), @ApiResponse(code = 500, message = "Internal server error")})

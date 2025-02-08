@@ -294,7 +294,7 @@
               'email=yours4@example.com\n' +
               '_auth=YWRtaW46cGFzc3dvcmQ=\n' +
               '\n' +
-              '; `_auth` ' + this.$t('Store.IS') + ' base64 token\n' +
+              '; `_auth` ' + this.$t('Store.IS') + ' base64 token'+ this.$t('Store.authDescription') + '\n' +
               '; ' + this.$t('Store.NpmAuth') + ':\n' +
               '; username=admin\n' +
               '; _password=password'
@@ -600,7 +600,7 @@
               'email=yours4@example.com\n' +
               '_auth=YWRtaW46cGFzc3dvcmQ=\n' +
               '\n' +
-              '; `_auth` ' + this.$t('Store.IS') + ' base64 token\n' +
+              '; `_auth` ' + this.$t('Store.IS') + ' base64 token'+ this.$t('Store.authDescription') + '\n' +
               '; ' + this.$t('Store.NpmAuth') + ':\n' +
               '; username=admin\n' +
               '; _password=password'
@@ -1435,9 +1435,9 @@ export default {
     },
       cargoConfiguration() {
         if(this.folibRepository.type === "hosted"){
-            return `[registry]\ndefault = "folib"\n\n[registries.folib]\nindex = "sparse+${this.baseDomain}storages/${this.folibRepository.storageId}/${this.folibRepository.id}/index/"`
+            return `[registry]\ndefault = "folib"\n\n[registries.folib]\nindex = "sparse+${this.baseDomain}/storages/${this.folibRepository.storageId}/${this.folibRepository.id}/index/"`
         }else {
-            return `[source.crates-io]\nreplace-with = 'folib-remote'\n[source.folib-remote]\nregistry = "sparse+${this.baseDomain}storages/${this.folibRepository.storageId}/${this.folibRepository.id}/index/"`
+            return `[source.crates-io]\nreplace-with = 'folib-remote'\n[source.folib-remote]\nregistry = "sparse+${this.baseDomain}/storages/${this.folibRepository.storageId}/${this.folibRepository.id}/index/"`
         }
       },
       cargoConfigurationToken() {

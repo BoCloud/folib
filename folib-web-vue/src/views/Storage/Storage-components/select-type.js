@@ -155,6 +155,12 @@ const typeList = [
         name:'Swift',
         disabled:true,
     },
+    {
+        src:'images/folib/ollama.svg',
+        type:'ollama',
+        name:'Ollama',
+        disabled:true,
+    },
 ]
 
 export default typeList
