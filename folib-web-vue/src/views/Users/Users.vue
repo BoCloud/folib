@@ -360,7 +360,7 @@ export default ({
           { required: this.passwordRequired, trigger: 'blur', validator: checkPassword }
         ],
         email: [
-          { required: true, message: `${this.$t('Users.EnterYourEmail')}`, trigger: 'blur' },
+          { required: false, message: `${this.$t('Users.EnterYourEmail')}`, trigger: 'blur' },
           { type: 'email', message: `${this.$t('Users.EnterCorrectEmail')}`, trigger: 'blur' },
         ],
       },
