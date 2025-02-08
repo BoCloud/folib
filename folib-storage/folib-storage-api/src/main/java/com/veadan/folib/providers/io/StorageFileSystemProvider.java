@@ -168,10 +168,10 @@ public abstract class StorageFileSystemProvider
         }
 
         RepositoryPath repositoryPath = (RepositoryPath) path;
-        if (!Files.exists(repositoryPath.getTarget())) {
-            throw new NoSuchFileException(unwrap(repositoryPath).toString());
-        }
-
+//        if (!Files.exists(repositoryPath.getTarget())) {
+//            throw new NoSuchFileException(unwrap(repositoryPath).toString());
+//
+//        }
         if (!Files.isDirectory(repositoryPath)) {
             doDeletePath(repositoryPath, force, true);
 
@@ -276,7 +276,9 @@ public abstract class StorageFileSystemProvider
         }
 
         RepositoryPath trashPath = getTrashPath(repositoryPath);
-
+        if (!Files.exists(repositoryPath)) {
+            return;
+        }
         try {
             Files.move(repositoryPath.getTarget(),
                     trashPath.getTarget(),

@@ -539,7 +539,7 @@
     <!-- 复制 -->
     <a-modal v-model="showOperationFormModal" :footer="null" :forceRender="true" :centered="true"
       :title="operationTitle" on-ok="showCopyFormModal = false">
-      <a-form :form="operationForm" ref="operationForm" layout="vertical" @submit.prevent="handleOperationSubmit">
+      <a-form :form="copyOperationForm" ref="copyOperationForm" layout="vertical" @submit.prevent="handleCopyOperationSubmit">
         <a-row :gutter="[24]">
           <a-col :span="24">
             <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" :colon="false"
@@ -552,11 +552,10 @@
                       {
                         required: true,
                         message: $t('Store.SelectTargetWarehouse'),
-                        type: 'array',
                       },
                     ],
                   },
-                ]" style="width: 100%" treeCheckable :maxTagCount="6"
+                ]" style="width: 100%" :treeCheckable="operationTitle.indexOf(this.$t('Store.Move')) !== -1 ? false : true" :multiple="operationTitle.indexOf(this.$t('Store.Move')) !== -1 ? false : true" :maxTagCount="operationTitle.indexOf(this.$t('Store.Move')) !== -1 ? 1 : 6"
                   :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }" :tree-data="repositories"
                   :placeholder="$t('Store.SelectTargetWarehouse')" allow-clear show-search
                   :replaceFields="{ children: 'children', title: 'key', key: 'key', value: 'key' }">
@@ -686,7 +685,7 @@
                   valuePropName: 'fileList',
                   getValueFromEvent: normFile,
                 },
-              ]" name="files" :multiple="false" :beforeUpload="beforeUpload" @change="onFileChange" list-type="text" accept=".gz,.tar,.zip,.giz">
+              ]" name="files" :multiple="false" :beforeUpload="beforeUpload" @change="onFileChange" list-type="text" accept="*">
                               <a-button>
                                   <a-icon type="upload"/>
                                   {{ $t('Store.SelectFile') }}
@@ -1193,6 +1192,7 @@ export default {
       dockerCode: { ubuntu: null, centos: null, windows: null, macos: null },
       // 预览
       operationForm: this.$form.createForm(this, { name: 'operation_form' }),
+      copyOperationForm: this.$form.createForm(this, { name: 'copy_operation_form' }),
       viewCodeVisible: false,
       viewCodes: null,
       locale: zhCN,
@@ -2161,10 +2161,20 @@ export default {
     handleMenuClick(active) {
       console.log(active)
       this.operationForm.resetFields()
+      this.copyOperationForm.resetFields()
       this.isTargetPatDisabled = this.folibRepository.layout !== 'Raw';
       this.$nextTick(() => {
         if (this.$refs.operationForm) {
           this.operationForm.setFieldsValue({
+            path: this.currentTreeNode.artifactPath,
+            targetPath: this.currentTreeNode.artifactPath,
+            type: 1,
+          })
+        }
+      })
+      this.$nextTick(() => {
+        if (this.$refs.copyOperationForm) {
+          this.copyOperationForm.setFieldsValue({
             path: this.currentTreeNode.artifactPath,
             targetPath: this.currentTreeNode.artifactPath,
             type: 1,
@@ -2311,6 +2321,116 @@ export default {
         }
       })
       return artifactoryRepositoryType
+    },
+    handleCopyOperationSubmit(e) {
+      e.preventDefault()
+      this.copyOperationForm.validateFields((err, values) => {
+        if (!err) {
+          let targetRepositoyList = []
+          let targetDispatchRepositoryList = []
+          let targetRepositoriesArr = null
+          if (typeof(values.targetRepositories) == 'string') {
+            targetRepositoriesArr = [values.targetRepositories]
+          } else {
+            targetRepositoriesArr = values.targetRepositories
+          }
+          targetRepositoriesArr.forEach(item => {
+            let split = item.split(',')
+            let arrayLength = split.length
+            if (this.operationTitle.indexOf(this.$t('Store.Distribute')) !== -1) {
+              let json = {}
+              if (this.artifactoryType === 1) {
+                let dispatchClusterEnName = split[0]
+                let dispatchTargetStorageId = split[1]
+                let dispatchTargetReopsitoryId = ''
+                if (arrayLength === 3) {
+                  dispatchTargetReopsitoryId = split[2]
+                }
+                json = {
+                  dispatchClusterEnName: dispatchClusterEnName,
+                  targetStorageId: dispatchTargetStorageId,
+                  targetRepositoryId: dispatchTargetReopsitoryId
+                }
+                json.artifactoryRepositoryType = 'inner'
+              } else {
+                let dispatchClusterEnName = split[0]
+                let dispatchTargetReopsitoryId = split[1]
+                json = {
+                  dispatchClusterEnName: dispatchClusterEnName,
+                  targetRepositoryId: dispatchTargetReopsitoryId
+                }
+                json.artifactoryRepositoryType = this.getArtifactoryRepositoryType(item)
+              }
+              targetDispatchRepositoryList.push(json)
+            } else {
+              targetRepositoyList.push({
+                targetStorageId: split[0],
+                targetRepositoryId: split[1]
+              })
+            }
+          })
+          let data = {
+            path: values.path,
+            targetPath: values.targetPath,
+            srcStorageId: this.folibRepository.storageId,
+            srcRepositoryId: this.folibRepository.id,
+            targetRepositoyList: targetRepositoyList
+          }
+          let dispatchData = {
+            path: values.path,
+            targetPath: values.targetPath,
+            srcStorageId: this.folibRepository.storageId,
+            srcRepositoryId: this.folibRepository.id,
+            targetDispatchRepositoryList: targetDispatchRepositoryList,
+            type: this.folibRepository.type,
+            layout: this.folibRepository.layout,
+            policy: this.folibRepository.policy
+          }
+          if (this.operationTitle.indexOf(this.$t('Store.Copy')) !== -1) {
+            artifactCopy(data)
+              .then(res => {
+                this.successMsg(this.$t('Store.Copying'))
+                this.operationFormModalClose()
+                this.reload()
+              })
+              .catch(err => {
+                this.$notification['error']({
+                  message: err.response.data.error,
+                  description: ''
+                })
+              })
+              .finally(() => { })
+          } else if (this.operationTitle.indexOf(this.$t('Store.Move')) !== -1) {
+            artifactMove(data)
+              .then(res => {
+                this.successMsg(this.$t('Store.Moving'))
+                this.operationFormModalClose()
+                this.reload()
+              })
+              .catch(err => {
+                this.$notification['error']({
+                  message: err.response.data.error,
+                  description: ''
+                })
+              })
+              .finally(() => { })
+          } else if (this.operationTitle.indexOf(this.$t('Store.Distribute')) !== -1) {
+            artifactDispatch(dispatchData)
+              .then(res => {
+                this.successMsg(this.$t('Store.Distributing'))
+                this.operationFormModalClose()
+                this.reload()
+              })
+              .catch(err => {
+                this.$notification['error']({
+                  message: err.response.data.error,
+                  description: ''
+                })
+              })
+              .finally(() => { })
+          }
+        }
+      })
     },
     handleOperationSubmit(e) {
       e.preventDefault()

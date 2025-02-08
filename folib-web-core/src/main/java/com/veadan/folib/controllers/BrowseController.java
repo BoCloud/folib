@@ -477,7 +477,7 @@ public class BrowseController
                                     targetPath.setArtifact(artifact);
                                 }
                             }
-                            artifactManagementService.validateAndStore(targetPath,is);
+                            artifactManagementService.store(targetPath,is);
                             artifactMetadataService.rebuildMetadata(storageId,repositoryId,targetArtifactoryPath);
 
                         }catch (Exception e){
