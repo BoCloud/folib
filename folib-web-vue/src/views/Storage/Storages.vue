@@ -461,7 +461,7 @@
                 <a-step v-if="folibRepository.type === 'group'" :title="$t('Storage.CombinationConfiguration')"/>
                 <a-step :title="$t('Storage.PermissionSetting')" :disabled="isRepoExist" />
                 <a-step :title="$t('Storage.TimingPolicy')" :disabled="isRepoExist" />
-                <a-step :title="$t('Storage.FederatedRepository')"  :disabled="isRepoExist"/>
+<!--                <a-step :title="$t('Storage.FederatedRepository')"  :disabled="isRepoExist"/>-->
                 <a-step :title="$t('Storage.Scan')"  :disabled="isRepoExist"/>
                 <!-- <a-step title="定时策略" /> -->
             </a-steps>
@@ -1074,26 +1074,26 @@
             <a-card v-else-if="(step === 4 && folibRepository.type === 'hosted') ||
             (  folibRepository.type === 'proxy' && step === 5) ||
             (step === 5 && folibRepository.type === 'group')" :bordered="false" class="header-solid">
-                <a-row>
-                    <a-col :span="24">
-                        <UnionRepository ref="unionRepository" :isShow="isShow" :folibRepository="this.folibRepositoryData" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></UnionRepository>
-                    </a-col>
-                </a-row>
-                <a-row>
-                    <a-col :span="12">
-                        <a-button @click="moveStep(-1)" class="px-25">{{ $t('Storage.Back') }}</a-button>
-                    </a-col>
-                    <a-col :span="12" style="text-align: right;">
-                        <a-button type="primary" @click="doUnionRepository" class="px-25">{{ $t('Storage.Next') }}</a-button>
-                    </a-col>
-                </a-row>
+<!--                <a-row>-->
+<!--                    <a-col :span="24">-->
+<!--                        <UnionRepository ref="unionRepository" :isShow="isShow" :folibRepository="this.folibRepositoryData" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></UnionRepository>-->
+<!--                    </a-col>-->
+<!--                </a-row>-->
+<!--                <a-row>-->
+<!--                    <a-col :span="12">-->
+<!--                        <a-button @click="moveStep(-1)" class="px-25">{{ $t('Storage.Back') }}</a-button>-->
+<!--                    </a-col>-->
+<!--                    <a-col :span="12" style="text-align: right;">-->
+<!--                        <a-button type="primary" @click="doUnionRepository" class="px-25">{{ $t('Storage.Next') }}</a-button>-->
+<!--                    </a-col>-->
+<!--                </a-row>-->
 
 
 
-            </a-card>
-            <a-card v-else-if="(step === 5 && folibRepository.type === 'hosted') ||
-            (  folibRepository.type === 'proxy' && step === 6) ||
-            (step === 6 && folibRepository.type === 'group')" :bordered="false" class="header-solid">
+<!--            </a-card>-->
+<!--            <a-card v-else-if="(step === 5 && folibRepository.type === 'hosted') ||-->
+<!--            (  folibRepository.type === 'proxy' && step === 6) ||-->
+<!--            (step === 6 && folibRepository.type === 'group')" :bordered="false" class="header-solid">-->
                 <a-row>
                     <a-col :span="24">
                         <Scan ref="scan" :isShow="isShow" :folibRepository="this.folibRepositoryData" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></Scan>
