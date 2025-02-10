@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableSet;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
+import com.veadan.folib.cron.jobs.fields.CronJobAliasNamedField;
+import com.veadan.folib.cron.jobs.fields.CronJobBooleanTypeField;
 import com.veadan.folib.cron.jobs.fields.CronJobField;
 import com.veadan.folib.cron.jobs.fields.CronJobNamedField;
 import com.veadan.folib.cron.jobs.fields.CronJobOptionalField;
@@ -12,6 +14,7 @@ import com.veadan.folib.cron.jobs.fields.CronJobStorageIdAutocompleteField;
 import com.veadan.folib.cron.jobs.fields.CronJobStringTypeField;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.metadata.indexer.RpmRepoIndexer;
+import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ArtifactResolutionService;
@@ -28,17 +31,23 @@ import org.w3c.dom.NodeList;
 import javax.annotation.Resource;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * @author huayanjun
@@ -50,6 +59,10 @@ public class SyncRemoteRpmCronJob extends JavaCronJob {
     private static final String PROPERTY_STORAGE_ID = "storageId";
 
     private static final String PROPERTY_REPOSITORY_ID = "repositoryId";
+
+    private static final String BACKUP_INCREASE = "backupIncrease";
+
+    public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMdd");
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -75,6 +88,10 @@ public class SyncRemoteRpmCronJob extends JavaCronJob {
     @Resource
     private ArtifactResolutionService artifactResolutionService;
 
+
+    @Resource
+    private ReplicationBackup replicationBackup;
+
     private final String DICT_TYPE = "repository_replication_task";
 
 
@@ -82,7 +99,9 @@ public class SyncRemoteRpmCronJob extends JavaCronJob {
             new CronJobStorageIdAutocompleteField(new CronJobStringTypeField(
                     new CronJobOptionalField(new CronJobNamedField(PROPERTY_STORAGE_ID)))),
             new CronJobRepositoryIdAutocompleteField(new CronJobStringTypeField(
-                    new CronJobOptionalField(new CronJobNamedField(PROPERTY_REPOSITORY_ID)))));
+                    new CronJobOptionalField(new CronJobNamedField(PROPERTY_REPOSITORY_ID)))),
+            new CronJobBooleanTypeField(
+                    new CronJobOptionalField(new CronJobAliasNamedField(new CronJobNamedField(BACKUP_INCREASE), "是否备份增量信息"))));
 
     @Override
     protected void executeTask(CronTaskConfigurationDto config) throws Throwable {
@@ -106,10 +125,11 @@ public class SyncRemoteRpmCronJob extends JavaCronJob {
         Dict query = new Dict().setDictType(DICT_TYPE).setDictKey(repository.getStorageIdAndRepositoryId());
         Dict lasted = dictService.selectLatestOneDict(query);
         // 没有同步过 开始全量同步
-        replication(repository, lasted);
+        boolean backup = Boolean.parseBoolean(config.getProperty(BACKUP_INCREASE)) && Objects.nonNull(lasted);
+        replication(repository, lasted, backup);
     }
 
-    void replication(Repository repository, Dict dict) {
+    void replication(Repository repository, Dict dict, boolean backup) {
         String repomDistPath = tempPath + "/replication/" + repository.getStorage().getId() + "/" + repository.getId() + "/repomd.xml";
         String repomdUrl = repository.getRemoteRepository().getUrl() + "/repodata/repomd.xml";
         artifactComponent.getArtifactByUrl(repository, repomdUrl, repomDistPath);
@@ -119,6 +139,7 @@ public class SyncRemoteRpmCronJob extends JavaCronJob {
                 return;
             }
             dictService.saveDict(newDict);
+            List<String> diff;
             if (dict == null || !dict.getDictValue().equals(newDict.getDictValue())) {
                 log.info("开始获取新制品");
                 String primaryDistPath = tempPath + "/replication/" + repository.getStorage().getId() + "/" + repository.getId() + "/" + newDict.getDictValue();
@@ -131,7 +152,7 @@ public class SyncRemoteRpmCronJob extends JavaCronJob {
                     previous = parsePrimaryXml(Paths.get(prePath));
                 }
                 List<String> current = parsePrimaryXml(Paths.get(primaryDistPath));
-                List<String> diff = new LinkedList<>(current);
+                diff = new LinkedList<>(current);
                 diff.removeAll(previous);
                 for (String path : diff) {
                     artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(), path);
@@ -140,7 +161,15 @@ public class SyncRemoteRpmCronJob extends JavaCronJob {
                 RpmRepoIndexer rpmRepoIndexer = new RpmRepoIndexer(repositoryPathResolver, artifactManagementService, tempPath);
                 rpmRepoIndexer.indexWriter(repository);
                 log.info("更新索引完成");
+                if (backup) {
+                    log.info("开始备份");
+                    // 1.压缩要备份的文件 2.是否存在同名的raw仓库 3.存入对应仓库
+                    String date= DATE_FORMAT.format(new Date());
+                    String path=date+"/"+"backUp.zip";
+                    replicationBackup.backUpByPath(repository,diff,path);
+                }
             }
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -191,6 +220,9 @@ public class SyncRemoteRpmCronJob extends JavaCronJob {
         } catch (Exception e) {
             return rpmFiles;
         }
-
     }
+
+
+
+
 }

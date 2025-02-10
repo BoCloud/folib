@@ -1456,6 +1456,36 @@ public class ArtifactComponent {
         }
     }
 
+    public String getHtml(Repository repository, String url) {
+        Response response = null;
+        String html=null;
+        int statusCode = 0;
+        String parentPath = "";
+        try {
+            Client client = clientPool.getRestClient(repository.getStorage().getId(), repository.getId());
+            WebTarget target = client.target(url);
+            log.info("get html {}",url);
+            commonComponent.authentication(target, repository.getRemoteRepository().getUsername(), repository.getRemoteRepository().getPassword());
+            response = target.request().get();
+            statusCode = response.getStatus();
+            if (statusCode == HttpStatus.OK.value()) {
+                html = response.readEntity(String.class);
+            } else {
+                log.error("Get html url [{}] error response statusCode [{}]", url, statusCode);
+            }
+        } catch (Exception ex) {
+            log.error("Get html url [{}] response statusCode [{}] error [{}]", url, statusCode, ExceptionUtils.getStackTrace(ex));
+        } finally {
+            if (Objects.nonNull(response)) {
+                response.close();
+            }
+            if (StringUtils.isNotBlank(parentPath)) {
+                FileUtil.del(new File(parentPath));
+            }
+        }
+        return html;
+    }
+
     private boolean isRelativePath(String href) {
         // 判断是否以 "http://" 或 "https://" 开头
         return !href.startsWith("http://") && !href.startsWith("https://");

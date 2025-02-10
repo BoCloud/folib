@@ -15,4 +15,6 @@ export default {
     'FillInTheCronExpression': '请填写cron表达式',
     'Failure': '失败',
     'AddArtifactPath': '添加制品目录',
+    'AddSycnScope':'添加同步范围',
+    'SyncScope':'发行版/组件/架构'
 }
