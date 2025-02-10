@@ -163,7 +163,7 @@ public class DebianArtifactCoordinates
             String architecture = matcher.group("architecture");
             String name = matcher.group("filename");
 
-            coordinates = DebianArtifactCoordinates.of(component, path, DebianConstant.PACKAGE_EXTENSION);
+            coordinates = DebianArtifactCoordinates.of(component, name, DebianConstant.PACKAGE_EXTENSION);
             coordinates.setDistribution(codename);
             coordinates.setArchitecture(architecture);
             coordinates.setVersion("1.0.0");
