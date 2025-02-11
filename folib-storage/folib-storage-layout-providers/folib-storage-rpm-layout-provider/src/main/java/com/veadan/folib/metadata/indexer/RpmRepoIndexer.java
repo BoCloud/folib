@@ -457,10 +457,10 @@ public class RpmRepoIndexer {
         for (Entry entry : metadata.getRequire()) {
             Element requiresEntryElement1 = doc.createElement("rpm:entry");
             requiresEntryElement1.setAttribute("name", entry.getName());
-            requiresEntryElement1.setAttribute("flags", entry.getFlags());
-            requiresEntryElement1.setAttribute("epoch", entry.getEpoch());
-            requiresEntryElement1.setAttribute("ver", entry.getVersion());
-            requiresEntryElement1.setAttribute("rel", entry.getRelease());
+            //requiresEntryElement1.setAttribute("flags", entry.getFlags());
+            //requiresEntryElement1.setAttribute("epoch", entry.getEpoch());
+            //requiresEntryElement1.setAttribute("ver", entry.getVersion());
+            //requiresEntryElement1.setAttribute("rel", entry.getRelease());
             requiresElement.appendChild(requiresEntryElement1);
         }
         formatElement.appendChild(requiresElement);

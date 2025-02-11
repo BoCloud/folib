@@ -303,16 +303,16 @@
           <prism-editor
             class="my-editor height-300"
             :value="
-              '[local_test]' +
+              `[folib]` +
               '\n' +
               'name=CentOS-$releasever - Base - mirrors.aliyun.com' +
-              '\n' +
-              'enabled=1' +
               '\n' +
               'baseurl=' +
               repositoryUrl +
               '/' +
               '\n' +
+              'enabled=1' +
+               '\n' +
               'gpgcheck=0'
             "
             :highlight="highlighterHandle"

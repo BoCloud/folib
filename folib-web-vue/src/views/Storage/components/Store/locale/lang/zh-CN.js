@@ -157,7 +157,7 @@ export default {
     'EngineerAllocation': '工程配置',
     'validCurrent': '该方式只对当前工程生效',
     'npmrcCode': '需要在仓库下创建.npmrc文件并填入如下：',
-    'RPMOperation': '在/etc/yum.repos.d/中添加一个local_test.repo文件,镜像服务器为阿里云,操作如下:',
+    'RPMOperation': `在/etc/yum.repos.d/中添加一个folib.repo文件,镜像服务器为阿里云,操作如下:`,
     'folibOperation': '将folib helm仓添加到本地操作步骤',
     'ChartPackage': '上传Chart包到Helm仓库',
     'HelmPlugin': '安装 helm-cm-push插件',
