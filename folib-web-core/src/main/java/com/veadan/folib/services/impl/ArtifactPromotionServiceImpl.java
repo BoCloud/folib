@@ -348,16 +348,15 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             Repository srcRepository = repositoryManagementService.getStorage(srcStorageId).getRepository(srcRepositoryId);
             final RepositoryPath srcRepositoryPath = repositoryPathResolver.resolve(srcRepository, artifactPromotion.getPath());
             // 多个目标仓库移动
-            for (TargetRepositoyDto x : artifactPromotion.getTargetRepositoyList()) {
-                String destStorageId = x.getTargetStorageId();
-                String destRepositoryId = x.getTargetRepositoryId();
-                if (destStorageId.equals(srcStorageId) && destRepositoryId.equals(srcRepositoryId) && artifactPromotion.getPath().equals(artifactPromotion.getTargetPath())) {
-                    return ResponseEntity.ok("Artifact move success");
-                }
-                log.info("Move [{}] from [{}] [{}] to [{}] [{}]...", artifactPromotion.getPath(), srcStorageId, srcRepositoryId, destStorageId,
-                        destRepositoryId);
-                singleFastSyncMove(artifactPromotion, srcRepository, destStorageId, destRepositoryId);
+            TargetRepositoyDto x = artifactPromotion.getTargetRepositoyList().get(0);
+            String destStorageId = x.getTargetStorageId();
+            String destRepositoryId = x.getTargetRepositoryId();
+            if (destStorageId.equals(srcStorageId) && destRepositoryId.equals(srcRepositoryId) && artifactPromotion.getPath().equals(artifactPromotion.getTargetPath())) {
+                return ResponseEntity.ok("Artifact move success");
             }
+            log.info("Move [{}] from [{}] [{}] to [{}] [{}]...", artifactPromotion.getPath(), srcStorageId, srcRepositoryId, destStorageId,
+                    destRepositoryId);
+            singleFastSyncMove(artifactPromotion, srcRepository, destStorageId, destRepositoryId);
             try {
                 artifactManagementService.delete(srcRepositoryPath, true);
             } catch (IOException e) {

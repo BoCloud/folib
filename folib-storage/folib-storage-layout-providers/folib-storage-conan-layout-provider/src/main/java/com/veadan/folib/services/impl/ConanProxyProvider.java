@@ -117,6 +117,19 @@ public class ConanProxyProvider implements ConanProvider {
     }
 
     @Override
+    public JSONObject getLocalRevisions(Repository repository, String artifactPath, String targetUrl) {
+        RepositoryPath indexJsonRepositoryPath = repositoryPathResolver.resolve(repository, artifactPath);
+        try {
+            if (Objects.nonNull(indexJsonRepositoryPath) && Files.exists(indexJsonRepositoryPath) && !RepositoryFiles.hasRefreshContent(indexJsonRepositoryPath)) {
+                return JSONObject.parseObject(Files.readString(indexJsonRepositoryPath));
+            }
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
+        return null;
+    }
+
+    @Override
     public JSONObject downloadUrls(Repository repository, String name, String version, String user, String channel) {
         String prefixUrl = repository.getRemoteRepository().getUrl();
         String suffixUrl = String.format("/v1/conans/%s/%s/%s/%s/download_urls", name, version, user, channel);

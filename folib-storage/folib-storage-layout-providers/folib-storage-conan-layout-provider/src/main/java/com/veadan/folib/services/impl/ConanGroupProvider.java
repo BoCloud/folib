@@ -11,6 +11,7 @@ import com.veadan.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.stereotype.Component;
 
@@ -90,6 +91,10 @@ public class ConanGroupProvider implements ConanProvider {
     @Override
     public JSONObject revisions(Repository repository, String artifactPath, String targetUrl) {
         JSONObject data = null, subData;
+        data = getLocalRevisions(repository, artifactPath, targetUrl);
+        if (Objects.nonNull(data) && !JSONUtil.isNull(data) && data.keySet().size() > 0) {
+            return data;
+        }
         for (String storageAndRepositoryId : getStorageAndRepositoryIdList(repository)) {
             try {
                 String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
@@ -100,6 +105,30 @@ public class ConanGroupProvider implements ConanProvider {
                 }
                 ConanProvider conanSearchProvider = conanProviderRegistry.getProvider(ConanSearchRepositoryTypeEnum.resolveType(subRepository.getType()));
                 subData = conanSearchProvider.revisions(subRepository, artifactPath, targetUrl);
+                if (Objects.nonNull(subData) && !JSONUtil.isNull(subData) && subData.keySet().size() > 0) {
+                    data = subData;
+                    break;
+                }
+            } catch (Exception ex) {
+                log.error(ExceptionUtils.getStackTrace(ex));
+            }
+        }
+        return data;
+    }
+
+    @Override
+    public JSONObject getLocalRevisions(Repository repository, String artifactPath, String targetUrl) {
+        JSONObject data = null, subData;
+        for (String storageAndRepositoryId : getStorageAndRepositoryIdList(repository)) {
+            try {
+                String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
+                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+                Repository subRepository = configurationManager.getRepository(sId, rId);
+                if (!isRepositoryResolvable(subRepository)) {
+                    continue;
+                }
+                ConanProvider conanSearchProvider = conanProviderRegistry.getProvider(ConanSearchRepositoryTypeEnum.resolveType(subRepository.getType()));
+                subData = conanSearchProvider.getLocalRevisions(subRepository, artifactPath, targetUrl);
                 if (Objects.nonNull(subData) && !JSONUtil.isNull(subData) && subData.keySet().size() > 0) {
                     data = subData;
                     break;

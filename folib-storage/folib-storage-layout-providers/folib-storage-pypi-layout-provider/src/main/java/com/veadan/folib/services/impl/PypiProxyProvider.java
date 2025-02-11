@@ -120,6 +120,20 @@ public class PypiProxyProvider implements PypiProvider {
         return null;
     }
 
+    @Override
+    public String getLocalPackages(Repository repository, String packageName, String targetUrl) {
+        String packageMetadataFilePath = PypiUtils.getRemotePackageIndexPath(packageName);
+        RepositoryPath packageHtmlRepositoryPath = repositoryPathResolver.resolve(repository, packageMetadataFilePath);
+        try {
+            if (Objects.nonNull(packageHtmlRepositoryPath) && Files.exists(packageHtmlRepositoryPath) && !RepositoryFiles.hasRefreshContent(packageHtmlRepositoryPath)) {
+                return Files.readString(packageHtmlRepositoryPath);
+            }
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
+        return null;
+    }
+
     private PypiSearchResult handleVersion(String storageId, String repositoryId, String packageTargetUrl, String finalPrefix, MatchResult matchResult) {
         String artifactName = "", artifactUrl = "";
         try {

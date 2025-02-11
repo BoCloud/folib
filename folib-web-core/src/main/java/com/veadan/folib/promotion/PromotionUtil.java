@@ -25,6 +25,7 @@ import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.forms.common.StorageTreeForm;
 import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
 import com.veadan.folib.mapper.ArtifactSyncSlaveRecordMapper;
+import com.veadan.folib.metadata.indexer.RpmRepoIndexer;
 import com.veadan.folib.model.request.ArtifactSliceUploadReq;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -77,6 +78,7 @@ import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
 import org.glassfish.jersey.media.multipart.internal.MultiPartWriter;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
@@ -182,6 +184,8 @@ public class PromotionUtil {
     private DistributedCacheComponent distributedCacheComponent;
     @Autowired
     private ArtifactMetadataService artifactMetadataService;
+    @Value("${folib.temp}")
+    private String tempPath;
 
     //100MB
     private static final long MAX_SLICE_BYTE_SIZE = 100L;
@@ -913,6 +917,7 @@ public class PromotionUtil {
         for (FutureTask<String> task : futureTaskList) {
             task.get();
         }
+        handleRpm(targetRepository);
     }
 
     public void copyFile(RepositoryPath sourcePath, RepositoryPath targetPath) throws IOException {
@@ -1064,6 +1069,19 @@ public class PromotionUtil {
         }
     }
 
+    private void handleRpm(Repository repository) {
+        try {
+            if (!ProductTypeEnum.Rpm.getFoLibraryName().equals(repository.getLayout())) {
+               return;
+            }
+            RpmRepoIndexer rpmRepoIndexer = new RpmRepoIndexer(repositoryPathResolver, artifactManagementService, tempPath);
+            rpmRepoIndexer.indexWriter(repository);
+        } catch (Exception ex) {
+            log.error("Rebuild rpm index storage [{}] repository [{}] error [{}]", repository.getStorage().getId(), repository.getId(), ExceptionUtils.getStackTrace(ex));
+        }
+
+    }
+
     public void handleFastMove(RepositoryPath sourcePath, Repository srcRepository, RepositoryPath targetPath, Repository targetRepository) throws Exception {
         List<RepositoryPath> list = RepositoryPathUtil.getPaths(srcRepository.getLayout(), sourcePath);
         List<FutureTask<String>> futureTaskList = Lists.newArrayList();
@@ -1080,6 +1098,7 @@ public class PromotionUtil {
         for (FutureTask<String> task : futureTaskList) {
             task.get();
         }
+        handleRpm(targetRepository);
     }
 
     private void repositoryPathMove(RepositoryPath sourcePath, Repository srcRepository, RepositoryPath targetPath, Repository targetRepository, RepositoryPath srcRepositoryPath, boolean isDocker) throws IOException {
@@ -1111,7 +1130,7 @@ public class PromotionUtil {
                             continue;
                         }
                         log.info("Do move srcRepositoryPath [{}] targetDockerSubsidiaryRepositoryPath [{}]", srcDockerSubsidiaryRepositoryPath, targetDockerSubsidiaryRepositoryPath);
-                        moveFile(srcDockerSubsidiaryRepositoryPath, targetDockerSubsidiaryRepositoryPath);
+                        copyFile(srcDockerSubsidiaryRepositoryPath, targetDockerSubsidiaryRepositoryPath);
                     }
                 }
             }
@@ -1128,7 +1147,7 @@ public class PromotionUtil {
                             continue;
                         }
                         log.info("Do move srcRepositoryPath [{}] targetManiFestPath [{}]", srcBlobPath, targetBlobPath);
-                        moveFile(srcBlobPath, targetBlobPath);
+                        copyFile(srcBlobPath, targetBlobPath);
                     }
                     if (StringUtils.isNotBlank(manifest.getDigest())) {
                         RepositoryPath srcMainFestPath = repositoryPathResolver.resolve(srcStorageId, srcRepositoryId, DockerLayoutProvider.MANIFEST + File.separator + manifest.getDigest());
@@ -1138,13 +1157,18 @@ public class PromotionUtil {
                             continue;
                         }
                         log.info("Do move srcRepositoryPath [{}] targetManiFestPath [{}]", srcMainFestPath, targetManiFestPath);
-                        moveFile(srcMainFestPath, targetManiFestPath);
+                        copyFile(srcMainFestPath, targetManiFestPath);
                     }
                 }
             }
         }
         log.info("Do move srcRepositoryPath [{}] targetRepositoryPath [{}]", srcRepositoryPath, targetRepositoryPath);
-        moveFile(srcRepositoryPath, targetRepositoryPath);
+        if (isDocker) {
+            copyFile(srcRepositoryPath, targetRepositoryPath);
+            RepositoryFiles.delete(srcRepositoryPath, true);
+        } else {
+            moveFile(srcRepositoryPath, targetRepositoryPath);
+        }
         handleMaven(targetRepositoryPath);
     }
 
