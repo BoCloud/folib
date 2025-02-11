@@ -834,7 +834,7 @@ public class ArtifactUploadTask implements Callable<String> {
 
     private void handlerDockerImage(final String storageId, final String repositoryId, final String path, final MultipartFile multipartFile, String baseUrl) throws IOException {
         log.info("Requested get docker application file {}/{}/{}.", storageId, repositoryId, path);
-        String url = String.join("/", baseUrl, storageId, repositoryId, path);
+        String url = String.join("/", baseUrl, repositoryId, path);
         DistributedCacheComponent distributedCacheComponent = SpringContextUtil.getApplicationContext().getBean(DistributedCacheComponent.class);
         String tag ;
         String value = distributedCacheComponent.get("DOCKER_UPLOAD_TAR_USE_BASE_URL");
@@ -850,7 +850,7 @@ public class ArtifactUploadTask implements Callable<String> {
             }
         } else {
             String port = SpringContextUtil.getApplicationContext().getEnvironment().getProperty("server.port");
-            tag = String.join("/", String.format("%s:%s", "127.0.0.1", port), storageId, repositoryId, path);
+            tag = String.join("/", String.format("%s:%s", "127.0.0.1", port), repositoryId, path);
         }
 
         Path tempDirectory =null;
