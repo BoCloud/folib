@@ -6,6 +6,7 @@ import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.write.metadata.WriteSheet;
 import com.alibaba.excel.write.metadata.fill.FillConfig;
+import com.alibaba.fastjson.JSONObject;
 import com.github.pagehelper.PageInfo;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -105,6 +106,7 @@ public class AlarmNoticeTask {
     }
 
     private void storageVerification() {
+        log.info("存储告警:开始处理");
         //获取所有存储空间
         Map<String, Storage> storages = getStorages();
         if(Objects.isNull(storages) || storages.isEmpty()){
@@ -129,7 +131,6 @@ public class AlarmNoticeTask {
             emaiList.addAll(alarmConfiguration.getEmails());
         }
 
-
         List<CapacityStorage> stroageList = Lists.newArrayList();
         for (String storageId : storages.keySet()) {
             StorageData storeData = (StorageData) storages.get(storageId);
@@ -142,6 +143,9 @@ public class AlarmNoticeTask {
                 capacityStorage.setPlatformStorageThreshold(alarmConfiguration.getStorageThreshold());
                 storageVerification(capacityStorage);
                 stroageList.add(capacityStorage);
+                log.info("存储告警:存储空间[{}]设置阈值:[{}],当前使用:[{}]", storeData.getId(),storeData.getStorageMaxSize(),storageBytesSize);
+            }else {
+                log.warn("存储告警:存储空间[{}]未设置阈值",storeData.getId());
             }
 
             if (isStorageAdmin) {
@@ -163,8 +167,9 @@ public class AlarmNoticeTask {
                     repoStorage.setStorageThreshold(repositoryDto.getStorageThreshold());
                     repositoriesVerification(repoStorage);
                     stroageList.add(repoStorage);
+                    log.info("存储告警:存储空间[{}]仓库[{}]设置阈值[{}],当前使用:[{}]", repositoryId, storeData.getId(),repositoryDto.getStorageMaxSize(),storageBytesSize);
                 }else {
-                    log.warn("存储告警:仓库[{}]存储空间[{}]不存在", repositoryId, storeData.getId());
+                    log.warn("存储告警:存储空间[{}]仓库[{}]未设置阈值", repositoryId, storeData.getId());
                 }
             }
         }
@@ -174,9 +179,11 @@ public class AlarmNoticeTask {
 
         if (isAdmin) {
             emaiList.addAll(users.stream().filter(user -> user.getRoles().contains("ADMIN")).map(UserDTO::getEmail).collect(Collectors.toList()));
+            log.info("存储告警:需要通知的管理员[{}]", JSONObject.toJSON(emaiList));
         }
         if (isStorageAdmin) {
             emaiList.addAll(users.stream().filter(user -> userList.contains(user.getUsername())).map(UserDTO::getEmail).collect(Collectors.toList()));
+            log.info("存储告警:需要通知的存储空间管理员[{}]", JSONObject.toJSON(emaiList));
         }
         if (emaiList.isEmpty()) {
             log.warn("存储告警:没有需要通知的用户的邮箱");
@@ -184,6 +191,7 @@ public class AlarmNoticeTask {
         }
 
         stroageList = stroageList.stream().filter(CapacityStorage::isNotice).collect(Collectors.toList());
+        log.info("存储告警:需要通知的存储空间[{}]", JSONObject.toJSON(stroageList.stream()));
         if (!stroageList.isEmpty()) {
             for (String email : emaiList) {
                 //发送邮件
@@ -192,8 +200,7 @@ public class AlarmNoticeTask {
         }else {
             log.warn("存储告警:没有需要通知的存储空间");
         }
-
-
+        log.info("存储告警:处理完成");
     }
 
 
