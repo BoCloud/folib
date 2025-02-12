@@ -199,7 +199,6 @@ public abstract class BaseArtifactController
                         range.getLimit() < fileSize
         );
     }
-
     public ResponseEntity<String> checkRepositoryAccess() {
         return new ResponseEntity<>("success", HttpStatus.OK);
     }
