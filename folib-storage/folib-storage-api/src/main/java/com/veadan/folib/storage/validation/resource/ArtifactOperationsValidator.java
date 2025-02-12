@@ -427,7 +427,7 @@ public class ArtifactOperationsValidator {
      * @param now
      */
     public void setNotificationValidFrom(String key, Instant now){
-        distributedCacheComponent.put(key, Long.toString(now.plus(4, ChronoUnit.HOURS).getEpochSecond()));
+        distributedCacheComponent.put(key, Long.toString(now.plus(4, ChronoUnit.MICROS).getEpochSecond()));
         //distributedCacheComponent.put(key, Long.toString(now.plus(1, ChronoUnit.MINUTES).getEpochSecond()));
     }
 
