@@ -274,6 +274,7 @@ public class AlarmNoticeTask {
 
         // 检查邮箱地址是否为空，为空则直接返回
         if (StringUtils.isBlank(email)) {
+            log.warn("存储告警:没有需要通知的用户的邮箱");
             return;
         }
         log.info("存储告警:开始发送邮件[{}]", email);
