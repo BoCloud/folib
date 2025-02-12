@@ -129,14 +129,6 @@ public abstract class BaseArtifactController
                 long fileSize = fileChannel.size(); // 获取文件总大小
                 String rangeHeader = httpHeaders.getFirst(HttpHeaders.RANGE);
                 logger.info("Range header: {}", rangeHeader);
-                // 无 Range 头时返回完整文件
-                if (StringUtils.isEmpty(rangeHeader)) {
-                    response.setHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(fileSize));
-                    fileChannel.transferTo(0, fileSize, responseChannel);
-                    logger.warn("RepositoryPath [{}] Download complete.", path.toString());
-                    return false;
-                }
-
                 // 解析范围请求
                 ByteRangeHeaderParser parser = new ByteRangeHeaderParser(rangeHeader);
                 List<ByteRange> ranges = parser.getRanges();
@@ -207,6 +199,7 @@ public abstract class BaseArtifactController
                         range.getLimit() < fileSize
         );
     }
+
     public ResponseEntity<String> checkRepositoryAccess() {
         return new ResponseEntity<>("success", HttpStatus.OK);
     }
