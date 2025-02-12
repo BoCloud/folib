@@ -125,8 +125,8 @@ public abstract class BaseArtifactController
             logger.debug("RepositoryPath [{}] Detected ranged request.", path.toString());
             try (FileChannel fileChannel = FileChannel.open(path);
                  WritableByteChannel responseChannel = Channels.newChannel(response.getOutputStream())) {
-
-                long fileSize = fileChannel.size(); // 获取文件总大小
+                // 获取文件总大小
+                long fileSize = fileChannel.size();
                 String rangeHeader = httpHeaders.getFirst(HttpHeaders.RANGE);
                 logger.info("Range header: {}", rangeHeader);
                 // 解析范围请求
@@ -144,10 +144,16 @@ public abstract class BaseArtifactController
                 // 只处理第一个范围（多范围需使用 multipart/byteranges）
                 ByteRange byteRange = ranges.get(0);
                 long start = byteRange.getOffset();
-                long end = byteRange.getLimit();
-
+                Long end = byteRange.getLimit();
+                if (Objects.isNull(end)) {
+                    end = fileSize - 1;
+                }
+                if (end < 0) {
+                    // 处理负数，转换为绝对值
+                    end = Math.abs(end);
+                }
                 // 范围有效性二次验证
-                if (start >= fileSize || end >= fileSize || start > end) {
+                if (start < 0 || end < 0 || start > end || start >= fileSize || end >= fileSize) {
                     response.setHeader(HttpHeaders.CONTENT_RANGE, "bytes */" + fileSize);
                     response.sendError(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE.value());
                     logger.warn("RepositoryPath [{}] Range header is invalid.", path.toString());
@@ -165,9 +171,9 @@ public abstract class BaseArtifactController
                 long transferred = fileChannel.transferTo(start, contentLength, responseChannel);
                 logger.info("Transferred {} bytes (range {}-{})", transferred, start, end);
 
-            } catch (IOException e) {
+            } catch (Exception e) {
                 logger.error("File transfer error", e);
-                response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value());
+                throw e;
             }
         } else if (path.toString().startsWith("s3://")) {
             //S3
@@ -192,12 +198,24 @@ public abstract class BaseArtifactController
     }
 
     private boolean validateRanges(List<ByteRange> ranges, long fileSize) {
-        return ranges.stream().allMatch(range ->
-                range != null &&
-                        range.getOffset() >= 0 &&
-                        range.getLimit() >= range.getOffset() &&
-                        range.getLimit() < fileSize
-        );
+        return ranges.stream().allMatch(range -> {
+            if (range == null) {
+                return false;
+            }
+            Long start = range.getOffset();
+            Long end = range.getLimit();
+            if (Objects.isNull(end)) {
+                end = fileSize - 1;
+            }
+            if (end < 0) {
+                // 处理负数，转换为绝对值
+                end = Math.abs(end);
+            }
+            // 确保范围有效
+            return start >= 0 &&
+                    end >= start &&
+                    end < fileSize;
+        });
     }
     public ResponseEntity<String> checkRepositoryAccess() {
         return new ResponseEntity<>("success", HttpStatus.OK);
