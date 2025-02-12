@@ -145,7 +145,7 @@ public abstract class BaseArtifactController
                 ByteRange byteRange = ranges.get(0);
                 long start = byteRange.getOffset();
                 Long end = byteRange.getLimit();
-                if (Objects.isNull(end)) {
+                if (Objects.isNull(end) || end >= fileSize) {
                     end = fileSize - 1;
                 }
                 if (end < 0) {
@@ -204,7 +204,7 @@ public abstract class BaseArtifactController
             }
             Long start = range.getOffset();
             Long end = range.getLimit();
-            if (Objects.isNull(end)) {
+            if (Objects.isNull(end) || end >= fileSize) {
                 end = fileSize - 1;
             }
             if (end < 0) {
