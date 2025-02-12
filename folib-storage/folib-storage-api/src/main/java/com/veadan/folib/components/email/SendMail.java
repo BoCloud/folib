@@ -73,6 +73,7 @@ public class SendMail {
     public void sendHtmlMail(MailRequest mailRequest) {
         String sendMailer = getSmtpConfiguration().getUsername();
         if (StringUtils.isBlank(sendMailer)) {
+            log.warn("邮件配置信息为空，发送邮件失败");
             return;
         }
         JavaMailSender javaMailSender = mailSenderConfig();
