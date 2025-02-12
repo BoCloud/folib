@@ -47,6 +47,7 @@ import com.veadan.folib.providers.layout.CocoapodsFileSystem;
 import com.veadan.folib.providers.layout.CocoapodsLayoutProvider;
 import com.veadan.folib.providers.layout.ConanFileSystem;
 import com.veadan.folib.providers.layout.ConanLayoutProvider;
+import com.veadan.folib.providers.layout.DebianLayoutProvider;
 import com.veadan.folib.providers.layout.DockerFileSystem;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.providers.layout.GitFlsFileSystem;
@@ -525,6 +526,11 @@ public class ArtifactComponent {
             } else if (PubLayoutProvider.ALIAS.equals(layout)) {
                 log.debug("pub布局");
                 List<String> suffixList = Collections.singletonList(".tar.gz");
+                flag = endsWith(filePath, suffixList);
+            }
+            else if (DebianLayoutProvider.ALIAS.equals(layout)) {
+                log.debug("debian布局");
+                List<String> suffixList = Lists.newArrayList(".deb",".gz");
                 flag = endsWith(filePath, suffixList);
             }
             log.debug("制品路径 [{}] 布局 [{}] 是否是该布局支持的制品类型 [{}]", filePath, layout, flag);

@@ -317,4 +317,7 @@ public interface ArtifactWebService {
      * @return 元数据
      */
     String getMetadata(String storageId,String repositoryId,String path);
+
+
+    void backupResolve(String storageId,String  repositoryId,MultipartFile file);
 }

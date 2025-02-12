@@ -13,7 +13,11 @@ import com.veadan.folib.cron.jobs.fields.CronJobOptionalField;
 import com.veadan.folib.cron.jobs.fields.CronJobRepositoryIdAutocompleteField;
 import com.veadan.folib.cron.jobs.fields.CronJobStorageIdAutocompleteField;
 import com.veadan.folib.cron.jobs.fields.CronJobStringTypeField;
+import com.veadan.folib.domain.DebianReleaseContext;
 import com.veadan.folib.entity.Dict;
+import com.veadan.folib.indexer.ArtifactorySearch;
+import com.veadan.folib.indexer.DebianReleaseMetadataIndexer;
+import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.DictService;
 import com.veadan.folib.storage.Storage;
@@ -32,6 +36,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Objects;
@@ -70,6 +75,12 @@ public class SyncRemoteDebianCronJob extends JavaCronJob {
 
     @Resource
     private ArtifactResolutionService artifactResolutionService;
+
+    @Resource
+    private RepositoryPathResolver repositoryPathResolver;
+
+    @Resource
+    private ArtifactorySearch artifactorySearch;
 
     @Resource
     private ReplicationBackup replicationBackup;
@@ -116,7 +127,7 @@ public class SyncRemoteDebianCronJob extends JavaCronJob {
         String dateStr = DATE_FORMAT.format(date);
         String preDate = dict == null ? null : DATE_FORMAT.format(dict.getCreateTime());
         String tempDir = tempPath + "/replication/" + repository.getStorage().getId() + "/" + repository.getId();
-        Set<String> updates = backup ? null : new HashSet<>();
+        Set<String> updates = backup ? new HashSet<>() : null;
         if (scope == null) {
             String remoteUrl = StringUtils.removeEnd(repository.getRemoteRepository().getUrl(), "/") + "/dists/";
             syncAllPackagesGz(repository, remoteUrl, Path.of(tempDir), preDate, dateStr, updates);
@@ -129,7 +140,7 @@ public class SyncRemoteDebianCronJob extends JavaCronJob {
                     continue;
                 }
                 String packagesGzPath = String.format("dists/%s/%s/binary-%s/Packages.gz", comp[0], comp[1], comp[2]);
-                syncSpecificPackagesGz(repository, packagesGzPath, tempDir, dateStr, preDate, updates);
+                syncSpecificPackagesGz(repository, packagesGzPath, tempDir, preDate, dateStr, updates);
             }
         }
         Dict current = new Dict();
@@ -138,7 +149,7 @@ public class SyncRemoteDebianCronJob extends JavaCronJob {
         if(Objects.nonNull(updates)&&!updates.isEmpty()){
             log.info("开始备份");
             // 1.压缩要备份的文件 2.是否存在同名的raw仓库 3.存入对应仓库
-            String path=dateStr+"/"+"backUp.zip";
+            String path=dateStr+"/backup/";
             replicationBackup.backUpByPath(repository,updates,path);
         }
     }
@@ -198,9 +209,9 @@ public class SyncRemoteDebianCronJob extends JavaCronJob {
                 if (Objects.nonNull(updates)) {
                     updates.addAll(diff);
                 }
+                updates.add(packageGzPath);
                 artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(), packageGzPath);
-                String releasePath = "dists/" + codename + "/Release";
-                artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(), releasePath);
+                (new DebianReleaseMetadataIndexer(repository, Collections.emptyList(), repositoryPathResolver, artifactorySearch)).indexRelease(new DebianReleaseContext(codename));
             } catch (Exception e) {
                 log.error("同步发行版【{}】,组件【{}】,架构【{}】时异常", codename, component, architecture, e);
             }
