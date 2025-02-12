@@ -123,27 +123,59 @@ public abstract class BaseArtifactController
         if (ArtifactControllerHelper.isRangedRequest(httpHeaders)) {
             //分片
             logger.debug("RepositoryPath [{}] Detected ranged request.", path.toString());
-            //try (ByteRangeInputStream is = new ByteRangeInputStream(Files.newInputStream(path))) {
-            //    //is.setReloadableInputStreamHandler(new FSReloadableInputStreamHandler(path));
-            //    is.setLength(Files.size(path));
-            //    ArtifactControllerHelper.handlePartialDownload(is, httpHeaders, response);
-            //}
             try (FileChannel fileChannel = FileChannel.open(path);
                  WritableByteChannel responseChannel = Channels.newChannel(response.getOutputStream())) {
-                String contentRange = httpHeaders.getFirst(HttpHeaders.RANGE);
-                ByteRangeHeaderParser parser = new ByteRangeHeaderParser(contentRange);
-                List<ByteRange> ranges = parser.getRanges();
-                if (!CollectionUtils.isEmpty(ranges)) {
-                    //long fileSize = fileChannel.size();
-                    ByteRange byteRange = ranges.get(0);
-                    response.setHeader(HttpHeaders.CONTENT_RANGE, String.format("bytes %d-%d/%d", byteRange.getOffset(), byteRange.getLimit(), byteRange.getLimit()));
-                    response.setHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(byteRange.getLimit() - byteRange.getOffset()));
-                    response.setStatus(PARTIAL_CONTENT.value());
-                    logger.debug("ByteRange: offset={}, limit={}", byteRange.getOffset(), byteRange.getLimit());
-                    logger.debug("Starting file transfer from position {}", byteRange.getOffset());
-                    long transferred = fileChannel.transferTo(byteRange.getOffset(), byteRange.getLimit(), responseChannel);
-                    logger.debug("Transferred {} bytes", transferred);
+
+                long fileSize = fileChannel.size(); // 获取文件总大小
+                String rangeHeader = httpHeaders.getFirst(HttpHeaders.RANGE);
+                logger.info("Range header: {}", rangeHeader);
+                // 无 Range 头时返回完整文件
+                if (StringUtils.isEmpty(rangeHeader)) {
+                    response.setHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(fileSize));
+                    fileChannel.transferTo(0, fileSize, responseChannel);
+                    logger.warn("RepositoryPath [{}] Download complete.", path.toString());
+                    return false;
                 }
+
+                // 解析范围请求
+                ByteRangeHeaderParser parser = new ByteRangeHeaderParser(rangeHeader);
+                List<ByteRange> ranges = parser.getRanges();
+
+                // 范围无效处理
+                if (CollectionUtils.isEmpty(ranges) || !validateRanges(ranges, fileSize)) {
+                    response.setHeader(HttpHeaders.CONTENT_RANGE, "bytes */" + fileSize);
+                    response.sendError(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE.value());
+                    logger.warn("RepositoryPath [{}] Range header is invalid.", path.toString());
+                    return false;
+                }
+
+                // 只处理第一个范围（多范围需使用 multipart/byteranges）
+                ByteRange byteRange = ranges.get(0);
+                long start = byteRange.getOffset();
+                long end = byteRange.getLimit();
+
+                // 范围有效性二次验证
+                if (start >= fileSize || end >= fileSize || start > end) {
+                    response.setHeader(HttpHeaders.CONTENT_RANGE, "bytes */" + fileSize);
+                    response.sendError(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE.value());
+                    logger.warn("RepositoryPath [{}] Range header is invalid.", path.toString());
+                    return false;
+                }
+                logger.info("Range start:[{}] end:[{}]  fileSize:[{}]",start,end,fileSize);
+                // 设置响应头
+                long contentLength = end - start + 1; // 注意字节数计算
+                logger.info("Length:[{}]",contentLength);
+                response.setStatus(HttpStatus.PARTIAL_CONTENT.value());
+                response.setHeader(HttpHeaders.CONTENT_RANGE, String.format("bytes %d-%d/%d", start, end, fileSize));
+                response.setHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(contentLength));
+
+                // 传输数据
+                long transferred = fileChannel.transferTo(start, contentLength, responseChannel);
+                logger.info("Transferred {} bytes (range {}-{})", transferred, start, end);
+
+            } catch (IOException e) {
+                logger.error("File transfer error", e);
+                response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value());
             }
         } else if (path.toString().startsWith("s3://")) {
             //S3
@@ -167,6 +199,14 @@ public abstract class BaseArtifactController
         return true;
     }
 
+    private boolean validateRanges(List<ByteRange> ranges, long fileSize) {
+        return ranges.stream().allMatch(range ->
+                range != null &&
+                        range.getOffset() >= 0 &&
+                        range.getLimit() >= range.getOffset() &&
+                        range.getLimit() < fileSize
+        );
+    }
     public ResponseEntity<String> checkRepositoryAccess() {
         return new ResponseEntity<>("success", HttpStatus.OK);
     }
