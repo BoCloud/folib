@@ -134,7 +134,7 @@ public class AlarmNoticeTask {
         List<CapacityStorage> stroageList = Lists.newArrayList();
         for (String storageId : storages.keySet()) {
             StorageData storeData = (StorageData) storages.get(storageId);
-            if (storeData.getStorageMaxSize() > 0) {
+            if (Objects.nonNull(storeData.getStorageMaxSize()) && storeData.getStorageMaxSize() > 0) {
                 CapacityStorage capacityStorage = new CapacityStorage();
                 capacityStorage.setStorageId(storageId);
                 capacityStorage.setStorageSize(BigDecimal.valueOf(storeData.getStorageMaxSize()));
