@@ -125,14 +125,17 @@ public abstract class BaseArtifactController
             logger.debug("RepositoryPath [{}] Detected ranged request.", path.toString());
             try (FileChannel fileChannel = FileChannel.open(path);
                  WritableByteChannel responseChannel = Channels.newChannel(response.getOutputStream())) {
-
-                long fileSize = fileChannel.size(); // 获取文件总大小
+                // 获取文件总大小
+                long fileSize = fileChannel.size();
                 String rangeHeader = httpHeaders.getFirst(HttpHeaders.RANGE);
                 logger.info("Range header: {}", rangeHeader);
                 // 无 Range 头时返回完整文件
                 if (StringUtils.isEmpty(rangeHeader)) {
                     response.setHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(fileSize));
-                    fileChannel.transferTo(0, fileSize, responseChannel);
+                    for (long left = fileSize; left > 0; ) {
+                        logger.debug("RepositoryPath [{}] position [{}] left [{}]", path.toString(), fileSize - left, left);
+                        left -= fileChannel.transferTo((fileSize - left), left, responseChannel);
+                    }
                     logger.warn("RepositoryPath [{}] Download complete.", path.toString());
                     return false;
                 }
@@ -162,8 +165,8 @@ public abstract class BaseArtifactController
                     return false;
                 }
                 logger.info("Range start:[{}] end:[{}]  fileSize:[{}]",start,end,fileSize);
-                // 设置响应头
-                long contentLength = end - start + 1; // 注意字节数计算
+                // 设置响应头，注意字节数计算
+                long contentLength = end - start + 1;
                 logger.info("Length:[{}]",contentLength);
                 response.setStatus(HttpStatus.PARTIAL_CONTENT.value());
                 response.setHeader(HttpHeaders.CONTENT_RANGE, String.format("bytes %d-%d/%d", start, end, fileSize));
