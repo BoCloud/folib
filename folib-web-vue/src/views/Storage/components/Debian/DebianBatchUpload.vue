@@ -19,7 +19,7 @@
           <a-col :span="24">
             <a-form-model-item class="mb-10" :label="$t('Store.Product')" :colon="false" prop="files">
               <a-upload v-model="uploadForm.files" :fileList="uploadForm.files" :multiple="true" :beforeUpload="beforeUpload" list-type="text"
-                :accept="'.deb'">
+                :accept="'.deb'" :remove="handleRemove">
                 <a-button>
                   <a-icon type="upload" />
                   {{ $t('Store.SelectFile') }}</a-button>
@@ -162,6 +162,9 @@ export default {
         callback();
       }
     },
+    handleRemove(file){
+      this.uploadForm.files = this.uploadForm.files.filter(item => item.uid !== file.uid);
+    }
   }
 }
 </script>
