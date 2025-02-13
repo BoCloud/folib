@@ -965,7 +965,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         Matcher matcher = DebianConstant.PACKAGE_PATTERN.matcher(distribution);
                         if(matcher.matches()){
                             String codename = matcher.group("codename");
-                            (new DebianReleaseMetadataIndexer(rootRepositoryPath.getRepository(), Collections.emptyList(), repositoryPathResolver, artifactorySearch)).indexRelease(new DebianReleaseContext(codename));
+                            (new DebianReleaseMetadataIndexer(rootRepositoryPath.getRepository(), Collections.emptyList(), repositoryPathResolver, artifactorySearch)).indexRelease(codename);
                         }
                     }
                 }
@@ -973,7 +973,6 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     RpmRepoIndexer rpmRepoIndexer = new RpmRepoIndexer(repositoryPathResolver, artifactManagementService, tempPath);
                     rpmRepoIndexer.indexWriter(rootRepositoryPath.getRepository());
                 }
-
             }
             String status = JSONObject.toJSONString(statusInfo);
             log.info("操作账号 [{}] 本次状态 [{}]", username, status);

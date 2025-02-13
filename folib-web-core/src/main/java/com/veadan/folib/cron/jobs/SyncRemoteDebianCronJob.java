@@ -211,7 +211,7 @@ public class SyncRemoteDebianCronJob extends JavaCronJob {
                 }
                 updates.add(packageGzPath);
                 artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(), packageGzPath);
-                (new DebianReleaseMetadataIndexer(repository, Collections.emptyList(), repositoryPathResolver, artifactorySearch)).indexRelease(new DebianReleaseContext(codename));
+                (new DebianReleaseMetadataIndexer(repository, Collections.emptyList(), repositoryPathResolver, artifactorySearch)).indexRelease(codename);
             } catch (Exception e) {
                 log.error("同步发行版【{}】,组件【{}】,架构【{}】时异常", codename, component, architecture, e);
             }

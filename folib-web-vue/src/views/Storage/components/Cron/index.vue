@@ -77,7 +77,7 @@
                 <a-input :min="1" v-if="f.name.includes(debianScopeKey)" v-model="f.architecture"
                 size="small" class="font-regular text-sm text-dark mr-10" style="width: 120px;"/>
               
-                <a-button v-if="f.name.includes(debianScopeKey)" @click="deleteArtifactPath(i.fields, index)" style="margin-left: 15px"
+                <a-button v-if="f.name.includes(debianScopeKey)" @click="deleteDebainScope(i.fields, index)" style="margin-left: 15px"
                 type="danger" size="small" shape="circle" icon="delete" />
 
 
@@ -378,7 +378,7 @@ export default {
     addDebainScope(data){
       data.push({name: this.debianScopeKey, codename: "", component: "",architecture:"",value:this.debianScopeKey})
     },
-    deleteDebainScope(data){
+    deleteDebainScope(data,index){
       data.splice(index, 1)
     }
 
