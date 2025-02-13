@@ -91,9 +91,9 @@ public class DebianServiceImpl implements DebianService {
             if(extract !=null){
                 artifactParse.setVersion(extract.getVersion());
                 artifactParse.setArchitecture(extract.getArchitecture());
-                artifactParse.setPath(artifactFile.getAbsolutePath());
                 artifactParse.setFileName(extract.getPackageName());
             }
+            artifactParse.setPath(artifactFile.getAbsolutePath());
             return artifactParse;
         } catch (Exception e) {
             log.error("extra metadata failed{},", e.getMessage(), e);
