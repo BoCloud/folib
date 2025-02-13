@@ -216,7 +216,7 @@ public class ConanProxyProvider implements ConanProvider {
     }
 
     protected String getRepositoryBaseUrl(Repository repository) {
-        return String.format("%s/storages/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
+        return String.format("%s/artifactory/api/conan/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getId());
     }
 
 }

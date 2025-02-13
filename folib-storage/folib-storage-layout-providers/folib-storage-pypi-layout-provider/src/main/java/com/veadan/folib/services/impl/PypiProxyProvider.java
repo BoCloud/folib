@@ -175,8 +175,4 @@ public class PypiProxyProvider implements PypiProvider {
         return data;
     }
 
-    protected String getRepositoryBaseUrl(Repository repository) {
-        return String.format("%s/storages/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
-    }
-
 }

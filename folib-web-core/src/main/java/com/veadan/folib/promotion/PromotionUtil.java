@@ -779,7 +779,6 @@ public class PromotionUtil {
                 log.error("Do copy srcRepositoryPath [{}] targetManiFestPath [{}] error [{}]", srcRepositoryPath, targetRepositoryPath, ExceptionUtils.getStackTrace(e));
                 throw new Exception(e.getMessage());
             }
-            rebuildMetadata(targetRepository, targetRepositoryPath);
             if (isDocker) {
                 List<DockerSubsidiary> dockerSubsidiaries = DockerUtils.getDockerSubsidiaryFilePaths(srcRepositoryPath);
                 if (CollectionUtils.isNotEmpty(dockerSubsidiaries)) {
@@ -875,7 +874,6 @@ public class PromotionUtil {
                 log.error("Do copy srcRepositoryPath [{}] targetManiFestPath [{}] error [{}]", srcRepositoryPath, targetRepositoryPath, ExceptionUtils.getStackTrace(e));
                 throw new Exception(e.getMessage());
             }
-            rebuildMetadata(targetRepository, targetRepositoryPath);
             if (isDocker) {
                 List<DockerSubsidiary> dockerSubsidiaries = DockerUtils.getDockerSubsidiaryFilePaths(srcRepositoryPath);
                 if (CollectionUtils.isNotEmpty(dockerSubsidiaries)) {
