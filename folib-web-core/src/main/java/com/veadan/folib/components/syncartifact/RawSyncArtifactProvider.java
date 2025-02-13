@@ -395,6 +395,7 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
         List<List<String>> artifactPathLists = Lists.partition(artifactPathList, 5);
         List<FutureTask<String>> futureTasks = Lists.newArrayList();
         FutureTask<String> futureTask = null;
+        String levelPrefix = "level_", fileName = path.getFileName().toString();
         for (List<String> itemArtifactPathList : artifactPathLists) {
             futureTask = new FutureTask<String>(() -> {
                 for (String artifactPath : itemArtifactPathList) {
@@ -402,6 +403,10 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
                         if (StringUtils.isNotBlank(artifactPath)) {
                             //制品
                             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+                            if (fileName.startsWith(levelPrefix) && (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath))) {
+                                //是目录的索引文件，并且在同步目录元数据时，该目录不存在，跳过处理
+                                continue;
+                            }
                             if (Files.exists(repositoryPath) && Files.isDirectory(repositoryPath)) {
                                 //目录
                                 distributedCounterComponent.getAtomicLong(JfrogMigrateService.DIRECTORY_COUNT + form.getStoreAndRepo()).addAndGet(1L);

@@ -377,6 +377,7 @@ public class DockerSyncArtifactProvider implements SyncArtifactProvider {
         List<List<String>> artifactPathLists = Lists.partition(artifactPathList, 5);
         List<FutureTask<String>> futureTasks = Lists.newArrayList();
         FutureTask<String> futureTask;
+        String levelPrefix = "level_", fileName = path.getFileName().toString();
         for (List<String> itemArtifactPathList : artifactPathLists) {
             RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
             futureTask = new FutureTask<>(() -> {
@@ -384,6 +385,10 @@ public class DockerSyncArtifactProvider implements SyncArtifactProvider {
                     try {
                         if (StringUtils.isNotBlank(artifactPath)) {
                             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+                            if (fileName.startsWith(levelPrefix) && (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath))) {
+                                //是目录的索引文件，并且在同步目录元数据时，该目录不存在，跳过处理
+                                continue;
+                            }
                             if (Files.exists(repositoryPath) && Files.isDirectory(repositoryPath)) {
                                 //目录
                                 JfrogPropertySyncer syncer = form.getSyncer();
