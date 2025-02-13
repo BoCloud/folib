@@ -46,6 +46,16 @@ public interface ConanProvider {
     JSONObject revisions(Repository repository, String artifactPath, String targetUrl);
 
     /**
+     * conan v2 revisions revisionsPackages
+     *
+     * @param repository   仓库
+     * @param artifactPath artifactPath
+     * @param targetUrl    targetUrl
+     * @return 结果
+     */
+    JSONObject getLocalRevisions(Repository repository, String artifactPath, String targetUrl);
+
+    /**
      * conan v1 downloadUrls
      *
      * @param repository 仓库

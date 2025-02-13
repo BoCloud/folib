@@ -4,6 +4,7 @@ export function artifactCopy (data) {
   return axios({
     url: '/api/artifact/folib/promotion/copy',
     method: 'post',
+    timeout: 15 * 60 * 1000,
     data: data
   })
 }
@@ -12,6 +13,7 @@ export function artifactMove (data) {
   return axios({
     url: '/api/artifact/folib/promotion/move',
     method: 'post',
+    timeout: 15 * 60 * 1000,
     data: data
   })
 }

@@ -46,7 +46,7 @@ public class ArtifactPromotionCopyTask implements Callable<String> {
     public String call() {
         String rs = "";
         try {
-            promotionUtil.handleCopy(path, srcRepository, targetPath,targetRepository);
+            promotionUtil.handleFastCopy(path, srcRepository, targetPath,targetRepository);
             log.info("Copy srcRepository [{}] [{}] targetRepository [{}] [{}] path [{}] finished", srcRepository.getStorage().getId(), srcRepository.getId(), targetRepository.getStorage().getId(), targetRepository.getId(), path);
         } catch (Exception e) {
             log.info("Copy srcRepository [{}] [{}] targetRepository [{}] [{}] path [{}] error [{}]", srcRepository.getStorage().getId(), srcRepository.getId(), targetRepository.getStorage().getId(), targetRepository.getId(), path, ExceptionUtils.getStackTrace(e));

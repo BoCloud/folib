@@ -1,51 +1,67 @@
 package com.veadan.folib.controllers;
 
+import cn.hutool.extra.spring.SpringUtil;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.components.ArtifactSecurityComponent;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.block.ArtifactBlockComponent;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.CacheSettings;
+import com.veadan.folib.domain.DirectoryListing;
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
+import com.veadan.folib.io.ByteRangeInputStream;
+import com.veadan.folib.providers.io.LayoutFileSystem;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RootRepositoryPath;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.DictService;
+import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.utils.ArtifactControllerHelper;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.carlspring.commons.http.range.ByteRange;
+import org.carlspring.commons.http.range.ByteRangeHeaderParser;
+import org.carlspring.commons.io.reloading.FSReloadableInputStreamHandler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
+import org.springframework.ui.ModelMap;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.HandlerMapping;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
+import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.TimeZone;
+import java.util.*;
+
+import static org.springframework.http.HttpStatus.PARTIAL_CONTENT;
 
 public abstract class BaseArtifactController
         extends BaseController {
@@ -92,13 +108,63 @@ public abstract class BaseArtifactController
         SimpleDateFormat sdf = new SimpleDateFormat("E, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
         sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
         response.setHeader("Last-Modified", sdf.format(new Date()));
+        response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", repositoryPath.getFileName()));
         long startTime = System.currentTimeMillis();
         logger.debug("Download [{}] 开始时间 [{}]", repositoryPath.toString(), startTime);
         if (ArtifactControllerHelper.isRangedRequest(httpHeaders)) {
             //分片
             logger.debug("RepositoryPath [{}] Detected ranged request.", path.toString());
-            try (InputStream is = Files.newInputStream(path)) {
-                ArtifactControllerHelper.handlePartialDownload(is, httpHeaders, response);
+            try (FileChannel fileChannel = FileChannel.open(path);
+                 WritableByteChannel responseChannel = Channels.newChannel(response.getOutputStream())) {
+                // 获取文件总大小
+                long fileSize = fileChannel.size();
+                String rangeHeader = httpHeaders.getFirst(HttpHeaders.RANGE);
+                logger.info("Range header: {}", rangeHeader);
+                // 解析范围请求
+                ByteRangeHeaderParser parser = new ByteRangeHeaderParser(rangeHeader);
+                List<ByteRange> ranges = parser.getRanges();
+
+                // 范围无效处理
+                if (CollectionUtils.isEmpty(ranges) || !validateRanges(ranges, fileSize)) {
+                    response.setHeader(HttpHeaders.CONTENT_RANGE, "bytes */" + fileSize);
+                    response.sendError(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE.value());
+                    logger.warn("RepositoryPath [{}] Range header is invalid.", path.toString());
+                    return false;
+                }
+
+                // 只处理第一个范围（多范围需使用 multipart/byteranges）
+                ByteRange byteRange = ranges.get(0);
+                long start = byteRange.getOffset();
+                Long end = byteRange.getLimit();
+                if (Objects.isNull(end) || end >= fileSize) {
+                    end = fileSize - 1;
+                }
+                if (end < 0) {
+                    // 处理负数，转换为绝对值
+                    end = Math.abs(end);
+                }
+                // 范围有效性二次验证
+                if (start < 0 || end < 0 || start > end || start >= fileSize || end >= fileSize) {
+                    response.setHeader(HttpHeaders.CONTENT_RANGE, "bytes */" + fileSize);
+                    response.sendError(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE.value());
+                    logger.warn("RepositoryPath [{}] Range header is invalid.", path.toString());
+                    return false;
+                }
+                logger.info("Range start:[{}] end:[{}]  fileSize:[{}]",start,end,fileSize);
+                // 设置响应头
+                long contentLength = end - start + 1; // 注意字节数计算
+                logger.info("Length:[{}]",contentLength);
+                response.setStatus(HttpStatus.PARTIAL_CONTENT.value());
+                response.setHeader(HttpHeaders.CONTENT_RANGE, String.format("bytes %d-%d/%d", start, end, fileSize));
+                response.setHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(contentLength));
+
+                // 传输数据
+                long transferred = fileChannel.transferTo(start, contentLength, responseChannel);
+                logger.info("Transferred {} bytes (range {}-{})", transferred, start, end);
+
+            } catch (Exception e) {
+                logger.error("File transfer error", e);
+                throw e;
             }
         } else if (path.toString().startsWith("s3://")) {
             //S3
@@ -122,6 +188,26 @@ public abstract class BaseArtifactController
         return true;
     }
 
+    private boolean validateRanges(List<ByteRange> ranges, long fileSize) {
+        return ranges.stream().allMatch(range -> {
+            if (range == null) {
+                return false;
+            }
+            Long start = range.getOffset();
+            Long end = range.getLimit();
+            if (Objects.isNull(end) || end >= fileSize) {
+                end = fileSize - 1;
+            }
+            if (end < 0) {
+                // 处理负数，转换为绝对值
+                end = Math.abs(end);
+            }
+            // 确保范围有效
+            return start >= 0 &&
+                    end >= start &&
+                    end < fileSize;
+        });
+    }
     public ResponseEntity<String> checkRepositoryAccess() {
         return new ResponseEntity<>("success", HttpStatus.OK);
     }

@@ -28,4 +28,8 @@ public class ArtifactCondition {
      * 搜索值
      */
     private String searchValue;
+    /**
+     * 搜索值后缀结束
+     */
+    private Boolean searchValueSuffixEnd;
 }

@@ -34,4 +34,14 @@ public interface PubProvider {
      * @return 结果
      */
     JSONObject packages(Repository repository, String packageName, String targetUrl);
+
+    /**
+     * pub packages
+     *
+     * @param repository  仓库
+     * @param packageName packageName
+     * @param targetUrl   targetUrl
+     * @return 结果
+     */
+    JSONObject getLocalPackages(Repository repository, String packageName, String targetUrl);
 }

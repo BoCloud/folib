@@ -72,9 +72,7 @@ public class PasswordAuthenticationProvider extends DaoAuthenticationProvider {
     protected void additionalAuthenticationChecks(UserDetails userDetails,
                                                   UsernamePasswordAuthenticationToken authentication)
             throws AuthenticationException {
-        HttpServletRequest httpServletRequest = ((ServletRequestAttributes) (RequestContextHolder.currentRequestAttributes())).getRequest();
-        String loginType = httpServletRequest.getHeader("X-Folibrary-Login-Type");
-        if (LoginTypeEnum.LDAP.getType().equalsIgnoreCase(loginType) && userDetails instanceof SpringSecurityUser) {
+        if (userDetails instanceof SpringSecurityUser) {
             SpringSecurityUser ldapUser = (SpringSecurityUser) userDetails;
             String ldapUserDetailsServiceSourceId = "ldapUserDetailsService";
             if (ldapUserDetailsServiceSourceId.equalsIgnoreCase(ldapUser.getSourceId())) {
@@ -89,8 +87,8 @@ public class PasswordAuthenticationProvider extends DaoAuthenticationProvider {
                 if (authenticate) {
                     return;
                 }
+                throw new BadCredentialsException("invalid.credentials");
             }
-            throw new BadCredentialsException("invalid.credentials");
         }
         UsernamePasswordAuthenticationToken cachedAuthentication = authenticationCache.getAuthenticationToken(userDetails.getUsername());
 
