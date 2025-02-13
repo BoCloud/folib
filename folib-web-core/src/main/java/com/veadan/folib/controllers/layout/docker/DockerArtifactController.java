@@ -50,21 +50,20 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.parameters.P;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -237,7 +236,14 @@ public class DockerArtifactController extends BaseArtifactController {
             response.addHeader(DockerHeaderEnum.DOCKER_CONTENT_DIGEST.key(), digest);
             String imagePath = resolveImagePath(name, extractPath);
             String artifactPath = String.format("blobs/%s", digest);
-            RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
+           // RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
+            String targetUrl = String.format("%s/blobs/%s", StringUtils.removeEnd(imagePath, "/"), digest);
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+            if (!artifactRealExists(repositoryPath)) {
+                repositoryPath.setTargetUrl(targetUrl);
+                repositoryPath.setArtifactPath(imagePath);
+                repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
+            }
             boolean exists = artifactRealExists(repositoryPath);
             logger.info("StorageId [{}] repositoryId [{}] name [{}] extractPath [{}] imagePath [{}] artifactPath [{}] exists [{}]", storageId, repositoryId, name, extractPath, imagePath, artifactPath, exists);
             //200已经存在 404不存在
@@ -301,7 +307,15 @@ public class DockerArtifactController extends BaseArtifactController {
                 return new ResponseEntity<>(errMsg("NAME_UNKNOWN", GlobalConstants.REPOSITORY_NOT_FOUND_MESSAGE), HttpStatus.NOT_FOUND);
             }
             String uuid = UUID.randomUUID().toString();
-            String url = new StringBuffer().append(request.getRequestURI()).append(uuid).toString();
+
+            SecureRandom secureRandom = new SecureRandom();
+            byte[] secretBytes = new byte[32];
+            secureRandom.nextBytes(secretBytes);
+            String url = String.format("%s%s",request.getRequestURI(),uuid);
+            if(httpHeaders.containsKey("user-agent") && Objects.requireNonNull(httpHeaders.get("user-agent")).stream().anyMatch(s -> s.startsWith("ollama/"))){
+                 url = String.format("%s%s%s",getBaseUrl(),request.getRequestURI(),uuid);
+            }
+
             response.reset();
             response.setDateHeader("Date", System.currentTimeMillis());
             response.setHeader(DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.value());
@@ -336,20 +350,31 @@ public class DockerArtifactController extends BaseArtifactController {
             @PathVariable String uuid
     ) throws Exception {
         String storageId = getDefaultStorageId(repositoryId);
-        InputStream inputStream = request.getInputStream();
-        response.setCharacterEncoding("utf8");
-        String extractPath = getExtractPath(request);
-        if (StringUtils.isNotBlank(extractPath)) {
-            extractPath = extractPath.replace(String.format("/blobs/uploads/%s", uuid), "");
+        try (InputStream inputStream = request.getInputStream();) {
+            response.setCharacterEncoding("utf8");
+            String extractPath = getExtractPath(request);
+            if (StringUtils.isNotBlank(extractPath)) {
+                extractPath = extractPath.replace(String.format("/blobs/uploads/%s", uuid), "");
+            }
+            String imagePath = resolveImagePath(name, extractPath);
+            String targetFilePath = FileUtils.getBasePath() + storageId + "/" + repositoryId + "/" + imagePath + "/" + uuid;
+            Path targetPath = Path.of(targetFilePath);
+
+            String contentRange = httpHeaders.getFirst(DockerHeaderEnum.CONTENT_RANGE.key());
+            if (contentRange != null && contentRange.contains("-")) {
+                Files.createDirectories(targetPath.getParent());
+                fileAdditional(inputStream, targetPath);
+            } else {
+                Files.createDirectories(targetPath.getParent());
+                Files.copy(inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING);
+            }
+            long fileSize = Files.size(targetPath);
+            updateRanges(uuid, fileSize);
         }
-        String imagePath = resolveImagePath(name, extractPath);
-        String targetFilePath = FileUtils.getBasePath() + storageId + "/" + repositoryId + "/" + imagePath + "/" + uuid;
-        Path targetPath = Path.of(targetFilePath);
-        Files.createDirectories(targetPath.getParent());
-        Files.copy(inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING);
-        long fileSize = Files.size(targetPath);
-        updateRanges(uuid, fileSize);
         String url = request.getRequestURI();
+        if(httpHeaders.containsKey("user-agent") && Objects.requireNonNull(httpHeaders.get("user-agent")).stream().anyMatch(s -> s.startsWith("ollama/"))){
+             url = String.format("%s%s",getBaseUrl(),request.getRequestURI());
+        }
         response.reset();
         response.setDateHeader(DockerHeaderEnum.DATE.key(), System.currentTimeMillis());
         response.setHeader(DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.value());
@@ -357,7 +382,7 @@ public class DockerArtifactController extends BaseArtifactController {
         response.setHeader(DockerHeaderEnum.LOCATION.key(), url);
         response.setHeader(DockerHeaderEnum.RANGE.key(), "0-" + (getRanges().getOrDefault(uuid, 1L) - 1));
         response.setHeader(DockerHeaderEnum.CONTENT_LENGTH.key(), "0");
-        //202 Accepted
+        //202 Accepted user-agent
         return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }
 
@@ -516,7 +541,11 @@ public class DockerArtifactController extends BaseArtifactController {
         response.setDateHeader(DockerHeaderEnum.DATE.key(), System.currentTimeMillis());
         response.addHeader(DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.value());
         response.addHeader(DockerHeaderEnum.DOCKER_CONTENT_DIGEST.key(), manifestSha256);
+        response.addHeader(DockerHeaderEnum.DOCKER_CONTENT_DIGEST.key(), manifestSha256);
         response.addHeader(DockerHeaderEnum.CONTENT_LENGTH.key(), "0");
+        if(httpHeaders.containsKey("user-agent") && Objects.requireNonNull(httpHeaders.get("user-agent")).stream().anyMatch(s -> s.startsWith("ollama/"))){
+            response.addHeader(DockerHeaderEnum.LOCATION.key(), String.format("%s%s/%s", getBaseUrl(), request.getRequestURI(), manifestSha256));
+        }
         return result;
     }
 
@@ -845,6 +874,7 @@ public class DockerArtifactController extends BaseArtifactController {
                 response.addHeader(DockerHeaderEnum.STREAM_CONTENT_TYPE.key(), DockerHeaderEnum.STREAM_CONTENT_TYPE.value());
                 response.addHeader(DockerHeaderEnum.DOCKER_CONTENT_DIGEST.key(), digest);
                 response.addHeader(DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.key(), DockerHeaderEnum.DOCKER_DISTRIBUTION_API_VERSION.value());
+                response.addHeader(DockerHeaderEnum.LOCATION.key(), String.format("%s%s",getBaseUrl(),request.getRequestURI()));
                 provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
                 entity = ResponseEntity.status(HttpStatus.OK).build();
             }
@@ -1141,4 +1171,28 @@ public class DockerArtifactController extends BaseArtifactController {
         }
         return imagePath;
     }
+
+    protected String getBaseUrl() {
+        return StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/");
+    }
+
+    public void fileAdditional( InputStream sourceStream ,Path targetPath) {
+        try (RandomAccessFile targetFile = new RandomAccessFile(targetPath.toFile(), "rw");
+              FileChannel targetChannel = targetFile.getChannel()){
+            // 将目标文件指针移到文件末尾进行追加
+            targetChannel.position(targetChannel.size());
+
+            byte[] buffer = new byte[1024]; // 缓冲区，用来读写流
+
+            int bytesRead;
+            while ((bytesRead = sourceStream.read(buffer)) != -1) {
+                // 将 InputStream 中读取到的内容写入文件
+                ByteBuffer byteBuffer = ByteBuffer.wrap(buffer, 0, bytesRead);
+                targetChannel.write(byteBuffer);
+            }
+        } catch (IOException e){
+            logger.error("fileAppender error: {}", e.getMessage());
+        }
+    }
+
 }
