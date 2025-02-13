@@ -218,7 +218,7 @@ public class NpmProxyProvider implements NpmProvider {
             Dist dist = versionEntry.getValue().getDist();
             if (Objects.nonNull(dist) && StringUtils.isNotBlank(dist.getTarball())) {
                 npmArtifactCoordinates = NpmArtifactCoordinates.of(versionEntry.getValue().getName(), versionEntry.getValue().getVersion(), packageSuffix);
-                URI uri = npmArtifactCoordinates.convertToLayoutResource(npmArtifactCoordinates);
+                URI uri = npmArtifactCoordinates.convertToResource(npmArtifactCoordinates);
                 dist.setTarball(repositoryBaseUrl + uri.toString());
             }
         } catch (Exception ex) {
@@ -250,8 +250,7 @@ public class NpmProxyProvider implements NpmProvider {
     }
 
     protected String getRepositoryBaseUrl(Repository repository) {
-        final String api = NpmSubLayout.OHPM.getValue().equals(repository.getSubLayout()) ? "ohpm" : "npm";
-        return String.format("%s/artifactory/api/%s/%s/", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), api, repository.getId());
+        return String.format("%s/storages/%s/%s/", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
     }
 
 }

@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.util.FileSystemUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.channels.FileChannel;
@@ -115,6 +116,11 @@ public abstract class StorageFileSystemProvider
             }
 
         };
+    }
+
+    @Override
+    public InputStream newInputStream(Path path, OpenOption... options) throws IOException {
+        return target.newInputStream(unwrap(path), options);
     }
 
     protected Iterator<Path> createRepositoryDsIterator(LayoutFileSystem rfs,

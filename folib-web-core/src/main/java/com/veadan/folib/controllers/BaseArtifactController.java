@@ -81,19 +81,6 @@ public abstract class BaseArtifactController
     @Autowired
     private ArtifactBlockComponent artifactBlockComponent;
 
-    @Autowired
-    private DictService dictService;
-
-    @Inject
-    @Qualifier("browseRepositoryDirectoryListingService")
-    @Lazy
-    private volatile DirectoryListingService directoryListingService;
-
-    @Autowired
-    @Lazy
-    private ArtifactSecurityComponent artifactSecurityComponent;
-
-
     protected boolean provideArtifactDownloadResponse(HttpServletRequest request,
                                                       HttpServletResponse response,
                                                       HttpHeaders httpHeaders,
@@ -372,118 +359,6 @@ public abstract class BaseArtifactController
         String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
         String bestMatchPattern = (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
         return new AntPathMatcher().extractPathWithinPattern(bestMatchPattern, path);
-    }
-
-    protected boolean probeForDirectoryListing(final RepositoryPath repositoryPath)
-            throws IOException {
-        return Files.exists(repositoryPath) &&
-                repositoryPath.getRepository().getLayout().equals("helm") && repositoryPath.getTarget().toString().endsWith("index.yaml") || Files.isDirectory(repositoryPath) &&
-                isPermittedForDirectoryListing(repositoryPath);
-    }
-
-    protected boolean isPermittedForDirectoryListing(final RepositoryPath repositoryPath)
-            throws IOException {
-        //TODO: RepositoryFiles.isIndex(repositoryPath) || (
-        return (!Files.isHidden(repositoryPath)
-                // 支持Cocoapods索引目录的显示
-                || repositoryPath.toString().contains(".specs") || repositoryPath.toString().contains(LayoutFileSystem.TRASH))
-                && !RepositoryFiles.isTemp(repositoryPath);
-    }
-
-    public Object browseRepository(HttpServletRequest request, HttpHeaders httpHeaders, HttpServletResponse response, ModelMap model, Repository repository, String path) {
-        final String storageId = repository.getStorage().getId();
-        final String repositoryId = repository.getId();
-        logger.info("Requested browsing repository content at {}/{}/{} ", storageId, repositoryId, path);
-        String acceptHeader = request.getHeader(HttpHeaders.ACCEPT);
-        try {
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, path);
-            repositoryPath.setDisableRemote(true);
-            RepositoryPath repositoryResolvePath = artifactResolutionService.resolvePath(repositoryPath);
-            if (Objects.isNull(repositoryResolvePath) && StringUtils.isNotBlank(RepositoryFiles.relativizePath(repositoryPath))) {
-                response.setStatus(HttpStatus.NOT_FOUND.value());
-                return null;
-            }
-            if (Objects.nonNull(repositoryResolvePath) && Files.exists(repositoryResolvePath) && Files.isRegularFile(repositoryResolvePath)) {
-                vulnerabilityBlock(repositoryResolvePath);
-                provideArtifactDownloadResponse(request, response, httpHeaders, repositoryResolvePath);
-                return null;
-            }
-            DirectoryListing directoryListing = null;
-            if (RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
-                directoryListing = directoryListingService.fromGroupRepositoryPath(repository, repositoryPath);
-            } else {
-                if (repositoryPath == null || !Files.exists(repositoryPath)) {
-                    return getNotFoundResponseEntity("The requested repository path was not found.", acceptHeader);
-                }
-                if (!repository.isInService()) {
-                    return getServiceUnavailableResponseEntity("Repository is not in service...", acceptHeader);
-                }
-                if (!repository.isAllowsDirectoryBrowsing() || !probeForDirectoryListing(repositoryPath)) {
-                    return getNotFoundResponseEntity("Requested repository doesn't allow browsing.", acceptHeader);
-                }
-                directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
-            }
-            if (acceptHeader != null && acceptHeader.contains(MediaType.APPLICATION_JSON_VALUE)) {
-                return ResponseEntity.ok(objectMapper.writer().writeValueAsString(directoryListing));
-            }
-            String currentUrl = org.apache.commons.lang.StringUtils.chomp(request.getRequestURI(), "/");
-            model.addAttribute("currentUrl", currentUrl);
-            model.addAttribute("directories", directoryListing.getDirectories());
-            model.addAttribute("files", directoryListing.getFiles());
-            return new ModelAndView("directoryListing", model);
-        } catch (Exception e) {
-            String message = "Failed to generate repository directory listing.";
-            return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, message, e, acceptHeader);
-        }
-    }
-
-    public Object download(Repository repository, HttpHeaders httpHeaders, String path, HttpServletRequest request, HttpServletResponse response, ModelMap model)
-            throws Exception {
-        final String storageId = repository.getStorage().getId();
-        final String repositoryId = repository.getId();
-        logger.info("Requested /{}/{}/{}.", storageId, repositoryId, path);
-        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, path);
-        repositoryPath.setDisableRemote(true);
-        if (ProductTypeEnum.SIMPLE_TYPE_LIST.stream().anyMatch(item -> item.equals(repository.getLayout()))) {
-            repositoryPath.setDisableRemote(null);
-        }
-        if (StringUtils.isNotBlank(RepositoryFiles.relativizePath(repositoryPath)) && !RepositoryTypeEnum.GROUP.getType().equals(repository.getType()) && !artifactSecurityComponent.validatePrivileges(repositoryPath, Privileges.ARTIFACTS_RESOLVE.getAuthority())) {
-            response.setStatus(HttpStatus.NOT_FOUND.value());
-            return null;
-        }
-        repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
-        boolean browse = RepositoryTypeEnum.GROUP.getType().equals(repository.getType()) || (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath) && Files.isDirectory(repositoryPath));
-        if (browse) {
-            return browseRepository(request, httpHeaders, response, model, repository, path);
-        } else {
-            vulnerabilityBlock(repositoryPath);
-            provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
-        }
-        return null;
-    }
-
-    /**
-     * 获取设置默认的存储空间
-     *
-     * @param repositoryId 仓库名称
-     * @return 存储空间
-     */
-    public String getDefaultStorageId(String repositoryId) {
-        DistributedCacheComponent distributedCacheComponent = SpringUtil.getBean(DistributedCacheComponent.class);
-        if (StringUtils.isNotBlank(repositoryId)) {
-            //按照仓库查询对应的存储空间
-            String key = "JFrogAdapterStorage_" + repositoryId;
-            String jFrogAdapterStorage = distributedCacheComponent.get(key);
-            if (StringUtils.isNotBlank(jFrogAdapterStorage)) {
-                return jFrogAdapterStorage;
-            }
-        }
-        String key = "JFrogAdapterDefaultStorage";
-        String jFrogAdapterDefaultStorage = distributedCacheComponent.get(key);
-        if (StringUtils.isBlank(jFrogAdapterDefaultStorage)) {
-            throw new RuntimeException("Default storage not found,Please Set the default storageId");
-        }
-        return jFrogAdapterDefaultStorage;
     }
 
 }

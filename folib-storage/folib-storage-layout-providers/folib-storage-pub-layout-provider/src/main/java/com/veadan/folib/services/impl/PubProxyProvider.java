@@ -101,7 +101,8 @@ public class PubProxyProvider implements PubProvider {
                 try {
                     String storageId = repository.getStorage().getId();
                     String repositoryId = repository.getId();
-                    String repositoryBaseUrl = getRepositoryBaseUrl(repository);
+                    String baseUrl = StringUtils.removeEnd(configurationManager.getConfiguration().getBaseUrl(), GlobalConstants.SEPARATOR);
+                    String repositoryBaseUrl = baseUrl + String.format("/storages/%s/%s/", storageId, repositoryId);
                     pubPackageMetadata = JSONObject.parseObject(packageData.toJSONString(), PubPackageMetadata.class);
                     for (PubPackageVersionMetadata pubPackageVersionMetadata : pubPackageMetadata.getVersions()) {
                         handleVersion(storageId, repositoryId, repositoryBaseUrl, pubPackageMetadata, PubArtifactCoordinates.of(pubPackageMetadata.getName(), pubPackageVersionMetadata.getVersion(), PubArtifactCoordinates.PUB_EXTENSION), pubPackageVersionMetadata);
@@ -142,7 +143,7 @@ public class PubProxyProvider implements PubProvider {
             if (StringUtils.isNotBlank(pubPackageVersionMetadata.getArchiveUrl())) {
                 pubPackageVersionMetadata.setSourceArchiveUrl(pubPackageVersionMetadata.getArchiveUrl());
                 pubArtifactCoordinates = PubArtifactCoordinates.of(pubPackageMetadata.getName(), pubPackageVersionMetadata.getVersion(), PubArtifactCoordinates.PUB_EXTENSION);
-                URI uri = pubArtifactCoordinates.convertToLayoutResource(pubArtifactCoordinates);
+                URI uri = pubArtifactCoordinates.convertToResource(pubArtifactCoordinates);
                 pubPackageVersionMetadata.setArchiveUrl(repositoryBaseUrl + uri.toString());
             }
         } catch (Exception ex) {
@@ -174,7 +175,7 @@ public class PubProxyProvider implements PubProvider {
     }
 
     protected String getRepositoryBaseUrl(Repository repository) {
-        return String.format("%s/artifactory/api/pub/%s/", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getId());
+        return String.format("%s/storages/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
     }
 
 }
