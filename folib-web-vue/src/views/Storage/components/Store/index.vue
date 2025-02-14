@@ -177,11 +177,11 @@
             <a-icon v-if="!isTrashView" type="delete" /> -->
           </a-tooltip>
           <!-- </a-button> -->
-          <leftTree 
-            :trashData="trashData" 
-            :treeData="treeData" 
+          <leftTree
+            :trashData="trashData"
+            :treeData="treeData"
             :isTrashView="isTrashView"
-            @onRightClick="onRightClick" 
+            @onRightClick="onRightClick"
             @onLoadData="onLoadData"
             @treeSelect="treeSelect"
           />
@@ -329,7 +329,8 @@
               <a-col :span="16" class="font-semibold m-0">
                 <a-row type="flex" align="middle">
                   <a-col :span="8" :xs="24" :xl="16">
-                    <a-avatar :size="24" shape="square" :src="'images/folib/docker-s.svg'" />
+                    <a-avatar :size="24" shape="square"  :src="'images/folib/docker-s.svg'" v-if="folibRepository.subLayout === 'Docker'" />
+                    <a-avatar :size="24" shape="square"  :src="'images/folib/ollama.svg'" v-if="folibRepository.subLayout === 'ollama'" />
                     {{ currentTreeNode.name }}
                   </a-col>
                   <a-col :span="8" :xs="24" :xl="8">
@@ -463,20 +464,20 @@
           <a v-if="currentTreeNode.url && folibRepository.layout !== 'Docker'" class="ml-10"><a-icon type="copy"
               @click="copy(getFormattedUrl(currentTreeNode.url))" /> </a>
           <hr class="gradient-line" />
-          <BaseData 
+          <BaseData
               ref="BaseData"
               :key="pageKey"
-              :isChecked="isChecked" 
-              :currentTreeNode="currentTreeNode" 
+              :isChecked="isChecked"
+              :currentTreeNode="currentTreeNode"
               :repositoryType="repositoryType"
-              :currentFileDetial="currentFileDetial" 
-              :successMsg="successMsg" 
-              :folibRepository="folibRepository" 
+              :currentFileDetial="currentFileDetial"
+              :successMsg="successMsg"
+              :folibRepository="folibRepository"
               @addPageKey="addPageKey"
               @handlerPermission="handlerPermission"
               @messageArchitectureChild="handleArchitectureMessage"
-              @metadataEditHandler="metadataEditHandler" 
-              @metadataHandler="metadataHandler" 
+              @metadataEditHandler="metadataEditHandler"
+              @metadataHandler="metadataHandler"
               @setCurrentFileDetial="setCurrentFileDetial"
           />
         </a-card>

@@ -138,7 +138,9 @@ public class BrowseController
         if (StringUtils.isBlank(type)) {
             type = repositoryParam.getLayout();
         }
-        if (!DockerLayoutProvider.ALIAS.equalsIgnoreCase(type)) {
+
+        String finalType = type;
+        if (DockerLayoutProvider.DOCKER_SUBLAYOUT.stream().noneMatch(x -> x.equalsIgnoreCase(finalType))) {
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
             Repository repository = repositoryPath.getRepository();
             Artifact artifact = getArtifact(repositoryPath, report);
@@ -195,8 +197,16 @@ public class BrowseController
                     DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) artifact.getArtifactCoordinates();
                     jsonObject.put("artifact", artifact);
                     String imageName = getArtifactoryBaseUrlSimple(repositoryId) + "/" + dockerArtifactCoordinates.getIMAGE_NAME();
-                    String code = "docker pull " + imageName;
-                    CodeSnippet codeSnippet = new CodeSnippet("Docker", code);
+                    String code = null;
+                    CodeSnippet codeSnippet = null;
+                    if("ollama".equalsIgnoreCase(type)){
+                         code = "ollama pull " + imageName;
+                         codeSnippet = new CodeSnippet("ollama", code);
+                    }else {
+                        code = "docker pull " + imageName;
+                        codeSnippet = new CodeSnippet("Docker", code);
+                    }
+
                     List<CodeSnippet> snippets = new ArrayList<>();
                     snippets.add(codeSnippet);
                     jsonObject.put("sha256", artifact.getArtifactName());

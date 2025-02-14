@@ -284,7 +284,8 @@ export default {
         { value: 'gitlfs' },
         { value: 'HuggingFace' },
         { value: 'pub' },
-        { value: 'debian' }
+        { value: 'debian' },
+        { value: 'ollama' },
       ]
     }
   },

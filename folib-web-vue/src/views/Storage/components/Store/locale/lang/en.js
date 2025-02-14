@@ -357,6 +357,7 @@ export default {
     'DebianPermissionConfiguration':'If you need to add the credential information to the "/etc/apt/sources.list" file, execute the following command:',
     'DebianCommandOperation':'After configuration, use the following command to install the package:',
     'CargoGlobalConfiguration': 'To point Cargo client to your FoLib repository, edit the configuration file under your Cargo home directory (for example ~/.cargo/config.toml):',
+    'OllamaGlobalConfiguration': 'Folib wants to open anonymous access',
     'CargoGlobalConfigurationToken': 'To set your credentials for API calls such as publish and yank, add the following section to the credentials file under your Cargo home directory (for example ~/.cargo/credentials.toml):',
     'CargoDeploy':'deploy',
     'CargoDeployConfig': 'To publish a crate and upload it to FoLib, use the cargo publish command.',
