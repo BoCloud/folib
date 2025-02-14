@@ -171,10 +171,11 @@ public class CargoArtifactController extends BaseArtifactController {
      */
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @PutMapping(value = "/{storageId}/{repositoryId}/api/v1/crates/new")
-    public ResponseEntity<?> publish(@PathVariable("storageId") String storageId,
+    public ResponseEntity<?> publish(@RepositoryMapping Repository repository,
                                      @PathVariable("repositoryId") String repositoryId,
                                      HttpServletRequest request) {
         List<String> errors = new ArrayList<>();
+        final String storageId = repository.getStorage().getId();
         try (InputStream inputStream = request.getInputStream()) {
             PublishRequest publishRequest = extractPublishRequest(inputStream);
             String cratePath = CargoUtil.buildCratePath(publishRequest.getMetadata().getName(), publishRequest.getMetadata().getVers());
