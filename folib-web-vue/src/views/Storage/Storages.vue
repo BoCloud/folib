@@ -1199,7 +1199,7 @@ export default {
         var reg = /^[a-zA-Z0-9_.\\-]+$/
         if (reg.test(value) === false) {
           callback(new Error(this.$t('Storage.SpaceNameLimit')))
-        } else if(value.length < 1 || value.length > 30) {
+        } else if(value.length < 1 || value.length > 45) {
           callback(new Error(this.$t('Storage.SpaceNameLengthLimit')))
         } else {
           callback()
