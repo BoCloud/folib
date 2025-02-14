@@ -1,5 +1,6 @@
 package com.veadan.folib.enums;
 
+import com.github.luben.zstd.ZstdInputStream;
 import lombok.Getter;
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
 
@@ -24,6 +25,12 @@ public enum ArchiveFormat {
         public InputStream unzipControl(ByteArrayInputStream controlArchiveStream) throws IOException {
             return new XZCompressorInputStream(controlArchiveStream);
         }
+    },
+    ZX(".zst"){
+        public InputStream unzipControl(ByteArrayInputStream controlArchiveStream) throws IOException {
+            return new ZstdInputStream(controlArchiveStream);
+        }
+
     },
     NONE("") {
         public InputStream unzipControl(ByteArrayInputStream controlArchiveStream) throws IOException {

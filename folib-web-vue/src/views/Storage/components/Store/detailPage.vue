@@ -16,10 +16,10 @@
               {{ currentTreeNode.repositoryId }}
             </a-descriptions-item>
             <a-descriptions-item v-if="currentTreeNode.layout" :label="$t('Store.RepositoryType')">
-              {{ currentTreeNode.layout }}
+              {{ currentTreeNode.subLayout }}
             </a-descriptions-item>
             <a-descriptions-item v-if="currentTreeNode.layout" :label="$t('Store.StrategyType')">
-              {{ currentTreeNode.type }}
+              {{ getStrategyType(currentTreeNode.type)}}
             </a-descriptions-item>
             <a-descriptions-item :label="$t('Store.Name')">
               {{ currentTreeNode.name }}
@@ -46,9 +46,10 @@
                             </template>
                             <p class="ellipsis-text"> {{ currentTreeNode.groupRepositories.join('\n') }}</p>
                         </a-tooltip> -->
-                        <a-tag v-for="(repo, index) in currentTreeNode.groupRepositories" :key="index">
+                        <a-tag v-for="(repo, index) in currentTreeNode.groupRepositories" :key="index" :color="currentTreeNode.groupDefaultRepository && currentTreeNode.groupDefaultRepository == repo ? 'green': ''">
                           <a-tooltip>
                             <template slot="title">
+                              <div v-if="currentTreeNode.groupDefaultRepository && currentTreeNode.groupDefaultRepository == repo">{{ $t('Store.GroupDefaultRepository')}}</div>
                               <div>{{ $t('Store.StorageName') + ":"}}<span class="ml-10">{{ repo.split(":")[0] }}</span></div>
                               <div>{{ $t('Store.RepositoryName') + ":"}}<span class="ml-10">{{ repo.split(":")[1] }}</span></div>
                             </template>
@@ -75,13 +76,28 @@ export default {
         }
     },
     computed:{
-        currentTreeNode() {
+        currentTreeNode(val) {
+          console.log(val,'currentTreeNode')
           if(this.isStoreView){
             let currentTreeNode={...this.folibRepository};
             currentTreeNode.name=this.folibRepository.id;
             return currentTreeNode;
           }else{
             return this.$store.state.currentTreeNode
+          }
+        },
+        getStrategyType(){
+          return val => {
+            let type = ''
+            switch(val){
+              case 'hosted':  type = this.$t('Storage.Local')
+              break
+              case 'proxy':  type = this.$t('Storage.Agent')
+              break
+              case 'group':  type = this.$t('Storage.Combination')
+              break
+            }
+            return type
           }
         }
     },

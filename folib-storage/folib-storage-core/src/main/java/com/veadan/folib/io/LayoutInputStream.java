@@ -127,14 +127,14 @@ public class LayoutInputStream
             throws IOException
     {
         int ch = in.read();
-        if (ch != -1)
-        {
-            for (Map.Entry entry : digests.entrySet())
-            {
-                MessageDigest digest = (MessageDigest) entry.getValue();
-                digest.update((byte) ch);
-            }
-        }
+        //if (ch != -1)
+        //{
+        //    for (Map.Entry entry : digests.entrySet())
+        //    {
+        //        MessageDigest digest = (MessageDigest) entry.getValue();
+        //        digest.update((byte) ch);
+        //    }
+        //}
 
         return ch;
     }
@@ -145,17 +145,17 @@ public class LayoutInputStream
                     int len)
             throws IOException
     {
-        int numberOfBytesRead = in.read(bytes, off, len);
-        if (numberOfBytesRead != -1)
-        {
-            for (Map.Entry entry : digests.entrySet())
-            {
-                MessageDigest digest = (MessageDigest) entry.getValue();
-                digest.update(bytes, off, numberOfBytesRead);
-            }
-        }
+        return in.read(bytes, off, len);
+        //if (numberOfBytesRead != -1)
+        //{
+        //    for (Map.Entry entry : digests.entrySet())
+        //    {
+        //        MessageDigest digest = (MessageDigest) entry.getValue();
+        //        digest.update(bytes, off, numberOfBytesRead);
+        //    }
+        //}
 
-        return numberOfBytesRead;
+        //return numberOfBytesRead;
     }
 
     @Override
@@ -164,13 +164,13 @@ public class LayoutInputStream
     {
         int len = in.read(bytes);
 
-        for (Map.Entry entry : digests.entrySet())
-        {
-            MessageDigest digest = (MessageDigest) entry.getValue();
-            if (len != -1) {
-                digest.update(bytes, 0, len);
-            }
-        }
+        //for (Map.Entry entry : digests.entrySet())
+        //{
+        //    MessageDigest digest = (MessageDigest) entry.getValue();
+        //    if (len != -1) {
+        //        digest.update(bytes, 0, len);
+        //    }
+        //}
 
         return len;
     }

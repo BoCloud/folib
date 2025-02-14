@@ -237,7 +237,7 @@
               </a-card>
             </a-form-model-item>
             <a-form-model-item class="mb-10" :label="$t('Storage.StorageSizeLimit')" :colon="false">
-                <a-input v-model="storageMaxSize" addon-after="TB">
+                <a-input v-model="storageMaxSize" @input="handleInput($event,'storageMaxSize')" :maxLength="6" addon-after="TB">
                 </a-input>
             </a-form-model-item>
             <a-form-model-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN') > -1" :label="$t('Storage.Administrator')"
@@ -342,7 +342,7 @@
               </a-card>
             </a-form-item>
             <a-form-item class="mb-10" :label="$t('Storage.StorageSizeLimit')" :colon="false">
-                <a-input v-model="storageMaxSize" addon-after="TB">
+                <a-input v-model="storageMaxSize" @input="handleInput($event,'storageMaxSize')"  :maxLength="6" addon-after="TB">
                 </a-input>
             </a-form-item>
             <a-form-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN') > -1" :label="$t('Storage.Administrator')"
@@ -525,8 +525,8 @@
               <a-row :gutter="[24]">
                 <a-col :span="12">
                   <a-form-item class="mb-10" :label="$t('Storage.WarehouseName')" :colon="false">
-                    <a-input :disabled="folibRepositoryEditDisabled" :placeholder="$t('Storage.KeywordPrompt')"
-                      v-model="folibRepositoryIds" />
+                    <a-input ref="inputName" :disabled="folibRepositoryEditDisabled" :placeholder="$t('Storage.KeywordPrompt')"
+                      v-model="folibRepositoryIds" @blur="getFolibRepositoryIds(folibRepositoryIds)" />
                   </a-form-item>
                 </a-col>
                 <a-col :span="6">
@@ -562,12 +562,12 @@
                 </a-col>
                 <a-col :span="12">
                   <a-form-item class="mb-10" :label="$t('Storage.RepositorySizeLimit')" :colon="false">
-                    <a-input  :placeholder="$t('Storage.RepositorySizeLimit')" addon-after="GB" v-model="repositoryStorageMaxSize" />
+                    <a-input  :placeholder="$t('Storage.RepositorySizeLimit')" :maxLength="6" @input="handleInput($event,'repositoryStorageMaxSize')" addon-after="GB" v-model="repositoryStorageMaxSize" />
                   </a-form-item>
                 </a-col>
                 <a-col :span="6">
                   <a-form-item class="mb-10" :label="$t('Storage.ItemLimit')" :colon="false">
-                    <a-input v-model="artifactMaxSize" addon-after="MB">
+                    <a-input v-model="artifactMaxSize" :maxLength="6" @input="handleInput($event,'artifactMaxSize')" addon-after="MB">
                     </a-input>
                   </a-form-item>
                 </a-col>
@@ -683,12 +683,13 @@
                   <a-button @click="moveStep(-1)" class="px-25">{{ $t('Storage.Back') }}</a-button>
                 </a-col>
                 <a-col :span="3" class="text-right">
-                    <a-button  v-if="folibRepository.type === 'hosted'" @click="addOrUpdateRepositorySecond(true,false)" class="px-25">
+                    <a-button :disabled="nameKey || loadingNameKey" v-if="folibRepository.type === 'hosted'" @click="addOrUpdateRepositorySecond(true,false)" class="px-25">
                         {{ $t('Storage.Save') }}
                     </a-button>
                 </a-col>
                   <a-col :span="3" class="text-right">
                       <a-button v-if="folibRepository.type === 'hosted'" type="primary"
+                                :disabled="nameKey || loadingNameKey"
                                 @click="addOrUpdateRepositorySecond(true)" class="px-25">
                           {{ $t('Storage.Next') }}
                       </a-button>
@@ -697,7 +698,7 @@
                         @click="addOrUpdateRepositorySecond(true)" class="px-25">
                         {{ folibRepositoryEditDisabled? '修改': '创建' }}并设置定时策略</a-button> -->
 
-                      <a-button v-else-if="folibRepository.type !== 'hosted'" type="primary" @click="moveStep(1)"
+                      <a-button :disabled="nameKey || loadingNameKey" v-else-if="folibRepository.type !== 'hosted'" type="primary" @click="moveStep(1)"
                                 class="px-25">{{ $t('Storage.Next') }}
                       </a-button>
                   </a-col>
@@ -1143,7 +1144,7 @@ import {
 } from "@/api/customLayout"
 import { getUsers, queryUser } from "@/api/users"
 import CardProjectFolib from "@/components/Cards/CardProjectFolib"
-import { getLayoutType, getLayoutRepoPrefix, genLayoutType, groupRepositoriesBuild, objectToGroupRepositories } from "@/utils/layoutUtil"
+import { getLayoutType, genLayoutType, groupRepositoriesBuild, objectToGroupRepositories } from "@/utils/layoutUtil"
 import draggable from "vuedraggable"
 import FolibKanbanBoard from "@/components/Kanban/FolibKanbanBoard"
 import FolibKanbanTask from "@/components/Kanban/FolibKanbanTask"
@@ -1410,6 +1411,8 @@ export default {
       groupDefaultRepository:undefined,
       customLayoutList: [],
       switchDisabled:true,
+      nameKey:false,
+      loadingNameKey:false
     };
   },
   watch: {
@@ -1484,6 +1487,40 @@ export default {
     this.switchDisabled = true
   },
   methods: {
+    
+    getFolibRepositoryIds(val){
+      this.loadingNameKey = true
+      if(!val){
+        this.$notification.open({
+          class: 'ant-notification-warning',
+          message: this.$t('Storage.FillInErrors'),
+          description: this.$t('Storage.EnterRepository'),
+        })
+        return
+      }
+      getRepositoryResponseEntity(this.currentStorage.id, val).then(res => {
+        this.nameKey = true
+        this.$refs.inputName.select()
+        this.$notification.open({
+          class: 'ant-notification-warning',
+          message: this.$t('Storage.FillInErrors'),
+          description: this.$t('Storage.nameRepeat'),
+        })
+      }).catch(err => {
+        this.nameKey = false
+        this.loadingNameKey = false
+      })
+    },
+    handleInput(e,type) {
+      let value = e.target.value
+      // 实时过滤非法字符：只能输入数字，且首位不能为0
+      value = value.replace(/^0+/, "").replace(/[^\d]/g, "") // 移除开头的零，保留数字
+      // 限制最大值
+      if (value !== "" && Number(value) > 999999) {
+        value = "999999"
+      }
+      this[type] = value; // 更新绑定值
+    },
     // 制品仓库页面专属。用于切换仓库和存储空间的展示模式
     checkMode(key){
       if(this.switchDisabled){
@@ -1766,7 +1803,7 @@ export default {
         deleteStorages(this.currentStorage, false).then(response => {
           setTimeout(() => {
             this.$notification.success({
-              message: response.message,
+              message: response.message || `${this.$t('Storage.successfulOperation')}`,
             })
           }, 100)
           this.showStorageUpdate = false
@@ -1776,7 +1813,7 @@ export default {
         }).catch(err => {
           let error = err.response.data?err.response.data:this.$t('Storage.UnknownError')
           this.$notification["error"]({
-            message: error,
+            message: error  || `${this.$t('Storage.successfulOperation')}`,
           })
         })
       }
@@ -1786,7 +1823,7 @@ export default {
         deleteStorages(this.currentStorage, true).then(response => {
           setTimeout(() => {
             this.$notification.success({
-              message: response.message,
+              message: response.message  || `${this.$t('Storage.successfulOperation')}`,
             })
           }, 100)
           this.showStorageUpdate = false;
@@ -1796,7 +1833,7 @@ export default {
         }).catch(err => {
           let error = err.response.data?err.response.data:this.$t('Storage.UnknownError')
           this.$notification["error"]({
-            message: error,
+            message: error  || `${this.$t('Storage.successfulOperation')}`,
           })
         })
       }
@@ -1816,7 +1853,7 @@ export default {
             createStorages(this.storageCreateData).then(response => {
               setTimeout(() => {
                 this.$notification.success({
-                  message: response.message,
+                  message: response.message  || `${this.$t('Storage.successfulOperation')}`,
                 })
               }, 100)
               this.showsTorageFormModal = false;
@@ -1844,7 +1881,7 @@ export default {
         updateStorages(this.currentStorage).then(response => {
           setTimeout(() => {
             this.$notification.success({
-              message: response.message,
+              message: response.message  || `${this.$t('Storage.successfulOperation')}`,
             })
           }, 100)
           this.showStorageUpdate = false
@@ -1933,6 +1970,7 @@ export default {
       this.getStorage(this.currentStorage.id)
     },
     loadMore(total){
+      console.log(total,total !== this.queryParams.total)
       if(total !== this.queryParams.total && !this.$refs.repositoryTree.loadingMore){
         this.$refs.repositoryTree.loadingMoreShow(true)
         this.queryParams.page ++

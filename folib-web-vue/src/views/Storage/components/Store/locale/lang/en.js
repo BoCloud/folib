@@ -105,6 +105,7 @@ export default {
     'MakeADockerVersion': 'Make a Docker version',
     'MirrorOS': 'Mirror OS',
     'TheInfrastructure': 'The infrastructure',
+    'Version': 'Version',
     'Metadata': 'Metadata ',
     'MetadataKey': 'MetadataKey',
     'Create': 'New',
@@ -129,6 +130,7 @@ export default {
     'Operations': 'Operations',
     'DeletedProductSuccess': 'Deleted product metadata successfully',
     'BomInformation': 'Bom information',
+    'authDescription':'The auth in the current example needs to be re-decoded and encoded',
     // UseDoc
     'Instructions': 'Instructions for use',
     'GlobalConfiguration': ' global configuration',
@@ -299,6 +301,7 @@ export default {
     "GoUploadCommand":"Execute upload command",
     "GoUploadUseFolib":"Using the folib command-line tool to upload",
     "Login":"Login",
+    "Upload":"Upload",
     "ParameterExplanation":"Parameter Explanation",
     "StorageName":"Storage name",
     "RepositoryName":"Repository name",
@@ -366,4 +369,5 @@ export default {
     'RecursiveTip': 'The metadata will be added to the selected folder and to all of the artifacts, folders and sub-folders under this folder.',
     'RecursiveDelete': 'Recursive Delete',
     'Edit': 'Edit',
+    'GroupDefaultRepository':'Default upload repository',
 }

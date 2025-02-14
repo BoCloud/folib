@@ -1005,6 +1005,9 @@
       <a-tab-pane key="9" :tab="$t('Setting.auditConfig')">
         <audit-config></audit-config>
       </a-tab-pane>
+      <a-tab-pane key="12" :tab="$t('Setting.TimingStrategy')">
+        <TimingStrategy></TimingStrategy>
+      </a-tab-pane>
 
     </a-tabs>
     <a-modal v-model="showMetadataHandler"
@@ -1331,6 +1334,7 @@ import BlockStrategy from './components/BlockStrategy/index.vue'
 import BlackWhite from './components/BlackWhite/index.vue'
 import FederalPromotionPolicy from './components/FederalPromotionPolicy/index.vue'
 import CustomLayout from './components/CustomLayout/index.vue'
+import TimingStrategy from "./components/TimingStrategy/index.vue";
 
 export default {
   props: ['navbarFixed'],
@@ -1344,6 +1348,7 @@ export default {
     BlackWhite,
     FederalPromotionPolicy,
     CustomLayout,
+    TimingStrategy,
   },
   data() {
     const checkClusterEnName = (rule, value, callback) => {

@@ -83,7 +83,7 @@ public class DebianIncrementalIndexer {
         eventsEntry.getValue().stream().collect(Collectors.groupingBy(DebianIndexEvent::componentArchitectureGroup)).entrySet().stream().filter(Objects::nonNull).filter(coordinateEvents -> coordinateEvents.getValue().size() > 0).forEach(coordinateEvents -> {
             this.indexSingleCoordinate(repo, distribution, coordinateEvents, writtenIndices, indicesToDelete);
         });
-        List<Artifact> packagesArtifacts = this.indexRelease(repo, distribution, indicesToDelete);
+        this.indexRelease(repo, distribution, indicesToDelete);
 //            DebianUtils.addByHashPackages(repo, writtenIndices, packagesArtifacts);
         finalizeIndex(repo, indicesToDelete);
         log.trace("Finished index for all required packages of distribution {}", distribution);
@@ -126,11 +126,10 @@ public class DebianIncrementalIndexer {
         }
     }
 
-    private List<Artifact> indexRelease(Repository repo, String distribution, List<String> indicesToDelete) {
+    private void indexRelease(Repository repo, String distribution, List<String> indicesToDelete) {
         log.debug("Indexing Release file for distribution {} on repo {}", distribution, repo.getId());
-        List<Artifact> packagesArtifacts = (new DebianReleaseMetadataIndexer(repo, indicesToDelete, resolver, artifactorySearch)).indexRelease(new DebianReleaseContext(distribution));
+        new DebianReleaseMetadataIndexer(repo, indicesToDelete, resolver, artifactorySearch).indexRelease(distribution);
         log.trace("Index of Release file for distribution {} in repo {} ", distribution, repo.getId());
-        return packagesArtifacts;
     }
 
     private Set<String> getAddEvents(Repository repo, List<DebianIndexEvent> events, DebianPackagesContext context) {

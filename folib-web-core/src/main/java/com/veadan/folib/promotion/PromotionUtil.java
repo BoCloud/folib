@@ -779,6 +779,7 @@ public class PromotionUtil {
                 log.error("Do copy srcRepositoryPath [{}] targetManiFestPath [{}] error [{}]", srcRepositoryPath, targetRepositoryPath, ExceptionUtils.getStackTrace(e));
                 throw new Exception(e.getMessage());
             }
+            handleMaven(targetRepositoryPath);
             if (isDocker) {
                 List<DockerSubsidiary> dockerSubsidiaries = DockerUtils.getDockerSubsidiaryFilePaths(srcRepositoryPath);
                 if (CollectionUtils.isNotEmpty(dockerSubsidiaries)) {
@@ -874,6 +875,7 @@ public class PromotionUtil {
                 log.error("Do copy srcRepositoryPath [{}] targetManiFestPath [{}] error [{}]", srcRepositoryPath, targetRepositoryPath, ExceptionUtils.getStackTrace(e));
                 throw new Exception(e.getMessage());
             }
+            handleMaven(targetRepositoryPath);
             if (isDocker) {
                 List<DockerSubsidiary> dockerSubsidiaries = DockerUtils.getDockerSubsidiaryFilePaths(srcRepositoryPath);
                 if (CollectionUtils.isNotEmpty(dockerSubsidiaries)) {
@@ -1072,7 +1074,7 @@ public class PromotionUtil {
     private void handleRpm(Repository repository) {
         try {
             if (!ProductTypeEnum.Rpm.getFoLibraryName().equals(repository.getLayout())) {
-               return;
+                return;
             }
             RpmRepoIndexer rpmRepoIndexer = new RpmRepoIndexer(repositoryPathResolver, artifactManagementService, tempPath);
             rpmRepoIndexer.indexWriter(repository);
