@@ -174,36 +174,40 @@ public class CargoLayoutProvider extends AbstractLayoutProvider<CargoArtifactCoo
 
     @Override
     public void initData(String storageId, String repositoryId) {
-        Repository repository = configurationManager.getConfiguration().getStorage(storageId).getRepository(repositoryId);
-        if(repository.isProxyRepository()){
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, ".proxy-config.json");
-            repositoryPath.setTargetUrl("config.json");
-            try {
-                repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+        try {
+            Repository repository = configurationManager.getConfiguration().getStorage(storageId).getRepository(repositoryId);
+            if(repository.isProxyRepository()){
+                RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, ".proxy-config.json");
+                if (Files.exists(repositoryPath)) {
+                    Files.deleteIfExists(repositoryPath);
+                }
+                repositoryPath.setTargetUrl("config.json");
+                try {
+                    repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), "config.json");
+            if (Files.exists(repositoryPath)) {
+                Files.deleteIfExists(repositoryPath);
+            }
+            String baseUrl = StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/");
+            ObjectMapper objectMapper = new ObjectMapper();
+            Map<String, String> map = new HashMap<>();
+            map.put("dl", String.format("%s/storages/%s/%s/api/v1/crates", baseUrl, repository.getStorage().getId(), repository.getId()));
+            map.put("api", String.format("%s/storages/%s/%s", baseUrl, repository.getStorage().getId(), repository.getId()));
+            if (!repository.isAllowAnonymous()) {
+                map.put("auth-required", "true");
+            }
+            objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+            ObjectWriter writer = objectMapper.writerWithDefaultPrettyPrinter();
+            //repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
+            artifactManagementService.store(repositoryPath, new ByteArrayInputStream(writer.writeValueAsString(map).getBytes()));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
 
-        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), "config.json");
-        if (!Files.exists(repositoryPath)) {
-            String baseUrl = StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/");
-            try {
-                ObjectMapper objectMapper = new ObjectMapper();
-                Map<String, String> map = new HashMap<>();
-                map.put("dl", String.format("%s/storages/%s/%s/api/v1/crates", baseUrl, repository.getStorage().getId(), repository.getId()));
-                map.put("api", String.format("%s/storages/%s/%s", baseUrl, repository.getStorage().getId(), repository.getId()));
-                if (!repository.isAllowAnonymous()) {
-                    map.put("auth-required", "true");
-                }
-                objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-                ObjectWriter writer = objectMapper.writerWithDefaultPrettyPrinter();
-                //repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
-                artifactManagementService.store(repositoryPath, new ByteArrayInputStream(writer.writeValueAsString(map).getBytes()));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
 
     }
 
