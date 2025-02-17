@@ -323,7 +323,7 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
             batch = syncArtifactForm.getBatch();
         }
         COUNT.set(0L);
-        int availableCores = commonComponent.getAvailableCores() * 2;
+        int availableCores =syncArtifactForm.getMaxThreadNum()!=null?syncArtifactForm.getMaxThreadNum(): 16;
         ThreadPoolTaskExecutor threadPoolTaskExecutor = commonComponent.buildThreadPoolTaskExecutor("browseRawSync", availableCores, availableCores);
         boolean ispaused = false;
         try (Stream<Path> pathStream = Files.list(path)) {
