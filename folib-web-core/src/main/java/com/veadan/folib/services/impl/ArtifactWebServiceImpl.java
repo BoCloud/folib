@@ -928,27 +928,27 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 boolean flag = false;
                 statusInfo.setTotal(fileList.size());
                 for (File artifactFile : fileList) {
-                    try {
-                        filePath = artifactFile.getPath().substring(parentFile.getAbsolutePath().length());
-                        if (filePath.startsWith(separator)) {
-                            filePath = filePath.substring(1);
-                        }
-                        if (StringUtils.isNotBlank(path)) {
-                            filePath = path + File.separator + filePath;
-                        }
-                        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, filePath);
-                        if (!RepositoryFiles.isArtifact(repositoryPath)) {
-                            log.warn("制品路径 [{}] 不是一个制品文件,跳过", repositoryPath.toString());
-                            continue;
-                        }
-                        try (FileInputStream fileInputStream = new FileInputStream(artifactFile)) {
-                            flag = storeArtifact(repositoryPath, fileInputStream);
-                            if (flag) {
-                                successTotal = successTotal + 1;
-                            }
+                    filePath = artifactFile.getPath().substring(parentFile.getAbsolutePath().length());
+                    if (filePath.startsWith(separator)) {
+                        filePath = filePath.substring(1);
+                    }
+                    if (StringUtils.isNotBlank(path)) {
+                        filePath = path + File.separator + filePath;
+                    }
+                    RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, filePath);
+                    if (!RepositoryFiles.isArtifact(repositoryPath)) {
+                        log.warn("制品路径 [{}] 不是一个制品文件,跳过", repositoryPath.toString());
+                        continue;
+                    }
+
+                    try (FileInputStream fileInputStream = new FileInputStream(artifactFile)) {
+                        flag = storeArtifact(repositoryPath, fileInputStream);
+                        if (flag) {
+                            successTotal = successTotal + 1;
                         }
                     } catch (Exception ex) {
                         log.error("路径 [{}] 错误 [{}] ", artifactFile.getAbsolutePath(), ExceptionUtils.getStackTrace(ex));
+                        throw new RuntimeException(ex.getMessage());
                     }
                     statusInfo.setSuccess(successTotal);
                     statusInfo.setFail(statusInfo.getTotal() - statusInfo.getSuccess());
@@ -1880,10 +1880,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 artifactMetadataService.rebuildMetadata(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), repositoryPath.getArtifactEntry().getArtifactPath());
             } catch (Exception ex) {
                 log.error("StoreArtifact rebuildMetadata repositoryPath：{}，error：{}", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
+                throw ex;
             }
         } catch (Exception ex) {
             log.error("StoreArtifact repositoryPath：{} error：{}", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
-            return false;
+            throw  new RuntimeException(ex);
         }
         return true;
     }
