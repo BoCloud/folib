@@ -439,7 +439,7 @@ public class StoragesConfigurationController
             //获取匿名角色关联的存储空间
             List<Storage> collect = repositoryComponent.getAnonymousUserStorages(storages, storageRepMap);
             //获取匿名角色关联的仓库
-            repositoryComponent.getAnonymousUserRepositories(storageId, type, excludeType, excludeRepositoryId, layout, policy, collect, storageRepMap, repositoriesList, storageTreeForms);
+            repositoryComponent.getAnonymousUserRepositories(storageId, name, type, excludeType, excludeRepositoryId, layout, policy, collect, storageRepMap, repositoriesList, storageTreeForms);
 
             List<Repository> pageRepository = repositoriesList.stream().skip((long) (page - 1) * limit).limit(limit).collect(Collectors.toList());
 
@@ -538,7 +538,7 @@ public class StoragesConfigurationController
             //获取匿名角色关联的存储空间
             List<Storage> collect = repositoryComponent.getAnonymousUserStorages(storages, storageRepMap);
             //获取匿名角色关联的仓库
-            repositoryComponent.getAnonymousUserRepositories(storageId, type, excludeType, excludeRepositoryId, layout, policy, collect, storageRepMap, repositorieList, storageTreeForms);
+            repositoryComponent.getAnonymousUserRepositories(storageId, "",type, excludeType, excludeRepositoryId, layout, policy, collect, storageRepMap, repositorieList, storageTreeForms);
 
             return ResponseEntity.ok(storageTreeForms);
         }
@@ -620,7 +620,7 @@ public class StoragesConfigurationController
             //获取匿名角色关联的存储空间
             List<Storage> collect = repositoryComponent.getAnonymousUserStorages(storages, storageRepMap);
             //获取匿名角色关联的仓库
-            repositoryComponent.getAnonymousUserRepositories(null, type, null, excludeRepositoryId, layout, policy, collect, storageRepMap, repositorieList, storageTreeForms);
+            repositoryComponent.getAnonymousUserRepositories(null, "", type, null, excludeRepositoryId, layout, policy, collect, storageRepMap, repositorieList, storageTreeForms);
 
             return ResponseEntity.ok(storageTreeForms);
         }

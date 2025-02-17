@@ -14,14 +14,9 @@ import com.veadan.folib.domain.migrate.SyncArtifactForm;
 import com.veadan.folib.entity.MigrateInfo;
 import com.veadan.folib.enums.ArtifactSyncTypeEnum;
 import com.veadan.folib.enums.MigrateStatusEnum;
-import com.veadan.folib.metadata.indexer.RpmRepoIndexer;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
-import com.veadan.folib.services.ArtifactManagementService;
-import com.veadan.folib.services.ArtifactResolutionService;
-import com.veadan.folib.services.ArtifactWebService;
-import com.veadan.folib.services.JfrogMigrateService;
-import com.veadan.folib.services.MigrateInfoService;
+import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import lombok.extern.slf4j.Slf4j;
@@ -50,7 +45,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Scanner;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
 /**
@@ -192,7 +186,7 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
         } catch (Exception ex) {
             log.error("Error [{}]", ExceptionUtils.getStackTrace(ex));
         }
-        long directoryTotal = (int )distributedCounterComponent.getAtomicLong(JfrogMigrateService.DIRECTORY_TOTAl + syncArtifactForm.getStoreAndRepo()).get();
+        long directoryTotal = (int) distributedCounterComponent.getAtomicLong(JfrogMigrateService.DIRECTORY_TOTAl + syncArtifactForm.getStoreAndRepo()).get();
         log.info("rpm包同步目录元数据完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个目录元数据，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), directoryTotal, System.currentTimeMillis() - allStartTime);
         return !ispaused;
     }
@@ -202,9 +196,9 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
         // 获取仓库信息
         try {
             MigrateInfo repository = migrateInfoService.getByMigrateIdAndRepoInfo(syncArtifactForm.getMigrateId(), syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
-            int total=repository.getTotalArtifact()==null?0:repository.getTotalArtifact();
+            int total = repository.getTotalArtifact() == null ? 0 : repository.getTotalArtifact();
             syncArtifactForm.setTotalArtifact(total);
-            if (MigrateStatusEnum.QUEUING.getStatus() == repository.getSyncStatus() &&repository.getIndexFinish()==0) {
+            if (MigrateStatusEnum.QUEUING.getStatus() == repository.getSyncStatus() && repository.getIndexFinish() == 0) {
                 migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.FETCHING_INDEX.getStatus());
                 String dirPath = syncPackageIndex(syncArtifactForm);
                 if (dirPath == null) {
@@ -231,7 +225,7 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
                 migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.PAUSED.getStatus());
             }
         } finally {
-            if(syncArtifactForm.getSyncer()!=null){
+            if (syncArtifactForm.getSyncer() != null) {
                 syncArtifactForm.getSyncer().close();
             }
 
@@ -262,9 +256,9 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
             if (remoteUrl.endsWith(separator)) {
                 remoteUrl = remoteUrl.substring(0, remoteUrl.lastIndexOf(separator));
             }
-            if(syncArtifactForm.getSyncMeta()==1&&syncArtifactForm.getSyncer()==null){
-                String apiUrl=remoteUrl.substring(0,remoteUrl.indexOf(repository.getId()));
-                JfrogPropertySyncer syncer = new JfrogPropertySyncer(apiUrl,repository.getRemoteRepository().getUsername(), repository.getRemoteRepository().getPassword());
+            if (syncArtifactForm.getSyncMeta() == 1 && syncArtifactForm.getSyncer() == null) {
+                String apiUrl = remoteUrl.substring(0, remoteUrl.indexOf(repository.getId()));
+                JfrogPropertySyncer syncer = new JfrogPropertySyncer(apiUrl, repository.getRemoteRepository().getUsername(), repository.getRemoteRepository().getPassword());
                 syncArtifactForm.setSyncer(syncer);
             }
             String rootUrl = remoteUrl;
@@ -342,7 +336,7 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
         long allStartTime = System.currentTimeMillis();
         Path path = Path.of(dirPath + "/artifact");
         if (!Files.exists(path) || !Files.isDirectory(path)) {
-            return syncArtifactForm.getTotalArtifact()==0;
+            return syncArtifactForm.getTotalArtifact() == 0;
         }
         int batch = 100;
         if (Objects.nonNull(syncArtifactForm.getBatch())) {
@@ -402,12 +396,6 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
         }
         int total = (int) distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).get();
         syncArtifactForm.setSyncMount(total);
-        try {
-            RpmRepoIndexer rpmRepoIndexer = new RpmRepoIndexer(repositoryPathResolver, artifactManagementService, tempPath);
-            rpmRepoIndexer.indexWriter(syncArtifactForm.getRepository());
-        } catch (Exception e) {
-            log.info("创建索引异常");
-        }
         handlerDirectoryMetadata(dirPath, syncArtifactForm);
         log.info("rpm包同步完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个制品，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), total, System.currentTimeMillis() - allStartTime);
         return !ispaused;
@@ -434,14 +422,14 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
             Elements links = doc.select(dom);
             for (Element link : links) {
                 String absUrl = link.absUrl("href");
-                if (absUrl.endsWith(".rpm")) {
+                if (absUrl.endsWith(".rpm") || isRepoData(absUrl)) {
                     absUrl = StringUtils.removeStart(absUrl.replace(remoteUrl, ""), GlobalConstants.SEPARATOR);
                     filesCommonComponent.storeContent(absUrl, file.getParent() + "/artifact");
                     distributedCounterComponent.getAtomicLong(JfrogMigrateService.INDEX_COUNT + repository.getStorageIdAndRepositoryId()).getAndAdd(1);
                     THREAD_LOCAL.set(THREAD_LOCAL.get() + 1);
                 } else {
                     // 非子目录
-                    if (!absUrl.contains(url) || url.equals(absUrl) || !absUrl.endsWith( File.separator)) {
+                    if (!absUrl.contains(url) || url.equals(absUrl) || !absUrl.endsWith(File.separator)) {
                         continue;
                     }
                     String path = absUrl.substring(rootUrl.length());
@@ -461,8 +449,8 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
         if (CollectionUtils.isEmpty(artifactPathList)) {
             return;
         }
-        String storageId=form.getStorageId();
-        String repositoryId=form.getRepositoryId();
+        String storageId = form.getStorageId();
+        String repositoryId = form.getRepositoryId();
         List<List<String>> artifactPathLists = Lists.partition(artifactPathList, 5);
         List<FutureTask<String>> futureTasks = Lists.newArrayList();
         FutureTask<String> futureTask = null;
@@ -499,11 +487,11 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
                             if (Files.exists(repositoryPath)) {
                                 // 添加成功 计数
                                 distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + storageId + ":" + repositoryId).addAndGet(1L);
-                                JfrogPropertySyncer syncer =form.getSyncer();
-                                if (syncer!=null) {
+                                JfrogPropertySyncer syncer = form.getSyncer();
+                                if (syncer != null) {
                                     String properties = syncer.getPropertiesByKeyAndPath(repositoryId, artifactPath);
-                                    if (properties!=null) {
-                                        artifactWebService.saveArtifactMetaByString(storageId,repositoryId,artifactPath, properties);
+                                    if (properties != null) {
+                                        artifactWebService.saveArtifactMetaByString(storageId, repositoryId, artifactPath, properties);
                                     }
                                 }
                             }
@@ -527,4 +515,26 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
         //清理
         artifactPathList.clear();
     }
+
+    private boolean isRepoData(String url) {
+        try {
+            if (StringUtils.isBlank(url)) {
+                return false;
+            }
+            String[] arr = url.split("/");
+            if (arr.length < 2) {
+                return false;
+            }
+            String parentDirectory = arr[arr.length - 2], repoData = "repodata";
+            if (repoData.equals(parentDirectory)) {
+                //repo data索引目录
+                return true;
+            }
+            return false;
+        } catch (Exception ex) {
+            log.error("Repo data url [{}] error [{}]", url, ExceptionUtils.getStackTrace(ex));
+        }
+        return false;
+    }
+
 }
