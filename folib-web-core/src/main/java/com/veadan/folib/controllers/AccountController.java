@@ -119,20 +119,11 @@ public class AccountController
         {
             throw new RequestBodyValidationException(UserController.FAILED_UPDATE_USER, bindingResult);
         }
-
-        if (!(authentication.getPrincipal() instanceof UserDetails))
-        {
-            String message = "Unsupported logged user principal type: " + authentication.getPrincipal().getClass();
-            return getFailedResponseEntity(HttpStatus.BAD_REQUEST, message, MediaType.APPLICATION_JSON_VALUE);
-        }
-
-        final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
-
         // Updating account details currently only allows changing password and security token.
         // However, we're reusing the UserForm which includes other fields. Just to be on the safe side,
         // we are creating a new UserDto which contains only password & securityToken field changes.
         UserDto user = new UserDto();
-        user.setUsername(loggedUser.getUsername());
+        user.setUsername(userToUpdate.getUsername());
         if (StringUtils.isNotBlank(userToUpdate.getPassword())) {
             user.setOriginalPassword(userToUpdate.getPassword());
             String password = rsaUtils.decrypt(userToUpdate.getPassword());
