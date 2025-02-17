@@ -35,6 +35,12 @@ public class PypiArtifactCoordinatesUtils {
      * @return Returns a PypiArtifactCoordinate object with all coordinates in the filename set
      */
     public static PypiArtifactCoordinates parse(String path) {
+        if (path.endsWith(".html")) {
+            PypiArtifactCoordinates pypiArtifactCoordinates = new PypiArtifactCoordinates();
+            pypiArtifactCoordinates.setPath(path);
+            pypiArtifactCoordinates.setId(path);
+            return pypiArtifactCoordinates;
+        }
         if (PypiArtifactCoordinates.EXTENSION_LIST.stream().noneMatch(path::endsWith)) {
             String message = String.format("The artifact packaging can be only %s path [%s]", String.join(" or ", PypiArtifactCoordinates.EXTENSION_LIST), path);
             log.info(message);

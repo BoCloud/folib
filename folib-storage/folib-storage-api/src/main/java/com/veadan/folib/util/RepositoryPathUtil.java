@@ -32,6 +32,8 @@ import java.util.stream.Stream;
 @Slf4j
 public class RepositoryPathUtil {
 
+    public final static List<String> EXCLUDE_LIST = Lists.newArrayList("blobs", "manifest", ".temp");
+
     public static List<S3Path> getS3FiePaths(S3Path s3Path) throws Exception {
         List<S3Path> listFile = new ArrayList<S3Path>();
         List<S3Path> listDir = new ArrayList<S3Path>();

@@ -13,6 +13,8 @@ export default {
     'NotAvailable': 'Not available',
     'UserInformation': 'User information',
     'UserEdit': 'User edit',
+    'EnterYourEmail':'Please enter your email',
+    'EnterCorrectEmail':'Please enter correct email',
     'Cancel': 'Cancel',
     'Save': 'Save',
     'UserName': 'User name',

@@ -404,6 +404,13 @@ export function crontasksList (scope) {
     method: 'get'
   })
 }
+export function cronTasksGlobalList () {
+  return axios({
+    url: '/api/configuration/crontasks/types/globalList',
+    method: 'get'
+  })
+}
+
 export function crontasksByRepository (storageId,repositoryId) {
   return axios({
     url: '/api/configuration/crontasks/getByRepository',
@@ -540,5 +547,13 @@ export function downloadTemplate () {
     url: '/api/migrate/jfrog/download',
     method: 'get',
     responseType: 'blob',
+  })
+}
+
+
+export function getMetadata (storageId,repositoryId,path) {
+  return axios({
+    url: '/api/artifact/metadata/'+storageId+'/'+repositoryId+'/'+path,
+    method: 'get'
   })
 }

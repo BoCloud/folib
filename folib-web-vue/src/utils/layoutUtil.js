@@ -136,7 +136,7 @@ export function fileSizeConverUnit(limit, unit) {
     return sizestr;
 }
 
-export function artifactCheck(repository, fileName, fileSize) {
+export function artifactCheck(repository, fileName, fileSize,maxSize) {
     let layout = repository.layout
     let result = {check: true, msg: ''}
     if (layout === 'Maven 2') {
@@ -156,12 +156,36 @@ export function artifactCheck(repository, fileName, fileSize) {
             return result
         }
     }
-    let fileSizeLimit = 2 * 1024 * 1024 * 1024
+    let fileSizeLimit = maxSize ? maxSize :4 * 1024 * 1024 * 1024
     if (fileSize > fileSizeLimit) {
+        let  mss= convertToUnit(fileSizeLimit);
+        let msg = "文件大小超过"+mss+"上传限制";
         result.check = false
         result.msg = msg
         return result
     }
     return result
+}
+
+export function convertToUnit(size) {
+    const sizeNumeric = Number(size);
+    if (isNaN(sizeNumeric)) {
+        throw new Error("Invalid size value: " + size);
+    }
+    if(size<1024){
+        return sizeNumeric + "B";
+    }else if(size>=1024 && size<1024*1024){
+        return (sizeNumeric/1024).toFixed(2)+"KB";
+    }else if(size>=1024*1024 && size<1024*1024*1024){
+        return (sizeNumeric/(1024*1024)).toFixed(2)+"MB";
+    }else if(size>=1024*1024*1024 && size<1024*1024*1024*1024){
+        return (sizeNumeric/(1024*1024*1024)).toFixed(2)+"GB";
+    }else if(size>=1024*1024*1024*1024 && size<1024*1024*1024*1024*1024){
+        return (sizeNumeric/(1024*1024*1024*1024)).toFixed(2)+"TB";
+    }else if(size>=1024*1024*1024*1024*1024 && size<1024*1024*1024*1024*1024*1024){
+        return (sizeNumeric/(1024*1024*1024*1024*1024)).toFixed(2)+"PB";
+    }else {
+        throw new Error("Unsupported unit: " + unit);
+    }
 }
 

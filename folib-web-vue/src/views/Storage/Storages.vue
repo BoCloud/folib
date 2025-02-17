@@ -119,7 +119,7 @@
                     </a>
                   </a-card>
                 </a-col>
-                <a-col :span="8" style="margin-bottom:20px;" v-for="(item, index) in repositories" :key="index">
+                <a-col :span="8" style="margin-bottom:20px;" v-for="(item, index) in repositories" :key="item.id">
                   <!-- Project Card -->
                   <CardProjectFolib :title=item.id :logo="'images/folib/' + getLayoutType(item) + '.svg'"
                     :team="['images/folib/' + item.type + '.svg']" :participants="item.type" :due="item.policy"
@@ -237,7 +237,7 @@
               </a-card>
             </a-form-model-item>
             <a-form-model-item class="mb-10" :label="$t('Storage.StorageSizeLimit')" :colon="false">
-                <a-input v-model="storageMaxSize" addon-after="TB">
+                <a-input v-model="storageMaxSize" @input="handleInput($event,'storageMaxSize')" :maxLength="6" addon-after="TB">
                 </a-input>
             </a-form-model-item>
             <a-form-model-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN') > -1" :label="$t('Storage.Administrator')"
@@ -342,7 +342,7 @@
               </a-card>
             </a-form-item>
             <a-form-item class="mb-10" :label="$t('Storage.StorageSizeLimit')" :colon="false">
-                <a-input v-model="storageMaxSize" addon-after="TB">
+                <a-input v-model="storageMaxSize" @input="handleInput($event,'storageMaxSize')"  :maxLength="6" addon-after="TB">
                 </a-input>
             </a-form-item>
             <a-form-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN') > -1" :label="$t('Storage.Administrator')"
@@ -461,7 +461,7 @@
                 <a-step v-if="folibRepository.type === 'group'" :title="$t('Storage.CombinationConfiguration')"/>
                 <a-step :title="$t('Storage.PermissionSetting')" :disabled="isRepoExist" />
                 <a-step :title="$t('Storage.TimingPolicy')" :disabled="isRepoExist" />
-                <a-step :title="$t('Storage.FederatedRepository')"  :disabled="isRepoExist"/>
+<!--                <a-step :title="$t('Storage.FederatedRepository')"  :disabled="isRepoExist"/>-->
                 <a-step :title="$t('Storage.Scan')"  :disabled="isRepoExist"/>
                 <!-- <a-step title="定时策略" /> -->
             </a-steps>
@@ -525,8 +525,8 @@
               <a-row :gutter="[24]">
                 <a-col :span="12">
                   <a-form-item class="mb-10" :label="$t('Storage.WarehouseName')" :colon="false">
-                    <a-input :disabled="folibRepositoryEditDisabled" :placeholder="$t('Storage.KeywordPrompt')"
-                      v-model="folibRepositoryIds" />
+                    <a-input ref="inputName" :disabled="folibRepositoryEditDisabled" :placeholder="$t('Storage.KeywordPrompt')"
+                      v-model="folibRepositoryIds" @blur="getFolibRepositoryIds(folibRepositoryIds)" />
                   </a-form-item>
                 </a-col>
                 <a-col :span="6">
@@ -562,12 +562,12 @@
                 </a-col>
                 <a-col :span="12">
                   <a-form-item class="mb-10" :label="$t('Storage.RepositorySizeLimit')" :colon="false">
-                    <a-input  :placeholder="$t('Storage.RepositorySizeLimit')" addon-after="GB" v-model="repositoryStorageMaxSize" />
+                    <a-input  :placeholder="$t('Storage.RepositorySizeLimit')" :maxLength="6" @input="handleInput($event,'repositoryStorageMaxSize')" addon-after="GB" v-model="repositoryStorageMaxSize" />
                   </a-form-item>
                 </a-col>
                 <a-col :span="6">
                   <a-form-item class="mb-10" :label="$t('Storage.ItemLimit')" :colon="false">
-                    <a-input v-model="artifactMaxSize" addon-after="MB">
+                    <a-input v-model="artifactMaxSize" :maxLength="6" @input="handleInput($event,'artifactMaxSize')" addon-after="MB">
                     </a-input>
                   </a-form-item>
                 </a-col>
@@ -683,12 +683,13 @@
                   <a-button @click="moveStep(-1)" class="px-25">{{ $t('Storage.Back') }}</a-button>
                 </a-col>
                 <a-col :span="3" class="text-right">
-                    <a-button  v-if="folibRepository.type === 'hosted'" @click="addOrUpdateRepositorySecond(true,false)" class="px-25">
+                    <a-button :disabled="nameKey || loadingNameKey" v-if="folibRepository.type === 'hosted'" @click="addOrUpdateRepositorySecond(true,false)" class="px-25">
                         {{ $t('Storage.Save') }}
                     </a-button>
                 </a-col>
                   <a-col :span="3" class="text-right">
                       <a-button v-if="folibRepository.type === 'hosted'" type="primary"
+                                :disabled="nameKey || loadingNameKey"
                                 @click="addOrUpdateRepositorySecond(true)" class="px-25">
                           {{ $t('Storage.Next') }}
                       </a-button>
@@ -697,7 +698,7 @@
                         @click="addOrUpdateRepositorySecond(true)" class="px-25">
                         {{ folibRepositoryEditDisabled? '修改': '创建' }}并设置定时策略</a-button> -->
 
-                      <a-button v-else-if="folibRepository.type !== 'hosted'" type="primary" @click="moveStep(1)"
+                      <a-button :disabled="nameKey || loadingNameKey" v-else-if="folibRepository.type !== 'hosted'" type="primary" @click="moveStep(1)"
                                 class="px-25">{{ $t('Storage.Next') }}
                       </a-button>
                   </a-col>
@@ -837,14 +838,14 @@
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="6">
-                  <a-form-item class="mb-10" label="" :colon="false">
-                    <a-checkbox v-model="folibRepository.syncEnabled">
-                      {{ $t('Storage.On') }}{{ $t('Storage.SyncRepository') }}
-                      <!-- {{ folibRepository.syncEnabled ?  $t('Storage.On') : $t('Storage.Off')  }} -->
-                    </a-checkbox>
-                  </a-form-item>
-                </a-col>
+<!--                <a-col :span="6">-->
+<!--                  <a-form-item class="mb-10" label="" :colon="false">-->
+<!--                    <a-checkbox v-model="folibRepository.syncEnabled">-->
+<!--                      {{ $t('Storage.On') }}{{ $t('Storage.SyncRepository') }}-->
+<!--                      &lt;!&ndash; {{ folibRepository.syncEnabled ?  $t('Storage.On') : $t('Storage.Off')  }} &ndash;&gt;-->
+<!--                    </a-checkbox>-->
+<!--                  </a-form-item>-->
+<!--                </a-col>-->
               </a-row>
 
               <a-row v-if="enableHostProxy" :gutter="[24]">
@@ -1074,26 +1075,26 @@
             <a-card v-else-if="(step === 4 && folibRepository.type === 'hosted') ||
             (  folibRepository.type === 'proxy' && step === 5) ||
             (step === 5 && folibRepository.type === 'group')" :bordered="false" class="header-solid">
-                <a-row>
-                    <a-col :span="24">
-                        <UnionRepository ref="unionRepository" :isShow="isShow" :folibRepository="this.folibRepositoryData" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></UnionRepository>
-                    </a-col>
-                </a-row>
-                <a-row>
-                    <a-col :span="12">
-                        <a-button @click="moveStep(-1)" class="px-25">{{ $t('Storage.Back') }}</a-button>
-                    </a-col>
-                    <a-col :span="12" style="text-align: right;">
-                        <a-button type="primary" @click="doUnionRepository" class="px-25">{{ $t('Storage.Next') }}</a-button>
-                    </a-col>
-                </a-row>
+<!--                <a-row>-->
+<!--                    <a-col :span="24">-->
+<!--                        <UnionRepository ref="unionRepository" :isShow="isShow" :folibRepository="this.folibRepositoryData" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></UnionRepository>-->
+<!--                    </a-col>-->
+<!--                </a-row>-->
+<!--                <a-row>-->
+<!--                    <a-col :span="12">-->
+<!--                        <a-button @click="moveStep(-1)" class="px-25">{{ $t('Storage.Back') }}</a-button>-->
+<!--                    </a-col>-->
+<!--                    <a-col :span="12" style="text-align: right;">-->
+<!--                        <a-button type="primary" @click="doUnionRepository" class="px-25">{{ $t('Storage.Next') }}</a-button>-->
+<!--                    </a-col>-->
+<!--                </a-row>-->
 
 
 
-            </a-card>
-            <a-card v-else-if="(step === 5 && folibRepository.type === 'hosted') ||
-            (  folibRepository.type === 'proxy' && step === 6) ||
-            (step === 6 && folibRepository.type === 'group')" :bordered="false" class="header-solid">
+<!--            </a-card>-->
+<!--            <a-card v-else-if="(step === 5 && folibRepository.type === 'hosted') ||-->
+<!--            (  folibRepository.type === 'proxy' && step === 6) ||-->
+<!--            (step === 6 && folibRepository.type === 'group')" :bordered="false" class="header-solid">-->
                 <a-row>
                     <a-col :span="24">
                         <Scan ref="scan" :isShow="isShow" :folibRepository="this.folibRepositoryData" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></Scan>
@@ -1410,6 +1411,8 @@ export default {
       groupDefaultRepository:undefined,
       customLayoutList: [],
       switchDisabled:true,
+      nameKey:false,
+      loadingNameKey:false
     };
   },
   watch: {
@@ -1484,6 +1487,40 @@ export default {
     this.switchDisabled = true
   },
   methods: {
+    
+    getFolibRepositoryIds(val){
+      this.loadingNameKey = true
+      if(!val){
+        this.$notification.open({
+          class: 'ant-notification-warning',
+          message: this.$t('Storage.FillInErrors'),
+          description: this.$t('Storage.EnterRepository'),
+        })
+        return
+      }
+      getRepositoryResponseEntity(this.currentStorage.id, val).then(res => {
+        this.nameKey = true
+        this.$refs.inputName.select()
+        this.$notification.open({
+          class: 'ant-notification-warning',
+          message: this.$t('Storage.FillInErrors'),
+          description: this.$t('Storage.nameRepeat'),
+        })
+      }).catch(err => {
+        this.nameKey = false
+        this.loadingNameKey = false
+      })
+    },
+    handleInput(e,type) {
+      let value = e.target.value
+      // 实时过滤非法字符：只能输入数字，且首位不能为0
+      value = value.replace(/^0+/, "").replace(/[^\d]/g, "") // 移除开头的零，保留数字
+      // 限制最大值
+      if (value !== "" && Number(value) > 999999) {
+        value = "999999"
+      }
+      this[type] = value; // 更新绑定值
+    },
     // 制品仓库页面专属。用于切换仓库和存储空间的展示模式
     checkMode(key){
       if(this.switchDisabled){
@@ -1766,7 +1803,7 @@ export default {
         deleteStorages(this.currentStorage, false).then(response => {
           setTimeout(() => {
             this.$notification.success({
-              message: response.message,
+              message: response.message || `${this.$t('Storage.successfulOperation')}`,
             })
           }, 100)
           this.showStorageUpdate = false
@@ -1776,7 +1813,7 @@ export default {
         }).catch(err => {
           let error = err.response.data?err.response.data:this.$t('Storage.UnknownError')
           this.$notification["error"]({
-            message: error,
+            message: error  || `${this.$t('Storage.successfulOperation')}`,
           })
         })
       }
@@ -1786,7 +1823,7 @@ export default {
         deleteStorages(this.currentStorage, true).then(response => {
           setTimeout(() => {
             this.$notification.success({
-              message: response.message,
+              message: response.message  || `${this.$t('Storage.successfulOperation')}`,
             })
           }, 100)
           this.showStorageUpdate = false;
@@ -1796,7 +1833,7 @@ export default {
         }).catch(err => {
           let error = err.response.data?err.response.data:this.$t('Storage.UnknownError')
           this.$notification["error"]({
-            message: error,
+            message: error  || `${this.$t('Storage.successfulOperation')}`,
           })
         })
       }
@@ -1816,7 +1853,7 @@ export default {
             createStorages(this.storageCreateData).then(response => {
               setTimeout(() => {
                 this.$notification.success({
-                  message: response.message,
+                  message: response.message  || `${this.$t('Storage.successfulOperation')}`,
                 })
               }, 100)
               this.showsTorageFormModal = false;
@@ -1844,7 +1881,7 @@ export default {
         updateStorages(this.currentStorage).then(response => {
           setTimeout(() => {
             this.$notification.success({
-              message: response.message,
+              message: response.message  || `${this.$t('Storage.successfulOperation')}`,
             })
           }, 100)
           this.showStorageUpdate = false
@@ -1933,7 +1970,8 @@ export default {
       this.getStorage(this.currentStorage.id)
     },
     loadMore(total){
-      if(total !== this.queryParams.total && !this.$refs.loadingMore){
+      console.log(total,total !== this.queryParams.total)
+      if(total !== this.queryParams.total && !this.$refs.repositoryTree.loadingMore){
         this.$refs.repositoryTree.loadingMoreShow(true)
         this.queryParams.page ++
         console.log('滚动加载...')
@@ -1945,7 +1983,8 @@ export default {
           page: this.queryParams.page
         }
         this.getQueryStorage(params)
-      }else{
+      }
+      if(total == this.queryParams.total){
         this.$refs.repositoryTree.loadingMoreShow(false)
       }
     },
@@ -2304,14 +2343,18 @@ export default {
       this.folibRepository.subLayout = this.layoutChecked
       this.folibRepository.layout = genLayoutType(this.layoutChecked)
       //将组合好的仓库转为groupRepository
-      if (this.step === 2 && this.folibRepository.type === 'group' && this.boards[1].tasks.length > 0) {
-        this.folibRepository.groupRepositories = groupRepositoriesBuild(this.boards[1].tasks)
+      if (this.step === 2 && this.folibRepository.type === 'group') {
+        if (this.boards[1].tasks.length > 0) {
+            this.folibRepository.groupRepositories = groupRepositoriesBuild(this.boards[1].tasks)
+        } else {
+            this.folibRepository.groupRepositories = [];
+        }
         // 判断是否组合库里有默认库有则添加
-        if(this.folibRepository.groupRepositories.find(item=>item===this.groupDefaultRepository)){
-          this.folibRepository.groupDefaultRepository=this.groupDefaultRepository;
-        }else{
-          this.folibRepository.groupDefaultRepository=null;
-          this.defaultRepositoryId=null;
+        if (this.folibRepository.groupRepositories.find(item => item === this.groupDefaultRepository)) {
+            this.folibRepository.groupDefaultRepository = this.groupDefaultRepository;
+        } else {
+            this.folibRepository.groupDefaultRepository = null;
+            this.defaultRepositoryId = null;
         }
         this.folibRepository.proxyConfiguration = null
         this.folibRepository.remoteRepository = null

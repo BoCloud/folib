@@ -310,11 +310,11 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
         RepositoryPath repositoryPath = (RepositoryPath) path;
         deleteMetadata(repositoryPath);
 
-        if (!Files.exists(path)) {
-            logger.warn("Path not found: path-[{}]", path);
-
-            return;
-        }
+//        if (!Files.exists(path)) {
+//            logger.warn("Path not found: path-[{}]", path);
+//
+//            return;
+//        }
 
         boolean directory = Files.isDirectory(path);
         deleteArtifactMedataFile(repositoryPath, force);

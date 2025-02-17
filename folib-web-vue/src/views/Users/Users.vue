@@ -204,7 +204,7 @@
                   <a-col :span="12">
                     <a-form-model-item class="mb-10" :label="$t('Users.Password')" :colon="false" prop="password"
                                        :required="passwordRequired">
-                      <a-input-password :disabled="userNotEdit || (!userNotEdit && !passwordUpdateEnable && currentUser.user.username != null && currentUser.user.username != 'admin')" autocomplete="new-password" placeholder="******"
+                      <a-input-password :disabled="userNotEdit" autocomplete="new-password" placeholder="******"
                                         v-model="currentUser.user.password" />
                     </a-form-model-item>
                   </a-col>
@@ -214,7 +214,7 @@
                         </a-form-model-item>
                   </a-col>
                   <a-col :span="12">
-                    <a-form-model-item class="mb-10" label="EMAIL" :colon="false">
+                    <a-form-model-item class="mb-10" label="EMAIL" :colon="false" name="email" prop="email">
                       <a-input :disabled="userNotEdit" v-model="currentUser.user.email" :placeholder="$t('Users.PleaseEnterEmail')" />
                     </a-form-model-item>
                   </a-col>
@@ -358,7 +358,11 @@ export default ({
         ],
         password: [
           { required: this.passwordRequired, trigger: 'blur', validator: checkPassword }
-        ]
+        ],
+        email: [
+          { required: false, message: `${this.$t('Users.EnterYourEmail')}`, trigger: 'blur' },
+          { type: 'email', message: `${this.$t('Users.EnterCorrectEmail')}`, trigger: 'blur' },
+        ],
       },
       passwordRequired: true,
       allUsers: [],
@@ -392,7 +396,6 @@ export default ({
           value: "GENERAL",
         }
       ],
-      passwordUpdateEnable: true,
     }
   },
   created() {
@@ -404,7 +407,6 @@ export default ({
       await this.getCurrentGroup()
       this.getUsers()
       this.queryUsers()
-      this.getPasswordUpdateEnable()
     },
     getUsers() {
       getUsers().then(res => {
@@ -625,13 +627,6 @@ export default ({
       } else {
           this.currentUser.user.userGroupIds = this.currentUser.user.userGroupIds.filter(item => item !== id)
       }
-    },
-    getPasswordUpdateEnable() {
-      getSingleDict({ dictType: 'system_property', dictKey: 'PASSWORD_UPDATE_ENABLE' }).then(res => {
-        if (res && res.dictValue) {
-          this.passwordUpdateEnable = !(res.dictValue === 'false')
-        }
-      })
     },
   }
 })

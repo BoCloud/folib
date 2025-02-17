@@ -219,6 +219,9 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
                 if (CollectionUtils.isNotEmpty(accessModelData.getStorageAuthorities())) {
                     authorities.remove(Privileges.ARTIFACTS_RESOLVE);
                 }
+                if (Objects.nonNull(repository) && RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())) {
+                    authorities.add(Privileges.ARTIFACTS_RESOLVE);
+                }
                 List<String> paths = Arrays.asList(ARTIFACT_ROOT_PATH, DOCKER_ROOT_PATH, BrowseController.ROOT_CONTEXT, STORAGE_ROOT_PATH);
                 if (StringUtils.isNotBlank(requestUri) && paths.stream().noneMatch(requestUri::startsWith)) {
                     return authorities;

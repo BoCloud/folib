@@ -7,7 +7,6 @@ import com.veadan.folib.artifact.coordinates.PubArtifactCoordinates;
 import com.veadan.folib.components.StorageClientComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.constant.GlobalConstants;
-import com.veadan.folib.constants.PubConstants;
 import com.veadan.folib.domain.PubPackageMetadata;
 import com.veadan.folib.domain.PubPackageVersionMetadata;
 import com.veadan.folib.domain.client.ResponseResult;
@@ -119,6 +118,20 @@ public class PubProxyProvider implements PubProvider {
                 }
             }
             return JSONObject.parseObject(Files.readString(packageJsonRepositoryPath));
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
+        return null;
+    }
+
+    @Override
+    public JSONObject getLocalPackages(Repository repository, String packageName, String targetUrl) {
+        String packageMetadataFilePath = PubUtils.getPackageMetadataFilePath(packageName);
+        RepositoryPath packageJsonRepositoryPath = repositoryPathResolver.resolve(repository, packageMetadataFilePath);
+        try {
+            if (Objects.nonNull(packageJsonRepositoryPath) && Files.exists(packageJsonRepositoryPath) && !RepositoryFiles.hasRefreshContent(packageJsonRepositoryPath)) {
+                return JSONObject.parseObject(Files.readString(packageJsonRepositoryPath));
+            }
         } catch (Exception ex) {
             log.error(ExceptionUtils.getStackTrace(ex));
         }

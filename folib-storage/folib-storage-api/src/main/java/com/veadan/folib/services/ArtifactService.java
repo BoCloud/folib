@@ -35,4 +35,13 @@ public interface ArtifactService {
      * @throws IOException io异常
      */
     Artifact findArtifact(RepositoryPath repositoryPath, Boolean report) throws IOException;
+
+    /**
+     * 保存或者更新制品顶点
+     *
+     * @param sourceRepositoryPath 源制品
+     * @param targetRepositoryPath 目标制品
+     * @throws IOException io异常
+     */
+    void copyArtifact(RepositoryPath sourceRepositoryPath, RepositoryPath targetRepositoryPath) throws IOException;
 }

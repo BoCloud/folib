@@ -64,6 +64,11 @@ public class NpmHostedProvider implements NpmProvider {
     }
 
     @Override
+    public PackageVersion getLocalPackageVersion(Repository repository, String packageName, String version, String targetUrl) {
+        return packageVersion(repository, packageName, version, targetUrl);
+    }
+
+    @Override
     public PackageFeed packageFeed(Repository repository, String packageName, String targetUrl) {
         String packageFeedFilePath = NpmUtils.getPackageMetadataPath(packageName);
         RepositoryPath packageMetadataRepositoryPath = repositoryPathResolver.resolve(repository, packageFeedFilePath);
@@ -87,7 +92,17 @@ public class NpmHostedProvider implements NpmProvider {
     }
 
     @Override
+    public PackageFeed getLocalPackageFeed(Repository repository, String packageName, String targetUrl) {
+        return packageFeed(repository, packageName, targetUrl);
+    }
+
+    @Override
     public String binary(Repository repository, String packageName, String targetUrl) {
+        return null;
+    }
+
+    @Override
+    public String getLocalBinary(Repository repository, String packageName, String targetUrl) {
         return null;
     }
 

@@ -160,6 +160,11 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
             if (remoteUrl.endsWith(separator)) {
                 remoteUrl = remoteUrl.substring(0, remoteUrl.lastIndexOf(separator));
             }
+            if(syncArtifactForm.getSyncMeta()==1&&syncArtifactForm.getSyncer()==null){
+                String apiUrl=remoteUrl.substring(0,remoteUrl.indexOf(repository.getId()));
+                JfrogPropertySyncer syncer = new JfrogPropertySyncer(apiUrl,repository.getRemoteRepository().getUsername(), repository.getRemoteRepository().getPassword());
+                syncArtifactForm.setSyncer(syncer);
+            }
             String rootUrl = remoteUrl;
             if (StringUtils.isNotBlank(syncArtifactForm.getBrowseUrl())) {
                 rootUrl = syncArtifactForm.getBrowseUrl();
@@ -207,7 +212,6 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
                             fileEmpty = false;
                             String url = rootUrl + line;
                             if (!findSubUrl(repository, rootUrl, url, remoteUrl, sleepMillis, syncArtifactForm.getDom(), subFile, writer, repositoryBaseUri)) {
-                                return null;
                             }
                         }
                     }
@@ -386,7 +390,7 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
                     }
                     // 清除已完成的文件
                     if (flag) {
-                        Files.delete(item);
+//                        Files.delete(item);
                     }
                 } catch (Exception ex) {
                     log.error("Handle path [{}] lines [{}] error [{}] ms", item.toString(), lines, ExceptionUtils.getStackTrace(ex));

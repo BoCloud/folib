@@ -19,8 +19,6 @@ import javax.inject.Inject;
 import java.util.List;
 import java.util.Objects;
 
-//import com.veadan.folib.domain.PubPackageVersionMetadata;
-//import com.veadan.folib.enums.PubRepositoryTypeEnum;
 
 /**
  * @author leipenghui
@@ -46,6 +44,10 @@ public class NpmGroupProvider implements NpmProvider {
     @Override
     public PackageVersion packageVersion(Repository repository, String packageName, String version, String targetUrl) {
         PackageVersion npmPackageVersionMetadata = null, subPubPackageVersionMetadata;
+        npmPackageVersionMetadata = getLocalPackageVersion(repository, packageName, version, targetUrl);
+        if (Objects.nonNull(npmPackageVersionMetadata)) {
+            return npmPackageVersionMetadata;
+        }
         List<String> storageAndRepositoryIdList = Lists.newArrayList();
         configurationManager.resolveGroupRepository(repository, storageAndRepositoryIdList);
         for (String storageAndRepositoryId : storageAndRepositoryIdList) {
@@ -70,8 +72,39 @@ public class NpmGroupProvider implements NpmProvider {
     }
 
     @Override
+    public PackageVersion getLocalPackageVersion(Repository repository, String packageName, String version, String targetUrl) {
+        PackageVersion npmPackageVersionMetadata = null, subPubPackageVersionMetadata;
+        List<String> storageAndRepositoryIdList = Lists.newArrayList();
+        configurationManager.resolveGroupRepository(repository, storageAndRepositoryIdList);
+        for (String storageAndRepositoryId : storageAndRepositoryIdList) {
+            try {
+                String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
+                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+                Repository subRepository = configurationManager.getRepository(sId, rId);
+                if (!isRepositoryResolvable(subRepository)) {
+                    continue;
+                }
+                NpmProvider npmProvider = npmProviderRegistry.getProvider(NpmRepositoryTypeEnum.resolveType(subRepository.getType()));
+                subPubPackageVersionMetadata = npmProvider.getLocalPackageVersion(subRepository, packageName, version, targetUrl);
+                if (Objects.nonNull(subPubPackageVersionMetadata)) {
+                    npmPackageVersionMetadata = subPubPackageVersionMetadata;
+                    break;
+                }
+            } catch (Exception ex) {
+                log.error(ExceptionUtils.getStackTrace(ex));
+            }
+        }
+        return npmPackageVersionMetadata;
+    }
+
+    @Override
     public PackageFeed packageFeed(Repository repository, String packageName, String targetUrl) {
         PackageFeed packageJson = null, subData;
+        packageJson = getLocalPackageFeed(repository, packageName, targetUrl);
+        if (Objects.nonNull(packageJson) && (
+                (Objects.nonNull(packageJson.getVersions()) && packageJson.getVersions().getAdditionalProperties().size() > 0) || MapUtils.isNotEmpty(packageJson.getAdditionalProperties()))) {
+            return packageJson;
+        }
         List<String> storageAndRepositoryIdList = Lists.newArrayList();
         configurationManager.resolveGroupRepository(repository, storageAndRepositoryIdList);
         for (String storageAndRepositoryId : storageAndRepositoryIdList) {
@@ -97,8 +130,39 @@ public class NpmGroupProvider implements NpmProvider {
     }
 
     @Override
+    public PackageFeed getLocalPackageFeed(Repository repository, String packageName, String targetUrl) {
+        PackageFeed packageJson = null, subData;
+        List<String> storageAndRepositoryIdList = Lists.newArrayList();
+        configurationManager.resolveGroupRepository(repository, storageAndRepositoryIdList);
+        for (String storageAndRepositoryId : storageAndRepositoryIdList) {
+            try {
+                String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
+                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+                Repository subRepository = configurationManager.getRepository(sId, rId);
+                if (!isRepositoryResolvable(subRepository)) {
+                    continue;
+                }
+                NpmProvider npmProvider = npmProviderRegistry.getProvider(NpmRepositoryTypeEnum.resolveType(subRepository.getType()));
+                subData = npmProvider.getLocalPackageFeed(subRepository, packageName, targetUrl);
+                if (Objects.nonNull(subData) && (
+                        (Objects.nonNull(subData.getVersions()) && subData.getVersions().getAdditionalProperties().size() > 0) || MapUtils.isNotEmpty(subData.getAdditionalProperties()))) {
+                    packageJson = subData;
+                    break;
+                }
+            } catch (Exception ex) {
+                log.error(ExceptionUtils.getStackTrace(ex));
+            }
+        }
+        return packageJson;
+    }
+
+    @Override
     public String binary(Repository repository, String packageName, String targetUrl) {
         String binaryData = null, subBinaryData;
+        binaryData = getLocalBinary(repository, packageName, targetUrl);
+        if (StringUtils.isNotBlank(binaryData)) {
+            return binaryData;
+        }
         List<String> storageAndRepositoryIdList = Lists.newArrayList();
         configurationManager.resolveGroupRepository(repository, storageAndRepositoryIdList);
         for (String storageAndRepositoryId : storageAndRepositoryIdList) {
@@ -111,6 +175,32 @@ public class NpmGroupProvider implements NpmProvider {
                 }
                 NpmProvider npmProvider = npmProviderRegistry.getProvider(NpmRepositoryTypeEnum.resolveType(subRepository.getType()));
                 subBinaryData = npmProvider.binary(subRepository, packageName, targetUrl);
+                if (StringUtils.isNotBlank(subBinaryData)) {
+                    binaryData = subBinaryData;
+                    break;
+                }
+            } catch (Exception ex) {
+                log.error(ExceptionUtils.getStackTrace(ex));
+            }
+        }
+        return binaryData;
+    }
+
+    @Override
+    public String getLocalBinary(Repository repository, String packageName, String targetUrl) {
+        String binaryData = null, subBinaryData;
+        List<String> storageAndRepositoryIdList = Lists.newArrayList();
+        configurationManager.resolveGroupRepository(repository, storageAndRepositoryIdList);
+        for (String storageAndRepositoryId : storageAndRepositoryIdList) {
+            try {
+                String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
+                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+                Repository subRepository = configurationManager.getRepository(sId, rId);
+                if (!isRepositoryResolvable(subRepository)) {
+                    continue;
+                }
+                NpmProvider npmProvider = npmProviderRegistry.getProvider(NpmRepositoryTypeEnum.resolveType(subRepository.getType()));
+                subBinaryData = npmProvider.getLocalBinary(subRepository, packageName, targetUrl);
                 if (StringUtils.isNotBlank(subBinaryData)) {
                     binaryData = subBinaryData;
                     break;

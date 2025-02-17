@@ -61,7 +61,7 @@ public class PypiBrowsePackageHtmlResponseBuilder {
             PypiArtifactCoordinates artifactCoordinates = (PypiArtifactCoordinates) RepositoryFiles.readCoordinates(repositoryPath);
 
             Repository repository = repositoryPath.getRepository();
-            packageLinks.append("<a href=\"" + "/storages/").append(repository.getStorage().getId()).append("/").append(repository.getId()).append("/packages/").append(artifactCoordinates.getFileName()).append("\">").append(artifactCoordinates.getFileName()).append("</a><br>\n");
+            packageLinks.append("<a href=\"" + "/storages/").append(repository.getStorage().getId()).append("/").append(repository.getId()).append("/packages/").append(artifactCoordinates.buildPath()).append("\">").append(artifactCoordinates.getFileName()).append("</a><br>\n");
         }
 
         return packageLinks.toString();

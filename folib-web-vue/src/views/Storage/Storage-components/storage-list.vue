@@ -72,9 +72,15 @@ export default {
   border-radius: 8px;
 }
 .storage_list{
-    height: calc(100vh - 205px);
-    overflow-y: auto;
     padding:12px;
+    padding-bottom: 0px;
     padding-top: 0;
+}
+
+</style>
+<style>
+.ant-anchor-wrapper{
+    height: calc(100vh - 193px);
+    overflow-y: auto;
 }
 </style>

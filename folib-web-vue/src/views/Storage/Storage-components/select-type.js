@@ -126,15 +126,15 @@ const typeList = [
         disabled:false,
     },
     {
+        src:'images/folib/cargo.svg',
+        type:'cargo',
+        name:'Cargo',
+        disabled:false,
+    },
+    {
         src:'images/folib/gems.svg',
         type:'gems',
         name:'Gems',
-        disabled:true,
-    },
-    {
-        src:'images/folib/rust.svg',
-        type:'rust',
-        name:'Rust',
         disabled:true,
     },
     {
@@ -153,6 +153,12 @@ const typeList = [
         src:'images/folib/swift.svg',
         type:'swift',
         name:'Swift',
+        disabled:true,
+    },
+    {
+        src:'images/folib/ollama.svg',
+        type:'ollama',
+        name:'Ollama',
         disabled:true,
     },
 ]

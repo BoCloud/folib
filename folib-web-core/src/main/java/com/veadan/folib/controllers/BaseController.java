@@ -96,7 +96,7 @@ public abstract class BaseController {
 
     @Inject
     @Lazy
-    private AuthComponent authComponent;
+    protected AuthComponent authComponent;
 
     protected Configuration getConfiguration() {
         return configurationManagementService.getConfiguration();
@@ -394,6 +394,10 @@ public abstract class BaseController {
 
     protected String getRepositoryBaseUrl(Repository repository) {
         return String.format("%s/storages/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
+    }
+
+    protected String getArtifactoryRepositoryUrl(Repository repository, String endPoint) {
+        return String.format("%s/artifactory/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getId());
     }
 
     /***

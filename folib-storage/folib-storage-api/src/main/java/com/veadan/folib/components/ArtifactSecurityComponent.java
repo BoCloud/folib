@@ -4,8 +4,10 @@ import com.google.common.collect.Lists;
 import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.enums.ProductTypeEnum;
+import com.veadan.folib.enums.RepositoryScopeEnum;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.users.domain.AccessModelData;
 import com.veadan.folib.users.domain.Privileges;
@@ -52,12 +54,18 @@ public class ArtifactSecurityComponent {
     public boolean validatePrivileges(RepositoryPath repositoryPath, String authority) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            log.debug("当前线程：[{}] 用户：[{}]", Thread.currentThread().getName(), UserUtils.getUsername());
+            String threadName = Thread.currentThread().getName();
+            log.debug("当前线程：[{}] 用户：[{}]", threadName, UserUtils.getUsername());
+            List<String> ignoreThreadNameList = GlobalConstants.IGNORE_THREAD_NAME_LIST;
+            if (ignoreThreadNameList.stream().anyMatch(threadName::startsWith)) {
+                return true;
+            }
             if (Objects.isNull(authentication)) {
                 return false;
             }
             String path = RepositoryFiles.relativizePath(repositoryPath);
-            if (ProductTypeEnum.Docker.getFoLibraryName().equalsIgnoreCase(repositoryPath.getRepository().getLayout()) && (path.startsWith(MANIFESTS) || path.startsWith(BLOBS))) {
+            Repository repository = repositoryPath.getRepository();
+            if (ProductTypeEnum.Docker.getFoLibraryName().equalsIgnoreCase(repository.getLayout()) && (path.startsWith(MANIFESTS) || path.startsWith(BLOBS))) {
                 return true;
             }
             String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId();
@@ -72,6 +80,9 @@ public class ArtifactSecurityComponent {
                 AccessModelData accessModelData = (AccessModelData) anonymousAccessModel.getAccessModelTarget();
                 if (CollectionUtils.isNotEmpty(accessModelData.getStorageAuthorities())) {
                     authorities.remove(Privileges.ARTIFACTS_RESOLVE);
+                }
+                if (RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())) {
+                    authorities.add(Privileges.ARTIFACTS_RESOLVE);
                 }
                 Set<Privileges> storageAuthorities = anonymousRole.getAccessModel().getPathAuthorities(storageId, repositoryId, Lists.newArrayList(RepositoryFiles.relativizePath(repositoryPath)));
                 if (!storageAuthorities.isEmpty()) {

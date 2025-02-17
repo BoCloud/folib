@@ -12,6 +12,7 @@ import com.veadan.folib.mapper.UserGroupMapper;
 import com.veadan.folib.users.service.RoleResourceRefService;
 import com.veadan.folib.users.service.UserGroupRefService;
 import com.veadan.folib.users.service.UserGroupService;
+import com.veadan.folib.utils.UserManageUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -65,6 +66,7 @@ public class UserGroupServiceImpl implements UserGroupService {
      * @param pageRequest 分页对象
      * @return 查询结果
      */
+    @Override
     public PageInfo<UserGroupListDTO> paginQuery(UserGroup userGroup, PageRequest pageRequest){
         PageHelper.startPage(pageRequest.getPageNumber(), pageRequest.getPageSize());
         List<UserGroupListDTO> userGroupListDTOS = userGroupMapper.queryAllByLimit(userGroup);
@@ -84,12 +86,14 @@ public class UserGroupServiceImpl implements UserGroupService {
      * @param userGroup 实例对象
      * @return 实例对象
      */
+    @Override
     public UserGroup save(UserGroup userGroup){
         String groupName = userGroup.getGroupName();
         List<UserGroup> userGroups = queryByGroupNames(Collections.singletonList(groupName));
         if (CollectionUtils.isNotEmpty(userGroups) && userGroups.get(0).getGroupName().equals(groupName)) {
             throw new RuntimeException("UserGroupName is already");
         }
+        userGroup.setCreateBy(UserManageUtils.getUsername());
         userGroup.setId(idGenerateUtils.generateId("userGroupId"));
         userGroupMapper.insert(userGroup);
         return userGroup;
@@ -101,6 +105,7 @@ public class UserGroupServiceImpl implements UserGroupService {
      * @param userGroup 实例对象
      * @return 实例对象
      */
+    @Override
     public UserGroup update(UserGroup userGroup){
         String groupName = userGroup.getGroupName();
         List<UserGroup> userGroups = queryByGroupNames(Collections.singletonList(groupName));
@@ -109,6 +114,7 @@ public class UserGroupServiceImpl implements UserGroupService {
                 && !userGroups.get(0).getId().equals(userGroup.getId())) {
             throw new RuntimeException("UserGroupName is already");
         }
+        userGroup.setUpdateBy(UserManageUtils.getUsername());
         userGroupMapper.update(userGroup);
         //批量更新用户组关联用户表中的用户组名称冗余字段
         batchUpdateRefGroupName(Collections.singletonList(userGroup.getId()));
@@ -139,8 +145,9 @@ public class UserGroupServiceImpl implements UserGroupService {
      * @param id 主键
      * @return 是否成功
      */
+    @Override
     public boolean deleteById(Long id){
-        int update = userGroupMapper.update(UserGroup.builder().id(id).deleted(GlobalConstants.DELETED).build());
+        int update = userGroupMapper.deleteById(id);
         //删除用户组关联用户
         userGroupRefService.deleteByUserGroupId(id);
         //删除角色关联用户组

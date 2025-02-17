@@ -7,6 +7,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.components.layout.DockerComponent;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.domain.adapter.jfrog.*;
 import com.veadan.folib.enums.ArtifactFieldTypeEnum;
@@ -18,6 +19,7 @@ import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.utils.FileUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -28,9 +30,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -313,6 +313,38 @@ public class ArtifactSearchController extends JFrogBaseController {
         Collections.reverse(dockerBlobsInfoList);
         DockerImageInfo dockerImageInfo = DockerImageInfo.builder().tagInfo(dockerTagInfo).blobsInfo(dockerBlobsInfoList).build();
         return ResponseEntity.ok(dockerImageInfo);
+    }
+
+    @ApiOperation(value = "JFrog Pattern搜索")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @GetMapping(value = {"/artifactory/api/search/pattern"})
+    public ResponseEntity<Object> searchPattern(@RequestParam("pattern") String pattern, HttpServletRequest request) throws Exception {
+        if (StringUtils.isBlank(pattern) || !pattern.contains(GlobalConstants.COLON)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(handlerErrors(null, GlobalConstants.REQUEST_PARAMS_ERROR));
+        }
+        String[] params = pattern.split(GlobalConstants.COLON);
+        String repositoryId = params[0], storageId = getDefaultStorageId(repositoryId), query = pattern.replace(repositoryId + GlobalConstants.COLON, "");
+        Storage storage = getStorage(storageId);
+        if (Objects.isNull(storage)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, STORAGE_NOT_FOUND_MESSAGE));
+        }
+        Repository repository = storage.getRepository(repositoryId);
+        if (Objects.isNull(repository)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, REPOSITORY_NOT_FOUND_MESSAGE));
+        }
+        ArtifactPatternSearch artifactPatternSearch = ArtifactPatternSearch.builder().repoUri(getArtifactoryRepositoryUrl(repository, "")).sourcePattern(query).build();
+        List<ArtifactConditionGroup> artifactConditionGroups = Lists.newArrayList();
+        ArtifactConditionGroup andArtifactConditionGroup = ArtifactConditionGroup.builder().artifactSearchConditionTypeEnum(ArtifactSearchConditionTypeEnum.AND)
+                .artifactConditions(Lists.newArrayList()).artifactMetadataConditions(Lists.newArrayList()).artifactNameConditions(Lists.newArrayList()).build();
+        artifactConditionGroups.add(andArtifactConditionGroup);
+        andArtifactConditionGroup.getArtifactConditions().add(ArtifactCondition.builder()
+                .artifactSearchConditionTypeEnum(ArtifactSearchConditionTypeEnum.MATCH).searchKey(ArtifactFieldTypeEnum.PATH.getFolibary()).searchValue(query).searchValueSuffixEnd(true).build());
+        ArtifactSearchCondition artifactSearchCondition = ArtifactSearchCondition.builder().storageId(storageId).repositoryId(repositoryId).path("").type("").artifactConditionGroups(artifactConditionGroups).build();
+        ArtifactSearch<Artifact> artifactSearch = artifactRepository.findMatchingByAql(ArtifactPage.builder().offset(0L).limit(9999L).build(), artifactSearchCondition);
+        if (Objects.nonNull(artifactSearch)) {
+            artifactPatternSearch.setFiles(Optional.ofNullable(artifactSearch.getResults()).orElse(Lists.newArrayList()).stream().map(Artifact::getArtifactPath).collect(Collectors.toList()));
+        }
+        return ResponseEntity.ok(artifactPatternSearch);
     }
 
     /**

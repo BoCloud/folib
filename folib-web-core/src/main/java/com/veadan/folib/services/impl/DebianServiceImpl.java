@@ -91,9 +91,9 @@ public class DebianServiceImpl implements DebianService {
             if(extract !=null){
                 artifactParse.setVersion(extract.getVersion());
                 artifactParse.setArchitecture(extract.getArchitecture());
-                artifactParse.setPath(artifactFile.getAbsolutePath());
                 artifactParse.setFileName(extract.getPackageName());
             }
+            artifactParse.setPath(artifactFile.getAbsolutePath());
             return artifactParse;
         } catch (Exception e) {
             log.error("extra metadata failed{},", e.getMessage(), e);
@@ -133,11 +133,20 @@ public class DebianServiceImpl implements DebianService {
 
         Repository repository = null;
         Set<DebianIndexEvent> events = Sets.newSet();
+        String tempPath = this.tempPath+"/upload/";
+        try{
+            if(!Files.exists(Paths.get(tempPath))){
+                Files.createDirectories(Path.of(tempPath));
+            }
+        }catch (Exception e){
+            log.info("创建临时文件夹失败");
+        }
+
         for (MultipartFile file : files) {
             File tempFile = null;
             try {
                 String fileName = file.getOriginalFilename();
-                tempFile = File.createTempFile("upload-", "-" + file.getOriginalFilename());
+                tempFile = new File(tempPath + fileName);
                 file.transferTo(tempFile);
                 log.info("begin to execute file {}", fileName);
                 try (InputStream is = new FileInputStream(tempFile)) {
@@ -164,18 +173,13 @@ public class DebianServiceImpl implements DebianService {
             } catch (Exception e) {
                 updateUploadProcess(file.getOriginalFilename(), "0");
                 log.error("create file:{} failed", file.getOriginalFilename(), e);
-            } finally {
-                log.info("begin delete temp file");
-                if(tempFile!= null){
-                    tempFile.delete();
-                }
             }
         }
-
         if (repository != null) {
             log.info("begin update packages and release");
             debianIncrementalIndexer.index(repository, events);
         }
+        new File(tempPath).delete();
     }
 
     public void updateUploadProcess(String fileName, String percent) {

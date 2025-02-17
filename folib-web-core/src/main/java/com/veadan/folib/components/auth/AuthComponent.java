@@ -175,6 +175,9 @@ public class AuthComponent {
                 if (CollectionUtils.isNotEmpty(accessModelData.getStorageAuthorities())) {
                     authorities.remove(Privileges.ARTIFACTS_RESOLVE);
                 }
+                if (RepositoryScopeEnum.OPEN.getType().equals(repository.getScope())) {
+                    authorities.add(Privileges.ARTIFACTS_RESOLVE);
+                }
                 Set<Privileges> storageAuthorities = anonymousRole.getAccessModel().getPathAuthorities(storageId, repositoryId, paths);
                 if (!storageAuthorities.isEmpty()) {
                     authorities.addAll(storageAuthorities);

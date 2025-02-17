@@ -6,6 +6,7 @@ import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.write.metadata.WriteSheet;
 import com.alibaba.excel.write.metadata.fill.FillConfig;
+import com.alibaba.fastjson.JSONObject;
 import com.github.pagehelper.PageInfo;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -105,8 +106,12 @@ public class AlarmNoticeTask {
     }
 
     private void storageVerification() {
+        log.info("存储告警:开始处理");
         //获取所有存储空间
         Map<String, Storage> storages = getStorages();
+        if(Objects.isNull(storages) || storages.isEmpty()){
+            log.warn("storages is null or empty");
+        }
         Configuration configuration = configurationManagementService.getConfiguration();
         AlarmConfiguration alarmConfiguration = configuration.getAlarmConfiguration();
         boolean isAdmin = false;
@@ -122,35 +127,33 @@ public class AlarmNoticeTask {
         if (alarmConfiguration.getRecipients() != null && !alarmConfiguration.getRecipients().isEmpty()) {
             userList.addAll(alarmConfiguration.getRecipients());
         }
-
         if (alarmConfiguration.getEmails() != null && !alarmConfiguration.getEmails().isEmpty()) {
             emaiList.addAll(alarmConfiguration.getEmails());
         }
 
         List<CapacityStorage> stroageList = Lists.newArrayList();
-        Map<String, String> dataMap = storageMonitoringService.getTodayData();
-        if (dataMap == null || dataMap.isEmpty()) {
-            return;
-        }
-
-
         for (String storageId : storages.keySet()) {
             StorageData storeData = (StorageData) storages.get(storageId);
-            if (storeData.getStorageMaxSize() > 0) {
+            if (Objects.nonNull(storeData.getStorageMaxSize()) && storeData.getStorageMaxSize() > 0) {
                 CapacityStorage capacityStorage = new CapacityStorage();
                 capacityStorage.setStorageId(storageId);
                 capacityStorage.setStorageSize(BigDecimal.valueOf(storeData.getStorageMaxSize()));
-                capacityStorage.setUseStorageSize(BigDecimal.valueOf(Double.parseDouble(dataMap.get(storageId))));
+                long storageBytesSize = artifactRepository.artifactsBytesStatisticsByStorageIds(Collections.singletonList(storageId));
+                capacityStorage.setUseStorageSize(BigDecimal.valueOf(storageBytesSize));
                 capacityStorage.setPlatformStorageThreshold(alarmConfiguration.getStorageThreshold());
                 storageVerification(capacityStorage);
                 stroageList.add(capacityStorage);
-
+                log.info("存储告警:存储空间[{}]设置阈值:[{}],当前使用:[{}]", storeData.getId(),storeData.getStorageMaxSize(),storageBytesSize);
+            }else {
+                log.warn("存储告警:存储空间[{}]未设置阈值",storeData.getId());
             }
 
             if (isStorageAdmin) {
                 userList.add(storeData.getAdmin());
             }
-
+            if(storeData.getRepositories().keySet().isEmpty()){
+                log.warn("{} repository is null or empty",storageId);
+            }
             for (String repositoryId : storeData.getRepositories().keySet()) {
                 RepositoryData repositoryDto = (RepositoryData) storeData.getRepository(repositoryId);
                 if (repositoryDto.getStorageMaxSize() > 0) {
@@ -158,11 +161,15 @@ public class AlarmNoticeTask {
                     repoStorage.setRepositoryId(repositoryId);
                     repoStorage.setStorageId(storeData.getId());
                     repoStorage.setStorageSize(BigDecimal.valueOf(repositoryDto.getStorageMaxSize()));
-                    repoStorage.setUseStorageSize(BigDecimal.valueOf(Double.parseDouble(dataMap.get(String.join(":", storeData.getId(), repositoryId)))));
+                    long storageBytesSize = artifactRepository.artifactsBytesStatistics(Collections.singletonList(String.format("%s-%s", storageId, repositoryId)));
+                    repoStorage.setUseStorageSize(BigDecimal.valueOf(storageBytesSize));
                     repoStorage.setPlatformStorageThreshold(alarmConfiguration.getStorageThreshold());
                     repoStorage.setStorageThreshold(repositoryDto.getStorageThreshold());
                     repositoriesVerification(repoStorage);
                     stroageList.add(repoStorage);
+                    log.info("存储告警:存储空间[{}]仓库[{}]设置阈值[{}],当前使用:[{}]", repositoryId, storeData.getId(),repositoryDto.getStorageMaxSize(),storageBytesSize);
+                }else {
+                    log.warn("存储告警:存储空间[{}]仓库[{}]未设置阈值", repositoryId, storeData.getId());
                 }
             }
         }
@@ -172,9 +179,11 @@ public class AlarmNoticeTask {
 
         if (isAdmin) {
             emaiList.addAll(users.stream().filter(user -> user.getRoles().contains("ADMIN")).map(UserDTO::getEmail).collect(Collectors.toList()));
+            log.info("存储告警:需要通知的管理员[{}]", JSONObject.toJSON(emaiList));
         }
         if (isStorageAdmin) {
             emaiList.addAll(users.stream().filter(user -> userList.contains(user.getUsername())).map(UserDTO::getEmail).collect(Collectors.toList()));
+            log.info("存储告警:需要通知的存储空间管理员[{}]", JSONObject.toJSON(emaiList));
         }
         if (emaiList.isEmpty()) {
             log.warn("存储告警:没有需要通知的用户的邮箱");
@@ -182,14 +191,16 @@ public class AlarmNoticeTask {
         }
 
         stroageList = stroageList.stream().filter(CapacityStorage::isNotice).collect(Collectors.toList());
+        log.info("存储告警:需要通知的存储空间[{}]", JSONObject.toJSON(stroageList.stream()));
         if (!stroageList.isEmpty()) {
             for (String email : emaiList) {
                 //发送邮件
                 handlerDataAndSendEmail(email, stroageList);
             }
+        }else {
+            log.warn("存储告警:没有需要通知的存储空间");
         }
-
-
+        log.info("存储告警:处理完成");
     }
 
 
@@ -267,51 +278,49 @@ public class AlarmNoticeTask {
      * @param exceedsSizeStorageList 数据
      */
     private void handlerDataAndSendEmail(String email, List<CapacityStorage> exceedsSizeStorageList) {
-        try {
-            // 检查邮箱地址是否为空，为空则直接返回
-            if (StringUtils.isBlank(email)) {
-                return;
-            }
-            // 生成临时文件路径，用于保存Excel文件
-            String filePath = tempPath + File.separator + UUID.randomUUID() + ".xlsx";
-            File file = FileUtil.file(filePath);
-            // 确保父目录存在
-            FileUtil.mkdir(file.getParent());
-            // 创建文件输出流
-            try (FileOutputStream fileOutputStream = new FileOutputStream(file)) {
-                // 加载Excel模板
-                InputStream template = this.getClass().getResourceAsStream("/template/exceedSizeStorageTemplate.xlsx");
-                // 使用模板构建ExcelWriter对象
-                try (ExcelWriter excelWriter = EasyExcel.write(fileOutputStream).withTemplate(template).build()) {
-                    // 创建写入工作表的对象
-                    WriteSheet writeSheet = EasyExcel.writerSheet().build();
-                    // 创建填充配置对象
-                    FillConfig fillConfig = FillConfig.builder().build();
-                    // 检查是否有数据需要写入
-                    if (CollectionUtils.isNotEmpty(exceedsSizeStorageList)) {
-                        // 如果数据量大，分批处理以避免内存溢出
-                        List<List<CapacityStorage>> list = Lists.partition(exceedsSizeStorageList, 10);
-                        for (List<CapacityStorage> itemList : list) {
-                            // 放入数据
-                            excelWriter.fill(itemList, fillConfig, writeSheet);
-                        }
-                    } else {
-                        // 如果没有数据，也需告知
-                        excelWriter.fill(Collections.emptyList(), fillConfig, writeSheet);
-                    }
-                    // 完成写入
-                    excelWriter.finish();
-                    // 构建邮件请求并发送邮件
-                    sendMail.sendHtmlMail(MailRequest.builder().filePath(filePath).sendTo(email).subject("存储空间存储额度告警通知").text("此邮件为存储空间存储额度告警通知邮件，详情见附件").build());
+
+        // 检查邮箱地址是否为空，为空则直接返回
+        if (StringUtils.isBlank(email)) {
+            log.warn("存储告警:没有需要通知的用户的邮箱");
+            return;
+        }
+        log.info("存储告警:开始发送邮件[{}]", email);
+        // 生成临时文件路径，用于保存Excel文件
+        String filePath = tempPath + File.separator + UUID.randomUUID() + ".xlsx";
+        File file = FileUtil.file(filePath);
+        // 确保父目录存在
+        FileUtil.mkdir(file.getParent());
+        // 创建文件输出流
+        try (FileOutputStream fileOutputStream = new FileOutputStream(file);
+             InputStream template = this.getClass().getResourceAsStream("/template/exceedSizeStorageTemplate.xlsx");
+             ExcelWriter excelWriter = EasyExcel.write(fileOutputStream).withTemplate(template).build();) {
+
+            // 创建写入工作表的对象
+            WriteSheet writeSheet = EasyExcel.writerSheet().build();
+            // 创建填充配置对象
+            FillConfig fillConfig = FillConfig.builder().build();
+            // 检查是否有数据需要写入
+            if (CollectionUtils.isNotEmpty(exceedsSizeStorageList)) {
+                // 如果数据量大，分批处理以避免内存溢出
+                List<List<CapacityStorage>> list = Lists.partition(exceedsSizeStorageList, 10);
+                for (List<CapacityStorage> itemList : list) {
+                    // 放入数据
+                    excelWriter.fill(itemList, fillConfig, writeSheet);
                 }
-            } finally {
-                // 关闭文件输出流
-                // 删除临时文件
-                FileUtil.del(file);
+            } else {
+                // 如果没有数据，也需告知
+                excelWriter.fill(Collections.emptyList(), fillConfig, writeSheet);
             }
+            // 完成写入
+            excelWriter.finish();
+            // 构建邮件请求并发送邮件
+            sendMail.sendHtmlMail(MailRequest.builder().filePath(filePath).sendTo(email).subject("存储空间存储额度告警通知").text("此邮件为存储空间存储额度告警通知邮件，详情见附件").build());
         } catch (Exception ex) {
-            // 记录错误日志
             log.error("发送存储空间存储额度告警通知邮件错误：{}", ExceptionUtils.getStackTrace(ex));
+        } finally {
+            log.info("存储告警:结束发送邮件[{}]", email);
+            // 删除临时文件
+            FileUtil.del(file);
         }
     }
 }

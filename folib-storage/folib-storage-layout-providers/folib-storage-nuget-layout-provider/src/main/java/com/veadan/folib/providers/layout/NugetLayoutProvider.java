@@ -89,7 +89,7 @@ public class NugetLayoutProvider
     }
 
     @Override
-    protected Set<String> getDigestAlgorithmSet()
+    public Set<String> getDigestAlgorithmSet()
     {
         return Stream.of(MessageDigestAlgorithms.SHA_512)
                      .collect(Collectors.toSet());

@@ -35,6 +35,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -101,6 +102,13 @@ public class GroupRepositoryProvider
                 return result;
             }
         }
+        if(ProductTypeEnum.Cargo.getFoLibraryName().equals(repositoryPath.getRepository().getLayout()) && repositoryPath.toString().endsWith("config.json")){
+            RepositoryPath result = resolvePathDirectlyFromGroupPathIfPossible(repositoryPath);
+            if (result != null) {
+                return result;
+            }
+        }
+
         return resolvePathTraversal(repositoryPath);
     }
 
@@ -113,6 +121,42 @@ public class GroupRepositoryProvider
         RepositoryPath subRepositoryPath = null;
         List<String> storageAndRepositoryIdList = Lists.newArrayList();
         configurationManager.resolveGroupRepository(groupRepository, storageAndRepositoryIdList);
+        for (String storageAndRepositoryId : storageAndRepositoryIdList) {
+            try {
+                //先从各个仓库本地缓存中查找一次，若存在则使用
+                String sId = ConfigurationUtils.getStorageId(storage.getId(), storageAndRepositoryId);
+                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+
+                Repository subRepository = getConfiguration().getStorage(sId).getRepository(rId);
+
+                subRepositoryPath = repositoryPathResolver.resolve(subRepository, repositoryPath);
+                if (!isRepositoryResolvable(groupRepository, subRepository, subRepositoryPath)) {
+                    continue;
+                }
+                if (!artifactSecurityComponent.validatePrivileges(subRepositoryPath, Privileges.ARTIFACTS_RESOLVE.getAuthority())) {
+                    continue;
+                }
+                if (Objects.nonNull(repositoryPath.getDisableRemote())) {
+                    subRepositoryPath.setDisableRemote(repositoryPath.getDisableRemote());
+                }
+                if (StringUtils.isNotBlank(repositoryPath.getTargetUrl())) {
+                    subRepositoryPath.setTargetUrl(repositoryPath.getTargetUrl());
+                }
+                if (MapUtils.isNotEmpty(repositoryPath.getHeaders())) {
+                    subRepositoryPath.setHeaders(repositoryPath.getHeaders());
+                }
+                if (StringUtils.isNotBlank(repositoryPath.getArtifactPath())) {
+                    subRepositoryPath.setArtifactPath(repositoryPath.getArtifactPath());
+                }
+                if (Objects.nonNull(subRepositoryPath) && Objects.nonNull(resolvePathDirectlyFromGroupPathIfPossible(subRepositoryPath))) {
+                    logger.info("Located artifact: [{}]", subRepositoryPath);
+                    return subRepositoryPath;
+                }
+            } catch (Exception ex) {
+                logger.error("group repository resolvePathTraversal artifact: [{}] error：[{}]", subRepositoryPath, ExceptionUtils.getStackTrace(ex));
+            }
+        }
+
         for (String storageAndRepositoryId : storageAndRepositoryIdList) {
             try {
                 String sId = ConfigurationUtils.getStorageId(storage.getId(), storageAndRepositoryId);
@@ -205,11 +249,13 @@ public class GroupRepositoryProvider
     }
 
     @Override
-    protected OutputStream getOutputStreamInternal(RepositoryPath repositoryPath) {
+    protected OutputStream getOutputStreamInternal(RepositoryPath repositoryPath) throws IOException {
         // It should not be possible to write artifacts to a group repository.
         // A group repository should only serve artifacts that already exist
         // in the repositories within the group.
-
+        if(ProductTypeEnum.Cargo.getFoLibraryName().equals(repositoryPath.getRepository().getLayout()) && repositoryPath.toString().endsWith("config.json")){
+            return Files.newOutputStream(repositoryPath);
+        }
         throw new UnsupportedOperationException();
     }
 

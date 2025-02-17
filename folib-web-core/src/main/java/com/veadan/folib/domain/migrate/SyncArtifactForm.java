@@ -76,7 +76,7 @@ public class SyncArtifactForm {
 
     private String password;
 
-    private Integer syncMeta;
+    private int syncMeta;
 
     private String apiUrl;
 

@@ -18,13 +18,15 @@ import com.veadan.folib.components.promotion.ArtifactPromotionProviderRegistry;
 import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
 import com.veadan.folib.constant.GlobalConstants;
-import com.veadan.folib.controllers.promotion.ArtifactPromotionController;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.*;
 import com.veadan.folib.entity.ArtifactSyncRecord;
 import com.veadan.folib.entity.Dict;
-import com.veadan.folib.enums.*;
+import com.veadan.folib.enums.ArtifactSyncRecordOpsTypeEnum;
+import com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum;
+import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
+import com.veadan.folib.enums.BusinessCodeEnum;
 import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
 import com.veadan.folib.mapper.ArtifactSyncSlaveRecordMapper;
 import com.veadan.folib.model.request.ArtifactPromotionNodeOptionCallbackReq;
@@ -63,7 +65,6 @@ import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -104,7 +105,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static com.veadan.folib.utils.UrlUtils.parsePath;
 
@@ -202,7 +202,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
     @Override
     public ResponseEntity syncCopy(ArtifactPromotion artifactPromotion) {
-        try{
+        try {
             checkParam(artifactPromotion);
             final String srcStorageId = artifactPromotion.getSrcStorageId();
             final String srcRepositoryId = artifactPromotion.getSrcRepositoryId();
@@ -317,11 +317,26 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         RepositoryPath targetPath = artifactPromotion.getTargetPath() == null ? null : repositoryPathResolver.resolve(destRepository, artifactPromotion.getTargetPath());
         promotionUtil.executeCopy(srcPath, srcRepository, targetPath, destRepository);
     }
+
     private void singleSyncCopy(ArtifactPromotion artifactPromotion, Repository srcRepository, String destStorageId, String destRepositoryId) {
         Repository destRepository = repositoryManagementService.getStorage(destStorageId).getRepository(destRepositoryId);
         RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, artifactPromotion.getPath());
         RepositoryPath targetPath = artifactPromotion.getTargetPath() == null ? null : repositoryPathResolver.resolve(destRepository, artifactPromotion.getTargetPath());
         promotionUtil.executeSyncCopy(srcPath, srcRepository, targetPath, destRepository);
+    }
+
+    private void singleFastSyncCopy(ArtifactPromotion artifactPromotion, Repository srcRepository, String destStorageId, String destRepositoryId) {
+        Repository destRepository = repositoryManagementService.getStorage(destStorageId).getRepository(destRepositoryId);
+        RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, artifactPromotion.getPath());
+        RepositoryPath targetPath = artifactPromotion.getTargetPath() == null ? null : repositoryPathResolver.resolve(destRepository, artifactPromotion.getTargetPath());
+        promotionUtil.executeFastSyncCopy(srcPath, srcRepository, targetPath, destRepository);
+    }
+
+    private void singleFastSyncMove(ArtifactPromotion artifactPromotion, Repository srcRepository, String destStorageId, String destRepositoryId) {
+        Repository destRepository = repositoryManagementService.getStorage(destStorageId).getRepository(destRepositoryId);
+        RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, artifactPromotion.getPath());
+        RepositoryPath targetPath = artifactPromotion.getTargetPath() == null ? null : repositoryPathResolver.resolve(destRepository, artifactPromotion.getTargetPath());
+        promotionUtil.executeFastSyncMove(srcPath, srcRepository, targetPath, destRepository);
     }
 
     @Override
@@ -1399,6 +1414,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         final File artifactFileSliceUploadFile = new File(artifactFileSliceUploadFilePathStr);
         boolean allSliceFileUploadCompleted = false;
         boolean consistencyMd5 = false;
+        AtomicBoolean allSliceFileDownloadCompleted = new AtomicBoolean(allSliceFileUploadCompleted);
         try {
 
             // 记录已上传的切片状态
@@ -1411,10 +1427,10 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             //    return true;
             //}
 
-            if (Files.exists(Path.of(artifactFileSliceUploadFilePathStr)) ) {
+            if (Files.exists(Path.of(artifactFileSliceUploadFilePathStr))) {
                 log.info("Chunk {} already uploaded.", chunkNo);
 
-            }else {
+            } else {
                 // 确保文件路径存在
                 if (!FileUtil.exist(artifactFileSliceUploadFile)) {
                     // 创建空文件
@@ -1427,25 +1443,26 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                      final FileOutputStream fileOutputStream = new FileOutputStream(artifactFileSliceUploadFile)) {
                     IoUtil.copy(inputStream, fileOutputStream);
                     // 状态写入
-                    this.writeSliceUploadStatus(artifactFileSliceUploadRootFolderPathStr, chunkNo, true);
-                    log.info("Chunk {} uploaded.", chunkNo);
+                    //this.writeSliceUploadStatus(artifactFileSliceUploadRootFolderPathStr, chunkNo, true);
+                    //log.info("Chunk {} uploaded.", chunkNo);
                 } catch (IOException e) {
                     log.info("切片文件转存失败", e);
                     // 状态写入
-                    this.writeSliceUploadStatus(artifactFileSliceUploadRootFolderPathStr, chunkNo, false);
+                    //this.writeSliceUploadStatus(artifactFileSliceUploadRootFolderPathStr, chunkNo, false);
+                    Files.deleteIfExists(Path.of(artifactFileSliceUploadFilePathStr));
                     throw new BusinessException(BusinessCodeEnum.ARTIFACT_SLICE_UPLOAD_CHUNK_FILE_SAVE_FAILED);
                 }
             }
-
 
 
             // 检查所有切片是否都已上传完成
             //final JSONObject updatedSliceUploadStatusJSONObj = this.getSliceUploadStatusJSONObj(artifactFileSliceUploadRootFolderPathStr);
             // 通过判断上传完成的数量与最大切片块的数量确定是否所有切片文件都已上传完成
             //allSliceFileUploadCompleted = canMerger(artifactFileSliceUploadFile.length(), chunkNoMax, artifactFileSliceUploadRootFolderPathStr);
-            allSliceFileUploadCompleted = canMerger( chunkNoMax, artifactFileSliceUploadRootFolderPathStr);
+            allSliceFileUploadCompleted = canMerger(chunkNoMax, artifactFileSliceUploadRootFolderPathStr);
+            allSliceFileDownloadCompleted.set(allSliceFileUploadCompleted);
             log.info("allSliceFileUploadCompleted: {}", allSliceFileUploadCompleted);
-            if (allSliceFileUploadCompleted) {
+            if (allSliceFileDownloadCompleted.get()) {
                 // 校验每个切片的上传状态
                 //for (int i = 1; i <= chunkNoMax; i++) {
                 //    if (!(Boolean) updatedSliceUploadStatusJSONObj.get(String.valueOf(i))) {
@@ -1494,8 +1511,14 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             log.error("切片上传失败", e);
             throw new BusinessException(e.getMessage());
         } finally {
-            if (consistencyMd5) {
-                FileUtil.del(new File(artifactFileSliceUploadRootFolderPathStr));
+            log.info("SliceUploadTask finally");
+            if (allSliceFileDownloadCompleted.get()) {
+                log.info("SliceUploadTask finally delete temp file");
+                try {
+                    FileUtil.del(new File(artifactFileSliceUploadRootFolderPathStr));
+                } catch (IORuntimeException e) {
+                    log.error("删除临时文件 [{}] 失败 [{}]", artifactFileSliceUploadRootFolderPathStr, ExceptionUtils.getStackTrace(e));
+                }
             }
         }
 
@@ -1515,10 +1538,10 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         //        .orElse(new JSONObject());
         // 获取 Hazelcast 分布式 Map，假设 Map 名为 "uploadStatusMap"
         IMap<String, String> map = hazelcastInstance.getMap(artifactFileSliceUploadRootFolderPathStr);
-        if(map.localKeySet().isEmpty()){
+        if (map.localKeySet().isEmpty()) {
             log.warn("Slice upload status map does not exist: {}", artifactFileSliceUploadRootFolderPathStr);
             return new JSONObject();
-        }else{
+        } else {
             log.info("Slice upload status map exist: {}", artifactFileSliceUploadRootFolderPathStr);
             JSONObject result = new JSONObject();
             map.localKeySet().forEach(key -> result.put(key, Boolean.valueOf(map.get(key))));
@@ -1528,7 +1551,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
     }
 
-    private  void writeSliceUploadStatus(String artifactFileSliceUploadRootFolderPathStr, Integer chunkIndex, Boolean uploadStatus) {
+    private void writeSliceUploadStatus(String artifactFileSliceUploadRootFolderPathStr, Integer chunkIndex, Boolean uploadStatus) {
         //final File sliceUploadStatusFile = new File(String.format("%s/sliceUploadStatus.json", artifactFileSliceUploadRootFolderPathStr));
         //
         //if (!FileUtil.exist(sliceUploadStatusFile)) {
@@ -1632,8 +1655,8 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         if (artifactSyncRecord.getStatus() == 3) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("任务已经结束不能删除");
         }
-        if(artifactSyncRecord.getStatus()<3){
-             promotionUtil.deleteTask(syncNo);
+        if (artifactSyncRecord.getStatus() < 3) {
+            promotionUtil.deleteTask(syncNo);
         }
         artifactSyncSlaveRecordMapper.deleteBySyncNo(syncNo);
         artifactSyncRecordMapper.delete(artifactSyncRecord);
@@ -1754,12 +1777,24 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                     log.info("is Unzip file {}", mergeFilePath);
                     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
                     SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
-                    String filePath =  StrUtil.isBlankOrUndefined(path) ? "" : path;
+                    String filePath = StrUtil.isBlankOrUndefined(path) ? "" : path;
                     // 调用处理文件上传的方法
                     artifactWebService.store(userDetails.getUsername(), storageId, repositoryId, filePath, UUID.randomUUID().toString(), fileStreamMultipartFile);
                 } else {
                     log.info("is Store file {}", mergeFilePath);
-                    String filePath =  StrUtil.isBlankOrUndefined(path) ? fileName : path.endsWith("/") ? String.join("", path, fileName) : String.join("/", path, fileName);
+                    String filePath = StrUtil.isBlankOrUndefined(path) ? fileName : path.endsWith("/") ? String.join("", path, fileName) : String.join("/", path, fileName);
+                    RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, filePath);
+                    Repository repository = repositoryPath.getRepository();
+                    if (Boolean.FALSE.equals(repository.isAllowsDeployment())) {
+                        throw new BusinessException("deployment of artifacts to " +
+                                repositoryPath.getStorageId() + ":" + repositoryPath.getRepositoryId() +
+                                " repository is not allowed!");
+                    }
+                    if (Files.exists(repositoryPath) && Boolean.FALSE.equals(repository.isAllowsRedeployment())) {
+                        throw new BusinessException("Re-deployment of artifacts to " +
+                                repositoryPath.getStorageId() + ":" + repositoryPath.getRepositoryId() +
+                                " repository is not allowed!");
+                    }
                     // 兼容原来上传逻辑
                     final ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repositoryId, fileStreamMultipartFile,
                             repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, layoutProviderRegistry, artifactMetadataService,
@@ -1793,18 +1828,18 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         return true;
     }
 
-    public boolean canMerger(long updatedSliceSize, long chunkNoMax,String artifactFileSliceUploadRootFolderPathStr) throws IOException {
+    public boolean canMerger(long updatedSliceSize, long chunkNoMax, String artifactFileSliceUploadRootFolderPathStr) throws IOException {
         long chunkSize = Files.list(Path.of(artifactFileSliceUploadRootFolderPathStr)).filter(p -> p.getFileName().toString().startsWith("chunkFile_")).count();
         log.info("chunkSize:{},updatedSliceSize:{},chunkNoMax:{}", chunkSize, updatedSliceSize, chunkNoMax);
-        boolean result =  chunkSize == chunkNoMax || updatedSliceSize == chunkNoMax;
+        boolean result = chunkSize == chunkNoMax || updatedSliceSize == chunkNoMax;
         log.info("canMerger:{}", result);
         return result;
     }
 
-    public boolean canMerger( long chunkNoMax,String artifactFileSliceUploadRootFolderPathStr) throws IOException {
+    public boolean canMerger(long chunkNoMax, String artifactFileSliceUploadRootFolderPathStr) throws IOException {
         long chunkSize = Files.list(Path.of(artifactFileSliceUploadRootFolderPathStr)).filter(p -> p.getFileName().toString().startsWith("chunkFile_")).count();
         log.info("chunkSize:{},chunkNoMax:{}", chunkSize, chunkNoMax);
-        boolean result =  chunkSize == chunkNoMax;
+        boolean result = chunkSize == chunkNoMax;
         log.info("canMerger:{}", result);
         return result;
     }

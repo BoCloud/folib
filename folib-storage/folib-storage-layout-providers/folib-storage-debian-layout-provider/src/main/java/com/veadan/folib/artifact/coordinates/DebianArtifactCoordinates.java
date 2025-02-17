@@ -139,7 +139,7 @@ public class DebianArtifactCoordinates
             String version = matcher.group(3);
             String name = path.substring(path.lastIndexOf('/') + 1);
             log.info("path is component:{},filename:{},version:{}", component, fileName, version);
-            coordinates = DebianArtifactCoordinates.of(component, name, DebianConstant.DEFAULT_EXTENSION);
+            coordinates = DebianArtifactCoordinates.of(component, path, DebianConstant.DEFAULT_EXTENSION);
             coordinates.setVersion(version);
             coordinates.setFileName(fileName);
         } else if(path.endsWith(DebianConstant.DEFAULT_EXTENSION)) {

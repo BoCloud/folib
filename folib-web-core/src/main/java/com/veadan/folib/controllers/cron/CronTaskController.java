@@ -42,6 +42,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -223,6 +224,23 @@ public class CronTaskController
                     .filter(cjd -> StringUtils.isNotBlank(cjd.getScope()) && (cjd.getScope().equals(scope) || "GLOBAL".equalsIgnoreCase(cjd.getScope()))).collect(Collectors.toSet());
         }
         return ResponseEntity.ok(cronJobDefinitions);
+    }
+
+    @ApiOperation(value = "列出全局 cron 任务类型和这些任务的字段类型.")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_GET_CONFIGURATION),
+            @ApiResponse(code = 404, message = NOT_FOUND_CONFIGURATION)})
+    @GetMapping(value = "/types/globalList",
+            produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity listGlobalCronJobs() {
+
+        CronTasksConfigurationDto config = cronTaskConfigurationService.getTasksConfigurationDto();
+        if (config == null || CollectionUtils.isEmpty(config.getCronTaskConfigurations())) {
+            return ResponseEntity.ok().build();
+        }
+        config.setCronTaskConfigurations(config.getCronTaskConfigurations().stream().filter(cron ->
+                (Objects.isNull(cron.getProperty("storageId")) && Objects.isNull(cron.getProperty("repositoryId")))
+        ).collect(Collectors.toSet()));
+        return ResponseEntity.ok(config);
     }
 
     @ApiOperation(value = "Used to get the configuration on given cron task UUID")

@@ -444,6 +444,7 @@ public class NpmArtifactController
         provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
     }
 
+    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT,target ="#repository.getStorage().getId() + '/' + #repository.getId()+ '/' + #name")
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @PutMapping(path = "{storageId}/{repositoryId}/{name:.+}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity publish(@RepositoryMapping Repository repository,

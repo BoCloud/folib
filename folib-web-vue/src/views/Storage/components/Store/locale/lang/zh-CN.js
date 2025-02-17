@@ -225,6 +225,7 @@ export default {
     'ConanRemoteList': '查询已添加的远程仓库',
     'NpmConfig': '查看npm当前配置',
     'IS': '是',
+    'authDescription':'当前示例的auth需要重新解码编码',
     'NpmAuth': '你也可以采用用户名密码模式',
     'NpmInstall': '安装依赖',
     'NpmPublish': '上传制品',
@@ -354,6 +355,16 @@ export default {
     // Debian
     'DebianGlobalConfiguration': '首先需要将仓库相关信息添加至"/etc/apt/sources.list文件， 执行如下命令：',
     'DebianPermissionConfiguration': '如需要将凭证信息添加至"/etc/apt/sources.list"文件，执行如下命令：',
-    'DebianCommandOperation':'配置完毕后使用如下命令安装包：'
-
+    'DebianCommandOperation':'配置完毕后使用如下命令安装包：',
+    'CargoGlobalConfiguration': '要将Cargo客户端指向FoLib仓库，请编辑Cargo主目录下的配置文件（例如~/.cargo/config.toml）：',
+    'CargoGlobalConfigurationToken': '为API调用（如publish和yank）设置凭据，请将以下部分添加到Cargo主目录下的凭据文件（例如~/.cargo/credentials.toml）：',
+    'CargoDeploy':'发布',
+    'CargoDeployConfig':'要发布一个crate并将其上传到FoLib，请使用cargo publish命令。',
+    'CargoInstall': '安装',
+    'CargoInstallConfig': '要安装一个crate，请使用cargo install命令。',
+    'Recursive': '递归',
+    'RecursiveTip': '元数据将添加到所选文件夹以及此文件夹下的所有制品、文件夹和子文件夹中。',
+    'RecursiveDelete': '递归删除',
+    'Edit': '编辑',
+    'GroupDefaultRepository':'默认上传仓库',
 }

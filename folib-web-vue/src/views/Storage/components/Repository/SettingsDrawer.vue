@@ -25,9 +25,9 @@
       <a-tab-pane :key="2" :tab="$t('Storage.TimingPolicy')">
         <CronTask :folibRepository="this.folibRepository" @settingDrawerClose="settingDrawerClose"></CronTask>
       </a-tab-pane>
-      <a-tab-pane :key="3" :tab="$t('Storage.FederatedRepository')" v-if="this.folibRepository.type === 'hosted'">
-        <UnionRepository :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></UnionRepository>
-      </a-tab-pane>
+<!--      <a-tab-pane :key="3" :tab="$t('Storage.FederatedRepository')" v-if="this.folibRepository.type === 'hosted'">-->
+<!--        <UnionRepository :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></UnionRepository>-->
+<!--      </a-tab-pane>-->
       <a-tab-pane :key="4" :tab="$t('Storage.Scan')" v-if="(isAdmin() || (storageAdmin && storageAdmin === $store.state.user.name)) && this.folibRepository.type !== 'group' && this.folibRepository.layout !== 'HuggingFace' ">
         <Scan :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></Scan>
       </a-tab-pane>

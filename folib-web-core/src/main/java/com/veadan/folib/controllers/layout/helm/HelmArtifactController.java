@@ -108,11 +108,12 @@ public class HelmArtifactController extends BaseArtifactController {
 
     }
 
+    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT,target ="#repository.getStorage().getId() + '/' + #repository.getId() +'/'+ #charts[0].getOriginalFilename()" )
     @ApiOperation(value = "Used to deploy an artifact")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(value = {"{storageId}/{repositoryId}/charts"}, method = {RequestMethod.POST})
+    @RequestMapping(value = {"{storageId}/{repositoryId}/charts","/{storageId}/{repositoryId}/api/charts"}, method = {RequestMethod.POST})
     public ResponseEntity upload(@RepositoryMapping Repository repository,
                                  @RequestHeader HttpHeaders httpHeaders,
                                  HttpServletRequest request,
@@ -157,11 +158,12 @@ public class HelmArtifactController extends BaseArtifactController {
         final String repositoryId = repository.getId();
         try {
             RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, "index.yaml");
-            if (Objects.nonNull(repositoryPath) && RepositoryTypeEnum.HOSTED.getType().equals(repositoryPath.getRepository().getType()) && !Files.exists(repositoryPath)) {
+            if (Objects.isNull(repositoryPath) && RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
                 // 创建刷新索引
-                RepositoryPath repoPath = repositoryPathResolver.resolve(repository, "");
-                String absolutePath = repoPath.toAbsolutePath().toString();
-                helmRepoUtil.createIndex(absolutePath, repository);
+                //helmRepoUtil.createIndex(absolutePath, repository);
+                HelmMetadataIndexer indexer = new HelmMetadataIndexer(storageId, repositoryId, artifactManagementService, repositoryPathResolver);
+                indexer.reindexAsSystem();
+                repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, "index.yaml");
             }
             if(repositoryPath == null && RepositoryTypeEnum.PROXY.getType().equals(repository.getType())){
                 repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, "charts/index.yaml");
