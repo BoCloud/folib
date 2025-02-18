@@ -99,7 +99,7 @@
                     display: flex;
                     align-items: center;
                     justify-content: flex-end;
-                  ">
+                  " v-if="repositoryLength">
                   <a v-if="folibRepository.layout === 'Docker' && folibRepository.type === 'hosted'">
                     <small style="padding-right: 20px" @click="handleDockerUploud">
                       {{ $t('Store.Upload') }}
@@ -1337,6 +1337,9 @@ export default {
     newDetailPage(){
       return this.$store.state.newDetailPage
     },
+    repositoryLength(){
+      return this.$store.state.repositoryLength
+    },
     contextMenuStyle() {
       return {
         position: 'fixed',
@@ -1354,10 +1357,12 @@ export default {
     },
   },
   watch:{
-    // currentTreeNode(val){
-    //   console.log(val,'watch currentTreeNode');
-    //   this.pageKey ++
-    // } 
+    repositoryLength(val){
+      if (!val) {
+          this.folibRepository = {}
+          this.baseUrl = ''
+      }
+    }
   },
   created () {
     this.initData()

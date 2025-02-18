@@ -4,6 +4,7 @@
  -->
 
  <template>
+     <a-spin :spinning="pageLoading">
   <div id="storages">
     <a-row :style="isChecked ? 'opacity:1;' : 'opacity:0;'" type="flex" :gutter="[24, 24]" style="margin-bottom:-30px;transition: all 0.5s ease;">
         <a-col :span="24" :lg="24">
@@ -711,7 +712,7 @@
           <a-card v-else-if="step === 2 && (folibRepository.type === 'proxy')" :bordered="false" class="header-solid">
             <h5 class="font-regular text-center">{{ $t('Storage.WarehouseConfig') }}</h5>
             <p class="text-center">
-              {{ $t('Storage.RemoteLibraryAddress') }}</p
+              {{ $t('Storage.RemoteLibraryAddress') }}</p>
             <a-form :form="form" :hideRequiredMark="true">
               <a-row :gutter="[24]">
                 <a-col :span="12">
@@ -1114,7 +1115,7 @@
       </div>
     </a-drawer>
   </div>
-
+     </a-spin>
 </template>
 
 <script>
@@ -1390,7 +1391,7 @@ export default {
         total:0,
       },
       layoutType:'isFilter',
-      isChecked: false,
+      isChecked: true,
       isShowOverview: false,
      permissionForm: {
         allowAnonymous: true,
@@ -1412,7 +1413,8 @@ export default {
       customLayoutList: [],
       switchDisabled:true,
       nameKey:false,
-      loadingNameKey:false
+      loadingNameKey:false,
+      pageLoading: false
     };
   },
   watch: {
@@ -1444,6 +1446,7 @@ export default {
       }
   },
   async created() {
+    this.pageLoading = true
     this.userInfo = store.state.user
     await  this.getStorages();
     await  this.getBaseUrl();
@@ -1904,12 +1907,6 @@ export default {
         }
       })
     },
-    async getStorages() {
-      await getStorages().then(response => {
-          this.storageData = response.storages;
-          this.cacheStorage()
-        })
-    },
     userSearchChange(matchUsername){
       this.userQueryParams.matchUsername = matchUsername
       this.userList = []
@@ -2004,6 +2001,7 @@ export default {
         if(res.status === 200){
           this.queryParams.total = res.data.total
           this.repositories = res.data.rows || []
+          this.$store.commit('setRepositoryLength', this.repositories.length)
           if(type){
             if(this.$refs.repositoryTree){
               this.$refs.repositoryTree.setKeyValue()
@@ -2015,6 +2013,7 @@ export default {
     getStorage(id) {
       if (id) {
         // this.$store.commit('setSwitchDisabled',true)
+        this.pageLoading = true
         this.switchDisabled = true
         getLibraryFilter(id).then(response => {
           this.currentStorage.id = response.id
@@ -2047,6 +2046,8 @@ export default {
           }
           this.getQueryStorage(params)
           // this.repositories = response.repositories
+        }).finally(() => {
+            this.pageLoading = false
         })
       }
     },
