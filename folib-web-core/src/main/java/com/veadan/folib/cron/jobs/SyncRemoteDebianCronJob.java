@@ -13,7 +13,6 @@ import com.veadan.folib.cron.jobs.fields.CronJobOptionalField;
 import com.veadan.folib.cron.jobs.fields.CronJobRepositoryIdAutocompleteField;
 import com.veadan.folib.cron.jobs.fields.CronJobStorageIdAutocompleteField;
 import com.veadan.folib.cron.jobs.fields.CronJobStringTypeField;
-import com.veadan.folib.domain.DebianReleaseContext;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.indexer.ArtifactorySearch;
 import com.veadan.folib.indexer.DebianReleaseMetadataIndexer;
@@ -146,11 +145,11 @@ public class SyncRemoteDebianCronJob extends JavaCronJob {
         Dict current = new Dict();
         current.setDictType(DICT_TYPE).setDictKey(repository.getStorageIdAndRepositoryId()).setCreateTime(date);
         dictService.saveDict(current);
-        if(Objects.nonNull(updates)&&!updates.isEmpty()){
+        if (Objects.nonNull(updates) && !updates.isEmpty()) {
             log.info("开始备份");
             // 1.压缩要备份的文件 2.是否存在同名的raw仓库 3.存入对应仓库
-            String path=dateStr+"/backup/";
-            replicationBackup.backUpByPath(repository,updates,path);
+            String path = dateStr + "/backup/";
+            replicationBackup.backUpByPath(repository, updates, path);
         }
     }
 
@@ -211,6 +210,7 @@ public class SyncRemoteDebianCronJob extends JavaCronJob {
                 }
                 updates.add(packageGzPath);
                 artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(), packageGzPath);
+                // 将package 文件写入其中
                 (new DebianReleaseMetadataIndexer(repository, Collections.emptyList(), repositoryPathResolver, artifactorySearch)).indexRelease(codename);
             } catch (Exception e) {
                 log.error("同步发行版【{}】,组件【{}】,架构【{}】时异常", codename, component, architecture, e);

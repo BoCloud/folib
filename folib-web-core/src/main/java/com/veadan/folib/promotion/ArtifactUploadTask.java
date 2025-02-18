@@ -22,22 +22,30 @@ import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.domain.DockerManifest;
 import com.veadan.folib.entity.Dict;
+import com.veadan.folib.enums.DeltaIndexEventType;
 import com.veadan.folib.enums.NpmPacketSuffix;
 import com.veadan.folib.enums.NpmSubLayout;
 import com.veadan.folib.enums.UploadTypeEnum;
+import com.veadan.folib.event.DebianIndexEvent;
 import com.veadan.folib.extractor.CargoIndex;
 import com.veadan.folib.extractor.CargoMetadataExtractor;
 import com.veadan.folib.extractor.CargoMetadataIndexer;
 import com.veadan.folib.indexer.DebianIncrementalIndexer;
+import com.veadan.folib.indexer.DebianReleaseMetadataIndexer;
 import com.veadan.folib.layout.providers.CargoLayoutProvider;
 import com.veadan.folib.metadata.indexer.RpmRepoIndexer;
 import com.veadan.folib.model.CargoMetadata;
-import com.veadan.folib.model.publish.CargoPublishRes;
-import com.veadan.folib.model.req.PublishRequest;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
-import com.veadan.folib.providers.layout.*;
+import com.veadan.folib.providers.layout.DebianLayoutProvider;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
+import com.veadan.folib.providers.layout.LayoutProvider;
+import com.veadan.folib.providers.layout.LayoutProviderRegistry;
+import com.veadan.folib.providers.layout.Maven2LayoutProvider;
+import com.veadan.folib.providers.layout.NpmLayoutProvider;
+import com.veadan.folib.providers.layout.PubLayoutProvider;
+import com.veadan.folib.providers.layout.RpmLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repository.MavenRepositoryFeatures;
 import com.veadan.folib.scanner.common.util.SpringContextUtil;
@@ -47,7 +55,6 @@ import com.veadan.folib.services.DictService;
 import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.services.impl.FileStreamMultipartFile;
 import com.veadan.folib.storage.metadata.MetadataHelper;
-import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.util.DebianUtils;
 import com.veadan.folib.util.MessageDigestUtils;
@@ -65,18 +72,28 @@ import org.apache.maven.artifact.repository.metadata.Snapshot;
 import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.apache.maven.index.artifact.Gav;
 import org.apache.maven.model.Model;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.mockito.internal.util.collections.Sets;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
-import javax.inject.Inject;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 
 @Data
@@ -252,14 +269,14 @@ public class ArtifactUploadTask implements Callable<String> {
                 handlerPubLayoutUpload(is, layout, repositoryPath);
             } else if (DockerLayoutProvider.ALIAS.equals(layout) && StringUtils.isNotBlank(fileType)) {
                 handlerDockerUploadProcess(this.storageId, this.repositoryId, this.imageTag, fileType, this.file, this.baseUrl);
-            }else if(RpmLayoutProvider.ALIAS.equals(layout)){
-                handlerRpmLayoutUpload(this.storageId, this.repositoryId,this.file);
-            }else if(CargoLayoutProvider.ALIAS.equals(layout)){
-                handlerCargoLayoutUpload(this.storageId,this.repositoryId,this.file);
-            }else if(DebianLayoutProvider.ALIAS.equals(layout)){
-                handlerDebianLayoutUpload(this.storageId,this.repositoryId,this.file,this.metaData,this.fileRelativePath);
+            } else if (RpmLayoutProvider.ALIAS.equals(layout)) {
+                handlerRpmLayoutUpload(this.storageId, this.repositoryId, this.file);
+            } else if (CargoLayoutProvider.ALIAS.equals(layout)) {
+                handlerCargoLayoutUpload(this.storageId, this.repositoryId, this.file);
+            } else if (DebianLayoutProvider.ALIAS.equals(layout)) {
+                handlerDebianLayoutUpload(this.storageId, this.repositoryId, this.file, this.metaData, this.fileRelativePath);
 
-            }else {
+            } else {
                 promotionUtil.setMetaData(repositoryPath, metaData);
                 artifactManagementService.store(repositoryPath, is);
             }
@@ -822,10 +839,10 @@ public class ArtifactUploadTask implements Callable<String> {
         }
         RepositoryPath dockerSubsidiaryRepositoryPath = DockerUtils.getDockerSubsidiaryPath(dockerTagRepositoryPath);
         String fileOriginalName = null;
-        if(multipartFile instanceof FileStreamMultipartFile){
+        if (multipartFile instanceof FileStreamMultipartFile) {
             fileOriginalName = ((FileStreamMultipartFile) multipartFile).getOriginalFilename();
-        }else {
-             fileOriginalName = (((CommonsMultipartFile) multipartFile).getFileItem()).getName();
+        } else {
+            fileOriginalName = (((CommonsMultipartFile) multipartFile).getFileItem()).getName();
         }
         RepositoryPath dockerSubsidiaryFileRepositoryPath = dockerSubsidiaryRepositoryPath.resolve(fileOriginalName);
         String subsidiaryFilePath = RepositoryFiles.relativizePath(dockerSubsidiaryFileRepositoryPath);
@@ -842,9 +859,9 @@ public class ArtifactUploadTask implements Callable<String> {
         log.info("Requested get docker application file {}/{}/{}.", storageId, repositoryId, path);
         String url = String.join("/", baseUrl, storageId, repositoryId, path);
         DistributedCacheComponent distributedCacheComponent = SpringContextUtil.getApplicationContext().getBean(DistributedCacheComponent.class);
-        String tag ;
+        String tag;
         String value = distributedCacheComponent.get("DOCKER_UPLOAD_TAR_USE_BASE_URL");
-        int isUseBaseUrl = value != null ? Integer.parseInt(value):0;
+        int isUseBaseUrl = value != null ? Integer.parseInt(value) : 0;
         if (isUseBaseUrl == 1) {
             final String prefix1 = "http://";
             final String prefix2 = "https://";
@@ -859,7 +876,7 @@ public class ArtifactUploadTask implements Callable<String> {
             tag = String.join("/", String.format("%s:%s", "127.0.0.1", port), storageId, repositoryId, path);
         }
 
-        Path tempDirectory =null;
+        Path tempDirectory = null;
         try (InputStream inputStream = multipartFile.getInputStream()) {
             String token = this.token;
             String uuid = UUID.randomUUID().toString();
@@ -892,7 +909,7 @@ public class ArtifactUploadTask implements Callable<String> {
         }
     }
 
-    private void handlerRpmLayoutUpload(final String storageId, final String repositoryId,final MultipartFile multipartFile){
+    private void handlerRpmLayoutUpload(final String storageId, final String repositoryId, final MultipartFile multipartFile) {
 
         try {
             String filename = multipartFile.getOriginalFilename();
@@ -913,18 +930,26 @@ public class ArtifactUploadTask implements Callable<String> {
         }
     }
 
-    private void handlerDebianLayoutUpload(final String storageId, final String repositoryId,final MultipartFile multipartFile,String metaData,String path){
+    private void handlerDebianLayoutUpload(final String storageId, final String repositoryId, final MultipartFile multipartFile, String metaData, String path) {
         try {
-            String filename = multipartFile.getOriginalFilename();
-            String debianPath = path+ filename;
+            Map<String, String> map = JSONObject.parseObject(metaData, Map.class);
+            String distribution = map.get("distribution");
+            String component = map.get("component");
+            String architecture = map.get("architecture");
+            String arrtString = DebianUtils.getArrtString(distribution, component, architecture);
+            String debianPath = path + ";" + arrtString;
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, debianPath);
             try (InputStream is = multipartFile.getInputStream()) {
-//                DebianUtils.getArrtString()
                 artifactManagementService.store(repositoryPath, is);
+                DebianArtifactCoordinates coordinate = new DebianArtifactCoordinates();
+                coordinate.setArchitecture(architecture);
+                coordinate.setDistribution(distribution);
+                coordinate.setComponent(component);
+                DebianIndexEvent addEvent = DebianUtils.generateEvent(coordinate, repositoryPath.getArtifactEntry(), DeltaIndexEventType.ADD);
+                DebianIncrementalIndexer debianIncrementalIndexer = (DebianIncrementalIndexer) SpringContextUtil.getBean("debianIncrementalIndexer");
+                debianIncrementalIndexer.index(repositoryPath.getRepository(), Sets.newSet(addEvent));
             }
-//            new DebianIncrementalIndexer()
-
-
+            new DebianReleaseMetadataIndexer(repositoryPath.getRepository(), Collections.emptyList(), repositoryPathResolver, null).indexRelease(distribution);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
@@ -965,7 +990,7 @@ public class ArtifactUploadTask implements Callable<String> {
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e.getMessage());
-        }finally {
+        } finally {
             try {
                 Files.deleteIfExists(tempPath);
             } catch (IOException e) {
@@ -973,7 +998,6 @@ public class ArtifactUploadTask implements Callable<String> {
             }
         }
     }
-
 
 
 }

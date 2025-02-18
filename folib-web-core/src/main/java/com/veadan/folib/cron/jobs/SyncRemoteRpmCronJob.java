@@ -138,7 +138,6 @@ public class SyncRemoteRpmCronJob extends JavaCronJob {
             if (Objects.isNull(newDict)) {
                 return;
             }
-            dictService.saveDict(newDict);
             List<String> diff;
             if (dict == null || !dict.getDictValue().equals(newDict.getDictValue())) {
                 log.info("开始获取新制品");
@@ -165,11 +164,11 @@ public class SyncRemoteRpmCronJob extends JavaCronJob {
                     log.info("开始备份");
                     // 1.压缩要备份的文件 2.是否存在同名的raw仓库 3.存入对应仓库
                     String date= DATE_FORMAT.format(new Date());
-                    String path=date+"/"+"backUp.zip";
+                    String path=date+"/backup/";
                     replicationBackup.backUpByPath(repository,diff,path);
                 }
             }
-
+            dictService.saveDict(newDict);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

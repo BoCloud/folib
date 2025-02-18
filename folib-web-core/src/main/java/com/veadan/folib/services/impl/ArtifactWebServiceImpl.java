@@ -970,7 +970,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     }
                 }
                 if (ProductTypeEnum.Rpm.getFoLibraryName().equals(rootRepositoryPath.getRepository().getLayout())) {
-                    RpmRepoIndexer rpmRepoIndexer = new RpmRepoIndexer(repositoryPathResolver, artifactManagementService, tempPath);
+                    RpmRepoIndexer rpmRepoIndexer = new RpmRepoIndexer(repositoryPathResolver, artifactManagementService, parentPath);
                     rpmRepoIndexer.indexWriter(rootRepositoryPath.getRepository());
                 }
             }
@@ -1494,10 +1494,6 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         return metadata;
     }
 
-    @Override
-    public void backupResolve(String storageId, String repositoryId, MultipartFile file) {
-        store("ADMIN", storageId, repositoryId, "", UUID.randomUUID().toString(), file);
-    }
 
     private void handleDockerRepo(RepositoryPath rootRepositoryPath, RepositoryPath blobsRootRepositoryPath, RepositoryPath manifestRootRepositoryPath) {
         AtomicLong imageAl = new AtomicLong(0), blobAl = new AtomicLong(0), manifestAl = new AtomicLong(0), copyBlobAl = new AtomicLong(0), copyManifestAl = new AtomicLong(0), copyBlobFailAl = new AtomicLong(0), copyManifestFailAl = new AtomicLong(0), deleteBlobAl = new AtomicLong(0), deleteManifestAl = new AtomicLong(0);
