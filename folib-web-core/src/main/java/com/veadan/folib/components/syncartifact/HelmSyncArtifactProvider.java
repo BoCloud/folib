@@ -142,7 +142,7 @@ public class HelmSyncArtifactProvider implements SyncArtifactProvider {
         Repository repository = repositoryPath.getRepository();
         String url = repository.getRemoteRepository().getUrl();
         COUNT.set(0L);
-        int availableCores = commonComponent.getAvailableCores() * 2;
+        int availableCores = syncArtifactForm.getMaxThreadNum() == null ? commonComponent.getAvailableCores() * 2 : syncArtifactForm.getMaxThreadNum();
         ThreadPoolTaskExecutor threadPoolTaskExecutor = commonComponent.buildThreadPoolTaskExecutor("browseHelmSync", availableCores, availableCores);
         int batch = 20;
         if (Objects.nonNull(syncArtifactForm.getBatch())) {

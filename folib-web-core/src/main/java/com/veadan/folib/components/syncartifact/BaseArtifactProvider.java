@@ -4,7 +4,6 @@ import cn.hutool.core.io.FileUtil;
 import com.google.common.collect.Lists;
 import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
 import com.veadan.folib.components.jfrogArtifactSync.JfrogPropertySyncer;
-import com.veadan.folib.components.replication.RemoteReplication;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.migrate.SyncArtifactForm;
 import com.veadan.folib.entity.MigrateInfo;
@@ -37,7 +36,7 @@ import java.util.stream.Stream;
  * @since 2025-01-20 14:54
  */
 @Slf4j
-public abstract class BaseArtifactProvider implements SyncArtifactProvider{
+public abstract class BaseArtifactProvider implements SyncArtifactProvider {
 
     private final SyncUtils syncUtils;
 
@@ -112,7 +111,7 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider{
      * @return 为上一级的子目录则为true
      */
     public boolean isSubDirectory(String currentUrl, String preUrl) {
-        return currentUrl.contains(preUrl) && !currentUrl.equals(preUrl);
+        return currentUrl.contains(preUrl) && !currentUrl.equals(preUrl)&&currentUrl.endsWith(GlobalConstants.SEPARATOR);
     }
 
 
@@ -355,7 +354,6 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider{
             log.error("Batch download artifactPath [{}] error [{}]", artifactPath, ExceptionUtils.getStackTrace(ex));
         }
     }
-
 
 
 }

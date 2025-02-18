@@ -401,7 +401,7 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
             batch = syncArtifactForm.getBatch();
         }
         COUNT.set(0L);
-        int availableCores = commonComponent.getAvailableCores() * 2;
+        int availableCores = syncArtifactForm.getMaxThreadNum() == null ? commonComponent.getAvailableCores() * 2 : syncArtifactForm.getMaxThreadNum();
         ThreadPoolTaskExecutor threadPoolTaskExecutor = commonComponent.buildThreadPoolTaskExecutor("browsedebianSync", availableCores, availableCores);
         boolean isPaused = false;
         try (Stream<Path> pathStream = Files.list(path)) {

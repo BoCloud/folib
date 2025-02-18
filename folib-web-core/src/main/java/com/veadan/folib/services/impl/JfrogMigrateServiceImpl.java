@@ -444,6 +444,10 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                     form.setPassword(info.getPassword());
                     form.setSyncMeta(info.getSyncMeta());
                     syncArtifactProvider.batchBrowseSync(form);
+                }else{
+                    MigrateInfo repoInfo = migrateInfoService.getByMigrateIdAndRepoInfo(migrateId, storageId, repositoryId);
+                    repoInfo.setSyncStatus(MigrateStatusEnum.COMPLETED.getStatus());
+                    migrateInfoService.updateById(repoInfo);
                 }
                 log.info("存储空间{}的仓库{}迁移结束",storageId,repositoryId);
                 pausedTask = PAUSED_QUEUE.poll();
