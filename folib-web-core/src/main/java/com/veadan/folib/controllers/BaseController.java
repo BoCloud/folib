@@ -396,6 +396,10 @@ public abstract class BaseController {
         return String.format("%s/storages/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
     }
 
+    protected String getArtifactoryRepositoryUrl(Repository repository, String endPoint) {
+        return String.format("%s/artifactory/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getId());
+    }
+
     /***
      * 获取制品RepositoryPath
      * @param storageId 存储空间名称

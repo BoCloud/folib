@@ -123,6 +123,42 @@ public class GroupRepositoryProvider
         configurationManager.resolveGroupRepository(groupRepository, storageAndRepositoryIdList);
         for (String storageAndRepositoryId : storageAndRepositoryIdList) {
             try {
+                //先从各个仓库本地缓存中查找一次，若存在则使用
+                String sId = ConfigurationUtils.getStorageId(storage.getId(), storageAndRepositoryId);
+                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+
+                Repository subRepository = getConfiguration().getStorage(sId).getRepository(rId);
+
+                subRepositoryPath = repositoryPathResolver.resolve(subRepository, repositoryPath);
+                if (!isRepositoryResolvable(groupRepository, subRepository, subRepositoryPath)) {
+                    continue;
+                }
+                if (!artifactSecurityComponent.validatePrivileges(subRepositoryPath, Privileges.ARTIFACTS_RESOLVE.getAuthority())) {
+                    continue;
+                }
+                if (Objects.nonNull(repositoryPath.getDisableRemote())) {
+                    subRepositoryPath.setDisableRemote(repositoryPath.getDisableRemote());
+                }
+                if (StringUtils.isNotBlank(repositoryPath.getTargetUrl())) {
+                    subRepositoryPath.setTargetUrl(repositoryPath.getTargetUrl());
+                }
+                if (MapUtils.isNotEmpty(repositoryPath.getHeaders())) {
+                    subRepositoryPath.setHeaders(repositoryPath.getHeaders());
+                }
+                if (StringUtils.isNotBlank(repositoryPath.getArtifactPath())) {
+                    subRepositoryPath.setArtifactPath(repositoryPath.getArtifactPath());
+                }
+                if (Objects.nonNull(subRepositoryPath) && Objects.nonNull(resolvePathDirectlyFromGroupPathIfPossible(subRepositoryPath))) {
+                    logger.info("Located artifact: [{}]", subRepositoryPath);
+                    return subRepositoryPath;
+                }
+            } catch (Exception ex) {
+                logger.error("group repository resolvePathTraversal artifact: [{}] error：[{}]", subRepositoryPath, ExceptionUtils.getStackTrace(ex));
+            }
+        }
+
+        for (String storageAndRepositoryId : storageAndRepositoryIdList) {
+            try {
                 String sId = ConfigurationUtils.getStorageId(storage.getId(), storageAndRepositoryId);
                 String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
 

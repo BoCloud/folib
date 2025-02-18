@@ -39,6 +39,10 @@ public class PypiGroupProvider implements PypiProvider {
     @Override
     public String packages(Repository repository, String packageName, String targetUrl) {
         String htmlData = null, subHtmlData;
+        htmlData = getLocalPackages(repository, packageName, targetUrl);
+        if (StringUtils.isNotBlank(htmlData)) {
+            return htmlData;
+        }
         List<String> storageAndRepositoryIdList = Lists.newArrayList();
         configurationManager.resolveGroupRepository(repository, storageAndRepositoryIdList);
         for (String storageAndRepositoryId : storageAndRepositoryIdList) {
@@ -51,6 +55,32 @@ public class PypiGroupProvider implements PypiProvider {
                 }
                 PypiProvider pypiProvider = pypiProviderRegistry.getProvider(PypiRepositoryTypeEnum.resolveType(subRepository.getType()));
                 subHtmlData = pypiProvider.packages(subRepository, packageName, targetUrl);
+                if (StringUtils.isNotBlank(subHtmlData)) {
+                    htmlData = subHtmlData;
+                    break;
+                }
+            } catch (Exception ex) {
+                log.error(ExceptionUtils.getStackTrace(ex));
+            }
+        }
+        return htmlData;
+    }
+
+    @Override
+    public String getLocalPackages(Repository repository, String packageName, String targetUrl) {
+        String htmlData = null, subHtmlData;
+        List<String> storageAndRepositoryIdList = Lists.newArrayList();
+        configurationManager.resolveGroupRepository(repository, storageAndRepositoryIdList);
+        for (String storageAndRepositoryId : storageAndRepositoryIdList) {
+            try {
+                String sId = ConfigurationUtils.getStorageId(repository.getStorage().getId(), storageAndRepositoryId);
+                String rId = ConfigurationUtils.getRepositoryId(storageAndRepositoryId);
+                Repository subRepository = configurationManager.getRepository(sId, rId);
+                if (!isRepositoryResolvable(subRepository)) {
+                    continue;
+                }
+                PypiProvider pypiProvider = pypiProviderRegistry.getProvider(PypiRepositoryTypeEnum.resolveType(subRepository.getType()));
+                subHtmlData = pypiProvider.getLocalPackages(subRepository, packageName, targetUrl);
                 if (StringUtils.isNotBlank(subHtmlData)) {
                     htmlData = subHtmlData;
                     break;

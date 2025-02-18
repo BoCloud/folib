@@ -65,4 +65,9 @@ public class PypiHostedProvider implements PypiProvider {
         return null;
     }
 
+    @Override
+    public String getLocalPackages(Repository repository, String packageName, String targetUrl) {
+        return packages(repository, packageName, targetUrl);
+    }
+
 }

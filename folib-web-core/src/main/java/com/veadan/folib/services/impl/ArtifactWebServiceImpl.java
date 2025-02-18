@@ -214,9 +214,6 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     @Autowired
     private RoleResourceRefMapper roleResourceRefMapper;
 
-    @Resource
-    private ArtifactorySearch artifactorySearch;
-
     @Value("${folib.temp}")
     private String tempPath;
 
@@ -449,7 +446,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     throw new BusinessException(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath()));
                 }
                 validateAuth(repositoryPath);
-                if (Files.isDirectory(repositoryPath)) {
+                boolean isDocker = DockerLayoutProvider.ALIAS.equalsIgnoreCase(repositoryPath.getRepository().getLayout());
+                boolean isDockerTag = isDocker && DockerArtifactCoordinates.isDockerTag(repositoryPath);
+                if (!isDockerTag && Files.isDirectory(repositoryPath)) {
                     recursiveMetadata(repositoryPath, artifactMetadataForm);
                     return ResponseMessage.ok().getMessage();
                 } else {
@@ -486,7 +485,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     throw new BusinessException(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath()));
                 }
                 validateAuth(repositoryPath);
-                if (Files.isDirectory(repositoryPath)) {
+                boolean isDocker = DockerLayoutProvider.ALIAS.equalsIgnoreCase(repositoryPath.getRepository().getLayout());
+                boolean isDockerTag = isDocker && DockerArtifactCoordinates.isDockerTag(repositoryPath);
+                if (!isDockerTag && Files.isDirectory(repositoryPath)) {
                     recursiveDeleteMetadata(repositoryPath, artifactMetadataForm);
                     return;
                 }
@@ -682,7 +683,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         throw new BusinessException(String.format(GlobalConstants.ARTIFACT_NOT_FOUND_MESSAGE, artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath()));
                     }
                     validateAuth(repositoryPath);
-                    if (Files.isDirectory(repositoryPath)) {
+                    boolean isDocker = DockerLayoutProvider.ALIAS.equalsIgnoreCase(repositoryPath.getRepository().getLayout());
+                    boolean isDockerTag = isDocker && DockerArtifactCoordinates.isDockerTag(repositoryPath);
+                    if (!isDockerTag && Files.isDirectory(repositoryPath)) {
                         recursiveBatchMetadata(repositoryPath, artifactMetaData, artifactMetadataFormList);
                         return;
                     }
@@ -956,6 +959,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         }
                     } catch (Exception ex) {
                         log.error("路径 [{}] 错误 [{}] ", artifactFile.getAbsolutePath(), ExceptionUtils.getStackTrace(ex));
+                        throw new RuntimeException(ex.getMessage());
                     }
                     statusInfo.setSuccess(successTotal);
                     statusInfo.setFail(statusInfo.getTotal() - statusInfo.getSuccess());
@@ -1454,6 +1458,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     public void saveArtifactMetaByString(String storageId, String repositoryId, String path, String metaData) {
         try {
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+            if (Files.isDirectory(repositoryPath)) {
+                artifactComponent.cacheArtifactMetadata(repositoryPath, metaData);
+                return;
+            }
             Artifact artifact = resolvePath(storageId, repositoryId, path);
             artifact.setMetadata(metaData);
             artifactService.saveOrUpdateArtifact(artifact);
@@ -1493,7 +1501,6 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         }
         return metadata;
     }
-
 
     private void handleDockerRepo(RepositoryPath rootRepositoryPath, RepositoryPath blobsRootRepositoryPath, RepositoryPath manifestRootRepositoryPath) {
         AtomicLong imageAl = new AtomicLong(0), blobAl = new AtomicLong(0), manifestAl = new AtomicLong(0), copyBlobAl = new AtomicLong(0), copyManifestAl = new AtomicLong(0), copyBlobFailAl = new AtomicLong(0), copyManifestFailAl = new AtomicLong(0), deleteBlobAl = new AtomicLong(0), deleteManifestAl = new AtomicLong(0);
@@ -1897,10 +1904,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 artifactMetadataService.rebuildMetadata(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), repositoryPath.getArtifactEntry().getArtifactPath());
             } catch (Exception ex) {
                 log.error("StoreArtifact rebuildMetadata repositoryPath：{}，error：{}", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
+                throw ex;
             }
         } catch (Exception ex) {
             log.error("StoreArtifact repositoryPath：{} error：{}", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
-            return false;
+            throw  new RuntimeException(ex);
         }
         return true;
     }
@@ -2647,8 +2655,3 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         }
     }
 }
-
-
-
-
-

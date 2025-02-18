@@ -32,6 +32,7 @@ public class AlarmConfiguration {
         this.notificationPolicy = config.getNotificationPolicy();
         this.recipients = config.getRecipients();
         this.emails = config.getEmails();
+        this.storageThreshold = config.getStorageThreshold();
     }
 
     // Getters and setters

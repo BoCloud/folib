@@ -3,6 +3,7 @@ package com.veadan.folib.services.impl;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.github.pagehelper.PageInfo;
+import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.cluster.SyncRepositoryEnum;
 import com.veadan.folib.cluster.SyncStorageEnum;
 import com.veadan.folib.components.DistributedCacheComponent;
@@ -98,6 +99,8 @@ import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import javax.inject.Inject;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -298,7 +301,11 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             RemoteRepositoryDto remoteDTO = new RemoteRepositoryDto();
             remoteDTO.setUsername(info.getUsername());
             remoteDTO.setPassword(info.getPassword());
-            remoteDTO.setUrl(info.getRemotePreUrl() + "/" + repositoryId);
+            if(repository.getLayout().equals(DockerArtifactCoordinates.LAYOUT_NAME)){
+                remoteDTO.setUrl(info.getRemotePreUrl() + "/v2/" + repositoryId);
+            }else {
+                remoteDTO.setUrl(info.getRemotePreUrl() + "/" + repositoryId);
+            }
             remoteDTO.setAutoBlocking(true);
             remoteDTO.setDownloadRemoteIndexes(true);
             remoteDTO.setChecksumValidation(true);
@@ -460,11 +467,17 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         }
     }
 
-    public Map<String, Long> getFinishedCount(String migrateId,List<String> storeAndRepos) {
-        HashMap<String, Long> result = new HashMap<>();
+    public Map<String, String> getFinishedCount(String migrateId,List<String> storeAndRepos) {
+        HashMap<String, String> result = new HashMap<>();
         for (String storeAndRepo : storeAndRepos) {
-            long count = distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + storeAndRepo).get();
-            result.put(storeAndRepo, count);
+            long artCount = distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + storeAndRepo).get();
+            long artTotal=distributedCounterComponent.getAtomicLong(JfrogMigrateService.INDEX_COUNT+storeAndRepo).get();
+            long directoryTotal= distributedCounterComponent.getAtomicLong(JfrogMigrateService.DIRECTORY_TOTAl + storeAndRepo).get();
+            long directoryCount= distributedCounterComponent.getAtomicLong(JfrogMigrateService.DIRECTORY_COUNT + storeAndRepo).get();
+            long up=artCount+directoryCount;
+            long down=artTotal+directoryTotal;
+            BigDecimal process=new BigDecimal(up).divide(new BigDecimal(down),4,RoundingMode.HALF_UP).multiply(new BigDecimal(100));
+            result.put(storeAndRepo, process.toString());
         }
         return result;
     }
@@ -521,6 +534,8 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 continue;
             }
             repository.setType(RepositoryTypeEnum.HOSTED.getType());
+            repository.setAllowsDeployment(Boolean.TRUE);
+            repository.setAllowsRedeployment(Boolean.TRUE);
             try {
                 configurationManagementService.saveRepository(storageId, repository);
                 SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);

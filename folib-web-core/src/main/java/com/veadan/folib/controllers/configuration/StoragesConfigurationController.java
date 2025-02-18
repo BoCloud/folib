@@ -979,10 +979,17 @@ public class StoragesConfigurationController
                     }
                     throw new RuntimeException(ex.getMessage());
                 }
+                LayoutProvider layoutProvider = null;
                 if (Objects.isNull(existRepository)) {
                     //初始化仓库数据
-                    LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(repositoryDto.getLayout());
+                    layoutProvider = layoutProviderRegistry.getProvider(repositoryDto.getLayout());
                     if(!RepositoryTypeEnum.GROUP.getType().equals(repository.getType()) || repositoryDto.getLayout().equals(CargoLayoutProvider.ALIAS)){
+                        layoutProvider.initData(storageId, repositoryId);
+                    }
+                }else {
+                    //更新cargo仓库配置
+                    if(repositoryDto.getLayout().equals(CargoLayoutProvider.ALIAS)){
+                        layoutProvider = layoutProviderRegistry.getProvider(repositoryDto.getLayout());
                         layoutProvider.initData(storageId, repositoryId);
                     }
                 }

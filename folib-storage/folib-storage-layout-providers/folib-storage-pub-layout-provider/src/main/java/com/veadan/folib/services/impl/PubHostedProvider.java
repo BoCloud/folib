@@ -86,4 +86,9 @@ public class PubHostedProvider implements PubProvider {
         return null;
     }
 
+    @Override
+    public JSONObject getLocalPackages(Repository repository, String packageName, String targetUrl) {
+        return packages(repository, packageName, targetUrl);
+    }
+
 }

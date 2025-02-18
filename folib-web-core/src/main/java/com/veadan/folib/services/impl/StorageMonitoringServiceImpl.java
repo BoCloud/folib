@@ -556,6 +556,7 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
 
         List<StorageMonitoring> storageMonitoringList = storageMonitoringMapper.getTodayData();
         if(storageMonitoringList.isEmpty()){
+            log.warn("存储告警:当天存储监控数据为空");
             return null;
         }
 

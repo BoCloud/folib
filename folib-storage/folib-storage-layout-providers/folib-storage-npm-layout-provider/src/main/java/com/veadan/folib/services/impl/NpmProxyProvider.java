@@ -83,6 +83,20 @@ public class NpmProxyProvider implements NpmProvider {
     }
 
     @Override
+    public PackageVersion getLocalPackageVersion(Repository repository, String packageName, String version, String targetUrl) {
+        PackageFeed packageFeed = getLocalPackageFeed(repository, packageName, targetUrl);
+        if (Objects.nonNull(packageFeed)) {
+            log.debug("Attempting to find the version {} in package metadata {}", version, packageName);
+            PackageVersion packageVersion = packageFeed.getVersions().getAdditionalProperties().get(version);
+            if (Objects.nonNull(packageVersion)) {
+                log.debug("Attempting to transform metadata content and minimize data, version {} in the package {}", version, packageName);
+                return packageVersion;
+            }
+        }
+        return null;
+    }
+
+    @Override
     public PackageFeed packageFeed(Repository repository, String packageName, String targetUrl) {
         String packageFeedFilePath = NpmUtils.getPackageMetadataPath(packageName);
         RepositoryPath packageFeedJsonRepositoryPath = repositoryPathResolver.resolve(repository, packageFeedFilePath);
@@ -135,6 +149,20 @@ public class NpmProxyProvider implements NpmProvider {
     }
 
     @Override
+    public PackageFeed getLocalPackageFeed(Repository repository, String packageName, String targetUrl) {
+        String packageFeedFilePath = NpmUtils.getPackageMetadataPath(packageName);
+        RepositoryPath packageFeedJsonRepositoryPath = repositoryPathResolver.resolve(repository, packageFeedFilePath);
+        try {
+            if (Objects.nonNull(packageFeedJsonRepositoryPath) && Files.exists(packageFeedJsonRepositoryPath) && !RepositoryFiles.hasRefreshContent(packageFeedJsonRepositoryPath)) {
+                return npmComponent.readPackageFeed(packageFeedJsonRepositoryPath);
+            }
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
+        return null;
+    }
+
+    @Override
     public String binary(Repository repository, String packageName, String targetUrl) {
         String binaryFilePath = NpmUtils.getBinaryMetadataPath(packageName);
         RepositoryPath binaryJsonRepositoryPath = repositoryPathResolver.resolve(repository, binaryFilePath);
@@ -164,6 +192,20 @@ public class NpmProxyProvider implements NpmProvider {
                 }
             }
             return npmComponent.readBinary(binaryJsonRepositoryPath);
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
+        return null;
+    }
+
+    @Override
+    public String getLocalBinary(Repository repository, String packageName, String targetUrl) {
+        String binaryFilePath = NpmUtils.getBinaryMetadataPath(packageName);
+        RepositoryPath binaryJsonRepositoryPath = repositoryPathResolver.resolve(repository, binaryFilePath);
+        try {
+            if (Objects.nonNull(binaryJsonRepositoryPath) && Files.exists(binaryJsonRepositoryPath) && !RepositoryFiles.hasRefreshContent(binaryJsonRepositoryPath)) {
+                return npmComponent.readBinary(binaryJsonRepositoryPath);
+            }
         } catch (Exception ex) {
             log.error(ExceptionUtils.getStackTrace(ex));
         }

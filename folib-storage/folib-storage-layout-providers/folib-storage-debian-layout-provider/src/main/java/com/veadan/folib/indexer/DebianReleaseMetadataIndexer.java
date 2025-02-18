@@ -354,4 +354,56 @@ public class DebianReleaseMetadataIndexer {
             this.header = header;
         }
     }
+
+
+    public void indexRelease(String distribution) {
+        // 获取新的所有的package
+        String path="dists/"+distribution;
+        RepositoryPath repositoryPath = resolver.resolve(this.repo, path);
+        try(Stream<Path> paths = Files.walk(repositoryPath)){
+            List<Path> packages = paths.map(p->(RepositoryPath)p).filter(p -> {
+                try {
+                    return !p.toString().contains("by-hash")&& !RepositoryFiles.isChecksum((p))&&!RepositoryFiles.isArtifactMetadata(p)&&!Files.isDirectory(p);
+                } catch (IOException e) {
+                    return false;
+                }
+            }).collect(Collectors.toList());
+            packages.removeIf(pkg -> this.packagesFilesToDelete.contains(pkg.toString()));
+
+            Set<String> components = Sets.newHashSet();
+            Set<String> architectures = Sets.newHashSet();
+            for (Path pgk : packages) {
+                String relativePath = repositoryPath.relativize(pgk).toString();
+                Matcher matcher = Pattern.compile(COMPONENT_AND_ARCHITECTURE_PATTERN).matcher(relativePath);
+                if (matcher.find()) {
+                    components.add(matcher.group(1));
+                    architectures.add(matcher.group(2));
+                } else {
+                    log.warn("Invalid Packages file path, cannot add to Release index : {}", pgk);
+                }
+            }
+            architectures.remove("all");
+            architectures.remove("any");
+            DebianReleaseContext releaseContext = new DebianReleaseContext(distribution, components, architectures);
+            List<DebianReleaseMetadataEntry> releaseEntryList = packages.stream().filter(Objects::nonNull).map(p -> {
+                try {
+                    RootRepositoryPath rootRepositoryPath=resolver.resolve(this.repo);
+                    RepositoryPath resolve = resolver.resolve(this.repo, rootRepositoryPath.relativize(p));
+                    Artifact artifact = resolve.getArtifactEntry();
+                    if(Objects.nonNull(artifact)) {
+                        return this.createReleaseEntry(artifact, releaseContext);
+                    }else {
+                        return null;
+                    }
+
+                } catch (IOException e) {
+                    log.error(e.getMessage());
+                    return null;
+                }
+            }).filter(Objects::nonNull).sorted(this.orderByPath).collect(Collectors.toList());
+            this.writeIndexFiles(releaseEntryList, releaseContext);
+        }catch (Exception e){
+            log.info("release index failed : {}", e.getMessage());
+        }
+    }
 }

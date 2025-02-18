@@ -338,7 +338,7 @@ public class ArtifactSearchController extends JFrogBaseController {
                 .artifactConditions(Lists.newArrayList()).artifactMetadataConditions(Lists.newArrayList()).artifactNameConditions(Lists.newArrayList()).build();
         artifactConditionGroups.add(andArtifactConditionGroup);
         andArtifactConditionGroup.getArtifactConditions().add(ArtifactCondition.builder()
-                .artifactSearchConditionTypeEnum(ArtifactSearchConditionTypeEnum.MATCH).searchKey(ArtifactFieldTypeEnum.PATH.getFolibary()).searchValue(query).build());
+                .artifactSearchConditionTypeEnum(ArtifactSearchConditionTypeEnum.MATCH).searchKey(ArtifactFieldTypeEnum.PATH.getFolibary()).searchValue(query).searchValueSuffixEnd(true).build());
         ArtifactSearchCondition artifactSearchCondition = ArtifactSearchCondition.builder().storageId(storageId).repositoryId(repositoryId).path("").type("").artifactConditionGroups(artifactConditionGroups).build();
         ArtifactSearch<Artifact> artifactSearch = artifactRepository.findMatchingByAql(ArtifactPage.builder().offset(0L).limit(9999L).build(), artifactSearchCondition);
         if (Objects.nonNull(artifactSearch)) {

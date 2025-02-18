@@ -15,6 +15,7 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.utils.CargoConstants;
 import com.veadan.folib.utils.CargoUtil;
+import com.veadan.folib.utils.CollectionUtils;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
 import lombok.extern.slf4j.Slf4j;
@@ -170,10 +171,11 @@ public class CargoArtifactController extends BaseArtifactController {
      */
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @PutMapping(value = "/{storageId}/{repositoryId}/api/v1/crates/new")
-    public ResponseEntity<?> publish(@PathVariable("storageId") String storageId,
+    public ResponseEntity<?> publish(@RepositoryMapping Repository repository,
                                      @PathVariable("repositoryId") String repositoryId,
                                      HttpServletRequest request) {
         List<String> errors = new ArrayList<>();
+        final String storageId = repository.getStorage().getId();
         try (InputStream inputStream = request.getInputStream()) {
             PublishRequest publishRequest = extractPublishRequest(inputStream);
             String cratePath = CargoUtil.buildCratePath(publishRequest.getMetadata().getName(), publishRequest.getMetadata().getVers());
@@ -184,7 +186,13 @@ public class CargoArtifactController extends BaseArtifactController {
             //写入制品文件
             artifactManagementService.store(repositoryPath, new ByteArrayInputStream(publishRequest.getCrateFile()));
             //写入索引文件
-            configurationIndexer.indexAsSystem(repositoryPath, new CargoIndex(publishRequest.getMetadata().getName(), CargoIndex.EventType.ADD, publishRequest.getMetadata().getDeps().get(0).getRegistry()));
+            CargoIndex cargoIndex = null;
+            if(Objects.nonNull(publishRequest.getMetadata()) && !CollectionUtils.isNullOrEmpty(publishRequest.getMetadata().getDeps()) ){
+                cargoIndex = new CargoIndex(publishRequest.getMetadata().getName(), CargoIndex.EventType.ADD, publishRequest.getMetadata().getDeps().get(0).getRegistry());
+            }else {
+                cargoIndex =  new CargoIndex(publishRequest.getMetadata().getName(), CargoIndex.EventType.ADD);
+            }
+            configurationIndexer.indexAsSystem(repositoryPath, cargoIndex);
             String metadataFilePath = CargoUtil.getLongMetadataFilePath(cratePath);
             //写入长索引文件
             RepositoryPath path = repositoryPathResolver.resolve(storageId, repositoryId, metadataFilePath);

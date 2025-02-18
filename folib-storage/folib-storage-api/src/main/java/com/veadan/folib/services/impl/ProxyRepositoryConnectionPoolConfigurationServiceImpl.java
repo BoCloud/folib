@@ -3,6 +3,7 @@ package com.veadan.folib.services.impl;
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.configuration.MutableProxyConfiguration;
 import com.veadan.folib.configuration.ProxyConfiguration;
+import com.veadan.folib.ext.jersey.ContentTypeFixerFilter;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import lombok.extern.slf4j.Slf4j;
@@ -134,7 +135,7 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
         ClientBuilder clientBuilder = ClientBuilder.newBuilder()
                 .register(new LoggingFeature(log, Verbosity.PAYLOAD_TEXT))
                 .withConfig(config);
-        return clientBuilder.build();
+        return clientBuilder.build().register(new ContentTypeFixerFilter());
     }
 
     @Override
@@ -166,7 +167,7 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
         ClientBuilder clientBuilder = ClientBuilder.newBuilder()
                 .register(new LoggingFeature(log, Verbosity.PAYLOAD_TEXT))
                 .withConfig(config);
-        return clientBuilder.build();
+        return clientBuilder.build().register(new ContentTypeFixerFilter());
     }
 
     @Override
@@ -192,7 +193,7 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
         ClientBuilder clientBuilder = ClientBuilder.newBuilder()
                 .register(new LoggingFeature(log, Verbosity.PAYLOAD_TEXT))
                 .withConfig(config);
-        return clientBuilder.build();
+        return clientBuilder.build().register(new ContentTypeFixerFilter());
     }
 
     private void isExistProxy(ProxyConfiguration globalProxyConfig, ProxyConfiguration repositoryProxyConfig, ClientConfig config) {
