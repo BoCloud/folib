@@ -327,16 +327,11 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
                                 }
                             } catch (Exception ex) {
                                 log.error(ExceptionUtils.getStackTrace(ex));
-                                flag = false;
                             }
                         }
                         if (CollectionUtils.isNotEmpty(pathList)) {
                             batchDownload(item, syncArtifactForm, pathList, threadPoolTaskExecutor);
                         }
-                    }
-                    // 清除已完成的文件
-                    if (flag) {
-//                        Files.delete(item);
                     }
                 } catch (Exception ex) {
                     log.error("Handle path [{}] lines [{}] error [{}] ms", item.toString(), lines, ExceptionUtils.getStackTrace(ex));

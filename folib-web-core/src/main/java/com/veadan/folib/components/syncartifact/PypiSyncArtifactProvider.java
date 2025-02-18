@@ -336,10 +336,6 @@ public class PypiSyncArtifactProvider implements SyncArtifactProvider {
                             batchDownload(item, syncArtifactForm, pathList, threadPoolTaskExecutor);
                         }
                     }
-                    // 清除已完成的文件
-                    if (flag) {
-//                        Files.delete(item);
-                    }
                 } catch (Exception ex) {
                     log.error("Handle path [{}] lines [{}] error [{}] ms", item.toString(), lines, ExceptionUtils.getStackTrace(ex));
                 }
