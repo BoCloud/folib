@@ -1543,7 +1543,7 @@ public class StoragesConfigurationController
     @ApiOperation(value = "get repository permission users.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "ok."),
             @ApiResponse(code = 404, message = "The repository ${storageId}:${repositoryId} was not found!")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping(value = "/repositoryPermission")
     public ResponseEntity repositoryPermission(@ApiParam(value = "The storageId", required = true)
                                                @RequestParam String storageId,
