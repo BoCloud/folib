@@ -629,7 +629,7 @@
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="6">
+                <a-col :span="6" v-if="folibRepository.type !== 'group'">
                   <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsDeletion">
                       {{ $t('Storage.Allowed') }}{{ $t('Storage.Delete') }}
@@ -637,7 +637,7 @@
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="6">
+                <a-col :span="6" v-if="folibRepository.type !== 'group'">
                   <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsForceDeletion">
                       {{ $t('Storage.Allowed') }}{{ $t('Storage.ForcedDeletion') }}
@@ -645,7 +645,7 @@
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="6">
+                <a-col :span="6" v-if="folibRepository.type === 'hosted'">
                   <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsDeployment">
                       {{ $t('Storage.Allowed') }}{{ $t('Storage.UploadDeploy') }}
@@ -653,7 +653,7 @@
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="6">
+                <a-col :span="6" v-if="folibRepository.type === 'hosted'">
                   <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsRedeployment">
                       {{ $t('Storage.Allowed') }}{{ $t('Storage.UploadOverlay') }}
@@ -669,7 +669,7 @@
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="6">
+                <a-col :span="6" v-if="folibRepository.type !== 'group'">
                   <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.syncEnabled">
                       {{ $t('Storage.On') }}{{ $t('Storage.SyncRepository') }}
@@ -1532,7 +1532,16 @@ export default {
       }, 0);
     },
     getRemote(val){
+      if(val == 'group') {
+          this.folibRepository.allowsDeletion = false
+          this.folibRepository.allowsDeployment = false
+      }
+      if(val == 'hosted') {
+          this.folibRepository.allowsDeletion = true
+          this.folibRepository.allowsDeployment = true
+      }
       if(val == 'proxy'){
+          this.folibRepository.allowsDeployment = false
           this.folibRepository.remoteRepository = {
             allowsDirectoryBrowsing: true,
             autoBlocking: true,
