@@ -34,6 +34,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -154,7 +155,11 @@ public class SyncRemoteRpmCronJob extends JavaCronJob {
                 diff = new LinkedList<>(current);
                 diff.removeAll(previous);
                 for (String path : diff) {
-                    artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(), path);
+                    try {
+                        artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(), path);
+                    } catch (Exception e) {
+                        log.error("resolve path [{}] failed", path, e);
+                    }
                 }
                 log.info("同步制品完成，开始更新索引");
                 RpmRepoIndexer rpmRepoIndexer = new RpmRepoIndexer(repositoryPathResolver, artifactManagementService, tempPath);
