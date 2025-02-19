@@ -25,6 +25,7 @@ import com.veadan.folib.services.MigrateInfoService;
 import com.veadan.folib.services.NpmService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.utils.NpmUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -442,7 +443,7 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
                             //索引
                             NpmArtifactCoordinates npmArtifactCoordinates = NpmArtifactCoordinates.resolveName(null, artifactPath);
                             String packageId = npmArtifactCoordinates.getId();
-                            npmService.packageFeed(rootRepositoryPath.getRepository(), packageId, packageId);
+                            npmService.packageFeed(rootRepositoryPath.getRepository(), packageId,  NpmUtils.getPackageMetadataPath(packageId));
                         }
                     } catch (Exception ex) {
                         log.error("Batch download path [{}] storageId [{}] repositoryId [{}] artifactPath [{}] error [{}]", path.toString(), storageId, repositoryId, artifactPath, ExceptionUtils.getStackTrace(ex));

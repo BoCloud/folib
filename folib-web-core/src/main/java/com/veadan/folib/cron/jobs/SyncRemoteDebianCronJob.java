@@ -203,7 +203,11 @@ public class SyncRemoteDebianCronJob extends JavaCronJob {
                 // 同步制品
                 for (String item : diff) {
                     String artifactPath = item + ";" + DebianUtils.getArrtString(codename, component, architecture);
-                    artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(), artifactPath);
+                    try {
+                        artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(), artifactPath);
+                    } catch (Exception e) {
+                        log.error("resolve path [{}] failed", item, e);
+                    }
                 }
                 if (Objects.nonNull(updates)) {
                     updates.addAll(diff);
