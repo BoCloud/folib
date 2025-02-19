@@ -330,27 +330,21 @@
 
           <prism-editor
             class="my-editor height-300"
-            :value="
-              '[local_test]' +
-              '\n' +
-              'name=CentOS-$releasever - Base - mirrors.aliyun.com' +
-              '\n' +
-              'enabled=1' +
-              '\n' +
-              'baseurl=' +
-              baseUrl +
-              'storages/' +
-              folibRepository.storageId +
-              '/' +
-              folibRepository.id +
-              '/' +
-              '\n' +
-              'gpgcheck=0'
-            "
+            :value="rpmLocalHelp()"
             :highlight="highlighterHandle"
             :line-numbers="false"
             :readonly="true"
+            v-if="this.folibRepository.type !== 'proxy'"
           ></prism-editor>
+            <prism-editor
+                class="my-editor height-300"
+                :value="rpmProxyHelp(this.folibRepository)"
+                :highlight="highlighterHandle"
+                :line-numbers="false"
+                :readonly="true"
+                v-if="this.folibRepository.type === 'proxy'"
+            ></prism-editor>
+          <p>{{ $t('Store.ForReference') }}<span>: https://developer.aliyun.com/mirror/centos</span></p>
         </a-timeline-item>
         <a-timeline-item color="primary">
           {{ $t('Store.CommandOperation') }}
@@ -359,13 +353,7 @@
 
           <prism-editor
             class="my-editor height-300"
-            :value="
-              'yum clean all #' + this.$t('Store.RpmClean') +
-              '\n' +
-              'yum repolist #' + this.$t('Store.RpmRepoList') +
-              '\n' +
-              'yum install --downloadonly --downloaddir=/folib_test/mysql mysql'
-            "
+            :value="rmpCommand()"
             :highlight="highlighterHandle"
             :line-numbers="false"
             :readonly="true"
@@ -1296,6 +1284,29 @@ go 1.20' :readonly="true">
             :line-numbers="false"
             :readonly="true"
           ></prism-editor>
+
+            <p>{{ $t('Store.DebianPermissionConfiguration') }}</p>
+            <prism-editor
+                class="my-editor height-300"
+                :value="debianPermissonConfiguration"
+                :highlight="highlighterHandle"
+                :line-numbers="false"
+                :readonly="true"
+            ></prism-editor>
+            <p>{{ $t('Store.DebianExampleTitle') }}</p>
+            <prism-editor
+                class="my-editor height-300"
+                :value="debianProxyHelp"
+                :highlight="highlighterHandle"
+                :line-numbers="false"
+                :readonly="true"
+                v-if="this.folibRepository.type === 'proxy' "
+            >
+            </prism-editor>
+            <p v-if="this.folibRepository.type === 'proxy' ">{{ $t('Store.ForReference') }}:
+                <a href="https://developer.aliyun.com/mirror/ubuntu">Ubuntu</a>&
+                <a href="https://developer.aliyun.com/mirror/debian">Debian</a>
+            </p>
         </a-timeline-item>
         <a-timeline-item color="primary">
           {{ $t('Store.CommandOperation') }}
@@ -1430,6 +1441,13 @@ export default {
       const protocol = this.baseUrl.startsWith('http://') ? 'http://' : 'https://';
       return  `sudo sh -c " echo  'deb  ${protocol}${name}:<PASSWORD>@${url}storages/${this.folibRepository.storageId}/${this.folibRepository.id} <DISTRIBUTION> <COMPONENT> ' >> /etc/apt/sources.list "`
     },
+
+   debianProxyHelp() {
+        return`deb ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id} focal main restricted universe multiverse
+deb ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id} focal-updates main restricted universe multiverse
+deb ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id} focal-backports main restricted universe multiverse
+deb ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id} focal-security main restricted universe multiverse`
+   },
     debianCommand(){
       return ` apt update --allow-insecure-repositories \n apt-get install <DEBIAN_PACKAGE_NAME>`
     },
@@ -1482,7 +1500,41 @@ export default {
       generateUserSecurityToken({expireSeconds: 1892160000}).then((res) => {
         this.copy(res)
       }).finally(() => {})
-    }
+    },
+      rpmProxyHelp(){
+          return `[base]
+name=CentOS-$releasever - Base
+baseurl=${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id}/$releasever/BaseOS/$basearch/os/
+gpgcheck=0
+enabled=1
+
+[extras]
+name=CentOS-$releasever - Extras
+baseurl=${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id}/$releasever/extras/$basearch/os/
+gpgcheck=0
+enabled=1
+
+[AppStream]
+name=CentOS-$releasever - AppStream
+baseurl=${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id}/$releasever/AppStream/$basearch/os/
+gpgcheck=0
+enabled=1`
+      },
+      rpmLocalHelp(){
+       return `
+[folib]
+name=CentOS-$releasever - folib
+baseurl=${this.baseUrl}/storages/${this.folibRepository.storageId}/${this.folibRepository.id}/
+enabled=1
+gpgcheck=0`
+      },
+      rmpCommand(){
+        return `yum clean all
+yum makecache
+yum repolist
+yum install mysql`
+      }
+
   },
 };
 </script>
