@@ -97,7 +97,7 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
         storageMonitoringList = trashStorageMonitoring(storageMonitoringList, trashStorageMonitoringList, date);
         Example deleteExample = Example.builder(StorageMonitoring.class).build();
         Example.Criteria deleteCriteria = deleteExample.createCriteria();
-        LocalDateTime deleteDeadlineDate = LocalDateTime.now().minusDays(60);
+        LocalDateTime deleteDeadlineDate = LocalDateTime.now().minusDays(7);
         deleteCriteria.andLessThanOrEqualTo("createTime", DateUtil.formatLocalDateTime(deleteDeadlineDate));
         storageMonitoringMapper.deleteByExample(deleteExample);
         Example example = Example.builder(StorageMonitoring.class).build();
