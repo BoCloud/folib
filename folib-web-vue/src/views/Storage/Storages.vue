@@ -540,7 +540,7 @@
                       <a-select-option value="proxy">
                         {{ $t('Storage.Agent') }}
                       </a-select-option>
-                      <a-select-option value="group" v-if="this.layoutChecked !== 'cocoapods' && this.layoutChecked !== 'rpm' && this.layoutChecked !== 'debian'">
+                      <a-select-option value="group" v-if="filterGroupStrategyLayout()">
                         {{ $t('Storage.Combination') }}
                       </a-select-option>
                     </a-select>
@@ -1413,7 +1413,8 @@ export default {
       customLayoutList: [],
       switchDisabled:true,
       nameKey:false,
-      loadingNameKey:false
+      loadingNameKey:false,
+      repoLayoutStrategy:['cocoapods' ,'rpm','debian'],
     };
   },
   watch: {
@@ -2794,6 +2795,13 @@ export default {
       }).finally(() => {
       })
     },
+    //根据仓库布局类型判断是否有组合仓库功能
+    filterGroupStrategyLayout(){
+        if(!this.repoLayoutStrategy || this.repoLayoutStrategy.length === 0){
+            return true;
+        }
+         return !this.repoLayoutStrategy.includes(this.layoutChecked)
+    }
 
   },
     provide() {
