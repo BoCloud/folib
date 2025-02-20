@@ -498,7 +498,14 @@ export default {
         const [repo, baseUrl] = await Promise.all([
           queryRepositoriesByStorage(query),
           getBaseUrl()
-        ]);
+        ]).catch(e=>{
+          this.$router.push({ name: 'storagesHome' })
+          return;
+        })
+        if(repo.data.total===0){
+          await this.$router.push({name: 'storagesHome'})
+          return;
+        }
         // 存储数据
         const data = {
           item: repo.data.rows[0],
