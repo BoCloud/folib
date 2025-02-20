@@ -18,10 +18,11 @@
                 class="leftTree"
                 :height="`${topHeight}px`"
                 node-key="artifactPath"
+                icon-class="el-icon-arrow-right"
                 :load="(treeNode, resolve) => onLoadData(treeNode,resolve, false)"
-                @select="(key,e)=>treeSelect(key,e,false)"
+                @node-click="(data)=>treeSelect(data,false)"
                 @node-contextmenu="onRightClick"
-                @node-expand="(expandedKeys, treeNode) => onExpand(expandedKeys, treeNode, false)"
+                @node-expand="(data, treeNode) => onExpand(data, treeNode, false)"
                 :selectedKeys="selectedKeys"
                 :expandedKeys="expandedKeys"
             >
@@ -55,7 +56,7 @@
                 :height="`${bottomHeight}px`"
                 node-key="artifactPath"
                 :load-data="(treeNode,resolve) => onLoadData(treeNode, resolve, true)"
-                @select="(key,e)=>treeSelect(key,e,true)"
+                @node-click="(data)=>treeSelect(data,true)"
                 @node-contextmenu="onRightClick"
                 @node-expand="(expandedKeys, treeNode) => onExpand(expandedKeys, treeNode, true)"
                 :selectedKeys="selectRecycleKeys"
@@ -137,10 +138,11 @@ export default {
     },
     methods: {
         onLoadData(treeNode,resolve, isTrashView) {
+            console.log(treeNode);
             treeNode.loading = true
             this.$emit('onLoadData', treeNode, isTrashView, resolve);
         },
-        onExpand(expandedKeys, node, expanded){
+        onExpand(data, node, expanded){
             if(node.data.name === '.trash'){
                 this.getPosition(expanded ? 300 : 40)
             }
@@ -150,7 +152,7 @@ export default {
             //     this.expandedKeys = expandedKeys
             // }
         },
-        treeSelect(key, e, type) {
+        treeSelect(data, type) {
             if(type){
                 if(this.expandedRecycleKeys.length){
                     this.expandedRecycleKeys = []
@@ -159,13 +161,13 @@ export default {
                     this.expandedRecycleKeys = ['.trash']
                     this.getPosition(300)
                 }
-                this.selectRecycleKeys = key
+                this.selectRecycleKeys = []
                 this.selectedKeys = []
             }else{
-                this.selectedKeys = key
+                this.selectedKeys = []
                 this.selectRecycleKeys = []
             }
-            this.$emit('treeSelect',key, e)
+            this.$emit('treeSelect',data, type)
         },
         onRightClick(event, data) {
             this.$emit('onRightClick',event, data)
@@ -316,5 +318,8 @@ export default {
 .leftTree .tree_icon {
     font-size: 16px;
     font-weight: 500;
+}
+.el-icon-arrow-right:before {
+    content: "\e6e0";
 }
 </style>

@@ -1610,13 +1610,13 @@ export default {
         this.libViewKey ++
         this.$refs.libview.myMounted()
       })
-    },  
+    },
     // 点击仓库下的文件,item为当前点击节点的最顶层父节点（仓库）
-    treeSelect(key, e, item) {
+    treeSelect(item,isTrashView) {
       this.libViewKey ++
       storage.set("libView_repository", { item, baseUrl: this.baseUrl })
       this.$nextTick(() => {
-          this.$refs.libview.treeSelect(key, e)
+          this.$refs.libview.treeSelect(item, isTrashView)
       })
     },
     onExpand() {
@@ -2053,7 +2053,7 @@ export default {
     },
     cacheStorage() {
       let cache = storage.get("libView_repository");
-      if (!cache || !cache.item.id) {
+      if (!cache || !cache.item?.id) {
         if (this.storageData) {
           let item = this.storageData[0]
           if (item && item.id) {

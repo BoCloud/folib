@@ -9,83 +9,94 @@
         <a-spin :spinning="loadingMore">
             <div ref="tree_container" class="tree_container" :style="{ height: topHeight + 'px' }"
                 @scroll="handleScroll">
-                <a-tree 
-                    :key="key" 
-                    class="repositoryTree" 
-                    ref="tree" 
-                    :replaceFields="replaceFields"
-                    :load-data="(treeNode) => onLoadData(treeNode, false)" 
-                    :tree-data="treeData" 
-                    :show-line="true" 
-                    @select="treeSelect"
-                    @expand="(expandedKeys,obj) => onExpand(expandedKeys, obj, false)" 
-                    @rightClick="(e) => rightClick(e,'tree')" 
-                    :expandedKeys="expandedKeys" 
+                <vue-easy-tree
+                    :key="key"
+                    class="repositoryTree"
+                    ref="tree"
+                    node-key="key"
+                    :props="props"
+                    icon-class="el-icon-arrow-right"
+                    lazy
+                    :height="`${topHeight}px`"
+                    :load="(treeNode,resolve) => onLoadData(treeNode, resolve, false)"
+                    :data="treeData"
+                    :show-line="true"
+                    @node-click="(data)=>treeSelect(data,false)"
+                    @node-expand="(data,node) => onExpand(data, node, false)"
+                    @node-contextmenu="(event, data) => rightClick(event, data,'tree')"
+                    :expandedKeys="expandedKeys"
                     show-icon
                     :selectedKeys="selectedKeys"
                 >
-                    <a-icon slot="switcherIcon" type="down" />
-                    <a-icon slot="switcherIcon" type="folder-open" />
-                    <template slot="title" slot-scope="{ expanded,name,id,type,selected,fileType }">
+                    <template slot-scope="{data,node}">
                         <div class="title_box">
-                            <img v-if="fileType === 'document'" :src="getSrc(selected, type)" alt="" width="24">
-                            <span v-if="fileType === 'document'" class="tree_title">
-                                {{ id }}
+                        <span>
+                            <a-icon v-if="node.loading && !node.expanded" type="loading" :style="{color: '#1890ff'}"/>
+                            <img v-if="data.fileType === 'document'" :src="getSrc(data.selected, data.type)" alt="" width="24">
+                            <span v-if="data.fileType === 'document'" class="tree_title">
+                                {{ data.id }}
                             </span>
                             <span v-else>
                                 <a-icon class="tree_icon" style="margin-left: 5px;"
-                                    v-if="type === 'dir' || type === 'DIR'"
-                                    :type="expanded ? 'folder-open' : 'folder'" />
+                                        v-if="data.type === 'dir' || data.type === 'DIR'"
+                                        :type="node.expanded ? 'folder-open' : 'folder'" />
                                 <a-icon class="tree_icon" style="margin-left: 10px;" v-else
-                                    :type="getIconType(name, type)"></a-icon>
+                                        :type="getIconType(data.name, data.type)"></a-icon>
                                 <span class="tree_title">
-                                    {{ name }}
+                                    {{ data.name }}
                                 </span>
                             </span>
+                        </span>
                         </div>
                     </template>
-                </a-tree>
+                </vue-easy-tree>
             </div>
         </a-spin>
         <div class="line" :class="isDragging ? 'line-drag' : ''" @mousedown="startDragging"></div>
         <a-spin :spinning="loadingMore">
             <div ref="tree_container" class="tree_container recycle" :style="{ height: bottomHeight + 'px' }"
                 @scroll="handleScroll">
-                <a-tree 
+                <vue-easy-tree
                     :key="recycleKey" 
                     class="repositoryTree" 
-                    ref="tree" 
-                    :replaceFields="replaceFields"
-                    :load-data="(treeNode) => onLoadData(treeNode, true)" 
-                    :tree-data="recycleTreeData" 
-                    :show-line="true" @select="(key,e) => treeSelect(key,e,true)"
-                    @expand="(expandedKeys,obj) => onExpand(expandedKeys,obj, true)" 
-                    @rightClick="(e) => rightClick(e,'recycleTree')" 
-                    :expandedKeys="expandedRecycleKeys" 
+                    ref="tree"
+                    node-key="key"
+                    :props="props"
+                    icon-class="el-icon-arrow-right"
+                    lazy
+                    :height="`${topHeight}px`"
+                    :load="(treeNode,resolve) => onLoadData(treeNode, resolve, true)"
+                    :data="recycleTreeData"
+                    :show-line="true"
+                    @node-click="(data)=>treeSelect(data,false)"
+                    @node-expand="(data,node) => onExpand(data,node, true)"
+                    @node-contextmenu="(event, data) => rightClick(event, data,'recycleTree')"
+                    :expandedKeys="expandedRecycleKeys"
                     show-icon
                     :selectedKeys="selectRecycleKeys"
                 >
-                    <a-icon slot="switcherIcon" type="down" />
-                    <a-icon slot="switcherIcon" type="folder-open" />
-                    <template slot="title" slot-scope="{ expanded,name,id,type,selected,fileType }">
+                    <template slot-scope="{data,node}">
                         <div class="title_box">
-                            <img v-if="fileType === 'document'" :src="getSrc(selected, type)" alt="" width="24">
-                            <span v-if="fileType === 'document'" class="tree_title">
-                                {{ id }}
+                        <span>
+                            <a-icon v-if="node.loading && !node.expanded" type="loading" :style="{color: '#1890ff'}"/>
+                            <img v-if="data.fileType === 'document'" :src="getSrc(data.selected, data.type)" alt="" width="24">
+                            <span v-if="data.fileType === 'document'" class="tree_title">
+                                {{ data.id }}
                             </span>
                             <span v-else>
                                 <a-icon class="tree_icon" style="margin-left: 5px;"
-                                    v-if="type === 'dir' || type === 'DIR'"
-                                    :type="expanded ? 'folder-open' : 'folder'" />
-                                <a-icon class="tree_icon" style="margin-left: 8px;" v-else :style="type == 'recycle'? 'color:#393b3e':''"
-                                    :type="getIconType(name, type)"></a-icon>
-                                <span class="tree_title" :style="type == 'recycle'? 'color:#393b3e':''">
-                                    {{ name }}
+                                        v-if="data.type === 'dir' || data.type === 'DIR'"
+                                        :type="node.expanded ? 'folder-open' : 'folder'" />
+                                <a-icon class="tree_icon" style="margin-left: 10px;" v-else :style="data.type === 'recycle'? 'color:#393b3e':''"
+                                        :type="getIconType(data.name, data.type)"></a-icon>
+                                <span class="tree_title" :style="data.type === 'recycle'? 'color:#393b3e':''">
+                                    {{ data.name }}
                                 </span>
                             </span>
+                        </span>
                         </div>
                     </template>
-                </a-tree>
+                </vue-easy-tree>
             </div>
         </a-spin>
         <rightMenu 
@@ -99,7 +110,8 @@
             :copyEnabled='copyEnabled' 
             :dispatchEnabled="dispatchEnabled" 
             :moveEnabled="moveEnabled"
-            :currentTreeNode="isTrashView ? currentTreeNodeRecycle : currentTreeNode" 
+            :showContextMenu="showContextMenu"
+            :currentTreeNode="isTrashView ? currentTreeNodeRecycle : currentTreeNode"
             :isTrashView="isTrashView" 
             @reload="reload" 
             @localDelNode="localDelNode"
@@ -118,20 +130,23 @@ import { getDockerArtifact, browse, getArtifact, getStorageAndRepositoryPermissi
 import { getLayoutType } from '@/utils/layoutUtil'
 import rightMenu from './right-menu.vue'
 import { hasRole, isAdmin } from '@/utils/permission'
+import VueEasyTree from "@wchbrad/vue-easy-tree"
+import "@wchbrad/vue-easy-tree/src/assets/index.scss"
 
 export default {
     components: {
-        rightMenu
+        rightMenu,
+        VueEasyTree
     },
     props: ['repositories', 'storageId'],
     data() {
         return {
             treeData: [],
             folibRepository: {},
-            replaceFields: {
-                key: 'key',
-                title: 'name',
+            props: {
+                label: 'name',
                 children: 'children',
+                isLeaf: 'isLeaf'
             },
             key: 0,
             repositoryType: '',
@@ -268,12 +283,7 @@ export default {
                         }
                         this.getRecycleTreeData()
                         this.selectedKeys = [this.treeData[0].id]
-                        const e = {
-                            node: {
-                                dataRef: this.treeData[0]
-                            }
-                        }
-                        this.treeSelect('', e)
+                        this.treeSelect(this.treeData[0])
                     }
                 }
             },
@@ -342,26 +352,121 @@ export default {
         },
         // 右键菜单选择操作
         handleMenuClick(active) {
+            if (active.key === '1') {
+                this.handleRefresh()
+                return
+            }
             this.$emit('handleMenuClick', active, this.isTrashView ? this.currentTreeNodeRecycle : this.currentTreeNode)
+        },
+        // 递归根据key判断是否为当前选中数据项
+        recursionGetItems(source, key, children, loading) {
+            source.forEach(item => {
+                if (item.key === key) {
+                    console.log(this.$refs.tree.updateKeyChildren);
+                    if (children) this.$refs.tree.updateKeyChildren(key, children)
+                    item.loading = loading
+                } else if (item.children?.length) {
+                    this.recursionGetItems(item.children, key, children, loading)
+                }
+            })
+        },
+        handleRefresh() {
+            const nowDataKey = this.isTrashView ? 'recycleTreeData' : 'treeData'
+            const { storageId, id, layout } = this.folibRepository
+            const currentNode =  this.isTrashView ? this.currentTreeNodeRecycle : this.currentTreeNode
+            this.recursionGetItems(this[nowDataKey], currentNode.key, null, true)
+            if (layout === 'Docker') {
+                getDockerArtifact(
+                    storageId,
+                    id,
+                    currentNode.artifactPath
+                ).then(res => {
+                    const children = []
+                    if (res.directories.length > 0) {
+                        let f = res.directories
+                        if (res.directories.some(ele => ele.name === '.trash')) {
+                            if (this.isTrashView) {
+                                f = res.directories.filter(ele => ele.name === '.trash')
+                            } else {
+                                f = res.directories.filter(ele => ele.name !== '.trash')
+                            }
+                        }
+                        const d = f
+                        d.forEach((item, index, d) => {
+                            item.type = 'dir'
+                            item.isLeaf = false
+                            item.key = id + item.artifactPath
+                            children.push(item)
+                        })
+                    }
+                    if (res.files.length > 0 && !this.isTrashView) {
+                        const a = res.files
+                        a.forEach((item, index, a) => {
+                            item.isLeaf = true
+                            item.type = 'file'
+                            item.key = id + item.artifactPath
+                            children.push(item)
+                        })
+                    }
+                    this.recursionGetItems(this[nowDataKey], currentNode.key, children, false)
+                    this.setKeyValue()
+                })
+            }
+
+            browse(
+                storageId,
+                id,
+                currentNode.artifactPath
+            ).then(res => {
+                let children = []
+                if (res.directories.length > 0) {
+                    let f = res.directories
+                    if (res.directories.some(ele => ele.name === '.trash')) {
+                        if (this.isTrashView) {
+                            f = res.directories.filter(ele => ele.name === '.trash')
+                        } else {
+                            f = res.directories.filter(ele => ele.name !== '.trash')
+                        }
+                    }
+                    const d = f
+                    d.forEach((item, index, d) => {
+                        item.type = 'dir'
+                        item.key = id + item.artifactPath
+                    })
+                    children = d
+                }
+                if (res.files.length > 0 && !this.isTrashView) {
+                    const a = res.files
+                    a.forEach((item, index, a) => {
+                        item.isLeaf = true
+                        item.type = 'file'
+                        item.key = id + item.artifactPath + index
+                    })
+                    children = children.concat(a)
+                }
+                this.recursionGetItems(this[nowDataKey], currentNode.key, children, false)
+                console.log(this[nowDataKey], children);
+                this.setKeyValue()
+            })
         },
         setKeyValue() {
             this.key++
         },
         // 鼠标右键
-        rightClick(e,type) {
+        rightClick(event, data, type) {
             this.isTrashView = type === 'recycleTree'
-            const { treeType } = e.node.dataRef
-            if (treeType !== 'root' && treeType !== 'lastRoot') {
-                this.showContextMenu = true
-                this.rightClickTop = `${e.event.clientY}px`;
-                this.rightClickLeft = `${e.event.clientX}px`;
-                if(this.isTrashView){
-                    this.currentTreeNodeRecycle = e.node.dataRef
-                }else{
-                    this.currentTreeNode = e.node.dataRef;
-                }
-                this.$refs.rightMenu.handlerDataPermission(e.node.dataRef,type)
+            const { treeType } = data
+            // if (treeType !== 'root' && treeType !== 'lastRoot') {
+            this.showContextMenu = true
+            this.rightClickTop = `${event.clientY}px`;
+            this.rightClickLeft = `${event.clientX}px`;
+            if(this.isTrashView){
+                this.currentTreeNodeRecycle = data
+            }else{
+                this.currentTreeNode = data
             }
+            this.$refs.rightMenu.handlerDataPermission(data,type)
+            // }
         },
         closeContextMenu() {
             this.showContextMenu = false;
@@ -408,8 +513,8 @@ export default {
             return key
         },
         // 树节点点击
-        treeSelect(key, e, isRecycle) {
-            const { newDetailPage,name } = e.node.dataRef
+        treeSelect(data, isRecycle) {
+            const { newDetailPage,name } = data
             if(isRecycle){
                 if(name == '制品回收站'){
                     if(this.expandedRecycleKeys.length){
@@ -419,18 +524,18 @@ export default {
                         this.expandedRecycleKeys = [this.storageId]
                         this.getPosition(320)
                     }
-                    this.treeSelect('',this.recycleRepositryList[0],true)
+                    this.treeSelect(this.recycleRepositryList[0],true)
                 }else{
-                    this.selectRecycleKeys = [e.node.dataRef.key]
+                    this.selectRecycleKeys = [data.key]
                 }
                 this.selectedKeys = []
             }else{
-                this.selectedKeys = [e.node.dataRef.key]
+                this.selectedKeys = [data.key]
                 this.selectRecycleKeys = []
             }
             this.$store.commit('setNewDetailPage', !!newDetailPage)
-            if (e.node.dataRef.fileType == 'document') {
-                this.folibRepository = e.node.dataRef
+            if (data.fileType === 'document') {
+                this.folibRepository = data
                 this.repositoryType = getLayoutType(this.folibRepository)
                 if (this.folibRepository.status.indexOf('Out of Service') !== -1) {
                     this.$notification.warning({
@@ -444,39 +549,40 @@ export default {
                     })
                     return false
                 }
-                this.$emit('repositorySelect', e.node.dataRef)
+                this.$emit('repositorySelect', data)
             } else {
-                let data = null
+                let target = null
                 // 获取当前子节点的最顶层父节点（仓库节点）
                 this.treeData.forEach(ele => {
-                    if (ele.id === e.node.dataRef.repositoryId) {
-                        data = ele
+                    if (ele.id === data.repositoryId) {
+                        target = ele
                     }
                 })
-                this.folibRepository = data
-                // this.$emit('repositorySelect', data) 
+                this.folibRepository = target
+                // this.$emit('repositorySelect', data)
                 this.$nextTick(() => {
                     setTimeout(() => {
-                        e.isRecycle = isRecycle
-                        this.$emit('treeSelect', key, e, data)
+                        data.id = target.id
+                        data.layout = target.layout
+                        this.$emit('treeSelect', data, isRecycle)
                     }, 0);
                 })
             }
             // 如果为新页面（jar包下面的文件夹），更新右侧展示页面数据
             if (!!newDetailPage) {
                 const { id, storageId } = this.folibRepository
-                let params = e.node.dataRef
+                let params = data
                 params.repositoryId = id
                 params.storageId = storageId
                 this.$store.commit('setCurrentTreeNode', params)
             }
         },
         // 获取当前已展开节点的key
-        onExpand(expandedKeys,obj,key) {
+        onExpand(data,node,key) {
             if(key){
-                this.expandedRecycleKeys = expandedKeys
+                this.expandedRecycleKeys = [data.key]
             }else{
-                this.expandedKeys = expandedKeys
+                this.expandedKeys = [data.key]
             }
             if(key && obj.node.dataRef.name === '制品回收站'){ // 回收站打开
                 this.getPosition(obj.expanded ? 320 : 40)
@@ -489,20 +595,22 @@ export default {
             })
             this.recycleTreeData[0].children = [...list]
             this.recycleTreeData = [...this.recycleTreeData]
+            console.log(this.recycleTreeData);
         },
         // 懒加载获取节点
-        onLoadData(treeNode,isTrashView) {
+        onLoadData(treeNode,resolve, isTrashView) {
+            if (!treeNode.data.fileType && !treeNode.data.type) return
             const nowDataKey = isTrashView ? 'recycleTreeData' : 'treeData'
-            if(treeNode.dataRef.type === 'recycle'){
+            if(treeNode.data.type === 'recycle'){
                 this.getPosition(320)
             }
-            if (treeNode.dataRef.fileType === 'document') {
-                this.folibRepository = treeNode.dataRef
+            if (treeNode.data.fileType === 'document') {
+                this.folibRepository = treeNode.data
                 this.repositoryType = getLayoutType(this.folibRepository)
                 this.queryPermission()
             }
             const { storageId, id, layout } = this.folibRepository
-            const { artifactPath, name } = treeNode.dataRef
+            const { artifactPath, name } = treeNode.data
             const params = {
                 treeNode,
                 storageId,
@@ -516,61 +624,16 @@ export default {
             }
 
             if (layout === 'Docker') {
-                return new Promise(resolve => {
-                    if (treeNode.dataRef.children) {
-                        resolve()
-                        return
-                    }
-                    getDockerArtifact(
-                        storageId,
-                        id,
-                        artifactPath
-                    ).then(res => {
-                        treeNode.dataRef.children = []
-                        if (res.directories.length > 0) {
-                            let f = res.directories
-                            if (res.directories.some(ele => ele.name === '.trash')) {
-                                if (isTrashView) {
-                                    f = res.directories.filter(ele => ele.name === '.trash')
-                                } else {
-                                    f = res.directories.filter(ele => ele.name !== '.trash')
-                                }
-                            }
-                            const d = f
-                            d.forEach((item, index, d) => {
-                                item.type = 'dir'
-                                item.key = id + item.artifactPath
-                                treeNode.dataRef.children.push(item)
-                            })
-                        }
-                        if (res.files.length > 0 && !isTrashView) {
-                            const a = res.files
-                            a.forEach((item, index, a) => {
-                                item.isLeaf = !this.getFileIsOpen(item.name)
-                                item.type = 'file'
-                                item.key = id + item.artifactPath
-                                treeNode.dataRef.children.push(item)
-                            })
-                        }
-                        this[nowDataKey] = [...this[nowDataKey]]
-                        resolve()
-                    })
-                })
-            }
-
-            return new Promise(resolve => {
-                if (treeNode.dataRef.children) {
-                    resolve()
+                if (treeNode.data.children) {
+                    resolve(treeNode.data.children)
                     return
                 }
-                browse(
+                getDockerArtifact(
                     storageId,
                     id,
                     artifactPath
                 ).then(res => {
-                    if (!treeNode.dataRef.children) {
-                        treeNode.dataRef.children = []
-                    }
+                    treeNode.data.children = []
                     if (res.directories.length > 0) {
                         let f = res.directories
                         if (res.directories.some(ele => ele.name === '.trash')) {
@@ -584,28 +647,70 @@ export default {
                         d.forEach((item, index, d) => {
                             item.type = 'dir'
                             item.key = id + item.artifactPath
+                            treeNode.data.children.push(item)
                         })
-                        treeNode.dataRef.children = d
                     }
                     if (res.files.length > 0 && !isTrashView) {
                         const a = res.files
                         a.forEach((item, index, a) => {
-                            item.isLeaf = !this.getFileIsOpen(item.name)
+                            item.isLeaf = true
                             item.type = 'file'
                             item.key = id + item.artifactPath
+                            treeNode.data.children.push(item)
                         })
-                        treeNode.dataRef.children = treeNode.dataRef.children.concat(a)
                     }
-
-                    this[nowDataKey] = [...this[nowDataKey]]
-                    resolve()
+                    resolve(treeNode.data.children)
+                    // if (treeNode.data.artifactPath) return
+                    // this[nowDataKey] = [...this[nowDataKey]]
                 })
+            }
+
+            if (treeNode.data.children) {
+                resolve(treeNode.data.children)
+                return
+            }
+            browse(
+                storageId,
+                id,
+                artifactPath
+            ).then(res => {
+                if (!treeNode.data.children) {
+                    treeNode.data.children = []
+                }
+                if (res.directories.length > 0) {
+                    let f = res.directories
+                    if (res.directories.some(ele => ele.name === '.trash')) {
+                        if (isTrashView) {
+                            f = res.directories.filter(ele => ele.name === '.trash')
+                        } else {
+                            f = res.directories.filter(ele => ele.name !== '.trash')
+                        }
+                    }
+                    const d = f
+                    d.forEach((item, index, d) => {
+                        item.type = 'dir'
+                        item.key = id + item.artifactPath
+                    })
+                    treeNode.data.children = d
+                }
+                if (res.files.length > 0 && !isTrashView) {
+                    const a = res.files
+                    a.forEach((item, index, a) => {
+                        item.isLeaf = true
+                        item.type = 'file'
+                        item.key = id + item.artifactPath
+                    })
+                    treeNode.data.children = treeNode.data.children.concat(a)
+                }
+                resolve(treeNode.data.children)
+                // if (treeNode.data.artifactPath) return
+                // this[nowDataKey] = [...this[nowDataKey]]
             })
         },
         // 获取可以继续打开的文件的目录（对应包预览）
         getPackagePreview({ treeNode, storageId, id, artifactPath },nowDataKey) {
             return new Promise(resolve => {
-                if (treeNode.dataRef.children) {
+                if (treeNode.data.children) {
                     resolve()
                     return
                 }
@@ -629,10 +734,10 @@ export default {
                             }
                         })
                     }
-                    treeNode.dataRef.children = []
+                    treeNode.data.children = []
                     if (res.listTree) {
                         setNewDetailPage(res.listTree)
-                        treeNode.dataRef.children = treeNode.dataRef.children.concat(res.listTree)
+                        treeNode.data.children = treeNode.data.children.concat(res.listTree)
                     }
                     this[nowDataKey] = [...this[nowDataKey]]
                     resolve()

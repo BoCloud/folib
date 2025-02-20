@@ -470,12 +470,10 @@ export default {
       console.log(active,currentTreeNode)
       this.$refs.store.handleMenuClickTree(active,currentTreeNode)
     },
-    treeSelect(key,e){
-      if(e.isRecycle){
-        this.isTrashView = true
-      }
+    treeSelect(data,isTrashView){
+      this.isTrashView = isTrashView
       this.getDataInfo()
-      this.$refs.store.treeSelect(key, e)
+      this.$refs.store.treeSelect(data, isTrashView)
     },
     searchBoxMouseStatus(bool) {
       this.mouseEnter = bool;

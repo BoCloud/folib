@@ -1362,7 +1362,12 @@ export default {
           this.folibRepository = {}
           this.baseUrl = ''
       }
-    }
+    },
+      folibRepository:{
+        handler(val, oldVal) {
+            console.log(val, oldVal);
+        },
+      }
   },
   created () {
     this.initData()
@@ -1475,7 +1480,8 @@ export default {
     createData() {
       //上个页面通过缓存传参，目的防止页面刷新，路由数据消失
       const params = store.get('libView_repository')
-      this.folibRepository = params.item
+        console.log(params);
+        this.folibRepository = params.item
       this.baseUrl = params.baseUrl
       this.repositoryType = this.getLayoutTypeHandle()
     },
@@ -2004,8 +2010,7 @@ export default {
     //   })
     // },
     onLoadData(treeNode,isTrashView,resolve, reject) {
-        console.log(treeNode);
-        this.isTrashView = isTrashView
+      this.isTrashView = isTrashView
       this.currentFileDetial = null
       if (this.folibRepository.layout === 'Docker') {
         // return new Promise(resolve => {
@@ -2035,8 +2040,6 @@ export default {
                 treeNode.data.children.push(item)
               })
             }
-            this.treeData = [...this.treeData]
-            this.trashData = [...this.trashData]
             const setTitle = (arr) => {
               arr.forEach(ele => {
                 ele.title = ele.name
@@ -2050,6 +2053,9 @@ export default {
             }
             setTitle(this.trashData)
             resolve(treeNode.data.children)
+            if (treeNode.data.artifactPath) return
+            this.treeData = [...this.treeData]
+            this.trashData = [...this.trashData]
           })
           return
         // })
@@ -2086,9 +2092,6 @@ export default {
             treeNode.data.children = treeNode.data.children.concat(a)
           }
           resolve(treeNode.data.children)
-          if (treeNode.data.artifactPath) return
-          this.treeData = [...this.treeData]
-          this.trashData = [...this.trashData]
           const setTitle = (arr) => {
             arr.forEach(ele => {
               ele.title = ele.name
@@ -2101,16 +2104,17 @@ export default {
             })
           }
           setTitle(this.trashData)
+          if (treeNode.data.artifactPath) return
+          this.treeData = [...this.treeData]
+          this.trashData = [...this.trashData]
         }).finally(() => {
             treeNode.loading = false
         })
       // })
     },
-    treeSelect(key, e) {
-      if(e.isRecycle){
-        this.isTrashView = true
-      }
-      this.currentTreeNode = e.node.dataRef
+    treeSelect(data, isTrashView) {
+      this.isTrashView = isTrashView
+      this.currentTreeNode = data
       this.scanReport = {
         show: false,
         fail: false,
@@ -2921,7 +2925,7 @@ export default {
         this.storageAdmin = res.storageAdmin
         this.permissions = res.permissions
         this.uploadEnabled =
-          this.folibRepository.status.indexOf('Out of Service') === -1 &&
+          this.folibRepository.status?.indexOf('Out of Service') === -1 &&
           this.enablUploadedLayout.includes(this.folibRepository.layout) &&
           (this.folibRepository.type === 'hosted' || (this.folibRepository.type === 'group' && this.folibRepository.groupDefaultRepository)) &&
           (hasRole('ARTIFACTS_MANAGER') ||
