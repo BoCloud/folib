@@ -22,6 +22,7 @@ export default {
     'Document': '文件',
     'Details': '详情',
     'Preview': '预览',
+    'Refresh': '刷新',
     'Copy': '复制',
     'Move': '移动',
     'SuerDelete': '确定要删除吗？',

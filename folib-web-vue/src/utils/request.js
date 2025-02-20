@@ -10,7 +10,7 @@ import Cookies from "js-cookie";
 // 创建 axios 实例
 const request = axios.create({
   // API 请求的默认前缀
-  timeout: 30000, // 请求超时时间
+  timeout: 3000000, // 请求超时时间
 });
 
 let messageContrl = {

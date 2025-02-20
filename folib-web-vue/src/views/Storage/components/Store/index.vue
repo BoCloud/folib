@@ -2004,12 +2004,13 @@ export default {
     //   })
     // },
     onLoadData(treeNode,isTrashView,resolve, reject) {
-      this.isTrashView = isTrashView
+        console.log(treeNode);
+        this.isTrashView = isTrashView
       this.currentFileDetial = null
       if (this.folibRepository.layout === 'Docker') {
         // return new Promise(resolve => {
-          if (treeNode.dataRef.children) {
-            resolve()
+          if (treeNode.data.children) {
+            resolve(treeNode.data.children)
             return
           }
           getDockerArtifact(
@@ -2017,13 +2018,13 @@ export default {
             this.folibRepository.id,
             treeNode.dataRef.artifactPath
           ).then(res => {
-            treeNode.dataRef.children = []
+            treeNode.data.children = []
             if (res.directories.length > 0) {
               const d = res.directories
 
               d.forEach((item, index, d) => {
                 item.type = 'dir'
-                treeNode.dataRef.children.push(item)
+                treeNode.data.children.push(item)
               })
             }
             if (res.files.length > 0) {
@@ -2031,7 +2032,7 @@ export default {
               a.forEach((item, index, a) => {
                 item.isLeaf = true
                 item.type = 'file'
-                treeNode.dataRef.children.push(item)
+                treeNode.data.children.push(item)
               })
             }
             this.treeData = [...this.treeData]
@@ -2048,7 +2049,7 @@ export default {
               })
             }
             setTitle(this.trashData)
-            resolve()
+            resolve(treeNode.data.children)
           })
           return
         // })
@@ -2056,24 +2057,25 @@ export default {
       }
 
       // return new Promise(resolve => {
-        if (treeNode.dataRef.children) {
-          resolve()
+        if (treeNode.data.children) {
+          resolve(treeNode.data.children)
           return
         }
+        treeNode.loading = true
         browse(
           this.folibRepository.storageId,
           this.folibRepository.id,
-          treeNode.dataRef.artifactPath
+          treeNode.data.artifactPath || ''
         ).then(res => {
-          if (!treeNode.dataRef.children) {
-            treeNode.dataRef.children = []
+          if (!treeNode.data.children) {
+            treeNode.data.children = []
           }
           if (res.directories.length > 0) {
             const d = res.directories
             d.forEach((item, index, d) => {
               item.type = 'dir'
             })
-            treeNode.dataRef.children = d
+            treeNode.data.children = d
           }
           if (res.files.length > 0) {
             const a = res.files
@@ -2081,9 +2083,10 @@ export default {
               item.isLeaf = true
               item.type = 'file'
             })
-            treeNode.dataRef.children = treeNode.dataRef.children.concat(a)
+            treeNode.data.children = treeNode.data.children.concat(a)
           }
-
+          resolve(treeNode.data.children)
+          if (treeNode.data.artifactPath) return
           this.treeData = [...this.treeData]
           this.trashData = [...this.trashData]
           const setTitle = (arr) => {
@@ -2098,7 +2101,8 @@ export default {
             })
           }
           setTitle(this.trashData)
-          resolve()
+        }).finally(() => {
+            treeNode.loading = false
         })
       // })
     },
@@ -3254,11 +3258,11 @@ export default {
         }
         return url;
       },
-     onRightClick(params) {
+     onRightClick(event, data) {
        this.showContextMenu = true;
-       this.rightClickTop = `${params.event.clientY}px`;
-       this.rightClickLeft = `${params.event.clientX}px`;
-       this.currentTreeNode = params.node.dataRef;
+       this.rightClickTop = `${event.clientY}px`;
+       this.rightClickLeft = `${event.clientX}px`;
+       this.currentTreeNode = data;
      },
      closeContextMenu() {
        this.showContextMenu = false;

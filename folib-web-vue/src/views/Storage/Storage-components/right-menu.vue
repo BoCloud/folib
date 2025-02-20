@@ -6,6 +6,10 @@
 <template>
     <div class="context-menu">
       <a-menu @click="handleRightClick">
+        <!-- <a-menu-item key="1">
+          <a-icon type="reload" />
+          {{ $t('Store.Refresh') }}
+        </a-menu-item>-->
         <a-menu-item key="2" v-if="copyEnabled && !isTrashView">
           <a-icon type="copy" />
           {{ $t('Store.Copy') }}
