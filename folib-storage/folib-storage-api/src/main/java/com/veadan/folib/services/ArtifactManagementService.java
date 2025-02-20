@@ -485,8 +485,9 @@ public class ArtifactManagementService {
 
         Repository repository = path.getFileSystem().getRepository();
 
-        artifactOperationsValidator.validate(path);
-
+        if (RepositoryTypeEnum.HOSTED.getType().equalsIgnoreCase(repository.getType())) {
+            artifactOperationsValidator.validate(path);
+        }
         if (!RepositoryFiles.isArtifact(path)) {
             return path;
         }

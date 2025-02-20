@@ -3,9 +3,12 @@ package com.veadan.folib.services.impl;
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.configuration.MutableProxyConfiguration;
 import com.veadan.folib.configuration.ProxyConfiguration;
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.ext.jersey.ContentTypeFixerFilter;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
@@ -42,6 +45,7 @@ import javax.ws.rs.client.ClientBuilder;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.cert.X509Certificate;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -148,14 +152,16 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
                 getProxyConfiguration();
 
         //仓库代理
-        ProxyConfiguration repositoryProxyConfig = configurationManagementService.
-                getConfiguration().getRepository(storageId, repositoryId).getProxyConfig();
+        Repository repository = configurationManagementService.
+                getConfiguration().getRepository(storageId, repositoryId);
+        ProxyConfiguration repositoryProxyConfig = repository.getProxyConfig();
         config.connectorProvider(new ApacheConnectorProvider());
         isExistProxy(globalProxyConfig, repositoryProxyConfig, config);
         config.property(ApacheClientProperties.CONNECTION_MANAGER, poolingHttpClientConnectionManager);
 
         // property to prevent closing connection manager when client is closed
         config.property(ApacheClientProperties.CONNECTION_MANAGER_SHARED, true);
+        dockerRegistry(repository, config);
 
         java.util.logging.Logger log = java.util.logging.Logger.getLogger("com.veadan.folib.RestClient");
 
@@ -184,7 +190,6 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
         config.connectorProvider(new ApacheConnectorProvider());
         isExistProxy(globalProxyConfig, repositoryProxyConfig, config);
         config.property(ApacheClientProperties.CONNECTION_MANAGER, poolingHttpClientConnectionManager);
-
         // property to prevent closing connection manager when client is closed
         config.property(ApacheClientProperties.CONNECTION_MANAGER_SHARED, true);
 
@@ -359,5 +364,23 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
             }
         }
 
+    }
+
+    private void dockerRegistry(Repository repository, ClientConfig config) {
+        if (!ProductTypeEnum.Docker.getFoLibraryName().equalsIgnoreCase(repository.getSubLayout())) {
+            return;
+        }
+        RemoteRepository remoteRepository = repository.getRemoteRepository();
+        if (Objects.isNull(remoteRepository)) {
+            return;
+        }
+        String url = remoteRepository.getUrl();
+        if (StringUtils.isBlank(url)) {
+            return;
+        }
+        if (url.startsWith("https://registry-1.docker.io")) {
+            //禁用自动重定向
+            config.property(ClientProperties.FOLLOW_REDIRECTS, false);
+        }
     }
 }
