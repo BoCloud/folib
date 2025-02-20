@@ -189,7 +189,12 @@ public class UnicomAdapter implements CostumeSecurityAdapter {
         //  获取当前用户
         SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
         UnicomRoleDTO unicomRoleDTO = getUserDetail(userDetails.getEmail());
-        Set<String> projects = unicomRoleDTO.ownProject();
+        Set<String> projects;
+        if(unicomRoleDTO != null) {
+            projects = unicomRoleDTO.ownProject();
+        }else {
+            projects = new HashSet<>();
+        }
         boolean filterByStorageId = StringUtils.isNotBlank(storageId);
         boolean filterByType = StringUtils.isNotBlank(type);
         boolean filterByLayout = StringUtils.isNotBlank(layout);
@@ -249,6 +254,9 @@ public class UnicomAdapter implements CostumeSecurityAdapter {
             return false;
         }
         UnicomRoleDTO userDetail = getUserDetail(userDetails.getEmail());
+        if(userDetail == null) {
+            return false;
+        }
         return userDetail.ownProject().contains(repository.getProjectId());
     }
 
@@ -258,6 +266,9 @@ public class UnicomAdapter implements CostumeSecurityAdapter {
         SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
         if (UNICOM_SOURCE_ID.equals(userDetails.getSourceId())) {
             UnicomRoleDTO userDetail = getUserDetail(userDetails.getEmail());
+            if(userDetail == null) {
+                return repositoryIdList;
+            }
             Set<String> projects = userDetail.ownProject();
             final List<Storage> storageList = new ArrayList<>(configurationManagementService.getConfiguration()
                     .getStorages()
@@ -297,7 +308,12 @@ public class UnicomAdapter implements CostumeSecurityAdapter {
 
     public boolean isUnicomUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
+        SpringSecurityUser userDetails = null;
+        try {
+            userDetails = (SpringSecurityUser) authentication.getPrincipal();
+        } catch (Exception e) {
+            return false;
+        }
         return UNICOM_SOURCE_ID.equals(userDetails.getSourceId());
 
     }
