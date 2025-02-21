@@ -111,7 +111,7 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider {
      * @return 为上一级的子目录则为true
      */
     public boolean isSubDirectory(String currentUrl, String preUrl) {
-        return currentUrl.contains(preUrl) && !currentUrl.equals(preUrl)&&currentUrl.endsWith(GlobalConstants.SEPARATOR);
+        return currentUrl.contains(preUrl) && !currentUrl.equals(preUrl) && currentUrl.endsWith(GlobalConstants.SEPARATOR);
     }
 
 
@@ -278,14 +278,14 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider {
                                 }
                                 pathList.add(currentLine);
                                 if (pathList.size() == finalBatch) {
-                                    batchDownload(syncArtifactForm, pathList, threadPoolTaskExecutor);
+                                    batchDownload(item, syncArtifactForm, pathList, threadPoolTaskExecutor);
                                 }
                             } catch (Exception ex) {
                                 log.error(ExceptionUtils.getStackTrace(ex));
                             }
                         }
                         if (CollectionUtils.isNotEmpty(pathList)) {
-                            batchDownload(syncArtifactForm, pathList, threadPoolTaskExecutor);
+                            batchDownload(item, syncArtifactForm, pathList, threadPoolTaskExecutor);
                         }
                     }
                 } catch (Exception ex) {
@@ -305,14 +305,14 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider {
         log.info("【{}】包同步完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个制品，耗时 [{}] 秒", getLayout(), syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), total, swTotal.getTotalTimeSeconds());
     }
 
-    protected void batchDownload(SyncArtifactForm form, List<String> artifactPathList, ThreadPoolTaskExecutor threadPoolTaskExecutor) {
+    protected void batchDownload(Path path, SyncArtifactForm form, List<String> artifactPathList, ThreadPoolTaskExecutor threadPoolTaskExecutor) {
         if (CollectionUtils.isEmpty(artifactPathList)) {
             return;
         }
         CountDownLatch latch = new CountDownLatch(artifactPathList.size());
         for (String artifactPath : artifactPathList) {
             threadPoolTaskExecutor.submit(() -> {
-                this.downloadByPath(artifactPath, form);
+                this.downloadByPath(path, artifactPath, form);
                 latch.countDown();
             });
         }
@@ -325,13 +325,30 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider {
         artifactPathList.clear();
     }
 
-    public void downloadByPath(String artifactPath, SyncArtifactForm form) {
+    public void downloadByPath(Path path, String artifactPath, SyncArtifactForm form) {
         try {
+            String levelPrefix = "level_", fileName = path.getFileName().toString();
             String storageId = form.getStorageId();
             String repositoryId = form.getRepositoryId();
             if (StringUtils.isNotBlank(artifactPath)) {
                 //制品
                 RepositoryPath repositoryPath = syncUtils.resolve(storageId, repositoryId, artifactPath);
+                if (fileName.startsWith(levelPrefix) && (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath))) {
+                    //是目录的索引文件，并且在同步目录元数据时，该目录不存在，跳过处理
+                    return;
+                }
+                if (Files.exists(repositoryPath) && Files.isDirectory(repositoryPath)) {
+                    //目录
+                    syncUtils.directoryIncrease(form.getStoreAndRepo());
+                    JfrogPropertySyncer syncer = form.getSyncer();
+                    if (syncer != null) {
+                        String properties = syncer.getPropertiesByKeyAndPath(repositoryId, artifactPath);
+                        if (properties != null) {
+                            syncUtils.saveArtifactMetaByString(storageId, repositoryId, artifactPath, properties);
+                        }
+                    }
+                    return;
+                }
                 if (Files.exists(repositoryPath)) {
                     syncUtils.artifactIncrease(form.getStoreAndRepo());
                     log.debug("Batch download storageId [{}] repositoryId [{}] artifactPath [{}] exists skip..", storageId, repositoryId, artifactPath);
