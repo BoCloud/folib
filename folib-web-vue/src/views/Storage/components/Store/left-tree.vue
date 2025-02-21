@@ -51,7 +51,7 @@
                     children: 'children',
                     isLeaf: 'isLeaf'
                 }"
-                :data="trashData"
+                :data="recycleTreeData"
                 class="leftTree"
                 :height="`${bottomHeight}px`"
                 node-key="artifactPath"
@@ -100,7 +100,13 @@ export default {
             selectedKeys:[],
             expandedRecycleKeys:[],
             selectRecycleKeys:[],
-            testData: []
+            recycleTreeData: [{
+                name:'回收站',
+                icon:'',
+                type:'recycle',
+                children:[],
+                artifactPath: '-'
+            }]
         }
     },
     computed: {
@@ -131,6 +137,19 @@ export default {
             }
         },
     },
+    watch: {
+        trashData: {
+            handler(val) {
+                let list = []
+                val.forEach(ele => {
+                    list.push(JSON.parse(JSON.stringify(ele)))
+                })
+                this.recycleTreeData[0].children = [...list]
+                this.recycleTreeData = [...this.recycleTreeData]
+            },
+            deep: true
+        }
+    },
     mounted() {
         this.$nextTick(() => {
             this.getPosition()
@@ -138,7 +157,6 @@ export default {
     },
     methods: {
         onLoadData(treeNode,resolve, isTrashView) {
-            console.log(treeNode);
             treeNode.loading = true
             this.$emit('onLoadData', treeNode, isTrashView, resolve);
         },

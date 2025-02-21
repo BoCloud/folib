@@ -1388,7 +1388,7 @@ export default {
         layout: null,
         type: null,
         page:1,
-        limit: 10,
+        limit: 30,
         total:0,
       },
       layoutType:'isFilter',
@@ -1531,6 +1531,7 @@ export default {
       }
       setTimeout(() => {
         this.isChecked = key
+        this.$store.commit('setRepositoryLength', -1)
         // this.$store.commit('setIsChecked',key)
       }, 0);
     },
@@ -1581,7 +1582,7 @@ export default {
         if(val){
           this.$refs.repositoryTree.loadingMoreShow(true)
           // this.$refs.libview.myMounted()
-          this.queryParams.limit = 20 // 20
+          this.queryParams.limit = 30 // 20
         }else{
           this.$store.commit('setNewDetailPage',false) // 将newDetailPage参数复原，以免影响到原有模式的详情页面
           this.queryParams.limit = 10
@@ -1639,7 +1640,7 @@ export default {
       })
       this.queryParams.page = 1
       if(this.isChecked){
-        this.queryParams.limit = 20
+        this.queryParams.limit = 30
       }else{
         this.queryParams.limit = 10
       }
@@ -1656,7 +1657,7 @@ export default {
         const params = JSON.parse(JSON.stringify(val))
         params.layout = val.layout ? genLayoutType(val.layout) : ''
         params.page = 1
-        params.limit = 20 // 20
+        params.limit = 30 // 20
         // 给当前页面搜索条赋值
         this.queryParams.layout = params.layout
         this.queryParams.type = params.type
@@ -2056,7 +2057,7 @@ export default {
             storageId: this.currentStorage.id,
             layout: this.queryParams.layout,
             type: this.queryParams.type,
-            limit: this.isChecked ? 20 : this.queryParams.limit,
+            limit: this.isChecked ? 30 : this.queryParams.limit,
             page: this.queryParams.page
           }
           this.getQueryStorage(params)

@@ -467,7 +467,6 @@ export default {
       this.isShowDelete = (isAdmin() || this.storageAdmin === this.$store.state.user.name) && (this.folibRepository.allowsDeletion || this.folibRepository.allowsForceDeletion)
     },
     handleMenuClickTree(active,currentTreeNode){
-      console.log(active,currentTreeNode)
       this.$refs.store.handleMenuClickTree(active,currentTreeNode)
     },
     treeSelect(data,isTrashView){

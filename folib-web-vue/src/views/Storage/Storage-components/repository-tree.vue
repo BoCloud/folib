@@ -7,7 +7,7 @@
     <div class="left_tree-container" ref="container">
         <div class="cover-box" v-if="isDragging"></div>
         <a-spin :spinning="loadingMore">
-            <div ref="tree_container" class="tree_container" :style="{ height: topHeight + 'px' }"
+            <div ref="tree_container_store" class="tree_container_store" :style="{ height: topHeight + 'px' }"
                 @scroll="handleScroll">
                 <vue-easy-tree
                     :key="key"
@@ -23,6 +23,7 @@
                     :show-line="true"
                     @node-click="(data)=>treeSelect(data,false)"
                     @node-expand="(data,node) => onExpand(data, node, false)"
+                    @node-collapse="(data,node) => onCollapse(data,node, false)"
                     @node-contextmenu="(event, data) => rightClick(event, data,'tree')"
                     :expandedKeys="expandedKeys"
                     show-icon
@@ -64,12 +65,13 @@
                     :props="props"
                     icon-class="el-icon-arrow-right"
                     lazy
-                    :height="`${topHeight}px`"
+                    :height="`${bottomHeight}px`"
                     :load="(treeNode,resolve) => onLoadData(treeNode, resolve, true)"
                     :data="recycleTreeData"
                     :show-line="true"
                     @node-click="(data)=>treeSelect(data,false)"
                     @node-expand="(data,node) => onExpand(data,node, true)"
+                    @node-collapse="(data,node) => onCollapse(data,node, true)"
                     @node-contextmenu="(event, data) => rightClick(event, data,'recycleTree')"
                     :expandedKeys="expandedRecycleKeys"
                     show-icon
@@ -239,6 +241,14 @@ export default {
         repositories: {
             handler(val) {
                 if (val) {
+                    if (val.length && !this.treeData.length) {
+                        this.$nextTick(() => {
+                            const nodeList = document.querySelectorAll('.vue-recycle-scroller')
+                            nodeList.forEach(item => {
+                                item.addEventListener('scroll', this.handleScroll);
+                            })
+                        })
+                    }
                     this.isTrashView = false
                     this.loadingMore = false
                     this.loadingMoreShow(false)
@@ -312,11 +322,15 @@ export default {
             icon:'',
             type:'recycle',
             children:[],
-            key:this.storageId
+            key:this.storageId || '-'
         }]
     },
     beforeDestroy() {
         document.removeEventListener('click', this.closeContextMenu)
+        const nodeList = document.querySelectorAll('.vue-recycle-scroller')
+        nodeList.forEach(item => {
+            item.removeEventListener('scroll', this.handleScroll);
+        })
     },
     methods: {
         reload(key = false) {
@@ -333,7 +347,6 @@ export default {
         // 远程节点删除成功后，调用本地删除节点方法（实现删除后树表展开结构不变）
         localDelNode(tarNode) {
             const { storageId, repositoryId, artifactPath,type } = tarNode
-            console.log(storageId, repositoryId, artifactPath)
             const arr = artifactPath.split('/')
             const length = arr.length
             const keyToDelete = arr[length - 1]
@@ -362,7 +375,6 @@ export default {
         recursionGetItems(source, key, children, loading) {
             source.forEach(item => {
                 if (item.key === key) {
-                    console.log(this.$refs.tree.updateKeyChildren);
                     if (children) this.$refs.tree.updateKeyChildren(key, children)
                     item.loading = loading
                 } else if (item.children?.length) {
@@ -445,7 +457,6 @@ export default {
                     children = children.concat(a)
                 }
                 this.recursionGetItems(this[nowDataKey], currentNode.key, children, false)
-                console.log(this[nowDataKey], children);
                 this.setKeyValue()
             })
         },
@@ -464,6 +475,22 @@ export default {
                 this.currentTreeNodeRecycle = data
             }else{
                 this.currentTreeNode = data
+            }
+            let target = null
+            // 获取当前子节点的最顶层父节点（仓库节点）
+            this.treeData.forEach(ele => {
+                if (ele.id === data.repositoryId) {
+                    target = ele
+                }
+            })
+            this.folibRepository = target
+            if (this.folibRepository.type === 'proxy') {
+                this.uploadEnabled = false
+                this.copyEnabled = false
+                this.dispatchEnabled = false
+                this.moveEnabled = false
+            } else {
+                this.queryPermission()
             }
             this.$refs.rightMenu.handlerDataPermission(data,type)
             // }
@@ -514,6 +541,7 @@ export default {
         },
         // 树节点点击
         treeSelect(data, isRecycle) {
+            this.closeContextMenu()
             const { newDetailPage,name } = data
             if(isRecycle){
                 if(name == '制品回收站'){
@@ -579,13 +607,20 @@ export default {
         },
         // 获取当前已展开节点的key
         onExpand(data,node,key) {
+            this.closeContextMenu()
             if(key){
                 this.expandedRecycleKeys = [data.key]
             }else{
                 this.expandedKeys = [data.key]
             }
-            if(key && obj.node.dataRef.name === '制品回收站'){ // 回收站打开
-                this.getPosition(obj.expanded ? 320 : 40)
+            if(key && data.name === '制品回收站'){ // 回收站打开
+                this.getPosition(320)
+            }
+        },
+        onCollapse(data,node,key) {
+            this.closeContextMenu()
+            if(key && data.name === '制品回收站'){ // 回收站关闭
+                this.getPosition(40)
             }
         },
         getRecycleTreeData(){
@@ -595,10 +630,10 @@ export default {
             })
             this.recycleTreeData[0].children = [...list]
             this.recycleTreeData = [...this.recycleTreeData]
-            console.log(this.recycleTreeData);
         },
         // 懒加载获取节点
         onLoadData(treeNode,resolve, isTrashView) {
+            this.closeContextMenu()
             if (!treeNode.data.fileType && !treeNode.data.type) return
             const nowDataKey = isTrashView ? 'recycleTreeData' : 'treeData'
             if(treeNode.data.type === 'recycle'){
@@ -799,7 +834,6 @@ export default {
                 this.bottomHeight = bottomHeight
             }
             this.containerHeight = this.$refs.container.clientHeight - 5
-            console.log(this.$refs.container.clientHeight)
             this.topHeight = this.containerHeight - this.bottomHeight - 5
         }
     },

@@ -23,7 +23,8 @@
                     <a-avatar @click="createData" :size="64" shape="square"
                       style="border-radius: 8px; background-image: linear-gradient(310deg, #f1f7ff, #f9fbff);"
                                 >
-                        <img :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" style="width: 150%;margin-left: -11px;" alt=""></img>
+                        <img v-if="folibRepository.id" :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" style="width: 150%;margin-left: -11px;" alt=""></img>
+                        <span v-else style="color: #BFBFBF; margin-left: -10px; font-size: 14px;">No Data</span>
                     </a-avatar>
                   </a>
                   <div class="avatar-info">
@@ -40,48 +41,41 @@
                     </a-tooltip>
                     <a-descriptions title="" :column="1" class="repo-address" style="margin-top:5px;">
                       <a-descriptions-item :label="$t('Store.BrowseAddress')">
-                        <a-tooltip placement="topLeft">
-                          <template slot="title">
-                            {{ $t('Store.WarehouseBrowseAddress') }}
-                          </template>
-                          <a :href="baseUrl +
-                            'artifactory/' + folibRepository.id" target="_blank">
-                            <p class="copy-p">
-                              {{ baseUrl +
-                                'artifactory/' + folibRepository.id }}
-                            </p>
+                        <template v-if="folibRepository.id">
+                          <a-tooltip placement="topLeft">
+                            <template slot="title">
+                              {{ $t('Store.WarehouseBrowseAddress') }}
+                            </template>
+                            <a :href="baseUrl + 'artifactory/' + folibRepository.id" target="_blank">
+                              <p class="copy-p">
+                                  {{ baseUrl + 'artifactory/' + folibRepository.id }}
+                              </p>
+                            </a>
+                          </a-tooltip>
+                          <a class="ml-10">
+                            <a-icon type="copy" @click="copy( baseUrl + 'artifactory/' + folibRepository.id )" />
                           </a>
-                        </a-tooltip>
-                        <a class="ml-10">
-                          <a-icon type="copy" @click="
-                            copy(
-                              baseUrl +
-                                'artifactory/' + folibRepository.id
-                            )" />
-                        </a>
+                        </template>
+                        <span v-else>--</span>
                       </a-descriptions-item>
                       <a-descriptions-item :label="$t('Store.UseAddress')" style="margin-top: -5px;">
-                        <a-tooltip>
-                          <template slot="title">
-                            {{ $t('Store.WarehouseUsageAddress') }}
-                          </template>
-                          <a>
-                            <p class="copy-p">
-                              {{
-                                getRepositoryUrl()
-                              }}
-                            </p>
+                        <template v-if="folibRepository.id">
+                          <a-tooltip>
+                            <template slot="title">
+                              {{ $t('Store.WarehouseUsageAddress') }}
+                            </template>
+                            <a>
+                              <p class="copy-p">
+                                {{ getRepositoryUrl() }}
+                              </p>
+                            </a>
+                          </a-tooltip>
+                          <a class="ml-10">
+                            <a-icon type="copy" @click="copy( getRepositoryUrl())" />
                           </a>
-                        </a-tooltip>
-                        <a class="ml-10">
-                          <a-icon type="copy" @click="
-                            copy(
-                              getRepositoryUrl()
-                            )
-                            " />
-                        </a>
+                        </template>
+                        <span v-else>--</span>
                       </a-descriptions-item>
-                      
                     </a-descriptions>
                   </div>
                 </a-col>
@@ -166,11 +160,11 @@
             <a-icon v-if="!isTrashView" type="delete" /> -->
           </a-tooltip>
           <!-- </a-button> -->
-          <leftTree 
-            :trashData="trashData" 
-            :treeData="treeData" 
+          <leftTree
+            :trashData="trashData"
+            :treeData="treeData"
             :isTrashView="isTrashView"
-            @onRightClick="onRightClick" 
+            @onRightClick="onRightClick"
             @onLoadData="onLoadData"
             @treeSelect="treeSelect"
           />
@@ -452,20 +446,20 @@
           <a v-if="currentTreeNode.url && folibRepository.layout !== 'Docker'" class="ml-10"><a-icon type="copy"
               @click="copy(getFormattedUrl(currentTreeNode.url))" /> </a>
           <hr class="gradient-line" />
-          <BaseData 
+          <BaseData
               ref="BaseData"
               :key="pageKey"
-              :isChecked="isChecked" 
-              :currentTreeNode="currentTreeNode" 
+              :isChecked="isChecked"
+              :currentTreeNode="currentTreeNode"
               :repositoryType="repositoryType"
-              :currentFileDetial="currentFileDetial" 
-              :successMsg="successMsg" 
-              :folibRepository="folibRepository" 
+              :currentFileDetial="currentFileDetial"
+              :successMsg="successMsg"
+              :folibRepository="folibRepository"
               @addPageKey="addPageKey"
               @handlerPermission="handlerPermission"
               @messageArchitectureChild="handleArchitectureMessage"
-              @metadataEditHandler="metadataEditHandler" 
-              @metadataHandler="metadataHandler" 
+              @metadataEditHandler="metadataEditHandler"
+              @metadataHandler="metadataHandler"
               @setCurrentFileDetial="setCurrentFileDetial"
           />
         </a-card>
@@ -1395,11 +1389,6 @@ export default {
           this.baseUrl = ''
       }
     },
-      folibRepository:{
-        handler(val, oldVal) {
-            console.log(val, oldVal);
-        },
-      }
   },
   created () {
     this.initData()
@@ -1422,7 +1411,7 @@ export default {
       {
         this.scannerRules()
         this.scanReport = Object.assign({}, this.propScanReport)
-   
+
       }
       this.getUploadMaxSize()
       this.queryStorageAndRepositoryPermission()
@@ -1512,8 +1501,7 @@ export default {
     createData() {
       //上个页面通过缓存传参，目的防止页面刷新，路由数据消失
       const params = store.get('libView_repository')
-        console.log(params);
-        this.folibRepository = params.item
+      this.folibRepository = params.item
       this.baseUrl = params.baseUrl
       this.repositoryType = this.getLayoutTypeHandle()
     },
@@ -1673,7 +1661,7 @@ export default {
                   //         item.originFileObj
                   //     )
                   // })
-                  console.info('docker:', values)
+                  // console.info('docker:', values)
                   const imageTag = values.imageTag ? values.imageTag : fileList[0].originFileObj.name;
                   this.uploadFiles(values.targetPath,false,null,imageTag,values.type)
                   this.successMsg(this.$t('Store.CheckProgress'))
@@ -2259,7 +2247,6 @@ export default {
       this.handleMenuClick(active)
     },
     handleMenuClick(active) {
-      console.log(active)
       this.operationForm.resetFields()
       this.copyOperationForm.resetFields()
       this.isTargetPatDisabled = this.folibRepository.layout !== 'Raw';
@@ -2311,7 +2298,7 @@ export default {
         this.getExternalNodeRepositories({ type: this.folibRepository.layout })
         this.operationTitle = this.$t('Store.Distribute')
         this.customTitle = this.$t('Store.DistributeCustomDirectory')
-        // 下载  
+        // 下载
       } else if (active.key === '6') {
         let url = this.currentTreeNode.url
         if (url) {
