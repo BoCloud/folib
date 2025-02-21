@@ -6,10 +6,10 @@
 <template>
     <div class="context-menu" v-if="showContextMenu">
         <a-menu @click="handleRightClick">
-            <!--   <a-menu-item v-if="currentTreeNode && currentTreeNode.type === 'dir' || currentTreeNode.treeType === 'root'" key="1">
+            <a-menu-item v-if="currentTreeNode && currentTreeNode.type === 'dir' || currentTreeNode.treeType === 'root'" key="1">
                 <a-icon type="reload"/>
                 {{ $t('Store.Refresh') }}
-            </a-menu-item>-->
+            </a-menu-item>
             <template v-if="!currentTreeNode.treeType">
                 <a-menu-item key="2" v-if="copyEnabled && !isTrashView">
                     <a-icon type="copy"/>

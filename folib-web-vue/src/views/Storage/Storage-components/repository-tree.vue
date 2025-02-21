@@ -12,7 +12,7 @@
                 <vue-easy-tree
                     :key="key"
                     class="repositoryTree"
-                    ref="tree"
+                    ref="storeTree"
                     node-key="key"
                     :props="props"
                     icon-class="el-icon-arrow-right"
@@ -60,7 +60,7 @@
                 <vue-easy-tree
                     :key="recycleKey" 
                     class="repositoryTree" 
-                    ref="tree"
+                    ref="recycleTree"
                     node-key="key"
                     :props="props"
                     icon-class="el-icon-arrow-right"
@@ -386,6 +386,7 @@ export default {
             const nowDataKey = this.isTrashView ? 'recycleTreeData' : 'treeData'
             const { storageId, id, layout } = this.folibRepository
             const currentNode =  this.isTrashView ? this.currentTreeNodeRecycle : this.currentTreeNode
+            const currentTreeRef =  this.isTrashView ? this.$refs.recycleTree : this.$refs.storeTree
             this.recursionGetItems(this[nowDataKey], currentNode.key, null, true)
             if (layout === 'Docker') {
                 getDockerArtifact(
@@ -420,8 +421,10 @@ export default {
                             children.push(item)
                         })
                     }
-                    this.recursionGetItems(this[nowDataKey], currentNode.key, children, false)
-                    this.setKeyValue()
+
+                    currentTreeRef.updateKeyChildren(currentNode.key, children)
+                    // this.recursionGetItems(this[nowDataKey], currentNode.key, children, false)
+                    // this.setKeyValue()
                 })
             }
 
@@ -452,12 +455,13 @@ export default {
                     a.forEach((item, index, a) => {
                         item.isLeaf = true
                         item.type = 'file'
-                        item.key = id + item.artifactPath + index
+                        item.key = id + item.artifactPath
                     })
                     children = children.concat(a)
                 }
-                this.recursionGetItems(this[nowDataKey], currentNode.key, children, false)
-                this.setKeyValue()
+                currentTreeRef.updateKeyChildren(currentNode.key, children)
+                // this.recursionGetItems(this[nowDataKey], currentNode.key, children, false)
+                // this.setKeyValue()
             })
         },
         setKeyValue() {
