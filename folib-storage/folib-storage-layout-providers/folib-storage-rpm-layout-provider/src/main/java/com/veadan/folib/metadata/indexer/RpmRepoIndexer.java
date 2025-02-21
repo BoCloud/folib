@@ -303,7 +303,13 @@ public class RpmRepoIndexer {
 
             for (Path path : paths) {
                 RepositoryPath location = root.relativize(path);
-                RpmMetadata metadata = new RpmMetadataExtractor().extract(path);
+                RpmMetadata metadata = null;
+                try {
+                    metadata = new RpmMetadataExtractor().extract(path);
+                } catch (Exception e) {
+                    logger.info("Failed to extract metadata from path " + path.toString(),e);
+                    continue;
+                }
                 String fileDigests =metadata.getSha1Digest();
 
                 // 生成primary package data

@@ -11,7 +11,6 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
 import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.DebianUtils;
 import com.veadan.folib.util.steam.StringInputStream;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +21,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
@@ -57,7 +55,7 @@ public class DebianReleaseMetadataIndexer {
 
     public DebianReleaseMetadataIndexer(Repository repo, List<String> packagesFilesToDelete, RepositoryPathResolver resolver, ArtifactorySearch search) {
         this.repo = repo;
-        this.search=search;
+        this.search = search;
         this.resolver = resolver;
         this.packagesFilesToDelete = packagesFilesToDelete != null ? packagesFilesToDelete : Lists.newArrayList();
     }
@@ -277,7 +275,7 @@ public class DebianReleaseMetadataIndexer {
     }
 
     private List<Artifact> getPackagesArtifacts(DebianReleaseContext releaseContext) {
-        return search.findReleaseByDistribution(releaseContext.getDistribution(),repo);
+        return search.findReleaseByDistribution(releaseContext.getDistribution(), repo);
     }
 
     private Predicate<Artifact> isSamePackagesIndexFile(DebianReleaseContext initialContext, Artifact newPkg) {

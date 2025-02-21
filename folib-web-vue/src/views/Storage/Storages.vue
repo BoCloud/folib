@@ -463,7 +463,7 @@
                 <a-step :title="$t('Storage.PermissionSetting')" :disabled="isRepoExist" />
                 <a-step :title="$t('Storage.TimingPolicy')" :disabled="isRepoExist" />
 <!--                <a-step :title="$t('Storage.FederatedRepository')"  :disabled="isRepoExist"/>-->
-                <a-step :title="$t('Storage.Scan')"  :disabled="isRepoExist"/>
+                <a-step :title="$t('Storage.Scan')"  :disabled="isRepoExist" v-if="folibRepository.type !== 'group'"/>
                 <!-- <a-step title="定时策略" /> -->
             </a-steps>
           <!-- / Steps -->
@@ -532,6 +532,7 @@
                 </a-col>
                 <a-col :span="6">
                   <a-form-item class="mb-10" :label="$t('Storage.Strategy')" :colon="false">
+
                     <a-select :disabled="folibRepositoryEditDisabled"
                       default-value="hosted" v-model="folibRepository.type" @change="getRemote">
                       <a-select-option value="hosted">
@@ -540,7 +541,7 @@
                       <a-select-option value="proxy">
                         {{ $t('Storage.Agent') }}
                       </a-select-option>
-                      <a-select-option value="group" v-if="this.layoutChecked !== 'cocoapods'">
+                      <a-select-option value="group" v-if="filterGroupStrategyLayout()">
                         {{ $t('Storage.Combination') }}
                       </a-select-option>
                     </a-select>
@@ -630,7 +631,7 @@
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="6">
+                <a-col :span="6" v-if="folibRepository.type !== 'group'">
                   <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsDeletion">
                       {{ $t('Storage.Allowed') }}{{ $t('Storage.Delete') }}
@@ -638,7 +639,7 @@
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="6">
+                <a-col :span="6" v-if="folibRepository.type !== 'group'">
                   <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsForceDeletion">
                       {{ $t('Storage.Allowed') }}{{ $t('Storage.ForcedDeletion') }}
@@ -646,7 +647,7 @@
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="6">
+                <a-col :span="6" v-if="folibRepository.type === 'hosted'">
                   <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsDeployment">
                       {{ $t('Storage.Allowed') }}{{ $t('Storage.UploadDeploy') }}
@@ -654,7 +655,7 @@
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="6">
+                <a-col :span="6" v-if="folibRepository.type === 'hosted'">
                   <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsRedeployment">
                       {{ $t('Storage.Allowed') }}{{ $t('Storage.UploadOverlay') }}
@@ -670,7 +671,7 @@
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="6">
+                <a-col :span="6" v-if="folibRepository.type !== 'group'">
                   <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.syncEnabled">
                       {{ $t('Storage.On') }}{{ $t('Storage.SyncRepository') }}
@@ -1069,13 +1070,13 @@
                         <a-button @click="moveStep(-1)" class="px-25">{{ $t('Storage.Back') }}</a-button>
                     </a-col>
                     <a-col :span="12" style="text-align: right;">
-                        <a-button type="primary" @click="moveStep(1)" class="px-25">{{ $t('Storage.Next') }}</a-button>
+                        <a-button v-if="folibRepository.type !== 'group'" type="primary" @click="moveStep(1)" class="px-25">{{ $t('Storage.Next') }}</a-button>
+                        <a-button v-if="folibRepository.type === 'group'" type="primary" @click="doDrawerStatus(false,true)" class="px-25"> {{ $t('Storage.Complete') }}{{ folibRepositoryEditDisabled ? $t('Storage.Edit') : $t('Storage.create') }}</a-button>
                     </a-col>
                 </a-row>
             </a-card>
             <a-card v-else-if="(step === 4 && folibRepository.type === 'hosted') ||
-            (  folibRepository.type === 'proxy' && step === 5) ||
-            (step === 5 && folibRepository.type === 'group')" :bordered="false" class="header-solid">
+            (  folibRepository.type === 'proxy' && step === 5)" :bordered="false" class="header-solid">
 <!--                <a-row>-->
 <!--                    <a-col :span="24">-->
 <!--                        <UnionRepository ref="unionRepository" :isShow="isShow" :folibRepository="this.folibRepositoryData" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></UnionRepository>-->
@@ -1391,7 +1392,7 @@ export default {
         total:0,
       },
       layoutType:'isFilter',
-      isChecked: true,
+      isChecked: false,
       isShowOverview: false,
      permissionForm: {
         allowAnonymous: true,
@@ -1414,7 +1415,8 @@ export default {
       switchDisabled:true,
       nameKey:false,
       loadingNameKey:false,
-      pageLoading: false
+      pageLoading: false,
+      repoLayoutStrategy:['cocoapods'],
     };
   },
   watch: {
@@ -1432,8 +1434,6 @@ export default {
       deep:true
     },
       layoutChecked(newVal, oldVal) {
-          console.log('Selected value changed from', oldVal, 'to', newVal);
-          console.log(newVal !=="maven");
           // 在这里处理值改变的逻辑
           if(newVal !=="maven"){
               this.folibRepository.policy="mixed"
@@ -1535,7 +1535,16 @@ export default {
       }, 0);
     },
     getRemote(val){
+      if(val == 'group') {
+          this.folibRepository.allowsDeletion = false
+          this.folibRepository.allowsDeployment = false
+      }
+      if(val == 'hosted') {
+          this.folibRepository.allowsDeletion = true
+          this.folibRepository.allowsDeployment = true
+      }
       if(val == 'proxy'){
+          this.folibRepository.allowsDeployment = false
           this.folibRepository.remoteRepository = {
             allowsDirectoryBrowsing: true,
             autoBlocking: true,
@@ -1907,6 +1916,12 @@ export default {
         }
       })
     },
+    async getStorages() {
+      await getStorages().then(response => {
+          this.storageData = response.storages;
+          this.cacheStorage()
+        })
+    },
     userSearchChange(matchUsername){
       this.userQueryParams.matchUsername = matchUsername
       this.userList = []
@@ -2174,6 +2189,9 @@ export default {
     },
 
     moveStep(distance) {
+        if(!distance){
+            this.doDrawerStatus=true
+        }
         if(this.stepsStatus === "error" && distance>0){
            return ;
         }
@@ -2186,6 +2204,7 @@ export default {
         this.repositoryList()
         this.calcHeight()
       }
+
 
     },
 
@@ -2783,6 +2802,13 @@ export default {
       }).finally(() => {
       })
     },
+    //根据仓库布局类型判断是否有组合仓库功能
+    filterGroupStrategyLayout(){
+        if(!this.repoLayoutStrategy || this.repoLayoutStrategy.length === 0){
+            return true;
+        }
+         return !this.repoLayoutStrategy.includes(this.layoutChecked)
+    }
 
   },
     provide() {

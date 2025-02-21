@@ -118,18 +118,7 @@
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
-                  <a v-if="uploadEnabled && folibRepository.layout === 'debian'"><small style="padding-right: 20px"
-                      @click="handleDebianUpload">
-                    {{ $t('Store.Upload') }}
-                      <a-icon type="cloud-upload" />
-                    </small>
-                  </a>
-                  <a v-if="uploadEnabled && folibRepository.layout !== 'rpm' &&  folibRepository.layout !== 'GitLfs' && folibRepository.layout !== 'GitLfs' && folibRepository.subLayout !== 'ohpm' && folibRepository.subLayout !== 'go' && folibRepository.layout !== 'debian' && folibRepository.layout !== 'cargo'"><small style="padding-right: 20px" @click="handleUpload">
-                      {{ $t('Store.BatchUpload') }}
-                      <a-icon type="cloud-upload" />
-                    </small>
-                  </a>
-                  <a v-if="uploadEnabled && folibRepository.layout === 'debian'"><small style="padding-right: 20px" @click="handleDebianBatchUpload">
+                  <a v-if="uploadEnabled && folibRepository.layout !== 'rpm' &&  folibRepository.layout !== 'GitLfs' && folibRepository.layout !== 'GitLfs' && folibRepository.subLayout !== 'ohpm' && folibRepository.subLayout !== 'go' && folibRepository.layout !== 'cargo'"><small style="padding-right: 20px" @click="handleUpload">
                       {{ $t('Store.BatchUpload') }}
                       <a-icon type="cloud-upload" />
                     </small>
@@ -622,6 +611,26 @@
               ]" :disabled="true" :placeholder="$t('Store.InputTargetWarehouse')">
               </a-input>
             </a-form-item>
+            <a-form-item :label="$t('Store.UploadMode')">
+              <a-radio-group v-decorator="[
+                'type',
+                {
+                  rules: [{ required: true, message: $t('Store.SelectUploadMode') }],
+                },
+              ]" @change="uploadTypeChange">
+                <a-radio :value="1">
+                  {{ $t('Store.Product') }}
+                </a-radio>
+                <a-radio :value="2">
+                  {{ $t('Store.ZipUpload') }}
+                </a-radio>
+              </a-radio-group>
+              <div>
+                <span v-if="uploadType === 1">{{ $t('Store.ProductUpload') }}</span>
+                <span v-if="uploadType === 2">{{ $t('Store.ZipFileUpload') }}{{ this.uploadMaxSize.size +
+                  this.uploadMaxSize.unit }}</span>
+              </div>
+            </a-form-item>
             <a-form-item :label="$t('Store.SelectFile')">
               <a-upload v-decorator="[
                 'files',
@@ -630,7 +639,7 @@
                   valuePropName: 'fileList',
                   getValueFromEvent: normFile,
                 },
-              ]" name="files" :multiple="true" :beforeUpload="beforeUpload" @change="onFileChange" list-type="text" accept=".rpm">
+              ]" name="files" :multiple="true" :beforeUpload="beforeUpload" @change="onFileChange" list-type="text" :accept="uploadType === 1 ? '.rpm':'.zip'">
                 <a-button>
                   <a-icon type="upload" />
                   {{ $t('Store.SelectFile') }} </a-button>
@@ -732,7 +741,7 @@
           </a-form>
       </a-modal>
 
-    <!-- raw 、maven、npm 上传 -->
+    <!-- raw 、maven、npm 、debian上传 -->
     <a-modal v-model="showUploadFormModal" :footer="null" :forceRender="true" :centered="true"
       :title="$t('Store.Upload')" on-ok="showUploadFormModal = false">
       <a-form :form="uploadForm" ref="uploadForm" layout="horizontal" @submit.prevent="handleUploadSubmit">
@@ -749,7 +758,7 @@
               </a-input>
             </a-form-item>
             <a-form-item :label="$t('Store.UploadMode')"
-              v-if="folibRepository.layout === 'Maven 2' || folibRepository.layout === 'Raw'">
+              v-if="folibRepository.layout === 'Maven 2' || folibRepository.layout === 'Raw' || folibRepository.layout === 'debian'">
               <a-radio-group v-decorator="[
                 'type',
                 {
@@ -778,12 +787,41 @@
                   getValueFromEvent: normFile,
                 },
               ]" name="files" :multiple="uploadType === 1 ? true : false" :beforeUpload="beforeUpload" list-type="text" @change="onFileChange"
-                :accept="uploadType === 1 ? (folibRepository.layout === 'Raw' ? '*' : folibRepository.layout === 'npm' ? '.tgz' : folibRepository.layout === 'pub' ? '.gz' :'.jar,.war,.pom') : ('.zip')">
+                :accept="uploadType === 1 ? (folibRepository.layout === 'Raw' ? '*' : folibRepository.layout === 'npm' ? '.tgz' : folibRepository.layout === 'pub' ? '.gz' : folibRepository.layout === 'debian' ? '.deb' :'.jar,.war,.pom') : ('.zip')">
                 <a-button>
                   <a-icon type="upload" />
                   {{ $t('Store.SelectFile') }}</a-button>
               </a-upload>
-            </a-form-item>
+            </a-form-item>  
+            <div v-if="folibRepository.layout === 'debian' && uploadType === 1 ">
+              <a-form-model-item  class="mb-10" label="distribution" :colon="false" prop="distribution">
+                <a-input :placeholder="$t('Store.PleaseEnter') + 'distribution'"  v-decorator="[
+                'distribution',
+                {
+                  rules: [{ required: true, message: $t('Store.PleaseEnter')+ 'distribution' }],
+                },
+              ]"  />
+              </a-form-model-item>
+              <a-form-model-item  class="mb-10" label="component" :colon="false"
+                prop="component">
+                <a-input :placeholder="$t('Store.PleaseEnter') + 'component'" v-decorator="[
+                'component',
+                {
+                  rules: [{ required: true, message: $t('Store.PleaseEnter')+ 'component' }],
+                },
+              ]" />
+              </a-form-model-item>
+              <a-form-model-item  class="mb-10" label="architecture" :colon="false" prop="architecture">
+                <a-input :placeholder="$t('Store.PleaseEnter') + 'architecture'"  v-decorator="[
+                'architecture',
+                {
+                  rules: [{ required: true, message: $t('Store.PleaseEnter')+ 'architecture' }],
+                },
+              ]"  />
+              </a-form-model-item>
+            </div>
+    
+
             <a-form-item class="tags-field mb-10" prop="targetPath" :colon="false"
               v-if="(!targetDirectoryExcludeLayout.includes(folibRepository.layout)) || uploadType === 2">
               <template slot="label">
@@ -962,8 +1000,6 @@
 
     <MavenUpload v-if="mavenUploadVisible" :modelVisible="mavenUploadVisible" :folibRepository="this.folibRepository"
       @mavenUploadClose="mavenUploadClose" />
-    <DebianUpload  ref="debianmodal" :folibRepository="folibRepository"/>
-    <DebianBatchUpload  ref="debianBatchModal" :folibRepository="folibRepository"/>
 
     <div v-if="showContextMenu" :style="contextMenuStyle" class="context-menu">
       <a-menu @click="handleRightClick">
@@ -1072,8 +1108,6 @@ import BaseData from './Data.vue'
 import UseDoc from './UseDoc.vue'
 import AddMetadata from './AddMetadata.vue'
 import MavenUpload from '../MavenUpload/index.vue'
-import DebianUpload from '../Debian/DebianUpload.vue'
-import DebianBatchUpload from '../Debian/DebianBatchUpload.vue'
 import Search from '../Search/index.vue'
 import { PrismEditor } from 'vue-prism-editor'
 import 'vue-prism-editor/dist/prismeditor.min.css' // import the styles somewhere
@@ -1105,8 +1139,6 @@ export default {
     AddMetadata,
     MavenUpload,
     Search,
-    DebianUpload,
-    DebianBatchUpload,
     CircleProgress,
     leftTree
   },
@@ -1524,7 +1556,8 @@ export default {
       this.$nextTick(() => {
         if (this.$refs.rpmUploadForm) {
           this.rpmUploadForm.setFieldsValue({
-            repostoryId: this.folibRepository.id
+            repostoryId: this.folibRepository.id,
+            type:1
           })
         }
       })
@@ -1556,7 +1589,7 @@ export default {
       this.$nextTick(() => {
         if (this.$refs.uploadForm) {
           let targetPath = ''
-          if (this.folibRepository.layout === 'Raw') {
+          if (this.folibRepository.layout === 'Raw'|| this.folibRepository.layout==='debian') {
             if (this.currentTreeNode.type === 'dir') {
               targetPath = this.currentTreeNode.artifactPath
             } else if (this.currentTreeNode.type === 'file') {
@@ -1572,6 +1605,9 @@ export default {
             repostoryId: this.folibRepository.id,
             type: 1,
             targetPath: targetPath,
+            distribution:'',
+            component:'',
+            architecture :'',
           })
         }
       })
@@ -1649,6 +1685,46 @@ export default {
       e.preventDefault()
       this.rpmUploadForm.validateFields((err, values) => {
         if (!err) {
+          if (this.uploadType === 2) {
+            if (values.files.length > 1) {
+              this.$notification['warning']({
+                message: this.$t('Store.UploadZipPackage'),
+                description: ''
+              })
+              return false
+            }
+            const file = values.files[0]
+            const sizeLimit = file.size > this.convertToBytes(this.uploadMaxSize.size, this.uploadMaxSize.unit)
+            if (sizeLimit) {
+              this.$notification.warning({
+                message: this.$t('Store.fileSize') + this.uploadMaxSize.size + this.uploadMaxSize.unit
+              })
+              return false
+            }
+            const fileFamart = file.name.split('.')[
+              file.name.split('.').length - 1
+            ]
+            if (fileFamart !== 'zip') {
+              this.$notification.warning({
+                message: this.$t('Store.ZIPFormat')
+              })
+              return false
+            }
+            if (typeof values.targetPath === 'undefined') {
+              values.targetPath = ''
+            } else {
+              values.targetPath = values.targetPath
+                .trim()
+                .replace(/^\/+|\/+$/g, '')
+            }
+            // this.handlerUploadZipFile(
+            //   values.targetPath,
+            //   file.name,
+            //   file.originFileObj
+            // )
+             //this.onFileChange(values.targetPath, file.name, values.files[0].originFileObj)
+             this.uploadFiles(values.targetPath,true,null,null,null)
+          } else{
           if (values.files.length > 10) {
             this.$notification['warning']({
               message: this.$t('Store.UploadCount'),
@@ -1680,6 +1756,7 @@ export default {
           //   )
           // })
             this.uploadFiles(values.targetPath,false,null,null,null)
+          }
           this.successMsg(this.$t('Store.CheckProgress'))
           this.uploadRpmFormModalClose()
         }
@@ -1883,7 +1960,17 @@ export default {
             //   )
             //    this.onFileChange(values.targetPath, item.name, item.originFileObj)
             // })
-            this.uploadFiles(values.targetPath,false,null,null,null)
+            let metaStr=null;
+             if(this.folibRepository.layout==='debian'){
+              let metadata={}
+              console.log(values)
+              metadata.distribution=values.distribution
+              metadata.component=values.component
+              metadata.architecture=values.architecture
+              metaStr=JSON.stringify(metadata)
+              console.log("debian的坐标为",metaStr)
+             }
+            this.uploadFiles(values.targetPath,false,metaStr,null,null)
           }
           this.successMsg(this.$t('Store.CheckProgress'))
           this.uploadFormModalClose()
@@ -2993,12 +3080,6 @@ export default {
       this.operationForm.setFieldsValue({
         targetRepositories: [],
       })
-    },
-    handleDebianUpload() {
-      this.$refs.debianmodal.openModal();
-    },
-    handleDebianBatchUpload() {
-      this.$refs.debianBatchModal.openModal();
     },
     onFileChange(event) {
         //console.log('onFileChange', event)

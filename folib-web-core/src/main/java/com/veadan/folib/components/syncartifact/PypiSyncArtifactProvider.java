@@ -336,10 +336,6 @@ public class PypiSyncArtifactProvider implements SyncArtifactProvider {
                             batchDownload(item, syncArtifactForm, pathList, threadPoolTaskExecutor);
                         }
                     }
-                    // 清除已完成的文件
-                    if (flag) {
-//                        Files.delete(item);
-                    }
                 } catch (Exception ex) {
                     log.error("Handle path [{}] lines [{}] error [{}] ms", item.toString(), lines, ExceptionUtils.getStackTrace(ex));
                 }
@@ -512,11 +508,11 @@ public class PypiSyncArtifactProvider implements SyncArtifactProvider {
                 }
                 repository.setSyncDirPath(dirPath);
                 repository.setTotalArtifact(syncArtifactForm.getTotalArtifact());
-                repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
-                // 更新状态
-                migrateInfoService.updateById(repository);
-                distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
             }
+            repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
+            // 更新状态
+            migrateInfoService.updateById(repository);
+            distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
             String path = repository.getSyncDirPath();
             if (syncArtifactForm.getSyncMeta() == 1) {
                 JfrogPropertySyncer syncer = new JfrogPropertySyncer(syncArtifactForm.getApiUrl(), syncArtifactForm.getUsername(), syncArtifactForm.getPassword());

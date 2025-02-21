@@ -33,6 +33,7 @@ import com.veadan.folib.components.thirdparty.foeyes.enums.UploadStatusEnum;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.configuration.MutableMetadataConfiguration;
+import com.veadan.folib.constant.DebianConstant;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.ResponseMessage;
 import com.veadan.folib.controllers.cluster.dto.SyncMetadataDto;
@@ -53,6 +54,8 @@ import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.forms.scanner.*;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
 import com.veadan.folib.gremlin.entity.vo.ArtifactVo;
+import com.veadan.folib.indexer.ArtifactorySearch;
+import com.veadan.folib.indexer.DebianReleaseMetadataIndexer;
 import com.veadan.folib.mapper.RoleResourceRefMapper;
 import com.veadan.folib.metadata.indexer.RpmRepoIndexer;
 import com.veadan.folib.promotion.PromotionUtil;
@@ -60,6 +63,7 @@ import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
+import com.veadan.folib.providers.layout.DebianLayoutProvider;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.providers.layout.LayoutProvider;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
@@ -107,6 +111,7 @@ import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
 import tk.mybatis.mapper.entity.Example;
 
+import javax.annotation.Resource;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
@@ -124,6 +129,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -914,6 +920,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             }
             log.info("压缩包内扫描到的目录 [{}]", dirList);
             List<File> itemList, fileList = Lists.newArrayList();
+            List<String> distributions = Lists.newArrayList();
             for (String dir : dirList) {
                 itemList = getNFSFiles(dir, rootRepositoryPath.getRepository());
                 if (CollectionUtils.isNotEmpty(itemList)) {
@@ -941,6 +948,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                             log.warn("制品路径 [{}] 不是一个制品文件,跳过", repositoryPath.toString());
                             continue;
                         }
+                        if(DebianLayoutProvider.ALIAS.equals(rootRepositoryPath.getRepository().getLayout())&&!filePath.endsWith(".deb")){
+                            distributions.add(filePath);
+                        }
                         try (FileInputStream fileInputStream = new FileInputStream(artifactFile)) {
                             flag = storeArtifact(repositoryPath, fileInputStream);
                             if (flag) {
@@ -949,9 +959,23 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         }
                     } catch (Exception ex) {
                         log.error("路径 [{}] 错误 [{}] ", artifactFile.getAbsolutePath(), ExceptionUtils.getStackTrace(ex));
+                        throw new RuntimeException(ex.getMessage());
                     }
                     statusInfo.setSuccess(successTotal);
                     statusInfo.setFail(statusInfo.getTotal() - statusInfo.getSuccess());
+                }
+                if(!distributions.isEmpty()){
+                    for (String distribution : distributions) {
+                        Matcher matcher = DebianConstant.PACKAGE_PATTERN.matcher(distribution);
+                        if(matcher.matches()){
+                            String codename = matcher.group("codename");
+                            (new DebianReleaseMetadataIndexer(rootRepositoryPath.getRepository(), Collections.emptyList(), repositoryPathResolver, null)).indexRelease(codename);
+                        }
+                    }
+                }
+                if (ProductTypeEnum.Rpm.getFoLibraryName().equals(rootRepositoryPath.getRepository().getLayout())) {
+                    RpmRepoIndexer rpmRepoIndexer = new RpmRepoIndexer(repositoryPathResolver, artifactManagementService, parentPath);
+                    rpmRepoIndexer.indexWriter(rootRepositoryPath.getRepository());
                 }
             }
             String status = JSONObject.toJSONString(statusInfo);
@@ -1880,10 +1904,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 artifactMetadataService.rebuildMetadata(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), repositoryPath.getArtifactEntry().getArtifactPath());
             } catch (Exception ex) {
                 log.error("StoreArtifact rebuildMetadata repositoryPath：{}，error：{}", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
+                throw ex;
             }
         } catch (Exception ex) {
             log.error("StoreArtifact repositoryPath：{} error：{}", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
-            return false;
+            throw  new RuntimeException(ex);
         }
         return true;
     }

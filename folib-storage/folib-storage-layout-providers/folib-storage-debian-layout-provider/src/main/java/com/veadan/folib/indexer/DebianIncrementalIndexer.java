@@ -130,6 +130,7 @@ public class DebianIncrementalIndexer {
         log.debug("Indexing Release file for distribution {} on repo {}", distribution, repo.getId());
         new DebianReleaseMetadataIndexer(repo, indicesToDelete, resolver, artifactorySearch).indexRelease(distribution);
         log.trace("Index of Release file for distribution {} in repo {} ", distribution, repo.getId());
+
     }
 
     private Set<String> getAddEvents(Repository repo, List<DebianIndexEvent> events, DebianPackagesContext context) {

@@ -158,7 +158,7 @@ export default {
     'EngineerAllocation': '工程配置',
     'validCurrent': '该方式只对当前工程生效',
     'npmrcCode': '需要在仓库下创建.npmrc文件并填入如下：',
-    'RPMOperation': `在/etc/yum.repos.d/中添加一个folib.repo文件,镜像服务器为阿里云,操作如下:`,
+    'RPMOperation': '在/etc/yum.repos.d/中添加一个folib.repo文件,镜像服务器为阿里云,操作如下:',
     'folibOperation': '将folib helm仓添加到本地操作步骤',
     'ChartPackage': '上传Chart包到Helm仓库',
     'HelmPlugin': '安装 helm-cm-push插件',
@@ -356,6 +356,7 @@ export default {
     // Debian
     'DebianGlobalConfiguration': '首先需要将仓库相关信息添加至"/etc/apt/sources.list文件， 执行如下命令：',
     'DebianPermissionConfiguration': '如需要将凭证信息添加至"/etc/apt/sources.list"文件，执行如下命令：',
+    'DebianExampleTitle':'以下是debian示例 Ubuntu 20.04 LTS (Focal Fossa):',
     'DebianCommandOperation':'配置完毕后使用如下命令安装包：',
     'CargoGlobalConfiguration': '要将Cargo客户端指向FoLib仓库，请编辑Cargo主目录下的配置文件（例如~/.cargo/config.toml）：',
     'CargoGlobalConfigurationToken': '为API调用（如publish和yank）设置凭据，请将以下部分添加到Cargo主目录下的凭据文件（例如~/.cargo/credentials.toml）：',

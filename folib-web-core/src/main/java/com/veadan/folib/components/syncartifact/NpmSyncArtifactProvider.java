@@ -25,6 +25,7 @@ import com.veadan.folib.services.MigrateInfoService;
 import com.veadan.folib.services.NpmService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.utils.NpmUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -442,7 +443,7 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
                             //索引
                             NpmArtifactCoordinates npmArtifactCoordinates = NpmArtifactCoordinates.resolveName(null, artifactPath);
                             String packageId = npmArtifactCoordinates.getId();
-                            npmService.packageFeed(rootRepositoryPath.getRepository(), packageId, packageId);
+                            npmService.packageFeed(rootRepositoryPath.getRepository(), packageId,  NpmUtils.getPackageMetadataPath(packageId));
                         }
                     } catch (Exception ex) {
                         log.error("Batch download path [{}] storageId [{}] repositoryId [{}] artifactPath [{}] error [{}]", path.toString(), storageId, repositoryId, artifactPath, ExceptionUtils.getStackTrace(ex));
@@ -481,11 +482,11 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
                 }
                 repository.setSyncDirPath(dirPath);
                 repository.setTotalArtifact(syncArtifactForm.getTotalArtifact());
-                repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
-                // 更新状态
-                migrateInfoService.updateById(repository);
-                distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
             }
+            repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
+            // 更新状态
+            migrateInfoService.updateById(repository);
+            distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
             String path = repository.getSyncDirPath();
             if (syncArtifactForm.getSyncMeta() == 1) {
                 JfrogPropertySyncer syncer = new JfrogPropertySyncer(syncArtifactForm.getApiUrl(), syncArtifactForm.getUsername(), syncArtifactForm.getPassword());

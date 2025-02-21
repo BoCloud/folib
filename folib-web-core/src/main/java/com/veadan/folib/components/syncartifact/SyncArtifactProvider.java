@@ -7,9 +7,6 @@ import com.veadan.folib.domain.migrate.SyncArtifactForm;
  * @author leipenghui
  **/
 public interface SyncArtifactProvider {
-
-    String cachePrefix= "ARTIFACT_MIGRATE:BROWSE_SYNC:";
-
     /**
      * 注册
      */
