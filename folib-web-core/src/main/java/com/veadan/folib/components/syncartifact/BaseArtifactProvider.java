@@ -366,7 +366,6 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider {
             threadPoolTaskExecutor.shutdown();
         }
         int total = syncUtils.getDirectoryCount(syncArtifactForm.getStoreAndRepo());
-        syncArtifactForm.setSyncMount(total);
         swTotal.stop();
         log.info("同步目录元数据完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个目录元数据，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), total, swTotal.getTotalTimeSeconds());
     }
