@@ -72,7 +72,10 @@ public class SyncUtils {
 
     public void resetArtifact(String storeAndRepo){
         distributedCounterComponent.getAtomicLong(ARTIFACT_COUNT + storeAndRepo).set(0L);
+    }
 
+    public void resetDirectoryCount(String storeAndRepo){
+        distributedCounterComponent.getAtomicLong(DIRECTORY_COUNT + storeAndRepo).set(0L);
     }
 
     public void indexIncrease(String storeAndRepo) {

@@ -88,6 +88,7 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider {
             // 更新状态
             migrateInfoService.updateById(repository);
             syncUtils.resetArtifact(syncArtifactForm.getStoreAndRepo());
+            syncUtils.resetDirectoryCount(syncArtifactForm.getStoreAndRepo());
             String path = repository.getSyncDirPath();
             if (syncArtifactForm.getSyncMeta() == 1) {
                 JfrogPropertySyncer syncer = new JfrogPropertySyncer(syncArtifactForm.getApiUrl(), syncArtifactForm.getUsername(), syncArtifactForm.getPassword());
@@ -303,6 +304,71 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider {
         syncArtifactForm.setSyncMount(total);
         swTotal.stop();
         log.info("【{}】包同步完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个制品，耗时 [{}] 秒", getLayout(), syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), total, swTotal.getTotalTimeSeconds());
+        handlerDirectoryMetadata(dirPath, syncArtifactForm);
+    }
+
+    private void handlerDirectoryMetadata(String dirPath, SyncArtifactForm syncArtifactForm) {
+        StopWatch swTotal = new StopWatch();
+        swTotal.start();
+        Path path = Path.of(dirPath);
+        if (!Files.exists(path) || !Files.isDirectory(path)) {
+            return;
+        }
+        int batch = 100;
+        if (Objects.nonNull(syncArtifactForm.getBatch())) {
+            batch = syncArtifactForm.getBatch();
+        }
+        int availableCores = syncArtifactForm.getMaxThreadNum() == null ? syncUtils.getDefaultThreadNums() : syncArtifactForm.getMaxThreadNum();
+        String levelPrefix = "level_";
+        ThreadPoolTaskExecutor threadPoolTaskExecutor = syncUtils.createThreadPool("browseSync:" + syncArtifactForm.getStoreAndRepo(), availableCores, availableCores);
+        try (Stream<Path> pathStream = Files.list(path)) {
+            int finalBatch = batch;
+            pathStream.filter(item -> Files.isRegularFile(item) && item.getFileName().toString().startsWith(levelPrefix)).forEach(item -> {
+                StopWatch swBatch = new StopWatch();
+                swBatch.start();
+                String currentLine = "";
+                long lines = 0;
+                try {
+                    List<String> pathList = Lists.newArrayList();
+                    try (LineIterator lineIterator = FileUtils.lineIterator(item.toFile(), "UTF-8")) {
+                        while (lineIterator.hasNext()) {
+                            try {
+                                lines++;
+                                currentLine = lineIterator.nextLine();
+                                if (StringUtils.isBlank(currentLine)) {
+                                    continue;
+                                }
+                                currentLine = StringUtils.removeEnd(StringUtils.removeStart(currentLine, GlobalConstants.SEPARATOR), GlobalConstants.SEPARATOR);
+                                if (StringUtils.isBlank(currentLine)) {
+                                    continue;
+                                }
+                                pathList.add(currentLine);
+                                if (pathList.size() == finalBatch) {
+                                    batchDownload(item, syncArtifactForm, pathList, threadPoolTaskExecutor);
+                                }
+                            } catch (Exception ex) {
+                                log.error(ExceptionUtils.getStackTrace(ex));
+                            }
+                        }
+                        if (CollectionUtils.isNotEmpty(pathList)) {
+                            batchDownload(item, syncArtifactForm, pathList, threadPoolTaskExecutor);
+                        }
+                    }
+                } catch (Exception ex) {
+                    log.error("Handle path [{}] lines [{}] error [{}] ms", item.toString(), lines, ExceptionUtils.getStackTrace(ex));
+                }
+                swBatch.stop();
+                log.info("Handle path [{}] lines [{}] finished take time [{}] s", item, lines, swBatch.getTotalTimeSeconds());
+            });
+        } catch (Exception ex) {
+            log.error("Error [{}]", ExceptionUtils.getStackTrace(ex));
+        } finally {
+            threadPoolTaskExecutor.shutdown();
+        }
+        int total = syncUtils.getDirectoryCount(syncArtifactForm.getStoreAndRepo());
+        syncArtifactForm.setSyncMount(total);
+        swTotal.stop();
+        log.info("同步目录元数据完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个目录元数据，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), total, swTotal.getTotalTimeSeconds());
     }
 
     protected void batchDownload(Path path, SyncArtifactForm form, List<String> artifactPathList, ThreadPoolTaskExecutor threadPoolTaskExecutor) {
