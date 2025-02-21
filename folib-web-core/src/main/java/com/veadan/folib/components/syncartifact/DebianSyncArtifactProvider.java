@@ -114,9 +114,9 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
     @PostConstruct
     @Override
     public void register() {
-        syncArtifactProviderRegistry.addProvider(ArtifactSyncTypeEnum.DEBIAN.getType(), this);
-        log.info("Registered sync artifact '{}' with alias '{}'.",
-                getClass().getCanonicalName(), ArtifactSyncTypeEnum.DEBIAN.getType());
+//        syncArtifactProviderRegistry.addProvider(ArtifactSyncTypeEnum.DEBIAN.getType(), this);
+//        log.info("Registered sync artifact '{}' with alias '{}'.",
+//                getClass().getCanonicalName(), ArtifactSyncTypeEnum.DEBIAN.getType());
     }
 
     @Override
