@@ -13,6 +13,7 @@ import com.google.cloud.tools.jib.api.Jib;
 import com.google.cloud.tools.jib.api.RegistryImage;
 import com.google.cloud.tools.jib.api.TarImage;
 import com.veadan.folib.artifact.MavenArtifactUtils;
+import com.veadan.folib.artifact.coordinates.DebianArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.PubArtifactCoordinates;
 import com.veadan.folib.components.DistributedCacheComponent;
@@ -27,6 +28,7 @@ import com.veadan.folib.enums.UploadTypeEnum;
 import com.veadan.folib.extractor.CargoIndex;
 import com.veadan.folib.extractor.CargoMetadataExtractor;
 import com.veadan.folib.extractor.CargoMetadataIndexer;
+import com.veadan.folib.indexer.DebianIncrementalIndexer;
 import com.veadan.folib.layout.providers.CargoLayoutProvider;
 import com.veadan.folib.metadata.indexer.RpmRepoIndexer;
 import com.veadan.folib.model.CargoMetadata;
@@ -47,6 +49,7 @@ import com.veadan.folib.services.impl.FileStreamMultipartFile;
 import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.CommonUtils;
+import com.veadan.folib.util.DebianUtils;
 import com.veadan.folib.util.MessageDigestUtils;
 import com.veadan.folib.utils.CargoConstants;
 import com.veadan.folib.utils.CargoUtil;
@@ -253,7 +256,10 @@ public class ArtifactUploadTask implements Callable<String> {
                 handlerRpmLayoutUpload(this.storageId, this.repositoryId,this.file);
             }else if(CargoLayoutProvider.ALIAS.equals(layout)){
                 handlerCargoLayoutUpload(this.storageId,this.repositoryId,this.file);
-            } else {
+            }else if(DebianLayoutProvider.ALIAS.equals(layout)){
+                handlerDebianLayoutUpload(this.storageId,this.repositoryId,this.file,this.metaData,this.fileRelativePath);
+
+            }else {
                 promotionUtil.setMetaData(repositoryPath, metaData);
                 artifactManagementService.store(repositoryPath, is);
             }
@@ -905,6 +911,25 @@ public class ArtifactUploadTask implements Callable<String> {
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
+    }
+
+    private void handlerDebianLayoutUpload(final String storageId, final String repositoryId,final MultipartFile multipartFile,String metaData,String path){
+        try {
+            String filename = multipartFile.getOriginalFilename();
+            String debianPath = path+ filename;
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, debianPath);
+            try (InputStream is = multipartFile.getInputStream()) {
+//                DebianUtils.getArrtString()
+                artifactManagementService.store(repositoryPath, is);
+            }
+//            new DebianIncrementalIndexer()
+
+
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+        }
+
+
     }
 
     private void handlerCargoLayoutUpload(final String storageId, final String repositoryId, final MultipartFile multipartFile) {

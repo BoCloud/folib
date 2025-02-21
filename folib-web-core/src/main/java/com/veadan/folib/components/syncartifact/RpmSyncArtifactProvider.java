@@ -214,12 +214,11 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
                 }
                 repository.setSyncDirPath(dirPath);
                 repository.setTotalArtifact(syncArtifactForm.getTotalArtifact());
-                repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
-                migrateInfoService.updateById(repository);
-                distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
             }
+            repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
+            migrateInfoService.updateById(repository);
+            distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
             String path = repository.getSyncDirPath();
-
             if (syncArtifactForm.getSyncMeta() == 1) {
                 JfrogPropertySyncer syncer = new JfrogPropertySyncer(syncArtifactForm.getApiUrl(), syncArtifactForm.getUsername(), syncArtifactForm.getPassword());
                 syncArtifactForm.setSyncer(syncer);

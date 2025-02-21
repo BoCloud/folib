@@ -44,6 +44,15 @@
         </a-row>
         <hr v-if="i.fields.length > 2" class="gradient-line my-10">
         <a-row type="flex" align="middle">
+          <div v-if="i.isSetted.jobClass.includes('SyncRemoteDebianCronJob')">
+            <div class="mt-10 ml-15" >
+              <a-tooltip @click="addDebainScope(i.fields)">
+                <template slot="title">{{ $t('Cron.AddSycnScope') }}</template>
+                <a-icon type="plus-circle" theme="filled" class="cursor-pointer package-name-add mr-20"
+                  :style="{ fontSize: '28px', color: '#1890FF' }" />
+              </a-tooltip>
+            </div>
+          </div>
           <a-col v-if="i.fields.length > 2" style="margin-right: 15px">
             <p class="font-semibold mb-0 ml-10">{{ $t('Cron.OtherParameters') }}</p>
           </a-col>
@@ -51,14 +60,27 @@
             <div v-for="(f, index) in i.fields" :key="index" class="mt-10">
               <a-col v-if="f.name !== 'storageId' && f.name !== 'repositoryId' && f.name !=='storageCondition'" class="ml-auto">
                 <span style="margin-left: 15px" class="mr-15" v-if="f.aliasName && f.aliasName.length > 0">{{ f.aliasName }}</span>
-                <span style="margin-left: 15px" class="mr-15" v-else-if="!f.name.includes(artifactPathKey)">{{ f.name }}</span>
+                <span style="margin-left: 15px" class="mr-15" v-else-if="!f.name.includes(artifactPathKey)&&!f.name.includes(debianScopeKey)">{{ f.name }}</span>
                 <span style="margin-left: 15px" class="mr-15" v-else-if="f.name.includes(artifactPathKey)">{{ '制品目录'}}</span>
+                <span style="margin-left: 15px" class="mr-15" v-else-if="f.name.includes(debianScopeKey)">{{ $t('Cron.SyncScope') }}</span>
                 <a-input :min="1" v-if="f.name.includes(artifactPathKey)" v-model="f.label"
                 size="small" class="font-regular text-sm text-dark mr-10" style="width: 120px;"/>
                 <a-input-number :min="1" v-if="f.name.includes(artifactPathKey)" v-model="f.value"
                 size="small" class="font-regular text-sm text-dark" style="width: 120px;" />
                 <a-button v-if="f.name.includes(artifactPathKey)" @click="deleteArtifactPath(i.fields, index)" style="margin-left: 15px"
                 type="danger" size="small" shape="circle" icon="delete" />
+
+                <a-input :min="1" v-if="f.name.includes(debianScopeKey)" v-model="f.codename"
+                size="small" class="font-regular text-sm text-dark mr-10" style="width: 120px;"/>
+                <a-input :min="1" v-if="f.name.includes(debianScopeKey)" v-model="f.component"
+                size="small" class="font-regular text-sm text-dark mr-10" style="width: 120px;"/>
+                <a-input :min="1" v-if="f.name.includes(debianScopeKey)" v-model="f.architecture"
+                size="small" class="font-regular text-sm text-dark mr-10" style="width: 120px;"/>
+              
+                <a-button v-if="f.name.includes(debianScopeKey)" @click="deleteDebainScope(i.fields, index)" style="margin-left: 15px"
+                type="danger" size="small" shape="circle" icon="delete" />
+
+
                 <a-input v-if="f.type === 'string'" v-model="f.value" size="small"
                   class="font-regular text-sm text-dark" style="width: 250px;" />
                 <a-input-number :min="1" v-if="f.type === 'int' && f.name === 'numberToKeep'" v-model="f.value"
@@ -140,7 +162,8 @@ export default {
           value: "day"
         }
       ],
-      artifactPathKey: "artifactPath:"
+      artifactPathKey: "artifactPath:",
+      debianScopeKey:"debianScopeKey"
     }
   },
   computed: {
@@ -211,6 +234,12 @@ export default {
                   if (key.includes(this.artifactPathKey)) {
                     c.fields.push({name: key, value: s.properties[key], label: key.replace(this.artifactPathKey, "")})
                   }
+                  if(key.includes(this.debianScopeKey)){
+                    const value =s.properties[key]
+                    value.split(',').map(part => part.split(':')).forEach(item=>{
+                      c.fields.push({name: key, codename: item[0], component: item[1],architecture:item[2],value:key})    
+                    })
+                  }
                 }
               }
             })
@@ -261,8 +290,12 @@ export default {
           return false
         }
         let fiedsNew = []
+        let scopeValue='';
         i.fields.forEach(f => {
           if (f.value !== null && f.value !== undefined) {
+            if(f.name === this.debianScopeKey){
+              scopeValue=scopeValue+f.codename+":"+f.component+":"+f.architecture+","
+            }else{
             if (f.label) {
               if (f.value !== '') {
                 fiedsNew.push({ name: this.artifactPathKey + f.label, value: f.value })
@@ -271,7 +304,12 @@ export default {
               fiedsNew.push({ name: f.name, value: f.value })
             }
           }
+          }
         })
+        if(scopeValue!==''){
+          const value=scopeValue.slice(0, -1);
+          fiedsNew.push({ name: this.debianScopeKey, value: value })
+        }
         i.isSetted.fields = fiedsNew
         if (i.isSetted.uuid) {
           let uuid = i.isSetted.uuid
@@ -336,7 +374,14 @@ export default {
     },
     deleteArtifactPath(data, index) {
       data.splice(index, 1)
+    },
+    addDebainScope(data){
+      data.push({name: this.debianScopeKey, codename: "", component: "",architecture:"",value:this.debianScopeKey})
+    },
+    deleteDebainScope(data,index){
+      data.splice(index, 1)
     }
+
   },
 };
 </script>

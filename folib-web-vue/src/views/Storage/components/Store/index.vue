@@ -130,22 +130,22 @@
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
-                  <a v-if="uploadEnabled && folibRepository.layout === 'debian'"><small style="padding-right: 20px"
+                  <!-- <a v-if="uploadEnabled && folibRepository.layout === 'debian'"><small style="padding-right: 20px"
                       @click="handleDebianUpload">
                     {{ $t('Store.Upload') }}
                       <a-icon type="cloud-upload" />
                     </small>
-                  </a>
-                  <a v-if="uploadEnabled && folibRepository.layout !== 'rpm' &&  folibRepository.layout !== 'GitLfs' && folibRepository.layout !== 'GitLfs' && folibRepository.subLayout !== 'ohpm' && folibRepository.subLayout !== 'go' && folibRepository.layout !== 'debian' && folibRepository.layout !== 'cargo'"><small style="padding-right: 20px" @click="handleUpload">
+                  </a> -->
+                  <a v-if="uploadEnabled && folibRepository.layout !== 'rpm' &&  folibRepository.layout !== 'GitLfs' && folibRepository.layout !== 'GitLfs' && folibRepository.subLayout !== 'ohpm' && folibRepository.subLayout !== 'go' && folibRepository.layout !== 'cargo'"><small style="padding-right: 20px" @click="handleUpload">
                       {{ $t('Store.BatchUpload') }}
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
-                  <a v-if="uploadEnabled && folibRepository.layout === 'debian'"><small style="padding-right: 20px" @click="handleDebianBatchUpload">
+                  <!-- <a v-if="uploadEnabled && folibRepository.layout === 'debian'"><small style="padding-right: 20px" @click="handleDebianBatchUpload">
                       {{ $t('Store.BatchUpload') }}
                       <a-icon type="cloud-upload" />
                     </small>
-                  </a>
+                  </a> -->
                   <a v-if="uploadEnabled && folibRepository.layout === 'cargo'"><small style="padding-right: 20px" @click="handleCargoBatchUpload">
                         {{ $t('Store.BatchUpload') }}
                         <a-icon type="cloud-upload" />
@@ -763,7 +763,7 @@
               </a-input>
             </a-form-item>
             <a-form-item :label="$t('Store.UploadMode')"
-              v-if="folibRepository.layout === 'Maven 2' || folibRepository.layout === 'Raw'">
+              v-if="folibRepository.layout === 'Maven 2' || folibRepository.layout === 'Raw' || folibRepository.layout === 'debian'">
               <a-radio-group v-decorator="[
                 'type',
                 {
@@ -797,7 +797,21 @@
                   <a-icon type="upload" />
                   {{ $t('Store.SelectFile') }}</a-button>
               </a-upload>
-            </a-form-item>
+            </a-form-item>  
+            <div v-if="folibRepository.layout === 'debian'">
+              <a-form-model-item  class="mb-10" label="distribution" :colon="false" prop="distribution">
+                <a-input :placeholder="$t('Store.PleaseEnter') + 'distribution'" v-model="uploadForm.distribution" required />
+              </a-form-model-item>
+              <a-form-model-item  class="mb-10" label="component" :colon="false"
+                prop="component">
+                <a-input :placeholder="$t('Store.PleaseEnter') + 'component'" v-model="uploadForm.component" required/>
+              </a-form-model-item>
+              <a-form-model-item  class="mb-10" label="architecture" :colon="false" prop="architecture">
+                <a-input :placeholder="$t('Store.PleaseEnter') + 'architecture'" v-model="uploadForm.architecture" required />
+              </a-form-model-item>
+            </div>
+    
+
             <a-form-item class="tags-field mb-10" prop="targetPath" :colon="false"
               v-if="(!targetDirectoryExcludeLayout.includes(folibRepository.layout)) || uploadType === 2">
               <template slot="label">

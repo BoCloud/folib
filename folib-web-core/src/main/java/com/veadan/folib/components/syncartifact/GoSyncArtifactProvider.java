@@ -1,15 +1,20 @@
 package com.veadan.folib.components.syncartifact;
 
+import com.veadan.folib.artifact.coordinates.GoArtifactCoordinates;
+import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.domain.migrate.SyncArtifactForm;
 import com.veadan.folib.enums.ArtifactSyncTypeEnum;
 
 import com.veadan.folib.services.MigrateInfoService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.inject.Inject;
+import java.io.File;
 
 /**
  * @author huayanjun
@@ -18,10 +23,16 @@ import javax.inject.Inject;
 
 @Slf4j
 @Component
-public class GoSyncArtifactProvider implements SyncArtifactProvider{
+public class GoSyncArtifactProvider extends BaseArtifactProvider{
 
-    @Inject
+    @Resource
     private SyncArtifactProviderRegistry syncArtifactProviderRegistry;
+
+    @Autowired
+    public GoSyncArtifactProvider(SyncUtils syncUtils,MigrateInfoService migrateInfoService) {
+        super(syncUtils,migrateInfoService);
+    }
+
     @Override
     @PostConstruct
     public void register() {
@@ -29,21 +40,16 @@ public class GoSyncArtifactProvider implements SyncArtifactProvider{
         log.info("Registered sync artifact '{}' with alias '{}'.",
                 getClass().getCanonicalName(), ArtifactSyncTypeEnum.GO.getType());
 
-
     }
 
     @Override
-    public void browseFullSync(SyncArtifactForm syncArtifactForm) {
-
+    public String getLayout() {
+        return GoArtifactCoordinates.LAYOUT_NAME;
     }
 
-    @Override
-    public void fullSync(SyncArtifactForm syncArtifactForm) {
-
-    }
 
     @Override
-    public void batchBrowseSync(SyncArtifactForm syncArtifactForm) {
-
+    public boolean isArtifact(String url) {
+        return !url.endsWith(File.separator);
     }
 }

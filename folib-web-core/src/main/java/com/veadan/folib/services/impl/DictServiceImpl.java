@@ -263,5 +263,13 @@ public class DictServiceImpl implements DictService {
         }
     }
 
+    public List<Dict> selectByTypeAndKey(String type,String key){
+        Example example = Example.builder(Dict.class).build();
+        Example.Criteria criteria = example.createCriteria();
+        criteria.andEqualTo("dictType", type);
+        criteria.andEqualTo("dictKey", key);
+        return dictMapper.selectByExample(example);
+    }
+
 
 }

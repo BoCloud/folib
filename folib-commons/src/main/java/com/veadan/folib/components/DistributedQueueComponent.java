@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author huayanjun
@@ -24,9 +25,16 @@ public class DistributedQueueComponent {
         queue.put(message);
     }
 
+    // 会一直阻塞
     public String takeFromQueue(String queueName) throws InterruptedException {
         IQueue<String> queue = hazelcastInstance.getQueue(queueName);
         return queue.take();
+    }
+
+    // 超过指定时间，队列无数据会返回null
+    public String pollFromQueue(String queueName, long time,TimeUnit unit) throws InterruptedException {
+        IQueue<String> queue = hazelcastInstance.getQueue(queueName);
+        return queue.poll(time,unit);
     }
 
 }

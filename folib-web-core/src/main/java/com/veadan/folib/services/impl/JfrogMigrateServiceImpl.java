@@ -94,6 +94,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import javax.inject.Inject;
@@ -115,6 +116,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -202,7 +205,8 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
 
     private final static Map<String, List<Integer>> STATUS_MAPPING = new HashMap<>();
 
-    private final AtomicInteger BATH_COUNT = new AtomicInteger(0);
+
+    private static ThreadPoolExecutor executor;
 
     // 0-初始 1-排队 2-获取索引 3-同步制品 4-暂停 5-完成
     static {
@@ -210,8 +214,6 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         STATUS_MAPPING.put("migrating", List.of(MigrateStatusEnum.PAUSED.getStatus(), MigrateStatusEnum.QUEUING.getStatus(), MigrateStatusEnum.FETCHING_INDEX.getStatus(), MigrateStatusEnum.SYNCING_ARTIFACT.getStatus()));
         STATUS_MAPPING.put("completed", List.of(MigrateStatusEnum.COMPLETED.getStatus()));
     }
-
-    private final ExecutorService executorService = Executors.newFixedThreadPool(10);
 
     @Resource
     private DictServiceImpl dictService;
@@ -223,6 +225,11 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
 
     @Resource
     private DistributedTopicComponent distributedTopicComponent;
+
+    @PostConstruct
+    public void initThreadPool(){
+        executor=new ThreadPoolExecutor(1,1, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
+    }
 
 
     @Async
@@ -329,6 +336,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 exist.setSyncStatus(0);
                 exist.setTotalArtifact(0);
                 exist.setSuccessMount(0);
+                exist.setIndexFinish(0);
                 migrateInfoService.updateById(exist);
             }
         }
@@ -357,9 +365,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             // 修改状态
             migrateInfoService.updateById(info);
             try {
-                if(info.getIndexFinish()==null||info.getIndexFinish()==0){
-                    distributedQueueComponent.putToQueue(QUEUE_NAME, storeAndRepo);
-                }
+                distributedQueueComponent.putToQueue(QUEUE_NAME, storeAndRepo);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -398,7 +404,6 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         }
     }
 
-    //
     public void listenTask(String migrateId) {
         Dict dict = getDictByMigrateId(migrateId);
         if (Objects.isNull(dict)) {
@@ -406,13 +411,9 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         }
         ArtifactMigrateInfo info = JSON.parseObject(dict.getAlias(), ArtifactMigrateInfo.class);
         int batchSize = info.getBatchSize();
-        log.info("当前允许并发进程【{}】,现有已执行线程【{}】",batchSize,BATH_COUNT.get());
-        // 单实例控制并发
-        if (BATH_COUNT.incrementAndGet() > batchSize) {
-            BATH_COUNT.decrementAndGet();
-            return;
-        }
-        executorService.submit(() -> {
+        // 修改最大线程数为配置内容
+        executor.setMaximumPoolSize(batchSize);
+        executor.submit(() -> {
             taskHandler(migrateId, info);
         });
     }
@@ -421,7 +422,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         try {
             securityUtils.setAdminAuthentication();
             String pausedTask = PAUSED_QUEUE.poll();
-            String storeAndRepo = pausedTask == null ? distributedQueueComponent.takeFromQueue(QUEUE_NAME) : pausedTask;
+            String storeAndRepo = pausedTask == null ? distributedQueueComponent.pollFromQueue(QUEUE_NAME,10,TimeUnit.SECONDS) : pausedTask;
             while(storeAndRepo!=null){
                 String storageId = ConfigurationUtils.getStorageId(storeAndRepo, storeAndRepo);
                 String repositoryId = ConfigurationUtils.getRepositoryId(storeAndRepo);
@@ -437,26 +438,27 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 }
                 log.info("开始迁移存储空间{}的仓库{}",storageId,repositoryId);
                 SyncArtifactProvider syncArtifactProvider = syncArtifactProviderRegistry.getProvider(ArtifactSyncTypeEnum.resolveType(repository.getLayout()));
-                SyncArtifactForm form = new SyncArtifactForm();
-                form.setDom("a");
-                form.setRepositoryId(repositoryId);
-                form.setMigrateId(migrateId);
-                form.setStorageId(storageId);
-                form.setBrowseUrl(StringUtils.removeEnd(info.getBrowsePrefix(), GlobalConstants.SEPARATOR) + GlobalConstants.SEPARATOR + repositoryId);
-                form.setMaxThreadNum(info.getThreadNumber());
-                form.setApiUrl(info.getRemotePreUrl());
-                form.setUsername(info.getUsername());
-                form.setPassword(info.getPassword());
-                form.setSyncMeta(info.getSyncMeta());
-                syncArtifactProvider.batchBrowseSync(form);
+                if(syncArtifactProvider!=null){
+                    SyncArtifactForm form = new SyncArtifactForm();
+                    form.setDom("a");
+                    form.setRepositoryId(repositoryId);
+                    form.setMigrateId(migrateId);
+                    form.setStorageId(storageId);
+                    form.setBrowseUrl(StringUtils.removeEnd(info.getBrowsePrefix(), GlobalConstants.SEPARATOR) + GlobalConstants.SEPARATOR + repositoryId);
+                    form.setMaxThreadNum(info.getThreadNumber());
+                    form.setApiUrl(info.getRemotePreUrl());
+                    form.setUsername(info.getUsername());
+                    form.setPassword(info.getPassword());
+                    form.setSyncMeta(info.getSyncMeta());
+                    syncArtifactProvider.batchBrowseSync(form);
+                }
                 log.info("存储空间{}的仓库{}迁移结束",storageId,repositoryId);
                 pausedTask = PAUSED_QUEUE.poll();
-                storeAndRepo = pausedTask == null ? distributedQueueComponent.takeFromQueue(QUEUE_NAME) : pausedTask;
+                storeAndRepo = pausedTask == null ? distributedQueueComponent.pollFromQueue(QUEUE_NAME,10,TimeUnit.SECONDS) : pausedTask;
             }
         } catch (Exception e) {
             log.error("迁移出现异常{}",e.getMessage(),e);
         } finally {
-            BATH_COUNT.decrementAndGet();
             securityUtils.clearAuthentication();
         }
     }
@@ -998,13 +1000,13 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
 
     @PreDestroy
     public void shutdownExecutor() {
-        executorService.shutdown();
+        executor.shutdown();
         try {
-            if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
-                executorService.shutdownNow();
+            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
             }
         } catch (InterruptedException e) {
-            executorService.shutdownNow();
+            executor.shutdownNow();
             Thread.currentThread().interrupt();
         }
     }

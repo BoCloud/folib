@@ -42,8 +42,6 @@ import javax.inject.Inject;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URLDecoder;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -169,7 +167,6 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
                 if (!absUrl.endsWith(separator)) {
                     absUrl = StringUtils.removeStart(absUrl.replace(remoteUrl, ""), GlobalConstants.SEPARATOR);
                     filesCommonComponent.storeContent(absUrl, file.getParent() + "/artifact");
-                    THREAD_LOCAL.set(THREAD_LOCAL.get() + 1);
                     distributedCounterComponent.getAtomicLong(JfrogMigrateService.INDEX_COUNT + repository.getStorageIdAndRepositoryId()).getAndAdd(1);
                 } else {
                     // 非子目录
@@ -186,33 +183,6 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
                     }
                 }
             });
-//            Document doc = artifactComponent.getDocument(repository, url);
-//            if (Objects.isNull(doc)) {
-//                log.error("获取文件失败");
-//                return false;
-//            }
-//            Elements links = doc.select(dom);
-//            for (Element link : links) {
-//                String absUrl = link.absUrl("href");
-//                absUrl = URLDecoder.decode(absUrl, Charset.defaultCharset());
-//                if (rawLayoutProvider.isChecksum(absUrl)) {
-//                    continue;
-//                }
-//                if (!absUrl.endsWith(separator)) {
-//                    absUrl = StringUtils.removeStart(absUrl.replace(remoteUrl, ""), GlobalConstants.SEPARATOR);
-//                    filesCommonComponent.storeContent(absUrl, file.getParent() + "/artifact");
-//                    THREAD_LOCAL.set(THREAD_LOCAL.get() + 1);
-//                    distributedCounterComponent.getAtomicLong(JfrogMigrateService.INDEX_COUNT + repository.getStorageIdAndRepositoryId()).getAndAdd(1);
-//                } else {
-//                    // 非子目录
-//                    if (!absUrl.contains(url) || url.equals(absUrl)) {
-//                        continue;
-//                    }
-//                    String path = absUrl.substring(rootUrl.length());
-//                    writer.write(path + "\n");
-//                    writer.flush();
-//                }
-//            }
         } catch (Exception e) {
             log.error("Raw包索引同步制品，错误 [{}]", ExceptionUtils.getStackTrace(e));
             return false;
@@ -306,15 +276,14 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
                     break;
                 }
             }
-            log.info("Raw包索引同步完成耗时 [{}] ms, 同步制品总个数 [{}]", System.currentTimeMillis() - startTime, THREAD_LOCAL.get());
-            syncArtifactForm.setTotalArtifact(THREAD_LOCAL.get());
+            int total= (int) distributedCounterComponent.getAtomicLong(JfrogMigrateService.INDEX_COUNT + syncArtifactForm.getStoreAndRepo()).get();
+            log.info("Raw包索引同步完成耗时 [{}] ms, 同步制品总个数 [{}]", System.currentTimeMillis() - startTime, total);
+            syncArtifactForm.setTotalArtifact(total);
             return dirPath;
         } catch (Exception e) {
             log.error("Raw包索引同步，错误 [{}]", ExceptionUtils.getStackTrace(e));
-        } finally {
-            THREAD_LOCAL.remove();
+            return null;
         }
-        return null;
     }
 
     private boolean handlerPath(String dirPath, SyncArtifactForm syncArtifactForm) {
@@ -328,6 +297,7 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
             batch = syncArtifactForm.getBatch();
         }
         int availableCores =syncArtifactForm.getMaxThreadNum()!=null?syncArtifactForm.getMaxThreadNum(): 16;
+        int availableCores = commonComponent.getAvailableCores() * 2;
         ThreadPoolTaskExecutor threadPoolTaskExecutor = commonComponent.buildThreadPoolTaskExecutor("browseRawSync", availableCores, availableCores);
         boolean ispaused = false;
         try (Stream<Path> pathStream = Files.list(path)) {
@@ -335,7 +305,6 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
             ispaused = pathStream.anyMatch(item -> {
                 String currentLine = "";
                 long lines = 0, startTime = System.currentTimeMillis();
-                boolean flag = true;
                 try {
                     List<String> pathList = Lists.newArrayList();
                     try (LineIterator lineIterator = FileUtils.lineIterator(item.toFile(), "UTF-8")) {
@@ -359,16 +328,11 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
                                 }
                             } catch (Exception ex) {
                                 log.error(ExceptionUtils.getStackTrace(ex));
-                                flag = false;
                             }
                         }
                         if (CollectionUtils.isNotEmpty(pathList)) {
                             batchDownload(item, syncArtifactForm, pathList, threadPoolTaskExecutor);
                         }
-                    }
-                    // 清除已完成的文件
-                    if (flag) {
-//                        Files.delete(item);
                     }
                 } catch (Exception ex) {
                     log.error("Handle path [{}] lines [{}] error [{}] ms", item.toString(), lines, ExceptionUtils.getStackTrace(ex));
@@ -379,6 +343,9 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
         } catch (Exception ex) {
             log.error("Error [{}]", ExceptionUtils.getStackTrace(ex));
         }
+        int total= (int) distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).get();
+        syncArtifactForm.setSyncMount(total);
+        log.info("Raw包同步完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个制品，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), total, System.currentTimeMillis() - allStartTime);
         handlerDirectoryMetadata(dirPath, syncArtifactForm);
         int total = (int) distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).get();
         syncArtifactForm.setSyncMount(total);
@@ -397,7 +364,7 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
         FutureTask<String> futureTask = null;
         String levelPrefix = "level_", fileName = path.getFileName().toString();
         for (List<String> itemArtifactPathList : artifactPathLists) {
-            futureTask = new FutureTask<String>(() -> {
+            futureTask = new FutureTask<>(() -> {
                 for (String artifactPath : itemArtifactPathList) {
                     try {
                         if (StringUtils.isNotBlank(artifactPath)) {
@@ -544,18 +511,16 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
                 }
                 repository.setSyncDirPath(dirPath);
                 repository.setTotalArtifact(syncArtifactForm.getTotalArtifact());
-                repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
-                // 更新状态
-                migrateInfoService.updateById(repository);
-                distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
             }
+            repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
+            // 更新状态
+            migrateInfoService.updateById(repository);
+            distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
             String path = repository.getSyncDirPath();
-
             if (syncArtifactForm.getSyncMeta() == 1) {
                 JfrogPropertySyncer syncer = new JfrogPropertySyncer(syncArtifactForm.getApiUrl(), syncArtifactForm.getUsername(), syncArtifactForm.getPassword());
                 syncArtifactForm.setSyncer(syncer);
             }
-
             distributedCacheComponent.put(JfrogMigrateService.PAUSED_FLAG_PRE + syncArtifactForm.getStoreAndRepo(), "1");
             if (handlerPath(path, syncArtifactForm)) {
                 migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.COMPLETED.getStatus());
