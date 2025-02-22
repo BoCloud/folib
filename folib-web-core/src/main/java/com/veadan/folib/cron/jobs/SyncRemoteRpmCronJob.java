@@ -161,9 +161,6 @@ public class SyncRemoteRpmCronJob extends JavaCronJob {
                         log.error("resolve path [{}] failed", path, e);
                     }
                 }
-//                log.info("同步制品完成，开始更新索引");
-//                RpmRepoIndexer rpmRepoIndexer = new RpmRepoIndexer(repositoryPathResolver, artifactManagementService, tempPath);
-//                rpmRepoIndexer.indexWriter(repository);
                 log.info("更新索引完成");
                 if (backup) {
                     log.info("开始备份");
@@ -195,15 +192,20 @@ public class SyncRemoteRpmCronJob extends JavaCronJob {
         DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         Document doc = builder.parse(repomdXml);
         NodeList nodes = doc.getElementsByTagName("data");
-        Dict update = new Dict();
+        Dict update = null;
         for (int i = 0; i < nodes.getLength(); i++) {
             Element dataElement = (Element) nodes.item(i);
             String localPath = dataElement.getElementsByTagName("location").item(0).getAttributes()
                     .getNamedItem("href").getNodeValue();
             artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(), localPath);
             if ("primary".equals(dataElement.getAttribute("type"))) {
+                update=new Dict();
                 update.setDictType(DICT_TYPE).setDictKey(repository.getStorageIdAndRepositoryId()).setDictValue(localPath);
             }
+        }
+        RepositoryPath repomd = repositoryPathResolver.resolve(repository, "repodata/repomd.xml");
+        if (Files.exists(repomd)) {
+            Files.delete(repomd);
         }
         artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(),"repodata/repomd.xml" );
         return update;
