@@ -24,6 +24,7 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.stringtemplate.v4.ST;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -135,39 +136,39 @@ public class SyncRemoteRpmCronJob extends JavaCronJob {
         String repomdUrl = repository.getRemoteRepository().getUrl() + "/repodata/repomd.xml";
         artifactComponent.getArtifactByUrl(repository, repomdUrl, repomDistPath);
         try {
-            Dict newDict = extractPrimaryXmlPath(new FileInputStream(repomDistPath), repository);
+            List<String> packageList=new ArrayList<>();
+            packageList.add("repodata/repomd.xml");
+            Dict newDict = extractPrimaryXmlPath(new FileInputStream(repomDistPath), repository,packageList);
             if (Objects.isNull(newDict)) {
                 return;
             }
-            List<String> diff;
-            if (dict == null || !dict.getDictValue().equals(newDict.getDictValue())) {
+            if (newDict != null ) {
                 log.info("开始获取新制品");
                 String primaryDistPath = tempPath + "/replication/" + repository.getStorage().getId() + "/" + repository.getId() + "/" + newDict.getDictValue();
                 String primaryXmlUrl = repository.getRemoteRepository().getUrl() + "/" + newDict.getDictValue();
                 artifactComponent.getArtifactByUrl(repository, primaryXmlUrl, primaryDistPath);
-                // 解析仓库里的制品
-                List<String> previous = new ArrayList<>();
-                if (dict != null) {
-                    String prePath = tempPath + "/replication/" + repository.getStorage().getId() + "/" + repository.getId() + "/" + dict.getDictValue();
-                    previous = parsePrimaryXml(Paths.get(prePath));
-                }
                 List<String> current = parsePrimaryXml(Paths.get(primaryDistPath));
-                diff = new LinkedList<>(current);
-                diff.removeAll(previous);
-                for (String path : diff) {
+                List<String> newList = new ArrayList<>();
+                for (String path : current) {
                     try {
-                        artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(), path);
+                        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, path);
+                        if(!Files.exists(repositoryPath)&&backup) {
+                            newList.add(path);
+                            artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(), path);
+                        }
+
                     } catch (Exception e) {
                         log.error("resolve path [{}] failed", path, e);
                     }
                 }
                 log.info("更新索引完成");
-                if (backup) {
+                if (backup&& !newList.isEmpty()) {
                     log.info("开始备份");
+                    newList.addAll(packageList);
                     // 1.压缩要备份的文件 2.是否存在同名的raw仓库 3.存入对应仓库
                     String date= DATE_FORMAT.format(new Date());
                     String path=date+"/backup/";
-                    replicationBackup.backUpByPath(repository,diff,path);
+                    replicationBackup.backUpByPath(repository,newList,path);
                 }
             }
             dictService.saveDict(newDict);
@@ -188,7 +189,7 @@ public class SyncRemoteRpmCronJob extends JavaCronJob {
 
 
     // 解析repomd.xml文件获取保存check
-    private Dict extractPrimaryXmlPath(InputStream repomdXml, Repository repository) throws Exception {
+    private Dict extractPrimaryXmlPath(InputStream repomdXml, Repository repository,List<String> packageList) throws Exception {
         DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         Document doc = builder.parse(repomdXml);
         NodeList nodes = doc.getElementsByTagName("data");
@@ -198,6 +199,7 @@ public class SyncRemoteRpmCronJob extends JavaCronJob {
             String localPath = dataElement.getElementsByTagName("location").item(0).getAttributes()
                     .getNamedItem("href").getNodeValue();
             artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(), localPath);
+            packageList.add(localPath);
             if ("primary".equals(dataElement.getAttribute("type"))) {
                 update=new Dict();
                 update.setDictType(DICT_TYPE).setDictKey(repository.getStorageIdAndRepositoryId()).setDictValue(localPath);
@@ -211,7 +213,7 @@ public class SyncRemoteRpmCronJob extends JavaCronJob {
         return update;
     }
 
-    private List<String> parsePrimaryXml(Path primaryXmlPath) throws Exception {
+    private List<String> parsePrimaryXml(Path primaryXmlPath) {
         List<String> rpmFiles = new ArrayList<>();
         try (GZIPInputStream gzipInputStream = new GZIPInputStream(Files.newInputStream(primaryXmlPath))) {
             DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
