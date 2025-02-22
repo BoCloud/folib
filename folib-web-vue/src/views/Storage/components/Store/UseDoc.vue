@@ -1524,7 +1524,7 @@ enabled=1`
        return `
 [folib]
 name=CentOS-$releasever - folib
-baseurl=${this.baseUrl}/storages/${this.folibRepository.storageId}/${this.folibRepository.id}/
+baseurl=${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id}/
 enabled=1
 gpgcheck=0`
       },
