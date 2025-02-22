@@ -7,7 +7,7 @@ public class RepomdMetadata {
 
     private XmlData other;
     private XmlData primary;
-
+    private XmlData filelists;
 
     @lombok.Data
     public static class XmlData {
