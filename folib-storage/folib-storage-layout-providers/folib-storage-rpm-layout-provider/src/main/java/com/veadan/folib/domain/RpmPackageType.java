@@ -29,7 +29,9 @@ public enum RpmPackageType
     XTENSA("xtensa"),
     X86_64("x86_64"),
     PPC64LE("ppc64le"),
-    AARCH64("aarch64");
+    AARCH64("aarch64"),
+    I686("i686"),
+    UNKNOWN("unknown");
 
     private String postfix;
 
@@ -42,4 +44,11 @@ public enum RpmPackageType
     {
         this.postfix = postfix;
     }
+
+
+
+
+
+
+
 }
