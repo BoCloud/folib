@@ -100,6 +100,10 @@ public class ReplicationBackup {
     private String genZip(Repository repository,Path targetPath) {
         String dateStr= DateUtil.format(DateUtil.date(), DatePattern.PURE_DATETIME_PATTERN)+".zip";
         String prefixPath=tempPath + "/replication/" + repository.getStorage().getId() + "/" + repository.getId()+"/"+dateStr;
+        if(!Files.exists(targetPath)){
+            log.info("备份文件不存在");
+            return null;
+        }
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(prefixPath));Stream<Path> pathStream = Files.walk(targetPath)) {
             pathStream.forEach(path -> {
                         String zipEntryName = targetPath.relativize(path).toString().replace("\\", "/");
