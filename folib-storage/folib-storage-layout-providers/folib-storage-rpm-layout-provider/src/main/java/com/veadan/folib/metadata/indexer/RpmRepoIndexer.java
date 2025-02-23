@@ -176,7 +176,11 @@ public class RpmRepoIndexer {
     }
 
     public List<Path> listPaths(Path path) throws IOException {
-        return Files.walk(path).filter(this::isFileExist).collect(Collectors.toList());
+        return Files.walk(path)
+                .filter(p -> !p.getFileName().toString().equals(".temp") &&
+                        !p.getFileName().toString().equals(".trash") &&
+                         isFileExist(p))
+                .collect(Collectors.toList());
     }
 
     //校验是否有效文件
