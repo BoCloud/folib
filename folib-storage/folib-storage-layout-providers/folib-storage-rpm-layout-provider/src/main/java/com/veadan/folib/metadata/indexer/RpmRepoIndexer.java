@@ -379,16 +379,24 @@ public class RpmRepoIndexer {
         nameElement.appendChild(doc.createTextNode(metadata.getName()));
         packageElement.appendChild(nameElement);
 
-        // Version
-        Element versionElement = doc.createElement("version");
-        versionElement.setAttribute("ver", metadata.getVersion());
-        versionElement.setAttribute("rel", metadata.getRelease());
-        packageElement.appendChild(versionElement);
-
         // Arch
         Element archElement = doc.createElement("arch");
         archElement.appendChild(doc.createTextNode(metadata.getArchitecture()));
         packageElement.appendChild(archElement);
+
+        // Version
+        Element versionElement = doc.createElement("version");
+        versionElement.setAttribute("epoch", Integer.toString(metadata.getEpoch()));
+        versionElement.setAttribute("ver", metadata.getVersion());
+        versionElement.setAttribute("rel", metadata.getRelease());
+        packageElement.appendChild(versionElement);
+
+        // Checksum
+        Element checksumElement = doc.createElement("checksum");
+        checksumElement.setAttribute("type", "sha");
+        checksumElement.setAttribute("pkgid", "YES");
+        checksumElement.appendChild(doc.createTextNode(fileDigests)); // Replace with actual checksum calculation
+        packageElement.appendChild(checksumElement);
 
         // Summary
         Element summaryElement = doc.createElement("summary");
@@ -428,12 +436,7 @@ public class RpmRepoIndexer {
         locationElement.setAttribute("href", location);
         packageElement.appendChild(locationElement);
 
-        // Checksum
-        Element checksumElement = doc.createElement("checksum");
-        checksumElement.setAttribute("type", "sha");
-        checksumElement.setAttribute("pkgid", "YES");
-        checksumElement.appendChild(doc.createTextNode(fileDigests)); // Replace with actual checksum calculation
-        packageElement.appendChild(checksumElement);
+
 
         // Format
         Element formatElement = doc.createElement("format");
@@ -466,8 +469,8 @@ public class RpmRepoIndexer {
 
         // Header Range
         Element headerRangeElement = doc.createElement("rpm:header-range");
-        headerRangeElement.setAttribute("start", Integer.toString(metadata.getHeaderStart()));  // Replace with actual start position
         headerRangeElement.setAttribute("end", Integer.toString(metadata.getHeaderEnd()));   // Replace with actual end position
+        headerRangeElement.setAttribute("start", Integer.toString(metadata.getHeaderStart()));  // Replace with actual start position
         formatElement.appendChild(headerRangeElement);
 
 
@@ -488,6 +491,18 @@ public class RpmRepoIndexer {
         for (Entry entry : metadata.getRequire()) {
             Element requiresEntryElement1 = doc.createElement("rpm:entry");
             requiresEntryElement1.setAttribute("name", entry.getName());
+            if(entry.getFlags()!=null){
+                requiresEntryElement1.setAttribute("flags", entry.getFlags());
+            }
+            if(entry.getEpoch()!=null){
+                requiresEntryElement1.setAttribute("epoch", entry.getEpoch());
+            }
+            if(entry.getVersion()!=null){
+                requiresEntryElement1.setAttribute("ver", entry.getVersion());
+            }
+            if(entry.getRelease()!=null){
+                requiresEntryElement1.setAttribute("rel", entry.getRelease());
+            }
             requiresElement.appendChild(requiresEntryElement1);
         }
         formatElement.appendChild(requiresElement);
