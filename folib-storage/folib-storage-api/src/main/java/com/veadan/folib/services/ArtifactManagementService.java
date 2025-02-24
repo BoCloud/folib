@@ -34,6 +34,7 @@ import com.veadan.folib.storage.validation.artifact.version.VersionValidationExc
 import com.veadan.folib.storage.validation.deployment.RedeploymentValidator;
 import com.veadan.folib.storage.validation.resource.ArtifactOperationsValidator;
 import com.veadan.folib.users.domain.Privileges;
+import com.veadan.folib.util.DirectoryValidatorUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -148,9 +149,7 @@ public class ArtifactManagementService {
     private long doStore(RepositoryPath repositoryPath,
                          InputStream is)
             throws IOException {
-        if (!validateInputStreamEmpty(repositoryPath, is)) {
-            throw new ArtifactResolutionException("The repositoryPath content is empty.");
-        }
+        validateRepositoryPath(repositoryPath, is, null);
         long startTime = System.currentTimeMillis();
         long result;
         try (final RepositoryStreamSupport.RepositoryOutputStream aos = artifactResolutionService.getOutputStream(repositoryPath)) {
@@ -188,9 +187,7 @@ public class ArtifactManagementService {
     private long doStore(RepositoryPath repositoryPath,
                          Path sourcePath)
             throws IOException {
-        if (!validateRepositoryPathEmpty(repositoryPath, sourcePath)) {
-            throw new ArtifactResolutionException("The repositoryPath content is empty.");
-        }
+        validateRepositoryPath(repositoryPath, null, sourcePath);
         long startTime = System.currentTimeMillis();
         long result;
         try (final RepositoryStreamSupport.RepositoryOutputStream aos = artifactResolutionService.getOutputStream(repositoryPath)) {
@@ -660,6 +657,19 @@ public class ArtifactManagementService {
             logger.error("Validate inputStream empty [{}] error [{}]", repositoryPath, ExceptionUtils.getStackTrace(ex));
         }
         return false;
+    }
+
+    private void validateRepositoryPath(RepositoryPath repositoryPath, InputStream inputStream, Path sourcePath) throws IOException {
+        if (Objects.nonNull(inputStream) && !validateInputStreamEmpty(repositoryPath, inputStream)) {
+            throw new ArtifactResolutionException("The repositoryPath content is empty.");
+        }
+        if (Objects.nonNull(sourcePath) && !validateRepositoryPathEmpty(repositoryPath, sourcePath)) {
+            throw new ArtifactResolutionException("The repositoryPath content is empty.");
+        }
+        String path = RepositoryFiles.relativizeOriginalPath(repositoryPath.getParent());
+        if (!DirectoryValidatorUtils.validateDirectoryPath(path)) {
+            throw new ArtifactResolutionException(String.format("Path [%s] contains illegal characters", path));
+        }
     }
 
 }
