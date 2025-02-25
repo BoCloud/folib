@@ -815,7 +815,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             }
             if (exist != null) {
                 log.info("The repository {} is exist,skip", repositoryId);
-                if (RepositoryTypeEnum.PROXY.getType().equals(exist.getType()) && repository.getType() == LOCAL) {
+                if (RepositoryTypeEnum.PROXY.getType().equals(exist.getType()) && repository.getType() == LOCAL&&"2".equals(form.getArtifactType())) {
                     createAndSaveMigrateInfo(migrateInfo, repository, storageId, reposUsed);
                 }
                 continue;
@@ -830,8 +830,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             repositoryDto.setAllowsDeletion(true);
             repositoryDto.setAllowsDeployment(true);
             repositoryDto.setAllowsDirectoryBrowsing(true);
-            setRepositoryInfo(repository, repositoryDto, artifactory, storageId, form);
-            createAndSaveMigrateInfo(migrateInfo, repository, storageId, reposUsed);
+            setRepositoryInfo(repository, repositoryDto, artifactory, storageId, form,migrateInfo,reposUsed);
             groupRepositoryValid(storageId, repositoryDto);
             RepositoryDto newRepo;
             try {
@@ -881,7 +880,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
     }
 
     void setRepositoryInfo(LightweightRepository repository, RepositoryDto repositoryDto, Artifactory
-            artifactory, String storageId, JfrogMigrateForm form) {
+            artifactory, String storageId, JfrogMigrateForm form,ArtifactMigrateInfo  migrateInfo,Map<String, String> reposUsed) {
         if (repository.getType() == LOCAL) {
             if ("2".equals(form.getArtifactType())) {
                 repositoryDto.setType(RepositoryTypeEnum.PROXY.getType());
@@ -902,6 +901,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                     remoteDTO.setUrl(repository.getUrl());
                 }
                 repositoryDto.setRemoteRepository(remoteDTO);
+                createAndSaveMigrateInfo(migrateInfo, repository, storageId, reposUsed);
             } else {
                 repositoryDto.setType(RepositoryTypeEnum.HOSTED.getType());
             }
