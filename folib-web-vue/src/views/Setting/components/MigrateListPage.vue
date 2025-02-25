@@ -149,6 +149,12 @@
             >
               {{ $t('Setting.FinishMigration') }}
             </a-button>
+            <a-button
+                type="primary"
+                @click="resetMigrate"
+            >
+              {{ $t('Setting.ResetMigration') }}
+            </a-button>
           </div>
         </div>
 
@@ -188,7 +194,20 @@
 
 
 <script>
-import { getRepositories, addMigrateRepo ,startMigrate, pauseMigrate, finishMigrate ,continueMigrate,getMigrateProgress,changeLayout,setFailed,getIndexProgress} from '@/api/migrate'
+import {
+  getRepositories,
+  addMigrateRepo,
+  startMigrate,
+  pauseMigrate,
+  finishMigrate,
+  continueMigrate,
+  getMigrateProgress,
+  changeLayout,
+  setFailed,
+  getIndexProgress,
+  getAllRepo,
+  restartMigrate
+} from '@/api/migrate'
 import { getStorages,queryRepositoriesByStorage } from '@/api/folib'
 
 export default {
@@ -739,17 +758,26 @@ export default {
         const params = {
           storageId: storageId,
           limit: 100000,
-          type: 'hosted',
+          excludeType: 'group',
           page: 1
         };
         const response = await queryRepositoriesByStorage(params);
+        let query={};
+        query.migrateId=this.migrateId;
+        const repos = await getAllRepo(query);
+        // 过滤掉response.data.rows中id存在于repos数组中的仓库
         if (response?.data) {
-          this.repositoryOptions = response.data.rows;
+          const filteredRows = response.data.rows.filter(row => {
+            return !repos.includes(row.id);
+          });
+          this.repositoryOptions = filteredRows;
         }
+
       } catch (error) {
+        
         this.$notification.error({
           message: this.$t('Setting.Error'),
-          description: error.message
+          description: error.response.data.error
         });
       } finally {
         this.repositoryLoading = false;
@@ -793,14 +821,13 @@ export default {
       } catch (error) {
         this.$notification.error({
           message: this.$t('Setting.Error'),
-          description: error.message
+          description: error.response.data.error
         });
       } finally {
         this.addLoading = false;
       }
     },
     async handleStartMigration() {
-      console.log("selectedRows",this.getSelectedRows());
       const selectedRows = this.getSelectedRows();
       if (!selectedRows.length) {
         return;
@@ -958,6 +985,18 @@ export default {
         message: this.$t('Setting.Success'),
       });
       this.loadMigratingData();
+    },
+
+    resetMigrate(){
+      const data={migrateId:this.migrateId}
+      restartMigrate(data).then(()=>{
+        this.$notification.success({
+          message: this.$t('Setting.Success'),
+          description: this.$t('Setting.Success')
+        });
+        this.activeTab=1;
+        this.loadData(this.activeTab);
+      })
     },
 
     // 继续迁移
