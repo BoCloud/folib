@@ -148,7 +148,7 @@ export function artifactCheck(repository, fileName, fileSize,maxSize) {
             msg = fileName + '为snapshot版本，仓库版本策略为release，禁止上传'
         }
         if (policy === 'snapshot' && !isSnapshot) {
-        msg = fileName + '为snapshot版本，仓库版本策略为release，禁止上传'
+        msg = fileName + '为release版本，仓库版本策略为snapshot，禁止上传'
         }
         if (msg) {
             result.check = false

@@ -64,6 +64,7 @@ import com.veadan.folib.utils.DockerUtils;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.artifact.ArtifactUtils;
@@ -739,7 +740,7 @@ public class ArtifactUploadTask implements Callable<String> {
             LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(layout);
             if (Objects.nonNull(layoutProvider)) {
                 try {
-                    PubArtifactCoordinates pubArtifactCoordinates = PubArtifactCoordinates.packageNameParse(fileRelativePath);
+                    PubArtifactCoordinates pubArtifactCoordinates = PubArtifactCoordinates.packageNameParse(FilenameUtils.getName(fileRelativePath));
                     String artifactPath = pubArtifactCoordinates.convertToPath(pubArtifactCoordinates);
                     log.info("The fileRelativePath：{} artifactPath：{}", fileRelativePath, artifactPath);
                     repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
