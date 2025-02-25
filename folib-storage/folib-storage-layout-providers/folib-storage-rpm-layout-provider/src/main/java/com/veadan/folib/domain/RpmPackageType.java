@@ -37,7 +37,7 @@ public enum RpmPackageType
     RISCV64("riscv64"),
     SRPMS("src"),
     SOURCES("sources"),
-    ;
+    UNKNOWN("unknown");
 
     private String postfix;
 
@@ -50,4 +50,11 @@ public enum RpmPackageType
     {
         this.postfix = postfix;
     }
+
+
+
+
+
+
+
 }

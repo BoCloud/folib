@@ -210,9 +210,11 @@ public class RpmSyncArtifactProvider implements SyncArtifactProvider {
                 repository.setTotalArtifact(syncArtifactForm.getTotalArtifact());
             }
             repository.setSyncStatus(MigrateStatusEnum.SYNCING_ARTIFACT.getStatus());
+            // 更新状态
             migrateInfoService.updateById(repository);
             distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
             String path = repository.getSyncDirPath();
+            distributedCounterComponent.getAtomicLong(JfrogMigrateService.INDEX_COUNT+syncArtifactForm.getStoreAndRepo()).set(total);
             if (syncArtifactForm.getSyncMeta() == 1) {
                 JfrogPropertySyncer syncer = new JfrogPropertySyncer(syncArtifactForm.getApiUrl(), syncArtifactForm.getUsername(), syncArtifactForm.getPassword());
                 syncArtifactForm.setSyncer(syncer);

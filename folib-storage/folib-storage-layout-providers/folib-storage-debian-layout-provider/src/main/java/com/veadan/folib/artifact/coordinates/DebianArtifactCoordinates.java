@@ -133,15 +133,27 @@ public class DebianArtifactCoordinates
         DebianArtifactCoordinates coordinates;
         if (path.startsWith("pool")) {
             Matcher matcher = DebianConstant.PATH_PATTERN.matcher(path);
-            Assert.isTrue(matcher.matches(), "Invalid Debian package path");
-            String component = matcher.group(1);
-            String fileName = matcher.group(2);
-            String version = matcher.group(3);
-            String name = path.substring(path.lastIndexOf('/') + 1);
-            log.info("path is component:{},filename:{},version:{}", component, fileName, version);
-            coordinates = DebianArtifactCoordinates.of(component, path, DebianConstant.DEFAULT_EXTENSION);
-            coordinates.setVersion(version);
-            coordinates.setFileName(fileName);
+            if(matcher.matches()) {
+                String component = matcher.group(1);
+                String fileName = matcher.group(2);
+                String version = matcher.group(3);
+                log.info("path is component:{},filename:{},version:{}", component, fileName, version);
+                coordinates = DebianArtifactCoordinates.of(component, path, DebianConstant.DEFAULT_EXTENSION);
+                coordinates.setVersion(version);
+                coordinates.setFileName(fileName);
+            }else {
+                String[] split = path.split("/");
+                String component = "main";
+                if(split.length >1) {
+                    component=split[1];
+                }
+                String name = path.substring(path.lastIndexOf('/') + 1);
+                coordinates = DebianArtifactCoordinates.of(component, path, DebianConstant.DEFAULT_EXTENSION);
+                coordinates.setVersion("1.0.0");
+                coordinates.setFileName(name);
+
+            }
+
         } else if(path.endsWith(DebianConstant.DEFAULT_EXTENSION)) {
             Matcher matcher = DebianConstant.CUSTOM_PATTERN.matcher(path);
             Assert.isTrue(matcher.matches(), "Invalid debian package path");
@@ -174,6 +186,4 @@ public class DebianArtifactCoordinates
     public static DebianArtifactCoordinates of(String component, String name, String extension) {
         return new DebianArtifactCoordinates(component, name, extension);
     }
-
-
 }
