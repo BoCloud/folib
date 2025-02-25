@@ -46,6 +46,18 @@ public class MigrateInfoServiceImpl implements MigrateInfoService {
     }
 
     @Override
+    public List<MigrateInfo> selectByMigrateId(String migrateId,  List<Integer> status) {
+        Example example = Example.builder(MigrateInfo.class).build();
+        Example.Criteria where = example.createCriteria();
+        where.andEqualTo("migrateId", migrateId);
+        if(status != null && !status.isEmpty()) {
+            where.andIn("syncStatus", status);
+        }
+        return migrateInfoMapper.selectByExample(example);
+
+    }
+
+    @Override
     public int countByMigrateId(String migrateId) {
         Example example = Example.builder(MigrateInfo.class).build();
         Example.Criteria where = example.createCriteria();
@@ -61,7 +73,7 @@ public class MigrateInfoServiceImpl implements MigrateInfoService {
         where.andEqualTo("storageId", storageId);
         where.andEqualTo("repositoryId", repositoryId);
         List<MigrateInfo> migrateInfos = migrateInfoMapper.selectByExample(example);
-        if (migrateInfos.size() < 1) {
+        if (migrateInfos.isEmpty()) {
             return null;
         } else {
             return migrateInfos.get(0);
@@ -80,6 +92,14 @@ public class MigrateInfoServiceImpl implements MigrateInfoService {
     @Override
     public MigrateInfo getById(Long id) {
         return migrateInfoMapper.selectByPrimaryKey(id);
+    }
+
+    @Override
+    public void deleteByMigrateId(String migrateId) {
+        Example example = Example.builder(MigrateInfo.class).build();
+        Example.Criteria where = example.createCriteria();
+        where.andEqualTo("migrateId", migrateId);
+        migrateInfoMapper.deleteByExample(example);
     }
 
 

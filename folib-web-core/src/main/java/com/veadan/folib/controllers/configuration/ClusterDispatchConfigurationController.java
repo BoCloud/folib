@@ -244,28 +244,28 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
 
 
     // 删除
-    @DeleteMapping(value = "/{clusterEnName}",
+    @DeleteMapping(value = "/dispatchNode",
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @AuditLog(value = AuditEventNameEnum.NODE_DISPATCH,target =" '删除节点:'+#clusterEnName" )
     @PreAuthorize("hasAuthority('CONFIGURATION_DELETE_STORAGE_CONFIGURATION')")
     public ResponseEntity deleteClusterDispatch(
-            @PathVariable String clusterEnName,
+            @RequestBody ClusterDispatchNodeDto dispatchNodeDto,
             @RequestHeader(HttpHeaders.ACCEPT) String accept) {
 
         final ClusterDispatchNodeDto nodeDto = new ClusterDispatchNodeDto();
         final SyncClusterDispatchDto syncClusterDispatchDto =
                 new SyncClusterDispatchDto(nodeDto, SyncClusterDispatchEnum.DELETE);
 
-        final ClusterDispatchNodeDto clusterDispatchNodeDto = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode().get(clusterEnName);
+        final ClusterDispatchNodeDto clusterDispatchNodeDto = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode().get(dispatchNodeDto.getClusterEnName());
         if (clusterDispatchNodeDto == null) {
-            throw new RuntimeException(String.format("not found ClusterDispatchNode info with clusterEnName %s", clusterEnName));
+            throw new RuntimeException(String.format("not found ClusterDispatchNode info with clusterEnName %s", dispatchNodeDto.getClusterEnName()));
         }
 //            if (clusterDispatchNodeDto.getAutoRegister() != null && clusterDispatchNodeDto.getAutoRegister()) {
 //                throw new UnsupportedOperationException("please delete it at the registration node side");
 //            }
         try {
-            nodeDto.setClusterEnName(clusterEnName);
+            nodeDto.setClusterEnName(dispatchNodeDto.getClusterEnName());
             clusterDispatchManagementService.deleteClusterNode(nodeDto);
             // 向其他集群节点同步制品分发节点信息
             clusterSyncService.syncClusterDispatch(syncClusterDispatchDto);
