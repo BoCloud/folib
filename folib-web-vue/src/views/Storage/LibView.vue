@@ -466,8 +466,8 @@ export default {
       this.isShowEdit = (isAdmin() || this.storageAdmin === this.$store.state.user.name)
       this.isShowDelete = (isAdmin() || this.storageAdmin === this.$store.state.user.name) && (this.folibRepository.allowsDeletion || this.folibRepository.allowsForceDeletion)
     },
-    handleMenuClickTree(active,currentTreeNode){
-      this.$refs.store.handleMenuClickTree(active,currentTreeNode)
+    handleMenuClickTree(active,currentTreeNode,folibRepository){
+      this.$refs.store.handleMenuClickTree(active,currentTreeNode,folibRepository)
     },
     treeSelect(data,isTrashView){
       this.isTrashView = isTrashView

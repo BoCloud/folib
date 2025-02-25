@@ -2242,14 +2242,14 @@ export default {
       }
 
     },
-    handleMenuClickTree(active,currentTreeNode){
+    handleMenuClickTree(active,currentTreeNode, folibRepository){
       this.currentTreeNode = currentTreeNode
-      this.handleMenuClick(active)
+      this.handleMenuClick(active, folibRepository)
     },
-    handleMenuClick(active) {
+    handleMenuClick(active, folibRepository) {
       this.operationForm.resetFields()
       this.copyOperationForm.resetFields()
-      this.isTargetPatDisabled = this.folibRepository.layout !== 'Raw';
+      this.isTargetPatDisabled = folibRepository.layout !== 'Raw';
       this.$nextTick(() => {
         if (this.$refs.operationForm) {
           this.operationForm.setFieldsValue({
@@ -2274,10 +2274,10 @@ export default {
         //复制 或 移动
         this.showOperationFormModal = true
         this.queryPermissionStoragesAndRepositories(
-          this.folibRepository.type,
-          this.folibRepository.layout,
-          this.folibRepository.storageId + ':' + this.folibRepository.id,
-          this.folibRepository.policy
+          folibRepository.type,
+          folibRepository.layout,
+          folibRepository.storageId + ':' + folibRepository.id,
+          folibRepository.policy
         )
         this.operationTitle =
           active.key === '2'
@@ -2291,11 +2291,11 @@ export default {
       } else if (active.key === '5') {
         this.showOperationDispatchFormModal = true
         this.getArtifactDispatchStoragesAndRepositories(
-          this.folibRepository.type,
-          this.folibRepository.layout,
-          this.folibRepository.policy
+          folibRepository.type,
+          folibRepository.layout,
+          folibRepository.policy
         )
-        this.getExternalNodeRepositories({ type: this.folibRepository.layout })
+        this.getExternalNodeRepositories({ type: folibRepository.layout })
         this.operationTitle = this.$t('Store.Distribute')
         this.customTitle = this.$t('Store.DistributeCustomDirectory')
         // 下载
@@ -2308,9 +2308,8 @@ export default {
       } else if (active.key === '7') {
         if (this.currentTreeNode.type === 'dir') {
           this.downLoadVisible = true;
-          this.folibRepository
-          let storageId = this.folibRepository.storageId;
-          let repositoryId = this.folibRepository.id;
+          let storageId = folibRepository.storageId;
+          let repositoryId = folibRepository.id;
           let path = this.currentTreeNode.artifactPath;
           getRawPathSize(storageId, repositoryId, path).then(res => {
             this.rawPathSize = res;

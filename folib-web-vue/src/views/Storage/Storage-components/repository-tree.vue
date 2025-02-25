@@ -369,7 +369,7 @@ export default {
                 this.handleRefresh()
                 return
             }
-            this.$emit('handleMenuClick', active, this.isTrashView ? this.currentTreeNodeRecycle : this.currentTreeNode)
+            this.$emit('handleMenuClick', active, this.isTrashView ? this.currentTreeNodeRecycle : this.currentTreeNode, this.folibRepository)
         },
         // 递归根据key判断是否为当前选中数据项
         recursionGetItems(source, key, children, loading) {
@@ -426,8 +426,8 @@ export default {
                     // this.recursionGetItems(this[nowDataKey], currentNode.key, children, false)
                     // this.setKeyValue()
                 })
+                return
             }
-
             browse(
                 storageId,
                 id,
@@ -702,6 +702,7 @@ export default {
                     // if (treeNode.data.artifactPath) return
                     // this[nowDataKey] = [...this[nowDataKey]]
                 })
+                return
             }
 
             if (treeNode.data.children) {
@@ -939,5 +940,12 @@ export default {
 
 .recycle {
     margin-top: 5px;
+}
+
+.vue-recycle-scroller.direction-vertical:not(.page-mode) {
+    overflow-x: auto;
+}
+.vue-recycle-scroller__item-wrapper {
+    overflow: visible;
 }
 </style>

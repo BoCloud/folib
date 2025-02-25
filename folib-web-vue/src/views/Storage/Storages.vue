@@ -81,7 +81,8 @@
               @getDetailInfo="getDetailInfo"
               :repositories="repositories" 
               :isTrashView="isTrashView"
-              :storageId="currentStorage.id" 
+              :storageId="currentStorage.id"
+              :baseUrl="baseUrl"
             />
             <!-- 存储列表 -->
             <storageList 
@@ -1605,9 +1606,9 @@ export default {
       })
     },
     // 右键菜单选择操作
-    handleMenuClickTree(active,currentTreeNode){
+    handleMenuClickTree(active,currentTreeNode, folibRepository){
       this.$nextTick(() => {
-          this.$refs.libview.handleMenuClickTree(active,currentTreeNode)
+          this.$refs.libview.handleMenuClickTree(active,currentTreeNode,folibRepository)
       })
     },
     reloadTree(){
