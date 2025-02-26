@@ -190,6 +190,15 @@ public class NpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<NpmA
             return URI.create(c.getDistribution());
         }
         String path = convertToPath(c);
+        return URI.create(path);
+    }
+
+    @Override
+    public URI convertToLayoutResource(NpmArtifactCoordinates c) {
+        if (StringUtils.isNotBlank(c.getDistribution())) {
+            return URI.create(c.getDistribution());
+        }
+        String path = convertToPath(c);
         if (path.endsWith(NpmLayoutProvider.PACKAGE_JSON)) {
             return URI.create(String.format("%s/-/%s-%s.%s", c.getId(), "package", c.getVersion(), "json"));
         } else if (path.endsWith(NpmLayoutProvider.OH_PACKAGE_JSON)) {

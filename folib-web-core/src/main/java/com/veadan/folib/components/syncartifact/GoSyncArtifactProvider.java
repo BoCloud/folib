@@ -1,20 +1,15 @@
 package com.veadan.folib.components.syncartifact;
 
 import com.veadan.folib.artifact.coordinates.GoArtifactCoordinates;
-import com.veadan.folib.components.artifact.ArtifactComponent;
-import com.veadan.folib.domain.migrate.SyncArtifactForm;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.enums.ArtifactSyncTypeEnum;
-
 import com.veadan.folib.services.MigrateInfoService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
-import javax.inject.Inject;
-import java.io.File;
 
 /**
  * @author huayanjun
@@ -23,14 +18,14 @@ import java.io.File;
 
 @Slf4j
 @Component
-public class GoSyncArtifactProvider extends BaseArtifactProvider{
+public class GoSyncArtifactProvider extends BaseArtifactProvider {
 
     @Resource
     private SyncArtifactProviderRegistry syncArtifactProviderRegistry;
 
     @Autowired
-    public GoSyncArtifactProvider(SyncUtils syncUtils,MigrateInfoService migrateInfoService) {
-        super(syncUtils,migrateInfoService);
+    public GoSyncArtifactProvider(SyncUtils syncUtils, MigrateInfoService migrateInfoService) {
+        super(syncUtils, migrateInfoService);
     }
 
     @Override
@@ -50,6 +45,6 @@ public class GoSyncArtifactProvider extends BaseArtifactProvider{
 
     @Override
     public boolean isArtifact(String url) {
-        return !url.endsWith(File.separator);
+        return !url.endsWith(GlobalConstants.SEPARATOR);
     }
 }

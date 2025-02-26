@@ -1,5 +1,7 @@
 package com.veadan.folib.cron.jobs;
 
+import cn.hutool.core.date.DatePattern;
+import cn.hutool.core.date.DateUtil;
 import com.google.common.collect.ImmutableSet;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
@@ -13,10 +15,10 @@ import com.veadan.folib.cron.jobs.fields.CronJobOptionalField;
 import com.veadan.folib.cron.jobs.fields.CronJobRepositoryIdAutocompleteField;
 import com.veadan.folib.cron.jobs.fields.CronJobStorageIdAutocompleteField;
 import com.veadan.folib.cron.jobs.fields.CronJobStringTypeField;
-import com.veadan.folib.domain.DebianReleaseContext;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.indexer.ArtifactorySearch;
 import com.veadan.folib.indexer.DebianReleaseMetadataIndexer;
+import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.DictService;
@@ -30,6 +32,7 @@ import org.springframework.beans.factory.annotation.Value;
 
 import javax.annotation.Resource;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -127,10 +130,10 @@ public class SyncRemoteDebianCronJob extends JavaCronJob {
         String dateStr = DATE_FORMAT.format(date);
         String preDate = dict == null ? null : DATE_FORMAT.format(dict.getCreateTime());
         String tempDir = tempPath + "/replication/" + repository.getStorage().getId() + "/" + repository.getId();
-        Set<String> updates = backup ? new HashSet<>() : null;
+        Set<String> increase=new HashSet<>();
         if (scope == null) {
             String remoteUrl = StringUtils.removeEnd(repository.getRemoteRepository().getUrl(), "/") + "/dists/";
-            syncAllPackagesGz(repository, remoteUrl, Path.of(tempDir), preDate, dateStr, updates);
+            increase=syncAllPackagesGz(repository, remoteUrl, Path.of(tempDir), preDate, dateStr, backup);
         } else {
             String[] groups = scope.split(",");
             for (String group : groups) {
@@ -140,27 +143,37 @@ public class SyncRemoteDebianCronJob extends JavaCronJob {
                     continue;
                 }
                 String packagesGzPath = String.format("dists/%s/%s/binary-%s/Packages.gz", comp[0], comp[1], comp[2]);
-                syncSpecificPackagesGz(repository, packagesGzPath, tempDir, preDate, dateStr, updates);
+                Set<String> part = syncSpecificPackagesGz(repository, packagesGzPath, tempDir, preDate, dateStr, backup);
+                increase.addAll(part);
+            }
+        }
+        for (String path : increase) {
+            try {
+                artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(), path);
+            } catch (IOException e) {
+                log.info("下载包异常{}",path);
             }
         }
         Dict current = new Dict();
         current.setDictType(DICT_TYPE).setDictKey(repository.getStorageIdAndRepositoryId()).setCreateTime(date);
+        log.info("debian replication [{}] [{}] 完成", repository.getStorage().getId(), repository.getId() );
         dictService.saveDict(current);
-        if(Objects.nonNull(updates)&&!updates.isEmpty()){
+        if (!increase.isEmpty()&&backup) {
             log.info("开始备份");
             // 1.压缩要备份的文件 2.是否存在同名的raw仓库 3.存入对应仓库
-            String path=dateStr+"/backup/";
-            replicationBackup.backUpByPath(repository,updates,path);
+            String path = DateUtil.format(DateUtil.date(), DatePattern.PURE_DATETIME_PATTERN) + "/backup/";
+            replicationBackup.backUpByPath(repository, increase, path);
         }
     }
 
-    private void syncAllPackagesGz(Repository repository, String remoteUrl, Path localDir, String preDate, String currentDate, Set<String> updates) {
+    private Set<String> syncAllPackagesGz(Repository repository, String remoteUrl, Path localDir, String preDate, String currentDate, boolean backup) {
         // 下载当前目录的 HTML 页面
         String html = artifactComponent.getHtml(repository, remoteUrl);
         // 用正则解析所有 <a href="..."> 链接
         Pattern pattern = Pattern.compile("<a href=\"([^\"]+)\">");
         Matcher matcher = pattern.matcher(html);
         Set<String> links = new HashSet<>();
+        Set<String> increase = new HashSet<>();
         while (matcher.find()) {
             String link = matcher.group(1);
             // 忽略上级目录链接 "../"
@@ -171,51 +184,63 @@ public class SyncRemoteDebianCronJob extends JavaCronJob {
         for (String link : links) {
             String fullUrl = remoteUrl + link;
             if (link.endsWith("/")) {
-                // 目录：递归调用
-                syncAllPackagesGz(repository, fullUrl, localDir, preDate, currentDate, updates);
+                syncAllPackagesGz(repository, fullUrl, localDir, preDate, currentDate, backup);
             } else if (link.contains("Packages.gz")) {
                 String relative = StringUtils.removeStart(fullUrl, repository.getRemoteRepository().getUrl());
                 String relativePath = StringUtils.removeStart(relative, "/");
-                syncSpecificPackagesGz(repository, relativePath, localDir.toString(), preDate, currentDate, updates);
+                Set<String> part = syncSpecificPackagesGz(repository, relativePath, localDir.toString(), preDate, currentDate, backup);
+                increase.addAll(part);
             }
         }
+        return increase;
     }
 
-    private void syncSpecificPackagesGz(Repository repository, String packageGzPath, String distDir, String preDate, String currentDate, Set<String> updates) {
+    private Set<String> syncSpecificPackagesGz(Repository repository, String packageGzPath, String distDir, String preDate, String currentDate, boolean backup)
+    {
         Matcher matcher = DebianConstant.PACKAGE_PATTERN.matcher(packageGzPath);
         // 将文件下载到本地
+        Set<String> newList = new HashSet<>();
         if (matcher.matches()) {
             String codename = matcher.group("codename");
             String component = matcher.group("component");
             String architecture = matcher.group("architecture");
-            Set<String> previous = new HashSet<>();
             try {
-                if (Objects.nonNull(preDate)) {
-                    String preDist = distDir + "/" + preDate + "/" + getPackageNameByPath(codename, component, architecture);
-                    previous = parsePackagesFile(readGzipFile(Path.of(preDist)));
-                }
                 String currentDist = distDir + "/" + currentDate + "/" + getPackageNameByPath(codename, component, architecture);
                 String fullPath = StringUtils.removeEnd(repository.getRemoteRepository().getUrl(), "/") + "/" + packageGzPath;
                 artifactComponent.getArtifactByUrl(repository, fullPath, currentDist);
                 // 获取本次的package.gz
                 Set<String> current = parsePackagesFile(readGzipFile(Path.of(currentDist)));
-                Set<String> diff = new HashSet<>(current);
-                diff.removeAll(previous);
                 // 同步制品
-                for (String item : diff) {
+                for (String item : current) {
                     String artifactPath = item + ";" + DebianUtils.getArrtString(codename, component, architecture);
-                    artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(), artifactPath);
+                    try {
+                        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, artifactPath);
+                        if(!backup){
+                            artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(), artifactPath);
+                        }
+                        if(!Files.exists(repositoryPath)&&backup) {
+                            newList.add(item);
+                        }
+                    } catch (Exception e) {
+                        log.error("resolve path [{}] failed", item, e);
+                    }
                 }
-                if (Objects.nonNull(updates)) {
-                    updates.addAll(diff);
+
+                //
+                if(!newList.isEmpty()){
+                    newList.add(packageGzPath);
                 }
-                updates.add(packageGzPath);
-                artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(), packageGzPath);
+                RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, packageGzPath);
+                Files.delete(repositoryPath);
+                artifactResolutionService.resolvePath(repositoryPath);
+                // 将package 文件写入其中
                 (new DebianReleaseMetadataIndexer(repository, Collections.emptyList(), repositoryPathResolver, artifactorySearch)).indexRelease(codename);
+                return newList;
             } catch (Exception e) {
                 log.error("同步发行版【{}】,组件【{}】,架构【{}】时异常", codename, component, architecture, e);
             }
         }
+        return newList;
     }
 
     private static Set<String> parsePackagesFile(String packagesText) {

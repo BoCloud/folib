@@ -35,6 +35,8 @@ public class SyncUtils {
 
     final String ARTIFACT_COUNT = "migrate:artifact:count:";
     final String INDEX_COUNT = "migrate:index:count:";
+    final String DIRECTORY_COUNT="migrate:directory:count:";
+
 
     @Resource
     private CommonComponent commonComponent;
@@ -68,9 +70,16 @@ public class SyncUtils {
         distributedCounterComponent.getAtomicLong(INDEX_COUNT + storeAndRepo).set(0L);
     }
 
+    public void setIndex(String storeAndRepo,int count){
+        distributedCounterComponent.getAtomicLong(INDEX_COUNT + storeAndRepo).set(count);
+    }
+
     public void resetArtifact(String storeAndRepo){
         distributedCounterComponent.getAtomicLong(ARTIFACT_COUNT + storeAndRepo).set(0L);
+    }
 
+    public void resetDirectoryCount(String storeAndRepo){
+        distributedCounterComponent.getAtomicLong(DIRECTORY_COUNT + storeAndRepo).set(0L);
     }
 
     public void indexIncrease(String storeAndRepo) {
@@ -87,6 +96,14 @@ public class SyncUtils {
 
     public int getArtifactCount(String storeAndRepo) {
         return (int) distributedCounterComponent.getAtomicLong(ARTIFACT_COUNT + storeAndRepo).get();
+    }
+
+    public void directoryIncrease(String storeAndRepo) {
+        distributedCounterComponent.getAtomicLong(DIRECTORY_COUNT + storeAndRepo).getAndAdd(1);
+    }
+
+    public int getDirectoryCount(String storeAndRepo) {
+        return (int) distributedCounterComponent.getAtomicLong(DIRECTORY_COUNT + storeAndRepo).get();
     }
 
     public Repository validRepo(SyncArtifactForm syncArtifactForm){

@@ -101,7 +101,7 @@ public class HelmRepoUtil {
 
     protected static String getRepositoryBaseUrl(Repository repository) {
         ConfigurationManager configurationManager = SpringUtil.getBean(ConfigurationManager.class);
-        return String.format("%s/%s/%s", StringUtils.removeEnd(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
+        return String.format("%s/artifactory/api/helm/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getId());
     }
 
     public String getUrls(String url){

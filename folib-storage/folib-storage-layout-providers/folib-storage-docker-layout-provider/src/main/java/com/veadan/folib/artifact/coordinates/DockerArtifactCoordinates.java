@@ -245,12 +245,6 @@ public class DockerArtifactCoordinates
     }
 
     @Override
-    public URI convertToResource(DockerArtifactCoordinates artifactCoordinates) {
-        return super.convertToResource(artifactCoordinates);
-    }
-
-
-    @Override
     public void setUuid(String uuid) {
         super.setUuid(uuid);
     }

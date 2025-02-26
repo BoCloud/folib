@@ -626,7 +626,7 @@ public abstract class StorageFileSystemProvider
         return path instanceof RepositoryPath ? ((RepositoryPath) path).getTarget() : path;
     }
 
-    private FileSystemProvider getTarget() {
+    public FileSystemProvider getTarget() {
         return target;
     }
 

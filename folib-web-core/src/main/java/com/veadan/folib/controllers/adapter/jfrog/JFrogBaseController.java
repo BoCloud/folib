@@ -24,30 +24,6 @@ public abstract class JFrogBaseController extends BaseArtifactController {
     private static final String NOT_FOUND_MESSAGE = "The %s Artifact was not found.";
 
     /**
-     * 获取设置默认的存储空间
-     *
-     * @param repositoryId 仓库名称
-     * @return 存储空间
-     */
-    public String getDefaultStorageId(String repositoryId) {
-        DistributedCacheComponent distributedCacheComponent = SpringUtil.getBean(DistributedCacheComponent.class);
-        if (StringUtils.isNotBlank(repositoryId)) {
-            //按照仓库查询对应的存储空间
-            String key = "JFrogAdapterStorage_" + repositoryId;
-            String jFrogAdapterStorage = distributedCacheComponent.get(key);
-            if (StringUtils.isNotBlank(jFrogAdapterStorage)) {
-                return jFrogAdapterStorage;
-            }
-        }
-        String key = "JFrogAdapterDefaultStorage";
-        String jFrogAdapterDefaultStorage = distributedCacheComponent.get(key);
-        if (StringUtils.isBlank(jFrogAdapterDefaultStorage)) {
-            throw new RuntimeException("Default storage not found,Please Set the default storageId");
-        }
-        return jFrogAdapterDefaultStorage;
-    }
-
-    /**
      * 校验存储空间和仓库是否存在
      *
      * @param storageId    存储空间

@@ -1,6 +1,9 @@
 package com.veadan.folib.controllers;
 
 import cn.hutool.extra.spring.SpringUtil;
+import com.veadan.folib.artifact.ArtifactNotFoundException;
+import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
+import com.veadan.folib.cloud.storage.s3fs.S3FileSystemProvider;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.ArtifactSecurityComponent;
 import com.veadan.folib.components.DistributedCacheComponent;
@@ -13,10 +16,7 @@ import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.io.ByteRangeInputStream;
-import com.veadan.folib.providers.io.LayoutFileSystem;
-import com.veadan.folib.providers.io.RepositoryFiles;
-import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.providers.io.RootRepositoryPath;
+import com.veadan.folib.providers.io.*;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.DictService;
@@ -34,6 +34,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.carlspring.commons.http.range.ByteRange;
 import org.carlspring.commons.http.range.ByteRangeHeaderParser;
 import org.carlspring.commons.io.reloading.FSReloadableInputStreamHandler;
+import org.eclipse.jetty.io.EofException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
@@ -49,15 +50,20 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.Channels;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.spi.FileSystemProvider;
+import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -80,6 +86,19 @@ public abstract class BaseArtifactController
 
     @Autowired
     private ArtifactBlockComponent artifactBlockComponent;
+
+    @Autowired
+    private DictService dictService;
+
+    @Inject
+    @Qualifier("browseRepositoryDirectoryListingService")
+    @Lazy
+    private volatile DirectoryListingService directoryListingService;
+
+    @Autowired
+    @Lazy
+    private ArtifactSecurityComponent artifactSecurityComponent;
+
 
     protected boolean provideArtifactDownloadResponse(HttpServletRequest request,
                                                       HttpServletResponse response,
@@ -165,17 +184,40 @@ public abstract class BaseArtifactController
         } else if (path.toString().startsWith("s3://")) {
             //S3
             if (path instanceof RepositoryPath) {
-                try (InputStream is = artifactResolutionService.getInputStream((RepositoryPath) path)) {
-                    copyToResponse(is, response);
+                if (!Files.exists(path)) {
+                    throw new ArtifactNotFoundException(path.toUri());
                 }
+                if (Files.isDirectory(path)) {
+                    throw new ArtifactNotFoundException(path.toUri(),
+                            String.format("The artifact path is a directory: [%s]", path.toString()));
+                }
+                StorageFileSystemProvider storageFileSystemProvider = (StorageFileSystemProvider) path.getFileSystem().provider();
+                S3FileSystemProvider s3FileSystemProvider =  (S3FileSystemProvider) storageFileSystemProvider.getTarget();
+                Path s3Path = unwrap(path);
+                try (InputStream s3FileSystem = s3FileSystemProvider.newInputStream(s3Path);) {
+                    copyToResponse(s3FileSystem, response);
+                }
+                //try (InputStream is = artifactResolutionService.getInputStream((RepositoryPath) path)) {
+                //    copyToResponse(is, response);
+                //}
             }
         } else {
             try (FileChannel fileChannel = FileChannel.open(path);
                  WritableByteChannel responseChannel = Channels.newChannel(response.getOutputStream())) {
                 long fileSize = fileChannel.size();
                 for (long left = fileSize; left > 0; ) {
-                    logger.debug("RepositoryPath [{}] position [{}] left [{}]", path.toString(), fileSize - left, left);
-                    left -= fileChannel.transferTo((fileSize - left), left, responseChannel);
+                    try {
+                        logger.debug("RepositoryPath [{}] position [{}] left [{}]", path.toString(), fileSize - left, left);
+                        left -= fileChannel.transferTo((fileSize - left), left, responseChannel);
+                    }catch (IOException e){
+                        // 检查是否为客户端断开连接
+                        if (e instanceof ClosedChannelException || e instanceof EofException) {
+                            logger.error("Client disconnected, stopping transfer [{}]", ExceptionUtils.getStackTrace(e));
+                            break;
+                        }
+                        //其他IO异常重新抛出
+                        throw e;
+                    }
                 }
             }
         }
@@ -359,6 +401,122 @@ public abstract class BaseArtifactController
         String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
         String bestMatchPattern = (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
         return new AntPathMatcher().extractPathWithinPattern(bestMatchPattern, path);
+    }
+
+    protected boolean probeForDirectoryListing(final RepositoryPath repositoryPath)
+            throws IOException {
+        return Files.exists(repositoryPath) &&
+                repositoryPath.getRepository().getLayout().equals("helm") && repositoryPath.getTarget().toString().endsWith("index.yaml") || Files.isDirectory(repositoryPath) &&
+                isPermittedForDirectoryListing(repositoryPath);
+    }
+
+    protected boolean isPermittedForDirectoryListing(final RepositoryPath repositoryPath)
+            throws IOException {
+        //TODO: RepositoryFiles.isIndex(repositoryPath) || (
+        return (!Files.isHidden(repositoryPath)
+                // 支持Cocoapods索引目录的显示
+                || repositoryPath.toString().contains(".specs") || repositoryPath.toString().contains(LayoutFileSystem.TRASH))
+                && !RepositoryFiles.isTemp(repositoryPath);
+    }
+
+    public Object browseRepository(HttpServletRequest request, HttpHeaders httpHeaders, HttpServletResponse response, ModelMap model, Repository repository, String path) {
+        final String storageId = repository.getStorage().getId();
+        final String repositoryId = repository.getId();
+        logger.info("Requested browsing repository content at {}/{}/{} ", storageId, repositoryId, path);
+        String acceptHeader = request.getHeader(HttpHeaders.ACCEPT);
+        try {
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, path);
+            repositoryPath.setDisableRemote(true);
+            RepositoryPath repositoryResolvePath = artifactResolutionService.resolvePath(repositoryPath);
+            if (Objects.isNull(repositoryResolvePath) && StringUtils.isNotBlank(RepositoryFiles.relativizePath(repositoryPath))) {
+                response.setStatus(HttpStatus.NOT_FOUND.value());
+                return null;
+            }
+            if (Objects.nonNull(repositoryResolvePath) && Files.exists(repositoryResolvePath) && Files.isRegularFile(repositoryResolvePath)) {
+                vulnerabilityBlock(repositoryResolvePath);
+                provideArtifactDownloadResponse(request, response, httpHeaders, repositoryResolvePath);
+                return null;
+            }
+            DirectoryListing directoryListing = null;
+            if (RepositoryTypeEnum.GROUP.getType().equals(repository.getType())) {
+                directoryListing = directoryListingService.fromGroupRepositoryPath(repository, repositoryPath);
+            } else {
+                if (repositoryPath == null || !Files.exists(repositoryPath)) {
+                    return getNotFoundResponseEntity("The requested repository path was not found.", acceptHeader);
+                }
+                if (!repository.isInService()) {
+                    return getServiceUnavailableResponseEntity("Repository is not in service...", acceptHeader);
+                }
+                if (!repository.isAllowsDirectoryBrowsing() || !probeForDirectoryListing(repositoryPath)) {
+                    return getNotFoundResponseEntity("Requested repository doesn't allow browsing.", acceptHeader);
+                }
+                directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+            }
+            if (acceptHeader != null && acceptHeader.contains(MediaType.APPLICATION_JSON_VALUE)) {
+                return ResponseEntity.ok(objectMapper.writer().writeValueAsString(directoryListing));
+            }
+            String currentUrl = org.apache.commons.lang.StringUtils.chomp(request.getRequestURI(), "/");
+            model.addAttribute("currentUrl", currentUrl);
+            model.addAttribute("directories", directoryListing.getDirectories());
+            model.addAttribute("files", directoryListing.getFiles());
+            return new ModelAndView("directoryListing", model);
+        } catch (Exception e) {
+            String message = "Failed to generate repository directory listing.";
+            return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, message, e, acceptHeader);
+        }
+    }
+
+    public Object download(Repository repository, HttpHeaders httpHeaders, String path, HttpServletRequest request, HttpServletResponse response, ModelMap model)
+            throws Exception {
+        final String storageId = repository.getStorage().getId();
+        final String repositoryId = repository.getId();
+        logger.info("Requested /{}/{}/{}.", storageId, repositoryId, path);
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, path);
+        repositoryPath.setDisableRemote(true);
+        if (ProductTypeEnum.SIMPLE_TYPE_LIST.stream().anyMatch(item -> item.equals(repository.getLayout()))) {
+            repositoryPath.setDisableRemote(null);
+        }
+        if (StringUtils.isNotBlank(RepositoryFiles.relativizePath(repositoryPath)) && !RepositoryTypeEnum.GROUP.getType().equals(repository.getType()) && !artifactSecurityComponent.validatePrivileges(repositoryPath, Privileges.ARTIFACTS_RESOLVE.getAuthority())) {
+            response.setStatus(HttpStatus.NOT_FOUND.value());
+            return null;
+        }
+        repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
+        boolean browse = RepositoryTypeEnum.GROUP.getType().equals(repository.getType()) || (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath) && Files.isDirectory(repositoryPath));
+        if (browse) {
+            return browseRepository(request, httpHeaders, response, model, repository, path);
+        } else {
+            vulnerabilityBlock(repositoryPath);
+            provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+        }
+        return null;
+    }
+
+    /**
+     * 获取设置默认的存储空间
+     *
+     * @param repositoryId 仓库名称
+     * @return 存储空间
+     */
+    public String getDefaultStorageId(String repositoryId) {
+        DistributedCacheComponent distributedCacheComponent = SpringUtil.getBean(DistributedCacheComponent.class);
+        if (StringUtils.isNotBlank(repositoryId)) {
+            //按照仓库查询对应的存储空间
+            String key = "JFrogAdapterStorage_" + repositoryId;
+            String jFrogAdapterStorage = distributedCacheComponent.get(key);
+            if (StringUtils.isNotBlank(jFrogAdapterStorage)) {
+                return jFrogAdapterStorage;
+            }
+        }
+        String key = "JFrogAdapterDefaultStorage";
+        String jFrogAdapterDefaultStorage = distributedCacheComponent.get(key);
+        if (StringUtils.isBlank(jFrogAdapterDefaultStorage)) {
+            throw new RuntimeException("Default storage not found,Please Set the default storageId");
+        }
+        return jFrogAdapterDefaultStorage;
+    }
+    
+    protected Path unwrap(Path path) {
+        return path instanceof RepositoryPath ? ((RepositoryPath) path).getTarget() : path;
     }
 
 }

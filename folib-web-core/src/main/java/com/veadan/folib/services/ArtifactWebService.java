@@ -319,5 +319,4 @@ public interface ArtifactWebService {
     String getMetadata(String storageId,String repositoryId,String path);
 
 
-    void backupResolve(String storageId,String  repositoryId,MultipartFile file);
 }

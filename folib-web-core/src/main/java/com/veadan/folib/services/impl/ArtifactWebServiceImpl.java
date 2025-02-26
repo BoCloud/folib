@@ -214,9 +214,6 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     @Autowired
     private RoleResourceRefMapper roleResourceRefMapper;
 
-    @Resource
-    private ArtifactorySearch artifactorySearch;
-
     @Value("${folib.temp}")
     private String tempPath;
 
@@ -962,6 +959,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         }
                     } catch (Exception ex) {
                         log.error("路径 [{}] 错误 [{}] ", artifactFile.getAbsolutePath(), ExceptionUtils.getStackTrace(ex));
+                        throw new RuntimeException(ex.getMessage());
                     }
                     statusInfo.setSuccess(successTotal);
                     statusInfo.setFail(statusInfo.getTotal() - statusInfo.getSuccess());
@@ -971,12 +969,12 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         Matcher matcher = DebianConstant.PACKAGE_PATTERN.matcher(distribution);
                         if(matcher.matches()){
                             String codename = matcher.group("codename");
-                            (new DebianReleaseMetadataIndexer(rootRepositoryPath.getRepository(), Collections.emptyList(), repositoryPathResolver, artifactorySearch)).indexRelease(codename);
+                            (new DebianReleaseMetadataIndexer(rootRepositoryPath.getRepository(), Collections.emptyList(), repositoryPathResolver, null)).indexRelease(codename);
                         }
                     }
                 }
                 if (ProductTypeEnum.Rpm.getFoLibraryName().equals(rootRepositoryPath.getRepository().getLayout())) {
-                    RpmRepoIndexer rpmRepoIndexer = new RpmRepoIndexer(repositoryPathResolver, artifactManagementService, tempPath);
+                    RpmRepoIndexer rpmRepoIndexer = new RpmRepoIndexer(repositoryPathResolver, artifactManagementService, parentPath);
                     rpmRepoIndexer.indexWriter(rootRepositoryPath.getRepository());
                 }
             }
@@ -1465,13 +1463,16 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 return;
             }
             Artifact artifact = resolvePath(storageId, repositoryId, path);
+            if (Objects.isNull(artifact)) {
+                return;
+            }
             artifact.setMetadata(metaData);
             artifactService.saveOrUpdateArtifact(artifact);
             repositoryPath.setArtifact(artifact);
             artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
             cacheMetadata(repositoryPath);
         } catch (Exception e) {
-            log.info("添加元数据失败");
+            log.error("添加元数据失败 [{}]", ExceptionUtils.getStackTrace(e));
         }
 
     }
@@ -1502,11 +1503,6 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             log.error("Get metadata storageId [{}] repositoryId [{}] path [{}] error [{}]", storageId, repositoryId, path, ExceptionUtils.getStackTrace(ex));
         }
         return metadata;
-    }
-
-    @Override
-    public void backupResolve(String storageId, String repositoryId, MultipartFile file) {
-        store("ADMIN", storageId, repositoryId, "", UUID.randomUUID().toString(), file);
     }
 
     private void handleDockerRepo(RepositoryPath rootRepositoryPath, RepositoryPath blobsRootRepositoryPath, RepositoryPath manifestRootRepositoryPath) {
@@ -1911,10 +1907,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 artifactMetadataService.rebuildMetadata(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), repositoryPath.getArtifactEntry().getArtifactPath());
             } catch (Exception ex) {
                 log.error("StoreArtifact rebuildMetadata repositoryPath：{}，error：{}", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
+                throw ex;
             }
         } catch (Exception ex) {
             log.error("StoreArtifact repositoryPath：{} error：{}", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
-            return false;
+            throw  new RuntimeException(ex);
         }
         return true;
     }
@@ -2661,8 +2658,3 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         }
     }
 }
-
-
-
-
-

@@ -16,7 +16,8 @@ const store = new Vuex.Store({
     newDetailPage: false,
     currentTreeNode: {},
     isChecked: false,
-    switchDisabled: true
+    switchDisabled: true,
+    repositoryLength: 0
   },
   mutations: {
     setNewDetailPage(state, key) {
@@ -36,6 +37,10 @@ const store = new Vuex.Store({
     setSwitchDisabled(state, key) {
       state.switchDisabled = key
       console.log(state.switchDisabled, 'state.switchDisabled')
+    },
+    // 设置仓库列表长度
+    setRepositoryLength(state, val) {
+      state.repositoryLength = val
     },
   },
   actions: {},

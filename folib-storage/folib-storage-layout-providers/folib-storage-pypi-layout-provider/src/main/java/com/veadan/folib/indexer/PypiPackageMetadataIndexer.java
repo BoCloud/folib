@@ -207,7 +207,7 @@ public class PypiPackageMetadataIndexer {
     }
 
     protected String getRepositoryBaseUrl(Repository repository) {
-        return String.format("%s/storages/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getStorage().getId(), repository.getId());
+        return String.format("%s/artifactory/api/pypi/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), repository.getId());
     }
 
 }

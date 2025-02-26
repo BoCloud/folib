@@ -97,9 +97,4 @@ public class HelmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<Hel
         return c.getId();
     }
 
-    @Override
-    public URI convertToResource(HelmArtifactCoordinates c) {
-        return URI.create(convertToPath(c));
-    }
-
 }

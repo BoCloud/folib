@@ -2,51 +2,35 @@ package com.veadan.folib.metadata.indexer;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
-import com.veadan.folib.metadata.extractor.RpmFormatInterpreter;
-import com.veadan.folib.metadata.extractor.RpmFormatReader;
 import com.veadan.folib.metadata.extractor.RpmMetadata;
 import com.veadan.folib.metadata.extractor.RpmMetadataExtractor;
 import com.veadan.folib.metadata.model.Entry;
 import com.veadan.folib.metadata.model.RepomdMetadata;
-import com.veadan.folib.providers.ProviderImplementationException;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
-import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.io.FileUtils;
-import org.redline_rpm.Dependency;
 import org.redline_rpm.changelog.ChangelogEntry;
-import org.redline_rpm.header.Format;
-import org.redline_rpm.header.Header;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import reactor.core.publisher.Flux;
-import reactor.core.scheduler.Schedulers;
 
-import javax.inject.Inject;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.zip.GZIPOutputStream;
 
 public class RpmRepoIndexer {
@@ -58,6 +42,9 @@ public class RpmRepoIndexer {
     private final String repomdXml;
     private final String primaryXmlGz;
     private final String otherXmlGz;
+    private final String fileListXml;
+    private final String fileListXmlGz;
+
 
     protected RepositoryPathResolver repositoryPathResolver;
 
@@ -74,63 +61,72 @@ public class RpmRepoIndexer {
         this.repomdXml = "repomd.xml";
         this.primaryXmlGz = "primary.xml.gz";
         this.otherXmlGz = "other.xml.gz";
+        this.fileListXml = "filelists.xml";
+        this.fileListXmlGz = "filelists.xml.gz";
     }
 
     public void indexWriter(Repository repository) throws Exception {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
-        indexWriter( storageId,  repositoryId);
+        indexWriter(storageId, repositoryId);
     }
+
     public void indexWriter(final String storageId, final String repositoryId) throws Exception {
 
         RootRepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
         String temp = String.join("/", tempPath, UUID.randomUUID().toString());
         Files.createDirectories(Path.of(temp));
         List<Path> paths = listPaths(repositoryPath);
-        if(CollectionUtil.isEmpty(paths)){
-            if(Files.isDirectory(Path.of(String.join("/", repositoryPath.getTarget().toString(),"repodata")))){
-                FileUtils.deleteDirectory(new File(String.join("/", repositoryPath.getTarget().toString(),"repodata")));
+        if (CollectionUtil.isEmpty(paths)) {
+            if (Files.isDirectory(Path.of(String.join("/", repositoryPath.getTarget().toString(), "repodata")))) {
+                FileUtils.deleteDirectory(new File(String.join("/", repositoryPath.getTarget().toString(), "repodata")));
             }
             return;
         }
-        generateXml(paths, temp,repositoryPath);
+        generateXml(paths, temp, repositoryPath);
         //generatePrimaryXml(paths, temp);
         //generateOtherXml(paths, temp);
 
         Path primaryXmlPath = Path.of(String.join("/", temp, primaryXml));
         Path otherXmlPath = Path.of(String.join("/", temp, otherXml));
-        if (!isFile(primaryXmlPath) || !isFile(otherXmlPath)) {
+        Path fileListXmlPath = Path.of(String.join("/", temp, fileListXml));
+        if (!isFile(primaryXmlPath) || !isFile(otherXmlPath) || !isFile(fileListXmlPath)) {
             throw new RuntimeException("primary.xml or other.xml is null");
         }
 
         String primaryXmlOpenSha = getSHA1(primaryXmlPath);
         String otherXmlOpenSha = getSHA1(otherXmlPath);
+        String fileListXmlOpenSha = getSHA1(fileListXmlPath);
         long primaryOpenSize = Files.size(primaryXmlPath);
-
         long primaryTimestamp = Files.getLastModifiedTime(primaryXmlPath).toMillis();
         long otherTimestamp = Files.getLastModifiedTime(otherXmlPath).toMillis();
+        long fileListTimestamp = Files.getLastModifiedTime(fileListXmlPath).toMillis();
 
         //Path primaryXmlGzPath = Path.of(String.join("/", temp, String.join("-", primaryXmlOpenSha, primaryXmlGz)));
         //Path otherXmlGzPath = Path.of(String.join("/", temp, String.join("-", otherXmlOpenSha, otherXmlGz)));
 
-        Path primaryXmlGzPath = Path.of(String.join("/", temp,  primaryXmlGz));
-        Path otherXmlGzPath = Path.of(String.join("/", temp,  otherXmlGz));
+        Path primaryXmlGzPath = Path.of(String.join("/", temp, primaryXmlGz));
+        Path otherXmlGzPath = Path.of(String.join("/", temp, otherXmlGz));
+        Path fileListXmlGzPath = Path.of(String.join("/", temp, fileListXmlGz));
 
 
         compressXMLToFile(primaryXmlPath, primaryXmlGzPath);
         compressXMLToFile(otherXmlPath, otherXmlGzPath);
+        compressXMLToFile(fileListXmlPath, fileListXmlGzPath);
 
-        if (!isFile(primaryXmlGzPath) || !isFile(otherXmlGzPath)) {
+        if (!isFile(primaryXmlGzPath) || !isFile(otherXmlGzPath) || !isFile(fileListXmlGzPath)) {
             throw new RuntimeException("primary.xml.gz or other.xml.gz is null");
         }
         String primaryXmlSha = getSHA1(primaryXmlGzPath);
         String otherXmlSha = getSHA1(otherXmlGzPath);
+        String fileListXmlSha = getSHA1(fileListXmlGzPath);
         long primarySize = Files.size(primaryXmlGzPath);
         long otherOpenSize = Files.size(otherXmlPath);
+        long fileListOpenSize = Files.size(fileListXmlPath);
 
         RepomdMetadata repomdMetadata = new RepomdMetadata();
         RepomdMetadata.XmlData primary = new RepomdMetadata.XmlData();
-        primary.setHref(String.join("/",  "repodata",  String.join("-", primaryXmlSha, primaryXmlGz)));
+        primary.setHref(String.join("/", "repodata", String.join("-", primaryXmlSha, primaryXmlGz)));
         primary.setSize(primarySize);
         primary.setChecksum(primaryXmlSha);
         primary.setTimestamp(primaryTimestamp);
@@ -139,16 +135,25 @@ public class RpmRepoIndexer {
 
         long otherSize = Files.size(otherXmlGzPath);
         RepomdMetadata.XmlData other = new RepomdMetadata.XmlData();
-        other.setHref(String.join("/", "repodata", String.join("-", otherXmlSha , otherXmlGz)));
+        other.setHref(String.join("/", "repodata", String.join("-", otherXmlSha, otherXmlGz)));
         other.setSize(otherSize);
         other.setChecksum(otherXmlSha);
         other.setTimestamp(otherTimestamp);
         other.setOpenChecksum(otherXmlOpenSha);
         other.setOpenSize(otherOpenSize);
 
+        long fileListSize = Files.size(fileListXmlGzPath);
+        RepomdMetadata.XmlData fileLists = new RepomdMetadata.XmlData();
+        fileLists.setHref(String.join("/", "repodata", String.join("-", fileListXmlSha, fileListXmlGz)));
+        fileLists.setSize(fileListSize);
+        fileLists.setChecksum(fileListXmlSha);
+        fileLists.setTimestamp(fileListTimestamp);
+        fileLists.setOpenChecksum(fileListXmlOpenSha);
+        fileLists.setOpenSize(fileListOpenSize);
 
         repomdMetadata.setPrimary(primary);
         repomdMetadata.setOther(other);
+        repomdMetadata.setFilelists(fileLists);
         generateRepomdXml(repomdMetadata, temp);
 
         Path repomdXmlPath = Path.of(String.join("/", temp, repomdXml));
@@ -159,18 +164,23 @@ public class RpmRepoIndexer {
         //RepositoryPath primaryPath = repositoryPathResolver.resolve(repository, String.join("/", "repodata", primaryXmlGzPath.getFileName().toString()));
         //RepositoryPath otherPath = repositoryPathResolver.resolve(repository, String.join("/", "repodata", otherXmlGzPath.getFileName().toString()));
 
-        RepositoryPath primaryPath = repositoryPathResolver.resolve(storageId,  repositoryId,String.join("/", "repodata", String.join("-", primaryXmlSha, primaryXmlGz)));
-        RepositoryPath otherPath = repositoryPathResolver.resolve(storageId,  repositoryId, String.join("/", "repodata", String.join("-", otherXmlSha, otherXmlGz)));
-
-
-        RepositoryPath repomdPath = repositoryPathResolver.resolve(storageId,  repositoryId, String.join("/", "repodata", repomdXml));
+        RepositoryPath primaryPath = repositoryPathResolver.resolve(storageId, repositoryId, String.join("/", "repodata", String.join("-", primaryXmlSha, primaryXmlGz)));
+        RepositoryPath otherPath = repositoryPathResolver.resolve(storageId, repositoryId, String.join("/", "repodata", String.join("-", otherXmlSha, otherXmlGz)));
+        RepositoryPath fileListPath = repositoryPathResolver.resolve(storageId, repositoryId, String.join("/", "repodata", String.join("-", fileListXmlSha, fileListXmlGz)));
+        RepositoryPath repomdPath = repositoryPathResolver.resolve(storageId, repositoryId, String.join("/", "repodata", repomdXml));
         artifactManagementService.validateAndStore(primaryPath, primaryXmlGzPath);
         artifactManagementService.validateAndStore(otherPath, otherXmlGzPath);
+        artifactManagementService.validateAndStore(fileListPath, fileListXmlGzPath);
         artifactManagementService.validateAndStore(repomdPath, repomdXmlPath);
         FileUtils.deleteDirectory(new File(temp));
     }
-    public  List<Path> listPaths(Path path) throws IOException {
-       return Files.walk(path).filter(this::isFileExist).collect(Collectors.toList());
+
+    public List<Path> listPaths(Path path) throws IOException {
+        return Files.walk(path)
+                .filter(p -> !p.getFileName().toString().equals(".temp") &&
+                        !p.getFileName().toString().equals(".trash") &&
+                         isFileExist(p))
+                .collect(Collectors.toList());
     }
 
     //校验是否有效文件
@@ -282,7 +292,8 @@ public class RpmRepoIndexer {
         }
         return hexString.toString();
     }
-    public void generateXml(List<Path> paths, String savePath, RepositoryPath root){
+
+    public void generateXml(List<Path> paths, String savePath, RepositoryPath root) {
         try {
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dbBuilder = dbFactory.newDocumentBuilder();
@@ -295,24 +306,39 @@ public class RpmRepoIndexer {
             docPrimary.appendChild(primaryRootElement);
 
             Document docOther = dbBuilder.newDocument();
-
             Element otherRootElement = docOther.createElement("otherdata");
             otherRootElement.setAttribute("xmlns", "http://linux.duke.edu/metadata/other");
             otherRootElement.setAttribute("packages", Integer.toString(paths.size()));
             docOther.appendChild(otherRootElement);
 
+            Document docFilelists = dbBuilder.newDocument();
+            Element filelistsRootElement = docFilelists.createElement("filelists");
+            filelistsRootElement.setAttribute("xmlns", "http://linux.duke.edu/metadata/filelists");
+            filelistsRootElement.setAttribute("packages", Integer.toString(paths.size()));
+            docFilelists.appendChild(filelistsRootElement);
+
             for (Path path : paths) {
                 RepositoryPath location = root.relativize(path);
-                RpmMetadata metadata = new RpmMetadataExtractor().extract(path);
-                String fileDigests =metadata.getSha1Digest();
+                RpmMetadata metadata = null;
+                try {
+                    metadata = new RpmMetadataExtractor().extract(path);
+                } catch (Exception e) {
+                    logger.info("Failed to extract metadata from path " + path.toString(), e);
+                    continue;
+                }
+                String fileDigests = metadata.getSha1Digest();
 
                 // 生成primary package data
-                Element packagePrimaryElement = generatePrimary(metadata, docPrimary, fileDigests,location.getPath());
+                Element packagePrimaryElement = generatePrimary(metadata, docPrimary, fileDigests, location.getPath());
                 primaryRootElement.appendChild(packagePrimaryElement);
 
                 // 生成other package data
                 Element packageOtherElement = generateOther(metadata, docOther);
                 otherRootElement.appendChild(packageOtherElement);
+
+                // 生成filelist.xml
+                Element packageFileListElement = generateFileList(metadata, docFilelists);
+                filelistsRootElement.appendChild(packageFileListElement);
             }
 
             // Save the XML
@@ -330,7 +356,12 @@ public class RpmRepoIndexer {
             StreamResult resultOther = new StreamResult(new File(savePath, otherXml));
             transformer.transform(sourceOther, resultOther);
 
-        }catch (Exception e){
+            //生成filelist.xml
+            DOMSource sourceFileList = new DOMSource(docFilelists);
+            StreamResult resultFileList = new StreamResult(new File(savePath, fileListXml));
+            transformer.transform(sourceFileList, resultFileList);
+
+        } catch (Exception e) {
             logger.error("生成other.xml或primary.xml失败");
             e.printStackTrace();
         }
@@ -338,7 +369,7 @@ public class RpmRepoIndexer {
     }
 
 
-    public Element generatePrimary(RpmMetadata metadata, Document doc, String fileDigests,String location) {
+    public Element generatePrimary(RpmMetadata metadata, Document doc, String fileDigests, String location) {
         Element packageElement = doc.createElement("package");
         packageElement.setAttribute("type", "rpm");
 
@@ -348,16 +379,24 @@ public class RpmRepoIndexer {
         nameElement.appendChild(doc.createTextNode(metadata.getName()));
         packageElement.appendChild(nameElement);
 
-        // Version
-        Element versionElement = doc.createElement("version");
-        versionElement.setAttribute("ver", metadata.getVersion());
-        versionElement.setAttribute("rel", metadata.getRelease());
-        packageElement.appendChild(versionElement);
-
         // Arch
         Element archElement = doc.createElement("arch");
         archElement.appendChild(doc.createTextNode(metadata.getArchitecture()));
         packageElement.appendChild(archElement);
+
+        // Version
+        Element versionElement = doc.createElement("version");
+        versionElement.setAttribute("epoch", Integer.toString(metadata.getEpoch()));
+        versionElement.setAttribute("ver", metadata.getVersion());
+        versionElement.setAttribute("rel", metadata.getRelease());
+        packageElement.appendChild(versionElement);
+
+        // Checksum
+        Element checksumElement = doc.createElement("checksum");
+        checksumElement.setAttribute("type", "sha");
+        checksumElement.setAttribute("pkgid", "YES");
+        checksumElement.appendChild(doc.createTextNode(fileDigests)); // Replace with actual checksum calculation
+        packageElement.appendChild(checksumElement);
 
         // Summary
         Element summaryElement = doc.createElement("summary");
@@ -397,12 +436,7 @@ public class RpmRepoIndexer {
         locationElement.setAttribute("href", location);
         packageElement.appendChild(locationElement);
 
-        // Checksum
-        Element checksumElement = doc.createElement("checksum");
-        checksumElement.setAttribute("type", "sha");
-        checksumElement.setAttribute("pkgid", "YES");
-        checksumElement.appendChild(doc.createTextNode(fileDigests)); // Replace with actual checksum calculation
-        packageElement.appendChild(checksumElement);
+
 
         // Format
         Element formatElement = doc.createElement("format");
@@ -435,8 +469,8 @@ public class RpmRepoIndexer {
 
         // Header Range
         Element headerRangeElement = doc.createElement("rpm:header-range");
-        headerRangeElement.setAttribute("start", Integer.toString(metadata.getHeaderStart()));  // Replace with actual start position
         headerRangeElement.setAttribute("end", Integer.toString(metadata.getHeaderEnd()));   // Replace with actual end position
+        headerRangeElement.setAttribute("start", Integer.toString(metadata.getHeaderStart()));  // Replace with actual start position
         formatElement.appendChild(headerRangeElement);
 
 
@@ -457,10 +491,18 @@ public class RpmRepoIndexer {
         for (Entry entry : metadata.getRequire()) {
             Element requiresEntryElement1 = doc.createElement("rpm:entry");
             requiresEntryElement1.setAttribute("name", entry.getName());
-            //requiresEntryElement1.setAttribute("flags", entry.getFlags());
-            //requiresEntryElement1.setAttribute("epoch", entry.getEpoch());
-            //requiresEntryElement1.setAttribute("ver", entry.getVersion());
-            //requiresEntryElement1.setAttribute("rel", entry.getRelease());
+            if(entry.getFlags()!=null){
+                requiresEntryElement1.setAttribute("flags", entry.getFlags());
+            }
+            if(entry.getEpoch()!=null){
+                requiresEntryElement1.setAttribute("epoch", entry.getEpoch());
+            }
+            if(entry.getVersion()!=null){
+                requiresEntryElement1.setAttribute("ver", entry.getVersion());
+            }
+            if(entry.getRelease()!=null){
+                requiresEntryElement1.setAttribute("rel", entry.getRelease());
+            }
             requiresElement.appendChild(requiresEntryElement1);
         }
         formatElement.appendChild(requiresElement);
@@ -494,7 +536,7 @@ public class RpmRepoIndexer {
         // Files
 
         for (com.veadan.folib.metadata.model.File file : metadata.getFiles()) {
-            if(StrUtil.isNotEmpty(file.path)){
+            if (StrUtil.isNotEmpty(file.path)) {
                 Element filesElement = doc.createElement("file");
                 filesElement.appendChild(doc.createTextNode(file.path)); // Replace with actual checksum calculation
                 formatElement.appendChild(filesElement);
@@ -527,6 +569,30 @@ public class RpmRepoIndexer {
         return packageElement;
     }
 
+    private static Element generateFileList(RpmMetadata metadata, Document doc) {
+        Element packageElement = doc.createElement("package");
+        packageElement.setAttribute("type", "rpm");
+        packageElement.setAttribute("pkgid", metadata.getSha1Digest());
+        packageElement.setAttribute("arch", metadata.getArchitecture());
+        packageElement.setAttribute("name", metadata.getName());
+
+        // Version
+        Element versionElement = doc.createElement("version");
+        versionElement.setAttribute("ver", metadata.getVersion());
+        versionElement.setAttribute("rel", metadata.getRelease());
+        packageElement.appendChild(versionElement);
+
+        // Files
+        for (com.veadan.folib.metadata.model.File file : metadata.getFiles()) {
+            if (StrUtil.isNotEmpty(file.path)) {
+                Element filesElement = doc.createElement("file");
+                filesElement.appendChild(doc.createTextNode(file.path)); // Replace with actual checksum calculation
+                packageElement.appendChild(filesElement);
+            }
+        }
+
+        return packageElement;
+    }
 
     private void generateRepomdXml(RepomdMetadata repomdMetadata, String savePath) throws Exception {
         try {
@@ -539,79 +605,17 @@ public class RpmRepoIndexer {
             rootElement.setAttribute("xmlns:rpm", "http://linux.duke.edu/metadata/rpm");
             doc.appendChild(rootElement);
 
-            Element dataElement = doc.createElement("data");
-            dataElement.setAttribute("type", "primary");
-            rootElement.appendChild(dataElement);
-
-            Element locationElement = doc.createElement("location");
-            locationElement.setAttribute("href", repomdMetadata.getPrimary().getHref());
-            dataElement.appendChild(locationElement);
-
-            Element checksumElement = doc.createElement("checksum");
-            checksumElement.setAttribute("type", "sha");
-            checksumElement.setAttribute("pkgid", "YES");
-            checksumElement.appendChild(doc.createTextNode(repomdMetadata.getPrimary().getChecksum()));
-            dataElement.appendChild(checksumElement);
-
-            Element sizeElement = doc.createElement("size");
-            sizeElement.appendChild(doc.createTextNode(Long.toString(repomdMetadata.getPrimary().getSize())));
-            dataElement.appendChild(sizeElement);
-
-            Element timestampElement = doc.createElement("timestamp");
-            timestampElement.appendChild(doc.createTextNode(Long.toString(repomdMetadata.getPrimary().getTimestamp())));
-            dataElement.appendChild(timestampElement);
-
-            Element openChecksumElement = doc.createElement("open-checksum");
-            openChecksumElement.setAttribute("type", "sha");
-            openChecksumElement.setAttribute("pkgid", "YES");
-            openChecksumElement.appendChild(doc.createTextNode(repomdMetadata.getPrimary().getOpenChecksum()));
-            dataElement.appendChild(openChecksumElement);
-
-            Element openSizeElement = doc.createElement("open-size");
-            openSizeElement.appendChild(doc.createTextNode(Long.toString(repomdMetadata.getPrimary().getOpenSize())));
-            dataElement.appendChild(openSizeElement);
-            //revision
-            Element revisionElement = doc.createElement("revision");
-            revisionElement.appendChild(doc.createTextNode(""));
-            dataElement.appendChild(revisionElement);
-
+            //
+            Element primaryDataElement = repomdXmlSupplementary(repomdMetadata, doc,"primary");
+            rootElement.appendChild(primaryDataElement);
             // 添加 other.xml 的数据部分
-            Element otherDataElement = doc.createElement("data");
-            otherDataElement.setAttribute("type", "other");
+            Element otherDataElement = repomdXmlSupplementary(repomdMetadata, doc,"other");
             rootElement.appendChild(otherDataElement);
 
-            Element otherLocationElement = doc.createElement("location");
-            otherLocationElement.setAttribute("href", repomdMetadata.getOther().getHref());
-            otherDataElement.appendChild(otherLocationElement);
 
-            Element otherChecksumElement = doc.createElement("checksum");
-            otherChecksumElement.setAttribute("type", "sha");
-            otherChecksumElement.setAttribute("pkgid", "YES");
-            otherChecksumElement.appendChild(doc.createTextNode(repomdMetadata.getOther().getChecksum()));
-            otherDataElement.appendChild(otherChecksumElement);
-
-            Element otherSizeElement = doc.createElement("size");
-            otherSizeElement.appendChild(doc.createTextNode(Long.toString(repomdMetadata.getOther().getSize())));
-            otherDataElement.appendChild(otherSizeElement);
-
-            Element otherOpenChecksumElement = doc.createElement("open-checksum");
-            otherOpenChecksumElement.setAttribute("type", "sha");
-            otherOpenChecksumElement.setAttribute("pkgid", "YES");
-            otherOpenChecksumElement.appendChild(doc.createTextNode(repomdMetadata.getOther().getOpenChecksum()));
-            otherDataElement.appendChild(otherOpenChecksumElement);
-
-            Element otherOpenSizeElement = doc.createElement("open-size");
-            otherOpenSizeElement.appendChild(doc.createTextNode(Long.toString(repomdMetadata.getOther().getOpenSize())));
-            otherDataElement.appendChild(otherOpenSizeElement);
-
-            Element otherTimestampElement = doc.createElement("timestamp");
-            otherTimestampElement.appendChild(doc.createTextNode(String.valueOf(repomdMetadata.getOther().getTimestamp())));
-            otherDataElement.appendChild(otherTimestampElement);
-
-            //revision
-            Element otherRevisionElement = doc.createElement("revision");
-            otherRevisionElement.appendChild(doc.createTextNode(""));
-            otherDataElement.appendChild(otherRevisionElement);
+            // 添加 filelist.xml 的数据部分
+            Element filelistsDataElement = repomdXmlSupplementary(repomdMetadata, doc,"filelists");
+            rootElement.appendChild(filelistsDataElement);
 
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             Transformer transformer = transformerFactory.newTransformer();
@@ -623,7 +627,72 @@ public class RpmRepoIndexer {
             logger.error("生成repomd.xml失败");
             e.printStackTrace();
         }
+    }
 
+    public Element repomdXmlSupplementary(RepomdMetadata repomdMetadata, Document doc, String type) {
+        String href = "";
+        String checksum = "";
+        long size=0 ;
+        long timestamp=0;
+        String openChecksum="";
+        long openSize=0;
+        if (type.equals("primary")) {
+            href = repomdMetadata.getPrimary().getHref();
+            checksum = repomdMetadata.getPrimary().getChecksum();
+            size = repomdMetadata.getPrimary().getSize();
+            timestamp = repomdMetadata.getPrimary().getTimestamp();
+            openChecksum = repomdMetadata.getPrimary().getOpenChecksum();
+            openSize = repomdMetadata.getPrimary().getOpenSize();
+        } else if (type.equals("other")) {
+            href = repomdMetadata.getOther().getHref();
+            checksum = repomdMetadata.getOther().getChecksum();
+            size = repomdMetadata.getOther().getSize();
+            timestamp = repomdMetadata.getOther().getTimestamp();
+            openChecksum = repomdMetadata.getOther().getOpenChecksum();
+            openSize = repomdMetadata.getOther().getOpenSize();
+        } else if (type.equals("filelists")) {
+            href = repomdMetadata.getFilelists().getHref();
+            checksum = repomdMetadata.getFilelists().getChecksum();
+            size = repomdMetadata.getFilelists().getSize();
+            timestamp = repomdMetadata.getFilelists().getTimestamp();
+            openChecksum = repomdMetadata.getFilelists().getOpenChecksum();
+            openSize = repomdMetadata.getFilelists().getOpenSize();
+        }
+        Element dataElement = doc.createElement("data");
+        dataElement.setAttribute("type", type);
+
+        Element locationElement = doc.createElement("location");
+        locationElement.setAttribute("href", href);
+        dataElement.appendChild(locationElement);
+
+        Element checksumElement = doc.createElement("checksum");
+        checksumElement.setAttribute("type", "sha");
+        checksumElement.setAttribute("pkgid", "YES");
+        checksumElement.appendChild(doc.createTextNode(checksum));
+        dataElement.appendChild(checksumElement);
+
+        Element sizeElement = doc.createElement("size");
+        sizeElement.appendChild(doc.createTextNode(Long.toString(size)));
+        dataElement.appendChild(sizeElement);
+
+        Element timestampElement = doc.createElement("timestamp");
+        timestampElement.appendChild(doc.createTextNode(Long.toString(timestamp)));
+        dataElement.appendChild(timestampElement);
+
+        Element openChecksumElement = doc.createElement("open-checksum");
+        openChecksumElement.setAttribute("type", "sha");
+        openChecksumElement.setAttribute("pkgid", "YES");
+        openChecksumElement.appendChild(doc.createTextNode(openChecksum));
+        dataElement.appendChild(openChecksumElement);
+
+        Element openSizeElement = doc.createElement("open-size");
+        openSizeElement.appendChild(doc.createTextNode(Long.toString(openSize)));
+        dataElement.appendChild(openSizeElement);
+        //revision
+        Element revisionElement = doc.createElement("revision");
+        revisionElement.appendChild(doc.createTextNode(""));
+        dataElement.appendChild(revisionElement);
+        return dataElement;
     }
 }
 

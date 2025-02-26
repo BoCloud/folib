@@ -28,9 +28,9 @@ public class StorageMonitoringTask {
     private DistributedLockComponent distributedLockComponent;
 
     /**
-     * 每天1点
+     * 每小时更新一次
      */
-    @Scheduled(cron = "0 0 1 * * ? ")
+    @Scheduled(cron = "0 0 0/1 * * ? ")
     public void run() {
         String lockName = "StorageMonitoring";
         long waitTime = 1L;

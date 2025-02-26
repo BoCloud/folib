@@ -126,7 +126,7 @@ public class PubArtifactCoordinates extends LayoutArtifactCoordinatesEntity<PubA
     }
 
     @Override
-    public URI convertToResource(PubArtifactCoordinates c) {
+    public URI convertToLayoutResource(PubArtifactCoordinates c) {
         return URI.create(String.format("packages/%s/versions/%s", c.getName(), c.getArtifactFileName()));
     }
 

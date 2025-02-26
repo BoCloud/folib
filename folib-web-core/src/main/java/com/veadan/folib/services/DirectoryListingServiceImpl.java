@@ -188,6 +188,9 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
         path = path.normalize();
 
         DirectoryListing directoryListing = new DirectoryListing();
+        if (!Files.exists(path)) {
+            return directoryListing;
+        }
         //Map<String, List<FileContent>> content = generateDirectoryListingV2(path);
         StopWatch stopWatch = new StopWatch();
         stopWatch.start("fromPath");
@@ -579,13 +582,11 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
 
         } else if (StringUtils.isBlank(file.getArtifactPath())) {
 
-            return new URL(String.format("%s/%s/%s", baseUrl, file.getStorageId(),
-                    file.getRepositoryId()));
+            return new URL(String.format("%s/%s", baseUrl, file.getRepositoryId()));
 
         }
 
-        return new URL(String.format("%s/%s/%s/%s", baseUrl, file.getStorageId(),
-                file.getRepositoryId(), file.getArtifactPath()));
+        return new URL(String.format("%s/%s/%s", baseUrl, file.getRepositoryId(), file.getArtifactPath()));
     }
 
     protected boolean probeForDirectoryListing(final RepositoryPath repositoryPath)

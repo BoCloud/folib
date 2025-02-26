@@ -85,7 +85,7 @@ public class CocoapodsIndexServiceImpl implements CocoapodsIndexService
         RepositoryPath specIndexZipTempPath = null;
         String ziFilePath = null;
 
-        String URL_PATTERN = "^(http|https)://(?:[a-zA-Z0-9.-]+|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})(?::\\d+)?/storages/[^/]+/[^/]+$";
+        String URL_PATTERN = "^(http|https)://(?:[a-zA-Z0-9.-]+|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})(?::\\d+)?/artifactory/api/pods/[^/]+/[^/]+$";
 
         try 
         {
@@ -153,7 +153,7 @@ public class CocoapodsIndexServiceImpl implements CocoapodsIndexService
                                 if (podRepoGitUrlMatcher.find()) {
                                     final String owner = podRepoGitUrlMatcher.group(1);
                                     final String podName = podRepoGitUrlMatcher.group(2);
-                                    final String newSourceUrl = String.format("%s/storages/%s/%s/pod/git/%s/%s/%s", baseUrl, storageId, repositoryId, owner, podName, version);
+                                    final String newSourceUrl = String.format("%s/artifactory/api/pods/%s/pod/git/%s/%s/%s", baseUrl, repositoryId, owner, podName, version);
                                     podNewSourceObj.clear();
                                     podNewSourceObj.put("http", newSourceUrl);
                                     podNewSourceObj.put("type", "tgz");

@@ -179,12 +179,32 @@ public abstract class RepositoryFiles {
         return p.path = p.getPath();
     }
 
+    public static String relativizeOriginalPath(RepositoryPath p)
+            throws IOException {
+        if (p.path != null) {
+            return p.path;
+        }
+
+        return p.path = p.getOriginalPath();
+    }
+
     public static URI resolveResource(RepositoryPath p)
             throws IOException {
         if (RepositoryFiles.isArtifact(p)) {
             ArtifactCoordinates c = RepositoryFiles.readCoordinates(p);
 
             return c.buildResource();
+        }
+
+        return relativizeUri(p);
+    }
+
+    public static URI resolveLayoutResource(RepositoryPath p)
+            throws IOException {
+        if (RepositoryFiles.isArtifact(p)) {
+            ArtifactCoordinates c = RepositoryFiles.readCoordinates(p);
+
+            return c.buildLayoutResource();
         }
 
         return relativizeUri(p);

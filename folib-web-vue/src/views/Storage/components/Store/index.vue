@@ -23,7 +23,8 @@
                     <a-avatar @click="createData" :size="64" shape="square"
                       style="border-radius: 8px; background-image: linear-gradient(310deg, #f1f7ff, #f9fbff);"
                                 >
-                        <img :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" style="width: 150%;margin-left: -11px;" alt=""></img>
+                        <img v-if="folibRepository.id" :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" style="width: 150%;margin-left: -11px;" alt=""></img>
+                        <span v-else style="color: #BFBFBF; margin-left: -10px; font-size: 14px;">No Data</span>
                     </a-avatar>
                   </a>
                   <div class="avatar-info">
@@ -32,10 +33,7 @@
                         {{ $t('Store.GotoBrowsePage') }}
                       </template>
                       <a :href="baseUrl +
-                        'api/browse/' +
-                        folibRepository.storageId +
-                        '/' +
-                        folibRepository.id" target="_blank">
+                        'artifactory/' + folibRepository.id" target="_blank">
                         <h6 class="font-semibold m-0" @click="createData">
                           {{ folibRepository.id }}
                         </h6>
@@ -43,57 +41,41 @@
                     </a-tooltip>
                     <a-descriptions title="" :column="1" class="repo-address" style="margin-top:5px;">
                       <a-descriptions-item :label="$t('Store.BrowseAddress')">
-                        <a-tooltip placement="topLeft">
-                          <template slot="title">
-                            {{ $t('Store.WarehouseBrowseAddress') }}
-                          </template>
-                          <a :href="baseUrl +
-                            'api/browse/' +
-                            folibRepository.storageId +
-                            '/' +
-                            folibRepository.id" target="_blank">
-                            <p class="copy-p">
-                              {{ baseUrl +
-                                'api/browse/' +
-                                folibRepository.storageId +
-                                '/' +
-                                folibRepository.id }}
-                            </p>
+                        <template v-if="folibRepository.id">
+                          <a-tooltip placement="topLeft">
+                            <template slot="title">
+                              {{ $t('Store.WarehouseBrowseAddress') }}
+                            </template>
+                            <a :href="baseUrl + 'artifactory/' + folibRepository.id" target="_blank">
+                              <p class="copy-p">
+                                  {{ baseUrl + 'artifactory/' + folibRepository.id }}
+                              </p>
+                            </a>
+                          </a-tooltip>
+                          <a class="ml-10">
+                            <a-icon type="copy" @click="copy( baseUrl + 'artifactory/' + folibRepository.id )" />
                           </a>
-                        </a-tooltip>
-                        <a class="ml-10">
-                          <a-icon type="copy" @click="
-                            copy(
-                              baseUrl +
-                              'api/browse/' +
-                              folibRepository.storageId +
-                              '/' +
-                              folibRepository.id
-                            )" />
-                        </a>
+                        </template>
+                        <span v-else>--</span>
                       </a-descriptions-item>
                       <a-descriptions-item :label="$t('Store.UseAddress')" style="margin-top: -5px;">
-                        <a-tooltip>
-                          <template slot="title">
-                            {{ $t('Store.WarehouseUsageAddress') }}
-                          </template>
-                          <a>
-                            <p class="copy-p">
-                              {{
-                                getRepositoryUrl()
-                              }}
-                            </p>
+                        <template v-if="folibRepository.id">
+                          <a-tooltip>
+                            <template slot="title">
+                              {{ $t('Store.WarehouseUsageAddress') }}
+                            </template>
+                            <a>
+                              <p class="copy-p">
+                                {{ getRepositoryUrl() }}
+                              </p>
+                            </a>
+                          </a-tooltip>
+                          <a class="ml-10">
+                            <a-icon type="copy" @click="copy( getRepositoryUrl())" />
                           </a>
-                        </a-tooltip>
-                        <a class="ml-10">
-                          <a-icon type="copy" @click="
-                            copy(
-                              getRepositoryUrl()
-                            )
-                            " />
-                        </a>
+                        </template>
+                        <span v-else>--</span>
                       </a-descriptions-item>
-                      
                     </a-descriptions>
                   </div>
                 </a-col>
@@ -111,7 +93,7 @@
                     display: flex;
                     align-items: center;
                     justify-content: flex-end;
-                  ">
+                  " v-if="repositoryLength">
                   <a v-if="folibRepository.layout === 'Docker' && folibRepository.type === 'hosted'">
                     <small style="padding-right: 20px" @click="handleDockerUploud">
                       {{ $t('Store.Upload') }}
@@ -130,22 +112,11 @@
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
-                  <!-- <a v-if="uploadEnabled && folibRepository.layout === 'debian'"><small style="padding-right: 20px"
-                      @click="handleDebianUpload">
-                    {{ $t('Store.Upload') }}
-                      <a-icon type="cloud-upload" />
-                    </small>
-                  </a> -->
                   <a v-if="uploadEnabled && folibRepository.layout !== 'rpm' &&  folibRepository.layout !== 'GitLfs' && folibRepository.layout !== 'GitLfs' && folibRepository.subLayout !== 'ohpm' && folibRepository.subLayout !== 'go' && folibRepository.layout !== 'cargo'"><small style="padding-right: 20px" @click="handleUpload">
                       {{ $t('Store.BatchUpload') }}
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
-                  <!-- <a v-if="uploadEnabled && folibRepository.layout === 'debian'"><small style="padding-right: 20px" @click="handleDebianBatchUpload">
-                      {{ $t('Store.BatchUpload') }}
-                      <a-icon type="cloud-upload" />
-                    </small>
-                  </a> -->
                   <a v-if="uploadEnabled && folibRepository.layout === 'cargo'"><small style="padding-right: 20px" @click="handleCargoBatchUpload">
                         {{ $t('Store.BatchUpload') }}
                         <a-icon type="cloud-upload" />
@@ -189,11 +160,11 @@
             <a-icon v-if="!isTrashView" type="delete" /> -->
           </a-tooltip>
           <!-- </a-button> -->
-          <leftTree 
-            :trashData="trashData" 
-            :treeData="treeData" 
+          <leftTree
+            :trashData="trashData"
+            :treeData="treeData"
             :isTrashView="isTrashView"
-            @onRightClick="onRightClick" 
+            @onRightClick="onRightClick"
             @onLoadData="onLoadData"
             @treeSelect="treeSelect"
           />
@@ -278,7 +249,7 @@
                 </a-row>
               </a-col>
               <a-col :span="8" class="text-right">
-                <a-dropdown v-if="currentTreeNode.url && getShowMore(0)" class="mr-30"
+                <a-dropdown v-if="currentTreeNode.url" class="mr-30"
                   placement="bottomCenter">
                   <span style="font-size: 16px; cursor: pointer">
                     {{ $t('Store.More') }}
@@ -319,11 +290,11 @@
                         v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact&&!isTrashView">
                         <a-icon type="download" />{{ $t('Store.DownLoad') }}
                       </a-menu-item>
-
-                      <a-menu-item key="7"
+                      <!-- 暂时禁用目录下载 -->
+                      <!-- <a-menu-item key="7"
                         v-if="(folibRepository.layout === 'Raw' && currentTreeNode && currentTreeNode.type === 'dir'&&!isTrashView)">
                         <a-icon type="download" />{{ $t('Store.DownLoad') }}
-                      </a-menu-item>
+                      </a-menu-item> -->
                       <a-menu-item key="8" v-if="isTrashView && currentTreeNode">
                         <a-icon type="undo" />{{ $t('Store.Restore') }}
                       </a-menu-item>
@@ -407,7 +378,7 @@
 
 
               <a-col :span="8" class="text-right">
-                <a-dropdown v-if="currentTreeNode.url && getShowMore(1)" class="mr-45">
+                <a-dropdown v-if="currentTreeNode.url" class="mr-45">
                   <span style="font-size: 16px; cursor: pointer">
                     {{ $t('Store.More') }}
                     <a-icon type="more" class="text-muted" style="font-size: 16px" />
@@ -475,20 +446,20 @@
           <a v-if="currentTreeNode.url && folibRepository.layout !== 'Docker'" class="ml-10"><a-icon type="copy"
               @click="copy(getFormattedUrl(currentTreeNode.url))" /> </a>
           <hr class="gradient-line" />
-          <BaseData 
+          <BaseData
               ref="BaseData"
               :key="pageKey"
-              :isChecked="isChecked" 
-              :currentTreeNode="currentTreeNode" 
+              :isChecked="isChecked"
+              :currentTreeNode="currentTreeNode"
               :repositoryType="repositoryType"
-              :currentFileDetial="currentFileDetial" 
-              :successMsg="successMsg" 
-              :folibRepository="folibRepository" 
+              :currentFileDetial="currentFileDetial"
+              :successMsg="successMsg"
+              :folibRepository="folibRepository"
               @addPageKey="addPageKey"
               @handlerPermission="handlerPermission"
               @messageArchitectureChild="handleArchitectureMessage"
-              @metadataEditHandler="metadataEditHandler" 
-              @metadataHandler="metadataHandler" 
+              @metadataEditHandler="metadataEditHandler"
+              @metadataHandler="metadataHandler"
               @setCurrentFileDetial="setCurrentFileDetial"
           />
         </a-card>
@@ -551,29 +522,27 @@
     <!-- 复制 -->
     <a-modal v-model="showOperationFormModal" :footer="null" :forceRender="true" :centered="true"
       :title="operationTitle" on-ok="showCopyFormModal = false">
-      <a-form :form="operationForm" ref="operationForm" layout="vertical" @submit.prevent="handleOperationSubmit">
+      <a-form :form="copyOperationForm" ref="copyOperationForm" layout="vertical" @submit.prevent="handleCopyOperationSubmit">
         <a-row :gutter="[24]">
           <a-col :span="24">
             <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" :colon="false"
               ref="targetRepositories" prop="targetRepositories">
-              <gb-ant-select-two-cascader allowClear :placeholder="$t('Store.SelectTargetWarehouse')" v-decorator="[
-                'targetRepositories',
-                {
-                  initialValue: [],
-                  rules: [
-                    {
-                      required: true,
-                      message: $t('Store.SelectTargetWarehouse'),
-                      type: 'array',
-                    },
-                  ],
-                },
-              ]" :selectOptionsConfig="{
-                  key: 'key',
-                  value: 'key',
-                  text: 'name',
-                  children: 'children',
-                }" dropdownClassName="customer-multiple-cascader" :treeData="repositories" />
+                <a-tree-select v-decorator="[
+                  'targetRepositories',
+                  {
+                    initialValue: [],
+                    rules: [
+                      {
+                        required: true,
+                        message: $t('Store.SelectTargetWarehouse'),
+                      },
+                    ],
+                  },
+                ]" style="width: 100%" :treeCheckable="operationTitle.indexOf(this.$t('Store.Move')) !== -1 ? false : true" :multiple="operationTitle.indexOf(this.$t('Store.Move')) !== -1 ? false : true" :maxTagCount="operationTitle.indexOf(this.$t('Store.Move')) !== -1 ? 1 : 6"
+                  :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }" :tree-data="repositories"
+                  :placeholder="$t('Store.SelectTargetWarehouse')" allow-clear show-search
+                  :replaceFields="{ children: 'children', title: 'key', key: 'key', value: 'key' }">
+                </a-tree-select>
             </a-form-item>
             <!-- <a-form-item class="tags-field mb-10" :colon="false" :label="customTitle" valuePropName="checked">
               <a-switch v-decorator="['custom',
@@ -636,6 +605,26 @@
               ]" :disabled="true" :placeholder="$t('Store.InputTargetWarehouse')">
               </a-input>
             </a-form-item>
+            <a-form-item :label="$t('Store.UploadMode')">
+              <a-radio-group v-decorator="[
+                'type',
+                {
+                  rules: [{ required: true, message: $t('Store.SelectUploadMode') }],
+                },
+              ]" @change="uploadTypeChange">
+                <a-radio :value="1">
+                  {{ $t('Store.Product') }}
+                </a-radio>
+                <a-radio :value="2">
+                  {{ $t('Store.ZipUpload') }}
+                </a-radio>
+              </a-radio-group>
+              <div>
+                <span v-if="uploadType === 1">{{ $t('Store.ProductUpload') }}</span>
+                <span v-if="uploadType === 2">{{ $t('Store.ZipFileUpload') }}{{ this.uploadMaxSize.size +
+                  this.uploadMaxSize.unit }}</span>
+              </div>
+            </a-form-item>
             <a-form-item :label="$t('Store.SelectFile')">
               <a-upload v-decorator="[
                 'files',
@@ -644,7 +633,7 @@
                   valuePropName: 'fileList',
                   getValueFromEvent: normFile,
                 },
-              ]" name="files" :multiple="true" :beforeUpload="beforeUpload" @change="onFileChange" list-type="text" accept=".rpm">
+              ]" name="files" :multiple="true" :beforeUpload="beforeUpload" @change="onFileChange" list-type="text" :accept="uploadType === 1 ? '.rpm':'.zip'">
                 <a-button>
                   <a-icon type="upload" />
                   {{ $t('Store.SelectFile') }} </a-button>
@@ -699,7 +688,7 @@
                   valuePropName: 'fileList',
                   getValueFromEvent: normFile,
                 },
-              ]" name="files" :multiple="false" :beforeUpload="beforeUpload" @change="onFileChange" list-type="text" accept=".gz,.tar,.zip,.giz">
+              ]" name="files" :multiple="false" :beforeUpload="beforeUpload" @change="onFileChange" list-type="text" accept="*">
                               <a-button>
                                   <a-icon type="upload"/>
                                   {{ $t('Store.SelectFile') }}
@@ -746,7 +735,7 @@
           </a-form>
       </a-modal>
 
-    <!-- raw 、maven、npm 上传 -->
+    <!-- raw 、maven、npm 、debian上传 -->
     <a-modal v-model="showUploadFormModal" :footer="null" :forceRender="true" :centered="true"
       :title="$t('Store.Upload')" on-ok="showUploadFormModal = false">
       <a-form :form="uploadForm" ref="uploadForm" layout="horizontal" @submit.prevent="handleUploadSubmit">
@@ -792,22 +781,37 @@
                   getValueFromEvent: normFile,
                 },
               ]" name="files" :multiple="uploadType === 1 ? true : false" :beforeUpload="beforeUpload" list-type="text" @change="onFileChange"
-                :accept="uploadType === 1 ? (folibRepository.layout === 'Raw' ? '*' : folibRepository.layout === 'npm' ? '.tgz' : folibRepository.layout === 'pub' ? '.gz' :'.jar,.war,.pom') : ('.zip')">
+                :accept="uploadType === 1 ? (folibRepository.layout === 'Raw' ? '*' : folibRepository.layout === 'npm' ? '.tgz' : folibRepository.layout === 'pub' ? '.gz' : folibRepository.layout === 'debian' ? '.deb' :'.jar,.war,.pom') : ('.zip')">
                 <a-button>
                   <a-icon type="upload" />
                   {{ $t('Store.SelectFile') }}</a-button>
               </a-upload>
             </a-form-item>  
-            <div v-if="folibRepository.layout === 'debian'">
+            <div v-if="folibRepository.layout === 'debian' && uploadType === 1 ">
               <a-form-model-item  class="mb-10" label="distribution" :colon="false" prop="distribution">
-                <a-input :placeholder="$t('Store.PleaseEnter') + 'distribution'" v-model="uploadForm.distribution" required />
+                <a-input :placeholder="$t('Store.PleaseEnter') + 'distribution'"  v-decorator="[
+                'distribution',
+                {
+                  rules: [{ required: true, message: $t('Store.PleaseEnter')+ 'distribution' }],
+                },
+              ]"  />
               </a-form-model-item>
               <a-form-model-item  class="mb-10" label="component" :colon="false"
                 prop="component">
-                <a-input :placeholder="$t('Store.PleaseEnter') + 'component'" v-model="uploadForm.component" required/>
+                <a-input :placeholder="$t('Store.PleaseEnter') + 'component'" v-decorator="[
+                'component',
+                {
+                  rules: [{ required: true, message: $t('Store.PleaseEnter')+ 'component' }],
+                },
+              ]" />
               </a-form-model-item>
               <a-form-model-item  class="mb-10" label="architecture" :colon="false" prop="architecture">
-                <a-input :placeholder="$t('Store.PleaseEnter') + 'architecture'" v-model="uploadForm.architecture" required />
+                <a-input :placeholder="$t('Store.PleaseEnter') + 'architecture'"  v-decorator="[
+                'architecture',
+                {
+                  rules: [{ required: true, message: $t('Store.PleaseEnter')+ 'architecture' }],
+                },
+              ]"  />
               </a-form-model-item>
             </div>
     
@@ -990,8 +994,6 @@
 
     <MavenUpload v-if="mavenUploadVisible" :modelVisible="mavenUploadVisible" :folibRepository="this.folibRepository"
       @mavenUploadClose="mavenUploadClose" />
-    <DebianUpload  ref="debianmodal" :folibRepository="folibRepository"/>
-    <DebianBatchUpload  ref="debianBatchModal" :folibRepository="folibRepository"/>
 
     <div v-if="showContextMenu" :style="contextMenuStyle" class="context-menu">
       <a-menu @click="handleRightClick">
@@ -1052,6 +1054,7 @@ import Cookies from "js-cookie";
 import uuidv4 from 'uuid/v4'
 import {
   getLayoutType,
+  getLayoutRepoPrefix,
   getFileType,
   fileSizeConver,
   formateDate,
@@ -1099,8 +1102,6 @@ import BaseData from './Data.vue'
 import UseDoc from './UseDoc.vue'
 import AddMetadata from './AddMetadata.vue'
 import MavenUpload from '../MavenUpload/index.vue'
-import DebianUpload from '../Debian/DebianUpload.vue'
-import DebianBatchUpload from '../Debian/DebianBatchUpload.vue'
 import Search from '../Search/index.vue'
 import { PrismEditor } from 'vue-prism-editor'
 import 'vue-prism-editor/dist/prismeditor.min.css' // import the styles somewhere
@@ -1132,8 +1133,6 @@ export default {
     AddMetadata,
     MavenUpload,
     Search,
-    DebianUpload,
-    DebianBatchUpload,
     CircleProgress,
     leftTree
   },
@@ -1219,6 +1218,7 @@ export default {
       dockerCode: { ubuntu: null, centos: null, windows: null, macos: null },
       // 预览
       operationForm: this.$form.createForm(this, { name: 'operation_form' }),
+      copyOperationForm: this.$form.createForm(this, { name: 'copy_operation_form' }),
       viewCodeVisible: false,
       viewCodes: null,
       locale: zhCN,
@@ -1360,28 +1360,11 @@ export default {
     }
   },
   computed: {
-    getShowMore(){
-      return (type) => {
-        const key1 = !this.currentFileDetial && !this.copyEnabled && !this.moveEnabled && !this.deleteEnabled && !this.dispatchEnabled && !this.currentTreeNode && this.isTrashView
-        && !(this.folibRepository.layout === 'Docker' && this.currentTreeNode && this.currentTreeNode.type === 'file' && this.currentFileDetial && this.currentFileDetial.artifact&&!this.isTrashView)
-        && !(this.folibRepository.layout === 'Raw' && this.currentTreeNode && this.currentTreeNode.type === 'dir'&&!this.isTrashView)
-
-        const key2 = !this.currentFileDetial && !this.copyEnabled && !this.moveEnabled && !this.deleteEnabled && !this.dispatchEnabled && !this.currentTreeNode && this.isTrashView
-        && !(this.folibRepository.layout === 'Docker' && this.currentTreeNode && this.currentTreeNode.type === 'file' && this.currentFileDetial && this.currentFileDetial.artifact&&!this.isTrashView)
-        if(type){
-          if(key1){
-            return false
-          }
-        }else{
-          if(key2){
-            return false
-          }
-        }
-        return true
-      }
-    },
     newDetailPage(){
       return this.$store.state.newDetailPage
+    },
+    repositoryLength(){
+      return this.$store.state.repositoryLength
     },
     contextMenuStyle() {
       return {
@@ -1400,10 +1383,12 @@ export default {
     },
   },
   watch:{
-    // currentTreeNode(val){
-    //   console.log(val,'watch currentTreeNode');
-    //   this.pageKey ++
-    // }
+    repositoryLength(val){
+      if (!val) {
+          this.folibRepository = {}
+          this.baseUrl = ''
+      }
+    },
   },
   created () {
     this.initData()
@@ -1466,6 +1451,9 @@ export default {
     },
     getLayoutTypeHandle() {
       return getLayoutType(this.folibRepository)
+    },
+    getLayoutRepoPrefixHandle() {
+      return getLayoutRepoPrefix(this.folibRepository)
     },
     getBrowse() {
       if (this.folibRepository.status.indexOf('Out of Service') !== -1) {
@@ -1556,7 +1544,8 @@ export default {
       this.$nextTick(() => {
         if (this.$refs.rpmUploadForm) {
           this.rpmUploadForm.setFieldsValue({
-            repostoryId: this.folibRepository.id
+            repostoryId: this.folibRepository.id,
+            type:1
           })
         }
       })
@@ -1588,7 +1577,7 @@ export default {
       this.$nextTick(() => {
         if (this.$refs.uploadForm) {
           let targetPath = ''
-          if (this.folibRepository.layout === 'Raw') {
+          if (this.folibRepository.layout === 'Raw'|| this.folibRepository.layout==='debian') {
             if (this.currentTreeNode.type === 'dir') {
               targetPath = this.currentTreeNode.artifactPath
             } else if (this.currentTreeNode.type === 'file') {
@@ -1604,6 +1593,9 @@ export default {
             repostoryId: this.folibRepository.id,
             type: 1,
             targetPath: targetPath,
+            distribution:'',
+            component:'',
+            architecture :'',
           })
         }
       })
@@ -1669,7 +1661,7 @@ export default {
                   //         item.originFileObj
                   //     )
                   // })
-                  console.info('docker:', values)
+                  // console.info('docker:', values)
                   const imageTag = values.imageTag ? values.imageTag : fileList[0].originFileObj.name;
                   this.uploadFiles(values.targetPath,false,null,imageTag,values.type)
                   this.successMsg(this.$t('Store.CheckProgress'))
@@ -1681,6 +1673,46 @@ export default {
       e.preventDefault()
       this.rpmUploadForm.validateFields((err, values) => {
         if (!err) {
+          if (this.uploadType === 2) {
+            if (values.files.length > 1) {
+              this.$notification['warning']({
+                message: this.$t('Store.UploadZipPackage'),
+                description: ''
+              })
+              return false
+            }
+            const file = values.files[0]
+            const sizeLimit = file.size > this.convertToBytes(this.uploadMaxSize.size, this.uploadMaxSize.unit)
+            if (sizeLimit) {
+              this.$notification.warning({
+                message: this.$t('Store.fileSize') + this.uploadMaxSize.size + this.uploadMaxSize.unit
+              })
+              return false
+            }
+            const fileFamart = file.name.split('.')[
+              file.name.split('.').length - 1
+            ]
+            if (fileFamart !== 'zip') {
+              this.$notification.warning({
+                message: this.$t('Store.ZIPFormat')
+              })
+              return false
+            }
+            if (typeof values.targetPath === 'undefined') {
+              values.targetPath = ''
+            } else {
+              values.targetPath = values.targetPath
+                .trim()
+                .replace(/^\/+|\/+$/g, '')
+            }
+            // this.handlerUploadZipFile(
+            //   values.targetPath,
+            //   file.name,
+            //   file.originFileObj
+            // )
+             //this.onFileChange(values.targetPath, file.name, values.files[0].originFileObj)
+             this.uploadFiles(values.targetPath,true,null,null,null)
+          } else{
           if (values.files.length > 10) {
             this.$notification['warning']({
               message: this.$t('Store.UploadCount'),
@@ -1712,6 +1744,7 @@ export default {
           //   )
           // })
             this.uploadFiles(values.targetPath,false,null,null,null)
+          }
           this.successMsg(this.$t('Store.CheckProgress'))
           this.uploadRpmFormModalClose()
         }
@@ -1915,7 +1948,17 @@ export default {
             //   )
             //    this.onFileChange(values.targetPath, item.name, item.originFileObj)
             // })
-            this.uploadFiles(values.targetPath,false,null,null,null)
+            let metaStr=null;
+             if(this.folibRepository.layout==='debian'){
+              let metadata={}
+              console.log(values)
+              metadata.distribution=values.distribution
+              metadata.component=values.component
+              metadata.architecture=values.architecture
+              metaStr=JSON.stringify(metadata)
+              console.log("debian的坐标为",metaStr)
+             }
+            this.uploadFiles(values.targetPath,false,metaStr,null,null)
           }
           this.successMsg(this.$t('Store.CheckProgress'))
           this.uploadFormModalClose()
@@ -1990,11 +2033,7 @@ export default {
           '" defaultConflictManager="all" />\n' +
           '   <resolvers>\n' +
           '        <ibiblio name="releases" root="' +
-          this.baseUrl +
-          'storages/' +
-          this.folibRepository.storageId +
-          '/' +
-          this.folibRepository.id +
+          this.getRepositoryUrl() +
           '" m2compatible="true" usepoms="true"/>\n' +
           '   </resolvers>\n' +
           '</ivysettings>'
@@ -2050,8 +2089,8 @@ export default {
       this.currentFileDetial = null
       if (this.folibRepository.layout === 'Docker') {
         // return new Promise(resolve => {
-          if (treeNode.dataRef.children) {
-            resolve()
+          if (treeNode.data.children) {
+            resolve(treeNode.data.children)
             return
           }
           getDockerArtifact(
@@ -2059,13 +2098,13 @@ export default {
             this.folibRepository.id,
             treeNode.dataRef.artifactPath
           ).then(res => {
-            treeNode.dataRef.children = []
+            treeNode.data.children = []
             if (res.directories.length > 0) {
               const d = res.directories
 
               d.forEach((item, index, d) => {
                 item.type = 'dir'
-                treeNode.dataRef.children.push(item)
+                treeNode.data.children.push(item)
               })
             }
             if (res.files.length > 0) {
@@ -2073,11 +2112,9 @@ export default {
               a.forEach((item, index, a) => {
                 item.isLeaf = true
                 item.type = 'file'
-                treeNode.dataRef.children.push(item)
+                treeNode.data.children.push(item)
               })
             }
-            this.treeData = [...this.treeData]
-            this.trashData = [...this.trashData]
             const setTitle = (arr) => {
               arr.forEach(ele => {
                 ele.title = ele.name
@@ -2090,31 +2127,36 @@ export default {
               })
             }
             setTitle(this.trashData)
-            resolve()
+            resolve(treeNode.data.children)
+            if (treeNode.data.artifactPath) return
+            this.treeData = [...this.treeData]
+            this.trashData = [...this.trashData]
           })
+          return
         // })
         return
       }
 
       // return new Promise(resolve => {
-        if (treeNode.dataRef.children) {
-          resolve()
+        if (treeNode.data.children) {
+          resolve(treeNode.data.children)
           return
         }
+        treeNode.loading = true
         browse(
           this.folibRepository.storageId,
           this.folibRepository.id,
-          treeNode.dataRef.artifactPath
+          treeNode.data.artifactPath || ''
         ).then(res => {
-          if (!treeNode.dataRef.children) {
-            treeNode.dataRef.children = []
+          if (!treeNode.data.children) {
+            treeNode.data.children = []
           }
           if (res.directories.length > 0) {
             const d = res.directories
             d.forEach((item, index, d) => {
               item.type = 'dir'
             })
-            treeNode.dataRef.children = d
+            treeNode.data.children = d
           }
           if (res.files.length > 0) {
             const a = res.files
@@ -2122,11 +2164,9 @@ export default {
               item.isLeaf = true
               item.type = 'file'
             })
-            treeNode.dataRef.children = treeNode.dataRef.children.concat(a)
+            treeNode.data.children = treeNode.data.children.concat(a)
           }
-
-          this.treeData = [...this.treeData]
-          this.trashData = [...this.trashData]
+          resolve(treeNode.data.children)
           const setTitle = (arr) => {
             arr.forEach(ele => {
               ele.title = ele.name
@@ -2139,15 +2179,17 @@ export default {
             })
           }
           setTitle(this.trashData)
-          resolve()
+          if (treeNode.data.artifactPath) return
+          this.treeData = [...this.treeData]
+          this.trashData = [...this.trashData]
+        }).finally(() => {
+            treeNode.loading = false
         })
       // })
     },
-    treeSelect(key, e) {
-      if(e.isRecycle){
-        this.isTrashView = true
-      }
-      this.currentTreeNode = e.node.dataRef
+    treeSelect(data, isTrashView) {
+      this.isTrashView = isTrashView
+      this.currentTreeNode = data
       this.scanReport = {
         show: false,
         fail: false,
@@ -2200,17 +2242,26 @@ export default {
       }
 
     },
-    handleMenuClickTree(active,currentTreeNode){
+    handleMenuClickTree(active,currentTreeNode, folibRepository){
       this.currentTreeNode = currentTreeNode
-      this.handleMenuClick(active)
+      this.handleMenuClick(active, folibRepository)
     },
-    handleMenuClick(active) {
-      console.log(active)
+    handleMenuClick(active, folibRepository) {
       this.operationForm.resetFields()
-      this.isTargetPatDisabled = this.folibRepository.layout !== 'Raw';
+      this.copyOperationForm.resetFields()
+      this.isTargetPatDisabled = folibRepository.layout !== 'Raw';
       this.$nextTick(() => {
         if (this.$refs.operationForm) {
           this.operationForm.setFieldsValue({
+            path: this.currentTreeNode.artifactPath,
+            targetPath: this.currentTreeNode.artifactPath,
+            type: 1,
+          })
+        }
+      })
+      this.$nextTick(() => {
+        if (this.$refs.copyOperationForm) {
+          this.copyOperationForm.setFieldsValue({
             path: this.currentTreeNode.artifactPath,
             targetPath: this.currentTreeNode.artifactPath,
             type: 1,
@@ -2223,10 +2274,10 @@ export default {
         //复制 或 移动
         this.showOperationFormModal = true
         this.queryPermissionStoragesAndRepositories(
-          this.folibRepository.type,
-          this.folibRepository.layout,
-          this.folibRepository.storageId + ':' + this.folibRepository.id,
-          this.folibRepository.policy
+          folibRepository.type,
+          folibRepository.layout,
+          folibRepository.storageId + ':' + folibRepository.id,
+          folibRepository.policy
         )
         this.operationTitle =
           active.key === '2'
@@ -2240,14 +2291,14 @@ export default {
       } else if (active.key === '5') {
         this.showOperationDispatchFormModal = true
         this.getArtifactDispatchStoragesAndRepositories(
-          this.folibRepository.type,
-          this.folibRepository.layout,
-          this.folibRepository.policy
+          folibRepository.type,
+          folibRepository.layout,
+          folibRepository.policy
         )
-        this.getExternalNodeRepositories({ type: this.folibRepository.layout })
+        this.getExternalNodeRepositories({ type: folibRepository.layout })
         this.operationTitle = this.$t('Store.Distribute')
         this.customTitle = this.$t('Store.DistributeCustomDirectory')
-        // 下载  
+        // 下载
       } else if (active.key === '6') {
         let url = this.currentTreeNode.url
         if (url) {
@@ -2257,9 +2308,8 @@ export default {
       } else if (active.key === '7') {
         if (this.currentTreeNode.type === 'dir') {
           this.downLoadVisible = true;
-          this.folibRepository
-          let storageId = this.folibRepository.storageId;
-          let repositoryId = this.folibRepository.id;
+          let storageId = folibRepository.storageId;
+          let repositoryId = folibRepository.id;
           let path = this.currentTreeNode.artifactPath;
           getRawPathSize(storageId, repositoryId, path).then(res => {
             this.rawPathSize = res;
@@ -2288,7 +2338,7 @@ export default {
             // 获取端口号，如果没有指定则默认为 80（http）或 443（https）
             const port = url.port ? `:${url.port}` : '';
             const params = this.targetArchitecture === null ? '' : '?platform=' + this.targetArchitecture;
-            const baseUrl = `${protocol}//${hostname}${port}/storages/` + this.currentTreeNode.storageId + '/' + this.currentTreeNode.repositoryId + '/download/' + result + params;
+            const baseUrl = `${protocol}//${hostname}${port}/artifactory/` + this.currentTreeNode.repositoryId + '/download/' + result + params;
             window.open(baseUrl)
           }
         }
@@ -2357,6 +2407,116 @@ export default {
         }
       })
       return artifactoryRepositoryType
+    },
+    handleCopyOperationSubmit(e) {
+      e.preventDefault()
+      this.copyOperationForm.validateFields((err, values) => {
+        if (!err) {
+          let targetRepositoyList = []
+          let targetDispatchRepositoryList = []
+          let targetRepositoriesArr = null
+          if (typeof(values.targetRepositories) == 'string') {
+            targetRepositoriesArr = [values.targetRepositories]
+          } else {
+            targetRepositoriesArr = values.targetRepositories
+          }
+          targetRepositoriesArr.forEach(item => {
+            let split = item.split(',')
+            let arrayLength = split.length
+            if (this.operationTitle.indexOf(this.$t('Store.Distribute')) !== -1) {
+              let json = {}
+              if (this.artifactoryType === 1) {
+                let dispatchClusterEnName = split[0]
+                let dispatchTargetStorageId = split[1]
+                let dispatchTargetReopsitoryId = ''
+                if (arrayLength === 3) {
+                  dispatchTargetReopsitoryId = split[2]
+                }
+                json = {
+                  dispatchClusterEnName: dispatchClusterEnName,
+                  targetStorageId: dispatchTargetStorageId,
+                  targetRepositoryId: dispatchTargetReopsitoryId
+                }
+                json.artifactoryRepositoryType = 'inner'
+              } else {
+                let dispatchClusterEnName = split[0]
+                let dispatchTargetReopsitoryId = split[1]
+                json = {
+                  dispatchClusterEnName: dispatchClusterEnName,
+                  targetRepositoryId: dispatchTargetReopsitoryId
+                }
+                json.artifactoryRepositoryType = this.getArtifactoryRepositoryType(item)
+              }
+              targetDispatchRepositoryList.push(json)
+            } else {
+              targetRepositoyList.push({
+                targetStorageId: split[0],
+                targetRepositoryId: split[1]
+              })
+            }
+          })
+          let data = {
+            path: values.path,
+            targetPath: values.targetPath,
+            srcStorageId: this.folibRepository.storageId,
+            srcRepositoryId: this.folibRepository.id,
+            targetRepositoyList: targetRepositoyList
+          }
+          let dispatchData = {
+            path: values.path,
+            targetPath: values.targetPath,
+            srcStorageId: this.folibRepository.storageId,
+            srcRepositoryId: this.folibRepository.id,
+            targetDispatchRepositoryList: targetDispatchRepositoryList,
+            type: this.folibRepository.type,
+            layout: this.folibRepository.layout,
+            policy: this.folibRepository.policy
+          }
+          if (this.operationTitle.indexOf(this.$t('Store.Copy')) !== -1) {
+            artifactCopy(data)
+              .then(res => {
+                this.successMsg(this.$t('Store.Copying'))
+                this.operationFormModalClose()
+                this.reload()
+              })
+              .catch(err => {
+                this.$notification['error']({
+                  message: err.response.data.error,
+                  description: ''
+                })
+              })
+              .finally(() => { })
+          } else if (this.operationTitle.indexOf(this.$t('Store.Move')) !== -1) {
+            artifactMove(data)
+              .then(res => {
+                this.successMsg(this.$t('Store.Moving'))
+                this.operationFormModalClose()
+                this.reload()
+              })
+              .catch(err => {
+                this.$notification['error']({
+                  message: err.response.data.error,
+                  description: ''
+                })
+              })
+              .finally(() => { })
+          } else if (this.operationTitle.indexOf(this.$t('Store.Distribute')) !== -1) {
+            artifactDispatch(dispatchData)
+              .then(res => {
+                this.successMsg(this.$t('Store.Distributing'))
+                this.operationFormModalClose()
+                this.reload()
+              })
+              .catch(err => {
+                this.$notification['error']({
+                  message: err.response.data.error,
+                  description: ''
+                })
+              })
+              .finally(() => { })
+          }
+        }
+      })
     },
     handleOperationSubmit(e) {
       e.preventDefault()
@@ -2838,7 +2998,7 @@ export default {
         this.storageAdmin = res.storageAdmin
         this.permissions = res.permissions
         this.uploadEnabled =
-          this.folibRepository.status.indexOf('Out of Service') === -1 &&
+          this.folibRepository.status?.indexOf('Out of Service') === -1 &&
           this.enablUploadedLayout.includes(this.folibRepository.layout) &&
           (this.folibRepository.type === 'hosted' || (this.folibRepository.type === 'group' && this.folibRepository.groupDefaultRepository)) &&
           (hasRole('ARTIFACTS_MANAGER') ||
@@ -2860,18 +3020,9 @@ export default {
       if (this.baseUrl) {
         repositoryUrl =
           this.baseUrl +
-          'storages/' +
-          this.folibRepository.storageId +
-          '/' +
-          this.folibRepository.id
-        let layout = this.folibRepository.layout.toLowerCase()
-        if (layout === 'docker') {
-          let baseUrlArr = this.baseUrl.split('://')
-          repositoryUrl =
-            baseUrlArr[1] +
-            this.folibRepository.storageId +
-            '/' +
-            this.folibRepository.id
+          this.getLayoutRepoPrefixHandle() + this.folibRepository.id
+        if (this.repositoryType && this.repositoryType === 'docker') {
+          repositoryUrl = repositoryUrl.replace('http://','').replace('https://','')
         }
       }
       return repositoryUrl
@@ -2915,12 +3066,6 @@ export default {
       this.operationForm.setFieldsValue({
         targetRepositories: [],
       })
-    },
-    handleDebianUpload() {
-      this.$refs.debianmodal.openModal();
-    },
-    handleDebianBatchUpload() {
-      this.$refs.debianBatchModal.openModal();
     },
     onFileChange(event) {
         //console.log('onFileChange', event)
@@ -3184,11 +3329,11 @@ export default {
         }
         return url;
       },
-     onRightClick(params) {
+     onRightClick(event, data) {
        this.showContextMenu = true;
-       this.rightClickTop = `${params.event.clientY}px`;
-       this.rightClickLeft = `${params.event.clientX}px`;
-       this.currentTreeNode = params.node.dataRef;
+       this.rightClickTop = `${event.clientY}px`;
+       this.rightClickLeft = `${event.clientX}px`;
+       this.currentTreeNode = data;
      },
      closeContextMenu() {
        this.showContextMenu = false;

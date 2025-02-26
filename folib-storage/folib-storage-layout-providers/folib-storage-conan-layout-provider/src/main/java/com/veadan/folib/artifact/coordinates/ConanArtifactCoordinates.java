@@ -70,9 +70,4 @@ public class ConanArtifactCoordinates extends LayoutArtifactCoordinatesEntity<Co
     public String convertToPath(ConanArtifactCoordinates c) {
         return c.getId();
     }
-
-    @Override
-    public URI convertToResource(ConanArtifactCoordinates c) {
-        return URI.create(GlobalConstants.DOWNLOAD.concat(GlobalConstants.SEPARATOR).concat(convertToPath(c)));
-    }
 }

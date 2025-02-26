@@ -72,6 +72,7 @@ public class DebianReleaseMetadataIndexer {
             throw new RuntimeException(e);
         }
     }
+
     private void writeIndexFiles(List<DebianReleaseMetadataEntry> releaseEntries, DebianReleaseContext releaseContext) throws Exception {
         if (releaseEntries == null) {
             throw new NullPointerException("releaseEntries is marked non-null but is null");

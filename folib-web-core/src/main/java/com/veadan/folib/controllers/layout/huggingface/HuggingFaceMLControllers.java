@@ -49,6 +49,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -73,6 +74,8 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
     private static final Logger log = LoggerFactory.getLogger(HuggingFaceMLControllers.class);
 
+    private static final String API_ENDPOINT = "/api/huggingfaceml/";
+
     @Inject
     private ArtifactRepository artifactRepository;
 
@@ -95,10 +98,16 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
     private final Semaphore concurrentCommitExecutionsLimit = new Semaphore(MAX_CONCURRENT_THREADS);
 
+    @Override
+    @PreAuthorize("authenticated")
+    @GetMapping(value = API_ENDPOINT + "{repositoryId}/")
+    public ResponseEntity<String> checkRepositoryAccess() {
+        return super.checkRepositoryAccess();
+    }
 
     @ApiOperation(value = "从具有组织名称的特定修订中获取文件头响应", nickname = "getFileHeaderWithOrganizationParam")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(path = "{storageId}/{repositoryId}/{organization}/{modelName}/resolve/{revision}/{filename:.+}",
+    @RequestMapping(path = API_ENDPOINT + "{repositoryId}/{organization}/{modelName}/resolve/{revision}/{filename:.+}",
             method = RequestMethod.HEAD
     )
     public ResponseEntity<?> getHead(@RepositoryMapping Repository repository,
@@ -127,7 +136,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     @ApiOperation(value = "从没有组织名称的特定修订中获取文件头响应", nickname = "getFileHeaderWithoutOrganizationParam")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#storageId + '/' + #repository.getId() + '/' + #modelName + '/' + #revision + '/' + #filename")
-    @RequestMapping(path = "{storageId}/{repositoryId}/{modelName}/resolve/{revision}/{filename:.+}",
+    @RequestMapping(path = API_ENDPOINT + "{repositoryId}/{modelName}/resolve/{revision}/{filename:.+}",
             method = RequestMethod.HEAD
     )
     public ResponseEntity<?> getHead(@RepositoryMapping Repository repository,
@@ -153,7 +162,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     @ApiOperation(value = "从具有组织名称的特定修订版中获取文件", nickname = "getFileWithOrganizationParam")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #organization + '/' + #modelName + '/' + #revision + '/' + #filename")
-    @RequestMapping(path = "{storageId}/{repositoryId}/{organization}/{modelName}/resolve/{revision}/{filename:.+}",
+    @RequestMapping(path = API_ENDPOINT + "{repositoryId}/{organization}/{modelName}/resolve/{revision}/{filename:.+}",
             method = RequestMethod.GET
     )
     public ResponseEntity<?> getFile(@RepositoryMapping Repository repository,
@@ -181,7 +190,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     @ApiOperation(value = "从没有组织名称的特定修订版本中获取文件", nickname = "getFileWithoutOrganizationParam")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #modelName + '/' + #revision + '/' + #filename")
-    @RequestMapping(path = "{storageId}/{repositoryId}/{modelName}/resolve/{revision}/{filename:.+}",
+    @RequestMapping(path = API_ENDPOINT + "{repositoryId}/{modelName}/resolve/{revision}/{filename:.+}",
             method = RequestMethod.GET
     )
     public ResponseEntity<?> getFile(@RepositoryMapping Repository repository,
@@ -206,7 +215,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
     @ApiOperation(value = "获取带有组织参数的主要修订信息", nickname = "getMainRevisionInfoWithOrganizationParam")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(path = "{storageId}/{repositoryId}/api/models/{organization}/{modelName}",
+    @RequestMapping(path = API_ENDPOINT + "{repositoryId}/api/models/{organization}/{modelName}",
             method = RequestMethod.GET
     )
     public ResponseEntity<?> getMainRevisionData(@RepositoryMapping Repository repository,
@@ -227,7 +236,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
     @ApiOperation(value = "获取没有组织参数的主要修订信息", nickname = "getMainRevisionInfoWithoutOrganizationParam")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(path = "{storageId}/{repositoryId}/api/models/{modelName}",
+    @RequestMapping(path = API_ENDPOINT + "{repositoryId}/api/models/{modelName}",
             method = RequestMethod.GET
     )
     public ResponseEntity<?> getMainRevisionData(@RepositoryMapping Repository repository,
@@ -248,11 +257,10 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
     @ApiOperation(value = "获取组织参数的修订信息", nickname = "getRevisionInfoWithOrganizationParam")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(path = "{storageId}/{repositoryId}/api/models/{organization}/{modelName}/revision/{revision}",
+    @RequestMapping(path = API_ENDPOINT + "{repositoryId}/api/models/{organization}/{modelName}/revision/{revision}",
             method = RequestMethod.GET
     )
     public void getRevisionData(@RepositoryMapping Repository repository,
-                                @PathVariable("storageId") String storageId,
                                 @PathVariable("repositoryId") String repositoryId,
                                 @PathVariable("organization") String organizationName,
                                 @PathVariable("modelName") String modelName,
@@ -281,7 +289,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     }
 
     @ApiOperation(value = "获取没有组织参数的修订信息", nickname = "getRevisionInfoWithoutOrganizationParam")
-    @RequestMapping(path = "{storageId}/{repositoryId}/api/models/{modelName}/revision/{revision}",
+    @RequestMapping(path = API_ENDPOINT + "{repositoryId}/api/models/{modelName}/revision/{revision}",
             method = RequestMethod.GET
     )
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
@@ -312,7 +320,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
     @ApiOperation(value = "上传组织名称参数的 LFS", nickname = "UploadLFSWithOrganizationNameParam")
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(path = "{storageId}/{repositoryId}/api/complete_multipart/{organization}/{modelName}/{oid}",
+    @RequestMapping(path = API_ENDPOINT + "{repositoryId}/api/complete_multipart/{organization}/{modelName}/{oid}",
             method = RequestMethod.PUT
     )
     public ResponseEntity<?> uploadMultipart(@RepositoryMapping Repository repository,
@@ -336,7 +344,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
     @ApiOperation(value = "上传没有组织名称参数的 LFS", nickname = "UploadLFSWithoutOrganizationNameParam")
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(path = "{storageId}/{repositoryId}/api/complete_multipart/{modelName}/{oid}",
+    @RequestMapping(path = API_ENDPOINT + "{repositoryId}/api/complete_multipart/{modelName}/{oid}",
             method = RequestMethod.PUT
     )
     public ResponseEntity<?> uploadMultipart(@RepositoryMapping Repository repository,
@@ -358,7 +366,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
     @ApiOperation(value = "处理有组织名称的 LFS 对象", nickname = "PreUploadLFSWithOrganizationNameParam")
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(path = "{storageId}/{repositoryId}/{organization}/{modelName}.git/info/lfs/objects/batch",
+    @RequestMapping(path = API_ENDPOINT + "{repositoryId}/{organization}/{modelName}.git/info/lfs/objects/batch",
             method = RequestMethod.POST,
             consumes = {"application/vnd.git-lfs+json"},
             produces = {"application/vnd.git-lfs+json"}
@@ -375,14 +383,14 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 .modelName(modelName)
                 .request(request)
                 .build();
-        return ResponseEntity.ok(preUploadBatch(context, lfsInfoPayload));
+        return ResponseEntity.ok(preUploadBatch(repository, context, lfsInfoPayload));
 
     }
 
 
     @ApiOperation(value = "处理没有组织名称的 LFS 对象", nickname = "PreUploadLFSWithoutOrganizationNameParam")
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(path = "{storageId}/{repositoryId}/{modelName}.git/info/lfs/objects/batch",
+    @RequestMapping(path = API_ENDPOINT + "{repositoryId}/{modelName}.git/info/lfs/objects/batch",
             method = RequestMethod.POST,
             consumes = {"application/vnd.git-lfs+json"},
             produces = {"application/vnd.git-lfs+json"}
@@ -398,14 +406,14 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 .request(request)
                 .build();
 
-        return ResponseEntity.ok(preUploadBatch(context, lfsInfoPayload));
+        return ResponseEntity.ok(preUploadBatch(repository, context, lfsInfoPayload));
 
     }
 
 
     @ApiOperation(value = "获取 preUpload 响应，以管理具有组织名称的每个文件的上传类型", nickname = "PreUploadModelWithOrganizationNameParam")
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(path = "{storageId}/{repositoryId}/api/models/{organization}/{modelName}/preupload/{revision}",
+    @RequestMapping(path = API_ENDPOINT + "{repositoryId}/api/models/{organization}/{modelName}/preupload/{revision}",
             method = RequestMethod.POST,
             consumes = {"application/json"},
             produces = {"application/json"}
@@ -434,7 +442,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
     @ApiOperation(value = "获取 preUpload 响应，以管理每个文件的上传类型，而无需组织名称", nickname = "PreUploadModelWithoutOrganizationNameParam")
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(path = "{storageId}/{repositoryId}/api/models/{modelName}/preupload/{revision}",
+    @RequestMapping(path = API_ENDPOINT + "{repositoryId}/api/models/{modelName}/preupload/{revision}",
             method = RequestMethod.POST,
             consumes = {"application/json"},
             produces = {"application/json"}
@@ -460,7 +468,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
     @ApiOperation(value = "将模型上传为具有组织名称的新修订版本", nickname = "UploadModelWithOrganizationNameParam")
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(path = "{storageId}/{repositoryId}/api/models/{organization}/{modelName}/commit/{revision}",
+    @RequestMapping(path = API_ENDPOINT + "{repositoryId}/api/models/{organization}/{modelName}/commit/{revision}",
             method = RequestMethod.POST,
             consumes = {"application/x-ndjson"},
             produces = {"application/json"}
@@ -498,7 +506,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
     @ApiOperation(value = "将模型作为新修订版本上传，不带组织名称", nickname = "UploadModelWithoutOrganizationNameParam")
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(path = "{storageId}/{repositoryId}/api/models/{modelName}/commit/{revision}",
+    @RequestMapping(path = API_ENDPOINT + "{repositoryId}/api/models/{modelName}/commit/{revision}",
             method = RequestMethod.POST,
             consumes = {"application/x-ndjson"},
             produces = {"application/json"}
@@ -524,7 +532,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
 
     @ApiOperation(value = "自动通过元数据验证", nickname = "AutoPassMetadataValidation")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(path = "{storageId}/{repositoryId}/api/validate-yaml",
+    @RequestMapping(path = API_ENDPOINT + "{repositoryId}/api/validate-yaml",
             method = RequestMethod.POST,
             consumes = {"application/json"},
             produces = {"application/json"}
@@ -541,7 +549,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             @ApiResponse(code = 503, message = "Repository currently not in service.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/models/' + #artifactPath")
-    @RequestMapping(value = {"/{storageId}/{repositoryId}/models/{artifactPath:.+}"}, method = {RequestMethod.GET, RequestMethod.HEAD})
+    @RequestMapping(value = {API_ENDPOINT + "{repositoryId}/models/{artifactPath:.+}"}, method = {RequestMethod.GET, RequestMethod.HEAD})
     public void download(@RepositoryMapping Repository repository,
                          @PathVariable String artifactPath,
                          @RequestHeader HttpHeaders httpHeaders, HttpServletRequest request,
@@ -864,7 +872,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     }
 
 
-    public GitLfsBatchJson preUploadBatch(MlModelRequestContext context, GitLfsBatchJson batchLfsJson) throws IOException {
+    public GitLfsBatchJson preUploadBatch(Repository repository, MlModelRequestContext context, GitLfsBatchJson batchLfsJson) throws IOException {
         String storageId = context.getStorageId();
         String repositoryId = context.getRepositoryId();
         String organization = context.getOrg();
@@ -891,8 +899,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
         //    throw new PackageForbiddenException(errorMessage, errorMessage);
         //}
 
-        String baserUrl = configurationManager.getConfiguration().getBaseUrl();
-        baserUrl = baserUrl.endsWith("/") ? baserUrl.substring(0, baserUrl.length() - 1) + "/storages" : baserUrl + "/storages";
+        String baserUrl = getArtifactoryRepositoryBaseUrl(repository, API_ENDPOINT);
         for (GitLfsJson requestJson : batchLfsJson.getObjects()) {
             boolean sha2ReusePossible = tryToReuseExistingSha2(storageId, repositoryId, organization, modelName, requestJson);
             if (sha2ReusePossible) {
@@ -900,7 +907,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 responseJsons.add(requestJson);
                 continue;
             }
-            String uploadPath = MlModelUtils.getLfsUploadEndpoint(storageId, repositoryId, organization, modelName, requestJson.getOid());
+            String uploadPath = MlModelUtils.getLfsUploadEndpoint(repositoryId, organization, modelName, requestJson.getOid());
             String signedUrl = String.format("%s%s", baserUrl, uploadPath);
             GitLfsJson lfsUploadJson = createLfsUploadJson(requestJson, request.getHeader("Authorization"), storageId, repositoryId, signedUrl);
             lfsUploadJson.setUploadLink(signedUrl);
@@ -1557,5 +1564,22 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             remoteUrl = repository.getRemoteRepository().getUrl();
         }
         return remoteUrl;
+    }
+
+    @Override
+    @ApiOperation(value = "Used to retrieve an artifact")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
+            @ApiResponse(code = 400, message = "An error occurred.")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
+    @GetMapping("/{repositoryId:^(?!api$).+}/{path:.+}")
+    public Object download(@RepositoryMapping Repository repository,
+                           @RequestHeader HttpHeaders httpHeaders,
+                           @PathVariable String path,
+                           HttpServletRequest request,
+                           HttpServletResponse response,
+                           ModelMap model)
+            throws Exception {
+        return super.download(repository, httpHeaders, path, request, response, model);
     }
 }

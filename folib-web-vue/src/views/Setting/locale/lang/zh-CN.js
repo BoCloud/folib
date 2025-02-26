@@ -580,5 +580,10 @@ export default {
     PostLayout:'对应布局',
     PreLayout:'原布局',
     ChangeLayoutSuccess: '修改布局成功',
-    setFailed: '置为失败'
+    setFailed: '置为失败',
+    Delete:'删除',
+    DeleteConfirm:'确定删除该任务吗?',
+    OK:'确定',
+    ResetMigration:'重新迁移',
+    EnterRepositoryName:'请输入仓库名称'
 }

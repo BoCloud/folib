@@ -99,6 +99,11 @@ public abstract class LayoutArtifactCoordinatesEntity<C extends LayoutArtifactCo
     }
 
     @Override
+    public URI buildLayoutResource() {
+        return convertToLayoutResource((C) this);
+    }
+
+    @Override
     public int compareTo(C that)
     {
         return comparator.compare((C) this, that);

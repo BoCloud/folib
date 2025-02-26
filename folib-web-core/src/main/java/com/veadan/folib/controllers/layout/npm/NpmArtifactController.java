@@ -61,6 +61,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
@@ -136,12 +137,12 @@ public class NpmArtifactController
 
     @Override
     @PreAuthorize("authenticated")
-    @GetMapping(value = "/{storageId}/{repositoryId}")
+    @GetMapping(value = {"/api/npm/{repositoryId}/", "/api/ohpm/{repositoryId}/"})
     public ResponseEntity<String> checkRepositoryAccess() {
         return super.checkRepositoryAccess();
     }
 
-    @GetMapping(path = "{storageId}/{repositoryId}/-/v1/search")
+    @GetMapping(path = "/api/npm/{repositoryId}/-/v1/search")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public void search(@RepositoryMapping Repository repository,
                        @RequestParam(name = "text") String text,
@@ -180,19 +181,19 @@ public class NpmArtifactController
         response.getOutputStream().write(npmJacksonMapper.writeValueAsBytes(searchResults));
     }
 
-    @GetMapping(path = "{storageId}/{repositoryId}/-/binary/{artifactPath:.+}")
+    @GetMapping(path = "/api/npm/{repositoryId}/-/binary/{artifactPath:.+}")
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public void viewBinaryFeedWithScope(@RepositoryMapping Repository repository,
-                                        @PathVariable(name = "storageId") String storageId,
                                         @PathVariable(name = "repositoryId") String repositoryId,
                                         @PathVariable(name = "artifactPath") String artifactPath,
                                         HttpServletRequest request,
                                         HttpServletResponse response,
                                         @RequestHeader HttpHeaders httpHeaders)
             throws Exception {
+        final String storageId = repository.getStorage().getId();
         String extension = FilenameUtils.getExtension(artifactPath);
         if (StringUtils.isNotBlank(extension)) {
-            String prefix = String.format("/storages/%s/%s", storageId, repositoryId);
+            String prefix = String.format("/artifactory/api/npm/%s", repositoryId);
             String packageId = request.getRequestURI().substring(prefix.length() + 1);
             RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, packageId);
             vulnerabilityBlock(repositoryPath);
@@ -201,7 +202,7 @@ public class NpmArtifactController
         }
         long startTime = System.currentTimeMillis();
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        String prefix = String.format("/storages/%s/%s", storageId, repositoryId);
+        String prefix = String.format("/artifactory/api/npm/%s", repositoryId);
         String packageId = request.getRequestURI().substring(prefix.length());
         String binary = "/binary/";
         String packageName = "binary";
@@ -221,7 +222,17 @@ public class NpmArtifactController
         logger.debug("[{}] viewPackageFeedWithScope storageId [{}] repositoryId [{}] packageId [{}] task time [{}] ms", this.getClass().getSimpleName(), repository.getStorage().getId(), repository.getId(), packageId, System.currentTimeMillis() - startTime);
     }
 
-    @GetMapping(path = "{storageId}/{repositoryId}/{packageScope:[^-].+}/{packageName:[^-].+}/{packageVersion}")
+    @GetMapping(path = {"/api/npm/{repositoryId}/{packageName:[^@^-].*}/{packageVersion}", "/api/ohpm/{repositoryId}/{packageName:[^@^-].*}/{packageVersion}"})
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    public void viewPackage(@RepositoryMapping Repository repository,
+                                     @PathVariable(name = "packageName") String packageName,
+                                     @PathVariable(name = "packageVersion") String packageVersion,
+                                     HttpServletResponse response)
+            throws Exception {
+        viewPackageWithScope(repository, null, packageName, packageVersion, response);
+    }
+
+    @GetMapping(path = {"/api/npm/{repositoryId}/{packageScope:@.*}/{packageName:[^@^-].*}/{packageVersion}", "/api/ohpm/{repositoryId}/{packageScope:@.*}/{packageName:[^@^-].*}/{packageVersion}"})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public void viewPackageWithScope(@RepositoryMapping Repository repository,
                                      @PathVariable(name = "packageScope") String packageScope,
@@ -255,7 +266,7 @@ public class NpmArtifactController
         response.getOutputStream().write(npmJacksonMapper.writeValueAsBytes(npmPackage));
     }
 
-    @GetMapping(path = "{storageId}/{repositoryId}/{packageScope:[^-].+}/{packageName}")
+    @GetMapping(path = {"/api/npm/{repositoryId}/{packageScope:@.*}/{packageName:[^@^-].*}", "/api/ohpm/{repositoryId}/{packageScope:@.*}/{packageName:[^@^-].*}"})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public void viewPackageFeedWithScope(@RepositoryMapping Repository repository,
                                          @PathVariable(name = "packageScope") String packageScope,
@@ -291,7 +302,7 @@ public class NpmArtifactController
                 DigestUtils.sha1Hex(versionsShasum).substring(0, 16);
     }
 
-    @GetMapping(path = "{storageId}/{repositoryId}/{packageName}")
+    @GetMapping(path = {"/api/npm/{repositoryId}/{packageName:[^@^-].*}", "/api/ohpm/{repositoryId}/{packageName:[^@^-].*}"})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public void viewPackageFeed(@RepositoryMapping Repository repository,
                                 @PathVariable(name = "packageName") String packageName,
@@ -313,7 +324,7 @@ public class NpmArtifactController
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #packageScope + '/' + #packageName + '/-/' + #packageNameWithVersion + '.' + #packageExtension")
-    @RequestMapping(path = "{storageId}/{repositoryId}/{packageScope}/{packageName}/-/{packageNameWithVersion}.{packageExtension}",
+    @RequestMapping(path = {"/api/npm/{repositoryId}/{packageScope:@.*}/{packageName:[^@^-].*}/-/{packageNameWithVersion}.{packageExtension}", "/api/ohpm/{repositoryId}/{packageScope:@.*}/{packageName:[^@^-].*}/-/{packageNameWithVersion}.{packageExtension}"},
             method = {RequestMethod.GET, RequestMethod.HEAD})
     public ResponseEntity<Object> downloadPackageWithScope(@RepositoryMapping Repository repository,
                                                            @PathVariable(name = "packageScope") String packageScope,
@@ -368,9 +379,7 @@ public class NpmArtifactController
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #packageName + '/-/' + #packageNameWithVersion + '.' + #packageExtension")
-    @RequestMapping(path = "{storageId}/{repositoryId}/{packageName}/-/{packageNameWithVersion}.{packageExtension}",
-            method = {RequestMethod.GET,
-                    RequestMethod.HEAD})
+    @GetMapping(path = {"/api/npm/{repositoryId}/{packageName:[^@^-].*}/-/{packageNameWithVersion}.{packageExtension}", "/api/ohpm/{repositoryId}/{packageName:[^@^-].*}/-/{packageNameWithVersion}.{packageExtension}"})
     public ResponseEntity<Object> downloadPackage(@RepositoryMapping Repository repository,
                                                   @PathVariable(name = "packageName") String packageName,
                                                   @PathVariable(name = "packageNameWithVersion") String packageNameWithVersion,
@@ -421,32 +430,32 @@ public class NpmArtifactController
         return null;
     }
 
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #packageScope + '/' + #packageName + '/' +#packageVersion '/' + #fileName + '.' + #fileExtension")
-    @GetMapping(path = "{storageId}/{repositoryId}/{packageScope}/{packageName}/{packageVersion}/{fileName}.{fileExtension}")
-    public void downloadPackageWithScopeFile(@RepositoryMapping Repository repository,
-                                             @PathVariable(name = "packageScope") String packageScope,
-                                             @PathVariable(name = "packageName") String packageName,
-                                             @PathVariable(name = "packageVersion") String packageVersion,
-                                             @PathVariable(name = "fileName") String fileName,
-                                             @PathVariable(name = "fileExtension") String fileExtension,
-                                             @RequestHeader HttpHeaders httpHeaders,
-                                             HttpServletRequest request,
-                                             HttpServletResponse response)
-            throws Exception {
-        final String storageId = repository.getStorage().getId();
-        final String repositoryId = repository.getId();
-        String path = packageScope + File.separator + packageName + File.separator + packageVersion + File.separator + fileName + GlobalConstants.POINT + fileExtension;
-        logger.info("Requested /{}/{}/{}.", storageId, repositoryId, path);
-
-        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
-        vulnerabilityBlock(repositoryPath);
-        provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
-    }
+//    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+//    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #packageScope + '/' + #packageName + '/' +#packageVersion '/' + #fileName + '.' + #fileExtension")
+//    @GetMapping(path = {"/api/npm/{repositoryId}/{packageScope}/{packageName}/{packageVersion}/{fileName}.{fileExtension}", "/api/ohpm/{repositoryId}/{packageScope}/{packageName}/{packageVersion}/{fileName}.{fileExtension}"})
+//    public void downloadPackageWithScopeFile(@RepositoryMapping Repository repository,
+//                                             @PathVariable(name = "packageScope") String packageScope,
+//                                             @PathVariable(name = "packageName") String packageName,
+//                                             @PathVariable(name = "packageVersion") String packageVersion,
+//                                             @PathVariable(name = "fileName") String fileName,
+//                                             @PathVariable(name = "fileExtension") String fileExtension,
+//                                             @RequestHeader HttpHeaders httpHeaders,
+//                                             HttpServletRequest request,
+//                                             HttpServletResponse response)
+//            throws Exception {
+//        final String storageId = repository.getStorage().getId();
+//        final String repositoryId = repository.getId();
+//        String path = packageScope + File.separator + packageName + File.separator + packageVersion + File.separator + fileName + GlobalConstants.POINT + fileExtension;
+//        logger.info("Requested /{}/{}/{}.", storageId, repositoryId, path);
+//
+//        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
+//        vulnerabilityBlock(repositoryPath);
+//        provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+//    }
 
     @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT,target ="#repository.getStorage().getId() + '/' + #repository.getId()+ '/' + #name")
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @PutMapping(path = "{storageId}/{repositoryId}/{name:.+}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(path = {"/api/npm/{repositoryId}/{name:.+}", "/api/ohpm/{repositoryId}/{name:.+}"}, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity publish(@RepositoryMapping Repository repository,
                                   @PathVariable(name = "name") String name,
                                   HttpServletRequest request)
@@ -490,7 +499,7 @@ public class NpmArtifactController
      * Example of PUT path: http://localhost:8080/@scope/package/-rev/0-0000000000000000.
      * As publishing doesn't play any role in 'unpublish' process, it should be skipped.
      *
-     * @param name name from path "{storageId}/{repositoryId}/{name:.+}"
+     * @param name name from path "/{repositoryId}/{name:.+}"
      * @return true if contains, false if not. If true PUT stage of 'unpublish' will be skipped.
      */
     private boolean nameContainsRevision(String name) {
@@ -503,7 +512,7 @@ public class NpmArtifactController
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @PutMapping(path = "{storageId}/{repositoryId}/-/user/org.couchdb.user:{username}",
+    @PutMapping(path = "/api/npm/{repositoryId}/-/user/org.couchdb.user:{username}",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity addUser(Authentication authentication) {
@@ -526,7 +535,7 @@ public class NpmArtifactController
                 .body("{\"ok\":\"user '" + authentication.getName() + "' created\"}");
     }
 
-    @DeleteMapping(path = "{storageId}/{repositoryId}/{packageScope}/{packageName}/-rev/{rev}")
+    @DeleteMapping(path = "/api/npm/{repositoryId}/{packageScope:@.*}/{packageName:[^@^-].*}/-rev/{rev}")
     @PreAuthorize("hasAuthority('ARTIFACTS_DELETE')")
     public ResponseEntity unpublishPackageWithScope(@RepositoryMapping Repository repository,
                                                     @PathVariable(name = "packageScope") String packageScope,
@@ -555,7 +564,7 @@ public class NpmArtifactController
      * @return result via {@link ResponseEntity} with HTTP status
      * @throws Exception
      */
-    @DeleteMapping(path = "{storageId}/{repositoryId}/{r1}/{r2}/{r3}/{packageScope}/{packageName}/-/{tarball}/-rev/{rev}")
+    @DeleteMapping(path = "/api/npm/{repositoryId}/{r1}/{r2}/{r3}/{packageScope:@.*}/{packageName:[^@^-].*}/-/{tarball}/-rev/{rev}")
     @PreAuthorize("hasAuthority('ARTIFACTS_DELETE')")
     public ResponseEntity unpublishVersionWithScope(@RepositoryMapping Repository repository,
                                                     @PathVariable(name = "packageScope") String packageScope,
@@ -591,7 +600,7 @@ public class NpmArtifactController
      * @return result via {@link ResponseEntity} with HTTP status
      * @throws Exception
      */
-    @DeleteMapping(path = "{storageId}/{repositoryId}/{packageScope}/{packageName}/-/{tarball}/-rev/{rev}")
+    @DeleteMapping(path = "/api/npm/{repositoryId}/{packageScope:@.*}/{packageName:[^@^-].*}/-/{tarball}/-rev/{rev}")
     @PreAuthorize("hasAuthority('ARTIFACTS_DELETE')")
     public ResponseEntity unpublishVersionWithScopeV5(@RepositoryMapping Repository repository,
                                                       @PathVariable(name = "packageScope") String packageScope,
@@ -616,7 +625,7 @@ public class NpmArtifactController
         return processUnpublishResult(result);
     }
 
-    @DeleteMapping(path = "{storageId}/{repositoryId}/{packageName}/-rev/{rev}")
+    @DeleteMapping(path = "/api/npm/{repositoryId}/{packageName:[^@^-].*}/-rev/{rev}")
     @PreAuthorize("hasAuthority('ARTIFACTS_DELETE')")
     public ResponseEntity unpublishPackage(@RepositoryMapping Repository repository,
                                            @PathVariable(name = "packageName") String packageName,
@@ -624,7 +633,7 @@ public class NpmArtifactController
         return unpublishPackageWithScope(repository, null, packageName, rev);
     }
 
-    @DeleteMapping(path = "{storageId}/{repositoryId}/{r1}/{r2}/{r3}/{packageName}/-/{tarball}/-rev/{rev}")
+    @DeleteMapping(path = "/api/npm/{repositoryId}/{r1}/{r2}/{r3}/{packageName:[^@^-].*}/-/{tarball}/-rev/{rev}")
     @PreAuthorize("hasAuthority('ARTIFACTS_DELETE')")
     public ResponseEntity unpublishVersion(@RepositoryMapping Repository repository,
                                            @PathVariable(name = "packageName") String packageName,
@@ -633,7 +642,7 @@ public class NpmArtifactController
         return unpublishVersionWithScope(repository, null, packageName, tarball, rev);
     }
 
-    @DeleteMapping(path = "{storageId}/{repositoryId}/{packageName}/-/{tarball}/-rev/{rev}")
+    @DeleteMapping(path = "/api/npm/{repositoryId}/{packageName:[^@^-].*}/-/{tarball}/-rev/{rev}")
     @PreAuthorize("hasAuthority('ARTIFACTS_DELETE')")
     public ResponseEntity unpublishVersionV5(@RepositoryMapping Repository repository,
                                              @PathVariable(name = "packageName") String packageName,
@@ -648,11 +657,9 @@ public class NpmArtifactController
             @ApiResponse(code = 401, message = "Unauthorized"),
             @ApiResponse(code = 403, message = "Forbidden"),
     })
-    @PostMapping(path = "{storageId}/{repositoryId}/login")
-    public ResponseEntity<?> ohpmLogin(@PathVariable(name = "storageId") String storageId,
-                                       @PathVariable(name = "repositoryId") String repositoryId,
+    @PostMapping(path = "/api/ohpm/{repositoryId}/login")
+    public ResponseEntity<?> ohpmLogin(@PathVariable(name = "repositoryId") String repositoryId,
                                        @RequestBody OhpmLoginReq ohpmLoginReq) {
-
         if (ohpmLoginReq.getPublishId() != null) {
             JSONObject data = new JSONObject();
             String publishId = ohpmLoginReq.getPublishId();
@@ -752,5 +759,22 @@ public class NpmArtifactController
             default:
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
+    }
+
+    @Override
+    @ApiOperation(value = "Used to retrieve an artifact")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
+            @ApiResponse(code = 400, message = "An error occurred.")})
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
+    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
+    @GetMapping("/{repositoryId:^(?!api$).+}/{path:.+}")
+    public Object download(@RepositoryMapping Repository repository,
+                           @RequestHeader HttpHeaders httpHeaders,
+                           @PathVariable String path,
+                           HttpServletRequest request,
+                           HttpServletResponse response,
+                           ModelMap model)
+            throws Exception {
+        return super.download(repository, httpHeaders, path, request, response, model);
     }
 }

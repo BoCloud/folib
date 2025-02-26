@@ -137,7 +137,8 @@ public class AccessModelData
             String dockerKey = "/v2/" + storage.getStorageId() + separator;
             String storageBrowseKey = "/api/browse/" + storage.getStorageId() + separator;
             String storageConfigKey = "/api/configuration/folib/storages/" + storage.getStorageId() + separator;
-            if (!normalizedUrl.startsWith(storageKey) && !normalizedUrl.startsWith(dockerKey) && !normalizedUrl.startsWith(storageBrowseKey) && !normalizedUrl.startsWith(storageConfigKey)) {
+            String artifactoryKey = "/artifactory/" + storage.getStorageId() + separator;
+            if (!normalizedUrl.startsWith(artifactoryKey) && !normalizedUrl.startsWith(storageKey) && !normalizedUrl.startsWith(dockerKey) && !normalizedUrl.startsWith(storageBrowseKey) && !normalizedUrl.startsWith(storageConfigKey)) {
                 continue;
             }
             privileges.addAll(storage.getStoragePrivileges());
@@ -151,12 +152,13 @@ public class AccessModelData
                 String repositoryDockerKey = dockerKey + repository.getRepositoryId() + separator;
                 String repositoryBrowseKey = storageBrowseKey + repository.getRepositoryId() + separator;
                 String repositoryConfigKey = storageConfigKey + repository.getRepositoryId() + separator;
-                if (!normalizedUrl.startsWith(repositoryKey) && !normalizedUrl.startsWith(repositoryDockerKey) && !normalizedUrl.startsWith(repositoryBrowseKey) && !normalizedUrl.startsWith(repositoryConfigKey)) {
+                String artifactoryRepositoryKey = artifactoryKey + repository.getRepositoryId() + separator;
+                if (!normalizedUrl.startsWith(artifactoryRepositoryKey) && !normalizedUrl.startsWith(repositoryKey) && !normalizedUrl.startsWith(repositoryDockerKey) && !normalizedUrl.startsWith(repositoryBrowseKey) && !normalizedUrl.startsWith(repositoryConfigKey)) {
                     continue;
                 }
                 privileges.addAll(repository.getRepositoryPrivileges());
                 for (PathPrivileges pathPrivilege : repository.getPathPrivileges()) {
-                    if (normalizedUrl.equals(repositoryKey) || normalizedUrl.equals(repositoryBrowseKey)) {
+                    if (normalizedUrl.equals(artifactoryRepositoryKey) || normalizedUrl.equals(repositoryKey) || normalizedUrl.equals(repositoryBrowseKey)) {
                         privileges.addAll(pathPrivilege.getPrivileges());
                         continue;
                     }
@@ -168,16 +170,18 @@ public class AccessModelData
                     }
                     for (String path : pathKeyList) {
                         String pathKey = StringUtils.removeEnd(repositoryKey, GlobalConstants.SEPARATOR) + GlobalConstants.SEPARATOR + path;
+                        String artifactoryPathKey = StringUtils.removeEnd(artifactoryRepositoryKey, GlobalConstants.SEPARATOR) + GlobalConstants.SEPARATOR + path;
                         String pathBrowseKey = storageBrowseKey + repository.getRepositoryId() + GlobalConstants.SEPARATOR + path;
-                        String pathKeyPattern = pathKey, pathBrowseKeyPattern = pathBrowseKey;
+                        String pathKeyPattern = pathKey, pathBrowseKeyPattern = pathBrowseKey, artifactoryPathKeyPattern = artifactoryPathKey;
                         if (!normalizedPath.contains("*") && !normalizedPath.contains("?")) {
                             pathKeyPattern = pathKey + end;
+                            artifactoryPathKeyPattern = artifactoryPathKey + end;
                             pathBrowseKeyPattern = pathBrowseKey + end;
                         }
-                        if (!normalizedUrl.startsWith(pathKey) && !normalizedUrl.startsWith(pathBrowseKey) && !normalizedUrl.matches(pathKeyPattern) && !normalizedUrl.matches(pathBrowseKeyPattern)) {
+                        if (!normalizedUrl.startsWith(artifactoryPathKey) && !normalizedUrl.startsWith(pathKey) && !normalizedUrl.startsWith(pathBrowseKey) && !normalizedUrl.matches(artifactoryPathKeyPattern) && !normalizedUrl.matches(pathKeyPattern) && !normalizedUrl.matches(pathBrowseKeyPattern)) {
                             continue;
                         }
-                        boolean flag = normalizedUrl.matches(pathKeyPattern) || normalizedUrl.matches(pathBrowseKeyPattern) || normalizedUrl.equals(pathKey) || normalizedUrl.equals(pathBrowseKey) || pathPrivilege.isWildcard();
+                        boolean flag = normalizedUrl.matches(artifactoryPathKeyPattern) || normalizedUrl.matches(pathKeyPattern) || normalizedUrl.matches(pathBrowseKeyPattern) || normalizedUrl.equals(artifactoryPathKey) || normalizedUrl.equals(pathKey) || normalizedUrl.equals(pathBrowseKey) || pathPrivilege.isWildcard();
                         if (flag) {
                             privileges.addAll(pathPrivilege.getPrivileges());
                         }

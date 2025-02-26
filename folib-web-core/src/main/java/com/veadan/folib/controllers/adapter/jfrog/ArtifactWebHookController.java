@@ -9,7 +9,6 @@ import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.adapter.jfrog.dto.ArtifactData;
 import com.veadan.folib.controllers.adapter.jfrog.dto.WebhookDto;
 import com.veadan.folib.domain.migrate.ArtifactMigrateInfo;
-import com.veadan.folib.domain.migrate.MigrateInfo;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.JFrogEventTypeEnum;
 import com.veadan.folib.enums.ProductTypeEnum;
@@ -27,12 +26,10 @@ import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.DictService;
 import com.veadan.folib.storage.Storage;
-import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import com.veadan.folib.users.security.SecurityTokenProvider;
 import com.veadan.folib.utils.SecurityUtils;
-import com.veadan.folib.utils.UserUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.collections4.CollectionUtils;
@@ -52,7 +49,6 @@ import javax.annotation.Resource;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -83,7 +79,6 @@ public class ArtifactWebHookController {
 
     @Inject
     protected DockerComponent dockerComponent;
-
 
     @Resource
     private DictService dictService;
@@ -171,7 +166,7 @@ public class ArtifactWebHookController {
                     ArtifactMigrateInfo jfrogInfo = JSON.parseObject(info.getAlias(), ArtifactMigrateInfo.class);
                     // 获取制品
                     try(Artifactory artifactory = ArtifactoryClientBuilder.create().setUrl(jfrogInfo.getRemotePreUrl()).setUsername(jfrogInfo.getUsername()).setPassword(jfrogInfo.getPassword()).build()){
-                        // 访问远程仓库
+                        // 设置admin权限
                         securityUtils.setAdminAuthentication();
                         RepositoryHandle repository = artifactory.repository(repositoryId);
                         // 1.下载 manifest.json
@@ -183,7 +178,7 @@ public class ArtifactWebHookController {
                         } else {
                             digestOrTag = artifactData.getTag().replace("__", ":");
                         }
-                        String targetPath;
+                        String targetPath = "";
                         String path = artifactData.getPath();
                         String imagePath = StringUtils.removeEnd(path.substring(0, path.indexOf(artifactData.getTag())), GlobalConstants.SEPARATOR);
                         if (isTag) {
@@ -199,9 +194,12 @@ public class ArtifactWebHookController {
                         MessageDigest shaDigest = MessageDigest.getInstance("SHA-256");
                         String shaChecksum = "sha256:" + dockerComponent.getFileChecksum(shaDigest,Files.newInputStream(tempManifestRepositoryPath));
                         RepositoryPath manifastRepoPath = rootRepositoryPath.resolve(DockerLayoutProvider.MANIFEST).resolve(shaChecksum);
+                        manifastRepoPath.setArtifactPath(imagePath);
                         RepositoryPath tagManifast = repositoryPath.resolve(shaChecksum);
+                        tagManifast.setArtifactPath(imagePath);
                         artifactManagementService.store(manifastRepoPath, Files.newInputStream(tempManifestRepositoryPath));
                         artifactManagementService.store(tagManifast, Files.newInputStream(tempManifestRepositoryPath));
+                        // 2.下载blobs
                         List<ImageManifest> imageManifestList = dockerComponent.getImageManifests(manifastRepoPath);
                         if (CollectionUtils.isNotEmpty(imageManifestList)) {
                             for (ImageManifest imageManifest : imageManifestList) {
@@ -300,7 +298,7 @@ public class ArtifactWebHookController {
                         securityUtils.setAdminAuthentication();
                         RepositoryHandle repository = artifactory.repository(repositoryId);
                         InputStream artifactStream = repository.download(artifactData.getPath()).doDownload();
-                        artifactManagementService.validateAndStore(repositoryPath, artifactStream);
+                        artifactManagementService.store(repositoryPath, artifactStream);
                     }catch (Exception e){
                         log.info("下载远程制品失败");
                         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("sync artifact failed");

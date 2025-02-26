@@ -505,11 +505,4 @@ public class ArtifactController extends BaseController {
         artifactWebService.deleteArtifactsResolve(roleId, resourceId);
         return ResponseEntity.ok("");
     }
-
-
-    @PreAuthorize("hasAuthority('ADMIN')")
-    @PostMapping(value = "/backupResolve")
-    public void backupResolve(String storageId,String repositoryId, MultipartFile file) throws Exception {
-        artifactWebService.backupResolve(storageId, repositoryId,file);
-    }
 }

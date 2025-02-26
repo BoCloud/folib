@@ -336,10 +336,6 @@ public class PypiSyncArtifactProvider implements SyncArtifactProvider {
                             batchDownload(item, syncArtifactForm, pathList, threadPoolTaskExecutor);
                         }
                     }
-                    // 清除已完成的文件
-                    if (flag) {
-//                        Files.delete(item);
-                    }
                 } catch (Exception ex) {
                     log.error("Handle path [{}] lines [{}] error [{}] ms", item.toString(), lines, ExceptionUtils.getStackTrace(ex));
                 }
@@ -502,6 +498,8 @@ public class PypiSyncArtifactProvider implements SyncArtifactProvider {
         // 获取仓库信息
         try {
             MigrateInfo repository = migrateInfoService.getByMigrateIdAndRepoInfo(syncArtifactForm.getMigrateId(), syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId());
+            int total = repository.getTotalArtifact() == null ? 0 : repository.getTotalArtifact();
+            syncArtifactForm.setTotalArtifact(total);
             if (MigrateStatusEnum.QUEUING.getStatus() == repository.getSyncStatus() &&repository.getIndexFinish()==0) {
                 migrateInfoService.updateAndSyncRepoStatus(syncArtifactForm, MigrateStatusEnum.FETCHING_INDEX.getStatus());
                 String dirPath = syncPackageIndex(syncArtifactForm);
@@ -518,6 +516,7 @@ public class PypiSyncArtifactProvider implements SyncArtifactProvider {
             migrateInfoService.updateById(repository);
             distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
             String path = repository.getSyncDirPath();
+            distributedCounterComponent.getAtomicLong(JfrogMigrateService.INDEX_COUNT+syncArtifactForm.getStoreAndRepo()).set(total);
             if (syncArtifactForm.getSyncMeta() == 1) {
                 JfrogPropertySyncer syncer = new JfrogPropertySyncer(syncArtifactForm.getApiUrl(), syncArtifactForm.getUsername(), syncArtifactForm.getPassword());
                 syncArtifactForm.setSyncer(syncer);

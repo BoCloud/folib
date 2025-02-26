@@ -534,7 +534,7 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
                     Dist dist = versionEntry.getValue().getDist();
                     if (Objects.nonNull(dist) && StringUtils.isNotBlank(dist.getTarball())) {
                         npmArtifactCoordinates = NpmArtifactCoordinates.of(versionEntry.getValue().getName(), versionEntry.getValue().getVersion(),packageSuffix);
-                        uri = npmArtifactCoordinates.convertToResource(npmArtifactCoordinates);
+                        uri = npmArtifactCoordinates.convertToLayoutResource(npmArtifactCoordinates);
                         dist.setTarball(repositoryBaseUrl + uri.toString());
                     }
                 }

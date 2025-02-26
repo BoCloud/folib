@@ -16,6 +16,15 @@
                         <a-button type="link" @click="handleEdit(record)">
                             {{ $t('Setting.Edit') }}
                         </a-button>
+                        <a-popconfirm
+                            :title="$t('Setting.DeleteConfirm')"
+                            :ok-text="$t('Setting.OK')"
+                            :cancel-text="$t('Setting.Cancel')"
+                            @confirm="deleteTask(record)">
+                          <a-button  type="link">
+                            {{ $t('Setting.Delete') }}
+                          </a-button>
+                        </a-popconfirm>
                         <a-button  type="link" @click="handleMigrate(record)">
                             {{ $t('Setting.Migrate') }}
                         </a-button>
@@ -85,7 +94,7 @@
 </template>
 
 <script>
-import { task, updateTask, addTask } from '@/api/migrate'
+import { task, updateTask, addTask,deleteTask } from '@/api/migrate'
 import MigrateListPage from './MigrateListPage.vue'
 
 export default {
@@ -305,6 +314,20 @@ export default {
                 syncMeta: 1
             };
             this.modalVisible = true;
+        },
+        deleteTask(record){
+          deleteTask(record.id).then(()=>{
+            this.$notification.success({
+              message: this.$t('Setting.Success'),
+              description: this.$t('Setting.DeleteSuccess')
+            });
+            this.getTask();
+          }).catch(error=>{
+            this.$notification.error({
+              message: this.$t('Setting.Error'),
+              description: error.response.data.error
+            });
+          })
         }
     },
 }

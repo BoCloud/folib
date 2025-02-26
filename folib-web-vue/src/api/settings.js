@@ -110,9 +110,11 @@ export function globalSettingArtifactDispatchConfig (data) {
 }
 
 export function globalSettingDelArtifactDispatchConfig(clusterEnName) {
+  const data={clusterEnName:clusterEnName}
   return axios({
-    url: '/api/configuration/folib/dispatch/' + clusterEnName,
-    method: 'delete'
+    url: '/api/configuration/folib/dispatch/dispatchNode',
+    method: 'delete',
+    data:data
   })
 }
 

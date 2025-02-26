@@ -75,6 +75,13 @@ public class ReplicationBackup {
     public void backUpByPath(Repository repository, Collection<String> paths, String path) {
         // 将增量文件复制到指定目录下
         String prefixPath=tempPath + "/replication/" + repository.getStorage().getId() + "/" + repository.getId()+"/"+path;
+        if (Files.exists(Path.of(prefixPath))) {
+            try {
+                Files.delete(Path.of(prefixPath));
+            } catch (IOException e) {
+                log.error("delete replication backup failed", e);
+            }
+        }
         for (String p : paths) {
             RepositoryPath scrPath = repositoryPathResolver.resolve(repository, p);
             Path targetPath = Path.of(prefixPath + p);
@@ -100,6 +107,10 @@ public class ReplicationBackup {
     private String genZip(Repository repository,Path targetPath) {
         String dateStr= DateUtil.format(DateUtil.date(), DatePattern.PURE_DATETIME_PATTERN)+".zip";
         String prefixPath=tempPath + "/replication/" + repository.getStorage().getId() + "/" + repository.getId()+"/"+dateStr;
+        if(!Files.exists(targetPath)){
+            log.info("备份文件不存在");
+            return null;
+        }
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(prefixPath));Stream<Path> pathStream = Files.walk(targetPath)) {
             pathStream.forEach(path -> {
                         String zipEntryName = targetPath.relativize(path).toString().replace("\\", "/");
