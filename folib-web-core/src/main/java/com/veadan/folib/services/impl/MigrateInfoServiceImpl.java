@@ -7,6 +7,7 @@ import com.veadan.folib.entity.MigrateInfo;
 
 import com.veadan.folib.mapper.MigrateInfoMapper;
 import com.veadan.folib.services.MigrateInfoService;
+import jodd.util.StringUtil;
 import org.springframework.stereotype.Service;
 import tk.mybatis.mapper.entity.Example;
 
@@ -36,12 +37,15 @@ public class MigrateInfoServiceImpl implements MigrateInfoService {
     }
 
     @Override
-    public PageInfo<MigrateInfo> selectByMigrateIdAndStatus(String migrateId, List<Integer> status, Integer pageNum, Integer pageSize) {
+    public PageInfo<MigrateInfo> selectByMigrateIdAndStatus(String migrateId, List<Integer> status, Integer pageNum, Integer pageSize,String repoName) {
         PageHelper.startPage(pageNum, pageSize);
         Example example = Example.builder(MigrateInfo.class).build();
         Example.Criteria where = example.createCriteria();
         where.andEqualTo("migrateId", migrateId);
         where.andIn("syncStatus", status);
+        if(StringUtil.isNotEmpty(repoName)) {
+            where.andLike("repositoryId", "%" + repoName + "%");
+        }
         return PageInfo.of(migrateInfoMapper.selectByExample(example));
     }
 

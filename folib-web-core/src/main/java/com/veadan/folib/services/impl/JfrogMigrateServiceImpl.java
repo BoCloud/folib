@@ -272,10 +272,10 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
     }
 
     @Override
-    public TableResultResponse<MigrateInfo> getRepositoryByMigrateId(int page, int limit, String migrateId, String status) {
+    public TableResultResponse<MigrateInfo> getRepositoryByMigrateId(int page, int limit, String migrateId, String status,String repoName) {
         List<Integer> statuses = STATUS_MAPPING.get(status);
         Assert.notNull(statuses, "无效的状态标识");
-        PageInfo<MigrateInfo> pages = migrateInfoService.selectByMigrateIdAndStatus(migrateId, statuses, page, limit);
+        PageInfo<MigrateInfo> pages = migrateInfoService.selectByMigrateIdAndStatus(migrateId, statuses, page, limit,repoName);
         return new TableResultResponse<>(pages.getTotal(), pages.getList());
     }
 
