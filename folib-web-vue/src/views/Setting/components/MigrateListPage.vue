@@ -4,16 +4,25 @@
       <a-tab-pane :key="1" :tab="$t('Setting.PendingMigration')">
         <div class="table-operations-container">
           <div class="table-operations">
-            <a-button type="primary" @click="handleAdd">
-              {{ $t('Setting.AddRepository') }}
-            </a-button>
-            <a-button 
+            <a-row >
+              <a-col :span="6">
+              <a-button type="primary" @click="handleAdd">
+                {{ $t('Setting.AddRepository') }}
+              </a-button>
+            </a-col>
+            <a-col :span="6">
+              <a-button 
               type="primary" 
               :disabled="!hasSelectedRows"
-              @click="handleStartMigration"
-            >
-              {{ $t('Setting.StartMigration') }}
-            </a-button>
+              @click="handleStartMigration">
+                {{ $t('Setting.StartMigration') }}
+              </a-button>
+            </a-col>
+            <a-col :span="12">
+                <a-input-search v-model="repoName" :placeholder="$t('Setting.EnterRepositoryName')" @search="searchRepo()" allowClear/>
+            </a-col>
+            </a-row>
+            
           </div>
         </div>
         
@@ -274,6 +283,7 @@ export default {
           }
         ]
       },
+      repoName: undefined,
       storageOptions: [],
       repositoryOptions: [],
       repositoryLoading: false,
@@ -408,6 +418,7 @@ export default {
     activeTab: {
       handler(newVal) {
         // 在迁移中标签页启动轮询，其他标签页停止轮询
+        this.repoName = undefined;
         if (newVal === 2) {
           this.startPolling();
         } else {
@@ -478,7 +489,8 @@ export default {
           page: this.pendingPagination.current,
           limit: this.pendingPagination.pageSize,
           status: 'pending',
-          migrateId: this.migrateId
+          migrateId: this.migrateId,
+          repoName: this.repoName
         });
         if (response?.data) {
           this.pendingData = response.data.rows;
@@ -1033,6 +1045,9 @@ export default {
         });
       }
     },
+    searchRepo(){
+      this.loadPendingData();
+    }
   },
   beforeDestroy() {
     // 组件销毁前停止轮询
@@ -1052,12 +1067,6 @@ export default {
   display: flex;
   justify-content: flex-end;
   margin-bottom: 16px;
-}
-
-.table-operations {
-  .ant-btn {
-    margin-left: 8px;
-  }
 }
 
 ::v-deep .ant-select-selection--multiple {

@@ -17,7 +17,7 @@ public interface MigrateInfoService {
 
     void updateById(MigrateInfo migrateInfo);
 
-    PageInfo<MigrateInfo> selectByMigrateIdAndStatus(String migrateId, List<Integer> status, Integer pageNum, Integer pageSize);
+    PageInfo<MigrateInfo> selectByMigrateIdAndStatus(String migrateId, List<Integer> status, Integer pageNum, Integer pageSize,String repoName);
 
     List<MigrateInfo> selectByMigrateId(String migrateId,  List<Integer> status);
 

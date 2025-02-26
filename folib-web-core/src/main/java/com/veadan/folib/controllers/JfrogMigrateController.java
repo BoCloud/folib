@@ -91,10 +91,8 @@ public class JfrogMigrateController {
     @GetMapping("/repository")
     public TableResultResponse<MigrateInfo> getRepositoryByMigrateId(@RequestParam(name = "page", defaultValue = "1") Integer page,
                                                                      @RequestParam(name = "limit", defaultValue = "10") Integer limit,
-                                                                     String migrateId, String status) {
-        return jfrogMigrateService.getRepositoryByMigrateId(page, limit, migrateId, status);
-
-
+                                                                     String migrateId, String status,String repoName) {
+        return jfrogMigrateService.getRepositoryByMigrateId(page, limit, migrateId, status,repoName);
     }
 
     // 添加迁移仓库
