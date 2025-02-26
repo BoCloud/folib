@@ -33,8 +33,8 @@ public class RpmMetadataExtractor  {
 
     public  String readSHA1FileContent(Path filePath) throws Exception {
         try {
-            return getSHA1(filePath);
-            //return new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8);
+            //return getSHA1(filePath);
+            return new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw e;
         }

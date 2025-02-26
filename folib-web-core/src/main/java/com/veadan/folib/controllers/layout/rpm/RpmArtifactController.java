@@ -202,12 +202,4 @@ public class RpmArtifactController extends BaseArtifactController {
         vulnerabilityBlock(repositoryPath);
         provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
     }
-    @GetMapping(value = {"{storageId}/{repositoryId}/test"})
-    public void test(@RepositoryMapping Repository repository,
-                     @RequestHeader HttpHeaders httpHeaders,
-                     @PathVariable String storageId,
-                     @PathVariable String repositoryId) throws Exception {
-        RpmGroupRepoIndexer rpmGroupRepoIndexer = new RpmGroupRepoIndexer(tempPath,repositoryPathResolver,artifactManagementService,configurationManager);
-        rpmGroupRepoIndexer.aggregationIndexer(repository);
-    }
 }

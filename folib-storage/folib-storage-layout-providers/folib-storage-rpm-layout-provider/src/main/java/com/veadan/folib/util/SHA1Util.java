@@ -34,7 +34,7 @@ public class SHA1Util {
     }
 
     private static String bytesToHex(byte[] hash) {
-        char[] hexArray = "0123456789ABCDEF".toCharArray();
+        char[] hexArray = "0123456789abcdef".toCharArray();
         char[] hexChars = new char[hash.length * 2];
         for (int i = 0; i < hash.length; i++) {
             int v = hash[i] & 0xFF;
