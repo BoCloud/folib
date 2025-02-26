@@ -58,11 +58,6 @@ import java.util.stream.Stream;
 @Component
 public class RawSyncArtifactProvider implements SyncArtifactProvider {
 
-    /**
-     * 计数
-     */
-    private static final ThreadLocal<Integer> THREAD_LOCAL = ThreadLocal.withInitial(() -> 0);
-
     @Value("${folib.temp}")
     private String tempPath;
 
@@ -297,7 +292,6 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
             batch = syncArtifactForm.getBatch();
         }
         int availableCores =syncArtifactForm.getMaxThreadNum()!=null?syncArtifactForm.getMaxThreadNum(): 16;
-        int availableCores = commonComponent.getAvailableCores() * 2;
         ThreadPoolTaskExecutor threadPoolTaskExecutor = commonComponent.buildThreadPoolTaskExecutor("browseRawSync", availableCores, availableCores);
         boolean ispaused = false;
         try (Stream<Path> pathStream = Files.list(path)) {
@@ -347,9 +341,6 @@ public class RawSyncArtifactProvider implements SyncArtifactProvider {
         syncArtifactForm.setSyncMount(total);
         log.info("Raw包同步完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个制品，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), total, System.currentTimeMillis() - allStartTime);
         handlerDirectoryMetadata(dirPath, syncArtifactForm);
-        int total = (int) distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).get();
-        syncArtifactForm.setSyncMount(total);
-        log.info("Raw包同步完成，存储空间 [{}] 仓库 [{}] 同步 [{}] 个制品，耗时 [{}] ms", syncArtifactForm.getStorageId(), syncArtifactForm.getRepositoryId(), total, System.currentTimeMillis() - allStartTime);
         return !ispaused;
     }
 
