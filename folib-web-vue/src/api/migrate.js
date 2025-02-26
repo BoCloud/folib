@@ -103,4 +103,27 @@ export function task () {
     })
   }
 
+export function getAllRepo(data) {
+  return request({
+    url: '/api/migrate/jfrog/repository/all',
+    method: 'post',
+    data: data
+  })
+}
+
+export function deleteTask(id) {
+  return request({
+    url: '/api/migrate/jfrog/task/'+id,
+    method: 'delete',
+  })
+}
+
+export function restartMigrate(data) {
+  return request({
+    url: '/api/migrate/jfrog/repository/restart',
+    method: 'post',
+    data: data
+  })
+}
+
   

@@ -17,7 +17,9 @@ public interface MigrateInfoService {
 
     void updateById(MigrateInfo migrateInfo);
 
-    PageInfo<MigrateInfo> selectByMigrateIdAndStatus(String migrateId, List<Integer> status, Integer pageNum, Integer pageSize);
+    PageInfo<MigrateInfo> selectByMigrateIdAndStatus(String migrateId, List<Integer> status, Integer pageNum, Integer pageSize,String repoName);
+
+    List<MigrateInfo> selectByMigrateId(String migrateId,  List<Integer> status);
 
     int countByMigrateId(String migrateId);
 
@@ -26,5 +28,7 @@ public interface MigrateInfoService {
     void updateAndSyncRepoStatus(SyncArtifactForm syncArtifactForm, int status);
 
     MigrateInfo getById(Long id);
+
+    void  deleteByMigrateId(String migrateId);
 
 }

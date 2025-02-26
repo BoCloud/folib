@@ -7,6 +7,7 @@ import com.veadan.folib.entity.MigrateInfo;
 
 import com.veadan.folib.mapper.MigrateInfoMapper;
 import com.veadan.folib.services.MigrateInfoService;
+import jodd.util.StringUtil;
 import org.springframework.stereotype.Service;
 import tk.mybatis.mapper.entity.Example;
 
@@ -36,13 +37,28 @@ public class MigrateInfoServiceImpl implements MigrateInfoService {
     }
 
     @Override
-    public PageInfo<MigrateInfo> selectByMigrateIdAndStatus(String migrateId, List<Integer> status, Integer pageNum, Integer pageSize) {
+    public PageInfo<MigrateInfo> selectByMigrateIdAndStatus(String migrateId, List<Integer> status, Integer pageNum, Integer pageSize,String repoName) {
         PageHelper.startPage(pageNum, pageSize);
         Example example = Example.builder(MigrateInfo.class).build();
         Example.Criteria where = example.createCriteria();
         where.andEqualTo("migrateId", migrateId);
         where.andIn("syncStatus", status);
+        if(StringUtil.isNotEmpty(repoName)) {
+            where.andLike("repositoryId", "%" + repoName + "%");
+        }
         return PageInfo.of(migrateInfoMapper.selectByExample(example));
+    }
+
+    @Override
+    public List<MigrateInfo> selectByMigrateId(String migrateId,  List<Integer> status) {
+        Example example = Example.builder(MigrateInfo.class).build();
+        Example.Criteria where = example.createCriteria();
+        where.andEqualTo("migrateId", migrateId);
+        if(status != null && !status.isEmpty()) {
+            where.andIn("syncStatus", status);
+        }
+        return migrateInfoMapper.selectByExample(example);
+
     }
 
     @Override
@@ -61,7 +77,7 @@ public class MigrateInfoServiceImpl implements MigrateInfoService {
         where.andEqualTo("storageId", storageId);
         where.andEqualTo("repositoryId", repositoryId);
         List<MigrateInfo> migrateInfos = migrateInfoMapper.selectByExample(example);
-        if (migrateInfos.size() < 1) {
+        if (migrateInfos.isEmpty()) {
             return null;
         } else {
             return migrateInfos.get(0);
@@ -80,6 +96,14 @@ public class MigrateInfoServiceImpl implements MigrateInfoService {
     @Override
     public MigrateInfo getById(Long id) {
         return migrateInfoMapper.selectByPrimaryKey(id);
+    }
+
+    @Override
+    public void deleteByMigrateId(String migrateId) {
+        Example example = Example.builder(MigrateInfo.class).build();
+        Example.Criteria where = example.createCriteria();
+        where.andEqualTo("migrateId", migrateId);
+        migrateInfoMapper.deleteByExample(example);
     }
 
 

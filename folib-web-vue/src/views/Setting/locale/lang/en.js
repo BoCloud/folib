@@ -574,4 +574,9 @@ export default {
     PostLayout: 'Post Layout',
     ChangeLayoutSuccess: 'Change layout successfully',
     setFailed: 'Set failed',
+    Delete:'Delete',
+    DeleteConfirm:'Are you sure delete this task?',
+    OK:'Yes',
+    ResetMigration:'Reset Migration',
+    EnterRepositoryName:'Enter repository name'
 }

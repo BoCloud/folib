@@ -88,6 +88,8 @@ public abstract class BaseArtifactProvider implements SyncArtifactProvider {
             // 更新状态
             migrateInfoService.updateById(repository);
             syncUtils.resetArtifact(syncArtifactForm.getStoreAndRepo());
+            syncUtils.setIndex(syncArtifactForm.getStoreAndRepo(),total);
+
             String path = repository.getSyncDirPath();
             if (syncArtifactForm.getSyncMeta() == 1) {
                 JfrogPropertySyncer syncer = new JfrogPropertySyncer(syncArtifactForm.getApiUrl(), syncArtifactForm.getUsername(), syncArtifactForm.getPassword());

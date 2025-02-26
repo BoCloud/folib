@@ -68,6 +68,10 @@ public class SyncUtils {
         distributedCounterComponent.getAtomicLong(INDEX_COUNT + storeAndRepo).set(0L);
     }
 
+    public void setIndex(String storeAndRepo,int count){
+        distributedCounterComponent.getAtomicLong(INDEX_COUNT + storeAndRepo).set(count);
+    }
+
     public void resetArtifact(String storeAndRepo){
         distributedCounterComponent.getAtomicLong(ARTIFACT_COUNT + storeAndRepo).set(0L);
 
