@@ -577,5 +577,6 @@ export default {
     Delete:'Delete',
     DeleteConfirm:'Are you sure delete this task?',
     OK:'Yes',
-    ResetMigration:'Reset Migration'
+    ResetMigration:'Reset Migration',
+    EnterRepositoryName:'Enter repository name'
 }

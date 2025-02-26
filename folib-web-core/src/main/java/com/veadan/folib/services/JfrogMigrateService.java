@@ -39,7 +39,7 @@ public interface JfrogMigrateService {
 
     List<Dict> getMigrateTask();
 
-    TableResultResponse<MigrateInfo> getRepositoryByMigrateId(int page, int limit, String migrateId, String status);
+    TableResultResponse<MigrateInfo> getRepositoryByMigrateId(int page, int limit, String migrateId, String status,String repoName);
 
     void addSyncRepository(AddRepositoryForm form);
 

@@ -584,5 +584,6 @@ export default {
     Delete:'删除',
     DeleteConfirm:'确定删除该任务吗?',
     OK:'确定',
-    ResetMigration:'重新迁移'
+    ResetMigration:'重新迁移',
+    EnterRepositoryName:'请输入仓库名称'
 }
