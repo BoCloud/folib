@@ -1,24 +1,36 @@
 package com.veadan.folib.providers.layout;
 
 import com.veadan.folib.artifact.coordinates.RpmArtifactCoordinates;
+import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.metadata.indexer.RpmGroupRepoIndexer;
 import com.veadan.folib.providers.header.HeaderMappingRegistry;
 import com.veadan.folib.providers.io.RepositoryFileAttributeType;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.repository.RepositoryManagementStrategy;
 import com.veadan.folib.repository.RpmRepositoryFeatures;
 import com.veadan.folib.repository.RpmRepositoryManagementStrategy;
+import com.veadan.folib.services.ArtifactManagementService;
+import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.tinkerpop.gremlin.structure.T;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -49,7 +61,16 @@ public class RpmLayoutProvider extends AbstractLayoutProvider<RpmArtifactCoordin
     private RpmRepositoryFeatures rpmRepositoryFeatures;
 
     @Inject
-    private HeaderMappingRegistry headerMappingRegistry;
+    private ConfigurationManager configurationManager;
+
+    @Inject
+    protected RepositoryPathResolver repositoryPathResolver;
+
+    @Inject
+    protected ArtifactManagementService artifactManagementService;
+
+    @Value("${folib.temp}")
+    private  String tempPath;
 
     @PostConstruct
     public void register()
@@ -77,37 +98,45 @@ public class RpmLayoutProvider extends AbstractLayoutProvider<RpmArtifactCoordin
     @Override
     protected Map<RepositoryFileAttributeType, Object> getRepositoryFileAttributes(RepositoryPath repositoryPath,
                                                                                    RepositoryFileAttributeType... attributeTypes)
-            throws IOException
-    {
-        Map<RepositoryFileAttributeType, Object> result = super.getRepositoryFileAttributes(repositoryPath,
-                attributeTypes);
+            throws IOException {
+        if (attributeTypes == null || attributeTypes.length == 0) {
+            return super.getRepositoryFileAttributes(repositoryPath, attributeTypes);
+        }
 
-        for (RepositoryFileAttributeType attributeType : attributeTypes)
-        {
+        Map<RepositoryFileAttributeType, Object> result = new ConcurrentHashMap<>(super.getRepositoryFileAttributes(repositoryPath, attributeTypes));
+
+        for (RepositoryFileAttributeType attributeType : attributeTypes) {
             Object value = result.get(attributeType);
-            switch (attributeType)
-            {
+
+            switch (attributeType) {
                 case ARTIFACT:
-                    value = (Boolean) value && !isRpmMetadata(repositoryPath);
-
-                    if (value != null)
-                    {
-                        result.put(attributeType, value);
+                    if (value instanceof Boolean) {
+                        boolean artifactValue = (Boolean) value && !isRpmMetadata(repositoryPath);
+                        result.put(attributeType, artifactValue);
                     }
-
                     break;
                 case METADATA:
-                    value = (Boolean) value || isRpmMetadata(repositoryPath);
-
-                    if (value != null)
-                    {
-                        result.put(attributeType, value);
+                    if (value instanceof Boolean) {
+                        boolean metadataValue = (Boolean) value || isRpmMetadata(repositoryPath);
+                        result.put(attributeType, metadataValue);
                     }
-
                     break;
-
+                case REFRESH_CONTENT:
+                    try {
+                        if (value instanceof Boolean) {
+                            Instant halfAnHourAgo = Instant.now().minus(refreshContentInterval(repositoryPath), ChronoUnit.MINUTES);
+                            boolean refreshContentValue = BooleanUtils.isTrue((Boolean) value) ||
+                                    (!RepositoryTypeEnum.HOSTED.getType().equals(repositoryPath.getRepository().getType()) && isIndex(repositoryPath)) &&
+                                            !RepositoryFiles.wasModifiedAfter(repositoryPath, halfAnHourAgo);
+                            result.put(attributeType, refreshContentValue);
+                        }
+                    } catch (Exception e) {
+                        // Log the exception or handle it appropriately
+                        logger.error("Error processing REFRESH_CONTENT attribute", e);
+                        throw new IOException("Error processing REFRESH_CONTENT attribute", e);
+                    }
+                    break;
                 default:
-
                     break;
             }
         }
@@ -132,6 +161,52 @@ public class RpmLayoutProvider extends AbstractLayoutProvider<RpmArtifactCoordin
     public String getAlias()
     {
         return ALIAS;
+    }
+
+    private boolean isIndex(RepositoryPath repositoryPath) {
+        if (repositoryPath == null || repositoryPath.getPath() == null || repositoryPath.getPath().isEmpty()) {
+            return false;
+        }
+        String path = repositoryPath.getPath();
+        return path.endsWith(".xml") || path.endsWith(".xml.gz");
+    }
+
+
+    @Override
+    public void initData(String storageId, String repositoryId) {
+        logger.info(" rpm repository initData storageId:{} repositoryId:{}", storageId,repositoryId);
+        // 获取存储配置时添加空指针检查
+        Storage storage = configurationManager.getConfiguration().getStorage(storageId);
+        if (storage == null) {
+            throw new IllegalStateException("Storage not found: " + storageId);
+        }
+
+        // 获取仓库时添加空指针检查
+        Repository repository = storage.getRepository(repositoryId);
+        if (repository == null) {
+            throw new IllegalStateException("Repository not found: " + repositoryId);
+        }
+
+        // 提前返回条件判断保持原逻辑
+        if (!"group".equals(repository.getType())) {
+            return;
+        }
+
+        // 创建索引器（保持原有实例化方式，如有需要可考虑依赖注入）
+        RpmGroupRepoIndexer indexer = new RpmGroupRepoIndexer(
+                tempPath,
+                repositoryPathResolver,
+                artifactManagementService,
+                configurationManager
+        );
+
+        try {
+            indexer.aggregationIndexer(repository);
+        } catch (Exception e) {
+            // 记录错误日志并保留原始异常信息
+            logger.error("Failed to index repository {}/{}", storageId, repositoryId, e);
+            throw new RuntimeException("Indexing failed", e);
+        }
     }
 
 }

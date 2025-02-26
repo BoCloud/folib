@@ -46,6 +46,7 @@ import com.veadan.folib.layout.providers.CargoLayoutProvider;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.LayoutProvider;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
+import com.veadan.folib.providers.layout.RpmLayoutProvider;
 import com.veadan.folib.providers.storage.FileSystemStorageProvider;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
@@ -988,7 +989,7 @@ public class StoragesConfigurationController
                     }
                 }else {
                     //更新cargo仓库配置
-                    if(repositoryDto.getLayout().equals(CargoLayoutProvider.ALIAS)){
+                    if(repositoryDto.getLayout().equals(CargoLayoutProvider.ALIAS) || repositoryDto.getLayout().equals(RpmLayoutProvider.ALIAS)){
                         layoutProvider = layoutProviderRegistry.getProvider(repositoryDto.getLayout());
                         layoutProvider.initData(storageId, repositoryId);
                     }

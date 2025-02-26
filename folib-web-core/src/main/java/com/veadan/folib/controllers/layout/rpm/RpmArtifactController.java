@@ -6,6 +6,7 @@ import com.veadan.folib.config.RepodataUtil;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.AuditEventNameEnum;
+import com.veadan.folib.metadata.indexer.RpmGroupRepoIndexer;
 import com.veadan.folib.metadata.indexer.RpmRepoIndexer;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.RpmLayoutProvider;
@@ -29,6 +30,8 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.stream.XMLStreamException;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -198,5 +201,13 @@ public class RpmArtifactController extends BaseArtifactController {
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
         vulnerabilityBlock(repositoryPath);
         provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath);
+    }
+    @GetMapping(value = {"{storageId}/{repositoryId}/test"})
+    public void test(@RepositoryMapping Repository repository,
+                     @RequestHeader HttpHeaders httpHeaders,
+                     @PathVariable String storageId,
+                     @PathVariable String repositoryId) throws Exception {
+        RpmGroupRepoIndexer rpmGroupRepoIndexer = new RpmGroupRepoIndexer(tempPath,repositoryPathResolver,artifactManagementService,configurationManager);
+        rpmGroupRepoIndexer.aggregationIndexer(repository);
     }
 }

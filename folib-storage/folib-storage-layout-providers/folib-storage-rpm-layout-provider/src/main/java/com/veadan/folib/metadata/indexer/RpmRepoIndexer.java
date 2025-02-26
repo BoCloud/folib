@@ -2,6 +2,9 @@ package com.veadan.folib.metadata.indexer;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.extra.spring.SpringUtil;
+import com.veadan.folib.event.index.IndexEventListenerRegistry;
+import com.veadan.folib.event.index.IndexTypeEnum;
 import com.veadan.folib.metadata.extractor.RpmMetadata;
 import com.veadan.folib.metadata.extractor.RpmMetadataExtractor;
 import com.veadan.folib.metadata.model.Entry;
@@ -35,7 +38,7 @@ import java.util.zip.GZIPOutputStream;
 
 public class RpmRepoIndexer {
 
-    private static final Logger logger = LoggerFactory.getLogger(RpmRepoIndexer.class);
+    private static final Logger logger = LoggerFactory.getLogger(RpmGroupRepoIndexer.class);
 
     private final String primaryXml;
     private final String otherXml;
@@ -173,12 +176,16 @@ public class RpmRepoIndexer {
         artifactManagementService.validateAndStore(fileListPath, fileListXmlGzPath);
         artifactManagementService.validateAndStore(repomdPath, repomdXmlPath);
         FileUtils.deleteDirectory(new File(temp));
+
+        //发送索引更新事件
+        IndexEventListenerRegistry registry = SpringUtil.getBean(IndexEventListenerRegistry.class);
+        registry.dispatchUpdateIndexEvent(storageId, repositoryId, IndexTypeEnum.RPM);
     }
 
     public List<Path> listPaths(Path path) throws IOException {
         return Files.walk(path)
-                .filter(p -> !p.getFileName().toString().equals(".temp") &&
-                        !p.getFileName().toString().equals(".trash") &&
+                .filter(p -> !p.getFileName().toString().contains("/.temp/") &&
+                        !p.getFileName().toString().contains("/.trash/") &&
                          isFileExist(p))
                 .collect(Collectors.toList());
     }

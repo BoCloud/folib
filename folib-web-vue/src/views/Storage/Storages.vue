@@ -1414,7 +1414,7 @@ export default {
       switchDisabled:true,
       nameKey:false,
       loadingNameKey:false,
-      repoLayoutStrategy:['cocoapods' ,'rpm','debian'],
+      repoLayoutStrategy:['cocoapods'],
     };
   },
   watch: {
