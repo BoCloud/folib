@@ -41,7 +41,7 @@ public class PrimaryXmlMerger {
 
     public void aggregate(Path filePath) throws Exception {
         logger.info("PrimaryXmlMerger aggregate file: " + filePath);
-        if(Files.exists(filePath)){
+        if(!Files.exists(filePath)){
             logger.warn("PrimaryXmlMerger aggregate file not exists: " + filePath);
             return;
         }

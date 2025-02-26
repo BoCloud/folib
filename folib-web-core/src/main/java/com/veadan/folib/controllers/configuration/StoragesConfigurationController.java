@@ -981,19 +981,32 @@ public class StoragesConfigurationController
                     throw new RuntimeException(ex.getMessage());
                 }
                 LayoutProvider layoutProvider = null;
-                if (Objects.isNull(existRepository)) {
-                    //初始化仓库数据
-                    layoutProvider = layoutProviderRegistry.getProvider(repositoryDto.getLayout());
-                    if(!RepositoryTypeEnum.GROUP.getType().equals(repository.getType()) || repositoryDto.getLayout().equals(CargoLayoutProvider.ALIAS)){
-                        layoutProvider.initData(storageId, repositoryId);
+                if (Objects.isNull(existRepository) ||
+                        repositoryDto.getLayout().equals(CargoLayoutProvider.ALIAS) ||
+                        repositoryDto.getLayout().equals(RpmLayoutProvider.ALIAS)) {
+
+                    // 空值检查
+                    if (repositoryDto.getLayout() == null) {
+                        throw new IllegalArgumentException("Repository layout cannot be null");
                     }
-                }else {
-                    //更新cargo仓库配置
-                    if(repositoryDto.getLayout().equals(CargoLayoutProvider.ALIAS) || repositoryDto.getLayout().equals(RpmLayoutProvider.ALIAS)){
+
+                    try {
                         layoutProvider = layoutProviderRegistry.getProvider(repositoryDto.getLayout());
-                        layoutProvider.initData(storageId, repositoryId);
+                    } catch (Exception e) {
+                        // 处理异常
+                        throw new RuntimeException("Failed to get layout provider", e);
+                    }
+
+                    // 初始化数据
+                    if (layoutProvider != null) {
+                        if (!RepositoryTypeEnum.GROUP.getType().equals(repository.getType()) ||
+                                repositoryDto.getLayout().equals(CargoLayoutProvider.ALIAS) ||
+                                repositoryDto.getLayout().equals(RpmLayoutProvider.ALIAS)) {
+                            layoutProvider.initData(storageId, repositoryId);
+                        }
                     }
                 }
+
                 String resourceId = storageId + "_" + repositoryId;
                 Resource resource = resourceService.queryById(resourceId);
                 if (Objects.equals(null, resource)) {

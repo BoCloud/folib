@@ -3,6 +3,7 @@ package com.veadan.folib.metadata.indexer;
 
 import cn.hutool.extra.spring.SpringUtil;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.event.index.IndexEventListenerRegistry;
 import com.veadan.folib.event.index.IndexTypeEnum;
 import com.veadan.folib.metadata.model.RepomdMetadata;
@@ -87,8 +88,9 @@ public class RpmGroupRepoIndexer {
     public void aggregationIndexer(Repository groupRepository, Repository targetRepository) throws Exception {
 
         Set<String> storageAndRepositoryIdList = new HashSet<>();
-        storageAndRepositoryIdList.add(String.join(":",targetRepository.getStorage().getId(),targetRepository.getId()));
-        storageAndRepositoryIdList.add(String.join(":",groupRepository.getStorage().getId(),groupRepository.getId()));
+
+        storageAndRepositoryIdList.add(ConfigurationUtils.getStorageIdAndRepositoryId(groupRepository.getStorage().getId(), groupRepository.getId()));
+        storageAndRepositoryIdList.add(ConfigurationUtils.getStorageIdAndRepositoryId(targetRepository.getStorage().getId(), targetRepository.getId()));
         List<Path> repomdXmlPaths = new ArrayList<>();
         for (String storageAndRepositoryId : storageAndRepositoryIdList) {
             repomdXmlPaths.addAll(getRepomdXmlPath(storageAndRepositoryId));
