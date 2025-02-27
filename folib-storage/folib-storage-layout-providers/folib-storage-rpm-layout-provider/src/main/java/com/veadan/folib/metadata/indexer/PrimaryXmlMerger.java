@@ -33,15 +33,29 @@ public class PrimaryXmlMerger {
     private StringBuilder buffer = new StringBuilder(); // 用于存储字符数据
     private static String currentLocationHref = null; // 用于存储location的href属性值
     private static String locationBasePath = null;
+    private static final String REPODATA_PREFIX = "repodata/";
 
 
     public void aggregate(RepositoryPath filePath) throws Exception {
+
+        if (filePath == null) {
+            throw new IllegalArgumentException("filePath cannot be null");
+        }
         logger.info("PrimaryXmlMerger aggregate file: " + filePath);
         if(!Files.exists(filePath)){
             logger.warn("PrimaryXmlMerger aggregate file not exists: " + filePath);
             return;
         }
-        locationBasePath = filePath.getPath().replace("/repodata/"+filePath.getFileName().toString(),"");
+
+        String fullPath = filePath.getPath();
+        String fileName = filePath.getFileName().toString();
+
+        if (fullPath.equals(REPODATA_PREFIX + fileName)) {
+            locationBasePath="";
+        }else{
+            String repoDataPath = REPODATA_PREFIX+fileName;
+            locationBasePath = fullPath.replace(repoDataPath, "/");
+        }
         // 创建SAX解析器工厂实例
         SAXParserFactory factory = SAXParserFactory.newInstance();
         SAXParser saxParser = factory.newSAXParser();
@@ -126,7 +140,8 @@ public class PrimaryXmlMerger {
                 currentSizeInstalled = attributes.getValue("installed");
                 currentSizePackage = attributes.getValue("package");
             } else if ("location".equals(qName)) {
-                currentLocationHref = String.join("/",locationBasePath,attributes.getValue("href")); // 获取location的href属性值
+                // 获取location的href属性值
+                currentLocationHref = locationBasePath+attributes.getValue("href");
             }
             buffer.setLength(0); // 清空buffer
         }
@@ -258,6 +273,10 @@ public class PrimaryXmlMerger {
 
         public void setLocation(String href) {
             this.locationHref = href;
+        }
+
+        public String getLocation(){
+            return locationHref;
         }
 
         public String getChecksumValue() {
