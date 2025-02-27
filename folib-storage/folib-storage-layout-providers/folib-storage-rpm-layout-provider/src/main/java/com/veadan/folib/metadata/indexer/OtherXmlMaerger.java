@@ -1,5 +1,6 @@
 package com.veadan.folib.metadata.indexer;
 
+import com.veadan.folib.providers.io.RepositoryPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -208,8 +209,8 @@ public class OtherXmlMaerger {
         }
     }
 
-    public void mergeOtherXmlFiles(List<Path> xmlFilePaths, String savePath) throws Exception {
-        for (Path filePath : xmlFilePaths) {
+    public void mergeOtherXmlFiles(List<RepositoryPath> xmlFilePaths, String savePath) throws Exception {
+        for (RepositoryPath filePath : xmlFilePaths) {
             aggregate(filePath);
         }
         writeToFile(Paths.get(savePath, "other.xml"));

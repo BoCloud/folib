@@ -1,5 +1,6 @@
 package com.veadan.folib.metadata.indexer;
 
+import com.veadan.folib.providers.io.RepositoryPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StopWatch;
@@ -178,8 +179,8 @@ public class FileListsXmlMerger {
      * @param savePath
      * @throws Exception
      */
-    public void mergeFileListsXmlFiles(List<Path> xmlFilePaths, String savePath) throws Exception {
-        for (Path filePath : xmlFilePaths) {
+    public void mergeFileListsXmlFiles(List<RepositoryPath> xmlFilePaths, String savePath) throws Exception {
+        for (RepositoryPath filePath : xmlFilePaths) {
             aggregate(filePath);
         }
         writeToFile(Paths.get(savePath, "filelists.xml"));

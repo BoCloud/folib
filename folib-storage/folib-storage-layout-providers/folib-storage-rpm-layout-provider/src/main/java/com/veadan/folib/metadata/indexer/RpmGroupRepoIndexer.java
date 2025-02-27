@@ -53,9 +53,9 @@ public class RpmGroupRepoIndexer {
     private final String fileListXml;
     private final String fileListXmlGz;
     private final String tempPath;
-    private final List<Path> primaryPaths;
-    private final List<Path> otherPaths;
-    private final List<Path> fileListPaths;
+    private final List<RepositoryPath> primaryPaths;
+    private final List<RepositoryPath> otherPaths;
+    private final List<RepositoryPath> fileListPaths;
     protected RepositoryPathResolver repositoryPathResolver;
     protected ArtifactManagementService artifactManagementService;
     private ConfigurationManager configurationManager;

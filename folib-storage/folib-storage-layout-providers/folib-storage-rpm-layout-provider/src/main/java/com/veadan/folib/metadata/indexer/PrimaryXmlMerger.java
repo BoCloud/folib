@@ -1,26 +1,21 @@
 package com.veadan.folib.metadata.indexer;
 
-import org.apache.lucene.util.AttributeImpl;
+import com.veadan.folib.providers.io.RepositoryPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.core.parameters.P;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
-import javax.xml.namespace.QName;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import javax.xml.stream.*;
-import javax.xml.stream.events.*;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
@@ -37,14 +32,16 @@ public class PrimaryXmlMerger {
     private Map<String, Package> packages = new HashMap<>();
     private StringBuilder buffer = new StringBuilder(); // 用于存储字符数据
     private static String currentLocationHref = null; // 用于存储location的href属性值
+    private static String locationBasePath = null;
 
 
-    public void aggregate(Path filePath) throws Exception {
+    public void aggregate(RepositoryPath filePath) throws Exception {
         logger.info("PrimaryXmlMerger aggregate file: " + filePath);
         if(!Files.exists(filePath)){
             logger.warn("PrimaryXmlMerger aggregate file not exists: " + filePath);
             return;
         }
+        locationBasePath = filePath.getPath().replace("/repodata/"+filePath.getFileName().toString(),"");
         // 创建SAX解析器工厂实例
         SAXParserFactory factory = SAXParserFactory.newInstance();
         SAXParser saxParser = factory.newSAXParser();
@@ -129,7 +126,7 @@ public class PrimaryXmlMerger {
                 currentSizeInstalled = attributes.getValue("installed");
                 currentSizePackage = attributes.getValue("package");
             } else if ("location".equals(qName)) {
-                currentLocationHref = attributes.getValue("href"); // 获取location的href属性值
+                currentLocationHref = String.join("/",locationBasePath,attributes.getValue("href")); // 获取location的href属性值
             }
             buffer.setLength(0); // 清空buffer
         }
@@ -318,8 +315,8 @@ public class PrimaryXmlMerger {
         }
     }
 
-    public  void mergePrimaryXmlFiles(List<Path> xmlFilePaths, String savePath) throws Exception {
-        for (Path filePath : xmlFilePaths){
+    public  void mergePrimaryXmlFiles(List<RepositoryPath> xmlFilePaths, String savePath) throws Exception {
+        for (RepositoryPath filePath : xmlFilePaths){
             aggregate(filePath);
         }
         writeToFile(Path.of(savePath, "primary.xml"));

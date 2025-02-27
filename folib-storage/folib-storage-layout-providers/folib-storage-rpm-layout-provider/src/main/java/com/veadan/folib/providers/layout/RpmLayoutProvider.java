@@ -21,6 +21,7 @@ import org.apache.tinkerpop.gremlin.structure.T;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -30,6 +31,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -172,6 +174,7 @@ public class RpmLayoutProvider extends AbstractLayoutProvider<RpmArtifactCoordin
     }
 
 
+
     @Override
     public void initData(String storageId, String repositoryId) {
         logger.info(" rpm repository initData storageId:{} repositoryId:{}", storageId,repositoryId);
@@ -191,7 +194,6 @@ public class RpmLayoutProvider extends AbstractLayoutProvider<RpmArtifactCoordin
         if (!"group".equals(repository.getType())) {
             return;
         }
-
         // 创建索引器（保持原有实例化方式，如有需要可考虑依赖注入）
         RpmGroupRepoIndexer indexer = new RpmGroupRepoIndexer(
                 tempPath,
@@ -199,14 +201,22 @@ public class RpmLayoutProvider extends AbstractLayoutProvider<RpmArtifactCoordin
                 artifactManagementService,
                 configurationManager
         );
-
-        try {
-            indexer.aggregationIndexer(repository);
-        } catch (Exception e) {
-            // 记录错误日志并保留原始异常信息
-            logger.error("Failed to index repository {}/{}", storageId, repositoryId, e);
-            throw new RuntimeException("Indexing failed", e);
-        }
+        CompletableFuture<Void> idexerFuture = CompletableFuture.runAsync(() -> {
+            try {
+                indexer.aggregationIndexer(repository);
+            } catch (Exception e) {
+                // 记录错误日志并保留原始异常信息
+                logger.error("Failed to index repository {}/{}", storageId, repositoryId, e);
+                throw new RuntimeException("Indexing failed", e);
+            }
+        }).exceptionally(ex -> {
+            if (ex.getCause() != null) {
+                logger.error("rpm 组合库构建索引异常", ex.getCause()); // 记录完整的异常堆栈信息
+            } else {
+                logger.error("rpm 组合库构建索引异常", ex); // 记录完整的异常堆栈信息
+            }
+            return null;
+        });
     }
 
 }
