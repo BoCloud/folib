@@ -1453,17 +1453,21 @@ export default {
     await  this.getBaseUrl();
 
     const params = storage.get('libView_repository')
+    try{
+      if (params) {
+        this.currentStorage.id = params.item.storageId
+        this.queryParams.storageId = params.item.storageId
+      }
 
-    if (params) {
-      this.currentStorage.id = params.item.storageId
-      this.queryParams.storageId = params.item.storageId
+      if (!this.currentStorage.id && this.storageData && this.storageData.length > 0) {
+        this.currentStorage.id = this.storageData[0].id
+      }
+      this.getStorage(this.currentStorage.id)
+      this.queryCustomLayoutList()
+    }finally {
+      this.pageLoading = true
     }
 
-    if (!this.currentStorage.id && this.storageData && this.storageData.length > 0) {
-      this.currentStorage.id = this.storageData[0].id
-    }
-    this.getStorage(this.currentStorage.id)
-    this.queryCustomLayoutList()
   },
   computed: {
     // isChecked(){
@@ -1578,6 +1582,10 @@ export default {
         const item = this.repositories[0]
         storage.set("libView_repository", { item, baseUrl: this.baseUrl })
         this.repositories = []
+      }else {
+        console.log("没有仓库")
+        const item = undefined
+        storage.set("libView_repository", { item, baseUrl: this.baseUrl })
       }
       this.$nextTick(() => {
         if(val){

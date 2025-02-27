@@ -140,8 +140,9 @@ export default {
       if(token!=null){
         console.log(token);
         store.dispatch("Token", token)
+        store.dispatch("GetInfo").then((res) => {});
       }
-      store.dispatch("GetInfo").then((res) => {});
+
     },
 
     getCookie(name) {
