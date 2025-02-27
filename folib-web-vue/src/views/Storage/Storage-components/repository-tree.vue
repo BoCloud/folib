@@ -594,9 +594,12 @@ export default {
                 // this.$emit('repositorySelect', data)
                 this.$nextTick(() => {
                     setTimeout(() => {
-                        data.id = target.id
-                        data.layout = target.layout
-                        this.$emit('treeSelect', data, isRecycle)
+                        const item = JSON.parse(JSON.stringify(data))
+                        item.id = target.id
+                        item.layout = target.layout
+                        item.type = target.type
+                        item.status = target.status
+                        this.$emit('treeSelect', item, isRecycle)
                     }, 0);
                 })
             }
@@ -637,6 +640,7 @@ export default {
         },
         // 懒加载获取节点
         onLoadData(treeNode,resolve, isTrashView) {
+            console.log(treeNode);
             this.closeContextMenu()
             if (!treeNode.data.fileType && !treeNode.data.type) return
             const nowDataKey = isTrashView ? 'recycleTreeData' : 'treeData'
@@ -733,7 +737,7 @@ export default {
                     })
                     treeNode.data.children = d
                 }
-                if (res.files.length > 0 && !isTrashView) {
+                if (res.files.length > 0) {
                     const a = res.files
                     a.forEach((item, index, a) => {
                         item.isLeaf = true

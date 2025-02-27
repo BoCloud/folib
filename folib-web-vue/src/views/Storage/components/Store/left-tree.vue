@@ -51,11 +51,12 @@
                     children: 'children',
                     isLeaf: 'isLeaf'
                 }"
-                :data="recycleTreeData"
+                lazy
+                :data="trashData"
                 class="leftTree"
                 :height="`${bottomHeight}px`"
                 node-key="artifactPath"
-                :load-data="(treeNode,resolve) => onLoadData(treeNode, resolve, true)"
+                :load="(treeNode,resolve) => onLoadData(treeNode, resolve, true)"
                 @node-click="(data)=>treeSelect(data,true)"
                 @node-contextmenu="onRightClick"
                 @node-expand="(expandedKeys, treeNode) => onExpand(expandedKeys, treeNode, true)"
@@ -72,7 +73,7 @@
                             <a-icon class="tree_icon" style="margin-left: 8px;" v-else :style="data.type === 'recycle'? 'color:#393b3e':''"
                                     :type="getIconType(data.name, data.type)"></a-icon>
                             <span class="tree_title" :style="data.type === 'recycle'? 'color:#393b3e':''">
-                                {{ data.name }}
+                                {{ data.title || data.name }}
                             </span>
                         </span>
                     </div>
@@ -99,14 +100,7 @@ export default {
             expandedKeys:[],
             selectedKeys:[],
             expandedRecycleKeys:[],
-            selectRecycleKeys:[],
-            recycleTreeData: [{
-                name:'回收站',
-                icon:'',
-                type:'recycle',
-                children:[],
-                artifactPath: '-'
-            }]
+            selectRecycleKeys:[]
         }
     },
     computed: {
@@ -140,12 +134,8 @@ export default {
     watch: {
         trashData: {
             handler(val) {
-                let list = []
-                val.forEach(ele => {
-                    list.push(JSON.parse(JSON.stringify(ele)))
-                })
-                this.recycleTreeData[0].children = [...list]
-                this.recycleTreeData = [...this.recycleTreeData]
+                console.log(val);
+                console.log(this.treeData);
             },
             deep: true
         }
@@ -171,6 +161,7 @@ export default {
             // }
         },
         treeSelect(data, type) {
+            this.$emit('closeContextMenu')
             if(type){
                 if(this.expandedRecycleKeys.length){
                     this.expandedRecycleKeys = []

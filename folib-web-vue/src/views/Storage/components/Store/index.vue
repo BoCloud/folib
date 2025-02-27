@@ -165,6 +165,7 @@
             :treeData="treeData"
             :isTrashView="isTrashView"
             @onRightClick="onRightClick"
+            @closeContextMenu="closeContextMenu"
             @onLoadData="onLoadData"
             @treeSelect="treeSelect"
           />
@@ -2379,7 +2380,7 @@ export default {
     },
 
     handleRightClick(active) {
-      this.handleMenuClick(active)
+      this.handleMenuClick(active, this.folibRepository)
       if (active.key === '4') {
         this.deletePackageHandle();
       }
@@ -3330,7 +3331,8 @@ export default {
         return url;
       },
      onRightClick(event, data) {
-       this.showContextMenu = true;
+         console.log(this.folibRepository);
+         this.showContextMenu = true;
        this.rightClickTop = `${event.clientY}px`;
        this.rightClickLeft = `${event.clientX}px`;
        this.currentTreeNode = data;
