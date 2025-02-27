@@ -594,12 +594,7 @@ export default {
                 // this.$emit('repositorySelect', data)
                 this.$nextTick(() => {
                     setTimeout(() => {
-                        const item = JSON.parse(JSON.stringify(data))
-                        item.id = target.id
-                        item.layout = target.layout
-                        item.type = target.type
-                        item.status = target.status
-                        this.$emit('treeSelect', item, isRecycle)
+                        this.$emit('treeSelect', data, isRecycle, target)
                     }, 0);
                 })
             }
@@ -737,7 +732,7 @@ export default {
                     })
                     treeNode.data.children = d
                 }
-                if (res.files.length > 0) {
+                if (res.files.length > 0 && ((isTrashView && treeNode.data.fileType !== 'document') || !isTrashView)) {
                     const a = res.files
                     a.forEach((item, index, a) => {
                         item.isLeaf = true

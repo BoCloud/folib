@@ -1623,11 +1623,11 @@ export default {
       })
     },
     // 点击仓库下的文件,item为当前点击节点的最顶层父节点（仓库）
-    treeSelect(item,isTrashView) {
+    treeSelect(data,isTrashView, item) {
       this.libViewKey ++
       storage.set("libView_repository", { item, baseUrl: this.baseUrl })
       this.$nextTick(() => {
-          this.$refs.libview.treeSelect(item, isTrashView)
+          this.$refs.libview.treeSelect(data, isTrashView, item)
       })
     },
     onExpand() {

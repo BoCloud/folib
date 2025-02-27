@@ -469,10 +469,10 @@ export default {
     handleMenuClickTree(active,currentTreeNode,folibRepository){
       this.$refs.store.handleMenuClickTree(active,currentTreeNode,folibRepository)
     },
-    treeSelect(data,isTrashView){
+    treeSelect(data,isTrashView, item){
       this.isTrashView = isTrashView
       this.getDataInfo()
-      this.$refs.store.treeSelect(data, isTrashView)
+      this.$refs.store.treeSelect(data, isTrashView, item)
     },
     searchBoxMouseStatus(bool) {
       this.mouseEnter = bool;

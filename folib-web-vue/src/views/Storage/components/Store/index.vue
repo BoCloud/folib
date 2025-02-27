@@ -292,10 +292,10 @@
                         <a-icon type="download" />{{ $t('Store.DownLoad') }}
                       </a-menu-item>
                       <!-- 暂时禁用目录下载 -->
-                      <!-- <a-menu-item key="7"
+                       <a-menu-item key="7"
                         v-if="(folibRepository.layout === 'Raw' && currentTreeNode && currentTreeNode.type === 'dir'&&!isTrashView)">
                         <a-icon type="download" />{{ $t('Store.DownLoad') }}
-                      </a-menu-item> -->
+                      </a-menu-item>
                       <a-menu-item key="8" v-if="isTrashView && currentTreeNode">
                         <a-icon type="undo" />{{ $t('Store.Restore') }}
                       </a-menu-item>
@@ -2188,9 +2188,10 @@ export default {
         })
       // })
     },
-    treeSelect(data, isTrashView) {
+    treeSelect(data, isTrashView, folibRepository) {
       this.isTrashView = isTrashView
       this.currentTreeNode = data
+      if (folibRepository) this.folibRepository = folibRepository
       this.scanReport = {
         show: false,
         fail: false,
