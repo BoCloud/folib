@@ -54,7 +54,7 @@ public class PrimaryXmlMerger {
             locationBasePath="";
         }else{
             String repoDataPath = REPODATA_PREFIX+fileName;
-            locationBasePath = fullPath.replace(repoDataPath, "/");
+            locationBasePath = fullPath.replace(repoDataPath, "");
         }
         // 创建SAX解析器工厂实例
         SAXParserFactory factory = SAXParserFactory.newInstance();
