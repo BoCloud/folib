@@ -2390,13 +2390,6 @@ export default {
           // }
         } else if (this.currentTreeNode.type === 'file') {
           let uri = this.currentTreeNode.url;
-          const str = this.currentFileDetial.imageName;
-
-          // 使用正则表达式匹配第三个 '/' 后的部分
-          const regex = /^([^\/]*\/){3}(.*)$/;
-          const match = str.match(regex);
-
-          const result = match ? match[2] : '';
           if (uri) {
             const url = new URL(uri);
             // 获取协议（http: 或 https:）
@@ -2406,6 +2399,7 @@ export default {
             // 获取端口号，如果没有指定则默认为 80（http）或 443（https）
             const port = url.port ? `:${url.port}` : '';
             const params = this.targetArchitecture === null ? '' : '?platform=' + this.targetArchitecture;
+            let result = this.currentTreeNode.artifactPath.replace(/\/(?=[^/]*$)/, ':')
             const baseUrl = `${protocol}//${hostname}${port}/artifactory/` + this.currentTreeNode.repositoryId + '/download/' + result + params;
             window.open(baseUrl)
           }
