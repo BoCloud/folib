@@ -498,6 +498,14 @@ export default {
                 this.queryPermission()
             }
             this.$refs.rightMenu.handlerDataPermission(data,type)
+            if (target.layout === 'Docker') {
+                const params = {
+                    storageId: target.storageId,
+                    id: target.id,
+                    artifactPath: data.artifactPath
+                }
+                this.getPackagePreview(params)
+            }
             // }
         },
         closeContextMenu() {
@@ -658,7 +666,7 @@ export default {
                 name
             }
             if (this.getFileIsOpen(name)) {
-                this.getPackagePreview(params,nowDataKey, resolve)
+                this.getPackagePreview(params, resolve)
                 return
             }
 
@@ -748,8 +756,8 @@ export default {
             })
         },
         // 获取可以继续打开的文件的目录（对应包预览）
-        getPackagePreview({ treeNode, storageId, id, artifactPath },nowDataKey, resolve) {
-            if (treeNode.data.children) {
+        getPackagePreview({ treeNode, storageId, id, artifactPath }, resolve) {
+            if (treeNode?.data.children) {
                 resolve(treeNode.data.children)
                 return
             }
@@ -760,6 +768,7 @@ export default {
                 artifactPath
             ).then(res => {
                 this.currentFileDetial = res
+                if (!resolve) return
                 function setNewDetailPage(arr) {
                     arr.forEach(ele => {
                         ele.newDetailPage = true
