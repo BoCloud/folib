@@ -148,7 +148,7 @@
           :bodyStyle="{ paddingTop: 0, paddingBottom: 0 }">
           <template #title>
             <h6 class="font-semibold m-0">{{ $t('Store.PacketList') }} <a
-                v-show="!isTrashView" class="ml-10" @click="reloadTreeData">
+                 class="ml-10" @click="reloadTreeData">
                 <a-icon type="reload" /></a></h6>
           </template>
           <!-- <a-button slot="extra" type="link"  size="large" style="color: black;" @click="isTrashView=!isTrashView"> -->
