@@ -1612,7 +1612,8 @@ export default {
       })
     },
     reloadTree(){
-      this.$refs.repositoryTree.reload(false)
+      this.loadMore(0)
+      this.$refs.repositoryTree.getPosition()
     },
     // 点击仓库
     repositorySelect(item){

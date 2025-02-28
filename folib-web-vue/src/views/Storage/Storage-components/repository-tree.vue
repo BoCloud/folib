@@ -346,7 +346,8 @@ export default {
         },
         // 远程节点删除成功后，调用本地删除节点方法（实现删除后树表展开结构不变）
         localDelNode(tarNode) {
-            const { storageId, repositoryId, artifactPath,type } = tarNode
+            this.$emit('loadMore', 0)
+            /*const { storageId, repositoryId, artifactPath,type } = tarNode
             const arr = artifactPath.split('/')
             const length = arr.length
             const keyToDelete = arr[length - 1]
@@ -361,7 +362,7 @@ export default {
                 })
             }
             this.treeData = removeNode(this.treeData, keyToDelete)
-            this.reload(true)
+            this.reload(true)*/
         },
         // 右键菜单选择操作
         handleMenuClick(active) {
@@ -534,7 +535,6 @@ export default {
         // 判断那些文件类型是可以打开的
         getFileIsOpen(name) {
             const _name = name.toLowerCase()
-            console.log(_name);
             const tarArr = ['.tar', '.jar', '.zip', '.7z', '.tar.gz', 'tgz']
             let key = false
             tarArr.forEach(ele => {
@@ -636,7 +636,6 @@ export default {
         },
         // 懒加载获取节点
         onLoadData(treeNode,resolve, isTrashView) {
-            console.log(treeNode);
             this.closeContextMenu()
             if (!treeNode.data.fileType && !treeNode.data.type) return
             const nowDataKey = isTrashView ? 'recycleTreeData' : 'treeData'
@@ -737,7 +736,7 @@ export default {
                 if (res.files.length > 0 && ((isTrashView && treeNode.data.fileType !== 'document') || !isTrashView)) {
                     const a = res.files
                     a.forEach((item, index, a) => {
-                        item.isLeaf = !this.getFileIsOpen(item.name)
+                        item.isLeaf = isTrashView || !this.getFileIsOpen(item.name)
                         item.type = 'file'
                         item.key = id + item.artifactPath
                     })

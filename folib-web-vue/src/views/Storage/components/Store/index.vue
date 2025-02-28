@@ -1481,7 +1481,7 @@ export default {
           })
           const f = res.files
           f.forEach((item, index) => {
-            item.isLeaf = true
+            item.isLeaf = !this.getFileIsOpen(item.name)
             item.type = 'file'
           })
           this.treeData = d.concat(f).filter(item => item.name !== '.trash')
@@ -2089,9 +2089,70 @@ export default {
     //     }, 100)
     //   })
     // },
-    onLoadData(treeNode,isTrashView,resolve, reject) {
+    // 判断那些文件类型是可以打开的
+    getFileIsOpen(name) {
+      const _name = name.toLowerCase()
+      console.log(_name);
+      const tarArr = ['.tar', '.jar', '.zip', '.7z', '.tar.gz', 'tgz']
+      let key = false
+      tarArr.forEach(ele => {
+          if (_name.indexOf(ele) !== -1) {
+              key = true
+          }
+      })
+      return key
+    },
+    // 获取可以继续打开的文件的目录（对应包预览）
+    getPackagePreview({ treeNode, storageId, id, artifactPath }, resolve) {
+        if (treeNode.data.children) {
+          resolve(treeNode.data.children)
+          return
+        }
+        getArtifact(
+          this.repositoryType,
+          storageId,
+          id,
+          artifactPath
+        ).then(res => {
+        this.currentFileDetial = res
+        function setNewDetailPage(arr) {
+          arr.forEach(ele => {
+              ele.newDetailPage = true
+              ele.treeType = 'lastRoot'
+              ele.storageId = storageId
+              ele.repositoryId = id
+              ele.key = ele.name
+              ele.artifactPath = `${id}/${artifactPath}/${ele.name}`
+              if (ele?.children?.length) {
+                  setNewDetailPage(ele.children)
+              }
+          })
+        }
+        treeNode.data.children = []
+        if (res.listTree) {
+          setNewDetailPage(res.listTree)
+          treeNode.data.children = treeNode.data.children.concat(res.listTree)
+        }
+        resolve(treeNode.data.children)
+      })
+    },
+    onLoadData(treeNode,isTrashView,resolve) {
       this.isTrashView = isTrashView
       this.currentFileDetial = null
+      const { storageId, id, layout } = this.folibRepository
+      const { artifactPath, name } = treeNode.data
+      const params = {
+        treeNode,
+        storageId,
+        id,
+        layout,
+        artifactPath,
+        name
+      }
+      if (this.getFileIsOpen(name)) {
+        this.getPackagePreview(params, resolve)
+        return
+      }
       if (this.folibRepository.layout === 'Docker') {
         // return new Promise(resolve => {
           if (treeNode.data.children) {
@@ -2115,7 +2176,7 @@ export default {
             if (res.files.length > 0) {
               const a = res.files
               a.forEach((item, index, a) => {
-                item.isLeaf = true
+                item.isLeaf = isTrashView || !this.getFileIsOpen(item.name)
                 item.type = 'file'
                 treeNode.data.children.push(item)
               })
@@ -2166,7 +2227,7 @@ export default {
           if (res.files.length > 0) {
             const a = res.files
             a.forEach((item, index, a) => {
-              item.isLeaf = true
+              item.isLeaf = isTrashView || !this.getFileIsOpen(item.name)
               item.type = 'file'
             })
             treeNode.data.children = treeNode.data.children.concat(a)
@@ -3337,8 +3398,8 @@ export default {
         return url;
       },
      onRightClick(event, data) {
-         console.log(this.folibRepository);
-         this.showContextMenu = true;
+       if (data.treeType === 'lastRoot') return
+       this.showContextMenu = true;
        this.rightClickTop = `${event.clientY}px`;
        this.rightClickLeft = `${event.clientX}px`;
        this.currentTreeNode = data;
