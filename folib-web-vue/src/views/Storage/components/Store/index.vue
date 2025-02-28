@@ -2391,7 +2391,7 @@ export default {
       let url = this.currentTreeNode.url
       if (url) {
         url = url.replace("api/browse", "storages")
-        window.open(url)
+        window.open(url + '?isZip=true')
       }
       this.downLoadVisible = false;
     },

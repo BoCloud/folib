@@ -493,6 +493,7 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
                 // 判断文件是否为目录，如果是，计算其URL并添加到目录列表中。
                 if (Boolean.TRUE.equals(fileAttributes.get("isDirectory"))) {
                     file.setUrl(calculateDirectoryUrl(file));
+                    file.setLastModified(new Date(((FileTime) fileAttributes.get("lastModifiedTime")).toMillis()));
                     directories.add(file);
                     continue;
                 }
