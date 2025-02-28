@@ -299,14 +299,14 @@
                       <a-menu-item key="8" v-if="isTrashView && currentTreeNode">
                         <a-icon type="undo" />{{ $t('Store.Restore') }}
                       </a-menu-item>
-                      <a-modal :title="$t('Store.Prompts')" :visible="downLoadVisible" :okText="$t('Store.Confirm')"
-                        :cancelText="$t('Store.Cancel')" centered @ok="handleDownLoadDir"
-                        @cancel="handleDownLoadDirCancel">
-                        <p>{{ currentTreeNode.artifactPath + $t('Store.DirSize') + rawPathSize + ", "+$t('Store.ConfirmDownload') }}</p>
-                      </a-modal>
                     </a-menu>
                   </template>
                 </a-dropdown>
+                <a-modal :title="$t('Store.Prompts')" :visible="downLoadVisible" :okText="$t('Store.Confirm')"
+                  :cancelText="$t('Store.Cancel')" centered @ok="handleDownLoadDir"
+                  @cancel="handleDownLoadDirCancel">
+                  <p>{{ currentTreeNode.artifactPath + $t('Store.DirSize') + rawPathSize + ", "+$t('Store.ConfirmDownload') }}</p>
+                </a-modal>
               </a-col>
             </a-row>
             <a-row type="flex" align="middle" v-if="folibRepository.layout === 'Docker'">
@@ -2097,7 +2097,7 @@ export default {
           getDockerArtifact(
             this.folibRepository.storageId,
             this.folibRepository.id,
-            treeNode.dataRef.artifactPath
+            treeNode.data.artifactPath
           ).then(res => {
             treeNode.data.children = []
             if (res.directories.length > 0) {
