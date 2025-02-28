@@ -250,7 +250,7 @@
                                         <a-menu-item key="1" :disabled="setTopDisableButton(record)" @click="handleStopClick()">
                                             <span><a-icon type="vertical-align-top"/>   {{$t('AdvancementCockpits.SetTop')}}</span>
                                             <a-modal v-model="stopVisible"
-                                                     :title="$t('Repository.Compensation')"
+                                                     :title="$t('AdvancementCockpits.SetTop')"
                                                      :ok-text="$t('Repository.Confirm')"
                                                      :cancel-text="$t('Repository.Cancel')"
                                                      @close="handleStopClose"
@@ -264,7 +264,7 @@
                                         <a-menu-item key="2" :disabled="removeDisableButton(record)" @click="handleRemoveClick()">
                                             <span><a-icon type="delete"/> {{$t('AdvancementCockpits.Remove')}}</span>
                                             <a-modal v-model="removeVisible"
-                                                     :title="$t('Repository.Compensation')"
+                                                     :title="$t('AdvancementCockpits.Remove')"
                                                      :ok-text="$t('Repository.Confirm')"
                                                      :cancel-text="$t('Repository.Cancel')"
                                                      @close="handleRemoveClose()"
