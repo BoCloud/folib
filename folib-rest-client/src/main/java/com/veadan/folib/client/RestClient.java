@@ -25,14 +25,16 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * folib rest client
@@ -887,6 +889,7 @@ public class RestClient extends ArtifactClient {
 
     /**
      * 制品统计信息
+     *
      * @return 制品统计信息
      */
     public ArtifactStatistics artifactStatistics() {
@@ -907,6 +910,62 @@ public class RestClient extends ArtifactClient {
             return ArtifactStatistics.builder().artifactsCount(zero).artifactsNormalCount(zero).artifactsVulnerabilitiesCount(zero)
                     .criticalVulnerabilitiesCount(zero).highVulnerabilitiesCount(zero).lowVulnerabilitiesCount(zero)
                     .mediumVulnerabilitiesCount(zero).suppressedVulnerabilitiesCount(zero).vulnerabilitiesCount(zero).artifactsBytes(zero).build();
+        }
+    }
+
+    /**
+     * 获取批量下载制品路径
+     *
+     * @param resolveBatchPathReq 参数
+     * @return ResponseEntity 响应实体
+     */
+    public List<BatchDownload> getResolveBatchPath(ResolveBatchPath resolveBatchPathReq) {
+        String url = getContextBaseUrl() + "/artifactory/resolveBatchPath";
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request().
+                post(Entity.entity(resolveBatchPathReq, MediaType.APPLICATION_JSON));
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            List<BatchDownload> batchDownloadList = Lists.newArrayList();
+            String res = response.readEntity(String.class);
+            if (StringUtils.isNotBlank(res)) {
+                List<BatchDownload> resList = JSONArray.parseArray(res, BatchDownload.class);
+                if (!CollectionUtils.isEmpty(resList)) {
+                    batchDownloadList = resList;
+                }
+            }
+            return batchDownloadList;
+        }
+    }
+
+    /**
+     * 下载制品到文件
+     *
+     * @param url    下载路径
+     * @param target 存储路径
+     * @return File 文件
+     */
+    public File download(String url, String target) {
+        WebTarget resource = getClientInstance().target(url);
+        setupAuthentication(resource);
+        Response response = resource.request().get();
+        if (response.getStatus() != HttpStatus.SC_OK) {
+            displayResponseError(response);
+            throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } else {
+            try (InputStream inputStream = response.readEntity(InputStream.class)) {
+                File file = new File(target);
+                Files.copy(inputStream, Path.of(file.getAbsolutePath()));
+                return file;
+            } catch (IOException ex) {
+                logger.error(ExceptionUtils.getStackTrace(ex));
+                throw new RuntimeException(ex.getMessage());
+            }
         }
     }
 

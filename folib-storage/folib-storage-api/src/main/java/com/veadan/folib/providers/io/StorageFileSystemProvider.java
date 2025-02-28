@@ -298,10 +298,10 @@ public abstract class StorageFileSystemProvider
             FileTime newTime = FileTime.fromMillis(System.currentTimeMillis());
             Files.setLastModifiedTime(trashPath.getTarget(), newTime);
         }
-
-        if (force && repository.isAllowsForceDeletion()) {
-            deleteTrash(repositoryPath, null, null);
-        }
+          //禁用强制删除
+//        if (force && repository.isAllowsForceDeletion()) {
+//            deleteTrash(repositoryPath, null, null);
+//        }
     }
 
     public void undelete(RepositoryPath path)

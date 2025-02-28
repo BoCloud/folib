@@ -19,7 +19,7 @@
               </a-button>
             </a-col>
             <a-col :span="12">
-                <a-input-search v-model="repoName" :placeholder="$t('Setting.EnterRepositoryName')" @search="searchRepo()" allowClear/>
+                <a-input-search v-model="repoName" :placeholder="$t('Setting.EnterRepositoryName')" @search="searchRepo(1)" allowClear/>
             </a-col>
             </a-row>
             
@@ -99,26 +99,19 @@
       <a-tab-pane :key="2" :tab="$t('Setting.Migrating')">
         <div class="table-operations-container">
           <div class="table-operations">
-            <a-button 
-              type="primary" 
-              @click="handleSetFailed"
-            >
-              {{ $t('Setting.setFailed') }}
-            </a-button>
-           <!-- <a-button 
-              type="primary" 
-              :disabled="!canContinueMigration"
-              @click="handleContinueMigration"
-            >
-              {{ $t('Setting.ContinueMigration') }}
-            </a-button>  -->
-            <!-- <a-button 
-              type="primary" 
-              :disabled="!canPauseMigration"
-              @click="handlePauseMigration"
-            >
-              {{ $t('Setting.PauseMigration') }}
-            </a-button> -->
+            <a-row>
+              <a-col :span="6">
+                <a-button 
+                  type="primary" 
+                  @click="handleSetFailed"
+                >
+                  {{ $t('Setting.setFailed') }}
+                </a-button>
+              </a-col>
+              <a-col :span="12">
+                  <a-input-search class="ml-20" v-model="repoName" :placeholder="$t('Setting.EnterRepositoryName')" @search="searchRepo(2)" allowClear/>
+              </a-col>
+            </a-row>
           </div>
         </div>
         
@@ -151,19 +144,28 @@
       <a-tab-pane :key="3" :tab="$t('Setting.Completed')">
         <div class="table-operations-container">
           <div class="table-operations">
-            <a-button 
-              type="primary" 
-              :disabled="!hasCompletedSelectedRows"
-              @click="handleComplete"
-            >
-              {{ $t('Setting.FinishMigration') }}
-            </a-button>
-            <a-button
+            <a-row >
+              <a-col :span="6">
+                  <a-button 
                 type="primary"
-                @click="resetMigrate"
-            >
-              {{ $t('Setting.ResetMigration') }}
-            </a-button>
+                :disabled="!hasCompletedSelectedRows"
+                @click="handleComplete"
+              >
+                {{ $t('Setting.FinishMigration') }}
+              </a-button>
+            </a-col>
+            <a-col :span="6">
+                <a-button
+                  type="primary"
+                  @click="resetMigrate"
+              >
+                {{ $t('Setting.ResetMigration') }}
+              </a-button>
+            </a-col>
+            <a-col :span="12">
+                <a-input-search v-model="repoName" :placeholder="$t('Setting.EnterRepositoryName')" @search="searchRepo(3)" allowClear/>
+            </a-col>
+            </a-row>
           </div>
         </div>
 
@@ -514,7 +516,8 @@ export default {
           page: this.migratingPagination.current,
           limit: this.migratingPagination.pageSize,
           status: 'migrating',
-          migrateId: this.migrateId
+          migrateId: this.migrateId,
+          repoName: this.repoName
         });
         if (response?.data) {
           this.migratingData = response.data.rows;
@@ -538,7 +541,8 @@ export default {
           page: this.completedPagination.current,
           limit: this.completedPagination.pageSize,
           status: 'completed',
-          migrateId: this.migrateId
+          migrateId: this.migrateId,
+          repoName: this.repoName
         });
         if (response?.data) {
           this.completedData = response.data.rows;
@@ -1045,8 +1049,15 @@ export default {
         });
       }
     },
-    searchRepo(){
-      this.loadPendingData();
+    searchRepo(type){
+      this.clearData()
+      if (type == 1) {
+        this.loadPendingData();
+      } else if (type == 2) {
+        this.updateMigratingProgress()
+      } else if (type == 3) {
+        this.loadCompletedData()
+      }
     }
   },
   beforeDestroy() {
