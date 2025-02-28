@@ -41,8 +41,12 @@
                 </a-menu-item>
                 <a-menu-item
                     key="7"
-                    v-if="folibRepository.layout === 'Docker' && currentTreeNode && currentTreeNode.type === 'file'
-                    && currentFileDetial && currentFileDetial.artifact && !isTrashView"
+                    v-if="
+                    folibRepository.layout === 'Docker' && currentTreeNode && currentTreeNode.type === 'file'
+                    && currentFileDetial && currentFileDetial.artifact && !isTrashView
+                    ||
+                    folibRepository.layout === 'Raw' && currentTreeNode && currentTreeNode.type === 'dir'&&!isTrashView
+                    "
                 >
                     <a-icon type="download"/>
                     {{ $t('Store.DownLoad') }}

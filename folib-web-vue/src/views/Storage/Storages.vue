@@ -1636,6 +1636,8 @@ export default {
     handheTableSearch(val,type,queryParams){
       this.repositories = []
       this.$nextTick(() => {
+        this.$refs.repositoryTree.key ++
+        this.$refs.repositoryTree.recycleKey ++
         this.$refs.repositoryTree.empty()
         this.$refs.repositoryTree.loadingMoreShow(true)
       })

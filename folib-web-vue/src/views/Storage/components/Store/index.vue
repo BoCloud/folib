@@ -2248,7 +2248,8 @@ export default {
       this.currentTreeNode = currentTreeNode
       this.handleMenuClick(active, folibRepository)
     },
-    handleMenuClick(active, folibRepository) {
+    handleMenuClick(active, repository) {
+      const folibRepository = repository || this.folibRepository
       this.operationForm.resetFields()
       this.copyOperationForm.resetFields()
       this.isTargetPatDisabled = folibRepository.layout !== 'Raw';
