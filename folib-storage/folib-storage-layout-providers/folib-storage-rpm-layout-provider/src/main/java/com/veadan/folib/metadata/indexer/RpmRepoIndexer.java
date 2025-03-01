@@ -518,11 +518,18 @@ public class RpmRepoIndexer {
         // No conflicts in this example
         for (Entry entry : metadata.getConflict()) {
             Element conflictsEntryElement1 = doc.createElement("rpm:entry");
-            conflictsEntryElement1.setAttribute("name", entry.getName());
-            conflictsEntryElement1.setAttribute("flags", entry.getFlags());
-            conflictsEntryElement1.setAttribute("epoch", entry.getEpoch());
-            conflictsEntryElement1.setAttribute("ver", entry.getVersion());
-            conflictsEntryElement1.setAttribute("rel", entry.getRelease());
+            if(entry.getFlags()!=null){
+                conflictsEntryElement1.setAttribute("flags", entry.getFlags());
+            }
+            if(entry.getEpoch()!=null){
+                conflictsEntryElement1.setAttribute("epoch", entry.getEpoch());
+            }
+            if(entry.getVersion()!=null){
+                conflictsEntryElement1.setAttribute("ver", entry.getVersion());
+            }
+            if(entry.getRelease()!=null){
+                conflictsEntryElement1.setAttribute("rel", entry.getRelease());
+            }
             conflictsElement.appendChild(conflictsEntryElement1);
         }
         formatElement.appendChild(conflictsElement);
@@ -545,7 +552,10 @@ public class RpmRepoIndexer {
         for (com.veadan.folib.metadata.model.File file : metadata.getFiles()) {
             if (StrUtil.isNotEmpty(file.path)) {
                 Element filesElement = doc.createElement("file");
-                filesElement.appendChild(doc.createTextNode(file.path)); // Replace with actual checksum calculation
+                filesElement.appendChild(doc.createTextNode(file.path));
+                if(file.type!=null){
+                    filesElement.setAttribute("type", file.type);
+                }
                 formatElement.appendChild(filesElement);
             }
         }
