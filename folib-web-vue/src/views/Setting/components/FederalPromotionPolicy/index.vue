@@ -560,27 +560,36 @@ export default {
         this.initData()
     },
     watch: {
-        'layout': function (newval,oldVal) {
-          if(this.federalPromotionPolicyForm.nodeType === 1){
-            this.getTargetRepositories(this.type, newval, this.policy);
-            if(this.targetNodesOptions && this.targetNodesOptions.length>0){
-              this.handleDefNode({ value: this.targetNodesOptions[0].key,
-                key: this.targetNodesOptions[0].key});
-              this.handleTargetRepositories(this.targetNodesOptions[0].key);
+        'layout': function (newval, oldVal) {
+            if (this.federalPromotionPolicyForm.nodeType === 1) {
+                this.getTargetRepositories(this.type, newval, this.policy);
+                if (this.federalPromotionPolicyForm.selectTargetNodes) {
+                    return
+                }
+                if (this.targetNodesOptions && this.targetNodesOptions.length > 0) {
+                    this.handleDefNode({
+                        value: this.targetNodesOptions[0].key,
+                        key: this.targetNodesOptions[0].key
+                    });
+                    this.handleTargetRepositories(this.targetNodesOptions[0].key);
+                }
             }
-          }
-
-
         },
-        'policy': function (newval,oldVal) {
-          if(this.federalPromotionPolicyForm.nodeType === 1){
-            this.getTargetRepositories(this.type, this.layout, newval);
-            if(this.targetNodesOptions && this.targetNodesOptions.length>0){
-              this.handleDefNode({ value: this.targetNodesOptions[0].key,
-                key: this.targetNodesOptions[0].key});
-              this.handleTargetRepositories(this.targetNodesOptions[0].key);
+        'policy': function (newval, oldVal) {
+            if (this.federalPromotionPolicyForm.nodeType === 1) {
+                this.getTargetRepositories(this.type, this.layout, newval);
+                if (this.federalPromotionPolicyForm.selectTargetNodes) {
+                    return
+                }
+                if (this.targetNodesOptions && this.targetNodesOptions.length > 0) {
+
+                    this.handleDefNode({
+                        value: this.targetNodesOptions[0].key,
+                        key: this.targetNodesOptions[0].key
+                    });
+                    this.handleTargetRepositories(this.targetNodesOptions[0].key);
+                }
             }
-          }
         },
       'selectedTargetRepositoriesKeys': function (newval,oldVal) {
         if(!newval ||  newval.length===0){
@@ -693,16 +702,21 @@ export default {
                     temp.label = item.name
                     this.targetNodesOptions.push(temp);
                 })
-
-              if(this.targetNodesOptions && this.targetNodesOptions.length > 0){
-                this.handleDefNode({ value: this.targetNodesOptions[0].key,
-                  key: this.targetNodesOptions[0].key});
-                this.handleTargetRepositories(this.targetNodesOptions[0].key);
-              }
+                if (this.federalPromotionPolicyForm.selectTargetNodes) {
+                    return;
+                }
+                if (this.targetNodesOptions && this.targetNodesOptions.length > 0) {
+                    this.handleDefNode({
+                        value: this.targetNodesOptions[0].key,
+                        key: this.targetNodesOptions[0].key
+                    });
+                    this.handleTargetRepositories(this.targetNodesOptions[0].key);
+                }
             })
         },
 
         handleTargetRepositories(key) {
+            console.log("33:", key)
             this.selectedTargetRepositories = [];
             this.targetNodesRepositories.forEach((item) => {
                 if (item.key === key) {
@@ -963,7 +977,7 @@ export default {
             };
             this.federalPromotionPolicyForm.selectTargetNodes = '';
             //this.targetNodesOptions = [];
-            console.log("this.targetNodesOptions",this.targetNodesOptions)
+            //console.log("this.targetNodesOptions",this.targetNodesOptions)
             this.selectedSourceRepositoriesKeys = [];
            // this.targetNodesRepositories = [];
             this.selectedTargetRepositories = [];
