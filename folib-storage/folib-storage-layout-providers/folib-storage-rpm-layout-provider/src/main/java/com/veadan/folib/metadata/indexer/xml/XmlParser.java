@@ -1,7 +1,10 @@
 package com.veadan.folib.metadata.indexer.xml;
 
 import com.alibaba.fastjson.JSONObject;
+import com.veadan.folib.metadata.indexer.PrimaryXmlMerger;
 import com.veadan.folib.providers.io.RepositoryPath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.InputSource;
 
 import javax.xml.namespace.QName;
@@ -19,9 +22,10 @@ import java.util.ArrayList;
 import java.util.zip.GZIPInputStream;
 
 public class XmlParser {
-
+    private static final Logger logger = LoggerFactory.getLogger(XmlParser.class);
     private static final String REPODATA_PREFIX = "repodata/";
     public Metadata parse(RepositoryPath filePath) throws Exception {
+        logger.info("XmlParser parse filePath:{}",filePath);
         XMLInputFactory factory = XMLInputFactory.newInstance();
         // 安全配置防止XXE
         factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);

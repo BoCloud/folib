@@ -29,11 +29,12 @@ public class Package {
         if (o == null || getClass() != o.getClass()) return false;
         Package aPackage = (Package) o;
         return Objects.equals(version, aPackage.version) &&
-                Objects.equals(name, aPackage.name);
+                Objects.equals(name, aPackage.name) &&
+                Objects.equals(arch, aPackage.arch);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(version, name);
+        return Objects.hash(version, name,arch);
     }
 }

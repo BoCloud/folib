@@ -17,7 +17,6 @@ public class PrimaryXmlMerger {
     public void mergePrimaryXmlFiles(List<RepositoryPath> xmlFilePaths, String savePath) throws Exception {
         XmlParser parser = new XmlParser();
         Set<Package> packageSet = new HashSet<>(); // 使用 HashSet 去重
-
         try {
             for (RepositoryPath filePath : xmlFilePaths) {
                 List<Package> packages = parser.parse(filePath).getPackageList();
@@ -30,12 +29,13 @@ public class PrimaryXmlMerger {
             JsonToXmlConverter converter = new JsonToXmlConverter();
             converter.jsonToXml(packages, savePath + "/primary.xml");
             logger.info("Successfully merged primary XML files and saved to: {}", savePath + "/primary.xml");
-
         } catch (NoClassDefFoundError e) {
             logger.error("Failed to load JsonToXmlConverter class. Ensure the class is in the runtime classpath.", e);
+            e.printStackTrace();
             throw e;
 
         } catch (Exception e) {
+            e.printStackTrace();
             logger.error("An error occurred while merging primary XML files: {}", e.getMessage(), e);
             throw e;
         }

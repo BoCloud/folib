@@ -22,6 +22,7 @@ import java.util.List;
 public class JsonToXmlConverter {
 
     private static final Logger logger = LoggerFactory.getLogger(JsonToXmlConverter.class);
+
     public void jsonToXml(List<Package> packageList, String outputFilePath) throws Exception {
         if (packageList == null || packageList.isEmpty()) {
             throw new IllegalArgumentException("Package list cannot be null or empty");
@@ -34,8 +35,13 @@ public class JsonToXmlConverter {
         if (Files.exists(outputPath)) {
             throw new IOException("Output file already exists and overwrite is not allowed");
         }
+        logger.info("jsonToXml outputFilePath:{}",outputFilePath);
+        // 指定临时文件的父目录
+        // 创建临时目录并指定合法的前缀
+        Path tempDir = Files.createTempDirectory("jsonToXmlTempDir");
+        Path tempPath = Files.createTempFile(tempDir, "jsonToXml", ".xml");
 
-        try (OutputStream outputStream = Files.newOutputStream(outputPath)) {
+        try (OutputStream outputStream = Files.newOutputStream(tempPath)) {
             XMLOutputFactory factory = XMLOutputFactory.newInstance();
             XMLStreamWriter writer = factory.createXMLStreamWriter(outputStream, "UTF-8");
 
@@ -67,18 +73,25 @@ public class JsonToXmlConverter {
             transformer.setOutputProperty(OutputKeys.INDENT, "yes");
             transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
 
-            // 将原始XML流重新读取并格式化输出
-            try (InputStream inputStream = new FileInputStream(outputFilePath)) {
+            // 将临时文件内容格式化并写入最终输出文件
+            try (InputStream inputStream = Files.newInputStream(tempPath);
+                 OutputStream finalOutputStream = Files.newOutputStream(outputPath)) {
                 StreamSource source = new StreamSource(inputStream);
-                transformer.transform(source, new StreamResult(outputStream));
+                StreamResult result = new StreamResult(finalOutputStream);
+                transformer.transform(source, result);
             }
         } catch (IOException | XMLStreamException e) {
             logger.error("Error writing XML: {}", e.getMessage(), e);
             throw new RuntimeException("Error writing XML", e);
+        } finally {
+            // 确保临时文件被删除
+            if (tempPath != null && Files.exists(tempPath)) {
+                Files.delete(tempPath);
+            }
         }
     }
 
-    private  void writePackageElement(XMLStreamWriter writer, Package pkg) throws XMLStreamException {
+    private void writePackageElement(XMLStreamWriter writer, Package pkg) throws XMLStreamException {
         writer.writeStartElement("package");
 
         // 写入直接属性
@@ -111,7 +124,7 @@ public class JsonToXmlConverter {
     }
 
     //通用方法：写入简单元素（标签 + 文本内容）
-    private  void writeSimpleElement(XMLStreamWriter writer, String content, String element) throws XMLStreamException {
+    private void writeSimpleElement(XMLStreamWriter writer, String content, String element) throws XMLStreamException {
         if (content != null) {
             writer.writeStartElement(element);
             writer.writeCharacters(content);
@@ -120,27 +133,39 @@ public class JsonToXmlConverter {
     }
 
     // 专门处理 checksum 字段
-    private  void writeChecksum(XMLStreamWriter writer, Checksum checksum) throws XMLStreamException {
+    private void writeChecksum(XMLStreamWriter writer, Checksum checksum) throws XMLStreamException {
         if (checksum != null) {
             writer.writeStartElement("checksum");
-            writer.writeAttribute("type", checksum.getType());
-            writer.writeAttribute("pkgid", checksum.getPkgid());
-            writer.writeCharacters(checksum.getValue());
+            if (checksum.getValue() != null) {
+                writer.writeAttribute("type", checksum.getType());
+            }
+            if (checksum.getPkgid() != null) {
+                writer.writeAttribute("pkgid", checksum.getPkgid());
+            }
+            if (checksum.getValue() != null) {
+                writer.writeCharacters(checksum.getValue());
+            }
             writer.writeEndElement();
         }
     }
 
-    private  void writeVersion(XMLStreamWriter writer, Version version) throws XMLStreamException {
+    private void writeVersion(XMLStreamWriter writer, Version version) throws XMLStreamException {
         if (version != null) {
             writer.writeStartElement("version");
-            writer.writeAttribute("epoch", version.getEpoch());
-            writer.writeAttribute("ver", version.getVer());
-            writer.writeAttribute("rel", version.getRel());
+            if (version.getEpoch() != null) {
+                writer.writeAttribute("epoch", version.getEpoch());
+            }
+            if (version.getVer() != null) {
+                writer.writeAttribute("ver", version.getVer());
+            }
+            if (version.getRel() != null) {
+                writer.writeAttribute("rel", version.getRel());
+            }
             writer.writeEndElement();
         }
     }
 
-    private  void writeTime(XMLStreamWriter writer, Time time) throws XMLStreamException {
+    private void writeTime(XMLStreamWriter writer, Time time) throws XMLStreamException {
         if (time != null) {
             writer.writeStartElement("time");
             writer.writeAttribute("file", Long.toString(time.getFile()));
@@ -149,7 +174,7 @@ public class JsonToXmlConverter {
         }
     }
 
-    private  void writeSize(XMLStreamWriter writer, Size size) throws XMLStreamException {
+    private void writeSize(XMLStreamWriter writer, Size size) throws XMLStreamException {
         if (size != null) {
             writer.writeStartElement("size");
             writer.writeAttribute("package", Long.toString(size.getPackageSize()));
@@ -159,15 +184,17 @@ public class JsonToXmlConverter {
         }
     }
 
-    private  void writeLocation(XMLStreamWriter writer, Location location) throws XMLStreamException {
+    private void writeLocation(XMLStreamWriter writer, Location location) throws XMLStreamException {
         if (location != null) {
             writer.writeStartElement("location");
-            writer.writeAttribute("href", location.getHref());
+            if (location.getHref() != null) {
+                writer.writeAttribute("href", location.getHref());
+            }
             writer.writeEndElement();
         }
     }
 
-    private  void writeFormatElement(XMLStreamWriter writer, Format format) throws XMLStreamException {
+    private void writeFormatElement(XMLStreamWriter writer, Format format) throws XMLStreamException {
         if (format != null) {
             writer.writeStartElement("format");
 
@@ -196,7 +223,7 @@ public class JsonToXmlConverter {
     }
 
 
-    private  void writeEntryElement(XMLStreamWriter writer, List<Entry> entryList, String key) throws XMLStreamException {
+    private void writeEntryElement(XMLStreamWriter writer, List<Entry> entryList, String key) throws XMLStreamException {
         if (entryList != null && !entryList.isEmpty()) {
             writer.writeStartElement(key);
             for (Entry entry : entryList) {
@@ -211,21 +238,23 @@ public class JsonToXmlConverter {
         }
     }
 
-    private  void writeFile(XMLStreamWriter writer, List<PackageFile> fileList) throws XMLStreamException {
+    private void writeFile(XMLStreamWriter writer, List<PackageFile> fileList) throws XMLStreamException {
         if (fileList != null) {
             for (PackageFile file : fileList) {
                 writer.writeStartElement("file");
                 if (file.getType() != null) {
                     writer.writeAttribute("type", file.getType());
                 }
-                writer.writeCharacters(file.getPath());
+                if (file.getPath() != null) {
+                    writer.writeCharacters(file.getPath());
+                }
                 writer.writeEndElement();
             }
         }
     }
 
     // 辅助方法：写入带 rpm 前缀的简单元素
-    private  void writeRpmElement(XMLStreamWriter writer, String localName, Object value) throws XMLStreamException {
+    private void writeRpmElement(XMLStreamWriter writer, String localName, Object value) throws XMLStreamException {
         if (value != null) {
             writer.writeStartElement("rpm", localName, "http://linux.duke.edu/metadata/rpm");
             writer.writeCharacters(value.toString());
