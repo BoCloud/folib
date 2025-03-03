@@ -10,7 +10,12 @@ import com.veadan.folib.forms.common.StorageTreeForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.Storage;
+import com.veadan.folib.storage.StorageData;
+import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryDto;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
+import com.veadan.folib.storage.repository.remote.heartbeat.RemoteRepositoryAlivenessService;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -68,6 +74,9 @@ public class UnicomAdapter implements CostumeSecurityAdapter {
 
     @Resource
     private ConfigurationManager configurationManager;
+
+    @Resource
+    private RemoteRepositoryAlivenessService remoteRepositoryAlivenessCacheManager;
 
 
     @Resource
@@ -115,7 +124,7 @@ public class UnicomAdapter implements CostumeSecurityAdapter {
             HttpEntity<String> entity = new HttpEntity<>(header);
             ResponseEntity<UicomUserDTO> response = restTemplate.exchange(url, HttpMethod.POST, entity, UicomUserDTO.class);
             if (response.getStatusCode() == HttpStatus.OK) {
-                log.debug("verify success,sessionId:{}", sessionId);
+                log.info("联通身份认证 verify success,sessionId:{},userDetail{}", sessionId, JSON.toJSONString(response.getBody()));
                 return response.getBody();
             } else {
                 return null;
@@ -130,7 +139,7 @@ public class UnicomAdapter implements CostumeSecurityAdapter {
         try {
             HttpHeaders header = getHeader();
             String url = unicomConfig.getSendEmailUrl();
-            HttpEntity<UnicomEmailDTO> entity = new HttpEntity<>(emailDTO, header);
+            HttpEntity<String> entity = new HttpEntity<>(JSON.toJSONString(emailDTO), header);
             log.info("发送邮件地址是{},发送内容为{}", url, JSON.toJSONString(entity));
             ResponseEntity<UnicomCommonResponse> response = restTemplate.exchange(url, HttpMethod.POST, entity, UnicomCommonResponse.class);
             if (response.getStatusCode().is2xxSuccessful()) {
@@ -190,9 +199,9 @@ public class UnicomAdapter implements CostumeSecurityAdapter {
         SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
         UnicomRoleDTO unicomRoleDTO = getUserDetail(userDetails.getEmail());
         Set<String> projects;
-        if(unicomRoleDTO != null) {
+        if (unicomRoleDTO != null) {
             projects = unicomRoleDTO.ownProject();
-        }else {
+        } else {
             projects = new HashSet<>();
         }
         boolean filterByStorageId = StringUtils.isNotBlank(storageId);
@@ -254,7 +263,7 @@ public class UnicomAdapter implements CostumeSecurityAdapter {
             return false;
         }
         UnicomRoleDTO userDetail = getUserDetail(userDetails.getEmail());
-        if(userDetail == null) {
+        if (userDetail == null) {
             return false;
         }
         return userDetail.ownProject().contains(repository.getProjectId());
@@ -266,7 +275,7 @@ public class UnicomAdapter implements CostumeSecurityAdapter {
         SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
         if (UNICOM_SOURCE_ID.equals(userDetails.getSourceId())) {
             UnicomRoleDTO userDetail = getUserDetail(userDetails.getEmail());
-            if(userDetail == null) {
+            if (userDetail == null) {
                 return repositoryIdList;
             }
             Set<String> projects = userDetail.ownProject();
@@ -316,6 +325,48 @@ public class UnicomAdapter implements CostumeSecurityAdapter {
         }
         return UNICOM_SOURCE_ID.equals(userDetails.getSourceId());
 
+    }
+
+    public ResponseEntity getStorageResponseEntity(StorageDto storage, Boolean filter, Authentication authentication) {
+        if (filter) {
+            SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
+            UnicomRoleDTO unicomRoleDTO = getUserDetail(userDetails.getEmail());
+            Map<String, ? extends Repository> repositoryMap = storage.getRepositories();
+            Set<String> projects;
+            if (unicomRoleDTO != null) {
+                projects = unicomRoleDTO.ownProject();
+            } else {
+                projects = new HashSet<>();
+            }
+            if (Objects.nonNull(repositoryMap) && CollectionUtils.isNotEmpty(repositoryMap.values())) {
+                repositoryMap = repositoryMap.values().stream()
+                        .filter(item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || projects.contains(item.getProjectId()))
+                        .map(item -> {
+                            if (RepositoryTypeEnum.PROXY.getType().equals(item.getType())) {
+                                RepositoryDto repositoryDto = (RepositoryDto) item;
+                                repositoryDto.setHealthStatus(remoteRepositoryAlivenessCacheManager.isAlive(((RepositoryDto) item).getRemoteRepository()));
+                            }
+                            return item;
+                        })
+                        .collect(Collectors.toMap(Repository::getId, Function.identity()));
+                storage.setRepositories((Map<String, RepositoryDto>) repositoryMap);
+            }
+        }
+        Map<String, ? extends Repository> repositoryMap = storage.getRepositories();
+        if (Objects.nonNull(repositoryMap) && CollectionUtils.isNotEmpty(repositoryMap.values())) {
+            repositoryMap = repositoryMap.values().stream()
+                    .map(item -> {
+                        if (RepositoryTypeEnum.PROXY.getType().equals(item.getType())) {
+                            RepositoryDto repositoryDto = (RepositoryDto) item;
+                            repositoryDto.setHealthStatus(remoteRepositoryAlivenessCacheManager.isAlive(((RepositoryDto) item).getRemoteRepository()));
+                        }
+                        return item;
+                    })
+                    .collect(Collectors.toMap(Repository::getId, Function.identity()));
+            storage.setRepositories((Map<String, RepositoryDto>) repositoryMap);
+        }
+        StorageData storageData = new StorageData(storage);
+        return ResponseEntity.ok(storageData);
     }
 }
 

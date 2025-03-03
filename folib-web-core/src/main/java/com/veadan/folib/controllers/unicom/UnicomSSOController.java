@@ -180,6 +180,7 @@ public class UnicomSSOController extends BaseController {
     @GetMapping("/login")
     public RedirectView ossLogin(@RequestParam String sessionId, HttpServletResponse response) {
         try {
+            log.info("联通 login sessionId:{}", sessionId);
             UicomUserDTO uicomUserDTO = unicomAdapter.verify(sessionId);
             Assert.notNull(uicomUserDTO, "认证失败");
             UserDetails userDetails = null;
@@ -187,6 +188,7 @@ public class UnicomSSOController extends BaseController {
                 userDetails = userDetailsService.loadUserByUsername(uicomUserDTO.getLoginName());
             } catch (UsernameNotFoundException e) {
                 createIfNotExist(uicomUserDTO.getLoginName(), uicomUserDTO.getEmail());
+                userDetails = userDetailsService.loadUserByUsername(uicomUserDTO.getLoginName());
             }
             Integer timeout = configurationManager.getSessionTimeoutSeconds();
             Map<String, String> claims = jwtClaimsProvider.getClaims((SpringSecurityUser) userDetails);
@@ -237,21 +239,21 @@ public class UnicomSSOController extends BaseController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<UnicomRepo>> addRepository(@ApiParam(value = "The storageId", required = true)
-                                        @PathVariable String storageId,
-                                        @ApiParam(value = "The repositoryId", required = true)
-                                        @PathVariable
-                                        String repositoryId,
-                                        @ApiParam(value = "The repository object", required = true)
-                                        @RequestBody
-                                        @Validated({Default.class,
-                                                ProxyConfigurationForm.ProxyConfigurationFormChecks.class})
-                                        UnicomRepositroyForm repositoryForm,
-                                        BindingResult bindingResult,
-                                        @RequestHeader(HttpHeaders.ACCEPT) String accept) {
+                                                          @PathVariable String storageId,
+                                                          @ApiParam(value = "The repositoryId", required = true)
+                                                          @PathVariable
+                                                          String repositoryId,
+                                                          @ApiParam(value = "The repository object", required = true)
+                                                          @RequestBody
+                                                          @Validated({Default.class,
+                                                                  ProxyConfigurationForm.ProxyConfigurationFormChecks.class})
+                                                          UnicomRepositroyForm repositoryForm,
+                                                          BindingResult bindingResult,
+                                                          @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         Storage storage = configurationManagementService.getConfiguration().getStorage(storageId);
         if (storage != null) {
             //生成子仓库和组合库
-            Deque<RepositoryDto> completedRepo=new LinkedList<>();
+            Deque<RepositoryDto> completedRepo = new LinkedList<>();
             getUniqProjectEn(storage, repositoryForm);
             if (bindingResult.hasErrors()) {
                 throw new RequestBodyValidationException(FAILED_SAVE_REPOSITORY, bindingResult);
@@ -300,19 +302,19 @@ public class UnicomSSOController extends BaseController {
             } catch (Exception e) {
                 log.info("创建仓库异常{}", e.getMessage(), e);
                 //删除已经创建的仓库
-                while (!completedRepo.isEmpty()){
+                while (!completedRepo.isEmpty()) {
                     RepositoryDto repo = completedRepo.pop();
                     try {
-                        configurationManagementService.removeRepository(repo.getStorage().getId(),repo.getId());
+                        configurationManagementService.removeRepository(repo.getStorage().getId(), repo.getId());
                     } catch (IOException ex) {
-                        log.error("仓库{}删除异常,请手动删除",repo.getId());
+                        log.error("仓库{}删除异常,请手动删除", repo.getId());
                     }
                 }
-                String message=String.format("自动创建项目【%s】制品仓库失败,请联系相关人员手动创建",repositoryForm.getProjectName());
-                unicomAdapter.sendMessageEmail("创建仓库异常",message,repositoryForm.getEmail());
+                String message = String.format("自动创建项目【%s】制品仓库失败,请联系相关人员手动创建", repositoryForm.getProjectName());
+                unicomAdapter.sendMessageEmail("创建仓库异常", message, repositoryForm.getEmail());
             }
             // 同步信息到其他节点
-            while (!completedRepo.isEmpty()){
+            while (!completedRepo.isEmpty()) {
                 RepositoryDto first = completedRepo.pollFirst();
                 SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(first, first.getStorage().getId(), first.getId(), SyncRepositoryEnum.ADD_OR_UPDATE);
                 clusterSyncService.syncRepository(syncRepositoryDto);
@@ -321,7 +323,7 @@ public class UnicomSSOController extends BaseController {
             }
             // 创建一个新的用户并赋予权限
             UserDto projectUser = createRole(repositoryForm);
-            sendEmail(projectUser, repositoryForm);
+            sendEmail(projectUser, repositoryForm,repository.getSubLayout());
             return ResponseEntity.ok(repositoryForm.genRepoInfo());
         } else {
             return getFailedResponseEntity(HttpStatus.NOT_FOUND, STORAGE_NOT_FOUND, accept);
@@ -342,7 +344,7 @@ public class UnicomSSOController extends BaseController {
         if (Objects.nonNull(subExist)) {
             return null;
         }
-        RepositoryDto subRepositoryDto = null;
+        RepositoryDto subRepositoryDto;
         groupRepositoryValid(storageId, repository);
         configurationManagementService.saveRepository(storageId, repository);
         subRepositoryDto = getMutableConfigurationClone().getStorage(storageId)
@@ -388,14 +390,14 @@ public class UnicomSSOController extends BaseController {
         }
     }
 
-    private void sendEmail(UserDto userDto, UnicomRepositroyForm form) {
+    private void sendEmail(UserDto userDto, UnicomRepositroyForm form,String subLayout) {
         String title = String.format("项目【%s】,folib仓库信息", form.getProjectName());
         UnicomEmailDTO emailDTO = new UnicomEmailDTO();
         emailDTO.setTitle(title);
         emailDTO.setAccount(form.getEmail());
         // 获取仓库地址
         String baseUrl = StringUtils.chomp(configurationManagementService.getConfiguration().getBaseUrl(), "/");
-        String prefixUrl = baseUrl + "/storages/" + form.getStorageId() + "/";
+        String prefixUrl = baseUrl + getLayoutRepoPrefix(subLayout);
         StringBuilder localLink = new StringBuilder();
         String releaseRepo = "";
         String snapshotRepo = "";
@@ -460,7 +462,7 @@ public class UnicomSSOController extends BaseController {
         try {
             UicomUserDTO uicomUserDTO = unicomAdapter.verify(sessionId);
             Assert.notNull(uicomUserDTO, "认证失败");
-            UserDetails userDetails = null;
+            UserDetails userDetails;
             try {
                 userDetails = userDetailsService.loadUserByUsername(uicomUserDTO.getLoginName());
             } catch (UsernameNotFoundException e) {
@@ -469,7 +471,7 @@ public class UnicomSSOController extends BaseController {
             }
             Integer timeout = configurationManager.getSessionTimeoutSeconds();
             Map<String, String> claims = jwtClaimsProvider.getClaims((SpringSecurityUser) userDetails);
-            String token = securityTokenProvider.getToken(uicomUserDTO.getLoginName(), claims, timeout, null);
+            String token = securityTokenProvider.getToken(userDetails.getUsername(), claims, timeout, null);
             //存储JWT令牌到Cookie
             UnicomToken unicomToken = new UnicomToken();
             unicomToken.setToken(token);
@@ -581,5 +583,51 @@ public class UnicomSSOController extends BaseController {
         form.setSubRepoList(repos);
     }
 
-
+    private String getLayoutRepoPrefix(String subLayout) {
+        String prefix;
+        switch (subLayout) {
+            case "pypi":
+                prefix = "/artifactory/api/pypi/";
+                break;
+            case "npm":
+                prefix = "/artifactory/api/npm/";
+                break;
+            case "ohpm":
+                prefix = "/artifactory/api/ohpm/";
+                break;
+            case "php":
+                prefix = "/artifactory/api/composer/";
+                break;
+            case "conan":
+                prefix = "/artifactory/api/conan/";
+                break;
+            case "helm":
+                prefix = "/artifactory/api/helm/";
+                break;
+            case "cocoapods":
+                prefix = "/artifactory/api/pods/";
+                break;
+            case "go":
+                prefix = "/artifactory/api/go/";
+                break;
+            case "gitlfs":
+                prefix = "/artifactory/api/lfs/";
+                break;
+            case "huggingface":
+                prefix = "/artifactory/api/huggingfaceml/";
+                break;
+            case "pub":
+                prefix = "/artifactory/api/pub/";
+                break;
+            case "docker":
+                prefix = "";
+                break;
+            case "cargo":
+                prefix = "/artifactory/api/cargo/";
+                break;
+            default:
+                prefix = "/artifactory/";
+        }
+        return prefix;
+    }
 }

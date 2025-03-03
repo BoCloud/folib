@@ -827,6 +827,13 @@ public class StoragesConfigurationController
             StorageData storageData = new StorageData(storage);
             return ResponseEntity.ok(storageData);
         }
+
+        // 特殊处理联通权限逻辑
+        SpringSecurityUser userDetails = (SpringSecurityUser) authentication.getPrincipal();
+        if(UnicomAdapter.UNICOM_SOURCE_ID.equals(userDetails.getSourceId())){
+            return unicomAdapter.getStorageResponseEntity(storage,filter,authentication);
+
+        }
         //查询数据库中存储空间绑定的用户
         storageManagementService.getStorageUsers(Collections.singletonList(storage));
         String username = loginUsername();
