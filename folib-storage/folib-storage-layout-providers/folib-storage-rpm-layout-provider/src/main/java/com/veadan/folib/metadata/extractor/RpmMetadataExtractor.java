@@ -3,11 +3,13 @@ package com.veadan.folib.metadata.extractor;
 
 import com.veadan.folib.providers.io.RepositoryPath;
 import org.redline_rpm.header.Format;
+import org.springframework.security.core.parameters.P;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -33,8 +35,8 @@ public class RpmMetadataExtractor  {
 
     public  String readSHA1FileContent(Path filePath) throws Exception {
         try {
-            return getSHA1(filePath);
-            //return new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8);
+            //return getSHA1(filePath);
+            return Files.readString(Paths.get(filePath.toString()+".sha1"));
         } catch (IOException e) {
             throw e;
         }

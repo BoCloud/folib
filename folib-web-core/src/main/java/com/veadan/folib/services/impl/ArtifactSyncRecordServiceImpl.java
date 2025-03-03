@@ -107,14 +107,23 @@ public class ArtifactSyncRecordServiceImpl implements ArtifactSyncRecordService 
      */
     @Override
     public ArtifactSyncRecordCountRes getCount(Integer days) {
-        ArtifactSyncRecordCountDto artifactSyncRecordCountDto = artifactSyncRecordMapper.countArtifactSyncRecord(days);
+        //ArtifactSyncRecordCountDto artifactSyncRecordCountDto = artifactSyncRecordMapper.countArtifactSyncRecord(days);
         ArtifactSyncRecordCountRes countRes = new ArtifactSyncRecordCountRes();
 
-        if (artifactSyncRecordCountDto == null) {
-             return countRes.setFailedCount(0L).setSuccessCount(0L).setTotalCount(0L).setFileSizeCount(new BigDecimal("0")).setDate(null);
+        //if (artifactSyncRecordCountDto == null) {
+        //     return countRes.setFailedCount(0L).setSuccessCount(0L).setTotalCount(0L).setFileSizeCount(new BigDecimal("0")).setDate(null);
+        //}
+
+        Long successCount = artifactSyncRecordMapper.statCount(days, ArtifactSyncRecordStatusEnum.SUCCESS.getVal());
+        Long failCount = artifactSyncRecordMapper.statCount(days, ArtifactSyncRecordStatusEnum.FAILED.getVal());
+        Long totalCount = artifactSyncRecordMapper.statCount(days, null);
+        if(totalCount==null || totalCount==0){
+            return countRes.setFailedCount(0L).setSuccessCount(0L).setTotalCount(0L).setFileSizeCount(new BigDecimal("0")).setDate(null);
         }
+        countRes.setFailedCount(failCount);
+        countRes.setSuccessCount(successCount);
+        countRes.setTotalCount(totalCount);
         Long fileSizeCount = artifactSyncSlaveRecordMapper.statisticsFileSize(days);
-        countRes = dtoToRes.apply(artifactSyncRecordCountDto);
         BigDecimal fileSizeInGB =   convertBytesToGB(fileSizeCount);
         countRes.setFileSizeCount(fileSizeInGB.setScale(4, RoundingMode.HALF_UP));
         return countRes;

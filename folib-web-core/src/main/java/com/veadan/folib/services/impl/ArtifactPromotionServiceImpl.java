@@ -18,6 +18,7 @@ import com.veadan.folib.components.promotion.ArtifactPromotionProviderRegistry;
 import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
 import com.veadan.folib.constant.GlobalConstants;
+import com.veadan.folib.controllers.promotion.ArtifactPromotionController;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.*;
 import com.veadan.folib.dto.*;
@@ -830,6 +831,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                         .body(temp.toString());
             }
         } catch (Exception e) {
+            log.error("upload exception", ExceptionUtils.getStackTrace(e));
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(e.getMessage());
         }

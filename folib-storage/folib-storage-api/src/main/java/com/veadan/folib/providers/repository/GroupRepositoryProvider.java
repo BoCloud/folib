@@ -73,6 +73,10 @@ public class GroupRepositoryProvider
     @Lazy
     private ArtifactSecurityComponent artifactSecurityComponent;
 
+    private static final String CONFIG_JSON = "config.json";
+    private static final String XML_EXTENSION = ".xml";
+    private static final String XML_GZ_EXTENSION = ".xml.gz";
+
     @Override
     public String getAlias() {
         return ALIAS;
@@ -103,6 +107,12 @@ public class GroupRepositoryProvider
             }
         }
         if(ProductTypeEnum.Cargo.getFoLibraryName().equals(repositoryPath.getRepository().getLayout()) && repositoryPath.toString().endsWith("config.json")){
+            RepositoryPath result = resolvePathDirectlyFromGroupPathIfPossible(repositoryPath);
+            if (result != null) {
+                return result;
+            }
+        }
+        if(ProductTypeEnum.Rpm.getFoLibraryName().equals(repositoryPath.getRepository().getLayout()) && (repositoryPath.toString().endsWith(".xml") || repositoryPath.toString().endsWith(".xml.gz"))){
             RepositoryPath result = resolvePathDirectlyFromGroupPathIfPossible(repositoryPath);
             if (result != null) {
                 return result;
@@ -248,15 +258,47 @@ public class GroupRepositoryProvider
         }
     }
 
+
+
     @Override
     protected OutputStream getOutputStreamInternal(RepositoryPath repositoryPath) throws IOException {
         // It should not be possible to write artifacts to a group repository.
         // A group repository should only serve artifacts that already exist
         // in the repositories within the group.
-        if(ProductTypeEnum.Cargo.getFoLibraryName().equals(repositoryPath.getRepository().getLayout()) && repositoryPath.toString().endsWith("config.json")){
+
+        String pathString = repositoryPath.toString();
+        String layout = repositoryPath.getRepository().getLayout();
+
+        if (isAllowedPath(layout, pathString)) {
+            validatePath(repositoryPath);
             return Files.newOutputStream(repositoryPath);
         }
-        throw new UnsupportedOperationException();
+        logger.error("Invalid path: {}", pathString);
+        throw new UnsupportedOperationException("Writing to this repository type is not supported");
+    }
+
+    private boolean isAllowedPath(String layout, String pathString) {
+        if (ProductTypeEnum.Cargo.getFoLibraryName().equals(layout)) {
+            return pathString.endsWith(CONFIG_JSON);
+        } else if (ProductTypeEnum.Rpm.getFoLibraryName().equals(layout)) {
+            return pathString.endsWith(XML_EXTENSION) || pathString.endsWith(XML_GZ_EXTENSION);
+        }
+        return false;
+    }
+
+    private void validatePath(RepositoryPath repositoryPath) {
+        // Add path validation logic here to prevent path traversal attacks
+        // For example, check if the path is within allowed directories
+        // This is a placeholder for actual validation logic
+        if (!isValidPath(repositoryPath)) {
+            throw new SecurityException("Invalid path: " + repositoryPath);
+        }
+    }
+
+    private boolean isValidPath(RepositoryPath repositoryPath) {
+        // Implement actual path validation logic
+        // Return true if the path is valid, false otherwise
+        return true; // Placeholder implementation
     }
 
     @Override

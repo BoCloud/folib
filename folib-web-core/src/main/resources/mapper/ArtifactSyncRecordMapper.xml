@@ -70,6 +70,8 @@
                count(case when status=2 then 1 end) as failedCount,
                count(case when status=3  then 1 WHEN status = 4 THEN 1 end) as totalCount
         from artifact_sync_record  where  create_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY);
+
+
     </select>
 
     <select id="countByDateArtifactSyncRecord" resultMap="countArtifactSyncRecord">
@@ -98,6 +100,19 @@
         ON ssr.sync_no = sr.sync_no
         WHERE sr.status &lt; 3
         AND ssr.target_path LIKE CONCAT('%', #{targetHostName}, '%')
+    </select>
+
+    <select id="statCount" resultType="long">
+        select count(DISTINCT sync_no) as countNumber
+        from artifact_sync_slave_record
+       <where>
+           <if test="status!=null">
+               and status = #{status}
+           </if>
+           <if test="days!=null">
+               and create_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+           </if>
+       </where>
     </select>
 
 </mapper>
