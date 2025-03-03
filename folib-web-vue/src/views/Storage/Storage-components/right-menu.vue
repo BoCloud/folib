@@ -138,10 +138,11 @@ export default {
                 .finally(() => {
                 })
         },
-        handlerDataPermission(currentTreeNode, type) {
+        handlerDataPermission(currentTreeNode, type, callback) {
             this.type = type
             this.deleteEnabled = false
             if (!currentTreeNode.storageId || !currentTreeNode.repositoryId || !currentTreeNode.artifactPath) {
+                if (callback) callback()
                 return false
             }
             let permissions = []
@@ -155,6 +156,8 @@ export default {
                     this.folibRepository.type !== 'group' &&
                     (hasRole('ARTIFACTS_MANAGER') ||
                         permissions.includes('ARTIFACTS_DELETE'))
+            }).finally(() => {
+                if (callback) callback()
             })
         },
     }

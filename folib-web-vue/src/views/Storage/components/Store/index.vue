@@ -2421,7 +2421,8 @@ export default {
                   message: self.$t('Store.RestoreSuccessful')
                 })
                 if(self.isChecked){
-                  self.$emit('reload')
+                    self.$store.commit('setRestoreActionMark')
+                  // self.$emit('reload')
                 }else{
                   self.reload()
                 }

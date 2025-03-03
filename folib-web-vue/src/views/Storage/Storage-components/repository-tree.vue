@@ -69,7 +69,7 @@
                     :load="(treeNode,resolve) => onLoadData(treeNode, resolve, true)"
                     :data="recycleTreeData"
                     :show-line="true"
-                    @node-click="(data)=>treeSelect(data,false)"
+                    @node-click="(data)=>treeSelect(data,true)"
                     @node-expand="(data,node) => onExpand(data,node, true)"
                     @node-collapse="(data,node) => onCollapse(data,node, true)"
                     @node-contextmenu="(event, data) => rightClick(event, data,'recycleTree')"
@@ -235,6 +235,9 @@ export default {
         },
         treeClickKey() {
             return this.$store.state.treeClickKey
+        },
+        restoreActionMark() {
+            return this.$store.state.restoreActionMark
         }
     },
     watch: {
@@ -308,9 +311,11 @@ export default {
                 this.loadingMoreShow(true)
             }
         },
-        // isTrashView() {
-        //     this.reload()
-        // },
+        restoreActionMark() {
+            const copyNode = JSON.parse(JSON.stringify(this.currentTreeNodeRecycle))
+            this.localDelNode(copyNode, true)
+            this.localRestoreNode(copyNode)
+        },
     },
     mounted() {
         document.addEventListener('click', this.closeContextMenu)
@@ -345,24 +350,41 @@ export default {
             }
         },
         // 远程节点删除成功后，调用本地删除节点方法（实现删除后树表展开结构不变）
-        localDelNode(tarNode) {
-            this.$emit('loadMore', 0)
-            /*const { storageId, repositoryId, artifactPath,type } = tarNode
-            const arr = artifactPath.split('/')
-            const length = arr.length
-            const keyToDelete = arr[length - 1]
-            // 从 treeData 中递归删除节点
-            const removeNode = (nodes, key) => {
-                return nodes.filter((node) => {
-                    if (node.name == key) return false // 移除目标节点
-                    if (node.children) {
-                        node.children = removeNode(node.children, key)
+        localDelNode(tarNode, isTrashView = false) {
+            const sourceArr = isTrashView ? this.recycleTreeData : this.treeData
+            const currentTreeRef =  isTrashView ? this.$refs.recycleTree : this.$refs.storeTree
+            const { id } = this.folibRepository
+            const { artifactPath } = tarNode
+            const parentKeyArr = artifactPath.split('/')
+            parentKeyArr.pop()
+            let parentKey = `${id}${parentKeyArr.join('/')}`
+            let updatedChildren = []
+            const recursionGetChildren = (source, artifactPath) => {
+                source.forEach(item => {
+                    if (item.artifactPath === artifactPath) {
+                        updatedChildren = source.filter(ele => ele.artifactPath !== artifactPath)
+                    } else if (item.children?.length) {
+                        recursionGetChildren(item.children, artifactPath)
                     }
-                    return true
                 })
             }
-            this.treeData = removeNode(this.treeData, keyToDelete)
-            this.reload(true)*/
+            recursionGetChildren(sourceArr, artifactPath)
+            currentTreeRef.updateKeyChildren(parentKey, updatedChildren)
+        },
+        // 远程节点从回收站还原成功后，调用本地新增节点方法（实现删除后树表展开结构不变）
+        localRestoreNode(tarNode) {
+            const { id } = this.folibRepository
+            const { artifactPath } = tarNode
+            const parentKeyArr = artifactPath.split('/')
+            parentKeyArr.shift()
+            parentKeyArr.pop()
+            let parentKey = `${id}${parentKeyArr.join('/')}`
+            const updateNode = {
+                artifactPath: parentKeyArr.join('/'),
+                key: parentKey
+            }
+            console.log(updateNode);
+            this.handleRefresh(updateNode)
         },
         // 右键菜单选择操作
         handleMenuClick(active) {
@@ -383,12 +405,12 @@ export default {
                 }
             })
         },
-        handleRefresh() {
-            const nowDataKey = this.isTrashView ? 'recycleTreeData' : 'treeData'
+        handleRefresh(refreshNode) {
+            // const nowDataKey = this.isTrashView ? 'recycleTreeData' : 'treeData'
             const { storageId, id, layout } = this.folibRepository
-            const currentNode =  this.isTrashView ? this.currentTreeNodeRecycle : this.currentTreeNode
-            const currentTreeRef =  this.isTrashView ? this.$refs.recycleTree : this.$refs.storeTree
-            this.recursionGetItems(this[nowDataKey], currentNode.key, null, true)
+            const currentNode = refreshNode || (this.isTrashView ? this.currentTreeNodeRecycle : this.currentTreeNode)
+            const currentTreeRef =  this.isTrashView && !refreshNode ? this.$refs.recycleTree : this.$refs.storeTree
+            // this.recursionGetItems(this[nowDataKey], currentNode.key, null, true)
             if (layout === 'Docker') {
                 getDockerArtifact(
                     storageId,
@@ -413,7 +435,7 @@ export default {
                             children.push(item)
                         })
                     }
-                    if (res.files.length > 0 && !this.isTrashView) {
+                    if (res.files.length > 0 && (((this.isTrashView && currentNode.data.fileType !== 'document') || !this.isTrashView) || refreshNode)) {
                         const a = res.files
                         a.forEach((item, index, a) => {
                             item.isLeaf = !this.getFileIsOpen(item.name)
@@ -451,7 +473,7 @@ export default {
                     })
                     children = d
                 }
-                if (res.files.length > 0 && !this.isTrashView) {
+                if (res.files.length > 0 && (((this.isTrashView && currentNode.data.fileType !== 'document') || !this.isTrashView) || refreshNode)) {
                     const a = res.files
                     a.forEach((item, index, a) => {
                         item.isLeaf = !this.getFileIsOpen(item.name)
@@ -470,12 +492,24 @@ export default {
         },
         // 鼠标右键
         rightClick(event, data, type) {
+            this.showContextMenu = false
             this.isTrashView = type === 'recycleTree'
             const { treeType } = data
-            // if (treeType !== 'root' && treeType !== 'lastRoot') {
-            this.showContextMenu = true
-            this.rightClickTop = `${event.clientY}px`;
-            this.rightClickLeft = `${event.clientX}px`;
+            if (treeType === 'lastRoot') return
+            const callback = () => {
+                this.$nextTick(() => {
+                    const viewportHeight = window.innerHeight;
+                    const spaceBelow = viewportHeight - event.clientY;
+                    const menuHeight = this.$refs.rightMenu?.$el?.offsetHeight;
+                    let top = event.clientY;
+                    if (spaceBelow < menuHeight) {
+                        top = event.clientY - menuHeight;
+                    }
+                    this.rightClickTop = `${top}px`;
+                    this.rightClickLeft = `${event.clientX}px`;
+                    this.showContextMenu = true
+                })
+            }
             if(this.isTrashView){
                 this.currentTreeNodeRecycle = data
             }else{
@@ -484,7 +518,7 @@ export default {
             let target = null
             // 获取当前子节点的最顶层父节点（仓库节点）
             this.treeData.forEach(ele => {
-                if (ele.id === data.repositoryId) {
+                if (ele.id === data.repositoryId || ele.id === data.id) {
                     target = ele
                 }
             })
@@ -497,8 +531,8 @@ export default {
             } else {
                 this.queryPermission()
             }
-            this.$refs.rightMenu.handlerDataPermission(data,type)
-            if (target.layout === 'Docker') {
+            this.$refs.rightMenu.handlerDataPermission(data,type, callback)
+            if (target.layout === 'Docker' && data.type === 'file') {
                 const params = {
                     storageId: target.storageId,
                     id: target.id,
@@ -506,7 +540,6 @@ export default {
                 }
                 this.getPackagePreview(params)
             }
-            // }
         },
         closeContextMenu() {
             this.showContextMenu = false;
@@ -566,6 +599,7 @@ export default {
                         this.getPosition(320)
                     }
                     this.treeSelect(this.recycleRepositryList[0],true)
+                    return
                 }else{
                     this.selectRecycleKeys = [data.key]
                 }
@@ -619,14 +653,14 @@ export default {
         // 获取当前已展开节点的key
         onExpand(data,node,key) {
             this.closeContextMenu()
-            if(key){
-                this.expandedRecycleKeys = [data.key]
-            }else{
-                this.expandedKeys = [data.key]
-            }
-            if(key && data.name === '制品回收站'){ // 回收站打开
-                this.getPosition(320)
-            }
+            // if(key){
+            //     this.expandedRecycleKeys = [data.key]
+            // }else{
+            //     this.expandedKeys = [data.key]
+            // }
+            // if(key && data.name === '制品回收站'){ // 回收站打开
+            //     this.getPosition(320)
+            // }
         },
         onCollapse(data,node,key) {
             this.closeContextMenu()
@@ -646,7 +680,6 @@ export default {
         onLoadData(treeNode,resolve, isTrashView) {
             this.closeContextMenu()
             if (!treeNode.data.fileType && !treeNode.data.type) return
-            const nowDataKey = isTrashView ? 'recycleTreeData' : 'treeData'
             if(treeNode.data.type === 'recycle'){
                 this.getPosition(320)
             }
@@ -697,7 +730,7 @@ export default {
                             treeNode.data.children.push(item)
                         })
                     }
-                    if (res.files.length > 0 && !isTrashView) {
+                    if (res.files.length > 0 && ((isTrashView && treeNode.data.fileType !== 'document') || !isTrashView)) {
                         const a = res.files
                         a.forEach((item, index, a) => {
                             item.isLeaf = !this.getFileIsOpen(item.name)
