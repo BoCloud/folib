@@ -168,7 +168,7 @@ public class ArtifactWebHookController {
                     try(Artifactory artifactory = ArtifactoryClientBuilder.create().setUrl(jfrogInfo.getRemotePreUrl()).setUsername(jfrogInfo.getUsername()).setPassword(jfrogInfo.getPassword()).build()){
                         // 设置admin权限
                         securityUtils.setAdminAuthentication();
-                        RepositoryHandle repository = artifactory.repository(repositoryId);
+                        RepositoryHandle repository = artifactory.repository(webhookDto.getData().getRepoKey());
                         // 1.下载 manifest.json
                         String digestOrTag = "";
                         boolean isTag = false;
@@ -296,11 +296,11 @@ public class ArtifactWebHookController {
                     try(Artifactory artifactory = ArtifactoryClientBuilder.create().setUrl(jfrogInfo.getRemotePreUrl()).setUsername(jfrogInfo.getUsername()).setPassword(jfrogInfo.getPassword()).build()){
                         // 访问远程仓库
                         securityUtils.setAdminAuthentication();
-                        RepositoryHandle repository = artifactory.repository(repositoryId);
+                        RepositoryHandle repository = artifactory.repository(webhookDto.getData().getRepoKey());
                         InputStream artifactStream = repository.download(artifactData.getPath()).doDownload();
                         artifactManagementService.store(repositoryPath, artifactStream);
                     }catch (Exception e){
-                        log.info("下载远程制品失败");
+                        log.error("下载远程制品失败 [{}]", ExceptionUtils.getStackTrace(e));
                         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("sync artifact failed");
                     }finally {
                         securityUtils.clearAuthentication();

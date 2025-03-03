@@ -34,6 +34,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 
 /**
@@ -960,7 +961,7 @@ public class RestClient extends ArtifactClient {
         } else {
             try (InputStream inputStream = response.readEntity(InputStream.class)) {
                 File file = new File(target);
-                Files.copy(inputStream, Path.of(file.getAbsolutePath()));
+                Files.copy(inputStream, Path.of(file.getAbsolutePath()), StandardCopyOption.REPLACE_EXISTING);
                 return file;
             } catch (IOException ex) {
                 logger.error(ExceptionUtils.getStackTrace(ex));
