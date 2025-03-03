@@ -394,7 +394,7 @@
           </a-col>
           <a-col :span="12" class="text-right">
             <a-button @click="storageDelHandle" class="px-30 ml-10" type="danger" size="small">{{ $t('Storage.Delete') }}</a-button>
-            <a-button @click="storageForceDelHandle" class="px-30 ml-10" type="dashed" size="small">{{ $t('Storage.ForcedDeletion') }}</a-button>
+            <!-- <a-button @click="storageForceDelHandle" class="px-30 ml-10" type="dashed" size="small">{{ $t('Storage.ForcedDeletion') }}</a-button> -->
           </a-col>
         </a-row>
       </a-form>
@@ -429,9 +429,9 @@
           <a-col :span="12" class="text-right">
             <a-button v-if="deleteBtnVisible" @click="delRepositoryResponseEntity" class="px-30 ml-10" type="danger"
               size="small">{{ $t('Storage.Delete') }}</a-button>
-            <a-button v-if="forceDeleteBtnVisible" @click="delRepositoryResponseEntityForce" class="px-30 ml-10"
+            <!-- <a-button v-if="forceDeleteBtnVisible" @click="delRepositoryResponseEntityForce" class="px-30 ml-10"
               type="dashed" size="small">{{ $t('Storage.ForcedDeletion') }}
-            </a-button>
+            </a-button> -->
           </a-col>
         </a-row>
       </a-form>
@@ -640,14 +640,13 @@
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-                <a-col :span="6" v-if="folibRepository.type !== 'group'">
+                <!-- <a-col :span="6" v-if="folibRepository.type !== 'group'">
                   <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsForceDeletion">
                       {{ $t('Storage.Allowed') }}{{ $t('Storage.ForcedDeletion') }}
-                      <!-- {{ folibRepository.allowsForceDeletion ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }} -->
                     </a-checkbox>
                   </a-form-item>
-                </a-col>
+                </a-col> -->
                 <a-col :span="6" v-if="folibRepository.type === 'hosted'">
                   <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsDeployment">
