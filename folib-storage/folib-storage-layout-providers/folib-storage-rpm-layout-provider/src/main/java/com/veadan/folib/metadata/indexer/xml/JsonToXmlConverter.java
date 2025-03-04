@@ -228,7 +228,7 @@ public class JsonToXmlConverter {
             writer.writeStartElement(key);
             for (Entry entry : entryList) {
                 writer.writeEmptyElement("rpm:entry");
-                writer.writeAttribute("name", entry.getName());
+                if (entry.getName() != null) writer.writeAttribute("name", entry.getName());
                 if (entry.getFlags() != null) writer.writeAttribute("flags", entry.getFlags());
                 if (entry.getEpoch() != null) writer.writeAttribute("epoch", entry.getEpoch());
                 if (entry.getVer() != null) writer.writeAttribute("ver", entry.getVer());
