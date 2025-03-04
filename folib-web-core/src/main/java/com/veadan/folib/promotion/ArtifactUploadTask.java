@@ -270,7 +270,7 @@ public class ArtifactUploadTask implements Callable<String> {
             } else if (DockerLayoutProvider.ALIAS.equals(layout) && StringUtils.isNotBlank(fileType)) {
                 handlerDockerUploadProcess(this.storageId, this.repositoryId, this.imageTag, fileType, this.file, this.baseUrl);
             } else if (RpmLayoutProvider.ALIAS.equals(layout)) {
-                handlerRpmLayoutUpload(this.storageId, this.repositoryId, this.file);
+                handlerRpmLayoutUpload(this.storageId, this.repositoryId, this.file,repositoryPath);
             } else if (CargoLayoutProvider.ALIAS.equals(layout)) {
                 handlerCargoLayoutUpload(this.storageId, this.repositoryId, this.file);
             } else if (DebianLayoutProvider.ALIAS.equals(layout)) {
@@ -909,12 +909,10 @@ public class ArtifactUploadTask implements Callable<String> {
         }
     }
 
-    private void handlerRpmLayoutUpload(final String storageId, final String repositoryId, final MultipartFile multipartFile) {
+    private void handlerRpmLayoutUpload(final String storageId, final String repositoryId, final MultipartFile multipartFile, RepositoryPath repositoryPath) {
 
         try {
-            String filename = multipartFile.getOriginalFilename();
-            String rpmPath = "Packages/" + filename;
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, rpmPath);
+            log.info("handlerRpmLayoutUpload repositoryPath:{}",repositoryPath.getPath());
             try (InputStream is = multipartFile.getInputStream()) {
                 artifactManagementService.store(repositoryPath, is);
             }
