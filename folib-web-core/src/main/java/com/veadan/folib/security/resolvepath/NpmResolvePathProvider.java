@@ -23,6 +23,8 @@ public class NpmResolvePathProvider implements ResolvePathProvider {
 
     public static final String STORAGE = "/storages/";
 
+    public static final String ARTIFACTORY = "/artifactory";
+
     @Inject
     private ResolvePathProviderRegistry resolvePathProviderRegistry;
 
@@ -41,6 +43,9 @@ public class NpmResolvePathProvider implements ResolvePathProvider {
         }
         String extension = FileNameUtils.getExtension(relativePath);
         if (!relativePath.startsWith(STORAGE) && !relativePath.startsWith(BINARY) && StringUtils.isNotBlank(extension) && NpmArtifactCoordinates.NPM_EXTENSION_PATTERN.matcher(extension).matches()) {
+            if (relativePath.startsWith(ARTIFACTORY)) {
+                relativePath = StringUtils.removeStart(relativePath.replace(String.format("%s/%s/%s", ARTIFACTORY, repository.getStorage().getId(), repository.getId()), ""), "/");
+            }
             NpmArtifactCoordinates npmArtifactCoordinates = NpmArtifactCoordinates.parseByResolvePath(relativePath);
             if (Objects.nonNull(npmArtifactCoordinates)) {
                 relativePath = npmArtifactCoordinates.buildPath();

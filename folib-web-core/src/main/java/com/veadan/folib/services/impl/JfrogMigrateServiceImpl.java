@@ -813,13 +813,13 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 log.error("don't  support the repository {} ", repository.getPackageType());
                 continue;
             }
-            if (exist != null) {
-                log.info("The repository {} is exist,skip", repositoryId);
-                if (RepositoryTypeEnum.PROXY.getType().equals(exist.getType()) && repository.getType() == LOCAL&&"2".equals(form.getArtifactType())) {
-                    createAndSaveMigrateInfo(migrateInfo, repository, storageId, reposUsed);
-                }
-                continue;
-            }
+//            if (exist != null) {
+//                log.info("The repository {} is exist,skip", repositoryId);
+//                if (RepositoryTypeEnum.PROXY.getType().equals(exist.getType()) && repository.getType() == LOCAL&&"2".equals(form.getArtifactType())) {
+//                    createAndSaveMigrateInfo(migrateInfo, repository, storageId, reposUsed);
+//                }
+//                continue;
+//            }
             repositoryDto.setId(repositoryId);
             if ("s3".equals(storage.getStorageProvider())) {
                 String basedir = storage.getBasedir() + "/" + repositoryId;

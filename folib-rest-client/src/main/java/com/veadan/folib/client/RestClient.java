@@ -664,6 +664,38 @@ public class RestClient extends ArtifactClient {
     }
 
     /**
+     * 上传制品
+     *
+     * @param uploadArtifactFrom 上传参数
+     * @return ResponseEntity 响应实体
+     */
+    public String uploadFile(UploadArtifactFrom uploadArtifactFrom) {
+        String url = getContextBaseUrl() + "/api/artifact/folib/promotion/upload-files";
+        FormDataMultiPart part = new FormDataMultiPart();
+        part.field("storageId", uploadArtifactFrom.getStorageId());
+        part.field("repostoryId", uploadArtifactFrom.getRepostoryId());
+        part.field("filePathMap", uploadArtifactFrom.getFilePathMap());
+        File file = uploadArtifactFrom.getFile();
+        try (InputStream is = Files.newInputStream(Path.of(file.getAbsolutePath()))) {
+            part.bodyPart(new StreamDataBodyPart("files", is, file.getName()));
+            WebTarget resource = getClientInstance().register(MultiPartWriter.class).target(url);
+            setupAuthentication(resource);
+            Response response = resource.request(MediaType.APPLICATION_JSON).header("Mime-Version", "1.0").
+                    post(Entity.entity(part, Boundary.addBoundary(MediaType.MULTIPART_FORM_DATA_TYPE)));
+            if (response.getStatus() != HttpStatus.SC_OK) {
+                displayResponseError(response);
+                throw new ServerErrorException(response.getStatus() + " | Unable to greet()",
+                        Response.Status.INTERNAL_SERVER_ERROR);
+            } else {
+                return "success";
+            }
+        } catch (IOException e) {
+            logger.error("Artifact upload error {}", e.getMessage());
+            return "error";
+        }
+    }
+
+    /**
      * 制品节点晋级
      *
      * @param promotionNodeOption 晋级参数

@@ -111,7 +111,7 @@ public abstract class BaseArtifactController
             return false;
         }
         Path path = getCachePath(repositoryPath);
-        ArtifactControllerHelper.provideArtifactHeaders(response, path);
+        ArtifactControllerHelper.provideArtifactHeaders(response, repositoryPath, path);
         // If the resource is not found, return false.
         if (response.getStatus() == HttpStatus.NOT_FOUND.value()) {
             return false;
