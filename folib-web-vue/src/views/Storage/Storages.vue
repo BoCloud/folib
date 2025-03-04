@@ -1141,7 +1141,8 @@ import {
     getStoragesAndRepositories,
     aliveRepository, repositoryEnableUsers,
     queryRepositoriesByStorage
-} from "@/api/folib"
+} from "@/api/folib";
+import {getSingleDict} from '@/api/advanced';
 import {
   queryCustomLayoutList,
 } from "@/api/customLayout"
@@ -1417,6 +1418,7 @@ export default {
       nameKey:false,
       loadingNameKey:false,
       pageLoading: false,
+      defaultId:undefined,
       repoLayoutStrategy:['cocoapods'],
     };
   },
@@ -1448,24 +1450,26 @@ export default {
   },
   async created() {
     this.pageLoading = true
-    this.userInfo = store.state.user
-    await  this.getStorages();
-    await  this.getBaseUrl();
-
-    const params = storage.get('libView_repository')
     try{
+      this.userInfo = store.state.user
+      await  this.defaultStorage();
+      await  this.getStorages();
+      await  this.getBaseUrl();
+      const params = storage.get('libView_repository')
       if (params) {
         this.currentStorage.id = params.item.storageId
         this.queryParams.storageId = params.item.storageId
       }
 
       if (!this.currentStorage.id && this.storageData && this.storageData.length > 0) {
-        this.currentStorage.id = this.storageData[0].id
+        this.currentStorage.id = this.defaultId;
       }
-      this.getStorage(this.currentStorage.id)
+      if(this.currentStorage.id){
+        this.getStorage(this.currentStorage.id)
+      }
       this.queryCustomLayoutList()
     }finally {
-      this.pageLoading = true
+      this.pageLoading = false
     }
 
   },
@@ -1493,6 +1497,7 @@ export default {
     this.$store.commit('setNewDetailPage',false)
     // this.$store.commit('setSwitchDisabled',true)
     this.switchDisabled = true
+
   },
   methods: {
     
@@ -1962,12 +1967,6 @@ export default {
           }
       }
     },
-    async getStorages() {
-      await getStorages().then(response => {
-        this.storageData = response.storages;
-        this.cacheStorage()
-      })
-    },
     setCurrentStorage(item) {
       if (!item.admin || item.admin === '') {
         item.admin = undefined
@@ -2076,11 +2075,11 @@ export default {
         })
       }
     },
-    cacheStorage() {
+    async cacheStorage() {
       let cache = storage.get("libView_repository");
       if (!cache || !cache.item?.id) {
         if (this.storageData) {
-          let item = this.storageData[0]
+          let item = this.storageData.filter(e=>this.defaultId===e.id)[0];
           if (item && item.id) {
             this.setCurrentStorage(item)
             item.storageId = item.id
@@ -2459,6 +2458,21 @@ export default {
       this.cronCanSetList = []
       this.cronSettedList = []
     },
+    defaultStorage(){
+       let query = {
+         dictType: "system_property",
+         dictKey:"JFrogAdapterDefaultStorage"
+       }
+       getSingleDict(query).then(res => {
+         if (res) {
+           this.defaultId= res.dictValue;
+         }else {
+           return null;
+         }
+       }).catch(()=>{
+         return null;
+       })
+     },
 
     crontasksListHandle() {
       crontasksList(this.folibRepository.layout === 'Maven 2' ? 'MAVEN' : this.folibRepository.layout.toUpperCase()).then(res => {

@@ -183,7 +183,7 @@ public class UnicomSSOController extends BaseController {
             log.info("联通 login sessionId:{}", sessionId);
             UicomUserDTO uicomUserDTO = unicomAdapter.verify(sessionId);
             Assert.notNull(uicomUserDTO, "认证失败");
-            UserDetails userDetails = null;
+            UserDetails userDetails;
             try {
                 userDetails = userDetailsService.loadUserByUsername(uicomUserDTO.getLoginName());
             } catch (UsernameNotFoundException e) {
@@ -460,6 +460,7 @@ public class UnicomSSOController extends BaseController {
     @GetMapping(value = "/token")
     public ResponseEntity<UnicomToken> getTokenBySessionId(@RequestParam String sessionId) {
         try {
+            log.info("联通 获取token sessionId:{}", sessionId);
             UicomUserDTO uicomUserDTO = unicomAdapter.verify(sessionId);
             Assert.notNull(uicomUserDTO, "认证失败");
             UserDetails userDetails;
@@ -484,14 +485,16 @@ public class UnicomSSOController extends BaseController {
 
     @GetMapping(value = "/getRedirectUrl")
     public ResponseEntity<String> getRedirectUrl() {
+        log.info("单点登录地址是{}",unicomConfig.getRedirectUrl());
         return ResponseEntity.ok(unicomConfig.getRedirectUrl());
 
     }
 
     private void createIfNotExist(String loginName, String email) {
         User exist = userService.findByUsername(loginName);
-        UserDto user = new UserDto();
         if (Objects.isNull(exist)) {
+            log.info("用户【{}】不存在,开始创建用户", loginName);
+            UserDto user = new UserDto();
             user.setEmail(email);
             user.setUsername(loginName);
             user.setEnabled(true);

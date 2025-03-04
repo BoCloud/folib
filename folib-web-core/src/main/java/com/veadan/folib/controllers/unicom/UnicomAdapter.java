@@ -95,18 +95,20 @@ public class UnicomAdapter implements CostumeSecurityAdapter {
             List<String> emails = Collections.singletonList(userEmail);
             params.add("json", emails);
             HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(params, header);
-            ResponseEntity<UnicomRoleDTO> response = restTemplate.exchange(url, HttpMethod.POST, entity, UnicomRoleDTO.class);
+            log.info("发送用户信息地址是{},发送内容为{}", url, JSON.toJSONString(entity));
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
             if (response.getStatusCode() == HttpStatus.OK) {
+                UnicomRoleDTO unicomRoleDTO = JSON.parseObject(response.getBody(),UnicomRoleDTO.class);
                 log.debug("get user: {} detail success", userEmail);
-                if (response.getBody() == null || response.getBody().getCode() != 200) {
+                if (response.getBody() == null || unicomRoleDTO.getCode() != 200) {
                     log.error("根据用户邮箱获取信息失败");
                     return null;
                 }
-                if (response.getBody().getData().size() != 1) {
+                if (unicomRoleDTO.getData().size() != 1) {
                     log.error("根据用户获取邮箱信息唯一");
                     return null;
                 }
-                return response.getBody();
+                return unicomRoleDTO;
             } else {
                 return null;
             }
@@ -122,13 +124,19 @@ public class UnicomAdapter implements CostumeSecurityAdapter {
             // 这里需要将sessionId放到query参数中，
             String url = unicomConfig.getVerifyUrl() + "?sessionId=" + sessionId;
             HttpEntity<String> entity = new HttpEntity<>(header);
-            ResponseEntity<UicomUserDTO> response = restTemplate.exchange(url, HttpMethod.POST, entity, UicomUserDTO.class);
+            log.info("发送验证地址是{},发送内容为{}", url, JSON.toJSONString(entity));
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+
             if (response.getStatusCode() == HttpStatus.OK) {
-                log.info("联通身份认证 verify success,sessionId:{},userDetail{}", sessionId, JSON.toJSONString(response.getBody()));
-                return response.getBody();
-            } else {
-                return null;
+                log.info("联通身份认证 verify success,sessionId:{},userDetail{}", sessionId, response.getBody());
+                UicomUserDTO userDTO = JSON.parseObject(response.getBody(), UicomUserDTO.class);
+                if(userDTO.getCode()==200){
+                    userDTO.fullFiled();
+                }else {
+                    return null;
+                }
             }
+            return null;
         } catch (Exception e) {
             log.error("verify failed,sessionId:{},error:{}", sessionId, e.getMessage(), e);
             return null;
@@ -138,6 +146,7 @@ public class UnicomAdapter implements CostumeSecurityAdapter {
     public void sendEmail(UnicomEmailDTO emailDTO) {
         try {
             HttpHeaders header = getHeader();
+            header.setContentType(MediaType.APPLICATION_JSON);
             String url = unicomConfig.getSendEmailUrl();
             HttpEntity<String> entity = new HttpEntity<>(JSON.toJSONString(emailDTO), header);
             log.info("发送邮件地址是{},发送内容为{}", url, JSON.toJSONString(entity));
@@ -177,7 +186,7 @@ public class UnicomAdapter implements CostumeSecurityAdapter {
             md.update(timeStamp.getBytes(Charset.defaultCharset()));
             byte[] result = md.digest();
             String signature = new BigInteger(1, result).toString(16);
-            log.debug("Sha256Gen,apCode:{},appSecret:{},timeStamp:{},signature:{}", appCode, appSecret, timeStamp, signature);
+            log.info("Sha256Gen,apCode:{},appSecret:{},timeStamp:{},signature:{}", appCode, appSecret, timeStamp, signature);
             header.add("appId", unicomConfig.getAppCode());
             header.add("signature", signature);
             header.add("timestamp", timeStamp);

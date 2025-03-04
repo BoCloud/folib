@@ -116,12 +116,13 @@ FOLIB_WRITE_BUFFER_LOW_WATER_MARK="${FOLIB_WRITE_BUFFER_LOW_WATER_MARK:-32768}"
 #artifact上传限制开关
 FOLIB_ARTIFACT_UPLOAD_RESTRICTIONS="${FOLIB_ARTIFACT_UPLOAD_RESTRICTIONS:-false}"
 #通联定制
-FOLIB_UNICOM_ADDRESS="${FOLIB_UNICOM_ADDRESS:"https://devops.chinaunicom.cn"}"
 FOLIB_UNICOM_APPCODE="${FOLIB_UNICOM_APPCODE:"126"}"
+FOLIB_UNICOM_APPNAME="${FOLIB_UNICOM_APPNAME:"博云"}"
 FOLIB_UNICOM_APPSECRET="${FOLIB_UNICOM_APPSECRET:"f95b5715436954c87bef2a27d688b24f"}"
 FOLIB_UNICOM_VERIFYURL="${FOLIB_UNICOM_VERIFYURL:"https://testdevops.chinaunicom.cn/openapi_view/common/domain/user/verification"}"
-FOLIB_UNICOM_APPNAME="${FOLIB_UNICOM_APPNAME:"博云"}"
-FOLIB_UNICOM_DETAILURL="${FOLIB_UNICOM_DETAILURL:"https://tianti.test.tg.unicom.local/openapi_view/api/v1/commonDomain/orgs/userGenericNew"}"
+FOLIB_UNICOM_USERDETAILURL="${FOLIB_UNICOM_USERDETAILURL:"https://testdevops.chinaunicom.cn/openapi_view/openapi/module/findRolesByEmails"}"
+FOLIB_UNICOM_SENDEMAILURL="${FOLIB_UNICOM_SENDEMAILURL:"https://testdevops.chinaunicom.cn/openapi_view/openapi/notice/send"}"
+FOLIB_UNICOM_REDIRECTURL="${FOLIB_UNICOM_REDIRECTURL:"https://testdevops.chinaunicom.cn/#/login"}"
 
 
 #SSL相关配置
@@ -326,7 +327,10 @@ run()
     JAVA_OPTS+=" -Dcustom.unicom.appSecret=${FOLIB_UNICOM_APPSECRET}"
     JAVA_OPTS+=" -Dcustom.unicom.appName=${FOLIB_UNICOM_APPNAME}"
     JAVA_OPTS+=" -Dcustom.unicom.verifyUrl=${FOLIB_UNICOM_VERIFYURL}"
-    JAVA_OPTS+=" -Dcustom.unicom.userDetailUrl=${FOLIB_UNICOM_DETAILURL}"
+    JAVA_OPTS+=" -Dcustom.unicom.userDetailUrl=${FOLIB_UNICOM_USERDETAILURL}"
+    JAVA_OPTS+=" -Dcustom.unicom.sendEmailUrl=${FOLIB_UNICOM_SENDEMAILURL}"
+    JAVA_OPTS+=" -Dcustom.unicom.redirectUrl=${FOLIB_UNICOM_REDIRECTURL}"
+
     JAVA_OPTS+=" -Dfolib.artifactDownloadImmediatelyUpdate=${FOLIB_ARTIFACT_DOWNLOAD_IMMEDIATELY_UPDATE}"
     JAVA_OPTS+=" -Dfolib.dockerBrowseCompatibility=${FOLIB_DOCKER_BROWSE_COMPATIBILITY}"
 

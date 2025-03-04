@@ -521,8 +521,10 @@ export default {
       }else{
         this.isready=true;
         const params = storage.get("libView_repository");
-        this.folibRepository = params.item;
-        this.baseUrl = params.baseUrl;
+        if(params){
+          this.folibRepository = params.item;
+          this.baseUrl = params.baseUrl;
+        }
       }
       if (!this.folibRepository || this.folibRepository.type !== "hosted") {
         this.enabled = false;
