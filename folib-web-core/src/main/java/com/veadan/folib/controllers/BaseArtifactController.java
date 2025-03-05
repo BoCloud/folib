@@ -212,7 +212,7 @@ public abstract class BaseArtifactController
                     }catch (IOException e){
                         // 检查是否为客户端断开连接
                         if (e instanceof ClosedChannelException || e instanceof EofException) {
-                            logger.error("Client disconnected, stopping transfer [{}]", ExceptionUtils.getStackTrace(e));
+                            logger.error("Client disconnected, stopping transfer path [{}] error [{}]", path, ExceptionUtils.getStackTrace(e));
                             break;
                         }
                         //其他IO异常重新抛出
