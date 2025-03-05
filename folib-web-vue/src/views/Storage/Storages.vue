@@ -1652,6 +1652,7 @@ export default {
         // 给当前页面搜索条赋值
         this.queryParams.layout = params.layout ? genLayoutType(params.layout) : ''
         this.queryParams.type = params.type
+        this.queryParams.name = params.name
         const item = this.storageData.find(ele => ele.id === val)
         this.setCurrentStorage(item)
       }else{
@@ -2060,6 +2061,7 @@ export default {
             storageId: this.currentStorage.id,
             layout: this.queryParams.layout,
             type: this.queryParams.type,
+            name: this.queryParams.name,
             limit: this.isChecked ? 30 : this.queryParams.limit,
             page: this.queryParams.page
           }
