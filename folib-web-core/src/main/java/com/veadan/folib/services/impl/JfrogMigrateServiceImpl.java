@@ -808,18 +808,10 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         for (LightweightRepository repository : repoList) {
             String repositoryId = repository.getKey();
             RepositoryDto repositoryDto = JfrogMapping.initRepoByPackageType(repository.getPackageType());
-            Repository exist = storage.getRepository(repository.getKey());
             if (repositoryDto == null) {
                 log.error("don't  support the repository {} ", repository.getPackageType());
                 continue;
             }
-//            if (exist != null) {
-//                log.info("The repository {} is exist,skip", repositoryId);
-//                if (RepositoryTypeEnum.PROXY.getType().equals(exist.getType()) && repository.getType() == LOCAL&&"2".equals(form.getArtifactType())) {
-//                    createAndSaveMigrateInfo(migrateInfo, repository, storageId, reposUsed);
-//                }
-//                continue;
-//            }
             repositoryDto.setId(repositoryId);
             if ("s3".equals(storage.getStorageProvider())) {
                 String basedir = storage.getBasedir() + "/" + repositoryId;
@@ -949,6 +941,10 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             migrateInfoService.save(migrateInfo);
         } else {
             exist.setUsedSpace(spaceInfo.get(repository.getKey()));
+            exist.setSyncStatus(MigrateStatusEnum.INITIAL.getStatus());
+            exist.setIndexFinish(0);
+            exist.setTotalArtifact(0);
+            exist.setSuccessMount(0);
             migrateInfoService.updateById(exist);
         }
     }
