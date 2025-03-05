@@ -2247,9 +2247,10 @@ export default {
       this.handleMenuClick(active, folibRepository)
     },
     handleMenuClick(active, folibRepository) {
+     
       this.operationForm.resetFields()
       this.copyOperationForm.resetFields()
-      this.isTargetPatDisabled = folibRepository.layout !== 'Raw';
+      this.isTargetPatDisabled = this.folibRepository.layout !== 'Raw';
       this.$nextTick(() => {
         if (this.$refs.operationForm) {
           this.operationForm.setFieldsValue({
