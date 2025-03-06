@@ -451,7 +451,15 @@ public class FolibWsRunManageV2 {
     private long getRateKbps(String targetHostName) {
         final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getKbps()).orElse(0) * (1024L);
         final Collection<ClusterDispatchNodeDto> clusterDispatchNodeDtos = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode().values();
-        final Map<String, Long> nodeKbpsMap = clusterDispatchNodeDtos.stream().collect(Collectors.toMap(e -> String.format("%s:%s", UrlUtils.getHost(e.getClusterNodeHost()), UrlUtils.getPort(e.getClusterNodeHost())), e -> null != e.getKbps() ? e.getKbps() * 1024L : 0L));
+        // 使用 Collectors.toMap 并提供合并函数
+        final Map<String, Long> nodeKbpsMap = clusterDispatchNodeDtos.stream().collect(
+                Collectors.toMap(
+                        e -> String.format("%s:%s",
+                                UrlUtils.getHost(e.getClusterNodeHost()),
+                                UrlUtils.getPort(e.getClusterNodeHost())),
+                        e -> null != e.getKbps() ? e.getKbps() * 1024L : 0L,
+                        (existing, replacement) -> existing + replacement // 合并策略：累加值
+                ));
         return Optional.ofNullable(nodeKbpsMap.get(FolibWsRunManageUtil.resolverTargetHostName(targetHostName))).filter(k -> k > 0).orElse(kbps);
     }
 

@@ -16,10 +16,24 @@ public class WsConfig {
     @Inject
     private DistributedCacheComponent distributedCacheComponent;
 
-    public Semaphore getSemaphore() {
+    private Semaphore semaphore;
 
-        return new Semaphore(getFoLibPromotionThread());
+    public Semaphore getSemaphore() {
+        if (semaphore == null) {
+            synchronized (this) {
+                if (semaphore == null) {
+                    try {
+                        semaphore = new Semaphore(getFoLibPromotionThread());
+                    } catch (NumberFormatException e) {
+                        // 处理异常情况，例如使用默认值
+                        semaphore = new Semaphore(GlobalConstants.FOLIB_PROMOTION_THREAD);
+                    }
+                }
+            }
+        }
+        return semaphore;
     }
+
 
     public int getFoLibPromotionThread() {
         int threadNumber = GlobalConstants.FOLIB_PROMOTION_THREAD;

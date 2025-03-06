@@ -1043,9 +1043,13 @@ export default {
 
                 if (res.sourceRepositories && res.sourceRepositories.length > 0) {
                     let sourceKey = res.sourceRepositories[0].storageId + ":" + res.sourceRepositories[0].repositoryId;
-                    this.subLayout = this.repositoriesList.filter(item => item.key === sourceKey)[0].subLayout;
-                    this.policy = this.repositoriesList.filter(item => item.key === sourceKey)[0].policy;
-                    this.layout = this.repositoriesList.filter(item => item.key === sourceKey)[0].layout;
+                    let repo = this.repositoriesList.find(item => item.key === sourceKey);
+
+                    if (repo) {
+                        this.subLayout = repo.subLayout || this.subLayout;
+                        this.policy = repo.policy || this.policy;
+                        this.layout = repo.layout || this.layout;
+                    }
 
                     this.selectedSourceRepositoriesKeys = res.sourceRepositories.map(item => {
                         return item.storageId + ":" + item.repositoryId;
