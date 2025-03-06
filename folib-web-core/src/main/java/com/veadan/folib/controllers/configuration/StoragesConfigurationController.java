@@ -443,18 +443,19 @@ public class StoragesConfigurationController
         List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
 
         if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
-            Map<String, List<String>> storageRepMap = new HashMap<>();
-            //获取匿名角色关联的存储空间
-            List<Storage> collect = repositoryComponent.getAnonymousUserStorages(storages, storageRepMap);
-            //获取匿名角色关联的仓库
-            repositoryComponent.getAnonymousUserRepositories(storageId, name, type, excludeType, excludeRepositoryId, layout, policy, collect, storageRepMap, repositoriesList, storageTreeForms);
-
-            List<Repository> pageRepository = repositoriesList.stream().skip((long) (page - 1) * limit).limit(limit).collect(Collectors.toList());
-
-            if (CollectionUtils.isEmpty(repositoriesList)) {
-                return new TableResultResponse<>(0, new ArrayList<>());
-            }
-            return new TableResultResponse<>(repositoriesList.size(), pageRepository);
+            return new TableResultResponse<>(0, new ArrayList<>());
+//            Map<String, List<String>> storageRepMap = new HashMap<>();
+//            //获取匿名角色关联的存储空间
+//            List<Storage> collect = repositoryComponent.getAnonymousUserStorages(storages, storageRepMap);
+//            //获取匿名角色关联的仓库
+//            repositoryComponent.getAnonymousUserRepositories(storageId, name, type, excludeType, excludeRepositoryId, layout, policy, collect, storageRepMap, repositoriesList, storageTreeForms);
+//
+//            List<Repository> pageRepository = repositoriesList.stream().skip((long) (page - 1) * limit).limit(limit).collect(Collectors.toList());
+//
+//            if (CollectionUtils.isEmpty(repositoriesList)) {
+//                return new TableResultResponse<>(0, new ArrayList<>());
+//            }
+//            return new TableResultResponse<>(repositoriesList.size(), pageRepository);
         }
 
         // 特殊处理联通权限逻辑
@@ -812,19 +813,19 @@ public class StoragesConfigurationController
             return getFailedResponseEntity(HttpStatus.NOT_FOUND, STORAGE_NOT_FOUND, MediaType.APPLICATION_JSON_VALUE);
         }
         if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
-            Map<String, List<String>> storageRepMap = new HashMap<>();
+//            Map<String, List<String>> storageRepMap = new HashMap<>();
             //获取匿名角色关联的存储空间
-            List<Storage> collect = repositoryComponent.getAnonymousUserStorages(Collections.singletonList(storage), storageRepMap);
-            //获取匿名角色关联的仓库
-            if (CollectionUtils.isNotEmpty(collect)) {
-                Map<String, ? extends Repository> repositoryMap = storage.getRepositories();
-                if (Objects.nonNull(repositoryMap) && CollectionUtils.isNotEmpty(repositoryMap.values())) {
-                    List<String> anonymousRepositories = storageRepMap.get(storage.getId());
-                    repositoryMap = repositoryMap.values().stream().filter(item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || (CollectionUtils.isNotEmpty(anonymousRepositories) && anonymousRepositories.contains(item.getId()))).collect(Collectors.toMap(Repository::getId, Function.identity()));
-                    storage.setRepositories((Map<String, RepositoryDto>) repositoryMap);
-                }
-            }
-
+//            List<Storage> collect = repositoryComponent.getAnonymousUserStorages(Collections.singletonList(storage), storageRepMap);
+//            //获取匿名角色关联的仓库
+//            if (CollectionUtils.isNotEmpty(collect)) {
+//                Map<String, ? extends Repository> repositoryMap = storage.getRepositories();
+//                if (Objects.nonNull(repositoryMap) && CollectionUtils.isNotEmpty(repositoryMap.values())) {
+//                    List<String> anonymousRepositories = storageRepMap.get(storage.getId());
+//                    repositoryMap = repositoryMap.values().stream().filter(item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || (CollectionUtils.isNotEmpty(anonymousRepositories) && anonymousRepositories.contains(item.getId()))).collect(Collectors.toMap(Repository::getId, Function.identity()));
+//                    storage.setRepositories((Map<String, RepositoryDto>) repositoryMap);
+//                }
+//            }
+            storage.setRepositories(new HashMap<>());
             StorageData storageData = new StorageData(storage);
             return ResponseEntity.ok(storageData);
         }

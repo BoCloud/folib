@@ -365,6 +365,7 @@ export default {
     onSearch(value) {},
     logout() {
       store.dispatch("Logout");
+      window.location.reload()
     },
     interval() {
       const intervalId = setInterval(() => {
