@@ -209,11 +209,10 @@ public abstract class BaseArtifactController
                     try {
                         logger.debug("RepositoryPath [{}] position [{}] left [{}]", path.toString(), fileSize - left, left);
                         left -= fileChannel.transferTo((fileSize - left), left, responseChannel);
-                    }catch (IOException e){
+                    } catch (IOException e){
                         // 检查是否为客户端断开连接
                         if (e instanceof ClosedChannelException || e instanceof EofException) {
-                            logger.error("Client disconnected, stopping transfer path [{}] error [{}]", path, ExceptionUtils.getStackTrace(e));
-                            break;
+                            logger.error("Client disconnected, stopping transfer userAgent [{}] path [{}] error [{}]", request.getHeader("User-Agent"), path, ExceptionUtils.getStackTrace(e));
                         }
                         //其他IO异常重新抛出
                         throw e;
