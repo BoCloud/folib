@@ -305,3 +305,4 @@ custom:
     userDetailUrl: "https://testdevops.chinaunicom.cn/openapi_view/openapi/module/findRolesByEmails"
     sendEmailUrl: "https://testdevops.chinaunicom.cn/openapi_view/openapi/notice/send"
     redirectUrl: "https://testdevops.chinaunicom.cn/#/login"
+    userInfoUrl: "https://testdevops.chinaunicom.cn/openapi_view/api/v1/commonDomain/orgs/userGenericNew"

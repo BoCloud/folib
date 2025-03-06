@@ -518,6 +518,7 @@ export default {
         // 使用存储的数据
         this.folibRepository = data.item;
         this.baseUrl = data.baseUrl;
+        this.reloadTree()
       }else{
         this.isready=true;
         const params = storage.get("libView_repository");

@@ -13,7 +13,7 @@ import java.util.List;
 public class UicomUserDTO {
 
 
-    private int code;                               // 请求返回码
+    private String code;                               // 请求返回码
     private String message;                         // 请求消息
     private UicomUserDTO.UserDTO data;
 

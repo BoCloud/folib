@@ -42,6 +42,7 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -130,7 +131,7 @@ public class UnicomAdapter implements CostumeSecurityAdapter {
             if (response.getStatusCode() == HttpStatus.OK) {
                 log.info("联通身份认证 verify success,sessionId:{},userDetail{}", sessionId, response.getBody());
                 UicomUserDTO userDTO = JSON.parseObject(response.getBody(), UicomUserDTO.class);
-                if(userDTO.getCode()==200){
+                if("200".equals(userDTO.getCode())){
                     userDTO.fullFiled();
                 }else {
                     return null;
@@ -162,6 +163,37 @@ public class UnicomAdapter implements CostumeSecurityAdapter {
             }
         } catch (Exception e) {
             log.error("发送邮件接口异常,{}", e.getMessage(), e);
+        }
+    }
+
+    public UicomUserDTO getUserDetailByName(String loginName) {
+        try {
+            HttpHeaders header = getHeader();
+            header.setContentType(MediaType.APPLICATION_JSON);
+            String url = unicomConfig.getUserInfoUrl();
+            HashMap<Object, Object> data = new HashMap<>();
+            data.put("loginName", loginName);
+            HttpEntity<HashMap<Object, Object>> entity = new HttpEntity<>(data, header);
+            log.info("发送用户信息{},发送内容为{}", url, JSON.toJSONString(entity));
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+            if (response.getStatusCode().is2xxSuccessful()) {
+                log.info("获取用户信息返回{}",response.getBody());
+                UicomUserDetail detail = JSON.parseObject(response.getBody(), UicomUserDetail.class);
+                if ("200".equals(detail.getCode())) {
+                    log.info("获取用户信息{}成功",loginName);
+                    UicomUserDTO userDTO = new UicomUserDTO();
+                    userDTO.setLoginName(loginName);
+                    userDTO.setEmail(detail.getData().getEmail());
+                    return userDTO;
+                } else {
+                    return null;
+                }
+            } else {
+                log.error("获取用户信息失败");
+                return null;
+            }
+        }catch (Exception e) {
+            return null;
         }
     }
 

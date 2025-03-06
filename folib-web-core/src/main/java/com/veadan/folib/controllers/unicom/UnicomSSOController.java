@@ -458,10 +458,10 @@ public class UnicomSSOController extends BaseController {
 
 
     @GetMapping(value = "/token")
-    public ResponseEntity<UnicomToken> getTokenBySessionId(@RequestParam String sessionId) {
+    public ResponseEntity<UnicomToken> getTokenBySessionId(@RequestParam String loginName) {
         try {
-            log.info("联通 获取token sessionId:{}", sessionId);
-            UicomUserDTO uicomUserDTO = unicomAdapter.verify(sessionId);
+            log.info("联通获取token loginName:{}", loginName);
+            UicomUserDTO uicomUserDTO = unicomAdapter.getUserDetailByName(loginName);
             Assert.notNull(uicomUserDTO, "认证失败");
             UserDetails userDetails;
             try {

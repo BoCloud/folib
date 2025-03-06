@@ -23,5 +23,7 @@ public class UnicomConfig {
     // 发送邮件地址
     private String sendEmailUrl;
     private String redirectUrl;
+    // 用户详情
+    private String userInfoUrl;
 
 }
