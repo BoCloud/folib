@@ -1,6 +1,7 @@
 package com.veadan.folib.ws.server;
 
 import cn.hutool.core.collection.CollectionUtil;
+import com.veadan.folib.entity.ArtifactSyncRecord;
 import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
 import com.veadan.folib.ws.server.config.WsConfig;
 import com.veadan.folib.ws.task.DistributionTask;
@@ -40,7 +41,7 @@ public class DistributionService {
      */
     public void addTask(DistributionTask task) {
         log.info("addTask: " + task.getTaskId() + " priority: " + task.getPriority());
-        log.info("当前的可用许可数量: " + semaphoreConfig.getSemaphore().availablePermits());
+        log.info("addTask 当前的可用许可数量: " + semaphoreConfig.getSemaphore().availablePermits());
         queue.put(task, task.getTaskId());
         log.info("addTask queue size:{}: " ,queue.size());
     }
@@ -57,8 +58,15 @@ public class DistributionService {
             taskToAdjust.setPriority(newPriority);
             log.info("updateTaskPriority: " + taskToAdjust.getTaskId() + " priority: " + taskToAdjust.getPriority());
             queue.adjustPriority(taskToAdjust, Comparator.comparingInt(DistributionTask::getPriority).reversed());
+        }else {
+            ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectBySyncNo(taskId);
+            if(artifactSyncRecord!=null && artifactSyncRecord.getStatus()>1){
+                log.warn("updateTaskPriority taskId is in progress");
+                return;
+            }
+            throw new RuntimeException("Task not found taskId:"+taskId);
         }
-        throw new RuntimeException("Task not found taskId:"+taskId);
+
     }
 
     public void deleteTask(String taskId){
@@ -123,7 +131,7 @@ public class DistributionService {
      */
     public void acquire() throws InterruptedException {
         semaphoreConfig.getSemaphore().acquire();
-        log.info("当前的可用许可数量: " + semaphoreConfig.getSemaphore().availablePermits());
+        log.info("acquire 当前的可用许可数量: " + semaphoreConfig.getSemaphore().availablePermits());
     }
 
     /**
@@ -131,6 +139,6 @@ public class DistributionService {
      */
     public void release() {
         semaphoreConfig.getSemaphore().release();
-        log.info("当前的可用许可数量: " + semaphoreConfig.getSemaphore().availablePermits());
+        log.info("release 当前的可用许可数量: " + semaphoreConfig.getSemaphore().availablePermits());
     }
 }
