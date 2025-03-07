@@ -103,7 +103,7 @@ public class WebhookEventsLogTask {
                                 repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, webhookEventsLog.getArtifactPath());
                                 WebhookEventsProvider webhookEventsProvider = webhookEventsProviderRegistry.getProvider(WebhookEventsTypeEnum.resolveType(repositoryPath.getRepository().getLayout()));
                                 webhook = WebhookDto.builder().eventType(webhookEventsLog.getEventType()).data(artifactData).build();
-                                boolean result = webhookEventsProvider.handler(webhook, repositoryPath, getArtifactMigrateTask());
+                                boolean result = webhookEventsProvider.handler(webhook, repositoryPath, getArtifactMigrateTask(), 2);
                                 log.info("Webhook event handler eventRepositoryId [{}] storageId [{}] repositoryId [{}] path [{}] handler result [{}]", artifactData.getRepoKey(), storageId, repositoryId, artifactData.getPath(), result);
                                 if (result) {
                                     webhookEventsLogService.updateWebhookEventsLog(WebhookEventsLog.builder().id(webhookEventsLog.getId()).updateBy("WebhookEventsLogTask").updateTime(new Date()).status(WebhookEventsStatusEnum.SUCCESS.getStatus()).build());

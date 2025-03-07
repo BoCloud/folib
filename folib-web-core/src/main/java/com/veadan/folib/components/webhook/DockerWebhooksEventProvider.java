@@ -11,7 +11,6 @@ import com.veadan.folib.domain.FileContent;
 import com.veadan.folib.domain.migrate.ArtifactMigrateInfo;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.entity.WebhookEventsLog;
-import com.veadan.folib.enums.JFrogEventTypeEnum;
 import com.veadan.folib.enums.WebhookEventsStatusEnum;
 import com.veadan.folib.enums.WebhookEventsTypeEnum;
 import com.veadan.folib.providers.io.RepositoryFiles;
@@ -45,7 +44,6 @@ import javax.inject.Inject;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.security.MessageDigest;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -67,7 +65,7 @@ public class DockerWebhooksEventProvider extends BaseWebhookEventsProvider {
     @Autowired
     private DockerComponent dockerComponent;
 
-    @Inject
+    @Autowired
     @Qualifier("browseRepositoryDirectoryListingService")
     private volatile DirectoryListingService directoryListingService;
 
@@ -84,7 +82,7 @@ public class DockerWebhooksEventProvider extends BaseWebhookEventsProvider {
                 getClass().getCanonicalName(), WebhookEventsTypeEnum.DOCKER.getType());
     }
 
-    private boolean localRepository(WebhookDto webhook, RepositoryPath repositoryPath, Dict artifactMigrateInfo) {
+    private boolean localRepository(WebhookDto webhook, RepositoryPath repositoryPath, Dict artifactMigrateInfo, int type) {
         boolean result = true;
         ArtifactData artifactData = webhook.getData();
         String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId(), name = repositoryPath.getFileName().toString(), path = artifactData.getPath(), failureReason = "";
@@ -176,12 +174,12 @@ public class DockerWebhooksEventProvider extends BaseWebhookEventsProvider {
         if (!result) {
             WebhookEventsLog webhookEventsLog = WebhookEventsLog.builder().eventType(webhook.getEventType()).eventRepositoryId(artifactData.getRepoKey()).storageId(storageId).repositoryId(repositoryId).artifactName(name)
                     .artifactPath(path).sha256Checksum(artifactData.getSha256()).size(artifactData.getSize()).status(WebhookEventsStatusEnum.FAILURE.getStatus()).failureReason(failureReason).build();
-            webhookEventsLogService.saveWebhookEventsLog(webhookEventsLog);
+            webhookEventsLogService.saveWebhookEventsLog(webhookEventsLog, type);
         }
         return true;
     }
 
-    private boolean proxyRepository(WebhookDto webhook, RepositoryPath repositoryPath) {
+    private boolean proxyRepository(WebhookDto webhook, RepositoryPath repositoryPath, int type) {
         boolean result = true;
         ArtifactData artifactData = webhook.getData();
         String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId(), name = repositoryPath.getFileName().toString(), path = artifactData.getPath(), failureReason = "";
@@ -251,22 +249,22 @@ public class DockerWebhooksEventProvider extends BaseWebhookEventsProvider {
         if (!result) {
             WebhookEventsLog webhookEventsLog = WebhookEventsLog.builder().eventType(webhook.getEventType()).eventRepositoryId(artifactData.getRepoKey()).storageId(storageId).repositoryId(repositoryId).artifactName(name)
                     .artifactPath(path).sha256Checksum(artifactData.getSha256()).size(artifactData.getSize()).status(WebhookEventsStatusEnum.FAILURE.getStatus()).failureReason(failureReason).build();
-            webhookEventsLogService.saveWebhookEventsLog(webhookEventsLog);
+            webhookEventsLogService.saveWebhookEventsLog(webhookEventsLog, type);
         }
         return true;
     }
 
     @Override
-    protected boolean deployedEvent(WebhookDto webhook, RepositoryPath repositoryPath, Dict artifactMigrateInfo) {
+    protected boolean deployedEvent(WebhookDto webhook, RepositoryPath repositoryPath, Dict artifactMigrateInfo, int type) {
         if (RepositoryTypeEnum.HOSTED.getType().equals(repositoryPath.getRepository().getType())) {
-            return localRepository(webhook, repositoryPath, artifactMigrateInfo);
+            return localRepository(webhook, repositoryPath, artifactMigrateInfo, type);
         } else {
-            return proxyRepository(webhook, repositoryPath);
+            return proxyRepository(webhook, repositoryPath, type);
         }
     }
 
     @Override
-    protected boolean deletedEvent(WebhookDto webhook, RepositoryPath repositoryPath) {
+    protected boolean deletedEvent(WebhookDto webhook, RepositoryPath repositoryPath, int type) {
         boolean result = true;
         ArtifactData artifactData = webhook.getData();
         String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId(), name = repositoryPath.getFileName().toString(), path = artifactData.getPath(), failureReason = "";
@@ -306,7 +304,7 @@ public class DockerWebhooksEventProvider extends BaseWebhookEventsProvider {
         if (!result) {
             WebhookEventsLog webhookEventsLog = WebhookEventsLog.builder().eventType(webhook.getEventType()).eventRepositoryId(artifactData.getRepoKey()).storageId(storageId).repositoryId(repositoryId).artifactName(name)
                     .artifactPath(path).sha256Checksum(artifactData.getSha256()).size(artifactData.getSize()).status(WebhookEventsStatusEnum.FAILURE.getStatus()).failureReason(failureReason).build();
-            webhookEventsLogService.saveWebhookEventsLog(webhookEventsLog);
+            webhookEventsLogService.saveWebhookEventsLog(webhookEventsLog, type);
         }
         return result;
     }

@@ -42,7 +42,7 @@ public class WebhookEventsLogServiceImpl implements WebhookEventsLogService {
     private DistributedLockComponent distributedLockComponent;
 
     @Override
-    public void saveWebhookEventsLog(WebhookEventsLog webhookEventsLog) {
+    public void saveWebhookEventsLog(WebhookEventsLog webhookEventsLog, int type) {
         String lockName = "SAVE_WEBHOOK_EVENTS_LOG_LOCK_" + webhookEventsLog.getSha256Checksum();
         long waitTime = 6L;
         if (distributedLockComponent.lock(lockName, waitTime)) {
@@ -56,7 +56,7 @@ public class WebhookEventsLogServiceImpl implements WebhookEventsLogService {
                     webhookEventsLog.setCreateBy(UserUtils.getUsername());
                     webhookEventsLog.setCreateTime(date);
                     webhookEventsLogMapper.insertSelective(webhookEventsLog);
-                } else {
+                } else if (type != 1) {
                     WebhookEventsLog updateWebhookEventsLog = WebhookEventsLog.builder().id(webhookEventsLogExists.getId()).retryCount(webhookEventsLogExists.getRetryCount() + 1)
                             .retryTime(date).updateBy(UserUtils.getUsername()).updateTime(date).failureReason(webhookEventsLog.getFailureReason()).build();
                     updateWebhookEventsLog(updateWebhookEventsLog);

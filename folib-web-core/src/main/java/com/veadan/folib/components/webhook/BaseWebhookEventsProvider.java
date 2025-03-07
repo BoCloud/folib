@@ -57,12 +57,12 @@ public abstract class BaseWebhookEventsProvider implements WebhookEventsProvider
     public abstract void register();
 
     @Override
-    public boolean handler(WebhookDto webhook, RepositoryPath repositoryPath, Dict artifactMigrateInfo) {
+    public boolean handler(WebhookDto webhook, RepositoryPath repositoryPath, Dict artifactMigrateInfo, int type) {
         boolean result = false;
         if (JFrogEventTypeEnum.DEPLOYED.getType().equalsIgnoreCase(webhook.getEventType())) {
-            result = deployedEvent(webhook, repositoryPath, artifactMigrateInfo);
+            result = deployedEvent(webhook, repositoryPath, artifactMigrateInfo, type);
         } else if (JFrogEventTypeEnum.DELETED.getType().equalsIgnoreCase(webhook.getEventType())) {
-            result = deletedEvent(webhook, repositoryPath);
+            result = deletedEvent(webhook, repositoryPath, type);
         }
         return result;
     }
@@ -72,7 +72,7 @@ public abstract class BaseWebhookEventsProvider implements WebhookEventsProvider
         return webhook.getData().getPath();
     }
 
-    protected boolean deployedEvent(WebhookDto webhook, RepositoryPath repositoryPath, Dict artifactMigrateInfo) {
+    protected boolean deployedEvent(WebhookDto webhook, RepositoryPath repositoryPath, Dict artifactMigrateInfo, int type) {
         boolean result = false;
         ArtifactData artifactData = webhook.getData();
         String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId(), name = repositoryPath.getFileName().toString(), path = artifactData.getPath(), failureReason = "";
@@ -100,6 +100,7 @@ public abstract class BaseWebhookEventsProvider implements WebhookEventsProvider
                 artifactResolutionService.resolvePath(repositoryPath);
             }
             if (Files.exists(repositoryPath)) {
+                handlerProperties(jfrogInfo, artifactData.getRepoKey(), storageId, repositoryId, path);
                 result = true;
             }
         } catch (Exception ex) {
@@ -109,12 +110,12 @@ public abstract class BaseWebhookEventsProvider implements WebhookEventsProvider
         if (!result) {
             WebhookEventsLog webhookEventsLog = WebhookEventsLog.builder().eventType(webhook.getEventType()).eventRepositoryId(artifactData.getRepoKey()).storageId(storageId).repositoryId(repositoryId).artifactName(name)
                     .artifactPath(path).sha256Checksum(artifactData.getSha256()).size(artifactData.getSize()).status(WebhookEventsStatusEnum.FAILURE.getStatus()).failureReason(failureReason).build();
-            webhookEventsLogService.saveWebhookEventsLog(webhookEventsLog);
+            webhookEventsLogService.saveWebhookEventsLog(webhookEventsLog, type);
         }
         return result;
     }
 
-    protected boolean deletedEvent(WebhookDto webhook, RepositoryPath repositoryPath) {
+    protected boolean deletedEvent(WebhookDto webhook, RepositoryPath repositoryPath, int type) {
         if (checkNotExists(repositoryPath)) {
             return true;
         }
@@ -134,7 +135,7 @@ public abstract class BaseWebhookEventsProvider implements WebhookEventsProvider
         if (!result) {
             WebhookEventsLog webhookEventsLog = WebhookEventsLog.builder().eventType(webhook.getEventType()).eventRepositoryId(artifactData.getRepoKey()).storageId(storageId).repositoryId(repositoryId).artifactName(name)
                     .artifactPath(path).sha256Checksum(artifactData.getSha256()).size(artifactData.getSize()).status(WebhookEventsStatusEnum.FAILURE.getStatus()).failureReason(failureReason).build();
-            webhookEventsLogService.saveWebhookEventsLog(webhookEventsLog);
+            webhookEventsLogService.saveWebhookEventsLog(webhookEventsLog, type);
         }
         return result;
     }

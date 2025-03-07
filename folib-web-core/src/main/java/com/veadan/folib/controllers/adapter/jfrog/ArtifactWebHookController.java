@@ -114,14 +114,11 @@ public class ArtifactWebHookController {
             RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
             ArtifactData artifactData = webhookDto.getData();
             RepositoryPath repositoryPath = rootRepositoryPath.resolve(artifactData.getPath());
-            Dict info = null;
-            if (RepositoryTypeEnum.HOSTED.getType().equals(repositoryPath.getRepository().getType())) {
-                Dict dict = new Dict();
-                dict.setDictType("artifact_migrate_task");
-                info = dictService.selectLatestOneDict(dict);
-                if (Objects.isNull(info)) {
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Cannot find JFrog artifact migrate info");
-                }
+            Dict dict = new Dict();
+            dict.setDictType("artifact_migrate_task");
+            dict = dictService.selectLatestOneDict(dict);
+            if (Objects.isNull(dict)) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Cannot find JFrog artifact migrate info");
             }
             boolean exists = false;
             String currentDigest = "";
@@ -143,7 +140,7 @@ public class ArtifactWebHookController {
             }
             log.info("JFrog event repositoryPath [{}] [{}] [{}] digestAlgorithm [sha256] digest [{}] currentDigest [{}] not exists", storageId, repositoryId, artifactData.getPath(), artifactData.getSha256(), currentDigest);
             WebhookEventsProvider webhookEventsProvider = webhookEventsProviderRegistry.getProvider(WebhookEventsTypeEnum.resolveType(repositoryPath.getRepository().getLayout()));
-            boolean result = webhookEventsProvider.handler(webhookDto, repositoryPath, info);
+            boolean result = webhookEventsProvider.handler(webhookDto, repositoryPath, dict, 1);
             if (!result) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(String.format("Handle event error [%s]", data));
             }

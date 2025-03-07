@@ -14,8 +14,9 @@ public interface WebhookEventsLogService {
      * 新增WebhookEventsLog
      *
      * @param webhookEventsLog 日志
+     * @param type 类型
      */
-    void saveWebhookEventsLog(WebhookEventsLog webhookEventsLog);
+    void saveWebhookEventsLog(WebhookEventsLog webhookEventsLog, int type);
 
     /**
      * 更新WebhookEventsLog

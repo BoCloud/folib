@@ -40,9 +40,9 @@ public class NpmWebhooksEventProvider extends BaseWebhookEventsProvider {
     }
 
     @Override
-    public boolean handler(WebhookDto webhook, RepositoryPath repositoryPath, Dict artifactMigrateInfo) {
+    public boolean handler(WebhookDto webhook, RepositoryPath repositoryPath, Dict artifactMigrateInfo, int type) {
         repositoryPath = repositoryPath.getRoot().resolve(resolvePath(webhook));
-        return super.handler(webhook, repositoryPath, artifactMigrateInfo);
+        return super.handler(webhook, repositoryPath, artifactMigrateInfo, type);
     }
 
     @Override
