@@ -497,6 +497,9 @@ public class ArtifactManagementService {
                 ArtifactCoordinatesValidator validator = artifactCoordinatesValidatorRegistry.getProvider(
                         validatorKey);
                 if (validator.supports(repository)) {
+                    if ((RedeploymentValidator.ALIAS.equalsIgnoreCase(validatorKey)) && RepositoryTypeEnum.PROXY.getType().equalsIgnoreCase(repository.getType())) {
+                        continue;
+                    }
                     validator.validate(repository, coordinates);
                 }
             }

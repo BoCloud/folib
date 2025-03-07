@@ -149,7 +149,7 @@ public class SyncUtils {
         return artifactResolutionService.resolvePath(storageId,repositoryId,artifactPath);
     }
 
-    void saveArtifactMetaByString(String storageId,String repositoryId,String path,String metaData){
+    public void saveArtifactMetaByString(String storageId,String repositoryId,String path,String metaData){
         artifactWebService.saveArtifactMetaByString(storageId,repositoryId,path,metaData);
     }
 }
