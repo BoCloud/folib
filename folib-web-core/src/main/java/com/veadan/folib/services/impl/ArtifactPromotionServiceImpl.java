@@ -1619,7 +1619,10 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             String sourceRepositoryId = parsePath(sourcePath)[1];
             String sourceBaseUrl = sourcePath.split("/" + sourceStorageId + "/" + sourceRepositoryId + "/")[0];
             String sourceArtifactPath = sourcePath.split("/" + sourceStorageId + "/" + sourceRepositoryId + "/")[1];
-            promotionRepositoryInfo.setSourceStorageId(getDefaultStorageId(sourceRepositoryId));
+            if("artifactory".equals(sourceStorageId)){
+                sourceStorageId=getDefaultStorageId(sourceRepositoryId);
+            }
+            promotionRepositoryInfo.setSourceStorageId(sourceStorageId);
             promotionRepositoryInfo.setSourceRepositoryId(sourceRepositoryId);
             promotionRepositoryInfo.setSourceArtifactPath(sourceArtifactPath);
             promotionRepositoryInfo.setSourceBaseUrl(sourceBaseUrl);
@@ -1628,7 +1631,10 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             String targetRepositoryId = parsePath(targetPath)[1];
             String targetBaseUrl = targetPath.split("/" + targetStorageId + "/" + targetRepositoryId + "/")[0];
             String targetArtifactPath = targetPath.split("/" + targetStorageId + "/" + targetRepositoryId + "/")[1];
-            promotionRepositoryInfo.setTargetStorageId(getDefaultStorageId(targetRepositoryId));
+            if("artifactory".equals(targetStorageId)){
+                targetStorageId=getDefaultStorageId(sourceRepositoryId);
+            }
+            promotionRepositoryInfo.setTargetStorageId(targetStorageId);
             promotionRepositoryInfo.setTargetRepositoryId(targetRepositoryId);
             promotionRepositoryInfo.setTargetArtifactPath(targetArtifactPath);
             promotionRepositoryInfo.setTargetBaseUrl(targetBaseUrl);
