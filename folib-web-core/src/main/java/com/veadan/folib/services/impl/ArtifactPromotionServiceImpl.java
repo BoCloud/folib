@@ -5,12 +5,14 @@ import cn.hutool.core.io.IORuntimeException;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.IdGenerateUtils;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.promotion.ArtifactPromotionProvider;
@@ -87,6 +89,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
+import javax.annotation.Resource;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -200,6 +203,9 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
     @Inject
     private HazelcastInstance hazelcastInstance;
+
+    @Resource
+    private DistributedCacheComponent distributedCacheComponent;
 
     @Override
     public ResponseEntity syncCopy(ArtifactPromotion artifactPromotion) {
@@ -386,6 +392,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             String targetBaseUrl = promotionRepositoryInfo.getTargetBaseUrl();
             String targetArtifactPath = promotionRepositoryInfo.getTargetArtifactPath();
             if (sourceBaseUrl.equals(targetBaseUrl)) {
+                targetStorageId=getDefaultStorageId(targetRepositoryId);
                 validateStorageAndRepository(sourceStorageId, sourceRepositoryId);
                 validateStorageAndRepository(targetStorageId, targetRepositoryId);
                 Repository destRepository = repositoryManagementService.getStorage(targetStorageId).getRepository(targetRepositoryId);
@@ -1603,22 +1610,25 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
     private PromotionRepositoryInfo resolvePromotionRepository(PromotionNodeOption promotionNodeOption) {
         try {
+
             PromotionRepositoryInfo promotionRepositoryInfo = PromotionRepositoryInfo.builder().build();
             String sourcePath = UriUtils.decode(StringUtils.removeEnd(promotionNodeOption.getSourcePath(), "/"));
             String targetPath = UriUtils.decode(StringUtils.removeEnd(promotionNodeOption.getTargetPath(), "/"));
-            String sourceStorageId = parsePath(sourcePath)[0];
+
+            String sourceStorageId =parsePath(sourcePath)[0] ;
             String sourceRepositoryId = parsePath(sourcePath)[1];
             String sourceBaseUrl = sourcePath.split("/" + sourceStorageId + "/" + sourceRepositoryId + "/")[0];
             String sourceArtifactPath = sourcePath.split("/" + sourceStorageId + "/" + sourceRepositoryId + "/")[1];
-            promotionRepositoryInfo.setSourceStorageId(sourceStorageId);
+            promotionRepositoryInfo.setSourceStorageId(getDefaultStorageId(sourceRepositoryId));
             promotionRepositoryInfo.setSourceRepositoryId(sourceRepositoryId);
             promotionRepositoryInfo.setSourceArtifactPath(sourceArtifactPath);
             promotionRepositoryInfo.setSourceBaseUrl(sourceBaseUrl);
+
             String targetStorageId = parsePath(targetPath)[0];
             String targetRepositoryId = parsePath(targetPath)[1];
             String targetBaseUrl = targetPath.split("/" + targetStorageId + "/" + targetRepositoryId + "/")[0];
             String targetArtifactPath = targetPath.split("/" + targetStorageId + "/" + targetRepositoryId + "/")[1];
-            promotionRepositoryInfo.setTargetStorageId(targetStorageId);
+            promotionRepositoryInfo.setTargetStorageId(getDefaultStorageId(targetRepositoryId));
             promotionRepositoryInfo.setTargetRepositoryId(targetRepositoryId);
             promotionRepositoryInfo.setTargetArtifactPath(targetArtifactPath);
             promotionRepositoryInfo.setTargetBaseUrl(targetBaseUrl);
@@ -1863,5 +1873,22 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         boolean result = chunkSize == chunkNoMax;
         log.info("canMerger:{}", result);
         return result;
+    }
+
+    public String getDefaultStorageId(String repositoryId) {
+        DistributedCacheComponent distributedCacheComponent = SpringUtil.getBean(DistributedCacheComponent.class);    if (StringUtils.isNotBlank(repositoryId)) {
+            //按照仓库查询对应的存储空间
+            String key = "JFrogAdapterStorage_" + repositoryId;
+            String jFrogAdapterStorage = distributedCacheComponent.get(key);
+            if (StringUtils.isNotBlank(jFrogAdapterStorage)) {
+                return jFrogAdapterStorage;
+            }
+        }
+        String key = "JFrogAdapterDefaultStorage";
+        String jFrogAdapterDefaultStorage = distributedCacheComponent.get(key);
+        if (StringUtils.isBlank(jFrogAdapterDefaultStorage)) {
+            throw new RuntimeException("Default storage not found,Please Set the default storageId");
+        }
+        return jFrogAdapterDefaultStorage;
     }
 }
