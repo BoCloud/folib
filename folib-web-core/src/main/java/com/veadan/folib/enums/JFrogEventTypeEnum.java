@@ -25,7 +25,7 @@ public enum JFrogEventTypeEnum {
     /**
      * deleted
      */
-    DELETED("deleted", false),
+    DELETED("deleted", true),
     /**
      * moved
      */

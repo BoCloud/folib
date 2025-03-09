@@ -1,6 +1,9 @@
 package com.veadan.folib.controllers;
 
 import cn.hutool.extra.spring.SpringUtil;
+import com.veadan.folib.artifact.ArtifactNotFoundException;
+import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
+import com.veadan.folib.cloud.storage.s3fs.S3FileSystemProvider;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.ArtifactSecurityComponent;
 import com.veadan.folib.components.DistributedCacheComponent;
@@ -13,10 +16,7 @@ import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.io.ByteRangeInputStream;
-import com.veadan.folib.providers.io.LayoutFileSystem;
-import com.veadan.folib.providers.io.RepositoryFiles;
-import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.providers.io.RootRepositoryPath;
+import com.veadan.folib.providers.io.*;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.DictService;
@@ -34,6 +34,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.carlspring.commons.http.range.ByteRange;
 import org.carlspring.commons.http.range.ByteRangeHeaderParser;
 import org.carlspring.commons.io.reloading.FSReloadableInputStreamHandler;
+import org.eclipse.jetty.io.EofException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
@@ -49,15 +50,20 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.Channels;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.spi.FileSystemProvider;
+import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -105,7 +111,7 @@ public abstract class BaseArtifactController
             return false;
         }
         Path path = getCachePath(repositoryPath);
-        ArtifactControllerHelper.provideArtifactHeaders(response, path);
+        ArtifactControllerHelper.provideArtifactHeaders(response, repositoryPath, path);
         // If the resource is not found, return false.
         if (response.getStatus() == HttpStatus.NOT_FOUND.value()) {
             return false;
@@ -178,17 +184,39 @@ public abstract class BaseArtifactController
         } else if (path.toString().startsWith("s3://")) {
             //S3
             if (path instanceof RepositoryPath) {
-                try (InputStream is = artifactResolutionService.getInputStream((RepositoryPath) path)) {
-                    copyToResponse(is, response);
+                if (!Files.exists(path)) {
+                    throw new ArtifactNotFoundException(path.toUri());
                 }
+                if (Files.isDirectory(path)) {
+                    throw new ArtifactNotFoundException(path.toUri(),
+                            String.format("The artifact path is a directory: [%s]", path.toString()));
+                }
+                StorageFileSystemProvider storageFileSystemProvider = (StorageFileSystemProvider) path.getFileSystem().provider();
+                S3FileSystemProvider s3FileSystemProvider =  (S3FileSystemProvider) storageFileSystemProvider.getTarget();
+                Path s3Path = unwrap(path);
+                try (InputStream s3FileSystem = s3FileSystemProvider.newInputStream(s3Path);) {
+                    copyToResponse(s3FileSystem, response);
+                }
+                //try (InputStream is = artifactResolutionService.getInputStream((RepositoryPath) path)) {
+                //    copyToResponse(is, response);
+                //}
             }
         } else {
             try (FileChannel fileChannel = FileChannel.open(path);
                  WritableByteChannel responseChannel = Channels.newChannel(response.getOutputStream())) {
                 long fileSize = fileChannel.size();
                 for (long left = fileSize; left > 0; ) {
-                    logger.debug("RepositoryPath [{}] position [{}] left [{}]", path.toString(), fileSize - left, left);
-                    left -= fileChannel.transferTo((fileSize - left), left, responseChannel);
+                    try {
+                        logger.debug("RepositoryPath [{}] position [{}] left [{}]", path.toString(), fileSize - left, left);
+                        left -= fileChannel.transferTo((fileSize - left), left, responseChannel);
+                    } catch (IOException e){
+                        // 检查是否为客户端断开连接
+                        if (e instanceof ClosedChannelException || e instanceof EofException) {
+                            logger.error("Client disconnected, stopping transfer userAgent [{}] path [{}] error [{}]", request.getHeader("User-Agent"), path, ExceptionUtils.getStackTrace(e));
+                        }
+                        //其他IO异常重新抛出
+                        throw e;
+                    }
                 }
             }
         }
@@ -484,6 +512,10 @@ public abstract class BaseArtifactController
             throw new RuntimeException("Default storage not found,Please Set the default storageId");
         }
         return jFrogAdapterDefaultStorage;
+    }
+    
+    protected Path unwrap(Path path) {
+        return path instanceof RepositoryPath ? ((RepositoryPath) path).getTarget() : path;
     }
 
 }

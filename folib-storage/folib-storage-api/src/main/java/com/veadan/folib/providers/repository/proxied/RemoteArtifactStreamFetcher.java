@@ -74,7 +74,14 @@ public class RemoteArtifactStreamFetcher
                                                 long offset)
         throws IOException
     {
-        CloseableRestResponse connection = client.get(resource.toString(), offset);
+        return getConnection(resource, "", offset);
+    }
+
+    private CloseableRestResponse getConnection(URI resource, String url, long offset) throws IOException {
+        if (StringUtils.isBlank(url)) {
+            url = resource.toString();
+        }
+        CloseableRestResponse connection = client.get(url, offset);
 
         Response response = connection.getResponse();
 
@@ -87,7 +94,16 @@ public class RemoteArtifactStreamFetcher
         if (response.getStatus() != 200 || response.getEntity() == null)
         {
             terminateConnection(connection);
-
+            if (response.getStatus() == 307) {
+                String redirectUrl = response.getHeaderString("Location");
+                if (StringUtils.isBlank(redirectUrl)) {
+                    throw new IOException(String.format("Unreadable response for %s. Response status is %s",
+                            response.toString(), response.getStatus()));
+                }
+                client.setTargetUrl(redirectUrl);
+                client.setHeaders(null);
+                return getConnection(resource, redirectUrl, offset);
+            }
             throw new IOException(String.format("Unreadable response for %s. Response status is %s",
                     response.toString(), response.getStatus()));
         }

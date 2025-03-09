@@ -149,13 +149,14 @@ public class RepositoryComponent {
         ).collect(Collectors.toList());
     }
 
-    public void getAnonymousUserRepositories(String storageId, String type, String excludeType, String excludeRepositoryId, String layout, String policy, List<Storage> collect, Map<String, List<String>> storageRepMap, List<Repository> repositoriesList, List<StorageTreeForm> storageTreeForms) {
+    public void getAnonymousUserRepositories(String storageId, String name, String type, String excludeType, String excludeRepositoryId, String layout, String policy, List<Storage> collect, Map<String, List<String>> storageRepMap, List<Repository> repositoriesList, List<StorageTreeForm> storageTreeForms) {
         boolean filterByStorageId = StringUtils.isNotBlank(storageId);
         boolean filterByType = StringUtils.isNotBlank(type);
         boolean filterByLayout = StringUtils.isNotBlank(layout);
         boolean filterByExcludeRepositoryId = StringUtils.isNotBlank(excludeRepositoryId);
         boolean filterByExcludeType = StringUtils.isNotBlank(excludeType);
         boolean filterByPolicy = StringUtils.isNotBlank(policy);
+        boolean filterByName = StringUtils.isNotBlank(name);
         String excludedStorageId = "", excludedRepositoryId = "";
         if (filterByExcludeRepositoryId) {
             excludedStorageId = ConfigurationUtils.getStorageId(storageId, excludeRepositoryId);
@@ -179,6 +180,7 @@ public class RepositoryComponent {
                     .filter(r -> !filterByPolicy || r.getPolicy().equalsIgnoreCase(policy))
                     .filter(r -> !filterByExcludeRepositoryId || (!r.getStorageIdAndRepositoryId().equalsIgnoreCase(excludedStorageIdAndRepositoryId)))
                     .filter(r -> !filterByExcludeType || !r.getType().equalsIgnoreCase(excludeType))
+                    .filter(r -> !filterByName || r.getId().toLowerCase().contains(name.toLowerCase()))
                     .collect(Collectors.toCollection(LinkedList::new));
             List<String> anonymousRepositories = storageRepMap.get(storage.getId());
             repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope())
@@ -235,7 +237,7 @@ public class RepositoryComponent {
             List<Storage> anonymousUserStorageList = getAnonymousUserStorages(storageList, storageRepMap);
             List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
             //获取匿名角色关联的仓库
-            getAnonymousUserRepositories("", "", "", "", "", "", anonymousUserStorageList, storageRepMap, repositoriesList, storageTreeForms);
+            getAnonymousUserRepositories("", "","", "", "", "", "", anonymousUserStorageList, storageRepMap, repositoriesList, storageTreeForms);
         } else {
             repositoriesList = getUserRepositories(storageList);
         }

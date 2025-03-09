@@ -15,4 +15,6 @@ export default {
     'FillInTheCronExpression': 'Please fill in the cron expression',
     'Failure': 'Failure',
     'AddArtifactPath': 'Add artifact path',
+    'AddSycnScope':"Add sycn scope",
+    'SyncScope':'distrubute/component/architure'
 }

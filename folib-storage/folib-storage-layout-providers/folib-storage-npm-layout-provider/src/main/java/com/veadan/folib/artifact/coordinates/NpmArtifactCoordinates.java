@@ -304,10 +304,10 @@ public class NpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<NpmA
             if (path.startsWith("@")) {
                 packageScope = arr[0];
                 packageName = arr[1];
-                packageNameWithVersion = arr[2];
+                packageNameWithVersion = arr[arr.length - 1];
             } else {
                 packageName = arr[0];
-                packageNameWithVersion = arr[1];
+                packageNameWithVersion = arr[arr.length - 1];
             }
             Matcher matcher = NPM_PACKAGE_NAME_PATTERN.matcher(packageNameWithVersion);
             if (matcher.matches()) {

@@ -174,37 +174,39 @@ public class CargoLayoutProvider extends AbstractLayoutProvider<CargoArtifactCoo
 
     @Override
     public void initData(String storageId, String repositoryId) {
-        Repository repository = configurationManager.getConfiguration().getStorage(storageId).getRepository(repositoryId);
-        if(repository.isProxyRepository()){
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, ".proxy-config.json");
-            repositoryPath.setTargetUrl("config.json");
-            try {
-                repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), "config.json");
-        if (!Files.exists(repositoryPath)) {
-            try {
-                String api = getRepositoryBaseUrl(repository);
-                ObjectMapper objectMapper = new ObjectMapper();
-                Map<String, String> map = new HashMap<>();
-                map.put("dl", String.format("%s/api/v1/crates", api));
-                map.put("api", api);
-                if (!repository.isAllowAnonymous()) {
-                    map.put("auth-required", "true");
+        try {
+            Repository repository = configurationManager.getConfiguration().getStorage(storageId).getRepository(repositoryId);
+            if(repository.isProxyRepository()){
+                RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, ".proxy-config.json");
+                if (Files.exists(repositoryPath)) {
+                    Files.deleteIfExists(repositoryPath);
                 }
-                objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-                ObjectWriter writer = objectMapper.writerWithDefaultPrettyPrinter();
-                //repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
-                artifactManagementService.store(repositoryPath, new ByteArrayInputStream(writer.writeValueAsString(map).getBytes()));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+                repositoryPath.setTargetUrl("config.json");
+                try {
+                    repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), "config.json");
+            if (Files.exists(repositoryPath)) {
+                Files.deleteIfExists(repositoryPath);
+            }
+            String api = getRepositoryBaseUrl(repository);
+            ObjectMapper objectMapper = new ObjectMapper();
+            Map<String, String> map = new HashMap<>();
+            map.put("dl", String.format("%s/api/v1/crates", api));
+            map.put("api", api);
+            if (!repository.isAllowAnonymous()) {
+                map.put("auth-required", "true");
+            }
+            objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+            ObjectWriter writer = objectMapper.writerWithDefaultPrettyPrinter();
+            //repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
+            artifactManagementService.store(repositoryPath, new ByteArrayInputStream(writer.writeValueAsString(map).getBytes()));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-
     }
 
     protected String getRepositoryBaseUrl(Repository repository) {

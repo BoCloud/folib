@@ -154,7 +154,6 @@ public class LayoutInputStream
                 digest.update(bytes, off, numberOfBytesRead);
             }
         }
-
         return numberOfBytesRead;
     }
 
@@ -163,7 +162,6 @@ public class LayoutInputStream
             throws IOException
     {
         int len = in.read(bytes);
-
         for (Map.Entry entry : digests.entrySet())
         {
             MessageDigest digest = (MessageDigest) entry.getValue();
@@ -171,7 +169,6 @@ public class LayoutInputStream
                 digest.update(bytes, 0, len);
             }
         }
-
         return len;
     }
 

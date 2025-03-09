@@ -214,7 +214,7 @@
                         </a-form-model-item>
                   </a-col>
                   <a-col :span="12">
-                    <a-form-model-item class="mb-10" label="EMAIL" :colon="false">
+                    <a-form-model-item class="mb-10" label="EMAIL" :colon="false" name="email" prop="email">
                       <a-input :disabled="userNotEdit" v-model="currentUser.user.email" :placeholder="$t('Users.PleaseEnterEmail')" />
                     </a-form-model-item>
                   </a-col>

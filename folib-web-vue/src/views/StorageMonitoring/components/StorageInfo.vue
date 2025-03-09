@@ -7,28 +7,28 @@
 		<div class="mx-25 search" style="margin-top:-60px;margin-right:-15px !important;">
 			<a-col :span="24" class="text-right">
 				<a-select @change="storageChange" showSearch allowClear v-model="queryParams.storageId"
-					v-if="!storageId" :placeholder="$t('StorageMonitoring.StorageQuery')" class="v-search">
+					v-if="!storageId" :placeholder="$t('StorageMonitoring.StorageQuery')" class="v-search"  v-popup-container>
 					<a-select-option v-for="(storage, index) in storageList" :key="index" :label="storage.id"
 						:value="storage.id">
 						{{ storage.id }}
 					</a-select-option>
 				</a-select>
 				<a-select @change="repositoryChange" showSearch allowClear v-model="queryParams.repositoryId"
-					:placeholder="$t('StorageMonitoring.RepositoryQuery')" class="v-search">
+					:placeholder="$t('StorageMonitoring.RepositoryQuery')" class="v-search"  v-popup-container>
 					<a-select-option v-for="(repository, index) in repositoryList" :key="index" :label="repository.id"
 						:value="repository.id">
 						{{ repository.id }}
 					</a-select-option>
 				</a-select>
 				<a-select @change="handheTableSearch" showSearch allowClear v-model="queryParams.repositorySubLayout"
-					:placeholder="$t('StorageMonitoring.RepositoryLayoutQuery')" class="v-search">
+					:placeholder="$t('StorageMonitoring.RepositoryLayoutQuery')" class="v-search" v-popup-container>
 					<a-select-option v-for="(layout, index) in layoutList" :key="index" :label="layout.key"
 						:value="layout.value">
 						{{ layout.key }}
 					</a-select-option>
 				</a-select>
 				<a-select @change="handheTableSearch" allowClear v-model="queryParams.repositoryType"
-					:placeholder="$t('StorageMonitoring.RepositoryTypeQuery')" class="v-search">
+					:placeholder="$t('StorageMonitoring.RepositoryTypeQuery')" class="v-search" v-popup-container>
 					<a-select-option v-for="(repositoryType, index) in repositoryTypeList" :key="index"
 						:value="repositoryType.value">
 						{{ getRepositoryType(repositoryType.value) }}

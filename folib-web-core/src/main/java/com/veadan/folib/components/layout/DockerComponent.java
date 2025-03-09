@@ -315,7 +315,7 @@ public class DockerComponent {
         repositoryPath.setArtifact(artifact);
     }
 
-    private String getFileChecksum(MessageDigest digest, InputStream stream) throws IOException {
+    public String getFileChecksum(MessageDigest digest, InputStream stream) throws IOException {
         //Get file input stream for reading the file content
         //FileInputStream fis = new FileInputStream(file);
 

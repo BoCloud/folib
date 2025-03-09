@@ -70,9 +70,14 @@ public class AuditLogRecordServiceImpl implements AuditLogRecordService {
             String requestBody = captureRequestBody(method, joinPoint.getArgs());
             AuditLogRecord record = new AuditLogRecord();
             record.setRequest(requestBody);
+            String username;
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            SpringSecurityUser user = (SpringSecurityUser) authentication.getPrincipal();
-            String username = user.getUsername();
+            if(authentication != null) {
+                SpringSecurityUser user = (SpringSecurityUser) authentication.getPrincipal();
+                username=user.getUsername();
+            }else {
+                username="ANONYMOUS";
+            }
             record.setUsername(username);
             record.setName(name.toString());
             record.setEventName(name.getName());

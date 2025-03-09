@@ -23,6 +23,7 @@ export default {
     'Document': 'Document',
     'Details': 'Details',
     'Preview': 'Preview',
+    'Refresh': 'Refresh',
     'Copy': 'Copy',
     'Move': 'Move',
     'SuerDelete': 'Are you sure you want to delete it?',
@@ -129,6 +130,7 @@ export default {
     'Operations': 'Operations',
     'DeletedProductSuccess': 'Deleted product metadata successfully',
     'BomInformation': 'Bom information',
+    'authDescription':'The auth in the current example needs to be re-decoded and encoded',
     // UseDoc
     'Instructions': 'Instructions for use',
     'GlobalConfiguration': ' global configuration',
@@ -285,7 +287,6 @@ export default {
     "GoUploadPreparation":"Preparation for uploading go artifacts",
     "GoUploadCreateFile":"Before uploading go artifacts, the following three files need to be prepared",
     "GoFilenameFormat":"File name format",
-    "Version":"Version",
     "Filename":"Filename",
     "FileContent":"File content",
     "GoInfoFormat":"The content is artifact information in the following format",
@@ -355,6 +356,7 @@ export default {
     //debian
     'DebianGlobalConfiguration':'First, you need to add the repository related information to the "/etc/apt/sources.list" file, and execute the following command:',
     'DebianPermissionConfiguration':'If you need to add the credential information to the "/etc/apt/sources.list" file, execute the following command:',
+    'DebianExampleTitle':'Here is the debian example Ubuntu 20.04 LTS (Focal Fossa):',
     'DebianCommandOperation':'After configuration, use the following command to install the package:',
     'CargoGlobalConfiguration': 'To point Cargo client to your FoLib repository, edit the configuration file under your Cargo home directory (for example ~/.cargo/config.toml):',
     'OllamaGlobalConfiguration': 'Folib wants to open anonymous access',
@@ -367,4 +369,5 @@ export default {
     'RecursiveTip': 'The metadata will be added to the selected folder and to all of the artifacts, folders and sub-folders under this folder.',
     'RecursiveDelete': 'Recursive Delete',
     'Edit': 'Edit',
+    'GroupDefaultRepository':'Default upload repository',
 }

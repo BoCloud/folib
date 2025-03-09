@@ -106,4 +106,6 @@ public interface DictService {
     Dict getById(Long id);
 
     void saveOrUpdateByTypeAndKey(Dict dict);
+
+    List<Dict> selectByTypeAndKey(String type,String key);
 }

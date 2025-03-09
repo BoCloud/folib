@@ -4,16 +4,25 @@
       <a-tab-pane :key="1" :tab="$t('Setting.PendingMigration')">
         <div class="table-operations-container">
           <div class="table-operations">
-            <a-button type="primary" @click="handleAdd">
-              {{ $t('Setting.AddRepository') }}
-            </a-button>
-            <a-button 
+            <a-row >
+              <a-col :span="6">
+              <a-button type="primary" @click="handleAdd">
+                {{ $t('Setting.AddRepository') }}
+              </a-button>
+            </a-col>
+            <a-col :span="6">
+              <a-button 
               type="primary" 
               :disabled="!hasSelectedRows"
-              @click="handleStartMigration"
-            >
-              {{ $t('Setting.StartMigration') }}
-            </a-button>
+              @click="handleStartMigration">
+                {{ $t('Setting.StartMigration') }}
+              </a-button>
+            </a-col>
+            <a-col :span="12">
+                <a-input-search v-model="repoName" :placeholder="$t('Setting.EnterRepositoryName')" @search="searchRepo(1)" allowClear/>
+            </a-col>
+            </a-row>
+            
           </div>
         </div>
         
@@ -90,26 +99,19 @@
       <a-tab-pane :key="2" :tab="$t('Setting.Migrating')">
         <div class="table-operations-container">
           <div class="table-operations">
-            <a-button 
-              type="primary" 
-              @click="handleSetFailed"
-            >
-              {{ $t('Setting.setFailed') }}
-            </a-button>
-           <!-- <a-button 
-              type="primary" 
-              :disabled="!canContinueMigration"
-              @click="handleContinueMigration"
-            >
-              {{ $t('Setting.ContinueMigration') }}
-            </a-button>  -->
-            <!-- <a-button 
-              type="primary" 
-              :disabled="!canPauseMigration"
-              @click="handlePauseMigration"
-            >
-              {{ $t('Setting.PauseMigration') }}
-            </a-button> -->
+            <a-row>
+              <a-col :span="6">
+                <a-button 
+                  type="primary" 
+                  @click="handleSetFailed"
+                >
+                  {{ $t('Setting.setFailed') }}
+                </a-button>
+              </a-col>
+              <a-col :span="12">
+                  <a-input-search class="ml-20" v-model="repoName" :placeholder="$t('Setting.EnterRepositoryName')" @search="searchRepo(2)" allowClear/>
+              </a-col>
+            </a-row>
           </div>
         </div>
         
@@ -142,13 +144,28 @@
       <a-tab-pane :key="3" :tab="$t('Setting.Completed')">
         <div class="table-operations-container">
           <div class="table-operations">
-            <a-button 
-              type="primary" 
-              :disabled="!hasCompletedSelectedRows"
-              @click="handleComplete"
-            >
-              {{ $t('Setting.FinishMigration') }}
-            </a-button>
+            <a-row >
+              <a-col :span="6">
+                  <a-button 
+                type="primary"
+                :disabled="!hasCompletedSelectedRows"
+                @click="handleComplete"
+              >
+                {{ $t('Setting.FinishMigration') }}
+              </a-button>
+            </a-col>
+            <a-col :span="6">
+                <a-button
+                  type="primary"
+                  @click="resetMigrate"
+              >
+                {{ $t('Setting.ResetMigration') }}
+              </a-button>
+            </a-col>
+            <a-col :span="12">
+                <a-input-search v-model="repoName" :placeholder="$t('Setting.EnterRepositoryName')" @search="searchRepo(3)" allowClear/>
+            </a-col>
+            </a-row>
           </div>
         </div>
 
@@ -188,7 +205,20 @@
 
 
 <script>
-import { getRepositories, addMigrateRepo ,startMigrate, pauseMigrate, finishMigrate ,continueMigrate,getMigrateProgress,changeLayout,setFailed,getIndexProgress} from '@/api/migrate'
+import {
+  getRepositories,
+  addMigrateRepo,
+  startMigrate,
+  pauseMigrate,
+  finishMigrate,
+  continueMigrate,
+  getMigrateProgress,
+  changeLayout,
+  setFailed,
+  getIndexProgress,
+  getAllRepo,
+  restartMigrate
+} from '@/api/migrate'
 import { getStorages,queryRepositoriesByStorage } from '@/api/folib'
 
 export default {
@@ -255,6 +285,7 @@ export default {
           }
         ]
       },
+      repoName: undefined,
       storageOptions: [],
       repositoryOptions: [],
       repositoryLoading: false,
@@ -390,6 +421,7 @@ export default {
     activeTab: {
       handler(newVal) {
         // 在迁移中标签页启动轮询，其他标签页停止轮询
+        this.repoName = undefined;
         if (newVal === 2) {
           this.startPolling();
         } else {
@@ -460,7 +492,8 @@ export default {
           page: this.pendingPagination.current,
           limit: this.pendingPagination.pageSize,
           status: 'pending',
-          migrateId: this.migrateId
+          migrateId: this.migrateId,
+          repoName: this.repoName
         });
         if (response?.data) {
           this.pendingData = response.data.rows;
@@ -484,7 +517,8 @@ export default {
           page: this.migratingPagination.current,
           limit: this.migratingPagination.pageSize,
           status: 'migrating',
-          migrateId: this.migrateId
+          migrateId: this.migrateId,
+          repoName: this.repoName
         });
         if (response?.data) {
           this.migratingData = response.data.rows;
@@ -508,7 +542,8 @@ export default {
           page: this.completedPagination.current,
           limit: this.completedPagination.pageSize,
           status: 'completed',
-          migrateId: this.migrateId
+          migrateId: this.migrateId,
+          repoName: this.repoName
         });
         if (response?.data) {
           this.completedData = response.data.rows;
@@ -740,17 +775,26 @@ export default {
         const params = {
           storageId: storageId,
           limit: 100000,
-          type: 'hosted',
+          excludeType: 'group',
           page: 1
         };
         const response = await queryRepositoriesByStorage(params);
+        let query={};
+        query.migrateId=this.migrateId;
+        const repos = await getAllRepo(query);
+        // 过滤掉response.data.rows中id存在于repos数组中的仓库
         if (response?.data) {
-          this.repositoryOptions = response.data.rows;
+          const filteredRows = response.data.rows.filter(row => {
+            return !repos.includes(row.id);
+          });
+          this.repositoryOptions = filteredRows;
         }
+
       } catch (error) {
+        
         this.$notification.error({
           message: this.$t('Setting.Error'),
-          description: error.message
+          description: error.response.data.error
         });
       } finally {
         this.repositoryLoading = false;
@@ -794,14 +838,13 @@ export default {
       } catch (error) {
         this.$notification.error({
           message: this.$t('Setting.Error'),
-          description: error.message
+          description: error.response.data.error
         });
       } finally {
         this.addLoading = false;
       }
     },
     async handleStartMigration() {
-      console.log("selectedRows",this.getSelectedRows());
       const selectedRows = this.getSelectedRows();
       if (!selectedRows.length) {
         return;
@@ -961,6 +1004,18 @@ export default {
       this.loadMigratingData();
     },
 
+    resetMigrate(){
+      const data={migrateId:this.migrateId}
+      restartMigrate(data).then(()=>{
+        this.$notification.success({
+          message: this.$t('Setting.Success'),
+          description: this.$t('Setting.Success')
+        });
+        this.activeTab=1;
+        this.loadData(this.activeTab);
+      })
+    },
+
     // 继续迁移
     async handleContinueMigration() {
       try {
@@ -995,6 +1050,16 @@ export default {
         });
       }
     },
+    searchRepo(type){
+      this.clearData()
+      if (type == 1) {
+        this.loadPendingData();
+      } else if (type == 2) {
+        this.updateMigratingProgress()
+      } else if (type == 3) {
+        this.loadCompletedData()
+      }
+    }
   },
   beforeDestroy() {
     // 组件销毁前停止轮询
@@ -1014,12 +1079,6 @@ export default {
   display: flex;
   justify-content: flex-end;
   margin-bottom: 16px;
-}
-
-.table-operations {
-  .ant-btn {
-    margin-left: 8px;
-  }
 }
 
 ::v-deep .ant-select-selection--multiple {

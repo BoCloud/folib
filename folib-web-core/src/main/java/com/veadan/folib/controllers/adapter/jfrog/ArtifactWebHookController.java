@@ -1,31 +1,29 @@
 package com.veadan.folib.controllers.adapter.jfrog;
 
 import com.alibaba.fastjson.JSONObject;
-import com.veadan.folib.components.layout.DockerComponent;
+import com.veadan.folib.components.webhook.WebhookEventsProvider;
+import com.veadan.folib.components.webhook.WebhookEventsProviderRegistry;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.adapter.jfrog.dto.ArtifactData;
 import com.veadan.folib.controllers.adapter.jfrog.dto.WebhookDto;
+import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.JFrogEventTypeEnum;
-import com.veadan.folib.enums.ProductTypeEnum;
+import com.veadan.folib.enums.WebhookEventsTypeEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
-import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.providers.layout.LayoutFileSystemProvider;
-import com.veadan.folib.schema2.ContainerConfigurationManifest;
-import com.veadan.folib.schema2.ImageManifest;
-import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.security.exceptions.ExpiredTokenException;
 import com.veadan.folib.security.exceptions.InvalidTokenException;
 import com.veadan.folib.services.ArtifactResolutionService;
+import com.veadan.folib.services.DictService;
 import com.veadan.folib.storage.Storage;
-import com.veadan.folib.storage.repository.remote.RemoteRepository;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.users.security.SecurityTokenProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.http.HttpStatus;
@@ -35,12 +33,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.annotation.Resource;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -65,7 +62,10 @@ public class ArtifactWebHookController {
     protected ArtifactResolutionService artifactResolutionService;
 
     @Inject
-    protected DockerComponent dockerComponent;
+    protected WebhookEventsProviderRegistry webhookEventsProviderRegistry;
+
+    @Resource
+    private DictService dictService;
 
     @PostMapping("/webhook")
     public ResponseEntity<Object> webhook(@RequestBody String data, HttpServletRequest request) {
@@ -78,51 +78,58 @@ public class ArtifactWebHookController {
             if (StringUtils.isBlank(token)) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(String.format("The header parameter [%s] is required", tokenKey));
             }
+            String repositoryKey = "X-repository";
+            String repositoryHeader = request.getHeader(repositoryKey);
+            // 存储空间固定且仓库同名
+            String storageKey = "X-storage";
+            String storageHeader = request.getHeader(storageKey);
+            if (StringUtils.isBlank(storageHeader) && StringUtils.isBlank(repositoryHeader)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(String.format("The either header parameter [%s] or [%s] must be passed", repositoryKey, storageKey));
+            }
             securityTokenProvider.getClaims(token, true);
             if (!JFrogEventTypeEnum.needHandle(webhookDto.getEventType())) {
                 log.info("JFrog event [{}] not need handle", webhookDto.getEventType());
                 return ResponseEntity.ok("");
             }
-            String repositoryHeaderKey = "X-repository";
-            String repositoryHeader = request.getHeader(repositoryHeaderKey);
-            log.info("JFrog event header repository [{}] [{}]", repositoryHeaderKey, repositoryHeader);
-            // 存储空间固定且仓库同名
-            String storageKey = "X-storage";
-            String storageHeader = request.getHeader(storageKey);
-            String storageId ;
-            String repositoryId;
+            log.info("JFrog event header storage [{}] [{}] header repository [{}] [{}]", storageKey, storageHeader, repositoryKey, repositoryHeader);
+            String storageId = "", repositoryId = "";
             if (StringUtils.isNotBlank(repositoryHeader)) {
-                storageId=ConfigurationUtils.getStorageId(repositoryHeader,repositoryHeader);
-                repositoryId=ConfigurationUtils.getRepositoryId(repositoryHeader);
-            }else if(StringUtils.isNotBlank(storageHeader)){
-                storageId=storageHeader;
-                repositoryId=webhookDto.getData().getRepoKey();
-            }else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(String.format("The header parameter [%s] is required", repositoryHeaderKey));
+                //固定仓库
+                storageId = ConfigurationUtils.getStorageId(repositoryHeader, repositoryHeader);
+                repositoryId = ConfigurationUtils.getRepositoryId(repositoryHeader);
+            } else if (StringUtils.isNotBlank(storageHeader)) {
+                //固定存储空间下的同名仓库
+                storageId = storageHeader;
+                repositoryId = webhookDto.getData().getRepoKey();
             }
-
             Storage storage = configurationManager.getStorage(storageId);
             if (Objects.isNull(storage)) {
                 log.warn("JFrog event storage [{}] not found", storageId);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(GlobalConstants.STORAGE_NOT_FOUND_MESSAGE);
             }
             if (Objects.isNull(storage.getRepository(repositoryId))) {
-                log.warn("JFrog event repository [{}] not found", repositoryId);
+                log.warn("JFrog event storage [{}] repository [{}] not found", storageId, repositoryId);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(GlobalConstants.REPOSITORY_NOT_FOUND_MESSAGE);
             }
             RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
             ArtifactData artifactData = webhookDto.getData();
             RepositoryPath repositoryPath = rootRepositoryPath.resolve(artifactData.getPath());
+            Dict dict = new Dict();
+            dict.setDictType("artifact_migrate_task");
+            dict = dictService.selectLatestOneDict(dict);
+            if (Objects.isNull(dict)) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Cannot find JFrog artifact migrate info");
+            }
             boolean exists = false;
             String currentDigest = "";
-            if (StringUtils.isNotBlank(artifactData.getSha256()) && Files.exists(repositoryPath)) {
+            if (JFrogEventTypeEnum.DEPLOYED.getType().equalsIgnoreCase(webhookDto.getEventType()) && StringUtils.isNotBlank(artifactData.getSha256()) && Files.exists(repositoryPath)) {
                 LayoutFileSystemProvider provider = rootRepositoryPath.getFileSystem().provider();
                 final RepositoryPath checksumPath = provider.getChecksumPath(repositoryPath, MessageDigestAlgorithms.SHA_256);
                 if (Objects.nonNull(checksumPath) && Files.exists(checksumPath)) {
                     try {
                         currentDigest = Files.readString(checksumPath);
                     } catch (IOException e) {
-                        throw new RuntimeException(e);
+                        log.error(ExceptionUtils.getStackTrace(e));
                     }
                     exists = artifactData.getSha256().equals(currentDigest);
                 }
@@ -132,53 +139,10 @@ public class ArtifactWebHookController {
                 return ResponseEntity.ok("");
             }
             log.info("JFrog event repositoryPath [{}] [{}] [{}] digestAlgorithm [sha256] digest [{}] currentDigest [{}] not exists", storageId, repositoryId, artifactData.getPath(), artifactData.getSha256(), currentDigest);
-            if (ProductTypeEnum.Docker.getName().equals(webhookDto.getDomain())) {
-                //docker
-                String path = artifactData.getPath();
-                String imagePath = StringUtils.removeEnd(path.substring(0, path.indexOf(artifactData.getTag())), GlobalConstants.SEPARATOR);
-                RemoteRepository remoteRepository = repositoryPath.getRepository().getRemoteRepository();
-                String remoteUrl = StringUtils.removeEnd(remoteRepository.getUrl(), GlobalConstants.SEPARATOR);
-                String digestOrTag = "";
-                boolean isTag = false;
-                if (!artifactData.getTag().startsWith(GlobalConstants.SHA_256)) {
-                    digestOrTag = artifactData.getTag();
-                    isTag = true;
-                } else {
-                    digestOrTag = artifactData.getTag().replace("__", ":");
-                }
-                if (!remoteUrl.endsWith(GlobalConstants.DOCKER_V2) || imagePath.split(GlobalConstants.SEPARATOR).length > 1) {
-                    imagePath = imagePath.replace(GlobalConstants.DOCKER_DEFAULT_REPO.concat(GlobalConstants.SEPARATOR), "");
-                }
-                RepositoryPath manifestRepositoryPath = dockerComponent.resolveManifest(storageId, repositoryId, imagePath, digestOrTag);
-                if (isTag && Objects.nonNull(manifestRepositoryPath)) {
-                    List<ImageManifest> imageManifestList = dockerComponent.getImageManifests(manifestRepositoryPath);
-                    if (CollectionUtils.isNotEmpty(imageManifestList)) {
-                        RepositoryPath blobsRepositoryPath;
-                        for (ImageManifest imageManifest : imageManifestList) {
-                            ContainerConfigurationManifest containerConfigurationManifest = imageManifest.getConfig();
-                            if (Objects.nonNull(containerConfigurationManifest) && StringUtils.isNotBlank(containerConfigurationManifest.getDigest())) {
-                                blobsRepositoryPath = rootRepositoryPath.resolve(DockerLayoutProvider.BLOBS + File.separator + containerConfigurationManifest.getDigest());
-                                String targetUrl = String.format("%s/blobs/%s", StringUtils.removeEnd(imagePath, "/"), containerConfigurationManifest.getDigest());
-                                blobsRepositoryPath.setTargetUrl(targetUrl);
-                                blobsRepositoryPath.setArtifactPath(imagePath);
-                                artifactResolutionService.resolvePath(blobsRepositoryPath);
-                            }
-                            if (CollectionUtils.isNotEmpty(imageManifest.getLayers())) {
-                                for (LayerManifest layerManifest : imageManifest.getLayers()) {
-                                    if (StringUtils.isNotBlank(layerManifest.getDigest())) {
-                                        blobsRepositoryPath = rootRepositoryPath.resolve(DockerLayoutProvider.BLOBS + File.separator + layerManifest.getDigest());
-                                        String targetUrl = String.format("%s/blobs/%s", StringUtils.removeEnd(imagePath, "/"), layerManifest.getDigest());
-                                        blobsRepositoryPath.setTargetUrl(targetUrl);
-                                        blobsRepositoryPath.setArtifactPath(imagePath);
-                                        artifactResolutionService.resolvePath(blobsRepositoryPath);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            } else {
-                artifactResolutionService.resolvePath(repositoryPath);
+            WebhookEventsProvider webhookEventsProvider = webhookEventsProviderRegistry.getProvider(WebhookEventsTypeEnum.resolveType(repositoryPath.getRepository().getLayout()));
+            boolean result = webhookEventsProvider.handler(webhookDto, repositoryPath, dict, 1);
+            if (!result) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(String.format("Handle event error [%s]", data));
             }
             return ResponseEntity.ok("");
         } catch (Exception ex) {
@@ -193,4 +157,5 @@ public class ArtifactWebHookController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(String.format("Handle event error [%s]", data));
         }
     }
+
 }

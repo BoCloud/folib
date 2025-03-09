@@ -22,6 +22,7 @@ export default {
     'Document': '文件',
     'Details': '详情',
     'Preview': '预览',
+    'Refresh': '刷新',
     'Copy': '复制',
     'Move': '移动',
     'SuerDelete': '确定要删除吗？',
@@ -157,7 +158,7 @@ export default {
     'EngineerAllocation': '工程配置',
     'validCurrent': '该方式只对当前工程生效',
     'npmrcCode': '需要在仓库下创建.npmrc文件并填入如下：',
-    'RPMOperation': `在/etc/yum.repos.d/中添加一个folib.repo文件,镜像服务器为阿里云,操作如下:`,
+    'RPMOperation': '在/etc/yum.repos.d/中添加一个folib.repo文件,镜像服务器为阿里云,操作如下:',
     'folibOperation': '将folib helm仓添加到本地操作步骤',
     'ChartPackage': '上传Chart包到Helm仓库',
     'HelmPlugin': '安装 helm-cm-push插件',
@@ -225,6 +226,7 @@ export default {
     'ConanRemoteList': '查询已添加的远程仓库',
     'NpmConfig': '查看npm当前配置',
     'IS': '是',
+    'authDescription':'当前示例的auth需要重新解码编码',
     'NpmAuth': '你也可以采用用户名密码模式',
     'NpmInstall': '安装依赖',
     'NpmPublish': '上传制品',
@@ -354,6 +356,7 @@ export default {
     // Debian
     'DebianGlobalConfiguration': '首先需要将仓库相关信息添加至"/etc/apt/sources.list文件， 执行如下命令：',
     'DebianPermissionConfiguration': '如需要将凭证信息添加至"/etc/apt/sources.list"文件，执行如下命令：',
+    'DebianExampleTitle':'以下是debian示例 Ubuntu 20.04 LTS (Focal Fossa):',
     'DebianCommandOperation':'配置完毕后使用如下命令安装包：',
     'CargoGlobalConfiguration': '要将Cargo客户端指向FoLib仓库，请编辑Cargo主目录下的配置文件（例如~/.cargo/config.toml）：',
     'OllamaGlobalConfiguration': 'folib 要开启匿名访问',
@@ -368,4 +371,5 @@ export default {
     'RecursiveTip': '元数据将添加到所选文件夹以及此文件夹下的所有制品、文件夹和子文件夹中。',
     'RecursiveDelete': '递归删除',
     'Edit': '编辑',
+    'GroupDefaultRepository':'默认上传仓库',
 }

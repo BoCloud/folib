@@ -13,6 +13,7 @@ import org.jfrog.artifactory.client.Artifactory;
 import org.jfrog.artifactory.client.ArtifactoryClientBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -74,13 +75,24 @@ public class JfrogMigrateController {
         return ResponseEntity.ok("update success");
     }
 
+    @DeleteMapping("/task/{id}")
+    public ResponseEntity<String> deleteTask(@PathVariable Long id) {
+        jfrogMigrateService.deleteTask(id);
+        return ResponseEntity.ok("update success");
+    }
+
+    @PostMapping("/repository/restart")
+    public ResponseEntity<String> restartRepo(@RequestBody AddRepositoryForm form) {
+        jfrogMigrateService.restartRepo(form.getMigrateId());
+        return ResponseEntity.ok("update success");
+    }
+
+
     @GetMapping("/repository")
     public TableResultResponse<MigrateInfo> getRepositoryByMigrateId(@RequestParam(name = "page", defaultValue = "1") Integer page,
                                                                      @RequestParam(name = "limit", defaultValue = "10") Integer limit,
-                                                                     String migrateId, String status) {
-        return jfrogMigrateService.getRepositoryByMigrateId(page, limit, migrateId, status);
-
-
+                                                                     String migrateId, String status,String repoName) {
+        return jfrogMigrateService.getRepositoryByMigrateId(page, limit, migrateId, status,repoName);
     }
 
     // 添加迁移仓库
@@ -140,4 +152,12 @@ public class JfrogMigrateController {
         jfrogMigrateService.repoFinish(form.getMigrateId(), form.getStoreAndRepos());
         return ResponseEntity.ok("finished");
     }
+
+    @PostMapping("/repository/all")
+    public ResponseEntity<List<String>> getAllRepo(@RequestBody AddRepositoryForm form) {
+        List<String> allRepo = jfrogMigrateService.getAllRepo(form.getMigrateId());
+        return ResponseEntity.ok(allRepo);
+    }
+
+
 }

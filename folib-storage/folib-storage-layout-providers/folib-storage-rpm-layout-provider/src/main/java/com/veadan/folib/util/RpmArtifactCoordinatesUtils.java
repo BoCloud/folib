@@ -62,7 +62,14 @@ public class RpmArtifactCoordinatesUtils
             else
             {
                 RpmPackageArch arch = parseArch(rpmFileName);
-                artifactCoordinates = new RpmArtifactCoordinates(baseName, version, release, RpmPackageType.valueOf(type.toUpperCase()), arch, path);
+                RpmPackageType rpmPackageType;
+                try {
+                    rpmPackageType =RpmPackageType.valueOf(type.toUpperCase());
+                } catch (Exception e) {
+                    rpmPackageType = RpmPackageType.UNKNOWN;
+                }
+                ;
+                artifactCoordinates = new RpmArtifactCoordinates(baseName, version, release,rpmPackageType, arch, path);
             }
 
             return artifactCoordinates;

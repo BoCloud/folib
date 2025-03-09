@@ -2,10 +2,12 @@ package com.veadan.folib.services.impl;
 
 import com.google.common.collect.Lists;
 import com.veadan.folib.components.DistributedCacheComponent;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.CacheSettings;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.UpgradeTaskStatusEnum;
+import com.veadan.folib.event.bucket.BucketEventListenerRegistry;
 import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.mapper.DictMapper;
 import com.veadan.folib.services.DictService;
@@ -38,6 +40,10 @@ public class DictServiceImpl implements DictService {
     @Autowired
     @Lazy
     private DistributedCacheComponent distributedCacheComponent;
+
+    @Autowired
+    @Lazy
+    private BucketEventListenerRegistry bucketEventListenerRegistry;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -77,6 +83,11 @@ public class DictServiceImpl implements DictService {
             System.setProperty(dict.getDictKey(), dict.getDictValue());
             log.info("更新系统属性 key [{}] value [{}]", dict.getDictKey(), dict.getDictValue());
             distributedCacheComponent.put(dict.getDictKey(), dict.getDictValue());
+            if(GlobalConstants.BUCKET_CAPACITY_KEY.equals(dict.getDictKey())){
+                bucketEventListenerRegistry.dispatchUpdateBucketEvent(Long.parseLong(dict.getDictValue()),0);
+            }if(GlobalConstants.BUCKET_TOKENS_KEY.equals(dict.getDictKey())){
+                bucketEventListenerRegistry.dispatchUpdateBucketEvent(0,Long.parseLong(dict.getDictValue()));
+            }
         }
         String key = DictTypeEnum.CACHE_SETTINGS.getType();
         if (key.equals(dict.getDictType())) {
@@ -261,6 +272,14 @@ public class DictServiceImpl implements DictService {
         }else {
             dictMapper.updateByExample(dict,example);
         }
+    }
+
+    public List<Dict> selectByTypeAndKey(String type,String key){
+        Example example = Example.builder(Dict.class).build();
+        Example.Criteria criteria = example.createCriteria();
+        criteria.andEqualTo("dictType", type);
+        criteria.andEqualTo("dictKey", key);
+        return dictMapper.selectByExample(example);
     }
 
 

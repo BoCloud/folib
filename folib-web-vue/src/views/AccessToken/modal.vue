@@ -62,7 +62,9 @@ export default {
     return {
       visible: false,
       userType:2,
-      form: {},
+      form: {
+        username: undefined
+      },
       users: [],
       userList:[],
       tokenInfo: {}

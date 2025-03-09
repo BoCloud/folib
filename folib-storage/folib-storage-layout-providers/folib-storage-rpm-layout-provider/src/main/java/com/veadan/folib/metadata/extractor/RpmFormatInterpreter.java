@@ -27,7 +27,7 @@ public class RpmFormatInterpreter {
     }
 
     public RpmFormatInterpreter() {
-        this.isRequiredEntriesLogicEnabled = true;
+        this.isRequiredEntriesLogicEnabled = false;
     }
 
     public RpmMetadata interpret(Format rpmFormat) {
@@ -199,19 +199,36 @@ public class RpmFormatInterpreter {
         }
     }
 
+    //private List<Entry> removeDuplicatesFromEntries(List<Entry> listWithDuplicates) {
+    //    TreeSet<Entry> uniqueList = (TreeSet<Entry>)listWithDuplicates.stream().collect(Collectors.toCollection(() -> new TreeSet(RpmFormatInterpreter::compare)));
+    //    return new LinkedList<>(uniqueList);
+    //}
+
     private List<Entry> removeDuplicatesFromEntries(List<Entry> listWithDuplicates) {
-        if (listWithDuplicates == null || listWithDuplicates.isEmpty()) {
-            return Collections.emptyList();
-        }
-        LinkedHashSet<Entry> uniqueList = (LinkedHashSet<Entry>) listWithDuplicates.stream()
+        // 过滤掉 null 元素
+        List<Entry> filteredList = listWithDuplicates.stream()
                 .filter(Objects::nonNull)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-        return new LinkedList<>(uniqueList);
+                .collect(Collectors.toList());
+
+        // 使用 TreeSet 去重并排序
+        TreeSet<Entry> uniqueSet = new TreeSet<>(Comparator.comparing((Entry e) -> e.name, InternalStringUtils::compareNullLast)
+                .thenComparing(e -> e.flags, InternalStringUtils::compareNullLast)
+                .thenComparing(e -> e.version, InternalStringUtils::compareNullLast)
+                .thenComparing(e -> e.pre, InternalStringUtils::compareNullLast));
+
+        uniqueSet.addAll(filteredList);
+
+        // 返回新的 LinkedList
+        return new LinkedList<>(uniqueSet);
     }
 
-    //private static int compare(Entry o1, Entry o2) {
-    //    return InternalStringUtils.compareNullLast(o1.name, o2.name) | InternalStringUtils.compareNullLast(o1.flags, o2.flags) | InternalStringUtils.compareNullLast(o1.version, o2.version) | InternalStringUtils.compareNullLast(o1.pre, o2.pre);
-    //}
+
+    private static int compare(Entry o1, Entry o2) {
+        return InternalStringUtils.compareNullLast(o1.name, o2.name) |
+                InternalStringUtils.compareNullLast(o1.flags, o2.flags) |
+                InternalStringUtils.compareNullLast(o1.version, o2.version) |
+                InternalStringUtils.compareNullLast(o1.pre, o2.pre);
+    }
 
     private Entry findLatestLibcSoEntry(List<Entry> libcSoEntries) {
         return libcSoEntries.isEmpty() ? null : (Entry) Collections.max(libcSoEntries, this::compareGlibcVersions);
