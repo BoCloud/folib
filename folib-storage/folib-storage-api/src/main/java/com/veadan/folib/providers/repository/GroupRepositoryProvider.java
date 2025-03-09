@@ -7,6 +7,7 @@ import com.veadan.folib.components.ArtifactSecurityComponent;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.enums.ProductTypeEnum;
+import com.veadan.folib.interceptor.GroupInterceptor;
 import com.veadan.folib.providers.io.AbstractRepositoryProvider;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -31,6 +32,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
@@ -72,6 +74,10 @@ public class GroupRepositoryProvider
     @Autowired
     @Lazy
     private ArtifactSecurityComponent artifactSecurityComponent;
+
+    @Resource
+    private GroupInterceptor groupInterceptor;
+
 
     private static final String CONFIG_JSON = "config.json";
     private static final String XML_EXTENSION = ".xml";
@@ -118,6 +124,12 @@ public class GroupRepositoryProvider
                 return result;
             }
         }
+        if(groupInterceptor.shouldInterceptor(repositoryPath)){
+            groupInterceptor.calculateIndex(repositoryPath);
+            RepositoryPath result = resolvePathDirectlyFromGroupPathIfPossible(repositoryPath);
+            return result;
+        }
+
 
         return resolvePathTraversal(repositoryPath);
     }
@@ -282,6 +294,8 @@ public class GroupRepositoryProvider
             return pathString.endsWith(CONFIG_JSON);
         } else if (ProductTypeEnum.Rpm.getFoLibraryName().equals(layout)) {
             return pathString.endsWith(XML_EXTENSION) || pathString.endsWith(XML_GZ_EXTENSION);
+        }else if(ProductTypeEnum.Debian.getFoLibraryName().equals(layout)) {
+            return true;
         }
         return false;
     }

@@ -949,7 +949,7 @@ public class ArtifactUploadTask implements Callable<String> {
                 DebianIncrementalIndexer debianIncrementalIndexer = (DebianIncrementalIndexer) SpringContextUtil.getBean("debianIncrementalIndexer");
                 debianIncrementalIndexer.index(repositoryPath.getRepository(), Sets.newSet(addEvent));
             }
-            new DebianReleaseMetadataIndexer(repositoryPath.getRepository(), Collections.emptyList(), repositoryPathResolver, null).indexRelease(distribution);
+            new DebianReleaseMetadataIndexer(repositoryPath.getRepository(), Collections.emptyList(), repositoryPathResolver).indexRelease(distribution);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }

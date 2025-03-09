@@ -54,7 +54,6 @@ import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.forms.scanner.*;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
 import com.veadan.folib.gremlin.entity.vo.ArtifactVo;
-import com.veadan.folib.indexer.ArtifactorySearch;
 import com.veadan.folib.indexer.DebianReleaseMetadataIndexer;
 import com.veadan.folib.mapper.RoleResourceRefMapper;
 import com.veadan.folib.metadata.indexer.RpmRepoIndexer;
@@ -111,7 +110,6 @@ import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
 import tk.mybatis.mapper.entity.Example;
 
-import javax.annotation.Resource;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
@@ -969,7 +967,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         Matcher matcher = DebianConstant.PACKAGE_PATTERN.matcher(distribution);
                         if(matcher.matches()){
                             String codename = matcher.group("codename");
-                            (new DebianReleaseMetadataIndexer(rootRepositoryPath.getRepository(), Collections.emptyList(), repositoryPathResolver, null)).indexRelease(codename);
+                            (new DebianReleaseMetadataIndexer(rootRepositoryPath.getRepository(), Collections.emptyList(), repositoryPathResolver)).indexRelease(codename);
                         }
                     }
                 }

@@ -1300,7 +1300,6 @@ go 1.20' :readonly="true">
                 :highlight="highlighterHandle"
                 :line-numbers="false"
                 :readonly="true"
-                v-if="this.folibRepository.type === 'proxy' "
             >
             </prism-editor>
             <p v-if="this.folibRepository.type === 'proxy' ">{{ $t('Store.ForReference') }}:
@@ -1433,23 +1432,23 @@ export default {
   },
   computed: {
     debianConfiguration() {
-      return  `sudo sh -c " echo  'deb ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id} <DISTRIBUTION> <COMPONENT> ' >> /etc/apt/sources.list "`
+      return  `sudo sh -c " echo  'deb [trusted=yes] ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id} <DISTRIBUTION> <COMPONENT> ' >> /etc/apt/sources.list "`
     },
     debianPermissonConfiguration() {
       const name = this.$store.getters.name;
       const url = this.baseUrl.replace('http://','').replace('https://','');
       const protocol = this.baseUrl.startsWith('http://') ? 'http://' : 'https://';
-      return  `sudo sh -c " echo  'deb  ${protocol}${name}:<PASSWORD>@${url}storages/${this.folibRepository.storageId}/${this.folibRepository.id} <DISTRIBUTION> <COMPONENT> ' >> /etc/apt/sources.list "`
+      return  `sudo sh -c " echo  'deb [trusted=yes] ${protocol}${name}:<PASSWORD>@${url}storages/${this.folibRepository.storageId}/${this.folibRepository.id} <DISTRIBUTION> <COMPONENT> ' >> /etc/apt/sources.list "`
     },
 
    debianProxyHelp() {
-        return`deb ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id} focal main restricted universe multiverse
-deb ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id} focal-updates main restricted universe multiverse
-deb ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id} focal-backports main restricted universe multiverse
-deb ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id} focal-security main restricted universe multiverse`
+        return`deb [trusted=yes]  ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id} focal main restricted universe multiverse
+deb [trusted=yes]  ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id} focal-updates main restricted universe multiverse
+deb [trusted=yes]  ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id} focal-backports main restricted universe multiverse
+deb [trusted=yes]  ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id} focal-security main restricted universe multiverse`
    },
     debianCommand(){
-      return ` apt update --allow-insecure-repositories \n apt-get install <DEBIAN_PACKAGE_NAME>`
+      return ` sudo apt-get update  \n apt-get install <DEBIAN_PACKAGE_NAME>`
     },
       cargoConfiguration() {
         if(this.folibRepository.type === "hosted"){

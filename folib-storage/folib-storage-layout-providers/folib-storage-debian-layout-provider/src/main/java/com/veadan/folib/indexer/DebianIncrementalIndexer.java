@@ -53,13 +53,13 @@ public class DebianIncrementalIndexer {
     private DebianPackagesMetadataCache debianPackagesMetadataCache;
 
     @Resource
-    private ArtifactorySearch artifactorySearch;
-
-    @Resource
     private RepositoryPathResolver resolver;
 
     @Resource
     private ArtifactManagementService artifactManagementService;
+
+    @Resource
+    private ArtifactorySearch artifactorySearch;
 
     @Async
     public void index(Repository repository, Set<DebianIndexEvent> indexEvents) {
@@ -128,7 +128,7 @@ public class DebianIncrementalIndexer {
 
     private void indexRelease(Repository repo, String distribution, List<String> indicesToDelete) {
         log.debug("Indexing Release file for distribution {} on repo {}", distribution, repo.getId());
-        new DebianReleaseMetadataIndexer(repo, indicesToDelete, resolver, artifactorySearch).indexRelease(distribution);
+        new DebianReleaseMetadataIndexer(repo, indicesToDelete, resolver).indexRelease(distribution);
         log.trace("Index of Release file for distribution {} in repo {} ", distribution, repo.getId());
 
     }
