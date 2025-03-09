@@ -224,6 +224,7 @@ public class PromotionUtil {
     public void executeCopy(RepositoryPath sourcePath, Repository srcRepository, RepositoryPath targetPath, Repository targetRepository) {
         try {
             handleCopy(sourcePath, srcRepository, targetPath, targetRepository);
+            handleRpm(targetRepository);
             log.info("Execute copy srcRepository [{}] [{}] targetRepository [{}] [{}] path [{}] finished", srcRepository.getStorage().getId(), srcRepository.getId(), targetRepository.getStorage().getId(), targetRepository.getId(), sourcePath);
         } catch (Exception e) {
             log.info("Execute copy srcRepository [{}] [{}] targetRepository [{}] [{}] path [{}] error [{}]", srcRepository.getStorage().getId(), srcRepository.getId(), targetRepository.getStorage().getId(), targetRepository.getId(), sourcePath, ExceptionUtils.getStackTrace(e));
@@ -1487,6 +1488,7 @@ public class PromotionUtil {
         DistributionTask task = new DistributionTask(Priority.HIGH.getValue(), syncNo,
                 () -> {
                     try {
+                        log.info("artifactSliceUploadV4 晋级编号 [{}] 源存储空间 [{}] 源仓库 [{}] 目标节点 [{}] 开始", syncNo, storageId, repositoryId, finalTargetHostName);
                         if (uploadDto.isRetry()) {
                             retryArtifactSliceUploadV3(uploadDto, storageId, repositoryId, syncNo, finalTargetUrl1, finalTargetHostName);
                         } else {
