@@ -91,6 +91,7 @@ export default {
     // Data.vue
     'BasicInformation': '基本信息',
     'OwningSpace': '所属空间',
+    'OwningRepository': '所属仓库',
     'Name': '名称',
     'ThePath': '路径',
     'FileSize': '文件大小',
