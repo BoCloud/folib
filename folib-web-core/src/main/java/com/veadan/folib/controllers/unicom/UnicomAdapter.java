@@ -92,6 +92,7 @@ public class UnicomAdapter implements CostumeSecurityAdapter {
             String url = unicomConfig.getUserDetailUrl();
             HttpHeaders header = getHeader();
             header.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            header.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
             MultiValueMap<String, Object> params = new LinkedMultiValueMap<>();
             List<String> emails = Collections.singletonList(userEmail);
             params.add("json", emails);
@@ -122,6 +123,7 @@ public class UnicomAdapter implements CostumeSecurityAdapter {
     public UicomUserDTO verify(String sessionId) {
         try {
             HttpHeaders header = getHeader();
+            header.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
             // 这里需要将sessionId放到query参数中，
             String url = unicomConfig.getVerifyUrl() + "?sessionId=" + sessionId;
             HttpEntity<String> entity = new HttpEntity<>(header);
@@ -148,6 +150,7 @@ public class UnicomAdapter implements CostumeSecurityAdapter {
         try {
             HttpHeaders header = getHeader();
             header.setContentType(MediaType.APPLICATION_JSON);
+            header.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
             String url = unicomConfig.getSendEmailUrl();
             HttpEntity<String> entity = new HttpEntity<>(JSON.toJSONString(emailDTO), header);
             log.info("发送邮件地址是{},发送内容为{}", url, JSON.toJSONString(entity));
@@ -170,6 +173,7 @@ public class UnicomAdapter implements CostumeSecurityAdapter {
         try {
             HttpHeaders header = getHeader();
             header.setContentType(MediaType.APPLICATION_JSON);
+            header.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
             String url = unicomConfig.getUserInfoUrl();
             HashMap<Object, Object> data = new HashMap<>();
             data.put("loginName", loginName);
