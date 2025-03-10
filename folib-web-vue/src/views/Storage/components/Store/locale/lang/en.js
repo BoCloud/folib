@@ -95,6 +95,7 @@ export default {
     // Data.vue
     'BasicInformation': 'Basic information',
     'OwningSpace': 'Owning space',
+    'OwningRepository': 'Owning repository',
     'Name': 'Name',
     'ThePath': 'The path',
     'FileSize': 'File size',
