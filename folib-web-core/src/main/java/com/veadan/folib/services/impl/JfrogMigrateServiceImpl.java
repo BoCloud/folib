@@ -918,9 +918,18 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             }
             repositoryDto.setGroupRepositories(groupRepository);
         }
+        MigrateInfo exist = migrateInfoService.getByMigrateIdAndRepoInfo(migrateInfo.getMigrateId(), storageId, repository.getKey());
+        if (Objects.nonNull(exist) && StringUtils.isNotBlank(exist.getPostLayout())) {
+            JfrogMappingEnum layout = JfrogMappingEnum.getEnumBySubLayout(exist.getPostLayout());
+            if (Objects.nonNull(layout)) {
+                repositoryDto.setLayout(layout.getLayout());
+                repositoryDto.setSubLayout(layout.getSubLayout());
+            }
+        }
+
     }
 
-    private void createAndSaveMigrateInfo(ArtifactMigrateInfo info, LightweightRepository repository, String storageId, Map<String, String> spaceInfo) {
+    private MigrateInfo createAndSaveMigrateInfo(ArtifactMigrateInfo info, LightweightRepository repository, String storageId, Map<String, String> spaceInfo) {
         //新建同步数据入库
         MigrateInfo exist = migrateInfoService.getByMigrateIdAndRepoInfo(info.getMigrateId(), storageId, repository.getKey());
         if (Objects.isNull(exist)) {
@@ -939,6 +948,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 migrateInfo.setPostLayout(jfrogName.getSubLayout());
             }
             migrateInfoService.save(migrateInfo);
+            return migrateInfo;
         } else {
             exist.setUsedSpace(spaceInfo.get(repository.getKey()));
             exist.setSyncStatus(MigrateStatusEnum.INITIAL.getStatus());
@@ -946,6 +956,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             exist.setTotalArtifact(0);
             exist.setSuccessMount(0);
             migrateInfoService.updateById(exist);
+            return exist;
         }
     }
 

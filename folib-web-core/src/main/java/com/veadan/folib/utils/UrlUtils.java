@@ -78,6 +78,7 @@ public class UrlUtils {
                     return null;
                 }
                 request.setAttribute("storageId", pathParts[2]);
+                request.setAttribute("repositoryId", pathParts[3]);
                 return getStorageAndRepositoryId(pathParts[2], pathParts[3]);
             }
             if (pathParts.length < 3) {
