@@ -31,6 +31,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.data.domain.Example;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
@@ -195,19 +196,19 @@ public class ConfigurableProviderManager extends ProviderManager implements User
             }
         } else {
             HttpServletRequest httpServletRequest = ((ServletRequestAttributes) (RequestContextHolder.currentRequestAttributes())).getRequest();
-            String loginType = httpServletRequest.getHeader("X-Folibrary-Login-Type");
-            String ldapUserDetailsServiceSourceId = "ldapUserDetailsService";
+//            String loginType = httpServletRequest.getHeader("X-Folibrary-Login-Type");
+//            String ldapUserDetailsServiceSourceId = "ldapUserDetailsService";
             for (Map.Entry<String, UserDetailsService> userDetailsServiceEntry : userProviderMap.entrySet()) {
                 String sourceId = userDetailsServiceEntry.getKey();
-                if (ldapUserDetailsServiceSourceId.equals(sourceId) && !LoginTypeEnum.LDAP.getType().equalsIgnoreCase(loginType)) {
-                    continue;
-                }
+//                if (ldapUserDetailsServiceSourceId.equals(sourceId) && !LoginTypeEnum.LDAP.getType().equalsIgnoreCase(loginType)) {
+//                    continue;
+//                }
                 UserDetailsService userDetailsService = userDetailsServiceEntry.getValue();
 
                 UserDetails externalUser;
                 try {
                     externalUser = userDetailsService.loadUserByUsername(username);
-                } catch (UsernameNotFoundException e) {
+                } catch (Exception e) {
                     logger.info("User [{}] not found from [{}]", username, sourceId);
                     continue;
                 }

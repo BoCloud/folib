@@ -23,6 +23,7 @@ export default {
     'Document': 'Document',
     'Details': 'Details',
     'Preview': 'Preview',
+    'Refresh': 'Refresh',
     'Copy': 'Copy',
     'Move': 'Move',
     'SuerDelete': 'Are you sure you want to delete it?',
@@ -94,6 +95,7 @@ export default {
     // Data.vue
     'BasicInformation': 'Basic information',
     'OwningSpace': 'Owning space',
+    'OwningRepository': 'Owning repository',
     'Name': 'Name',
     'ThePath': 'The path',
     'FileSize': 'File size',
@@ -286,7 +288,6 @@ export default {
     "GoUploadPreparation":"Preparation for uploading go artifacts",
     "GoUploadCreateFile":"Before uploading go artifacts, the following three files need to be prepared",
     "GoFilenameFormat":"File name format",
-    "Version":"Version",
     "Filename":"Filename",
     "FileContent":"File content",
     "GoInfoFormat":"The content is artifact information in the following format",

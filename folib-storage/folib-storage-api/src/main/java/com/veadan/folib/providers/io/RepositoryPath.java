@@ -415,6 +415,13 @@ public class RepositoryPath
         return path;
     }
 
+    public String getOriginalPath() {
+        if (StringUtils.isBlank(path)) {
+            path = relativize().toString();
+        }
+        return path;
+    }
+
     public void setArtifactPath(String artifactPath) {
         this.artifactPath = artifactPath;
     }
