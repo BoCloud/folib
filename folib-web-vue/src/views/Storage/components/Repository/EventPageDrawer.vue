@@ -105,8 +105,8 @@
             </div>
           </a-table>
         </a-tab-pane>
-        <a-tab-pane :key="2" :tab="$t('Repository.AuditLog')">
-        </a-tab-pane>
+        <!-- <a-tab-pane :key="2" :tab="$t('Repository.AuditLog')">
+        </a-tab-pane> -->
       </a-tabs>
     </a-card>
   </a-drawer>
