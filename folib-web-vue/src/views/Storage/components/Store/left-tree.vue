@@ -21,7 +21,7 @@
                 icon-class="el-icon-arrow-right"
                 :load="(treeNode, resolve) => onLoadData(treeNode,resolve, false)"
                 @node-click="(data)=>treeSelect(data,false)"
-                @node-contextmenu="onRightClick"
+                @node-contextmenu="(event, data) => onRightClick(event, data, false)"
                 @node-expand="(data, treeNode) => onExpand(data, treeNode, false)"
                 :selectedKeys="selectedKeys"
                 :expandedKeys="expandedKeys"
@@ -58,7 +58,7 @@
                 node-key="artifactPath"
                 :load="(treeNode,resolve) => onLoadData(treeNode, resolve, true)"
                 @node-click="(data)=>treeSelect(data,true)"
-                @node-contextmenu="onRightClick"
+                @node-contextmenu="(event, data) => onRightClick(event, data, true)"
                 @node-expand="(expandedKeys, treeNode) => onExpand(expandedKeys, treeNode, true)"
                 :selectedKeys="selectRecycleKeys"
                 :expandedKeys="expandedRecycleKeys"
@@ -178,8 +178,8 @@ export default {
             }
             this.$emit('treeSelect',data, type)
         },
-        onRightClick(event, data) {
-            this.$emit('onRightClick',event, data)
+        onRightClick(event, data, isTrashView) {
+            this.$emit('onRightClick',event, data, isTrashView)
         },
         startDragging(event) {
             event.preventDefault()

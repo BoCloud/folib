@@ -435,7 +435,7 @@ export default {
                             children.push(item)
                         })
                     }
-                    if (res.files.length > 0 && (((this.isTrashView && currentNode.data.fileType !== 'document') || !this.isTrashView) || refreshNode)) {
+                    if (res.files.length > 0 && (((this.isTrashView && currentNode.fileType !== 'document') || !this.isTrashView) || refreshNode)) {
                         const a = res.files
                         a.forEach((item, index, a) => {
                             item.isLeaf = !this.getFileIsOpen(item.name)
@@ -473,7 +473,7 @@ export default {
                     })
                     children = d
                 }
-                if (res.files.length > 0 && (((this.isTrashView && currentNode.data.fileType !== 'document') || !this.isTrashView) || refreshNode)) {
+                if (res.files.length > 0 && (((this.isTrashView && currentNode.fileType !== 'document') || !this.isTrashView) || refreshNode)) {
                     const a = res.files
                     a.forEach((item, index, a) => {
                         item.isLeaf = !this.getFileIsOpen(item.name)
@@ -497,6 +497,7 @@ export default {
             const { treeType } = data
             if (treeType === 'lastRoot') return
             const callback = () => {
+                this.showContextMenu = true
                 this.$nextTick(() => {
                     const viewportHeight = window.innerHeight;
                     const spaceBelow = viewportHeight - event.clientY;
@@ -507,7 +508,6 @@ export default {
                     }
                     this.rightClickTop = `${top}px`;
                     this.rightClickLeft = `${event.clientX}px`;
-                    this.showContextMenu = true
                 })
             }
             if(this.isTrashView){
