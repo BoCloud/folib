@@ -58,7 +58,7 @@
             <a-descriptions-item :label="$t('Store.OwningSpace')">
               {{ currentTreeNode.storageId}}
             </a-descriptions-item>
-            <a-descriptions-item :label="$t('Store.OwningSpace')">
+            <a-descriptions-item :label="$t('Store.OwningRepository')">
               {{ currentTreeNode.repositoryId}}
             </a-descriptions-item>
             <a-descriptions-item v-if="currentFileDetial" :label="$t('Store.ImageName')">

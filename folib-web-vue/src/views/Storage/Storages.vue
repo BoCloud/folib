@@ -4,6 +4,7 @@
  -->
 
  <template>
+     <a-spin :spinning="pageLoading">
   <div id="storages">
     <a-row :style="isChecked ? 'opacity:1;' : 'opacity:0;'" type="flex" :gutter="[24, 24]" style="margin-bottom:-30px;transition: all 0.5s ease;">
         <a-col :span="24" :lg="24">
@@ -80,7 +81,8 @@
               @getDetailInfo="getDetailInfo"
               :repositories="repositories" 
               :isTrashView="isTrashView"
-              :storageId="currentStorage.id" 
+              :storageId="currentStorage.id"
+              :baseUrl="baseUrl"
             />
             <!-- 存储列表 -->
             <storageList 
@@ -642,7 +644,6 @@
                   <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsForceDeletion">
                       {{ $t('Storage.Allowed') }}{{ $t('Storage.ForcedDeletion') }}
-                      <!-- {{ folibRepository.allowsForceDeletion ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }} -->
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
@@ -712,7 +713,7 @@
           <a-card v-else-if="step === 2 && (folibRepository.type === 'proxy')" :bordered="false" class="header-solid">
             <h5 class="font-regular text-center">{{ $t('Storage.WarehouseConfig') }}</h5>
             <p class="text-center">
-              {{ $t('Storage.RemoteLibraryAddress') }}</p
+              {{ $t('Storage.RemoteLibraryAddress') }}</p>
             <a-form :form="form" :hideRequiredMark="true">
               <a-row :gutter="[24]">
                 <a-col :span="12">
@@ -1115,7 +1116,7 @@
       </div>
     </a-drawer>
   </div>
-
+     </a-spin>
 </template>
 
 <script>
@@ -1387,11 +1388,11 @@ export default {
         layout: null,
         type: null,
         page:1,
-        limit: 10,
+        limit: 30,
         total:0,
       },
       layoutType:'isFilter',
-      isChecked: false,
+      isChecked: true,
       isShowOverview: false,
      permissionForm: {
         allowAnonymous: true,
@@ -1414,6 +1415,7 @@ export default {
       switchDisabled:true,
       nameKey:false,
       loadingNameKey:false,
+      pageLoading: false,
       repoLayoutStrategy:['cocoapods'],
     };
   },
@@ -1444,6 +1446,7 @@ export default {
       }
   },
   async created() {
+    this.pageLoading = true
     this.userInfo = store.state.user
     await  this.getStorages();
     await  this.getBaseUrl();
@@ -1528,6 +1531,7 @@ export default {
       }
       setTimeout(() => {
         this.isChecked = key
+        this.$store.commit('setRepositoryLength', -1)
         // this.$store.commit('setIsChecked',key)
       }, 0);
     },
@@ -1578,7 +1582,7 @@ export default {
         if(val){
           this.$refs.repositoryTree.loadingMoreShow(true)
           // this.$refs.libview.myMounted()
-          this.queryParams.limit = 20 // 20
+          this.queryParams.limit = 30 // 20
         }else{
           this.$store.commit('setNewDetailPage',false) // 将newDetailPage参数复原，以免影响到原有模式的详情页面
           this.queryParams.limit = 10
@@ -1601,13 +1605,14 @@ export default {
       })
     },
     // 右键菜单选择操作
-    handleMenuClickTree(active,currentTreeNode){
+    handleMenuClickTree(active,currentTreeNode, folibRepository){
       this.$nextTick(() => {
-          this.$refs.libview.handleMenuClickTree(active,currentTreeNode)
+          this.$refs.libview.handleMenuClickTree(active,currentTreeNode,folibRepository)
       })
     },
     reloadTree(){
-      this.$refs.repositoryTree.reload(false)
+      this.loadMore(0)
+      this.$refs.repositoryTree.getPosition()
     },
     // 点击仓库
     repositorySelect(item){
@@ -1616,13 +1621,13 @@ export default {
         this.libViewKey ++
         this.$refs.libview.myMounted()
       })
-    },  
+    },
     // 点击仓库下的文件,item为当前点击节点的最顶层父节点（仓库）
-    treeSelect(key, e, item) {
+    treeSelect(data,isTrashView, item) {
       this.libViewKey ++
       storage.set("libView_repository", { item, baseUrl: this.baseUrl })
       this.$nextTick(() => {
-          this.$refs.libview.treeSelect(key, e)
+          this.$refs.libview.treeSelect(data, isTrashView, item)
       })
     },
     onExpand() {
@@ -1631,12 +1636,14 @@ export default {
     handheTableSearch(val,type,queryParams){
       this.repositories = []
       this.$nextTick(() => {
+        this.$refs.repositoryTree.key ++
+        this.$refs.repositoryTree.recycleKey ++
         this.$refs.repositoryTree.empty()
         this.$refs.repositoryTree.loadingMoreShow(true)
       })
       this.queryParams.page = 1
       if(this.isChecked){
-        this.queryParams.limit = 20
+        this.queryParams.limit = 30
       }else{
         this.queryParams.limit = 10
       }
@@ -1645,6 +1652,7 @@ export default {
         // 给当前页面搜索条赋值
         this.queryParams.layout = params.layout ? genLayoutType(params.layout) : ''
         this.queryParams.type = params.type
+        this.queryParams.name = params.name
         const item = this.storageData.find(ele => ele.id === val)
         this.setCurrentStorage(item)
       }else{
@@ -1653,7 +1661,7 @@ export default {
         const params = JSON.parse(JSON.stringify(val))
         params.layout = val.layout ? genLayoutType(val.layout) : ''
         params.page = 1
-        params.limit = 20 // 20
+        params.limit = 30 // 20
         // 给当前页面搜索条赋值
         this.queryParams.layout = params.layout
         this.queryParams.type = params.type
@@ -2013,6 +2021,7 @@ export default {
         if(res.status === 200){
           this.queryParams.total = res.data.total
           this.repositories = res.data.rows || []
+          this.$store.commit('setRepositoryLength', this.repositories.length)
           if(type){
             if(this.$refs.repositoryTree){
               this.$refs.repositoryTree.setKeyValue()
@@ -2024,6 +2033,7 @@ export default {
     getStorage(id) {
       if (id) {
         // this.$store.commit('setSwitchDisabled',true)
+        this.pageLoading = true
         this.switchDisabled = true
         getLibraryFilter(id).then(response => {
           this.currentStorage.id = response.id
@@ -2051,17 +2061,20 @@ export default {
             storageId: this.currentStorage.id,
             layout: this.queryParams.layout,
             type: this.queryParams.type,
-            limit: this.isChecked ? 20 : this.queryParams.limit,
+            name: this.queryParams.name,
+            limit: this.isChecked ? 30 : this.queryParams.limit,
             page: this.queryParams.page
           }
           this.getQueryStorage(params)
           // this.repositories = response.repositories
+        }).finally(() => {
+            this.pageLoading = false
         })
       }
     },
     cacheStorage() {
       let cache = storage.get("libView_repository");
-      if (!cache || !cache.item.id) {
+      if (!cache || !cache.item?.id) {
         if (this.storageData) {
           let item = this.storageData[0]
           if (item && item.id) {
@@ -2625,7 +2638,7 @@ export default {
       return isAdmin() || this.currentStorage.admin === this.$store.state.user.name
     },
     getRepositoryUrl(repository) {
-      let repositoryUrl = ""
+      let repositoryUrl = ''
       if (this.baseUrl) {
         repositoryUrl = this.baseUrl + 'storages/' + repository.storageId + '/' + repository.id
         let layout = repository.layout.toLowerCase()

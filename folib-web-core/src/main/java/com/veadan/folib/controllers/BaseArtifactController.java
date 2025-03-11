@@ -34,6 +34,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.carlspring.commons.http.range.ByteRange;
 import org.carlspring.commons.http.range.ByteRangeHeaderParser;
 import org.carlspring.commons.io.reloading.FSReloadableInputStreamHandler;
+import org.eclipse.jetty.io.EofException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
@@ -53,6 +54,7 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.Channels;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -96,7 +98,7 @@ public abstract class BaseArtifactController
             return false;
         }
         Path path = getCachePath(repositoryPath);
-        ArtifactControllerHelper.provideArtifactHeaders(response, path);
+        ArtifactControllerHelper.provideArtifactHeaders(response, repositoryPath, path);
         // If the resource is not found, return false.
         if (response.getStatus() == HttpStatus.NOT_FOUND.value()) {
             return false;
@@ -191,8 +193,17 @@ public abstract class BaseArtifactController
                  WritableByteChannel responseChannel = Channels.newChannel(response.getOutputStream())) {
                 long fileSize = fileChannel.size();
                 for (long left = fileSize; left > 0; ) {
-                    logger.debug("RepositoryPath [{}] position [{}] left [{}]", path.toString(), fileSize - left, left);
-                    left -= fileChannel.transferTo((fileSize - left), left, responseChannel);
+                    try {
+                        logger.debug("RepositoryPath [{}] position [{}] left [{}]", path.toString(), fileSize - left, left);
+                        left -= fileChannel.transferTo((fileSize - left), left, responseChannel);
+                    } catch (IOException e){
+                        // 检查是否为客户端断开连接
+                        if (e instanceof ClosedChannelException || e instanceof EofException) {
+                            logger.error("Client disconnected, stopping transfer userAgent [{}] path [{}] error [{}]", request.getHeader("User-Agent"), path, ExceptionUtils.getStackTrace(e));
+                        }
+                        //其他IO异常重新抛出
+                        throw e;
+                    }
                 }
             }
         }

@@ -107,6 +107,12 @@ export default {
             currentTaskId: null,
             taskColumns:[
                 {
+                    title: 'ID',
+                    dataIndex: 'dictKey',
+                    align: 'center',
+                    key: 'dictKey',
+                },
+                {
                     title: this.$t('Setting.CreateTime'),
                     dataIndex: 'viewTime',
                     align: 'center',

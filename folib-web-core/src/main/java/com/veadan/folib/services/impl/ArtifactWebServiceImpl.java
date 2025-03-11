@@ -1461,13 +1461,16 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 return;
             }
             Artifact artifact = resolvePath(storageId, repositoryId, path);
+            if (Objects.isNull(artifact)) {
+                return;
+            }
             artifact.setMetadata(metaData);
             artifactService.saveOrUpdateArtifact(artifact);
             repositoryPath.setArtifact(artifact);
             artifactEvent.dispatchArtifactMetaDataEvent(repositoryPath);
             cacheMetadata(repositoryPath);
         } catch (Exception e) {
-            log.info("添加元数据失败");
+            log.error("添加元数据失败 [{}]", ExceptionUtils.getStackTrace(e));
         }
 
     }
