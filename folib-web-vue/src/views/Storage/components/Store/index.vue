@@ -2093,7 +2093,6 @@ export default {
     // 判断那些文件类型是可以打开的
     getFileIsOpen(name) {
       const _name = name.toLowerCase()
-      console.log(_name);
       const tarArr = ['.tar', '.jar', '.zip', '.7z', '.tar.gz', 'tgz']
       let key = false
       tarArr.forEach(ele => {
@@ -2150,7 +2149,7 @@ export default {
         artifactPath,
         name
       }
-      if (this.getFileIsOpen(name)) {
+      if (name && this.getFileIsOpen(name)) {
         this.getPackagePreview(params, resolve)
         return
       }
@@ -3393,8 +3392,9 @@ export default {
         }
         return url;
       },
-     onRightClick(event, data) {
+     onRightClick(event, data, isTrashView) {
        if (data.treeType === 'lastRoot') return
+       this.isTrashView = isTrashView
        this.showContextMenu = true;
        this.rightClickTop = `${event.clientY}px`;
        this.rightClickLeft = `${event.clientX}px`;
