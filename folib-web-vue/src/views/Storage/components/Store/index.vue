@@ -23,7 +23,8 @@
                     <a-avatar @click="createData" :size="64" shape="square"
                       style="border-radius: 8px; background-image: linear-gradient(310deg, #f1f7ff, #f9fbff);"
                                 >
-                        <img :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" style="width: 150%;margin-left: -11px;" alt=""></img>
+                        <img v-if="folibRepository.id" :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" style="width: 150%;margin-left: -11px;" alt=""></img>
+                        <span v-else style="color: #BFBFBF; margin-left: -10px; font-size: 14px;">No Data</span>
                     </a-avatar>
                   </a>
                   <div class="avatar-info">
@@ -111,7 +112,7 @@
                     display: flex;
                     align-items: center;
                     justify-content: flex-end;
-                  ">
+                  " v-if="repositoryLength">
                   <a v-if="folibRepository.layout === 'Docker' && folibRepository.type === 'hosted'">
                     <small style="padding-right: 20px" @click="handleDockerUploud">
                       {{ $t('Store.Upload') }}
@@ -166,7 +167,7 @@
           :bodyStyle="{ paddingTop: 0, paddingBottom: 0 }">
           <template #title>
             <h6 class="font-semibold m-0">{{ $t('Store.PacketList') }} <a
-                v-show="!isTrashView" class="ml-10" @click="reloadTreeData">
+                 class="ml-10" @click="reloadTreeData">
                 <a-icon type="reload" /></a></h6>
           </template>
           <!-- <a-button slot="extra" type="link"  size="large" style="color: black;" @click="isTrashView=!isTrashView"> -->
@@ -178,11 +179,12 @@
             <a-icon v-if="!isTrashView" type="delete" /> -->
           </a-tooltip>
           <!-- </a-button> -->
-          <leftTree 
-            :trashData="trashData" 
-            :treeData="treeData" 
+          <leftTree
+            :trashData="trashData"
+            :treeData="treeData"
             :isTrashView="isTrashView"
-            @onRightClick="onRightClick" 
+            @onRightClick="onRightClick"
+            @closeContextMenu="closeContextMenu"
             @onLoadData="onLoadData"
             @treeSelect="treeSelect"
           />
@@ -308,22 +310,22 @@
                         v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact&&!isTrashView">
                         <a-icon type="download" />{{ $t('Store.DownLoad') }}
                       </a-menu-item>
-
-                      <a-menu-item key="7"
+                      <!-- 暂时禁用目录下载 -->
+                       <a-menu-item key="7"
                         v-if="(folibRepository.layout === 'Raw' && currentTreeNode && currentTreeNode.type === 'dir'&&!isTrashView)">
                         <a-icon type="download" />{{ $t('Store.DownLoad') }}
                       </a-menu-item>
                       <a-menu-item key="8" v-if="isTrashView && currentTreeNode">
                         <a-icon type="undo" />{{ $t('Store.Restore') }}
                       </a-menu-item>
-                      <a-modal :title="$t('Store.Prompts')" :visible="downLoadVisible" :okText="$t('Store.Confirm')"
-                        :cancelText="$t('Store.Cancel')" centered @ok="handleDownLoadDir"
-                        @cancel="handleDownLoadDirCancel">
-                        <p>{{ currentTreeNode.artifactPath + $t('Store.DirSize') + rawPathSize + ", "+$t('Store.ConfirmDownload') }}</p>
-                      </a-modal>
                     </a-menu>
                   </template>
                 </a-dropdown>
+                <a-modal :title="$t('Store.Prompts')" :visible="downLoadVisible" :okText="$t('Store.Confirm')"
+                  :cancelText="$t('Store.Cancel')" centered @ok="handleDownLoadDir"
+                  @cancel="handleDownLoadDirCancel">
+                  <p>{{ currentTreeNode.artifactPath + $t('Store.DirSize') + rawPathSize + ", "+$t('Store.ConfirmDownload') }}</p>
+                </a-modal>
               </a-col>
             </a-row>
             <a-row type="flex" align="middle" v-if="folibRepository.layout === 'Docker'">
@@ -464,20 +466,20 @@
           <a v-if="currentTreeNode.url && folibRepository.layout !== 'Docker'" class="ml-10"><a-icon type="copy"
               @click="copy(getFormattedUrl(currentTreeNode.url))" /> </a>
           <hr class="gradient-line" />
-          <BaseData 
+          <BaseData
               ref="BaseData"
               :key="pageKey"
-              :isChecked="isChecked" 
-              :currentTreeNode="currentTreeNode" 
+              :isChecked="isChecked"
+              :currentTreeNode="currentTreeNode"
               :repositoryType="repositoryType"
-              :currentFileDetial="currentFileDetial" 
-              :successMsg="successMsg" 
-              :folibRepository="folibRepository" 
+              :currentFileDetial="currentFileDetial"
+              :successMsg="successMsg"
+              :folibRepository="folibRepository"
               @addPageKey="addPageKey"
               @handlerPermission="handlerPermission"
               @messageArchitectureChild="handleArchitectureMessage"
-              @metadataEditHandler="metadataEditHandler" 
-              @metadataHandler="metadataHandler" 
+              @metadataEditHandler="metadataEditHandler"
+              @metadataHandler="metadataHandler"
               @setCurrentFileDetial="setCurrentFileDetial"
           />
         </a-card>
@@ -1055,7 +1057,11 @@
           {{ $t('Store.DownLoad') }}
         </a-menu-item>
         <a-menu-item key="7"
-          v-if="folibRepository.layout === 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact && !isTrashView">
+          v-if="
+            folibRepository.layout === 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact && !isTrashView
+            ||
+            folibRepository.layout === 'Raw' && currentTreeNode && currentTreeNode.type === 'dir'&&!isTrashView
+          ">
           <a-icon type="download" />
           {{ $t('Store.DownLoad') }}
         </a-menu-item>
@@ -1401,6 +1407,9 @@ export default {
     newDetailPage(){
       return this.$store.state.newDetailPage
     },
+    repositoryLength(){
+      return this.$store.state.repositoryLength
+    },
     contextMenuStyle() {
       return {
         position: 'fixed',
@@ -1418,10 +1427,12 @@ export default {
     },
   },
   watch:{
-    // currentTreeNode(val){
-    //   console.log(val,'watch currentTreeNode');
-    //   this.pageKey ++
-    // } 
+    repositoryLength(val){
+      if (!val) {
+          this.folibRepository = {}
+          this.baseUrl = ''
+      }
+    },
   },
   created () {
     this.initData()
@@ -1444,7 +1455,7 @@ export default {
       {
         this.scannerRules()
         this.scanReport = Object.assign({}, this.propScanReport)
-   
+
       }
       this.getUploadMaxSize()
       this.queryStorageAndRepositoryPermission()
@@ -1506,7 +1517,7 @@ export default {
           })
           const f = res.files
           f.forEach((item, index) => {
-            item.isLeaf = true
+            item.isLeaf = !this.getFileIsOpen(item.name)
             item.type = 'file'
           })
           this.treeData = d.concat(f).filter(item => item.name !== '.trash')
@@ -1691,7 +1702,7 @@ export default {
                   //         item.originFileObj
                   //     )
                   // })
-                  console.info('docker:', values)
+                  // console.info('docker:', values)
                   const imageTag = values.imageTag ? values.imageTag : fileList[0].originFileObj.name;
                   this.uploadFiles(values.targetPath,false,null,imageTag,values.type)
                   this.successMsg(this.$t('Store.CheckProgress'))
@@ -2118,39 +2129,98 @@ export default {
     //     }, 100)
     //   })
     // },
-    onLoadData(treeNode,isTrashView,resolve, reject) {
+    // 判断那些文件类型是可以打开的
+    getFileIsOpen(name) {
+      const _name = name.toLowerCase()
+      console.log(_name);
+      const tarArr = ['.tar', '.jar', '.zip', '.7z', '.tar.gz', 'tgz']
+      let key = false
+      tarArr.forEach(ele => {
+          if (_name.indexOf(ele) !== -1) {
+              key = true
+          }
+      })
+      return key
+    },
+    // 获取可以继续打开的文件的目录（对应包预览）
+    getPackagePreview({ treeNode, storageId, id, artifactPath }, resolve) {
+        if (treeNode.data.children) {
+          resolve(treeNode.data.children)
+          return
+        }
+        getArtifact(
+          this.repositoryType,
+          storageId,
+          id,
+          artifactPath
+        ).then(res => {
+        this.currentFileDetial = res
+        function setNewDetailPage(arr) {
+          arr.forEach(ele => {
+              ele.newDetailPage = true
+              ele.treeType = 'lastRoot'
+              ele.storageId = storageId
+              ele.repositoryId = id
+              ele.key = ele.name
+              ele.artifactPath = `${id}/${artifactPath}/${ele.name}`
+              if (ele?.children?.length) {
+                  setNewDetailPage(ele.children)
+              }
+          })
+        }
+        treeNode.data.children = []
+        if (res.listTree) {
+          setNewDetailPage(res.listTree)
+          treeNode.data.children = treeNode.data.children.concat(res.listTree)
+        }
+        resolve(treeNode.data.children)
+      })
+    },
+    onLoadData(treeNode,isTrashView,resolve) {
       this.isTrashView = isTrashView
       this.currentFileDetial = null
+      const { storageId, id, layout } = this.folibRepository
+      const { artifactPath, name } = treeNode.data
+      const params = {
+        treeNode,
+        storageId,
+        id,
+        layout,
+        artifactPath,
+        name
+      }
+      if (this.getFileIsOpen(name)) {
+        this.getPackagePreview(params, resolve)
+        return
+      }
       if (this.folibRepository.layout === 'Docker') {
         // return new Promise(resolve => {
-          if (treeNode.dataRef.children) {
-            resolve()
+          if (treeNode.data.children) {
+            resolve(treeNode.data.children)
             return
           }
           getDockerArtifact(
             this.folibRepository.storageId,
             this.folibRepository.id,
-            treeNode.dataRef.artifactPath
+            treeNode.data.artifactPath
           ).then(res => {
-            treeNode.dataRef.children = []
+            treeNode.data.children = []
             if (res.directories.length > 0) {
               const d = res.directories
 
               d.forEach((item, index, d) => {
                 item.type = 'dir'
-                treeNode.dataRef.children.push(item)
+                treeNode.data.children.push(item)
               })
             }
             if (res.files.length > 0) {
               const a = res.files
               a.forEach((item, index, a) => {
-                item.isLeaf = true
+                item.isLeaf = isTrashView || !this.getFileIsOpen(item.name)
                 item.type = 'file'
-                treeNode.dataRef.children.push(item)
+                treeNode.data.children.push(item)
               })
             }
-            this.treeData = [...this.treeData]
-            this.trashData = [...this.trashData]
             const setTitle = (arr) => {
               arr.forEach(ele => {
                 ele.title = ele.name
@@ -2163,43 +2233,46 @@ export default {
               })
             }
             setTitle(this.trashData)
-            resolve()
+            resolve(treeNode.data.children)
+            if (treeNode.data.artifactPath) return
+            this.treeData = [...this.treeData]
+            this.trashData = [...this.trashData]
           })
+          return
         // })
         return
       }
 
       // return new Promise(resolve => {
-        if (treeNode.dataRef.children) {
-          resolve()
+        if (treeNode.data.children) {
+          resolve(treeNode.data.children)
           return
         }
+        treeNode.loading = true
         browse(
           this.folibRepository.storageId,
           this.folibRepository.id,
-          treeNode.dataRef.artifactPath
+          treeNode.data.artifactPath || ''
         ).then(res => {
-          if (!treeNode.dataRef.children) {
-            treeNode.dataRef.children = []
+          if (!treeNode.data.children) {
+            treeNode.data.children = []
           }
           if (res.directories.length > 0) {
             const d = res.directories
             d.forEach((item, index, d) => {
               item.type = 'dir'
             })
-            treeNode.dataRef.children = d
+            treeNode.data.children = d
           }
           if (res.files.length > 0) {
             const a = res.files
             a.forEach((item, index, a) => {
-              item.isLeaf = true
+              item.isLeaf = isTrashView || !this.getFileIsOpen(item.name)
               item.type = 'file'
             })
-            treeNode.dataRef.children = treeNode.dataRef.children.concat(a)
+            treeNode.data.children = treeNode.data.children.concat(a)
           }
-
-          this.treeData = [...this.treeData]
-          this.trashData = [...this.trashData]
+          resolve(treeNode.data.children)
           const setTitle = (arr) => {
             arr.forEach(ele => {
               ele.title = ele.name
@@ -2212,15 +2285,18 @@ export default {
             })
           }
           setTitle(this.trashData)
-          resolve()
+          if (treeNode.data.artifactPath) return
+          this.treeData = [...this.treeData]
+          this.trashData = [...this.trashData]
+        }).finally(() => {
+            treeNode.loading = false
         })
       // })
     },
-    treeSelect(key, e) {
-      if(e.isRecycle){
-        this.isTrashView = true
-      }
-      this.currentTreeNode = e.node.dataRef
+    treeSelect(data, isTrashView, folibRepository) {
+      this.isTrashView = isTrashView
+      this.currentTreeNode = data
+      if (folibRepository) this.folibRepository = folibRepository
       this.scanReport = {
         show: false,
         fail: false,
@@ -2273,14 +2349,14 @@ export default {
       }
 
     },
-    handleMenuClickTree(active,currentTreeNode){
+    handleMenuClickTree(active,currentTreeNode, folibRepository){
       this.currentTreeNode = currentTreeNode
-      this.handleMenuClick(active)
+      this.handleMenuClick(active, folibRepository)
     },
-    handleMenuClick(active) {
-      console.log(active)
+    handleMenuClick(active, repository) {
+      const folibRepository = repository || this.folibRepository
       this.operationForm.resetFields()
-      this.isTargetPatDisabled = this.folibRepository.layout !== 'Raw';
+      this.isTargetPatDisabled = folibRepository.layout !== 'Raw';
       this.$nextTick(() => {
         if (this.$refs.operationForm) {
           this.operationForm.setFieldsValue({
@@ -2296,10 +2372,10 @@ export default {
         //复制 或 移动
         this.showOperationFormModal = true
         this.queryPermissionStoragesAndRepositories(
-          this.folibRepository.type,
-          this.folibRepository.layout,
-          this.folibRepository.storageId + ':' + this.folibRepository.id,
-          this.folibRepository.policy
+          folibRepository.type,
+          folibRepository.layout,
+          folibRepository.storageId + ':' + folibRepository.id,
+          folibRepository.policy
         )
         this.operationTitle =
           active.key === '2'
@@ -2313,14 +2389,14 @@ export default {
       } else if (active.key === '5') {
         this.showOperationDispatchFormModal = true
         this.getArtifactDispatchStoragesAndRepositories(
-          this.folibRepository.type,
-          this.folibRepository.layout,
-          this.folibRepository.policy
+          folibRepository.type,
+          folibRepository.layout,
+          folibRepository.policy
         )
-        this.getExternalNodeRepositories({ type: this.folibRepository.layout })
+        this.getExternalNodeRepositories({ type: folibRepository.layout })
         this.operationTitle = this.$t('Store.Distribute')
         this.customTitle = this.$t('Store.DistributeCustomDirectory')
-        // 下载  
+        // 下载
       } else if (active.key === '6') {
         let url = this.currentTreeNode.url
         if (url) {
@@ -2330,9 +2406,8 @@ export default {
       } else if (active.key === '7') {
         if (this.currentTreeNode.type === 'dir') {
           this.downLoadVisible = true;
-          this.folibRepository
-          let storageId = this.folibRepository.storageId;
-          let repositoryId = this.folibRepository.id;
+          let storageId = folibRepository.storageId;
+          let repositoryId = folibRepository.id;
           let path = this.currentTreeNode.artifactPath;
           getRawPathSize(storageId, repositoryId, path).then(res => {
             this.rawPathSize = res;
@@ -2345,13 +2420,6 @@ export default {
           // }
         } else if (this.currentTreeNode.type === 'file') {
           let uri = this.currentTreeNode.url;
-          const str = this.currentFileDetial.imageName;
-
-          // 使用正则表达式匹配第三个 '/' 后的部分
-          const regex = /^([^\/]*\/){3}(.*)$/;
-          const match = str.match(regex);
-
-          const result = match ? match[2] : '';
           if (uri) {
             const url = new URL(uri);
             // 获取协议（http: 或 https:）
@@ -2382,7 +2450,8 @@ export default {
                   message: self.$t('Store.RestoreSuccessful')
                 })
                 if(self.isChecked){
-                  self.$emit('reload')
+                    self.$store.commit('setRestoreActionMark')
+                  // self.$emit('reload')
                 }else{
                   self.reload()
                 }
@@ -2402,7 +2471,7 @@ export default {
     },
 
     handleRightClick(active) {
-      this.handleMenuClick(active)
+      this.handleMenuClick(active, this.folibRepository)
       if (active.key === '4') {
         this.deletePackageHandle();
       }
@@ -2911,7 +2980,7 @@ export default {
         this.storageAdmin = res.storageAdmin
         this.permissions = res.permissions
         this.uploadEnabled =
-          this.folibRepository.status.indexOf('Out of Service') === -1 &&
+          this.folibRepository.status?.indexOf('Out of Service') === -1 &&
           this.enablUploadedLayout.includes(this.folibRepository.layout) &&
           (this.folibRepository.type === 'hosted' || (this.folibRepository.type === 'group' && this.folibRepository.groupDefaultRepository)) &&
           (hasRole('ARTIFACTS_MANAGER') ||
@@ -3251,11 +3320,12 @@ export default {
         }
         return url;
       },
-     onRightClick(params) {
+     onRightClick(event, data) {
+       if (data.treeType === 'lastRoot') return
        this.showContextMenu = true;
-       this.rightClickTop = `${params.event.clientY}px`;
-       this.rightClickLeft = `${params.event.clientX}px`;
-       this.currentTreeNode = params.node.dataRef;
+       this.rightClickTop = `${event.clientY}px`;
+       this.rightClickLeft = `${event.clientX}px`;
+       this.currentTreeNode = data;
      },
      closeContextMenu() {
        this.showContextMenu = false;
