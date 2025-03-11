@@ -148,7 +148,7 @@ export function artifactCheck(repository, fileName, fileSize,maxSize) {
             msg = fileName + '为snapshot版本，仓库版本策略为release，禁止上传'
         }
         if (policy === 'snapshot' && !isSnapshot) {
-        msg = fileName + '为snapshot版本，仓库版本策略为release，禁止上传'
+        msg = fileName + '为release版本，仓库版本策略为snapshot，禁止上传'
         }
         if (msg) {
             result.check = false
@@ -165,6 +165,55 @@ export function artifactCheck(repository, fileName, fileSize,maxSize) {
         return result
     }
     return result
+}
+
+export function getLayoutRepoPrefix(item) {
+    let prefix = 'artifactory/'
+    let subLayout = item.subLayout
+    switch(subLayout) {
+        case 'pypi':
+            prefix = 'artifactory/api/pypi/'
+        break;
+        case 'npm':
+            prefix = 'artifactory/api/npm/'
+        break;
+        case 'ohpm':
+            prefix = 'artifactory/api/ohpm/'
+        break;
+        case 'php':
+            prefix = 'artifactory/api/composer/'
+        break;
+        case 'conan':
+            prefix = 'artifactory/api/conan/'
+        break;
+        case 'helm':
+            prefix = 'artifactory/api/helm/'
+        break;
+        case 'cocoapods':
+            prefix = 'artifactory/api/pods/'
+        break;
+        case 'go':
+            prefix = 'artifactory/api/go/'
+        break;
+        case 'gitlfs':
+            prefix = 'artifactory/api/lfs/'
+        break;
+        case 'huggingface':
+            prefix = 'artifactory/api/huggingfaceml/'
+        break;
+        case 'pub':
+            prefix = 'artifactory/api/pub/'
+        break;
+        case 'docker':
+            prefix = ''
+        break;
+        case 'cargo':
+            prefix = 'artifactory/api/cargo/'
+        break;
+        default:
+            prefix = 'artifactory/'
+    }
+    return prefix
 }
 
 export function convertToUnit(size) {
@@ -187,5 +236,6 @@ export function convertToUnit(size) {
     }else {
         throw new Error("Unsupported unit: " + unit);
     }
+
 }
 

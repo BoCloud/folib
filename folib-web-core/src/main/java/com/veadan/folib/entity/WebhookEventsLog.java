@@ -1,0 +1,148 @@
+package com.veadan.folib.entity;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
+
+import javax.persistence.Column;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import java.io.Serializable;
+import java.util.Date;
+
+
+/**
+ * @author leipenghui
+ */
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@Accessors(chain = true)
+@Table(name = "webhook_events_log")
+public class WebhookEventsLog implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * 主键ID
+     */
+    @Id
+    private Long id;
+
+    /**
+     * 事件类型
+     */
+    @Column(name = "event_type")
+    private String eventType;
+
+    /**
+     * 事件仓库名称
+     */
+    @Column(name = "event_repository_id")
+    private String eventRepositoryId;
+
+    /**
+     * 存储空间名称
+     */
+    @Column(name = "storage_id")
+    private String storageId;
+
+    /**
+     * 仓库名称
+     */
+    @Column(name = "repository_id")
+    private String repositoryId;
+
+    /**
+     * 制品名称
+     */
+    @Column(name = "artifact_name")
+    private String artifactName;
+
+    /**
+     * 制品路径
+     */
+    @Column(name = "artifact_path")
+    private String artifactPath;
+
+    /**
+     * sha256的checksum
+     */
+    @Column(name = "sha256_checksum")
+    private String sha256Checksum;
+
+    /**
+     * 文件大小（单位：字节）
+     */
+    @Column(name = "size")
+    private Long size;
+
+    /**
+     * 访问url前缀
+     */
+    @Column(name = "base_url")
+    private String baseUrl;
+
+    /**
+     * 状态（1：初始状态 2：成功 3：失败）
+     */
+    @Column(name = "status")
+    private Integer status;
+
+    /**
+     * 失败原因
+     */
+    @Column(name = "failure_reason")
+    private String failureReason;
+
+    /**
+     * 重试标记（0:不重试，1:重试）
+     */
+    @Column(name = "retry")
+    private Integer retry;
+
+    /**
+     * 重试次数
+     */
+    @Column(name = "retry_count")
+    private Integer retryCount;
+
+    /**
+     * 重试时间
+     */
+    @Column(name = "retry_time")
+    @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date retryTime;
+
+    /**
+     * 创建人
+     */
+    @Column(name = "create_by")
+    private String createBy;
+
+    /**
+     * 创建时间
+     */
+    @Column(name = "create_time")
+    @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date createTime;
+
+    /**
+     * 更新人
+     */
+    @Column(name = "update_by")
+    private String updateBy;
+
+    /**
+     * 更新时间
+     */
+    @Column(name = "update_time")
+    @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date updateTime;
+
+}

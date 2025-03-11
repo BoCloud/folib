@@ -346,4 +346,17 @@ public interface GlobalConstants {
     String COLON = ":";
 
     String RELEASE_ARTIFACT_KEY ="[RELEASE]";
+
+    /**
+     * 桶容量
+     */
+    long BUCKET_CAPACITY =3000;
+    /**
+     * 桶生成令牌量
+     */
+    long BUCKET_TOKENS=3000;
+
+    String BUCKET_CAPACITY_KEY="BUCKET_CAPACITY";
+
+    String BUCKET_TOKENS_KEY="BUCKET_TOKENS";
 }
