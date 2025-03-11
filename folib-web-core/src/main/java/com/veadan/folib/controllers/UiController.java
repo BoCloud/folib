@@ -11,6 +11,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.servlet.view.RedirectView;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
@@ -25,10 +26,14 @@ public class UiController implements ErrorController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND.value()).build();
     }
 
-    @GetMapping(path = {"/**", "/error"}, produces = {MediaType.TEXT_HTML_VALUE})
-    public RedirectView indexWithRoute(HttpServletResponse response) {
+    @GetMapping(path = {"/**"}, produces = {MediaType.TEXT_HTML_VALUE})
+    public RedirectView indexWithRoute(HttpServletRequest request, HttpServletResponse response) {
+        String path = request.getRequestURI();
+        if (path.startsWith("/error")) {
+            // 适配webdav 能够401返回给客户端而不发生重定向
+            return null;
+        }
         response.setStatus(HttpStatus.NOT_FOUND.value());
-
         return new RedirectView(getUIIndex(), true, false);
     }
 
