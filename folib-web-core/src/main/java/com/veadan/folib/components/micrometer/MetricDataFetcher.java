@@ -29,7 +29,7 @@ public class MetricDataFetcher {
         this.storageMonitoringMapper = storageMonitoringMapper;
     }
 
-    @Scheduled(fixedRate = 5000) // 每5秒查询一次
+    @Scheduled(fixedRate = 60000) // 每5秒查询一次
     public List<MetricData> fetchAllMetrics() {
         return saveMetricData(storageMonitoringMapper.getTodayData());
 

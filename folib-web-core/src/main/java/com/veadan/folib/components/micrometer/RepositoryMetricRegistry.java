@@ -16,13 +16,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 @Component
-public class RepositoryIdMetricRegistry {
+public class RepositoryMetricRegistry {
     private final MeterRegistry meterRegistry;
     private final MetricDataFetcher metricDataFetcher;
     // 缓存所有指标，Key格式：metricName|packageType|type|name
     private final Map<String, AtomicReference<Double>> metricCache = new ConcurrentHashMap<>();
 
-    public RepositoryIdMetricRegistry(MeterRegistry meterRegistry, MetricDataFetcher metricDataFetcher) {
+    public RepositoryMetricRegistry(MeterRegistry meterRegistry, MetricDataFetcher metricDataFetcher) {
         this.meterRegistry = meterRegistry;
         this.metricDataFetcher = metricDataFetcher;
         init();
@@ -34,11 +34,14 @@ public class RepositoryIdMetricRegistry {
         updateAllMetrics();
         // 定时更新
         ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-        scheduler.scheduleAtFixedRate(this::updateAllMetrics, 0, 5, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(this::updateAllMetrics, 0, 60, TimeUnit.SECONDS);
     }
 
     private void updateAllMetrics() {
         List<MetricData> metrics = metricDataFetcher.fetchAllMetrics();
+        if(metrics==null || metrics.isEmpty()){
+            return;
+        }
         metrics.forEach(this::updateSingleMetric);
         cleanupExpiredMetrics(metrics);
     }
