@@ -65,7 +65,7 @@ public class PypiPackageMetadataIndexer {
     private PypiBrowsePackageHtmlResponseBuilder pypiBrowsePackageHtmlResponseBuilder;
 
     public void indexAsSystem(RepositoryPath repositoryPath, PypiIndexTypeEnum pypiIndexTypeEnum) throws Exception {
-        if (Objects.isNull(repositoryPath) || Files.isHidden(repositoryPath)) {
+        if (Objects.isNull(repositoryPath) || Files.isHidden(repositoryPath) || RepositoryFiles.isMetadata(repositoryPath)) {
             return;
         }
         if (!RepositoryTypeEnum.HOSTED.getType().equals(repositoryPath.getRepository().getType())) {
