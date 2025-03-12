@@ -1448,7 +1448,7 @@ deb [trusted=yes]  ${this.baseUrl}storages/${this.folibRepository.storageId}/${t
 deb [trusted=yes]  ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id} focal-security main restricted universe multiverse`
    },
     debianCommand(){
-      return ` sudo apt-get update  \n apt-get install <DEBIAN_PACKAGE_NAME>`
+      return ` sudo apt update  \n apt-get install <DEBIAN_PACKAGE_NAME>`
     },
       cargoConfiguration() {
         if(this.folibRepository.type === "hosted"){
