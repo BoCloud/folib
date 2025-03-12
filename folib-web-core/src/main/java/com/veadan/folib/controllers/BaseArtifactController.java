@@ -5,6 +5,7 @@ import com.veadan.folib.artifact.ArtifactNotFoundException;
 import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
 import com.veadan.folib.cloud.storage.s3fs.S3FileSystemProvider;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
 import com.veadan.folib.components.ArtifactSecurityComponent;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
@@ -123,7 +124,7 @@ public abstract class BaseArtifactController
         SimpleDateFormat sdf = new SimpleDateFormat("E, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
         sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
         response.setHeader("Last-Modified", sdf.format(new Date()));
-        response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", repositoryPath.getFileName()));
+        response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", UriUtils.encode(repositoryPath.getFileName().toString())));
         long startTime = System.currentTimeMillis();
         logger.debug("Download [{}] 开始时间 [{}]", repositoryPath.toString(), startTime);
         if (ArtifactControllerHelper.isRangedRequest(httpHeaders)) {
