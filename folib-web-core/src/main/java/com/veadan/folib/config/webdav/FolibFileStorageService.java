@@ -1,6 +1,7 @@
 package com.veadan.folib.config.webdav;
 
 import com.google.common.base.Joiner;
+import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.dto.TargetRepositoyDto;
@@ -9,7 +10,6 @@ import com.veadan.folib.providers.io.LayoutFileSystem;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
-import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ArtifactPromotionService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.DirectoryListingService;
@@ -17,7 +17,6 @@ import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
-
 import com.veadan.folib.utils.PathUtils;
 import io.milton.http.exceptions.BadRequestException;
 import lombok.extern.slf4j.Slf4j;
@@ -52,20 +51,18 @@ public class FolibFileStorageService implements FileStorageService {
     private RepositoryPathResolver repositoryPathResolver;
 
     @Autowired
-    private ConfigurationManagementService configurationManagementService;
-
-    @Autowired
     @Qualifier("browseRepositoryDirectoryListingService")
     private volatile DirectoryListingService directoryListingService;
 
     @Autowired
     private ArtifactPromotionService artifactPromotionService;
 
-    @Autowired
-    private ArtifactManagementService artifactManagementService;
 
     @Autowired
     private ConfigurationManagementService configurationManager;
+
+    @Autowired
+    private ArtifactComponent artifactComponent;
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -79,7 +76,9 @@ public class FolibFileStorageService implements FileStorageService {
             return null;
         }
         try (InputStream inputStream = Files.newInputStream(repositoryPath)) {
-            return inputStream.readAllBytes();
+            byte[] bytes = inputStream.readAllBytes();
+            artifactComponent.afterRead(repositoryPath);
+            return bytes;
         }
     }
 
@@ -90,8 +89,8 @@ public class FolibFileStorageService implements FileStorageService {
             throw new IllegalArgumentException("path:" + path + " is not a valid repository path");
         }
         String repoPath = getRepoPath(path);
-        String name= PathUtils.getLastPathElement(path);
-        ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), new MockMultipartFile(name,content), repoPath, tempPath);
+        String name = PathUtils.getLastPathElement(path);
+        ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), new MockMultipartFile(name, content), repoPath, tempPath);
         artifactUploadTask.call();
     }
 
@@ -109,7 +108,7 @@ public class FolibFileStorageService implements FileStorageService {
         }
         if (split.length == 1) {
             // 只显示本地仓库
-            Map<String,Repository> collect = storage.getRepositories().values().stream().filter(repository ->
+            Map<String, Repository> collect = storage.getRepositories().values().stream().filter(repository ->
                     RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())
             ).collect(Collectors.toMap(Repository::getId, repository -> repository));
             return directoryListingService.fromRepositories(collect);
