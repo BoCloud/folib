@@ -51,6 +51,11 @@ public class AuditLogRecordServiceImpl implements AuditLogRecordService {
 
     @Override
     public boolean saveRecord(AuditLogRecord record) {
+        int targetMaxLength = 255;
+        String target = record.getTarget();
+        if (StringUtils.isNotBlank(target) && target.length() >= targetMaxLength) {
+            record.setTarget(target.substring(0, targetMaxLength));
+        }
         return auditLogRecordMapper.insert(record) == 1;
     }
 

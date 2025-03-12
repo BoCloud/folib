@@ -523,6 +523,7 @@ export default {
                 }
             })
             this.folibRepository = target
+            this.repositoryType = getLayoutType(this.folibRepository)
             if (this.folibRepository.type === 'proxy') {
                 this.uploadEnabled = false
                 this.copyEnabled = false
@@ -532,7 +533,7 @@ export default {
                 this.queryPermission()
             }
             this.$refs.rightMenu.handlerDataPermission(data,type, callback)
-            if (target.layout === 'Docker' && data.type === 'file') {
+            if (target.layout && data.type === 'file') {
                 const params = {
                     storageId: target.storageId,
                     id: target.id,
@@ -687,6 +688,15 @@ export default {
                 this.folibRepository = treeNode.data
                 this.repositoryType = getLayoutType(this.folibRepository)
                 this.queryPermission()
+            } else {
+                let target = null
+                // 获取当前子节点的最顶层父节点（仓库节点）
+                this.treeData.forEach(ele => {
+                    if (ele.id === treeNode.data.repositoryId) {
+                        target = ele
+                    }
+                })
+                this.folibRepository = target
             }
             const { storageId, id, layout } = this.folibRepository
             const { artifactPath, name } = treeNode.data

@@ -64,7 +64,7 @@
                     <div @click="checkMode(true)" class="img-sty" :class="isChecked ? 'isActive' : ''">
                       <img src="./images/tree.svg" width="20" alt="">
                     </div>
-                    <div :style="switchDisabled?'display:block;':'display:none;'" class="disabled_sty"></div>
+                    <div :style="switchDisabled || !storageData || !storageData.length ?'display:block;':'display:none;'" class="disabled_sty"></div>
                   </div>
                 </a-col>
               </a-row>
@@ -1525,8 +1525,8 @@ export default {
       this[type] = value; // 更新绑定值
     },
     // 制品仓库页面专属。用于切换仓库和存储空间的展示模式
-    checkMode(key){
-      if(this.switchDisabled){
+    checkMode(key, forced = false){
+      if(this.switchDisabled && !forced){
         return
       }
       setTimeout(() => {
@@ -1824,9 +1824,10 @@ export default {
             })
           }, 100)
           this.showStorageUpdate = false
-          this.getStorages()
-          this.currentStorage = this.currentDefultStorage
-          this.reload()
+          storage.remove("libView_repository")
+          this.getStorages(() => {
+              this.reload()
+          })
         }).catch(err => {
           let error = err.response.data?err.response.data:this.$t('Storage.UnknownError')
           this.$notification["error"]({
@@ -1921,11 +1922,15 @@ export default {
         }
       })
     },
-    async getStorages() {
+    async getStorages(callback) {
       await getStorages().then(response => {
           this.storageData = response.storages;
           this.cacheStorage()
-        })
+          if (callback) callback()
+        }).catch(() => {
+          this.pageLoading = false
+          this.checkMode(false, true)
+      })
     },
     userSearchChange(matchUsername){
       this.userQueryParams.matchUsername = matchUsername
@@ -1956,12 +1961,6 @@ export default {
               this.getUsersList()
           }
       }
-    },
-    async getStorages() {
-      await getStorages().then(response => {
-        this.storageData = response.storages;
-        this.cacheStorage()
-      })
     },
     setCurrentStorage(item) {
       if (!item.admin || item.admin === '') {
@@ -2075,13 +2074,16 @@ export default {
     cacheStorage() {
       let cache = storage.get("libView_repository");
       if (!cache || !cache.item?.id) {
-        if (this.storageData) {
+        if (this.storageData && this.storageData.length) {
           let item = this.storageData[0]
           if (item && item.id) {
             this.setCurrentStorage(item)
             item.storageId = item.id
             storage.set("libView_repository", { item, baseUrl: this.baseUrl })
           }
+        } else {
+            this.pageLoading = false
+            this.checkMode(false, true)
         }
       }
       if (this.currentStorage.id) {

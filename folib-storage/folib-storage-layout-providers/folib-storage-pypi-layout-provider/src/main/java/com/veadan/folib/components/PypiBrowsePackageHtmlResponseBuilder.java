@@ -10,6 +10,8 @@ import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.pypi.PypiSearchResult;
 import com.veadan.folib.storage.repository.Repository;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -27,6 +29,7 @@ public class PypiBrowsePackageHtmlResponseBuilder {
         if (CollectionUtils.isEmpty(filePaths)) {
             htmlResponse = "<html>\n" +
                     "        <head>\n" +
+                    "            <meta name=\"pypi:repository-version\" content=\"1.0\">\n" +
                     "            <title>Not Found</title>\n" +
                     "        </head>\n" +
                     "        <body>\n" +
@@ -40,6 +43,7 @@ public class PypiBrowsePackageHtmlResponseBuilder {
 
             htmlResponse = "<html>\n" +
                     "        <head>\n" +
+                    "            <meta name=\"pypi:repository-version\" content=\"1.0\">\n" +
                     "            <title>Links for " + packageName + "</title>\n" +
                     "        </head>\n" +
                     "        <body>\n" +
@@ -72,6 +76,7 @@ public class PypiBrowsePackageHtmlResponseBuilder {
         if (CollectionUtils.isEmpty(pypiSearchResultList)) {
             htmlResponse = "<html>\n" +
                     "        <head>\n" +
+                    "            <meta name=\"pypi:repository-version\" content=\"1.0\">\n" +
                     "            <title>Not Found</title>\n" +
                     "        </head>\n" +
                     "        <body>\n" +
@@ -83,6 +88,7 @@ public class PypiBrowsePackageHtmlResponseBuilder {
             final String packageName = artifactCoordinates.getId();
             htmlResponse = "<html>\n" +
                     "        <head>\n" +
+                    "            <meta name=\"pypi:repository-version\" content=\"1.0\">\n" +
                     "            <title>Links for " + packageName + "</title>\n" +
                     "        </head>\n" +
                     "        <body>\n" +
@@ -99,7 +105,13 @@ public class PypiBrowsePackageHtmlResponseBuilder {
         PypiArtifactCoordinates artifactCoordinates = null;
         for (PypiSearchResult pypiSearchResult : pypiSearchResultList) {
             artifactCoordinates = PypiArtifactCoordinates.parse(pypiSearchResult.getArtifactName());
-            packageLinks.append("<a href=\"" + "/storages/").append(pypiSearchResult.getStorageId()).append("/").append(pypiSearchResult.getRepositoryId()).append("/packages/").append(pypiSearchResult.getArtifactPath()).append("\">").append(artifactCoordinates.getFileName()).append("</a><br>\n");
+            packageLinks.append("<a href=\"" + "/storages/").append(pypiSearchResult.getStorageId()).append("/").append(pypiSearchResult.getRepositoryId()).append("/packages/").append(pypiSearchResult.getArtifactPath()).append("\"");
+            if (StringUtils.isNotBlank(pypiSearchResult.getAttributes())) {
+                packageLinks.append(" ");
+                packageLinks.append(pypiSearchResult.getAttributes());
+            }
+            packageLinks.append(">");
+            packageLinks.append(artifactCoordinates.getFileName()).append("</a><br>\n");
         }
         return packageLinks.toString();
     }
@@ -107,6 +119,7 @@ public class PypiBrowsePackageHtmlResponseBuilder {
     public String nouFound() {
         return "<html>\n" +
                 "        <head>\n" +
+                "            <meta name=\"pypi:repository-version\" content=\"1.0\">\n" +
                 "            <title>Not Found</title>\n" +
                 "        </head>\n" +
                 "        <body>\n" +
