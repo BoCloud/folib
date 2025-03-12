@@ -48,5 +48,6 @@
     <include file="classpath:db/changelog/changelog_migrate_info_init.xml"/>
     <include file="classpath:db/changelog/changelog_migrate_info_update.xml"/>
     <include file="classpath:db/changelog/changelog_webhook_events_log_init.xml"/>
+    <include file="classpath:db/changelog/changelog_audit_log_record_update.xml"/>
     <!--后续增加的按照写对应的sql与changelog-->
 </databaseChangeLog>

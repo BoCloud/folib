@@ -1,8 +1,8 @@
 package com.veadan.folib.services.impl;
 
 import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
-import com.veadan.folib.components.StorageClientComponent;
 import com.veadan.folib.components.PypiBrowsePackageHtmlResponseBuilder;
+import com.veadan.folib.components.StorageClientComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.constants.PypiConstants;
@@ -19,8 +19,14 @@ import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import com.veadan.folib.storage.repository.remote.heartbeat.RemoteRepositoryAlivenessService;
 import com.veadan.folib.util.PypiUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Attribute;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -144,7 +150,7 @@ public class PypiProxyProvider implements PypiProvider {
             }
             String artifactPath = artifactUrl.substring(artifactUrl.indexOf("/packages/") + "/packages/".length());
             artifactUrl = PypiUtils.resolveUrl(packageTargetUrl, artifactUrl);
-            return PypiSearchResult.builder().artifactName(artifactName).artifactPath(artifactPath).artifactUrl(artifactUrl).storageId(storageId).repositoryId(repositoryId).groupName(PypiArtifactCoordinates.parse(artifactName).getId()).build();
+            return PypiSearchResult.builder().artifactName(artifactName).artifactPath(artifactPath).artifactUrl(artifactUrl).storageId(storageId).repositoryId(repositoryId).groupName(PypiArtifactCoordinates.parse(artifactName).getId()).attributes(getAttributes(matchResult.group(0))).build();
         } catch (Exception ex) {
             log.error("Pypi storageId [{}] repositoryId [{}] packageName [{}] parse error [{}]", storageId, repositoryId, artifactName, ExceptionUtils.getStackTrace(ex));
 //            throw new RuntimeException(ex.getMessage());
@@ -173,6 +179,37 @@ public class PypiProxyProvider implements PypiProvider {
             data = responseResult.getData();
         }
         return data;
+    }
+
+    private String getAttributes(String html) {
+        try {
+            if (StringUtils.isBlank(html)) {
+                return "";
+            }
+            StringBuffer attributesStringBuffer = new StringBuffer();
+            // 解析HTML字符串
+            Document doc = Jsoup.parse(html);
+            // 选择所有<a>标签
+            Elements aTags = doc.select("a");
+            // 遍历每个<a>标签并获取属性
+            for (Element aTag : aTags) {
+                // 获取所有属性
+                for (Attribute attribute : aTag.attributes().asList()) {
+                    if ("href".equalsIgnoreCase(attribute.getKey())) {
+                        continue;
+                    }
+                    attributesStringBuffer.append(attribute.getKey());
+                    attributesStringBuffer.append("=\"");
+                    attributesStringBuffer.append(StringEscapeUtils.escapeXml(attribute.getValue()));
+                    attributesStringBuffer.append("\"");
+                    attributesStringBuffer.append(" ");
+                }
+            }
+            return attributesStringBuffer.toString();
+        } catch (Exception ex) {
+            log.error("Pypi proxy index html [{}] error [{}]", html, ExceptionUtils.getStackTrace(ex));
+        }
+        return "";
     }
 
 }

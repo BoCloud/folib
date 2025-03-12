@@ -484,11 +484,11 @@ export default {
     createData() {
       //上个页面通过缓存传参，目的防止页面刷新，路由数据消失
       const params = storage.get("libView_repository");
-      this.folibRepository = params.item;
+      this.folibRepository = params?.item;
       if (!this.folibRepository || this.folibRepository.type !== "hosted") {
         this.enabled = false;
       }
-      this.baseUrl = params.baseUrl;
+      this.baseUrl = params?.baseUrl;
       this.repositoryType = this.getLayoutTypeHandle();
     },
     getLayoutTypeHandle() {
@@ -604,7 +604,7 @@ export default {
     },
     getStorage(id) {
       getLibraryFilter(id).then(response => {
-        this.eventSettingEnabled = isAdmin() || response.admin === this.$store.state.user.name
+        this.eventSettingEnabled = this.$store.state.user.name ? true : false
         this.settingsEnabled = isAdmin() || response.admin === this.$store.state.user.name
       })
     },

@@ -117,6 +117,11 @@ public class WebhookServiceImpl implements WebhookService {
                         String id = webhookLogList.get(size - 1).getId() + "";
                         webhookLogMapper.deleteByIds(id);
                     }
+                    int artifactPathMaxLength = 255;
+                    String artifactPath = webhookLog.getArtifactPath();
+                    if (StringUtils.isNotBlank(artifactPath) && artifactPath.length() >= artifactPathMaxLength) {
+                        webhookLog.setArtifactPath(artifactPath.substring(0, artifactPathMaxLength));
+                    }
                     webhookLogMapper.insertSelective(webhookLog);
                 } finally {
                     lock.unlock();

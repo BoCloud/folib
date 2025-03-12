@@ -302,11 +302,6 @@
                     </a-menu>
                   </template>
                 </a-dropdown>
-                <a-modal :title="$t('Store.Prompts')" :visible="downLoadVisible" :okText="$t('Store.Confirm')"
-                  :cancelText="$t('Store.Cancel')" centered @ok="handleDownLoadDir"
-                  @cancel="handleDownLoadDirCancel">
-                  <p>{{ currentTreeNode.artifactPath + $t('Store.DirSize') + rawPathSize + ", "+$t('Store.ConfirmDownload') }}</p>
-                </a-modal>
               </a-col>
             </a-row>
             <a-row type="flex" align="middle" v-if="folibRepository.layout === 'Docker'">
@@ -994,6 +989,12 @@
       </a-form>
     </a-modal>
 
+    <a-modal :title="$t('Store.Prompts')" :visible="downLoadVisible" :okText="$t('Store.Confirm')"
+      :cancelText="$t('Store.Cancel')" centered @ok="handleDownLoadDir"
+      @cancel="handleDownLoadDirCancel">
+      <p>{{ currentTreeNode.artifactPath + $t('Store.DirSize') + rawPathSize + ", "+$t('Store.ConfirmDownload') }}</p>
+    </a-modal>
+
     <MavenUpload v-if="mavenUploadVisible" :modelVisible="mavenUploadVisible" :folibRepository="this.folibRepository"
       @mavenUploadClose="mavenUploadClose" />
 
@@ -1149,6 +1150,7 @@ export default {
       rawPathSize: "",
       baseUrl: '',
       folibRepository: {},
+      actionFolibRepository: {},
       repositoryType: null,
       rpmUploadForm: this.$form.createForm(this, { name: 'rpmUpload_form' }),
       cargoUploadForm: this.$form.createForm(this, { name: 'cargoUpload_form' }),
@@ -1507,8 +1509,8 @@ export default {
     createData() {
       //上个页面通过缓存传参，目的防止页面刷新，路由数据消失
       const params = store.get('libView_repository')
-      this.folibRepository = params.item
-      this.baseUrl = params.baseUrl
+      this.folibRepository = params?.item
+      this.baseUrl = params?.baseUrl
       this.repositoryType = this.getLayoutTypeHandle()
     },
     copy(url) {
@@ -2315,6 +2317,7 @@ export default {
     },
     handleMenuClick(active, repository) {
       const folibRepository = repository || this.folibRepository
+      this.actionFolibRepository = folibRepository
       this.operationForm.resetFields()
       this.copyOperationForm.resetFields()
       this.isTargetPatDisabled = folibRepository.layout !== 'Raw';
@@ -2521,19 +2524,19 @@ export default {
           let data = {
             path: values.path,
             targetPath: values.targetPath,
-            srcStorageId: this.folibRepository.storageId,
-            srcRepositoryId: this.folibRepository.id,
+            srcStorageId: this.actionFolibRepository.storageId,
+            srcRepositoryId: this.actionFolibRepository.id,
             targetRepositoyList: targetRepositoyList
           }
           let dispatchData = {
             path: values.path,
             targetPath: values.targetPath,
-            srcStorageId: this.folibRepository.storageId,
-            srcRepositoryId: this.folibRepository.id,
+            srcStorageId: this.actionFolibRepository.storageId,
+            srcRepositoryId: this.actionFolibRepository.id,
             targetDispatchRepositoryList: targetDispatchRepositoryList,
-            type: this.folibRepository.type,
-            layout: this.folibRepository.layout,
-            policy: this.folibRepository.policy
+            type: this.actionFolibRepository.type,
+            layout: this.actionFolibRepository.layout,
+            policy: this.actionFolibRepository.policy
           }
           if (this.operationTitle.indexOf(this.$t('Store.Copy')) !== -1) {
             artifactCopy(data)
@@ -2625,19 +2628,19 @@ export default {
           let data = {
             path: values.path,
             targetPath: values.targetPath,
-            srcStorageId: this.folibRepository.storageId,
-            srcRepositoryId: this.folibRepository.id,
+            srcStorageId: this.actionFolibRepository.storageId,
+            srcRepositoryId: this.actionFolibRepository.id,
             targetRepositoyList: targetRepositoyList
           }
           let dispatchData = {
             path: values.path,
             targetPath: values.targetPath,
-            srcStorageId: this.folibRepository.storageId,
-            srcRepositoryId: this.folibRepository.id,
+            srcStorageId: this.actionFolibRepository.storageId,
+            srcRepositoryId: this.actionFolibRepository.id,
             targetDispatchRepositoryList: targetDispatchRepositoryList,
-            type: this.folibRepository.type,
-            layout: this.folibRepository.layout,
-            policy: this.folibRepository.policy
+            type: this.actionFolibRepository.type,
+            layout: this.actionFolibRepository.layout,
+            policy: this.actionFolibRepository.policy
           }
           if (this.operationTitle.indexOf(this.$t('Store.Copy')) !== -1) {
             artifactCopy(data)
