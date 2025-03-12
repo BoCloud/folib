@@ -147,10 +147,7 @@ public class WebSecurityConfig
     @Bean
     @UnauthorizedEntyPoint
     AuthenticationEntryPoint customBasicAuthenticationEntryPoint() {
-        BasicAuthenticationEntryPoint entryPoint = new BasicAuthenticationEntryPoint();
-        entryPoint.setRealmName("folib");
-        return entryPoint;
-
+        return new PathSpecificBasicAuthenticationEntryPoint();
     }
 
     @Bean
