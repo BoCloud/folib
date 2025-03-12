@@ -533,7 +533,7 @@ export default {
                 this.queryPermission()
             }
             this.$refs.rightMenu.handlerDataPermission(data,type, callback)
-            if (target.layout === 'Docker' && data.type === 'file') {
+            if (target.layout && data.type === 'file') {
                 const params = {
                     storageId: target.storageId,
                     id: target.id,
