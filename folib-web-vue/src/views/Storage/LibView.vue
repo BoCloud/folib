@@ -604,7 +604,7 @@ export default {
     },
     getStorage(id) {
       getLibraryFilter(id).then(response => {
-        this.eventSettingEnabled = isAdmin() || response.admin === this.$store.state.user.name
+        this.eventSettingEnabled = this.$store.state.user.name ? true : false
         this.settingsEnabled = isAdmin() || response.admin === this.$store.state.user.name
       })
     },
