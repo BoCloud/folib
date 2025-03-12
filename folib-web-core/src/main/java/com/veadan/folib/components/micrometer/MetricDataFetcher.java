@@ -22,8 +22,10 @@ public class MetricDataFetcher {
     private final String METRIC_FILES = "folib.storage.repo.files";
     private final String METRIC_FOLDERS = "folib.storage.repo.folders";
     private final String METRIC_ITEMS = "folib.storage.repo.items";
-    private final String METRIC_USED_BYTES = "folib.storage.repo.used.bytes";
     private final String METRIC_PERCENTAGE = "folib.storage.repo.percentage";
+    private final String METRIC_ARTIFACTS_SIZE = "folib.storage.repo.artifacts.size";
+    private final String metric_artifacts_count = "folib.storage.repo.artifacts.count";
+    private final String METRIC_DISK_PERCENTAGE = "folib.storage.repo.disk.percentage";
 
     public MetricDataFetcher(StorageMonitoringMapper storageMonitoringMapper) {
         this.storageMonitoringMapper = storageMonitoringMapper;
@@ -48,13 +50,17 @@ public class MetricDataFetcher {
                     .filter(d -> d.getRepositoryId() != null && !d.getRepositoryId().isEmpty())
                     .collect(Collectors.toList());
             for (StorageMonitoring monitoring : storageMonitoringList) {
-                metricDataList.add(setMetric(monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), METRIC_FILES, monitoring.getFilesCount()));
-                metricDataList.add(setMetric(monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), METRIC_FOLDERS, monitoring.getFoldersCount()));
-                metricDataList.add(setMetric(monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), METRIC_ITEMS, monitoring.getItemsCount()));
-                double usedBytes = monitoring.getUsedFilesSizePercentage() == null ? 0 : monitoring.getUsedFilesSizePercentage().doubleValue();
-                metricDataList.add(setMetric(monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), METRIC_USED_BYTES, usedBytes));
+                metricDataList.add(setMetric(monitoring.getStorageId(),monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), METRIC_FILES, monitoring.getFilesCount()));
+                metricDataList.add(setMetric(monitoring.getStorageId(),monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), METRIC_FOLDERS, monitoring.getFoldersCount()));
+                metricDataList.add(setMetric(monitoring.getStorageId(),monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), METRIC_ITEMS, monitoring.getItemsCount()));
                 double percentage = monitoring.getUsedStorageQuotaSizePercentage() == null ? 0 : monitoring.getUsedStorageQuotaSizePercentage().doubleValue();
-                metricDataList.add(setMetric(monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), METRIC_PERCENTAGE, percentage));
+                metricDataList.add(setMetric(monitoring.getStorageId(),monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), METRIC_PERCENTAGE, percentage));
+                double artifactsSize = monitoring.getArtifactsSize() == null ? 0 : monitoring.getArtifactsSize().doubleValue();
+                metricDataList.add(setMetric(monitoring.getStorageId(),monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), METRIC_ARTIFACTS_SIZE, artifactsSize));
+                double artifactsCount = monitoring.getArtifactsCount() == null ? 0 : monitoring.getArtifactsCount().doubleValue();
+                metricDataList.add(setMetric(monitoring.getStorageId(),monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), metric_artifacts_count, artifactsCount));
+                double diskPercentage = monitoring.getUsedStorageDeviceSizePercentage() == null ? 0 : monitoring.getUsedStorageDeviceSizePercentage().doubleValue();
+                metricDataList.add(setMetric(monitoring.getStorageId(),monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), METRIC_DISK_PERCENTAGE, diskPercentage));
             }
             return metricDataList;
         }
@@ -71,13 +77,14 @@ public class MetricDataFetcher {
      * @param value
      * @return
      */
-    public MetricData setMetric(String repositoryId, String type, String repositoryLayout, String metricName, double value) {
+    public MetricData setMetric(String storageId,String repositoryId, String type, String repositoryLayout, String metricName, double value) {
         MetricData metricData = new MetricData();
         metricData.setName(repositoryId);
         metricData.setType(type);
         metricData.setPackageType(repositoryLayout);
         metricData.setValue(value);
         metricData.setMetricName(metricName);
+        metricData.setStorageId(storageId);
         return metricData;
     }
 }

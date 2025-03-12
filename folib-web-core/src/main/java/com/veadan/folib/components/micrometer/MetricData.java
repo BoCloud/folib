@@ -17,6 +17,8 @@ public class MetricData {
 
     private String name;
 
+    private String storageId;
+
     private double value;
 
     private String metricName;

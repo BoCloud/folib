@@ -64,7 +64,8 @@ public class RepositoryMetricRegistry {
                     .tags(
                             "package_type", data.getPackageType(),
                             "type", data.getType(),
-                            "name", data.getName()
+                            "name", data.getName(),
+                            "storageId", data.getStorageId()
                     )
                     .register(meterRegistry);
             return ref;
