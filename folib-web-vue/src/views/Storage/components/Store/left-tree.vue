@@ -7,79 +7,89 @@
     <div ref="container" class="left_tree_container">
         <div class="cover-box" v-if="isDragging"></div>
         <div ref="tree_container_sty" class="tree_container_sty" :style="{ height: topHeight + 'px' }">
-            <a-tree 
-                :replaceFields="{
-                    key: 'artifactPath',
-                    title: 'name',
+            <vue-easy-tree
+                :props="{
+                    label: 'name',
                     children: 'children',
-                }" 
-                :tree-data="treeData" 
+                    isLeaf: 'isLeaf'
+                }"
+                lazy
+                :data="treeData"
                 class="leftTree"
-                :load-data="(treeNode) => onLoadData(treeNode,false)" 
-                @select="(key,e)=>treeSelect(key,e,false)" 
-                @rightClick="onRightClick"
-                @expand="(expandedKeys, treeNode) => onExpand(expandedKeys, treeNode, false)"
+                :height="`${topHeight}px`"
+                node-key="artifactPath"
+                icon-class="el-icon-arrow-right"
+                :load="(treeNode, resolve) => onLoadData(treeNode,resolve, false)"
+                @node-click="(data)=>treeSelect(data,false)"
+                @node-contextmenu="(event, data) => onRightClick(event, data, false)"
+                @node-expand="(data, treeNode) => onExpand(data, treeNode, false)"
                 :selectedKeys="selectedKeys"
                 :expandedKeys="expandedKeys"
             >
-                <a-icon slot="switcherIcon" type="down" />
-                <a-icon slot="switcherIcon" type="folder-open" />
-                <template slot="title" slot-scope="{ expanded,name,id,type,selected,fileType }">
+                <template slot-scope="{data,node}">
                     <div class="title_box">
                         <span>
+                            <a-icon v-if="node.loading && !node.expanded" type="loading" :style="{color: '#1890ff'}"/>
                             <a-icon class="tree_icon" style="margin-left: 5px;"
-                                v-if="type === 'dir' || type === 'DIR'"
-                                :type="expanded ? 'folder-open' : 'folder'" />
-                            <a-icon class="tree_icon" style="margin-left: 10px;" v-else
-                                :type="getIconType(name, type)"></a-icon>
-                            <span class="tree_title">
-                                {{ name }}
+                                    v-if="data.type === 'dir' || data.type === 'DIR'"
+                                    :type="node.expanded ? 'folder-open' : 'folder'" />
+                            <a-icon class="tree_icon" style="margin-left: 8px;" v-else :style="data.type === 'recycle'? 'color:#393b3e':''"
+                                    :type="getIconType(data.name, data.type)"></a-icon>
+                            <span class="tree_title" :style="data.type === 'recycle'? 'color:#393b3e':''">
+                                {{ data.name }}
                             </span>
                         </span>
                     </div>
                 </template>
-            </a-tree>
+            </vue-easy-tree>
         </div>
         <div class="line-box" :class="isDragging ? 'line-drag' : ''" @mousedown="startDragging"></div>
         <div ref="tree_container_sty" class="tree_container_sty recycle" :style="{ height: bottomHeight + 'px' }">
-            <a-tree 
-                :replaceFields="{
-                    key: 'artifactPath',
-                    title: 'name',
+            <vue-easy-tree
+                :props="{
+                    label: 'name',
                     children: 'children',
-                }" 
-                :tree-data="trashData" 
+                    isLeaf: 'isLeaf'
+                }"
+                lazy
+                :data="trashData"
                 class="leftTree"
-                :load-data="(treeNode) => onLoadData(treeNode,true)" 
-                @select="(key,e)=>treeSelect(key,e,true)" 
-                @rightClick="onRightClick" 
-                @expand="(expandedKeys, treeNode) => onExpand(expandedKeys, treeNode, true)"
+                :height="`${bottomHeight}px`"
+                node-key="artifactPath"
+                :load="(treeNode,resolve) => onLoadData(treeNode, resolve, true)"
+                @node-click="(data)=>treeSelect(data,true)"
+                @node-contextmenu="(event, data) => onRightClick(event, data, true)"
+                @node-expand="(expandedKeys, treeNode) => onExpand(expandedKeys, treeNode, true)"
                 :selectedKeys="selectRecycleKeys"
                 :expandedKeys="expandedRecycleKeys"
             >
-                <a-icon slot="switcherIcon" type="down" />
-                <a-icon slot="switcherIcon" type="folder-open" />
-                <template slot="title" slot-scope="{ expanded,name,id,type,selected,fileType,title }">
+                <template slot-scope="{data,node}">
                     <div class="title_box">
                         <span>
+                            <a-icon v-if="node.loading && !node.expanded" type="loading" :style="{color: '#1890ff'}"/>
                             <a-icon class="tree_icon" style="margin-left: 5px;"
-                                v-if="type === 'dir' || type === 'DIR'"
-                                :type="expanded ? 'folder-open' : 'folder'" />
-                            <a-icon class="tree_icon" style="margin-left: 8px;" v-else :style="type == 'recycle'? 'color:#393b3e':''"
-                                :type="getIconType(name, type)"></a-icon>
-                            <span class="tree_title" :style="type == 'recycle'? 'color:#393b3e':''">
-                                {{title || name }}
+                                    v-if="data.type === 'dir' || data.type === 'DIR'"
+                                    :type="node.expanded ? 'folder-open' : 'folder'" />
+                            <a-icon class="tree_icon" style="margin-left: 8px;" v-else :style="data.type === 'recycle'? 'color:#393b3e':''"
+                                    :type="getIconType(data.name, data.type)"></a-icon>
+                            <span class="tree_title" :style="data.type === 'recycle'? 'color:#393b3e':''">
+                                {{ data.title || data.name }}
                             </span>
                         </span>
                     </div>
                 </template>
-            </a-tree>
+            </vue-easy-tree>
         </div>
     </div>
 </template>
 
 <script>
+import VueEasyTree from "@wchbrad/vue-easy-tree"
+import "@wchbrad/vue-easy-tree/src/assets/index.scss"
 export default {
+    components: {
+        VueEasyTree
+    },
     props: ['trashData', 'treeData'],
     data() {
         return {
@@ -121,28 +131,37 @@ export default {
             }
         },
     },
+    watch: {
+        trashData: {
+            handler(val) {
+                console.log(val);
+                console.log(this.treeData);
+            },
+            deep: true
+        }
+    },
     mounted() {
         this.$nextTick(() => {
             this.getPosition()
         })
     },
     methods: {
-        onLoadData(treeNode,isTrashView) {
-            return new Promise((resolve, reject) => {
-                this.$emit('onLoadData', treeNode, isTrashView, resolve, reject);
-            })
+        onLoadData(treeNode,resolve, isTrashView) {
+            treeNode.loading = true
+            this.$emit('onLoadData', treeNode, isTrashView, resolve);
         },
-        onExpand(expandedKeys, { node, expanded },key){
-            if(node.dataRef.name === '.trash'){
+        onExpand(data, node, expanded){
+            if(node.data.name === '.trash'){
                 this.getPosition(expanded ? 300 : 40)
             }
-            if(key){
-                this.expandedRecycleKeys = expandedKeys
-            }else{
-                this.expandedKeys = expandedKeys
-            }
+            // if(key){
+            //     this.expandedRecycleKeys = expandedKeys
+            // }else{
+            //     this.expandedKeys = expandedKeys
+            // }
         },
-        treeSelect(key, e, type) {
+        treeSelect(data, type) {
+            this.$emit('closeContextMenu')
             if(type){
                 if(this.expandedRecycleKeys.length){
                     this.expandedRecycleKeys = []
@@ -151,16 +170,16 @@ export default {
                     this.expandedRecycleKeys = ['.trash']
                     this.getPosition(300)
                 }
-                this.selectRecycleKeys = key
+                this.selectRecycleKeys = []
                 this.selectedKeys = []
             }else{
-                this.selectedKeys = key
+                this.selectedKeys = []
                 this.selectRecycleKeys = []
             }
-            this.$emit('treeSelect',key, e)
+            this.$emit('treeSelect',data, type)
         },
-        onRightClick(params) {
-            this.$emit('onRightClick',params)
+        onRightClick(event, data, isTrashView) {
+            this.$emit('onRightClick',event, data, isTrashView)
         },
         startDragging(event) {
             event.preventDefault()
@@ -308,5 +327,8 @@ export default {
 .leftTree .tree_icon {
     font-size: 16px;
     font-weight: 500;
+}
+.el-icon-arrow-right:before {
+    content: "\e6e0";
 }
 </style>

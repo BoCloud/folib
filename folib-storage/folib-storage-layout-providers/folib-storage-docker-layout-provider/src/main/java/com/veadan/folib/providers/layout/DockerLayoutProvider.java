@@ -212,6 +212,9 @@ public class DockerLayoutProvider
                         concat = true;
                     }
                 } else {
+                    if(Objects.isNull(path.getTargetUrl())){
+                        return;
+                    }
                     dockerArtifactCoordinates = DockerArtifactCoordinates.parse(path.getTargetUrl());
                     imagePath = dockerArtifactCoordinates.getName();
                     if (imagePath.split(GlobalConstants.SEPARATOR).length <= 2) {

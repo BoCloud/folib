@@ -3,6 +3,7 @@ package com.veadan.folib.utils;
 import com.alibaba.fastjson.JSON;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.controllers.BaseController;
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.exception.ExceptionHandlingOutputStream;
 import com.veadan.folib.io.ByteRangeInputStream;
 import com.veadan.folib.io.StreamUtils;
@@ -10,6 +11,7 @@ import com.veadan.folib.providers.io.RepositoryFileAttributes;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.schema2.ImageManifest;
+import com.veadan.folib.storage.repository.Repository;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.carlspring.commons.http.range.ByteRange;
@@ -187,6 +189,7 @@ public class ArtifactControllerHelper
     }
 
     public static void provideArtifactHeaders(HttpServletResponse response,
+                                              RepositoryPath repositoryPath,
                                               Path path)
             throws IOException
     {
@@ -200,15 +203,15 @@ public class ArtifactControllerHelper
         }
         response.setHeader(HttpHeaders.LAST_MODIFIED, DateTimeFormatter.RFC_1123_DATE_TIME.format(
                 ZonedDateTime.ofInstant(Files.getLastModifiedTime(path).toInstant(), ZoneId.systemDefault())));
-
+        Repository repository = repositoryPath.getRepository();
         // TODO: This is far from optimal and will need to have a content type approach at some point:
-        String contentType = getContentType(path);
+        String contentType = getContentType(repository, path);
         response.setContentType(contentType);
 
         response.setHeader(HttpHeaders.ACCEPT_RANGES, "bytes");
     }
 
-    private static String getContentType(Path path)
+    private static String getContentType(Repository repository, Path path)
             throws IOException
     {
         if (path.getFileName().toString().endsWith(".properties"))
@@ -222,11 +225,11 @@ public class ArtifactControllerHelper
         else if (path.getFileName().toString().endsWith(".gz"))
         {
             return com.google.common.net.MediaType.GZIP.toString();
-        } else if (DockerArtifactCoordinates.isManifestPath(path)) {
+        } else if (ProductTypeEnum.Docker.getFoLibraryName().equalsIgnoreCase(repository.getLayout()) && DockerArtifactCoordinates.isManifestPath(path)) {
             //docker repository v2
             ImageManifest imageManifest = JSON.parseObject(Files.readString(path), ImageManifest.class);
             return imageManifest.getMediaType();
-        } else if (path.toString().contains("/blobs/") && path.getFileName().toString().startsWith("sha256:")) {
+        } else if (ProductTypeEnum.Docker.getFoLibraryName().equalsIgnoreCase(repository.getLayout()) && path.toString().contains("/blobs/") && path.getFileName().toString().startsWith("sha256:")) {
             return "application/vnd.docker.image.rootfs.diff.tar.gzip";
         }
 

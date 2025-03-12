@@ -16,7 +16,10 @@ const store = new Vuex.Store({
     newDetailPage: false,
     currentTreeNode: {},
     isChecked: false,
-    switchDisabled: true
+    switchDisabled: true,
+    repositoryLength: 0,
+    // 还原操作标识
+    restoreActionMark: false
   },
   mutations: {
     setNewDetailPage(state, key) {
@@ -36,6 +39,14 @@ const store = new Vuex.Store({
     setSwitchDisabled(state, key) {
       state.switchDisabled = key
       console.log(state.switchDisabled, 'state.switchDisabled')
+    },
+    // 设置仓库列表长度
+    setRepositoryLength(state, val) {
+      state.repositoryLength = val
+    },
+    // 制品回收站还原操作
+    setRestoreActionMark(state) {
+      state.restoreActionMark = !state.restoreActionMark
     },
   },
   actions: {},

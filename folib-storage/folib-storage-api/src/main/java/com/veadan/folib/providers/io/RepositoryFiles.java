@@ -179,6 +179,15 @@ public abstract class RepositoryFiles {
         return p.path = p.getPath();
     }
 
+    public static String relativizeOriginalPath(RepositoryPath p)
+            throws IOException {
+        if (p.path != null) {
+            return p.path;
+        }
+
+        return p.path = p.getOriginalPath();
+    }
+
     public static URI resolveResource(RepositoryPath p)
             throws IOException {
         if (RepositoryFiles.isArtifact(p)) {

@@ -457,7 +457,7 @@ public class ArtifactController extends BaseController {
         return ResponseEntity.ok(layouts);
     }
 
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+    @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping(value = "/rawPathSize/{storageId}/{repositoryId}/{path:.+}")
     public ResponseEntity<String> getRawPathSize(@PathVariable("storageId") String storageId,
                                                  @PathVariable("repositoryId") String repositoryId,

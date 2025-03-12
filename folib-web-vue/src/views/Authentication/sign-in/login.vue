@@ -14,12 +14,12 @@
 				<h4 class="mb-15">{{ $t('Authentication.Login') }}</h4>
 				<p class="text-muted">{{ $t('Authentication.UsingUsernamePasswordLogin') }}</p>
 
-				<a-tabs
+				<!-- <a-tabs
 					:default-active-key="1"
 					:activeKey="loginTypeActiveKey"
 					@change="loginTypeChange($event)"
 				>
-					<a-tab-pane :key="1" :tab="$t('Authentication.LocalAuthentication')">
+					<a-tab-pane :key="1" :tab="$t('Authentication.LocalAuthentication')"> -->
 							<!-- Sign in Form -->
 						<a-form id="components-form-demo-normal-login" :form="form" class="login-form" @submit="handleSubmit"
 							:hideRequiredMark="true">
@@ -54,8 +54,8 @@
 							</a-form-item>
 						</a-form>
 					<!-- / Sign Up Form -->
-					</a-tab-pane>
-					<a-tab-pane :key="2" :tab="'LDAP' + $t('Authentication.Authentication')">
+					<!-- </a-tab-pane> -->
+					<!-- <a-tab-pane :key="2" :tab="'LDAP' + $t('Authentication.Authentication')">
 						<a-form id="components-form-demo-normal-login" :form="form" class="login-form" @submit="handleSubmit"
 							:hideRequiredMark="true">
 							<a-form-item class="mb-10" :label="'LDAP' + $t('Authentication.Username')" :colon="false">
@@ -76,7 +76,7 @@
 								</a-button>
 							</a-form-item>
 						</a-form>
-					</a-tab-pane>
+					</a-tab-pane> -->
 				</a-tabs>
         <Clients :clients="clientList"></Clients>
 				<!-- <p class="font-semibold text-muted text-center">没有账号? <router-link to="/sign-in"

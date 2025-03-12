@@ -5,15 +5,19 @@ import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Feature;
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.Closeable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 import org.apache.http.client.config.RequestConfig;
 import org.glassfish.jersey.apache.connector.ApacheClientProperties;
 import org.glassfish.jersey.client.ClientProperties;
+import org.glassfish.jersey.internal.guava.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
@@ -27,7 +31,7 @@ public class RestArtifactResolver
     private static final Logger logger = LoggerFactory.getLogger(RestArtifactResolver.class);
 
     private final String repositoryBaseUrl;
-    private final String targetUrl;
+    private String targetUrl;
     private MultivaluedMap<String, Object> headers;
     private final Client client;
     private Feature authentication;
@@ -105,10 +109,17 @@ public class RestArtifactResolver
                                                       .build();
         long startTime = System.currentTimeMillis();
         logger.debug("Url [{}] 开始于 [{}]", url, startTime);
+        MultivaluedMap<String, Object> acceptHeaders = new MultivaluedHashMap();
+        List<Object> acceptList = new ArrayList<>();
+        acceptList.add("FoLibrary/1.2.8");
+        acceptHeaders.put("User-Agent", acceptList);
         Invocation.Builder request = resource.request();
         if (Objects.nonNull(headers)) {
-            request.headers(headers);
+            headers.add("User-Agent", acceptList);
+        } else {
+            headers = acceptHeaders;
         }
+        request.headers(headers);
         Response response;
 
         if (offset > 0)
@@ -195,4 +206,23 @@ public class RestArtifactResolver
         return Integer.parseInt(globalClientConnectTimeOut);
     }
 
+    public Client getClient() {
+        return client;
+    }
+
+    public String getTargetUrl() {
+        return targetUrl;
+    }
+
+    public void setTargetUrl(String targetUrl) {
+        this.targetUrl = targetUrl;
+    }
+
+    public MultivaluedMap<String, Object> getHeaders() {
+        return headers;
+    }
+
+    public void setHeaders(MultivaluedMap<String, Object> headers) {
+        this.headers = headers;
+    }
 }
