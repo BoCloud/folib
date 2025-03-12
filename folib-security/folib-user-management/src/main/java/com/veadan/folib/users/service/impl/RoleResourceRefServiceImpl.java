@@ -202,6 +202,9 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
 
     @Override
     public List<RoleResourceRef> queryRefsByRoleIds(List<String> roleIds) {
+        if (CollectionUtils.isEmpty(roleIds)) {
+            return Lists.newArrayList();
+        }
         return this.roleResourceRefMapper.queryAllByRoleId(roleIds);
     }
 
