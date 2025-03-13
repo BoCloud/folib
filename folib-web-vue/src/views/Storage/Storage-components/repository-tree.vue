@@ -594,10 +594,10 @@ export default {
                 if(name == '制品回收站'){
                     if(this.expandedRecycleKeys.length){
                         this.expandedRecycleKeys = []
-                        this.getPosition()
+                        this.getPosition(320)
                     }else{
                         this.expandedRecycleKeys = [this.storageId]
-                        this.getPosition(320)
+                        this.getPosition()
                     }
                     this.treeSelect(this.recycleRepositryList[0],true)
                     return
@@ -654,18 +654,15 @@ export default {
         // 获取当前已展开节点的key
         onExpand(data,node,key) {
             this.closeContextMenu()
-            // if(key){
-            //     this.expandedRecycleKeys = [data.key]
-            // }else{
-            //     this.expandedKeys = [data.key]
-            // }
-            // if(key && data.name === '制品回收站'){ // 回收站打开
-            //     this.getPosition(320)
-            // }
+            if(key && data.name === '制品回收站'){ // 回收站打开
+                this.expandedRecycleKeys = [this.storageId]
+                this.getPosition(320)
+            }
         },
         onCollapse(data,node,key) {
             this.closeContextMenu()
             if(key && data.name === '制品回收站'){ // 回收站关闭
+                this.expandedRecycleKeys = []
                 this.getPosition(40)
             }
         },
