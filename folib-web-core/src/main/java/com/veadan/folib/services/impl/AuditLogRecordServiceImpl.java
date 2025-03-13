@@ -11,7 +11,7 @@ import com.veadan.folib.mapper.AuditLogRecordMapper;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.AuditEventService;
 import com.veadan.folib.services.AuditLogRecordService;
-import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import com.veadan.folib.utils.UserUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -23,8 +23,6 @@ import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 import tk.mybatis.mapper.entity.Example;
@@ -75,14 +73,7 @@ public class AuditLogRecordServiceImpl implements AuditLogRecordService {
             String requestBody = captureRequestBody(method, joinPoint.getArgs());
             AuditLogRecord record = new AuditLogRecord();
             record.setRequest(requestBody);
-            String username;
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if(authentication != null) {
-                SpringSecurityUser user = (SpringSecurityUser) authentication.getPrincipal();
-                username=user.getUsername();
-            }else {
-                username="ANONYMOUS";
-            }
+            String username = UserUtils.getUsername();
             record.setUsername(username);
             record.setName(name.toString());
             record.setEventName(name.getName());
@@ -120,10 +111,10 @@ public class AuditLogRecordServiceImpl implements AuditLogRecordService {
         if (StringUtils.isNotBlank(model.getEventValue())) {
             where.andEqualTo("name", model.getEventValue());
         }
-        if(model.getFromDate()!=null){
+        if (model.getFromDate() != null) {
             where.andGreaterThanOrEqualTo("createTime", model.getFromDate());
         }
-        if(model.getToDate()!=null){
+        if (model.getToDate() != null) {
             where.andLessThanOrEqualTo("createTime", model.getToDate());
         }
         example.setOrderByClause("create_time DESC");
