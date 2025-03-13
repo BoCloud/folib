@@ -1461,6 +1461,9 @@ export default {
     if (!this.currentStorage.id && this.storageData && this.storageData.length > 0) {
       this.currentStorage.id = this.storageData[0].id
     }
+    if (!this.isChecked) {
+      this.queryParams.limit = 10
+    }
     this.getStorage(this.currentStorage.id)
     this.queryCustomLayoutList()
   },
