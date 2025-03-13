@@ -11,7 +11,6 @@ import com.veadan.folib.domain.ArtifactIdGroupEntity;
 import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.providers.ProviderImplementationException;
 import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.repository.PypiRepositoryFeatures;
 import com.veadan.folib.services.PypiService;
 import com.veadan.folib.storage.metadata.pypi.PypiArtifactMetadata;
 import com.veadan.folib.storage.repository.Repository;
@@ -23,12 +22,12 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -79,7 +78,7 @@ public class PypiArtifactController extends BaseArtifactController {
     }
 
 
-    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT,target ="#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #file.getOriginalFilename()")
+    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #file.getOriginalFilename()")
     @ApiOperation(value = "This end point will be used to upload/deploy python package.")
     @ApiResponses(value = {@ApiResponse(code = HttpURLConnection.HTTP_OK, message = "python package was deployed successfully."),
             @ApiResponse(code = HttpURLConnection.HTTP_INTERNAL_ERROR, message = "An error occurred while executing request."),
@@ -107,7 +106,7 @@ public class PypiArtifactController extends BaseArtifactController {
             @RequestParam(name = "author_email", required = false) String authorEmail,
             @RequestParam(name = "content", required = true) MultipartFile file,
             HttpServletRequest request) {
-        String repositoryId= repository.getId();
+        String repositoryId = repository.getId();
         logger.info("python package upload request for storageId -> [{}] , repositoryId -> [{}]",
                 repository.getStorage().getId(),
                 repositoryId);
@@ -207,7 +206,7 @@ public class PypiArtifactController extends BaseArtifactController {
             coordinates = PypiArtifactCoordinates.parse(artifactName);
         } catch (IllegalArgumentException e) {
             logger.error("Invalid package name - {}", e.getMessage());
-            response.setStatus(HttpStatus.BAD_REQUEST.value());
+            response.setStatus(HttpStatus.NOT_FOUND.value());
             return;
         }
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(
@@ -297,9 +296,9 @@ public class PypiArtifactController extends BaseArtifactController {
         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId,
                 repositoryId,
                 coordinates.buildPath());
-        try( InputStream is =  file.getInputStream()) {
+        try (InputStream is = file.getInputStream()) {
             artifactManagementService.validateAndStore(repositoryPath, is);
-        }catch (IOException e){
+        } catch (IOException e) {
             logger.error(e.getMessage(), e);
             throw new IOException(e);
         }

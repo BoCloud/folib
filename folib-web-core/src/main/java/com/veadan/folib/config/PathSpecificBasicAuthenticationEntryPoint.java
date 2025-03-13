@@ -31,7 +31,9 @@ public class PathSpecificBasicAuthenticationEntryPoint extends BasicAuthenticati
 
     private static final String IS_REQUEST_OPTIONS = "options";
 
-    private static final List<String> USER_AGENT_LIST = Lists.newArrayList("Apache-Maven");
+    private static final List<String> DOCKER_USER_AGENT_LIST = Lists.newArrayList("docker", "containerd");
+
+    private static final List<String> USER_AGENT_LIST = Lists.newArrayList("Apache-Maven", "docker", "containerd");
 
     @Inject
     private ObjectMapper objectMapper;
@@ -52,6 +54,7 @@ public class PathSpecificBasicAuthenticationEntryPoint extends BasicAuthenticati
             if (authenticate) {
                 ConfigurationManagementService configurationManagementService = SpringUtil.getBean(ConfigurationManagementService.class);
                 response.setHeader("WWW-Authenticate", "Basic realm=\"" + String.format(FOLIB_REALM, configurationManagementService.getConfiguration().getInstanceName()) + "\"");
+                setDockerTokenUrl(request, response, userAgent);
             }
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             response.getWriter().println(objectMapper.writeValueAsString(new ErrorResponseEntityBody(message)));
@@ -65,6 +68,20 @@ public class PathSpecificBasicAuthenticationEntryPoint extends BasicAuthenticati
         ConfigurationManagementService configurationManagementService = SpringUtil.getBean(ConfigurationManagementService.class);
         setRealmName(configurationManagementService.getConfiguration().getInstanceName());
         super.afterPropertiesSet();
+    }
+
+    private void setDockerTokenUrl(HttpServletRequest request, HttpServletResponse response, String userAgent) {
+        if (DOCKER_USER_AGENT_LIST.stream().anyMatch(userAgent::contains)) {
+            String originalProtocol = request.getHeader("X-Forwarded-Proto"), https = "https";
+            boolean sslEnabled = Boolean.parseBoolean(SpringUtil.getProperty("server.ssl.enabled"));
+            if (sslEnabled || https.equals(originalProtocol)) {
+                // 使用HTTPS协议
+                response.setHeader("WWW-Authenticate", String.format("Bearer realm=\"%stoken\",service=\"%s\"", "https://" + request.getServerName() + "/v2/", request.getServerName()));
+            } else {
+                // 使用HTTP协议
+                response.setHeader("WWW-Authenticate", String.format("Bearer realm=\"%stoken\",service=\"%s\"", "http://" + request.getServerName() + ":" + request.getServerPort() + "/v2/", request.getServerName() + ":" + request.getServerPort()));
+            }
+        }
     }
 
 }
