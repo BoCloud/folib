@@ -1388,7 +1388,7 @@ export default {
         layout: null,
         type: null,
         page:1,
-        limit: 30,
+        limit: 10,
         total:0,
       },
       layoutType:'isFilter',

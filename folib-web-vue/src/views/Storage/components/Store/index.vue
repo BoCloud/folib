@@ -2431,6 +2431,7 @@ export default {
             // 获取端口号，如果没有指定则默认为 80（http）或 443（https）
             const port = url.port ? `:${url.port}` : '';
             const params = this.targetArchitecture === null ? '' : '?platform=' + this.targetArchitecture;
+            let result = this.currentTreeNode.artifactPath.replace(/\/(?=[^/]*$)/, ':')
             const baseUrl = `${protocol}//${hostname}${port}/storages/` + this.currentTreeNode.storageId + '/' + this.currentTreeNode.repositoryId + '/download/' + result + params;
             window.open(baseUrl)
           }
