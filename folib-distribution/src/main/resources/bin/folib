@@ -203,7 +203,7 @@ pre_check()
 
 run()
 {
-    JAVA_OPTS="${JAVA_OPTS} -XX:+ExitOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError -XX:ParallelGCThreads=${FOLIB_JVM_PARALLEL_GC_THREADS} -XX:MaxDirectMemorySize=${FOLIB_JVM_MAX_DIRECT_MEMORY_SIZE} -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${FOLIB_VAULT}/logs -XX:+PrintGCDetails -Xloggc:${FOLIB_VAULT}/logs/gc-%t.log"
+    JAVA_OPTS="${JAVA_OPTS} -XX:+ExitOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError -XX:ParallelGCThreads=${FOLIB_JVM_PARALLEL_GC_THREADS} -XX:MaxDirectMemorySize=${FOLIB_JVM_MAX_DIRECT_MEMORY_SIZE} -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${FOLIB_VAULT}/logs -XX:+PrintGCDetails -Xloggc:${FOLIB_VAULT}/logs/gc-%t.log -XX:ErrorFile=${FOLIB_VAULT}/logs/hs_err_pid%p.log"
     JAVA_OPTS+=" -Xmx${FOLIB_JVM_XMX} -Xms${FOLIB_JVM_XMS} -Xss${FOLIB_JVM_XSS}"
     JAVA_OPTS+=" -Dappserver.home=. -Dappserver.base=${FOLIB_HOME} -Djetty.logs=${FOLIB_HOME}/logs"
     JAVA_OPTS+=" -Djava.io.tmpdir=${FOLIB_HOME}/tmp"

@@ -312,6 +312,7 @@ public class UnicomSSOController extends BaseController {
                 }
                 String message = String.format("自动创建项目【%s】制品仓库失败,请联系相关人员手动创建", repositoryForm.getProjectName());
                 unicomAdapter.sendMessageEmail("创建仓库异常", message, repositoryForm.getEmail());
+                return getFailedResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, "The repository created failed", accept);
             }
             // 同步信息到其他节点
             while (!completedRepo.isEmpty()) {

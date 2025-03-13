@@ -50,7 +50,7 @@ public interface ArtifactPromotionService {
 
     ResponseEntity upload(MultipartFile[] files, String storageId, String repositoryId, String filePathMap, String fileMetaDataMap, String uuid, String imageTag, String fileType, String baseUrl, String token);
 
-    ResponseEntity upload(String parseArtifact, String storageId, String repositoryId);
+    ResponseEntity upload(String parseArtifact, String storageId, String repositoryId,MultipartFile file);
 
     ResponseEntity download(ArtifactDto artifactDto, HttpServletResponse response);
 

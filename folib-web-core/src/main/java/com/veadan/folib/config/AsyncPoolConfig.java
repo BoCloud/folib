@@ -347,6 +347,17 @@ public class AsyncPoolConfig {
     }
 
     @Bean
+    public ThreadPoolTaskExecutor asyncCheckSumTaskExecutor() {
+        return buildThreadPoolTaskExecutor(
+                asyncPromotionCorePoolSize,
+                asyncPromotionMaxPoolSize,
+                asyncPromotionQueueCapacity,
+                asyncPromotionKeepAliveSeconds,
+                "asyncCheckSumTask",
+                asyncPromotionAwaitTerminationSeconds);
+    }
+
+    @Bean
     public ThreadPoolTaskExecutor asyncDeleteArtifactTaskExecutor() {
         return buildThreadPoolTaskExecutor(
                 asyncDeleteArtifactCorePoolSize,

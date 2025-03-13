@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.FileSystemUtils;
@@ -106,6 +107,9 @@ public class ArtifactManagementService {
     @Value("${folib.uploadRestrictions:false}")
     private boolean artifactUploadRestrictions;
 
+    @Autowired
+    private ThreadPoolTaskExecutor asyncCheckSumTaskExecutor;
+
     public long validateAndStore(RepositoryPath repositoryPath,
                                  InputStream is)
             throws IOException,
@@ -156,7 +160,6 @@ public class ArtifactManagementService {
             result = writeArtifact(repositoryPath, is, aos);
             logger.info("Stored [{}] bytes for [{}].", result, repositoryPath);
             aos.flush();
-
         } catch (IOException e) {
             throw e;
         } catch (Exception e) {
@@ -341,22 +344,26 @@ public class ArtifactManagementService {
 
     private void writeChecksums(RepositoryPath repositoryPath,
                                 Map<String, String> digestMap) {
-        LayoutFileSystemProvider provider = (LayoutFileSystemProvider) repositoryPath.getFileSystem().provider();
+        LayoutFileSystemProvider provider = repositoryPath.getFileSystem().provider();
 
-        digestMap.entrySet()
-                .stream()
-                .forEach(entry -> {
-                    long startTime = System.currentTimeMillis();
-                    final RepositoryPath checksumPath = provider.getChecksumPath(repositoryPath, entry.getKey());
-                    logger.info("Write check sum [{}] algorithm [{}] digest [{}] find checksumPath [{}] take time [{}] ms", repositoryPath.toString(), entry.getKey(), entry.getValue(), checksumPath, System.currentTimeMillis() - startTime);
-                    try {
-                        startTime = System.currentTimeMillis();
-                        Files.write(checksumPath, entry.getValue().getBytes(StandardCharsets.UTF_8));
-                        logger.info("Write check sum [{}] algorithm [{}] digest [{}] take time [{}] ms", repositoryPath.toString(), entry.getKey(), entry.getValue(), System.currentTimeMillis() - startTime);
-                    } catch (IOException ex) {
-                        logger.error(ex.getMessage(), ex);
-                    }
-                });
+        asyncCheckSumTaskExecutor.execute(() -> {
+            digestMap.entrySet()
+                    .stream()
+                    .forEach(entry -> {
+                        long startTime = System.currentTimeMillis();
+                        final RepositoryPath checksumPath = provider.getChecksumPath(repositoryPath, entry.getKey());
+                        logger.info("Write check sum [{}] algorithm [{}] digest [{}] find checksumPath [{}] take time [{}] ms", repositoryPath.toString(), entry.getKey(), entry.getValue(), checksumPath, System.currentTimeMillis() - startTime);
+                        try {
+                            startTime = System.currentTimeMillis();
+                            Files.write(checksumPath, entry.getValue().getBytes(StandardCharsets.UTF_8));
+                            logger.info("Write check sum [{}] algorithm [{}] digest [{}] take time [{}] ms", repositoryPath.toString(), entry.getKey(), entry.getValue(), System.currentTimeMillis() - startTime);
+                        } catch (IOException ex) {
+                            logger.error(ex.getMessage(), ex);
+                        }
+                    });
+        });
+
+
     }
 
     public void checksums(RepositoryPath repositoryPath, Map<String, String> digestMap) {
@@ -595,7 +602,7 @@ public class ArtifactManagementService {
             return repositoryPath;
         }
         if (repository.isGroupRepository() && StringUtils.isNotBlank(repository.getGroupDefaultRepository())) {
-            if(repository.getLayout().equals(ProductTypeEnum.Cargo.getFoLibraryName()) && repositoryPath.toString().endsWith("config.json")){
+            if (repository.getLayout().equals(ProductTypeEnum.Cargo.getFoLibraryName()) && repositoryPath.toString().endsWith("config.json")) {
                 return repositoryPath;
             }
             //是组合库，并且设置了默认上传仓库

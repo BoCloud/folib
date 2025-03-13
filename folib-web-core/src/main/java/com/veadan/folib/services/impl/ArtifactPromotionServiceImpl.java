@@ -846,12 +846,12 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     }
 
     @Override
-    public ResponseEntity upload(String parseArtifact, String storageId, String repositoryId) {
+    public ResponseEntity upload(String parseArtifact, String storageId, String repositoryId,MultipartFile file) {
         try {
             validateStorageAndRepository(storageId, repositoryId);
             ArtifactParse artifactParse = JSONObject.parseObject(parseArtifact, ArtifactParse.class);
             List<FutureTask<String>> listTask = new ArrayList<>();
-            ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repositoryId, null,
+            ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repositoryId, file,
                     repositoryManagementService, repositoryPathResolver, artifactManagementService, promotionUtil, layoutProviderRegistry, artifactMetadataService, artifactRepository, mavenRepositoryFeatures, tempPath, FileUtil.getName(artifactParse.getFilePath()), null, null, parseArtifact);
             FutureTask<String> futureTask = new FutureTask<String>(artifactUploadTask);
             listTask.add(futureTask);

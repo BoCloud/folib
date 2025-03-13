@@ -74,6 +74,7 @@ import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.apache.maven.index.artifact.Gav;
 import org.apache.maven.model.Model;
 import org.mockito.internal.util.collections.Sets;
+import org.springframework.util.StopWatch;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
@@ -315,6 +316,8 @@ public class ArtifactUploadTask implements Callable<String> {
      * @param artifactParse  制品信息
      */
     private void handlerMavenLayoutUpload(InputStream is, String layout, RepositoryPath repositoryPath, ArtifactParse artifactParse) {
+        StopWatch  stopWatch= new StopWatch();
+        stopWatch.start();
         File parentTempFile = null;
         try {
             String point = ".";
@@ -336,6 +339,8 @@ public class ArtifactUploadTask implements Callable<String> {
             log.error("handlerMavenLayoutUpload path：{}，error：{}", repositoryPath.toAbsolutePath(), ExceptionUtils.getStackTrace(ex));
             throw new RuntimeException(ex.getMessage());
         } finally {
+            stopWatch.stop();
+            log.info("layout:{} stored {} take time {}ms",layout,repositoryPath,stopWatch.getTotalTimeMillis());
             if (Objects.nonNull(parentTempFile)) {
                 FileUtil.del(parentTempFile);
             }
@@ -425,6 +430,7 @@ public class ArtifactUploadTask implements Callable<String> {
      */
     private void handlerJar(LayoutProvider layoutProvider, RepositoryPath repositoryPath, Path path, String point, File artifactTempFile, File parentTempFile, ArtifactParse artifactParse) {
         try {
+            log.info("start get gav");
             Gav gav = MavenArtifactUtils.convertPathToGav(fileRelativePath);
             fileRelativePath = convertArtifactUploadFileName(fileRelativePath);
             String groupId, sourceGroupId, artifactId, version, properties = "";
@@ -472,6 +478,7 @@ public class ArtifactUploadTask implements Callable<String> {
                 log.error("store artifact：{}，error：{}", artifactRepositoryPath.toAbsolutePath(), ExceptionUtils.getStackTrace(ex));
                 throw new RuntimeException(ex.getMessage());
             }
+            log.info("start generate pom ....");
             Gav artifactGav = MavenArtifactUtils.convertPathToGav(artifactRepositoryPath);
             byte[] pomBytes = layoutProvider.getContentByFileName(repositoryPath, path, "pom.xml");
             String pomName = String.format("%s-%s", artifactId, artifactGav.getVersion()) + ".pom";

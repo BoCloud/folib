@@ -180,8 +180,9 @@ public class ArtifactPromotionController extends BaseArtifactController {
     public ResponseEntity upload(
             @RequestParam("storageId") String storageId,
             @RequestParam("repositoryId") String repositoryId,
-            @RequestParam(name = "parseArtifact") String parseArtifact) {
-        return artifactPromotionService.upload(parseArtifact, storageId, repositoryId);
+            @RequestParam(name = "parseArtifact") String parseArtifact,
+            @RequestParam(name = "file",required = false) MultipartFile file) {
+        return artifactPromotionService.upload(parseArtifact, storageId, repositoryId,file);
     }
 
     @PostMapping(value = "/download")
