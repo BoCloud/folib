@@ -1,5 +1,6 @@
 package com.veadan.folib.providers.io;
 
+import cn.hutool.core.date.StopWatch;
 import com.veadan.folib.artifact.ArtifactNotFoundException;
 import com.veadan.folib.io.*;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
@@ -22,6 +23,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author xuxinping
@@ -170,32 +172,35 @@ public class RepositoryStreamSupport {
         @Override
         public void flush()
                 throws IOException {
-            long allStartTime = System.currentTimeMillis();
-            long startTime;
-            logger.debug("Flushing [{}]", getContext().getPath());
-
+            StopWatch stopWatch = new StopWatch("Flush " + getContext().getPath());
+            String path = ctx.getPath().toString();
+            String className = this.getClass().getSimpleName();
+            if (logger.isDebugEnabled()) {
+                logger.debug("Flushing [{}]", path);
+            }
+            stopWatch.start("super.flush");
             super.flush();
-
-            logger.debug("Flushed [{}]", getContext().getPath());
-
+            stopWatch.stop();
+            if(logger.isDebugEnabled()) {
+                logger.debug("Flushed [{}]", path);
+            }
             TransactionStatus transaction = ctx.getTransaction();
             if (transaction != null && !transaction.isRollbackOnly()) {
-                logger.info("Commit [{}]", getContext().getPath());
+                logger.info("Commit [{}]", path);
                 try {
-                    startTime = System.currentTimeMillis();
+                    stopWatch.start("db commit");
                     RepositoryStreamSupport.this.commit();
-                    logger.info("Flush db commit [{}] take time [{}] ms." , getContext().getPath(), System.currentTimeMillis() - startTime);
-                    startTime = System.currentTimeMillis();
+                    stopWatch.stop();
+                    stopWatch.start("transaction commit");
                     transactionManager.commit(transaction);
-                    logger.info("Flush transaction commit [{}] take time [{}] ms." , getContext().getPath(), System.currentTimeMillis() - startTime);
-                    logger.info("Commited [{}]", getContext().getPath());
+                    stopWatch.stop();
                 } catch (Exception ex) {
                     String realMessage = CommonUtils.getRealMessage(ex);
                     logger.warn("[{}] [{}] flush error [{}]",
-                            this.getClass().getSimpleName(), getContext().getPath(), realMessage);
+                            className, path, realMessage);
                     if (CommonUtils.catchException(realMessage)) {
                         logger.warn("[{}] [{}] flush catch error",
-                                this.getClass().getSimpleName(), getContext().getPath());
+                                className, path);
                         return;
                     }
                     throw ex;
@@ -203,21 +208,23 @@ public class RepositoryStreamSupport {
             } else {
                 logger.warn("Skip commit [{}]", getContext().getPath());
             }
-            logger.info("Flush [{}] take time [{}] ms." , getContext().getPath(), System.currentTimeMillis() - allStartTime);
+            logger.info("【Flush】 [{}] completed, total stats: \n {}", path,stopWatch.prettyPrint(TimeUnit.MILLISECONDS));
         }
 
         @Override
         public void close()
                 throws IOException {
             try {
-                long startTime = System.currentTimeMillis();
+                StopWatch stopWatch = new StopWatch("Close Step");
+                stopWatch.start("super.close");
                 super.close();
-                logger.info("IOUtils close [{}] take time [{}] ms." , getContext().getPath(), System.currentTimeMillis() - startTime);
-                startTime = System.currentTimeMillis();
+                stopWatch.stop();
+                stopWatch.start("OnAfterWrite");
                 if (((CountingOutputStream) out).getByteCount() > 0) {
                     callback.onAfterWrite((RepositoryStreamWriteContext) ctx);
                 }
-                logger.info("OnAfterWrite [{}] take time [{}] ms." , getContext().getPath(), System.currentTimeMillis() - startTime);
+                stopWatch.stop();
+                logger.info("【Close】 [{}] completed ,total stats:\n {}", getContext().getPath(),stopWatch.prettyPrint(TimeUnit.MILLISECONDS));
             } catch (Exception e) {
                 logger.error("Failed to close [{}].", getContext().getPath(), e);
 

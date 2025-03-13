@@ -1,5 +1,6 @@
 package com.veadan.folib.services;
 
+import cn.hutool.core.date.StopWatch;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.components.ArtifactSecurityComponent;
 import com.veadan.folib.components.DistributedCacheComponent;
@@ -35,6 +36,7 @@ import com.veadan.folib.storage.validation.deployment.RedeploymentValidator;
 import com.veadan.folib.storage.validation.resource.ArtifactOperationsValidator;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.util.DirectoryValidatorUtils;
+import org.apache.cassandra.tools.nodetool.Stop;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -61,6 +63,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -154,7 +157,8 @@ public class ArtifactManagementService {
                          InputStream is)
             throws IOException {
         validateRepositoryPath(repositoryPath, is, null);
-        long startTime = System.currentTimeMillis();
+        StopWatch stopWatch = new StopWatch("Store step");
+        stopWatch.start("doStore");
         long result;
         try (final RepositoryStreamSupport.RepositoryOutputStream aos = artifactResolutionService.getOutputStream(repositoryPath)) {
             result = writeArtifact(repositoryPath, is, aos);
@@ -182,7 +186,8 @@ public class ArtifactManagementService {
                 }
             }
         }
-        logger.info("DoStore [{}] take time [{}] ms.", repositoryPath.toString(), System.currentTimeMillis() - startTime);
+        stopWatch.stop();
+        logger.info("【Store】finise [{}] \n {} .", repositoryPath,stopWatch.prettyPrint(TimeUnit.MILLISECONDS));
 
         return result;
     }
@@ -347,20 +352,20 @@ public class ArtifactManagementService {
         LayoutFileSystemProvider provider = repositoryPath.getFileSystem().provider();
 
         asyncCheckSumTaskExecutor.execute(() -> {
+            StopWatch stopWatch = new StopWatch("checksum step" );
             digestMap.entrySet()
                     .stream()
                     .forEach(entry -> {
-                        long startTime = System.currentTimeMillis();
+                        stopWatch.start(entry.getKey());
                         final RepositoryPath checksumPath = provider.getChecksumPath(repositoryPath, entry.getKey());
-                        logger.info("Write check sum [{}] algorithm [{}] digest [{}] find checksumPath [{}] take time [{}] ms", repositoryPath.toString(), entry.getKey(), entry.getValue(), checksumPath, System.currentTimeMillis() - startTime);
                         try {
-                            startTime = System.currentTimeMillis();
                             Files.write(checksumPath, entry.getValue().getBytes(StandardCharsets.UTF_8));
-                            logger.info("Write check sum [{}] algorithm [{}] digest [{}] take time [{}] ms", repositoryPath.toString(), entry.getKey(), entry.getValue(), System.currentTimeMillis() - startTime);
+                            stopWatch.stop();
                         } catch (IOException ex) {
                             logger.error(ex.getMessage(), ex);
                         }
                     });
+            logger.info("checksum write  finished. the stats is \n{}", stopWatch.prettyPrint(TimeUnit.MILLISECONDS));
         });
 
 
