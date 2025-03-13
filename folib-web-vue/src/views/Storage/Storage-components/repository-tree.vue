@@ -688,7 +688,7 @@ export default {
                 this.folibRepository = treeNode.data
                 this.repositoryType = getLayoutType(this.folibRepository)
                 this.queryPermission()
-            } else {
+            } else if (treeNode.data.type !== 'recycle'){
                 let target = null
                 // 获取当前子节点的最顶层父节点（仓库节点）
                 this.treeData.forEach(ele => {
