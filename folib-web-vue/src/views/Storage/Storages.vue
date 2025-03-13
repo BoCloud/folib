@@ -1392,7 +1392,7 @@ export default {
         total:0,
       },
       layoutType:'isFilter',
-      isChecked: true,
+      isChecked: false,
       isShowOverview: false,
      permissionForm: {
         allowAnonymous: true,
