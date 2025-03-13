@@ -208,7 +208,7 @@ public class PypiArtifactController extends BaseArtifactController {
             coordinates = PypiArtifactCoordinates.parse(artifactName);
         } catch (IllegalArgumentException e) {
             logger.error("Invalid package name - {}", e.getMessage());
-            response.setStatus(HttpStatus.BAD_REQUEST.value());
+            response.setStatus(HttpStatus.NOT_FOUND.value());
             return;
         }
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(

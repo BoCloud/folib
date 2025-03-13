@@ -694,7 +694,6 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "name", value = "制品名", required = true),
             @ApiImplicitParam(name = "tag", value = "tag", required = true)
     })
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value = {"/v2/{repositoryId}/{name}/manifests/{reference}", "/v2/{repositoryId}/{name}/**/manifests/{reference}"}, method = {RequestMethod.HEAD}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity existingManifests(@RequestHeader HttpHeaders httpHeaders,
                                             HttpServletRequest request,
@@ -708,6 +707,10 @@ public class DockerArtifactController extends BaseArtifactController {
             extractPath = extractPath.replace(String.format("/manifests/%s", reference), "");
         }
         String imagePath = resolveImagePath(name, extractPath);
+        if (!validatePathPrivileges(storageId, repositoryId, Collections.singletonList(imagePath), Privileges.ARTIFACTS_RESOLVE.getAuthority())) {
+            setTokenUrl(request, response);
+            return new ResponseEntity<>(unAuth(), HttpStatus.UNAUTHORIZED);
+        }
         ResponseEntity entity = ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         String digest = "", contentLength = "0";
         response.reset();
@@ -781,7 +784,6 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "name", value = "制品名", required = true),
             @ApiImplicitParam(name = "digest", value = "digest", required = true)
     })
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value = {"/v2/{repositoryId}/{name}/manifests/{digest}", "/v2/{repositoryId}/{name}/**/manifests/{digest}"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity pullingAnImageManifest(@RequestHeader HttpHeaders httpHeaders,
                                                  HttpServletRequest request,
@@ -795,6 +797,10 @@ public class DockerArtifactController extends BaseArtifactController {
             extractPath = extractPath.replace(String.format("/manifests/%s", digest), "");
         }
         String imagePath = resolveImagePath(name, extractPath);
+        if (!validatePathPrivileges(storageId, repositoryId, Collections.singletonList(imagePath), Privileges.ARTIFACTS_RESOLVE.getAuthority())) {
+            setTokenUrl(request, response);
+            return new ResponseEntity<>(unAuth(), HttpStatus.UNAUTHORIZED);
+        }
         Storage storage = getStorage(storageId);
         if (Objects.isNull(storage)) {
             return new ResponseEntity<>(errMsg("NAME_UNKNOWN", GlobalConstants.STORAGE_NOT_FOUND_MESSAGE), HttpStatus.NOT_FOUND);
