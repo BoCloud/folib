@@ -1202,6 +1202,7 @@ export default {
       metadataNumber: false,
       metadataEditor: false,
       prismEditor: false,
+      currentManifest: {},
       codeParam: {
         type: '',
         code: null
