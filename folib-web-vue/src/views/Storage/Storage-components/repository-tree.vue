@@ -268,18 +268,6 @@ export default {
                     if(key){
                         this.treeData = this.treeData.concat(JSON.parse(JSON.stringify(val)))
                         this.recycleRepositryList = this.recycleRepositryList.concat(JSON.parse(JSON.stringify(val)))
-                        // function uniqueById(arr) {
-                        //     const unique = [];
-                        //     const seen = new Set();
-                        //     arr.forEach(item => {
-                        //         if (!seen.has(item.id)) {
-                        //         unique.push(item);
-                        //         seen.add(item.id);
-                        //         }
-                        //     });
-                        //     return unique;
-                        // }
-                        // this.treeData = uniqueById(this.treeData)
                         const objs = ['treeData','recycleRepositryList']
                         objs.forEach(key => {
                             this[key].forEach(ele => {
@@ -671,8 +659,9 @@ export default {
             this.recycleRepositryList.forEach(ele => {
                 list.push(JSON.parse(JSON.stringify(ele)))
             })
-            this.recycleTreeData[0].children = [...list]
-            this.recycleTreeData = [...this.recycleTreeData]
+            this.$refs.recycleTree.updateKeyChildren(this.storageId, list)
+            // this.recycleTreeData[0].children = [...list]
+            // this.recycleTreeData = [...this.recycleTreeData]
         },
         // 懒加载获取节点
         onLoadData(treeNode,resolve, isTrashView) {
