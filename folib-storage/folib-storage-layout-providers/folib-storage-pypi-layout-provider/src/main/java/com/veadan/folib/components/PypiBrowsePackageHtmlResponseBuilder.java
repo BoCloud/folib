@@ -27,7 +27,7 @@ public class PypiBrowsePackageHtmlResponseBuilder {
 
         String htmlResponse = "";
         if (CollectionUtils.isEmpty(filePaths)) {
-            htmlResponse = "<html>\n" +
+            htmlResponse = "<!DOCTYPE html>\n<html>\n" +
                     "        <head>\n" +
                     "            <meta name=\"pypi:repository-version\" content=\"1.0\">\n" +
                     "            <title>Not Found</title>\n" +
@@ -41,7 +41,7 @@ public class PypiBrowsePackageHtmlResponseBuilder {
             PypiArtifactCoordinates artifactCoordinates = (PypiArtifactCoordinates) RepositoryFiles.readCoordinates((RepositoryPath) filePaths.get(0));
             final String packageName = artifactCoordinates.getId();
 
-            htmlResponse = "<html>\n" +
+            htmlResponse = "<!DOCTYPE html>\n<html>\n" +
                     "        <head>\n" +
                     "            <meta name=\"pypi:repository-version\" content=\"1.0\">\n" +
                     "            <title>Links for " + packageName + "</title>\n" +
@@ -74,7 +74,7 @@ public class PypiBrowsePackageHtmlResponseBuilder {
     public String getProxyHtmlResponse(List<PypiSearchResult> pypiSearchResultList) {
         String htmlResponse = "";
         if (CollectionUtils.isEmpty(pypiSearchResultList)) {
-            htmlResponse = "<html>\n" +
+            htmlResponse = "<!DOCTYPE html>\n<html>\n" +
                     "        <head>\n" +
                     "            <meta name=\"pypi:repository-version\" content=\"1.0\">\n" +
                     "            <title>Not Found</title>\n" +
@@ -86,7 +86,7 @@ public class PypiBrowsePackageHtmlResponseBuilder {
         } else {
             PypiArtifactCoordinates artifactCoordinates = PypiArtifactCoordinates.parse(pypiSearchResultList.get(0).getArtifactName());
             final String packageName = artifactCoordinates.getId();
-            htmlResponse = "<html>\n" +
+            htmlResponse = "<!DOCTYPE html>\n<html>\n" +
                     "        <head>\n" +
                     "            <meta name=\"pypi:repository-version\" content=\"1.0\">\n" +
                     "            <title>Links for " + packageName + "</title>\n" +
@@ -117,7 +117,7 @@ public class PypiBrowsePackageHtmlResponseBuilder {
     }
 
     public String nouFound() {
-        return "<html>\n" +
+        return "<!DOCTYPE html>\n<html>\n" +
                 "        <head>\n" +
                 "            <meta name=\"pypi:repository-version\" content=\"1.0\">\n" +
                 "            <title>Not Found</title>\n" +

@@ -1222,6 +1222,7 @@ export default {
       metadataNumber: false,
       metadataEditor: false,
       prismEditor: false,
+      currentManifest: {},
       codeParam: {
         type: '',
         code: null
@@ -2182,6 +2183,7 @@ export default {
       this.currentFileDetial = null
       const { storageId, id, layout } = this.folibRepository
       const { artifactPath, name } = treeNode.data
+      if (!artifactPath) return;
       const params = {
         treeNode,
         storageId,
@@ -3330,6 +3332,16 @@ export default {
        this.rightClickTop = `${event.clientY}px`;
        this.rightClickLeft = `${event.clientX}px`;
        this.currentTreeNode = data;
+       if (this.currentTreeNode.type === 'file'){
+         getArtifact(
+           this.repositoryType,
+           this.currentTreeNode.storageId,
+           this.currentTreeNode.repositoryId,
+           this.currentTreeNode.artifactPath
+         ).then(res => {
+           this.currentFileDetial = res
+         })
+       }
      },
      closeContextMenu() {
        this.showContextMenu = false;
