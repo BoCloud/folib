@@ -1,6 +1,8 @@
 package com.veadan.folib.services.impl;
 
+import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.PypiArtifactCoordinates;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.PypiBrowsePackageHtmlResponseBuilder;
 import com.veadan.folib.components.StorageClientComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
@@ -34,6 +36,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.MatchResult;
@@ -65,6 +68,9 @@ public class PypiProxyProvider implements PypiProvider {
 
     @Inject
     private RemoteRepositoryAlivenessService remoteRepositoryAlivenessCacheManager;
+
+    @Inject
+    private DistributedCacheComponent distributedCacheComponent;
 
     @PostConstruct
     @Override
@@ -186,6 +192,7 @@ public class PypiProxyProvider implements PypiProvider {
             if (StringUtils.isBlank(html)) {
                 return "";
             }
+            List<String> includeAttributes = getIncludeAttributes();
             StringBuffer attributesStringBuffer = new StringBuffer();
             // 解析HTML字符串
             Document doc = Jsoup.parse(html);
@@ -195,7 +202,7 @@ public class PypiProxyProvider implements PypiProvider {
             for (Element aTag : aTags) {
                 // 获取所有属性
                 for (Attribute attribute : aTag.attributes().asList()) {
-                    if ("href".equalsIgnoreCase(attribute.getKey())) {
+                    if (includeAttributes.stream().noneMatch(item -> item.equalsIgnoreCase(attribute.getKey()))) {
                         continue;
                     }
                     attributesStringBuffer.append(attribute.getKey());
@@ -212,4 +219,13 @@ public class PypiProxyProvider implements PypiProvider {
         return "";
     }
 
+    private List<String> getIncludeAttributes() {
+        List<String> includeAttributes = Lists.newArrayList("data-requires-python");
+        String key = "PYPI_INCLUDE_ATTRIBUTES";
+        String cacheValue = distributedCacheComponent.get(key);
+        if (StringUtils.isNotBlank(cacheValue)) {
+            includeAttributes = Arrays.asList(cacheValue.split(","));
+        }
+        return includeAttributes;
+    }
 }
