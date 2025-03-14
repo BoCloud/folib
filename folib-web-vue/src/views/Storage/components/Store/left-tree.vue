@@ -59,7 +59,8 @@
                 :load="(treeNode,resolve) => onLoadData(treeNode, resolve, true)"
                 @node-click="(data)=>treeSelect(data,true)"
                 @node-contextmenu="(event, data) => onRightClick(event, data, true)"
-                @node-expand="(expandedKeys, treeNode) => onExpand(expandedKeys, treeNode, true)"
+                @node-expand="(data,node) => onExpand(data,node, true)"
+                @node-collapse="(data,node) => onCollapse(data,node, true)"
                 :selectedKeys="selectRecycleKeys"
                 :expandedKeys="expandedRecycleKeys"
             >
@@ -150,25 +151,31 @@ export default {
             treeNode.loading = true
             this.$emit('onLoadData', treeNode, isTrashView, resolve);
         },
-        onExpand(data, node, expanded){
-            if(node.data.name === '.trash'){
-                this.getPosition(expanded ? 300 : 40)
+        onExpand(data, node, key){
+            this.$emit('closeContextMenu')
+            if(key && data.name === '.trash'){ // 回收站打开
+                this.expandedRecycleKeys = ['.trash']
+                this.getPosition(320)
             }
-            // if(key){
-            //     this.expandedRecycleKeys = expandedKeys
-            // }else{
-            //     this.expandedKeys = expandedKeys
-            // }
+        },
+        onCollapse(data, node, key){
+            this.$emit('closeContextMenu')
+            if(key && data.name === '.trash'){ // 回收站关闭
+                this.expandedRecycleKeys = []
+                this.getPosition(40)
+            }
         },
         treeSelect(data, type) {
             this.$emit('closeContextMenu')
             if(type){
-                if(this.expandedRecycleKeys.length){
-                    this.expandedRecycleKeys = []
-                    this.getPosition()
-                }else{
-                    this.expandedRecycleKeys = ['.trash']
-                    this.getPosition(300)
+                if (data.name === '.trash') {
+                    if(this.expandedRecycleKeys.length){
+                        this.expandedRecycleKeys = []
+                        this.getPosition(300)
+                    }else{
+                        this.expandedRecycleKeys = ['.trash']
+                        this.getPosition()
+                    }
                 }
                 this.selectRecycleKeys = []
                 this.selectedKeys = []
