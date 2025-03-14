@@ -192,7 +192,7 @@ public class RepositoryStreamSupport {
                     RepositoryStreamSupport.this.commit();
                     stopWatch.stop();
                     stopWatch.start("transaction commit");
-                    transactionManager.commit(transaction);
+//                    transactionManager.commit(transaction);
                     stopWatch.stop();
                 } catch (Exception ex) {
                     String realMessage = CommonUtils.getRealMessage(ex);

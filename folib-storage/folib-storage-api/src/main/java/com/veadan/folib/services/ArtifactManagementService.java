@@ -229,38 +229,32 @@ public class ArtifactManagementService {
                                InputStream is,
                                OutputStream os)
             throws IOException {
-        long startTime = System.currentTimeMillis();
+        StopWatch stopWatch = new StopWatch("Write step");
+        stopWatch.start("Read attribute");
         LayoutOutputStream aos = StreamUtils.findSource(LayoutOutputStream.class, os);
-
         Repository repository = repositoryPath.getRepository();
-
         Boolean checksumAttribute = RepositoryFiles.isChecksum(repositoryPath);
-        logger.info("Read attribute [{}] take time [{}] ms", repositoryPath.toString(), System.currentTimeMillis() - startTime);
+        stopWatch.stop();
         // If we have no digests, then we have a checksum to store.
         if (Boolean.TRUE.equals(checksumAttribute)) {
             aos.setCacheOutputStream(new ByteArrayOutputStream());
         }
-
         if (repository.isHostedRepository()) {
             artifactEventListenerRegistry.dispatchArtifactUploadingEvent(repositoryPath);
         }
-
-        startTime = System.currentTimeMillis();
+        stopWatch.start("IOUtils copy");
         long totalAmountOfBytes = IOUtils.copy(is, os);
-        logger.info("IOUtils copy [{}] size [{}] take time [{}] ms", repositoryPath.toString(), totalAmountOfBytes, System.currentTimeMillis() - startTime);
+        stopWatch.stop();
+        logger.info("【writeArtifact】 step stats \n{}", stopWatch.prettyPrint(TimeUnit.MILLISECONDS));
 
         URI repositoryPathId = repositoryPath.toUri();
-        startTime = System.currentTimeMillis();
+
         Map<String, String> digestMap = aos.getDigestMap(repository.getLayout());
-        logger.info("Get digest [{}] take time [{}] ms", repositoryPath.toString(), System.currentTimeMillis() - startTime);
+
         if (Boolean.FALSE.equals(checksumAttribute) && !digestMap.isEmpty()) {
-            startTime = System.currentTimeMillis();
             // Store artifact digests in cache if we have them.
             addChecksumsToCacheManager(digestMap, repositoryPathId);
-            logger.info("Write addChecksumsToCacheManager [{}] take time [{}] ms", repositoryPath.toString(), System.currentTimeMillis() - startTime);
-            startTime = System.currentTimeMillis();
             writeChecksums(repositoryPath, digestMap);
-            logger.info("Write check sum [{}] take time [{}] ms", repositoryPath.toString(), System.currentTimeMillis() - startTime);
         }
 
         if (Boolean.TRUE.equals(checksumAttribute)) {
@@ -302,7 +296,6 @@ public class ArtifactManagementService {
         if (Boolean.FALSE.equals(checksumAttribute) && !digestMap.isEmpty()) {
             // Store artifact digests in cache if we have them.
             addChecksumsToCacheManager(digestMap, repositoryPathId);
-
             writeChecksums(repositoryPath, digestMap);
         }
 
@@ -350,13 +343,12 @@ public class ArtifactManagementService {
     private void writeChecksums(RepositoryPath repositoryPath,
                                 Map<String, String> digestMap) {
         LayoutFileSystemProvider provider = repositoryPath.getFileSystem().provider();
-
         asyncCheckSumTaskExecutor.execute(() -> {
             StopWatch stopWatch = new StopWatch("checksum step" );
             digestMap.entrySet()
                     .stream()
                     .forEach(entry -> {
-                        stopWatch.start(entry.getKey());
+                        stopWatch.start(entry.getKey()+":"+repositoryPath.toString());
                         final RepositoryPath checksumPath = provider.getChecksumPath(repositoryPath, entry.getKey());
                         try {
                             Files.write(checksumPath, entry.getValue().getBytes(StandardCharsets.UTF_8));
@@ -375,6 +367,8 @@ public class ArtifactManagementService {
         if (Objects.nonNull(digestMap) && !digestMap.isEmpty()) {
             addChecksumsToCacheManager(digestMap, repositoryPath.toUri());
             writeChecksums(repositoryPath, digestMap);
+
+
         }
     }
 
@@ -427,6 +421,27 @@ public class ArtifactManagementService {
 
         return matched != null && !matched.isEmpty();
     }
+
+//    private void asyncCheckSumToCacheAndWrite(Map<String, String> digestMap,
+//                                              URI artifactPath,RepositoryPath repositoryPath) {
+//
+//        StopWatch stopWatch = new StopWatch("checksum step" );
+//        LayoutFileSystemProvider provider = repositoryPath.getFileSystem().provider();
+//        asyncCheckSumTaskExecutor.execute(() -> {
+//            for (Map.Entry<String, String> entry : digestMap.entrySet()) {
+//                checksumCacheManager.addArtifactChecksum(artifactPath.toString(), entry.getKey(), entry.getValue());
+//                stopWatch.start(entry.getKey()+":"+repositoryPath.toString());
+//                final RepositoryPath checksumPath = provider.getChecksumPath(repositoryPath, entry.getKey());
+//                try {
+//                    Files.write(checksumPath, entry.getValue().getBytes(StandardCharsets.UTF_8));
+//                    stopWatch.stop();
+//                } catch (IOException ex) {
+//                    logger.error(ex.getMessage(), ex);
+//                }
+//            }
+//            logger.info("checksum write  finished. the stats is \n{}", stopWatch.prettyPrint(TimeUnit.MILLISECONDS));
+//        });
+//    }
 
     private void addChecksumsToCacheManager(Map<String, String> digestMap,
                                             URI artifactPath) {
