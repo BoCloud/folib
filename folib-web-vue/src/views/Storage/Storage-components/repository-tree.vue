@@ -659,9 +659,9 @@ export default {
             this.recycleRepositryList.forEach(ele => {
                 list.push(JSON.parse(JSON.stringify(ele)))
             })
-            this.$refs.recycleTree.updateKeyChildren(this.storageId, list)
-            // this.recycleTreeData[0].children = [...list]
-            // this.recycleTreeData = [...this.recycleTreeData]
+            // this.$refs.recycleTree.updateKeyChildren(this.storageId, list)
+            this.recycleTreeData[0].children = [...list]
+            this.recycleTreeData = [...this.recycleTreeData]
         },
         // 懒加载获取节点
         onLoadData(treeNode,resolve, isTrashView) {
