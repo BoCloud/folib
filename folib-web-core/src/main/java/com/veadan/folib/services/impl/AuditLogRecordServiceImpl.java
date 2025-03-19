@@ -12,6 +12,7 @@ import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.AuditEventService;
 import com.veadan.folib.services.AuditLogRecordService;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import com.veadan.folib.utils.UserUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -75,14 +76,7 @@ public class AuditLogRecordServiceImpl implements AuditLogRecordService {
             String requestBody = captureRequestBody(method, joinPoint.getArgs());
             AuditLogRecord record = new AuditLogRecord();
             record.setRequest(requestBody);
-            String username;
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if(authentication != null) {
-                SpringSecurityUser user = (SpringSecurityUser) authentication.getPrincipal();
-                username=user.getUsername();
-            }else {
-                username="ANONYMOUS";
-            }
+            String username = UserUtils.getUsername();
             record.setUsername(username);
             record.setName(name.toString());
             record.setEventName(name.getName());

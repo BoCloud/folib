@@ -1428,7 +1428,6 @@ export default {
     },
     currentStorage:{
       handler(val){
-        console.log(val);
 
       },
       deep:true
@@ -1441,8 +1440,6 @@ export default {
           }else {
               this.notEditPolicy=false;
           }
-          console.log("notEditPolicy",this.notEditPolicy);
-
       }
   },
   async created() {
@@ -1460,6 +1457,9 @@ export default {
 
     if (!this.currentStorage.id && this.storageData && this.storageData.length > 0) {
       this.currentStorage.id = this.storageData[0].id
+    }
+    if (!this.isChecked) {
+      this.queryParams.limit = 10
     }
     this.getStorage(this.currentStorage.id)
     this.queryCustomLayoutList()
@@ -1572,7 +1572,6 @@ export default {
       }
     },
     getDetailInfo(val,type){
-      console.log(val,type)
       if(this.repositories.length){
         const item = this.repositories[0]
         storage.set("libView_repository", { item, baseUrl: this.baseUrl })
@@ -1656,7 +1655,6 @@ export default {
         const item = this.storageData.find(ele => ele.id === val)
         this.setCurrentStorage(item)
       }else{
-        console.log(val,'log of val')
         // 此时的val为queryParams
         const params = JSON.parse(JSON.stringify(val))
         params.layout = val.layout ? genLayoutType(val.layout) : ''
@@ -1983,10 +1981,10 @@ export default {
       if (this.currentStorage.basedir) {
         this.storagePrefix = this.currentStorage.basedir.replace("/" + this.currentStorage.id, "").replace("/", "")
       }
+      this.queryParams.page = 1
       this.getStorage(this.currentStorage.id)
     },
     loadMore(total){
-      console.log(total,total !== this.queryParams.total)
       if(total !== this.queryParams.total && !this.$refs.repositoryTree.loadingMore){
         this.$refs.repositoryTree.loadingMoreShow(true)
         this.queryParams.page ++
@@ -2727,7 +2725,6 @@ export default {
           this.$emit('settingDrawerClose')
       },
       doPermission(){
-        console.log("this.folibRepository:",this.folibRepository)
         this.$refs.permission.permissionFormSubmit()
           this.moveStep(1);
       },

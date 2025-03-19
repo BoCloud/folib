@@ -183,7 +183,8 @@ export default {
             }],
             isTrashView:false,
             recycleRepositryList:[],
-            recycleKey:0
+            recycleKey:0,
+            isScroll: false
         };
     },
     computed: {
@@ -268,18 +269,6 @@ export default {
                     if(key){
                         this.treeData = this.treeData.concat(JSON.parse(JSON.stringify(val)))
                         this.recycleRepositryList = this.recycleRepositryList.concat(JSON.parse(JSON.stringify(val)))
-                        // function uniqueById(arr) {
-                        //     const unique = [];
-                        //     const seen = new Set();
-                        //     arr.forEach(item => {
-                        //         if (!seen.has(item.id)) {
-                        //         unique.push(item);
-                        //         seen.add(item.id);
-                        //         }
-                        //     });
-                        //     return unique;
-                        // }
-                        // this.treeData = uniqueById(this.treeData)
                         const objs = ['treeData','recycleRepositryList']
                         objs.forEach(key => {
                             this[key].forEach(ele => {
@@ -358,6 +347,7 @@ export default {
             const parentKeyArr = artifactPath.split('/')
             parentKeyArr.pop()
             let parentKey = `${id}${parentKeyArr.join('/')}`
+            console.log(parentKey);
             let updatedChildren = []
             const recursionGetChildren = (source, artifactPath) => {
                 source.forEach(item => {
@@ -518,7 +508,7 @@ export default {
             let target = null
             // 获取当前子节点的最顶层父节点（仓库节点）
             this.treeData.forEach(ele => {
-                if (ele.id === data.repositoryId || ele.id === data.id) {
+                if (ele.id === data.currentRepositoryId || ele.id === data.id) {
                     target = ele
                 }
             })
@@ -536,7 +526,7 @@ export default {
             if (target.layout && data.type === 'file') {
                 const params = {
                     storageId: target.storageId,
-                    id: target.id,
+                    id: data.repositoryId,
                     artifactPath: data.artifactPath
                 }
                 this.getPackagePreview(params)
@@ -566,6 +556,7 @@ export default {
         },
         // 滚动条滚动
         handleScroll(event) {
+            this.isScroll = true
             const { scrollTop, clientHeight, scrollHeight } = event.target;
             if (scrollTop + clientHeight + 10 >= scrollHeight) {
                 this.$nextTick(() => {
@@ -594,10 +585,10 @@ export default {
                 if(name == '制品回收站'){
                     if(this.expandedRecycleKeys.length){
                         this.expandedRecycleKeys = []
-                        this.getPosition()
+                        this.getPosition(320)
                     }else{
                         this.expandedRecycleKeys = [this.storageId]
-                        this.getPosition(320)
+                        this.getPosition()
                     }
                     this.treeSelect(this.recycleRepositryList[0],true)
                     return
@@ -630,7 +621,7 @@ export default {
                 let target = null
                 // 获取当前子节点的最顶层父节点（仓库节点）
                 this.treeData.forEach(ele => {
-                    if (ele.id === data.repositoryId) {
+                    if (ele.id === data.currentRepositoryId) {
                         target = ele
                     }
                 })
@@ -654,18 +645,15 @@ export default {
         // 获取当前已展开节点的key
         onExpand(data,node,key) {
             this.closeContextMenu()
-            // if(key){
-            //     this.expandedRecycleKeys = [data.key]
-            // }else{
-            //     this.expandedKeys = [data.key]
-            // }
-            // if(key && data.name === '制品回收站'){ // 回收站打开
-            //     this.getPosition(320)
-            // }
+            if(key && data.name === '制品回收站'){ // 回收站打开
+                this.expandedRecycleKeys = [this.storageId]
+                this.getPosition(320)
+            }
         },
         onCollapse(data,node,key) {
             this.closeContextMenu()
             if(key && data.name === '制品回收站'){ // 回收站关闭
+                this.expandedRecycleKeys = []
                 this.getPosition(40)
             }
         },
@@ -674,8 +662,13 @@ export default {
             this.recycleRepositryList.forEach(ele => {
                 list.push(JSON.parse(JSON.stringify(ele)))
             })
-            this.recycleTreeData[0].children = [...list]
-            this.recycleTreeData = [...this.recycleTreeData]
+            if (this.isScroll) {
+                this.isScroll = false
+                this.$refs.recycleTree.updateKeyChildren(this.storageId, list)
+            } else {
+                this.recycleTreeData[0].children = [...list]
+                this.recycleTreeData = [...this.recycleTreeData]
+            }
         },
         // 懒加载获取节点
         onLoadData(treeNode,resolve, isTrashView) {
@@ -688,11 +681,11 @@ export default {
                 this.folibRepository = treeNode.data
                 this.repositoryType = getLayoutType(this.folibRepository)
                 this.queryPermission()
-            } else {
+            } else if (treeNode.data.type !== 'recycle'){
                 let target = null
                 // 获取当前子节点的最顶层父节点（仓库节点）
                 this.treeData.forEach(ele => {
-                    if (ele.id === treeNode.data.repositoryId) {
+                    if (ele.id === treeNode.data.currentRepositoryId) {
                         target = ele
                     }
                 })
@@ -736,6 +729,7 @@ export default {
                         const d = f
                         d.forEach((item, index, d) => {
                             item.type = 'dir'
+                            item.currentRepositoryId = id
                             item.key = id + item.artifactPath
                             treeNode.data.children.push(item)
                         })
@@ -745,6 +739,7 @@ export default {
                         a.forEach((item, index, a) => {
                             item.isLeaf = !this.getFileIsOpen(item.name)
                             item.type = 'file'
+                            item.currentRepositoryId = id
                             item.key = id + item.artifactPath
                             treeNode.data.children.push(item)
                         })
@@ -780,6 +775,7 @@ export default {
                     const d = f
                     d.forEach((item, index, d) => {
                         item.type = 'dir'
+                        item.currentRepositoryId = id
                         item.key = id + item.artifactPath
                     })
                     treeNode.data.children = d
@@ -789,6 +785,7 @@ export default {
                     a.forEach((item, index, a) => {
                         item.isLeaf = isTrashView || !this.getFileIsOpen(item.name)
                         item.type = 'file'
+                        item.currentRepositoryId = id
                         item.key = id + item.artifactPath
                     })
                     treeNode.data.children = treeNode.data.children.concat(a)

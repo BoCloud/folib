@@ -117,6 +117,7 @@ public class AuthComponent {
             if (Objects.isNull(authentication)) {
                 return Collections.emptySet();
             }
+            boolean globalAllowAnonymous = configurationManager.getConfiguration().getAdvancedConfiguration().isAllowAnonymous();
             Storage storage = configurationManager.getStorage(storageId);
             if (Objects.isNull(storage)) {
                 return Collections.emptySet();
@@ -142,6 +143,10 @@ public class AuthComponent {
             Object principal = authentication.getPrincipal();
             String anonymousUser = "anonymousUser";
             if (anonymousUser.equals(principal.toString())) {
+                if (!globalAllowAnonymous || !repository.isAllowAnonymous()) {
+                    //全局禁止匿名访问或者仓库禁止匿名访问
+                    return Collections.emptySet();
+                }
                 //匿名角色
                 Role anonymousRole = authoritiesProvider.getRuntimeRole(SystemRole.ANONYMOUS.name());
                 Set<Privileges> anonymousApiAuthorities = anonymousRole.getAccessModel().getApiAuthorities();
