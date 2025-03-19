@@ -854,7 +854,9 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
         try (stream) {
             String uploadPath = MlModelUtils.getLfsTmpUploadPath(context.getOrg(), context.getModelName(), context.getFile());
             Artifact artifact = artifactRepository.findOneArtifact(context.getStorageId(), context.getRepositoryId(), uploadPath);
-            if (artifact == null) {
+            RepositoryPath path = repositoryPathResolver.resolve(context.getStorageId(), context.getRepositoryId(), uploadPath);
+            //判断图库有数据但是磁盘上面没文件的场景
+            if (!Files.exists(path) || artifact == null) {
                 RepositoryPath tagPath = repositoryPathResolver.resolve(context.getStorageId(), context.getRepositoryId(), uploadPath);
                 RepositoryPath repositoryPath = artifactResolutionService.resolvePath(tagPath);
                 repositoryPath = repositoryPath == null ? tagPath : repositoryPath;
@@ -899,7 +901,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
         //    throw new PackageForbiddenException(errorMessage, errorMessage);
         //}
 
-        String baserUrl = getArtifactoryRepositoryBaseUrl(repository, API_ENDPOINT);
+        String baserUrl = getArtifactoryHfmlBaseUrl(API_ENDPOINT);
         for (GitLfsJson requestJson : batchLfsJson.getObjects()) {
             boolean sha2ReusePossible = tryToReuseExistingSha2(storageId, repositoryId, organization, modelName, requestJson);
             if (sha2ReusePossible) {

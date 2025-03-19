@@ -401,6 +401,9 @@ public abstract class BaseController {
         return String.format("%s/artifactory/%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), StringUtils.removeEnd(StringUtils.removeStart(endPoint, GlobalConstants.SEPARATOR), GlobalConstants.SEPARATOR), repository.getId());
     }
 
+    protected String getArtifactoryHfmlBaseUrl(String endPoint) {
+        return String.format("%s/artifactory/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl(), "/"), StringUtils.removeEnd(StringUtils.removeStart(endPoint, GlobalConstants.SEPARATOR), GlobalConstants.SEPARATOR));
+    }
     protected String getArtifactoryBaseUrlSimple(String repositoryId) {
         return String.format("%s/%s", StringUtils.chomp(configurationManager.getConfiguration().getBaseUrl().replace("http://", "").replace("https://", ""), "/"), repositoryId);
     }
