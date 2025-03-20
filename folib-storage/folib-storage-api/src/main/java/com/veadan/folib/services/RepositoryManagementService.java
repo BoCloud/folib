@@ -25,7 +25,7 @@ public interface RepositoryManagementService {
     void deleteTrash(String storageId, String repositoryId, String storageDay, Map<String, String> cleanupArtifactPathMap)
             throws IOException;
 
-    void deleteTrash(boolean checkTask, String storageDay)
+    void deleteTrash(boolean checkTask, String storageDa, Map<String, String> cleanupArtifactPathMap)
             throws IOException;
 
     void undelete(RepositoryPath repositoryPath)

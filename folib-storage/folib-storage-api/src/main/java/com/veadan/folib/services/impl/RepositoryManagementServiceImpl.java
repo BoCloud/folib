@@ -164,7 +164,7 @@ public class RepositoryManagementServiceImpl
     }
 
     @Override
-    public void deleteTrash(boolean checkTask, String storageDay)
+    public void deleteTrash(boolean checkTask, String storageDay, Map<String, String> cleanupArtifactPathMap)
             throws ArtifactStorageException {
         try {
             for (Map.Entry<String, Storage> entry : getConfiguration().getStorages().entrySet()) {
@@ -179,7 +179,7 @@ public class RepositoryManagementServiceImpl
                     if (repository.isAllowsDeletion()) {
                         logger.info("Emptying trash for repository {}...", ConfigurationUtils.getStorageIdAndRepositoryId(storage.getId(), repository.getId()));
 
-                        deleteTrash(repository.getStorage().getId(), repository.getId(), storageDay, null);
+                        deleteTrash(repository.getStorage().getId(), repository.getId(), storageDay, cleanupArtifactPathMap);
                     } else {
                         logger.warn("Repository {} does not support removal of trash.", ConfigurationUtils.getStorageIdAndRepositoryId(storage.getId(), repository.getId()));
                     }
