@@ -87,7 +87,7 @@ public class TrashController
     {
         try
         {
-            repositoryManagementService.deleteTrash(false);
+            repositoryManagementService.deleteTrash(false, "");
 
             logger.info("Deleted trash for all repositories.");
         }

@@ -642,6 +642,7 @@ public class RestClient extends ArtifactClient {
         part.field("storageId", uploadArtifactFrom.getStorageId());
         part.field("repostoryId", uploadArtifactFrom.getRepostoryId());
         part.field("filePathMap", uploadArtifactFrom.getFilePathMap());
+        part.field("fileMetaDataMap", uploadArtifactFrom.getFileMetaDataMap());
         try (InputStream is = uploadArtifactFrom.getFiles()[0].getInputStream()) {
             part.bodyPart(new StreamDataBodyPart("files", is,
                     uploadArtifactFrom.getFiles()[0].getOriginalFilename()));

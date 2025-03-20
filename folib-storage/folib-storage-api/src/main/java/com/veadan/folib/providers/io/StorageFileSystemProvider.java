@@ -371,6 +371,7 @@ public abstract class StorageFileSystemProvider
             if (isTrash) {
                 Files.createDirectories(trashPath);
             }
+            logger.info("Deleting hidden folders [{}] for [{}]", LayoutFileSystem.TRASH, trashPath.getTarget());
             return;
         }
         Files.walkFileTree(trashPath, new SimpleFileVisitor<Path>() {
