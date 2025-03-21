@@ -422,6 +422,7 @@ export default {
                             item.type = 'dir'
                             item.isLeaf = false
                             item.key = id + item.artifactPath
+                            item.currentRepositoryId = id
                             children.push(item)
                         })
                     }
@@ -431,6 +432,7 @@ export default {
                             item.isLeaf = !this.getFileIsOpen(item.name)
                             item.type = 'file'
                             item.key = id + item.artifactPath
+                            item.currentRepositoryId = id
                             children.push(item)
                         })
                     }
@@ -460,6 +462,7 @@ export default {
                     d.forEach((item, index, d) => {
                         item.type = 'dir'
                         item.key = id + item.artifactPath
+                        item.currentRepositoryId = id
                     })
                     children = d
                 }
@@ -469,6 +472,7 @@ export default {
                         item.isLeaf = !this.getFileIsOpen(item.name)
                         item.type = 'file'
                         item.key = id + item.artifactPath
+                        item.currentRepositoryId = id
                     })
                     children = children.concat(a)
                 }
@@ -677,6 +681,7 @@ export default {
             if(treeNode.data.type === 'recycle'){
                 this.getPosition(320)
             }
+            console.log(treeNode.data);
             if (treeNode.data.fileType === 'document') {
                 this.folibRepository = treeNode.data
                 this.repositoryType = getLayoutType(this.folibRepository)
@@ -815,7 +820,8 @@ export default {
                         ele.treeType = 'lastRoot'
                         ele.storageId = storageId
                         ele.repositoryId = id
-                        ele.key = ele.name
+                        ele.currentRepositoryId = id
+                        ele.key = `${id}/${artifactPath}/${ele.name}`
                         ele.artifactPath = `${id}/${artifactPath}/${ele.name}`
                         if (ele?.children?.length) {
                             setNewDetailPage(ele.children)
