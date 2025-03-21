@@ -814,23 +814,23 @@ export default {
             ).then(res => {
                 this.currentFileDetial = res
                 if (!resolve) return
-                function setNewDetailPage(arr) {
+                function setNewDetailPage(arr, parentKey) {
                     arr.forEach(ele => {
                         ele.newDetailPage = true
                         ele.treeType = 'lastRoot'
                         ele.storageId = storageId
                         ele.repositoryId = id
                         ele.currentRepositoryId = id
-                        ele.key = `${id}/${artifactPath}/${ele.name}`
+                        ele.key = `${parentKey}/${ele.name}`
                         ele.artifactPath = `${id}/${artifactPath}/${ele.name}`
                         if (ele?.children?.length) {
-                            setNewDetailPage(ele.children)
+                            setNewDetailPage(ele.children, ele.key)
                         }
                     })
                 }
                 treeNode.data.children = []
                 if (res.listTree) {
-                    setNewDetailPage(res.listTree)
+                    setNewDetailPage(res.listTree, `${id}/${artifactPath}`)
                     treeNode.data.children = treeNode.data.children.concat(res.listTree)
                 }
                 // this[nowDataKey] = [...this[nowDataKey]]

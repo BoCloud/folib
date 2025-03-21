@@ -2117,23 +2117,22 @@ export default {
           artifactPath
         ).then(res => {
         this.currentFileDetial = res
-        function setNewDetailPage(arr) {
+        function setNewDetailPage(arr, parentKey) {
           arr.forEach(ele => {
               ele.newDetailPage = true
               ele.treeType = 'lastRoot'
               ele.storageId = storageId
               ele.repositoryId = id
-              ele.key = ele.name
-              ele.artifactPath = `${id}/${artifactPath}/${ele.name}`
+              ele.artifactPath = `${parentKey}/${ele.name}`
               if (ele?.children?.length) {
-                  setNewDetailPage(ele.children)
+                  setNewDetailPage(ele.children, ele.artifactPath)
               }
           })
         }
         treeNode.data.children = []
         if (res.listTree) {
-          setNewDetailPage(res.listTree)
-          treeNode.data.children = treeNode.data.children.concat(res.listTree)
+            setNewDetailPage(res.listTree, `${id}/${artifactPath}`)
+            treeNode.data.children = treeNode.data.children.concat(res.listTree)
         }
         resolve(treeNode.data.children)
       })
