@@ -999,6 +999,6 @@ export default {
     overflow-x: auto;
 }
 .vue-recycle-scroller__item-wrapper {
-    overflow: visible;
+    overflow: visible!important;
 }
 </style>
