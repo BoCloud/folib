@@ -292,8 +292,17 @@ public class DockerWebhooksEventProvider extends BaseWebhookEventsProvider {
                     return true;
                 }
                 if (Files.exists(repositoryPath)) {
-                    RepositoryFiles.delete(repositoryPath);
-                    result = checkNotExists(repositoryPath);
+                    if (2 == type) {
+                        //定时任务触发，直接删除
+                        RepositoryFiles.delete(repositoryPath);
+                        result = checkNotExists(repositoryPath);
+                    } else {
+                        //webhook触发，保存至数据库，异步定时任务处理
+                        WebhookEventsLog webhookEventsLog = WebhookEventsLog.builder().eventType(webhook.getEventType()).eventRepositoryId(artifactData.getRepoKey()).storageId(storageId).repositoryId(repositoryId).artifactName(name)
+                                .artifactPath(path).sha256Checksum(artifactData.getSha256()).size(artifactData.getSize()).status(WebhookEventsStatusEnum.INIT.getStatus()).build();
+                        webhookEventsLogService.saveWebhookEventsLog(webhookEventsLog, type);
+                        result = true;
+                    }
                 }
             }
         } catch (Exception ex) {

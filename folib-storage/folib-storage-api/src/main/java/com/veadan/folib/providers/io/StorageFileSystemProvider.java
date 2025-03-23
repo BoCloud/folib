@@ -2,6 +2,7 @@ package com.veadan.folib.providers.io;
 
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.constant.GlobalConstants;
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.RepositoryPathUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -193,8 +194,9 @@ public abstract class StorageFileSystemProvider
         logger.debug("Deleting hidden folders for [{}]", path);
 
         FileSystemUtils.deleteRecursively(unwrap(root).resolve(LayoutFileSystem.TEMP));
-        FileSystemUtils.deleteRecursively(unwrap(root).resolve(LayoutFileSystem.TRASH));
-        Files.delete(unwrap(root));
+//        FileSystemUtils.deleteRecursively(unwrap(root).resolve(LayoutFileSystem.TRASH));
+        //不删除仓库本身，保留回收站
+//        Files.delete(unwrap(root));
 
         logger.debug("Hidden folders deleted [{}]", path);
 
@@ -217,10 +219,21 @@ public abstract class StorageFileSystemProvider
             }
 
             @Override
+            public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+                boolean isTrash = Files.isSameFile(dir, dir.getRoot().resolve(LayoutFileSystem.TRASH));
+                if (isTrash) {
+                    log.info("RepositoryPath [{}] skip...", dir.toString());
+                    return FileVisitResult.SKIP_SUBTREE;
+                }
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
             public FileVisitResult postVisitDirectory(Path dir,
                                                       IOException exc)
                     throws IOException {
-                if (root.equals(dir)) {
+                boolean isTrash = Files.isSameFile(dir, dir.getRoot().resolve(LayoutFileSystem.TRASH));
+                if (root.equals(dir) || isTrash) {
                     return FileVisitResult.CONTINUE;
                 }
 

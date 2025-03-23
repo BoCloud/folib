@@ -427,11 +427,14 @@
             <a-button key="back" @click="deleteFormVisible = false" class="px-30 ml-10" size="small">{{ $t('Storage.Cancel') }}</a-button>
           </a-col>
           <a-col :span="12" class="text-right">
-            <a-button v-if="deleteBtnVisible" @click="delRepositoryResponseEntity" class="px-30 ml-10" type="danger"
+            <a-button v-if="deleteBtnVisible" @click="delRepositoryResponseEntity" class="ml-10" type="danger"
               size="small">{{ $t('Storage.Delete') }}</a-button>
             <!-- <a-button v-if="forceDeleteBtnVisible" @click="delRepositoryResponseEntityForce" class="px-30 ml-10"
               type="dashed" size="small">{{ $t('Storage.ForcedDeletion') }}
             </a-button> -->
+            <a-button @click="cleanupRepository" class="ml-10"
+              type="danger" size="small">{{ $t('Storage.CleanupArtifacts') }}
+            </a-button>
           </a-col>
         </a-row>
       </a-form>
@@ -1129,6 +1132,7 @@ import {
     addOrUpdateRepository,
     getRepositoryResponseEntity,
     delRepositoryResponseEntity,
+    cleanupRepository,
     getBaseUrl,
     createStorages,
     deleteStorages,
@@ -2567,6 +2571,40 @@ export default {
                   class: 'ant-notification-success',
                   message: this.$t('Storage.Success'),
                   description: values.id + this.$t('Storage.Deleted'),
+                });
+              }, 100)
+            }).catch((err) => {
+              let error = err.response.data?err.response.data:this.$t('Storage.UnknownError')
+              this.$notification["error"]({
+                message: error,
+              })
+            }).finally(() => {
+              this.deleteFormVisible = false;
+              this.getStorage(this.currentStorage.id)
+            })
+          } else {
+            setTimeout(() => {
+              this.$notification.open({
+                class: 'ant-notification-warning',
+                message: this.$t('Storage.FillInErrors'),
+                description: this.$t('Storage.ContentError'),
+              });
+            }, 1000);
+          }
+
+        }
+      });
+    },
+    cleanupRepository() {
+      this.delForm.validateFields((err, values) => {
+        if (!err) {
+          if (this.willDelId === values.id) {
+            cleanupRepository(this.currentStorage.id, values.id, true).then(response => {
+              setTimeout(() => {
+                this.$notification.open({
+                  class: 'ant-notification-success',
+                  message: this.$t('Storage.Success'),
+                  description: values.id + ' ' + this.$t('Storage.CleanupFinished'),
                 });
               }, 100)
             }).catch((err) => {

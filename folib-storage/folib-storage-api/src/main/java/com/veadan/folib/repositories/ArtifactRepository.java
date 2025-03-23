@@ -1057,4 +1057,45 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.UUID, Text.textPrefix(uuid)).count().tryNext().orElse(0L);
     }
 
+    public long countGenericArtifactCoordinatesByUUid(String uuid, String artifactPath) {
+        return g().V()
+                .hasLabel(Vertices.GENERIC_ARTIFACT_COORDINATES).has(Properties.UUID, artifactPath)
+                .in(Edges.ARTIFACT_HAS_ARTIFACT_COORDINATES)
+                .hasLabel(Vertices.ARTIFACT).has(Properties.UUID, P.neq(uuid))
+                .count().tryNext().orElse(0L);
+    }
+
+    private void deleteLayoutArtifactCoordinates(Artifact artifact, String layout) {
+        long count = countGenericArtifactCoordinatesByUUid(artifact.getUuid(), artifact.getArtifactPath());
+        if (count != 0) {
+            return;
+        }
+        String artifactCoordinates = ProductTypeEnum.queryArtifactCoordinatesByFoLibraryName(layout);
+        if (StringUtils.isBlank(artifactCoordinates)) {
+            return;
+        }
+        log.info("Delete storageId [{}] repositoryId [{}] artifactPath [{}] artifactCoordinates [{}]", artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), artifactCoordinates);
+        g().V().hasLabel(Vertices.GENERIC_ARTIFACT_COORDINATES).has(Properties.UUID, artifact.getArtifactPath())
+                .in(Edges.EXTENDS)
+                .hasLabel(artifactCoordinates).drop().iterate();
+    }
+
+    public void delete(Artifact artifact, String layout) {
+        if (distributedLockComponent.lock(artifact.getArtifactPath(), GlobalConstants.WAIT_LOCK_TIME, TimeUnit.SECONDS)) {
+            try {
+                try {
+                    deleteLayoutArtifactCoordinates(artifact, layout);
+                    super.delete(artifact);
+                } catch (Exception ex) {
+                    log.error("Delete artifact [{}] error [{}]", artifact.getUuid(), ExceptionUtils.getStackTrace(ex));
+                    throw new RuntimeException(ex.getMessage());
+                }
+            } finally {
+                distributedLockComponent.unLock(artifact.getArtifactPath());
+            }
+        } else {
+            log.warn("Delete artifact [{}] was not get lock", artifact.getUuid());
+        }
+    }
+
 }

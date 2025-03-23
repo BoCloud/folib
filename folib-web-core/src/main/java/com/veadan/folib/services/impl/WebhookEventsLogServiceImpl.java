@@ -87,7 +87,7 @@ public class WebhookEventsLogServiceImpl implements WebhookEventsLogService {
     }
 
     @Override
-    public List<WebhookEventsLog> queryWebhookEventsLogList(WebhookEventsLog webhookEventsLog) {
+    public List<WebhookEventsLog> queryWebhookEventsLogList(List<Integer> statsList, WebhookEventsLog webhookEventsLog) {
         Example example = Example.builder(WebhookEventsLog.class).build();
         Example.Criteria criteria = example.createCriteria();
         if (StringUtils.isNotBlank(webhookEventsLog.getEventType())) {
@@ -113,6 +113,9 @@ public class WebhookEventsLogServiceImpl implements WebhookEventsLogService {
         }
         if (Objects.nonNull(webhookEventsLog.getRetryCount())) {
             criteria.andLessThanOrEqualTo("retryCount", webhookEventsLog.getRetryCount());
+        }
+        if (CollectionUtils.isNotEmpty(statsList)) {
+            criteria.andIn("status", statsList);
         }
         example.setOrderByClause("create_time desc");
         return webhookEventsLogMapper.selectByExample(example);
@@ -157,10 +160,10 @@ public class WebhookEventsLogServiceImpl implements WebhookEventsLogService {
     }
 
     @Override
-    public long count(Integer status, Integer retryCount) {
+    public long count(List<Integer> statsList, Integer retryCount) {
         Example example = Example.builder(WebhookEventsLog.class).build();
         Example.Criteria criteria = example.createCriteria();
-        criteria.andEqualTo("status", status);
+        criteria.andIn("status", statsList);
         criteria.andLessThanOrEqualTo("retryCount", retryCount);
         return webhookEventsLogMapper.selectCountByExample(example);
     }
@@ -171,7 +174,7 @@ public class WebhookEventsLogServiceImpl implements WebhookEventsLogService {
     }
 
     @Override
-    public TableResultResponse<WebhookEventsLog> queryWebhookEventLogPage(Integer page, Integer limit, WebhookEventsLog webhookEventsLog) {
+    public TableResultResponse<WebhookEventsLog> queryWebhookEventLogPage(Integer page, Integer limit, List<Integer> statsList, WebhookEventsLog webhookEventsLog) {
         if (Objects.isNull(page)) {
             page = 1;
         }
@@ -179,7 +182,7 @@ public class WebhookEventsLogServiceImpl implements WebhookEventsLogService {
             limit = 10;
         }
         Page<Object> result = PageHelper.startPage(page, limit);
-        List<WebhookEventsLog> webhookEventsLogs = queryWebhookEventsLogList(webhookEventsLog);
+        List<WebhookEventsLog> webhookEventsLogs = queryWebhookEventsLogList(statsList, webhookEventsLog);
         return new TableResultResponse<WebhookEventsLog>(result.getTotal(), CollectionUtils.isEmpty(webhookEventsLogs) ? Collections.emptyList() : webhookEventsLogs);
     }
 

@@ -138,6 +138,12 @@ public class RepositoryManagementServiceImpl
     }
 
     @Override
+    public void cleanupRepository(String storageId, String repositoryId) throws IOException {
+        LayoutProvider provider = getLayoutProvider(storageId, repositoryId);
+        provider.getRepositoryManagementStrategy().removeRepository(storageId, repositoryId);
+    }
+
+    @Override
     public void deleteTrash(String storageId, String repositoryId, String storageDay, Map<String, String> cleanupArtifactPathMap)
             throws IOException {
         artifactOperationsValidator.checkStorageExists(storageId);
