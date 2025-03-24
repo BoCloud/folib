@@ -40,6 +40,8 @@ export default {
     'Delete': '删除',
     'create': '新建',
     'ForcedDeletion': '强制删除',
+    'CleanupArtifacts': '清空制品',
+    'CleanupFinished': '已清空制品',
     'ConfirmDeletion1': '你确定要删除',
     'ConfirmDeletion2': '这个制品仓库么？请谨慎操作',
     'WarehouseName': '仓库名称',

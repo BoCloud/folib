@@ -21,5 +21,6 @@ public class UploadArtifactFrom {
     private String storageId;
     private String repostoryId;
     private String filePathMap;
+    private String fileMetaDataMap;
     private File file;
 }

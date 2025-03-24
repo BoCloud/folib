@@ -40,6 +40,8 @@ export default {
     'Edit': 'Edit',
     'Delete': 'Delete',
     'ForcedDeletion': 'Forced deletion',
+    'CleanupArtifacts': 'Cleanup Artifacts',
+    'CleanupFinished': 'Cleanup Artifacts finished',
     'ConfirmDeletion1': 'Are you sure you want to delete the ',
     'ConfirmDeletion2': ' product warehouse? Please proceed with caution.',
     'WarehouseName': 'Warehouse name',

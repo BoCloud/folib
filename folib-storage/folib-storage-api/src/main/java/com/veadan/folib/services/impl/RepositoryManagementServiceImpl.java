@@ -138,6 +138,12 @@ public class RepositoryManagementServiceImpl
     }
 
     @Override
+    public void cleanupRepository(String storageId, String repositoryId) throws IOException {
+        LayoutProvider provider = getLayoutProvider(storageId, repositoryId);
+        provider.getRepositoryManagementStrategy().removeRepository(storageId, repositoryId);
+    }
+
+    @Override
     public void deleteTrash(String storageId, String repositoryId, String storageDay, Map<String, String> cleanupArtifactPathMap)
             throws IOException {
         artifactOperationsValidator.checkStorageExists(storageId);
@@ -164,7 +170,7 @@ public class RepositoryManagementServiceImpl
     }
 
     @Override
-    public void deleteTrash(boolean checkTask)
+    public void deleteTrash(boolean checkTask, String storageDay, Map<String, String> cleanupArtifactPathMap)
             throws ArtifactStorageException {
         try {
             for (Map.Entry<String, Storage> entry : getConfiguration().getStorages().entrySet()) {
@@ -179,7 +185,7 @@ public class RepositoryManagementServiceImpl
                     if (repository.isAllowsDeletion()) {
                         logger.info("Emptying trash for repository {}...", ConfigurationUtils.getStorageIdAndRepositoryId(storage.getId(), repository.getId()));
 
-                        deleteTrash(repository.getStorage().getId(), repository.getId(), null, null);
+                        deleteTrash(repository.getStorage().getId(), repository.getId(), storageDay, cleanupArtifactPathMap);
                     } else {
                         logger.warn("Repository {} does not support removal of trash.", ConfigurationUtils.getStorageIdAndRepositoryId(storage.getId(), repository.getId()));
                     }

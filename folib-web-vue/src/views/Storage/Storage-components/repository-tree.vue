@@ -347,6 +347,7 @@ export default {
             const parentKeyArr = artifactPath.split('/')
             parentKeyArr.pop()
             let parentKey = `${id}${parentKeyArr.join('/')}`
+            console.log(parentKey);
             let updatedChildren = []
             const recursionGetChildren = (source, artifactPath) => {
                 source.forEach(item => {
@@ -421,6 +422,7 @@ export default {
                             item.type = 'dir'
                             item.isLeaf = false
                             item.key = id + item.artifactPath
+                            item.currentRepositoryId = id
                             children.push(item)
                         })
                     }
@@ -430,6 +432,7 @@ export default {
                             item.isLeaf = !this.getFileIsOpen(item.name)
                             item.type = 'file'
                             item.key = id + item.artifactPath
+                            item.currentRepositoryId = id
                             children.push(item)
                         })
                     }
@@ -459,6 +462,7 @@ export default {
                     d.forEach((item, index, d) => {
                         item.type = 'dir'
                         item.key = id + item.artifactPath
+                        item.currentRepositoryId = id
                     })
                     children = d
                 }
@@ -468,6 +472,7 @@ export default {
                         item.isLeaf = !this.getFileIsOpen(item.name)
                         item.type = 'file'
                         item.key = id + item.artifactPath
+                        item.currentRepositoryId = id
                     })
                     children = children.concat(a)
                 }
@@ -507,7 +512,7 @@ export default {
             let target = null
             // 获取当前子节点的最顶层父节点（仓库节点）
             this.treeData.forEach(ele => {
-                if (ele.id === data.repositoryId || ele.id === data.id) {
+                if (ele.id === data.currentRepositoryId || ele.id === data.id) {
                     target = ele
                 }
             })
@@ -525,7 +530,7 @@ export default {
             if (target.layout && data.type === 'file') {
                 const params = {
                     storageId: target.storageId,
-                    id: target.id,
+                    id: data.repositoryId,
                     artifactPath: data.artifactPath
                 }
                 this.getPackagePreview(params)
@@ -620,7 +625,7 @@ export default {
                 let target = null
                 // 获取当前子节点的最顶层父节点（仓库节点）
                 this.treeData.forEach(ele => {
-                    if (ele.id === data.repositoryId) {
+                    if (ele.id === data.currentRepositoryId) {
                         target = ele
                     }
                 })
@@ -676,6 +681,7 @@ export default {
             if(treeNode.data.type === 'recycle'){
                 this.getPosition(320)
             }
+            console.log(treeNode.data);
             if (treeNode.data.fileType === 'document') {
                 this.folibRepository = treeNode.data
                 this.repositoryType = getLayoutType(this.folibRepository)
@@ -684,7 +690,7 @@ export default {
                 let target = null
                 // 获取当前子节点的最顶层父节点（仓库节点）
                 this.treeData.forEach(ele => {
-                    if (ele.id === treeNode.data.repositoryId) {
+                    if (ele.id === treeNode.data.currentRepositoryId) {
                         target = ele
                     }
                 })
@@ -728,6 +734,7 @@ export default {
                         const d = f
                         d.forEach((item, index, d) => {
                             item.type = 'dir'
+                            item.currentRepositoryId = id
                             item.key = id + item.artifactPath
                             treeNode.data.children.push(item)
                         })
@@ -737,6 +744,7 @@ export default {
                         a.forEach((item, index, a) => {
                             item.isLeaf = !this.getFileIsOpen(item.name)
                             item.type = 'file'
+                            item.currentRepositoryId = id
                             item.key = id + item.artifactPath
                             treeNode.data.children.push(item)
                         })
@@ -772,6 +780,7 @@ export default {
                     const d = f
                     d.forEach((item, index, d) => {
                         item.type = 'dir'
+                        item.currentRepositoryId = id
                         item.key = id + item.artifactPath
                     })
                     treeNode.data.children = d
@@ -781,6 +790,7 @@ export default {
                     a.forEach((item, index, a) => {
                         item.isLeaf = isTrashView || !this.getFileIsOpen(item.name)
                         item.type = 'file'
+                        item.currentRepositoryId = id
                         item.key = id + item.artifactPath
                     })
                     treeNode.data.children = treeNode.data.children.concat(a)
@@ -804,22 +814,23 @@ export default {
             ).then(res => {
                 this.currentFileDetial = res
                 if (!resolve) return
-                function setNewDetailPage(arr) {
+                function setNewDetailPage(arr, parentKey) {
                     arr.forEach(ele => {
                         ele.newDetailPage = true
                         ele.treeType = 'lastRoot'
                         ele.storageId = storageId
                         ele.repositoryId = id
-                        ele.key = ele.name
+                        ele.currentRepositoryId = id
+                        ele.key = `${parentKey}/${ele.name}`
                         ele.artifactPath = `${id}/${artifactPath}/${ele.name}`
                         if (ele?.children?.length) {
-                            setNewDetailPage(ele.children)
+                            setNewDetailPage(ele.children, ele.key)
                         }
                     })
                 }
                 treeNode.data.children = []
                 if (res.listTree) {
-                    setNewDetailPage(res.listTree)
+                    setNewDetailPage(res.listTree, `${id}/${artifactPath}`)
                     treeNode.data.children = treeNode.data.children.concat(res.listTree)
                 }
                 // this[nowDataKey] = [...this[nowDataKey]]
@@ -988,6 +999,6 @@ export default {
     overflow-x: auto;
 }
 .vue-recycle-scroller__item-wrapper {
-    overflow: visible;
+    overflow: visible!important;
 }
 </style>

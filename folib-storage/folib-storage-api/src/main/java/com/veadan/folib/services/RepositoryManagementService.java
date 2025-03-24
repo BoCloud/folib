@@ -22,10 +22,14 @@ public interface RepositoryManagementService {
                           String repositoryId)
             throws IOException;
 
+    void cleanupRepository(String storageId,
+                          String repositoryId)
+            throws IOException;
+
     void deleteTrash(String storageId, String repositoryId, String storageDay, Map<String, String> cleanupArtifactPathMap)
             throws IOException;
 
-    void deleteTrash(boolean checkTask)
+    void deleteTrash(boolean checkTask, String storageDa, Map<String, String> cleanupArtifactPathMap)
             throws IOException;
 
     void undelete(RepositoryPath repositoryPath)

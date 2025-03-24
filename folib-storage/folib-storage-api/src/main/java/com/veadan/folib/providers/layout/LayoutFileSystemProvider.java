@@ -344,7 +344,7 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
         Artifact artifactEntry = Optional.ofNullable(repositoryPath.getArtifactEntry())
                 .orElseGet(() -> fetchArtifactEntry(repositoryPath));
         if (artifactEntry != null) {
-            artifactEntityRepository.delete(artifactEntry);
+            artifactEntityRepository.delete(artifactEntry, repositoryPath.getRepository().getLayout());
             ArtifactCoordinates c = RepositoryFiles.readCoordinates(repositoryPath);
             if (Objects.nonNull(c) && StringUtils.isNotBlank(c.getId()) && ProductTypeEnum.Npm.getFoLibraryName().equals(repositoryPath.getRepository().getLayout())) {
                 ArtifactIdGroup artifactIdGroup = new ArtifactIdGroupEntity(artifactEntry.getStorageId(), artifactEntry.getRepositoryId(), c.getId());
