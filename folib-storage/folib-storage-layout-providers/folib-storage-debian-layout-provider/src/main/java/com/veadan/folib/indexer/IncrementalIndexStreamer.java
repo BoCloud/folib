@@ -60,7 +60,8 @@ public class IncrementalIndexStreamer {
                 if (filenameField == null && lineWithoutSpace.startsWith(this.filter.getLineIdentifier())) {
                     filenameField = lineWithoutSpace;
                 }
-                builder.append(line).append(System.lineSeparator());
+                builder.append(line);
+//                builder.append(line).append(System.lineSeparator());
                 line = buffer.readLine();
             }
             if (filenameField != null && !this.filter.shouldRemoveBlock(filenameField)) {
