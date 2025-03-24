@@ -441,6 +441,7 @@ public class DebianUtils {
         Set<String> debianDefaultArchitectures = new HashSet<>();
         debianDefaultArchitectures.add("amd64");
         debianDefaultArchitectures.add("arm64");
+        debianDefaultArchitectures.add("aarch64");
         return debianDefaultArchitectures;
 
     }

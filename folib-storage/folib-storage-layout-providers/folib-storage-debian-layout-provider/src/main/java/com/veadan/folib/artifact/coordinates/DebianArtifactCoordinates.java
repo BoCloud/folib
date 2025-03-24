@@ -34,7 +34,9 @@ public class DebianArtifactCoordinates
 
     public DebianArtifactCoordinates(String component,  String name, String extension) {
         setName(name);
-        setComponent(component);
+        if(component!=null){
+            setComponent(component);
+        }
         setExtension(extension);
     }
 
@@ -138,7 +140,7 @@ public class DebianArtifactCoordinates
                 String fileName = matcher.group(2);
                 String version = matcher.group(3);
                 log.info("path is component:{},filename:{},version:{}", component, fileName, version);
-                coordinates = DebianArtifactCoordinates.of(component, path, DebianConstant.DEFAULT_EXTENSION);
+                coordinates = DebianArtifactCoordinates.of(null, path, DebianConstant.DEFAULT_EXTENSION);
                 coordinates.setVersion(version);
                 coordinates.setFileName(fileName);
             }else {
@@ -148,7 +150,7 @@ public class DebianArtifactCoordinates
                     component=split[1];
                 }
                 String name = path.substring(path.lastIndexOf('/') + 1);
-                coordinates = DebianArtifactCoordinates.of(component, path, DebianConstant.DEFAULT_EXTENSION);
+                coordinates = DebianArtifactCoordinates.of(null, path, DebianConstant.DEFAULT_EXTENSION);
                 coordinates.setVersion("1.0.0");
                 coordinates.setFileName(name);
 
