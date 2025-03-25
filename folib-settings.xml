@@ -5,6 +5,7 @@
     <!--本地依赖位置按照实际情况进行修改-->
 <!--    <localRepository>/Users/leipenghui/apps/m2/repository-future</localRepository>-->
 <!--    <localRepository>/Users/zerowang/data/maven/repository-folib-server</localRepository>-->
+        <localRepository>/home/lg/apps/repository-folib-server</localRepository>
 
 
     <mirrors>

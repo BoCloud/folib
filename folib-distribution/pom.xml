@@ -223,11 +223,11 @@
                         <id>config</id>
                         <phase>prepare-package</phase>
                         <configuration>
-                            <tasks>
+                            <target>
                                 <mkdir dir="${dir.folib.vault}/"/>
                                 <mkdir dir="${dir.folib.standalone}/tmp"/>
                                 <mkdir dir="${dir.folib.vault}/logs"/>
-                            </tasks>
+                            </target>
                         </configuration>
                         <goals>
                             <goal>run</goal>
