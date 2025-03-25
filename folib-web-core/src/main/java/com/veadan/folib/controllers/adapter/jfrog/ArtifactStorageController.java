@@ -1,5 +1,6 @@
 package com.veadan.folib.controllers.adapter.jfrog;
 
+import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -8,13 +9,13 @@ import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.adapter.jfrog.ArtifactStorageInfo;
 import com.veadan.folib.enums.ArtifactMetadataEnum;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ArtifactWebService;
 import com.veadan.folib.storage.ArtifactStorageException;
 import com.veadan.folib.storage.Storage;
-import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.web.RepositoryMapping;
+import com.veadan.folib.util.RepositoryPathUtil;
 import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -67,7 +68,7 @@ public class ArtifactStorageController extends JFrogBaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @RequestMapping(value = {"/{repositoryId}/{artifactPath:.+}"}, method = {RequestMethod.GET})
     public ResponseEntity<?> itemProperties(@PathVariable("repositoryId") String repositoryId, @PathVariable("artifactPath") String artifactPath,
-                                                 @RequestParam(value = "properties", required = false) String properties, HttpServletRequest request) throws Exception {
+                                            @RequestParam(value = "properties", required = false) String properties, HttpServletRequest request) throws Exception {
         String storageId = getDefaultStorageId(repositoryId);
         Storage storage = getStorage(storageId);
         if (Objects.isNull(storage)) {
@@ -80,16 +81,11 @@ public class ArtifactStorageController extends JFrogBaseController {
         if (Collections.list(request.getParameterNames()).stream().anyMatch("list"::equals)) {
             return getStorageFileList(repositoryId, storageId, artifactPath, request);
         }
-
-        Artifact artifact = findArtifact(storageId, repositoryId, artifactPath);
-        if (Objects.isNull(artifact)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, ARTIFACT_NOT_FOUND_MESSAGE));
-        }
-
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
         String propertiesKey = "properties";
         boolean hasPropertiesKey = request.getParameterMap().containsKey(propertiesKey);
-        String metadata = artifact.getMetadata();
-        if (hasPropertiesKey && StringUtils.isBlank(metadata)) {
+        String metadata = artifactWebService.getMetadata(storageId, repositoryId, artifactPath);
+        if (hasPropertiesKey && (StringUtils.isBlank(metadata) || "{}".equals(metadata))) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, null));
         }
         ArtifactStorageInfo artifactStorageInfo = ArtifactStorageInfo.builder().uri(request.getRequestURL().toString()).build();
@@ -122,22 +118,30 @@ public class ArtifactStorageController extends JFrogBaseController {
             }
         }
         if (!hasPropertiesKey) {
-            String admin = "admin";
-            artifactStorageInfo.setRepo(String.format("%s/%s", artifact.getStorageId(), artifact.getRepositoryId()));
-            artifactStorageInfo.setPath("/" + artifact.getArtifactPath());
-            artifactStorageInfo.setCreated(Date.from(artifact.getCreated().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()));
-            artifactStorageInfo.setCreatedBy(admin);
-            artifactStorageInfo.setLastModified(Date.from(artifact.getLastUpdated().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()));
-            artifactStorageInfo.setModifiedBy(admin);
+            Artifact artifact = null;
+            if (RepositoryFiles.isArtifact(repositoryPath)) {
+                artifact = findArtifact(storageId, repositoryId, artifactPath);
+                if (Objects.nonNull(artifact)) {
+                    artifactStorageInfo.setCreatedBy(artifact.getCreatedBy());
+                    artifactStorageInfo.setModifiedBy(artifact.getUpdatedBy());
+                    artifactStorageInfo.setCreated(Date.from(artifact.getCreated().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()));
+                    artifactStorageInfo.setLastModified(Date.from(artifact.getLastUpdated().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()));
+                    artifactStorageInfo.setDownloadUri(String.format("%s/%s", getBaseUrl(storageId, repositoryId), artifactPath));
+                    MimetypesFileTypeMap mimetypesFileTypeMap = new MimetypesFileTypeMap();
+                    String mimeType = mimetypesFileTypeMap.getContentType(artifact.getArtifactPath());
+                    artifactStorageInfo.setMimeType(mimeType);
+                    artifactStorageInfo.setSize(Objects.nonNull(artifact.getSizeInBytes()) ? artifact.getSizeInBytes().toString() : "0");
+                    Map<String, String> checksumsMap = artifact.getChecksums();
+                    artifactStorageInfo.setChecksums(replaceKey(checksumsMap));
+                    artifactStorageInfo.setOriginalChecksums(artifactStorageInfo.getChecksums());
+                }
+            } else if (Files.isDirectory(repositoryPath)) {
+                artifactStorageInfo.setCreated(RepositoryPathUtil.getFileCreationDate(repositoryPath));
+                artifactStorageInfo.setLastModified(RepositoryPathUtil.getFileLastModifiedDate(repositoryPath));
+            }
+            artifactStorageInfo.setRepo(String.format("%s/%s", storageId, repositoryId));
+            artifactStorageInfo.setPath("/" + artifactPath);
             artifactStorageInfo.setLastUpdated(artifactStorageInfo.getLastModified());
-            artifactStorageInfo.setDownloadUri(String.format("%s/%s", getBaseUrl(storageId, repositoryId), artifact.getArtifactPath()));
-            MimetypesFileTypeMap mimetypesFileTypeMap = new MimetypesFileTypeMap();
-            String mimeType = mimetypesFileTypeMap.getContentType(artifact.getArtifactPath());
-            artifactStorageInfo.setMimeType(mimeType);
-            artifactStorageInfo.setSize(Objects.nonNull(artifact.getSizeInBytes()) ? artifact.getSizeInBytes().toString() : "0");
-            Map<String, String> checksumsMap = artifact.getChecksums();
-            artifactStorageInfo.setChecksums(replaceKey(checksumsMap));
-            artifactStorageInfo.setOriginalChecksums(artifactStorageInfo.getChecksums());
         }
         return ResponseEntity.ok(artifactStorageInfo);
     }
@@ -146,7 +150,7 @@ public class ArtifactStorageController extends JFrogBaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PutMapping(value = {"/{repositoryId}/{artifactPath:.+}"})
     public ResponseEntity<Object> setItemProperties(@PathVariable("repositoryId") String repositoryId, @PathVariable("artifactPath") String artifactPath,
-                                                    @RequestParam(value = "properties", required = false) String properties, HttpServletRequest request) throws Exception {
+                                                    @RequestParam(value = "properties", required = false) String properties, @RequestParam(value = "recursive", required = false) Boolean recursive, HttpServletRequest request) throws Exception {
 
         String storageId = getDefaultStorageId(repositoryId);
         Storage storage = getStorage(storageId);
@@ -158,10 +162,6 @@ public class ArtifactStorageController extends JFrogBaseController {
         }
         if (Objects.isNull(storage.getRepository(repositoryId))) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, REPOSITORY_NOT_FOUND_MESSAGE));
-        }
-        Artifact artifact = findArtifact(storageId, repositoryId, artifactPath);
-        if (Objects.isNull(artifact)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, ARTIFACT_NOT_FOUND_MESSAGE));
         }
         String splitSemicolon = ";", splitVerticalLine = "|", splitVerticalLineEncode = "\\|", splitSlashSemicolon = "\\;", splitSlashSemicolonEncode = "\\\\;", splitComma = ",";
         List<String> propertyList = Arrays.asList(properties.split(splitSemicolon)), itemPropertyList = null, propertyGroupSplitList = null;
@@ -180,7 +180,7 @@ public class ArtifactStorageController extends JFrogBaseController {
                 } else {
                     metadataValue = "";
                 }
-                artifactMetadataForm = ArtifactMetadataForm.builder().storageId(storageId).repositoryId(repositoryId).artifactPath(artifactPath).type(ArtifactMetadataEnum.STRING.toString()).key(metadataKey).viewShow(1).build();
+                artifactMetadataForm = ArtifactMetadataForm.builder().storageId(storageId).repositoryId(repositoryId).artifactPath(artifactPath).type(ArtifactMetadataEnum.STRING.toString()).key(metadataKey).viewShow(1).recursive(recursive).build();
                 itemPropertyList = Arrays.asList(metadataValue.split(splitComma));
                 if (metadataValue.contains(splitSlashSemicolon)) {
                     itemPropertyList = Arrays.asList(metadataValue.split(splitSlashSemicolonEncode));
@@ -219,16 +219,16 @@ public class ArtifactStorageController extends JFrogBaseController {
     /**
      * 获取文件夹列表
      *
-     * @param storageId       存储ID
-     * @param repositoryId    仓库ID
-     * @param artifactPath      文件夹路径
+     * @param storageId    存储ID
+     * @param repositoryId 仓库ID
+     * @param artifactPath 文件夹路径
      * @return 文件夹列表
      */
     public ResponseEntity<?> getStorageFileList(String repositoryId,
                                                 String storageId,
                                                 String artifactPath,
                                                 HttpServletRequest request
-                                               ) {
+    ) {
         boolean deep = "1".equals(request.getParameter("deep"));
 
         int depth = Integer.parseInt(request.getParameter("depth"));
@@ -238,7 +238,7 @@ public class ArtifactStorageController extends JFrogBaseController {
 
         Map<String, Object> result = new HashMap<>();
         try {
-            RepositoryPath  repositoryPath=  artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
+            RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
 
             //String folderPath;
             //RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, folderPath);
@@ -249,7 +249,7 @@ public class ArtifactStorageController extends JFrogBaseController {
             List<FileRes> files = listDirectory(repositoryPath, deep, depth, listFolders, mdTimestamps, includeRootPath);
             result.put("files", files);
             result.put("created", LocalDateTime.now().toString());
-            result.put("uri", String.format("%s://%s:%s%s",request.getScheme(),request.getServerName(),request.getServerPort(),request.getRequestURI()));
+            result.put("uri", String.format("%s://%s:%s%s", request.getScheme(), request.getServerName(), request.getServerPort(), request.getRequestURI()));
         } catch (Exception e) {
             logger.error("获取文件列表失败", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -261,7 +261,7 @@ public class ArtifactStorageController extends JFrogBaseController {
     /**
      * 获取文件夹列表
      *
-     * @param rootPath      文件夹路径
+     * @param rootPath        文件夹路径
      * @param deep            是否递归
      * @param depth           递归深度
      * @param listFolders     是否返回文件夹列表
@@ -269,12 +269,12 @@ public class ArtifactStorageController extends JFrogBaseController {
      * @param includeRootPath 是否包含根路径
      * @return 文件夹列表
      */
-    public  List<FileRes> listDirectory(RepositoryPath rootPath,
-                                              boolean deep,
-                                              int depth,
-                                              boolean listFolders,
-                                              boolean mdTimestamps,
-                                              boolean includeRootPath) throws IOException {
+    public List<FileRes> listDirectory(RepositoryPath rootPath,
+                                       boolean deep,
+                                       int depth,
+                                       boolean listFolders,
+                                       boolean mdTimestamps,
+                                       boolean includeRootPath) throws IOException {
         //Path startPath = Paths.get(rootPath);
         List<FileRes> result = new ArrayList<>();
 
@@ -288,7 +288,7 @@ public class ArtifactStorageController extends JFrogBaseController {
                     return FileVisitResult.SKIP_SUBTREE;
                 }
                 if (listFolders && (includeRootPath || !((RepositoryPath) dir).getPath().equals(((RepositoryPath) rootPath).getPath()))) {
-                    if(!dir.toString().endsWith(".foLibrary-metadata")){
+                    if (!dir.toString().endsWith(".foLibrary-metadata")) {
                         // true 表示这是一个文件夹
                         result.add(formatOutput(dir, attrs, true));
                     }
@@ -304,7 +304,7 @@ public class ArtifactStorageController extends JFrogBaseController {
                         && !file.toString().endsWith(".sha256")
                         && !file.toString().endsWith(".metadata")
                         && !file.toString().endsWith(".sm3")
-                && !file.toString().contains(".foLibrary-metadata")) {
+                        && !file.toString().contains(".foLibrary-metadata")) {
                     // false 表示这是一个文件
                     result.add(formatOutput(file, attrs, false));
                 }
@@ -380,12 +380,13 @@ public class ArtifactStorageController extends JFrogBaseController {
     @PatchMapping(value = {"/{repositoryId}/{artifactPath:.+}"})
     public ResponseEntity<Object> setItemCustomProperties(@PathVariable("repositoryId") String repositoryId,
                                                           @PathVariable("artifactPath") String artifactPath,
+                                                          @RequestParam(value = "recursive", required = false) Boolean recursive,
                                                           @RequestParam(required = false) Map<String, String> customProperties,
                                                           HttpServletRequest request) throws Exception {
 
         String storageId = getDefaultStorageId(repositoryId);
         Storage storage = getStorage(storageId);
-        if (customProperties==null) {
+        if (customProperties == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(handlerErrors(HttpStatus.BAD_REQUEST.value(), PROPERTIES_VALUE_CANNOT_BE_EMPTY));
         }
         if (Objects.isNull(storage)) {
@@ -394,14 +395,10 @@ public class ArtifactStorageController extends JFrogBaseController {
         if (Objects.isNull(storage.getRepository(repositoryId))) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, REPOSITORY_NOT_FOUND_MESSAGE));
         }
-        Artifact artifact = findArtifact(storageId, repositoryId, artifactPath);
-        if (Objects.isNull(artifact)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, ARTIFACT_NOT_FOUND_MESSAGE));
-        }
         List<ArtifactMetadataForm> artifactMetadataFormList = Lists.newArrayList();
         // 遍历所有接收到的参数
         for (Map.Entry<String, String> entry : customProperties.entrySet()) {
-            ArtifactMetadataForm  artifactMetadataForm = ArtifactMetadataForm.builder()
+            ArtifactMetadataForm artifactMetadataForm = ArtifactMetadataForm.builder()
                     .storageId(storageId)
                     .repositoryId(repositoryId)
                     .artifactPath(artifactPath)
@@ -409,6 +406,7 @@ public class ArtifactStorageController extends JFrogBaseController {
                     .key(entry.getKey())
                     .value(entry.getValue())
                     .viewShow(1)
+                    .recursive(recursive)
                     .build();
             artifactMetadataFormList.add(artifactMetadataForm);
         }

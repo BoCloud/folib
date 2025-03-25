@@ -386,7 +386,7 @@ public abstract class BaseArtifactController
             } catch (Exception e) {
 
             }
-            logger.warn("解析制品 [{}] 本地缓存.metadata文件错误 [{}]", path, ExceptionUtils.getStackTrace(ex));
+            logger.debug("解析制品 [{}] 本地缓存.metadata文件错误 [{}]", path, ExceptionUtils.getStackTrace(ex));
         }
         return artifact;
     }

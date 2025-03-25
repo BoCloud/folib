@@ -464,7 +464,7 @@ export default {
       await this.createData()
       await this.getStorage(this.folibRepository.storageId)
       this.isShowEdit = (isAdmin() || this.storageAdmin === this.$store.state.user.name)
-      this.isShowDelete = (isAdmin() || this.storageAdmin === this.$store.state.user.name) && (this.folibRepository.allowsDeletion || this.folibRepository.allowsForceDeletion)
+      this.isShowDelete = (isAdmin() || this.storageAdmin === this.$store.state.user.name) && (this.folibRepository.type == 'group' || this.folibRepository.allowsDeletion || this.folibRepository.allowsForceDeletion)
     },
     handleMenuClickTree(active,currentTreeNode,folibRepository){
       this.$refs.store.handleMenuClickTree(active,currentTreeNode,folibRepository)

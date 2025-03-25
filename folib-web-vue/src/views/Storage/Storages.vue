@@ -432,7 +432,7 @@
             <!-- <a-button v-if="forceDeleteBtnVisible" @click="delRepositoryResponseEntityForce" class="px-30 ml-10"
               type="dashed" size="small">{{ $t('Storage.ForcedDeletion') }}
             </a-button> -->
-            <a-button @click="cleanupRepository" class="ml-10"
+            <a-button v-if="folibRepository.type != 'group'" @click="cleanupRepository" class="ml-10"
               type="danger" size="small">{{ $t('Storage.CleanupArtifacts') }}
             </a-button>
           </a-col>
@@ -2635,9 +2635,10 @@ export default {
       } else if (e === "delete" && title !== null) {
         getRepositoryResponseEntity(this.currentStorage.id, title).then(res => {
           if (res.id === title) {
+            this.folibRepository = res
             this.willDelId = title
             this.deleteBtnVisible = false
-            if (res.allowsDeletion) {
+            if (res.allowsDeletion || res.type == 'group') {
               this.deleteBtnVisible = true
             }
             this.forceDeleteBtnVisible = false

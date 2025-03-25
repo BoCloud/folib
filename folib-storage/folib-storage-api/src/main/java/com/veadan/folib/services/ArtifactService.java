@@ -44,4 +44,13 @@ public interface ArtifactService {
      * @throws IOException io异常
      */
     void copyArtifact(RepositoryPath sourceRepositoryPath, RepositoryPath targetRepositoryPath) throws IOException;
+
+    /**
+     * 获取制品信息
+     *
+     * @param repositoryPath 制品信息
+     * @return Artifact
+     * @throws IOException 异常
+     */
+    Artifact provideArtifact(RepositoryPath repositoryPath) throws IOException;
 }

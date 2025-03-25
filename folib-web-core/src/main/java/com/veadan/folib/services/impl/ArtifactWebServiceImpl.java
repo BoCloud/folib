@@ -1904,7 +1904,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         try {
             artifactManagementService.validateAndStore(repositoryPath, inputStream);
             try {
-                artifactMetadataService.rebuildMetadata(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), repositoryPath.getArtifactEntry().getArtifactPath());
+                artifactMetadataService.rebuildMetadata(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(repositoryPath));
             } catch (Exception ex) {
                 log.error("StoreArtifact rebuildMetadata repositoryPath：{}，error：{}", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
                 throw ex;
@@ -2202,7 +2202,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         artifactManagementService.validateAndStoreIndex(repositoryPath);
                         if (Maven2LayoutProvider.ALIAS.equals(repository.getLayout())) {
                             try {
-                                artifactMetadataService.rebuildMetadata(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), repositoryPath.getArtifactEntry().getArtifactPath());
+                                artifactMetadataService.rebuildMetadata(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), artifactPath);
                             } catch (Exception ex) {
                                 log.error("HandleArtifacts rebuildMetadata path [{}] error [{}]", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
                             }
@@ -2223,7 +2223,8 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         return resultList;
     }
 
-    private void doForceDelete(RepositoryPath repositoryPath) {
+    @Override
+    public void doForceDelete(RepositoryPath repositoryPath) {
         try {
             //强制构建索引，若图库中存在则删除图库的记录
             Artifact artifact = getArtifact(repositoryPath);
@@ -2231,7 +2232,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 //先缓存元数据信息
                 artifactComponent.cacheArtifactMetadata(repositoryPath, artifact.getMetadata());
                 //删除图库记录
-                artifactRepository.deleteById(artifact.getUuid());
+                artifactRepository.delete(artifact, repositoryPath.getRepository().getLayout());
                 repositoryPath.setArtifact(null);
                 log.info("Delete artifact storageId [{}] repositoryId [{}] path [{}]", artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath());
             }
@@ -2317,7 +2318,8 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         return storageIdAndRepositoryIdList;
     }
 
-    private void handlerMetadata(String artifactPath, RepositoryPath repositoryPath) {
+    @Override
+    public String handlerMetadata(String artifactPath, RepositoryPath repositoryPath) {
         try {
             Artifact artifact = null;
             String metadata = "";
@@ -2354,7 +2356,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     }
                 } catch (Exception ex) {
                     Files.deleteIfExists(artifactMetadataRepositoryPath);
-                    log.warn("解析制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
+                    log.debug("解析制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
                 }
             }
             //从元数据缓存文件中获取元数据
@@ -2363,9 +2365,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 promotionUtil.setMetaData(repositoryPath, metadata);
             }
             log.info("Artifact storageId [{}] repositoryId [{}] path [{}] metadata [{}]", repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), artifactPath, metadata);
+            return metadata;
         } catch (Exception ex) {
             log.error("handleArtifact sync metadata path：{}，error：{}", repositoryPath.toString(), ExceptionUtils.getStackTrace(ex));
         }
+        return "";
     }
 
     private Repository getRepository(String storageId, String repositoryId) {

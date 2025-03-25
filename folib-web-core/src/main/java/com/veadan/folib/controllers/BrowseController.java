@@ -19,18 +19,13 @@ import com.veadan.folib.domain.FileContent;
 import com.veadan.folib.domain.bom.Bom;
 import com.veadan.folib.domain.bom.FoEyes;
 import com.veadan.folib.enums.AuditEventNameEnum;
-import com.veadan.folib.providers.io.LayoutFileSystem;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.schema2.Manifests;
-import com.veadan.folib.services.ArtifactManagementService;
-import com.veadan.folib.services.ArtifactMetadataService;
-import com.veadan.folib.services.ArtifactService;
-import com.veadan.folib.services.ConfigurationManagementService;
-import com.veadan.folib.services.DirectoryListingService;
+import com.veadan.folib.services.*;
 import com.veadan.folib.storage.ArtifactStorageException;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
@@ -43,7 +38,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.reflections.vfs.SystemFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -125,6 +119,10 @@ public class BrowseController
 
     @Resource
     private ArtifactMetadataService artifactMetadataService;
+
+    @Inject
+    @Lazy
+    private RestoreArtifactService restoreArtifactService;
 
     @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping(value = "/getArtifact/{storageId}/{repositoryId}/{artifactPath:.+}")
@@ -389,7 +387,7 @@ public class BrowseController
     }
 
     @ApiOperation(value = "Deletes a path from a repository.")
-    @AuditLog(value = AuditEventNameEnum.DELETE_ARTIfFACT,target ="#artifactPath" )
+    @AuditLog(value = AuditEventNameEnum.DELETE_ARTIfFACT, target = "#artifactPath")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deleted."),
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 404, message = "The specified storageId/repositoryId/path does not exist!")})
@@ -430,7 +428,7 @@ public class BrowseController
             @ApiResponse(code = 400, message = "Bad request.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @PostMapping(value = "/{storageId}/{repositoryId}/{artifactPath:.+}")
-    public ResponseEntity restore(@PathVariable String storageId,@PathVariable String repositoryId,@PathVariable String artifactPath)
+    public ResponseEntity restore(@PathVariable String storageId, @PathVariable String repositoryId, @PathVariable String artifactPath)
             throws IOException {
         logger.info("restore {}:{}/{}...", storageId, repositoryId, artifactPath);
         try {
@@ -439,70 +437,20 @@ public class BrowseController
                 return ResponseEntity.status(NOT_FOUND)
                         .body("The specified path does not exist!");
             }
-            // 判断是文件还是目录
-            List<String> artifactoryPaths =new LinkedList<>();
-            // 文件夹则遍历其中说有的文件string
-            if(Files.isDirectory(repositoryPath)){
-                try(var stream = Files.walk(repositoryPath)){
-                    stream.filter(Files::isRegularFile)  // 过滤出所有文件，忽略目录
-                            .forEach(p -> {
-                                String path=p.toString();
-                                if(notMetadata(path)){
-                                    int trashIndex = path.indexOf(LayoutFileSystem.TRASH);
-                                    if(trashIndex!=-1){
-                                        path=path.substring(trashIndex);
-                                        artifactoryPaths.add(path);
-                                    }
-                                }});
-                }
-            }else {
-                artifactoryPaths.add(artifactPath);
-            }
-            for (String sourceArtifactoryPath : artifactoryPaths) {
-                RepositoryPath sourcePath=repositoryPathResolver.resolve(storageId, repositoryId, sourceArtifactoryPath);
-                String targetArtifactoryPath=sourceArtifactoryPath.replaceAll(".trash/","");
-                RepositoryPath targetPath=repositoryPathResolver.resolve(storageId, repositoryId, targetArtifactoryPath);
-                if(RepositoryFiles.isArtifact(sourcePath)){
-                    if (!Files.exists(targetPath)) {
-                        try (InputStream is = Files.newInputStream(sourcePath)){
-                            // 查找元数据
-                            int lastSlash = sourceArtifactoryPath.lastIndexOf("/");
-                            if(lastSlash!=-1){
-                                String pathWithoutFilename = sourceArtifactoryPath.substring(0, lastSlash + 1);
-                                String filename = sourceArtifactoryPath.substring(lastSlash + 1);
-                                String metaPath=pathWithoutFilename + "." + filename + ".metadata";
-                                RepositoryPath metaRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, metaPath);
-                                if (Files.exists(metaRepositoryPath)) {
-                                    Artifact artifact = parseArtifact(metaRepositoryPath);
-                                    targetPath.setArtifact(artifact);
-                                }
-                            }
-                            artifactManagementService.store(targetPath,is);
-                            artifactMetadataService.rebuildMetadata(storageId,repositoryId,targetArtifactoryPath);
-
-                        }catch (Exception e){
-                            log.error("restore {} failed",targetPath,e);
-                            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                    .body(e.getMessage());
-                        }
-                    }
-                }
-            }
-            Files.delete(repositoryPath);
-        } catch (ArtifactStorageException e) {
+            restoreArtifactService.restoreArtifact(repositoryPath);
+        } catch (Exception e) {
             logger.error(e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(e.getMessage());
         }
-
-
         return ResponseEntity.ok("The artifact was restore.");
     }
 
 
-    private boolean notMetadata(String path){
-        return !(path.endsWith(".metadata") || path.endsWith(".md5") ||path.endsWith(".sha256")||path.endsWith(".sha1")||path.endsWith(".sm3"));
+    private boolean notMetadata(String path) {
+        return !(path.endsWith(".metadata") || path.endsWith(".md5") || path.endsWith(".sha256") || path.endsWith(".sha1") || path.endsWith(".sm3"));
     }
+
     private Artifact parseArtifact(Path path) {
         Artifact artifact = null;
         try (InputStream inputStream = Files.newInputStream(path);
@@ -512,12 +460,11 @@ public class BrowseController
             try {
                 Files.deleteIfExists(path);
             } catch (Exception e) {
-                logger.error("解析制品 [{}] 本地缓存.metadata文件错误 [{}]", path, ExceptionUtils.getStackTrace(ex));
+                logger.debug("解析制品 [{}] 本地缓存.metadata文件错误 [{}]", path, ExceptionUtils.getStackTrace(ex));
             }
         }
         return artifact;
     }
-
 
 
     @ApiOperation(value = "List the contents for a repository.")
