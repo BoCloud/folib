@@ -93,15 +93,18 @@ public class UnicomAdapter implements CostumeSecurityAdapter {
             HttpHeaders header = getHeader();
             header.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
             header.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-            MultiValueMap<String, Object> params = new LinkedMultiValueMap<>();
-            List<String> emails = Collections.singletonList(userEmail);
-            params.add("json", emails);
-            HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(params, header);
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+            List<Map<String,String>> emails = new ArrayList<>();
+            HashMap<String, String> email = new HashMap<>();
+            email.put("email", userEmail);
+            emails.add(email);
+            params.add("json", JSON.toJSONString(emails));
+            HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(params, header);
             log.info("发送用户信息地址是{},发送内容为{}", url, JSON.toJSONString(entity));
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
             if (response.getStatusCode() == HttpStatus.OK) {
                 UnicomRoleDTO unicomRoleDTO = JSON.parseObject(response.getBody(),UnicomRoleDTO.class);
-                log.debug("get user: {} detail success", userEmail);
+                log.info("get user: {} detail success", userEmail);
                 if (response.getBody() == null || unicomRoleDTO.getCode() != 200) {
                     log.error("根据用户邮箱获取信息失败");
                     return null;
@@ -115,7 +118,7 @@ public class UnicomAdapter implements CostumeSecurityAdapter {
                 return null;
             }
         } catch (Exception e) {
-            log.debug("get user: {} detail error:{}", userEmail, e.getMessage(), e);
+            log.info("get user: {} detail error:{}", userEmail, e.getMessage(), e);
             return null;
         }
     }
