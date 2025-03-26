@@ -2,6 +2,9 @@ package com.veadan.folib.metadata.indexer;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.extra.spring.SpringUtil;
+import com.veadan.folib.event.index.IndexEventListenerRegistry;
+import com.veadan.folib.event.index.IndexTypeEnum;
 import com.veadan.folib.metadata.extractor.RpmMetadata;
 import com.veadan.folib.metadata.extractor.RpmMetadataExtractor;
 import com.veadan.folib.metadata.model.Entry;
@@ -35,7 +38,7 @@ import java.util.zip.GZIPOutputStream;
 
 public class RpmRepoIndexer {
 
-    private static final Logger logger = LoggerFactory.getLogger(RpmRepoIndexer.class);
+    private static final Logger logger = LoggerFactory.getLogger(RpmGroupRepoIndexer.class);
 
     private final String primaryXml;
     private final String otherXml;
@@ -173,12 +176,16 @@ public class RpmRepoIndexer {
         artifactManagementService.validateAndStore(fileListPath, fileListXmlGzPath);
         artifactManagementService.validateAndStore(repomdPath, repomdXmlPath);
         FileUtils.deleteDirectory(new File(temp));
+
+        //发送索引更新事件
+        IndexEventListenerRegistry registry = SpringUtil.getBean(IndexEventListenerRegistry.class);
+        registry.dispatchUpdateIndexEvent(storageId, repositoryId, IndexTypeEnum.RPM);
     }
 
     public List<Path> listPaths(Path path) throws IOException {
         return Files.walk(path)
-                .filter(p -> !p.getFileName().toString().equals(".temp") &&
-                        !p.getFileName().toString().equals(".trash") &&
+                .filter(p -> !p.getFileName().toString().contains("/.temp/") &&
+                        !p.getFileName().toString().contains("/.trash/") &&
                          isFileExist(p))
                 .collect(Collectors.toList());
     }
@@ -511,11 +518,18 @@ public class RpmRepoIndexer {
         // No conflicts in this example
         for (Entry entry : metadata.getConflict()) {
             Element conflictsEntryElement1 = doc.createElement("rpm:entry");
-            conflictsEntryElement1.setAttribute("name", entry.getName());
-            conflictsEntryElement1.setAttribute("flags", entry.getFlags());
-            conflictsEntryElement1.setAttribute("epoch", entry.getEpoch());
-            conflictsEntryElement1.setAttribute("ver", entry.getVersion());
-            conflictsEntryElement1.setAttribute("rel", entry.getRelease());
+            if(entry.getFlags()!=null){
+                conflictsEntryElement1.setAttribute("flags", entry.getFlags());
+            }
+            if(entry.getEpoch()!=null){
+                conflictsEntryElement1.setAttribute("epoch", entry.getEpoch());
+            }
+            if(entry.getVersion()!=null){
+                conflictsEntryElement1.setAttribute("ver", entry.getVersion());
+            }
+            if(entry.getRelease()!=null){
+                conflictsEntryElement1.setAttribute("rel", entry.getRelease());
+            }
             conflictsElement.appendChild(conflictsEntryElement1);
         }
         formatElement.appendChild(conflictsElement);
@@ -538,7 +552,10 @@ public class RpmRepoIndexer {
         for (com.veadan.folib.metadata.model.File file : metadata.getFiles()) {
             if (StrUtil.isNotEmpty(file.path)) {
                 Element filesElement = doc.createElement("file");
-                filesElement.appendChild(doc.createTextNode(file.path)); // Replace with actual checksum calculation
+                filesElement.appendChild(doc.createTextNode(file.path));
+                if(file.type!=null){
+                    filesElement.setAttribute("type", file.type);
+                }
                 formatElement.appendChild(filesElement);
             }
         }

@@ -1,23 +1,15 @@
 package com.veadan.folib.config;
 
+import com.veadan.folib.authentication.AuthenticationConfig;
 import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.security.CustomAccessDeniedHandler;
-import com.veadan.folib.security.authentication.Http401AuthenticationEntryPoint;
 import com.veadan.folib.security.authentication.FolibAuthenticationFilter;
 import com.veadan.folib.security.authentication.suppliers.AuthenticationSupplier;
 import com.veadan.folib.security.authentication.suppliers.AuthenticationSuppliers;
 import com.veadan.folib.security.vote.MethodAccessDecisionManager;
-import com.veadan.folib.authentication.AuthenticationConfig;
 import com.veadan.folib.services.ConfigurationManagementService;
-import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.security.AuthoritiesProvider;
-
-import javax.inject.Inject;
-import javax.inject.Qualifier;
-
-import java.util.*;
-
 import org.apache.commons.lang.BooleanUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
@@ -44,20 +36,25 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.access.ExceptionTranslationFilter;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
+import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
 import org.springframework.security.web.firewall.DefaultHttpFirewall;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-@ComponentScan({ "com.veadan.folib.security" })
-@Import({ DataServiceConfig.class,
-          UsersConfig.class,
-          AuthenticationConfig.class})
+import javax.inject.Inject;
+import javax.inject.Qualifier;
+import java.util.ArrayList;
+import java.util.List;
+
+@ComponentScan({"com.veadan.folib.security"})
+@Import({DataServiceConfig.class,
+        UsersConfig.class,
+        AuthenticationConfig.class})
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig
-        extends WebSecurityConfigurerAdapter
-{
+        extends WebSecurityConfigurerAdapter {
 
     @Inject
     private AuthoritiesProvider authoritiesProvider;
@@ -71,8 +68,7 @@ public class WebSecurityConfig
 
     @Override
     public void init(WebSecurity web)
-            throws Exception
-    {
+            throws Exception {
         super.init(web);
         DefaultHttpFirewall httpFirewall = new DefaultHttpFirewall();
         httpFirewall.setAllowUrlEncodedSlash(true);
@@ -81,30 +77,29 @@ public class WebSecurityConfig
 
     @Override
     protected void configure(HttpSecurity http)
-            throws Exception
-    {
+            throws Exception {
         http.addFilterAfter(folibAuthenticationFilter(),
-                            ExceptionTranslationFilter.class)
-            .sessionManagement()
-            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            .and()
-            .exceptionHandling()
-            .accessDeniedHandler(accessDeniedHandler())
-            // TODO SB-813
-            .authenticationEntryPoint(customBasicAuthenticationEntryPoint())
-            .and()
-            // this part of code is necessary to secure endpoints for not authorized users
-            .authorizeRequests()
-            .requestMatchers(EndpointRequest.toAnyEndpoint())
-            .hasAuthority("ADMIN")
-            .and()
-            .anonymous()
-            .authenticationFilter(anonymousAuthenticationFilter())
-            .and()
-            .cors()
-            .and()
-            .csrf()
-            .disable();
+                        ExceptionTranslationFilter.class)
+                .sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and()
+                .exceptionHandling()
+                .accessDeniedHandler(accessDeniedHandler())
+                // TODO SB-813
+                .authenticationEntryPoint(customBasicAuthenticationEntryPoint())
+                .and()
+                // this part of code is necessary to secure endpoints for not authorized users
+                .authorizeRequests().antMatchers("/dav/**").authenticated()
+                .requestMatchers(EndpointRequest.toAnyEndpoint())
+                .hasAuthority("ADMIN")
+                .and()
+                .anonymous()
+                .authenticationFilter(anonymousAuthenticationFilter())
+                .and()
+                .cors()
+                .and()
+                .csrf()
+                .disable();
     }
 
     @Override
@@ -113,36 +108,28 @@ public class WebSecurityConfig
     }
 
     @Bean
-    public CorsConfigurationSource corsConfigurationSource(ConfigurationManagementService configurationManagementService)
-    {
+    public CorsConfigurationSource corsConfigurationSource(ConfigurationManagementService configurationManagementService) {
         final CorsConfiguration configuration = new CorsConfiguration();
         final com.veadan.folib.configuration.CorsConfiguration internalCorsConfiguration = configurationManagementService
-                                                                                                           .getConfiguration()
-                                                                                                           .getCorsConfiguration();
-        if (internalCorsConfiguration != null)
-        {
-            if (internalCorsConfiguration.getAllowedMethods() != null)
-            {
+                .getConfiguration()
+                .getCorsConfiguration();
+        if (internalCorsConfiguration != null) {
+            if (internalCorsConfiguration.getAllowedMethods() != null) {
                 configuration.setAllowedMethods(new ArrayList<>(internalCorsConfiguration.getAllowedMethods()));
             }
-            if (internalCorsConfiguration.getAllowedHeaders() != null)
-            {
+            if (internalCorsConfiguration.getAllowedHeaders() != null) {
                 configuration.setAllowedHeaders(new ArrayList<>(internalCorsConfiguration.getAllowedHeaders()));
             }
-            if (internalCorsConfiguration.getAllowedOrigins() != null)
-            {
+            if (internalCorsConfiguration.getAllowedOrigins() != null) {
                 configuration.setAllowedOriginPatterns(new ArrayList<>(internalCorsConfiguration.getAllowedOrigins()));
             }
-            if (internalCorsConfiguration.getExposedHeaders() != null)
-            {
+            if (internalCorsConfiguration.getExposedHeaders() != null) {
                 configuration.setExposedHeaders(new ArrayList<>(internalCorsConfiguration.getExposedHeaders()));
             }
-            if (internalCorsConfiguration.getAllowCredentials() != null)
-            {
+            if (internalCorsConfiguration.getAllowCredentials() != null) {
                 configuration.setAllowCredentials(BooleanUtils.isTrue(internalCorsConfiguration.getAllowCredentials()));
             }
-            if (internalCorsConfiguration.getMaxAge() != null)
-            {
+            if (internalCorsConfiguration.getMaxAge() != null) {
                 configuration.setMaxAge(internalCorsConfiguration.getMaxAge());
             }
         }
@@ -153,37 +140,32 @@ public class WebSecurityConfig
     }
 
     @Bean
-    AccessDeniedHandler accessDeniedHandler()
-    {
+    AccessDeniedHandler accessDeniedHandler() {
         return new CustomAccessDeniedHandler();
     }
 
     @Bean
     @UnauthorizedEntyPoint
-    AuthenticationEntryPoint customBasicAuthenticationEntryPoint()
-    {
-        return new Http401AuthenticationEntryPoint();
+    AuthenticationEntryPoint customBasicAuthenticationEntryPoint() {
+        return new PathSpecificBasicAuthenticationEntryPoint();
     }
 
     @Bean
-    FolibAuthenticationFilter folibAuthenticationFilter()
-    {
+    FolibAuthenticationFilter folibAuthenticationFilter() {
         return new FolibAuthenticationFilter(new AuthenticationSuppliers(suppliers), authenticationManager);
     }
 
 
     @Bean
-    AnonymousAuthenticationFilter anonymousAuthenticationFilter()
-    {
+    AnonymousAuthenticationFilter anonymousAuthenticationFilter() {
         List<GrantedAuthority> authorities = AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS");
 
         Role role = authoritiesProvider.getRuntimeRole(SystemRole.ANONYMOUS.name());
         authorities.addAll(role.getAccessModel().getApiAuthorities());
         return new AnonymousAuthenticationFilter("folib-unique-key",
-                                                 "anonymousUser",
-                                                 authorities);
+                "anonymousUser",
+                authorities);
     }
-
 
 
     /**
@@ -194,33 +176,30 @@ public class WebSecurityConfig
     @Configuration
     @EnableGlobalMethodSecurity(prePostEnabled = true)
     public static class MethodSecurityConfig
-            extends GlobalMethodSecurityConfiguration
-    {
+            extends GlobalMethodSecurityConfiguration {
 
         @Inject
         MethodAccessDecisionManager methodAccessDecisionManager;
 
         @Override
-        protected AccessDecisionManager accessDecisionManager()
-        {
+        protected AccessDecisionManager accessDecisionManager() {
             return methodAccessDecisionManager;
         }
 
     }
 
     @Configuration
-    public static class SharedObjectsConfig{
+    public static class SharedObjectsConfig {
 
         @Bean
         AuthenticationTrustResolver authenticationTrustResolver() {
             return new AuthenticationTrustResolverImpl();
         }
-        
+
     }
 
     @Qualifier
-    public static @interface UnauthorizedEntyPoint
-    {
+    public static @interface UnauthorizedEntyPoint {
 
     }
 

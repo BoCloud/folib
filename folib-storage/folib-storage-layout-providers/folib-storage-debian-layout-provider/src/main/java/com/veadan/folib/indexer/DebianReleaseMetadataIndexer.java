@@ -1,5 +1,6 @@
 package com.veadan.folib.indexer;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.veadan.folib.constant.DebianConstant;
@@ -20,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -51,27 +53,25 @@ public class DebianReleaseMetadataIndexer {
     private final Predicate<String> anyAndAll = (input) -> input != null && !input.equals("all") && !input.equals("any");
     private final Comparator<DebianReleaseMetadataEntry> orderByPath = Comparator.comparing((entry) -> entry.path);
 
-    private final ArtifactorySearch search;
 
-    public DebianReleaseMetadataIndexer(Repository repo, List<String> packagesFilesToDelete, RepositoryPathResolver resolver, ArtifactorySearch search) {
+    public DebianReleaseMetadataIndexer(Repository repo, List<String> packagesFilesToDelete, RepositoryPathResolver resolver) {
         this.repo = repo;
-        this.search = search;
         this.resolver = resolver;
         this.packagesFilesToDelete = packagesFilesToDelete != null ? packagesFilesToDelete : Lists.newArrayList();
     }
 
-    public List<Artifact> indexRelease(DebianReleaseContext initialContext) {
-        // 去掉空的package
-        List<Artifact> packages = this.resolvePackagesFilesToIndex(initialContext);
-        DebianReleaseContext releaseContext = this.createReleaseContextByPackagesArtifacts(initialContext, packages);
-        List<DebianReleaseMetadataEntry> releaseEntryList = packages.stream().filter(Objects::nonNull).map(artifact -> this.createReleaseEntry(artifact, releaseContext)).sorted(this.orderByPath).collect(Collectors.toList());
-        try {
-            this.writeIndexFiles(releaseEntryList, releaseContext);
-            return packages;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+//    public List<Artifact> indexRelease(DebianReleaseContext initialContext) {
+//        // 去掉空的package
+//        List<Artifact> packages = this.resolvePackagesFilesToIndex(initialContext);
+//        DebianReleaseContext releaseContext = this.createReleaseContextByPackagesArtifacts(initialContext, packages);
+//        List<DebianReleaseMetadataEntry> releaseEntryList = packages.stream().filter(Objects::nonNull).map(artifact -> this.createReleaseEntry(artifact, releaseContext)).sorted(this.orderByPath).collect(Collectors.toList());
+//        try {
+//            this.writeIndexFiles(releaseEntryList, releaseContext);
+//            return packages;
+//        } catch (Exception e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
 
     private void writeIndexFiles(List<DebianReleaseMetadataEntry> releaseEntries, DebianReleaseContext releaseContext) throws Exception {
         if (releaseEntries == null) {
@@ -135,12 +135,12 @@ public class DebianReleaseMetadataIndexer {
 
 
     //
-    private List<Artifact> resolvePackagesFilesToIndex(DebianReleaseContext initialContext) {
-        List<Artifact> packages = this.getPackagesArtifacts(initialContext);
-        packages.removeIf(pkg -> this.packagesFilesToDelete.contains(pkg.getArtifactPath()));
-        return packages;
-
-    }
+//    private List<Artifact> resolvePackagesFilesToIndex(DebianReleaseContext initialContext) {
+//
+//        packages.removeIf(pkg -> this.packagesFilesToDelete.contains(pkg.getArtifactPath()));
+//        return packages;
+//
+//    }
 
     private DebianReleaseContext createReleaseContextByPackagesArtifacts(DebianReleaseContext context, List<Artifact> packages) {
         Set<String> components = Sets.newHashSet();
@@ -172,17 +172,37 @@ public class DebianReleaseMetadataIndexer {
 
     }
 
-    private DebianReleaseMetadataEntry createReleaseEntry(Artifact artifact, DebianReleaseContext context) {
-        String relativePath;
+//    private DebianReleaseMetadataEntry createReleaseEntry(Artifact artifact, DebianReleaseContext context) {
+//        String relativePath;
+//
+//        String artifactPath = artifact.getArtifactPath();
+//        String releasePath = context.getReleasePath();
+//        relativePath = StringUtils.removeStart(artifactPath, releasePath + "/" + this.getTempPathWithDistro(context));
+//        relativePath = StringUtils.removeStart(relativePath, context.getReleasePath());
+//
+//        relativePath = DebianUtils.trimSlashes(relativePath);
+//        String md5 = artifact.getChecksums().get("MD5");
+//        return new DebianReleaseMetadataEntry(relativePath, artifact, md5);
+//    }
 
-        String artifactPath = artifact.getArtifactPath();
-        String releasePath = context.getReleasePath();
-        relativePath = StringUtils.removeStart(artifactPath, releasePath + "/" + this.getTempPathWithDistro(context));
-        relativePath = StringUtils.removeStart(relativePath, context.getReleasePath());
-
+    private DebianReleaseMetadataEntry createReleaseEntry(RepositoryPath repositoryPath, DebianReleaseContext context) {
+        Repository repository = repositoryPath.getRepository();
+        RepositoryPath releasePath = resolver.resolve(repository,context.getReleasePath());
+        String relativePath = repositoryPath.getPath().substring(releasePath.getPath().length()+1);
+        // 写md5
         relativePath = DebianUtils.trimSlashes(relativePath);
-        String md5 = artifact.getChecksums().get("MD5");
-        return new DebianReleaseMetadataEntry(relativePath, artifact, md5);
+        DebianReleaseMetadataEntry entry = new DebianReleaseMetadataEntry();
+        entry.setPath(relativePath);
+        try {
+            entry.setSize(Files.size(repositoryPath));
+            entry.setSha1(Files.readString(Paths.get(repositoryPath+".sha1")));
+            entry.setSha256(Files.readString(Paths.get(repositoryPath+".sha256")));
+            entry.setMd5sum(Files.readString(Paths.get(repositoryPath+".md5")));
+        }catch (Exception e) {
+            log.info("Error while getting release size for release path {}", relativePath, e);
+        }
+        return entry;
+
     }
 
     private void write(String releaseFileContent, String releaseFilePath, String name) throws Exception {
@@ -274,8 +294,9 @@ public class DebianReleaseMetadataIndexer {
         return formatter.format(new Date()) + " UTC";
     }
 
-    private List<Artifact> getPackagesArtifacts(DebianReleaseContext releaseContext) {
-        return search.findReleaseByDistribution(releaseContext.getDistribution(), repo);
+    private RepositoryPath getPackagesArtifacts(DebianReleaseContext releaseContext) {
+        String releasePath = Joiner.on("/").join("dists", releaseContext.getDistribution());
+        return resolver.resolve(this.repo, releasePath);
     }
 
     private Predicate<Artifact> isSamePackagesIndexFile(DebianReleaseContext initialContext, Artifact newPkg) {
@@ -305,7 +326,7 @@ public class DebianReleaseMetadataIndexer {
 
     public void indexRelease(String distribution) {
         // 获取新的所有的package
-        String path="dists/"+distribution;
+        String path= Joiner.on("/").join("dists", distribution);
         RepositoryPath repositoryPath = resolver.resolve(this.repo, path);
         try(Stream<Path> paths = Files.walk(repositoryPath)){
             List<Path> packages = paths.map(p->(RepositoryPath)p).filter(p -> {
@@ -319,31 +340,35 @@ public class DebianReleaseMetadataIndexer {
 
             Set<String> components = Sets.newHashSet();
             Set<String> architectures = Sets.newHashSet();
+            Set<Path> correctPackages = Sets.newHashSet();
             for (Path pgk : packages) {
                 String relativePath = repositoryPath.relativize(pgk).toString();
                 Matcher matcher = Pattern.compile(COMPONENT_AND_ARCHITECTURE_PATTERN).matcher(relativePath);
                 if (matcher.find()) {
                     components.add(matcher.group(1));
                     architectures.add(matcher.group(2));
+                    correctPackages.add(pgk);
                 } else {
                     log.warn("Invalid Packages file path, cannot add to Release index : {}", pgk);
                 }
             }
+
             architectures.remove("all");
             architectures.remove("any");
             DebianReleaseContext releaseContext = new DebianReleaseContext(distribution, components, architectures);
-            List<DebianReleaseMetadataEntry> releaseEntryList = packages.stream().filter(Objects::nonNull).map(p -> {
+            List<DebianReleaseMetadataEntry> releaseEntryList = correctPackages.stream().filter(Objects::nonNull).map(p -> {
                 try {
-                    RootRepositoryPath rootRepositoryPath=resolver.resolve(this.repo);
-                    RepositoryPath resolve = resolver.resolve(this.repo, rootRepositoryPath.relativize(p));
-                    Artifact artifact = resolve.getArtifactEntry();
-                    if(Objects.nonNull(artifact)) {
-                        return this.createReleaseEntry(artifact, releaseContext);
-                    }else {
-                        return null;
-                    }
+//                    RootRepositoryPath rootRepositoryPath=resolver.resolve(this.repo);
+//                    RepositoryPath resolve = resolver.resolve(this.repo, rootRepositoryPath.relativize(p));
+//                    Artifact artifact = resolve.getArtifactEntry();
+//                    if(Objects.nonNull(artifact)) {
+                        RepositoryPath repoPath =(RepositoryPath)p;
+                        return this.createReleaseEntry(repoPath, releaseContext);
+//                    }else {
+//                        return null;
+//                    }
 
-                } catch (IOException e) {
+                } catch (Exception e) {
                     log.error(e.getMessage());
                     return null;
                 }

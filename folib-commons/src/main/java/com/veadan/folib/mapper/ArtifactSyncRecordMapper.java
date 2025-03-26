@@ -38,4 +38,7 @@ public interface ArtifactSyncRecordMapper extends SelectByIdsMapper<ArtifactSync
    List<FileSizeStatisticsDto> fileSizeStatisticsByWarehouse(@Param("days") Integer days,@Param("limitNumber") Integer limitNumber);
 
     List<String> searchByTargetHostName(@Param("targetHostName") @NotNull String targetHostName);
+
+    Long statCount(@Param("days") Integer days ,@Param("status") Integer status);
+
 }

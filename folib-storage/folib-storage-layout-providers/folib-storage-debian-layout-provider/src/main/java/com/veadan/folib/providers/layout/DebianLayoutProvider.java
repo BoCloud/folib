@@ -9,14 +9,18 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.repository.DebianRepositoryFeatures;
 import com.veadan.folib.repository.DebianRepositoryManagementStrategy;
 import com.veadan.folib.repository.RepositoryManagementStrategy;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.DebianUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
+import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -105,12 +109,24 @@ public class DebianLayoutProvider extends AbstractLayoutProvider<DebianArtifactC
                         result.put(attributeType, value);
                     }
                     break;
+                case REFRESH_CONTENT:
+                    final Instant halfAnHourAgo = Instant.now().minus(refreshContentInterval(repositoryPath), ChronoUnit.MINUTES);
+                    value = BooleanUtils.isTrue((Boolean) value) || (!RepositoryTypeEnum.HOSTED.getType().equals(repositoryPath.getRepository().getType()) && isPackage(repositoryPath))
+                            &&
+                            !RepositoryFiles.wasModifiedAfter(repositoryPath,
+                                    halfAnHourAgo);
+                    result.put(attributeType, value);
                 default:
                     break;
             }
         }
 
         return result;
+    }
+
+    private boolean isPackage(RepositoryPath repositoryPath){
+        String item=repositoryPath.getFileName().toString();
+        return item.startsWith("Packages") || item.equals("Release") || item.equals("InRelease");
     }
 
 

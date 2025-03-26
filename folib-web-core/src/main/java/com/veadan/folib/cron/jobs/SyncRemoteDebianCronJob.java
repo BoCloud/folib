@@ -16,7 +16,6 @@ import com.veadan.folib.cron.jobs.fields.CronJobRepositoryIdAutocompleteField;
 import com.veadan.folib.cron.jobs.fields.CronJobStorageIdAutocompleteField;
 import com.veadan.folib.cron.jobs.fields.CronJobStringTypeField;
 import com.veadan.folib.entity.Dict;
-import com.veadan.folib.indexer.ArtifactorySearch;
 import com.veadan.folib.indexer.DebianReleaseMetadataIndexer;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -32,7 +31,6 @@ import org.springframework.beans.factory.annotation.Value;
 
 import javax.annotation.Resource;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -81,9 +79,6 @@ public class SyncRemoteDebianCronJob extends JavaCronJob {
 
     @Resource
     private RepositoryPathResolver repositoryPathResolver;
-
-    @Resource
-    private ArtifactorySearch artifactorySearch;
 
     @Resource
     private ReplicationBackup replicationBackup;
@@ -234,7 +229,7 @@ public class SyncRemoteDebianCronJob extends JavaCronJob {
                 Files.delete(repositoryPath);
                 artifactResolutionService.resolvePath(repositoryPath);
                 // 将package 文件写入其中
-                (new DebianReleaseMetadataIndexer(repository, Collections.emptyList(), repositoryPathResolver, artifactorySearch)).indexRelease(codename);
+                (new DebianReleaseMetadataIndexer(repository, Collections.emptyList(), repositoryPathResolver)).indexRelease(codename);
                 return newList;
             } catch (Exception e) {
                 log.error("同步发行版【{}】,组件【{}】,架构【{}】时异常", codename, component, architecture, e);

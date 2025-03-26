@@ -441,4 +441,9 @@ public class RepositoryPath
     public void setSize(Long size) {
         this.size = size;
     }
+
+    public String getName(){
+        Path path =getTarget().getName(getTarget().getNameCount()-1);
+        return path.getFileName().toString();
+    }
 }

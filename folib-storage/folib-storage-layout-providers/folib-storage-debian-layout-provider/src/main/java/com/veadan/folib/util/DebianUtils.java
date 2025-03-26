@@ -10,10 +10,13 @@ import com.veadan.folib.domain.ArtifactEntity;
 import com.veadan.folib.domain.DebianMetadata;
 import com.veadan.folib.domain.DebianPackagesContext;
 import com.veadan.folib.enums.ArchiveFormat;
+import com.veadan.folib.enums.DebianArchiveFormat;
 import com.veadan.folib.enums.DeltaIndexEventType;
 import com.veadan.folib.event.DebianIndexEvent;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RootRepositoryPath;
+import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.steam.SmarchiveInputStream;
 import com.veadan.folib.validator.DpkgDependenciesValidator;
 import com.veadan.folib.validator.DpkgDescriptionMd5Validator;
@@ -45,6 +48,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -53,6 +57,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -385,6 +390,62 @@ public class DebianUtils {
         sb.append(DebianConstant.ATTR_ARCHITECTURE).append("=").append(architecture);
         return sb.toString();
     }
+
+    public static String getComponentFromPackagesRepoPath(RepositoryPath packagesFileRepoPath) {
+        RepositoryPath archRepoPath = packagesFileRepoPath.getParent();
+        String errorMsg = ", Packages file need to be under dists/distribution/component path";
+        if (archRepoPath == null) {
+            throw new InvalidPathException(packagesFileRepoPath.getPath(), "Couldn't extract architecture from:" + packagesFileRepoPath + errorMsg);
+        } else {
+            RepositoryPath compRepoPath = archRepoPath.getParent();
+            if (compRepoPath == null) {
+                throw new InvalidPathException(packagesFileRepoPath.getPath(), "Couldn't extract component from:" + packagesFileRepoPath + errorMsg);
+            } else {
+                return compRepoPath.getName();
+            }
+        }
+    }
+
+    // 获取发行版的名字
+    public static String getDistributionName(RepositoryPath sourceRepoPath) {
+
+        if (sourceRepoPath == null) {
+            return null;
+        } else {
+            RootRepositoryPath rootDirectory = sourceRepoPath.getFileSystem().getRootDirectory();
+            RepositoryPath relativePath = rootDirectory.relativize(sourceRepoPath);;
+            Path path = Paths.get(relativePath.getPath());
+            if (!path.startsWith("dists") || path.getNameCount() < 2) {
+                return null; // 不是有效的 Debian 发行版路径
+            }
+            // 获取 "dists" 后的第一个目录，即发行版名称
+            return path.getName(1).toString();
+        }
+    }
+
+    public static String getArchFromPackagesFileRepoPath(RepositoryPath packagesFileRepoPath) {
+        RepositoryPath archRepoPath = packagesFileRepoPath.getParent();
+        if (archRepoPath == null) {
+            throw new InvalidPathException(packagesFileRepoPath.getPath(), "Couldn't extract architecture from:" + packagesFileRepoPath + ", Packages file need to be under dists/distribution/component path");
+        } else {
+            return archRepoPath.getName();
+        }
+
+    }
+
+    public static List<DebianArchiveFormat> getPackagesArchiveFormats(){
+        return List.of(DebianArchiveFormat.GZIP,DebianArchiveFormat.BZ2);
+    }
+
+    public  static Set<String> getDebianDefaultArchitectures(Repository repository){
+        Set<String> debianDefaultArchitectures = new HashSet<>();
+        debianDefaultArchitectures.add("amd64");
+        debianDefaultArchitectures.add("arm64");
+        debianDefaultArchitectures.add("aarch64");
+        return debianDefaultArchitectures;
+
+    }
+
 
 
 }

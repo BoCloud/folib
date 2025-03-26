@@ -56,6 +56,10 @@ FOLIB_S3_SECRET_KEY="${FOLIB_S3_SECRET_KEY:-folib}"
 
 ##图数据库索引ES节点配置
 FOLIB_ES_HOST="${FOLIB_ES_HOST:-127.0.0.1}"
+FOLIB_ES_USERNAME="${FOLIB_USERNAME:-elastic}"
+FOLIB_ES_PASSWORD="${FOLIB_ES_PASSWORD:-}"
+
+
 
 #自动晋级阻断
 FOLIB_PROMOTION_BLOCK="${FOLIB_PROMOTION_BLOCK:-false}"
@@ -75,7 +79,7 @@ FOLIB_REDIS_HOST="${FOLIB_REDIS_HOST:-127.0.0.1}"
 FOLIB_REDIS_PASSWORD="${FOLIB_REDIS_PASSWORD:-123456}"
 
 #UI 访问前缀key
-FOLIB_WEB_URL_PREFIX= "${FOLIB_WEB_URL_PREFIX:-'/ui/'}"
+FOLIB_WEB_URL_PREFIX="${FOLIB_WEB_URL_PREFIX:-/ui/}"
 
 #Hazelcast分布式缓存设置
 FOLIB_CACHE_PORT="${FOLIB_CACHE_PORT:-5701}"
@@ -130,6 +134,13 @@ FOLIB_SSL_TRUST_STORE_TYPE="${FOLIB_SSL_TRUST_STORE_TYPE:-}"
 
 FOLIB_ARTIFACT_DOWNLOAD_IMMEDIATELY_UPDATE="${FOLIB_ARTIFACT_DOWNLOAD_IMMEDIATELY_UPDATE:-false}"
 FOLIB_DOCKER_BROWSE_COMPATIBILITY="${FOLIB_DOCKER_BROWSE_COMPATIBILITY:-false}"
+
+#晋级相关
+FOLIB_PROMOTION_WS_REQUEST_TIMOUT_OF_ARTIFACT_UPLOAD="${FOLIB_PROMOTION_WS_REQUEST_TIMOUT_OF_ARTIFACT_UPLOAD:-600}"
+FOLIB_PROMOTION_QUEUE_SIZE="${FOLIB_PROMOTION_QUEUE_SIZE:-1000}"
+FOLIB_PROMOTION_THREAD="${FOLIB_PROMOTION_THREAD:-3}"
+FOLIB_PROMOTION_RETRY_COUNT="${FOLIB_PROMOTION_RETRY_COUNT:-10}"
+FOLIB_PROMOTION_WS_REQUEST_TIMOUT="${FOLIB_PROMOTION_WS_REQUEST_TIMOUT:-2}"
 
 print_banner()
 {
@@ -194,7 +205,7 @@ pre_check()
 
 run()
 {
-    JAVA_OPTS="${JAVA_OPTS} -XX:+ExitOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError -XX:ParallelGCThreads=${FOLIB_JVM_PARALLEL_GC_THREADS} -XX:MaxDirectMemorySize=${FOLIB_JVM_MAX_DIRECT_MEMORY_SIZE} -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${FOLIB_VAULT}/logs -XX:+PrintGCDetails -Xloggc:${FOLIB_VAULT}/logs/gc-%t.log"
+    JAVA_OPTS="${JAVA_OPTS} -XX:+ExitOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError -XX:ParallelGCThreads=${FOLIB_JVM_PARALLEL_GC_THREADS} -XX:MaxDirectMemorySize=${FOLIB_JVM_MAX_DIRECT_MEMORY_SIZE} -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${FOLIB_VAULT}/logs  -Xlog:gc*:file=${FOLIB_VAULT}/logs/gc-%t.log -XX:ErrorFile=${FOLIB_VAULT}/logs/hs_err_pid%p.log"
     JAVA_OPTS+=" -Xmx${FOLIB_JVM_XMX} -Xms${FOLIB_JVM_XMS} -Xss${FOLIB_JVM_XSS}"
     JAVA_OPTS+=" -Dappserver.home=. -Dappserver.base=${FOLIB_HOME} -Djetty.logs=${FOLIB_HOME}/logs"
     JAVA_OPTS+=" -Djava.io.tmpdir=${FOLIB_HOME}/tmp"
@@ -229,6 +240,8 @@ run()
     JAVA_OPTS+=" -Dfolib.cluster.openflag=${FOLIB_CLUSTER_OPENFLAG}"
     JAVA_OPTS+=" -Dscan.storage-base=${FOLIB_STORAGE_BASE_DIR}/"
     JAVA_OPTS+=" -DES_HOST=${FOLIB_ES_HOST}"
+    JAVA_OPTS+=" -DES_USERNAME=${FOLIB_ES_USERNAME}"
+    JAVA_OPTS+=" -DES_PASSWORD=${FOLIB_ES_PASSWORD}"
     JAVA_OPTS+=" -DGLOBAL_REINDEX=false"
     JAVA_OPTS+=" -Dfolib.swagger.enable=${FOLIB_SWAGGER_ENABLE}"
 #    JAVA_OPTS+=" -Dfolib.dependentPushUrl=${FOLIB_DEPENDENT_PUSHURL}"
@@ -388,9 +401,11 @@ run()
     set -eo pipefail;
 
     if [[ $1 != "console" ]]; then
-        exec $CMD >/dev/null 2>&1 & echo $! > $FOLIB_PID_FILE
+        nohup $CMD >/dev/null 2>&1 & echo $! > $FOLIB_PID_FILE
+        sleep 1
         printf "  PID: $(get_pid) \n"
-        printf "  CMD: $CMD\n\n"
+        printf "  CMD: %s\n\n" "$CMD"
+        tail -fn 1000 ${FOLIB_VAULT}/logs/folib.log
     else
         trap "kill -SIGTERM $(get_pid) && sleep 3" SIGTERM
         trap "echo 'Exiting!'; (set -ex; rm -rf $FOLIB_PID_FILE)" EXIT

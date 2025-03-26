@@ -1,5 +1,7 @@
 package com.veadan.folib.domain;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 
 import java.io.Serializable;
@@ -8,6 +10,8 @@ import java.io.Serializable;
  * @author huayanjun
  * @since 2024-09-04 16:22
  */
+@Data
+@NoArgsConstructor
 public class DebianReleaseMetadataEntry implements Serializable {
     public String sha1;
     public String sha256;
