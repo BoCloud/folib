@@ -295,15 +295,17 @@ public interface ArtifactWebService {
 
     /**
      * 删除ARTIFACTS_RESOLVE权限
-     * @param roleId 角色id
+     *
+     * @param roleId     角色id
      * @param resourceId 资源id
      */
     void deleteArtifactsResolve(String roleId, String resourceId);
 
-    void saveArtifactMetaByString(String storageId,String repositoryId,String path,String metaData);
+    void saveArtifactMetaByString(String storageId, String repositoryId, String path, String metaData);
 
     /**
      * 根据uuid前缀统计数量
+     *
      * @param uuidPrefix uuid前缀
      * @return 数量
      */
@@ -311,12 +313,28 @@ public interface ArtifactWebService {
 
     /**
      * 获取元数据
-     * @param storageId 存储空间
+     *
+     * @param storageId    存储空间
      * @param repositoryId 仓库名称
-     * @param path 路径
+     * @param path         路径
      * @return 元数据
      */
-    String getMetadata(String storageId,String repositoryId,String path);
+    String getMetadata(String storageId, String repositoryId, String path);
 
+    /**
+     * 处理缓存元数据
+     *
+     * @param artifactPath   制品路径
+     * @param repositoryPath 制品信息
+     * @return 元数据信息
+     */
+    String handlerMetadata(String artifactPath, RepositoryPath repositoryPath);
+
+    /**
+     * 强制删除制品信息
+     *
+     * @param repositoryPath 制品信息
+     */
+    void doForceDelete(RepositoryPath repositoryPath);
 
 }

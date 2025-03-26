@@ -2597,9 +2597,10 @@ export default {
       } else if (e === "delete" && title !== null) {
         getRepositoryResponseEntity(this.currentStorage.id, title).then(res => {
           if (res.id === title) {
+            this.folibRepository = res
             this.willDelId = title
             this.deleteBtnVisible = false
-            if (res.allowsDeletion) {
+            if (res.allowsDeletion || res.type == 'group') {
               this.deleteBtnVisible = true
             }
             this.forceDeleteBtnVisible = false

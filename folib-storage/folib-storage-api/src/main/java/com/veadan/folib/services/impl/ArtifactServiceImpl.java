@@ -189,7 +189,8 @@ public class ArtifactServiceImpl implements ArtifactService {
         }
     }
 
-    protected Artifact provideArtifact(RepositoryPath repositoryPath) throws IOException {
+    @Override
+    public Artifact provideArtifact(RepositoryPath repositoryPath) throws IOException {
         return Optional.ofNullable(repositoryPath.getArtifactEntry())
                 .orElse(new ArtifactEntity(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(),
                         RepositoryFiles.readCoordinates(repositoryPath)));
@@ -214,7 +215,7 @@ public class ArtifactServiceImpl implements ArtifactService {
                     byte[] byteArray = byteArrayOutputStream.toByteArray();
                     Files.write(artifactRepositoryPath, byteArray);
                 } catch (Exception ex) {
-                    log.warn("写入制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
+                    log.debug("写入制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
                 }
             }
         } catch (Exception ex) {

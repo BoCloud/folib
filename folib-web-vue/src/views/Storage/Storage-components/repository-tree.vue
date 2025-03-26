@@ -347,7 +347,6 @@ export default {
             const parentKeyArr = artifactPath.split('/')
             parentKeyArr.pop()
             let parentKey = `${id}${parentKeyArr.join('/')}`
-            console.log(parentKey);
             let updatedChildren = []
             const recursionGetChildren = (source, artifactPath) => {
                 source.forEach(item => {
@@ -373,7 +372,7 @@ export default {
                 artifactPath: parentKeyArr.join('/'),
                 key: parentKey
             }
-            console.log(updateNode);
+            this.isTrashView = false
             this.handleRefresh(updateNode)
         },
         // 右键菜单选择操作

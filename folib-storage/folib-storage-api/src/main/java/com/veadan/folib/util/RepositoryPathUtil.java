@@ -6,6 +6,7 @@ import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.enums.ProductTypeEnum;
+import com.veadan.folib.providers.io.LayoutFileSystem;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -22,10 +23,7 @@ import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -368,6 +366,95 @@ public class RepositoryPathUtil {
         return pathList;
     }
 
+    /**
+     * 回收站内获取绝对路径下的所有文件
+     *
+     * @param repositoryPath 路径
+     * @return 列表
+     * @throws IOException 异常
+     */
+    public static List<RepositoryPath> getTrashPaths(RepositoryPath repositoryPath) throws IOException {
+        return getTrashPaths(repositoryPath, null, null, null);
+    }
+
+    /**
+     * 回收站内获取绝对路径下的所有文件
+     *
+     * @param repositoryPath       路径
+     * @param excludeDirectoryList 排除的目录列表
+     * @param beginDate            开始日期
+     * @param endDate              结束日期
+     * @return 列表
+     * @throws IOException 异常
+     */
+    public static List<RepositoryPath> getTrashPaths(RepositoryPath repositoryPath, List<String> excludeDirectoryList, LocalDateTime beginDate, LocalDateTime endDate) throws IOException {
+        List<RepositoryPath> pathList = Lists.newArrayList();
+        if (!Files.exists(repositoryPath)) {
+            log.warn("Path [{}] not exists", repositoryPath);
+            return pathList;
+        }
+        RepositoryPathResolver repositoryPathResolver = SpringUtil.getBean(RepositoryPathResolver.class);
+        if (!Files.isDirectory(repositoryPath) && withinTimeFrame(repositoryPath, beginDate, endDate)) {
+            //是一个文件
+            pathList.add(repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(repositoryPath)));
+            log.info("Path [{}] find paths [{}]", repositoryPath, pathList.size());
+            return pathList;
+        }
+        String layout = repositoryPath.getRepository().getLayout();
+        final boolean isDockerLayout = ProductTypeEnum.Docker.getFoLibraryName().equalsIgnoreCase(layout);
+        try {
+            Files.walkFileTree(repositoryPath, new SimpleFileVisitor<Path>() {
+
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                    if (exc instanceof NoSuchFileException) {
+                        // 目录或文件已删除，继续遍历
+                        log.warn("Find path [{}] no such file skip...", file);
+                        return FileVisitResult.CONTINUE;
+                    }
+                    return super.visitFileFailed(file, exc);
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file,
+                                                 BasicFileAttributes attrs)
+                        throws IOException {
+                    RepositoryPath itemPath = (RepositoryPath) file;
+                    if (include(1, itemPath, isDockerLayout, layout, repositoryPathResolver) && withinTimeFrame(itemPath, beginDate, endDate)) {
+                        log.info("Find path [{}]", itemPath);
+                        pathList.add(repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath)));
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+                    try {
+                        RepositoryPath itemPath = (RepositoryPath) dir;
+                        if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !include(2, itemPath, isDockerLayout, layout, repositoryPathResolver) || (CollectionUtils.isNotEmpty(excludeDirectoryList) && excludeDirectoryList.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
+                            log.info("RepositoryPath [{}] skip...", itemPath.toString());
+                            return FileVisitResult.SKIP_SUBTREE;
+                        }
+                        if (include(2, itemPath, isDockerLayout, layout, repositoryPathResolver)) {
+                            log.info("Find directory path [{}]", itemPath);
+                            pathList.add(repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath)));
+                        }
+                        return FileVisitResult.CONTINUE;
+                    } catch (NoSuchFileException e) {
+                        // 文件已删除，跳过处理
+                        log.warn("Find path directory [{}] no such directory skip...", dir);
+                        return FileVisitResult.CONTINUE;
+                    }
+                }
+            });
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException(ex);
+        }
+        log.info("Path [{}] find paths [{}]", repositoryPath, pathList.size());
+        return pathList;
+    }
+
     public static boolean exclude(String name) {
         if (StringUtils.isBlank(name)) {
             return true;
@@ -386,25 +473,38 @@ public class RepositoryPathUtil {
     }
 
     public static boolean include(int type, RepositoryPath repositoryPath, boolean isDockerLayout, String layout) throws IOException {
-        return include(type, repositoryPath, isDockerLayout, true, layout);
+        return include(type, repositoryPath, isDockerLayout, true, layout, false, null);
     }
 
     public static boolean include(int type, RepositoryPath repositoryPath, boolean isDockerLayout, boolean filterArtifact, String layout) throws IOException {
-        String name = repositoryPath.getFileName().toString();
+        return include(type, repositoryPath, isDockerLayout, filterArtifact, layout, false, null);
+    }
+
+    public static boolean include(int type, RepositoryPath repositoryPath, boolean isDockerLayout, String layout, RepositoryPathResolver repositoryPathResolver) throws IOException {
+        return include(type, repositoryPath, isDockerLayout, true, layout, true, repositoryPathResolver);
+    }
+
+    public static boolean include(int type, RepositoryPath repositoryPath, boolean isDockerLayout, boolean filterArtifact, String layout, boolean isTrash, RepositoryPathResolver repositoryPathResolver) throws IOException {
+        RepositoryPath tempRepositoryPath = repositoryPath;
+        if (isTrash) {
+            String artifactPath = RepositoryFiles.relativizePath(repositoryPath).replace(LayoutFileSystem.TRASH + File.separator, "");
+            tempRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), artifactPath);
+        }
+        String name = tempRepositoryPath.getFileName().toString();
         if (StringUtils.isBlank(name)) {
             return false;
         }
-        if (RepositoryFiles.isHidden(repositoryPath)) {
+        if (RepositoryFiles.isHidden(tempRepositoryPath)) {
             return false;
         }
-        if (RepositoryFiles.isArtifactMetadata(repositoryPath)) {
+        if (RepositoryFiles.isArtifactMetadata(tempRepositoryPath)) {
             return false;
         }
         String dsStore = ".DS_Store";
         if (name.endsWith(dsStore)) {
             return false;
         }
-        if (type == 1 && RepositoryFiles.isChecksum(repositoryPath)) {
+        if (type == 1 && RepositoryFiles.isChecksum(tempRepositoryPath)) {
             return false;
         }
         if (type == 1 && isDockerLayout && !name.startsWith("sha256")) {
@@ -413,7 +513,7 @@ public class RepositoryPathUtil {
         if (type == 1 && ProductTypeEnum.Npm.getFoLibraryName().equals(layout)) {
             return name.endsWith(".tgz") || name.endsWith(".har");
         }
-        if (filterArtifact && type == 1 && !RepositoryFiles.isArtifact(repositoryPath)) {
+        if (filterArtifact && type == 1 && !RepositoryFiles.isArtifact(tempRepositoryPath)) {
             return false;
         }
         return true;
@@ -488,6 +588,24 @@ public class RepositoryPathUtil {
         return lastModifiedDateTime;
     }
 
+    public static Date getFileCreationDate(Path path) {
+        LocalDateTime lastModifiedDateTime = null;
+        try {
+            BasicFileAttributes attributes = Files.readAttributes(path, BasicFileAttributes.class);
+            FileTime fileTime = attributes.creationTime();
+            // 将FileTime转换为Instant
+            Instant instant = fileTime.toInstant();
+            // 将Instant转换为LocalDateTime
+            lastModifiedDateTime = instant.atZone(ZoneId.of("Asia/Shanghai")).toLocalDateTime();
+        } catch (IOException ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
+        if (Objects.isNull(lastModifiedDateTime)) {
+            return null;
+        }
+        return Date.from(lastModifiedDateTime.atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant());
+    }
+
     public static LocalDateTime getFileLastModifiedTime(Path path) {
         LocalDateTime lastModifiedDateTime = null;
         try {
@@ -501,6 +619,24 @@ public class RepositoryPathUtil {
             log.error(ExceptionUtils.getStackTrace(ex));
         }
         return lastModifiedDateTime;
+    }
+
+    public static Date getFileLastModifiedDate(Path path) {
+        LocalDateTime lastModifiedDateTime = null;
+        try {
+            BasicFileAttributes attributes = Files.readAttributes(path, BasicFileAttributes.class);
+            FileTime fileTime = attributes.lastModifiedTime();
+            // 将FileTime转换为Instant
+            Instant instant = fileTime.toInstant();
+            // 将Instant转换为LocalDateTime
+            lastModifiedDateTime = instant.atZone(ZoneId.of("Asia/Shanghai")).toLocalDateTime();
+        } catch (IOException ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
+        if (Objects.isNull(lastModifiedDateTime)) {
+            return null;
+        }
+        return Date.from(lastModifiedDateTime.atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant());
     }
 
     public static boolean globPathMatcher(String pattern, RepositoryPath repositoryPath) {

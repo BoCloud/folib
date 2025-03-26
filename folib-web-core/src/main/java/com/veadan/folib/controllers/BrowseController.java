@@ -470,64 +470,12 @@ public class BrowseController
                 return ResponseEntity.status(NOT_FOUND)
                         .body("The specified path does not exist!");
             }
-            // 判断是文件还是目录
-            List<String> artifactoryPaths = new LinkedList<>();
-            // 文件夹则遍历其中说有的文件string
-            if (Files.isDirectory(repositoryPath)) {
-                try (var stream = Files.walk(repositoryPath)) {
-                    stream.filter(Files::isRegularFile)  // 过滤出所有文件，忽略目录
-                            .forEach(p -> {
-                                String path = p.toString();
-                                if (notMetadata(path)) {
-                                    int trashIndex = path.indexOf(LayoutFileSystem.TRASH);
-                                    if (trashIndex != -1) {
-                                        path = path.substring(trashIndex);
-                                        artifactoryPaths.add(path);
-                                    }
-                                }
-                            });
-                }
-            } else {
-                artifactoryPaths.add(artifactPath);
-            }
-            for (String sourceArtifactoryPath : artifactoryPaths) {
-                RepositoryPath sourcePath = repositoryPathResolver.resolve(storageId, repositoryId, sourceArtifactoryPath);
-                String targetArtifactoryPath = sourceArtifactoryPath.replaceAll(".trash/", "");
-                RepositoryPath targetPath = repositoryPathResolver.resolve(storageId, repositoryId, targetArtifactoryPath);
-                if (RepositoryFiles.isArtifact(sourcePath)) {
-                    if (!Files.exists(targetPath)) {
-                        try (InputStream is = Files.newInputStream(sourcePath)) {
-                            // 查找元数据
-                            int lastSlash = sourceArtifactoryPath.lastIndexOf("/");
-                            if (lastSlash != -1) {
-                                String pathWithoutFilename = sourceArtifactoryPath.substring(0, lastSlash + 1);
-                                String filename = sourceArtifactoryPath.substring(lastSlash + 1);
-                                String metaPath = pathWithoutFilename + "." + filename + ".metadata";
-                                RepositoryPath metaRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, metaPath);
-                                if (Files.exists(metaRepositoryPath)) {
-                                    Artifact artifact = parseArtifact(metaRepositoryPath);
-                                    targetPath.setArtifact(artifact);
-                                }
-                            }
-                            artifactManagementService.store(targetPath, is);
-                            artifactMetadataService.rebuildMetadata(storageId, repositoryId, targetArtifactoryPath);
-
-                        } catch (Exception e) {
-                            log.error("restore {} failed", targetPath, e);
-                            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                    .body(e.getMessage());
-                        }
-                    }
-                }
-            }
-            Files.delete(repositoryPath);
-        } catch (ArtifactStorageException e) {
+            restoreArtifactService.restoreArtifact(repositoryPath);
+        } catch (Exception e) {
             logger.error(e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(e.getMessage());
         }
-
-
         return ResponseEntity.ok("The artifact was restore.");
     }
 
@@ -545,7 +493,7 @@ public class BrowseController
             try {
                 Files.deleteIfExists(path);
             } catch (Exception e) {
-                logger.error("解析制品 [{}] 本地缓存.metadata文件错误 [{}]", path, ExceptionUtils.getStackTrace(ex));
+                logger.debug("解析制品 [{}] 本地缓存.metadata文件错误 [{}]", path, ExceptionUtils.getStackTrace(ex));
             }
         }
         return artifact;
