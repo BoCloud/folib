@@ -61,14 +61,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
@@ -586,5 +579,37 @@ public class NugetArtifactController
 
         return sourceValue.replaceAll("['\"]", "");
     }
+
+    /*
+    * 包内容
+    * */
+    @ApiOperation(value = "枚举包版本")
+    @GetMapping(path = "{LOWER_ID}/index.json", produces = MediaType.APPLICATION_JSON)
+    public ResponseEntity indexV3(@PathVariable("LOWER_ID") String lowerId)
+    {
+        return null;
+    }
+
+    @ApiOperation(value = "下载包内容")
+    @GetMapping(path = "{LOWER_ID}/{LOWER_VERSION}/{LOWER_ID}.{LOWER_VERSION}.nupkg", produces = MediaType.APPLICATION_OCTET_STREAM)
+    public ResponseEntity<Resource> downloadPackageV3(@PathVariable("LOWER_ID") String lowerId,
+                                            @PathVariable("LOWER_VERSION") String lowerVersion)
+    {
+        return null;
+    }
+
+    @ApiOperation(value = "下载包清单")
+    @GetMapping(path = "{LOWER_ID}/{LOWER_VERSION}/{LOWER_ID}.nuspec", produces = MediaType.APPLICATION_XML)
+    public ResponseEntity<Resource> downloadNuspecV3(@PathVariable("LOWER_ID") String lowerId,
+                                            @PathVariable("LOWER_VERSION") String lowerVersion)
+    {
+        return null;
+    }
+
+    /*
+    * 推送和删除
+    * */
+
+
 
 }
