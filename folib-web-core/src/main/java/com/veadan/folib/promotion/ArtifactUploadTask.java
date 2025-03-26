@@ -233,6 +233,24 @@ public class ArtifactUploadTask implements Callable<String> {
         this.token = token;
     }
 
+    public ArtifactUploadTask(String storageId, String repositoryId, MultipartFile file, String fileRelativePath,String tempPath) {
+        this.storageId = storageId;
+        this.repositoryId = repositoryId;
+        this.file = file;
+        this.tempPath = tempPath;
+        this.fileRelativePath = fileRelativePath;
+        this.artifactComponent = SpringUtil.getBean(ArtifactComponent.class);
+        this.repositoryPathResolver = SpringUtil.getBean(RepositoryPathResolver.class);
+        this.artifactManagementService= SpringUtil.getBean(ArtifactManagementService.class);
+        this.promotionUtil = SpringUtil.getBean(PromotionUtil.class);
+        this.layoutProviderRegistry = SpringUtil.getBean(LayoutProviderRegistry.class);
+        this.artifactMetadataService = SpringUtil.getBean(ArtifactMetadataService.class);
+        this.artifactRepository = SpringUtil.getBean(ArtifactRepository.class);
+        this.mavenRepositoryFeatures = SpringUtil.getBean(MavenRepositoryFeatures.class);
+
+
+    }
+
     @Override
     public String call() {
         String rs = "";
@@ -950,7 +968,7 @@ public class ArtifactUploadTask implements Callable<String> {
                 DebianIncrementalIndexer debianIncrementalIndexer = (DebianIncrementalIndexer) SpringContextUtil.getBean("debianIncrementalIndexer");
                 debianIncrementalIndexer.index(repositoryPath.getRepository(), Sets.newSet(addEvent));
             }
-            new DebianReleaseMetadataIndexer(repositoryPath.getRepository(), Collections.emptyList(), repositoryPathResolver, null).indexRelease(distribution);
+            new DebianReleaseMetadataIndexer(repositoryPath.getRepository(), Collections.emptyList(), repositoryPathResolver).indexRelease(distribution);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }

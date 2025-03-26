@@ -969,7 +969,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                         Matcher matcher = DebianConstant.PACKAGE_PATTERN.matcher(distribution);
                         if(matcher.matches()){
                             String codename = matcher.group("codename");
-                            (new DebianReleaseMetadataIndexer(rootRepositoryPath.getRepository(), Collections.emptyList(), repositoryPathResolver, null)).indexRelease(codename);
+                            (new DebianReleaseMetadataIndexer(rootRepositoryPath.getRepository(), Collections.emptyList(), repositoryPathResolver)).indexRelease(codename);
                         }
                     }
                 }
