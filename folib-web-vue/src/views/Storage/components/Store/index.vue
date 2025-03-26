@@ -2,11 +2,11 @@
   <div class="repo-info">
     <a-affix :offset-top="50" class="repository-affix">
       <a-row>
-        <a-col :span="24" :md="24" class="mb-24">
+        <a-col :span="24" :md="24" :class="{'mb-24': !isChecked}">
             <!-- 进度球-->
 <!--            <CircleProgress :progress="totalUploadProgress" :closeGlobe="isClose" :waveClassName="waveClassName" :containerClassName="containerClassName"/>-->
           <!-- User Profile Card -->
-          <a-card :bordered="false" style="height: 100px;" class="card-profile-head card-shadow top-card" :bodyStyle="{ padding: 0 }" :targetOffset="0"
+          <a-card :bordered="false" style="height: 100px;border-bottom-left-radius: 0;border-bottom-right-radius: 0;" class="card-profile-head card-shadow top-card" :bodyStyle="{ padding: 0 }" :targetOffset="0"
             :affix="false">
             <template #title>
               <a-row type="flex" align="middle">
@@ -21,8 +21,7 @@
                   </a>
                   <a style="justify-content: center;align-items: center;display: flex;">
                     <a-avatar @click="createData" :size="64" shape="square"
-                      style="border-radius: 8px; background-image: linear-gradient(310deg, #f1f7ff, #f9fbff);"
-                                >
+                      style="border-radius: 8px; background-image: linear-gradient(310deg, #f1f7ff, #f9fbff);">
                         <img v-if="folibRepository.id" :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" style="width: 150%;margin-left: -11px;" alt=""></img>
                         <span v-else style="color: #BFBFBF; margin-left: -10px; font-size: 14px;">No Data</span>
                     </a-avatar>
@@ -113,6 +112,13 @@
                     align-items: center;
                     justify-content: flex-end;
                   " v-if="repositoryLength">
+
+                  <a v-if="$store.state.user.token">
+                    <small style="padding-right: 20px" @click="isDetail = !isDetail; getBrowse()">
+                        {{ $t(`Storage.${!isDetail ? 'Details' : 'Statistics'}`) }}
+                        <a-icon type="line-chart" />
+                    </small>
+                  </a>
                   <a v-if="folibRepository.layout === 'Docker' && folibRepository.type === 'hosted'">
                     <small style="padding-right: 20px" @click="handleDockerUploud">
                       {{ $t('Store.Upload') }}
@@ -131,28 +137,49 @@
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
-                  <a v-if="uploadEnabled && folibRepository.layout !== 'rpm' &&  folibRepository.layout !== 'GitLfs' && folibRepository.layout !== 'GitLfs' && folibRepository.subLayout !== 'ohpm' && folibRepository.subLayout !== 'go' && folibRepository.layout !== 'cargo'"><small style="padding-right: 20px" @click="handleUpload">
+                  <a v-if="uploadEnabled && folibRepository.layout !== 'rpm' &&  folibRepository.layout !== 'GitLfs' && folibRepository.layout !== 'GitLfs' && folibRepository.subLayout !== 'ohpm' && folibRepository.subLayout !== 'go' && folibRepository.layout !== 'cargo'"><small style="padding-right: 10px" @click="handleUpload">
                       {{ $t('Store.BatchUpload') }}
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
-                  <a v-if="uploadEnabled && folibRepository.layout === 'cargo'"><small style="padding-right: 20px" @click="handleCargoBatchUpload">
+                  <a v-if="uploadEnabled && folibRepository.layout === 'cargo'"><small style="padding-right: 10px" @click="handleCargoBatchUpload">
                         {{ $t('Store.BatchUpload') }}
                         <a-icon type="cloud-upload" />
                     </small>
                   </a>
+                  <a-icon type="line" style="transform: rotate(90deg);color: #e8e8e8;"/>
+                  <div v-if="(isAdmin() || (storageAdmin && storageAdmin === $store.state.user.name)) && folibRepository.type !== 'group'">
+                    <span class="mr-10 by-font-normal by-f-w-300" style="color: #7E84A3;">{{ $t('Store.Scan') }}</span>
+                    <a-switch default-checked :checked-children="$t('Store.Open')" :un-checked-children="$t('Store.Close')" v-model="scan.onScan" @change="scannerChange" />
+                  </div>
+
                   <a v-if="folibRepository.layout !== 'Raw'">
-                    <small style="padding-right: 20px" @click="UsedHelperVisible">
-                      {{ $t('Store.UseHelp') }}
-                      <a-icon type="question-circle" theme="filled" />
+                    <small style="padding-left: 20px;position: relative;top: 4px;" @click="UsedHelperVisible">
+                        <!--  {{ $t('Store.UseHelp') }}-->
+                        <a-icon type="question-circle" theme="twoTone" two-tone-color="#8196E6" style="font-size: 20px"/>
                     </small>
                   </a>
-                  <div v-if="(isAdmin() || (storageAdmin && storageAdmin === $store.state.user.name)) && folibRepository.type !== 'group'">
-                    <span class="mr-15">{{
-                      scan.onScan ? $t('Store.ScanOn') : $t('Store.ScanOff')
-                    }}</span>
-                    <a-switch default-checked v-model="scan.onScan" @change="scannerChange" />
-                  </div>
+                  <a-dropdown placement="bottomRight">
+                    <span style="font-size: 16px; cursor: pointer;position: relative;top: 4px; ">
+                      <a-icon type="more" class="text-muted" style="font-size: 24px" />
+                    </span>
+                    <template #overlay>
+                        <a-menu slot="overlay" @click="handleLibMenuClick" style="padding: 6px 10px">
+                            <a-menu-item key="1" v-if="isShowEdit && isChecked && !isTrashView" class="overlay-item">
+                                <a-icon type="form" />{{ $t('Store.Edit') }}
+                            </a-menu-item>
+                            <a-menu-item key="2" v-if="isShowDelete && isChecked && !isTrashView" class="overlay-item">
+                                <a-icon type="delete" />{{ $t('Store.Delete') }}
+                            </a-menu-item>
+                            <a-menu-item key="3" v-if="eventSettingEnabled" class="overlay-item">
+                                <a-icon type="file-done" />{{ $t('Repository.EventRecord') }}
+                            </a-menu-item>
+                            <a-menu-item key="4" v-if="settingsEnabled" class="overlay-item">
+                                <a-icon type="setting" />{{ $t('Store.Setting') }}
+                            </a-menu-item>
+                        </a-menu>
+                      </template>
+                    </a-dropdown>
                 </a-col>
               </a-row>
             </template>
@@ -162,8 +189,8 @@
     </a-affix>
     <a-row v-if="isSearch === false" type="flex" :gutter="24">
       <!-- Platform Settings Column -->
-      <a-col style="margin-top:-30px;" v-if="!isChecked" :span="9" class="mb-24">
-        <a-card :bordered="false" style="height:calc(100vh - 312px); overflow-y: auto;margin-bottom:-22px;" class="header-solid card-shadow left_tree_sty"
+      <a-col style="margin-top:-30px;" v-if="!isChecked && isDetail" :span="9" class="mb-24">
+        <a-card :bordered="false" style="height:calc(100vh - 216px); overflow-y: auto;margin-bottom:-22px;" class="header-solid card-shadow left_tree_sty"
           :bodyStyle="{ paddingTop: 0, paddingBottom: 0 }">
           <template #title>
             <h6 class="font-semibold m-0">{{ $t('Store.PacketList') }} <a
@@ -190,12 +217,13 @@
           />
         </a-card>
       </a-col>
-      <a-col style="margin-top:-30px;" :span="24" :md="!isChecked ? 15 : 24" class="mb-24">
-        <a-card :bordered="false" class="header-solid h-full card-shadow card-profile-information"
+      <a-col style="margin-top:-30px;" :span="24" :md="!isChecked && isDetail ? 15 : 24" class="mb-24">
+        <a-card v-if="isDetail" :bordered="false" class="header-solid h-full card-profile-information"
           :bodyStyle="{ paddingTop: 0, paddingBottom: '0' }" :headStyle="{ paddingRight: 0 }"
-          :style="isChecked?'height:calc(100vh - 392px);overflow-y:auto;':'height:calc(100vh - 312px); overflow-y: auto;margin-bottom:-22px;'"
+          :style="isChecked?'height:calc(100vh - 277px);overflow-y:auto;':'height:calc(100vh - 216px); overflow-y: auto;margin-bottom:-22px;'"
           >
           <template #title v-if="isChecked ? !newDetailPage : true ">
+            <hr v-if="isChecked" class="gradient-line" />
             <a-row type="flex" align="middle" v-if="folibRepository.layout !== 'Docker'">
               <a-col :span="16" class="font-semibold m-0">
                 <a-row type="flex" align="middle">
@@ -269,15 +297,15 @@
                 </a-row>
               </a-col>
               <a-col :span="8" class="text-right">
-                <a-dropdown v-if="currentTreeNode.url && getShowMore(0)" class="mr-30"
+                <a-dropdown v-if="currentTreeNode.url && getShowMore(0)" class="mr-20"
                   placement="bottomCenter">
                   <span style="font-size: 16px; cursor: pointer">
-                    {{ $t('Store.More') }}
-                    <a-icon type="more" class="text-muted" style="font-size: 16px" />
+                    <!--  {{ $t('Store.More') }}-->
+                    <a-icon type="more" class="text-muted" style="font-size: 24px" />
                   </span>
                   <template #overlay>
-                    <a-menu slot="overlay" @click="handleMenuClick">
-                      <a-menu-item key="1" v-if="currentFileDetial">
+                    <a-menu slot="overlay" @click="handleMenuClick" style="padding: 6px 10px">
+                      <a-menu-item key="1" v-if="currentFileDetial" class="overlay-item">
                         <a-icon type="eye" />
                         {{
                           currentFileDetial.listTree
@@ -289,33 +317,33 @@
                                 : ""
                         }}{{ $t('Store.Preview') }}
                       </a-menu-item>
-                      <a-menu-item key="2" v-if="copyEnabled&&!isTrashView">
+                      <a-menu-item key="2" v-if="copyEnabled&&!isTrashView" class="overlay-item">
                         <a-icon type="copy" />{{ $t('Store.Copy') }}
                       </a-menu-item>
-                      <a-menu-item key="3" v-if="moveEnabled&&!isTrashView">
+                      <a-menu-item key="3" v-if="moveEnabled&&!isTrashView" class="overlay-item">
                         <a-icon type="swap" />{{ $t('Store.Move') }}
                       </a-menu-item>
-                      <a-menu-item key="4" v-if="deleteEnabled&&!isTrashView">
+                      <a-menu-item key="4" v-if="deleteEnabled&&!isTrashView" class="overlay-item">
                         <a-popconfirm :title="$t('Store.SuerDelete')" placement="topLeft" okType="danger"
                           :ok-text="$t('Store.Confirm')" :cancel-text="$t('Store.Cancel')"
                           @confirm="deletePackageHandle">
                           <a-icon type="delete" />{{ $t('Store.Delete') }}
                         </a-popconfirm>
                       </a-menu-item>
-                      <a-menu-item key="5" v-if="dispatchEnabled&&!isTrashView">
+                      <a-menu-item key="5" v-if="dispatchEnabled&&!isTrashView" class="overlay-item">
                         <a-icon type="retweet" />{{ $t('Store.Distribute') }}
                       </a-menu-item>
 
-                      <a-menu-item key="6"
+                      <a-menu-item key="6" class="overlay-item"
                         v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact&&!isTrashView">
                         <a-icon type="download" />{{ $t('Store.DownLoad') }}
                       </a-menu-item>
                       <!-- 暂时禁用目录下载 -->
-                       <a-menu-item key="7"
+                       <a-menu-item key="7" class="overlay-item"
                         v-if="(folibRepository.layout === 'Raw' && currentTreeNode && currentTreeNode.type === 'dir'&&!isTrashView)">
                         <a-icon type="download" />{{ $t('Store.DownLoad') }}
                       </a-menu-item>
-                      <a-menu-item key="8" v-if="isTrashView && currentTreeNode">
+                      <a-menu-item key="8" v-if="isTrashView && currentTreeNode" class="overlay-item">
                         <a-icon type="undo" />{{ $t('Store.Restore') }}
                       </a-menu-item>
                     </a-menu>
@@ -393,14 +421,14 @@
 
 
               <a-col :span="8" class="text-right">
-                <a-dropdown v-if="currentTreeNode.url && getShowMore(1)" class="mr-45">
+                <a-dropdown v-if="currentTreeNode.url && getShowMore(1)" class="mr-20">
                   <span style="font-size: 16px; cursor: pointer">
-                    {{ $t('Store.More') }}
-                    <a-icon type="more" class="text-muted" style="font-size: 16px" />
+                    <!--  {{ $t('Store.More') }}-->
+                    <a-icon type="more" class="text-muted" style="font-size: 24px" />
                   </span>
                   <template #overlay>
-                    <a-menu slot="overlay" @click="handleMenuClick">
-                      <a-menu-item key="1" v-if="currentFileDetial">
+                    <a-menu slot="overlay" @click="handleMenuClick" style="padding: 6px 10px">
+                      <a-menu-item key="1" v-if="currentFileDetial" class="overlay-item">
                         <a-icon type="eye" />
                         {{
                           currentFileDetial.listTree
@@ -412,15 +440,15 @@
                                 : ""
                         }}{{ $t('Store.Preview') }}
                       </a-menu-item>
-                      <a-menu-item key="2" v-if="copyEnabled&&!isTrashView">
+                      <a-menu-item key="2" v-if="copyEnabled&&!isTrashView" class="overlay-item">
                         <a-icon type="copy" />
                         {{ $t('Store.Copy') }}
                       </a-menu-item>
-                      <a-menu-item key="3" v-if="moveEnabled&&!isTrashView">
+                      <a-menu-item key="3" v-if="moveEnabled&&!isTrashView" class="overlay-item">
                         <a-icon type="swap" />
                         {{ $t('Store.Move') }}
                       </a-menu-item>
-                      <a-menu-item key="4" v-if="deleteEnabled&&!isTrashView">
+                      <a-menu-item key="4" v-if="deleteEnabled&&!isTrashView" class="overlay-item">
                         <a-popconfirm :title="$t('Store.SuerDelete')" placement="topLeft" okType="danger"
                           :ok-text="$t('Store.Confirm')" :cancel-text="$t('Store.Cancel')"
                           @confirm="deletePackageHandle">
@@ -428,23 +456,23 @@
                           {{ $t('Store.Delete') }}
                         </a-popconfirm>
                       </a-menu-item>
-                      <a-menu-item key="5" v-if="dispatchEnabled&&!isTrashView">
+                      <a-menu-item key="5" v-if="dispatchEnabled&&!isTrashView" class="overlay-item">
                         <a-icon type="retweet" />
                         {{ $t('Store.Distribute') }}
                       </a-menu-item>
 
-                      <a-menu-item key="6"
+                      <a-menu-item key="6" class="overlay-item"
                         v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact&&!isTrashView">
                         <a-icon type="download" />
                         {{ $t('Store.DownLoad') }}
                       </a-menu-item>
 
-                      <a-menu-item key="7"
+                      <a-menu-item key="7" class="overlay-item"
                         v-if="folibRepository.layout === 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact&&!isTrashView">
                         <a-icon type="download" />
                         {{ $t('Store.DownLoad') }}
                       </a-menu-item>
-                      <a-menu-item key="8" v-if="isTrashView && currentTreeNode">
+                      <a-menu-item key="8" v-if="isTrashView && currentTreeNode" class="overlay-item">
                         <a-icon type="undo" />{{ $t('Store.Restore') }}
                       </a-menu-item>
                     </a-menu>
@@ -460,7 +488,7 @@
           </a>
           <a v-if="currentTreeNode.url && folibRepository.layout !== 'Docker'" class="ml-10"><a-icon type="copy"
               @click="copy(getFormattedUrl(currentTreeNode.url))" /> </a>
-          <hr class="gradient-line" />
+          <hr class="gradient-line" :style="{opacity: isChecked && newDetailPage ? 0.2 : 0}"/>
           <BaseData
               ref="BaseData"
               :key="pageKey"
@@ -477,6 +505,18 @@
               @metadataHandler="metadataHandler"
               @setCurrentFileDetial="setCurrentFileDetial"
           />
+        </a-card>
+        <a-card v-else :bordered="false" class="header-solid h-full card-profile-information"
+              :bodyStyle="{ paddingTop: 0, paddingBottom: '0' }" :headStyle="{ paddingRight: 0 }"
+              :style="isChecked?'height:calc(100vh - 277px);overflow-y:auto;':'height:calc(100vh - 216px); overflow-y: auto;margin-bottom:-22px;'"
+        >
+            <hr v-if="isChecked" class="gradient-line" />
+            <safe
+                :style="isChecked ? 'margin-top:20px;' : ''"
+                :isChecked="isChecked"
+                :folibRepository="folibRepository"
+                :vulnerabilityColumns="i18nVulnerabilityColumns"
+            />
         </a-card>
       </a-col>
     </a-row>
@@ -1140,6 +1180,8 @@ import SparkMD5 from 'spark-md5';
 import {ACCESS_TOKEN} from "@/store/mutation-types";
 import CircleProgress from '@/components/Tools/CircleProgress.vue';
 import leftTree from './left-tree.vue'
+import Safe from "../Safe/index.vue";
+
 export default {
   inject: ['reload'],
   props: [
@@ -1149,7 +1191,12 @@ export default {
     'searchType',
     'propScanReport',
     'formateDate',
-    'isChecked'
+    'isChecked',
+    'isShowEdit',
+    'isShowDelete',
+    'eventSettingEnabled',
+    'settingsEnabled',
+    'i18nVulnerabilityColumns',
   ],
   components: {
     PrismEditor,
@@ -1160,12 +1207,14 @@ export default {
     MavenUpload,
     Search,
     CircleProgress,
-    leftTree
+    leftTree,
+    Safe
   },
   data() {
     return {
       downLoadVisible: false,
       downLoadLoading: true,
+      isDetail: true,
       rawPathSize: "",
       baseUrl: '',
       folibRepository: {},
@@ -2351,6 +2400,9 @@ export default {
       }
 
     },
+    handleLibMenuClick(active){
+      this.$emit('handleLibMenuClick', active.key)
+    },
     handleMenuClickTree(active,currentTreeNode, folibRepository){
       this.currentTreeNode = currentTreeNode
       this.handleMenuClick(active, folibRepository)
@@ -3361,6 +3413,10 @@ export default {
   .repo-address .ant-descriptions-item-label {
     margin-left: 0px !important;
   }
+
+    .ant-tabs-bar {
+        border: none;
+    }
 }
 
 .ellipsis-text {
@@ -3406,5 +3462,13 @@ export default {
     .ant-card-body{
       padding: 0 !important;
     }
+  }
+  .overlay-item {
+      border-radius: 4px;
+
+      &:hover {
+          background-color: #F4F7FE;
+          color: #186DE7;
+      }
   }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <div class="wrapper">
-    <a-card :bordered="false" style="margin-top: 20px; margin-bottom: 20px; overflow-y: auto">
+    <a-card :bordered="false" style="margin-top: 10px; margin-bottom: 20px; overflow-y: auto">
       <div class="mx-25 search">
         <a-col :span="24" class="text-right">
           <a-input-search :placeholder="$t('Module.groupNameQuery')" class="v-search" v-model="queryParams.groupId" @search="handheTableSearch()" />

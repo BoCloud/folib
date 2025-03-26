@@ -21,28 +21,28 @@
 		.ant-breadcrumb > span {
 			.ant-breadcrumb-link a,
 			.ant-breadcrumb-separator {
-				color: $color-gray-1;
+				color: #8C8DA5;
 				transition: none;
 			}
 			.ant-breadcrumb-link a {
 				opacity: .75;
 			}
 			&:last-child .ant-breadcrumb-link {
-				color: $color-gray-1;
+				color: #092943;
 			}
 		}
 		.ant-page-header-heading .ant-page-header-heading-title {
-			color: $color-gray-1;
+			color: #8C8DA5;
 		}
 		.header-control .btn-sign-in span {
-			color: $color-gray-1;
+			color: #8C8DA5;
 		}
 		.header-control {
 			.btn-sign-in,
 			.ant-btn,
 			.ant-dropdown-link {
 				svg path {
-					fill: $color-gray-1;
+					fill: #8C8DA5;
 				}
 			}
 		}
@@ -55,12 +55,12 @@
 	}
 	.sidebar-toggler {
 		svg {
-			fill: #ffffff;
+			fill: #666666;
 		}
 	}
 }
 .profile-nav-bg {
-	height: 90px;
+	height: 40px;
 	margin-top: -137.8px;
 	border-radius: 12px;
 	box-shadow: $shadow-1;
@@ -68,7 +68,7 @@
 	background-position: center;
 
 	@media( min-width: $md ){
-		margin-top: -87.8px;
+		margin-top: -44.8px;
 	}
 }
 

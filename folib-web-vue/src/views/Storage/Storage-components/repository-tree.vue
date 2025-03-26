@@ -680,7 +680,6 @@ export default {
             if(treeNode.data.type === 'recycle'){
                 this.getPosition(320)
             }
-            console.log(treeNode.data);
             if (treeNode.data.fileType === 'document') {
                 this.folibRepository = treeNode.data
                 this.repositoryType = getLayoutType(this.folibRepository)
@@ -954,7 +953,7 @@ export default {
 <style lang="scss">
 .left_tree-container {
     position: relative;
-    height: calc(100vh - 282px);
+    height: calc(100vh - 235px);
     display: flex;
     flex-direction: column;
 

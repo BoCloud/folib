@@ -48,14 +48,14 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-$rad: 60px;
+$rad: 6px;
 $dur: 0.3s;
 $colorDark: #2f2f2f;
 $colorLight: rgba(255, 255, 255, 1);
 $colorBrand: #2c76ff;
 //$colorBrand: #aeb0b9;
 $ff: 'Lato', sans-serif;
-$h: 50px;
+$h: 30px;
 $btnWidth: 120px;
 $fs: 17px;
 $bez: cubic-bezier(0, 0, 0.43, 1.49);
@@ -114,7 +114,8 @@ input[type='search'] {
   transition-property: width, border-radius;
   z-index: 1;
   position: relative;
-  box-shadow: 0 0 15px #908585;
+  box-shadow: 0 0 6px #bbb1b1;
+  font-size: 14px;
 }
 
 button {

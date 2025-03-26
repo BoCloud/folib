@@ -7,6 +7,8 @@ export default {
     'createModal': 'create',
     'create': 'create ',
     'CreateStorageSpace': 'Create storage space',
+    'AllStorageSpace': 'All storage space',
+    'ChangeStorageSpace': 'Change storage space',
     'CreateRepository':'Create Repository',
     'StorageSpaceName': 'Storage space name',
     'StorageType': 'Storage type',

@@ -116,5 +116,15 @@ export default ({
 </script>
 
 <style lang="scss">
-
+#app {
+    min-height: 100vh;
+    background: linear-gradient(135deg,
+        #F6F8FC 0%,
+        #F1F1FC 20%,
+        #F2F2FC 40%,
+        #F3F3FC 50%,
+        #ECF7FC 70%,
+        #F6F8FC 100%
+    );
+}
 </style>

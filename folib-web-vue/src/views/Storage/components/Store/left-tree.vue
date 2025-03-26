@@ -231,7 +231,7 @@ export default {
 <style lang="scss">
 .left_tree_container {
     position: relative;
-    height: calc(100vh - 383px);
+    height: calc(100vh - 287px);
     display: flex;
     flex-direction: column;
 

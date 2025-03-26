@@ -2,13 +2,9 @@
   <div class="anonymous-home">
      <!-- Header Background Image -->
      <div class="profile-nav-bg" style="
-            background: url(images/banner.jpg) center/cover;
+            background: #fff;
             transition: all 0.3s;
           ">
-<!--        <div-->
-<!--          :class="[mouseEnter ? 'mouse-enter nested' : 'nested']"-->
-
-<!--        ></div>-->
       <a-row type="flex" :md="8" :xs="4">
         <SearchBox @mouse="searchBoxMouseStatus" @search="search"/>
       </a-row>
