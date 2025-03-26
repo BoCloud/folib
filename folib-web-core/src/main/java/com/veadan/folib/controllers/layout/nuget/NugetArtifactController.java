@@ -476,7 +476,7 @@ public class NugetArtifactController
                            @ApiParam(value = "The packageId", required = true) @PathVariable(name = "packageId") String packageId,
                            @ApiParam(value = "The packageVersion", required = true) @PathVariable(name = "packageVersion") String packageVersion,
                            HttpServletResponse response,
-                           HttpServletRequest request, 
+                           HttpServletRequest request,
                            @RequestHeader HttpHeaders httpHeaders)
             throws Exception
     {
@@ -580,39 +580,62 @@ public class NugetArtifactController
         return sourceValue.replaceAll("['\"]", "");
     }
 
-    @ApiOperation(value = "枚举包版本")
-    @GetMapping(path = "{storageId}/{repositoryId}/{LOWER_ID}/index.json", produces = MediaType.APPLICATION_JSON)
-    public ResponseEntity indexV3(@PathVariable("LOWER_ID") String lowerId)
+    // API_V3
+    @ApiOperation(value = "PackageBaseAddress/3.0.0-枚举包版本")
+    @GetMapping(path = "{storageId}/{repositoryId}/{packageId}/index.json",
+                produces = MediaType.APPLICATION_JSON)
+    public ResponseEntity<Resource> indexPackageV3(@RepositoryMapping Repository repository,
+                                                   @PathVariable(name = "packageId") String packageId)
     {
         return null;
     }
 
-    @ApiOperation(value = "下载包内容")
-    @GetMapping(path = "{storageId}/{repositoryId}/{LOWER_ID}/{LOWER_VERSION}/{LOWER_ID}.{LOWER_VERSION}.nupkg", produces = MediaType.APPLICATION_OCTET_STREAM)
-    public ResponseEntity<Resource> downloadPackageV3(@PathVariable("LOWER_ID") String lowerId,
-                                            @PathVariable("LOWER_VERSION") String lowerVersion)
+    @ApiOperation(value = "PackageBaseAddress/3.0.0-下载包内容")
+    @GetMapping(path = "{storageId}/{repositoryId}/{packageId}/{version}/{packageId}.{version}.nupkg",
+                produces = MediaType.APPLICATION_OCTET_STREAM)
+    public ResponseEntity<Resource> downloadPackageV3(@RepositoryMapping Repository repository,
+                                                      @PathVariable(name = "packageId") String packageId,
+                                                      @PathVariable(name = "version") String packageVersion)
     {
         return null;
     }
 
-    @ApiOperation(value = "下载包清单")
-    @GetMapping(path = "{storageId}/{repositoryId}/{LOWER_ID}/{LOWER_VERSION}/{LOWER_ID}.nuspec", produces = MediaType.APPLICATION_XML)
-    public ResponseEntity<Resource> downloadNuspecV3(@PathVariable("LOWER_ID") String lowerId,
-                                            @PathVariable("LOWER_VERSION") String lowerVersion)
+    @ApiOperation(value = "PackageBaseAddress/3.0.0-下载包清单")
+    @GetMapping(path = "{storageId}/{repositoryId}/{packageId}/{version}/{packageID}.nuspec",
+                produces = MediaType.APPLICATION_XML)
+    public ResponseEntity<Resource> downloadNuspecV3(@RepositoryMapping Repository repository,
+                                                    @PathVariable(name = "packageId") String packageId,
+                                                    @PathVariable(name = "version") String packageVersion)
     {
         return null;
     }
 
-    @ApiOperation(value = "重新列出包")
+
+    @ApiOperation(value = "PackagePublish/2.0.0-重新列出包")
     @PostMapping(path = "{storageId}/{repositoryId}/{packageId}/{packageVersion}")
-    public ResponseEntity<Resource> relistPackageV3(@PathVariable("storageId") String storageId,
-                                                  @PathVariable("repositoryId") String repositoryId,
-                                                  @PathVariable("packageId") String packageId,
-                                                  @PathVariable("packageVersion") String packageVersion)
+    public ResponseEntity<Resource> relistPackage(@RepositoryMapping Repository repository,
+                                                 @PathVariable(name = "packageId") String packageId,
+                                                 @PathVariable(name = "packageVersion") String packageVersion)
     {
         return null;
     }
 
+    /*
+    *  SearchQueryService/3.5.0-搜索包
+    *  兼容 SearchQueryService, SearchQueryService/3.0.0-beta 和 SearchQueryService/3.0.0-rc
+    * */
+    @ApiOperation(value = "SearchQueryService/3.5.0-搜索包")
+    @GetMapping(path = "{storageId}/{repositoryId}/search")
+    public ResponseEntity<Resource> searchPackage(@RepositoryMapping Repository repository,
+                                                  @RequestParam(name = "q") String query,
+                                                  @RequestParam(name = "skip") Integer skip,
+                                                  @RequestParam(name = "take") Integer take,
+                                                  @RequestParam(name = "prerelease") Boolean prerelease,
+                                                  @RequestParam(name = "semVerLevel") String semVerLevel,
+                                                  @RequestParam(name = "packageType") String packageType)
+    {
+        return null;
+    }
 
 
 
