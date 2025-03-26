@@ -128,6 +128,10 @@ public class BrowseController
     @Lazy
     private ArtifactWebService artifactWebService;
 
+    @Inject
+    @Lazy
+    private RestoreArtifactService restoreArtifactService;
+
     @Inject()
     @Named("asyncApiBrowseThreadPoolExecutor")
     private ThreadPoolTaskExecutor asyncApiBrowseThreadPoolExecutor;
