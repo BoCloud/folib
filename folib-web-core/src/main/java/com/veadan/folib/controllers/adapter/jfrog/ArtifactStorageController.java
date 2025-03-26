@@ -150,7 +150,7 @@ public class ArtifactStorageController extends JFrogBaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PutMapping(value = {"/{repositoryId}/{artifactPath:.+}"})
     public ResponseEntity<Object> setItemProperties(@PathVariable("repositoryId") String repositoryId, @PathVariable("artifactPath") String artifactPath,
-                                                    @RequestParam(value = "properties", required = false) String properties, @RequestParam(value = "recursive", required = false) Boolean recursive, HttpServletRequest request) throws Exception {
+                                                    @RequestParam(value = "properties", required = false) String properties, @RequestParam(value = "recursive", required = false, defaultValue = "1") Boolean recursive, HttpServletRequest request) throws Exception {
 
         String storageId = getDefaultStorageId(repositoryId);
         Storage storage = getStorage(storageId);
@@ -380,7 +380,7 @@ public class ArtifactStorageController extends JFrogBaseController {
     @PatchMapping(value = {"/{repositoryId}/{artifactPath:.+}"})
     public ResponseEntity<Object> setItemCustomProperties(@PathVariable("repositoryId") String repositoryId,
                                                           @PathVariable("artifactPath") String artifactPath,
-                                                          @RequestParam(value = "recursive", required = false) Boolean recursive,
+                                                          @RequestParam(value = "recursive", required = false, defaultValue = "1") Boolean recursive,
                                                           @RequestParam(required = false) Map<String, String> customProperties,
                                                           HttpServletRequest request) throws Exception {
 
