@@ -580,18 +580,15 @@ public class NugetArtifactController
         return sourceValue.replaceAll("['\"]", "");
     }
 
-    /*
-    * 包内容
-    * */
     @ApiOperation(value = "枚举包版本")
-    @GetMapping(path = "{LOWER_ID}/index.json", produces = MediaType.APPLICATION_JSON)
+    @GetMapping(path = "{storageId}/{repositoryId}/{LOWER_ID}/index.json", produces = MediaType.APPLICATION_JSON)
     public ResponseEntity indexV3(@PathVariable("LOWER_ID") String lowerId)
     {
         return null;
     }
 
     @ApiOperation(value = "下载包内容")
-    @GetMapping(path = "{LOWER_ID}/{LOWER_VERSION}/{LOWER_ID}.{LOWER_VERSION}.nupkg", produces = MediaType.APPLICATION_OCTET_STREAM)
+    @GetMapping(path = "{storageId}/{repositoryId}/{LOWER_ID}/{LOWER_VERSION}/{LOWER_ID}.{LOWER_VERSION}.nupkg", produces = MediaType.APPLICATION_OCTET_STREAM)
     public ResponseEntity<Resource> downloadPackageV3(@PathVariable("LOWER_ID") String lowerId,
                                             @PathVariable("LOWER_VERSION") String lowerVersion)
     {
@@ -599,16 +596,23 @@ public class NugetArtifactController
     }
 
     @ApiOperation(value = "下载包清单")
-    @GetMapping(path = "{LOWER_ID}/{LOWER_VERSION}/{LOWER_ID}.nuspec", produces = MediaType.APPLICATION_XML)
+    @GetMapping(path = "{storageId}/{repositoryId}/{LOWER_ID}/{LOWER_VERSION}/{LOWER_ID}.nuspec", produces = MediaType.APPLICATION_XML)
     public ResponseEntity<Resource> downloadNuspecV3(@PathVariable("LOWER_ID") String lowerId,
                                             @PathVariable("LOWER_VERSION") String lowerVersion)
     {
         return null;
     }
 
-    /*
-    * 推送和删除
-    * */
+    @ApiOperation(value = "重新列出包")
+    @PostMapping(path = "{storageId}/{repositoryId}/{packageId}/{packageVersion}")
+    public ResponseEntity<Resource> relistPackageV3(@PathVariable("storageId") String storageId,
+                                                  @PathVariable("repositoryId") String repositoryId,
+                                                  @PathVariable("packageId") String packageId,
+                                                  @PathVariable("packageVersion") String packageVersion)
+    {
+        return null;
+    }
+
 
 
 
