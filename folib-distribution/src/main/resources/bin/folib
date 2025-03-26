@@ -56,6 +56,10 @@ FOLIB_S3_SECRET_KEY="${FOLIB_S3_SECRET_KEY:-folib}"
 
 ##图数据库索引ES节点配置
 FOLIB_ES_HOST="${FOLIB_ES_HOST:-127.0.0.1}"
+FOLIB_ES_USERNAME="${FOLIB_USERNAME:-elastic}"
+FOLIB_ES_PASSWORD="${FOLIB_ES_PASSWORD:-}"
+
+
 
 #自动晋级阻断
 FOLIB_PROMOTION_BLOCK="${FOLIB_PROMOTION_BLOCK:-false}"
@@ -236,6 +240,8 @@ run()
     JAVA_OPTS+=" -Dfolib.cluster.openflag=${FOLIB_CLUSTER_OPENFLAG}"
     JAVA_OPTS+=" -Dscan.storage-base=${FOLIB_STORAGE_BASE_DIR}/"
     JAVA_OPTS+=" -DES_HOST=${FOLIB_ES_HOST}"
+    JAVA_OPTS+=" -DES_USERNAME=${FOLIB_ES_USERNAME}"
+    JAVA_OPTS+=" -DES_PASSWORD=${FOLIB_ES_PASSWORD}"
     JAVA_OPTS+=" -DGLOBAL_REINDEX=false"
     JAVA_OPTS+=" -Dfolib.swagger.enable=${FOLIB_SWAGGER_ENABLE}"
 #    JAVA_OPTS+=" -Dfolib.dependentPushUrl=${FOLIB_DEPENDENT_PUSHURL}"
@@ -395,7 +401,8 @@ run()
     set -eo pipefail;
 
     if [[ $1 != "console" ]]; then
-        exec $CMD >/dev/null 2>&1 & echo $! > $FOLIB_PID_FILE
+        nohup $CMD >/dev/null 2>&1 & echo $! > $FOLIB_PID_FILE
+        sleep 1
         printf "  PID: $(get_pid) \n"
         printf "  CMD: %s\n\n" "$CMD"
         tail -fn 1000 ${FOLIB_VAULT}/logs/folib.log
