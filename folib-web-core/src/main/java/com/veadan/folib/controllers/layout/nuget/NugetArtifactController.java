@@ -386,23 +386,23 @@ public class NugetArtifactController
         return new ResponseEntity<>(new InputStreamResource(inputStream), HttpStatus.OK);
     }
 
-    /**
-     * This method is used to check storage availability.<br>
-     * For example NuGet pings the root without credentials to determine if the repository is healthy. If this receives
-     * a 401 response then NuGet will prompt for authentication.
-     * 
-     * @return
-     */
-    @Override
-    @ApiOperation(value = "Used to check storage availability")
-    @ApiResponses(value = { @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Storage available."),
-                            @ApiResponse(code = HttpURLConnection.HTTP_UNAUTHORIZED, message = "Storage requires authorization.") })
-    @GetMapping(path = { "{storageId}/{repositoryId}", "checkRepositoryAccess" })
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    public ResponseEntity<String> checkRepositoryAccess()
-    {
-        return new ResponseEntity<>("success", HttpStatus.OK);
-    }
+//    /**
+//     * This method is used to check storage availability.<br>
+//     * For example NuGet pings the root without credentials to determine if the repository is healthy. If this receives
+//     * a 401 response then NuGet will prompt for authentication.
+//     *
+//     * @return
+//     */
+//    @Override
+//    @ApiOperation(value = "Used to check storage availability")
+//    @ApiResponses(value = { @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Storage available."),
+//                            @ApiResponse(code = HttpURLConnection.HTTP_UNAUTHORIZED, message = "Storage requires authorization.") })
+//    @GetMapping(path = { "{storageId}/{repositoryId}", "checkRepositoryAccess" })
+//    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
+//    public ResponseEntity<String> checkRepositoryAccess()
+//    {
+//        return new ResponseEntity<>("success", HttpStatus.OK);
+//    }
 
     @ApiOperation(value = "Used to deploy a package")
     @ApiResponses(value = { @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "The package was deployed successfully."),
@@ -580,62 +580,6 @@ public class NugetArtifactController
         return sourceValue.replaceAll("['\"]", "");
     }
 
-    // API_V3
-    @ApiOperation(value = "PackageBaseAddress/3.0.0-枚举包版本")
-    @GetMapping(path = "{storageId}/{repositoryId}/{packageId}/index.json",
-                produces = MediaType.APPLICATION_JSON)
-    public ResponseEntity<Resource> indexPackageV3(@RepositoryMapping Repository repository,
-                                                   @PathVariable(name = "packageId") String packageId)
-    {
-        return null;
-    }
-
-    @ApiOperation(value = "PackageBaseAddress/3.0.0-下载包内容")
-    @GetMapping(path = "{storageId}/{repositoryId}/{packageId}/{version}/{packageId}.{version}.nupkg",
-                produces = MediaType.APPLICATION_OCTET_STREAM)
-    public ResponseEntity<Resource> downloadPackageV3(@RepositoryMapping Repository repository,
-                                                      @PathVariable(name = "packageId") String packageId,
-                                                      @PathVariable(name = "version") String packageVersion)
-    {
-        return null;
-    }
-
-    @ApiOperation(value = "PackageBaseAddress/3.0.0-下载包清单")
-    @GetMapping(path = "{storageId}/{repositoryId}/{packageId}/{version}/{packageID}.nuspec",
-                produces = MediaType.APPLICATION_XML)
-    public ResponseEntity<Resource> downloadNuspecV3(@RepositoryMapping Repository repository,
-                                                    @PathVariable(name = "packageId") String packageId,
-                                                    @PathVariable(name = "version") String packageVersion)
-    {
-        return null;
-    }
-
-
-    @ApiOperation(value = "PackagePublish/2.0.0-重新列出包")
-    @PostMapping(path = "{storageId}/{repositoryId}/{packageId}/{packageVersion}")
-    public ResponseEntity<Resource> relistPackage(@RepositoryMapping Repository repository,
-                                                 @PathVariable(name = "packageId") String packageId,
-                                                 @PathVariable(name = "packageVersion") String packageVersion)
-    {
-        return null;
-    }
-
-    /*
-    *  SearchQueryService/3.5.0-搜索包
-    *  兼容 SearchQueryService, SearchQueryService/3.0.0-beta 和 SearchQueryService/3.0.0-rc
-    * */
-    @ApiOperation(value = "SearchQueryService/3.5.0-搜索包")
-    @GetMapping(path = "{storageId}/{repositoryId}/search")
-    public ResponseEntity<Resource> searchPackage(@RepositoryMapping Repository repository,
-                                                  @RequestParam(name = "q") String query,
-                                                  @RequestParam(name = "skip") Integer skip,
-                                                  @RequestParam(name = "take") Integer take,
-                                                  @RequestParam(name = "prerelease") Boolean prerelease,
-                                                  @RequestParam(name = "semVerLevel") String semVerLevel,
-                                                  @RequestParam(name = "packageType") String packageType)
-    {
-        return null;
-    }
 
 
 

@@ -1,0 +1,37 @@
+{
+  "version": "3.0.0",
+  "resources": [
+    {
+      "@id": "flatcontainer/",
+      "@type": "PackageBaseAddress/3.0.0"
+    },
+    {
+      "@id": "package/",
+      "@type": "PackagePublish/2.0.0"
+    },
+    {
+      "@id": "search/",
+      "@type": "SearchQueryService/3.5.0"
+    },
+    {
+      "@id": "registration5-semver1/",
+      "@type": "RegistrationsBaseUrl"
+    },
+    {
+      "@id": "registration5-semver1/",
+      "@type": "RegistrationsBaseUrl/3.0.0"
+    },
+    {
+      "@id": "registration5-semver1/",
+      "@type": "RegistrationsBaseUrl/3.0.0-rc"
+    },
+    {
+      "@id": "registration5-gz-semver1/",
+      "@type": "RegistrationsBaseUrl/3.4.0"
+    },
+    {
+      "@id": "registration5-gz-semver2/",
+      "@type": "RegistrationsBaseUrl/3.6.0"
+    }
+  ]
+}
