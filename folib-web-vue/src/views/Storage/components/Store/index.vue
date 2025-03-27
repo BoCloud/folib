@@ -1459,6 +1459,9 @@ export default {
     newDetailPage(){
       return this.$store.state.newDetailPage
     },
+    onScan(){
+      return this.$store.state.onScan
+    },
     repositoryLength(){
       return this.$store.state.repositoryLength
     },
@@ -1485,6 +1488,9 @@ export default {
           this.baseUrl = ''
       }
     },
+    onScan(val){
+      this.scan.onScan = val
+    }
   },
   created () {
     this.initData()

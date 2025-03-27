@@ -149,8 +149,10 @@ export default {
             onScan: this.scanForm.onScan,
             bomOnScan: this.scanForm.bomOnScan,
           }
+          this.$store.commit('setOnScan', null)
           insertOrUpdateRules(data).then(res => {
             this.successMsg(this.$t('Scan.OperationSuccessful'))
+            this.$store.commit('setOnScan', this.scanForm.onScan)
             setTimeout(() => {
               this.scanResetForm()
                 this.callParent(true,'process')

@@ -15,6 +15,7 @@ const store = new Vuex.Store({
   state: {
     newDetailPage: false,
     currentTreeNode: {},
+    onScan: null,
     isChecked: false,
     switchDisabled: true,
     repositoryLength: 0,
@@ -47,6 +48,9 @@ const store = new Vuex.Store({
     // 制品回收站还原操作
     setRestoreActionMark(state) {
       state.restoreActionMark = !state.restoreActionMark
+    },
+    setOnScan(state, val) {
+      state.onScan = val
     },
   },
   actions: {},

@@ -157,6 +157,7 @@ export default {
     'EnterRepository': '请输入仓库名称',
     'RepositoryLengthLimit': '仓库名称长度在 1 到 30 个字符',
     'RepositoryLimit': '仓库名称应为大小写字母，数字，特殊符号(-_.)，不能以_.开头',
+    'DockerRepositoryLimit': '仓库名称应为小写字母，数字，特殊符号(-_.)，不能以_.开头',
     'WarehouseModified': '仓库已修改完成',
     'WarehouseAdded': '仓库已新增完成',
     'RepositoryNameExists': '仓库名称已存在',

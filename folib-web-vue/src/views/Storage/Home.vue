@@ -2,7 +2,7 @@
   <div class="anonymous-home">
      <!-- Header Background Image -->
      <div class="profile-nav-bg" style="
-            background: #fff;
+            background: url(images/banner.jpg) center/cover;
             transition: all 0.3s;
           ">
       <a-row type="flex" :md="8" :xs="4">

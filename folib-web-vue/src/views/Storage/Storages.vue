@@ -1613,8 +1613,11 @@ export default {
       })
     },
     reloadTree(){
-      this.loadMore(0)
-      this.$refs.repositoryTree.getPosition()
+      this.$refs.repositoryTree.key ++
+      this.$refs.repositoryTree.recycleKey ++
+      this.$refs.repositoryTree.empty()
+      this.$refs.repositoryTree.loadingMoreShow(true)
+      this.getDetailInfo(this.isChecked)
     },
     // 点击仓库
     repositorySelect(item){
@@ -2333,7 +2336,7 @@ export default {
         this.$notification.open({
           class: 'ant-notification-warning',
           message: this.$t('Storage.FillInErrors'),
-          description: this.$t('Storage.RepositoryLimit'),
+          description: this.$t('Storage.RepositoryLengthLimit'),
         })
         return false
       }
@@ -2341,7 +2344,7 @@ export default {
       let description = this.$t('Storage.RepositoryLimit')
       if (this.layoutChecked === 'docker') {
         reg = /^(?![_.])[a-z0-9_.\\-]+$/
-        description = 'docker'+this.$t('Storage.RepositoryLimit')
+        description = 'docker'+this.$t('Storage.DockerRepositoryLimit')
       }
       if (reg.test(repositoryName) === false) {
         this.$notification.open({

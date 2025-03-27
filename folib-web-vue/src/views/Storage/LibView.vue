@@ -2,7 +2,7 @@
   <div :key="key" class="lib-view">
     <!-- Header Background Image -->
     <div v-if="!isChecked" class="profile-nav-bg" style="
-            background: #FFFFFF;
+            background: url(images/banner.jpg) center/cover;
             transition: all 0.3s;
           ">
 <!--        <div-->
