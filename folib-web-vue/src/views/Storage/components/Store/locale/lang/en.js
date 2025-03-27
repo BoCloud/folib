@@ -370,4 +370,5 @@ export default {
     'RecursiveDelete': 'Recursive Delete',
     'Edit': 'Edit',
     'GroupDefaultRepository':'Default upload repository',
+    'CreateTrashDirectoryError': 'There are files in the recycle bin that conflict with this artifact. Please check the information of this artifact in the recycle bin',
 }

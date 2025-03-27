@@ -108,6 +108,9 @@ public class RestoreArtifactServiceImpl implements RestoreArtifactService {
 
     @Override
     public void restoreArtifact(RepositoryPath repositoryPath) throws Exception {
+        if (!RepositoryFiles.isTrash(repositoryPath) || Files.isSameFile(repositoryPath, repositoryPath.getRoot())) {
+            return;
+        }
         restoreArtifacts(repositoryPath, 6);
         Repository repository = repositoryPath.getRepository();
         RepositoryFiles.delete(repositoryPath, true);
@@ -262,7 +265,6 @@ public class RestoreArtifactServiceImpl implements RestoreArtifactService {
         } else if (RepositoryFiles.isMetadata(targetRepositoryPath)) {
             artifactEventListenerRegistry.dispatchArtifactMetadataStoredEvent(targetRepositoryPath);
         }
-        RepositoryFiles.delete(restoreRepositoryPath, true);
     }
 
     public void buildArtifact(RepositoryPath targetRepositoryPath, Map<String, String> digestMap, String metadata) throws IOException {

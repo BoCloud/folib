@@ -127,6 +127,10 @@ export default {
                         : err.response.data.error
                             ? err.response.data.error
                             : err.response.data
+                    let temp = this.$t('Store.' + msg)
+                    if (temp.indexOf('Store.') == -1) {
+                        msg = temp 
+                    }
                     if (!msg || msg.length === 0 || typeof msg === 'object') {
                         msg = this.$t('Store.DeletionFailed')
                     }

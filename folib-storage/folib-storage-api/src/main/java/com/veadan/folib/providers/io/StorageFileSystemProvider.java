@@ -170,34 +170,23 @@ public abstract class StorageFileSystemProvider
             throws IOException {
         if (!(path instanceof RepositoryPath)) {
             Files.delete(path);
-
             return;
         }
-
         RepositoryPath repositoryPath = (RepositoryPath) path;
-//        if (!Files.exists(repositoryPath.getTarget())) {
-//            throw new NoSuchFileException(unwrap(repositoryPath).toString());
-//
-//        }
         if (!Files.isDirectory(repositoryPath)) {
             doDeletePath(repositoryPath, force, true);
-
             return;
         }
-
         RootRepositoryPath root = repositoryPath.getFileSystem().getRootDirectory();
         recursiveDeleteExceptRoot(repositoryPath, force);
         if (!root.equals(path)) {
             return;
         }
-
         logger.debug("Deleting hidden folders for [{}]", path);
-
         FileSystemUtils.deleteRecursively(unwrap(root).resolve(LayoutFileSystem.TEMP));
 //        FileSystemUtils.deleteRecursively(unwrap(root).resolve(LayoutFileSystem.TRASH));
         //不删除仓库本身，保留回收站
 //        Files.delete(unwrap(root));
-
         logger.debug("Hidden folders deleted [{}]", path);
 
     }
@@ -208,6 +197,13 @@ public abstract class StorageFileSystemProvider
         RootRepositoryPath root = repositoryPath.getFileSystem().getRootDirectory();
 
         Files.walkFileTree(repositoryPath, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                log.warn(exc.getMessage());
+                // 目录或文件已删除，继续遍历
+                return FileVisitResult.CONTINUE;
+            }
+
             @Override
             public FileVisitResult visitFile(Path file,
                                              BasicFileAttributes attrs)
@@ -220,6 +216,9 @@ public abstract class StorageFileSystemProvider
 
             @Override
             public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+                if (force) {
+                    return FileVisitResult.CONTINUE;
+                }
                 boolean isTrash = Files.isSameFile(dir, dir.getRoot().resolve(LayoutFileSystem.TRASH));
                 if (isTrash) {
                     log.info("RepositoryPath [{}] skip...", dir.toString());
@@ -459,8 +458,14 @@ public abstract class StorageFileSystemProvider
 
         if (!Files.exists(trashPath.getParent().getTarget())) {
             logger.debug("Creating: [{}]", trashPath.getParent());
-
-            Files.createDirectories(trashPath.getParent().getTarget());
+            try {
+                Files.createDirectories(trashPath.getParent().getTarget());
+            } catch (Exception ex) {
+                if (ex instanceof FileSystemException && ex.getMessage().contains("Not a directory")) {
+                    throw new RuntimeException("CreateTrashDirectoryError");
+                }
+                throw ex;
+            }
         }
 
         return trashPath;

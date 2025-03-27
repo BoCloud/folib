@@ -568,12 +568,6 @@ public class ArtifactManagementService {
 
         artifactOperationsValidator.checkAllowsDeletion(repository);
 
-        Optional<Artifact> artifactEntry = Optional.ofNullable(repositoryPath.getArtifactEntry());
-        if (!Files.isDirectory(repositoryPath) && RepositoryFiles.isArtifact(repositoryPath) && artifactEntry.isEmpty()) {
-            logger.warn(String.format("Corresponding [%s] record not found for path [%s]",
-                    Artifact.class.getSimpleName(), repositoryPath));
-        }
-
         try {
             RepositoryFiles.delete(repositoryPath, force);
         } catch (IOException e) {
