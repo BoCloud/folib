@@ -85,3 +85,12 @@ export function deleteDict(data) {
     params: data
   })
 }
+
+
+export function systemDict(data) {
+  return axios({
+    url: '/api/dict/system',
+    method: 'get',
+    params: data
+  })
+}

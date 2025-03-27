@@ -1,5 +1,7 @@
 package com.veadan.folib.services.impl;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.google.common.collect.Lists;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.constant.GlobalConstants;
@@ -10,6 +12,7 @@ import com.veadan.folib.enums.UpgradeTaskStatusEnum;
 import com.veadan.folib.event.bucket.BucketEventListenerRegistry;
 import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.mapper.DictMapper;
+import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.DictService;
 import com.veadan.folib.util.CacheUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -70,14 +73,16 @@ public class DictServiceImpl implements DictService {
             Example.Criteria criteria = example.createCriteria();
             if (Objects.nonNull(dict.getId())) {
                 criteria.andEqualTo("id", dict.getId());
+                dictMapper.updateByExampleSelective(dict, example);
+            }else {
+                if (StringUtils.isNotBlank(dict.getDictKey())) {
+                    criteria.andEqualTo("dictKey", dict.getDictKey());
+                }
+                if (StringUtils.isNotBlank(dict.getDictType())) {
+                    criteria.andEqualTo("dictType", dict.getDictType());
+                    dictMapper.updateByExampleSelective(dict, example);
+                }
             }
-            if (StringUtils.isNotBlank(dict.getDictKey())) {
-                criteria.andEqualTo("dictKey", dict.getDictKey());
-            }
-            if (StringUtils.isNotBlank(dict.getDictType())) {
-                criteria.andEqualTo("dictType", dict.getDictType());
-            }
-            dictMapper.updateByExampleSelective(dict, example);
         }
         if (Boolean.TRUE.equals(dictForm.getOverrideSystemProperty())) {
             System.setProperty(dict.getDictKey(), dict.getDictValue());
@@ -278,8 +283,18 @@ public class DictServiceImpl implements DictService {
         Example example = Example.builder(Dict.class).build();
         Example.Criteria criteria = example.createCriteria();
         criteria.andEqualTo("dictType", type);
-        criteria.andEqualTo("dictKey", key);
+        if(StringUtils.isNotBlank(key)){
+            criteria.andEqualTo("dictKey", key);
+        }
         return dictMapper.selectByExample(example);
+    }
+
+    @Override
+    public TableResultResponse<Dict> getSystemDict(Integer page, Integer limit,String dictKey){
+        PageHelper.startPage(page, limit);
+        List<Dict> systems = selectByTypeAndKey(DictTypeEnum.SYSTEM_PROPERTY.getType(),dictKey);
+        PageInfo<Dict> pages = PageInfo.of(systems);
+        return new TableResultResponse<>(pages.getTotal(), pages.getList());
     }
 
 
