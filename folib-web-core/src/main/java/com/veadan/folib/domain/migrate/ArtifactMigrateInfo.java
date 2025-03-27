@@ -33,6 +33,8 @@ public class ArtifactMigrateInfo {
 
     private Integer syncMeta;
 
+    private Integer webhookSetting;
+
     public void setBrowsePrefix(String browsePrefix){
         this.browsePrefix= StringUtils.removeEnd(browsePrefix, GlobalConstants.SEPARATOR);
     }

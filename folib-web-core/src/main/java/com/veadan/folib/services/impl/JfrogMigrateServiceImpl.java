@@ -272,10 +272,10 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
     }
 
     @Override
-    public TableResultResponse<MigrateInfo> getRepositoryByMigrateId(int page, int limit, String migrateId, String status,String repoName) {
+    public TableResultResponse<MigrateInfo> getRepositoryByMigrateId(int page, int limit, String migrateId, String status, String repoName) {
         List<Integer> statuses = STATUS_MAPPING.get(status);
         Assert.notNull(statuses, "无效的状态标识");
-        PageInfo<MigrateInfo> pages = migrateInfoService.selectByMigrateIdAndStatus(migrateId, statuses, page, limit,repoName);
+        PageInfo<MigrateInfo> pages = migrateInfoService.selectByMigrateIdAndStatus(migrateId, statuses, page, limit, repoName);
         return new TableResultResponse<>(pages.getTotal(), pages.getList());
     }
 
@@ -822,7 +822,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             repositoryDto.setAllowsDeletion(true);
             repositoryDto.setAllowsDeployment(true);
             repositoryDto.setAllowsDirectoryBrowsing(true);
-            setRepositoryInfo(repository, repositoryDto, artifactory, storageId, form,migrateInfo,reposUsed);
+            setRepositoryInfo(repository, repositoryDto, artifactory, storageId, form, migrateInfo, reposUsed);
             groupRepositoryValid(storageId, repositoryDto);
             RepositoryDto newRepo;
             try {
@@ -872,7 +872,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
     }
 
     void setRepositoryInfo(LightweightRepository repository, RepositoryDto repositoryDto, Artifactory
-            artifactory, String storageId, JfrogMigrateForm form,ArtifactMigrateInfo  migrateInfo,Map<String, String> reposUsed) {
+            artifactory, String storageId, JfrogMigrateForm form, ArtifactMigrateInfo migrateInfo, Map<String, String> reposUsed) {
         if (repository.getType() == LOCAL) {
             if ("2".equals(form.getArtifactType())) {
                 repositoryDto.setType(RepositoryTypeEnum.PROXY.getType());
@@ -1130,5 +1130,22 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         }
     }
 
+    // 从迁移任务中获取存在默认的jfrog配置信息，如果存在多条或不存在取最后一条
+    public Dict getWebhookSetting() {
+        Dict query = new Dict();
+        query.setDictType("artifact_migrate_task");
+        List<Dict> dicts = dictService.selectDict(query);
+        if (CollectionUtils.isEmpty(dicts)) {
+            return null;
+        }
+        ;
+        for (Dict dict : dicts) {
+            ArtifactMigrateInfo info = JSON.parseObject(dict.getAlias(), ArtifactMigrateInfo.class);
+            if (info.getWebhookSetting() != null && info.getWebhookSetting() == 1) {
+                return dict;
+            }
+        }
+        return dicts.get(0);
+    }
 
 }

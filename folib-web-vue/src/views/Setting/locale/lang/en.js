@@ -569,6 +569,7 @@ export default {
     PauseMigration: 'Pause Migration',
     CompleteSuccess: 'Complete Success',
     SyncMetadata: 'Sync Metadata',
+    WebhookSetting: 'Default Webhook Setting',
     MigratedArtifact: 'Migrated Artifact',
     PreLayout: 'Pre Layout',
     PostLayout: 'Post Layout',
@@ -591,5 +592,6 @@ export default {
     PleaseEnterDictKey:'Property name cannot be empty',
     PleaseEnterDictValue:'Property value cannot be empty',
     PleaseCompleteRequiredFields:'Please complete required fields',
+    WebhookSettingAnswer:'When performing incremental migration, use this configuration information to obtain artifacts. If there are multiple entries, take the latest one'
     
 }
