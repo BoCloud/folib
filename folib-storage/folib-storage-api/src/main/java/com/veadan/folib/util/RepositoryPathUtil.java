@@ -393,6 +393,9 @@ public class RepositoryPathUtil {
             log.warn("Path [{}] not exists", repositoryPath);
             return pathList;
         }
+        if (Files.isSameFile(repositoryPath, repositoryPath.getRoot())) {
+            return pathList;
+        }
         RepositoryPathResolver repositoryPathResolver = SpringUtil.getBean(RepositoryPathResolver.class);
         if (!Files.isDirectory(repositoryPath) && withinTimeFrame(repositoryPath, beginDate, endDate)) {
             //是一个文件
@@ -431,6 +434,9 @@ public class RepositoryPathUtil {
                 public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
                     try {
                         RepositoryPath itemPath = (RepositoryPath) dir;
+                        if (Files.isSameFile(itemPath, repositoryPath.getRoot().resolve(LayoutFileSystem.TRASH))) {
+                            return FileVisitResult.CONTINUE;
+                        }
                         if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !include(2, itemPath, isDockerLayout, layout, repositoryPathResolver) || (CollectionUtils.isNotEmpty(excludeDirectoryList) && excludeDirectoryList.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
                             log.info("RepositoryPath [{}] skip...", itemPath.toString());
                             return FileVisitResult.SKIP_SUBTREE;

@@ -1019,7 +1019,7 @@
           <a-icon type="swap" />
           {{ $t('Store.Move') }}
         </a-menu-item>
-        <a-menu-item key="4" v-if="deleteEnabled && !isTrashView">
+        <a-menu-item key="4" v-if="deleteEnabled && currentTreeNode.name !== '.trash'">
           <!-- <a-popconfirm :title="$t('Store.SuerDelete')" okType="danger"
               :ok-text="$t('Store.Confirm')" :cancel-text="$t('Store.Cancel')" @confirm.stop="deletePackageHandle"  :style="{ zIndex: 2000 }"> -->
           <a-icon type="delete" />
@@ -3396,7 +3396,7 @@ export default {
         return url;
       },
      onRightClick(event, data, isTrashView) {
-       if (data.treeType === 'lastRoot') return
+       if (data.treeType === 'lastRoot' || data.name === '.trash') return
        this.isTrashView = isTrashView
        this.showContextMenu = true;
        this.rightClickTop = `${event.clientY}px`;

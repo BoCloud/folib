@@ -19,7 +19,7 @@
                     <a-icon type="swap"/>
                     {{ $t('Store.Move') }}
                 </a-menu-item>
-                <a-menu-item key="4" v-if="deleteEnabled && !isTrashView">
+                <a-menu-item key="4" v-if="deleteEnabled && currentTreeNode.name !== '.trash'">
                     <!-- <a-popconfirm :title="$t('Store.SuerDelete')" okType="danger"
                         :ok-text="$t('Store.Confirm')" :cancel-text="$t('Store.Cancel')" @confirm.stop="deletePackageHandle"  :style="{ zIndex: 2000 }"> -->
                     <a-icon type="delete"/>
@@ -114,7 +114,7 @@ export default {
                             message: this.$t('Store.DeletionSuccessful')
                         })
                         // this.$emit('reload')
-                        this.$emit('localDelNode', {storageId, repositoryId, artifactPath, type: this.type})
+                        this.$emit('localDelNode', {storageId, repositoryId, artifactPath, type: this.type}, this.isTrashView)
                     }, 100)
                 })
                 .catch(err => {
@@ -127,6 +127,10 @@ export default {
                         : err.response.data.error
                             ? err.response.data.error
                             : err.response.data
+                    let temp = this.$t('Store.' + msg)
+                    if (temp.indexOf('Store.') == -1) {
+                        msg = temp 
+                    }
                     if (!msg || msg.length === 0 || typeof msg === 'object') {
                         msg = this.$t('Store.DeletionFailed')
                     }
