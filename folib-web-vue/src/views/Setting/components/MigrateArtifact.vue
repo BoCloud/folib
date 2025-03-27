@@ -28,7 +28,7 @@
                         <a-button  type="link" @click="handleMigrate(record)">
                             {{ $t('Setting.Migrate') }}
                         </a-button>
-                </div>
+                    </div>
                 </template>
             </a-table>
         </div>

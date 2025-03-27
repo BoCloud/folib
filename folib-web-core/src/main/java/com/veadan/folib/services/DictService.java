@@ -2,6 +2,7 @@ package com.veadan.folib.services;
 
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.forms.dict.DictForm;
+import com.veadan.folib.scanner.common.msg.TableResultResponse;
 
 import java.util.List;
 
@@ -107,5 +108,7 @@ public interface DictService {
 
     void saveOrUpdateByTypeAndKey(Dict dict);
 
-    List<Dict> selectByTypeAndKey(String type,String key);
+    List<Dict> selectByTypeAndKey(String type, String key);
+
+    TableResultResponse<Dict> getSystemDict(Integer page, Integer limit, String dictKey);
 }
