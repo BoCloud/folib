@@ -616,6 +616,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
         try {
 
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(requestContext.getStorageId(), requestContext.getRepositoryId(), latestLeadFilePath);
+            repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
             try (InputStream leadStream = Files.newInputStream(repositoryPath)) {
                 revisionData = MlModelUtils.createObjectMapper().readValue(leadStream, RevisionData.class);
                 String mlStr = Objects.isNull(requestContext.getOrg()) ? String.format("models/%s/",requestContext.getModelName()) : String.format("models/%s/%s/", requestContext.getOrg(), requestContext.getModelName());
@@ -628,6 +629,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 requestContext.setVersionFolder(revision);
             }
         } catch (Exception e) {
+            e.printStackTrace();
             return afterFailedToFetchLatestModelInfo(requestContext, latestLeadFilePath, e, remoteBaseUrl);
 
         }
