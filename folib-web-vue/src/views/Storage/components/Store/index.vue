@@ -1417,6 +1417,26 @@ export default {
     }
   },
   computed: {
+    getShowMore(){
+      return (type) => {
+        const key1 = !this.currentFileDetial && !this.copyEnabled && !this.moveEnabled && !this.deleteEnabled && !this.dispatchEnabled && !this.currentTreeNode && this.isTrashView
+        && !(this.folibRepository.layout === 'Docker' && this.currentTreeNode && this.currentTreeNode.type === 'file' && this.currentFileDetial && this.currentFileDetial.artifact&&!this.isTrashView)
+        && !(this.folibRepository.layout === 'Raw' && this.currentTreeNode && this.currentTreeNode.type === 'dir'&&!this.isTrashView)
+
+        const key2 = !this.currentFileDetial && !this.copyEnabled && !this.moveEnabled && !this.deleteEnabled && !this.dispatchEnabled && !this.currentTreeNode && this.isTrashView
+        && !(this.folibRepository.layout === 'Docker' && this.currentTreeNode && this.currentTreeNode.type === 'file' && this.currentFileDetial && this.currentFileDetial.artifact&&!this.isTrashView)
+        if(type){
+          if(key1){
+            return false
+          }
+        }else{
+          if(key2){
+            return false
+          }
+        }
+        return true
+      }
+    },
     newDetailPage(){
       return this.$store.state.newDetailPage
     },
