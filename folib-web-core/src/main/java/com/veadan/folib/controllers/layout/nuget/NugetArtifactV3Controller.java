@@ -1,5 +1,6 @@
 package com.veadan.folib.controllers.layout.nuget;
 
+import com.alibaba.excel.metadata.Head;
 import com.veadan.folib.artifact.coordinates.NugetArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.PathNupkg;
 import com.veadan.folib.artifact.coordinates.versioning.SemanticVersion;
@@ -31,11 +32,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.HttpHeaders;
 
 
 import javax.inject.Inject;
 import javax.json.*;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.ws.rs.core.MediaType;
 import java.io.*;
@@ -93,7 +97,7 @@ public class NugetArtifactV3Controller extends BaseArtifactController {
                 JsonObjectBuilder modifiedResource = Json.createObjectBuilder(resource);
                 String id = resource.getString("@id");
 //                modifiedResource.add("@id", storageId + "/" + repositoryId + "/" + id);
-                modifiedResource.add("@id", "http://localhost:38080/storages/public-project/bacadadas/v3/" + id);
+                modifiedResource.add("@id", "http://10.30.20.56:38080/storages/public-project/bacadadas/v3/" + id);
                 modifiedResources.add(modifiedResource);
             }
 
@@ -131,7 +135,7 @@ public class NugetArtifactV3Controller extends BaseArtifactController {
         String normalisedPackageId = normaliseSearchTerm(packageId);
 
         NugetSearchRequest nugetSearchRequest = new NugetSearchRequest();
-        nugetSearchRequest.setFilter(String.format("Id eq '%s'", packageId));
+        nugetSearchRequest.setFilter(String.format("tolower(Id) eq '%s'", packageId));
         repositorySearchEventListener.setNugetSearchRequest(nugetSearchRequest);
 
         RepositoryProvider provider = repositoryProviderRegistry.getProvider(repository.getType());
@@ -165,24 +169,80 @@ public class NugetArtifactV3Controller extends BaseArtifactController {
 
 
     @ApiOperation(value = "PackageBaseAddress/3.0.0-下载包内容.nupkg")
+    @ApiResponses(value = { @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "OK"),
+                            @ApiResponse(code = HttpURLConnection.HTTP_NOT_FOUND, message = "Package not Found")})
     @GetMapping(path = "{storageId}/{repositoryId}/v3/flatcontainer/{packageId}/{version}/{packageId}.{version}.nupkg",
                 produces = MediaType.APPLICATION_OCTET_STREAM)
-    public ResponseEntity<Resource> downloadPackage(@RepositoryMapping Repository repository,
+    public void downloadPackage(@RepositoryMapping Repository repository,
                                                     @PathVariable(name = "packageId") String packageId,
-                                                    @PathVariable(name = "version") String packageVersion)
+                                                    @PathVariable(name = "version") String packageVersion,
+                                                    HttpServletResponse response,
+                                                    HttpServletRequest request,
+                                                    @RequestHeader HttpHeaders httpHeaders)
+            throws Exception
     {
-        return null;
+        getPackageInternal(repository, packageId, packageVersion, response, request, httpHeaders);
     }
 
 
     @ApiOperation(value = "PackageBaseAddress/3.0.0-下载包清单.nuspec")
+    @ApiResponses(value = { @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "OK"),
+            @ApiResponse(code = HttpURLConnection.HTTP_NOT_FOUND, message = "Package not Found")})
     @GetMapping(path = "{storageId}/{repositoryId}/v3/flatcontainer/{packageId}/{version}/{packageID}.nuspec",
                 produces = MediaType.APPLICATION_XML)
-    public ResponseEntity<Resource> downloadNuspec(@RepositoryMapping Repository repository,
+    public void downloadNuspec(@RepositoryMapping Repository repository,
                                                    @PathVariable(name = "packageId") String packageId,
-                                                   @PathVariable(name = "version") String packageVersion)
+                                                   @PathVariable(name = "version") String version,
+                                                   HttpServletResponse response,
+                                                   HttpServletRequest request,
+                                                   @RequestHeader HttpHeaders httpHeaders)
     {
-        return null;
+        try
+        {
+            // 构建包坐标
+            NugetArtifactCoordinates coordinates = new NugetArtifactCoordinates(packageId, version);
+            
+            // 获取包路径
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository, coordinates);
+            
+            // 检查包是否存在
+            if (!Files.exists(repositoryPath))
+            {
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            }
+
+            // 获取nuspec文件
+            Path nuspecFile = repositoryPath.resolveSibling(packageId + ".nuspec");
+            if (!Files.exists(nuspecFile))
+            {
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            }
+
+            // 设置响应头
+            response.setHeader("Content-Type", MediaType.APPLICATION_XML);
+            response.setHeader("Content-Disposition", "attachment; filename=\"" + packageId + ".nuspec\"");
+
+            // 写入响应流
+            try (InputStream is = Files.newInputStream(nuspecFile);
+                 OutputStream os = response.getOutputStream())
+            {
+                byte[] buffer = new byte[4096];
+                int bytesRead;
+                while ((bytesRead = is.read(buffer)) != -1)
+                {
+                    os.write(buffer, 0, bytesRead);
+                }
+                os.flush();
+            }
+        }
+        catch (Exception e)
+        {
+            logger.error("下载nuspec文件失败", e);
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
+
     }
 
 
@@ -202,19 +262,6 @@ public class NugetArtifactV3Controller extends BaseArtifactController {
                                       @RequestParam(value = "package") MultipartFile file,
                                       HttpServletRequest request)
     {
-
-//        // 将MultipartFile file存到 /temp
-//        String targetFilePath = "/home/lg/temp/" + file.getOriginalFilename();
-//        // 创建目标文件对象
-//        File destFile = new File(targetFilePath);
-//        try {
-//            // 将文件保存到指定路径
-//            file.transferTo(destFile);
-//            System.out.println("文件保存成功：" + targetFilePath);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//            System.err.println("文件保存失败：" + e.getMessage());
-//        }
 
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
@@ -248,12 +295,35 @@ public class NugetArtifactV3Controller extends BaseArtifactController {
 
     @ApiOperation(value = "PackagePublish/2.0.0-删除包")
     @DeleteMapping(path = "{storageId}/{repositoryId}/v3/package/{packageId}/{version}")
-    public ResponseEntity<Resource> deletePackage(@RequestHeader(name = "X-NuGet-ApiKey") String apiKey,
+    public ResponseEntity deletePackage(@RequestHeader(name = "X-NuGet-ApiKey", required = false) String apiKey,
                                                   @RepositoryMapping Repository repository,
                                                   @PathVariable(name = "packageId") String packageId,
                                                   @PathVariable(name = "version") String version)
     {
-        return null;
+        final String storageId = repository.getStorage().getId();
+        final String repositoryId = repository.getId();
+
+        logger.info("Nuget delete request: storageId-[{}]; repositoryId-[{}]; packageId-[{}]", storageId, repositoryId,
+                packageId);
+
+        RepositoryPath path = repositoryPathResolver.resolve(storageId, repositoryId, String.format("%s/%s/%s.nuspec", packageId, version, packageId));;
+        try
+        {
+            //TODO: we should move associated files deletion into corresponding layout providers.
+            artifactManagementService.delete(path, true);
+            path = repositoryPathResolver.resolve(storageId, repositoryId, String.format("%s/%s/%s.%s.nupkg", packageId, version, packageId,version));
+            artifactManagementService.delete(path, true);
+            path = repositoryPathResolver.resolve(storageId, repositoryId, String.format("%s/%s/%s.%s.nupkg.sha512", packageId, version, packageId,version));
+            artifactManagementService.delete(path, true);
+        }
+        catch (IOException e)
+        {
+            logger.error("Failed to process Nuget delete request: path-[{}]", path, e);
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
 
@@ -464,6 +534,31 @@ public class NugetArtifactV3Controller extends BaseArtifactController {
 
         return new URI("");
     }
+
+    private void getPackageInternal(Repository repository,
+                                    String packageId,
+                                    String packageVersion,
+                                    HttpServletResponse response,
+                                    HttpServletRequest request,
+                                    org.springframework.http.HttpHeaders httpHeaders)
+            throws Exception
+    {
+        final String storageId = repository.getStorage().getId();
+        final String repositoryId = repository.getId();
+        logger.info("Requested Nuget Package {},{}, {}, {}.", storageId, repositoryId, packageId, packageVersion);
+
+        String fileName = String.format("%s.%s.nupkg", packageId, packageVersion);
+        String path = String.format("%s/%s/%s", packageId, packageVersion, fileName);
+
+        RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, path);
+        vulnerabilityBlock(repositoryPath);
+        if (provideArtifactDownloadResponse(request, response, httpHeaders, repositoryPath))
+        {
+            response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", fileName));
+        }
+    }
+
+
 
 
 }
