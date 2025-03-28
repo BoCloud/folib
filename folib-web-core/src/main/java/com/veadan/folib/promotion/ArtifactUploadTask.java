@@ -76,16 +76,12 @@ import org.mockito.internal.util.collections.Sets;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringReader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
@@ -986,7 +982,7 @@ public class ArtifactUploadTask implements Callable<String> {
                 promotionUtil.setMetaData(repositoryPath, metaData);
                 artifactManagementService.store(repositoryPath, is);
             }
-            artifactManagementService.store(tempPath, is);
+            writeFile(tempPath, is);
 
             CargoMetadataExtractor extractor = new CargoMetadataExtractor();
             CargoMetadata metadata = extractor.extract(tempPath);
@@ -1006,7 +1002,7 @@ public class ArtifactUploadTask implements Callable<String> {
             RepositoryPath path = repositoryPathResolver.resolve(storageId, repositoryId, metadataFilePath);
             CargoUtil.writeLongMetadata(metadata, path, artifactManagementService);
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            e.printStackTrace();
             throw new RuntimeException(e.getMessage());
         } finally {
             try {
@@ -1017,7 +1013,24 @@ public class ArtifactUploadTask implements Callable<String> {
         }
     }
 
-
+    public void writeFile(RepositoryPath path, InputStream inputStream) {
+        try (
+                OutputStream out = Files.newOutputStream(path, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                InputStream in = inputStream
+        ) {
+            byte[] buffer = new byte[8192]; // 使用缓冲区逐块写入
+            int bytesRead;
+            while ((bytesRead = in.read(buffer)) != -1) {
+                out.write(buffer, 0, bytesRead);
+            }
+        } catch (IOException e) {
+            // 记录详细日志信息
+            log.error("Error writing file to path: {}", path, e);
+            // 包装异常并重新抛出，以便调用方能够处理
+            throw new RuntimeException("Failed to write file to path: " + path, e);
+        }
+    }
 
 
 }
+
