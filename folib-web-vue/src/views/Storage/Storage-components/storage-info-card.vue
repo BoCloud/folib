@@ -4,31 +4,113 @@
 日期：
 **/
 <template>
-    <a-card :bordered="false" id="profile" class="card-profile-head info-card" :bodyStyle="{ padding: 0, }">
+    <a-card :bordered="false" id="profile" class="card-profile-head info-card" :bodyStyle="{ padding: 0 }">
         <template #title>
             <a-row type="flex" align="middle">
-                <a-col :span="layoutType === 'isFilter' ? 8 : 20" class="col-info">
-                    <a-avatar :title="layoutType === 'isFilter' ? $t('Storage.CreateStorageSpace') :''" :style="layoutType === 'isFilter' ? 'cursor:pointer':''" :size="40" shape="square" @click="createHandleView" src="images/folib/storage.svg" />
-                    <div class="avatar-info" style="margin-top:-8px;">
-                        <h4 class="font-semibold m-0">
-                            <span style="font-size:16px;" v-if="layoutType !== 'isFilter'">{{ currentStorage.id }}</span>
-                            <a-dropdown overlayClassName="overlayClassName" v-else :trigger="['click']">
-                                <a style="color: #141414;" class="ant-dropdown-link" @click="e => e.preventDefault()">
-                                    {{ currentStorage.id }} <a-icon style="font-size:16px;" type="down" />
+                <a-col :span="8" class="col-info">
+                    <div class="avatar-info" style="margin-top:2px; margin-left: 4px;">
+                        <h4 class="font-semibold m-0 by-p-l-4 by-flex">
+                            <!--   <a-avatar :title="layoutType === 'isFilter' ? $t('Storage.CreateStorageSpace') :''" :style="layoutType === 'isFilter' ? 'cursor:pointer':''" :size="20" shape="square" @click="createHandleView" src="images/folib/storage.svg" />-->
+                            <span class="storage-icon by-flex by-row-center">
+                                <svg v-if="currentStorage.storageProvider === 's3'" width="17px" height="12px" viewBox="0 0 17 12" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                                    <title>形状 2</title>
+                                    <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                        <g id="首页备份-20" transform="translate(-272.000000, -259.000000)" fill="#FFFFFF" fill-rule="nonzero">
+                                            <g id="编组-5" transform="translate(250.000000, 80.000000)">
+                                                <g id="编组-15备份-9" transform="translate(13.000000, 166.000000)">
+                                                    <g id="服务项目" transform="translate(8.218884, 9.000000)">
+                                                        <g id="云数据库RDS" transform="translate(0.891175, 2.000000)">
+                                                            <path d="M12.0929323,14 C9.93446739,14 8.18568683,13.4527903 8.18568683,12.7756039 L8.18568683,11.3075459 C8.18568683,11.9847324 9.93606738,12.5318525 12.0929323,12.5318525 C14.2497972,12.5318525 15.9984889,11.9847324 16,11.3075459 L16,12.7756039 C16,13.4527903 14.2512194,14 12.0929323,14 Z M12.0929323,11.7967494 C9.93446739,11.7967494 8.18568683,11.2495397 8.18568683,10.5723532 L8.18568683,9.10429527 C8.18568683,9.78148176 9.93606738,10.3286019 12.0929323,10.3286019 C14.2497972,10.3286019 15.9984889,9.77987047 16,9.10429527 L16,10.5723532 C16,11.2495397 14.2512194,11.7967494 12.0929323,11.7967494 Z M12.0929323,9.59349872 C9.93446739,9.59349872 8.18568683,9.04637859 8.18568683,8.3691921 L8.18568683,7.39024809 C8.18568683,6.71315111 9.93606738,6.16594146 12.0929323,6.16594146 C14.2497972,6.16594146 15.9984889,6.7147624 16,7.38711504 L16,8.3691921 C16,9.04637859 14.2512194,9.59349872 12.0929323,9.59349872 Z M7.70729214,7.11910494 L7.70729214,8.20546783 C7.70729214,8.21674681 7.70889212,8.226325 7.70889212,8.23760398 L7.70889212,9.05282372 C7.70755516,9.0421676 7.70702031,9.03142493 7.70729214,9.02068758 L7.70729214,10.6494263 C7.70729214,10.662227 7.70889212,10.6718947 7.70889212,10.6830842 L7.70729214,10.6830842 L7.70729214,11.4983039 C7.70597902,11.4876757 7.70544425,11.4769646 7.70569216,11.4662573 L7.70569216,12.3023342 L3.5279608,12.3023342 C1.5663826,12.1949153 0,10.6927519 0,8.86815277 C0,7.32284274 1.1247875,6.01340666 2.66877035,5.58498438 C2.79996889,3.58878362 4.52146087,2.00014798 6.61592649,2.00014798 C8.11156814,1.98719366 9.48633081,2.82563815 10.167887,4.16642862 C11.4062055,4.22184803 12.5564467,4.82714197 13.308741,5.81924704 C12.9072344,5.78075528 12.4832391,5.76034569 12.0417329,5.76034569 C9.64967056,5.76034569 7.70889212,6.36815749 7.70729214,7.11910494 L7.70729214,7.11910494 Z" id="形状"></path>
+                                                        </g>
+                                                    </g>
+                                                </g>
+                                            </g>
+                                        </g>
+                                    </g>
+                                </svg>
+                                <svg v-else width="15px" height="15px" viewBox="0 0 15 15" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                                    <title>形状</title>
+                                    <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                        <g id="首页备份-20" transform="translate(-273.000000, -212.000000)" fill="#FFFFFF" fill-rule="nonzero">
+                                            <g id="编组-5" transform="translate(250.000000, 80.000000)">
+                                                <g id="编组-15备份" transform="translate(13.000000, 122.000000)">
+                                                    <g id="服务项目" transform="translate(8.605140, 9.000000)">
+                                                        <path d="M9.09725285,8.04345703 L9.09725285,4.86923828 C9.09725285,4.16367187 9.29926438,3.52119141 9.72180518,2.95009766 C10.1662306,2.35244141 10.7503806,1.94238281 11.4793055,1.75976562 C12.6459222,1.46923828 13.6896484,1.71660156 14.5768158,2.52509766 C15.071744,2.96835937 15.4016962,3.56269531 15.5178528,4.21181641 C15.7316484,5.37558594 15.4050631,6.37832031 14.5279963,7.19179687 C14.0515858,7.63339844 13.4758529,7.89238281 12.8310994,7.99365234 C12.6459222,8.02353516 12.4590615,8.03847656 12.2705174,8.03847656 C11.2352083,8.04179687 10.2015826,8.04013672 9.16627346,8.04013672 L9.09725285,8.04345703 L9.09725285,8.04345703 Z M8.1461152,8.04345703 L4.94928264,8.04345703 C4.1075679,8.04345703 3.3702258,7.77285156 2.74399003,7.22001953 C2.23727776,6.78007812 1.885441,6.19072266 1.74066607,5.53994141 C1.47805107,4.39111328 1.87702386,3.19414062 2.77934205,2.42382812 C3.26080288,2.01376953 3.8163346,1.75976562 4.44593723,1.67841797 C5.46609548,1.54726562 6.3583131,1.82783203 7.10912265,2.5234375 C7.65287036,3.028125 7.97945568,3.65234375 8.10234603,4.37617187 C8.13096433,4.54052734 8.14443177,4.70654297 8.1461152,4.87255859 C8.14948206,5.91181641 8.14779863,6.94941406 8.14779863,7.98867187 L8.1461152,8.04345703 Z M8.1461228,8.97978516 L8.1461228,12.1390625 C8.14779863,12.9691406 7.87003277,13.6962891 7.30776732,14.3138672 C6.81115563,14.8583984 6.19502044,15.2086914 5.45936177,15.3265625 C4.33314745,15.5075195 3.36517551,15.1837891 2.56554651,14.3852539 C2.13122171,13.9569336 1.83830498,13.4074219 1.72551521,12.8114258 C1.53023739,11.7987305 1.76255065,10.8873047 2.44433959,10.1020508 C2.94600157,9.52431641 3.58907163,9.17900391 4.34661489,9.03789062 C4.55367671,8.99970703 4.76578883,8.98144531 4.97621751,8.98144531 L8.07541116,8.98144531 L8.1461228,8.97978516 L8.1461228,8.97978516 Z M9.09725285,9.01630859 L12.3210203,9.01630859 C12.9741909,9.01630859 13.5802255,9.17900391 14.1290235,9.53095703 C14.8023953,9.96425781 15.2586047,10.5619141 15.4639831,11.3272461 C15.7383821,12.3449219 15.5481546,13.2845703 14.9017177,14.1246094 C14.4572923,14.7006836 13.8697754,15.0791992 13.1610516,15.268457 C12.8108983,15.3647461 12.4455941,15.3962891 12.0836567,15.3614258 C10.8530698,15.2352539 9.96590245,14.6143555 9.4086873,13.5302734 C9.24034435,13.2048828 9.15112259,12.8545898 9.11240371,12.4910156 C9.10061971,12.3764648 9.09725285,12.2619141 9.09725285,12.1457031 C9.09556942,11.1213867 9.09556942,10.0970703 9.09725285,9.07109375 L9.09725285,9.01630859 L9.09725285,9.01630859 Z" id="形状"></path>
+                                                    </g>
+                                                </g>
+                                            </g>
+                                        </g>
+                                    </g>
+                                </svg>
+                            </span>
+                            <span style="font-size:16px;margin-left: 10px;" v-if="layoutType !== 'isFilter'">{{ currentStorage.id }}
+                                <a-icon v-if="hasStoragePermission()" @click="updateHandleView" type="edit" style="color: #008AFF;margin-left: 5px;"/>
+                            </span>
+                            <div class="by-flex" v-else>
+                                <a style="color: #141414;" class="ant-dropdown-link by-m-l-10 by-m-r-10" @click="e => e.preventDefault()">
+                                    {{ currentStorage.id }}
                                 </a>
-                                <a-menu slot="overlay" @click="handheTableSearch($event,'storageId')">
-                                    <a-menu-item v-for="item in storageData" :key="item.id" :class="{active:currentStorage.id === item.id }">
-                                        {{ item.id }}
-                                    </a-menu-item>
-                                </a-menu>
-                            </a-dropdown>
-                            <a-tooltip placement="topLeft">
+                                <a-dropdown overlayClassName="overlayClassName" :trigger="['click']">
+                                    <div class="change-store">
+                                        <a-icon type="swap" />
+                                        {{ $t('Storage.ChangeStorageSpace') }}
+                                    </div>
+                                    <div slot="overlay" class="overlay-content">
+                                        <div class="by-flex by-row-between by-p-l-14 by-p-r-16">
+                                            <span class="all-storage">{{ $t('Storage.AllStorageSpace') }}</span>
+                                            <a-icon
+                                                v-if="$store.state.user.roles.indexOf('ADMIN') > -1"
+                                                @click="createHandleView()"
+                                                type="plus" class="by-pointer by-font-xs"
+                                            />
+                                        </div>
+                                        <div class="menu-content">
+                                            <a-menu @click="handheTableSearch($event,'storageId')" >
+                                                <a-menu-item v-for="item in storageData" :key="item.id" :class="{active:currentStorage.id === item.id }" class="by-flex">
+                                                    <svg v-if="item.storageProvider === 's3'" width="17px" height="12px" viewBox="0 0 17 12" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                                                        <title>形状 2</title>
+                                                        <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                                            <g id="首页备份-20" transform="translate(-272.000000, -259.000000)" :fill="item.id === currentStorage.id ? '#186DE7' : '#B2B8C3'" fill-rule="nonzero">
+                                                                <g id="编组-5" transform="translate(250.000000, 80.000000)">
+                                                                    <g id="编组-15备份-9" transform="translate(13.000000, 166.000000)">
+                                                                        <g id="服务项目" transform="translate(8.218884, 9.000000)">
+                                                                            <g id="云数据库RDS" transform="translate(0.891175, 2.000000)">
+                                                                                <path d="M12.0929323,14 C9.93446739,14 8.18568683,13.4527903 8.18568683,12.7756039 L8.18568683,11.3075459 C8.18568683,11.9847324 9.93606738,12.5318525 12.0929323,12.5318525 C14.2497972,12.5318525 15.9984889,11.9847324 16,11.3075459 L16,12.7756039 C16,13.4527903 14.2512194,14 12.0929323,14 Z M12.0929323,11.7967494 C9.93446739,11.7967494 8.18568683,11.2495397 8.18568683,10.5723532 L8.18568683,9.10429527 C8.18568683,9.78148176 9.93606738,10.3286019 12.0929323,10.3286019 C14.2497972,10.3286019 15.9984889,9.77987047 16,9.10429527 L16,10.5723532 C16,11.2495397 14.2512194,11.7967494 12.0929323,11.7967494 Z M12.0929323,9.59349872 C9.93446739,9.59349872 8.18568683,9.04637859 8.18568683,8.3691921 L8.18568683,7.39024809 C8.18568683,6.71315111 9.93606738,6.16594146 12.0929323,6.16594146 C14.2497972,6.16594146 15.9984889,6.7147624 16,7.38711504 L16,8.3691921 C16,9.04637859 14.2512194,9.59349872 12.0929323,9.59349872 Z M7.70729214,7.11910494 L7.70729214,8.20546783 C7.70729214,8.21674681 7.70889212,8.226325 7.70889212,8.23760398 L7.70889212,9.05282372 C7.70755516,9.0421676 7.70702031,9.03142493 7.70729214,9.02068758 L7.70729214,10.6494263 C7.70729214,10.662227 7.70889212,10.6718947 7.70889212,10.6830842 L7.70729214,10.6830842 L7.70729214,11.4983039 C7.70597902,11.4876757 7.70544425,11.4769646 7.70569216,11.4662573 L7.70569216,12.3023342 L3.5279608,12.3023342 C1.5663826,12.1949153 0,10.6927519 0,8.86815277 C0,7.32284274 1.1247875,6.01340666 2.66877035,5.58498438 C2.79996889,3.58878362 4.52146087,2.00014798 6.61592649,2.00014798 C8.11156814,1.98719366 9.48633081,2.82563815 10.167887,4.16642862 C11.4062055,4.22184803 12.5564467,4.82714197 13.308741,5.81924704 C12.9072344,5.78075528 12.4832391,5.76034569 12.0417329,5.76034569 C9.64967056,5.76034569 7.70889212,6.36815749 7.70729214,7.11910494 L7.70729214,7.11910494 Z" id="形状"></path>
+                                                                            </g>
+                                                                        </g>
+                                                                    </g>
+                                                                </g>
+                                                            </g>
+                                                        </g>
+                                                    </svg>
+                                                    <svg v-else width="15px" height="15px" viewBox="0 0 15 15" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                                                        <title>形状</title>
+                                                        <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                                            <g id="首页备份-20" transform="translate(-273.000000, -212.000000)" :fill="item.id === currentStorage.id ? '#186DE7' : '#B2B8C3'" fill-rule="nonzero">
+                                                                <g id="编组-5" transform="translate(250.000000, 80.000000)">
+                                                                    <g id="编组-15备份" transform="translate(13.000000, 122.000000)">
+                                                                        <g id="服务项目" transform="translate(8.605140, 9.000000)">
+                                                                            <path d="M9.09725285,8.04345703 L9.09725285,4.86923828 C9.09725285,4.16367187 9.29926438,3.52119141 9.72180518,2.95009766 C10.1662306,2.35244141 10.7503806,1.94238281 11.4793055,1.75976562 C12.6459222,1.46923828 13.6896484,1.71660156 14.5768158,2.52509766 C15.071744,2.96835937 15.4016962,3.56269531 15.5178528,4.21181641 C15.7316484,5.37558594 15.4050631,6.37832031 14.5279963,7.19179687 C14.0515858,7.63339844 13.4758529,7.89238281 12.8310994,7.99365234 C12.6459222,8.02353516 12.4590615,8.03847656 12.2705174,8.03847656 C11.2352083,8.04179687 10.2015826,8.04013672 9.16627346,8.04013672 L9.09725285,8.04345703 L9.09725285,8.04345703 Z M8.1461152,8.04345703 L4.94928264,8.04345703 C4.1075679,8.04345703 3.3702258,7.77285156 2.74399003,7.22001953 C2.23727776,6.78007812 1.885441,6.19072266 1.74066607,5.53994141 C1.47805107,4.39111328 1.87702386,3.19414062 2.77934205,2.42382812 C3.26080288,2.01376953 3.8163346,1.75976562 4.44593723,1.67841797 C5.46609548,1.54726562 6.3583131,1.82783203 7.10912265,2.5234375 C7.65287036,3.028125 7.97945568,3.65234375 8.10234603,4.37617187 C8.13096433,4.54052734 8.14443177,4.70654297 8.1461152,4.87255859 C8.14948206,5.91181641 8.14779863,6.94941406 8.14779863,7.98867187 L8.1461152,8.04345703 Z M8.1461228,8.97978516 L8.1461228,12.1390625 C8.14779863,12.9691406 7.87003277,13.6962891 7.30776732,14.3138672 C6.81115563,14.8583984 6.19502044,15.2086914 5.45936177,15.3265625 C4.33314745,15.5075195 3.36517551,15.1837891 2.56554651,14.3852539 C2.13122171,13.9569336 1.83830498,13.4074219 1.72551521,12.8114258 C1.53023739,11.7987305 1.76255065,10.8873047 2.44433959,10.1020508 C2.94600157,9.52431641 3.58907163,9.17900391 4.34661489,9.03789062 C4.55367671,8.99970703 4.76578883,8.98144531 4.97621751,8.98144531 L8.07541116,8.98144531 L8.1461228,8.97978516 L8.1461228,8.97978516 Z M9.09725285,9.01630859 L12.3210203,9.01630859 C12.9741909,9.01630859 13.5802255,9.17900391 14.1290235,9.53095703 C14.8023953,9.96425781 15.2586047,10.5619141 15.4639831,11.3272461 C15.7383821,12.3449219 15.5481546,13.2845703 14.9017177,14.1246094 C14.4572923,14.7006836 13.8697754,15.0791992 13.1610516,15.268457 C12.8108983,15.3647461 12.4455941,15.3962891 12.0836567,15.3614258 C10.8530698,15.2352539 9.96590245,14.6143555 9.4086873,13.5302734 C9.24034435,13.2048828 9.15112259,12.8545898 9.11240371,12.4910156 C9.10061971,12.3764648 9.09725285,12.2619141 9.09725285,12.1457031 C9.09556942,11.1213867 9.09556942,10.0970703 9.09725285,9.07109375 L9.09725285,9.01630859 L9.09725285,9.01630859 Z" id="形状"></path>
+                                                                        </g>
+                                                                    </g>
+                                                                </g>
+                                                            </g>
+                                                        </g>
+                                                    </svg>
+                                                    <span class="by-m-l-10"> {{ item.id }} </span>
+                                                </a-menu-item>
+                                            </a-menu>
+                                        </div>
+                                    </div>
+                                </a-dropdown>
+                            </div>
+                            <!--  <a-tooltip placement="topLeft">
                                 <template slot="title">
                                     <span>{{ $t('Storage.s3Storage') }}</span>
                                 </template>
                                 <a-icon style="margin-left: 15px" v-if="currentStorage.storageProvider === 's3'" type="cloud"
                                     theme="filled" class="text-gray-6 text-lg" />
-                            </a-tooltip>
+                            </a-tooltip>-->
                         </h4>
                         <!-- <p>
                             {{ baseUrl }}api/browse/{{ currentStorage.id }}
@@ -43,8 +125,21 @@
                         </p> -->
                     </div>
                 </a-col>
-                <a-col v-if="layoutType === 'isFilter'" :span="12" style="display: flex;align-items: center;">
+                <a-col v-if="layoutType === 'isFilter'" :span="16" style="display: flex;align-items: center;justify-content: flex-end">
+                    <a-tabs v-if="layoutType === 'isFilter'" class="tabs-sliding" style="margin-top:-2px;margin-right:10px;" default-active-key="1" @change="getTabKey">
+                        <a-tab-pane key="1" tab="仓库"></a-tab-pane>
+                        <a-tab-pane key="2" tab="概览"></a-tab-pane>
+                    </a-tabs>
                     <a-form layout="inline">
+                        <a-form-item>
+                            <a-input-search
+                                class="v-search"
+                                style="width:180px;"
+                                v-model="queryParams.name"
+                                @search="search"
+                                :placeholder="$t('Storage.RepositoryNameQuery')"
+                            />
+                        </a-form-item>
                         <a-form-item>
                             <a-select
                                 class="v-search self-icon_search"
@@ -111,58 +206,11 @@
                                 </a-select-option>
                             </a-select>
                         </a-form-item>
-                        <a-form-item>
-                            <a-input-search
-                                class="v-search"
-                                style="width:180px;"
-                                v-model="queryParams.name" 
-                                @search="search"
-                                :placeholder="$t('Storage.RepositoryNameQuery')"
-                            />
-                        </a-form-item>
                     </a-form>
-                </a-col>
-                <a-col :span="4" style="display: flex; align-items: center; justify-content: flex-end;">
-                    <a-tabs v-if="layoutType === 'isFilter'" class="tabs-sliding" style="margin-top:-2px;margin-right:10px;" default-active-key="1" @change="getTabKey">
-                        <a-tab-pane key="1" tab="仓库"></a-tab-pane>
-                        <a-tab-pane key="2" tab="概览"></a-tab-pane>
-                    </a-tabs>
-                    <a-tooltip placement="topLeft">
-                        <template slot="title">
-                            <span>{{ $t('Storage.CreateStorageSpace') }}</span>
-                        </template>
-                        <div class="add-sty" @click="createHandleView" v-if="$store.state.user.roles.indexOf('ADMIN') > -1 && layoutType === 'isFilter'">
-                            <img src="./images/add.svg" width="30" alt="">
-                        </div>
-                    </a-tooltip>
-                    <a-tooltip placement="topLeft">
-                        <template slot="title">
-                            <span>{{ $t('Storage.ModifyStorageSpace') }}</span>
-                        </template>
-                        <div style="margin-top:4px;cursor:pointer;" v-if="hasStoragePermission()" @click="updateHandleView">
-                            <svg width="20px" height="20px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg"
-                                xmlns:xlink="http://www.w3.org/1999/xlink">
-                            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                                <g transform="translate(-2020.000000, -442.000000)" class="fill-dark" fill="#FFFFFF"
-                                fill-rule="nonzero">
-                                <g transform="translate(1716.000000, 291.000000)">
-                                    <g transform="translate(304.000000, 151.000000)">
-                                    <polygon class="color-background" opacity="0.596981957"
-                                        points="18.0883333 15.7316667 11.1783333 8.82166667 13.3333333 6.66666667 6.66666667 0 0 6.66666667 6.66666667 13.3333333 8.82166667 11.1783333 15.315 17.6716667">
-                                    </polygon>
-                                    <path class="color-background"
-                                        d="M31.5666667,23.2333333 C31.0516667,23.2933333 30.53,23.3333333 30,23.3333333 C29.4916667,23.3333333 28.9866667,23.3033333 28.48,23.245 L22.4116667,30.7433333 L29.9416667,38.2733333 C32.2433333,40.575 35.9733333,40.575 38.275,38.2733333 L38.275,38.2733333 C40.5766667,35.9716667 40.5766667,32.2416667 38.275,29.94 L31.5666667,23.2333333 Z"
-                                        opacity="0.596981957"></path>
-                                    <path class="color-background"
-                                        d="M33.785,11.285 L28.715,6.215 L34.0616667,0.868333333 C32.82,0.315 31.4483333,0 30,0 C24.4766667,0 20,4.47666667 20,10 C20,10.99 20.1483333,11.9433333 20.4166667,12.8466667 L2.435,27.3966667 C0.95,28.7083333 0.0633333333,30.595 0.00333333333,32.5733333 C-0.0583333333,34.5533333 0.71,36.4916667 2.11,37.89 C3.47,39.2516667 5.27833333,40 7.20166667,40 C9.26666667,40 11.2366667,39.1133333 12.6033333,37.565 L27.1533333,19.5833333 C28.0566667,19.8516667 29.01,20 30,20 C35.5233333,20 40,15.5233333 40,10 C40,8.55166667 39.685,7.18 39.1316667,5.93666667 L33.785,11.285 Z">
-                                    </path>
-                                    </g>
-                                </g>
-                                </g>
-                            </g>
-                            </svg>
-                        </div>
-                    </a-tooltip>
+                    <!-- <a-button class="repository-setting by-m-l-10" size="small" icon="delete"></a-button>-->
+                    <a-button v-if="layoutType === 'isFilter'" class="repository-setting by-m-l-10" size="small" icon="form" @click="updateHandleView"></a-button>
+                    <a-button v-if="$store.state.user.roles.indexOf('ADMIN') > -1 && layoutType === 'isFilter'" class="by-m-l-10" size="small" icon="plus"  @click="createHandleView()" >
+                    </a-button>
                 </a-col>
             </a-row>
         </template>
@@ -180,8 +228,8 @@ export default {
         StorageInfo
     },
     props:['currentStorage','baseUrl','layoutType','storageData'],
-    data() {
-        return {
+    data() {
+        return {
             queryParams:{
                 storageId:'',
                 name: undefined,
@@ -191,8 +239,8 @@ export default {
                 page:1
             },
             typeList,
-        }
-    },
+        }
+    },
     computed:{
         
     },
@@ -207,9 +255,9 @@ export default {
             deep:true,
         }
     },
-    mounted() {
+    mounted() {
 
-    },
+    },
     methods:{
         emptyQuery(){
             this.queryParams.layout = undefined
@@ -285,6 +333,14 @@ export default {
         .ant-avatar{
             box-shadow: 0px 0px 6px 1px rgba(0, 0, 0, 0.12);
         }
+        .ant-form {
+            position: relative;
+            top: 2px;
+        }
+        .ant-form-inline .ant-form-item {
+            margin-left: 6px;
+            margin-right: 0;
+        }
     }
 
     .add-sty{
@@ -299,5 +355,82 @@ export default {
         padding: 1px;
         background: #fff;
         box-shadow: 0px 0px 6px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .ant-card-head-title {
+
+        .path-label {
+            font-family: PingFangSC, PingFang SC;
+            font-size: 12px;
+            font-weight: 400;
+            color: #5A5F80;
+        }
+
+        .url-value {
+            font-family: PingFangSC, PingFang SC;
+            font-size: 12px;
+            font-weight: 400;
+            color: #186DE7;
+            margin-right: 10px;
+        }
+
+        .copy {
+            position: relative;
+            top: 2px;
+        }
+    }
+    .change-store {
+        position: relative;
+        top: 2px;
+        height: 22px;
+        background: rgba(24, 144, 255, 0.1);
+        border-radius: 4px;
+        color: #186DE7;
+        font-size: 12px!important;
+        font-weight: 400;
+        padding: 0 10px;
+        cursor: pointer;
+    }
+    .overlay-content {
+        width: 240px;
+        background: #fff;
+        padding: 15px 0 0 12px;
+        box-shadow: 0px 2px 15px -6px rgba(66,73,97,0.9);
+
+        .all-storage {
+            font-weight: 600;
+            font-size: 16px;
+            color: #0B2A42;
+            line-height: 24px;
+        }
+    }
+    .menu-content {
+        max-height: 450px;
+        overflow-y: auto;
+        padding-right: 12px;
+        margin-top: 10px;
+
+        .ant-menu-vertical {
+            border-right: none;
+
+            .ant-menu-item {
+                border-radius: 8px;
+
+                &:hover {
+                    background: #F4F7FE;
+                }
+            }
+            .active {
+                color: #186DE7;
+                background: #F4F7FE;
+            }
+        }
+    }
+    .storage-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 5px;
+        background: #1c94fc;
+        margin-left: 0!important;
     }
 </style>

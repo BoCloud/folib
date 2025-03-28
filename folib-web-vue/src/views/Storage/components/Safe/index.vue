@@ -1,6 +1,6 @@
 <template>
   <div :style="isChecked ? 'padding-left: 3px;padding-right: 3px;height:calc(100vh - 270px);overflow-y: auto;overflow-x: hidden;':''">
-    <a-row  type="flex" :gutter="24">
+    <a-row  type="flex" :gutter="24" style="padding-top: 10px;padding-bottom: 10px">
       <a-col :span="24" :xl="4" class="mb-24 statistics">
         <a-card :bordered="false" class="widget-2 card-shadow">
           <a-statistic :value="vulnerabilityStatistics.artifactCount">
@@ -130,20 +130,18 @@
         </a-card>
       </a-col>
     </a-row>
-    <a-card :bordered="false" class="card-shadow">
-      <Vulnerability
-        :vulnerabilityColumns="vulnerabilityColumns"
-        :queryStorageId="false"
-        :vulnerabilityLevel="2"
-        :queryRepositoryId="false"
-        :storageId="folibRepository.storageId"
-        :repositoryId="folibRepository.id"
-        :repositoryType="folibRepository.type"
-        @repositoryVulnerabilityStatistics="repositoryVulnerabilityStatistics"
-        ref="vulnerability"
-      >
-      </Vulnerability>
-    </a-card>
+    <Vulnerability
+      :vulnerabilityColumns="vulnerabilityColumns"
+      :queryStorageId="false"
+      :vulnerabilityLevel="2"
+      :queryRepositoryId="false"
+      :storageId="folibRepository.storageId"
+      :repositoryId="folibRepository.id"
+      :repositoryType="folibRepository.type"
+      @repositoryVulnerabilityStatistics="repositoryVulnerabilityStatistics"
+      ref="vulnerability"
+    >
+    </Vulnerability>
 
 
     <a-drawer
@@ -233,3 +231,10 @@ export default {
   },
 };
 </script>
+<style lang="scss">
+.statistics {
+  .card-shadow.ant-card {
+      box-shadow: -1px 2px 15px -6px rgba(66,73,97,0.53)!important;
+  }
+}
+</style>

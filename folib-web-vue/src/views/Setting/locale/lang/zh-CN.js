@@ -576,6 +576,7 @@ export default {
     PauseMigration: '暂停迁移',
     CompleteSuccess: '完成成功',
     SyncMetadata: '同步元数据',
+    WebhookSetting:'Webhook使用配置',
     MigratedArtifact: '已同步制品',
     PostLayout:'对应布局',
     PreLayout:'原布局',
@@ -585,5 +586,21 @@ export default {
     DeleteConfirm:'确定删除该任务吗?',
     OK:'确定',
     ResetMigration:'重新迁移',
-    EnterRepositoryName:'请输入仓库名称'
+    EnterRepositoryName:'请输入仓库名称',
+    // 系统cju
+    SystemConfig:'系统参数',
+    SystemConfigInfo:'用于覆盖默认系统参数配置',
+    AddConfig:'添加参数',
+    EditConfig:'编辑参数',
+    SystemKey:'属性名',
+    SystemValue:'属性值',
+    SystemComment:'属性描述',
+    SearchName:'请输入属性名',
+    PleaseEnterDictKey:'属性名不能为空',
+    PleaseEnterDictValue:'属性值不能为空',
+    PleaseCompleteRequiredFields:'请完成必填项',
+    WebhookSettingAnswer:'增量迁移时使用该配置信息获取制品，如果存在多条取最新的一条'
+
+
+    
 }

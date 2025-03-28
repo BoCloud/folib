@@ -4,7 +4,6 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.veadan.folib.domain.migrate.SyncArtifactForm;
 import com.veadan.folib.entity.MigrateInfo;
-
 import com.veadan.folib.mapper.MigrateInfoMapper;
 import com.veadan.folib.services.MigrateInfoService;
 import jodd.util.StringUtil;
@@ -37,24 +36,24 @@ public class MigrateInfoServiceImpl implements MigrateInfoService {
     }
 
     @Override
-    public PageInfo<MigrateInfo> selectByMigrateIdAndStatus(String migrateId, List<Integer> status, Integer pageNum, Integer pageSize,String repoName) {
+    public PageInfo<MigrateInfo> selectByMigrateIdAndStatus(String migrateId, List<Integer> status, Integer pageNum, Integer pageSize, String repoName) {
         PageHelper.startPage(pageNum, pageSize);
         Example example = Example.builder(MigrateInfo.class).build();
         Example.Criteria where = example.createCriteria();
         where.andEqualTo("migrateId", migrateId);
         where.andIn("syncStatus", status);
-        if(StringUtil.isNotEmpty(repoName)) {
+        if (StringUtil.isNotEmpty(repoName)) {
             where.andLike("repositoryId", "%" + repoName + "%");
         }
         return PageInfo.of(migrateInfoMapper.selectByExample(example));
     }
 
     @Override
-    public List<MigrateInfo> selectByMigrateId(String migrateId,  List<Integer> status) {
+    public List<MigrateInfo> selectByMigrateId(String migrateId, List<Integer> status) {
         Example example = Example.builder(MigrateInfo.class).build();
         Example.Criteria where = example.createCriteria();
         where.andEqualTo("migrateId", migrateId);
-        if(status != null && !status.isEmpty()) {
+        if (status != null && !status.isEmpty()) {
             where.andIn("syncStatus", status);
         }
         return migrateInfoMapper.selectByExample(example);

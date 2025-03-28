@@ -569,6 +569,7 @@ export default {
     PauseMigration: 'Pause Migration',
     CompleteSuccess: 'Complete Success',
     SyncMetadata: 'Sync Metadata',
+    WebhookSetting: 'Default Webhook Setting',
     MigratedArtifact: 'Migrated Artifact',
     PreLayout: 'Pre Layout',
     PostLayout: 'Post Layout',
@@ -578,5 +579,19 @@ export default {
     DeleteConfirm:'Are you sure delete this task?',
     OK:'Yes',
     ResetMigration:'Reset Migration',
-    EnterRepositoryName:'Enter repository name'
+    EnterRepositoryName:'Enter repository name',
+    // 系统参数相关
+    SystemConfig:'System Config',
+    SystemConfigInfo:'Override system property',
+    AddConfig:'Add Config',
+    EditConfig:'Edit Config',
+    SystemKey:'key Name',
+    SystemValue:'key Value',
+    SystemComment:'key Descprition',
+    SearchName:'Please enter the keyName',
+    PleaseEnterDictKey:'Property name cannot be empty',
+    PleaseEnterDictValue:'Property value cannot be empty',
+    PleaseCompleteRequiredFields:'Please complete required fields',
+    WebhookSettingAnswer:'When performing incremental migration, use this configuration information to obtain artifacts. If there are multiple entries, take the latest one'
+    
 }

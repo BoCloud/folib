@@ -28,7 +28,7 @@
                         <a-button  type="link" @click="handleMigrate(record)">
                             {{ $t('Setting.Migrate') }}
                         </a-button>
-                </div>
+                    </div>
                 </template>
             </a-table>
         </div>
@@ -81,6 +81,21 @@
                 </a-form-model-item>
                 <a-form-model-item :label="$t('Setting.Password')" prop="password">
                     <a-input-password v-model="form.password" />
+                </a-form-model-item>
+                <a-form-model-item  prop="webhookSetting">
+                    <a-switch 
+                        :checked="form.webhookSetting === 1"
+                        @change="val => form.webhookSetting = val ? 1 : 0"
+                    />
+                    <template slot="label">
+                        {{ $t('Setting.WebhookSetting') }}
+                        <a-popover placement="topLeft">
+                            <template slot="content">
+                            <p class="mb-0">{{ $t('Setting.WebhookSettingAnswer') }}</p>
+                            </template>
+                            <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
+                        </a-popover>
+                    </template>
                 </a-form-model-item>
                 <a-form-model-item :label="$t('Setting.SyncMetadata')" prop="syncMeta">
                     <a-switch 
@@ -186,7 +201,8 @@ export default {
                 remotePreUrl: '',
                 username: '',
                 password: '',
-                syncMeta: 1
+                syncMeta: 1,
+                webhookSetting: 1
             },
             formRules: {
                 browsePrefix: [
@@ -246,7 +262,8 @@ export default {
                 remotePreUrl: record.remotePreUrl,
                 username: record.username,
                 password: record.password,
-                syncMeta: record.syncMeta ?? 1
+                syncMeta: record.syncMeta ?? 1,
+                webhookSetting: record.webhookSetting?? 1
             };
             this.modalVisible = true;
         },
@@ -317,7 +334,8 @@ export default {
                 remotePreUrl: '',
                 username: '',
                 password: '',
-                syncMeta: 1
+                syncMeta: 1,
+                webhookSetting: 1
             };
             this.modalVisible = true;
         },

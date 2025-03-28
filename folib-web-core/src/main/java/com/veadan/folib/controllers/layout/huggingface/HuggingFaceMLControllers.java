@@ -570,7 +570,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
     private ResponseEntity<?> fetch(MlModelRequestContext context, RevisionData modelInfo, String remoteBaseUrl) throws IOException {
         String revision = context.getRevision();
         String alternativeUrl = remoteBaseUrl == null ? null : MlModelRemoteUtils.getHuggingFaceAlternativeFileUrl(context, remoteBaseUrl);
-        String revisionLocal = context.getRevision();
+        String revisionLocal = context.getVersionFolder();
         if (revision.equals(modelInfo.getSha()) && StrUtil.isNotBlank(remoteBaseUrl)) {
             revisionLocal = "main";
         }
@@ -626,11 +626,14 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(requestContext.getStorageId(), requestContext.getRepositoryId(), latestLeadFilePath);
             try (InputStream leadStream = Files.newInputStream(repositoryPath)) {
                 revisionData = MlModelUtils.createObjectMapper().readValue(leadStream, RevisionData.class);
+                String mlStr = Objects.isNull(requestContext.getOrg()) ? String.format("models/%s/",requestContext.getModelName()) : String.format("models/%s/%s/", requestContext.getOrg(), requestContext.getModelName());
+                String revision = latestLeadFilePath.replace(mlStr,"").replace(String.format("/%s/%s",revisionData.getLastModified(),LEAD_FILE_NAME),"");
                 String leadFilePath = MlModelUtils.getFilePath(requestContext.getOrg(), requestContext.getModelName(), requestContext
                         .getRevision(), revisionData.getLastModified(), LEAD_FILE_NAME);
+
                 String revisionFolder = MlModelUtils.getRevisionFolderByTimeStampLeadFilePath(requestContext, leadFilePath, revisionData
                         .getLastModified());
-                requestContext.setVersionFolder(revisionFolder);
+                requestContext.setVersionFolder(revision);
             }
         } catch (Exception e) {
             return afterFailedToFetchLatestModelInfo(requestContext, latestLeadFilePath, e, remoteBaseUrl);
@@ -639,12 +642,13 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
         return revisionData;
     }
 
+
     private String getLatestLeadFilePath(MlModelRequestContext context) throws IOException {
         if (context == null) {
             throw new NullPointerException("context is marked non-null but is null");
         }
 
-        RepositoryPath tagPath = repositoryPathResolver.resolve(context.getStorageId(), context.getRepositoryId(), MlModelUtils.getModelRevisionPath(context));
+        RepositoryPath tagPath = repositoryPathResolver.resolve(context.getStorageId(), context.getRepositoryId(), MlModelUtils.getModelPath(context.getOrg(), context.getModelName()));
         RepositoryPath repositoryPath = artifactResolutionService.resolvePath(tagPath);
         repositoryPath = repositoryPath == null ? tagPath : repositoryPath;
         if (repositoryPath == null || !Files.exists(repositoryPath)) {
@@ -1445,10 +1449,15 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
         if (!attributes.isEmpty()) {
             log.debug("Setting attributes {} for repo {} model {} revision {} organization {}", attributes, repositoryId, modelName, revision, organization);
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, leadFilePath);
-            try (ByteArrayInputStream is = new ByteArrayInputStream(MlModelUtils.createObjectMapper().enable(SerializationFeature.INDENT_OUTPUT).writeValueAsString(dataToSerialize).getBytes())) {
+            ObjectMapper objectMapper = MlModelUtils.createObjectMapper();
+            try (ByteArrayInputStream is = new ByteArrayInputStream(objectMapper.enable(SerializationFeature.INDENT_OUTPUT).writeValueAsString(dataToSerialize).getBytes())) {
                 artifactManagementService.validateAndStore(repositoryPath, is);
             }
-
+            String latestLeadFilePath =  MlModelUtils.getLatestLeadFilePath(organization, modelName,revision);
+            RepositoryPath repositoryLatestPath = repositoryPathResolver.resolve(storageId, repositoryId, latestLeadFilePath);
+            try (ByteArrayInputStream is = new ByteArrayInputStream(objectMapper.enable(SerializationFeature.INDENT_OUTPUT).writeValueAsString(dataToSerialize).getBytes())) {
+                artifactManagementService.validateAndStore(repositoryLatestPath, is);
+            }
         }
     }
 
@@ -1481,7 +1490,8 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                             && !file.getFileName().toString().endsWith(".metadata")
                             && !file.getFileName().toString().endsWith(".md5")
                             && !file.getFileName().toString().endsWith(".sha1")
-                            && !file.getFileName().toString().endsWith(".sha256")) {
+                            && !file.getFileName().toString().endsWith(".sha256")
+                            && !file.getFileName().toString().endsWith(".sm3")) {
                         fileList.add(file);
                     }
                     return FileVisitResult.CONTINUE;
@@ -1545,7 +1555,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
         dataToSerialize.setPrivateProperty(false);
         dataToSerialize.setSiblings(dataToSerialize
                 .getSiblings().stream().filter(sibling ->
-                        ".folib_huggingface_model_info.json".equalsIgnoreCase(sibling.getFileName())).collect(Collectors.toList()));
+                        !".folib_huggingface_model_info.json".equalsIgnoreCase(sibling.getFileName())).collect(Collectors.toList()));
         return dataToSerialize;
     }
 

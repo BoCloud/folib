@@ -65,7 +65,7 @@
                                 {{ $t('Permissions.SelectResources') }}
                             </a-button>
                            <a-table :columns="selectedResourcesColumns" :dataSource="selectedResources" :pagination="false"
-                                size="small" class="selected-resources-table" :rowKey="record => record.title">
+                                size="small" class="selected-resources-table" :rowKey="record => record.title" :scroll="{ y: 350 }">
                                 <template slot="type" slot-scope="text">
                                     <span v-if="text === 'storage'">{{ $t('Permissions.StorageSpace') }}</span>
                                     <span v-else-if="text === 'repository'">{{ $t('Permissions.Repository') }}</span>
@@ -947,6 +947,8 @@ export default {
                     method(params).then(res => {
                         this.visible = false;
                         this.$emit('reset');
+                    }).catch(error => {
+                        this.$message.error(error.response.data.message)
                     }).finally(() => {
                         this.confirmLoading = false
                     })
@@ -1755,7 +1757,7 @@ export default {
 
 .transfer-container {
     /deep/ .ant-transfer-list .ant-transfer-list-content {
-        height: calc(100% - 55px) !important;
+        height: calc(100% - 60px) !important;
     }
 
 }

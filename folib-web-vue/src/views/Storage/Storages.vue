@@ -26,7 +26,7 @@
       <a-col :span="24" :lg="6">
         <!-- Page Anchors -->
 <!--        <a-affix :offset-top="navbarFixed ? 100 : 10">-->
-          <a-card :bordered="false" :style="isChecked ? 'height:calc(100vh - 230px);margin-bottom:0px;' : ''" class="header-solid mb-24 left_menu">
+          <a-card :bordered="false" :style="isChecked ? 'height:calc(100vh - 180px);margin-bottom:0px;' : ''" class="header-solid mb-24 left_menu">
             <template #title>
               <a-row type="flex" align="middle" class="position:relative;">
                 <a-col :span="24" :md="14" class="col-info" style="display: flex; align-items: center;">
@@ -110,7 +110,7 @@
         />
         <a-tabs v-if="!isChecked" class="tabs-sliding self_tabs" style="margin-top:-20px;" default-active-key="1">
           <a-tab-pane key="1" :tab="$t('Storage.RepositoryList')">
-            <div style="height:calc(100vh - 270px);overflow-y: auto;overflow-x: hidden;border-radius: 12px;margin-top:0px;padding-left:4px;padding-right: 10px;">
+            <div style="height:calc(100vh - 224px);overflow-y: auto;overflow-x: hidden;border-radius: 12px;margin-top:0px;padding-left:4px;padding-right: 10px;">
               <a-row type="flex" :gutter="20">
                 <a-col :span="8" style="margin-bottom:20px;" v-if="hasStoragePermission()">
                   <a-card @click="folibVisibleShow()" class="crm-bar-line header-solid h-full xinjian"
@@ -145,7 +145,7 @@
             </div>
           </a-tab-pane>
           <a-tab-pane key="2" v-if="isLogin" :tab="$t('Storage.StorageOverview')">
-            <a-row type="flex" :gutter="24" style="height: calc(100vh - 270px);overflow:auto;margin-top:0px;padding-left:4px;margin-right: 4px;">
+            <a-row type="flex" :gutter="24" style="height: calc(100vh - 224px);overflow:auto;margin-top:0px;padding-left:4px;margin-right: 4px;">
               <a-col :span="24">
                 <Overview :storageId="currentStorage.id"/>
                 <StorageInfo class="mt-20" :storageId="currentStorage.id"/>
@@ -161,7 +161,7 @@
           @reloadTree="reloadTree"
           @handleMenuClick="handleMenuClick"
           :storageAdmin="currentStorage.admin" 
-          :style="isChecked ? 'margin-top:-105px;' : ''" style="border:none;transition: all 0.5s ease;" 
+          :style="isChecked ? 'margin-top:-121px;' : ''" style="border:none;transition: all 0.5s ease;"
           :isChecked="isChecked" 
         />
       </a-col>
@@ -1221,7 +1221,7 @@ export default {
       userInfo: {},
       showStorageUpdate: false,
       userList: [],
-      baseUrl: null,
+      baseUrl: '',
       folibVisible: false,
       storageData: [],
       cronCanSetList: [],
@@ -1425,7 +1425,7 @@ export default {
   },
   watch: {
     isChecked(val){
-      this.getDetailInfo(val)
+      if (!this.pageLoading) this.getDetailInfo(val)
     },
     '$i18n.locale'() {
       this.$forceUpdate();
@@ -1448,6 +1448,7 @@ export default {
   },
   async created() {
     this.pageLoading = true
+    this.isChecked = storage.get('isChecked')
     this.userInfo = store.state.user
     await  this.getStorages();
     await  this.getBaseUrl();
@@ -1533,6 +1534,7 @@ export default {
       if(this.switchDisabled && !forced){
         return
       }
+      storage.set("isChecked", key)
       setTimeout(() => {
         this.isChecked = key
         this.$store.commit('setRepositoryLength', -1)
@@ -1567,6 +1569,7 @@ export default {
     // 展示存储概览
     showOverview(val){
       this.isShowOverview = val == 2
+      if(!this.isShowOverview) this.$nextTick(() => { this.reloadTree() })
     },
     changeMoudles(){
       // this.isChecked = !this.isChecked
@@ -1614,8 +1617,11 @@ export default {
       })
     },
     reloadTree(){
-      this.loadMore(0)
-      this.$refs.repositoryTree.getPosition()
+      this.$refs.repositoryTree.key ++
+      this.$refs.repositoryTree.recycleKey ++
+      this.$refs.repositoryTree.empty()
+      this.$refs.repositoryTree.loadingMoreShow(true)
+      this.getDetailInfo(this.isChecked)
     },
     // 点击仓库
     repositorySelect(item){
@@ -2334,7 +2340,7 @@ export default {
         this.$notification.open({
           class: 'ant-notification-warning',
           message: this.$t('Storage.FillInErrors'),
-          description: this.$t('Storage.RepositoryLimit'),
+          description: this.$t('Storage.RepositoryLengthLimit'),
         })
         return false
       }
@@ -2342,7 +2348,7 @@ export default {
       let description = this.$t('Storage.RepositoryLimit')
       if (this.layoutChecked === 'docker') {
         reg = /^(?![_.])[a-z0-9_.\\-]+$/
-        description = 'docker'+this.$t('Storage.RepositoryLimit')
+        description = 'docker'+this.$t('Storage.DockerRepositoryLimit')
       }
       if (reg.test(repositoryName) === false) {
         this.$notification.open({
@@ -2944,9 +2950,9 @@ export default {
     cursor: pointer;
   }
 
-  .ant-anchor-link a svg g {
-    fill: #344767;
-  }
+  //.ant-anchor-link a svg g {
+  //  fill: #344767;
+  //}
 
   .ant-anchor-link a svg {
     margin-right: 8px;

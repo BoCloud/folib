@@ -121,7 +121,7 @@
                 v-if="metadataEditor"
                 v-model="metadataForm.value"
                 :options="quillOptions"
-                style="height: 300px"
+                style="height: 300px; margin-bottom: 20px"
               />
               <prism-editor
                 class="metadata-prism-editor"

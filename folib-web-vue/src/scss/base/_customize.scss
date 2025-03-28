@@ -152,7 +152,7 @@ text {
 @for $i from 100 to 900 {
   @if $i % 100 == 0 {
     .by-f-w-#{$i} {
-      font-weight: $i;
+      font-weight: $i!important;
     }
   }
 }

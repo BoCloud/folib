@@ -318,7 +318,17 @@
               </a-tab-pane>
             </a-tabs>
           </a-tab-pane>
-          <a-tab-pane :key="7" :tab="$t('Setting.JfrogMigrate')">
+          <a-tab-pane :key="7" :tab="$t('Setting.SystemConfig')">
+            <a-card :bordered="false" class="header-solid">
+              <template #title>
+                <h6>{{ $t('Setting.SystemConfig') }}</h6>
+                <p>{{ $t('Setting.SystemConfigInfo') }}
+                </p>
+              </template>
+              <system-config/>
+            </a-card>
+          </a-tab-pane>
+          <a-tab-pane :key="8" :tab="$t('Setting.JfrogMigrate')">
             <a-card :bordered="false" class="header-solid">
               <template #title>
                 <h6>{{ $t('Setting.JfrogMigrate') }}</h6>
@@ -354,6 +364,7 @@ import BackupStrategy from "./components/BackupStrategy/index.vue";
 import ArtifactsCache from "./components/Cache/index.vue";
 import JfrogMigration from "./components/JfrogMigration.vue"
 import MigrateArtifact from "./components/MigrateArtifact.vue"
+import SystemConfig from "./components/SystemConfig.vue"
 
 import {
   getStoragesAndRepositories,
@@ -440,6 +451,7 @@ export default {
     JfrogMigration,
     BackupStrategy,
     MigrateArtifact,
+    SystemConfig
   },
   computed: {
 
@@ -640,7 +652,7 @@ export default {
     updateSingleDict(type, id, comment) {
       updateSingleDict({ id: id, comment: comment }).then(res => {
         this.tabChange(type)
-        this.message("success", this.$t('Setting.updateStatusSuccessful'))
+        this.$message("success", this.$t('Setting.updateStatusSuccessful'))
       })
     },
     getCrontaskByClass() {

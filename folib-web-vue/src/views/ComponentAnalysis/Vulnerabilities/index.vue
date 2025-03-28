@@ -1,6 +1,6 @@
 <template>
   <div class="wrapper vulnerability-database">
-    <a-card :bordered="false" style="margin-top: 20px; margin-bottom: 20px">
+    <a-card :bordered="false" style="margin-top: 10px; margin-bottom: 20px">
       <div class="mx-25 search">
         <a-col :span="24" class="text-right">
           <a-input-search :placeholder="$t('Vulnerabilities.EnterVulnerabilityNumber')" class="v-search" v-model="queryParams.searchKeyword"
