@@ -359,6 +359,8 @@ export default {
             }
             recursionGetChildren(sourceArr, artifactPath)
             currentTreeRef.updateKeyChildren(parentKey, updatedChildren)
+            const parentNode = this.recursionGetItems(sourceArr, parentKey)
+            if (parentNode) this.treeSelect(parentNode, isTrashView)
         },
         // 远程节点从回收站还原成功后，调用本地新增节点方法（实现删除后树表展开结构不变）
         localRestoreNode(tarNode) {
@@ -383,23 +385,23 @@ export default {
             }
             this.$emit('handleMenuClick', active, this.isTrashView ? this.currentTreeNodeRecycle : this.currentTreeNode, this.folibRepository)
         },
-        // 递归根据key判断是否为当前选中数据项
-        recursionGetItems(source, key, children, loading) {
+        // 递归根据key获取当前数据项
+        recursionGetItems(source, key) {
+            let target = null
             source.forEach(item => {
                 if (item.key === key) {
-                    if (children) this.$refs.tree.updateKeyChildren(key, children)
-                    item.loading = loading
+                    target = item
                 } else if (item.children?.length) {
-                    this.recursionGetItems(item.children, key, children, loading)
+                    target = this.recursionGetItems(item.children, key)
                 }
             })
+            return target
         },
         handleRefresh(refreshNode) {
             // const nowDataKey = this.isTrashView ? 'recycleTreeData' : 'treeData'
             const { storageId, id, layout } = this.folibRepository
             const currentNode = refreshNode || (this.isTrashView ? this.currentTreeNodeRecycle : this.currentTreeNode)
             const currentTreeRef =  this.isTrashView && !refreshNode ? this.$refs.recycleTree : this.$refs.storeTree
-            // this.recursionGetItems(this[nowDataKey], currentNode.key, null, true)
             if (layout === 'Docker') {
                 getDockerArtifact(
                     storageId,
@@ -437,8 +439,6 @@ export default {
                     }
 
                     currentTreeRef.updateKeyChildren(currentNode.key, children)
-                    // this.recursionGetItems(this[nowDataKey], currentNode.key, children, false)
-                    // this.setKeyValue()
                 })
                 return
             }
@@ -476,8 +476,6 @@ export default {
                     children = children.concat(a)
                 }
                 currentTreeRef.updateKeyChildren(currentNode.key, children)
-                // this.recursionGetItems(this[nowDataKey], currentNode.key, children, false)
-                // this.setKeyValue()
             })
         },
         setKeyValue() {
