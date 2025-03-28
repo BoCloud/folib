@@ -287,6 +287,9 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     public List<Artifact> findMatchingBySafeLevels(List<String> storageIdAndRepositoryIdList, List<String> safeLevels, String retryKey, Integer retryCount, String order) {
+        if (CollectionUtils.isEmpty(storageIdAndRepositoryIdList) || CollectionUtils.isEmpty(safeLevels)) {
+            return null;
+        }
         List<EntityTraversal<Vertex, Vertex>> orEntityTraversalList = Lists.newArrayList();
         orEntityTraversalList.add(__.has(Properties.METADATA, Text.textRegex(String.format(".*\\\"%s\\\":\\{[^}]*\\\"value\\\":\\\"[0-%s]\\\"[^}]*}.*", retryKey, retryCount - 1))));
         orEntityTraversalList.add(__.has(Properties.METADATA, P.eq(null)));
@@ -299,11 +302,17 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     public long findMatchingCountBySafeLevels(List<String> storageIdAndRepositoryIdList, List<String> safeLevels) {
+        if (CollectionUtils.isEmpty(storageIdAndRepositoryIdList) || CollectionUtils.isEmpty(safeLevels)) {
+            return 0L;
+        }
         return buildEntityTraversalSafeLevels(storageIdAndRepositoryIdList, safeLevels).count().tryNext().orElse(0L);
     }
 
     public Page<Artifact> findMatchingPageBySafeLevels(Pageable pagination, List<String> storageIdAndRepositoryIdList, List<String> safeLevels, String order) {
         Long zero = 0L;
+        if (CollectionUtils.isEmpty(storageIdAndRepositoryIdList) || CollectionUtils.isEmpty(safeLevels)) {
+            return new PageImpl<>(Collections.emptyList(), pagination, zero);
+        }
         Long count = buildEntityTraversalSafeLevels(storageIdAndRepositoryIdList, safeLevels).count().tryNext().orElse(zero);
         if (zero.equals(count)) {
             return new PageImpl<>(Collections.emptyList(), pagination, count);
