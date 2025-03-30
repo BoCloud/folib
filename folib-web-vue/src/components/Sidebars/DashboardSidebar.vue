@@ -5,7 +5,7 @@
     breakpoint="lg"
     collapsed-width="0"
     width="250px"
-    ref="scrollContainer" 
+    ref="scrollContainer"
     :collapsed="sidebarCollapsed"
     @collapse="$emit('toggleSidebar', !sidebarCollapsed)"
     :trigger="null"
@@ -99,7 +99,7 @@
              <span class="label">{{ $t('Sidebars.StorageMonitoring') }}</span>
            </router-link>
          </a-menu-item>
-   
+
          <a-menu-item v-if="userInfo.roles.indexOf('ADMIN') > -1" class="menu-item-header">
            <hr class="mt-5" />
            {{ $t('Sidebars.SetupManagement') }}
@@ -128,7 +128,7 @@
              <span class="label">{{ $t('Sidebars.Permissions') }}</span>
            </router-link>
          </a-menu-item>
-   
+
          <a-menu-item v-if="userInfo.roles.indexOf('ADMIN') > -1">
            <router-link to="/accessToken">
              <span class="icon">
@@ -185,7 +185,7 @@
           </span>
           <h6>{{ $t('Sidebars.DoNotKnowHowToUseIt') }}</h6>
           <p>{{ $t('Sidebars.CheckTheHelpDocumentation') }}</p>
-          <a-button block size="small" href="/docs/overview/index.html" target="_blank"> {{ $t('Sidebars.userManual') }} </a-button>
+          <a-button block size="small" href="/help/index.html" target="_blank"> {{ $t('Sidebars.userManual') }} </a-button>
         </div>
     </div>
   </div>

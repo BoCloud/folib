@@ -1,1 +1,0 @@
-__NUXT_JSONP__("/deploy/vm-comand-deploy", {data:[{}],fetch:{},mutations:void 0});

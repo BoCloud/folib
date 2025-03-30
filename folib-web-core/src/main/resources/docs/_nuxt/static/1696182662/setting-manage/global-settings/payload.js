@@ -1,1 +1,0 @@
-__NUXT_JSONP__("/setting-manage/global-settings", {data:[{}],fetch:{},mutations:void 0});

@@ -37,6 +37,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.io.Resource;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.*;
@@ -55,6 +56,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupp
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import org.springframework.web.servlet.resource.GzipResourceResolver;
 import org.springframework.web.servlet.resource.PathResourceResolver;
+import org.springframework.web.servlet.resource.ResourceResolverChain;
 import org.springframework.web.servlet.view.InternalResourceView;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import tk.mybatis.mapper.autoconfigure.MapperAutoConfiguration;
@@ -228,6 +230,8 @@ public class WebConfig
                 .setPathMatcher(antPathMatcher);
     }
 
+
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.setOrder(-1);
@@ -250,12 +254,12 @@ public class WebConfig
                 .resourceChain(true)
                 .addResolver(new GzipResourceResolver())
                 .addResolver(new PathResourceResolver());
-        registry.addResourceHandler("/docs/**")
+        registry.addResourceHandler("/help/**")
                 .addResourceLocations("classpath:/docs/")
                 .setCachePeriod(3600)
                 .resourceChain(true)
                 .addResolver(new GzipResourceResolver())
-                .addResolver(new PathResourceResolver());
+                .addResolver(new HtmlFallbackResourceResolver()); // 替换为自定义解析器
 
         registry.addResourceHandler("/webjars/**")
                 .addResourceLocations("classpath:/META-INF/resources/webjars/");
@@ -329,5 +333,20 @@ public class WebConfig
         CustomMultipartResolver resolver = new CustomMultipartResolver();
         resolver.setMaxInMemorySize(1024*1024*100);
         return resolver;
+    }
+
+    public class HtmlFallbackResourceResolver extends PathResourceResolver {
+        @Override
+        protected Resource resolveResourceInternal(
+                HttpServletRequest request, String requestPath,
+                List<? extends Resource> locations, ResourceResolverChain chain) {
+
+            Resource resource = super.resolveResourceInternal(request,  requestPath, locations, chain);
+            if (resource == null && !requestPath.endsWith(".html"))  {
+                // 尝试添加 .html 后缀
+                return super.resolveResourceInternal(request,  requestPath + ".html", locations, chain);
+            }
+            return resource;
+        }
     }
 }

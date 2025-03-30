@@ -1,1 +1,0 @@
-__NUXT_JSONP__("/tools/Yum-Rpm", {data:[{}],fetch:{},mutations:void 0});

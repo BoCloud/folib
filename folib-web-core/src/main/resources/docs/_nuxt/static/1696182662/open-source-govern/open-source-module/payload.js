@@ -1,1 +1,0 @@
-__NUXT_JSONP__("/open-source-govern/open-source-module", {data:[{}],fetch:{},mutations:void 0});

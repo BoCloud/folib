@@ -1,1 +1,0 @@
-__NUXT_JSONP__("/navigation/pagination", {data:[{}],fetch:{},mutations:void 0});

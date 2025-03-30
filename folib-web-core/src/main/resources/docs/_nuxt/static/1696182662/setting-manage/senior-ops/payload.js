@@ -1,1 +1,0 @@
-__NUXT_JSONP__("/setting-manage/senior-ops", {data:[{}],fetch:{},mutations:void 0});
