@@ -18,8 +18,8 @@ import org.springframework.transaction.interceptor.TransactionInterceptor;
  *
  */
 @Aspect
-@Component
-@Order(TransactionRetryAspect.ORDER)
+//@Component
+//@Order(TransactionRetryAspect.ORDER)
 public class TransactionRetryAspect
 {
 

@@ -4,6 +4,7 @@ import cn.hutool.extra.spring.SpringUtil;
 import com.google.common.collect.Lists;
 import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
+import com.veadan.folib.cloud.storage.s3fs.attribute.S3BasicFileAttributes;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.providers.io.RepositoryFiles;
@@ -46,7 +47,7 @@ public class RepositoryPathUtil {
         S3Iterator s3Iterator = new S3Iterator(s3Path);
         while (s3Iterator.hasNext()) {
             S3Path s3PathTemp = s3Iterator.next();
-            if (s3PathTemp.getFileAttributes() == null || s3PathTemp.getFileAttributes().isDirectory()) {
+            if (s3PathTemp.getFileAttributes(S3BasicFileAttributes.class) == null || s3PathTemp.getFileAttributes(S3BasicFileAttributes.class).isDirectory()) {
                 if (!exclude(s3PathTemp.getFileName().toString())) {
                     listDir.add(s3PathTemp);
                 }
@@ -63,7 +64,7 @@ public class RepositoryPathUtil {
             s3Iterator = new S3Iterator(currentPath);
             while (s3Iterator.hasNext()) {
                 S3Path s3PathTemp = s3Iterator.next();
-                if (s3PathTemp.getFileAttributes() == null || s3PathTemp.getFileAttributes().isDirectory()) {
+                if (s3PathTemp.getFileAttributesCache() == null || s3PathTemp.getFileAttributes(S3BasicFileAttributes.class).isDirectory()) {
                     if (!exclude(s3PathTemp.getFileName().toString())) {
                         listDir.add(s3PathTemp);
                     }
