@@ -101,7 +101,8 @@ public class WebhookEventsLogTask {
                                 storageId = webhookEventsLog.getStorageId();
                                 repositoryId = webhookEventsLog.getRepositoryId();
                                 artifactData = ArtifactData.builder().name(webhookEventsLog.getArtifactName()).path(webhookEventsLog.getArtifactPath())
-                                        .repoKey(webhookEventsLog.getEventRepositoryId()).sha256(webhookEventsLog.getSha256Checksum()).size(webhookEventsLog.getSize()).build();
+                                        .repoKey(webhookEventsLog.getEventRepositoryId()).sha256(webhookEventsLog.getSha256Checksum()).size(webhookEventsLog.getSize()).sourceRepoPath(webhookEventsLog.getSourceArtifactPath())
+                                        .targetRepoPath(webhookEventsLog.getTargetArtifactPath()).build();
                                 repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, webhookEventsLog.getArtifactPath());
                                 WebhookEventsProvider webhookEventsProvider = webhookEventsProviderRegistry.getProvider(WebhookEventsTypeEnum.resolveType(repositoryPath.getRepository().getLayout()));
                                 webhook = WebhookDto.builder().eventType(webhookEventsLog.getEventType()).data(artifactData).build();
