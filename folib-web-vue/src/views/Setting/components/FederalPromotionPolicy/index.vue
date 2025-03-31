@@ -474,6 +474,7 @@ export default {
             },
             federalPromotionPolicyLoading: false,
             visibleDrawer: false,
+            updateStatus: false,
             federalPromotionPolicyFormRules: {
                 name: [
                     { required: true, trigger: ['blur'], validator: checkName },
@@ -561,11 +562,13 @@ export default {
     },
     watch: {
         'layout': function (newval, oldVal) {
-            if (this.federalPromotionPolicyForm.nodeType === 1) {
-                this.getTargetRepositories(this.type, newval, this.policy);
-                if (this.federalPromotionPolicyForm.selectTargetNodes) {
-                    return
-                }
+
+            if (this.federalPromotionPolicyForm.nodeType === 1 && newval) {
+                // if (this.updateStatus) {
+                //     return
+                // }
+                let layout =  newval ? newval : this.layout;
+                this.getTargetRepositories(this.type, layout, this.policy);
                 if (this.targetNodesOptions && this.targetNodesOptions.length > 0) {
                     this.handleDefNode({
                         value: this.targetNodesOptions[0].key,
@@ -576,13 +579,14 @@ export default {
             }
         },
         'policy': function (newval, oldVal) {
-            if (this.federalPromotionPolicyForm.nodeType === 1) {
-                this.getTargetRepositories(this.type, this.layout, newval);
-                if (this.federalPromotionPolicyForm.selectTargetNodes) {
-                    return
-                }
-                if (this.targetNodesOptions && this.targetNodesOptions.length > 0) {
+            if (this.federalPromotionPolicyForm.nodeType === 1 && newval) {
 
+                // if (this.updateStatus) {
+                //     return
+                // }
+                let policy = newval ? newval : this.policy;
+                this.getTargetRepositories(this.type, this.layout, policy);
+                if (this.targetNodesOptions && this.targetNodesOptions.length > 0 ) {
                     this.handleDefNode({
                         value: this.targetNodesOptions[0].key,
                         key: this.targetNodesOptions[0].key
@@ -716,7 +720,6 @@ export default {
         },
 
         handleTargetRepositories(key) {
-            console.log("33:", key)
             this.selectedTargetRepositories = [];
             this.targetNodesRepositories.forEach((item) => {
                 if (item.key === key) {
@@ -802,7 +805,13 @@ export default {
 
         sourceRepositoriesOnChange(nextTargetKeys) {
             this.selectedSourceRepositoriesKeys = nextTargetKeys.filter(item => this.repositoriesList.some(data => data.key === item && data.policy === this.policy && data.subLayout === this.subLayout))
-            //console.log(this.selectedSourceRepositoriesKeys)
+            if(Array.isArray(nextTargetKeys) || nextTargetKeys.length === 0){
+                this.subLayout = undefined;
+                this.policy = undefined;
+                this.layout = undefined;
+                this.federalPromotionPolicyForm.selectTargetNodes=undefined;
+                this.selectedTargetRepositories=[];
+            }
         },
 
 
@@ -1068,6 +1077,7 @@ export default {
                     });
                 }
                 this.visibleDrawer = true;
+                this.updateStatus = true;
             }).catch((err) => {
                 console.log("err",err)
                 this.$notification.error({
