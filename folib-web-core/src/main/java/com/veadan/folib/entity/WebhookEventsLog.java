@@ -71,6 +71,18 @@ public class WebhookEventsLog implements Serializable {
     private String artifactPath;
 
     /**
+     * 源路径
+     */
+    @Column(name = "source_artifact_path")
+    private String sourceArtifactPath;
+
+    /**
+     * 目标路径
+     */
+    @Column(name = "target_artifact_path")
+    private String targetArtifactPath;
+
+    /**
      * sha256的checksum
      */
     @Column(name = "sha256_checksum")

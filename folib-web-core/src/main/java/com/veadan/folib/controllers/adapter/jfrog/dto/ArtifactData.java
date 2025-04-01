@@ -46,4 +46,14 @@ public class ArtifactData {
      * 大小
      */
     private long size;
+    /**
+     * 源路径
+     */
+    @JSONField(name = "source_repo_path")
+    private String sourceRepoPath;
+    /**
+     * 目标路径
+     */
+    @JSONField(name = "target_repo_path")
+    private String targetRepoPath;
 }
