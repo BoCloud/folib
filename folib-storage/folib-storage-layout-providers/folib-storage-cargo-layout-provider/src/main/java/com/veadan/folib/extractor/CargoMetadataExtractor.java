@@ -44,7 +44,7 @@ public class CargoMetadataExtractor {
         try (InputStream in =  new BufferedInputStream(Files.newInputStream(repositoryPath));
              InputStream uncompressedStream = new BufferedInputStream( new GzipCompressorInputStream(in));
              ArchiveInputStream stream = (new ArchiveStreamFactory()).createArchiveInputStream(uncompressedStream);) {
-            log.debug("Reading contents of cargo crate '{}' with size '{}' and SHA-1 '{}'", new Object[]{path, Files.size(repositoryPath), Files.readString(Path.of(repositoryPath.getTarget().toString() + ".sha1"))});
+            log.debug("Reading contents of cargo crate '{}' with size '{}'", path, Files.size(repositoryPath));
             CargoMetadata cargoMetadata = extractCargoMetadata(path, stream);
             stream.close();
             uncompressedStream.close();

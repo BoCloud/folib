@@ -1,1 +1,0 @@
-__NUXT_JSONP__("/deploy/cluster-deploy", {data:[{}],fetch:{},mutations:void 0});

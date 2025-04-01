@@ -64,7 +64,6 @@ import com.veadan.folib.utils.DockerUtils;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.artifact.ArtifactUtils;
@@ -77,16 +76,12 @@ import org.mockito.internal.util.collections.Sets;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringReader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
@@ -127,6 +122,8 @@ public class ArtifactUploadTask implements Callable<String> {
 
     public ArtifactUploadTask() {
     }
+
+
 
     public ArtifactUploadTask(String storageId,
                               String repositoryId,
@@ -190,6 +187,24 @@ public class ArtifactUploadTask implements Callable<String> {
         this.artifactComponent = SpringUtil.getBean(ArtifactComponent.class);
     }
 
+    public ArtifactUploadTask(String storageId, String repositoryId, MultipartFile file, String fileRelativePath,String tempPath) {
+        this.storageId = storageId;
+        this.repositoryId = repositoryId;
+        this.file = file;
+        this.tempPath = tempPath;
+        this.fileRelativePath = fileRelativePath;
+        this.artifactComponent = SpringUtil.getBean(ArtifactComponent.class);
+        this.repositoryPathResolver = SpringUtil.getBean(RepositoryPathResolver.class);
+        this.artifactManagementService= SpringUtil.getBean(ArtifactManagementService.class);
+        this.promotionUtil = SpringUtil.getBean(PromotionUtil.class);
+        this.layoutProviderRegistry = SpringUtil.getBean(LayoutProviderRegistry.class);
+        this.artifactMetadataService = SpringUtil.getBean(ArtifactMetadataService.class);
+        this.artifactRepository = SpringUtil.getBean(ArtifactRepository.class);
+        this.mavenRepositoryFeatures = SpringUtil.getBean(MavenRepositoryFeatures.class);
+
+
+    }
+
     public ArtifactUploadTask(String storageId,
                               String repositoryId,
                               MultipartFile file,
@@ -233,24 +248,6 @@ public class ArtifactUploadTask implements Callable<String> {
         this.token = token;
     }
 
-    public ArtifactUploadTask(String storageId, String repositoryId, MultipartFile file, String fileRelativePath,String tempPath) {
-        this.storageId = storageId;
-        this.repositoryId = repositoryId;
-        this.file = file;
-        this.tempPath = tempPath;
-        this.fileRelativePath = fileRelativePath;
-        this.artifactComponent = SpringUtil.getBean(ArtifactComponent.class);
-        this.repositoryPathResolver = SpringUtil.getBean(RepositoryPathResolver.class);
-        this.artifactManagementService= SpringUtil.getBean(ArtifactManagementService.class);
-        this.promotionUtil = SpringUtil.getBean(PromotionUtil.class);
-        this.layoutProviderRegistry = SpringUtil.getBean(LayoutProviderRegistry.class);
-        this.artifactMetadataService = SpringUtil.getBean(ArtifactMetadataService.class);
-        this.artifactRepository = SpringUtil.getBean(ArtifactRepository.class);
-        this.mavenRepositoryFeatures = SpringUtil.getBean(MavenRepositoryFeatures.class);
-
-
-    }
-
     @Override
     public String call() {
         String rs = "";
@@ -289,7 +286,7 @@ public class ArtifactUploadTask implements Callable<String> {
             } else if (DockerLayoutProvider.ALIAS.equals(layout) && StringUtils.isNotBlank(fileType)) {
                 handlerDockerUploadProcess(this.storageId, this.repositoryId, this.imageTag, fileType, this.file, this.baseUrl);
             } else if (RpmLayoutProvider.ALIAS.equals(layout)) {
-                handlerRpmLayoutUpload(this.storageId, this.repositoryId, this.file);
+                handlerRpmLayoutUpload(this.storageId, this.repositoryId, this.file,repositoryPath);
             } else if (CargoLayoutProvider.ALIAS.equals(layout)) {
                 handlerCargoLayoutUpload(this.storageId, this.repositoryId, this.file);
             } else if (DebianLayoutProvider.ALIAS.equals(layout)) {
@@ -758,7 +755,7 @@ public class ArtifactUploadTask implements Callable<String> {
             LayoutProvider layoutProvider = layoutProviderRegistry.getProvider(layout);
             if (Objects.nonNull(layoutProvider)) {
                 try {
-                    PubArtifactCoordinates pubArtifactCoordinates = PubArtifactCoordinates.packageNameParse(FilenameUtils.getName(fileRelativePath));
+                    PubArtifactCoordinates pubArtifactCoordinates = PubArtifactCoordinates.packageNameParse(fileRelativePath);
                     String artifactPath = pubArtifactCoordinates.convertToPath(pubArtifactCoordinates);
                     log.info("The fileRelativePath：{} artifactPath：{}", fileRelativePath, artifactPath);
                     repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
@@ -928,12 +925,10 @@ public class ArtifactUploadTask implements Callable<String> {
         }
     }
 
-    private void handlerRpmLayoutUpload(final String storageId, final String repositoryId, final MultipartFile multipartFile) {
+    private void handlerRpmLayoutUpload(final String storageId, final String repositoryId, final MultipartFile multipartFile, RepositoryPath repositoryPath) {
 
         try {
-            String filename = multipartFile.getOriginalFilename();
-            String rpmPath = "Packages/" + filename;
-            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, rpmPath);
+            log.info("handlerRpmLayoutUpload repositoryPath:{}",repositoryPath.getPath());
             try (InputStream is = multipartFile.getInputStream()) {
                 artifactManagementService.store(repositoryPath, is);
             }
@@ -987,7 +982,7 @@ public class ArtifactUploadTask implements Callable<String> {
                 promotionUtil.setMetaData(repositoryPath, metaData);
                 artifactManagementService.store(repositoryPath, is);
             }
-            artifactManagementService.store(tempPath, is);
+            writeFile(tempPath, is);
 
             CargoMetadataExtractor extractor = new CargoMetadataExtractor();
             CargoMetadata metadata = extractor.extract(tempPath);
@@ -1007,7 +1002,7 @@ public class ArtifactUploadTask implements Callable<String> {
             RepositoryPath path = repositoryPathResolver.resolve(storageId, repositoryId, metadataFilePath);
             CargoUtil.writeLongMetadata(metadata, path, artifactManagementService);
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            e.printStackTrace();
             throw new RuntimeException(e.getMessage());
         } finally {
             try {
@@ -1018,5 +1013,24 @@ public class ArtifactUploadTask implements Callable<String> {
         }
     }
 
+    public void writeFile(RepositoryPath path, InputStream inputStream) {
+        try (
+                OutputStream out = Files.newOutputStream(path, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                InputStream in = inputStream
+        ) {
+            byte[] buffer = new byte[8192]; // 使用缓冲区逐块写入
+            int bytesRead;
+            while ((bytesRead = in.read(buffer)) != -1) {
+                out.write(buffer, 0, bytesRead);
+            }
+        } catch (IOException e) {
+            // 记录详细日志信息
+            log.error("Error writing file to path: {}", path, e);
+            // 包装异常并重新抛出，以便调用方能够处理
+            throw new RuntimeException("Failed to write file to path: " + path, e);
+        }
+    }
+
 
 }
+

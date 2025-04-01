@@ -1,1 +1,0 @@
-__NUXT_JSONP__("/store-manager/repository-setting", {data:[{}],fetch:{},mutations:void 0});
