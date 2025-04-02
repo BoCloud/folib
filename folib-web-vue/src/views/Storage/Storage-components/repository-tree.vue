@@ -527,8 +527,9 @@ export default {
             if (target.layout && data.type === 'file') {
                 const params = {
                     storageId: target.storageId,
-                    id: data.repositoryId,
-                    artifactPath: data.artifactPath
+                    repositoryId: data.repositoryId,
+                    artifactPath: data.artifactPath,
+                    currentRepositoryId: data.currentRepositoryId
                 }
                 this.getPackagePreview(params)
             }
@@ -694,14 +695,15 @@ export default {
                 this.folibRepository = target
             }
             const { storageId, id, layout } = this.folibRepository
-            const { artifactPath, name } = treeNode.data
+            const { artifactPath, name, repositoryId, currentRepositoryId } = treeNode.data
             const params = {
                 treeNode,
                 storageId,
-                id,
+                repositoryId,
                 layout,
                 artifactPath,
-                name
+                name,
+                currentRepositoryId
             }
             if (this.getFileIsOpen(name)) {
                 this.getPackagePreview(params, resolve)
@@ -798,7 +800,7 @@ export default {
             })
         },
         // 获取可以继续打开的文件的目录（对应包预览）
-        getPackagePreview({ treeNode, storageId, id, artifactPath }, resolve) {
+        getPackagePreview({ treeNode, storageId, repositoryId, artifactPath, currentRepositoryId }, resolve) {
             if (treeNode?.data.children) {
                 resolve(treeNode.data.children)
                 return
@@ -806,7 +808,7 @@ export default {
             getArtifact(
                 this.repositoryType,
                 storageId,
-                id,
+                repositoryId,
                 artifactPath
             ).then(res => {
                 this.currentFileDetial = res
@@ -816,10 +818,10 @@ export default {
                         ele.newDetailPage = true
                         ele.treeType = 'lastRoot'
                         ele.storageId = storageId
-                        ele.repositoryId = id
-                        ele.currentRepositoryId = id
+                        ele.repositoryId = repositoryId
+                        ele.currentRepositoryId = currentRepositoryId
                         ele.key = `${parentKey}/${ele.name}`
-                        ele.artifactPath = `${id}/${artifactPath}/${ele.name}`
+                        ele.artifactPath = `${currentRepositoryId}/${artifactPath}/${ele.name}`
                         if (ele?.children?.length) {
                             setNewDetailPage(ele.children, ele.key)
                         }
@@ -827,7 +829,7 @@ export default {
                 }
                 treeNode.data.children = []
                 if (res.listTree) {
-                    setNewDetailPage(res.listTree, `${id}/${artifactPath}`)
+                    setNewDetailPage(res.listTree, `${currentRepositoryId}/${artifactPath}`)
                     treeNode.data.children = treeNode.data.children.concat(res.listTree)
                 }
                 // this[nowDataKey] = [...this[nowDataKey]]
