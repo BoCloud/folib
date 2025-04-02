@@ -30,6 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.janusgraph.core.JanusGraph;
+import org.janusgraph.core.JanusGraphTransaction;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
@@ -78,7 +79,10 @@ public class ArtifactServiceImpl implements ArtifactService {
 
     @Override
     public void saveOrUpdateArtifact(Artifact artifact) {
-        saveOrUpdateArtifact(artifact, true);
+        Optional<Artifact> exist = artifactRepository.findById(artifact.getUuid());
+        ArtifactEntity artifactEntity = (ArtifactEntity)artifact ;
+        exist.ifPresent(value -> artifactEntity.setNativeId(value.getNativeId()));
+        saveOrUpdateArtifact(artifactEntity, true);
     }
 
     @Override

@@ -22,8 +22,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.tinkerpop.gremlin.process.traversal.Order;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
-import org.janusgraph.core.JanusGraph;
-import org.janusgraph.core.JanusGraphTransaction;
 import org.janusgraph.core.attribute.Text;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
@@ -51,18 +49,12 @@ public class ArtifactIdGroupRepository extends GremlinVertexRepository<ArtifactI
     @Inject
     DistributedLockComponent distributedLockComponent;
 
-    @Inject
-    private JanusGraph graph;
-
     public void saveOrUpdate(ArtifactIdGroup artifactIdGroup) {
-
         if (distributedLockComponent.lock(artifactIdGroup.getUuid(), GlobalConstants.WAIT_LOCK_TIME, TimeUnit.SECONDS)) {
-            try(JanusGraphTransaction tx = graph.newTransaction()) {
+            try {
                 try {
                     merge(artifactIdGroup);
-                    tx.commit();
                 } catch (Exception ex) {
-                    tx.rollback();
                     if (CommonUtils.catchException(ex)) {
                         log.warn("Handle artifactIdGroup [{}] catch error", artifactIdGroup.getUuid());
                         return;
@@ -70,7 +62,6 @@ public class ArtifactIdGroupRepository extends GremlinVertexRepository<ArtifactI
                     log.error("Handle artifactIdGroup [{}] error [{}]", artifactIdGroup.getUuid(), ExceptionUtils.getStackTrace(ex));
                     throw new RuntimeException(ex.getMessage());
                 }
-
             } finally {
                 distributedLockComponent.unLock(artifactIdGroup.getUuid());
             }

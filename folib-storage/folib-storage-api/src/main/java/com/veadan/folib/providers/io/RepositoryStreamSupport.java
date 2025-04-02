@@ -89,11 +89,11 @@ public class RepositoryStreamSupport {
     }
 
     private void open(RepositoryPath repositoryPath) throws IOException {
-//        if (ctx instanceof RepositoryStreamWriteContext) {
-//            TransactionStatus transaction = transactionManager.getTransaction(new DefaultTransactionDefinition(
-//                    Propagation.REQUIRED.value()));
-//            ctx.setTransaction(transaction);
-//        }
+        if (ctx instanceof RepositoryStreamWriteContext) {
+            TransactionStatus transaction = transactionManager.getTransaction(new DefaultTransactionDefinition(
+                    Propagation.REQUIRED.value()));
+            ctx.setTransaction(transaction);
+        }
 
         ctx.setArtifactExists(RepositoryFiles.artifactExists(repositoryPath));
 
@@ -183,32 +183,33 @@ public class RepositoryStreamSupport {
             if(logger.isDebugEnabled()) {
                 logger.debug("Flushed [{}]", path);
             }
+
             RepositoryStreamSupport.this.commit();
             stopWatch.stop();
-//            TransactionStatus transaction = ctx.getTransaction();
-//            if (transaction != null && !transaction.isRollbackOnly()) {
-//                logger.info("Commit [{}]", path);
-//                try {
-//                    stopWatch.start("db commit");
-//
-//                    stopWatch.stop();
-//                    stopWatch.start("transaction commit");
-//                    transactionManager.commit(transaction);
-//                    stopWatch.stop();
-//                } catch (Exception ex) {
-//                    String realMessage = CommonUtils.getRealMessage(ex);
-//                    logger.warn("[{}] [{}] flush error [{}]",
-//                            className, path, realMessage);
-//                    if (CommonUtils.catchException(realMessage)) {
-//                        logger.warn("[{}] [{}] flush catch error",
-//                                className, path);
-//                        return;
-//                    }
-//                    throw ex;
-//                }
-//            } else {
-//                logger.warn("Skip commit [{}]", getContext().getPath());
-//            }
+            TransactionStatus transaction = ctx.getTransaction();
+            if (transaction != null && !transaction.isRollbackOnly()) {
+                logger.info("Commit [{}]", path);
+                try {
+                    stopWatch.start("db commit");
+
+                    stopWatch.stop();
+                    stopWatch.start("transaction commit");
+                    transactionManager.commit(transaction);
+                    stopWatch.stop();
+                } catch (Exception ex) {
+                    String realMessage = CommonUtils.getRealMessage(ex);
+                    logger.warn("[{}] [{}] flush error [{}]",
+                            className, path, realMessage);
+                    if (CommonUtils.catchException(realMessage)) {
+                        logger.warn("[{}] [{}] flush catch error",
+                                className, path);
+                        return;
+                    }
+                    throw ex;
+                }
+            } else {
+                logger.warn("Skip commit [{}]", getContext().getPath());
+            }
             logger.info("【Flush】 [{}] completed, total stats: \n {}", path,stopWatch.prettyPrint(TimeUnit.MILLISECONDS));
         }
 

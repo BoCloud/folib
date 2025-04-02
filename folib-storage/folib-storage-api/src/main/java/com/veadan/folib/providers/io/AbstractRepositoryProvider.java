@@ -9,6 +9,7 @@ import com.veadan.folib.data.criteria.Expression.ExpOperator;
 import com.veadan.folib.data.criteria.Predicate;
 import com.veadan.folib.data.criteria.Selector;
 import com.veadan.folib.domain.*;
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.io.*;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
@@ -29,10 +30,12 @@ import org.apache.commons.io.output.CountingOutputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.util.Assert;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,6 +45,11 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Veadan
@@ -82,6 +90,16 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
 
     @Inject
     private ArtifactTagService artifactTagService;
+
+    @Value("${folib.threadPool.asyncRawGraph.corePoolSize:#{T(java.lang.Runtime).getRuntime().availableProcessors()}}")
+    private Integer asyncRawGraphTaskThreadPoolCorePoolSize;
+
+    private ExecutorService executorService;
+
+    @PostConstruct
+    public void init(){
+        this.executorService =new ThreadPoolExecutor(asyncRawGraphTaskThreadPoolCorePoolSize, asyncRawGraphTaskThreadPoolCorePoolSize, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
+    }
 
     protected Configuration getConfiguration() {
         return configurationManager.getConfiguration();
@@ -204,9 +222,12 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
 
     @Override
     public void onAfterWrite(RepositoryStreamWriteContext ctx) throws IOException {
+
         RepositoryPath repositoryPath = (RepositoryPath) ctx.getPath();
         logger.debug("Complete writing [{}]", repositoryPath);
-
+        if(ProductTypeEnum.Raw.getFoLibraryName().equals(repositoryPath.getRepository().getLayout())){
+           return;
+        }
         if (RepositoryFiles.isArtifact(repositoryPath)) {
             if (ctx.getArtifactExists()) {
                 artifactEventListenerRegistry.dispatchArtifactUpdatedEvent(repositoryPath);
@@ -256,8 +277,6 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
         artifact.setLastUsed(now);
         artifact.setUpdatedBy(username);
         Repository repository = repositoryPath.getRepository();
-        Storage storage = repository.getStorage();
-        ArtifactCoordinates coordinates = RepositoryFiles.readCoordinates(repositoryPath);
 
         CountingOutputStream cos = StreamUtils.findSource(CountingOutputStream.class, ctx.getStream());
         artifact.setSizeInBytes(cos.getByteCount());
@@ -265,12 +284,44 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
         LayoutOutputStream los = StreamUtils.findSource(LayoutOutputStream.class, ctx.getStream());
         artifact.setChecksums(los.getDigestMap(repository.getLayout()));
 
-        ArtifactTag lastVersionTag = artifactTagService.findOneOrCreate(ArtifactTagEntity.LAST_VERSION);
+        if(ProductTypeEnum.Raw.getFoLibraryName().equals(repository.getLayout())){
+            this.executorService.submit(()->{
+                try {
+                    this.commitTask(ctx,artifact);
+                    if (RepositoryFiles.isArtifact(repositoryPath)) {
+                        if (ctx.getArtifactExists()) {
+                            artifactEventListenerRegistry.dispatchArtifactUpdatedEvent(repositoryPath);
+                        } else {
+                            artifactEventListenerRegistry.dispatchArtifactStoredEvent(repositoryPath);
+                        }
+                    } else if (RepositoryFiles.isMetadata(repositoryPath)) {
+                        artifactEventListenerRegistry.dispatchArtifactMetadataStoredEvent(repositoryPath);
+                    }
+                } catch (Exception ex) {
+                    String realMessage = CommonUtils.getRealMessage(ex);
+                    logger.warn("[{}] [{}] merge group error [{}]",
+                            this.getClass().getSimpleName(), repositoryPath, realMessage);
+                    if (CommonUtils.catchException(realMessage)) {
+                        logger.warn("[{}] [{}] merge group catch error",
+                                this.getClass().getSimpleName(), repositoryPath);
+                    }
+                }
+            });
+        }else {
+            this.commitTask(ctx,artifact);
+        }
+    }
 
+    protected void commitTask(RepositoryStreamWriteContext ctx,Artifact artifact) throws IOException {
+        RepositoryPath repositoryPath = (RepositoryPath) ctx.getPath();
+        Repository repository = repositoryPath.getRepository();
+        Storage storage = repository.getStorage();
+        ArtifactCoordinates coordinates = RepositoryFiles.readCoordinates(repositoryPath);
+        ArtifactTag lastVersionTag = artifactTagService.findOneOrCreate(ArtifactTagEntity.LAST_VERSION);
         ArtifactIdGroup artifactGroup = artifactIdGroupRepository.findArtifactGroupWithTag(storage.getId(),
-                repository.getId(),
-                coordinates.getId(),
-                Optional.of(lastVersionTag))
+                        repository.getId(),
+                        coordinates.getId(),
+                        Optional.of(lastVersionTag))
                 .orElseGet(() -> new ArtifactIdGroupEntity(storage.getId(),
                         repository.getId(),
                         coordinates.getId()));
@@ -282,6 +333,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
                 lastVersion.getPath());
         try {
             artifactIdGroupRepository.saveOrUpdate(artifactGroup);
+            logger.debug("Complete writing [{}]", repositoryPath);
         } catch (Exception ex) {
             String realMessage = CommonUtils.getRealMessage(ex);
             logger.warn("[{}] [{}] merge group error [{}]",
@@ -289,11 +341,10 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
             if (CommonUtils.catchException(realMessage)) {
                 logger.warn("[{}] [{}] merge group catch error",
                         this.getClass().getSimpleName(), repositoryPath);
-                return;
             }
-            throw ex;
         }
     }
+
 
     @Override
     public void commitStoreIndex(RepositoryStreamReadContext ctx) throws IOException {

@@ -4,6 +4,8 @@ import cn.hutool.core.date.StopWatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.veadan.folib.booters.PropertiesBooter;
+import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
+import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.auth.AuthComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
@@ -11,8 +13,15 @@ import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
-import com.veadan.folib.providers.io.*;
+import com.veadan.folib.providers.io.LayoutFileSystem;
+import com.veadan.folib.providers.io.RepositoryFileAttributeType;
+import com.veadan.folib.providers.io.RepositoryFiles;
+import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.providers.io.RootRepositoryPath;
+import com.veadan.folib.providers.io.StorageFileSystemProvider;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
+import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.scanner.common.util.SpringContextUtil;
 import com.veadan.folib.services.support.ArtifactRoutingRulesChecker;
@@ -34,6 +43,12 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CommonPrefix;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.S3Object;
+import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -44,8 +59,22 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.spi.FileSystemProvider;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -65,6 +94,10 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
     @Autowired
     @Lazy
     private AuthComponent authComponent;
+
+    @Autowired
+    @Lazy
+    private LayoutProviderRegistry layoutProviderRegistry;
 
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
@@ -199,7 +232,7 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
         directoryListing.setDirectories(content.get("directories"));
         directoryListing.setFiles(content.get("files"));
         stopWatch.stop();
-        logger.info("generateDirectoryListingV3: " + stopWatch.getTotalTimeMillis());
+        logger.info("generateDirectoryListingV3: " + stopWatch.getTotalTimeMillis() + "ms");
         return directoryListing;
     }
 
@@ -254,7 +287,6 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
                 file.setUrl(calculateDirectoryUrl(file));
                 file.setLastModified(new Date(((FileTime) fileAttributes.get("lastModifiedTime")).toMillis()));
                 directories.add(file);
-
                 continue;
             }
             file.setUrl((URL) fileAttributes.get(RepositoryFileAttributeType.RESOURCE_URL.getName()));
@@ -340,21 +372,60 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
         // 从配置中获取是否显示校验和的设置
         boolean showChecksum = configurationManagementService.getConfiguration().getAdvancedConfiguration().isShowChecksum();
 
-        // 初始化路径列表，并过滤出有效路径
-        return listPaths(path)
-                //.filter(this::isValidPath)
-                .collectList()
-                .flatMapMany(contentPaths -> Flux.fromIterable(ListUtils.partition(contentPaths, this.getRepositoryPathBatchSize())))
-                // 使用并行处理提高效率 在多个 Flux 中使用 .publishOn(Schedulers.boundedElastic()) 时，Schedulers.boundedElastic() 是共享的，而不是为每个 Flux 创建独立的线程池。
-                .publishOn(Schedulers.boundedElastic())
-                .parallel(this.getRepositoryPathThread())
-                // 根据路径构建文件内容任务
-                .flatMap(paths -> buildFileContentTask(paths, showChecksum))
-                // 将并行处理的结果序列化
-                .sequential()
-                .collectList()
-                // 合并处理结果
-                .map(this::mergeResults);
+        if (path.toString().startsWith("s3://")) {
+            Map<String, List<FileContent>> listing = new HashMap<>();
+            RepositoryPath repositoryPath = (RepositoryPath) path;
+            String storageId = repositoryPath.getStorageId();
+            String repositoryId = repositoryPath.getRepositoryId();
+            S3FileSystem s3FileSystem = (S3FileSystem) repositoryPath.getFileSystem().getTarget();
+            S3Path s3Path = new S3Path(s3FileSystem, path.toString());
+            S3Client s3Client = s3FileSystem.getClient();
+            List<FileContent> directories = new ArrayList<>();
+            List<FileContent> files = new ArrayList<>();
+            String prefix = s3Path.getKey() + "/";
+            String pathPrefix = s3Path.toString() + "/";
+            ListObjectsV2Request request = ListObjectsV2Request.builder()
+                    .bucket(s3Path.getBucketName())
+                    .prefix(prefix) // 列出特定前缀下的对象
+                    .delimiter("/")       // 仅列出当前层级
+                    .maxKeys(1000)        // 每页最多 1000 个对象
+                    .build();
+            ListObjectsV2Iterable paginator = s3Client.listObjectsV2Paginator(request);
+            for (ListObjectsV2Response page : paginator) {
+                // 文件
+                for (S3Object obj : page.contents()) {
+                    FileContent file = processFile(obj, prefix, pathPrefix, repositoryPath, storageId, repositoryId, showChecksum);
+                    if (Objects.nonNull(file)) {
+                        files.add(file);
+                    }
+                }
+                // 目录
+                for (CommonPrefix dir : page.commonPrefixes()) {
+                    FileContent directory = processDirectory(dir, prefix, pathPrefix, repositoryPath, storageId, repositoryId);
+                    if (Objects.nonNull(directory)) {
+                        directories.add(directory);
+                    }
+                }
+            }
+            listing.put("directories", directories);
+            listing.put("files", files);
+            return Mono.just(listing);
+        } else {
+            return listPaths(path)
+                    //.filter(this::isValidPath)
+                    .collectList()
+                    .flatMapMany(contentPaths -> Flux.fromIterable(ListUtils.partition(contentPaths, this.getRepositoryPathBatchSize())))
+                    // 使用并行处理提高效率 在多个 Flux 中使用 .publishOn(Schedulers.boundedElastic()) 时，Schedulers.boundedElastic() 是共享的，而不是为每个 Flux 创建独立的线程池。
+                    .publishOn(Schedulers.boundedElastic())
+                    .parallel(this.getRepositoryPathThread())
+                    // 根据路径构建文件内容任务
+                    .flatMap(paths -> buildFileContentTask(paths, showChecksum))
+                    // 将并行处理的结果序列化
+                    .sequential()
+                    .collectList()
+                    // 合并处理结果
+                    .map(this::mergeResults);
+        }
     }
 
     /**
@@ -633,5 +704,61 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
         }
         return batchSize;
     }
+
+    private FileContent processFile(S3Object obj, String prefix, String pathPrefix, RepositoryPath repositoryPath,
+                                    String storageId, String repositoryId, boolean showChecksum) {
+        String name = obj.key().substring(prefix.length());
+        if (StringUtils.isBlank(name)) {
+            return null;
+        }
+        RepositoryPath repoPath = repositoryPath.resolve(name);
+        FileContent file = new FileContent();
+        try {
+            if (!showChecksum && RepositoryFiles.isChecksum(repoPath)) {
+                return null;
+            }
+            if (!isValidPath(repoPath)) {
+                return null;
+            }
+            file.setPath(pathPrefix + name);
+            file.setName(name);
+            file.setSize(obj.size());
+            file.setLastModified(Date.from(obj.lastModified()));
+            file.setStorageId(storageId);
+            file.setRepositoryId(repositoryId);
+            Map<String, Object> fileAttributes = Files.readAttributes(repoPath, "folib:artifactPath,folib:resourceUrl");
+            file.setUrl((URL) fileAttributes.get(RepositoryFileAttributeType.RESOURCE_URL.getName()));
+            file.setArtifactPath((String) fileAttributes.get("artifactPath"));
+        } catch (IOException e) {
+            logger.info("Error accessing path {}", repoPath);
+            return null;
+        }
+        return file;
+    }
+
+    private FileContent processDirectory(CommonPrefix dir, String prefix, String pathPrefix, RepositoryPath repositoryPath,
+                                         String storageId, String repositoryId) {
+        String dirPrefix = dir.prefix();
+        String name = dirPrefix.substring(prefix.length(), dirPrefix.length() - 1);
+        RepositoryPath repoPath = repositoryPath.resolve(name);
+        if (!isValidPath(repoPath)) {
+            return null;
+        }
+        FileContent directory = new FileContent();
+        directory.setName(name);
+        directory.setStorageId(storageId);
+        directory.setRepositoryId(repositoryId);
+        directory.setPath(pathPrefix + name);
+        try {
+            Map<String, Object> fileAttributes = Files.readAttributes(repoPath, "folib:artifactPath");
+            directory.setArtifactPath((String) fileAttributes.get("artifactPath"));
+            directory.setUrl(calculateDirectoryUrl(directory));
+        } catch (Exception e) {
+            logger.info("Error accessing path {}", repoPath);
+            return null;
+        }
+        return directory;
+    }
+
 
 }

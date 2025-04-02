@@ -16,6 +16,7 @@ import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerFileSystem;
+import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.scanner.service.ScanService;
 import com.veadan.folib.scanner.service.ScannerService;
 import com.veadan.folib.scanner.task.ScannerTask;
@@ -34,7 +35,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import javax.inject.Inject;
@@ -49,7 +49,7 @@ import java.util.stream.Collectors;
  * 事件监听，处理漏洞扫描
  */
 @Slf4j
-@Component
+//@Component
 public class ArtifactEventScannerListener {
 
     @Inject
@@ -74,6 +74,9 @@ public class ArtifactEventScannerListener {
     @Inject
     @Lazy
     private ScanService scanService;
+
+    @Inject
+    private ArtifactRepository artifactRepository;
 
     @Value("${folib.temp}")
     private String tempPath;

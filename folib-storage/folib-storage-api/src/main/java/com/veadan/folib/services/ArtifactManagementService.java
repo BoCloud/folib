@@ -187,8 +187,7 @@ public class ArtifactManagementService {
             }
         }
         stopWatch.stop();
-        logger.info("【Store】finise [{}] \n {} .", repositoryPath,stopWatch.prettyPrint(TimeUnit.MILLISECONDS));
-
+        logger.info("【Store】finished [{}] \n {} .", repositoryPath,stopWatch.prettyPrint(TimeUnit.MILLISECONDS));
         return result;
     }
 

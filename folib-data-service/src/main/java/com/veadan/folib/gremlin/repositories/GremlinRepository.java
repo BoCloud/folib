@@ -4,14 +4,16 @@ import com.veadan.folib.data.domain.DomainObject;
 import com.veadan.folib.gremlin.adapters.EntityTraversalAdapter;
 import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.dsl.EntityTraversalSource;
+import com.veadan.folib.gremlin.tx.TransactionContext;
 import org.apache.tinkerpop.gremlin.structure.Element;
-import org.janusgraph.core.JanusGraph;
+import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.neo4j.ogm.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.repository.CrudRepository;
 
 import javax.inject.Inject;
+import javax.transaction.Transactional;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -20,12 +22,14 @@ import java.util.function.Supplier;
  *
  * @author xuxinping
  */
+@Transactional
 public abstract class GremlinRepository<S extends Element, E extends DomainObject> implements CrudRepository<E, String> {
 
     private static final Logger logger = LoggerFactory.getLogger(GremlinRepository.class);
 
     @Inject
-    private JanusGraph graph;
+    @TransactionContext
+    private Graph graph;
 
     @Inject
     protected Session session;
@@ -40,8 +44,9 @@ public abstract class GremlinRepository<S extends Element, E extends DomainObjec
     protected abstract EntityTraversal<S, S> start(Supplier<EntityTraversalSource> g);
 
     public <R extends E> R save(Supplier<EntityTraversalSource> g, R entity) {
-        merge(g, entity);
-        return entity;
+        String uuid = merge(g, entity);
+
+        return (R) findById(g, uuid).get();
     }
 
     public abstract String merge(Supplier<EntityTraversalSource> g, E entity);

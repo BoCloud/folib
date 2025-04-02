@@ -137,9 +137,9 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
                 throw new ArtifactResolutionException(String.format("The artifact path is a directory: [%s]",
                         path.toString()));
             }
-
-            Files.createDirectories(path.getParent());
-
+            if(!path.toString().startsWith("s3")){
+                Files.createDirectories(path.getParent());
+            }
             try {
                 return decorateStream((RepositoryPath) path, super.newOutputStream(path, options));
             } catch (NoSuchAlgorithmException e) {

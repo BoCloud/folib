@@ -232,6 +232,8 @@ public class AsyncPoolConfig {
     @Value("${folib.threadPool.asyncDeleteArtifact.awaitTerminationSeconds}")
     private Integer asyncDeleteArtifactAwaitTerminationSeconds;
 
+
+
     @Bean
     public ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor() {
         return buildThreadPoolTaskExecutor(asyncCorePoolSize, asyncMaxPoolSize, asyncQueueCapacity, asyncKeepAliveSeconds, asyncThreadNamePrefix, asyncAwaitTerminationSeconds);

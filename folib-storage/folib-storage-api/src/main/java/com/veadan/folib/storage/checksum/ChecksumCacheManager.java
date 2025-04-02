@@ -137,7 +137,7 @@ public class ChecksumCacheManager
     public synchronized void removeArtifactChecksum(String artifactBasePath)
     {
         Optional.ofNullable(cachedChecksums.remove(artifactBasePath))
-                .ifPresent(ac -> logger.info("Removed [{}] artifact checksum value [{}] from cache current size [{}].",
+                .ifPresent(ac -> logger.debug("Removed [{}] artifact checksum value [{}] from cache current size [{}].",
                                               artifactBasePath, ac, cachedChecksums.size()));
     }
 
