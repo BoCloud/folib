@@ -21,9 +21,9 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class CondaArtifactCoordinates
         extends LayoutArtifactCoordinatesEntity<CondaArtifactCoordinates, String> {
 
-    public static final String LAYOUT_NAME = "Conda";
+    public static final String LAYOUT_NAME = "conda";
 
-    public static final String LAYOUT_ALIAS = "Conda";
+    public static final String LAYOUT_ALIAS = "conda";
 
     public static final String NAME = "name";
 
@@ -52,5 +52,9 @@ public class CondaArtifactCoordinates
     @Override
     public String convertToPath(CondaArtifactCoordinates artifactCoordinates) {
         return "";
+    }
+
+    public static CondaArtifactCoordinates parse(String path) {
+        return new CondaArtifactCoordinates();
     }
 }
