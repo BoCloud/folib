@@ -292,6 +292,9 @@ public abstract class StorageFileSystemProvider
             FileTime newTime = FileTime.fromMillis(System.currentTimeMillis());
             Files.setLastModifiedTime(trashPath.getTarget(), newTime);
         } catch (Exception e) {
+            if (e instanceof FileSystemException && e.getMessage().contains("Not a directory")) {
+                throw new RuntimeException("CreateTrashDirectoryError");
+            }
             Files.move(repositoryPath.getTarget(),
                     trashPath.getTarget(),
                     StandardCopyOption.REPLACE_EXISTING);

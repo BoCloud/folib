@@ -2200,7 +2200,7 @@ export default {
       return key
     },
     // 获取可以继续打开的文件的目录（对应包预览）
-    getPackagePreview({ treeNode, storageId, id, artifactPath }, resolve) {
+    getPackagePreview({ treeNode, storageId, repositoryId, artifactPath }, resolve) {
         if (treeNode.data.children) {
           resolve(treeNode.data.children)
           return
@@ -2208,7 +2208,7 @@ export default {
         getArtifact(
           this.repositoryType,
           storageId,
-          id,
+          repositoryId,
           artifactPath
         ).then(res => {
         this.currentFileDetial = res
@@ -2217,7 +2217,7 @@ export default {
               ele.newDetailPage = true
               ele.treeType = 'lastRoot'
               ele.storageId = storageId
-              ele.repositoryId = id
+              ele.repositoryId = repositoryId
               ele.artifactPath = `${parentKey}/${ele.name}`
               if (ele?.children?.length) {
                   setNewDetailPage(ele.children, ele.artifactPath)
@@ -2226,7 +2226,7 @@ export default {
         }
         treeNode.data.children = []
         if (res.listTree) {
-            setNewDetailPage(res.listTree, `${id}/${artifactPath}`)
+            setNewDetailPage(res.listTree, `${repositoryId}/${artifactPath}`)
             treeNode.data.children = treeNode.data.children.concat(res.listTree)
         }
         resolve(treeNode.data.children)
@@ -2236,12 +2236,12 @@ export default {
       this.isTrashView = isTrashView
       this.currentFileDetial = null
       const { storageId, id, layout } = this.folibRepository
-      const { artifactPath, name } = treeNode.data
+      const { artifactPath, name, repositoryId } = treeNode.data
       if (!artifactPath) return;
       const params = {
         treeNode,
         storageId,
-        id,
+        repositoryId,
         layout,
         artifactPath,
         name
