@@ -4,7 +4,7 @@ import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
 import com.veadan.folib.security.enums.ResolvePathTypeEnum;
 import com.veadan.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.compress.utils.FileNameUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -41,7 +41,7 @@ public class NpmResolvePathProvider implements ResolvePathProvider {
         if (StringUtils.isBlank(relativePath)) {
             return "";
         }
-        String extension = FileNameUtils.getExtension(relativePath);
+        String extension = FilenameUtils.getExtension(relativePath);
         if (!relativePath.startsWith(STORAGE) && !relativePath.startsWith(BINARY) && StringUtils.isNotBlank(extension) && NpmArtifactCoordinates.NPM_EXTENSION_PATTERN.matcher(extension).matches()) {
             if (relativePath.startsWith(ARTIFACTORY)) {
                 relativePath = StringUtils.removeStart(relativePath.replace(String.format("%s/%s/%s", ARTIFACTORY, repository.getStorage().getId(), repository.getId()), ""), "/");

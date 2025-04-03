@@ -61,12 +61,12 @@
               <a-col v-if="f.name !== 'storageId' && f.name !== 'repositoryId' && f.name !=='storageCondition'" class="ml-auto">
                 <span style="margin-left: 15px" class="mr-15" v-if="f.aliasName && f.aliasName.length > 0">{{ f.aliasName }}</span>
                 <span style="margin-left: 15px" class="mr-15" v-else-if="!f.name.includes(artifactPathKey)&&!f.name.includes(debianScopeKey)">{{ f.name }}</span>
-                <span style="margin-left: 15px" class="mr-15" v-else-if="f.name.includes(artifactPathKey)">{{ '制品目录'}}</span>
+                <span style="margin-left: 15px" class="mr-15" v-else-if="f.name.includes(artifactPathKey)">{{ $t('Cron.ArtifactCatalog')}}</span>
                 <span style="margin-left: 15px" class="mr-15" v-else-if="f.name.includes(debianScopeKey)">{{ $t('Cron.SyncScope') }}</span>
                 <a-input :min="1" v-if="f.name.includes(artifactPathKey)" v-model="f.label"
-                size="small" class="font-regular text-sm text-dark mr-10" style="width: 120px;"/>
+                size="small" class="font-regular text-sm text-dark mr-10" style="width: 120px;" @blur="artifactPathChange(i.fields, f.label)" :placeholder="$t('Cron.EnterArtifactCatalog')"/>
                 <a-input-number :min="1" v-if="f.name.includes(artifactPathKey)" v-model="f.value"
-                size="small" class="font-regular text-sm text-dark" style="width: 120px;" />
+                size="small" class="font-regular text-sm text-dark" style="width: 120px;" :placeholder="$t('Cron.EnterRetentionPeriod')"/>
                 <a-button v-if="f.name.includes(artifactPathKey)" @click="deleteArtifactPath(i.fields, index)" style="margin-left: 15px"
                 type="danger" size="small" shape="circle" icon="delete" />
 
@@ -86,7 +86,7 @@
                 <a-input-number :min="1" v-if="f.type === 'int' && f.name === 'numberToKeep'" v-model="f.value"
                   size="small" class="font-regular text-sm text-dark" style="width: 120px;" />
                 <a-input-number :min="1" v-if="f.type === 'int' && f.name === 'storageDay'" v-model="f.value"
-                                size="small" class="font-regular text-sm text-dark" style="width: 120px;"/>  
+                                size="small" class="font-regular text-sm text-dark" style="width: 120px;" :placeholder="f.aliasName?$t('Cron.PleaseEnter') + f.aliasName: $t('Cron.EnterRetentionPeriod')"/>  
                 <a-input-number :min="1" v-if="f.type === 'int' && f.name === 'keepPeriod'" v-model="f.value"
                   size="small" class="font-regular text-sm text-dark" style="width: 120px;" />
                 <a-input-number :min="1" v-if="f.name === 'lastModifiedTime'" v-model="f.value"
@@ -162,6 +162,7 @@ export default {
           value: "day"
         }
       ],
+      storageCondition: 'day',
       artifactPathKey: "artifactPath:",
       debianScopeKey:"debianScopeKey"
     }
@@ -191,8 +192,10 @@ export default {
     storageConditionChange(event, fields) {
       let aliasName = this.$t('Cron.RetentionDaysNum')
       if (event === 'tag') {
+        this.storageCondition = 'tag'
         aliasName = this.$t('Cron.KeepTheNumber')
       } else if (event === 'day') {
+        this.storageCondition = 'day'
         aliasName = this.$t('Cron.RetentionDaysNum')
       }
       fields.filter(i => i.name === "storageDay").forEach(i => i.aliasName = aliasName)
@@ -256,7 +259,7 @@ export default {
         i.isShow = true
         this.cronCanSetList.splice(index, i)
         if (this.folibRepository.layout.toLowerCase() === "docker") {
-          let storageCondition = 'day'
+          storageCondition = 'day'
           let cleanupTask = i.fields.filter(i => i.name === 'storageCondition')
           if (cleanupTask && cleanupTask.length >0) {
             storageCondition = cleanupTask[0].value
@@ -289,8 +292,19 @@ export default {
           })
           return false
         }
+        if (i.fields) {
+          let storageDays = i.fields.filter(i => i.name === "storageDay")
+          if (storageDays && !storageDays[0].value) {
+            this.$notification.open({
+              class: 'ant-notification-warning',
+              message: this.storageCondition == 'day' ? this.$t('Cron.EnterRetentionPeriod') : this.$t('Cron.EnterKeepTheNumber'),
+            })
+            return false
+          }
+        }
         let fiedsNew = []
         let scopeValue='';
+        let hasRepeatError = false
         i.fields.forEach(f => {
           if (f.value !== null && f.value !== undefined) {
             if(f.name === this.debianScopeKey){
@@ -299,6 +313,10 @@ export default {
             if (f.label) {
               if (f.value !== '') {
                 fiedsNew.push({ name: this.artifactPathKey + f.label, value: f.value })
+                if (fiedsNew.filter(item => item.name == this.artifactPathKey + f.label).length > 1) {
+                  hasRepeatError = true
+                  return false
+                }
               }
             } else {
               fiedsNew.push({ name: f.name, value: f.value })
@@ -306,6 +324,13 @@ export default {
           }
           }
         })
+        if (hasRepeatError) {
+          this.$notification.open({
+            class: 'ant-notification-warning',
+            message: this.$t('Cron.DuplicateItemsPresent'),
+          })
+          return false
+        }
         if(scopeValue!==''){
           const value=scopeValue.slice(0, -1);
           fiedsNew.push({ name: this.debianScopeKey, value: value })
@@ -380,8 +405,20 @@ export default {
     },
     deleteDebainScope(data,index){
       data.splice(index, 1)
+    },
+    artifactPathChange(fileIds, label) {
+      if (fileIds && label) {
+        let size = fileIds.filter(item => item.label == label).length
+        if (size > 1) {
+            this.$notification.open({
+                class: 'ant-notification-warning',
+                message: label + " " + this.$t('Cron.Exists'),
+            })
+            return false
+        }
+      }
+      return true
     }
-
   },
 };
 </script>
