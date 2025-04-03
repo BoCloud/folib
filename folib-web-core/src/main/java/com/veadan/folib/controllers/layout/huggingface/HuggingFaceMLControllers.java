@@ -277,7 +277,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 .request(request)
                 .build();
         String remoteBaseUrl = getRemoteUrl(repository);
-        String alternativeUrl = repository.getRemoteRepository() == null ? null : MlModelRemoteUtils.getModelInfoAlternativeUrl(context.getOrg(), context.getModelName(), context.getRevision(), remoteBaseUrl);
+        String alternativeUrl = remoteBaseUrl == null ? null : MlModelRemoteUtils.getModelInfoAlternativeUrl(context.getOrg(), context.getModelName(), context.getRevision(), remoteBaseUrl);
         String modelInfoPath = MlModelUtils.getLatestModelInfoPath(context);
         RepositoryPath tagPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), modelInfoPath);
         tagPath.setTargetUrl(alternativeUrl);
@@ -624,6 +624,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
         try {
 
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(requestContext.getStorageId(), requestContext.getRepositoryId(), latestLeadFilePath);
+            repositoryPath = artifactResolutionService.resolvePath(repositoryPath);
             try (InputStream leadStream = Files.newInputStream(repositoryPath)) {
                 revisionData = MlModelUtils.createObjectMapper().readValue(leadStream, RevisionData.class);
                 String mlStr = Objects.isNull(requestContext.getOrg()) ? String.format("models/%s/",requestContext.getModelName()) : String.format("models/%s/%s/", requestContext.getOrg(), requestContext.getModelName());
@@ -636,6 +637,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 requestContext.setVersionFolder(revision);
             }
         } catch (Exception e) {
+            e.printStackTrace();
             return afterFailedToFetchLatestModelInfo(requestContext, latestLeadFilePath, e, remoteBaseUrl);
 
         }
@@ -1460,6 +1462,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
             }
         }
     }
+
 
 
     @NonNull
