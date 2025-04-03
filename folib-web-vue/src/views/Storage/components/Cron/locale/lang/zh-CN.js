@@ -16,5 +16,12 @@ export default {
     'Failure': '失败',
     'AddArtifactPath': '添加制品目录',
     'AddSycnScope':'添加同步范围',
-    'SyncScope':'发行版/组件/架构'
+    'SyncScope':'发行版/组件/架构',
+    'Exists': '已存在',
+    'ArtifactCatalog': '制品目录',
+    'EnterArtifactCatalog': '请输入制品目录',
+    'EnterRetentionPeriod': '请输入保留天数',
+    'EnterKeepTheNumber': '请输入保留个数',
+    'DuplicateItemsPresent': '存在重复项',
+    'PleaseEnter': '请输入',
 }

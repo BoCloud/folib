@@ -16,5 +16,12 @@ export default {
     'Failure': 'Failure',
     'AddArtifactPath': 'Add artifact path',
     'AddSycnScope':"Add sycn scope",
-    'SyncScope':'distrubute/component/architure'
+    'SyncScope':'distrubute/component/architure',
+    'Exists': 'Exists',
+    'ArtifactCatalog': 'Artifact catalog',
+    'EnterArtifactCatalog': 'Please enter the artifact catalog',
+    'EnterRetentionPeriod': 'Please enter the retention period',
+    'EnterKeepTheNumber': 'Please enter the keep the number',
+    'DuplicateItemsPresent': 'There are duplicate items present',
+    'PleaseEnter': 'Please enter the ',
 }
