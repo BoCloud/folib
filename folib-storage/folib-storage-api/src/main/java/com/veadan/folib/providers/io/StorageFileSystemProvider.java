@@ -497,8 +497,8 @@ public abstract class StorageFileSystemProvider
                                         OpenOption... options)
             throws IOException {
         TempRepositoryPath temp = RepositoryFiles.temporary((RepositoryPath) path);
-
-        return new TempOutputStream(temp, options);
+//        return new TempOutputStream(temp, options);
+        return new ProxyOutputStream(StorageFileSystemProvider.super.newOutputStream(unwrap(path), options));
     }
 
     @Override

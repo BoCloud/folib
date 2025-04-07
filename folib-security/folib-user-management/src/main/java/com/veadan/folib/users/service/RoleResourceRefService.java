@@ -132,4 +132,6 @@ public interface RoleResourceRefService{
     List<RoleResourceRef> queryByIds(List<Long> ids);
 
     List<RoleResourceRef> queryResourcesByRoleIds(List<String> roleIds);
+
+     void deleteAllByRoleIdAndEntityNotNull(String roleId);
 }

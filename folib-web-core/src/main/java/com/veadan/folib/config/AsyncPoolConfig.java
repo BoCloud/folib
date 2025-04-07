@@ -232,6 +232,8 @@ public class AsyncPoolConfig {
     @Value("${folib.threadPool.asyncDeleteArtifact.awaitTerminationSeconds}")
     private Integer asyncDeleteArtifactAwaitTerminationSeconds;
 
+
+
     @Bean
     public ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor() {
         return buildThreadPoolTaskExecutor(asyncCorePoolSize, asyncMaxPoolSize, asyncQueueCapacity, asyncKeepAliveSeconds, asyncThreadNamePrefix, asyncAwaitTerminationSeconds);
@@ -343,6 +345,17 @@ public class AsyncPoolConfig {
                 asyncPromotionQueueCapacity,
                 asyncPromotionKeepAliveSeconds,
                 asyncPromotionThreadNamePrefix,
+                asyncPromotionAwaitTerminationSeconds);
+    }
+
+    @Bean
+    public ThreadPoolTaskExecutor asyncCheckSumTaskExecutor() {
+        return buildThreadPoolTaskExecutor(
+                asyncPromotionCorePoolSize,
+                asyncPromotionMaxPoolSize,
+                asyncPromotionQueueCapacity,
+                asyncPromotionKeepAliveSeconds,
+                "asyncCheckSumTask",
                 asyncPromotionAwaitTerminationSeconds);
     }
 

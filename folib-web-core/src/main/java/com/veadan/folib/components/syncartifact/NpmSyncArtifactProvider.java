@@ -268,7 +268,7 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
             if (Objects.nonNull(sleepMillis)) {
                 Thread.sleep(sleepMillis);
             }
-            String storageId = repository.getStorage().getId(), repositoryId = repository.getId(), separator = "/", npmSeparator = "/-/";
+            String separator = "/", npmSeparator = "/-/";
             if (!remoteUrl.endsWith(separator)) {
                 remoteUrl = remoteUrl + separator;
             }
@@ -299,16 +299,18 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
                     if (separator.equals(absUrl)) {
                         continue;
                     }
-                    writer.write(absUrl + "\n");
-                    writer.flush();
-                    if (absUrl.startsWith(separator) || absUrl.endsWith(separator)) {
+                    if (absUrl.endsWith(separator)) {
+                        writer.write(absUrl + "\n");
+                        writer.flush();
                         absUrl = UriUtils.decode(StringUtils.removeEnd(StringUtils.removeStart(absUrl, separator), separator));
                         if (absUrl.startsWith(GlobalConstants.AT) && !absUrl.contains(separator)) {
                             continue;
                         }
+                        if(absUrl.startsWith(".npm")){
+                            continue;
+                        }
                         filesCommonComponent.storeContent(absUrl, file.getParent() + "/artifact");
                         THREAD_LOCAL_PACKAGE.set(THREAD_LOCAL_PACKAGE.get() + 1);
-                        distributedCounterComponent.getAtomicLong(JfrogMigrateService.INDEX_COUNT + repository.getStorageIdAndRepositoryId()).getAndAdd(1);
                     }
                 }
             }
@@ -413,9 +415,9 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
         RepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
         List<List<String>> artifactPathLists = Lists.partition(artifactPathList, 5);
         List<FutureTask<String>> futureTasks = Lists.newArrayList();
-        FutureTask<String> futureTask = null;
+        FutureTask<String> futureTask;
         for (List<String> itemArtifactPathList : artifactPathLists) {
-            futureTask = new FutureTask<String>(() -> {
+            futureTask = new FutureTask<>(() -> {
                 for (String artifactPath : itemArtifactPathList) {
                     try {
                         if (NpmArtifactCoordinates.NPM_EXTENSION_LIST.stream().anyMatch(artifactPath::endsWith)) {
@@ -441,9 +443,14 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
                             }
                         } else {
                             //索引
-                            NpmArtifactCoordinates npmArtifactCoordinates = NpmArtifactCoordinates.resolveName(null, artifactPath);
-                            String packageId = npmArtifactCoordinates.getId();
-                            npmService.packageFeed(rootRepositoryPath.getRepository(), packageId,  NpmUtils.getPackageMetadataPath(packageId));
+                            NpmArtifactCoordinates npmArtifactCoordinates;
+                            try {
+                                npmArtifactCoordinates = NpmArtifactCoordinates.resolveName(null, artifactPath);
+                                String packageId = npmArtifactCoordinates.getId();
+                                npmService.packageFeed(rootRepositoryPath.getRepository(), packageId,  NpmUtils.getPackageMetadataPath(packageId));
+                            } catch (Exception e) {
+                                log.info("{}非索引文件",artifactPath);
+                            }
                         }
                     } catch (Exception ex) {
                         log.error("Batch download path [{}] storageId [{}] repositoryId [{}] artifactPath [{}] error [{}]", path.toString(), storageId, repositoryId, artifactPath, ExceptionUtils.getStackTrace(ex));
@@ -488,7 +495,6 @@ public class NpmSyncArtifactProvider implements SyncArtifactProvider {
             migrateInfoService.updateById(repository);
             distributedCounterComponent.getAtomicLong(JfrogMigrateService.ARTIFACT_COUNT + syncArtifactForm.getStoreAndRepo()).set(0);
             String path = repository.getSyncDirPath();
-            distributedCounterComponent.getAtomicLong(JfrogMigrateService.INDEX_COUNT+syncArtifactForm.getStoreAndRepo()).set(total);
             if (syncArtifactForm.getSyncMeta() == 1) {
                 JfrogPropertySyncer syncer = new JfrogPropertySyncer(syncArtifactForm.getApiUrl(), syncArtifactForm.getUsername(), syncArtifactForm.getPassword());
                 syncArtifactForm.setSyncer(syncer);

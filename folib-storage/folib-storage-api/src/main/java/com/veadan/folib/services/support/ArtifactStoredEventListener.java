@@ -39,7 +39,6 @@ public class ArtifactStoredEventListener
     protected Artifact handleEvent(RepositoryPath repositoryPath)
             throws IOException {
         Artifact artifactEntry = repositoryPath.getArtifactEntry();
-
         if (artifactEntry == null) {
             logger.debug("No [{}] for [{}].",
                     Artifact.class.getSimpleName(),
