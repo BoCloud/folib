@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import javax.json.JsonObject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DELETE;
 
@@ -75,33 +76,45 @@ public class CondaArtifactController extends BaseArtifactController {
         }
     }
 
+    @ApiOperation(value = "")
+    @ApiResponses(value = {@ApiResponse(code = 404, message = "Package Not Found")})
     @GetMapping(path = "/{storageId}/{repositoryId}/dist/{channelId}/{packageId}/{version}/{platformId}/{filename}")
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public ResponseEntity<Object> getArtifact() {
+
         return null;
     }
 
     @GetMapping(path = "/{storageId}/{repositoryId}/package/{channelId}/{packageId}/{version}")
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public ResponseEntity<Object> getPackage() {
         return null;
     }
 
     @GetMapping(path = "/{storageId}/{repositoryId}/release/{channelId}/{packageId}/{version}")
+    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public ResponseEntity<Object> getRelease() {
         return null;
     }
 
     @PostMapping(path = "/{storageId}/{repositoryId}/package/{channelId}/{packageId}/{version}")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     public ResponseEntity<Object> createPackage() {
         return null;
     }
 
     @PostMapping(path = "/{storageId}/{repositoryId}/release/{channelId}/{packageId}/{version}")
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     public ResponseEntity<Object> createRelease() {
         return null;
     }
 
+    @ApiOperation(value = "Post the metadata of the artifact")
     @PostMapping(path = "/{storageId}/{repositoryId}/stage/{channelId}/{packageId}/{version}/{platformId}/{filename}")
-    public ResponseEntity<Object> stageArtifact() {
+    public ResponseEntity<Object> stageArtifact(JsonObject metadata,
+                                                HttpServletRequest request,
+                                                HttpServerResponse response,
+                                                Authentication authentication) {
         return null;
     }
 
@@ -113,5 +126,9 @@ public class CondaArtifactController extends BaseArtifactController {
     @DeleteMapping(path = "/{storageId}/{repositoryId}/package/{channelId}/{packageId}")
     public ResponseEntity<Object> deletePackage() {
         return null;
+    }
+
+    Boolean checkCondaPackageName(String packageName) {
+        return true;
     }
 }
