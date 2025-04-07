@@ -269,7 +269,7 @@ public class HuggingFaceMLControllers extends BaseArtifactController {
                 .request(request)
                 .build();
         String remoteBaseUrl = getRemoteUrl(repository);
-        String alternativeUrl = repository.getRemoteRepository() == null ? null : MlModelRemoteUtils.getModelInfoAlternativeUrl(context.getOrg(), context.getModelName(), context.getRevision(), remoteBaseUrl);
+        String alternativeUrl = remoteBaseUrl == null ? null : MlModelRemoteUtils.getModelInfoAlternativeUrl(context.getOrg(), context.getModelName(), context.getRevision(), remoteBaseUrl);
         String modelInfoPath = MlModelUtils.getLatestModelInfoPath(context);
         RepositoryPath tagPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId(), modelInfoPath);
         tagPath.setTargetUrl(alternativeUrl);

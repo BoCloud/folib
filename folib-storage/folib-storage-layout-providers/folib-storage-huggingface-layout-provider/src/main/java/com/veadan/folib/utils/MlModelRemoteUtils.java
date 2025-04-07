@@ -32,11 +32,10 @@ public final class MlModelRemoteUtils {
             throw new NullPointerException("remoteBaseUrl is marked non-null but is null");
         }
         if (StrUtil.isBlank(context.getOrg())) {
-            alternativeUrl = String.join("/", getMlModelRemoteBaseUrl(context, remoteBaseUrl), context.getModelName(), "resolve", context
-                    .getOriginalRemoteCommit(), context.getFile());
+            alternativeUrl = String.join("/", getMlModelRemoteBaseUrl(context, remoteBaseUrl), context.getModelName(), "resolve",  context.getOriginalRemoteCommit() == null ? "main" : context.getOriginalRemoteCommit(), context.getFile());
         } else {
             alternativeUrl = String.join("/",  getMlModelRemoteBaseUrl(context, remoteBaseUrl), context.getOrg(), context
-                    .getModelName(), "resolve", context.getOriginalRemoteCommit(), context.getFile() );
+                    .getModelName(), "resolve",  context.getOriginalRemoteCommit() == null ? "main" : context.getOriginalRemoteCommit(), context.getFile() );
         }
         try {
             return URIUtils.encodeQuery(alternativeUrl);
