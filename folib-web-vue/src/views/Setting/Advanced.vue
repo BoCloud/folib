@@ -336,6 +336,16 @@
               <migrate-artifact/>
             </a-card>
           </a-tab-pane>
+          <a-tab-pane :key="8" :tab="$t('Setting.SystemImportExport')">
+            <a-card :bordered="false" class="header-solid mt-10" >
+              <template #title>
+                <h6>{{ $t('Setting.SystemImportExport') }}</h6>
+                <p>{{ $t('Setting.SystemImportExportInfo') }}
+                </p>
+              </template>
+              <SystemImportExport/>
+            </a-card>
+          </a-tab-pane>
         </a-tabs>
       </a-col>
     </a-row>
@@ -354,6 +364,7 @@ import BackupStrategy from "./components/BackupStrategy/index.vue";
 import ArtifactsCache from "./components/Cache/index.vue";
 import JfrogMigration from "./components/JfrogMigration.vue"
 import MigrateArtifact from "./components/MigrateArtifact.vue"
+import SystemImportExport from "./components/SystemImportExport/index.vue"
 
 import {
   getStoragesAndRepositories,
@@ -440,6 +451,7 @@ export default {
     JfrogMigration,
     BackupStrategy,
     MigrateArtifact,
+    SystemImportExport,
   },
   computed: {
 

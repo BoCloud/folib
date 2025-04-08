@@ -585,5 +585,7 @@ export default {
     DeleteConfirm:'确定删除该任务吗?',
     OK:'确定',
     ResetMigration:'重新迁移',
-    EnterRepositoryName:'请输入仓库名称'
+    EnterRepositoryName:'请输入仓库名称',
+    'SystemImportExport':'系统配置导入导出',
+    'SystemImportExportInfo': '该功能用于导入或者导出系统配置',
 }

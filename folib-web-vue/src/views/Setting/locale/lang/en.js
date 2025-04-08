@@ -578,5 +578,7 @@ export default {
     DeleteConfirm:'Are you sure delete this task?',
     OK:'Yes',
     ResetMigration:'Reset Migration',
-    EnterRepositoryName:'Enter repository name'
+    EnterRepositoryName:'Enter repository name',
+    'SystemImportExport':'System Import Export',
+    'SystemImportExportInfo': 'This function is used to import or export system configurations',
 }
