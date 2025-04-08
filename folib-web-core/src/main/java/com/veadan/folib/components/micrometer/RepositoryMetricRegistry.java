@@ -2,9 +2,12 @@ package com.veadan.folib.components.micrometer;
 
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,6 +20,7 @@ import java.util.stream.Collectors;
 
 @Component
 public class RepositoryMetricRegistry {
+    private static final Logger logger = LoggerFactory.getLogger(RepositoryMetricRegistry.class);
     private final MeterRegistry meterRegistry;
     private final MetricDataFetcher metricDataFetcher;
     // 缓存所有指标，Key格式：metricName|packageType|type|name
@@ -38,12 +42,15 @@ public class RepositoryMetricRegistry {
     }
 
     private void updateAllMetrics() {
+        Instant startTime = Instant.now();
         List<MetricData> metrics = metricDataFetcher.fetchAllMetrics();
         if(metrics==null || metrics.isEmpty()){
+            logger.info("No metrics fetched at {}", startTime);
             return;
         }
         metrics.forEach(this::updateSingleMetric);
         cleanupExpiredMetrics(metrics);
+        logger.info("Metrics updated at {}", startTime);
     }
 
     /**
@@ -68,10 +75,13 @@ public class RepositoryMetricRegistry {
                             "storageId", data.getStorageId()
                     )
                     .register(meterRegistry);
+            logger.info("Registered new metric: {}", uniqueKey);
             return ref;
         });
         valueRef.set(data.getValue());
+        logger.info("Updated metric: {} with value {}", uniqueKey, data.getValue());
     }
+
 
     /**
      * 清理已删除的指标
@@ -86,7 +96,13 @@ public class RepositoryMetricRegistry {
                 ))
                 .collect(Collectors.toSet());
 
-        metricCache.keySet().removeIf(key -> !activeKeys.contains(key));
+        metricCache.keySet().removeIf(key -> {
+            boolean removed = !activeKeys.contains(key);
+            if (removed) {
+                logger.info("Removed expired metric: {}", key);
+            }
+            return removed;
+        });
     }
 }
 
