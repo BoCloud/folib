@@ -599,8 +599,7 @@ export default {
     PleaseEnterDictKey:'属性名不能为空',
     PleaseEnterDictValue:'属性值不能为空',
     PleaseCompleteRequiredFields:'请完成必填项',
-    WebhookSettingAnswer:'增量迁移时使用该配置信息获取制品，如果存在多条取最新的一条'
-
-
-    
+    WebhookSettingAnswer:'增量迁移时使用该配置信息获取制品，如果存在多条取最新的一条',
+    'SystemImportExport':'系统配置导入导出',
+    'SystemImportExportInfo': '该功能用于导入或者导出系统配置',
 }
