@@ -22,23 +22,23 @@ public class NpmRepositoryManagementStrategy
     @Inject
     private CronTaskDataService cronTaskDataService;
 
-    @Override
-    protected void createRepositoryInternal(Storage storage,
-                                            Repository repository)
-        throws RepositoryManagementStrategyException
-    {
-        String storageId = storage.getId();
-        String repositoryId = repository.getId();
-
-        if (repository.isProxyRepository())
-        {
-            createRemoteChangesFeedFetcherCronTask(storageId, repositoryId);
-        }
-    }
+//    @Override
+//    protected void createRepositoryInternal(Storage storage,
+//                                            Repository repository)
+//        throws RepositoryManagementStrategyException
+//    {
+//        String storageId = storage.getId();
+//        String repositoryId = repository.getId();
+//
+//        if (repository.isProxyRepository())
+//        {
+////            createRemoteChangesFeedFetcherCronTask(storageId, repositoryId);
+//        }
+//    }
 
     private void createRemoteChangesFeedFetcherCronTask(String storageId,
                                                         String repositoryId)
-        throws RepositoryManagementStrategyException
+            throws RepositoryManagementStrategyException
     {
         CronTaskConfigurationDto configuration = new CronTaskConfigurationDto();
         configuration.setName(FetchRemoteNpmChangesFeedCronJob.calculateJobName(storageId, repositoryId));

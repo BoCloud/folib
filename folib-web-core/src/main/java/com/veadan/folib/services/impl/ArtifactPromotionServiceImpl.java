@@ -1804,12 +1804,21 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                     String filePath = StrUtil.isBlankOrUndefined(path) ? fileName : path.endsWith("/") ? String.join("", path, fileName) : String.join("/", path, fileName);
                     RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, filePath);
                     Repository repository = repositoryPath.getRepository();
-                    if (Boolean.FALSE.equals(repository.isAllowsDeployment())) {
+                    boolean flag = true;
+                    if (repository.isGroupRepository() && StringUtils.isBlank(repository.getGroupDefaultRepository())) {
                         throw new BusinessException("deployment of artifacts to " +
                                 repositoryPath.getStorageId() + ":" + repositoryPath.getRepositoryId() +
                                 " repository is not allowed!");
                     }
-                    if (Files.exists(repositoryPath) && Boolean.FALSE.equals(repository.isAllowsRedeployment())) {
+                    if (repository.isGroupRepository() && StringUtils.isNotBlank(repository.getGroupDefaultRepository())) {
+                        flag = false;
+                    }
+                    if (flag && Boolean.FALSE.equals(repository.isAllowsDeployment())) {
+                        throw new BusinessException("deployment of artifacts to " +
+                                repositoryPath.getStorageId() + ":" + repositoryPath.getRepositoryId() +
+                                " repository is not allowed!");
+                    }
+                    if (flag && Files.exists(repositoryPath) && Boolean.FALSE.equals(repository.isAllowsRedeployment())) {
                         throw new BusinessException("Re-deployment of artifacts to " +
                                 repositoryPath.getStorageId() + ":" + repositoryPath.getRepositoryId() +
                                 " repository is not allowed!");
