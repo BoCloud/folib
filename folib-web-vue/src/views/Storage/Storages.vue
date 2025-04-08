@@ -1448,7 +1448,9 @@ export default {
   },
   async created() {
     this.pageLoading = true
-    this.isChecked = storage.get('isChecked')
+    if (storage.get('isChecked') != undefined) {
+      this.isChecked = storage.get('isChecked')
+    }
     this.userInfo = store.state.user
     await  this.getStorages();
     await  this.getBaseUrl();
