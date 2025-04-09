@@ -9,7 +9,7 @@ pipeline {
         string(name: 'hub_certificate', defaultValue: 'public-folib-key', description: 'Hub凭证')
         string(name: 'docker_repo', defaultValue: 'mufan/mufan-docker', description: '镜像仓库名称')
         string(name: 'docker_name', defaultValue: 'folib-server', description: '镜像名称')
-        string(name: 'dockerTag', defaultValue: '1.2.8.1', description: '镜像版本')
+        string(name: 'dockerTag', defaultValue: '1.2.8-dev', description: '镜像版本')
         string(name: 'buildPackageType', defaultValue: 'k8s', description: '部署包名称')
         string(name: 'platform', defaultValue: 'linux/amd64', description: '支持linux/amd64')
         string(name: 'maven_settings_id', defaultValue: 'devops-settings-folib', description: 'maven-settings的id')
