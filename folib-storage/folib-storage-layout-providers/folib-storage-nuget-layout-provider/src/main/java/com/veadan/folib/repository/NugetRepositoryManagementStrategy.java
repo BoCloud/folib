@@ -25,27 +25,27 @@ public class NugetRepositoryManagementStrategy
     @Inject
     private CronTaskDataService cronTaskDataService;
 
-    
-    @Override
-    protected void createRepositoryInternal(Storage storage,
-                                            Repository repository)
-        throws RepositoryManagementStrategyException
-    {
-        String storageId = storage.getId();
-        String repositoryId = repository.getId();
-        
-        if (repository.isProxyRepository())
-        {
-            createRemoteFeedDownloaderCronTask(storageId, repositoryId);
-        }
-    }
+
+//    @Override
+//    protected void createRepositoryInternal(Storage storage,
+//                                            Repository repository)
+//        throws RepositoryManagementStrategyException
+//    {
+//        String storageId = storage.getId();
+//        String repositoryId = repository.getId();
+//
+//        if (repository.isProxyRepository())
+//        {
+//            createRemoteFeedDownloaderCronTask(storageId, repositoryId);
+//        }
+//    }
 
     private void createRemoteFeedDownloaderCronTask(String storageId,
                                                     String repositoryId)
-        throws RepositoryManagementStrategyException
+            throws RepositoryManagementStrategyException
     {
         String downloadRemoteFeedCronJobName = "Remote feed download for " + storageId + ":" + repositoryId;
-        
+
         CronTaskConfigurationDto configuration = new CronTaskConfigurationDto();
         configuration.setName(downloadRemoteFeedCronJobName);
         configuration.setJobClass(DownloadRemoteFeedCronJob.class.getName());
@@ -65,5 +65,5 @@ public class NugetRepositoryManagementStrategy
             throw new RepositoryManagementStrategyException(e.getMessage(), e);
         }
     }
-    
+
 }

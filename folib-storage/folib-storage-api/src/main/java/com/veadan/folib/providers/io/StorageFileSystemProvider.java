@@ -2,6 +2,7 @@ package com.veadan.folib.providers.io;
 
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.constant.GlobalConstants;
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.RepositoryPathUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -174,10 +175,6 @@ public abstract class StorageFileSystemProvider
         }
 
         RepositoryPath repositoryPath = (RepositoryPath) path;
-//        if (!Files.exists(repositoryPath.getTarget())) {
-//            throw new NoSuchFileException(unwrap(repositoryPath).toString());
-//
-//        }
         if (!Files.isDirectory(repositoryPath)) {
             doDeletePath(repositoryPath, force, true);
 
@@ -206,6 +203,13 @@ public abstract class StorageFileSystemProvider
         RootRepositoryPath root = repositoryPath.getFileSystem().getRootDirectory();
 
         Files.walkFileTree(repositoryPath, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                log.warn(exc.getMessage());
+                // 目录或文件已删除，继续遍历
+                return FileVisitResult.CONTINUE;
+            }
+
             @Override
             public FileVisitResult visitFile(Path file,
                                              BasicFileAttributes attrs)
@@ -374,6 +378,7 @@ public abstract class StorageFileSystemProvider
             if (isTrash) {
                 Files.createDirectories(trashPath);
             }
+            logger.info("Deleting hidden folders [{}] for [{}]", LayoutFileSystem.TRASH, trashPath.getTarget());
             return;
         }
         Files.walkFileTree(trashPath, new SimpleFileVisitor<Path>() {
@@ -448,8 +453,14 @@ public abstract class StorageFileSystemProvider
 
         if (!Files.exists(trashPath.getParent().getTarget())) {
             logger.debug("Creating: [{}]", trashPath.getParent());
-
-            Files.createDirectories(trashPath.getParent().getTarget());
+            try {
+                Files.createDirectories(trashPath.getParent().getTarget());
+            } catch (Exception ex) {
+                if (ex instanceof FileSystemException && ex.getMessage().contains("Not a directory")) {
+                    throw new RuntimeException("CreateTrashDirectoryError");
+                }
+                throw ex;
+            }
         }
 
         return trashPath;
@@ -478,8 +489,8 @@ public abstract class StorageFileSystemProvider
                                         OpenOption... options)
             throws IOException {
         TempRepositoryPath temp = RepositoryFiles.temporary((RepositoryPath) path);
-
-        return new TempOutputStream(temp, options);
+//        return new TempOutputStream(temp, options);
+        return new ProxyOutputStream(StorageFileSystemProvider.super.newOutputStream(unwrap(path), options));
     }
 
     @Override

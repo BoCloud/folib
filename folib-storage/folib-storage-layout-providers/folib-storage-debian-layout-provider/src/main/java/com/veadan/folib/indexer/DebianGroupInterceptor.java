@@ -42,6 +42,7 @@ public class DebianGroupInterceptor implements GroupInterceptor {
         this.repositoryPathResolver = repositoryPathResolver;
     }
 
+    @Override
     public boolean shouldInterceptor(RepositoryPath path) {
         return this.shouldTakeAction(path);
     }

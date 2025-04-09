@@ -45,11 +45,9 @@ public class SystemConfigurationServiceImpl implements SystemConfigurationServic
                 pathStream.forEach(path -> {
                     try {
                         Path targetPath = targetParentPath.resolve(path.getFileName().toString());
-                        if (Files.isDirectory(path)) {
-                            FileUtils.copyDirectory(path.toFile(), targetPath.toFile());
-                            return;
+                        if (Files.isRegularFile(path) && getIncludeFilenames().stream().anyMatch(item -> item.equals(path.getFileName().toString()))) {
+                            FileUtils.copyFile(path.toFile(), targetPath.toFile());
                         }
-                        FileUtils.copyFile(path.toFile(), targetPath.toFile());
                     } catch (IOException ex) {
                         throw new RuntimeException(ex);
                     }
@@ -74,11 +72,9 @@ public class SystemConfigurationServiceImpl implements SystemConfigurationServic
                     pathStream.forEach(path -> {
                         try {
                             Path targetPath = confPath.resolve(path.getFileName().toString());
-                            if (Files.isDirectory(path)) {
-                                FileUtils.copyDirectory(path.toFile(), targetPath.toFile());
-                                return;
+                            if (Files.isRegularFile(path) && getIncludeFilenames().stream().anyMatch(item -> item.equals(path.getFileName().toString()))) {
+                                FileUtils.copyFile(path.toFile(), targetPath.toFile());
                             }
-                            FileUtils.copyFile(path.toFile(), targetPath.toFile());
                         } catch (IOException ex) {
                             throw new RuntimeException(ex);
                         }

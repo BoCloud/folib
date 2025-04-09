@@ -26,6 +26,7 @@ public class JfrogMigrateForm {
     // USER GROUP PERMISSION REPOSITORY
     private Set<String> contents;
 
+
     @Pattern(regexp = "[a-zA-Z0-9\\-\\_\\.]+")
     private String storageId;
 
@@ -33,5 +34,6 @@ public class JfrogMigrateForm {
 
     private String basedir;
 
+    @NotBlank(message = "制品迁移方式不能为空1-jfrog备份 2-数据爬取")
     private String artifactType;
 }
