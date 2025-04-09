@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.output.ProxyOutputStream;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileSystemUtils;
@@ -296,14 +297,19 @@ public abstract class StorageFileSystemProvider
             FileTime newTime = FileTime.fromMillis(System.currentTimeMillis());
             Files.setLastModifiedTime(trashPath.getTarget(), newTime);
         } catch (Exception e) {
+            logger.error("DoDeletePath [{}] error [{}]", repositoryPath, ExceptionUtils.getStackTrace(e));
             if (e instanceof FileSystemException && e.getMessage().contains("Not a directory")) {
                 throw new RuntimeException("CreateTrashDirectoryError");
             }
-            Files.move(repositoryPath.getTarget(),
-                    trashPath.getTarget(),
-                    StandardCopyOption.REPLACE_EXISTING);
-            FileTime newTime = FileTime.fromMillis(System.currentTimeMillis());
-            Files.setLastModifiedTime(trashPath.getTarget(), newTime);
+            try {
+                Files.move(repositoryPath.getTarget(),
+                        trashPath.getTarget(),
+                        StandardCopyOption.REPLACE_EXISTING);
+                FileTime newTime = FileTime.fromMillis(System.currentTimeMillis());
+                Files.setLastModifiedTime(trashPath.getTarget(), newTime);
+            } catch (Exception ignore) {
+
+            }
         }
 
         if (force && repository.isAllowsForceDeletion()) {
