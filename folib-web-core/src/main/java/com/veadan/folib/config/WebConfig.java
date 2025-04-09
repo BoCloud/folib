@@ -254,7 +254,7 @@ public class WebConfig
                 .resourceChain(true)
                 .addResolver(new GzipResourceResolver())
                 .addResolver(new PathResourceResolver());
-        registry.addResourceHandler("/help/**")
+        registry.addResourceHandler("/help/","/help/**")
                 .addResourceLocations("classpath:/docs/")
                 .setCachePeriod(3600)
                 .resourceChain(true)
@@ -342,9 +342,9 @@ public class WebConfig
                 List<? extends Resource> locations, ResourceResolverChain chain) {
 
             Resource resource = super.resolveResourceInternal(request,  requestPath, locations, chain);
-            if (resource == null && !requestPath.endsWith(".html"))  {
+            if (resource == null )  {
                 // 尝试添加 .html 后缀
-                return super.resolveResourceInternal(request,  requestPath + ".html", locations, chain);
+                return super.resolveResourceInternal(request,"index.html", locations, chain);
             }
             return resource;
         }
