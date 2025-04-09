@@ -254,7 +254,7 @@ public class WebConfig
                 .resourceChain(true)
                 .addResolver(new GzipResourceResolver())
                 .addResolver(new PathResourceResolver());
-        registry.addResourceHandler("/help/","/help/**")
+        registry.addResourceHandler("/help","/help/","/help/**")
                 .addResourceLocations("classpath:/docs/")
                 .setCachePeriod(3600)
                 .resourceChain(true)
