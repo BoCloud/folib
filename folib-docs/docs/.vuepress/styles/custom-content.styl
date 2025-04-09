@@ -1,0 +1,59 @@
+.content__default p code {
+    background: #f2f4f5;
+    border: 1px solid #eee;
+    border-radius: 3px;
+    font-size: .9em;
+    margin: 0 1px;
+    padding: .2em .4em;
+}
+
+.custom-divider {
+    color: rgba(0, 0, 0, .85);
+    display: table;
+    font-size: 16px;
+    font-weight: 500;
+    margin: 16px 0;
+    text-align: center;
+    white-space: nowrap;
+    clear: both;
+    height: 1px;
+    min-width: 100%;
+    width: 100%;
+}
+.custom-divider::before, .custom-divider::after {
+    border-top: 1px solid #e8e8e8;
+    content: "";
+    display: table-cell;
+    position: relative;
+    top: 10%;
+    transform: translateY(50%);
+    width: 5%;
+}
+.custom-divider::after {
+    width: 95%;
+}
+.custom-divider .divider-inner {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.line-numbers-mode {
+    max-height: 500px;
+    overflow: auto;
+}
+
+.line-numbers-mode .code-copy svg,span {
+    top: 0!important;
+}
+
+.content__default img.three-quarters {
+    display: block;
+    width: 75%;
+    margin: 0 auto;
+}
+
+.content__default img.half {
+    display: block;
+    width: 50%;
+    margin: 0 auto;
+}

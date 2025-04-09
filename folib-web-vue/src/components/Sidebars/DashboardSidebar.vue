@@ -1,5 +1,5 @@
 <template>
-  <a-layout-sider
+  <a-layout-sider199
     collapsible
     class="sider-primary"
     breakpoint="lg"
@@ -190,7 +190,7 @@
     </div>
   </div>
     <!-- / Sidebar Footer -->
-  </a-layout-sider>
+  </a-layout-sider199>
   <!-- / Main Sidebar -->
 </template>
 

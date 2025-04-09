@@ -23,7 +23,7 @@ public class CheckDD{
         engine.analyzeDependencies();
         try {
 
-            engine.getReport("folib", new File("/Users/veadan/dependency-check/folib.html"),"HTML",null );
+            engine.getReport("folib", new File("/Users/veadan/dependency-check/folib.html"),"JSON",null );
         } catch (ReportException e) {
             e.printStackTrace();
         }
