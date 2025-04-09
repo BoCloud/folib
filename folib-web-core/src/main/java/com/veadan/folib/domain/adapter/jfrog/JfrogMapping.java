@@ -29,7 +29,7 @@ public class JfrogMapping {
 
     public static String accessConvert(Privilege privilege) {
         if (privilege == ADMIN) {
-            return "";
+            return "ARTIFACTS_MANAGE";
         } else if (privilege == DELETE) {
             return "ARTIFACTS_DELETE";
         } else if (privilege == DEPLOY) {

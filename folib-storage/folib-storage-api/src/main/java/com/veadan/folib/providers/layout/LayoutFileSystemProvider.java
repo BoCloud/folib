@@ -137,9 +137,9 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
                 throw new ArtifactResolutionException(String.format("The artifact path is a directory: [%s]",
                         path.toString()));
             }
-
-            Files.createDirectories(path.getParent());
-
+            if(!path.toString().startsWith("s3")){
+                Files.createDirectories(path.getParent());
+            }
             try {
                 return decorateStream((RepositoryPath) path, super.newOutputStream(path, options));
             } catch (NoSuchAlgorithmException e) {
@@ -305,18 +305,9 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
                        boolean force)
             throws IOException {
         logger.info("Deleting in ({})...", path);
-
-
         RepositoryPath repositoryPath = (RepositoryPath) path;
         deleteMetadata(repositoryPath);
         boolean exists = Files.exists(path);
-
-//        if (!Files.exists(path)) {
-//            logger.warn("Path not found: path-[{}]", path);
-//
-//            return;
-//        }
-
         boolean directory = Files.isDirectory(path);
         deleteArtifactMedataFile(repositoryPath, force);
         super.delete(path, force);
@@ -328,7 +319,6 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
         } else {
             artifactEventListenerRegistry.dispatchArtifactDirectoryPathDeletedEvent(path);
         }
-
         logger.info("Deleted [{}]", path);
     }
 

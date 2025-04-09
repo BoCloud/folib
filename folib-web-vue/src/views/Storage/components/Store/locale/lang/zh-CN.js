@@ -374,4 +374,5 @@ export default {
     'RecursiveDelete': '递归删除',
     'Edit': '编辑',
     'GroupDefaultRepository':'默认上传仓库',
+    'CreateTrashDirectoryError': '回收站内存在与该制品互相冲突的文件，请检查回收站下该制品的信息',
 }
