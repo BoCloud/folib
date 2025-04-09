@@ -134,7 +134,7 @@ public class CleanupArtifactsRepositoryCronJob extends JavaCronJob {
                 cleanupRepositoryType = "DOCKER";
             }
             CleanupArtifactsProvider cleanupArtifactsProvider = cleanupArtifactsProviderRegistry.getProvider(cleanupRepositoryType);
-            cleanupArtifactsProvider.cleanup(storageId, repositoryId, "", storageDay, storageCondition, cleanupArtifactPathMap);
+            cleanupArtifactsProvider.cleanupV2(storageId, repositoryId, "", storageDay, storageCondition, cleanupArtifactPathMap);
         } else {
             log.warn("Repository storageId repositoryId storageDay should not be null");
         }

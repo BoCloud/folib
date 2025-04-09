@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -300,6 +301,104 @@ public class RepositoryPathUtil {
     /**
      * 获取绝对路径下的所有文件
      *
+     * @param layout           布局
+     * @param repositoryPath   路径
+     * @param filePathConsumer path回调方法
+     * @param dirPathConsumer  目录回调方法
+     * @throws IOException 异常
+     */
+    public static void handlerPaths(String layout, RepositoryPath repositoryPath, Consumer<RepositoryPath> filePathConsumer, Consumer<RepositoryPath> dirPathConsumer) throws IOException {
+        handlerPaths(layout, repositoryPath, null, null, null, filePathConsumer, dirPathConsumer);
+    }
+
+    /**
+     * 获取绝对路径下的所有文件
+     *
+     * @param layout               布局
+     * @param repositoryPath       路径
+     * @param excludeDirectoryList 排除的目录列表
+     * @param beginDate            开始日期
+     * @param endDate              结束日期
+     * @param filePathConsumer     path回调方法
+     * @param dirPathConsumer      目录回调方法
+     * @throws IOException 异常
+     */
+    public static void handlerPaths(String layout, RepositoryPath repositoryPath, List<String> excludeDirectoryList, LocalDateTime beginDate, LocalDateTime endDate, Consumer<RepositoryPath> filePathConsumer, Consumer<RepositoryPath> dirPathConsumer) throws IOException {
+        if (!Files.exists(repositoryPath)) {
+            log.warn("Path [{}] not exists", repositoryPath);
+            return;
+        }
+        RepositoryPathResolver repositoryPathResolver = SpringUtil.getBean(RepositoryPathResolver.class);
+        if (!Files.isDirectory(repositoryPath) && withinTimeFrame(repositoryPath, beginDate, endDate)) {
+            //是一个文件
+            log.info("Handler path [{}]", repositoryPath);
+            filePathConsumer.accept(repositoryPathResolver.resolve(repositoryPath.getRepository(), RepositoryFiles.relativizePath(repositoryPath)));
+            return;
+        }
+        final boolean isDockerLayout = ProductTypeEnum.Docker.getFoLibraryName().equalsIgnoreCase(layout);
+        try {
+            Files.walkFileTree(repositoryPath, new SimpleFileVisitor<Path>() {
+
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                    if (exc instanceof NoSuchFileException) {
+                        // 目录或文件已删除，继续遍历
+                        log.warn("Handler path [{}] no such file skip...", file);
+                        return FileVisitResult.CONTINUE;
+                    }
+                    return super.visitFileFailed(file, exc);
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file,
+                                                 BasicFileAttributes attrs)
+                        throws IOException {
+                    RepositoryPath itemPath = (RepositoryPath) file;
+                    if (include(1, itemPath, isDockerLayout, layout) && withinTimeFrame(itemPath, beginDate, endDate)) {
+                        log.info("Handler path [{}]", itemPath);
+                        filePathConsumer.accept(repositoryPathResolver.resolve(itemPath.getRepository(), RepositoryFiles.relativizePath(itemPath)));
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+                    try {
+                        RepositoryPath itemPath = (RepositoryPath) dir;
+                        if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !include(2, itemPath, isDockerLayout, layout) || (CollectionUtils.isNotEmpty(excludeDirectoryList) && excludeDirectoryList.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
+                            log.info("RepositoryPath [{}] skip...", itemPath.toString());
+                            return FileVisitResult.SKIP_SUBTREE;
+                        }
+                        return FileVisitResult.CONTINUE;
+                    } catch (NoSuchFileException e) {
+                        // 文件已删除，跳过处理
+                        log.warn("Handler path directory [{}] no such directory skip...", dir);
+                        return FileVisitResult.CONTINUE;
+                    }
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
+                    try {
+                        RepositoryPath itemPath = (RepositoryPath) dir;
+                        log.info("Handler directory path [{}]", itemPath);
+                        dirPathConsumer.accept(itemPath);
+                        return FileVisitResult.CONTINUE;
+                    } catch (Exception e) {
+                        log.warn("Handler directory path [{}] error [{}]", dir, ExceptionUtils.getStackTrace(e));
+                        return FileVisitResult.CONTINUE;
+                    }
+                }
+            });
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException(ex);
+        }
+    }
+
+    /**
+     * 获取绝对路径下的所有文件
+     *
      * @param repositoryPath 路径
      */
     public static List<RepositoryPath> getDockerImagePaths(RepositoryPath repositoryPath) {
@@ -364,6 +463,90 @@ public class RepositoryPathUtil {
         }
         log.info("Path [{}] find image paths [{}]", repositoryPath, pathList.size());
         return pathList;
+    }
+
+    /**
+     * 获取绝对路径下的所有文件
+     *
+     * @param repositoryPath   路径
+     * @param filePathConsumer path回调方法
+     * @param dirPathConsumer  目录回调方法
+     */
+    public static void handlerDockerImagePaths(RepositoryPath repositoryPath, Consumer<RepositoryPath> filePathConsumer, Consumer<RepositoryPath> dirPathConsumer) {
+        String blobs = "blobs", manifest = "manifest", temp = ".temp";
+        List<String> excludeList = Lists.newArrayList(blobs, manifest, temp);
+        if (!Files.exists(repositoryPath)) {
+            log.warn("Path [{}] not exists", repositoryPath);
+            return;
+        }
+        if (!Files.isDirectory(repositoryPath)) {
+            log.warn("Path [{}] not is directory", repositoryPath);
+            return;
+        }
+        RepositoryPathResolver repositoryPathResolver = SpringUtil.getBean(RepositoryPathResolver.class);
+        List<RepositoryPath> pathList = Lists.newArrayList();
+        try {
+            Files.walkFileTree(repositoryPath, new SimpleFileVisitor<Path>() {
+
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                    if (exc instanceof NoSuchFileException) {
+                        // 目录或文件已删除，继续遍历
+                        log.warn("Find image path [{}] no such file skip...", file);
+                        return FileVisitResult.CONTINUE;
+                    }
+                    return super.visitFileFailed(file, exc);
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file,
+                                                 BasicFileAttributes attrs)
+                        throws IOException {
+                    RepositoryPath itemPath = (RepositoryPath) file;
+                    log.debug("Current path [{}]", itemPath);
+                    if (include(1, itemPath, true, ProductTypeEnum.Docker.getFoLibraryName()) && !pathList.contains(itemPath.getParent().getParent())) {
+                        log.info("Handler image path [{}]", itemPath);
+                        itemPath = repositoryPathResolver.resolve(itemPath.getRepository(), RepositoryFiles.relativizePath(itemPath.getParent().getParent()));
+                        pathList.add(itemPath);
+                        filePathConsumer.accept(itemPath);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+                    try {
+                        RepositoryPath itemPath = (RepositoryPath) dir;
+                        log.debug("Current directory path [{}]", itemPath);
+                        if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !include(2, itemPath, true, ProductTypeEnum.Docker.getFoLibraryName()) || (CollectionUtils.isNotEmpty(excludeList) && excludeList.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
+                            log.debug("RepositoryPath [{}] skip...", itemPath.toString());
+                            return FileVisitResult.SKIP_SUBTREE;
+                        }
+                        return FileVisitResult.CONTINUE;
+                    } catch (NoSuchFileException e) {
+                        // 文件已删除，跳过处理
+                        log.warn("Find image path directory [{}] no such directory skip...", dir);
+                        return FileVisitResult.CONTINUE;
+                    }
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
+                    try {
+                        RepositoryPath itemPath = (RepositoryPath) dir;
+                        log.info("Handler image directory path [{}]", itemPath);
+                        dirPathConsumer.accept(itemPath);
+                        return FileVisitResult.CONTINUE;
+                    } catch (Exception e) {
+                        log.warn("Handler image directory path [{}] error [{}]", dir, ExceptionUtils.getStackTrace(e));
+                        return FileVisitResult.CONTINUE;
+                    }
+                }
+            });
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
+            throw new RuntimeException(ex);
+        }
     }
 
     /**

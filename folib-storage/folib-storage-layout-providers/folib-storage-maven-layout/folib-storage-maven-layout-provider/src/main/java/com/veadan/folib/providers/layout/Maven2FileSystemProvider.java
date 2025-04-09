@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.spi.FileSystemProvider;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -30,6 +31,7 @@ import java.util.stream.StreamSupport;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.artifact.ArtifactUtils;
 import org.apache.maven.artifact.repository.metadata.Metadata;
+import org.apache.maven.artifact.repository.metadata.SnapshotVersion;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -181,7 +183,7 @@ public class Maven2FileSystemProvider extends LayoutFileSystemProvider
                             if (Objects.nonNull(mavenArtifact)) {
                                 String version = mavenArtifact.getVersion();
                                 version = version == null ? pomPath.getParent().getFileName().toString() : version;
-                                deleteMetadataAtVersionLevel(artifactBasePath, version);
+                                deleteMetadataAtArtifactLevel(artifactBasePath, version);
                             }
                         }
                     }
@@ -258,7 +260,11 @@ public class Maven2FileSystemProvider extends LayoutFileSystemProvider
         Metadata metadataVersionLevel = mavenMetadataManager.readMetadata(artifactPath);
         if (metadataVersionLevel != null && metadataVersionLevel.getVersioning() != null)
         {
-            metadataVersionLevel.getVersioning().getVersions().remove(version);
+            if (ArtifactUtils.isSnapshot(version)) {
+                metadataVersionLevel.getVersioning().getSnapshotVersions().removeIf(snapshotVersion -> snapshotVersion.getVersion().equals(version));
+            } else {
+                metadataVersionLevel.getVersioning().getVersions().remove(version);
+            }
 
             if (version.equals(metadataVersionLevel.getVersioning().getLatest()))
             {

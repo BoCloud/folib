@@ -202,4 +202,18 @@ public class DockerFileSystemProvider
         return existsRelation;
     }
 
+    @Override
+    public void deleteMetadata(RepositoryPath repositoryPath) {
+        try {
+            if (DockerArtifactCoordinates.isTrashDockerTag(repositoryPath)) {
+                RepositoryPath tempRepositoryPath = repositoryPath.resolveSibling("temp");
+                RepositoryFiles.deleteTrash(tempRepositoryPath, null, null);
+                RepositoryPath hiddenTempRepositoryPath = repositoryPath.resolveSibling(".temp");
+                RepositoryFiles.deleteTrash(hiddenTempRepositoryPath, null, null);
+            }
+        } catch (Exception ex) {
+            logger.error("Docker deleteMetadata error [{}]", ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
 }

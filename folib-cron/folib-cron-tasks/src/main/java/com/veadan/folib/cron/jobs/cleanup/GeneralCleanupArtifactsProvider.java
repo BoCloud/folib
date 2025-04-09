@@ -86,6 +86,49 @@ public class GeneralCleanupArtifactsProvider implements CleanupArtifactsProvider
         }
     }
 
+    @Override
+    public void cleanupV2(String storageId, String repositoryId, String path, String storageDay, String storageCondition, Map<String, String> cleanupArtifactPathMap) throws Exception {
+        try {
+            RepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+            List<Integer> resultList = Lists.newArrayList();
+            RepositoryPathUtil.handlerPaths(rootRepositoryPath.getRepository().getLayout(), rootRepositoryPath,
+                    (RepositoryPath filePath) ->
+                    {
+                        handlerFilePath(resultList, storageId, repositoryId, filePath, storageDay, storageCondition, cleanupArtifactPathMap);
+                    },
+                    (RepositoryPath dirPath) -> {
+                        handlerDirPath(storageId, repositoryId, dirPath);
+                    });
+            long success = resultList.stream().filter(ONE::equals).count(), fail = resultList.stream().filter(ZERO::equals).count();
+            log.info("Cleanup artifact job storageId [{}] repositoryId [{}] storageCondition [{}] storageDay [{}] success [{}] fail [{}]",
+                    storageId, repositoryId, storageCondition, storageDay, success, fail);
+        } catch (Exception e) {
+            log.error("Cleanup artifact job storageId [{}] repositoryId [{}] storageCondition [{}] storageDay [{}] error [{}]", storageId, repositoryId, storageCondition, storageDay, ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    private void handlerFilePath(List<Integer> resultList, String storageId, String repositoryId, RepositoryPath repositoryPath, String storageDay, String storageCondition, Map<String, String> cleanupArtifactPathMap) {
+        try {
+            Integer result = cleanupArtifact(storageId, repositoryId, repositoryPath, storageDay, cleanupArtifactPathMap);
+            if (Objects.nonNull(result)) {
+                resultList.add(result);
+            }
+        } catch (Exception ex) {
+            log.error("Cleanup artifact job storageId [{}] repositoryId [{}] storageCondition [{}] storageDay [{}]  path [{}] error [{}]", storageId, repositoryId, storageCondition, storageDay, repositoryPath, ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
+    private void handlerDirPath(String storageId, String repositoryId, RepositoryPath repositoryPath) {
+        try {
+            if (Files.exists(repositoryPath) && !Files.isSameFile(repositoryPath.getRoot(), repositoryPath) && Files.list(repositoryPath).count() == 0) {
+                Files.deleteIfExists(repositoryPath);
+                log.info("Cleanup storageId [{}] repositoryId [{}] dir path [{}] do delete", storageId, repositoryId, repositoryPath.toString());
+            }
+        } catch (Exception ex) {
+            log.error("Cleanup artifact job storageId [{}] repositoryId [{}] dir path [{}] error [{}]", storageId, repositoryId, repositoryPath, ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
     private Integer cleanupArtifact(String storageId, String repositoryId, RepositoryPath repositoryPath, String storageDay, Map<String, String> cleanupArtifactPathMap) throws Exception {
         String path = RepositoryFiles.relativizePath(repositoryPath);
         if (!Files.exists(repositoryPath)) {
