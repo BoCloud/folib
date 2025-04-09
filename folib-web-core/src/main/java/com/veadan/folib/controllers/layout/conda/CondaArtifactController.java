@@ -62,8 +62,14 @@ public class CondaArtifactController extends BaseArtifactController {
         return ResponseEntity.ok().build();
     }
 
-
-
+    @ApiOperation(value = "Get Authentication Type")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @GetMapping(path = "/{storageId}/{repositoryId}/authentication-type")
+    public ResponseEntity getAuthenticationType(@RepositoryMapping Repository repository) {
+        JSONObject resultData = new JSONObject();
+        resultData.put("authentication_type", "password");
+        return ResponseEntity.ok(resultData);
+    }
 
     @ApiOperation(value = "Used to authenticate an artifact")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "{token}")})
@@ -125,7 +131,7 @@ public class CondaArtifactController extends BaseArtifactController {
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public ResponseEntity getPackageMetadata(@RepositoryMapping Repository repository) {
         JSONObject resultData = new JSONObject();
-        resultData.put("result: ", "success");
+        resultData.put("result", "success");
         return ResponseEntity.ok(resultData);
     }
 
@@ -138,7 +144,7 @@ public class CondaArtifactController extends BaseArtifactController {
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     public ResponseEntity getReleaseMetadata(@RepositoryMapping Repository repository) {
         JSONObject resultData = new JSONObject();
-        resultData.put("result: ", "success");
+        resultData.put("result", "success");
         return ResponseEntity.ok(resultData);
     }
 
@@ -148,7 +154,7 @@ public class CondaArtifactController extends BaseArtifactController {
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     public ResponseEntity createPackage() {
         JSONObject resultData = new JSONObject();
-        resultData.put("result: ", "success");
+        resultData.put("result", "success");
         return ResponseEntity.ok(resultData);
     }
 
@@ -158,7 +164,7 @@ public class CondaArtifactController extends BaseArtifactController {
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     public ResponseEntity createRelease() {
         JSONObject resultData = new JSONObject();
-        resultData.put("result: ", "success");
+        resultData.put("result", "success");
         return ResponseEntity.ok(resultData);
     }
 

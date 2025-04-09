@@ -63,7 +63,8 @@ public class JWTAuthenticationSupplier
         // give priority to header based authentication, because it is more likely to be present
         if (request.getHeader(AUTHORIZATION_HEADER) != null) {
             String authHeader = request.getHeader(AUTHORIZATION_HEADER);
-            hasHeader = StringUtils.isNotBlank(authHeader) && authHeader.startsWith(BEARER_AUTHORIZATION_PREFIX);
+            hasHeader = StringUtils.isNotBlank(authHeader) &&
+                        (authHeader.startsWith(BEARER_AUTHORIZATION_PREFIX) || authHeader.startsWith(TOKEN_AUTHORIZATION_PREFIX));
         }
         // fallback - check if a cookie is present (necessary for EventSource; check gh#1046).
         else if (request.getCookies() != null && matchesScope(request)) {
