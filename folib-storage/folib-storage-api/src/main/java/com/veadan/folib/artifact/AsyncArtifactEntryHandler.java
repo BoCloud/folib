@@ -10,6 +10,7 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathLock;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.repositories.ArtifactRepository;
+import com.veadan.folib.services.ArtifactService;
 import com.veadan.folib.util.CommonUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tinkerpop.gremlin.structure.Graph;
@@ -29,6 +30,8 @@ public abstract class AsyncArtifactEntryHandler {
 
     @Inject
     private ArtifactRepository artifactEntityRepository;
+    @Inject
+    private ArtifactService artifactService;
     @Inject
     private RepositoryPathLock repositoryPathLock;
     @Inject
@@ -77,36 +80,11 @@ public abstract class AsyncArtifactEntryHandler {
     }
 
     private void handleTransactional(RepositoryPath repositoryPath) {
-        Graph g = janusGraph.tx().createThreadedTx();
         try {
             Artifact result = handleEvent(repositoryPath);
-            if (result == null) {
-                logger.debug("No [{}] result for event [{}] and path [{}].",
-                        Artifact.class.getSimpleName(),
-                        AsyncArtifactEntryHandler.this.getClass().getSimpleName(),
-                        repositoryPath);
-                g.tx().rollback();
-                return;
-            }
-            artifactEntityRepository.merge(() -> g.traversal(EntityTraversalSource.class), result);
-            if (g.tx().isOpen()) {
-                g.tx().commit();
-            }
+            artifactService.saveOrUpdateArtifact(result);
         } catch (Throwable ex) {
-            if (g.tx().isOpen()) {
-                g.tx().rollback();
-            }
-            String realMessage = CommonUtils.getRealMessage(ex);
-            logger.warn("[{}] [{}] handleTransactional error [{}]",
-                    this.getClass().getSimpleName(), repositoryPath, realMessage);
-            if (CommonUtils.catchException(realMessage)) {
-                logger.warn("[{}] [{}] handleTransactional catch error",
-                        this.getClass().getSimpleName(), repositoryPath);
-                return;
-            }
             throw new UndeclaredThrowableException(ex);
-        } finally {
-            g.tx().close();
         }
     }
 

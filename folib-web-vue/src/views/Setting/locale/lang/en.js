@@ -592,6 +592,7 @@ export default {
     PleaseEnterDictKey:'Property name cannot be empty',
     PleaseEnterDictValue:'Property value cannot be empty',
     PleaseCompleteRequiredFields:'Please complete required fields',
-    WebhookSettingAnswer:'When performing incremental migration, use this configuration information to obtain artifacts. If there are multiple entries, take the latest one'
-    
+    WebhookSettingAnswer:'When performing incremental migration, use this configuration information to obtain artifacts. If there are multiple entries, take the latest one',
+    'SystemImportExport':'System Import Export',
+    'SystemImportExportInfo': 'This function is used to import or export system configurations',
 }
