@@ -110,14 +110,15 @@ public class RestArtifactResolver
         long startTime = System.currentTimeMillis();
         logger.debug("Url [{}] 开始于 [{}]", url, startTime);
         MultivaluedMap<String, Object> acceptHeaders = new MultivaluedHashMap();
+        String userAgentKey = "User-Agent";
         List<Object> acceptList = new ArrayList<>();
         acceptList.add("FoLibrary/1.2.8");
-        acceptHeaders.put("User-Agent", acceptList);
+        acceptHeaders.put(userAgentKey, acceptList);
         Invocation.Builder request = resource.request();
-        if (Objects.nonNull(headers)) {
-            headers.add("User-Agent", acceptList);
-        } else {
+        if (Objects.isNull(headers)) {
             headers = acceptHeaders;
+        } else if (!headers.containsKey(userAgentKey)){
+            headers.add(userAgentKey, acceptList);
         }
         request.headers(headers);
         Response response;

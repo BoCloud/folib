@@ -2,9 +2,12 @@ package com.veadan.folib.providers.repository.proxied;
 
 import cn.hutool.core.math.MathUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.extra.spring.SpringUtil;
+import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.ArtifactNotFoundException;
 import com.veadan.folib.client.CloseableRestResponse;
 import com.veadan.folib.client.RestArtifactResolver;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +18,8 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 @Slf4j
@@ -101,7 +106,11 @@ public class RemoteArtifactStreamFetcher
                             response.toString(), response.getStatus()));
                 }
                 client.setTargetUrl(redirectUrl);
-                client.setHeaders(null);
+                if (Objects.nonNull(client.getHeaders())) {
+                    getRemoveHeaderList().forEach(header -> {
+                        client.getHeaders().remove(header);
+                    });
+                }
                 return getConnection(resource, redirectUrl, offset);
             }
             throw new IOException(String.format("Unreadable response for %s. Response status is %s",
@@ -260,4 +269,19 @@ public class RemoteArtifactStreamFetcher
 
     }
 
+    private List<String> getRemoveHeaderList() {
+        List<String> removeHeaderList = Lists.newArrayList("Authorization", "authorization");
+        String key = "REMOTE_REPOSITORY_REMOVE_FOLLOW_REDIRECTS_HEADER";
+        DistributedCacheComponent distributedCacheComponent = SpringUtil.getBean(DistributedCacheComponent.class);
+        String values = distributedCacheComponent.get(key);
+        if (StringUtils.isNotBlank(values)) {
+            Arrays.asList(values.split(",")).forEach(item -> {
+                if (StringUtils.isNotBlank(item) && !removeHeaderList.contains(item)) {
+                    removeHeaderList.add(item);
+                }
+            });
+        }
+        log.info("Remove follow redirects header [{}]", String.join(",", removeHeaderList));
+        return removeHeaderList;
+    }
 }
