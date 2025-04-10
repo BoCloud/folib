@@ -13,7 +13,14 @@ export default {
     'Success': '成功',
     'TheOperationIsIncorrect': '操作不正确',
     'FillInTheCronExpression': '请填写cron表达式',
+    'FillInTheCorrectCronExpression': '请填写正确的cron表达式',
     'Failure': '失败',
     'AddArtifactPath': '添加制品目录',
-    'TimingStrategyTitle':'全局定时策略'
+    'TimingStrategyTitle':'全局定时策略',
+    'ArtifactCatalog': '制品目录',
+    'EnterArtifactCatalog': '请输入制品目录',
+    'EnterRetentionPeriod': '请输入保留天数',
+    'EnterFull': '请输入制品目录完整信息',
+    'DuplicateItemsPresent': '存在重复项',
+    'PleaseEnter': '请输入',
 }

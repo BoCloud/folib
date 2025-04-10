@@ -16,7 +16,7 @@ public class ArtifactVersionDirectoryVisitor
         extends SimpleFileVisitor<Path>
 {
 
-    private static final String CHECKSUM_PATTERN = "glob:*.{md5,sha1,sha256}";
+    private static final String CHECKSUM_PATTERN = "glob:*.{md5,sha1,sha256,sha512,sm3}";
     private static final String METADATA_PATTERN = "glob:maven-metadata.*";
     private static final String SNAPSHOT_PATTERN = "glob:*SNAPSHOT*";
 

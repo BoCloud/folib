@@ -13,6 +13,7 @@ export default {
     'Success': 'Success',
     'TheOperationIsIncorrect': 'The operation is incorrect',
     'FillInTheCronExpression': 'Please fill in the cron expression',
+    'FillInTheCorrectCronExpression': 'Please fill in the correct cron expression',
     'Failure': 'Failure',
     'AddArtifactPath': 'Add artifact path',
     'AddSycnScope':"Add sycn scope",
@@ -22,6 +23,7 @@ export default {
     'EnterArtifactCatalog': 'Please enter the artifact catalog',
     'EnterRetentionPeriod': 'Please enter the retention period',
     'EnterKeepTheNumber': 'Please enter the keep the number',
+    'EnterFull': 'Please enter artifact catalog complete information',
     'DuplicateItemsPresent': 'There are duplicate items present',
     'PleaseEnter': 'Please enter the ',
 }

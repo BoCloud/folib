@@ -133,6 +133,12 @@ public class MavenMetadataManager
                      try
                      {
                          Path metadataPath = MetadataHelper.getMetadataPath(metadataBasePath, version, metadataType);
+                         if (Objects.nonNull(metadata)) {
+                             if (CollectionUtils.isEmpty(metadata.getVersioning().getVersions()) && CollectionUtils.isEmpty(metadata.getVersioning().getSnapshotVersions()) && CollectionUtils.isEmpty(metadata.getPlugins())) {
+                                 Files.deleteIfExists(metadataPath);
+                                 return;
+                             }
+                         }
                          if (metadataPath.toString().startsWith("s3://")) {
                              try (
                                      OutputStream os = Files.newOutputStream(metadataPath,

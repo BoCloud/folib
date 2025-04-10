@@ -1061,7 +1061,7 @@
             (step === 4 && folibRepository.type === 'group')" :bordered="false" class="header-solid">
 
                 <a-row>
-                    <a-col :span="12">
+                    <a-col :span="24">
                         <CronTask :folibRepository="this.folibRepositoryData" @settingDrawerClose="settingDrawerClose"></CronTask>
                     </a-col>
                 </a-row>

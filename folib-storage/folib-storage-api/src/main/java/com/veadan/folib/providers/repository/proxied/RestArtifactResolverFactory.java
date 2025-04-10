@@ -2,13 +2,13 @@ package com.veadan.folib.providers.repository.proxied;
 
 import com.veadan.folib.client.RemoteRepositoryRetryArtifactDownloadConfiguration;
 import com.veadan.folib.client.RestArtifactResolver;
+import com.veadan.folib.config.CustomAuthenticationFeature;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import com.veadan.folib.storage.repository.remote.heartbeat.RemoteRepositoryAlivenessService;
 import org.apache.commons.lang3.StringUtils;
-import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -43,12 +43,12 @@ public class RestArtifactResolverFactory
         String password = repository.getPassword();
         String url = repository.getUrl();
 
-        final HttpAuthenticationFeature authenticationFeature = (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) ? HttpAuthenticationFeature.basic(username, password) : null;
+        final CustomAuthenticationFeature customAuthenticationFeature = (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) ? CustomAuthenticationFeature.create(username, password) : null;
         final BearerTokenAuthFilter bearerTokenAuthFilter = (StringUtils.isEmpty(username) && StringUtils.isNotBlank(password))  ? new BearerTokenAuthFilter( password) : null;
         Client client  = proxyRepositoryConnectionPoolConfigurationService.getRestClient(repositoryPath.getStorageId(),repositoryPath.getRepositoryId());
         return new RestArtifactResolver(client , url, repositoryPath.getTargetUrl(), repositoryPath.getHeaders(),
                                         configuration,
-                                        authenticationFeature,
+                                        customAuthenticationFeature,
                                         bearerTokenAuthFilter)
                                 {
 

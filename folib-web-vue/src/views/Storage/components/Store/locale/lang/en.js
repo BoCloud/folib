@@ -371,6 +371,7 @@ export default {
     'CargoInstallConfig': 'To install a crate, use the cargo install command.',
     'Recursive': 'Recursive',
     'RecursiveTip': 'The metadata will be added to the selected folder and to all of the artifacts, folders and sub-folders under this folder.',
+    'MeteDataHiddenTip': 'If the selected metadata KEY is set to Do Not Display in the global settings, the new metadata will not be displayed on the page',
     'RecursiveDelete': 'Recursive Delete',
     'Edit': 'Edit',
     'GroupDefaultRepository':'Default upload repository',
