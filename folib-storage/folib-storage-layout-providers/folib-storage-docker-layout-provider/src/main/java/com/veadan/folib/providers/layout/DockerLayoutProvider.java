@@ -61,6 +61,8 @@ public class DockerLayoutProvider
 
     public static final List<String> DOCKER_BLOBS_MANIFESTS_URL = Lists.newArrayList(MANIFESTS, BLOBS);
 
+    public static final List<String> DOCKER_SUBLAYOUT = Lists.newArrayList(DockerArtifactCoordinates.LAYOUT_NAME, "ollama");
+
     @Inject
     private HeaderMappingRegistry headerMappingRegistry;
 
