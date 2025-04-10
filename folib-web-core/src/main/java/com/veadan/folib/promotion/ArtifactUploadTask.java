@@ -55,6 +55,7 @@ import com.veadan.folib.services.DictService;
 import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.services.impl.FileStreamMultipartFile;
 import com.veadan.folib.storage.metadata.MetadataHelper;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.util.DebianUtils;
 import com.veadan.folib.util.MessageDigestUtils;
@@ -849,6 +850,7 @@ public class ArtifactUploadTask implements Callable<String> {
     private void handlerDockerSubsidiary(final String storageId, final String repositoryId, final String path, final MultipartFile multipartFile) throws Exception {
         String artifactPath = path.replace(":", File.separator);
         RepositoryPath dockerTagRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        dockerTagRepositoryPath = artifactManagementService.validateRepositoryPathPrivilege(dockerTagRepositoryPath);
         if (!Files.exists(dockerTagRepositoryPath)) {
             String msg = String.format("Docker tag [%s] [%s] [%s] not found", storageId, repositoryId, artifactPath);
             throw new IllegalArgumentException(msg);
@@ -915,6 +917,7 @@ public class ArtifactUploadTask implements Callable<String> {
 
         } catch (Exception e) {
             log.error("docker upload error uuid: {} ,storageId:{} ,repositoryId:{} ,tag:{} error: {}", uuid, storageId, repositoryId, tag, ExceptionUtils.getStackTrace(e));
+            throw new RuntimeException(e);
         } finally {
             if (tempDirectory != null) {
                 Files.walk(tempDirectory)

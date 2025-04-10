@@ -13,6 +13,7 @@ export default {
     'Success': '成功',
     'TheOperationIsIncorrect': '操作不正确',
     'FillInTheCronExpression': '请填写cron表达式',
+    'FillInTheCorrectCronExpression': '请填写正确的cron表达式',
     'Failure': '失败',
     'AddArtifactPath': '添加制品目录',
     'AddSycnScope':'添加同步范围',
@@ -22,6 +23,7 @@ export default {
     'EnterArtifactCatalog': '请输入制品目录',
     'EnterRetentionPeriod': '请输入保留天数',
     'EnterKeepTheNumber': '请输入保留个数',
+    'EnterFull': '请输入制品目录完整信息',
     'DuplicateItemsPresent': '存在重复项',
     'PleaseEnter': '请输入',
 }

@@ -1,9 +1,9 @@
 package com.veadan.folib.client;
 
+import com.veadan.folib.config.CustomAuthenticationFeature;
 import org.apache.http.HttpStatus;
 import org.glassfish.jersey.apache.connector.ApacheConnectorProvider;
 import org.glassfish.jersey.client.ClientConfig;
-import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.springframework.security.authentication.AuthenticationServiceException;
 
 import javax.ws.rs.ServerErrorException;
@@ -322,7 +322,7 @@ public class ArtifactClient extends BaseArtifactClient implements Closeable {
     public WebTarget setupAuthentication(WebTarget target) {
         if (username != null && password != null) {
             logger.trace("[setupAuthentication] {}", username);
-            target.register(HttpAuthenticationFeature.basic(username, password));
+            target.register(CustomAuthenticationFeature.create(username, password));
             return target;
         } else {
             throw new ServerErrorException("Unable to setup authentication", Response.Status.INTERNAL_SERVER_ERROR);

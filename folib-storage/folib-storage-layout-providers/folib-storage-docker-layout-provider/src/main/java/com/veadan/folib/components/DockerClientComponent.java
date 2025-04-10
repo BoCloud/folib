@@ -2,6 +2,7 @@ package com.veadan.folib.components;
 
 import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONObject;
+import com.veadan.folib.config.CustomAuthenticationFeature;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.domain.client.ResponseResult;
 import com.veadan.folib.enums.ResponseDataTypeEnum;
@@ -15,7 +16,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.HttpStatus;
 import org.glassfish.jersey.client.ClientProperties;
-import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -74,9 +74,9 @@ public class DockerClientComponent {
             client.property(ClientProperties.READ_TIMEOUT, 60000);
             WebTarget target = client.target(targetUrl);
             if (basicAuth) {
-                final HttpAuthenticationFeature authenticationFeature = (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) ? HttpAuthenticationFeature.basic(username, password) : null;
-                if (Objects.nonNull(authenticationFeature)) {
-                    target.register(authenticationFeature);
+                final CustomAuthenticationFeature customAuthenticationFeature = (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) ? CustomAuthenticationFeature.create(username, password) : null;
+                if (Objects.nonNull(customAuthenticationFeature)) {
+                    target.register(customAuthenticationFeature);
                 }
             }
             Invocation.Builder builder = target.request();
