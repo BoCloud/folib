@@ -13,7 +13,14 @@ export default {
     'Success': 'Success',
     'TheOperationIsIncorrect': 'The operation is incorrect',
     'FillInTheCronExpression': 'Please fill in the cron expression',
+    'FillInTheCorrectCronExpression': 'Please fill in the correct cron expression',
     'Failure': 'Failure',
     'AddArtifactPath': 'Add artifact path',
-    'TimingStrategyTitle':'Global Timing Strategy'
+    'TimingStrategyTitle':'Global Timing Strategy',
+    'ArtifactCatalog': 'Artifact catalog',
+    'EnterArtifactCatalog': 'Please enter the artifact catalog',
+    'EnterRetentionPeriod': 'Please enter the retention period',
+    'EnterFull': 'Please enter artifact catalog complete information',
+    'DuplicateItemsPresent': 'There are duplicate items present',
+    'PleaseEnter': 'Please enter the ',
 }

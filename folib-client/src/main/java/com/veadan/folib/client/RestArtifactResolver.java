@@ -112,7 +112,7 @@ public class RestArtifactResolver
         MultivaluedMap<String, Object> acceptHeaders = new MultivaluedHashMap();
         String userAgentKey = "User-Agent";
         List<Object> acceptList = new ArrayList<>();
-        acceptList.add("FoLibrary/1.2.8");
+        acceptList.add("FoLibrary/1.0.0");
         acceptHeaders.put(userAgentKey, acceptList);
         Invocation.Builder request = resource.request();
         if (Objects.isNull(headers)) {

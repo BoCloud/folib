@@ -9,6 +9,7 @@ import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.components.files.FilesCommonComponent;
 import com.veadan.folib.components.jfrogArtifactSync.JfrogPropertySyncer;
+import com.veadan.folib.config.CustomAuthenticationFeature;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.migrate.SyncArtifactForm;
@@ -32,7 +33,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.glassfish.jersey.apache.connector.ApacheClientProperties;
-import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -255,9 +255,9 @@ public class DebianSyncArtifactProvider implements SyncArtifactProvider {
      * @param password  password
      */
     public void authentication(WebTarget webTarget, String username, String password) {
-        final HttpAuthenticationFeature authenticationFeature = (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) ? HttpAuthenticationFeature.basic(username, password) : null;
-        if (authenticationFeature != null) {
-            webTarget.register(authenticationFeature);
+        final CustomAuthenticationFeature customAuthenticationFeature = (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) ? CustomAuthenticationFeature.create(username, password) : null;
+        if (customAuthenticationFeature != null) {
+            webTarget.register(customAuthenticationFeature);
             webTarget.property(ApacheClientProperties.REQUEST_CONFIG,
                     RequestConfig.custom().setCircularRedirectsAllowed(true).build());
         }

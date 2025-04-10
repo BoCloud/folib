@@ -23,7 +23,7 @@
         <Permission :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></Permission>
       </a-tab-pane>
       <a-tab-pane :key="2" :tab="$t('Storage.TimingPolicy')">
-        <CronTask :folibRepository="this.folibRepository" @settingDrawerClose="settingDrawerClose"></CronTask>
+        <CronTask v-if="settingTabActiveKey === 2" :folibRepository="this.folibRepository" @settingDrawerClose="settingDrawerClose"></CronTask>
       </a-tab-pane>
 <!--      <a-tab-pane :key="3" :tab="$t('Storage.FederatedRepository')" v-if="this.folibRepository.type === 'hosted'">-->
 <!--        <UnionRepository :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></UnionRepository>-->

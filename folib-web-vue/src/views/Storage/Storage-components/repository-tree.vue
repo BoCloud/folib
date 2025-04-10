@@ -167,7 +167,7 @@ export default {
             currentTreeNodeRecycle: {},
             rightClickTop: '0px',
             rightClickLeft: '0px',
-            enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm', 'go', 'GitLfs', 'pub', 'debian'],
+            enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm', 'go','GitLfs', 'pub','debian','cargo', 'Docker'],
             expandedKeys: [],
             expandedRecycleKeys: [],
             topHeight: 500, // 初始顶部 div 的高度 (容器高度 - 底部高度 - 分隔条高度)
