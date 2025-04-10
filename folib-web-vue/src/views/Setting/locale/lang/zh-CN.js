@@ -152,6 +152,7 @@ export default {
     'MetadataTypes': '元数据类型',
     'SelectMetadataType': '请选择元数据类型',
     'WhetherToDisplay': '是否展示',
+    'DisplayDesc': '若未开启展示开关，且仓库详情中新增元数据时选择该元数据KEY，则新增的元数据不在页面上展示',
     'AddWhitelist': '添加白名单',
     'AddBlacklist': '添加黑名单',
     'EnterVulnerabilityNum': '请输入漏洞编号',

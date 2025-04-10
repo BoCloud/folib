@@ -36,10 +36,18 @@
             <a-form-model-item
               :key='key'
               class="mb-10"
-              :label="$t('Store.Metadata')+'KEY'"
               :colon="false"
               prop="key"
             >
+              <template slot="label">
+                {{ $t('Store.Metadata')+'KEY' }}
+                <a-popover v-if="!currentViewShow" placement="topLeft">
+                    <template slot="content">
+                        <p class="mb-0">{{ $t('Store.MeteDataHiddenTip') }}</p>
+                    </template>
+                    <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
+                </a-popover>
+              </template>
               <a-select
                 :disabled="handlerMetadataType !== 1"
                 v-model="metadataForm.key"
@@ -214,7 +222,8 @@ export default {
       metadataInput: false,
       metadataNumber: false,
       showMetadata: false,
-      key:0
+      key:0,
+      currentViewShow: true
     };
   },
   computed: {
@@ -258,11 +267,14 @@ export default {
     // },
     metadataKeyChange(value) {
       let type = null;
+      let viewShow = true;
       this.metadataConfigList.forEach((config) => {
         if (config.key === value) {
           type = config.type;
+          viewShow = config.viewShow;
         }
       });
+      this.currentViewShow = viewShow;
       this.metadataForm.type = type;
       this.metadataTypeChange(type);
     },

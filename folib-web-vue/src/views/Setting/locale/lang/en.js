@@ -152,6 +152,7 @@ export default {
     'MetadataTypes': 'Metadata types',
     'SelectMetadataType': 'Please select the metadata type',
     'WhetherToDisplay': 'Whether to display',
+    'DisplayDesc': 'If the display switch is not enabled, the new metadata is not displayed on the page after you select the metadata KEY in the repository details',
     'AddWhitelist': 'Add whitelist',
     'AddBlacklist': 'Add blacklist',
     'EnterVulnerabilityNum': 'Please enter the vulnerability number',

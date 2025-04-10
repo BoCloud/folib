@@ -367,6 +367,7 @@ export default {
     'CargoInstallConfig': '要安装一个crate，请使用cargo install命令。',
     'Recursive': '递归',
     'RecursiveTip': '元数据将添加到所选文件夹以及此文件夹下的所有制品、文件夹和子文件夹中。',
+    'MeteDataHiddenTip': '当前选中的元数据KEY在全局设置中设置为不展示，新增的元数据不会在页面上展示',
     'RecursiveDelete': '递归删除',
     'Edit': '编辑',
     'GroupDefaultRepository':'默认上传仓库',
