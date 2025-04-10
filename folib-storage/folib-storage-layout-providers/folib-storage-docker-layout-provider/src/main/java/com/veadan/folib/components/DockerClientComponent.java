@@ -1,11 +1,10 @@
 package com.veadan.folib.components;
 
-import cn.hutool.core.net.URLEncodeUtil;
 import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONObject;
+import com.veadan.folib.config.CustomAuthenticationFeature;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.domain.client.ResponseResult;
-import com.veadan.folib.enums.DockerHeaderEnum;
 import com.veadan.folib.enums.ResponseDataTypeEnum;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.storage.repository.Repository;
@@ -13,25 +12,18 @@ import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import com.veadan.folib.storage.repository.remote.heartbeat.RemoteRepositoryAlivenessService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.HttpStatus;
 import org.glassfish.jersey.client.ClientProperties;
-import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -81,16 +73,11 @@ public class DockerClientComponent {
             //读取内容超时时间
             client.property(ClientProperties.READ_TIMEOUT, 60000);
             WebTarget target = client.target(targetUrl);
-            if (basicAuth && StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) {
-                String auth = username + ":" + password;
-                if (MapUtils.isEmpty(headers)) {
-                    headers = acceptHeaders();
+            if (basicAuth) {
+                final CustomAuthenticationFeature customAuthenticationFeature = (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) ? CustomAuthenticationFeature.create(username, password) : null;
+                if (Objects.nonNull(customAuthenticationFeature)) {
+                    target.register(customAuthenticationFeature);
                 }
-                // 明确使用UTF-8编码
-                byte[] authBytes = auth.getBytes(StandardCharsets.UTF_8);
-                String encodedAuth = Base64.getEncoder().encodeToString(authBytes);
-                String authHeader = "Basic " + encodedAuth;
-                headers.add(HttpHeaders.AUTHORIZATION, authHeader);
             }
             Invocation.Builder builder = target.request();
             if (MapUtils.isNotEmpty(headers)) {
@@ -138,9 +125,5 @@ public class DockerClientComponent {
 
     public ResponseResult doGet(String storageId, String repositoryId, String targetUrl, boolean basicAuth) {
         return doGet(storageId, repositoryId, targetUrl, null, basicAuth);
-    }
-
-    public static MultivaluedMap<String, Object> acceptHeaders() {
-        return new MultivaluedHashMap();
     }
 }

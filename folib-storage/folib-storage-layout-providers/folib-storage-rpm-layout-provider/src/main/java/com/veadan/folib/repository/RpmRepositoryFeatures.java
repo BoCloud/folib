@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.veadan.folib.config.CustomAuthenticationFeature;
 import com.veadan.folib.config.RpmLayoutProviderConfig;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
@@ -32,7 +33,6 @@ import com.veadan.folib.yum.configuration.repository.remote.RpmRemoteRepositoryC
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.glassfish.jersey.apache.connector.ApacheClientProperties;
-import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Scope;
@@ -518,9 +518,9 @@ public class RpmRepositoryFeatures implements RepositoryFeatures
      * @param password  password
      */
     public void authentication(WebTarget webTarget, String username, String password) {
-        final HttpAuthenticationFeature authenticationFeature = (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) ? HttpAuthenticationFeature.basic(username, password) : null;
-        if (authenticationFeature != null) {
-            webTarget.register(authenticationFeature);
+        final CustomAuthenticationFeature customAuthenticationFeature = (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) ? CustomAuthenticationFeature.create(username, password) : null;
+        if (customAuthenticationFeature != null) {
+            webTarget.register(customAuthenticationFeature);
             webTarget.property(ApacheClientProperties.REQUEST_CONFIG,
                     RequestConfig.custom().setCircularRedirectsAllowed(true).build());
         }
