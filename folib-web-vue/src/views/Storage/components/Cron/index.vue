@@ -211,6 +211,9 @@ export default {
         if (this.folibRepository.type === "hosted")
         { cronCanSetList = res.filter(e => !(e.jobClass === "com.veadan.folib.cron.jobs.SyncProxyRepositoryIndexCronJob")) }
 
+        if (this.folibRepository.type === "group")
+        { cronCanSetList = res.filter(e => !e.jobClass.includes("CleanupArtifactsRepositoryCronJob") && !e.jobClass.includes("ClearRepositoryTrashCronJob"))}
+
         crontasksByRepository(this.folibRepository.storageId, this.folibRepository.id).then(res => {
           //已经被设置的定时任务列表
           this.cronSettedList = res.cronTaskConfigurations

@@ -94,7 +94,7 @@
                     align-items: center;
                     justify-content: flex-end;
                   " v-if="repositoryLength">
-                  <a v-if="folibRepository.layout === 'Docker' && folibRepository.type === 'hosted'">
+                  <a v-if="uploadEnabled && folibRepository.layout === 'Docker'">
                     <small style="padding-right: 20px" @click="handleDockerUploud">
                       {{ $t('Store.Upload') }}
                       <a-icon type="cloud-upload" />
@@ -112,7 +112,7 @@
                       <a-icon type="cloud-upload" />
                     </small>
                   </a>
-                  <a v-if="uploadEnabled && folibRepository.layout !== 'rpm' &&  folibRepository.layout !== 'GitLfs' && folibRepository.layout !== 'GitLfs' && folibRepository.subLayout !== 'ohpm' && folibRepository.subLayout !== 'go' && folibRepository.layout !== 'cargo'"><small style="padding-right: 20px" @click="handleUpload">
+                  <a v-if="uploadEnabled && folibRepository.layout !== 'rpm' &&  folibRepository.layout !== 'GitLfs' && folibRepository.layout !== 'GitLfs' && folibRepository.subLayout !== 'ohpm' && folibRepository.subLayout !== 'go' && folibRepository.layout !== 'cargo' && folibRepository.layout !== 'Docker'"><small style="padding-right: 20px" @click="handleUpload">
                       {{ $t('Store.BatchUpload') }}
                       <a-icon type="cloud-upload" />
                     </small>
@@ -1302,7 +1302,7 @@ export default {
       showOperationDispatchFormModal: false,
       repositories: [],
       custom: false,
-      enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm', 'go','GitLfs', 'pub','debian','cargo'],
+      enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm', 'go','GitLfs', 'pub','debian','cargo', 'Docker'],
       targetDirectoryExcludeLayout: ['Maven 2', 'npm', 'pub'],
       storageAdmin: '',
       permissions: [],
