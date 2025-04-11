@@ -1,5 +1,6 @@
 package com.veadan.folib.providers.io;
 
+import com.google.common.collect.Lists;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.enums.ProductTypeEnum;
@@ -9,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.output.ProxyOutputStream;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileSystemUtils;
@@ -472,6 +474,29 @@ public abstract class StorageFileSystemProvider
         }
 
         return trashPath;
+    }
+
+    public void deleteEmptyDirectory(RepositoryPath repositoryPath)
+            throws IOException {
+        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath) || !Files.isDirectory(repositoryPath)) {
+            return;
+        }
+        List<String> includeDirectoryList = Lists.newArrayList(LayoutFileSystem.TRASH);
+        RepositoryPathUtil.handlerDirectories(repositoryPath.getRepository().getLayout(), repositoryPath, includeDirectoryList,
+                (RepositoryPath dirPath) -> {
+                    deleteEmptyDirectory(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), dirPath);
+                });
+    }
+
+    private void deleteEmptyDirectory(String storageId, String repositoryId, RepositoryPath repositoryPath) {
+        try {
+            if (Files.exists(repositoryPath) && !Files.isSameFile(repositoryPath.getRoot(), repositoryPath) && RepositoryFiles.isDirectoryEmpty(repositoryPath)) {
+                Files.deleteIfExists(repositoryPath);
+                log.info("Empty directory storageId [{}] repositoryId [{}] dir path [{}] do delete", storageId, repositoryId, repositoryPath.toString());
+            }
+        } catch (Exception ex) {
+            log.error("Empty directory storageId [{}] repositoryId [{}] dir path [{}] error [{}]", storageId, repositoryId, repositoryPath, ExceptionUtils.getStackTrace(ex));
+        }
     }
 
     protected static RepositoryPath rebase(RepositoryPath source,

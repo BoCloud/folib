@@ -3,6 +3,7 @@ package com.veadan.folib.services;
 import com.veadan.folib.providers.ProviderImplementationException;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.repository.RepositoryManagementStrategyException;
+import com.veadan.folib.storage.ArtifactResolutionException;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.RepositoryPermissionDto;
 
@@ -23,7 +24,7 @@ public interface RepositoryManagementService {
             throws IOException;
 
     void cleanupRepository(String storageId,
-                          String repositoryId)
+                           String repositoryId)
             throws IOException;
 
     void deleteTrash(String storageId, String repositoryId, String storageDay, Map<String, String> cleanupArtifactPathMap)
@@ -67,5 +68,18 @@ public interface RepositoryManagementService {
      * @param permissions  权限
      */
     void deleteRepositoryPermission(String storageId, String repositoryId, String username, String permissions);
+
+    /**
+     * 删除仓库下的空目录
+     */
+    void deleteEmptyDirectory();
+
+    /**
+     * 删除仓库下的空目录
+     *
+     * @param storageId    存储空间名称
+     * @param repositoryId 仓库名称
+     */
+    void deleteEmptyDirectory(String storageId, String repositoryId);
 
 }

@@ -14,6 +14,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -237,6 +238,11 @@ public abstract class RepositoryFiles {
         repositoryPath.getFileSystem().provider().deleteTrash(repositoryPath, storageDay, cleanupArtifactPathMap);
     }
 
+    public static void deleteEmptyDirectory(RepositoryPath repositoryPath)
+            throws IOException {
+        repositoryPath.getFileSystem().provider().deleteEmptyDirectory(repositoryPath);
+    }
+
     public static void undeleteTrash(RepositoryPath repositoryPath)
             throws IOException {
         repositoryPath.getFileSystem().provider().undelete(repositoryPath);
@@ -303,4 +309,14 @@ public abstract class RepositoryFiles {
         return false;
     }
 
+    public static boolean isDirectoryEmpty(RepositoryPath repositoryPath) throws IOException {
+        // 确保路径是目录
+        if (!Files.isDirectory(repositoryPath)) {
+            return false;
+        }
+        // 检查目录是否为空
+        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(repositoryPath)) {
+            return !dirStream.iterator().hasNext();
+        }
+    }
 }
