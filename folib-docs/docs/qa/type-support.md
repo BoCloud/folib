@@ -34,72 +34,72 @@
         <tr>
             <td><i>Raw</i></td>
             <td>✅</td>
-            <td></td>
             <td>✅</td>
-            <td></td>
-            <td></td>
+            <td>✅</td>
+            <td>✅</td>
+            <td>✅</td>
         </tr>
         <tr>
             <td><i>Maven</i></td>
             <td>✅</td>
             <td>✅</td>
             <td>✅</td>
-            <td></td>
-            <td></td>
+            <td>✅</td>
+            <td>✅</td>
         </tr>
         <tr>
             <td><i>Npm</i></td>
             <td>✅</td>
-            <td></td>
             <td>✅</td>
-            <td></td>
-            <td></td>
+            <td>✅</td>
+            <td>✅</td>
+            <td>✅</td>
         </tr>
         <tr>
             <td><i>Yarn</i></td>
             <td>✅</td>
-            <td></td>
             <td>✅</td>
-          	<td></td>
-            <td></td>
+            <td>✅</td>
+          	<td>✅</td>
+            <td>✅</td>
         </tr>
         <tr>
             <td><i>NuGet</i></td>
             <td>✅</td>
-            <td></td>
-            <td></td>
-          	<td></td>
-            <td></td>
+            <td>✅</td>
+            <td>✅</td>
+          	<td>✅</td>
+            <td>✅</td>
         </tr>
         <tr>
             <td><i>lvy</i></td>
             <td>✅</td>
             <td>✅</td>
             <td>✅</td>
-            <td></td>
-            <td></td>
+            <td>✅</td>
+            <td>✅</td>
         </tr>
         <tr>
             <td><i>SBT</i></td>
             <td>✅</td>
             <td>✅</td>
             <td>✅</td>
-            <td></td>
-            <td></td>
+            <td>✅</td>
+            <td>✅</td>
         </tr>
         <tr>
             <td><i>Gradle</i></td>
             <td>✅</td>
             <td>✅</td>
             <td>✅</td>
-            <td></td>
-            <td></td>
+            <td>✅</td>
+            <td>✅</td>
         </tr>
         <tr>
             <td><i>Rpm</i></td>
             <td>✅</td>
             <td>✅</td>
-            <td></td>
+            <td>✅</td>
           	<td></td>
             <td></td>
         </tr>
@@ -107,14 +107,14 @@
             <td><i>Docker</i></td>
             <td>✅</td>
             <td>✅</td>
-            <td></td>
-          	<td></td>
+            <td>✅</td>
+          	<td>✅</td>
             <td></td>
         </tr>
         <tr>
             <td><i>Php</i></td>
             <td>✅</td>
-            <td></td>
+            <td>✅</td>
             <td>✅</td>
           	<td></td>
             <td></td>
@@ -122,9 +122,9 @@
         <tr>
             <td><i>PyPi</i></td>
             <td>✅</td>
-            <td></td>
-            <td></td>
-          	<td></td>
+            <td>✅</td>
+            <td>✅</td>
+          	<td>✅</td>
             <td></td>
         </tr>
         <tr>
@@ -217,8 +217,8 @@
         </tr>
         <tr>
             <td><i>Conda</i></td>
-            <td>下个版本，敬请期待🥳</td>
-            <td></td>
+            <td>✅</td>
+            <td>✅</td>
             <td></td>
           	<td></td>
             <td></td>
@@ -241,7 +241,7 @@
         </tr>
         <tr>
             <td><i>Ollama</i></td>
-            <td>下个版本，敬请期待🥳</td>
+            <td>✅</td>
             <td></td>
             <td></td>
           	<td></td>
