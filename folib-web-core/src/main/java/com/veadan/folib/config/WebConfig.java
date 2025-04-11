@@ -30,6 +30,7 @@ import org.jtwig.web.servlet.JtwigRenderer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.cache.annotation.EnableCaching;
@@ -117,6 +118,9 @@ public class WebConfig
 
     @Inject
     private ConfigurationManager configurationManager;
+
+    @Value("${folib.custom.maxInMemorySize:10240}")
+    private int maxInMemorySize;
 
     WebConfig() {
         logger.info("Initialized web configuration.");
@@ -331,7 +335,7 @@ public class WebConfig
     @Bean(name = "multipartResolver")
     public MultipartResolver multipartResolver() {
         CustomMultipartResolver resolver = new CustomMultipartResolver();
-        resolver.setMaxInMemorySize(1024*1024*100);
+        resolver.setMaxInMemorySize(maxInMemorySize);
         return resolver;
     }
 
