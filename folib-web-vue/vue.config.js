@@ -18,24 +18,10 @@ module.exports = {
 			})
 	},
 	configureWebpack: {
-		/*optimization: {
-			splitChunks: {
-				chunks: 'all',
-				minSize: 20000,
-				maxSize: 250000,
-				minChunks: 1,
-				maxAsyncRequests: 30,
-				maxInitialRequests: 30,
-				cacheGroups: {
-					vendor: {
-						test: /[\\/]node_modules[\\/]/,
-						name: 'vendor',
-						chunks: 'all',
-					},
-				},
-			},
-		},*/
 		plugins: [
+			new webpack.optimize.LimitChunkCountPlugin({
+				maxChunks: 5, // 限制最多生成 5 个 chunk 文件
+			}),
 			// 压缩成 .gz 文件
 			new CompressionPlugin({
 				filename: '[path][base].gz',

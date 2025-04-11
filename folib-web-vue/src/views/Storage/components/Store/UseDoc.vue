@@ -1368,8 +1368,41 @@ go 1.20' :readonly="true">
           </a-timeline-item>
 
       </a-timeline>
+        <!--ollama 使用说明 -->
+      <a-timeline v-if="folibRepository.subLayout === 'ollama'">
+            <a-timeline-item color="primary">
+                ollama {{ $t('Store.GlobalConfiguration') }}
+                <p>{{ $t('Store.OllamaGlobalConfiguration') }}</p>
+            </a-timeline-item>
 
-      <a-timeline>
+            <a-timeline-item color="primary" v-if="folibRepository.type !== 'proxy'">
+                ollama {{ $t('Store.CargoDeploy') }}
+                <p>{{ $t('Store.OllamaDeployConfig') }}</p>
+                <prism-editor
+                    class="my-editor height-300"
+                    :value="ollamaDeploy"
+                    :highlight="highlighterHandle"
+                    :line-numbers="false"
+                    :readonly="true"
+                >
+                </prism-editor>
+            </a-timeline-item>
+            <a-timeline-item color="primary" v-if="folibRepository.type !== 'proxy'">
+                ollama {{ $t('Store.CargoInstall') }}
+                <p>{{ $t('Store.OllamaInstallConfig') }}</p>
+                <prism-editor
+                    class="my-editor height-300"
+                    :value="ollamaInstall"
+                    :highlight="highlighterHandle"
+                    :line-numbers="false"
+                    :readonly="true"
+                >
+                </prism-editor>
+            </a-timeline-item>
+
+        </a-timeline>
+
+        <a-timeline>
         <a-timeline-item color="primary">
           {{ $t('Store.WarehouseAddress') }}
           <small>{{ $t('Store.WarehouseUseAddress') }}</small>
@@ -1466,6 +1499,12 @@ deb [trusted=yes]  ${this.baseUrl}storages/${this.folibRepository.storageId}/${t
       cargoInstall(){
           return `cargo login "Bearer <TOKEN>"\ncargo install <PACKAGE_NAME>`
       },
+      ollamaDeploy(){
+        return `ollama push  <MODEL> `
+      },
+      ollamaInstall(){
+        return `ollama pull  <MODEL>`+`\n`+`ollama run  <MODEL>`
+      }
   },
   methods: {
     highlighterHandle(code) {

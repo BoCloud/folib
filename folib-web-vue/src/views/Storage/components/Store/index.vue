@@ -355,7 +355,8 @@
               <a-col :span="16" class="font-semibold m-0">
                 <a-row type="flex" align="middle">
                   <a-col :span="8" :xs="24" :xl="16">
-                    <a-avatar :size="24" shape="square" :src="'images/folib/docker-s.svg'" />
+                    <a-avatar :size="24" shape="square"  :src="'images/folib/docker-s.svg'" v-if="folibRepository.subLayout === 'Docker'" />
+                    <a-avatar :size="24" shape="square"  :src="'images/folib/ollama.svg'" v-if="folibRepository.subLayout === 'ollama'" />
                     {{ currentTreeNode.name }}
                   </a-col>
                   <a-col :span="8" :xs="24" :xl="8">
@@ -843,7 +844,7 @@
                   <a-icon type="upload" />
                   {{ $t('Store.SelectFile') }}</a-button>
               </a-upload>
-            </a-form-item>  
+            </a-form-item>
             <div v-if="folibRepository.layout === 'debian' && uploadType === 1 ">
               <a-form-model-item  class="mb-10" label="distribution" :colon="false" prop="distribution">
                 <a-input :placeholder="$t('Store.PleaseEnter') + 'distribution'"  v-decorator="[
@@ -871,7 +872,7 @@
               ]"  />
               </a-form-model-item>
             </div>
-    
+
 
             <a-form-item class="tags-field mb-10" prop="targetPath" :colon="false"
               v-if="(!targetDirectoryExcludeLayout.includes(folibRepository.layout)) || uploadType === 2">
