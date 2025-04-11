@@ -131,6 +131,8 @@ FOLIB_SSL_TRUST_STORE_TYPE="${FOLIB_SSL_TRUST_STORE_TYPE:-}"
 FOLIB_ARTIFACT_DOWNLOAD_IMMEDIATELY_UPDATE="${FOLIB_ARTIFACT_DOWNLOAD_IMMEDIATELY_UPDATE:-false}"
 FOLIB_DOCKER_BROWSE_COMPATIBILITY="${FOLIB_DOCKER_BROWSE_COMPATIBILITY:-false}"
 
+FOLIB_CUSTOM_MAX_IN_MEMORY_SIZE="${FOLIB_CUSTOM_MAX_IN_MEMORY_SIZE:-10240}"
+
 print_banner()
 {
     echo "  _____ ___  _     ___ ____  ";
@@ -284,7 +286,8 @@ run()
     JAVA_OPTS+=" -Dfolib.write.buffer.low.water.mark=${FOLIB_WRITE_BUFFER_LOW_WATER_MARK}"
     #artifact上传限制开关
     JAVA_OPTS+=" -Dfolib.uploadRestrictions=${FOLIB_ARTIFACT_UPLOAD_RESTRICTIONS}"
-
+    #上传临时文件占用内存的最大值
+    JAVA_OPTS+=" -Dfolib.custom.maxInMemorySize=${FOLIB_CUSTOM_MAX_IN_MEMORY_SIZE}"
     #SSL相关配置
     JAVA_OPTS+=" -Dhttp.port=${FOLIB_HTTP_PORT}"
     JAVA_OPTS+=" -Dserver.ssl.enabled=${FOLIB_SSL_ENABLED}"

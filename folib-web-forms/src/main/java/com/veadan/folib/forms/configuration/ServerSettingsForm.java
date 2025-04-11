@@ -35,10 +35,14 @@ public class ServerSettingsForm
     /**
      * 节点传输速率（KB/s）
      */
+    @Min(value = 1, message = "The kbps be an integer between 1 and 999999.")
+    @Max(value = 999999, message = "The kbps be an integer between 1 and 999999.")
     private Integer kbps;
     /**
      * 节点传输切片大小（MB）
      */
+    @Min(value = 1, message = "The sliceMbSize must be an integer between 1 and 10240.")
+    @Max(value = 10240, message = "The sliceMbSize must be an integer between 1 and 10240.")
     private Long sliceMbSize;
 
     @Valid
