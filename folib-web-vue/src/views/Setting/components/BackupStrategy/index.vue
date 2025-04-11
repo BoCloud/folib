@@ -185,6 +185,7 @@ import {
 import {
   folderList
 } from "@/api/advanced"
+import { isValidCron } from 'cron-validator';
 
 export default {
   props: {
@@ -205,7 +206,14 @@ export default {
       if (!value) {
         callback(new Error(this.$t('BackupStrategy.EnterCronExpression')))
       } else {
-        callback()
+        const isOk = isValidCron(value, {
+          seconds: true, // 是否支持秒字段
+          alias: true, // 是否支持别名（如 @hourly）
+          allowBlankDay: true, // 是否允许日期字段为空
+          allowSevenAsSunday: true // 是否允许将 7 作为星期天
+        })
+        if (!isOk) callback(new Error(this.$t('BackupStrategy.EnterCorrectCronExpression')))
+        else callback()
       }
     }
     const checkBackupPath = (rule, value, callback) => {

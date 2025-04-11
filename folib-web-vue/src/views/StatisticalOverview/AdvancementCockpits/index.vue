@@ -700,7 +700,7 @@ export default {
                 this.$message.success("success");
                 this.getData();
             }).catch(errorReason => {
-                this.$message.error(errorReason.response.data)
+                this.$message.error(errorReason.response.data.error || errorReason.response.data.message)
             }).finally(() => {
                 this.vulnerabilityTableLoading = false
                 this.stopVisible = false;
