@@ -75,11 +75,9 @@ public class RepositoryMetricRegistry {
                             "storageId", data.getStorageId()
                     )
                     .register(meterRegistry);
-            logger.info("Registered new metric: {}", uniqueKey);
             return ref;
         });
         valueRef.set(data.getValue());
-        logger.info("Updated metric: {} with value {}", uniqueKey, data.getValue());
     }
 
 
@@ -97,11 +95,7 @@ public class RepositoryMetricRegistry {
                 .collect(Collectors.toSet());
 
         metricCache.keySet().removeIf(key -> {
-            boolean removed = !activeKeys.contains(key);
-            if (removed) {
-                logger.info("Removed expired metric: {}", key);
-            }
-            return removed;
+          return  !activeKeys.contains(key);
         });
     }
 }
