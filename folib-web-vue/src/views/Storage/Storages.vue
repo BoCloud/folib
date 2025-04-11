@@ -1309,6 +1309,7 @@ export default {
           id: "",
           storageId:"",
           layout: "",
+          type: "",
       },
       repositoryStorageMaxSize: 0,
       repositoryStorageThreshold:0,
@@ -2413,6 +2414,7 @@ export default {
       this.folibRepositoryData.id= this.folibRepository.id;
       this.folibRepositoryData.storageId= this.currentStorage.id;
       this.folibRepositoryData.layout = this.folibRepository.layout;
+      this.folibRepositoryData.type = this.folibRepository.type;
 
       this.folibRepository.artifactMaxSize = this.artifactMaxSize * 1024 * 1024
       this.folibRepository.storageMaxSize =  this.setRepoMaxSize(this.repositoryStorageMaxSize);
