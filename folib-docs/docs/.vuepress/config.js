@@ -555,6 +555,9 @@ module.exports = {
             }, {
               title: 'JFrog的接口适配文档',
               link: '/qa/JFrogApi'
+            }, {
+              title: 'Jenkins插件',
+              link: '/qa/jenkins-plugin'
             }
           ]
         }
