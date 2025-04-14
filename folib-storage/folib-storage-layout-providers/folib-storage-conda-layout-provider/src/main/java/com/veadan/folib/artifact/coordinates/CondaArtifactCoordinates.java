@@ -31,51 +31,27 @@ public class CondaArtifactCoordinates
     public static final String LAYOUT_NAME = "conda";
     public static final String LAYOUT_ALIAS = "conda";
 
-    public static final String CHANNEL = "channel";
     public static final String PLATFORM = "platform";
-    public static final String NAME = "name";
-    public static final String VERSION = "version";
     public static final String FILE_NAME = "fileName";
 
 
     public CondaArtifactCoordinates() {
-        resetCoordinates(CHANNEL, NAME, VERSION, PLATFORM, FILE_NAME);
+        resetCoordinates(PLATFORM, FILE_NAME);
     }
 
-    public CondaArtifactCoordinates(String channel,
-                                    String name,
-                                    String version,
-                                    String platform,
+    public CondaArtifactCoordinates(String platform,
                                     String fileName) {
         this();
-        setChannel(channel);
-        setName(name);
-        setVersion(version);
         setPlatform(platform);
         setFileName(fileName);
     }
 
     @Override
     public String getId() {
-        return getName();
+        return getFileName();
     }
 
     // getters
-    @ArtifactLayoutCoordinate
-    public String getChannel() {
-        return getCoordinate(CHANNEL);
-    }
-
-    @ArtifactLayoutCoordinate
-    public String getName() {
-        return getCoordinate(NAME);
-    }
-
-    @ArtifactLayoutCoordinate
-    public String getVersion() {
-        return getCoordinate(VERSION);
-    }
-
     @ArtifactLayoutCoordinate
     public String getPlatform() {
         return getCoordinate(PLATFORM);
@@ -89,12 +65,6 @@ public class CondaArtifactCoordinates
 
 
     // setters
-    private void setChannel(String channel) {
-        setCoordinate(CHANNEL, channel);
-    }
-    public void setName(String name) {
-        setCoordinate(NAME, name);
-    }
     private void setPlatform(String platform) {
         setCoordinate(PLATFORM, platform);
     }
@@ -109,29 +79,13 @@ public class CondaArtifactCoordinates
     }
 
     // 路径解析:
-    // 文件路径: conda/{channel}/{platform}/{filename}/{FILE and index.json}
+    // 文件路径: {platform}/{fileName}
     public static CondaArtifactCoordinates parse(String path) {
-        try {
-            Assert.isTrue(path.startsWith("conda/"), "The path must start with 'conda/'");
-            String subPath = path.substring(6);
-            String[] parts = subPath.split("/");
-            Assert.isTrue(parts.length == 6, "Invalid path format: " + path);
-            String channel = parts[0];
-            String name = parts[1];
-            String version = parts[2];
-            String platform = parts[3];
-            String fileName = parts[4];
-            return new CondaArtifactCoordinates(channel, name, version, platform, fileName);
-        } catch (Exception e) {
-            log.error("Failed to parse CondaArtifactCoordinates from path: {}", path, e);
-        }
         return null;
     }
 
     @Override
     public String convertToPath(CondaArtifactCoordinates artifactCoordinates) {
-        return String.format("conda/%s/%s/%s/%s/%s", artifactCoordinates.getChannel(),
-                artifactCoordinates.getName(), artifactCoordinates.getVersion(),
-                artifactCoordinates.getPlatform(), artifactCoordinates.getFileName());
+        return null;
     }
 }
