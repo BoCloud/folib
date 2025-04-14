@@ -33,6 +33,8 @@ public class RepositoryPathUtil {
 
     public final static List<String> EXCLUDE_LIST = Lists.newArrayList("blobs", "manifest", ".temp");
 
+    public final static String DS_STORE = ".DS_Store";
+
     public static List<S3Path> getS3FiePaths(S3Path s3Path) throws Exception {
         List<S3Path> listFile = new ArrayList<S3Path>();
         List<S3Path> listDir = new ArrayList<S3Path>();
@@ -409,11 +411,12 @@ public class RepositoryPathUtil {
      * @param layout               布局
      * @param repositoryPath       路径
      * @param includeDirectoryList 包含的目录列表
+     * @param filePathConsumer     path回调方法
      * @param dirPathConsumer      目录回调方法
      * @throws IOException 异常
      */
-    public static void handlerDirectories(String layout, RepositoryPath repositoryPath, List<String> includeDirectoryList, Consumer<RepositoryPath> dirPathConsumer) throws IOException {
-        handlerDirectories(layout, repositoryPath, includeDirectoryList, null, dirPathConsumer);
+    public static void handlerDirectories(String layout, RepositoryPath repositoryPath, List<String> includeDirectoryList, Consumer<RepositoryPath> filePathConsumer, Consumer<RepositoryPath> dirPathConsumer) throws IOException {
+        handlerDirectories(layout, repositoryPath, includeDirectoryList, null, filePathConsumer, dirPathConsumer);
     }
 
     /**
@@ -423,10 +426,11 @@ public class RepositoryPathUtil {
      * @param repositoryPath       路径
      * @param includeDirectoryList 包含的目录列表
      * @param excludeDirectoryList 排除的目录列表
+     * @param filePathConsumer     path回调方法
      * @param dirPathConsumer      目录回调方法
      * @throws IOException 异常
      */
-    public static void handlerDirectories(String layout, RepositoryPath repositoryPath, List<String> includeDirectoryList, List<String> excludeDirectoryList, Consumer<RepositoryPath> dirPathConsumer) throws IOException {
+    public static void handlerDirectories(String layout, RepositoryPath repositoryPath, List<String> includeDirectoryList, List<String> excludeDirectoryList, Consumer<RepositoryPath> filePathConsumer, Consumer<RepositoryPath> dirPathConsumer) throws IOException {
         if (!Files.exists(repositoryPath)) {
             log.warn("Path [{}] not exists", repositoryPath);
             return;
@@ -436,19 +440,54 @@ public class RepositoryPathUtil {
             log.warn("Path [{}] is file skip...", repositoryPath);
             return;
         }
+        RepositoryPathResolver repositoryPathResolver = SpringUtil.getBean(RepositoryPathResolver.class);
         final boolean isDockerLayout = ProductTypeEnum.Docker.getFoLibraryName().equalsIgnoreCase(layout);
         try {
             Files.walkFileTree(repositoryPath, new SimpleFileVisitor<Path>() {
 
                 @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                    if (exc instanceof NoSuchFileException) {
+                        // 目录或文件已删除，继续遍历
+                        log.warn("Handler path [{}] no such file skip...", file);
+                        return FileVisitResult.CONTINUE;
+                    }
+                    return super.visitFileFailed(file, exc);
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file,
+                                                 BasicFileAttributes attrs)
+                        throws IOException {
+                    if (Objects.isNull(filePathConsumer)) {
+                        return FileVisitResult.CONTINUE;
+                    }
+                    try {
+                        RepositoryPath itemPath = (RepositoryPath) file;
+                        if (RepositoryFiles.isChecksum(itemPath) || RepositoryFiles.isArtifactMetadata(itemPath)) {
+                            log.info("Handler path [{}]", itemPath);
+                            filePathConsumer.accept(repositoryPathResolver.resolve(itemPath.getRepository(), RepositoryFiles.relativizePath(itemPath)));
+                        }
+                    } catch (Exception ex) {
+                        log.error("Handler path [{}] error [{}]", file, ExceptionUtils.getStackTrace(ex));
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
                 public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
                     try {
                         RepositoryPath itemPath = (RepositoryPath) dir;
-                        boolean result = !Files.isSameFile(itemPath, itemPath.getRoot()) && !include(2, itemPath, isDockerLayout, layout)
+                        boolean result = !Files.isSameFile(itemPath, itemPath.getRoot()) && !include(2, itemPath, isDockerLayout, layout) && !RepositoryFiles.isArtifactMetadataDirectory(itemPath)
                                 && (CollectionUtils.isNotEmpty(includeDirectoryList) && includeDirectoryList.stream().noneMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))
                                 || (CollectionUtils.isNotEmpty(excludeDirectoryList) && excludeDirectoryList.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)));
                         if (result) {
                             log.info("RepositoryPath [{}] skip...", itemPath.toString());
+                            return FileVisitResult.SKIP_SUBTREE;
+                        }
+                        if (RepositoryFiles.canDeleteArtifactMetadata(itemPath)) {
+                            Files.deleteIfExists(itemPath);
+                            log.info("Empty directory storageId [{}] repositoryId [{}] dir path [{}] do delete", itemPath.getStorageId(), itemPath.getRepositoryId(), itemPath.toString());
                             return FileVisitResult.SKIP_SUBTREE;
                         }
                         return FileVisitResult.CONTINUE;
@@ -738,8 +777,7 @@ public class RepositoryPathUtil {
         if (name.startsWith(".") && name.endsWith(".foLibrary-metadata")) {
             return true;
         }
-        String dsStore = ".DS_Store";
-        if (name.endsWith(dsStore)) {
+        if (name.endsWith(DS_STORE)) {
             return true;
         }
         return false;
@@ -773,8 +811,7 @@ public class RepositoryPathUtil {
         if (RepositoryFiles.isArtifactMetadata(tempRepositoryPath)) {
             return false;
         }
-        String dsStore = ".DS_Store";
-        if (name.endsWith(dsStore)) {
+        if (name.endsWith(DS_STORE)) {
             return false;
         }
         if (type == 1 && RepositoryFiles.isChecksum(tempRepositoryPath)) {
