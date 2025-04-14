@@ -286,7 +286,7 @@
                                                      @ok="confirmRecord(record)"
                                             >
                                                 <p>{{
-                                                        (record != null && record.status === 4) ? $t('Repository.CurrentProductIsSynchronizing') + $t('Repository.SureMakeProductCompensation') : $t('Repository.SureMakeProductCompensation')
+                                                        (record != null && record.status === 4) ? $t('Repository.CurrentProductIsFailure') + $t('Repository.SureMakeProductCompensation') : $t('Repository.SureMakeProductCompensation')
                                                     }}</p>
                                             </a-modal>
                                         </a-menu-item>

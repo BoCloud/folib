@@ -11,6 +11,7 @@ export default {
     'Cleared': 'Cleared',
     'NotCleared': 'Not cleared',
     'CurrentProductIsSynchronizing': 'The current aritfact is synchronizing',
+    'CurrentProductIsFailure': 'The current aritfact is failure',
     'SureMakeProductCompensation': ' are you sure you want to make aritfact compensation?',
     'Confirm': 'Confirm',
     'Cancel': 'Cancel',
