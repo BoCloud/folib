@@ -32,7 +32,7 @@ public class CondaArtifactCoordinates
     public static final String LAYOUT_ALIAS = "conda";
 
     public static final String PLATFORM = "platform";
-    public static final String FILE_NAME = "fileName";
+    public static final String FILE_NAME = "name";
 
 
     public CondaArtifactCoordinates() {
@@ -70,6 +70,10 @@ public class CondaArtifactCoordinates
     }
     private void setFileName(String extension) {
         setCoordinate(FILE_NAME, extension);
+    }
+
+    public static CondaArtifactCoordinates of(String platform, String fileName) {
+        return new CondaArtifactCoordinates(platform, fileName);
     }
 
 

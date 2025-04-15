@@ -6,6 +6,7 @@ import com.veadan.folib.storage.repository.Repository;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.nio.file.FileSystem;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -26,6 +27,7 @@ public class CondaFileSystem extends LayoutFileSystem {
 
     @Override
     public Set<String> getDigestAlgorithmSet() {
-        return layoutProvider.getDigestAlgorithmSet();
+//        return layoutProvider.getDigestAlgorithmSet();
+        return new HashSet<>();
     }
 }
