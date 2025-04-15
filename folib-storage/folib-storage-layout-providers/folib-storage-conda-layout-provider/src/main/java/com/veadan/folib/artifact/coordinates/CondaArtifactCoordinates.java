@@ -81,11 +81,20 @@ public class CondaArtifactCoordinates
     // 路径解析:
     // 文件路径: {platform}/{fileName}
     public static CondaArtifactCoordinates parse(String path) {
-        return null;
+        Assert.notNull(path, "path cannot be null");
+        String[] parts = path.split("/");
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("Invalid path format: " + path);
+        }
+        String platform = parts[0];
+        String fileName = parts[1];
+        return new CondaArtifactCoordinates(platform, fileName);
     }
 
     @Override
     public String convertToPath(CondaArtifactCoordinates artifactCoordinates) {
-        return null;
+        String platform = artifactCoordinates.getPlatform();
+        String fileName = artifactCoordinates.getFileName();
+        return String.format("%s/%s", platform, fileName);
     }
 }

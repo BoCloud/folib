@@ -26,16 +26,6 @@ public class CondaLayoutProvider extends AbstractLayoutProvider<CondaArtifactCoo
 
     public static final String ALIAS = CondaArtifactCoordinates.LAYOUT_NAME;
 
-    public static final Collection<String> CONDA_METADATA_SET;
-
-    static {
-        HashSet<String> set = new HashSet<>();
-        set.add("list");
-        set.add("@latest");
-        set.add(".info");
-        CONDA_METADATA_SET = Collections.unmodifiableSet(set);
-    }
-
     @Inject
     private CondaRepositoryManagementStrategy condaRepositoryManagementStrategy;
 
@@ -55,13 +45,12 @@ public class CondaLayoutProvider extends AbstractLayoutProvider<CondaArtifactCoo
 
     @Override
     public boolean isArtifactMetadata(RepositoryPath path) {
-        return CONDA_METADATA_SET.stream().anyMatch(path::endsWith);
+        return path.getFileName().toString().endsWith("index.json");
     }
 
-
-    public boolean isArtifact(RepositoryPath path) {
-        //TODO
-        return true;
+    public boolean isCondaRepoData(RepositoryPath path) {
+        return path.getFileName().toString().endsWith("repodata.json") ||
+               path.getFileName().toString().endsWith("current_repodata.json");
     }
 
 
@@ -80,8 +69,4 @@ public class CondaLayoutProvider extends AbstractLayoutProvider<CondaArtifactCoo
         return ALIAS;
     }
 
-    @Override
-    protected Map<RepositoryFileAttributeType, Object> getRepositoryFileAttributes(RepositoryPath repositoryPath, RepositoryFileAttributeType... attributeTypes) throws IOException {
-        return new HashMap<>();
-    }
 }

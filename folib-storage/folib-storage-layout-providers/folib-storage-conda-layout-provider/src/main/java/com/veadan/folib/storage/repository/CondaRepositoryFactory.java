@@ -13,7 +13,7 @@ import java.util.LinkedHashSet;
  * @Description:
  */
 @Component
-public class CondaRepositroyFactory implements RepositoryFactory {
+public class CondaRepositoryFactory implements RepositoryFactory {
     @Inject
     private CondaRepositoryFeatures condaRepositoryFeatures;
 

@@ -49,6 +49,6 @@ public class CondaMODDependencyFormatter implements DependencySynonymFormatter {
     public String getDependencySnippet(ArtifactCoordinates artifactCoordinates)
     {
         //TODO
-        return null;
+        return "";
     }
 }
