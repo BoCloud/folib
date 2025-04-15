@@ -362,13 +362,13 @@ public abstract class RepositoryFiles {
         return false;
     }
 
-    public static boolean isDirectoryEmpty(RepositoryPath repositoryPath) throws IOException {
+    public static boolean isDirectoryEmpty(Path path) throws IOException {
         // 确保路径是目录
-        if (!Files.isDirectory(repositoryPath)) {
+        if (!Files.isDirectory(path)) {
             return false;
         }
         // 检查目录是否为空
-        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(repositoryPath)) {
+        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(path)) {
             return !dirStream.iterator().hasNext();
         }
     }

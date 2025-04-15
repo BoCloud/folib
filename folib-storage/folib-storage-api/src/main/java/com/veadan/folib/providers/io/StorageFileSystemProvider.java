@@ -443,7 +443,7 @@ public abstract class StorageFileSystemProvider
                 if (Files.isSameFile(dirPath, trashPath)) {
                     return FileVisitResult.CONTINUE;
                 }
-                if (Files.list(dirPath).count() == 0) {
+                if (RepositoryFiles.isDirectoryEmpty(dirPath)) {
                     boolean result = Files.deleteIfExists(dirPath);
                     log.info("Delete trash storageId [{}] repositoryId [{}] directory path [{}] result [{}]", path.getStorageId(), path.getRepositoryId(), dirPath.getFileName().toString(), result);
                 }

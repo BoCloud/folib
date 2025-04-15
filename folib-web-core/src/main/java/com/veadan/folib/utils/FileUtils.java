@@ -2,6 +2,7 @@ package com.veadan.folib.utils;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.extra.spring.SpringUtil;
+import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.scanner.common.exception.BusinessException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -125,7 +126,7 @@ public class FileUtils {
         try {
             deletePath(path);
             Path parentPath = path.getParent();
-            if (Files.isDirectory(parentPath) && Files.list(parentPath).count() <= 0) {
+            if (Files.isDirectory(parentPath) && RepositoryFiles.isDirectoryEmpty(parentPath)) {
                 Files.deleteIfExists(parentPath);
             }
         } catch (IOException ex) {

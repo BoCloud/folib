@@ -142,7 +142,7 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
 
     private void handlerDirPath(String storageId, String repositoryId, RepositoryPath repositoryPath) {
         try {
-            if (Files.exists(repositoryPath) && !Files.isSameFile(repositoryPath.getRoot(), repositoryPath) && Files.list(repositoryPath).count() == 0) {
+            if (Files.exists(repositoryPath) && !Files.isSameFile(repositoryPath.getRoot(), repositoryPath) && RepositoryFiles.isDirectoryEmpty(repositoryPath)) {
                 Files.deleteIfExists(repositoryPath);
                 log.info("Cleanup storageId [{}] repositoryId [{}] dir path [{}] do delete", storageId, repositoryId, repositoryPath.toString());
             }
@@ -286,7 +286,7 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
                 log.info("Cleanup docker tag storageId [{}] repositoryId [{}] path [{}] do delete", storageId, repositoryId, deleteRepositoryPath.toString());
                 artifactManagementService.delete(deleteRepositoryPath, repositoryPath.getRepository().isAllowsForceDeletion());
                 RepositoryPath dockerImageRepositoryPath = deleteRepositoryPath.getParent();
-                if (Files.exists(dockerImageRepositoryPath) && !Files.isSameFile(repositoryPath.getRoot(), dockerImageRepositoryPath) && Files.list(dockerImageRepositoryPath).count() == 0) {
+                if (Files.exists(dockerImageRepositoryPath) && !Files.isSameFile(repositoryPath.getRoot(), dockerImageRepositoryPath) && RepositoryFiles.isDirectoryEmpty(dockerImageRepositoryPath)) {
                     Files.deleteIfExists(dockerImageRepositoryPath);
                     log.info("Cleanup docker image storageId [{}] repositoryId [{}] path [{}] do delete", storageId, repositoryId, dockerImageRepositoryPath.toString());
                 }
