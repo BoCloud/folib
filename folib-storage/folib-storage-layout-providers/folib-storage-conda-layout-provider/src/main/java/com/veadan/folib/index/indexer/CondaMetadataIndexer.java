@@ -1,11 +1,13 @@
 package com.veadan.folib.index.indexer;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.index.model.*;
 import com.veadan.folib.index.utils.CondaUtils;
 import com.veadan.folib.index.utils.CondaVersionComparator;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
+import jnr.ffi.annotations.In;
 import lombok.NonNull;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +15,9 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.inject.Inject;
+import javax.transaction.Transactional;
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -25,19 +30,20 @@ import java.util.stream.Collectors;
 
 @Component
 public class CondaMetadataIndexer {
-    private CondaMetadataExtractor extractor;
+    private final CondaMetadataExtractor extractor;
 
-    public CondaMetadataIndexer(CondaMetadataExtractor extractor) {
-        this.extractor = extractor;
-    }
-
-    @VisibleForTesting
-    void setCondaMetadataExtractor(CondaMetadataExtractor extractor) {
-        this.extractor = extractor;
-    }
+    private final RepositoryPathResolver repositoryPathResolver;
 
     @Autowired
-    RepositoryPathResolver repositoryPathResolver;
+    public CondaMetadataIndexer(CondaMetadataExtractor extractor, RepositoryPathResolver repositoryPathResolver) {
+        this.extractor = extractor;
+        this.repositoryPathResolver = repositoryPathResolver;
+    }
+
+//    @VisibleForTesting
+//    void setCondaMetadataExtractor(CondaMetadataExtractor extractor) {
+//        this.extractor = extractor;
+//    }
 
 
 
@@ -58,7 +64,11 @@ public class CondaMetadataIndexer {
                 return null;
             } else {
                 RepoDataPackage repoDataPackage = IndexToRepodataPackageAdapter.adapt(index);
-                this.supplementRepoDataPackage(repoDataPackage, repoKey, artifactName);
+                try {
+                    this.supplementRepoDataPackage(repoDataPackage, repoKey, artifactName);
+                } catch (IOException e) {
+                    return null;
+                }
                 return repoDataPackage;
             }
         }
@@ -147,14 +157,27 @@ public class CondaMetadataIndexer {
     }
 
     private void supplementRepoDataPackage(RepoDataPackage repoDataPackage, String repoKey,
-                                           @NonNull String artifactName) {
-        repoDataPackage.setSize(123L);
-        repoDataPackage.setMd5("123");
-        repoDataPackage.setSha256("1234");
+                                           @NonNull String artifactName) throws IOException {
+        // 1. 分解repoKey后三位 .../{storageId}/{repositoryId}/{platform}
+        String[] repoKeyParts = repoKey.split("/");
+        if (repoKeyParts.length < 3) {
+            return;
+        }
+        String storageId = repoKeyParts[repoKeyParts.length - 3];
+        String repositoryId = repoKeyParts[repoKeyParts.length - 2];
+        String platform = repoKeyParts[repoKeyParts.length - 1];
+        // 2. 获取存储路径
+        RepositoryPath repoPath = repositoryPathResolver.resolve(storageId, repositoryId, platform + "/" + artifactName);
+        // 3. 获取文件实体
+        Artifact artifact = repoPath.getArtifactEntry();
+
+
+        repoDataPackage.setSize(artifact.getSizeInBytes());
         if (repoDataPackage.getNoarch() == null) {
             this.findNoArchInMetaYaml(repoKey, repoDataPackage, artifactName);
         }
     }
+
 
     private void findNoArchInMetaYaml(String repoKey, RepoDataPackage repoDataPackage, String artifactName) {
         MetaYaml metaYaml = (MetaYaml) this.extractor.getIndex(repoKey, artifactName, "meta.yaml", MetaYaml.class,

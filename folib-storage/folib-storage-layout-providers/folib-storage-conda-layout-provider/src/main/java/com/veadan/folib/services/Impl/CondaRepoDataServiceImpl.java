@@ -8,8 +8,10 @@ import com.veadan.folib.index.model.RepoDataEventKind;
 import com.veadan.folib.index.model.RepoDataPackage;
 import com.veadan.folib.services.CondaRepoDataService;
 import lombok.NonNull;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -23,9 +25,12 @@ import java.nio.file.Path;
 
 @Service
 public class CondaRepoDataServiceImpl implements CondaRepoDataService {
-    CondaMetadataExtractor condaMetadataExtractor = new CondaMetadataExtractor();
+    private final CondaMetadataIndexer condaMetadataIndexer;
 
-    CondaMetadataIndexer condaMetadataIndexer = new CondaMetadataIndexer(condaMetadataExtractor);
+    @Autowired
+    public CondaRepoDataServiceImpl(CondaMetadataIndexer condaMetadataIndexer) {
+        this.condaMetadataIndexer = condaMetadataIndexer;
+    }
 
     @Override
     public RepoData getRepoData(String repoKey) {
