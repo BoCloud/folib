@@ -185,7 +185,6 @@ import {
 import {
   folderList
 } from "@/api/advanced"
-import { isValidCron } from 'cron-validator';
 import cronstrue from 'cronstrue';
 
 export default {

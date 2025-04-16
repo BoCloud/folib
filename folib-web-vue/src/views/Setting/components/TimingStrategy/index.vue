@@ -138,7 +138,6 @@ import {
     updateCronOne,
     delCronOne, cronTasksGlobalList,
 } from "@/api/folib"
-import { isValidCron } from "cron-validator";
 import cronstrue from 'cronstrue';
 
 export default {
