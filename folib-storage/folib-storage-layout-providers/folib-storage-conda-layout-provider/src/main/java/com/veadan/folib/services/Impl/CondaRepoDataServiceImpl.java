@@ -6,6 +6,7 @@ import com.veadan.folib.index.indexer.CondaMetadataIndexer;
 import com.veadan.folib.index.model.RepoData;
 import com.veadan.folib.index.model.RepoDataEventKind;
 import com.veadan.folib.index.model.RepoDataPackage;
+import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.services.CondaRepoDataService;
 import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;

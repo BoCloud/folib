@@ -12,6 +12,7 @@ import com.veadan.folib.providers.ProviderImplementationException;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ArtifactManagementService;
+import com.veadan.folib.services.CondaArtifactService;
 import com.veadan.folib.services.CondaRepoDataService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
@@ -64,6 +65,9 @@ public class CondaArtifactController extends BaseArtifactController {
 
     @Inject
     private CondaRepoDataService condaRepoDataService;
+
+    @Inject
+    private CondaArtifactService condaArtifactService;
 
     @Inject
     private CondaMetadataExtractor condaMetadataExtractor;
@@ -121,7 +125,7 @@ public class CondaArtifactController extends BaseArtifactController {
             RepositoryPath artifactPath = repositoryPathResolver.resolve(repository, platform + "/" + fileName);
 
             // 5. 检查文件是否存在
-            if (checkArtifactExist(artifactPath)) {
+            if (condaArtifactService.checkArtifactExist(artifactPath)) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("Artifact already exists");
             }
 
@@ -199,40 +203,29 @@ public class CondaArtifactController extends BaseArtifactController {
     }
 
 
-    /**
-     * @Description: 检查包是否存在, FileExist and IndexExist. 若不一致, 则修复(删除索引或添加索引)
-     * @param path: 完整的文件路径, repoKey/artifactName
-     * @return
-     */
-    private boolean checkArtifactExist(@NonNull RepositoryPath path) throws Exception {
-        boolean fileExist = false;
+    @ApiOperation(value = "Get conda package")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "DELETE conda package successfully"),
+            @ApiResponse(code = 404, message = "Conda package not found"),
+            @ApiResponse(code = 500, message = "Internal server error")
+    })
+    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
+    @DeleteMapping(value = {"/{storageId}/{repositoryId}/{platformId}/{packageName}",
+                            "/{storageId}/{repositoryId}/package/{platformId}/{packageName}"})
+    public ResponseEntity<?> deleteCondaPackage(@RepositoryMapping Repository repository,
+                                                @PathVariable String platformId,
+                                                @PathVariable String packageName) {
 
-        boolean indexExist = false;
-        // 1. 提取父目录和文件名和indexPath
-        String parentPath = path.getParent().toString();
-        String fileName = path.getFileName().toString();
-
-        // 2. 检查文件是否存在
-        fileExist = Files.exists(path);
-
-        // 3. 检查索引文件是否存在, 且文件是否在索引中
-        RepoData repoData = condaRepoDataService.getRepoData(parentPath);
-        indexExist = condaRepoDataService.checkPackageExistsInRepoData(repoData, fileName);
-
-        if (fileExist && indexExist) {
-            return true;
-        } else if (!fileExist && !indexExist) {
-            return false;
-        } else if (fileExist && !indexExist) {
-            // 4. 文件存在, 索引不存在, 则添加索引
-            condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.ADD, parentPath, fileName);
-            return true;
-        } else if (!fileExist && indexExist) {
-            // 5. 文件不存在, 索引存在, 则删除索引
-            condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.REMOVE, parentPath, fileName);
-            return false;
+        // 1. 获取conda包路径
+        RepositoryPath artifactPath = repositoryPathResolver.resolve(repository, platformId + "/" + packageName);
+        try {
+            condaArtifactService.unpublishPackage(artifactPath);
+        } catch (Exception e) {
+            log.error("Error deleting conda package", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete conda package");
         }
-        return false;
+        // 2. 返回成功响应
+        return ResponseEntity.ok("Conda package deleted successfully");
     }
 
 
