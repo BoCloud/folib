@@ -4,6 +4,8 @@ import cn.hutool.extra.spring.SpringUtil;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
+import com.veadan.folib.constant.GlobalConstants;
+import com.veadan.folib.controllers.BrowseController;
 import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
@@ -39,7 +41,12 @@ public class UrlUtils {
     }
 
     public static HttpServletRequest getRequest() {
-        return ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+        try {
+            return ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+        } catch (Exception ignore) {
+
+        }
+        return null;
     }
 
     public static String getCurrentStorageId() {
@@ -108,6 +115,12 @@ public class UrlUtils {
                 return getStorageAndRepositoryId(storageId, repositoryId);
             }
             return null;
+        }
+        if (servletPath.startsWith(BrowseController.ROOT_CONTEXT)) {
+            String[] pathParts = StringUtils.removeStart(servletPath, BrowseController.ROOT_CONTEXT + GlobalConstants.SEPARATOR).split("/");
+            request.setAttribute("storageId", pathParts[0]);
+            request.setAttribute("repositoryId", pathParts[1]);
+            return getStorageAndRepositoryId(pathParts[0], pathParts[1]);
         }
         return null;
     }
