@@ -1,5 +1,6 @@
 package com.veadan.folib.controllers.layout.conda;
 
+import cn.hutool.core.io.FileUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veadan.folib.artifact.coordinates.CondaArtifactCoordinates;
 import com.veadan.folib.controllers.BaseArtifactController;
@@ -27,6 +28,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -45,7 +47,9 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 
 /**
@@ -70,6 +74,9 @@ public class CondaArtifactController extends BaseArtifactController {
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
 
+    @Value("${folib.temp}")
+    private String tempPath;
+
 
     @ApiOperation(value = "Upload conda artifact")
     @ApiResponses(value = {
@@ -92,24 +99,17 @@ public class CondaArtifactController extends BaseArtifactController {
             return ResponseEntity.badRequest().body("Invalid file name");
         }
 
-        RepositoryPath tmpPath = null;
+        File parentTempFile = null;
         try {
             // 1. 存储到临时目录
-            tmpPath = repositoryPathResolver.resolve(repository, "tmp/" + fileName);
-            File tmpDir = new File(tmpPath.getParent().toString());
-            if (!tmpDir.exists()) {
-                tmpDir.mkdirs();
-            }
-
-            File tmpFile = new File(tmpPath.toString());
-            try(FileOutputStream fos = new FileOutputStream(tmpFile)) {
-                fos.write(file.getBytes());
-            } catch (IOException e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save file: " + e.getMessage());
-            }
+            parentTempFile = new File(tempPath + File.separator + UUID.randomUUID() + File.separator);
+            File artifactTempFile = new File(parentTempFile.getAbsolutePath() + File.separator + fileName);
+            Path artifactTempPath = Path.of(artifactTempFile.getAbsolutePath());
+            InputStream is = file.getInputStream();
+            FileUtil.writeFromStream(is, artifactTempFile);
 
             // 2. 提取元数据
-            Index index = condaMetadataExtractor.extract(tmpPath.getParent().toString(), fileName);
+            Index index = condaMetadataExtractor.extract(artifactTempPath.getParent().toString(), fileName);
             if (index == null) {
                 throw new RuntimeException("Failed to extract metadata");
             }
@@ -127,7 +127,7 @@ public class CondaArtifactController extends BaseArtifactController {
 
             // 6. 存储文件
             CondaArtifactCoordinates coordinates = CondaArtifactCoordinates.of(platform, fileName);
-            storeCondaPackage(repository, coordinates, tmpPath);
+            storeCondaPackage(repository, coordinates, artifactTempFile);
 
             // 7. 更新索引
             condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.ADD, artifactPath.getParent().toString(), fileName);
@@ -137,12 +137,8 @@ public class CondaArtifactController extends BaseArtifactController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Processing error: " + e.getMessage());
         } finally {
             // 9. 安全删除临时文件
-            if (tmpPath != null && Files.exists(tmpPath)) {
-                try {
-                    Files.delete(tmpPath);
-                } catch (IOException e) {
-                    log.error("Failed to delete tmp file at: {}", tmpPath, e);
-                }
+            if (Objects.nonNull(parentTempFile)) {
+                FileUtil.del(parentTempFile);
             }
         }
     }
@@ -246,17 +242,18 @@ public class CondaArtifactController extends BaseArtifactController {
      * @Description: 存储conda包
      * @param repository: 存储库
      * @param coordinates: 坐标
-     * @param condaPackageTmp: 临时文件路径
+     * @param artifactTempFile: 临时文件
      * @throws IOException
      * @throws ProviderImplementationException
      * @throws ArtifactCoordinatesValidationException
      */
     private void storeCondaPackage(Repository repository,
-                                   CondaArtifactCoordinates coordinates,
-                                   Path condaPackageTmp)
+                                   @NonNull CondaArtifactCoordinates coordinates,
+                                   @NonNull File artifactTempFile)
             throws IOException, ProviderImplementationException, ArtifactCoordinatesValidationException {
+
         RepositoryPath artifactPath = repositoryPathResolver.resolve(repository, coordinates);
-        try (InputStream is = new BufferedInputStream(Files.newInputStream(condaPackageTmp))) {
+        try (InputStream is = new FileInputStream(artifactTempFile)) {
             artifactManagementService.validateAndStore(artifactPath, is);
         }
     }
