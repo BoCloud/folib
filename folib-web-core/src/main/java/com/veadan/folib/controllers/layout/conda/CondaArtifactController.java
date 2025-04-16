@@ -194,7 +194,11 @@ public class CondaArtifactController extends BaseArtifactController {
         // 1. 获取conda包路径
         RepositoryPath condaPackagePath = repositoryPathResolver.resolve(repository, platformId + "/" + packageName);
         // 2. 检查包是否存在
-        if (!Files.exists(condaPackagePath)) {
+//        if (!Files.exists(condaPackagePath)) {
+//            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+//            return;
+//        }
+        if (!condaArtifactService.checkArtifactExist(condaPackagePath)) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
