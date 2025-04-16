@@ -1,5 +1,7 @@
 package com.veadan.folib.services.Impl;
 
+import com.veadan.folib.index.indexer.CondaMetadataExtractor;
+import com.veadan.folib.index.model.Index;
 import com.veadan.folib.index.model.RepoData;
 import com.veadan.folib.index.model.RepoDataEventKind;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -24,10 +26,13 @@ public class CondaArtifactServiceImpl implements CondaArtifactService {
 
     private final ArtifactManagementService artifactManagementService;
 
+    private final CondaMetadataExtractor condaMetadataExtractor;
+
     @Autowired
-    public CondaArtifactServiceImpl(CondaRepoDataService condaRepoDataService, ArtifactManagementService artifactManagementService) {
+    public CondaArtifactServiceImpl(CondaRepoDataService condaRepoDataService, ArtifactManagementService artifactManagementService, CondaMetadataExtractor condaMetadataExtractor) {
         this.condaRepoDataService = condaRepoDataService;
         this.artifactManagementService = artifactManagementService;
+        this.condaMetadataExtractor = condaMetadataExtractor;
     }
 
     /**
@@ -86,5 +91,18 @@ public class CondaArtifactServiceImpl implements CondaArtifactService {
         }
     }
 
+    /**
+     * @Description: 提取索引
+     * @param repoKey: 仓库名称
+     * @param artifactName: 包名称
+     * @return
+     */
+    public Index extract(@NonNull String repoKey, @NonNull String artifactName) {
+        try {
+            return condaMetadataExtractor.extract(repoKey, artifactName);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to extract metadata for " + artifactName, e);
+        }
+    }
 
 }
