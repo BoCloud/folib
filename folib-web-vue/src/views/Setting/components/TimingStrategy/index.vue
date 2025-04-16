@@ -139,6 +139,7 @@ import {
     delCronOne, cronTasksGlobalList,
 } from "@/api/folib"
 import { isValidCron } from "cron-validator";
+import cronstrue from 'cronstrue';
 
 export default {
     data() {
@@ -244,12 +245,12 @@ export default {
                     })
                     return false
                 }
-                const isOk = isValidCron(i.isSetted.cronExpression, {
-                    seconds: true, // 是否支持秒字段
-                    alias: true, // 是否支持别名（如 @hourly）
-                    allowBlankDay: true, // 是否允许日期字段为空
-                    allowSevenAsSunday: true // 是否允许将 7 作为星期天
-                })
+                let isOk = true
+                try {
+                    cronstrue.toString(i.isSetted.cronExpression)
+                } catch (e) {
+                    isOk = false
+                }
                 if (!isOk) {
                     this.$notification.open({
                         class: 'ant-notification-warning',

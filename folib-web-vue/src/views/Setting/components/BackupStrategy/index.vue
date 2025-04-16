@@ -186,6 +186,7 @@ import {
   folderList
 } from "@/api/advanced"
 import { isValidCron } from 'cron-validator';
+import cronstrue from 'cronstrue';
 
 export default {
   props: {
@@ -206,12 +207,12 @@ export default {
       if (!value) {
         callback(new Error(this.$t('BackupStrategy.EnterCronExpression')))
       } else {
-        const isOk = isValidCron(value, {
-          seconds: true, // 是否支持秒字段
-          alias: true, // 是否支持别名（如 @hourly）
-          allowBlankDay: true, // 是否允许日期字段为空
-          allowSevenAsSunday: true // 是否允许将 7 作为星期天
-        })
+        let isOk = true
+        try {
+          cronstrue.toString(value)
+        } catch (e) {
+          isOk = false
+        }
         if (!isOk) callback(new Error(this.$t('BackupStrategy.EnterCorrectCronExpression')))
         else callback()
       }
