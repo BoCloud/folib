@@ -60,13 +60,7 @@ import com.veadan.folib.scanner.common.util.SpringContextUtil;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
-import com.veadan.folib.services.ArtifactManagementService;
-import com.veadan.folib.services.ArtifactMetadataService;
-import com.veadan.folib.services.ArtifactResolutionService;
-import com.veadan.folib.services.ArtifactService;
-import com.veadan.folib.services.ArtifactWebService;
-import com.veadan.folib.services.ConfigurationManagementService;
-import com.veadan.folib.services.RepositoryManagementService;
+import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.DebianUtils;
 import com.veadan.folib.util.MessageDigestUtils;
@@ -215,6 +209,9 @@ public class PromotionUtil {
     private ArtifactComponent artifactComponent;
 
     @Autowired
+    private CondaArtifactService condaArtifactService;
+
+    @Autowired
     @Lazy
     private DockerComponent dockerComponent;
     @Autowired
@@ -277,6 +274,7 @@ public class PromotionUtil {
             handleCopy(sourcePath, srcRepository, targetPath, targetRepository);
             handleRpm(targetRepository);
             handleDebian(targetPath);
+            handleConda(targetPath);
             log.info("Execute copy srcRepository [{}] [{}] targetRepository [{}] [{}] path [{}] finished", srcRepository.getStorage().getId(), srcRepository.getId(), targetRepository.getStorage().getId(), targetRepository.getId(), sourcePath);
         } catch (Exception e) {
             log.info("Execute copy srcRepository [{}] [{}] targetRepository [{}] [{}] path [{}] error [{}]", srcRepository.getStorage().getId(), srcRepository.getId(), targetRepository.getStorage().getId(), targetRepository.getId(), sourcePath, ExceptionUtils.getStackTrace(e));
@@ -974,6 +972,7 @@ public class PromotionUtil {
         }
         handleRpm(targetRepository);
         handleDebian(targetPath);
+        handleConda(targetPath);
     }
 
     public void copyFile(RepositoryPath sourcePath, RepositoryPath targetPath) throws IOException {
@@ -1161,6 +1160,18 @@ public class PromotionUtil {
 
     }
 
+
+    private void handleConda(RepositoryPath repositoryPath) {
+        try {
+            if (!ProductTypeEnum.Conda.getFoLibraryName().equals(repositoryPath.getRepository().getLayout())) {
+                return;
+            }
+            condaArtifactService.checkArtifactExist(repositoryPath);
+        } catch (Exception ex) {
+            log.error("Rebuild debian index storage [{}] repository [{}] error [{}]", repositoryPath.getRepository().getStorage().getId(), repositoryPath.getRepositoryId(), ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
     public void handleFastMove(RepositoryPath sourcePath, Repository srcRepository, RepositoryPath targetPath, Repository targetRepository) throws Exception {
         List<RepositoryPath> list = RepositoryPathUtil.getPaths(srcRepository.getLayout(), sourcePath);
         List<FutureTask<String>> futureTaskList = Lists.newArrayList();
@@ -1179,6 +1190,7 @@ public class PromotionUtil {
         }
         handleRpm(targetRepository);
         handleDebian(targetPath);
+        handleConda(targetPath);
     }
 
     private void repositoryPathMove(RepositoryPath sourcePath, Repository srcRepository, RepositoryPath targetPath, Repository targetRepository, RepositoryPath srcRepositoryPath, boolean isDocker) throws IOException {
