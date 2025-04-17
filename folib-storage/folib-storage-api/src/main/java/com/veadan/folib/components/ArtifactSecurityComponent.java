@@ -25,7 +25,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -92,7 +95,7 @@ public class ArtifactSecurityComponent {
             SpringSecurityUser userDetails = (SpringSecurityUser) principal;
             Collection<? extends GrantedAuthority> grantedAuthorities = authentication.getAuthorities();
             List<GrantedAuthority> authorities = Lists.newArrayList(grantedAuthorities);
-            Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(storageId, repositoryId, Lists.newArrayList(RepositoryFiles.relativizePath(repositoryPath)));
+            Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(getServerName(), storageId, repositoryId, Lists.newArrayList(RepositoryFiles.relativizePath(repositoryPath)));
             if (!storageAuthorities.isEmpty()) {
                 authorities.addAll(storageAuthorities);
             }
@@ -126,6 +129,28 @@ public class ArtifactSecurityComponent {
             return RepositoryTypeEnum.PROXY.getType().equals(repositoryType) && CollectionUtils.isNotEmpty(accessModelData.getStorageAuthorities());
         }
         return true;
+    }
+
+    public HttpServletRequest getRequest() {
+        try {
+            return ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+        } catch (Exception ignore) {
+
+        }
+        return null;
+    }
+
+    public String getServerName() {
+        try {
+            HttpServletRequest request = getRequest();
+            if (Objects.isNull(request)) {
+                return null;
+            }
+            return request.getServerName();
+        } catch (Exception ignore) {
+
+        }
+        return null;
     }
 
 }

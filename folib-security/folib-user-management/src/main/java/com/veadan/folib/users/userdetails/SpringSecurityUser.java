@@ -1,13 +1,10 @@
 package com.veadan.folib.users.userdetails;
 
 import com.google.common.base.Objects;
-import com.google.common.collect.Lists;
 import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.dto.AccessModel;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.SerializationUtils;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.*;
@@ -107,9 +104,9 @@ public class SpringSecurityUser
     public Collection<Privileges> getAuthorities() {
         return roles.stream().flatMap(r -> {
             AccessModel accessModel = r.getAccessModel();
-            if (accessModel != null){
+            if (accessModel != null) {
                 return accessModel.getApiAuthorities().stream();
-            }else {
+            } else {
                 return Stream.empty();
             }
         }).collect(Collectors.toSet());
@@ -131,13 +128,13 @@ public class SpringSecurityUser
                 .collect(Collectors.toSet());
     }
 
-    public Collection<Privileges> getStorageAuthorities(String storageId, String repositoryId, List<String> paths) {
+    public Collection<Privileges> getStorageAuthorities(String serverName, String storageId, String repositoryId, List<String> paths) {
         Collection<Privileges> privilegesCollection = getRoles().stream()
                 .flatMap(r -> r.getAccessModel()
                         .getPathAuthorities(storageId, repositoryId, paths)
                         .stream())
                 .collect(Collectors.toSet());
-        UserPrivileges.handlerRestrictedRepository(privilegesCollection, storageId, repositoryId);
+        UserPrivileges.handlerRestrictedRepository(serverName, privilegesCollection, storageId, repositoryId);
         return privilegesCollection;
     }
 

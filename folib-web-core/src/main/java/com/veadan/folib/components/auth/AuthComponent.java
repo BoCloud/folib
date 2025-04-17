@@ -18,6 +18,7 @@ import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.security.AnonymousAccessModel;
 import com.veadan.folib.users.security.AuthoritiesProvider;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import com.veadan.folib.utils.UrlUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -29,6 +30,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -111,6 +113,7 @@ public class AuthComponent {
     public Set<String> getAllPrivileges(String storageId, String repositoryId) {
         return getAllPrivileges(storageId, repositoryId, Collections.emptyList());
     }
+
     public Set<String> getAllPrivileges(String storageId, String repositoryId, List<String> paths) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -171,7 +174,7 @@ public class AuthComponent {
             SpringSecurityUser userDetails = (SpringSecurityUser) principal;
             Collection<? extends GrantedAuthority> grantedAuthorities = authentication.getAuthorities();
             List<GrantedAuthority> authorities = Lists.newArrayList(grantedAuthorities);
-            Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(storageId, repositoryId, Collections.emptyList());
+            Collection<Privileges> storageAuthorities = userDetails.getStorageAuthorities(getServerName(), storageId, repositoryId, Collections.emptyList());
             if (!storageAuthorities.isEmpty()) {
                 authorities.addAll(storageAuthorities);
             }
@@ -219,6 +222,19 @@ public class AuthComponent {
         } else {
             return validatePathPrivileges(repository.getStorage().getId(), repository.getId(), paths, authority);
         }
+    }
+
+    public String getServerName() {
+        try {
+            HttpServletRequest request = UrlUtils.getRequest();
+            if (Objects.isNull(request)) {
+                return null;
+            }
+            return request.getServerName();
+        } catch (Exception ignore) {
+
+        }
+        return null;
     }
 
 }
