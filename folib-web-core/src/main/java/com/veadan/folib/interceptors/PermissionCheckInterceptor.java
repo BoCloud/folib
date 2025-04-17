@@ -13,14 +13,16 @@ import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.scanner.common.util.IPUtil;
+import com.veadan.folib.security.vote.ExtendedAuthoritiesVoter;
 import com.veadan.folib.services.ConfigurationManagementService;
-import com.veadan.folib.users.domain.Privileges;
-import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.wrapper.RequestWrapper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -90,16 +92,34 @@ public class PermissionCheckInterceptor implements HandlerInterceptor {
             handlerResponse(response);
             return false;
         }
-        boolean auth = authentication.getAuthorities().stream().anyMatch(item -> item.getAuthority().equals(resourceKey));
+        String storageKey = permission.storageKey();
+        String repositoryKey = permission.repositoryKey();
+        String storageId = "", repositoryId = "";
+        Collection<? extends GrantedAuthority> globalAuthorities = authentication.getAuthorities();
+        List<GrantedAuthority> authorities = Lists.newArrayList();
+        globalAuthorities.forEach(item -> {
+            authorities.add(SerializationUtils.clone(item));
+        });
+        if (StringUtils.isNotBlank(storageKey) && StringUtils.isNotBlank(repositoryKey)) {
+            storageId = request.getParameter(storageKey);
+            repositoryId = request.getParameter(repositoryKey);
+            ExtendedAuthoritiesVoter extendedAuthoritiesVoter = SpringUtil.getBean(ExtendedAuthoritiesVoter.class);
+            boolean result = extendedAuthoritiesVoter.handlerRestrictedRepository(authorities, storageId, repositoryId);
+            if (result) {
+                Authentication newAuthentication = new UsernamePasswordAuthenticationToken(
+                        authentication.getPrincipal(),
+                        authentication.getCredentials(),
+                        authorities
+                );
+                SecurityContextHolder.getContext().setAuthentication(newAuthentication);
+            }
+        }
+        boolean auth = authorities.stream().anyMatch(item -> item.getAuthority().equals(resourceKey));
         if (auth) {
             return true;
         }
-        String storageKey = permission.storageKey();
-        String repositoryKey = permission.repositoryKey();
         String pathKey = permission.pathKey();
         if (StringUtils.isNotBlank(storageKey) && StringUtils.isNotBlank(repositoryKey)) {
-            String storageId = request.getParameter(storageKey);
-            String repositoryId = request.getParameter(repositoryKey);
             String filePathMap = request.getParameter("filePathMap");
             List<String> filePaths = null;
             if (StringUtils.isNotBlank(filePathMap)) {

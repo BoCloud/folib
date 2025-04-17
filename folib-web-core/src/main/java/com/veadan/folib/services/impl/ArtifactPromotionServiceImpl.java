@@ -141,6 +141,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static com.veadan.folib.utils.UrlUtils.parsePath;
 
@@ -1877,16 +1878,15 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         return true;
     }
 
-    public boolean canMerger(long updatedSliceSize, long chunkNoMax, String artifactFileSliceUploadRootFolderPathStr) throws IOException {
-        long chunkSize = Files.list(Path.of(artifactFileSliceUploadRootFolderPathStr)).filter(p -> p.getFileName().toString().startsWith("chunkFile_")).count();
-        log.info("chunkSize:{},updatedSliceSize:{},chunkNoMax:{}", chunkSize, updatedSliceSize, chunkNoMax);
-        boolean result = chunkSize == chunkNoMax || updatedSliceSize == chunkNoMax;
-        log.info("canMerger:{}", result);
-        return result;
+    public long countChunkFiles(String artifactFileSliceUploadRootFolderPathStr) throws IOException {
+        // 使用 try-with-resources 自动关闭流
+        try (Stream<Path> files = Files.list(Path.of(artifactFileSliceUploadRootFolderPathStr))) {
+            return files.filter(p -> p.getFileName().toString().startsWith("chunkFile_")).count();
+        }
     }
 
     public boolean canMerger(long chunkNoMax, String artifactFileSliceUploadRootFolderPathStr) throws IOException {
-        long chunkSize = Files.list(Path.of(artifactFileSliceUploadRootFolderPathStr)).filter(p -> p.getFileName().toString().startsWith("chunkFile_")).count();
+        long chunkSize = countChunkFiles(artifactFileSliceUploadRootFolderPathStr);
         log.info("chunkSize:{},chunkNoMax:{}", chunkSize, chunkNoMax);
         boolean result = chunkSize == chunkNoMax;
         log.info("canMerger:{}", result);

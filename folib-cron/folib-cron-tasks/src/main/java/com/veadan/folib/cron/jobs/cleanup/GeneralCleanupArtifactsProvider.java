@@ -120,7 +120,7 @@ public class GeneralCleanupArtifactsProvider implements CleanupArtifactsProvider
 
     private void handlerDirPath(String storageId, String repositoryId, RepositoryPath repositoryPath) {
         try {
-            if (Files.exists(repositoryPath) && !Files.isSameFile(repositoryPath.getRoot(), repositoryPath) && Files.list(repositoryPath).count() == 0) {
+            if (Files.exists(repositoryPath) && !Files.isSameFile(repositoryPath.getRoot(), repositoryPath) && RepositoryFiles.isDirectoryEmpty(repositoryPath)) {
                 Files.deleteIfExists(repositoryPath);
                 log.info("Cleanup storageId [{}] repositoryId [{}] dir path [{}] do delete", storageId, repositoryId, repositoryPath.toString());
             }
@@ -170,7 +170,7 @@ public class GeneralCleanupArtifactsProvider implements CleanupArtifactsProvider
                 artifactManagementService.delete(repositoryPath, repositoryPath.getRepository().isAllowsForceDeletion());
                 RepositoryPath parentRepositoryPath = null;
                 parentRepositoryPath = repositoryPath.getParent();
-                if (Files.exists(parentRepositoryPath) && !Files.isSameFile(repositoryPath.getRoot(), parentRepositoryPath) && Files.list(parentRepositoryPath).count() == 0) {
+                if (Files.exists(parentRepositoryPath) && !Files.isSameFile(repositoryPath.getRoot(), parentRepositoryPath) && RepositoryFiles.isDirectoryEmpty(parentRepositoryPath)) {
                     Files.deleteIfExists(parentRepositoryPath);
                     log.info("Cleanup storageId [{}] repositoryId [{}] parent path [{}] do delete", storageId, repositoryId, parentRepositoryPath.toString());
                 }

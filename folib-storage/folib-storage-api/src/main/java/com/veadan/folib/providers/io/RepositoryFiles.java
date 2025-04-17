@@ -6,6 +6,7 @@ import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.util.CacheUtil;
+import com.veadan.folib.util.RepositoryPathUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -32,6 +33,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public abstract class RepositoryFiles {
     public final static String SCHEME_PREFIX = StorageFileSystemProvider.FOLIB_SCHEME + ":";
+
+    public final static List<String> CHECK_SUM_LIST = Lists.newArrayList(".md5", ".sha1", ".sha256", ".sha512", ".sm3");
 
     public static Boolean isChecksum(RepositoryPath path)
             throws IOException {
@@ -61,6 +64,57 @@ public abstract class RepositoryFiles {
         return flag;
     }
 
+    public static Boolean isArtifactMetadataDirectory(RepositoryPath path) {
+        RepositoryPath root = path.getRoot();
+        if (path.equals(root)) {
+            return false;
+        }
+        boolean flag = false;
+        String fileName = path.getFileName().toString();
+        if (fileName.startsWith(".") && fileName.endsWith(".foLibrary-metadata")) {
+            flag = true;
+        } else if (fileName.endsWith(".artifactory-metadata")) {
+            flag = true;
+        }
+        return flag;
+    }
+
+    public static boolean canDeleteArtifactMetadata(RepositoryPath path) throws IOException {
+        RepositoryPath root = path.getRoot();
+        if (path.equals(root)) {
+            return false;
+        }
+        RepositoryPath repositoryPath = null;
+        String fileName = path.getFileName().toString();
+        if (fileName.endsWith(RepositoryPathUtil.DS_STORE)) {
+            return true;
+        }
+        String parentFileName = path.getParent().getFileName().toString();
+        if (fileName.startsWith(".") && fileName.endsWith(".metadata")) {
+            repositoryPath = path.resolveSibling(StringUtils.removeEnd(StringUtils.removeStart(fileName, "."), ".metadata"));
+            return !Files.exists(repositoryPath);
+        } else if (isChecksum(path)) {
+            Optional<String> checksumOptional = CHECK_SUM_LIST.stream().filter(fileName::endsWith).findFirst();
+            if (checksumOptional.isPresent()) {
+                repositoryPath = path.resolveSibling(StringUtils.removeEnd(fileName, checksumOptional.get()));
+                return !Files.exists(repositoryPath);
+            }
+        } else if (fileName.startsWith(".") && fileName.endsWith(".foLibrary-metadata")) {
+            repositoryPath = path.resolveSibling(StringUtils.removeEnd(StringUtils.removeStart(fileName, "."), ".foLibrary-metadata"));
+            return !Files.exists(repositoryPath);
+        } else if (parentFileName.startsWith(".") && parentFileName.endsWith(".foLibrary-metadata")) {
+            repositoryPath = path.getParent().resolveSibling(StringUtils.removeEnd(StringUtils.removeStart(parentFileName, "."), ".foLibrary-metadata"));
+            return !Files.exists(repositoryPath);
+        } else if (fileName.endsWith(".artifactory-metadata")) {
+            repositoryPath = path.resolveSibling(StringUtils.removeEnd(fileName, ".artifactory-metadata"));
+            return !Files.exists(repositoryPath);
+        } else if (parentFileName.endsWith(".artifactory-metadata")) {
+            repositoryPath = path.getParent().resolveSibling(StringUtils.removeEnd(parentFileName, ".artifactory-metadata"));
+            return !Files.exists(repositoryPath);
+        }
+        return false;
+    }
+
     public static Boolean isHidden(Path path) throws IOException {
         String fileName = path.getFileName().toString();
         return Files.isHidden(path) || fileName.startsWith(".");
@@ -70,8 +124,7 @@ public abstract class RepositoryFiles {
         if (StringUtils.isBlank(name)) {
             return true;
         }
-        List<String> checksumList = Lists.newArrayList(".md5", ".sha1", ".sha256", ".sha512", ".sm3");
-        return checksumList.stream().anyMatch(name::endsWith);
+        return CHECK_SUM_LIST.stream().anyMatch(name::endsWith);
     }
 
     public static Boolean isTrash(RepositoryPath path)
@@ -298,13 +351,13 @@ public abstract class RepositoryFiles {
         return false;
     }
 
-    public static boolean isDirectoryEmpty(RepositoryPath repositoryPath) throws IOException {
+    public static boolean isDirectoryEmpty(Path path) throws IOException {
         // 确保路径是目录
-        if (!Files.isDirectory(repositoryPath)) {
+        if (!Files.isDirectory(path)) {
             return false;
         }
         // 检查目录是否为空
-        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(repositoryPath)) {
+        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(path)) {
             return !dirStream.iterator().hasNext();
         }
     }

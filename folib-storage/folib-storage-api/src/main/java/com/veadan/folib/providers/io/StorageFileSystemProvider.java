@@ -440,7 +440,7 @@ public abstract class StorageFileSystemProvider
                 if (Files.isSameFile(dirPath, trashPath)) {
                     return FileVisitResult.CONTINUE;
                 }
-                if (Files.list(dirPath).count() == 0) {
+                if (RepositoryFiles.isDirectoryEmpty(dirPath)) {
                     boolean result = Files.deleteIfExists(dirPath);
                     log.info("Delete trash storageId [{}] repositoryId [{}] directory path [{}] result [{}]", path.getStorageId(), path.getRepositoryId(), dirPath.getFileName().toString(), result);
                 }
@@ -480,14 +480,37 @@ public abstract class StorageFileSystemProvider
         }
         List<String> includeDirectoryList = Lists.newArrayList(LayoutFileSystem.TRASH);
         RepositoryPathUtil.handlerDirectories(repositoryPath.getRepository().getLayout(), repositoryPath, includeDirectoryList,
+                (RepositoryPath filePath) -> {
+                    deleteEmptyPath(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), filePath);
+                },
                 (RepositoryPath dirPath) -> {
                     deleteEmptyDirectory(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), dirPath);
                 });
+        RepositoryPathUtil.handlerDirectories(repositoryPath.getRepository().getLayout(), repositoryPath.resolve(LayoutFileSystem.TRASH), includeDirectoryList,
+                (RepositoryPath filePath) -> {
+                    deleteEmptyPath(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), filePath);
+                },
+                (RepositoryPath dirPath) -> {
+                    deleteEmptyDirectory(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), dirPath);
+                });
+        RootRepositoryPath root = repositoryPath.getFileSystem().getRootDirectory();
+        FileSystemUtils.deleteRecursively(unwrap(root).resolve(LayoutFileSystem.TEMP));
+    }
+
+    private void deleteEmptyPath(String storageId, String repositoryId, RepositoryPath repositoryPath) {
+        try {
+            if (Files.exists(repositoryPath) && RepositoryFiles.canDeleteArtifactMetadata(repositoryPath)) {
+                Files.deleteIfExists(repositoryPath);
+                log.info("Empty path storageId [{}] repositoryId [{}] path [{}] do delete", storageId, repositoryId, repositoryPath.toString());
+            }
+        } catch (Exception ex) {
+            log.error("Empty path storageId [{}] repositoryId [{}] path [{}] error [{}]", storageId, repositoryId, repositoryPath, ExceptionUtils.getStackTrace(ex));
+        }
     }
 
     private void deleteEmptyDirectory(String storageId, String repositoryId, RepositoryPath repositoryPath) {
         try {
-            if (Files.exists(repositoryPath) && !Files.isSameFile(repositoryPath.getRoot(), repositoryPath) && RepositoryFiles.isDirectoryEmpty(repositoryPath)) {
+            if (Files.exists(repositoryPath) && !Files.isSameFile(repositoryPath.getRoot().resolve(LayoutFileSystem.TRASH), repositoryPath) && !Files.isSameFile(repositoryPath.getRoot(), repositoryPath) && RepositoryFiles.isDirectoryEmpty(repositoryPath)) {
                 Files.deleteIfExists(repositoryPath);
                 log.info("Empty directory storageId [{}] repositoryId [{}] dir path [{}] do delete", storageId, repositoryId, repositoryPath.toString());
             }

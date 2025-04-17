@@ -1557,7 +1557,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                                     }
                                 });
                             }
-                            if (Files.list(blobsRepositoryPath).count() == 0) {
+                            if (RepositoryFiles.isDirectoryEmpty(blobsRepositoryPath)) {
                                 RepositoryFiles.delete(blobsRepositoryPath, true);
                             }
                         }
@@ -1606,7 +1606,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                                     }
                                 });
                             }
-                            if (Files.list(manifestsRepositoryPath).count() == 0) {
+                            if (RepositoryFiles.isDirectoryEmpty(manifestsRepositoryPath)) {
                                 RepositoryFiles.delete(manifestsRepositoryPath, true);
                             }
                         }
@@ -1768,7 +1768,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     }
                 });
             }
-            if (Files.list(blobsRootRepositoryPath).count() == 0) {
+            if (RepositoryFiles.isDirectoryEmpty(blobsRootRepositoryPath)) {
                 RepositoryFiles.delete(blobsRootRepositoryPath, true);
             }
             //删除仓库根目录下manifest目录
@@ -1785,7 +1785,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     }
                 });
             }
-            if (Files.list(manifestRootRepositoryPath).count() == 0) {
+            if (RepositoryFiles.isDirectoryEmpty(manifestRootRepositoryPath)) {
                 RepositoryFiles.delete(manifestRootRepositoryPath, true);
             }
             log.info("DockerLayoutDowngrade [{}] is finished images [{}] blobs [{}] manifest [{}] copyBlobs [{}] copyManifest [{}] rootBlobs [{}] rootManifest [{}] deleteBlobs [{}] deleteManifest [{}]", rootRepositoryPath.toString(), imageAl.get(), blobAl.get(), manifestAl.get(), copyBlobAl.get(), copyManifestAl.get(), rootBlobAl.get(), rootManifestAl.get(), deleteBlobAl.get(), deleteManifestAl.get());
