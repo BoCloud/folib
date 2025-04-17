@@ -295,13 +295,12 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
      * @param repository  repository
      * @param rootUrl     rootUrl
      * @param url         当前url
-     * @param remoteUrl   remoteUrl
      * @param sleepMillis 睡眠毫秒数
      * @param dom         页面元素
      * @param file        文件
      * @param writer      writer
      */
-    private boolean findSubUrl(Repository repository, String rootUrl, String url, String remoteUrl, Integer sleepMillis, String dom, File file, BufferedWriter writer) {
+    private boolean findSubUrl(Repository repository, String rootUrl, String url, Integer sleepMillis, String dom, File file, BufferedWriter writer) {
         try {
             if (isSuffix(url)) {
                 return true;
@@ -311,7 +310,7 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
             }
             return artifactComponent.parseLinksStreaming(repository, url, absUrl -> {
                 if (isSuffix(absUrl)) {
-                    absUrl = StringUtils.removeStart(absUrl.replace(remoteUrl, ""), GlobalConstants.SEPARATOR);
+                    absUrl = StringUtils.removeStart(absUrl.replace(rootUrl, ""), GlobalConstants.SEPARATOR);
                     filesCommonComponent.storeContent(absUrl, file.getParent() + "/artifact");
                     THREAD_LOCAL.set(THREAD_LOCAL.get() + 1);
                     distributedCounterComponent.getAtomicLong(JfrogMigrateService.INDEX_COUNT + repository.getStorageIdAndRepositoryId()).addAndGet(1);
@@ -430,7 +429,7 @@ public class MavenSyncArtifactProvider implements SyncArtifactProvider {
                             }
                             fileEmpty = false;
                             String url = rootUrl + line;
-                            if (!findSubUrl(repository, rootUrl, url, remoteUrl, sleepMillis, syncArtifactForm.getDom(), subFile, writer)) {
+                            if (!findSubUrl(repository, rootUrl, url, sleepMillis, syncArtifactForm.getDom(), subFile, writer)) {
                             }
                         }
                     }
