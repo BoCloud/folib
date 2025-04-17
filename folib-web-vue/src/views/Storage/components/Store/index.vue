@@ -2024,8 +2024,10 @@ export default {
               })
               return false
             }
+            let emptyFile = ''
             let fileList = []
             for (let item of values.files) {
+              if (!item.size) emptyFile = item.name
               let fileName = item.name.replace(':', '/')
               let result = artifactCheck(
                 this.folibRepository,
@@ -2039,6 +2041,13 @@ export default {
               }
               item.name = fileName
               fileList.push(item)
+            }
+            if (emptyFile) {
+                this.$notification['warning']({
+                    message: `${this.$t('Store.EmptyFile')}：${emptyFile}`,
+                    description: ''
+                })
+                return false
             }
             // fileList.forEach(item => {
             //   this.handlerUploadFile(

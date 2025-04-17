@@ -79,6 +79,7 @@ export default {
     'ZIPFormat': '必须上传zip格式的文件!',
     'UploadCount': '一次上传不能超过10个文件!',
     'DirectoryFormat': '目标目录不能以/开头',
+    'EmptyFile': '请勿上传空文件',
     'CopyCustomDirectory': '复制到自定义目录',
     'MoveCustomDirectory': '移动到自定义目录',
     'DistributeCustomDirectory': '分发到指定目录',

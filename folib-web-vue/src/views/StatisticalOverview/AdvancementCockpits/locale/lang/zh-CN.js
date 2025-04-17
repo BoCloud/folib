@@ -20,7 +20,7 @@ export default {
     'ProductUpgrade': '制品晋级',
     'Distribution': '制品分发',
     'SynchronousMode': '同步模式',
-    'SetTop': '置顶',
+    'SetTop': '优先晋级',
     'EnterVulnerabilitySourceStorageId': '输入源存储空间查询',
     'EnterVulnerabilitySourceRepositoryId': '输入源仓库查询',
     'Uncharted': '未定义',

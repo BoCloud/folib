@@ -80,6 +80,7 @@ export default {
     'ZIPFormat': 'You must upload a file in ZIP format!',
     'UploadCount': 'You cannot upload more than 10 files at once',
     'DirectoryFormat': 'The target directory cannot start with /',
+    'EmptyFile': 'Do not upload empty files',
     'CopyCustomDirectory': 'Copy to a custom directory',
     'MoveCustomDirectory': 'Move to a custom directory',
     'DistributeCustomDirectory': 'Distribute to a custom directory',
