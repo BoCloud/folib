@@ -4,6 +4,7 @@ import cn.hutool.extra.spring.SpringUtil;
 import com.google.common.collect.Lists;
 import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.controllers.BrowseController;
