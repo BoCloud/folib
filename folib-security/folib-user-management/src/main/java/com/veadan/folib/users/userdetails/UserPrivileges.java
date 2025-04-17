@@ -7,15 +7,10 @@ import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.users.domain.Privileges;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * @author leipenghui
@@ -23,21 +18,10 @@ import java.util.Objects;
  **/
 public class UserPrivileges {
 
-    public static HttpServletRequest getRequest() {
-        try {
-            return ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
-        } catch (Exception ignore) {
-
-        }
-        return null;
-    }
-
-    public static boolean handlerRestrictedRepository(Collection<Privileges> grantedAuthorities, String storageId, String repositoryId) {
-        HttpServletRequest request = getRequest();
-        if (Objects.isNull(request)) {
+    public static boolean handlerRestrictedRepository(String serverName, Collection<Privileges> grantedAuthorities, String storageId, String repositoryId) {
+        if (StringUtils.isBlank(serverName)) {
             return false;
         }
-        String serverName = request.getServerName();
         List<String> restrictedSourceList = getRestrictedSource();
         if (CollectionUtils.isEmpty(restrictedSourceList)) {
             return false;
