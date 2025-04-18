@@ -72,6 +72,27 @@ public class CondaArtifactServiceImpl implements CondaArtifactService {
     }
 
     /**
+     * @Description: 重新将某个包添加到索引中/删除
+     * @param path
+     * @throws Exception
+     */
+    public void reIndexArtifact(@NonNull RepositoryPath path) throws Exception {
+        boolean fileExist = false;
+        // 1. 提取父目录和文件名和indexPath
+        String parentPath = path.getParent().toString();
+        String fileName = path.getFileName().toString();
+
+        // 2. 检查文件是否存在
+        fileExist = Files.exists(path);
+
+        condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.REMOVE, parentPath, fileName);
+        if (fileExist) {   // 文件存在, 删除索引
+            condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.ADD, parentPath, fileName);
+        }
+        return;
+    }
+
+    /**
      * @Description: 删除包
      * @param path: 完整的文件路径, repoKey/artifactName
      * @return

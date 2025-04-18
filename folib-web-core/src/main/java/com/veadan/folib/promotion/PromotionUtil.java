@@ -1167,7 +1167,7 @@ public class PromotionUtil {
             if (!ProductTypeEnum.Conda.getFoLibraryName().equals(repositoryPath.getRepository().getLayout())) {
                 return;
             }
-            condaArtifactService.checkArtifactExist(repositoryPath);
+            condaArtifactService.reIndexArtifact(repositoryPath);
         } catch (Exception ex) {
             log.error("Rebuild debian index storage [{}] repository [{}] error [{}]", repositoryPath.getRepository().getStorage().getId(), repositoryPath.getRepositoryId(), ExceptionUtils.getStackTrace(ex));
         }

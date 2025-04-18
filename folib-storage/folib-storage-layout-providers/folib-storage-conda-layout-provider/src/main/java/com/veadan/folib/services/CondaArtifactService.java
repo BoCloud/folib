@@ -13,6 +13,8 @@ import lombok.NonNull;
 public interface CondaArtifactService {
     public boolean checkArtifactExist(@NonNull RepositoryPath path) throws Exception;
 
+    public void reIndexArtifact(@NonNull RepositoryPath path) throws Exception;
+
     public void unpublishPackage(@NonNull RepositoryPath path) throws Exception;
 
     public Index extract(@NonNull String repoKey, @NonNull String artifactName);
