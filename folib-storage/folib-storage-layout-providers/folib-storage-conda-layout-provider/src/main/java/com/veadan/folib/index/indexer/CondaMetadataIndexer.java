@@ -17,9 +17,15 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
+import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.ParameterizedType;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 /**
@@ -289,6 +295,35 @@ public class CondaMetadataIndexer {
         }
     }
 
+
+    /**
+     * @Description: 扫描整个平台, 重新生成索引repoData.json
+     * @param repoKey
+     * @return
+     */
+    public RepoData reindexRepoData(String repoKey){
+        // 1. 创建新的索引数据
+        RepoData repoData = this.createNewRepoData(repoKey);
+
+        try {
+            // 2. 获取所有的conda和tar.bz2文件
+            List<Path> condaAndTarBz2Files = this.findCondaAndTarBz2Files(repoKey);
+
+            // 3. 遍历所有的conda和tar.bz2文件, 获取索引数据
+            for (Path condaAndTarBz2File : condaAndTarBz2Files) {
+                String artifactName = condaAndTarBz2File.getFileName().toString();
+                String repoKeyPath = condaAndTarBz2File.getParent().toString();
+                RepoDataPackage repoDataPackage = this.getRepoDataPackage(repoKeyPath, artifactName);
+                if (repoDataPackage != null) {
+                    this.addPackageToRepodata(repoData, repoDataPackage, artifactName);
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to reindex repo data for repoKey: " + repoKey, e);
+        }
+        return repoData;
+    }
+
     private SortedMap<String, RepoDataPackage> aggregateCurrent(SortedMap<String, RepoDataPackage> condaPackages) {
         Map<String, Map<String, RepoDataPackage>> condaPackageByName = CondaUtils.convertToMapByName(condaPackages);
         SortedMap<String, RepoDataPackage> condaStringRepoDataPackageMap = new TreeMap();
@@ -301,5 +336,14 @@ public class CondaMetadataIndexer {
         return condaStringRepoDataPackageMap;
     }
 
+    private List<Path> findCondaAndTarBz2Files(String repoKey) throws IOException {
+        Path repoKeyPath = Paths.get(repoKey);
+        try (Stream<Path> stream = Files.walk(repoKeyPath)) {
+            return stream
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.toString().endsWith(".conda") || path.toString().endsWith(".tar.bz2"))
+                    .collect(Collectors.toList());
+        }
+    }
 
 }

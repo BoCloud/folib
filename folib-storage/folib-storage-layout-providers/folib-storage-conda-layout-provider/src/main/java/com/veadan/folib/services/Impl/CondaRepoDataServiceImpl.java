@@ -109,6 +109,14 @@ public class CondaRepoDataServiceImpl implements CondaRepoDataService {
     }
 
     private void reindexPackage(RepoData repoData, String repoKey) {
+        // 1. 获取索引数据
+        RepoData newRepoData = condaMetadataIndexer.reindexRepoData(repoKey);
+        if (newRepoData == null) {
+            throw new RuntimeException("Failed to reindex repo data for repoKey: " + repoKey);
+        }
+        // 2. 更新索引数据
+        repoData.update(newRepoData);
+
     }
 
     private void saveRepoData(RepoData repoData, String repoDataPath) {
