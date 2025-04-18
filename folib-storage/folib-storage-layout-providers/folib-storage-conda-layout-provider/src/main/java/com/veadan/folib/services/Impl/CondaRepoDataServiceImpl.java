@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author LingengMa
@@ -27,6 +28,8 @@ import java.nio.file.Path;
 @Service
 public class CondaRepoDataServiceImpl implements CondaRepoDataService {
     private final CondaMetadataIndexer condaMetadataIndexer;
+
+    private static final ConcurrentHashMap<String, Object> repoLocks = new ConcurrentHashMap<>();
 
     @Autowired
     public CondaRepoDataServiceImpl(CondaMetadataIndexer condaMetadataIndexer) {
@@ -45,6 +48,14 @@ public class CondaRepoDataServiceImpl implements CondaRepoDataService {
 
     @Override
     public void sendRepoDataEvent(RepoDataEventKind kind, String repoKey, String artifactName) {
+        // 获取锁
+        Object lock = repoLocks.computeIfAbsent("condaRepo_" + repoKey, k -> new Object());
+        synchronized (lock) {
+            handleRepoDataEvent(kind, repoKey, artifactName);
+        }
+    }
+
+    public void handleRepoDataEvent(RepoDataEventKind kind, String repoKey, String artifactName) {
         RepoData repoData = getRepoData(repoKey);
         RepoData currentRepoData = getCurrentRepoData(repoKey);
         if (kind == RepoDataEventKind.ADD) {
@@ -90,7 +101,11 @@ public class CondaRepoDataServiceImpl implements CondaRepoDataService {
             return;
         }
         condaMetadataIndexer.removePackageFromRepodata(repoData, artifactName);
-        condaMetadataIndexer.reindexCurrentRepoData(repoData, repoKey);
+        RepoData newCurrentRepoData = condaMetadataIndexer.reindexCurrentRepoData(repoData, repoKey);
+        if (newCurrentRepoData == null) {
+            throw new RuntimeException("Failed to reindex current repo data for artifact: " + artifactName);
+        }
+        currentRepoData.update(newCurrentRepoData);
     }
 
     private void reindexPackage(RepoData repoData, String repoKey) {

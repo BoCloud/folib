@@ -76,6 +76,14 @@ public class RepoData {
     public RepoData() {
     }
 
+    @Generated
+    public void update(RepoData repoData) {
+        this.info = repoData.getInfo();
+        this.packages = repoData.getPackages();
+        this.condaPackages = repoData.getCondaPackages();
+        this.removed = repoData.getRemoved();
+    }
+
 
     @Generated
     public String toJson() {
