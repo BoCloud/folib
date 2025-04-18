@@ -19,6 +19,7 @@ import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidatio
 import com.veadan.folib.web.LayoutRequestMapping;
 
 import com.veadan.folib.web.RepositoryMapping;
+import io.github.bucket4j.distributed.remote.Request;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -30,12 +31,9 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
+import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.multipart.MultipartFile;
@@ -153,18 +151,29 @@ public class CondaArtifactController extends BaseArtifactController {
             @ApiResponse(code = 404, message = "Repodata not found"),
             @ApiResponse(code = 500, message = "Internal server error")
     })
-    @GetMapping(value = "/{storageId}/{repositoryId}/{platformId}/repodata.json",
-                produces = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @GetMapping(value = {"/{storageId}/{repositoryId}/{platformId}/repodata.json",
+                         "/{storageId}/{repositoryId}/{platformId}/current_repodata.json"},
+                produces = MediaType.APPLICATION_JSON_VALUE)
     public void getRepoData(@RepositoryMapping Repository repository,
                                          @PathVariable String platformId,
+                                         HttpServletRequest httpRequest,
                                          HttpServletResponse response) {
+        String uri = httpRequest.getRequestURI();
+        String targetName = uri.substring(uri.lastIndexOf('/') + 1);
+
         // 1. 获取RepoData
         RepositoryPath repoDataPath = repositoryPathResolver.resolve(repository, platformId + "/repodata.json");
-        RepoData repoData = condaRepoDataService.getRepoData(repoDataPath.getParent().toString());
+//        RepoData repoData = condaRepoDataService.getRepoData(repoDataPath.getParent().toString());
+        RepoData repoData = null;
+        if (targetName.equals("repodata.json")) {
+            repoData = condaRepoDataService.getRepoData(repoDataPath.getParent().toString());
+        } else if (targetName.equals("current_repodata.json")) {
+            repoData = condaRepoDataService.getCurrentRepoData(repoDataPath.getParent().toString());
+        }
 
         // 2. 设置响应头
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setHeader("Content-Disposition", "attachment; filename=repodata.json");
+        response.setHeader("Content-Disposition", "attachment; filename=" + targetName);
 
         // 3. 写入响应
         try (PrintWriter writer = response.getWriter()) {

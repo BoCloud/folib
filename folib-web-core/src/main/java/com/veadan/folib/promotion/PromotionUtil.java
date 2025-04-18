@@ -650,6 +650,7 @@ public class PromotionUtil {
         if (delFlag) {
             try {
                 artifactManagementService.delete(srcRepositoryPath, true);
+                handleConda(srcRepositoryPath);
             } catch (IOException e) {
                 log.error("Delete srcRepositoryPath error [{}]", ExceptionUtils.getStackTrace(e));
             }
