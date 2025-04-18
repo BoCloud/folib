@@ -2,6 +2,7 @@ package com.veadan.folib.controllers.layout.conda;
 
 import cn.hutool.core.io.FileUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hazelcast.core.HazelcastInstance;
 import com.veadan.folib.artifact.coordinates.CondaArtifactCoordinates;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.index.indexer.CondaMetadataExtractor;
@@ -26,6 +27,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 
 
+import lombok.Data;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,9 +48,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 
 /**
@@ -76,6 +76,10 @@ public class CondaArtifactController extends BaseArtifactController {
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
 
+    @Inject
+    private HazelcastInstance hazelcastInstance;
+
+
     @Value("${folib.temp}")
     private String tempPath;
 
@@ -99,6 +103,9 @@ public class CondaArtifactController extends BaseArtifactController {
         // 新增文件名校验
         if (fileName == null || fileName.trim().isEmpty()) {
             return ResponseEntity.badRequest().body("Invalid file name");
+        }
+        if (!fileName.endsWith(".conda") && !fileName.endsWith(".tar.bz2")) {
+            return ResponseEntity.badRequest().body("Please upload a .conda or .tar.bz2 file");
         }
 
         File parentTempFile = null;
@@ -156,14 +163,24 @@ public class CondaArtifactController extends BaseArtifactController {
                 produces = MediaType.APPLICATION_JSON_VALUE)
     public void getRepoData(@RepositoryMapping Repository repository,
                                          @PathVariable String platformId,
+                                         @RequestHeader(value = "If-Modified-Since", required = false) Long ifModifiedSince,
                                          HttpServletRequest httpRequest,
                                          HttpServletResponse response) {
         String uri = httpRequest.getRequestURI();
         String targetName = uri.substring(uri.lastIndexOf('/') + 1);
 
-        // 1. 获取RepoData
+        // 1. 构造repoData路径
         RepositoryPath repoDataPath = repositoryPathResolver.resolve(repository, platformId + "/repodata.json");
-//        RepoData repoData = condaRepoDataService.getRepoData(repoDataPath.getParent().toString());
+        Map<String, Date> repoDataMap = hazelcastInstance.getMap("condaRepoData");
+
+        // NotModified检查
+        if (checkNotModified(ifModifiedSince, repoDataPath.toString())) {
+            response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+            response.setHeader("Last-Modified", String.valueOf(ifModifiedSince));
+            return;
+        }
+
+        // 2. 获取RepoData
         RepoData repoData = null;
         if (targetName.equals("repodata.json")) {
             repoData = condaRepoDataService.getRepoData(repoDataPath.getParent().toString());
@@ -171,11 +188,17 @@ public class CondaArtifactController extends BaseArtifactController {
             repoData = condaRepoDataService.getCurrentRepoData(repoDataPath.getParent().toString());
         }
 
-        // 2. 设置响应头
+        // 3. 设置响应头
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setHeader("Content-Disposition", "attachment; filename=" + targetName);
 
-        // 3. 写入响应
+        if (!repoDataMap.containsKey(repoDataPath.toString())) {
+            repoDataMap.put(repoDataPath.toString(), new Date());
+        }
+        Date lastModified = repoDataMap.get(repoDataPath.toString());
+        response.setHeader("Last-Modified", String.valueOf(lastModified.getTime()));
+
+        // 4. 写入响应
         try (PrintWriter writer = response.getWriter()) {
             writer.write(repoData.toJsonPretty());
             writer.flush();
@@ -262,5 +285,16 @@ public class CondaArtifactController extends BaseArtifactController {
         try (InputStream is = new FileInputStream(artifactTempFile)) {
             artifactManagementService.validateAndStore(artifactPath, is);
         }
+    }
+
+    private boolean checkNotModified(Long ifModifiedSince, String artifactPath) {
+        if (ifModifiedSince == null || ifModifiedSince <= 0) {
+            return false;
+        }
+        if (hazelcastInstance.getMap("condaRepoData").containsKey(artifactPath)) {
+            Date lastModified = (Date) hazelcastInstance.getMap("condaRepoData").get(artifactPath);
+            return ifModifiedSince >= lastModified.getTime();
+        }
+        return false;
     }
 }

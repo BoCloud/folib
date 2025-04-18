@@ -1,6 +1,7 @@
 package com.veadan.folib.services.Impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hazelcast.core.HazelcastInstance;
 import com.veadan.folib.index.indexer.CondaMetadataExtractor;
 import com.veadan.folib.index.indexer.CondaMetadataIndexer;
 import com.veadan.folib.index.model.RepoData;
@@ -17,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -29,11 +31,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CondaRepoDataServiceImpl implements CondaRepoDataService {
     private final CondaMetadataIndexer condaMetadataIndexer;
 
+    private final HazelcastInstance hazelcastInstance;
+
     private static final ConcurrentHashMap<String, Object> repoLocks = new ConcurrentHashMap<>();
 
     @Autowired
-    public CondaRepoDataServiceImpl(CondaMetadataIndexer condaMetadataIndexer) {
+    public CondaRepoDataServiceImpl(CondaMetadataIndexer condaMetadataIndexer, HazelcastInstance hazelcastInstance) {
         this.condaMetadataIndexer = condaMetadataIndexer;
+        this.hazelcastInstance = hazelcastInstance;
     }
 
     @Override
@@ -127,6 +132,8 @@ public class CondaRepoDataServiceImpl implements CondaRepoDataService {
                 Files.createDirectories(path.getParent());
             }
             Files.writeString(path, repoData.toJsonPretty());
+            // 更新缓存, 映射到当前时间戳
+            hazelcastInstance.getMap("condaRepoData").put(repoDataPath, new Date());
         } catch (IOException e) {
             throw new RuntimeException("Failed to save RepoData to path: " + repoDataPath, e);
         }
