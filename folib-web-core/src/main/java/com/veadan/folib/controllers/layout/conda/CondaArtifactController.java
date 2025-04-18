@@ -2,7 +2,6 @@ package com.veadan.folib.controllers.layout.conda;
 
 import cn.hutool.core.io.FileUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hazelcast.core.HazelcastInstance;
 import com.veadan.folib.artifact.coordinates.CondaArtifactCoordinates;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.index.indexer.CondaMetadataExtractor;
@@ -12,9 +11,7 @@ import com.veadan.folib.index.model.RepoDataEventKind;
 import com.veadan.folib.providers.ProviderImplementationException;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
-import com.veadan.folib.services.ArtifactManagementService;
-import com.veadan.folib.services.CondaArtifactService;
-import com.veadan.folib.services.CondaRepoDataService;
+import com.veadan.folib.services.*;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidationException;
 import com.veadan.folib.web.LayoutRequestMapping;
@@ -42,12 +39,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.security.Principal;
 import java.util.*;
 
 
@@ -77,8 +76,10 @@ public class CondaArtifactController extends BaseArtifactController {
     private RepositoryPathResolver repositoryPathResolver;
 
     @Inject
-    private HazelcastInstance hazelcastInstance;
+    protected ArtifactResolutionService artifactResolutionService;
 
+    @Inject
+    CondaCacheService condaCacheService;
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -162,50 +163,32 @@ public class CondaArtifactController extends BaseArtifactController {
                          "/{storageId}/{repositoryId}/{platformId}/current_repodata.json"},
                 produces = MediaType.APPLICATION_JSON_VALUE)
     public void getRepoData(@RepositoryMapping Repository repository,
-                                         @PathVariable String platformId,
-                                         @RequestHeader(value = "If-Modified-Since", required = false) Long ifModifiedSince,
-                                         HttpServletRequest httpRequest,
-                                         HttpServletResponse response) {
+                            @PathVariable String platformId,
+                            @RequestHeader HttpHeaders httpHeaders,
+                            HttpServletRequest httpRequest,
+                            HttpServletResponse response, Principal principal)
+            throws Exception {
         String uri = httpRequest.getRequestURI();
         String targetName = uri.substring(uri.lastIndexOf('/') + 1);
+        String storageId = repository.getStorage().getId();
+        String repositoryId = repository.getId();
 
         // 1. 构造repoData路径
-        RepositoryPath repoDataPath = repositoryPathResolver.resolve(repository, platformId + "/repodata.json");
-        Map<String, Date> repoDataMap = hazelcastInstance.getMap("condaRepoData");
+        RepositoryPath repoDataPath = artifactResolutionService.resolvePath(storageId, repositoryId, platformId + "/" + targetName);
 
-        // NotModified检查
-        if (checkNotModified(ifModifiedSince, repoDataPath.toString())) {
-            response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
-            response.setHeader("Last-Modified", String.valueOf(ifModifiedSince));
+        if (repoDataPath == null) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
 
-        // 2. 获取RepoData
-        RepoData repoData = null;
-        if (targetName.equals("repodata.json")) {
-            repoData = condaRepoDataService.getRepoData(repoDataPath.getParent().toString());
-        } else if (targetName.equals("current_repodata.json")) {
-            repoData = condaRepoDataService.getCurrentRepoData(repoDataPath.getParent().toString());
-        }
+        provideArtifactDownloadResponse(httpRequest, response, httpHeaders, repoDataPath);
 
-        // 3. 设置响应头
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setHeader("Content-Disposition", "attachment; filename=" + targetName);
-
-        if (!repoDataMap.containsKey(repoDataPath.toString())) {
-            repoDataMap.put(repoDataPath.toString(), new Date());
-        }
-        Date lastModified = repoDataMap.get(repoDataPath.toString());
-        response.setHeader("Last-Modified", String.valueOf(lastModified.getTime()));
-
-        // 4. 写入响应
-        try (PrintWriter writer = response.getWriter()) {
-            writer.write(repoData.toJsonPretty());
-            writer.flush();
-        } catch (IOException e) {
-            log.error("Error writing repodata.json to response", e);
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-        }
+        // NotModified检查
+//        if (checkNotModified(ifModifiedSince, repoDataPath.toString())) {
+//            response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+//            response.setHeader("Last-Modified", String.valueOf(ifModifiedSince));
+//            return;
+//        }
     }
 
     @ApiOperation(value = "Get conda package")
@@ -224,17 +207,15 @@ public class CondaArtifactController extends BaseArtifactController {
                                 HttpServletResponse response)
             throws Exception {
         // 1. 获取conda包路径
-        RepositoryPath condaPackagePath = repositoryPathResolver.resolve(repository, platformId + "/" + packageName);
+        String storageId = repository.getStorage().getId();
+        String repositoryId = repository.getId();
+        RepositoryPath condaPackagePath = artifactResolutionService.resolvePath(storageId, repositoryId,
+                platformId + "/" + packageName);
         // 2. 检查包是否存在
-//        if (!Files.exists(condaPackagePath)) {
-//            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-//            return;
-//        }
-        if (!condaArtifactService.checkArtifactExist(condaPackagePath)) {
+        if (condaPackagePath == null) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
-
         provideArtifactDownloadResponse(request, response, httpHeaders, condaPackagePath);
     }
 
@@ -291,8 +272,8 @@ public class CondaArtifactController extends BaseArtifactController {
         if (ifModifiedSince == null || ifModifiedSince <= 0) {
             return false;
         }
-        if (hazelcastInstance.getMap("condaRepoData").containsKey(artifactPath)) {
-            Date lastModified = (Date) hazelcastInstance.getMap("condaRepoData").get(artifactPath);
+        if (condaCacheService.containsKey(artifactPath)) {
+            Date lastModified = condaCacheService.get(artifactPath);
             return ifModifiedSince >= lastModified.getTime();
         }
         return false;
