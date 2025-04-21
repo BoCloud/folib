@@ -2,6 +2,7 @@ package com.veadan.folib.controllers.layout.conda;
 
 import cn.hutool.core.io.FileUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hazelcast.core.HazelcastInstance;
 import com.veadan.folib.artifact.coordinates.CondaArtifactCoordinates;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.index.indexer.CondaMetadataExtractor;
@@ -85,6 +86,10 @@ public class CondaArtifactController extends BaseArtifactController {
     private String tempPath;
 
 
+    @Inject
+    private HazelcastInstance hazelcastInstance;
+
+
     @ApiOperation(value = "Upload conda artifact")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Artifact uploaded successfully"),
@@ -165,8 +170,9 @@ public class CondaArtifactController extends BaseArtifactController {
     public void getRepoData(@RepositoryMapping Repository repository,
                             @PathVariable String platformId,
                             @RequestHeader HttpHeaders httpHeaders,
+                            @RequestHeader(value = "If-Modified-Since", required = false) Date ifModifiedSince,
                             HttpServletRequest httpRequest,
-                            HttpServletResponse response, Principal principal)
+                            HttpServletResponse response)
             throws Exception {
         String uri = httpRequest.getRequestURI();
         String targetName = uri.substring(uri.lastIndexOf('/') + 1);
@@ -181,14 +187,19 @@ public class CondaArtifactController extends BaseArtifactController {
             return;
         }
 
-        provideArtifactDownloadResponse(httpRequest, response, httpHeaders, repoDataPath);
+        // 2. NotModified检查
+        if (checkNotModified(ifModifiedSince, repoDataPath.toString())) {
+            response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+            response.setHeader("Last-Modified", String.valueOf(ifModifiedSince));
+            return;
+        }
 
-        // NotModified检查
-//        if (checkNotModified(ifModifiedSince, repoDataPath.toString())) {
-//            response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
-//            response.setHeader("Last-Modified", String.valueOf(ifModifiedSince));
-//            return;
-//        }
+        provideArtifactDownloadResponse(httpRequest, response, httpHeaders, repoDataPath);
+        if (!condaCacheService.containsKey(repoDataPath.toString())) {
+            condaCacheService.put(repoDataPath.toString(), new Date());
+        }
+        response.setHeader("Last-Modified", String.valueOf(new Date()));
+
     }
 
     @ApiOperation(value = "Get conda package")
@@ -268,13 +279,13 @@ public class CondaArtifactController extends BaseArtifactController {
         }
     }
 
-    private boolean checkNotModified(Long ifModifiedSince, String artifactPath) {
-        if (ifModifiedSince == null || ifModifiedSince <= 0) {
+    private boolean checkNotModified(Date ifModifiedSince, String artifactPath) {
+        if (ifModifiedSince == null) {
             return false;
         }
         if (condaCacheService.containsKey(artifactPath)) {
             Date lastModified = condaCacheService.get(artifactPath);
-            return ifModifiedSince >= lastModified.getTime();
+            return !ifModifiedSince.before(lastModified);
         }
         return false;
     }
