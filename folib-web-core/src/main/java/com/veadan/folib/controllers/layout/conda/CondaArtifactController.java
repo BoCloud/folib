@@ -41,6 +41,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Qualifier;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
@@ -78,9 +79,6 @@ public class CondaArtifactController extends BaseArtifactController {
 
     @Inject
     protected ArtifactResolutionService artifactResolutionService;
-
-    @Inject
-    CondaCacheService condaCacheService;
 
     @Value("${folib.temp}")
     private String tempPath;
@@ -181,6 +179,7 @@ public class CondaArtifactController extends BaseArtifactController {
 
         // 1. 构造repoData路径
         RepositoryPath repoDataPath = artifactResolutionService.resolvePath(storageId, repositoryId, platformId + "/" + targetName);
+        Map<String, Date> repoDataMap = hazelcastInstance.getMap("condaRepoData");
 
         if (repoDataPath == null) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -195,10 +194,9 @@ public class CondaArtifactController extends BaseArtifactController {
         }
 
         provideArtifactDownloadResponse(httpRequest, response, httpHeaders, repoDataPath);
-        if (!condaCacheService.containsKey(repoDataPath.toString())) {
-            condaCacheService.put(repoDataPath.toString(), new Date());
+        if (!repoDataMap.containsKey(repoDataPath.toString())) {
+            repoDataMap.put(repoDataPath.toString(), new Date());
         }
-        response.setHeader("Last-Modified", String.valueOf(new Date()));
 
     }
 
@@ -283,9 +281,9 @@ public class CondaArtifactController extends BaseArtifactController {
         if (ifModifiedSince == null) {
             return false;
         }
-        if (condaCacheService.containsKey(artifactPath)) {
-            Date lastModified = condaCacheService.get(artifactPath);
-            return !ifModifiedSince.before(lastModified);
+        if (hazelcastInstance.getMap("condaRepoData").containsKey(artifactPath)) {
+            Date lastModified = (Date) hazelcastInstance.getMap("condaRepoData").get(artifactPath);
+            return ifModifiedSince.getTime() / 1000 >= lastModified.getTime() / 1000;
         }
         return false;
     }

@@ -1,13 +1,13 @@
 package com.veadan.folib.services.Impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hazelcast.core.HazelcastInstance;
 import com.veadan.folib.index.indexer.CondaMetadataExtractor;
 import com.veadan.folib.index.indexer.CondaMetadataIndexer;
 import com.veadan.folib.index.model.RepoData;
 import com.veadan.folib.index.model.RepoDataEventKind;
 import com.veadan.folib.index.model.RepoDataPackage;
 import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.services.CondaCacheService;
 import com.veadan.folib.services.CondaRepoDataService;
 import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,14 +31,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CondaRepoDataServiceImpl implements CondaRepoDataService {
     private final CondaMetadataIndexer condaMetadataIndexer;
 
-    private final CondaCacheService condaCacheService;
+    private final HazelcastInstance hazelcastInstance;
 
     private static final ConcurrentHashMap<String, Object> repoLocks = new ConcurrentHashMap<>();
 
     @Autowired
-    public CondaRepoDataServiceImpl(CondaMetadataIndexer condaMetadataIndexer, CondaCacheService condaCacheService) {
+    public CondaRepoDataServiceImpl(CondaMetadataIndexer condaMetadataIndexer, HazelcastInstance hazelcastInstance) {
         this.condaMetadataIndexer = condaMetadataIndexer;
-        this.condaCacheService = condaCacheService;
+        this.hazelcastInstance = hazelcastInstance;
     }
 
     @Override
@@ -133,7 +133,7 @@ public class CondaRepoDataServiceImpl implements CondaRepoDataService {
             }
             Files.writeString(path, repoData.toJsonPretty());
             // 更新缓存, 映射到当前时间戳
-            condaCacheService.put(repoDataPath, new Date());
+            hazelcastInstance.getMap("condaRepoData").put(repoDataPath, new Date());
         } catch (IOException e) {
             throw new RuntimeException("Failed to save RepoData to path: " + repoDataPath, e);
         }
