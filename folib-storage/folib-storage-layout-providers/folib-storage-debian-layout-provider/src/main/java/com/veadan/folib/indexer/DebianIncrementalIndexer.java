@@ -151,7 +151,7 @@ public class DebianIncrementalIndexer {
 
 
     private void addEventsForComponent(Repository repo, String distribution, String component, List<DebianIndexEvent> componentEvents, Set<DebianIndexEvent> result) {
-        Set<String> forcedArchitectures = Sets.newHashSet();
+        Set<String> forcedArchitectures = Sets.newHashSet("amd64","arm64");
         try {
             List<Artifact> componentArtifacts = artifactorySearch.findByDistributionAndComponent(distribution, component, repo);
             componentEvents.forEach((componentEvent) -> {
@@ -241,19 +241,22 @@ public class DebianIncrementalIndexer {
     //
     List<Path> getAllPackages(Repository repo) {
         RepositoryPath rootPath = resolver.resolve(repo, DebianConstant.PACKAGE_PREFIX);
-        try (Stream<Path> stream = Files.walk(rootPath)) {
-            return stream.filter(Files::isRegularFile).filter(path -> path.getFileName().toString().equals("Packages")).collect(Collectors.toList());
-        } catch (Exception e) {
-            log.info("getAllPackages failed", e);
-            return null;
+        if(Files.exists(rootPath)) {
+            try (Stream<Path> stream = Files.walk(rootPath)) {
+                return stream.filter(Files::isRegularFile).filter(path -> path.getFileName().toString().equals("Packages")).collect(Collectors.toList());
+            } catch (Exception e) {
+                log.info("getAllPackages failed", e);
+                return null;
+            }
+        }else {
+            return Collections.emptyList();
         }
+
     }
 
     private String getRelativePath(RepositoryPath repoPath) {
         RepositoryPath root = repoPath.getRoot();
         String relativize = root.relativize(repoPath).toString();
         return relativize;
-
-
     }
 }
