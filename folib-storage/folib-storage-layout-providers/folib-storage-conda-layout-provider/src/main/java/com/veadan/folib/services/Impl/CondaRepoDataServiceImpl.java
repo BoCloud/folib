@@ -2,6 +2,8 @@ package com.veadan.folib.services.Impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.core.HazelcastInstance;
+import com.veadan.folib.components.DistributedLockComponent;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.index.indexer.CondaMetadataExtractor;
 import com.veadan.folib.index.indexer.CondaMetadataIndexer;
 import com.veadan.folib.index.model.RepoData;
@@ -10,7 +12,9 @@ import com.veadan.folib.index.model.RepoDataPackage;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.services.CondaRepoDataService;
 import lombok.NonNull;
+import net.bytebuddy.agent.builder.AgentBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
@@ -33,12 +37,14 @@ public class CondaRepoDataServiceImpl implements CondaRepoDataService {
 
     private final HazelcastInstance hazelcastInstance;
 
-    private static final ConcurrentHashMap<String, Object> repoLocks = new ConcurrentHashMap<>();
+    private final DistributedLockComponent distributedLockComponent;
+
 
     @Autowired
-    public CondaRepoDataServiceImpl(CondaMetadataIndexer condaMetadataIndexer, HazelcastInstance hazelcastInstance) {
+    public CondaRepoDataServiceImpl(CondaMetadataIndexer condaMetadataIndexer, HazelcastInstance hazelcastInstance, DistributedLockComponent distributedLockComponent) {
         this.condaMetadataIndexer = condaMetadataIndexer;
         this.hazelcastInstance = hazelcastInstance;
+        this.distributedLockComponent = distributedLockComponent;
     }
 
     @Override
@@ -54,9 +60,13 @@ public class CondaRepoDataServiceImpl implements CondaRepoDataService {
     @Override
     public void sendRepoDataEvent(RepoDataEventKind kind, String repoKey, String artifactName) {
         // 获取锁
-        Object lock = repoLocks.computeIfAbsent("condaRepo_" + repoKey, k -> new Object());
-        synchronized (lock) {
-            handleRepoDataEvent(kind, repoKey, artifactName);
+        String key = String.format("CondaRepoData_%s", repoKey);
+        if (distributedLockComponent.lock(key, GlobalConstants.WAIT_LOCK_TIME * GlobalConstants.WAIT_LOCK_TIME)) {
+           try {
+               handleRepoDataEvent(kind, repoKey, artifactName);
+           } finally {
+               distributedLockComponent.unLock(key);
+           }
         }
     }
 
