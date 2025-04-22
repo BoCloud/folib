@@ -25,9 +25,7 @@ public interface JwtTokenFetcher
 
     String BEARER_AUTHORIZATION_PREFIX = "Bearer";
 
-    String TOKEN_AUTHORIZATION_PREFIX = "token";
-
-    Pattern BEARER_PATTERN = Pattern.compile("(Bearer|token) (.*)");
+    Pattern BEARER_PATTERN = Pattern.compile("Bearer (.*)");
 
     default Optional<String> getToken(HttpServletRequest request)
     {
@@ -39,7 +37,7 @@ public interface JwtTokenFetcher
 
             if (headerMatcher.matches())
             {
-                String token = headerMatcher.group(2);
+                String token = headerMatcher.group(1);
                 logger.debug("Bearer Authorization header found with token {}", token);
                 return Optional.of(token);
             }
