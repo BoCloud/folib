@@ -9,5 +9,6 @@ package com.veadan.folib.index.model;
 public enum RepoDataEventKind {
     ADD,
     REMOVE,
-    REINDEX
+    REINDEX,
+    AGGREGATE,
 }

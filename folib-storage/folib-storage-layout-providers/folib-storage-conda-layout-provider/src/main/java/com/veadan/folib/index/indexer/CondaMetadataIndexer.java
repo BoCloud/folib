@@ -52,13 +52,11 @@ public class CondaMetadataIndexer {
 //    }
 
 
-
-
     /**
-     * @Description: 将包转化为包索引数据
      * @param repoKey
      * @param artifactName
      * @return
+     * @Description: 将包转化为包索引数据
      */
     @Nullable
     public RepoDataPackage getRepoDataPackage(@NonNull String repoKey, @NonNull String artifactName) {
@@ -81,9 +79,9 @@ public class CondaMetadataIndexer {
     }
 
     /**
-     * @Description: 创建新的索引数据
      * @param platformId
      * @return
+     * @Description: 创建新的索引数据
      */
     public RepoData createNewRepoData(@NonNull String platformId) {
         RepoData repoData = new RepoData();
@@ -149,6 +147,42 @@ public class CondaMetadataIndexer {
     }
 
 
+    /**
+     * @param repoDataList
+     * @Description: 聚合同平台所有索引数据
+     */
+    public RepoData aggregateRepoData(List<RepoData> repoDataList)
+            throws Exception {
+        // 1. 过滤掉空数据
+        List<RepoData> filteredRepoDataList = repoDataList.stream()
+                .filter(repoData -> repoData != null && repoData.getPackages() != null)
+                .collect(Collectors.toList());
+        // 2. 判断所有RepoData是否都属于同一平台
+        if (filteredRepoDataList.isEmpty()) {
+            return null;
+        }
+        String platformId = filteredRepoDataList.get(0).getInfo().getSubdir();
+        for (RepoData repoData : filteredRepoDataList) {
+            if (!StringUtils.equals(repoData.getInfo().getSubdir(), platformId)) {
+                throw new Exception("All RepoData must belong to the same platform");
+            }
+        }
+        // 3. 创建新的索引数据
+        RepoData aggregatedRepoData = this.createNewRepoData(platformId);
+        // 4. 聚合索引数据
+        for (RepoData repoData : filteredRepoDataList) {
+            if (repoData.getPackages() != null) {
+                aggregatedRepoData.getPackages().putAll(repoData.getPackages());
+            }
+            if (repoData.getCondaPackages() != null) {
+                aggregatedRepoData.getCondaPackages().putAll(repoData.getCondaPackages());
+            }
+        }
+        // 5. 返回聚合后的索引数据
+        return aggregatedRepoData;
+    }
+
+
     public boolean checkPackageExistsInRepoData(RepoData repoData,
                                                 String artifactName) {
         SortedMap<String, RepoDataPackage> packageSortedMap = CondaUtils.isTarBz2File(artifactName) ? repoData.getPackages() : repoData.getCondaPackages();
@@ -203,7 +237,6 @@ public class CondaMetadataIndexer {
 
         return "''".equals(noarch);
     }
-
 
 
     /**
@@ -268,10 +301,10 @@ public class CondaMetadataIndexer {
 
 
     /**
-     * @Description: 重新索引当前的索引数据
      * @param repoData
      * @param platformId
      * @return
+     * @Description: 重新索引当前的索引数据
      */
     @Nullable
     public RepoData reindexCurrentRepoData(RepoData repoData, String platformId) {
@@ -290,11 +323,11 @@ public class CondaMetadataIndexer {
 
 
     /**
-     * @Description: 扫描整个平台, 重新生成索引repoData.json
      * @param repoKey
      * @return
+     * @Description: 扫描整个平台, 重新生成索引repoData.json
      */
-    public RepoData reindexRepoData(String repoKey){
+    public RepoData reindexRepoData(String repoKey) {
         // 1. 创建新的索引数据
         RepoData repoData = this.createNewRepoData(repoKey);
 

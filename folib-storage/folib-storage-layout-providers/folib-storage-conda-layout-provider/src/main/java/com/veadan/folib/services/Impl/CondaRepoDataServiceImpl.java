@@ -31,7 +31,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -108,7 +110,11 @@ public class CondaRepoDataServiceImpl implements CondaRepoDataService {
             removePackage(repoData, currentRepoData, platformId, artifactName);
         } else if (kind == RepoDataEventKind.REINDEX) {
             reindexPackage(repoData, repository, platformId);
-        } else {
+        } else if (kind == RepoDataEventKind.AGGREGATE) {
+            aggregatePackage(repoData, event.getRepoData());
+
+        }
+        else {
             throw new RuntimeException("Unsupported RepoDataEventKind: " + kind);
         }
         saveRepoData(repoData, repository, platformId, REPODATA);
@@ -165,6 +171,19 @@ public class CondaRepoDataServiceImpl implements CondaRepoDataService {
         // 2. 更新索引数据
         repoData.update(newRepoData);
 
+    }
+
+    private void aggregatePackage(RepoData repoData, RepoData deltaRepoData) {
+
+        try {
+            List<RepoData> repoDataList = new ArrayList<>();
+            repoDataList.add(repoData);
+            repoDataList.add(deltaRepoData);
+            RepoData new_repoData = condaMetadataIndexer.aggregateRepoData(repoDataList);
+            repoData.update(new_repoData);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to aggregate repo data.", e);
+        }
     }
 
     private void saveRepoData(RepoData repoData, Repository repository, String platformId, String repoDataName) {
