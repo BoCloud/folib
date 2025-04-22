@@ -1,6 +1,7 @@
 package com.veadan.folib.services;
 
 import com.veadan.folib.index.model.Index;
+import com.veadan.folib.index.model.RepoDataPackage;
 import com.veadan.folib.providers.io.RepositoryPath;
 import lombok.NonNull;
 import org.springframework.stereotype.Component;
@@ -19,5 +20,7 @@ public interface CondaArtifactService {
     public void unpublishPackage(@NonNull RepositoryPath path) throws Exception;
 
     public Index extract(@NonNull String repoKey, @NonNull String artifactName);
+
+    public RepoDataPackage getRepoDataPackage(@NonNull RepositoryPath path);
 
 }

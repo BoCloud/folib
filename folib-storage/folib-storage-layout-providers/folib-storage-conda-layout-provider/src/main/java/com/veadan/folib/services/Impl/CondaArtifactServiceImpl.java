@@ -1,9 +1,12 @@
 package com.veadan.folib.services.Impl;
 
+import com.veadan.folib.event.CondaRepodataEvent;
 import com.veadan.folib.index.indexer.CondaMetadataExtractor;
+import com.veadan.folib.index.indexer.CondaMetadataIndexer;
 import com.veadan.folib.index.model.Index;
 import com.veadan.folib.index.model.RepoData;
 import com.veadan.folib.index.model.RepoDataEventKind;
+import com.veadan.folib.index.model.RepoDataPackage;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.CondaArtifactService;
@@ -29,11 +32,14 @@ public class CondaArtifactServiceImpl implements CondaArtifactService {
 
     private final CondaMetadataExtractor condaMetadataExtractor;
 
+    private final CondaMetadataIndexer condaMetadataIndexer;
+
     @Autowired
-    public CondaArtifactServiceImpl(CondaRepoDataService condaRepoDataService, ArtifactManagementService artifactManagementService, CondaMetadataExtractor condaMetadataExtractor) {
+    public CondaArtifactServiceImpl(CondaRepoDataService condaRepoDataService, ArtifactManagementService artifactManagementService, CondaMetadataExtractor condaMetadataExtractor, CondaMetadataIndexer condaMetadataIndexer) {
         this.condaRepoDataService = condaRepoDataService;
         this.artifactManagementService = artifactManagementService;
         this.condaMetadataExtractor = condaMetadataExtractor;
+        this.condaMetadataIndexer = condaMetadataIndexer;
     }
 
     /**
@@ -65,11 +71,16 @@ public class CondaArtifactServiceImpl implements CondaArtifactService {
             return false;
         } else if (fileExist && !indexExist) {
             // 5. 文件存在, 索引不存在, 则添加索引
-            condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.ADD, repository, platformId, artifactName);
+            RepoDataPackage repoDataPackage = getRepoDataPackage(path);
+            condaRepoDataService.sendRepoDataEvent(
+                    new CondaRepodataEvent(RepoDataEventKind.ADD, repository, platformId, artifactName, repoDataPackage)
+            );
             return true;
         } else if (!fileExist && indexExist) {
             // 6. 文件不存在, 索引存在, 则删除索引
-            condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.REMOVE, repository, platformId, artifactName);
+            condaRepoDataService.sendRepoDataEvent(
+                    new CondaRepodataEvent(RepoDataEventKind.REMOVE, repository,platformId, artifactName)
+            );
             return false;
         }
         return false;
@@ -83,20 +94,24 @@ public class CondaArtifactServiceImpl implements CondaArtifactService {
     public void reIndexArtifact(@NonNull RepositoryPath path) throws Exception {
         boolean fileExist = false;
         // 1. 提取父目录和文件名和indexPath
-        String parentPath = path.getParent().toString();
-        String fileName = path.getFileName().toString();
+        String repoKey = path.getParent().toString();
+        String artifactName = path.getFileName().toString();
 
         // 2. 检查文件是否存在
         fileExist = Files.exists(path);
 
         // 提取platformId
         Repository repository = path.getRepository();
-        String platformId = parentPath.substring(parentPath.lastIndexOf("/") + 1);
+        String platformId = repoKey.substring(repoKey.lastIndexOf("/") + 1);
 
-
-        condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.REMOVE, repository, platformId, fileName);
-        if (fileExist) {   // 文件存在, 删除索引
-            condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.ADD, repository, platformId, fileName);
+        condaRepoDataService.sendRepoDataEvent(
+                new CondaRepodataEvent(RepoDataEventKind.REMOVE, repository, platformId, artifactName)
+        );
+        if (fileExist) {   // 文件存在, 则添加索引
+            RepoDataPackage repoDataPackage = getRepoDataPackage(path);
+            condaRepoDataService.sendRepoDataEvent(
+                    new CondaRepodataEvent(RepoDataEventKind.ADD, repository, platformId, artifactName, repoDataPackage)
+            );
         }
         return;
     }
@@ -118,8 +133,10 @@ public class CondaArtifactServiceImpl implements CondaArtifactService {
         if (!checkArtifactExist(path)) {
             throw new Exception("File does not exist: " + path);
         }
-
-        condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.REMOVE, repository, platformId, fileName);
+        // 2. 删除索引
+        condaRepoDataService.sendRepoDataEvent(
+                new CondaRepodataEvent(RepoDataEventKind.REMOVE, repository, platformId, fileName)
+        );
         try {
             artifactManagementService.delete(path, false);
         } catch (Exception e) {
@@ -139,6 +156,13 @@ public class CondaArtifactServiceImpl implements CondaArtifactService {
         } catch (Exception e) {
             throw new RuntimeException("Failed to extract metadata for " + artifactName, e);
         }
+    }
+
+
+    public RepoDataPackage getRepoDataPackage(@NonNull RepositoryPath path) {
+        String repoKey = path.getParent().toString();
+        String artifactName = path.getFileName().toString();
+        return condaMetadataIndexer.getRepoDataPackage(repoKey, artifactName);
     }
 
 }

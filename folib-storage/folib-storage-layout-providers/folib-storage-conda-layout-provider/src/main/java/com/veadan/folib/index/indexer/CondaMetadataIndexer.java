@@ -270,15 +270,15 @@ public class CondaMetadataIndexer {
     /**
      * @Description: 重新索引当前的索引数据
      * @param repoData
-     * @param packagesParentPath
+     * @param platformId
      * @return
      */
     @Nullable
-    public RepoData reindexCurrentRepoData(RepoData repoData, String packagesParentPath) {
+    public RepoData reindexCurrentRepoData(RepoData repoData, String platformId) {
         if (repoData == null) {
             return null;
         } else {
-            RepoData currentRepoData = this.createNewRepoData(packagesParentPath);
+            RepoData currentRepoData = this.createNewRepoData(platformId);
             currentRepoData.setInfo(repoData.getInfo());
             SortedMap<String, RepoDataPackage> tgzRepoDataPackageMap = this.aggregateCurrent(repoData.getPackages());
             currentRepoData.setPackages(tgzRepoDataPackageMap);

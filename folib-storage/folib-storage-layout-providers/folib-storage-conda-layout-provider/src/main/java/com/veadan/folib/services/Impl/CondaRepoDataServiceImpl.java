@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.core.HazelcastInstance;
 import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.constant.GlobalConstants;
+import com.veadan.folib.event.CondaRepodataEvent;
 import com.veadan.folib.index.indexer.CondaMetadataExtractor;
 import com.veadan.folib.index.indexer.CondaMetadataIndexer;
 import com.veadan.folib.index.model.RepoData;
@@ -79,26 +80,30 @@ public class CondaRepoDataServiceImpl implements CondaRepoDataService {
     }
 
     @Override
-    public void sendRepoDataEvent(RepoDataEventKind kind, Repository repository, String platformId,
-                                  String artifactName) {
+    public void sendRepoDataEvent(CondaRepodataEvent event) {
         // 获取锁
-        String repoKey = String.format("%s/%s/%s", repository.getStorage().getId(), repository.getId(), platformId);
+        Repository repository = event.getRepository();
+        String repoKey = String.format("%s/%s/%s", repository.getStorage().getId(), repository.getId(), event.getPlatformId());
         String key = String.format("CondaRepoData_%s", repoKey);
         if (distributedLockComponent.lock(key, GlobalConstants.WAIT_LOCK_TIME * GlobalConstants.WAIT_LOCK_TIME)) {
             try {
-                handleRepoDataEvent(kind, repository, platformId, artifactName);
+                handleRepoDataEvent(repository, event);
             } finally {
                 distributedLockComponent.unLock(key);
             }
         }
     }
 
-    private void handleRepoDataEvent(RepoDataEventKind kind, Repository repository, String platformId,
-                                     String artifactName) {
+    private void handleRepoDataEvent(Repository repository, CondaRepodataEvent event) {
+        RepoDataEventKind kind = event.getType();
+        String platformId = event.getPlatformId();
+        String artifactName = event.getArtifactName();
+
         RepoData repoData = getRepoData(repository, platformId);
         RepoData currentRepoData = getCurrentRepoData(repository, platformId);
+
         if (kind == RepoDataEventKind.ADD) {
-            addPackage(repoData, currentRepoData, repository, platformId, artifactName);
+            addPackage(repoData, currentRepoData, artifactName, event.getRepoDataPackage());
         } else if (kind == RepoDataEventKind.REMOVE) {
             removePackage(repoData, currentRepoData, platformId, artifactName);
         } else if (kind == RepoDataEventKind.REINDEX) {
@@ -116,16 +121,12 @@ public class CondaRepoDataServiceImpl implements CondaRepoDataService {
         return condaMetadataIndexer.checkPackageExistsInRepoData(repoData, artifactName);
     }
 
-    private void addPackage(RepoData repoData, RepoData currentRepoData, Repository repository, String platformId,
-                            String artifactName) {
+    private void addPackage(RepoData repoData, RepoData currentRepoData, String artifactName,
+                            RepoDataPackage repoDataPackage) {
         if (this.checkPackageExistsInRepoData(repoData, artifactName)) {
             return;
         }
 
-        RepositoryPath repoDataPath = repositoryPathResolver.resolve(repository, platformId);
-        String repoKey = repoDataPath.toString();
-
-        RepoDataPackage repoDataPackage = condaMetadataIndexer.getRepoDataPackage(repoKey, artifactName);
         if (repoDataPackage == null) {
             throw new RuntimeException("Failed to get RepoDataPackage for artifact: " + artifactName);
         }

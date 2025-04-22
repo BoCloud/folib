@@ -27,6 +27,7 @@ import com.veadan.folib.enums.DeltaIndexEventType;
 import com.veadan.folib.enums.NpmPacketSuffix;
 import com.veadan.folib.enums.NpmSubLayout;
 import com.veadan.folib.enums.UploadTypeEnum;
+import com.veadan.folib.event.CondaRepodataEvent;
 import com.veadan.folib.event.DebianIndexEvent;
 import com.veadan.folib.extractor.CargoIndex;
 import com.veadan.folib.extractor.CargoMetadataExtractor;
@@ -34,6 +35,7 @@ import com.veadan.folib.extractor.CargoMetadataIndexer;
 import com.veadan.folib.index.indexer.CondaMetadataExtractor;
 import com.veadan.folib.index.model.Index;
 import com.veadan.folib.index.model.RepoDataEventKind;
+import com.veadan.folib.index.model.RepoDataPackage;
 import com.veadan.folib.indexer.DebianIncrementalIndexer;
 import com.veadan.folib.indexer.DebianReleaseMetadataIndexer;
 import com.veadan.folib.layout.providers.CargoLayoutProvider;
@@ -66,6 +68,7 @@ import org.apache.maven.artifact.repository.metadata.Snapshot;
 import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.apache.maven.index.artifact.Gav;
 import org.apache.maven.model.Model;
+import org.apache.maven.model.Repository;
 import org.mockito.internal.util.collections.Sets;
 import org.opencypher.v9_0.expressions.functions.Exp;
 import org.springframework.http.HttpStatus;
@@ -1040,7 +1043,6 @@ public class ArtifactUploadTask implements Callable<String> {
             }
 
             // 6. 存储文件
-            CondaArtifactCoordinates coordinates = CondaArtifactCoordinates.of(platformId, fileName);
             try (InputStream artifactInputStream = new FileInputStream(artifactTempFile)) {
                 artifactManagementService.validateAndStore(artifactPath, artifactInputStream);
             } catch (Exception e) {
@@ -1049,8 +1051,12 @@ public class ArtifactUploadTask implements Callable<String> {
             }
 
             // 7. 更新索引
-            condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.ADD, artifactPath.getRepository(), platformId,
-                    fileName);
+            RepoDataPackage repoDataPackage = condaArtifactService.getRepoDataPackage(artifactPath);
+            CondaRepodataEvent event = new CondaRepodataEvent(RepoDataEventKind.ADD, artifactPath.getRepository(), platformId,
+                    fileName,
+                    repoDataPackage);
+            condaRepoDataService.sendRepoDataEvent(event);
+
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         } finally {

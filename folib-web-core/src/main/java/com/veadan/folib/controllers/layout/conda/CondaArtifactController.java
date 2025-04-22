@@ -5,10 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.core.HazelcastInstance;
 import com.veadan.folib.artifact.coordinates.CondaArtifactCoordinates;
 import com.veadan.folib.controllers.BaseArtifactController;
+import com.veadan.folib.event.CondaRepodataEvent;
 import com.veadan.folib.index.indexer.CondaMetadataExtractor;
 import com.veadan.folib.index.model.Index;
 import com.veadan.folib.index.model.RepoData;
 import com.veadan.folib.index.model.RepoDataEventKind;
+import com.veadan.folib.index.model.RepoDataPackage;
 import com.veadan.folib.providers.ProviderImplementationException;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -140,7 +142,10 @@ public class CondaArtifactController extends BaseArtifactController {
             storeCondaPackage(repository, coordinates, artifactTempFile);
 
             // 7. 更新索引
-            condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.ADD, repository, platform, fileName);
+            RepoDataPackage repoDataPackage = condaArtifactService.getRepoDataPackage(artifactPath);
+            CondaRepodataEvent event = new CondaRepodataEvent(RepoDataEventKind.ADD,repository, platform, fileName,
+                    repoDataPackage);
+            condaRepoDataService.sendRepoDataEvent(event);
 
             return ResponseEntity.ok("Artifact uploaded successfully");
         } catch (Exception e) {
@@ -217,7 +222,6 @@ public class CondaArtifactController extends BaseArtifactController {
         String repositoryId = repository.getId();
         RepositoryPath condaPackagePath = artifactResolutionService.resolvePath(storageId, repositoryId,
                 platformId + "/" + packageName);
-        // 2. 检查包是否存在
         if (condaPackagePath == null) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
@@ -226,7 +230,7 @@ public class CondaArtifactController extends BaseArtifactController {
     }
 
 
-    @ApiOperation(value = "Get conda package")
+    @ApiOperation(value = "Delete conda package")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "DELETE conda package successfully"),
             @ApiResponse(code = 404, message = "Conda package not found"),

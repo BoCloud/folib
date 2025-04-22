@@ -1,6 +1,7 @@
 package com.veadan.folib.services;
 
 
+import com.veadan.folib.event.CondaRepodataEvent;
 import com.veadan.folib.index.model.RepoData;
 import com.veadan.folib.index.model.RepoDataEventKind;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -21,8 +22,7 @@ public interface CondaRepoDataService {
 
     public RepoData getCurrentRepoData(Repository repository, String platformId);
 
-    public void sendRepoDataEvent(RepoDataEventKind kind, Repository repository, String platformId,
-                                  String artifactName);
+    public void sendRepoDataEvent(CondaRepodataEvent event);
 
     public boolean checkPackageExistsInRepoData(RepoData repoData,
                                                 String artifactName);
