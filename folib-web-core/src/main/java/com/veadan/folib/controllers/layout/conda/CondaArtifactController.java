@@ -180,6 +180,14 @@ public class CondaArtifactController extends BaseArtifactController {
         String repositoryId = repository.getId();
 
         // 1. 构造repoData路径
+        try {
+            condaRepoDataService.getRepoData(repository, platformId);
+        } catch (Exception e) {
+            log.error("Error getting repo data", e);
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
         RepositoryPath repoDataPath = artifactResolutionService.resolvePath(storageId, repositoryId, platformId + "/" + targetName);
         Map<String, Date> repoDataMap = hazelcastInstance.getMap("condaRepoData");
 

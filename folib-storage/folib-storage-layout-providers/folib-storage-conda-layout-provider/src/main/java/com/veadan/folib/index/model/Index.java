@@ -1,5 +1,6 @@
 package com.veadan.folib.index.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Generated;
@@ -14,6 +15,7 @@ import java.util.List;
  * @Description:
  */
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class Index implements Serializable {
     private String arch;

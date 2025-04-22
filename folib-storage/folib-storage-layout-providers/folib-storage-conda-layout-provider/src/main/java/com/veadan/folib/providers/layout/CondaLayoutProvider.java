@@ -7,7 +7,7 @@ import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.repository.CondaRepositoryFeatures;
 import com.veadan.folib.repository.CondaRepositoryManagementStrategy;
-import com.veadan.folib.services.CondaGroupService;
+import com.veadan.folib.services.CondaRepoDataService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
@@ -45,7 +45,7 @@ public class CondaLayoutProvider extends AbstractLayoutProvider<CondaArtifactCoo
     private CondaRepositoryFeatures condaRepositoryFeatures;
 
     @Inject
-    private CondaGroupService condaGroupService;
+    private CondaRepoDataService condaRepoDataService;
 
     @PostConstruct
     public void register() {
@@ -129,28 +129,5 @@ public class CondaLayoutProvider extends AbstractLayoutProvider<CondaArtifactCoo
     @Override
     public String getAlias() {
         return ALIAS;
-    }
-
-    @Override
-    public void initData(String storageId, String repositoryId) {
-        logger.info(" rpm repository initData storageId:{} repositoryId:{}", storageId,repositoryId);
-        // 获取存储配置时添加空指针检查
-        Storage storage = configurationManager.getConfiguration().getStorage(storageId);
-        if (storage == null) {
-            throw new IllegalStateException("Storage not found: " + storageId);
-        }
-
-        // 获取仓库时添加空指针检查
-        Repository repository = storage.getRepository(repositoryId);
-        if (repository == null) {
-            throw new IllegalStateException("Repository not found: " + repositoryId);
-        }
-
-        // 提前返回条件判断保持原逻辑
-        if (!"group".equals(repository.getType())) {
-            return;
-        }
-        condaGroupService.aggregateCondaGroupRepoData(repository);
-
     }
 }

@@ -26,4 +26,6 @@ public interface CondaRepoDataService {
 
     public boolean checkPackageExistsInRepoData(RepoData repoData,
                                                 String artifactName);
+
+    public RepoData aggregateCondaGroupPlatformRepoData(Repository repository, String platformId);
 }

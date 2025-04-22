@@ -4,6 +4,7 @@ import cn.hutool.extra.spring.SpringUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.core.HazelcastInstance;
 import com.veadan.folib.components.DistributedLockComponent;
+import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.event.CondaRepodataEvent;
 import com.veadan.folib.event.index.IndexEventListenerRegistry;
@@ -17,6 +18,7 @@ import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ArtifactManagementService;
+import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.CondaRepoDataService;
 import com.veadan.folib.storage.repository.Repository;
 import lombok.NonNull;
@@ -34,10 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -55,21 +54,25 @@ public class CondaRepoDataServiceImpl implements CondaRepoDataService {
 
     private final DistributedLockComponent distributedLockComponent;
 
-    private final ArtifactManagementService artifactManagementService;
+    private final ArtifactResolutionService artifactResolutionService;
 
     private final RepositoryPathResolver repositoryPathResolver;
+
+    private final ConfigurationManager configurationManager;
 
     private final String REPODATA = "repodata.json";
     private final String CURRENT_REPODATA = "current_repodata.json";
 
     @Autowired
-    public CondaRepoDataServiceImpl(CondaMetadataIndexer condaMetadataIndexer, HazelcastInstance hazelcastInstance, DistributedLockComponent distributedLockComponent, ArtifactManagementService artifactManagementService, RepositoryPathResolver repositoryPathResolver) {
+    public CondaRepoDataServiceImpl(CondaMetadataIndexer condaMetadataIndexer, HazelcastInstance hazelcastInstance, DistributedLockComponent distributedLockComponent, ArtifactResolutionService artifactResolutionService, RepositoryPathResolver repositoryPathResolver, ConfigurationManager configurationManager) {
         this.condaMetadataIndexer = condaMetadataIndexer;
         this.hazelcastInstance = hazelcastInstance;
         this.distributedLockComponent = distributedLockComponent;
-        this.artifactManagementService = artifactManagementService;
+        this.artifactResolutionService = artifactResolutionService;
         this.repositoryPathResolver = repositoryPathResolver;
+        this.configurationManager = configurationManager;
     }
+
 
     @Override
     public RepoData getRepoData(Repository repository, String platformId) {
@@ -112,8 +115,7 @@ public class CondaRepoDataServiceImpl implements CondaRepoDataService {
             reindexPackage(repoData, repository, platformId);
         } else if (kind == RepoDataEventKind.AGGREGATE) {
             aggregatePackage(repoData, event.getRepoData());
-        }
-        else {
+        } else {
             throw new RuntimeException("Unsupported RepoDataEventKind: " + kind);
         }
         saveRepoData(repoData, repository, platformId, REPODATA);
@@ -213,20 +215,75 @@ public class CondaRepoDataServiceImpl implements CondaRepoDataService {
     @NonNull
     private RepoData readRepoData(Repository repository, String platformId, String repoDataName) {
         // 1. 构建索引路径
-        RepositoryPath repoDataPath = repositoryPathResolver.resolve(repository, platformId + "/" + repoDataName);
+        String storageId = repository.getStorage().getId();
+        String repositoryId = repository.getId();
 
-        // 1. 检查repoDataPath是否存在
-        if (repoDataPath == null || !Files.exists(repoDataPath)) {
-            return condaMetadataIndexer.createNewRepoData(platformId);
+        if (repository.isGroupRepository()) {
+            // 组合仓库
+            RepositoryPath repoDataPath = repositoryPathResolver.resolve(repository, platformId + "/" + repoDataName);
+            if (Files.exists(repoDataPath)) {
+                // 1.1 如果索引文件存在，直接返回
+                try (InputStream inputStream = new FileInputStream(repoDataPath.toString())) {
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    return objectMapper.readValue(inputStream, RepoData.class);
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to read RepoData from path.", e);
+                }
+            }
+            return aggregateCondaGroupPlatformRepoData(repository, platformId);
         }
 
-        // 2. 获取索引数据
-        try (InputStream inputStream = new FileInputStream(repoDataPath.toFile())) {
-            ObjectMapper objectMapper = new ObjectMapper();
-            return objectMapper.readValue(inputStream, RepoData.class);
+        try {
+            RepositoryPath repoDataPath = artifactResolutionService.resolvePath(storageId, repositoryId,
+                    platformId + "/" + repoDataName);
+
+            // 1. 检查repoDataPath是否存在
+            if (repoDataPath == null || !Files.exists(repoDataPath)) {
+                return condaMetadataIndexer.createNewRepoData(platformId);
+            }
+
+            // 2. 获取索引数据
+            File repoDataFile = new File(repoDataPath.toString());
+            try (InputStream inputStream = new FileInputStream(repoDataFile)) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                return objectMapper.readValue(inputStream, RepoData.class);
+            }
         } catch (IOException e) {
-            throw new RuntimeException("Failed to read RepoData from path: " + repoDataPath, e);
+            throw new RuntimeException("Failed to read RepoData from path: " + repositoryId + platformId, e);
         }
     }
 
+
+    @Override
+    public RepoData aggregateCondaGroupPlatformRepoData(Repository repository, String platformId) {
+        if (!repository.isGroupRepository()) {
+            throw new IllegalArgumentException("The repository is not a group repository");
+        }
+        List<RepoData> repoDataList = new ArrayList<>();
+        for (String id : repository.getGroupRepositories()) {
+            Repository subRepository = configurationManager.getRepository(id);
+            if (subRepository == null) {
+                continue;
+            }
+            RepoData repoData = getRepoData(subRepository, platformId);
+            if (repoData != null) {
+                repoDataList.add(repoData);
+            }
+        }
+
+        // 2. 合并索引
+        try {
+            RepositoryPath repoDataPath = repositoryPathResolver.resolve(repository, platformId + "/" + REPODATA);
+            RepoData groupRepoData = condaMetadataIndexer.aggregateRepoData(repoDataList);
+            Path path = Path.of(repoDataPath.toString());
+            if (!Files.exists(path.getParent()))       {
+                Files.createDirectories(path.getParent());
+            }
+            Files.writeString(path, groupRepoData.toJsonPretty());
+            return groupRepoData;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to aggregate conda group platform repo data", e);
+        }
+    }
 }
