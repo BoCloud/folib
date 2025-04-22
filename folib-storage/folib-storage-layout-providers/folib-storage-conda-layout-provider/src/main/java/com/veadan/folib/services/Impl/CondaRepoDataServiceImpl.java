@@ -1,10 +1,13 @@
 package com.veadan.folib.services.Impl;
 
+import cn.hutool.extra.spring.SpringUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.core.HazelcastInstance;
 import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.event.CondaRepodataEvent;
+import com.veadan.folib.event.index.IndexEventListenerRegistry;
+import com.veadan.folib.event.index.IndexTypeEnum;
 import com.veadan.folib.index.indexer.CondaMetadataExtractor;
 import com.veadan.folib.index.indexer.CondaMetadataIndexer;
 import com.veadan.folib.index.model.RepoData;
@@ -112,13 +115,20 @@ public class CondaRepoDataServiceImpl implements CondaRepoDataService {
             reindexPackage(repoData, repository, platformId);
         } else if (kind == RepoDataEventKind.AGGREGATE) {
             aggregatePackage(repoData, event.getRepoData());
-
         }
         else {
             throw new RuntimeException("Unsupported RepoDataEventKind: " + kind);
         }
         saveRepoData(repoData, repository, platformId, REPODATA);
         saveRepoData(currentRepoData, repository, platformId, CURRENT_REPODATA);
+        // 组仓库更新
+        if (kind == RepoDataEventKind.ADD || kind == RepoDataEventKind.REINDEX || kind == RepoDataEventKind.AGGREGATE) {
+            String storageId = repository.getStorage().getId();
+            String repositoryId = repository.getId();
+            //发送索引更新事件
+            IndexEventListenerRegistry registry = SpringUtil.getBean(IndexEventListenerRegistry.class);
+            registry.dispatchUpdateIndexEvent(storageId, repositoryId, IndexTypeEnum.CONDA);
+        }
     }
 
     @Override

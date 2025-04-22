@@ -10,7 +10,9 @@ import com.veadan.folib.event.index.IndexTypeEnum;
 import com.veadan.folib.event.privilege.PrivilegeEvent;
 import com.veadan.folib.metadata.indexer.RpmGroupRepoIndexer;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.scanner.common.util.SpringContextUtil;
 import com.veadan.folib.services.ArtifactManagementService;
+import com.veadan.folib.services.CondaGroupService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
@@ -51,6 +53,9 @@ public class IndexEventListener {
         log.info("IndexEventListener handle storageId: {}, repositoryId: {} ,type: {}", event.getStorageId(), event.getRepositoryId(),event.getIndexType().toString());
         if (event.getIndexType().equals(IndexTypeEnum.RPM)) {
             handleRpmGroupRepoIndexer(event);
+        } else if (event.getIndexType().equals(IndexTypeEnum.CONDA)) {
+            handleCondaGroupRepoIndexer(event);
+
         }
     }
 
@@ -83,6 +88,42 @@ public class IndexEventListener {
                     continue;
                 }
                 rpmGroupRepoIndexer.aggregationIndexer(groupRepository, repository);
+            } catch (Exception e) {
+                log.error("Error handling RPM group repo indexer for storageAndRepositoryId: {}. Error: {}", storageAndRepositoryId, e.getMessage(), e);
+            }
+        }
+    }
+
+
+    public void handleCondaGroupRepoIndexer(IndexEvent event) {
+        Repository repository = configurationManager.getRepository(event.getStorageId(), event.getRepositoryId());
+        if (repository == null) {
+            log.error("Repository not found for storageId: {}, repositoryId: {}", event.getStorageId(), event.getRepositoryId());
+            return;
+        }
+
+        List<String> storageAndRepositoryIdList = Lists.newArrayList();
+        resolveGroupRepository(repository, storageAndRepositoryIdList);
+
+        if (storageAndRepositoryIdList.isEmpty()) {
+            log.warn("No storage and repository IDs found for repository: {}", repository.getId());
+            return;
+        }
+
+        // 创建 Conda 索引聚合服务
+        CondaGroupService condaGroupService = SpringContextUtil.getBean(CondaGroupService.class);
+        for (String storageAndRepositoryId : storageAndRepositoryIdList) {
+            try {
+                Repository groupRepository = configurationManager.getRepository(storageAndRepositoryId);
+                if (groupRepository == null) {
+                    log.error("Group repository not found for storageAndRepositoryId: {}", storageAndRepositoryId);
+                    continue;
+                }
+                if (!groupRepository.getType().equals("group")) {
+                    log.warn("Group repository type is not group for storageAndRepositoryId: {}", storageAndRepositoryId);
+                    continue;
+                }
+                condaGroupService.aggregateCondaGroupRepoData(groupRepository, repository);
             } catch (Exception e) {
                 log.error("Error handling RPM group repo indexer for storageAndRepositoryId: {}. Error: {}", storageAndRepositoryId, e.getMessage(), e);
             }
