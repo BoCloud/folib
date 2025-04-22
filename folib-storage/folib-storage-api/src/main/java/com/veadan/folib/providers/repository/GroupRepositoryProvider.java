@@ -124,6 +124,12 @@ public class GroupRepositoryProvider
                 return result;
             }
         }
+        if(ProductTypeEnum.Conda.getFoLibraryName().equals(repositoryPath.getRepository().getLayout()) && (repositoryPath.toString().endsWith("repodata.json") || repositoryPath.toString().endsWith("current_repodata.json"))){
+            RepositoryPath result = resolvePathDirectlyFromGroupPathIfPossible(repositoryPath);
+            if (result != null) {
+                return result;
+            }
+        }
         if(groupInterceptor.shouldInterceptor(repositoryPath)){
             groupInterceptor.calculateIndex(repositoryPath);
             RepositoryPath result = resolvePathDirectlyFromGroupPathIfPossible(repositoryPath);

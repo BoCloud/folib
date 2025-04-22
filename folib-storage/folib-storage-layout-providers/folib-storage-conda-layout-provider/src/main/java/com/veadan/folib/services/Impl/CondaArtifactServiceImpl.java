@@ -8,6 +8,7 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.CondaArtifactService;
 import com.veadan.folib.services.CondaRepoDataService;
+import com.veadan.folib.storage.repository.Repository;
 import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -46,26 +47,29 @@ public class CondaArtifactServiceImpl implements CondaArtifactService {
         boolean indexExist = false;
         // 1. 提取父目录和文件名和indexPath
         String parentPath = path.getParent().toString();
-        String fileName = path.getFileName().toString();
+        String artifactName = path.getFileName().toString();
 
         // 2. 检查文件是否存在
         fileExist = Files.exists(path);
 
         // 3. 检查索引文件是否存在, 且文件是否在索引中
-        RepoData repoData = condaRepoDataService.getRepoData(parentPath);
-        indexExist = condaRepoDataService.checkPackageExistsInRepoData(repoData, fileName);
+        RepoData repoData = condaRepoDataService.getRepoData(path.getRepository(), artifactName);
+        indexExist = condaRepoDataService.checkPackageExistsInRepoData(repoData, artifactName);
+        // 4. 提取platformId
+        Repository repository = path.getRepository();
+        String platformId = parentPath.substring(parentPath.lastIndexOf("/") + 1);
 
         if (fileExist && indexExist) {
             return true;
         } else if (!fileExist && !indexExist) {
             return false;
         } else if (fileExist && !indexExist) {
-            // 4. 文件存在, 索引不存在, 则添加索引
-            condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.ADD, parentPath, fileName);
+            // 5. 文件存在, 索引不存在, 则添加索引
+            condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.ADD, repository, platformId, artifactName);
             return true;
         } else if (!fileExist && indexExist) {
-            // 5. 文件不存在, 索引存在, 则删除索引
-            condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.REMOVE, parentPath, fileName);
+            // 6. 文件不存在, 索引存在, 则删除索引
+            condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.REMOVE, repository, platformId, artifactName);
             return false;
         }
         return false;
@@ -85,9 +89,14 @@ public class CondaArtifactServiceImpl implements CondaArtifactService {
         // 2. 检查文件是否存在
         fileExist = Files.exists(path);
 
-        condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.REMOVE, parentPath, fileName);
+        // 提取platformId
+        Repository repository = path.getRepository();
+        String platformId = parentPath.substring(parentPath.lastIndexOf("/") + 1);
+
+
+        condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.REMOVE, repository, platformId, fileName);
         if (fileExist) {   // 文件存在, 删除索引
-            condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.ADD, parentPath, fileName);
+            condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.ADD, repository, platformId, fileName);
         }
         return;
     }
@@ -100,11 +109,17 @@ public class CondaArtifactServiceImpl implements CondaArtifactService {
     public void unpublishPackage(@NonNull RepositoryPath path) throws Exception {
         String parentPath = path.getParent().toString();
         String fileName = path.getFileName().toString();
+
+        // 提取platformId
+        Repository repository = path.getRepository();
+        String platformId = parentPath.substring(parentPath.lastIndexOf("/") + 1);
+
+        // 1. 检查文件是否存在
         if (!checkArtifactExist(path)) {
             throw new Exception("File does not exist: " + path);
         }
 
-        condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.REMOVE, parentPath, fileName);
+        condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.REMOVE, repository, platformId, fileName);
         try {
             artifactManagementService.delete(path, false);
         } catch (Exception e) {

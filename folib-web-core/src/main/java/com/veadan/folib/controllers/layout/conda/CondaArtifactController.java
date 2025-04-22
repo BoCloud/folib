@@ -69,9 +69,6 @@ public class CondaArtifactController extends BaseArtifactController {
     private CondaArtifactService condaArtifactService;
 
     @Inject
-    private CondaMetadataExtractor condaMetadataExtractor;
-
-    @Inject
     private ArtifactManagementService artifactManagementService;
 
     @Inject
@@ -122,7 +119,7 @@ public class CondaArtifactController extends BaseArtifactController {
             FileUtil.writeFromStream(is, artifactTempFile);
 
             // 2. 提取元数据
-            Index index = condaMetadataExtractor.extract(artifactTempPath.getParent().toString(), fileName);
+            Index index = condaArtifactService.extract(artifactTempPath.getParent().toString(), fileName);
             if (index == null) {
                 throw new RuntimeException("Failed to extract metadata");
             }
@@ -143,7 +140,7 @@ public class CondaArtifactController extends BaseArtifactController {
             storeCondaPackage(repository, coordinates, artifactTempFile);
 
             // 7. 更新索引
-            condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.ADD, artifactPath.getParent().toString(), fileName);
+            condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.ADD, repository, platform, fileName);
 
             return ResponseEntity.ok("Artifact uploaded successfully");
         } catch (Exception e) {

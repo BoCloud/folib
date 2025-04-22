@@ -1027,11 +1027,12 @@ public class ArtifactUploadTask implements Callable<String> {
                 throw new RuntimeException("Failed to extract metadata");
             }
 
-            // 3. 获取platform
-            String platform = Optional.ofNullable(index.getSubdir()).orElse("noarch");
+            // 3. 获取platformId
+            String platformId = Optional.ofNullable(index.getSubdir()).orElse("noarch");
 
             // 4. 构建conda路径
-            RepositoryPath artifactPath = repositoryPathResolver.resolve(storageId, repositoryId, platform + "/" + fileName);
+            RepositoryPath artifactPath = repositoryPathResolver.resolve(storageId, repositoryId,
+                    platformId + "/" + fileName);
 
             // 5. 检查文件是否存在
             if (condaArtifactService.checkArtifactExist(artifactPath)) {
@@ -1039,7 +1040,7 @@ public class ArtifactUploadTask implements Callable<String> {
             }
 
             // 6. 存储文件
-            CondaArtifactCoordinates coordinates = CondaArtifactCoordinates.of(platform, fileName);
+            CondaArtifactCoordinates coordinates = CondaArtifactCoordinates.of(platformId, fileName);
             try (InputStream artifactInputStream = new FileInputStream(artifactTempFile)) {
                 artifactManagementService.validateAndStore(artifactPath, artifactInputStream);
             } catch (Exception e) {
@@ -1048,7 +1049,8 @@ public class ArtifactUploadTask implements Callable<String> {
             }
 
             // 7. 更新索引
-            condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.ADD, artifactPath.getParent().toString(), fileName);
+            condaRepoDataService.sendRepoDataEvent(RepoDataEventKind.ADD, artifactPath.getRepository(), platformId,
+                    fileName);
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         } finally {

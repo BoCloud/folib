@@ -3,6 +3,7 @@ package com.veadan.folib.services;
 import com.veadan.folib.index.model.Index;
 import com.veadan.folib.providers.io.RepositoryPath;
 import lombok.NonNull;
+import org.springframework.stereotype.Component;
 
 /**
  * @author LingengMa

@@ -81,21 +81,14 @@ public class CondaMetadataIndexer {
     }
 
     /**
-     * @param parentPath
-     * @return
      * @Description: 创建新的索引数据
+     * @param platformId
+     * @return
      */
-    public RepoData createNewRepoData(String parentPath) {
+    public RepoData createNewRepoData(@NonNull String platformId) {
         RepoData repoData = new RepoData();
         repoData.setInfo(new RepoDataInfo());
-        String subdir;
-        if (parentPath.lastIndexOf(47) != -1) {
-            subdir = StringUtils.substringAfterLast(parentPath, "/");
-        } else {
-            subdir = parentPath;
-        }
-
-        repoData.getInfo().setSubdir(subdir);
+        repoData.getInfo().setSubdir(platformId);
         return repoData;
     }
 
