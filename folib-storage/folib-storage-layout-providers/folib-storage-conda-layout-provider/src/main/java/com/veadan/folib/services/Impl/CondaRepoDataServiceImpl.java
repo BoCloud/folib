@@ -105,6 +105,12 @@ public class CondaRepoDataServiceImpl implements CondaRepoDataService {
         String platformId = event.getPlatformId();
         String artifactName = event.getArtifactName();
 
+        RepositoryPath repoPath = repositoryPathResolver.resolve(repository, platformId + "/" + artifactName);
+        if (repository.isGroupRepository() && !Files.exists(repoPath)) {
+            // 组仓库，且不存在文件，直接返回(后续获取时会自动更新)
+            return;
+        }
+
         RepoData repoData = getRepoData(repository, platformId);
         RepoData currentRepoData = getCurrentRepoData(repository, platformId);
 
@@ -243,11 +249,21 @@ public class CondaRepoDataServiceImpl implements CondaRepoDataService {
                 return condaMetadataIndexer.createNewRepoData(platformId);
             }
 
+
             // 2. 获取索引数据
             File repoDataFile = new File(repoDataPath.toString());
             try (InputStream inputStream = new FileInputStream(repoDataFile)) {
                 ObjectMapper objectMapper = new ObjectMapper();
-                return objectMapper.readValue(inputStream, RepoData.class);
+                RepoData repoData = objectMapper.readValue(inputStream, RepoData.class);
+                if (repository.isHostedRepository() && !condaIndexCache.containsKey(repoDataPath.toString())) {
+                    // 更新缓存
+                    condaIndexCache.put(repoDataPath.toString());
+                    this.sendRepoDataEvent(
+                            new CondaRepodataEvent(RepoDataEventKind.AGGREGATE, repository, platformId,
+                                    repoData)
+                    );
+                }
+                return repoData;
             }
         } catch (IOException e) {
             throw new RuntimeException("Failed to read RepoData from path: " + repositoryId + platformId, e);
@@ -276,6 +292,10 @@ public class CondaRepoDataServiceImpl implements CondaRepoDataService {
         try {
             RepoData groupRepoData = condaMetadataIndexer.aggregateRepoData(repoDataList);
             saveRepoData(groupRepoData, repository, platformId, REPODATA);
+            this.sendRepoDataEvent(
+                    new CondaRepodataEvent(RepoDataEventKind.AGGREGATE, repository, platformId,
+                            groupRepoData)
+            );
             return groupRepoData;
         } catch (Exception e) {
             throw new RuntimeException("Failed to aggregate conda group platform repo data", e);
