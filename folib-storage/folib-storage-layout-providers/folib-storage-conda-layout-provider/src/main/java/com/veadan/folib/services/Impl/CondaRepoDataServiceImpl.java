@@ -62,9 +62,6 @@ public class CondaRepoDataServiceImpl implements CondaRepoDataService {
     private final String REPODATA = "repodata.json";
     private final String CURRENT_REPODATA = "current_repodata.json";
 
-    @Value("${folib.temp}")
-    private String tempPath;
-
     @Autowired
     public CondaRepoDataServiceImpl(CondaMetadataIndexer condaMetadataIndexer, HazelcastInstance hazelcastInstance, DistributedLockComponent distributedLockComponent, ArtifactManagementService artifactManagementService, RepositoryPathResolver repositoryPathResolver) {
         this.condaMetadataIndexer = condaMetadataIndexer;
@@ -197,7 +194,6 @@ public class CondaRepoDataServiceImpl implements CondaRepoDataService {
     }
 
     private void saveRepoData(RepoData repoData, Repository repository, String platformId, String repoDataName) {
-        String temp = String.join("/", tempPath, UUID.randomUUID().toString());
         RepositoryPath repoDataPath = repositoryPathResolver.resolve(repository, platformId + "/" + repoDataName);
         try {
             Path path = Path.of(repoDataPath.toString());

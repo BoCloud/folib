@@ -1,5 +1,6 @@
 package com.veadan.folib.services.Impl;
 
+import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.event.CondaRepodataEvent;
 import com.veadan.folib.index.model.RepoData;
 import com.veadan.folib.index.model.RepoDataEventKind;
@@ -31,10 +32,13 @@ public class CondaGroupServiceImpl implements CondaGroupService {
 
     private final CondaRepoDataService condaRepoDataService;
 
+    private final ConfigurationManager configurationManager;
+
     @Autowired
-    public CondaGroupServiceImpl(RepositoryPathResolver repositoryPathResolver, CondaRepoDataServiceImpl condaRepoDataServiceImpl, CondaRepoDataService condaRepoDataService) {
+    public CondaGroupServiceImpl(RepositoryPathResolver repositoryPathResolver, CondaRepoDataServiceImpl condaRepoDataServiceImpl, CondaRepoDataService condaRepoDataService, ConfigurationManager configurationManager) {
         this.repositoryPathResolver = repositoryPathResolver;
         this.condaRepoDataService = condaRepoDataService;
+        this.configurationManager = configurationManager;
     }
 
     @Override
@@ -65,6 +69,21 @@ public class CondaGroupServiceImpl implements CondaGroupService {
             CondaRepodataEvent event = new CondaRepodataEvent(RepoDataEventKind.AGGREGATE, groupRepository, platform,
                     sonRepoData);
             condaRepoDataService.sendRepoDataEvent(event);
+        }
+    }
+
+
+    @Override
+    public void aggregateCondaGroupRepoData(Repository groupRepository) {
+        if (!groupRepository.isGroupRepository()) {
+            throw new IllegalArgumentException("The repository is not a group repository");
+        }
+        for (String id: groupRepository.getGroupRepositories()) {
+            Repository subRepository = configurationManager.getRepository(id);
+            if (subRepository == null) {
+                continue;
+            }
+            aggregateCondaGroupRepoData(subRepository, groupRepository);
         }
     }
 }

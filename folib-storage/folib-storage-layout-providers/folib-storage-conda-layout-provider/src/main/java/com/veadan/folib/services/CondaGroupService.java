@@ -11,4 +11,6 @@ import com.veadan.folib.storage.repository.Repository;
 
 public interface CondaGroupService {
     public void aggregateCondaGroupRepoData(Repository groupRepository, Repository sonRepository);
+
+    public void aggregateCondaGroupRepoData(Repository groupRepository);
 }

@@ -44,6 +44,7 @@ import com.veadan.folib.forms.common.StorageTreeForm;
 import com.veadan.folib.forms.configuration.*;
 import com.veadan.folib.layout.providers.CargoLayoutProvider;
 import com.veadan.folib.providers.io.RepositoryPath;
+import com.veadan.folib.providers.layout.CondaLayoutProvider;
 import com.veadan.folib.providers.layout.LayoutProvider;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import com.veadan.folib.providers.layout.RpmLayoutProvider;
@@ -985,7 +986,8 @@ public class StoragesConfigurationController
                 LayoutProvider layoutProvider = null;
                 if (Objects.isNull(existRepository) ||
                         repositoryDto.getLayout().equals(CargoLayoutProvider.ALIAS) ||
-                        repositoryDto.getLayout().equals(RpmLayoutProvider.ALIAS)) {
+                        repositoryDto.getLayout().equals(RpmLayoutProvider.ALIAS) ||
+                        repositoryDto.getLayout().equals(CondaLayoutProvider.ALIAS)) {
 
                     // 空值检查
                     if (repositoryDto.getLayout() == null) {
@@ -1003,7 +1005,8 @@ public class StoragesConfigurationController
                     if (layoutProvider != null) {
                         if (!RepositoryTypeEnum.GROUP.getType().equals(repository.getType()) ||
                                 repositoryDto.getLayout().equals(CargoLayoutProvider.ALIAS) ||
-                                repositoryDto.getLayout().equals(RpmLayoutProvider.ALIAS)) {
+                                repositoryDto.getLayout().equals(RpmLayoutProvider.ALIAS) ||
+                                repositoryDto.getLayout().equals(CondaLayoutProvider.ALIAS)) {
                             layoutProvider.initData(storageId, repositoryId);
                         }
                     }
