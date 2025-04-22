@@ -9,6 +9,7 @@ import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.event.CondaRepodataEvent;
 import com.veadan.folib.event.index.IndexEventListenerRegistry;
 import com.veadan.folib.event.index.IndexTypeEnum;
+import com.veadan.folib.index.cache.CondaIndexCache;
 import com.veadan.folib.index.indexer.CondaMetadataExtractor;
 import com.veadan.folib.index.indexer.CondaMetadataIndexer;
 import com.veadan.folib.index.model.RepoData;
@@ -50,8 +51,6 @@ import java.util.concurrent.TimeUnit;
 public class CondaRepoDataServiceImpl implements CondaRepoDataService {
     private final CondaMetadataIndexer condaMetadataIndexer;
 
-    private final HazelcastInstance hazelcastInstance;
-
     private final DistributedLockComponent distributedLockComponent;
 
     private final ArtifactResolutionService artifactResolutionService;
@@ -60,17 +59,19 @@ public class CondaRepoDataServiceImpl implements CondaRepoDataService {
 
     private final ConfigurationManager configurationManager;
 
+    private final CondaIndexCache condaIndexCache;
+
     private final String REPODATA = "repodata.json";
     private final String CURRENT_REPODATA = "current_repodata.json";
 
     @Autowired
-    public CondaRepoDataServiceImpl(CondaMetadataIndexer condaMetadataIndexer, HazelcastInstance hazelcastInstance, DistributedLockComponent distributedLockComponent, ArtifactResolutionService artifactResolutionService, RepositoryPathResolver repositoryPathResolver, ConfigurationManager configurationManager) {
+    public CondaRepoDataServiceImpl(CondaMetadataIndexer condaMetadataIndexer, DistributedLockComponent distributedLockComponent, ArtifactResolutionService artifactResolutionService, RepositoryPathResolver repositoryPathResolver, ConfigurationManager configurationManager, CondaIndexCache condaIndexCache) {
         this.condaMetadataIndexer = condaMetadataIndexer;
-        this.hazelcastInstance = hazelcastInstance;
         this.distributedLockComponent = distributedLockComponent;
         this.artifactResolutionService = artifactResolutionService;
         this.repositoryPathResolver = repositoryPathResolver;
         this.configurationManager = configurationManager;
+        this.condaIndexCache = condaIndexCache;
     }
 
 
@@ -205,7 +206,7 @@ public class CondaRepoDataServiceImpl implements CondaRepoDataService {
             }
             Files.writeString(path, repoData.toJsonPretty());
             // 更新缓存, 映射到当前时间戳
-            hazelcastInstance.getMap("condaRepoData").put(repoDataPath.toString(), new Date());
+            condaIndexCache.put(repoDataPath.toString());
         } catch (IOException e) {
             throw new RuntimeException("Failed to save RepoData to path: " + repoDataPath, e);
         }
@@ -273,15 +274,9 @@ public class CondaRepoDataServiceImpl implements CondaRepoDataService {
 
         // 2. 合并索引
         try {
-            RepositoryPath repoDataPath = repositoryPathResolver.resolve(repository, platformId + "/" + REPODATA);
             RepoData groupRepoData = condaMetadataIndexer.aggregateRepoData(repoDataList);
-            Path path = Path.of(repoDataPath.toString());
-            if (!Files.exists(path.getParent()))       {
-                Files.createDirectories(path.getParent());
-            }
-            Files.writeString(path, groupRepoData.toJsonPretty());
+            saveRepoData(groupRepoData, repository, platformId, REPODATA);
             return groupRepoData;
-
         } catch (Exception e) {
             throw new RuntimeException("Failed to aggregate conda group platform repo data", e);
         }

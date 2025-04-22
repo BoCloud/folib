@@ -2,6 +2,7 @@ package com.veadan.folib.providers.layout;
 
 import com.veadan.folib.artifact.coordinates.CondaArtifactCoordinates;
 import com.veadan.folib.configuration.ConfigurationManager;
+import com.veadan.folib.index.cache.CondaIndexCache;
 import com.veadan.folib.providers.io.RepositoryFileAttributeType;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -47,6 +48,9 @@ public class CondaLayoutProvider extends AbstractLayoutProvider<CondaArtifactCoo
     @Inject
     private CondaRepoDataService condaRepoDataService;
 
+    @Inject
+    private CondaIndexCache condaIndexCache;
+
     @PostConstruct
     public void register() {
         logger.info("Registered layout provider '{}' with alias '{}'.", getClass().getCanonicalName(), ALIAS);
@@ -91,6 +95,9 @@ public class CondaLayoutProvider extends AbstractLayoutProvider<CondaArtifactCoo
                                     (!RepositoryTypeEnum.HOSTED.getType().equals(repositoryPath.getRepository().getType()) && isIndex(repositoryPath)) &&
                                             !RepositoryFiles.wasModifiedAfter(repositoryPath, halfAnHourAgo);
 
+                            if (refreshContentValue) {
+                                condaIndexCache.reset(repositoryPath.toString());
+                            }
                             result.put(attributeType, refreshContentValue);
                         }
                     } catch (Exception e) {

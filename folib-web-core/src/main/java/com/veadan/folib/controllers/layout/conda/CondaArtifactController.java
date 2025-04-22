@@ -6,6 +6,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.veadan.folib.artifact.coordinates.CondaArtifactCoordinates;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.event.CondaRepodataEvent;
+import com.veadan.folib.index.cache.CondaIndexCache;
 import com.veadan.folib.index.indexer.CondaMetadataExtractor;
 import com.veadan.folib.index.model.Index;
 import com.veadan.folib.index.model.RepoData;
@@ -84,7 +85,7 @@ public class CondaArtifactController extends BaseArtifactController {
 
 
     @Inject
-    private HazelcastInstance hazelcastInstance;
+    private CondaIndexCache condaIndexCache;
 
 
     @ApiOperation(value = "Upload conda artifact")
@@ -189,23 +190,21 @@ public class CondaArtifactController extends BaseArtifactController {
         }
 
         RepositoryPath repoDataPath = artifactResolutionService.resolvePath(storageId, repositoryId, platformId + "/" + targetName);
-        Map<String, Date> repoDataMap = hazelcastInstance.getMap("condaRepoData");
-
         if (repoDataPath == null) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
 
         // 2. NotModified检查
-        if (checkNotModified(ifModifiedSince, repoDataPath.toString())) {
+        if (condaIndexCache.isNotModified(repoDataPath.toString(), ifModifiedSince)) {
             response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
             response.setHeader("Last-Modified", String.valueOf(ifModifiedSince));
             return;
         }
 
         provideArtifactDownloadResponse(httpRequest, response, httpHeaders, repoDataPath);
-        if (!repoDataMap.containsKey(repoDataPath.toString())) {
-            repoDataMap.put(repoDataPath.toString(), new Date());
+        if (!condaIndexCache.containsKey(repoDataPath.toString())) {
+            condaIndexCache.put(repoDataPath.toString());
         }
 
     }
@@ -284,16 +283,5 @@ public class CondaArtifactController extends BaseArtifactController {
         try (InputStream is = new FileInputStream(artifactTempFile)) {
             artifactManagementService.validateAndStore(artifactPath, is);
         }
-    }
-
-    private boolean checkNotModified(Date ifModifiedSince, String artifactPath) {
-        if (ifModifiedSince == null) {
-            return false;
-        }
-        if (hazelcastInstance.getMap("condaRepoData").containsKey(artifactPath)) {
-            Date lastModified = (Date) hazelcastInstance.getMap("condaRepoData").get(artifactPath);
-            return ifModifiedSince.getTime() / 1000 >= lastModified.getTime() / 1000;
-        }
-        return false;
     }
 }
