@@ -13,7 +13,6 @@ import com.google.cloud.tools.jib.api.Jib;
 import com.google.cloud.tools.jib.api.RegistryImage;
 import com.google.cloud.tools.jib.api.TarImage;
 import com.veadan.folib.artifact.MavenArtifactUtils;
-import com.veadan.folib.artifact.coordinates.CondaArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.DebianArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.PubArtifactCoordinates;
@@ -27,15 +26,10 @@ import com.veadan.folib.enums.DeltaIndexEventType;
 import com.veadan.folib.enums.NpmPacketSuffix;
 import com.veadan.folib.enums.NpmSubLayout;
 import com.veadan.folib.enums.UploadTypeEnum;
-import com.veadan.folib.event.CondaRepodataEvent;
 import com.veadan.folib.event.DebianIndexEvent;
 import com.veadan.folib.extractor.CargoIndex;
 import com.veadan.folib.extractor.CargoMetadataExtractor;
 import com.veadan.folib.extractor.CargoMetadataIndexer;
-import com.veadan.folib.index.indexer.CondaMetadataExtractor;
-import com.veadan.folib.index.model.Index;
-import com.veadan.folib.index.model.RepoDataEventKind;
-import com.veadan.folib.index.model.RepoDataPackage;
 import com.veadan.folib.indexer.DebianIncrementalIndexer;
 import com.veadan.folib.indexer.DebianReleaseMetadataIndexer;
 import com.veadan.folib.layout.providers.CargoLayoutProvider;
@@ -44,11 +38,21 @@ import com.veadan.folib.model.CargoMetadata;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
-import com.veadan.folib.providers.layout.*;
+import com.veadan.folib.providers.layout.DebianLayoutProvider;
+import com.veadan.folib.providers.layout.DockerLayoutProvider;
+import com.veadan.folib.providers.layout.LayoutProvider;
+import com.veadan.folib.providers.layout.LayoutProviderRegistry;
+import com.veadan.folib.providers.layout.Maven2LayoutProvider;
+import com.veadan.folib.providers.layout.NpmLayoutProvider;
+import com.veadan.folib.providers.layout.PubLayoutProvider;
+import com.veadan.folib.providers.layout.RpmLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repository.MavenRepositoryFeatures;
 import com.veadan.folib.scanner.common.util.SpringContextUtil;
-import com.veadan.folib.services.*;
+import com.veadan.folib.services.ArtifactManagementService;
+import com.veadan.folib.services.ArtifactMetadataService;
+import com.veadan.folib.services.DictService;
+import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.services.impl.FileStreamMultipartFile;
 import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
@@ -69,11 +73,7 @@ import org.apache.maven.artifact.repository.metadata.Snapshot;
 import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.apache.maven.index.artifact.Gav;
 import org.apache.maven.model.Model;
-import org.apache.maven.model.Repository;
 import org.mockito.internal.util.collections.Sets;
-import org.opencypher.v9_0.expressions.functions.Exp;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
@@ -292,8 +292,6 @@ public class ArtifactUploadTask implements Callable<String> {
                 handlerCargoLayoutUpload(this.storageId, this.repositoryId, this.file);
             } else if (DebianLayoutProvider.ALIAS.equals(layout)) {
                 handlerDebianLayoutUpload(this.storageId, this.repositoryId, this.file, this.metaData, this.fileRelativePath);
-            } else if (CondaLayoutProvider.ALIAS.equals(layout)) {
-                handlerCondaLayoutUpload(this.storageId, this.repositoryId, this.file);
 
             } else {
                 promotionUtil.setMetaData(repositoryPath, metaData);
@@ -1035,67 +1033,6 @@ public class ArtifactUploadTask implements Callable<String> {
             throw new RuntimeException("Failed to write file to path: " + path, e);
         }
     }
-    private void handlerCondaLayoutUpload(final String storageId, final String repositoryId,
-                                          final MultipartFile multipartFile) {
-        CondaArtifactService condaArtifactService = SpringContextUtil.getBean(CondaArtifactService.class);
-        CondaRepoDataService condaRepoDataService = SpringContextUtil.getBean(CondaRepoDataService.class);
-        File parentTempFile = null;
-        String fileName = multipartFile.getOriginalFilename();
-        if (!fileName.endsWith(".tar.bz2") && !fileName.endsWith(".conda")) {
-            throw new RuntimeException("Only the .tar.bz2 and .conda suffix is supported");
-        }
-        try {
-            // 1. 存储到临时目录
-            parentTempFile = new File(tempPath + File.separator + UUID.randomUUID() + File.separator);
-            File artifactTempFile = new File(parentTempFile.getAbsolutePath() + File.separator + fileName);
-            Path artifactTempPath = Path.of(artifactTempFile.getAbsolutePath());
-            InputStream is = file.getInputStream();
-            FileUtil.writeFromStream(is, artifactTempFile);
-
-            // 2. 提取元数据
-            Index index = condaArtifactService.extract(artifactTempPath.getParent().toString(), fileName);
-            if (index == null) {
-                throw new RuntimeException("Failed to extract metadata");
-            }
-
-            // 3. 获取platformId
-            String platformId = Optional.ofNullable(index.getSubdir()).orElse("noarch");
-
-            // 4. 构建conda路径
-            RepositoryPath artifactPath = repositoryPathResolver.resolve(storageId, repositoryId,
-                    platformId + "/" + fileName);
-
-            // 5. 检查文件是否存在
-            if (condaArtifactService.checkArtifactExist(artifactPath)) {
-                return;
-            }
-
-            // 6. 存储文件
-            try (InputStream artifactInputStream = new FileInputStream(artifactTempFile)) {
-                artifactManagementService.validateAndStore(artifactPath, artifactInputStream);
-            } catch (Exception e) {
-                log.error("store artifact：{}，error：{}", artifactPath.toAbsolutePath(), ExceptionUtils.getStackTrace(e));
-                throw new RuntimeException(e.getMessage());
-            }
-
-            // 7. 更新索引
-            RepoDataPackage repoDataPackage = condaArtifactService.getRepoDataPackage(artifactPath);
-            CondaRepodataEvent event = new CondaRepodataEvent(RepoDataEventKind.ADD, artifactPath.getRepository(), platformId,
-                    fileName,
-                    repoDataPackage);
-            condaRepoDataService.sendRepoDataEvent(event);
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        } finally {
-            // 9. 安全删除临时文件
-            if (Objects.nonNull(parentTempFile)) {
-                FileUtil.del(parentTempFile);
-            }
-        }
-
-    }
-
 
 
 }

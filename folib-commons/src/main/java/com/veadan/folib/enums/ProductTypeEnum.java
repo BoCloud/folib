@@ -97,11 +97,7 @@ public enum ProductTypeEnum {
     /**
      * Cargo
      */
-    Cargo(22, "cargo", "cargo", "cargo", "CargoArtifactCoordinates"),
-    /**
-     * Conda
-     */
-    Conda(23, "conda", "conda", "conda", "CondaArtifactCoordinates");
+    Cargo(22, "cargo", "cargo", "cargo", "CargoArtifactCoordinates");
 
     private Integer value;
     private String name;

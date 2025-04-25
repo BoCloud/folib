@@ -7,9 +7,7 @@ public enum IndexTypeEnum {
 
     RPM("rpm"),
 
-    debian("debian"),
-
-    CONDA("conda");
+    debian("debian");
 
     private String type;
 

@@ -141,7 +141,7 @@ const typeList = [
         src:'images/folib/conda.svg',
         type:'conda',
         name:'Conda',
-        disabled:false,
+        disabled:true,
     },
     {
         src:'images/folib/opkg.svg',

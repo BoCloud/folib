@@ -49,7 +49,6 @@
         <module>folib-storage-pub-layout-provider</module>
         <module>folib-storage-debian-layout-provider</module>
         <module>folib-storage-cargo-layout-provider</module>
-        <module>folib-storage-conda-layout-provider</module>
     </modules>
 
     <dependencies>

@@ -839,9 +839,7 @@
                   getValueFromEvent: normFile,
                 },
               ]" name="files" :multiple="uploadType === 1 ? true : false" :beforeUpload="beforeUpload" list-type="text" @change="onFileChange"
-                :accept="uploadType === 1 ? (folibRepository.layout === 'Raw' ? '*' : folibRepository.layout ===
-                'npm' ? '.tgz' : folibRepository.layout === 'pub' ? '.gz' : folibRepository.layout === 'debian' ?
-                '.deb' : folibRepository.layout === 'conda'? '.conda,.tar.bz2':'.jar,.war,.pom') : ('.zip')">
+                :accept="uploadType === 1 ? (folibRepository.layout === 'Raw' ? '*' : folibRepository.layout === 'npm' ? '.tgz' : folibRepository.layout === 'pub' ? '.gz' : folibRepository.layout === 'debian' ? '.deb' :'.jar,.war,.pom') : ('.zip')">
                 <a-button>
                   <a-icon type="upload" />
                   {{ $t('Store.SelectFile') }}</a-button>
@@ -1373,7 +1371,7 @@ export default {
       showOperationDispatchFormModal: false,
       repositories: [],
       custom: false,
-      enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm', 'go','GitLfs', 'pub','debian','cargo', 'Docker','conda'],
+      enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm', 'go','GitLfs', 'pub','debian','cargo', 'Docker'],
       targetDirectoryExcludeLayout: ['Maven 2', 'npm', 'pub'],
       storageAdmin: '',
       permissions: [],
