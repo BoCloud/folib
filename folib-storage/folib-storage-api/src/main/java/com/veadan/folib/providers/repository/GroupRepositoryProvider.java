@@ -29,6 +29,7 @@ import org.apache.maven.index.artifact.M2ArtifactRecognizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
@@ -119,6 +120,12 @@ public class GroupRepositoryProvider
             }
         }
         if(ProductTypeEnum.Rpm.getFoLibraryName().equals(repositoryPath.getRepository().getLayout()) && (repositoryPath.toString().endsWith(".xml") || repositoryPath.toString().endsWith(".xml.gz"))){
+            RepositoryPath result = resolvePathDirectlyFromGroupPathIfPossible(repositoryPath);
+            if (result != null) {
+                return result;
+            }
+        }
+        if(ProductTypeEnum.Conda.getFoLibraryName().equals(repositoryPath.getRepository().getLayout()) && (repositoryPath.toString().endsWith("repodata.json") || repositoryPath.toString().endsWith("current_repodata.json"))){
             RepositoryPath result = resolvePathDirectlyFromGroupPathIfPossible(repositoryPath);
             if (result != null) {
                 return result;

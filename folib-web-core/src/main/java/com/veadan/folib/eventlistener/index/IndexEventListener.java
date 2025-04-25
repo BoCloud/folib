@@ -10,6 +10,7 @@ import com.veadan.folib.event.index.IndexTypeEnum;
 import com.veadan.folib.event.privilege.PrivilegeEvent;
 import com.veadan.folib.metadata.indexer.RpmGroupRepoIndexer;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
+import com.veadan.folib.scanner.common.util.SpringContextUtil;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.Storage;
@@ -88,6 +89,7 @@ public class IndexEventListener {
             }
         }
     }
+
 
     /**
      * 解析并获取组仓库相关的存储和仓库ID列表

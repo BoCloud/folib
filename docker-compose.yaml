@@ -1,0 +1,33 @@
+services:
+  elasticsearch:
+    image: elasticsearch:7.13.3
+    container_name: elasticsearch
+    restart: always
+    privileged: true
+    environment:
+      cluster.name: elasticsearch
+      discovery.type: single-node
+      ES_JAVA_OPTS: "-Xms1024m -Xmx1024m"
+      xpack.security.enabled: true   
+      ELASTIC_PASSWORD: "@123456"
+    volumes:
+      - /mnt/data/elasticsearch/data:/usr/share/elasticsearch/data
+      - /mnt/data/elasticsearch/plugins:/usr/share/elasticsearch/plugins  
+    ports:
+      - 9200:9200
+      - 9300:9300
+  kibana:
+    image: dockerpull.org/kibana:7.13.3
+    container_name: kibana
+    restart: always
+    depends_on:
+      - elasticsearch
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      I18N_LOCALE: zh-CN
+      ELASTICSEARCH_USERNAME: elastic
+      ELASTICSEARCH_PASSWORD: "@123456"
+    ports:
+      - 5601:5601
+
+  

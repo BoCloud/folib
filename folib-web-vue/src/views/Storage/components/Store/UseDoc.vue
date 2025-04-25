@@ -1374,7 +1374,6 @@ go 1.20' :readonly="true">
                 ollama {{ $t('Store.GlobalConfiguration') }}
                 <p>{{ $t('Store.OllamaGlobalConfiguration') }}</p>
             </a-timeline-item>
-
             <a-timeline-item color="primary" v-if="folibRepository.type !== 'proxy'">
                 ollama {{ $t('Store.CargoDeploy') }}
                 <p>{{ $t('Store.OllamaDeployConfig') }}</p>
@@ -1399,10 +1398,50 @@ go 1.20' :readonly="true">
                 >
                 </prism-editor>
             </a-timeline-item>
-
         </a-timeline>
+      <!--conda 使用说明 -->
+      <a-timeline v-if="folibRepository.layout === 'conda'">
+        <a-timeline-item color="primary">
+          Conda {{ $t('Store.GlobalConfiguration') }}
+          <p>{{ $t('Store.CondaGlobalConfiguration') }}</p>
+          <prism-editor
+              class="my-editor height-300"
+              :value="condaConfiguration"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          >
+          </prism-editor>
+        </a-timeline-item>
 
-        <a-timeline>
+        <a-timeline-item color="primary" v-if="folibRepository.type === 'hosted'">
+          Conda {{ $t('Store.CondaDeploy') }}
+          <p>{{ $t('Store.CondaDeployConfig') }}</p>
+          <prism-editor
+              class="my-editor height-300"
+              :value="condaDeploy"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          >
+          </prism-editor>
+        </a-timeline-item>
+        <a-timeline-item color="primary">
+          Conda {{ $t('Store.CondaInstall') }}
+          <p>{{ $t('Store.CondaInstallConfig') }}</p>
+          <prism-editor
+              class="my-editor height-300"
+              :value="condaInstall"
+              :highlight="highlighterHandle"
+              :line-numbers="false"
+              :readonly="true"
+          >
+          </prism-editor>
+        </a-timeline-item>
+
+      </a-timeline>
+
+      <a-timeline>
         <a-timeline-item color="primary">
           {{ $t('Store.WarehouseAddress') }}
           <small>{{ $t('Store.WarehouseUseAddress') }}</small>
@@ -1504,7 +1543,16 @@ deb [trusted=yes]  ${this.baseUrl}storages/${this.folibRepository.storageId}/${t
       },
       ollamaInstall(){
         return `ollama pull  <MODEL>`+`\n`+`ollama run  <MODEL>`
-      }
+      },
+      condaConfiguration() {
+        return `channels:\n  - ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id}\nrepodata_use_zst: false\nrepodata_fns:\n  - repodata.json\n`
+      },
+      condaDeploy() {
+        return `curl -u '<username>:<password>' -X PUT \\\n  -F "package=@<localPackagePath>" \\\n  ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id}/conda\n`
+      },
+      condaInstall() {
+        return `conda install <packageName>\nconda install <packageName> -c ${this.baseUrl}storages/${this.folibRepository.storageId}/${this.folibRepository.id}\n`
+      },
   },
   methods: {
     highlighterHandle(code) {

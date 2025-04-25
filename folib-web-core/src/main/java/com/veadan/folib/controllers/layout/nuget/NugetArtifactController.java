@@ -61,14 +61,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
@@ -397,7 +390,7 @@ public class NugetArtifactController
      * This method is used to check storage availability.<br>
      * For example NuGet pings the root without credentials to determine if the repository is healthy. If this receives
      * a 401 response then NuGet will prompt for authentication.
-     * 
+     *
      * @return
      */
     @Override
@@ -483,7 +476,7 @@ public class NugetArtifactController
                            @ApiParam(value = "The packageId", required = true) @PathVariable(name = "packageId") String packageId,
                            @ApiParam(value = "The packageVersion", required = true) @PathVariable(name = "packageVersion") String packageVersion,
                            HttpServletResponse response,
-                           HttpServletRequest request, 
+                           HttpServletRequest request,
                            @RequestHeader HttpHeaders httpHeaders)
             throws Exception
     {
@@ -586,5 +579,8 @@ public class NugetArtifactController
 
         return sourceValue.replaceAll("['\"]", "");
     }
+
+
+
 
 }
