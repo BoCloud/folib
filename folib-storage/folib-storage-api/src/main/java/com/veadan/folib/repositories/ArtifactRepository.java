@@ -598,8 +598,8 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         }
         if (StringUtils.isNotBlank(query)) {
             List<EntityTraversal<Vertex, Vertex>> orEntityTraversalList = Lists.newArrayList();
-            orEntityTraversalList.add(__.has(Properties.ARTIFACT_NAME, Text.textContains(query)));
-            orEntityTraversalList.add(__.has(Properties.ARTIFACT_NAME, Text.textRegex(".*" + query + ".*")));
+            orEntityTraversalList.add(__.has(Properties.UUID, Text.textContains(query)));
+            orEntityTraversalList.add(__.has(Properties.UUID, Text.textRegex(".*" + query + ".*")));
             EntityTraversal[] orEntityTraversalArray = orEntityTraversalList.toArray(new EntityTraversal[orEntityTraversalList.size()]);
             entityTraversal = entityTraversal.or(orEntityTraversalArray);
         }
