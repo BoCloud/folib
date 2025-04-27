@@ -215,16 +215,64 @@
 💡 当只有一个的时候为当前使用实例，不允许删除。
 :::
 
-## Jfrog数据迁移
+## Jfrog配置数据迁移
 
 该功能支持已使用 `jforg` 制品系统的用户，通过填写Jfrog地址、用户名、密码后选择迁移内容和存储空间，进行相关数据的直接迁移至本平台。
 
 1. 从左侧导航栏选择 **【设置管理】->【高级运维】** 。
 2. 在 **【高级运维】** 页面，点击 **【Jfrog数据迁移】** 。
-3. 填写 *Jfrog* 地址、用户名、密码后选择迁移内容和存储空间。
+3. 输入JFrog平台的地址（IP地址和端口号），以及具备管理员权限的JFrog账户凭证；
+4. 选定目标存储空间以保存制品；
+5. 选择迁移方式：1-基于JFrog备份；2-基于API调用（这里选择API调用）；
+6. 选择需要迁移具体内容。 
+7. 点击 **【保存】** ，进行数据迁移。
+   :::tip
+   💡 该功能在于实现对Jfrog制品库中特定仓库信息、用户信息、用户组以及权限等数据的有选择性同步。特别指出，由于原始用户密码信息无法被检索，因此将为所有用户统一配置初始密码。
+   :::
 
 ![数据迁移](../../assets/folib/setting-management/senior-ops/setting-manage-senior-ops-migration.png)
 
 :::tip
 💡 存储空间指 *Jfrog* 同步仓库所属存储空间,可以是一个已经存在的存储空间,也可以新建一个新的存储空间，若不填默认创建一个本地目录的新存储空间。
+:::
+
+## Jfrog制品数据迁移
+当使用高级运维-jfrog配置数据迁移结束后，会在下方的制品迁移多出一条迁移任务
+
+操作步骤如下：
+1. 点击 ***迁移*** 按钮后，将进入待迁移列表，所有jfrog同步中的本地库将被视为本次迁移的待迁移仓库；
+2. 在列表中选择需要迁移的仓库后，即可开始迁移。迁移过程中，仓库会进入“迁移中”状态；
+3. 当仓库内容迁移完成后，选择“完成迁移”，该仓库将从代理库恢复为本地库，标志着迁移的正式完成。
+
+<div style="display: flex; gap: 10px;">
+  <!-- 右侧上下两张图片 -->
+  <div style="width: 40%; display: flex; flex-direction: column;">
+    <img src="../../assets/folib/setting-management/senior-ops/add_jfrog_task.png" style="width: 100%; height: 50%;"/>
+    <img src="../../assets/folib/setting-management/senior-ops/jfrog_task_pipeline.png" style="width: 100%; height: 50%;"/>
+  </div>
+  <!-- 左侧单张图片 -->
+  <div style="width: 60%;">
+    <img src="../../assets/folib/setting-management/senior-ops/build_jfrog_task.png" style="width: 100%;"/>
+  </div>
+</div>
+
+## Jfrog制品增量迁移
+当制品数据迁移完成后，为防止JFrog制品库数据还有新增或修改删除等情况，增量同步目前可以通过jfrog的webhook功能实现，确保你的 JFrog 实例版本支持 Webhook（Artifactory 7.x 及以上版本）。
+操作步骤如下：
+1. 在JFrog 管理控制台为要同步的仓库配置webhook
+2. URL中输入folib的webhook监听api http://IP:端口/artifactory/webhook
+3. 选择需同步的仓库及事件
+4. 添加自定义header
+- X-jfrog-event-auth: 访问令牌可在folib访问令牌-添加令牌处添加
+- X-storage: 被同步至folib的存储空间格式和 “存储空间” 例 public-project
+  - X-repository: 被同步至folib的仓库格式和 “存储空间:仓库名称” 例 public-project:maven-local
+注意，webhook除了上述手动添加的方式以外，您还可通过添加迁移任务是进行自动添加。
+
+<div style="display: flex; justify-content: space-between;">
+  <img src="../../assets/folib/setting-management/senior-ops/add-webhook.png"  style="width: 40%;" />
+  <img src="../../assets/folib/setting-management/senior-ops/jf_webhook.png"  style="width: 60%;" />
+</div>
+
+:::tip
+当使用手动添加迁移任务是，为避免影响源仓库的数据，可以通过配置同步线程数来控制迁移任务的执行效率，包括单一实例允许同时同步的最大仓库数和每个仓库的线程数（即单实例总同步线程数 = 并发仓库数 × 单仓库线程数）。
 :::
