@@ -276,6 +276,10 @@ module.exports = {
             {
               title: 'Cocoapods',
               link: '/docs/tools/cocoapods'
+            },
+            {
+              title: 'Conda',
+              link: '/docs/tools/Conda'
             }
           ]
         },
