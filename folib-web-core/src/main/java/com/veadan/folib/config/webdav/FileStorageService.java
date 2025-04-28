@@ -27,5 +27,7 @@ public interface FileStorageService {
     Date getModifiedDate(String path);
     void createDirectory(String path) throws IOException;
     void saveFileContentFromStream(String path, InputStream inputStream, Long length) throws IOException;
+    InputStream getFileInputStream(String path) throws IOException;
+    void saveFileInputStream(String path,InputStream inputStream);
 
 }

@@ -8,14 +8,15 @@ import io.milton.http.Request;
 import io.milton.http.exceptions.BadRequestException;
 import io.milton.http.exceptions.ConflictException;
 import io.milton.http.exceptions.NotAuthorizedException;
-import io.milton.http.exceptions.NotFoundException;
 import io.milton.resource.CollectionResource;
 import io.milton.resource.FileResource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Date;
 import java.util.Map;
@@ -34,21 +35,36 @@ public class FolibFileResource implements FileResource {
         this.fileStorageService = fileStorageService;
     }
 
-    protected String getPath(){
+    protected String getPath() {
         return this.path;
     }
 
     @Override
-    public void sendContent(OutputStream outputStream, Range range, Map<String, String> params, String contentType) throws IOException, NotAuthorizedException, BadRequestException, NotFoundException {
-        byte[] fileContent = this.fileStorageService.getFileContent(this.path);
-        if (range != null) {
-            int start = range.getStart().intValue();
-            int finish =  range.getFinish().intValue();
-            int length = finish - start;
-            outputStream.write(fileContent, start, length);
-        } else {
-            outputStream.write(fileContent);
+    public void sendContent(OutputStream outputStream, Range range, Map<String, String> params, String contentType) throws IOException {
+        try (InputStream fileInputStream = this.fileStorageService.getFileInputStream(this.path)) {
+            if (range != null) {
+                int start = range.getStart().intValue();
+                int finish = range.getFinish().intValue();
+                int length = finish - start + 1;
+                // 跳过流中的起始字节
+                long skipped = fileInputStream.skip(start);
+                if (skipped != start) {
+                    throw new IOException("Unable to skip to the requested range start: " + start);
+                }
+                // 传输指定长度的字节
+                byte[] buffer = new byte[8192]; // 8KB 缓冲区
+                long remaining = length;
+                int bytesRead;
+                while (remaining > 0 && (bytesRead = fileInputStream.read(buffer, 0, (int) Math.min(buffer.length, remaining))) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                    remaining -= bytesRead;
+                }
+            } else {
+                IOUtils.copy(fileInputStream, outputStream);
+            }
+
         }
+
     }
 
     @Override

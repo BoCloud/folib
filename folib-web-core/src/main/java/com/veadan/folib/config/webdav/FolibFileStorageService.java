@@ -83,6 +83,18 @@ public class FolibFileStorageService implements FileStorageService {
     }
 
     @Override
+    public InputStream getFileInputStream(String path) throws IOException {
+        log.info("path:{}", path);
+        RepositoryPath repositoryPath = getRepositoryPath(path);
+        if (repositoryPath == null) {
+            return null;
+        }
+        artifactComponent.afterRead(repositoryPath);
+        return Files.newInputStream(repositoryPath);
+    }
+
+
+    @Override
     public void saveFileContent(String path, byte[] content) throws IOException {
         RepositoryPath repositoryPath = getRepositoryPath(path);
         if (repositoryPath == null) {
@@ -92,6 +104,18 @@ public class FolibFileStorageService implements FileStorageService {
         String name = PathUtils.getLastPathElement(path);
         ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), new MockMultipartFile(name, content), repoPath, tempPath);
         artifactUploadTask.call();
+    }
+
+    @Override
+    public void saveFileInputStream(String path, InputStream inputStream) {
+        RepositoryPath repositoryPath = getRepositoryPath(path);
+        if (repositoryPath == null) {
+            throw new IllegalArgumentException("path:" + path + " is not a valid repository path");
+        }
+        String repoPath = getRepoPath(path);
+        ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), inputStream, repoPath, tempPath);
+        artifactUploadTask.call();
+
     }
 
     @Override
@@ -304,17 +328,13 @@ public class FolibFileStorageService implements FileStorageService {
 
     }
 
-
+    @Override
     public void saveFileContentFromStream(String path, InputStream inputStream, Long length) throws IOException {
         if (exists(path)) {
             throw new IllegalArgumentException("File or directory already exists: " + path);
         }
-        byte[] content = length != null ?
-                inputStream.readNBytes(length.intValue()) :
-                inputStream.readAllBytes();
-        saveFileContent(path, content);
+        saveFileInputStream(path, inputStream);
     }
-
 
 }
 
