@@ -288,7 +288,23 @@ module.exports = {
             {
               title: 'Huggingface',
               link: '/docs/tools/huggingface'
-            }
+            },
+            {
+              title: 'Ohpm',
+              link: '/docs/tools/ohpm'
+            },
+            {
+              title: 'Go',
+              link: '/docs/tools/go'
+            },
+            {
+              title: 'Pub',
+              link: '/docs/tools/pub'
+            },
+            {
+              title: 'Debian',
+              link: '/docs/tools/debian'
+            },
           ]
         },
         // 命令工具说明文档

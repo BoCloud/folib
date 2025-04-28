@@ -8,7 +8,7 @@
 1. 配置ETag超时时间和端点
 ```bash 
 export HF_HUB_ETAG_TIMEOUT=1500000000 
-export HF_ENDPOINT=https://public.bocloud.com.cn/artifactory/api/huggingfaceml/hunggingface 
+export HF_ENDPOINT=https://127.10.10.2/artifactory/api/huggingfaceml/hunggingface 
 ``` 
 - `HF_HUB_ETAG_TIMEOUT`：对于0.19.0及以上版本的Hugging Face客户端，该参数允许使用管道和标记符解析模型。
 - `HF_ENDPOINT`：指定Hugging Face仓库的端点地址。
@@ -60,7 +60,7 @@ snapshot_download(
 ## 五、仓库地址
 仓库使用地址为：
 ``` 
-https://public.bocloud.com.cn/artifactory/api/huggingfaceml/hunggingface 
+https://127.10.10.2/artifactory/api/huggingfaceml/hunggingface 
 ``` 
 您可以通过该地址访问和管理Hugging Face仓库中的模型。
 
