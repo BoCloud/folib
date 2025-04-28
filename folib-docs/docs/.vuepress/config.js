@@ -280,6 +280,14 @@ module.exports = {
             {
               title: 'Conda',
               link: '/docs/tools/Conda'
+            },
+            {
+              title: 'Cargo',
+              link: '/docs/tools/Cargo'
+            },
+            {
+              title: 'Huggingface',
+              link: '/docs/tools/huggingface'
             }
           ]
         },
