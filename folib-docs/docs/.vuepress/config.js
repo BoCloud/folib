@@ -254,12 +254,24 @@ module.exports = {
               link: '/docs/tools/yarn-npm'
             },
             {
+              title: 'Ohpm',
+              link: '/docs/tools/ohpm'
+            },
+            {
+              title: 'Go',
+              link: '/docs/tools/go'
+            },
+            {
               title: 'Nuget/Mono',
               link: '/docs/tools/Nuget-Mono'
             },
             {
               title: 'Pypi',
               link: '/docs/tools/Pypi'
+            },
+            {
+              title: 'Conda',
+              link: '/docs/tools/Conda'
             },
             {
               title: 'SBT',
@@ -270,6 +282,10 @@ module.exports = {
               link: '/docs/tools/Yum-Rpm'
             },
             {
+              title: 'Debian',
+              link: '/docs/tools/debian'
+            },
+            {
               title: 'Conan/C&C++',
               link: '/docs/tools/conan-c'
             },
@@ -277,10 +293,7 @@ module.exports = {
               title: 'Cocoapods',
               link: '/docs/tools/cocoapods'
             },
-            {
-              title: 'Conda',
-              link: '/docs/tools/Conda'
-            },
+
             {
               title: 'Cargo',
               link: '/docs/tools/Cargo'
@@ -290,21 +303,22 @@ module.exports = {
               link: '/docs/tools/huggingface'
             },
             {
-              title: 'Ohpm',
-              link: '/docs/tools/ohpm'
-            },
-            {
-              title: 'Go',
-              link: '/docs/tools/go'
+              title: 'Ollama',
+              link: '/docs/tools/ollama'
             },
             {
               title: 'Pub',
               link: '/docs/tools/pub'
             },
             {
-              title: 'Debian',
-              link: '/docs/tools/debian'
+              title: 'Helm',
+              link: '/docs/tools/helm'
             },
+            {
+              title: 'GitLFS',
+              link: '/docs/tools/gitlfs'
+            },
+
           ]
         },
         // 命令工具说明文档
