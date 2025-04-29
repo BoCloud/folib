@@ -29,6 +29,7 @@ conda --version
 channels:
   - http://localhost:38080/storages/public-project/repository1 
   - http://localhost:38080/storages/public-project/repository2 
+  - http://admin:folib@v587@localhost:38080/storages/public-project/repository3 # 非匿名用户, 需替换实际参数
 repodata_use_zst: false    # 禁用zst压缩格式 
 auto_activate_base: false  # 关闭自动激活base环境 
 repodata_fns: repodata.json # 指定索引文件名称 
@@ -56,8 +57,9 @@ curl -u 'admin:folib@v587' -X PUT \
 
 2.2 包下载（客户端）
 ```bash 
-从指定仓库安装包 
+从指定仓库安装/更新包 
 conda install six --channel http://localhost:38080/storages/public-project/repository1 
+conda update six --channel http://localhost:38080/storages/public-project/repository1 
  
 添加代理仓库（推荐）
 conda config --add channels https://repo.anaconda.com/pkgs/main 
@@ -134,10 +136,6 @@ conda list
    # 错误配置示例（会导致索引失效）
    repodata_fns: current_repodata.json 
    ```
-
-4. 依赖解析策略：
-    - 尽量选择依赖少的包
-    - 推荐优先使用代理仓库
 
  
 > 提示：实际操作时请将示例中的地址、用户名、密码替换为实际生产环境参数。建议定期使用 `conda clean` 命令清理缓存。
