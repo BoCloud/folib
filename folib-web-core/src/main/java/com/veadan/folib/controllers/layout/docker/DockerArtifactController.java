@@ -217,7 +217,6 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "name", value = "制品名", required = true),
             @ApiImplicitParam(name = "digest", value = "digest", required = true)
     })
-    @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/{digest}", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/{digest}"}, method = {RequestMethod.HEAD}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity existingLayers(@RequestHeader HttpHeaders httpHeaders,
                                          HttpServletRequest request,
@@ -238,6 +237,10 @@ public class DockerArtifactController extends BaseArtifactController {
             response.addHeader(DockerHeaderEnum.DOCKER_CONTENT_DIGEST.key(), digest);
             String imagePath = resolveImagePath(name, extractPath);
             String artifactPath = String.format("blobs/%s", digest);
+            if (!validatePathPrivileges(storageId, repositoryId, Collections.singletonList(imagePath), Privileges.ARTIFACTS_RESOLVE.getAuthority())) {
+                setTokenUrl(request, response);
+                return new ResponseEntity<>(unAuth(), HttpStatus.UNAUTHORIZED);
+            }
             RepositoryPath repositoryPath = artifactResolutionService.resolvePath(storageId, repositoryId, artifactPath);
             boolean exists = artifactRealExists(repositoryPath);
             logger.info("StorageId [{}] repositoryId [{}] name [{}] extractPath [{}] imagePath [{}] artifactPath [{}] exists [{}]", storageId, repositoryId, name, extractPath, imagePath, artifactPath, exists);
