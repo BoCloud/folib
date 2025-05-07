@@ -3,7 +3,7 @@
     <changeSet id="folib-1.0-artifact-sync-record-update" author="folib">
         <sqlFile  path="classpath:db/sql/folib-artifact-sync-slave-record-update.sql" stripComments="true"/>
     </changeSet>
-    <changeSet id="folib-1.0-artifact-sync-record-update2" author="folib">
+    <changeSet id="folib-1.0-artifact-sync-record-update2" author="folib" runOnChange="true">
         <sqlFile  path="classpath:db/sql/folib-artifact-sync-slave-record-update2.sql" stripComments="true"/>
     </changeSet>
 </databaseChangeLog>
