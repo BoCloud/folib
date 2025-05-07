@@ -2,7 +2,7 @@
 pipeline {
     agent { label 'master' }
     parameters {
-        string(name: 'repoUrl', defaultValue: 'http://223.112.233.194:8888/folib/folib-server.git', description: '')
+        string(name: 'repoUrl', defaultValue: 'http://192.168.1.25:8888/folib/folib-server.git', description: '')
         string(name: 'repoCred', defaultValue: 'folib', description: '')
         choice(name: 'repoBranch', choices: ['artifactory', 'dev', 'master'], description: '选择代码分支')
         string(name: 'dockerUrl', defaultValue: 'https://public.folib.com', description: 'Hub地址')
