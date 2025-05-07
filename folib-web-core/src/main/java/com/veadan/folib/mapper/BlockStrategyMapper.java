@@ -1,6 +1,6 @@
 package com.veadan.folib.mapper;
 
-import com.veadan.folib.common.base.CommonMapper;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.veadan.folib.domain.blockstrategy.BlockStrategyRecord;
 import com.veadan.folib.entity.BlockStrategy;
 import com.veadan.folib.forms.blockstrategy.BlockStrategyForm;
@@ -13,7 +13,7 @@ import java.util.List;
  * @author leipenghui
  */
 @Component
-public interface BlockStrategyMapper extends CommonMapper<BlockStrategy> {
+public interface BlockStrategyMapper extends BaseMapper<BlockStrategy> {
 
     /**
      * 查询阻断策略列表

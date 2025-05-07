@@ -10,14 +10,15 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -33,7 +34,6 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
  * @author
  * @author veadan
  * @author @author veadan
- * @see {@linkplain http://docs.spring.io/spring/docs/current/spring-framework-reference/html/mvc.html#mvc-config-path-matching}
  */
 @RestController
 @LayoutRequestMapping(MavenArtifactCoordinates.LAYOUT_NAME)

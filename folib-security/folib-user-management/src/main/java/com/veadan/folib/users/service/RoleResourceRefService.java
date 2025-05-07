@@ -25,14 +25,14 @@ public interface RoleResourceRefService{
      * @return 实例对象
      */
     RoleResourceRef queryById(Long id);
-    /** 
-     * 分页查询
-     *
-     * @param roleResourceRef 筛选条件
-     * @param pageRequest 分页对象
-     * @return 查询结果
-     */
-    Page<RoleResourceRef> paginQuery(RoleResourceRef roleResourceRef, PageRequest pageRequest);
+    ///**
+    // * 分页查询
+    // *
+    // * @param roleResourceRef 筛选条件
+    // * @param pageRequest 分页对象
+    // * @return 查询结果
+    // */
+    //Page<RoleResourceRef> paginQuery(RoleResourceRef roleResourceRef, PageRequest pageRequest);
     /** 
      * 新增数据
      *

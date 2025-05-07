@@ -7,6 +7,7 @@ import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.GenericArtifactCoordinates;
 import com.veadan.folib.gremlin.adapters.ArtifactCoordinatesHierarchyAdapter;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -17,6 +18,7 @@ public class ArtifactCoordinatesRepository extends GremlinVertexRepository<Gener
 
     @Inject
     ArtifactCoordinatesHierarchyAdapter artifactCoordinatesAdapter;
+    @Lazy
     @Inject
     ArtifactCoordinatesQueries queries;
 

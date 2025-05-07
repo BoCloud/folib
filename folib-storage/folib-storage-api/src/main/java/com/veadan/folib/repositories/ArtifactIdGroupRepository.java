@@ -312,4 +312,5 @@ public class ArtifactIdGroupRepository extends GremlinVertexRepository<ArtifactI
             t.has(Properties.UUID, Text.textRegex(regex));
         }
     }
+
 }

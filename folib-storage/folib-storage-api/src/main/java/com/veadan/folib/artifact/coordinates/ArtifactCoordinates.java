@@ -1,8 +1,9 @@
 package com.veadan.folib.artifact.coordinates;
 
+import jakarta.xml.bind.annotation.XmlRootElement;
+
 import java.net.URI;
 
-import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  * @author Veadan

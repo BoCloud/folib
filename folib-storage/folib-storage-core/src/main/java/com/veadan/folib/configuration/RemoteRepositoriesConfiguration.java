@@ -4,12 +4,12 @@ import com.veadan.folib.client.MutableRemoteRepositoryRetryArtifactDownloadConfi
 import com.veadan.folib.client.RemoteRepositoryRetryArtifactDownloadConfiguration;
 
 import javax.annotation.concurrent.Immutable;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
 
 /**
  * @author veadan

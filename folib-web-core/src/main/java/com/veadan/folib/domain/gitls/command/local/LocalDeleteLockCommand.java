@@ -24,7 +24,7 @@ public class LocalDeleteLockCommand  {
 
     public  GitLfsLock.Root lfsDeleteLock(String storageId, String repositoryId, GitLfsDeleteLock deleteLockRequest, String lockId)  {
         GitLfsLockEntity entity = new GitLfsLockEntity()
-                .setId(storageId)
+                .setStorageId(storageId)
                 .setRepositoryId(repositoryId).setId(lockId).setRef(deleteLockRequest.getRef().getName());
         entity  =  gitLfsLocalLockService.deleteLock(entity
                 .setId(lockId)

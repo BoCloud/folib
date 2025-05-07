@@ -19,28 +19,9 @@ scriptEngines:
           - org.opencypher.gremlin.traversal.CustomPredicate#*
           - org.opencypher.gremlin.traversal.CustomFunctions#*
 serializers:
-#  - className: org.apache.tinkerpop.gremlin.driver.ser.GryoMessageSerializerV3d0
-#    config:
-#      ioRegistries:
-#        - org.janusgraph.graphdb.tinkerpop.JanusGraphIoRegistry
-#  - className: org.apache.tinkerpop.gremlin.driver.ser.GryoMessageSerializerV3d0
-#    config:
-#      serializeResultToString: true
-#  - className: org.apache.tinkerpop.gremlin.driver.ser.GraphSONMessageSerializerV3d0
-#    config:
-#      ioRegistries:
-#        - org.janusgraph.graphdb.tinkerpop.JanusGraphIoRegistry
-   - className: org.apache.tinkerpop.gremlin.driver.ser.GraphBinaryMessageSerializerV1
-     config:
-       ioRegistries:
-         - org.janusgraph.graphdb.tinkerpop.JanusGraphIoRegistry
-   - className: org.apache.tinkerpop.gremlin.driver.ser.GraphBinaryMessageSerializerV1
-     config:
-       serializeResultToString: true
-   - className: org.apache.tinkerpop.gremlin.driver.ser.GraphSONMessageSerializerV3d0
-     config:
-       ioRegistries:
-         - org.janusgraph.graphdb.tinkerpop.JanusGraphIoRegistry
+  - { className: org.apache.tinkerpop.gremlin.util.ser.GraphSONMessageSerializerV3, config: { ioRegistries: [org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerIoRegistryV3] }}            # application/json
+  - { className: org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1 }                                                                                                           # application/vnd.graphbinary-v1.0
+  - { className: org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1, config: { serializeResultToString: true }}
 processors:
   - className: org.apache.tinkerpop.gremlin.server.op.session.SessionOpProcessor
     config:

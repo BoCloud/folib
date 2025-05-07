@@ -57,7 +57,7 @@ public class RepositoryPathUtil {
                 }
             }
         }
-        while (listDir.size() != 0) {
+        while (!listDir.isEmpty()) {
             S3Path currentPath = listDir.get(0);
             listDir.remove(currentPath);
             s3Iterator = new S3Iterator(currentPath);

@@ -1,9 +1,10 @@
 package com.veadan.folib.configuration;
 
-import com.beust.jcommander.internal.Lists;
+
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.storage.StorageDto;

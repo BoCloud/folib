@@ -1,11 +1,12 @@
 package com.veadan.folib.mapper;
 
-import com.veadan.folib.common.base.CommonMapper;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.veadan.folib.dto.RoleResourceRefDTO;
 import com.veadan.folib.entity.UserGroupRef;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -15,7 +16,7 @@ import java.util.List;
  * @date : 2024-7-17
  */
 @Mapper
-public interface UserGroupRefMapper extends CommonMapper<UserGroupRef> {
+public interface UserGroupRefMapper extends BaseMapper<UserGroupRef> {
     /** 
      * 通过ID查询单条数据 
      *
@@ -30,7 +31,7 @@ public interface UserGroupRefMapper extends CommonMapper<UserGroupRef> {
      * @param pageable 分页对象
      * @return 对象列表
      */
-    List<UserGroupRef> queryAllByLimit(UserGroupRef userGroupRef, @Param("pageable") Pageable pageable);
+    IPage<UserGroupRef> queryAllByLimit(Page<UserGroupRef> pageable, @Param("entity") UserGroupRef userGroupRef);
     /** 
      * 统计总行数
      *

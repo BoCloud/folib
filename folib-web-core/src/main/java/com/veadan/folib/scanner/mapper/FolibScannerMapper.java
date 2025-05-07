@@ -1,7 +1,7 @@
 package com.veadan.folib.scanner.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.veadan.folib.scanner.common.base.BaseQuery;
-import com.veadan.folib.common.base.CommonMapper;
 import com.veadan.folib.scanner.entity.*;
 import org.apache.ibatis.annotations.Param;
 
@@ -12,7 +12,7 @@ import java.util.List;
  * @version 2022-05-31 23:12:54
  * @email xuxinping@126.com
  */
-public interface FolibScannerMapper extends CommonMapper<FolibScanner> {
+public interface FolibScannerMapper extends BaseMapper<FolibScanner> {
     //=#{enableScan} where repository=#{repository} and storage=#{storage}
     public void updateByStorage(@Param("enableScan") boolean enableScan, @Param("repository") String repository, @Param("storage") String storage);
 

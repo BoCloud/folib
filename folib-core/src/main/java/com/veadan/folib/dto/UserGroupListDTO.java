@@ -9,9 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+
 import java.io.Serializable;
 import java.util.Date;
 
@@ -30,7 +28,6 @@ public class UserGroupListDTO implements Serializable,Cloneable {
     /**
      * 主键
      */
-    @Id
     @ApiModelProperty(name = "主键", notes = "")
     private String id;
     /**

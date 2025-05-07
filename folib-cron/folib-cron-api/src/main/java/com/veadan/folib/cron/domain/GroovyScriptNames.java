@@ -1,11 +1,11 @@
 package com.veadan.folib.cron.domain;
 
 import javax.annotation.concurrent.Immutable;
-import javax.xml.bind.annotation.XmlElement;
 import java.util.Collections;
 import java.util.List;
 
 import com.google.common.collect.ImmutableList;
+import jakarta.xml.bind.annotation.XmlElement;
 
 /**
  * @author veadan

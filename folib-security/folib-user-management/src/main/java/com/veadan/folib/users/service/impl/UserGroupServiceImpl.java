@@ -1,5 +1,6 @@
 package com.veadan.folib.users.service.impl;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.veadan.folib.components.IdGenerateUtils;
@@ -21,7 +22,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
 import java.util.Collections;
@@ -43,8 +43,10 @@ public class UserGroupServiceImpl implements UserGroupService {
     @Inject
     @Lazy
     private IdGenerateUtils idGenerateUtils;
+    @Lazy
     @Autowired
     private UserGroupRefService userGroupRefService;
+    @Lazy
     @Autowired
     private RoleResourceRefService roleResourceRefService;
 
@@ -157,12 +159,16 @@ public class UserGroupServiceImpl implements UserGroupService {
 
     @Override
     public List<UserGroup> queryUserGroupList(UserGroup userGroup) {
-        return userGroupMapper.select(userGroup);
+       return userGroupMapper.selectList(Wrappers.<UserGroup>lambdaQuery()
+                .eq(UserGroup::getJoinGroup, userGroup.getJoinGroup())
+                .eq(UserGroup::getDeleted, userGroup.getDeleted())
+                .eq(userGroup.getGroupName()!=null,UserGroup::getGroupName, userGroup.getGroupName())
+        );
     }
 
     @Override
     public List<UserGroup> findAll() {
-        return userGroupMapper.select(UserGroup.builder().deleted(GlobalConstants.NOT_DELETED).build());
+      return userGroupMapper.selectList(Wrappers.<UserGroup>lambdaQuery().eq(UserGroup::getDeleted, GlobalConstants.NOT_DELETED));
     }
 
     @Override
@@ -181,9 +187,7 @@ public class UserGroupServiceImpl implements UserGroupService {
         if (CollectionUtils.isEmpty(ids)) {
             return Collections.emptyList();
         }
-        Example example = new Example(UserGroup.class);
-        example.createCriteria().andIn("id", ids);
-        return userGroupMapper.selectByExample(example);
+        return userGroupMapper.selectList(Wrappers.<UserGroup>lambdaQuery().in(UserGroup::getId, ids));
     }
 
     @Override
@@ -191,8 +195,6 @@ public class UserGroupServiceImpl implements UserGroupService {
         if (CollectionUtils.isEmpty(groupNames)) {
             return Collections.emptyList();
         }
-        Example example = new Example(UserGroup.class);
-        example.createCriteria().andIn("groupName", groupNames);
-        return userGroupMapper.selectByExample(example);
+        return userGroupMapper.selectList(Wrappers.<UserGroup>lambdaQuery().in(UserGroup::getGroupName, groupNames));
     }
 }

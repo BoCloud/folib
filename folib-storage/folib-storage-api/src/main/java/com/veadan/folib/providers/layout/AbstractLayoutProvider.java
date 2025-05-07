@@ -23,6 +23,7 @@ import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.inject.Inject;
@@ -52,16 +53,16 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
                     JarArchiveListingFunction.INSTANCE
             )
     );
-
+    @Lazy
     @Inject
     private ConfigurationManager configurationManager;
-
+    @Lazy
     @Inject
     private ArtifactIdGroupRepository artifactIdGroupRepository;
-
+    @Lazy
     @Inject
     protected StorageProviderRegistry storageProviderRegistry;
-
+    @Lazy
     @Inject
     private DistributedCacheComponent distributedCacheComponent;
 

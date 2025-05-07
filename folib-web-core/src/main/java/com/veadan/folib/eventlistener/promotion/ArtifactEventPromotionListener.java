@@ -1,6 +1,7 @@
 package com.veadan.folib.eventlistener.promotion;
 
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.promotion.ArtifactPromotionProvider;
 import com.veadan.folib.components.promotion.ArtifactPromotionProviderRegistry;
@@ -31,6 +32,7 @@ import com.veadan.folib.ws.common.FolibWsRunManageV2;
 import com.veadan.folib.ws.server.Command;
 import com.veadan.folib.ws.server.WSMessageRequest;
 import com.veadan.folib.ws.server.WSMessageResponse;
+import jakarta.websocket.Session;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -39,10 +41,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
-import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
-import javax.websocket.Session;
+
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -144,10 +145,11 @@ public class ArtifactEventPromotionListener {
                 }
                 if (promotionFlag) {
                     boolean promotionBlock = artifactComponent.promotionBlock();
-                    Example example = new Example(ScanRules.class);
-                    example.createCriteria().andEqualTo("onScan", 1).andEqualTo("storage", storageId)
-                            .andEqualTo("repository", repositoryId);
-                    List<ScanRules> scanRulesList = scanRulesMapper.selectByExample(example);
+                    List<ScanRules> scanRulesList = scanRulesMapper.selectList(Wrappers.<ScanRules>lambdaQuery()
+                            .eq(ScanRules::getOnScan, 1)
+                            .eq(ScanRules::getStorage, storageId)
+                            .eq(ScanRules::getRepository, repositoryId)
+                    );
                     boolean scanEnable = CollectionUtils.isNotEmpty(scanRulesList);
                     log.debug("自动晋级阻断开关状态 [{}]，仓库扫描状态 [{}]", promotionBlock, scanEnable);
                     if (promotionBlock && scanEnable) {
@@ -334,10 +336,11 @@ public class ArtifactEventPromotionListener {
     public void handleFederalPromotion(RepositoryPath repositoryPath, Artifact artifact, FederalPromotionPolicyRes policyDetail) {
         boolean promotionBlock = artifactComponent.promotionBlock();
         String artifactPath = getArtifactPath(repositoryPath, artifact);
-        Example example = new Example(ScanRules.class);
-        example.createCriteria().andEqualTo("onScan", 1).andEqualTo("storage", repositoryPath.getStorageId())
-                .andEqualTo("repository", repositoryPath.getRepositoryId());
-        List<ScanRules> scanRulesList = scanRulesMapper.selectByExample(example);
+        List<ScanRules> scanRulesList = scanRulesMapper.selectList(Wrappers.<ScanRules>lambdaQuery()
+                .eq(ScanRules::getOnScan, 1)
+                .eq(ScanRules::getStorage, repositoryPath.getStorageId())
+                .eq(ScanRules::getRepository, repositoryPath.getRepositoryId())
+        );
         boolean scanEnable = CollectionUtils.isNotEmpty(scanRulesList);
         List<FederalRepositoryRes> targetRepositories = policyDetail.getTargetRepositories();
         log.debug("自动晋级阻断开关状态 [{}]，仓库扫描状态 [{}]", promotionBlock, scanEnable);

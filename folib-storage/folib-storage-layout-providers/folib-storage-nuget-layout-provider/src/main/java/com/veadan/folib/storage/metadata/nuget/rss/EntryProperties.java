@@ -26,13 +26,6 @@ import java.util.List;
 import java.util.Map;
 
 import javax.xml.XMLConstants;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAnyElement;
-import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -45,6 +38,14 @@ import com.veadan.folib.storage.metadata.nuget.Dependency;
 import com.veadan.folib.storage.metadata.nuget.NugetFormatException;
 import com.veadan.folib.storage.metadata.nuget.Nuspec;
 import com.veadan.folib.storage.metadata.nuget.StringListTypeAdapter;
+import jakarta.xml.bind.DatatypeConverter;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlAnyElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -575,7 +576,7 @@ public class EntryProperties
         this.description = getTextContent(hashMap, "Description");
         this.releaseNotes = getTextContent(hashMap, "ReleaseNotes");
         this.language = getTextContent(hashMap, "Language");
-        this.published = javax.xml.bind.DatatypeConverter.parseDateTime(hashMap.get("Published").getTextContent())
+        this.published =  DatatypeConverter.parseDateTime(hashMap.get("Published").getTextContent())
                                                          .getTime();
         this.price = getDoubleContent(hashMap.get("Price"));
         this.dependencies = getTextContent(hashMap, "Dependencies");

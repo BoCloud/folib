@@ -8,11 +8,11 @@ import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.ws.common.FolibWsRunManageUtil;
 import com.veadan.folib.ws.common.FolibWsRunManageV2;
 import com.veadan.folib.ws.server.handler.command.FolibWsServerSaveNodeInfoCommand;
+import jakarta.websocket.*;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 
-import javax.websocket.*;
 import java.nio.ByteBuffer;
 
 /**

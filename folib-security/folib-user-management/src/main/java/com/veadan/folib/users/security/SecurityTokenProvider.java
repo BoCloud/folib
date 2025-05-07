@@ -14,6 +14,7 @@ import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.jose4j.keys.HmacKey;
 import org.jose4j.lang.JoseException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -42,6 +43,7 @@ public class SecurityTokenProvider
      */
     private Key key;
 
+    @Lazy
     @Resource
     private AccessTokenFinder accessTokenFinder;
 

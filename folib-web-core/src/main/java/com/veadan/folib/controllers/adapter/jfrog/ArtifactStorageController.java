@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.activation.MimetypesFileTypeMap;
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;

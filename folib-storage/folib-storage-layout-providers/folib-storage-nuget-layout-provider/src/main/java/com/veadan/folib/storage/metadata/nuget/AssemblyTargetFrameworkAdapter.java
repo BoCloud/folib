@@ -17,11 +17,11 @@
 
 package com.veadan.folib.storage.metadata.nuget;
 
-import javax.xml.bind.annotation.adapters.XmlAdapter;
 import java.util.EnumSet;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
+import jakarta.xml.bind.annotation.adapters.XmlAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

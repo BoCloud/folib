@@ -11,6 +11,7 @@ import javax.transaction.Transactional;
 import java.util.List;
 
 import org.apache.tinkerpop.gremlin.structure.Vertex;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.neo4j.annotation.Query;
 import org.springframework.stereotype.Repository;
 
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Repository;
 public class SecurityRoleRepository extends GremlinVertexRepository<SecurityRole>
         implements SecurityRoleQueries
 {
+    @Lazy
     @Inject
     private SecurityRoleQueries queries;
 
@@ -39,7 +41,6 @@ public class SecurityRoleRepository extends GremlinVertexRepository<SecurityRole
     {
         return roleAdapter;
     }
-
 }
 
 @Repository

@@ -1,27 +1,21 @@
 package com.veadan.folib.artifact.coordinates;
 
-import javax.annotation.Nonnull;
 import javax.validation.constraints.NotBlank;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlRootElement;
 
-import com.veadan.folib.artifact.coordinates.versioning.SemanticVersion;
-import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
+
+
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
 import com.veadan.folib.domain.RpmPackageArch;
 import com.veadan.folib.domain.RpmPackageType;
-import com.veadan.folib.providers.io.RepositoryFiles;
-import com.veadan.folib.providers.io.RepositoryPath;
+
 import com.veadan.folib.util.RpmArtifactCoordinatesUtils;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import org.codehaus.commons.nullanalysis.NotNull;
 import org.neo4j.ogm.annotation.NodeEntity;
-import org.springframework.util.Assert;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**

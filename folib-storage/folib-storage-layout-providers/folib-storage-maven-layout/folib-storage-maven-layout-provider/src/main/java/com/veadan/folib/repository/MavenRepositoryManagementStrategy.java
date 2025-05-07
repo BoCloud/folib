@@ -15,6 +15,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 /**
@@ -24,13 +25,14 @@ import org.springframework.stereotype.Component;
 public class MavenRepositoryManagementStrategy
         extends AbstractRepositoryManagementStrategy
 {
-
+    @Lazy
     @Inject
     private CronTaskDataService cronTaskDataService;
-
+    @Lazy
     @Inject
     private MavenRepositoryFeatures repositoryFeatures;
 
+    @Lazy
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
 

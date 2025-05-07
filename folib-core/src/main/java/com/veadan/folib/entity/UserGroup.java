@@ -1,18 +1,17 @@
 package com.veadan.folib.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
-import javax.persistence.Column;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+
 import java.io.Serializable;
 import java.util.Date;
 
@@ -31,7 +30,6 @@ public class UserGroup implements Serializable,Cloneable {
      /**
       * 主键
       */
-     @Id
      @ApiModelProperty(name = "主键", notes = "")
      private Long id;
      /**
@@ -55,11 +53,11 @@ public class UserGroup implements Serializable,Cloneable {
       * 是否删除
       */
      @ApiModelProperty(name = "是否删除", notes = "")
-     @Column(name = "deleted")
+     @TableField("deleted")
      private String deleted;
       /** 是否默认 */
       @ApiModelProperty(name = "是否默认", notes = "")
-      @Column(name = "is_default")
+      @TableField("is_default")
       private String isDefault;
      /** 创建人 */
      @ApiModelProperty(name = "创建人",notes = "")

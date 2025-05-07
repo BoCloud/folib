@@ -25,8 +25,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.*;
 
 /**
@@ -64,7 +64,7 @@ public class PermissionCheckInterceptor implements HandlerInterceptor {
         return currentWhiteList;
     }
 
-    @Override
+
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response,
                              Object handler) throws Exception {
         HandlerMethod handlerMethod = (HandlerMethod) handler;

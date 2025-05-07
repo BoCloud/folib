@@ -10,7 +10,7 @@ import com.veadan.folib.data.domain.DomainObject;
 import com.veadan.folib.data.domain.EntityHierarchyNode;
 import com.veadan.folib.gremlin.adapters.UnfoldEntityTraversal;
 import org.apache.tinkerpop.gremlin.process.traversal.Traversal;
-import org.apache.tinkerpop.gremlin.process.traversal.dsl.GremlinDsl;
+//import org.apache.tinkerpop.gremlin.process.traversal.dsl.GremlinDsl;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
 import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
@@ -28,7 +28,7 @@ import org.springframework.util.CollectionUtils;
  * @param <E>
  * @see <a href="https://tinkerpop.apache.org/docs/current/reference/#gremlin-java-dsl">Domain Specific Languages</a>
  */
-@GremlinDsl(traversalSource = "com.veadan.folib.gremlin.dsl.EntityTraversalSourceDsl")
+//@GremlinDsl(traversalSource = "com.veadan.folib.gremlin.dsl.EntityTraversalSourceDsl")
 public interface EntityTraversalDsl<S, E> extends GraphTraversal.Admin<S, E>
 {
 

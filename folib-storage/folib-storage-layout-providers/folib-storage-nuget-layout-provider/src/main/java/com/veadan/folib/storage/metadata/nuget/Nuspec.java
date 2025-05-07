@@ -19,9 +19,6 @@ package com.veadan.folib.storage.metadata.nuget;
 
 import com.veadan.folib.artifact.coordinates.versioning.SemanticVersion;
 
-import javax.xml.bind.*;
-import javax.xml.bind.annotation.*;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.xml.transform.sax.SAXSource;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -29,6 +26,9 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.xml.bind.*;
+import jakarta.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;

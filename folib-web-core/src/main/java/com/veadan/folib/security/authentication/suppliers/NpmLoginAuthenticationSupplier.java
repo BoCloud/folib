@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.regex.Matcher;
 

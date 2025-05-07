@@ -1,7 +1,6 @@
 package com.veadan.folib.mapper;
 
 
-import com.veadan.folib.common.base.CommonMapper;
 import com.veadan.folib.entity.FederalPromotionPolicy;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;

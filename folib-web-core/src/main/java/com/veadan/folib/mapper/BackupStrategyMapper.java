@@ -1,6 +1,6 @@
 package com.veadan.folib.mapper;
 
-import com.veadan.folib.common.base.CommonMapper;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.veadan.folib.domain.backupstrategy.BackupStrategyRecord;
 import com.veadan.folib.entity.BackupStrategy;
 import com.veadan.folib.forms.backupstrategy.BackupStrategyForm;
@@ -13,7 +13,7 @@ import java.util.List;
  * @author leipenghui
  */
 @Component
-public interface BackupStrategyMapper extends CommonMapper<BackupStrategy> {
+public interface BackupStrategyMapper extends BaseMapper<BackupStrategy> {
 
     /**
      * 查询备份策略列表

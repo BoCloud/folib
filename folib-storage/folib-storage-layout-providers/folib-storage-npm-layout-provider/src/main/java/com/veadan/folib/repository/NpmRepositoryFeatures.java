@@ -79,24 +79,25 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
 
     private static final Logger logger = LoggerFactory.getLogger(NpmRepositoryFeatures.class);
 
+    @Lazy
     @Inject
     private ConfigurationManagementService configurationManagementService;
-
+    @Lazy
     @Inject
     private RedeploymentValidator redeploymentValidator;
-
+    @Lazy
     @Inject
     private GenericReleaseVersionValidator genericReleaseVersionValidator;
-
+    @Lazy
     @Inject
     private GenericSnapshotVersionValidator genericSnapshotVersionValidator;
-
+    @Lazy
     @Inject
     private ProxyRepositoryConnectionPoolConfigurationService proxyRepositoryConnectionPoolConfigurationService;
-
+    @Lazy
     @Inject
     private ConfigurationManager configurationManager;
-
+    @Lazy
     @Inject
     private ArtifactIdGroupRepository artifactIdGroupRepository;
 
@@ -106,10 +107,10 @@ public class NpmRepositoryFeatures implements RepositoryFeatures {
     @Inject
     @NpmObjectMapper
     private ObjectMapper npmJacksonMapper;
-
+    @Lazy
     @Inject
     private NpmPackageFeedParser npmPackageFeedParser;
-
+    @Lazy
     @Inject
     protected RepositoryPathResolver repositoryPathResolver;
 

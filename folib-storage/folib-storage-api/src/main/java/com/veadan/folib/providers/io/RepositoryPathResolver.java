@@ -12,6 +12,7 @@ import com.veadan.folib.util.CacheUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -27,13 +28,14 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Component
 public class RepositoryPathResolver {
-
+    @Lazy
     @Inject
     protected ConfigurationManager configurationManager;
 
+    @Lazy
     @Inject
     protected ArtifactRepository artifactEntityRepository;
-
+    @Lazy
     @Inject
     protected RepositoryFileSystemRegistry fileSystemRegistry;
 

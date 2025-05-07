@@ -1,6 +1,7 @@
 package com.veadan.folib.services.impl;
 
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.google.common.collect.Maps;
@@ -17,7 +18,7 @@ import com.veadan.folib.mapper.LicenseMapper;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.LicenseService;
-import com.veadan.folib.utils.Translate;
+//import com.veadan.folib.utils.Translate;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
@@ -29,7 +30,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
 import javax.ws.rs.client.Client;
@@ -98,7 +98,7 @@ public class LicenseServiceImpl implements LicenseService {
         if (Objects.nonNull(dbLicense)) {
             updateLicense(license);
         } else {
-            licenseMapper.insertSelective(license);
+            licenseMapper.insert(license);
         }
         clearCache();
     }
@@ -108,34 +108,23 @@ public class LicenseServiceImpl implements LicenseService {
     public void updateLicense(License license) {
         License dbLicense = selectOneLicense(license);
         if (Objects.nonNull(dbLicense)) {
-            Example example = Example.builder(License.class).build();
-            Example.Criteria criteria = example.createCriteria();
-            criteria.andEqualTo("licenseId", license.getLicenseId());
-            licenseMapper.updateByExampleSelective(license, example);
+            licenseMapper.update(license, Wrappers.<License>lambdaUpdate().eq(License::getLicenseId, dbLicense.getLicenseId()));
         }
         clearCache();
     }
 
     @Override
     public List<License> selectLicense(License license) {
-        Example example = Example.builder(License.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        if (Objects.nonNull(license)) {
-            if (Objects.nonNull(license.getIsDeprecated())) {
-                criteria.andEqualTo("isDeprecated", license.getIsDeprecated());
-            }
-        }
-        example.selectProperties("id", "licenseId", "licenseUrl");
-        example.setOrderByClause("id");
-        return licenseMapper.selectByExample(example);
+
+        return licenseMapper.selectList(Wrappers.<License>lambdaQuery()
+                .eq(Objects.nonNull(license) && license.getIsDeprecated()!=null,License::getIsDeprecated,license.getIsDeprecated())
+                .orderByAsc(License::getId)
+        );
     }
 
     @Override
     public License selectOneLicense(License license) {
-        Example example = Example.builder(License.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        criteria.andEqualTo("licenseId", license.getLicenseId());
-        return licenseMapper.selectOneByExample(example);
+        return licenseMapper.selectOne(Wrappers.<License>lambdaQuery().eq(License::getLicenseId, license.getLicenseId()));
     }
 
     @Override
@@ -205,12 +194,12 @@ public class LicenseServiceImpl implements LicenseService {
                         String[] arr = stringToStringArray(license.getContent(), 2000);
                         for (int j = 0; j < arr.length; j++) {
                             String content = arr[j];
-                            contentCn = Translate.translate(content);
+                           // contentCn = Translate.translate(content);
                             stringBuilder.append(contentCn);
                         }
                         contentCn = stringBuilder.toString();
                     } else {
-                        contentCn = Translate.translate(license.getContent());
+                        //contentCn = Translate.translate(license.getContent());
                     }
                 }
                 if (StringUtils.isNotBlank(contentCn)) {
@@ -278,10 +267,8 @@ public class LicenseServiceImpl implements LicenseService {
         if (Objects.isNull(license)) {
             return;
         }
-        Example example = Example.builder(License.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        criteria.andEqualTo("licenseId", license.getLicenseId());
-        licenseMapper.updateByExampleSelective(License.builder().blackWhiteType(licenseBlackWhite.getBlackWhiteType()).build(), example);
+        licenseMapper.update(License.builder().blackWhiteType(licenseBlackWhite.getBlackWhiteType()).build(), Wrappers.<License>lambdaUpdate()
+                .eq(License::getLicenseId, license.getLicenseId()));
         clearCache();
     }
 

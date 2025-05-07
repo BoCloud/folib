@@ -1,6 +1,6 @@
 package com.veadan.folib.scanner.mapper;
 
-import com.veadan.folib.common.base.CommonMapper;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.veadan.folib.scanner.entity.ScanRules;
 import org.springframework.stereotype.Component;
 
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
  * @email xuxinping@126.com
  */
 @Component
-public interface ScanRulesMapper extends CommonMapper<ScanRules> {
+public interface ScanRulesMapper extends BaseMapper<ScanRules> {
 
     /**
      * 统计properties表数据量，若小于等于1，初始化漏洞数据

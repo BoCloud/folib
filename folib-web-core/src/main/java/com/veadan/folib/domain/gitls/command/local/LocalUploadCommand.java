@@ -3,7 +3,7 @@ package com.veadan.folib.domain.gitls.command.local;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.domain.gitls.command.LfsBaseUploadCommand;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 
 import com.veadan.folib.domain.gitls.model.GitLfsJson;

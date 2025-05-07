@@ -7,12 +7,11 @@
  <parent>
         <groupId>com.veadan.folib</groupId>
         <artifactId>folib-parent</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>3.0-SNAPSHOT</version>
         <relativePath/>
     </parent>
 
     <artifactId>folib-cron-tasks</artifactId>
-    <version>1.0-SNAPSHOT</version>
 
     <name>Folib: Cron [Tasks]</name>
 
@@ -50,8 +49,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>11</source>
-                    <target>11</target>
+                    <source>17</source>
+                    <target>17</target>
                 </configuration>
             </plugin>
 
@@ -90,17 +89,17 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-cron-api</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-data-service</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-api</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
 <!--        <dependency>-->
 <!--            <groupId>${project.groupId}</groupId>-->
@@ -111,17 +110,17 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-default-authentication-provider</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-common-resources</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-api</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>

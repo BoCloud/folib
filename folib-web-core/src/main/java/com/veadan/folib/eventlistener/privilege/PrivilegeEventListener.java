@@ -21,6 +21,7 @@ import com.veadan.folib.ws.common.FolibWsRunManageV2;
 import com.veadan.folib.ws.server.Command;
 import com.veadan.folib.ws.server.WSMessageRequest;
 import com.veadan.folib.ws.server.WSMessageResponse;
+import jakarta.websocket.Session;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -30,7 +31,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import javax.websocket.Session;
 import java.util.*;
 import java.util.stream.Collectors;
 

@@ -4,12 +4,12 @@ import com.veadan.folib.domain.RepositoryPathExistCheck;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.LayoutFileSystemProvider;
+import jakarta.websocket.Session;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.websocket.Session;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Objects;

@@ -6,7 +6,6 @@ import com.veadan.folib.config.hazelcast.HazelcastConfiguration;
 import com.veadan.folib.web.DirectoryTraversalFilter;
 
 import javax.annotation.Nullable;
-import javax.servlet.ServletRegistration;
 import java.util.Map;
 import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Collectors;
@@ -16,6 +15,7 @@ import io.reactivex.Observable;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.BehaviorSubject;
 import io.reactivex.subjects.Subject;
+import jakarta.servlet.ServletRegistration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -36,7 +36,6 @@ import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
  * <p>
  * Requirements:
  *  <li>Must start as soon as possible.</li>
- *  <li>Must stop BEFORE {@link org.springframework.boot.web.servlet.context.WebServerStartStopLifecycle} which will start the real web server.</li>
  *  <li>Must emit boot progress via /api/ping</li>
  * </p>
  */
@@ -76,7 +75,7 @@ public class BootProgressBeanPostProcessor
     //@formatter:on
 
     /**
-     * Counter-intuitive, but since we need the web server to stop exactly before {@link org.springframework.boot.web.servlet.context.WebServerStartStopLifecycle}
+     * Counter-intuitive, but since we need the web server to stop exactly before
      * we are forced to use {@link SmartLifecycle#start}.
      */
     @Override
@@ -99,7 +98,7 @@ public class BootProgressBeanPostProcessor
     }
 
     /**
-     * The phase should be lower then {@link org.springframework.boot.web.servlet.context.WebServerStartStopLifecycle#getPhase()}
+     * The phase should be lower then
      */
     @Override
     public int getPhase()

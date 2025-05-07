@@ -3,7 +3,7 @@ package com.veadan.folib.mapper;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.springframework.data.domain.Pageable;
+
 import com.veadan.folib.entity.RoleUserRef;
 
  /**
@@ -27,7 +27,7 @@ public interface RoleUserRefMapper{
      * @param pageable 分页对象
      * @return 对象列表
      */
-    List<RoleUserRef> queryAllByLimit(RoleUserRef roleUserRef, @Param("pageable") Pageable pageable);
+    //List<RoleUserRef> queryAllByLimit(RoleUserRef roleUserRef, @Param("pageable") Pageable pageable);
     /** 
      * 统计总行数
      *

@@ -19,6 +19,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -46,12 +47,13 @@ public class PubLayoutProvider
 
     public static final String ALIAS = PubArtifactCoordinates.LAYOUT_NAME;
 
+    @Lazy
     @Inject
     private PubRepositoryManagementStrategy pubRepositoryManagementStrategy;
-
+    @Lazy
     @Inject
     private PubRepositoryFeatures pubRepositoryFeatures;
-
+    @Lazy
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
 

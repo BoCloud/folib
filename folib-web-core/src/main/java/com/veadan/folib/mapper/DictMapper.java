@@ -1,7 +1,7 @@
 package com.veadan.folib.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.veadan.folib.entity.Dict;
-import com.veadan.folib.common.base.CommonMapper;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Component;
 
@@ -11,7 +11,7 @@ import java.util.List;
  * @author leipenghui
  */
 @Component
-public interface DictMapper extends CommonMapper<Dict> {
+public interface DictMapper extends BaseMapper<Dict> {
 
     /**
      * 根据条件查询字典

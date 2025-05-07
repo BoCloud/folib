@@ -4,13 +4,14 @@ package com.veadan.folib.artifact.coordinates;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.neo4j.ogm.annotation.NodeEntity;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlRootElement;
+
 import java.net.URI;
 
 @NodeEntity(Vertices.CONAN_ARTIFACT_COORDINATES)

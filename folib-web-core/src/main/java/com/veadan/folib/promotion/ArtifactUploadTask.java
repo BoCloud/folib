@@ -74,7 +74,7 @@ import org.apache.maven.index.artifact.Gav;
 import org.apache.maven.model.Model;
 import org.mockito.internal.util.collections.Sets;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.commons.CommonsMultipartFile;
+
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -862,7 +862,7 @@ public class ArtifactUploadTask implements Callable<String> {
         if (multipartFile instanceof FileStreamMultipartFile) {
             fileOriginalName = ((FileStreamMultipartFile) multipartFile).getOriginalFilename();
         } else {
-            fileOriginalName = (((CommonsMultipartFile) multipartFile).getFileItem()).getName();
+            fileOriginalName = ((MultipartFile) multipartFile).getOriginalFilename();
         }
         RepositoryPath dockerSubsidiaryFileRepositoryPath = dockerSubsidiaryRepositoryPath.resolve(fileOriginalName);
         String subsidiaryFilePath = RepositoryFiles.relativizePath(dockerSubsidiaryFileRepositoryPath);

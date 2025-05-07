@@ -1,5 +1,6 @@
 package com.veadan.folib.services.impl;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.google.common.collect.Lists;
@@ -24,7 +25,6 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
 import java.util.*;
@@ -60,15 +60,11 @@ public class PackageNameBlockServiceImpl implements PackageNameBlockService {
         if (Objects.isNull(limit)) {
             limit = 10;
         }
-        Example example = Example.builder(PackageNameBlock.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        if (StringUtils.isNotBlank(packageNameBlockForm.getPackageName())) {
-            String packageName = "%" + packageNameBlockForm.getPackageName() + "%";
-            criteria.andLike("packageName", packageName);
-        }
-        example.setOrderByClause("create_time");
         Page<Object> result = PageHelper.startPage(page, limit);
-        List<PackageNameBlock> packageNameBlockList = packageNameBlockMapper.selectByExample(example);
+        List<PackageNameBlock> packageNameBlockList = packageNameBlockMapper.selectList(Wrappers.<PackageNameBlock>lambdaQuery()
+                .like(StringUtils.isNotBlank(packageNameBlockForm.getPackageName()),PackageNameBlock::getPackageName,"%" + packageNameBlockForm.getPackageName() + "%")
+                .orderByAsc(PackageNameBlock::getCreateTime)
+        );
         return new TableResultResponse<PackageNameBlockInfo>(result.getTotal(), Optional.ofNullable(packageNameBlockList).orElse(Collections.emptyList()).stream().map(packageNameBlock -> {
             PackageNameBlockInfo packageNameBlockInfo = PackageNameBlockInfo.builder().build();
             BeanUtils.copyProperties(packageNameBlock, packageNameBlockInfo);
@@ -108,7 +104,7 @@ public class PackageNameBlockServiceImpl implements PackageNameBlockService {
             packageNameBlock.setCreateTime(date);
             packageNameBlock.setUpdateBy(username);
             packageNameBlock.setUpdateTime(date);
-            packageNameBlockMapper.insertSelective(packageNameBlock);
+            packageNameBlockMapper.insert(packageNameBlock);
         }
         clearCache();
     }
@@ -125,7 +121,7 @@ public class PackageNameBlockServiceImpl implements PackageNameBlockService {
             updatePackageNameBlock.setConditionValue(packageNameBlockForm.getConditionValue());
             updatePackageNameBlock.setVersion(packageNameBlockForm.getVersion());
             updatePackageNameBlock.setId(packageNameBlock.getId());
-            packageNameBlockMapper.updateByPrimaryKeySelective(updatePackageNameBlock);
+            packageNameBlockMapper.updateById(updatePackageNameBlock);
             clearCache();
         }
     }
@@ -136,12 +132,12 @@ public class PackageNameBlockServiceImpl implements PackageNameBlockService {
         if (CollectionUtils.isNotEmpty(packageNameBlockForm.getPackageNames())) {
             List<PackageNameBlock> packageNameBlockList = queryPackageNameBlock(packageNameBlockForm.getPackageNames());
             if (CollectionUtils.isNotEmpty(packageNameBlockList)) {
-                packageNameBlockMapper.deleteByIds(packageNameBlockList.stream().map(item -> String.valueOf(item.getId())).collect(Collectors.joining(",")));
+                packageNameBlockMapper.deleteByIds(packageNameBlockList.stream().map(item -> String.valueOf(item.getId())).collect(Collectors.toSet()));
             }
         } else {
             PackageNameBlockInfo packageNameBlock = selectOnePackageNameBlock(packageNameBlockForm);
             if (Objects.nonNull(packageNameBlock)) {
-                packageNameBlockMapper.deleteByPrimaryKey(packageNameBlock.getId());
+                packageNameBlockMapper.selectById(packageNameBlock.getId());
             }
         }
         clearCache();
@@ -151,21 +147,16 @@ public class PackageNameBlockServiceImpl implements PackageNameBlockService {
     public PackageNameBlockInfo selectOnePackageNameBlock(PackageNameBlockForm packageNameBlockForm) {
         PackageNameBlockInfo packageNameBlockInfo = null;
         if (Objects.nonNull(packageNameBlockForm.getId())) {
-            PackageNameBlock packageNameBlock = packageNameBlockMapper.selectByPrimaryKey(packageNameBlockForm.getId());
+            PackageNameBlock packageNameBlock = packageNameBlockMapper.selectById(packageNameBlockForm.getId());
             packageNameBlockInfo = PackageNameBlockInfo.builder().build();
             BeanUtils.copyProperties(packageNameBlock, packageNameBlockInfo);
         } else if (StringUtils.isNotBlank(packageNameBlockForm.getPackageName())) {
-            Example example = Example.builder(PackageNameBlock.class).build();
-            Example.Criteria criteria = example.createCriteria();
-            criteria.andEqualTo("packageName", packageNameBlockForm.getPackageName());
-            if (StringUtils.isNotBlank(packageNameBlockForm.getConditionValue())) {
-                criteria.andEqualTo("conditionValue", packageNameBlockForm.getConditionValue());
-            }
-            if (StringUtils.isNotBlank(packageNameBlockForm.getVersion())) {
-                criteria.andEqualTo("version", packageNameBlockForm.getVersion());
-            }
-            example.setOrderByClause("create_time desc");
-            List<PackageNameBlock> packageNameBlockList = packageNameBlockMapper.selectByExample(example);
+            List<PackageNameBlock> packageNameBlockList = packageNameBlockMapper.selectList(Wrappers.<PackageNameBlock>lambdaQuery()
+                    .eq(PackageNameBlock::getPackageName, packageNameBlockForm.getPackageName())
+                    .eq(StringUtils.isNotBlank(packageNameBlockForm.getConditionValue()),PackageNameBlock::getConditionValue,packageNameBlockForm.getConditionValue())
+                    .eq(StringUtils.isNotBlank(packageNameBlockForm.getVersion()),PackageNameBlock::getVersion, packageNameBlockForm.getVersion())
+                    .orderByDesc(PackageNameBlock::getCreateTime)
+            );
             if (CollectionUtils.isNotEmpty(packageNameBlockList)) {
                 PackageNameBlock packageNameBlock = packageNameBlockList.get(0);
                 packageNameBlockInfo = PackageNameBlockInfo.builder().build();
@@ -219,7 +210,7 @@ public class PackageNameBlockServiceImpl implements PackageNameBlockService {
     public List<PackageNameBlock> getPackageNameBlockCache() {
         List<PackageNameBlock> packageNameBlockList = getCache();
         if (CollectionUtils.isEmpty(packageNameBlockList)) {
-            packageNameBlockList = packageNameBlockMapper.selectAll();
+            packageNameBlockList = packageNameBlockMapper.selectList(Wrappers.<PackageNameBlock>lambdaQuery());
             putCache(packageNameBlockList, 8);
         }
         return packageNameBlockList;
@@ -264,11 +255,11 @@ public class PackageNameBlockServiceImpl implements PackageNameBlockService {
      * @return 列表
      */
     public List<PackageNameBlock> queryPackageNameBlock(List<String> packageNames) {
-        Example example = Example.builder(PackageNameBlock.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        criteria.andIn("packageName", packageNames);
-        example.setOrderByClause("create_time desc");
-        return packageNameBlockMapper.selectByExample(example);
+        return packageNameBlockMapper.selectList(Wrappers.<PackageNameBlock>lambdaQuery()
+                .in(PackageNameBlock::getPackageName,packageNames)
+                .orderByDesc(PackageNameBlock::getCreateTime)
+        );
+
     }
 
     /**

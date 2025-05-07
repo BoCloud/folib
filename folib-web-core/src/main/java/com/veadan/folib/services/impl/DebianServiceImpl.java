@@ -26,7 +26,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
 import javax.annotation.Resource;
 import java.io.File;
@@ -67,7 +66,7 @@ public class DebianServiceImpl implements DebianService {
 
 
     public DebianParserVO parseArtifact(String storageId, String repositoryId, MultipartFile file) {
-        String fileOriginalName = ((CommonsMultipartFile) file).getFileItem().getName();
+        String fileOriginalName =  file.getOriginalFilename();
         DebianParserVO artifactParse = new DebianParserVO();
         String parentPath  = tempPath + File.separator + "parseArtifact" + File.separator;
         String artifactPath = parentPath + fileOriginalName;

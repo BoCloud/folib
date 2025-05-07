@@ -1,5 +1,6 @@
 package com.veadan.folib.services.impl;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.datastax.oss.driver.shaded.guava.common.collect.Maps;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
@@ -33,7 +34,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tk.mybatis.mapper.entity.Example;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -126,7 +126,7 @@ public class BackupStrategyServiceImpl implements BackupStrategyService {
         if (Boolean.FALSE.equals(backupStrategyForm.getEnabled())) {
             backupStrategy.setEnabled(false);
         }
-        backupStrategyMapper.insertSelective(backupStrategy);
+        backupStrategyMapper.insert(backupStrategy);
         if (CollectionUtils.isNotEmpty(backupStrategyForm.getRepositories())) {
             String storageId = "", repositoryId = "";
             Storage storage = null;
@@ -181,10 +181,8 @@ public class BackupStrategyServiceImpl implements BackupStrategyService {
         if (Boolean.FALSE.equals(backupStrategyForm.getEnabled())) {
             backupStrategy.setEnabled(false);
         }
-        backupStrategyMapper.updateByPrimaryKey(backupStrategy);
-        Example example = new Example(BackupStrategyRepository.class);
-        example.createCriteria().andEqualTo("backupStrategyId", backupStrategyId);
-        backupStrategyRepositoryMapper.deleteByExample(example);
+        backupStrategyMapper.updateById(backupStrategy);
+        backupStrategyRepositoryMapper.delete(Wrappers.<BackupStrategyRepository>lambdaQuery().eq(BackupStrategyRepository::getBackupStrategyId, backupStrategyId));
         clearBackupStrategyRepositoryCache(existsBackupStrategy.getId());
         if (CollectionUtils.isNotEmpty(backupStrategyForm.getRepositories())) {
             String storageId = "", repositoryId = "";
@@ -229,17 +227,18 @@ public class BackupStrategyServiceImpl implements BackupStrategyService {
         }
         clearBackupStrategyRepositoryCache(existsBackupStrategy.getId());
         Long backupStrategyId = existsBackupStrategy.getId();
-        backupStrategyMapper.deleteByPrimaryKey(backupStrategyId);
+        backupStrategyMapper.deleteById(backupStrategyId);
         //删除仓库
-        Example backupStrategyRepositoryExample = new Example(BackupStrategyRepository.class);
-        backupStrategyRepositoryExample.createCriteria().andEqualTo("backupStrategyId", backupStrategyId);
-        backupStrategyRepositoryMapper.deleteByExample(backupStrategyRepositoryExample);
+        backupStrategyRepositoryMapper.delete(Wrappers.<BackupStrategyRepository>lambdaQuery().eq(BackupStrategyRepository::getBackupStrategyId, backupStrategyId));
         deleteCronTask(backupStrategyName, existsBackupStrategy.getCronExpression());
     }
 
     @Override
     public BackupStrategy getBackupStrategy(BackupStrategy backupStrategy) {
-        return backupStrategyMapper.selectOne(backupStrategy);
+        return backupStrategyMapper.selectOne(Wrappers.<BackupStrategy>lambdaQuery()
+                .eq(backupStrategy.getStrategyName()!=null,BackupStrategy::getStrategyName, backupStrategy.getStrategyName())
+                .eq(backupStrategy.getId()!=null,BackupStrategy::getId, backupStrategy.getId())
+        );
     }
 
     @Override
@@ -321,9 +320,7 @@ public class BackupStrategyServiceImpl implements BackupStrategyService {
      * @param id 备份策略id
      */
     private void clearBackupStrategyRepositoryCache(Long id) {
-        Example backupStrategyRepositoryExample = new Example(BackupStrategyRepository.class);
-        backupStrategyRepositoryExample.createCriteria().andEqualTo("backupStrategyId", id);
-        List<BackupStrategyRepository> existsBackupStrategyRepositories = backupStrategyRepositoryMapper.selectByExample(backupStrategyRepositoryExample);
+        List<BackupStrategyRepository> existsBackupStrategyRepositories = backupStrategyRepositoryMapper.selectList(Wrappers.<BackupStrategyRepository>lambdaQuery().eq(BackupStrategyRepository::getBackupStrategyId, id));
         if (CollectionUtils.isNotEmpty(existsBackupStrategyRepositories)) {
             for (BackupStrategyRepository existsBackupStrategyRepository : existsBackupStrategyRepositories) {
                 //清理上次保存的仓库缓存
@@ -356,9 +353,8 @@ public class BackupStrategyServiceImpl implements BackupStrategyService {
     }
 
     private List<String> getRepositories(Long backupStrategyId) {
-        Example backupStrategyRepositoryExample = new Example(BackupStrategyRepository.class);
-        backupStrategyRepositoryExample.createCriteria().andEqualTo("backupStrategyId", backupStrategyId);
-        List<BackupStrategyRepository> backupStrategyRepositories = backupStrategyRepositoryMapper.selectByExample(backupStrategyRepositoryExample);
+        List<BackupStrategyRepository> backupStrategyRepositories = backupStrategyRepositoryMapper.selectList(Wrappers.<BackupStrategyRepository>lambdaQuery()
+                .eq(BackupStrategyRepository::getBackupStrategyId, backupStrategyId));
         return Optional.ofNullable(backupStrategyRepositories).orElse(Collections.emptyList()).stream().map(backupStrategyRepository -> ConfigurationUtils.getStorageIdAndRepositoryId(backupStrategyRepository.getStorageId(), backupStrategyRepository.getRepositoryId())).collect(Collectors.toList());
     }
 

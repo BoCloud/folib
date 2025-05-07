@@ -1,11 +1,12 @@
 package com.veadan.folib.wrapper;
 
+import jakarta.servlet.ReadListener;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.servlet.ReadListener;
-import javax.servlet.ServletInputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
+import jakarta.servlet.ServletInputStream;
+
 import java.io.*;
 
 /**

@@ -42,6 +42,7 @@ import org.jfrog.artifactory.client.model.CopyMoveResultReport;
 import org.jfrog.artifactory.client.model.File;
 import org.jfrog.artifactory.client.model.LightweightRepository;
 import org.jfrog.artifactory.client.model.impl.RepositoryTypeImpl;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
@@ -60,6 +61,7 @@ import java.util.stream.Collectors;
 @Service
 public class JFrogServiceImpl implements JFrogService {
 
+    @Lazy
     @Inject
     private ExternalNodeService externalNodeService;
 

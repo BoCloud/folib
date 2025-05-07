@@ -1,5 +1,6 @@
 package com.veadan.folib.users.service.impl;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.veadan.folib.authorization.AuthorizationConfigFileManager;
@@ -20,10 +21,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tk.mybatis.mapper.entity.Example;
+
 
 import javax.inject.Inject;
 import java.util.*;
@@ -39,20 +41,25 @@ import java.util.stream.Stream;
 @Service
 @Transactional(rollbackFor=Exception.class)
 public class FolibRoleServiceImpl implements FolibRoleService {
+    @Lazy
     @Autowired
     private FolibRoleMapper folibRoleMapper;
+    @Lazy
     @Inject
     private AuthorizationConfigFileManager authorizationConfigFileManager;
+    @Lazy
     @Inject
     private ResourceService resourceService;
+    @Lazy
     @Inject
     private RoleResourceRefService roleResourceRefService;
-    @Inject
-    private FolibRoleService folibRoleService;
+    @Lazy
     @Inject
     private DistributedCacheComponent distributedCacheComponent;
+    @Lazy
     @Inject
     private UserGroupRefService userGroupRefService;
+    @Lazy
     @Inject
     private UserGroupService userGroupService;
     @Override
@@ -460,7 +467,7 @@ public class FolibRoleServiceImpl implements FolibRoleService {
 
     @Override
     public List<FolibRole> queryRoles(FolibRole build) {
-        return folibRoleMapper.select(build);
+        return folibRoleMapper.selectList(Wrappers.<FolibRole>lambdaQuery().eq(FolibRole::getIsDefault,build.getIsDefault()));
     }
 
     @Override
@@ -532,15 +539,13 @@ public class FolibRoleServiceImpl implements FolibRoleService {
 
     @Override
     public List<FolibRole> queryByIds(Set<String> roles) {
-        Example example = new Example(FolibRole.class);
-        example.createCriteria().andIn("id", roles);
-        return folibRoleMapper.selectByExample(example);
+        return folibRoleMapper.selectList(Wrappers.<FolibRole>lambdaQuery().in(FolibRole::getId, roles));
     }
 
     @Override
     public void updateRepostoryPermission(String storageId, String repositoryId, RepositoryPermissionDto repositoryPermissionDto) {
         String roleId = String.format("%S_%S", storageId, repositoryId);
-        FolibRole folibRole = folibRoleService.queryById(roleId);
+        FolibRole folibRole = queryById(roleId);
         List<AccessUsersDTO> users = new ArrayList<>();
         repositoryPermissionDto.getUserList().forEach(user -> {
             users.add(AccessUsersDTO.builder().id(user.getUsername()).access(user.getPermissions()).build());

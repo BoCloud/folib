@@ -20,10 +20,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
-import javax.xml.bind.JAXBException;
 
 import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.artifact.coordinates.versioning.SemanticVersion;
@@ -55,6 +52,9 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.xml.bind.JAXBException;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -164,8 +164,7 @@ public class NugetArtifactController
                                             @RequestParam(name = "searchTerm", required = false) String searchTerm,
                                             @RequestParam(name = "targetFramework", required = false) String targetFramework,
                                             HttpServletResponse response)
-            throws JAXBException, IOException
-    {
+            throws IOException, JAXBException {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
 

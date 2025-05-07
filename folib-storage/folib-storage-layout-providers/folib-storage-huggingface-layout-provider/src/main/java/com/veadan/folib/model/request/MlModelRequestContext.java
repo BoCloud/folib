@@ -2,7 +2,8 @@ package com.veadan.folib.model.request;
 
 import java.beans.ConstructorProperties;
 import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
+
 
 import lombok.Data;
 import lombok.Generated;

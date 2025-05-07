@@ -8,10 +8,10 @@ import com.veadan.folib.json.MapValuesJsonSerializer;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryData;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
 
 import javax.annotation.concurrent.Immutable;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Map;

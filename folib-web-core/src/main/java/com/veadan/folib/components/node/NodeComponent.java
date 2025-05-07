@@ -103,7 +103,7 @@ public class NodeComponent {
             String gossipInfo = nodeProbe.getGossipInfo(true);
             cassandraClusterForm.setGossipInfo(gossipInfo);
             //数据信息
-            StatsHolder statsHolder = new TableStatsHolder(nodeProbe, true, false, Collections.emptyList(), "", 0);
+            StatsHolder statsHolder = new TableStatsHolder(nodeProbe, true, false, Collections.emptyList(), "", 0, false);
             Map<String, Object> statsHolderMap = statsHolder.convert2Map();
             cassandraClusterForm.setStatsHolderMap(statsHolderMap);
             //dcsMap

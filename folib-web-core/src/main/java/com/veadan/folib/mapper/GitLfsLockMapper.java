@@ -1,13 +1,13 @@
 package com.veadan.folib.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.veadan.folib.entity.GitLfsLockEntity;
-import com.veadan.folib.common.base.CommonMapper;
 import org.springframework.stereotype.Component;
 import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
 @Component
-public interface GitLfsLockMapper extends CommonMapper<GitLfsLockEntity> {
+public interface GitLfsLockMapper extends BaseMapper<GitLfsLockEntity> {
 
     /**
      * 分页查询指定行数据

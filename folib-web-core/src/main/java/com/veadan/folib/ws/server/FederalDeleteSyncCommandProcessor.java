@@ -3,10 +3,11 @@ package com.veadan.folib.ws.server;
 import com.veadan.folib.domain.policy.FederalPromotionPolicyService;
 import com.veadan.folib.domain.policy.dto.SyncArtifatDTO;
 import com.veadan.folib.scanner.common.util.SpringContextUtil;
+import jakarta.websocket.Session;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import javax.websocket.Session;
+
 import java.util.List;
 
 @Slf4j

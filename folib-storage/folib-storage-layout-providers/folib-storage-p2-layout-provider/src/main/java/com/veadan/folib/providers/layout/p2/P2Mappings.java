@@ -1,7 +1,8 @@
 package com.veadan.folib.providers.layout.p2;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlElement;
+
 import java.util.ArrayList;
 import java.util.List;
 

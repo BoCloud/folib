@@ -1,12 +1,11 @@
 package com.veadan.folib.mapper;
 
-import com.veadan.folib.common.base.CommonMapper;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.veadan.folib.dto.UserGroupDTO;
 import com.veadan.folib.dto.UserGroupListDTO;
 import com.veadan.folib.entity.UserGroup;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -16,7 +15,7 @@ import java.util.List;
  * @date : 2024-7-17
  */
 @Mapper
-public interface UserGroupMapper extends CommonMapper<UserGroup> {
+public interface UserGroupMapper extends BaseMapper<UserGroup> {
     /** 
      * 通过ID查询单条数据 
      *

@@ -18,6 +18,7 @@ import com.veadan.folib.repository.NugetRepositoryManagementStrategy;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 /**
@@ -43,9 +44,10 @@ public class NugetLayoutProvider
 
     public static final String USER_AGENT_PREFIX = ALIAS;
 
+    @Lazy
     @Inject
     private NugetRepositoryManagementStrategy nugetRepositoryManagementStrategy;
-
+    @Lazy
     @Inject
     private NugetRepositoryFeatures nugetRepositoryFeatures;
 

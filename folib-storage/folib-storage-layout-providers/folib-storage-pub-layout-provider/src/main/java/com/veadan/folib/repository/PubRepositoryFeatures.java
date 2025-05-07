@@ -9,6 +9,7 @@ import com.veadan.folib.storage.validation.artifact.version.GenericSnapshotVersi
 import com.veadan.folib.storage.validation.deployment.RedeploymentValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -26,21 +27,22 @@ public class PubRepositoryFeatures implements RepositoryFeatures {
 
     private static final Logger logger = LoggerFactory.getLogger(PubRepositoryFeatures.class);
 
+    @Lazy
     @Inject
     private ConfigurationManagementService configurationManagementService;
-
+    @Lazy
     @Inject
     private RedeploymentValidator redeploymentValidator;
-
+    @Lazy
     @Inject
     private GenericReleaseVersionValidator genericReleaseVersionValidator;
-
+    @Lazy
     @Inject
     private GenericSnapshotVersionValidator genericSnapshotVersionValidator;
-
+    @Lazy
     @Inject
     private ConfigurationManager configurationManager;
-
+    @Lazy
     @Inject
     protected RepositoryPathResolver repositoryPathResolver;
 

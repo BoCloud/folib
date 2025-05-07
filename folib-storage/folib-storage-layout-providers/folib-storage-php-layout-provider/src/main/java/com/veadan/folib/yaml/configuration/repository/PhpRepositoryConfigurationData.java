@@ -4,10 +4,11 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.veadan.folib.providers.layout.PhpLayoutProvider;
 import com.veadan.folib.yaml.repository.CustomRepositoryConfiguration;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
 
 import javax.annotation.concurrent.Immutable;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
+
 
 /**
  * @author leipenghui

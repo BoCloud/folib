@@ -1,5 +1,7 @@
 package com.veadan.folib.entity;
 
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -33,14 +35,14 @@ import java.util.Date;
 @NoArgsConstructor
 @EqualsAndHashCode
 @Accessors(chain = true)
-@Table(name = "artifact_sync_slave_record")
+@TableName("artifact_sync_slave_record")
 @ApiModel("制品同步从记录")
 public class ArtifactSyncSlaveRecord implements Serializable {
     private static final long serialVersionUID = 1L;
 
 
-    @Id
-    @GeneratedValue(generator = "JDBC",strategy = GenerationType.IDENTITY)
+
+    @TableId
     @ApiModelProperty("id")
     @Column(name = "id")
     private Long id;

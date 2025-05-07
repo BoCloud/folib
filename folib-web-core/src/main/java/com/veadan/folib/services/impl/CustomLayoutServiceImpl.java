@@ -1,5 +1,6 @@
 package com.veadan.folib.services.impl;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.veadan.folib.components.IdGenerateUtils;
@@ -16,7 +17,6 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tk.mybatis.mapper.entity.Example;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -44,16 +44,11 @@ public class CustomLayoutServiceImpl implements CustomLayoutService {
             limit = 10;
         }
         Page<Object> result = PageHelper.startPage(page, limit);
-        Example example = Example.builder(CustomLayout.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        criteria.andGreaterThan("id", "0");
-        if (StringUtils.isNotBlank(customLayoutForm.getLayoutName())) {
-            criteria.andEqualTo("layoutName", customLayoutForm.getLayoutName());
-        }
-        if (StringUtils.isNotBlank(customLayoutForm.getMatchLayoutName())) {
-            criteria.andLike("layoutName", customLayoutForm.getMatchLayoutName() + "%");
-        }
-        List<CustomLayout> customLayoutList = customLayoutMapper.selectByExample(example);
+        List<CustomLayout> customLayoutList = customLayoutMapper.selectList(Wrappers.<CustomLayout>lambdaQuery()
+                .ge(CustomLayout::getId,0)
+                .eq(StringUtils.isNotBlank(customLayoutForm.getLayoutName()), CustomLayout::getLayoutName, customLayoutForm.getLayoutName())
+                .like(StringUtils.isNotBlank(customLayoutForm.getMatchLayoutName()), CustomLayout::getLayoutName, customLayoutForm.getMatchLayoutName())
+        );
         return new TableResultResponse<CustomLayoutRecord>(result.getTotal(), Optional.ofNullable(customLayoutList).orElse(Collections.emptyList()).stream()
                 .map(item -> {
                     CustomLayoutRecord customLayoutRecord = CustomLayoutRecord.builder().build();
@@ -65,16 +60,11 @@ public class CustomLayoutServiceImpl implements CustomLayoutService {
 
     @Override
     public List<CustomLayoutRecord> queryCustomLayoutList(CustomLayoutForm customLayoutForm) {
-        Example example = Example.builder(CustomLayout.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        criteria.andGreaterThan("id", "0");
-        if (StringUtils.isNotBlank(customLayoutForm.getLayoutName())) {
-            criteria.andEqualTo("layoutName", customLayoutForm.getLayoutName());
-        }
-        if (StringUtils.isNotBlank(customLayoutForm.getMatchLayoutName())) {
-            criteria.andLike("layoutName", customLayoutForm.getMatchLayoutName());
-        }
-        List<CustomLayout> customLayoutList = customLayoutMapper.selectByExample(example);
+        List<CustomLayout> customLayoutList = customLayoutMapper.selectList(Wrappers.<CustomLayout>lambdaQuery()
+                .ge(CustomLayout::getId,0)
+                .eq(StringUtils.isNotBlank(customLayoutForm.getLayoutName()), CustomLayout::getLayoutName, customLayoutForm.getLayoutName())
+                .eq(StringUtils.isNotBlank(customLayoutForm.getMatchLayoutName()), CustomLayout::getLayoutName, customLayoutForm.getMatchLayoutName())
+        );
         return Optional.ofNullable(customLayoutList).orElse(Collections.emptyList()).stream()
                 .map(item -> {
                     CustomLayoutRecord customLayoutRecord = CustomLayoutRecord.builder().build();
@@ -104,7 +94,7 @@ public class CustomLayoutServiceImpl implements CustomLayoutService {
         Long customLayoutId = idGenerateUtils.generateId("customLayoutId");
         CustomLayout customLayout = CustomLayout.builder().id(customLayoutId).layoutName(customLayoutForm.getLayoutName()).artifactPathPattern(customLayoutForm.getArtifactPathPattern()).createBy(username)
                 .createTime(now).updateBy(username).updateTime(now).build();
-        customLayoutMapper.insertSelective(customLayout);
+        customLayoutMapper.insert(customLayout);
     }
 
     @Override
@@ -118,7 +108,7 @@ public class CustomLayoutServiceImpl implements CustomLayoutService {
         Date now = new Date();
         Long customLayoutId = existsCustomLayout.getId();
         CustomLayout customLayout = CustomLayout.builder().id(customLayoutId).artifactPathPattern(customLayoutForm.getArtifactPathPattern()).updateBy(username).updateTime(now).build();
-        customLayoutMapper.updateByPrimaryKeySelective(customLayout);
+        customLayoutMapper.updateById(customLayout);
     }
 
     @Override
@@ -128,11 +118,20 @@ public class CustomLayoutServiceImpl implements CustomLayoutService {
         if (Objects.isNull(existsCustomLayout)) {
             return;
         }
-        customLayoutMapper.deleteByPrimaryKey(existsCustomLayout.getId());
+        customLayoutMapper.deleteById(existsCustomLayout.getId());
     }
 
     @Override
     public CustomLayout getCustomLayout(CustomLayout customLayout) {
-        return customLayoutMapper.selectOne(customLayout);
+        return customLayoutMapper.selectOne(Wrappers.<CustomLayout>lambdaQuery()
+                .eq(customLayout.getLayoutName()!=null,CustomLayout::getLayoutName, customLayout.getLayoutName())
+                .eq(customLayout.getId()!=null, CustomLayout::getId,customLayout.getId())
+                .eq(customLayout.getArtifactPathPattern()!=null,CustomLayout::getArtifactPathPattern, customLayout.getArtifactPathPattern())
+                .eq(customLayout.getCreateBy()!=null,CustomLayout::getCreateBy, customLayout.getCreateBy())
+                .eq(customLayout.getCreateTime()!=null,CustomLayout::getCreateTime, customLayout.getCreateTime())
+                .eq(customLayout.getUpdateBy()!=null,CustomLayout::getUpdateBy, customLayout.getUpdateBy())
+                .eq(customLayout.getUpdateTime()!=null,CustomLayout::getUpdateTime, customLayout.getUpdateTime())
+
+        );
     }
 }

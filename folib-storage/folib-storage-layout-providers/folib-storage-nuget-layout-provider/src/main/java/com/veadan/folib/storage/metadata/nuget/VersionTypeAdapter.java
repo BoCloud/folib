@@ -18,8 +18,8 @@
 package com.veadan.folib.storage.metadata.nuget;
 
 import com.veadan.folib.artifact.coordinates.versioning.SemanticVersion;
+import jakarta.xml.bind.annotation.adapters.XmlAdapter;
 
-import javax.xml.bind.annotation.adapters.XmlAdapter;
 
 /**
  * @author Dmitry Sviridov

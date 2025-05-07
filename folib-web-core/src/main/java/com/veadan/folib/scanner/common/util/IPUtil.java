@@ -2,7 +2,7 @@ package com.veadan.folib.scanner.common.util;
 
 import org.springframework.http.server.reactive.ServerHttpRequest;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashSet;

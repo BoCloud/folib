@@ -1,6 +1,6 @@
 package com.veadan.folib.mapper;
 
-import com.veadan.folib.common.base.CommonMapper;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.veadan.folib.entity.BlockStrategyInfo;
 import com.veadan.folib.entity.BlockStrategyRepository;
 import org.apache.ibatis.annotations.Param;
@@ -12,7 +12,7 @@ import java.util.List;
  * @author leipenghui
  */
 @Component
-public interface BlockStrategyInfoMapper extends CommonMapper<BlockStrategyInfo> {
+public interface BlockStrategyInfoMapper extends BaseMapper<BlockStrategyInfo> {
 
     /**
      * 批量保存

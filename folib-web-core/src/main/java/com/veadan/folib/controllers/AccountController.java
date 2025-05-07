@@ -57,16 +57,20 @@ public class AccountController
 {
 
     @Inject
+    @Lazy
     @RelationalDatabaseUserService.RelationalDatabase
     private UserService userService;
 
     @Inject
+    @Lazy
     private PasswordEncoder passwordEncoder;
 
     @Inject
+    @Lazy
     private ConfigurationManager configurationManager;
 
     @Inject
+    @Lazy
     private RSAUtils rsaUtils;
     @Autowired
     @Lazy

@@ -1,6 +1,7 @@
 package com.veadan.folib.providers.layout.p2;
 
-import javax.xml.bind.annotation.XmlAttribute;
+
+import jakarta.xml.bind.annotation.XmlAttribute;
 
 public class P2Property
 {

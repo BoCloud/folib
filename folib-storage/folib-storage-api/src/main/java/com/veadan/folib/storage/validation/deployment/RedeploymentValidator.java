@@ -16,6 +16,7 @@ import java.io.IOException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 /**
@@ -31,13 +32,14 @@ public class RedeploymentValidator
     public static final String ALIAS = "redeployment-validator";
 
     public static final String DESCRIPTION = "Re-deployment validator";
-    
+
+    @Lazy
     @Inject
     private LayoutProviderRegistry layoutProviderRegistry;
-
+    @Lazy
     @Inject
     private ArtifactCoordinatesValidatorRegistry artifactCoordinatesValidatorRegistry;
-
+    @Lazy
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
 

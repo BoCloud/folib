@@ -3,11 +3,12 @@ package com.veadan.folib.services.impl;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
-import com.beust.jcommander.internal.Sets;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.IdGenerateUtils;
@@ -41,7 +42,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
 import java.math.BigDecimal;
@@ -95,15 +95,11 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
         platformStorageMonitoring(storageMap, storageMonitoringList, date);
         storageDeviceStorageMonitoring(storageMonitoringList, storageDeviceList, date);
         storageMonitoringList = trashStorageMonitoring(storageMonitoringList, trashStorageMonitoringList, date);
-        Example deleteExample = Example.builder(StorageMonitoring.class).build();
-        Example.Criteria deleteCriteria = deleteExample.createCriteria();
+
         LocalDateTime deleteDeadlineDate = LocalDateTime.now().minusDays(60);
-        deleteCriteria.andLessThanOrEqualTo("createTime", DateUtil.formatLocalDateTime(deleteDeadlineDate));
-        storageMonitoringMapper.deleteByExample(deleteExample);
-        Example example = Example.builder(StorageMonitoring.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        criteria.andEqualTo("isLatest", true);
-        storageMonitoringMapper.updateByExampleSelective(StorageMonitoring.builder().isLatest(Boolean.FALSE).build(), example);
+        storageMonitoringMapper.delete(Wrappers.<StorageMonitoring>lambdaQuery().eq(StorageMonitoring::getCreateTime, deleteDeadlineDate));
+
+        storageMonitoringMapper.update(StorageMonitoring.builder().isLatest(Boolean.TRUE).build(), Wrappers.<StorageMonitoring>lambdaUpdate().eq(StorageMonitoring::getIsLatest,true));
         List<List<StorageMonitoring>> lists = Lists.partition(storageMonitoringList, 50);
         for (List<StorageMonitoring> itemList : lists) {
             storageMonitoringMapper.batchInsertStorageMonitoring(itemList);
@@ -118,7 +114,7 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
         if (Objects.nonNull(storageMonitoringRes)) {
             updateStorageMonitoring(storageMonitoring);
         } else {
-            storageMonitoringMapper.insertSelective(storageMonitoring);
+            storageMonitoringMapper.insertOrUpdate(storageMonitoring);
         }
     }
 
@@ -127,39 +123,21 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
     public void updateStorageMonitoring(StorageMonitoring storageMonitoring) {
         StorageMonitoringRes storageMonitoringRes = queryOneStorageMonitoring(storageMonitoring);
         if (Objects.nonNull(storageMonitoringRes)) {
-            Example example = Example.builder(StorageMonitoring.class).build();
-            Example.Criteria criteria = example.createCriteria();
-            criteria.andEqualTo("id", storageMonitoring.getId());
-            storageMonitoringMapper.updateByExampleSelective(storageMonitoring, example);
+            storageMonitoringMapper.updateById(storageMonitoring);
         }
     }
 
     @Override
     public List<StorageMonitoringRes> queryStorageMonitoring(StorageMonitoring storageMonitoring) {
-        Example example = Example.builder(StorageMonitoring.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        if (Objects.nonNull(storageMonitoring)) {
-            if (StringUtils.isNotBlank(storageMonitoring.getStorageId())) {
-                criteria.andEqualTo("storageId", storageMonitoring.getStorageId());
-            }
-            if (StringUtils.isNotBlank(storageMonitoring.getRepositoryId())) {
-                criteria.andEqualTo("repositoryId", storageMonitoring.getRepositoryId());
-            }
-            if (StringUtils.isNotBlank(storageMonitoring.getRepositoryType())) {
-                criteria.andEqualTo("repositoryType", storageMonitoring.getRepositoryType());
-            }
-            if (StringUtils.isNotBlank(storageMonitoring.getRepositoryLayout())) {
-                criteria.andEqualTo("repositoryLayout", storageMonitoring.getRepositoryLayout());
-            }
-            if (Objects.nonNull(storageMonitoring.getDataType())) {
-                criteria.andEqualTo("dataType", storageMonitoring.getDataType());
-            }
-            if (Objects.nonNull(storageMonitoring.getIsLatest())) {
-                criteria.andEqualTo("isLatest", storageMonitoring.getIsLatest());
-            }
-        }
         List<StorageMonitoringRes> storageMonitoringResList = null;
-        List<StorageMonitoring> storageMonitoringList = storageMonitoringMapper.selectByExample(example);
+        List<StorageMonitoring> storageMonitoringList = storageMonitoringMapper.selectList(Wrappers.<StorageMonitoring>lambdaQuery()
+                .eq(StringUtils.isNotBlank(storageMonitoring.getStorageId()), StorageMonitoring::getStorageId, storageMonitoring.getStorageId())
+                .eq(StringUtils.isNotBlank(storageMonitoring.getRepositoryId()), StorageMonitoring::getRepositoryId, storageMonitoring.getRepositoryId())
+                .eq(StringUtils.isNotBlank(storageMonitoring.getRepositoryType()), StorageMonitoring::getRepositoryType, storageMonitoring.getRepositoryType())
+                .eq(StringUtils.isNotBlank(storageMonitoring.getRepositoryLayout()), StorageMonitoring::getRepositoryLayout, storageMonitoring.getRepositoryLayout())
+                .eq(Objects.nonNull(storageMonitoring.getDataType()), StorageMonitoring::getDataType, storageMonitoring.getDataType())
+                .eq(Objects.nonNull(storageMonitoring.getIsLatest()), StorageMonitoring::getIsLatest, storageMonitoring.getIsLatest())
+        );
         if (CollectionUtils.isNotEmpty(storageMonitoringList)) {
             storageMonitoringResList = storageMonitoringList.stream().map(item -> {
                 StorageMonitoringRes storageMonitoringRes = StorageMonitoringRes.builder().build();
@@ -174,11 +152,8 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
 
     @Override
     public StorageMonitoringRes queryOneStorageMonitoring(StorageMonitoring storageMonitoring) {
-        Example example = Example.builder(StorageMonitoring.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        criteria.andEqualTo("id", storageMonitoring.getId());
         StorageMonitoringRes storageMonitoringRes = null;
-        StorageMonitoring dbStorageMonitoring = storageMonitoringMapper.selectOneByExample(example);
+        StorageMonitoring dbStorageMonitoring = storageMonitoringMapper.selectById(storageMonitoring.getId());
         if (Objects.nonNull(dbStorageMonitoring)) {
             storageMonitoringRes = StorageMonitoringRes.builder().build();
             BeanUtils.copyProperties(dbStorageMonitoring, storageMonitoringRes);
@@ -197,49 +172,28 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
         if (Objects.isNull(limit)) {
             limit = 10;
         }
-        Example example = Example.builder(StorageMonitoring.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        if (StringUtils.isNotBlank(storageMonitoringReq.getStorageId())) {
-            criteria.andEqualTo("storageId", storageMonitoringReq.getStorageId());
-        }
-        if (StringUtils.isNotBlank(storageMonitoringReq.getRepositoryId())) {
-            criteria.andEqualTo("repositoryId", storageMonitoringReq.getRepositoryId());
-        }
-        if (StringUtils.isNotBlank(storageMonitoringReq.getRepositoryType())) {
-            criteria.andEqualTo("repositoryType", storageMonitoringReq.getRepositoryType());
-        }
-        if (StringUtils.isNotBlank(storageMonitoringReq.getRepositoryLayout())) {
-            criteria.andEqualTo("repositoryLayout", storageMonitoringReq.getRepositoryLayout());
-        }
-        if (StringUtils.isNotBlank(storageMonitoringReq.getRepositorySubLayout())) {
-            criteria.andEqualTo("repositorySubLayout", storageMonitoringReq.getRepositorySubLayout());
-        }
-        if (Objects.nonNull(storageMonitoringReq.getDataType())) {
-            criteria.andEqualTo("dataType", storageMonitoringReq.getDataType());
-        }
-        if (CollectionUtils.isNotEmpty(storageMonitoringReq.getDataTypes())) {
-            criteria.andIn("dataType", storageMonitoringReq.getDataTypes());
-        }
-        if (Objects.nonNull(storageMonitoringReq.getIsLatest())) {
-            criteria.andEqualTo("isLatest", storageMonitoringReq.getIsLatest());
-        }
-        if (StringUtils.isNotBlank(storageMonitoringReq.getStorageDeviceName())) {
-            criteria.andEqualTo("storageDeviceName", storageMonitoringReq.getStorageDeviceName());
-        }
-        StringBuilder orderBy = new StringBuilder();
-        orderBy.append("data_type desc");
+
+        boolean isAsc = true;
         if (StringUtils.isNotBlank(storageMonitoringReq.getSortField()) && StringUtils.isNotBlank(storageMonitoringReq.getSortOrder())) {
-            orderBy.append(",");
-            orderBy.append(StrUtil.toUnderlineCase(storageMonitoringReq.getSortField()));
             if (Paginator.Order.ASC.toString().equalsIgnoreCase(storageMonitoringReq.getSortOrder())) {
-                orderBy.append(" asc");
+                isAsc =true;
             } else if (Paginator.Order.DESC.toString().equalsIgnoreCase(storageMonitoringReq.getSortOrder())) {
-                orderBy.append(" desc");
+                isAsc = false;
             }
         }
-        example.setOrderByClause(orderBy.toString());
         Page<Object> result = PageHelper.startPage(page, limit);
-        List<StorageMonitoring> storageMonitoringList = storageMonitoringMapper.selectByExample(example);
+        List<StorageMonitoring> storageMonitoringList = storageMonitoringMapper.selectList(Wrappers.<StorageMonitoring>lambdaQuery()
+                .eq(StringUtils.isNotBlank(storageMonitoringReq.getStorageId()), StorageMonitoring::getStorageId, storageMonitoringReq.getStorageId())
+                .eq(StringUtils.isNotBlank(storageMonitoringReq.getRepositoryId()), StorageMonitoring::getRepositoryId, storageMonitoringReq.getRepositoryId())
+                .eq(StringUtils.isNotBlank(storageMonitoringReq.getRepositoryType()), StorageMonitoring::getRepositoryType, storageMonitoringReq.getRepositoryType())
+                .eq(StringUtils.isNotBlank(storageMonitoringReq.getRepositoryLayout()), StorageMonitoring::getRepositoryLayout, storageMonitoringReq.getRepositoryLayout())
+                .eq(StringUtils.isNotBlank(storageMonitoringReq.getRepositorySubLayout()), StorageMonitoring::getRepositorySubLayout, storageMonitoringReq.getRepositorySubLayout())
+                .eq(Objects.nonNull(storageMonitoringReq.getDataType()), StorageMonitoring::getDataType, storageMonitoringReq.getDataType())
+                .in(CollectionUtils.isNotEmpty(storageMonitoringReq.getDataTypes()), StorageMonitoring::getDataType, storageMonitoringReq.getDataTypes())
+                .eq(Objects.nonNull(storageMonitoringReq.getIsLatest()), StorageMonitoring::getIsLatest, storageMonitoringReq.getIsLatest())
+                .eq(StringUtils.isNotBlank(storageMonitoringReq.getStorageDeviceName()), StorageMonitoring::getStorageDeviceName, storageMonitoringReq.getStorageDeviceName())
+                .orderBy(true,isAsc,StorageMonitoring::getDataType)
+        );
         List<StorageMonitoringRes> storageMonitoringResList = null;
         if (CollectionUtils.isNotEmpty(storageMonitoringList)) {
             storageMonitoringResList = storageMonitoringList.stream().map(item -> {

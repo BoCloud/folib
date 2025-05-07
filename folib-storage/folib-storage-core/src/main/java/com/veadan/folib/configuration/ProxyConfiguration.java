@@ -1,13 +1,14 @@
 package com.veadan.folib.configuration;
 
 import javax.annotation.concurrent.Immutable;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
+
 import java.util.Collections;
 import java.util.List;
 
 import com.google.common.collect.ImmutableList;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
 
 /**
  * @author veadan

@@ -4,13 +4,13 @@ import com.veadan.folib.artifact.coordinates.versioning.SemanticVersion;
 import com.veadan.folib.constant.DebianConstant;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import lombok.extern.slf4j.Slf4j;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.springframework.util.Assert;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlRootElement;
 import java.util.regex.Matcher;
 
 /**

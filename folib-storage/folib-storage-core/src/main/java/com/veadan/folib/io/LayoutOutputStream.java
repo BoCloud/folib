@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.bind.DatatypeConverter;
 
 /**
  * This class decorates storage {@link OutputStream} with common layout specific logic.

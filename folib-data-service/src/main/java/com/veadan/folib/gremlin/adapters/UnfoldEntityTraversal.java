@@ -144,6 +144,14 @@ public class UnfoldEntityTraversal<S, E> implements EntityTraversal<S, E>
         return target.isLocked();
     }
 
+    /**
+     * Lock the traversal and perform any final adjustments to it after strategy application.
+     */
+    @Override
+    public void lock() {
+
+    }
+
     @Override
     public Optional<Graph> getGraph()
     {

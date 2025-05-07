@@ -11,8 +11,8 @@ import org.springframework.web.client.RestTemplate;
 import javax.inject.Inject;
 import javax.servlet.*;
 import javax.servlet.annotation.WebFilter;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -54,7 +54,7 @@ public class FoEyesHttpProxyFilter implements Filter {
         // 请求类型
         String method = req.getMethod();
         // 请求方式
-        HttpMethod httpMethod = HttpMethod.resolve(method);
+        HttpMethod httpMethod = HttpMethod.valueOf(method);
         // 请求头
         MultiValueMap<String, String> headers = parseRequestHeader(req);
         String params = getParamsString(req);

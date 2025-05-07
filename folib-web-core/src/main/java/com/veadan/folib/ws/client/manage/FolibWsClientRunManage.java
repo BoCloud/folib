@@ -16,7 +16,8 @@ import org.springframework.web.socket.PingMessage;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
-import org.springframework.web.socket.client.jetty.JettyWebSocketClient;
+
+import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -35,11 +36,11 @@ import java.util.concurrent.TimeUnit;
 @Deprecated
 public class FolibWsClientRunManage extends FolibWsRunManage {
     private static final Map<String, FolibWsServerRun> FOLIB_WS_RUN_MAP = new ConcurrentHashMap<>();
-    public static final JettyWebSocketClient WEB_SOCKET_CLIENT = new JettyWebSocketClient();
+    public static final StandardWebSocketClient WEB_SOCKET_CLIENT = new StandardWebSocketClient();
 
-    static {
-        WEB_SOCKET_CLIENT.start();
-    }
+    //static {
+    //    WEB_SOCKET_CLIENT.start();
+    //}
 
     public static Collection<FolibWsServerRun> getAllRun() {
         return FOLIB_WS_RUN_MAP.values();

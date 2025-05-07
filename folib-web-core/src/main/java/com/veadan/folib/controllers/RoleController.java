@@ -31,6 +31,7 @@ import com.veadan.folib.ws.server.Command;
 import com.veadan.folib.ws.server.WSMessageRequest;
 import com.veadan.folib.ws.server.WSMessageResponse;
 import io.swagger.annotations.*;
+import jakarta.websocket.Session;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -49,8 +50,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.websocket.Session;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.stream.Collectors;
 

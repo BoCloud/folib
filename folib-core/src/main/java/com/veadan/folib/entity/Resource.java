@@ -1,5 +1,6 @@
 package com.veadan.folib.entity;
 
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -9,10 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
+
 import java.io.Serializable;
 import java.util.Date;
 
@@ -27,12 +25,11 @@ import java.util.Date;
  @NoArgsConstructor
  @Accessors(chain = true)
 @ApiModel(value = "资源表",description = "")
-@Table(name="resource")
+@TableName("resource")
 public class Resource implements Serializable,Cloneable {
      /**
       * 主键
       */
-     @Id
      @ApiModelProperty(name = "主键", notes = "")
      private String id;
      /**

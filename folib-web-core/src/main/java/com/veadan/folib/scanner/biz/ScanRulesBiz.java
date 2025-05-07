@@ -13,5 +13,5 @@ import org.springframework.stereotype.Service;
  * @version 2022-06-03 14:51:22
  */
 @Service
-public class ScanRulesBiz extends BusinessBiz<ScanRulesMapper,ScanRules> {
+public class ScanRulesBiz extends BusinessBiz {
 }

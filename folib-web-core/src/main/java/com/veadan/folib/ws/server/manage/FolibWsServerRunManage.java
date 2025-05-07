@@ -5,12 +5,13 @@ import com.veadan.folib.ws.common.FolibWsAction;
 import com.veadan.folib.ws.common.FolibWsRunManage;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import jakarta.websocket.Session;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.websocket.Session;
+
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Map;

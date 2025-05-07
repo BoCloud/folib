@@ -8,13 +8,12 @@
     <parent>
         <groupId>com.veadan.folib</groupId>
         <artifactId>folib-parent</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>3.0-SNAPSHOT</version>
         <relativePath/>
     </parent>
 
     <artifactId>folib-commons</artifactId>
     <packaging>jar</packaging>
-    <version>1.0-SNAPSHOT</version>
 
     <name>Folib: Commons</name>
 
@@ -33,8 +32,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>11</source>
-                    <target>11</target>
+                    <source>17</source>
+                    <target>17</target>
                 </configuration>
             </plugin>
             <plugin>
@@ -108,7 +107,7 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-common-resources</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>3.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>
@@ -232,16 +231,9 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>tk.mybatis</groupId>
-            <artifactId>mapper-base</artifactId>
-            <version>4.2.1</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mybatis</groupId>
-            <artifactId>mybatis</artifactId>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
             <version>3.5.9</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -250,7 +242,7 @@
         <dependency>
             <groupId>com.veadan.folib</groupId>
             <artifactId>folib-s3fs-nio</artifactId>
-            <version>1.0-SNAPSHOT</version>
+             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -263,11 +255,11 @@
             <artifactId>hutool-all</artifactId>
             <version>5.7.20</version>
         </dependency>
-        <dependency>
-            <groupId>org.redisson</groupId>
-            <artifactId>redisson</artifactId>
-            <version>3.11.5</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.redisson</groupId>-->
+<!--            <artifactId>redisson</artifactId>-->
+<!--            <version>3.22.0</version>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>

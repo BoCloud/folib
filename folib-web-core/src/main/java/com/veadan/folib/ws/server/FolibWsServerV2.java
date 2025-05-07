@@ -1,12 +1,13 @@
 package com.veadan.folib.ws.server;
 
 import com.veadan.folib.scanner.common.util.SpringContextUtil;
+import jakarta.websocket.*;
+import jakarta.websocket.server.PathParam;
+import jakarta.websocket.server.ServerEndpoint;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import javax.websocket.*;
-import javax.websocket.server.PathParam;
-import javax.websocket.server.ServerEndpoint;
+
 import java.nio.ByteBuffer;
 
 /**

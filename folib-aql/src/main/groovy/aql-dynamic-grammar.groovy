@@ -13,11 +13,11 @@ JtwigModel model = JtwigModel.newModel().with("layoutMap", layoutMap)
 new File("$project.basedir/target/antlr4/com/veadan/folib/aql/grammar").mkdirs()
 
 def out = new File("$project.basedir/target/antlr4/com/veadan/folib/aql/grammar","AQL.g4").newOutputStream()
-try 
+try
 {
     template.render(model, out)
-} 
-finally 
+}
+finally
 {
     out.close()
 }

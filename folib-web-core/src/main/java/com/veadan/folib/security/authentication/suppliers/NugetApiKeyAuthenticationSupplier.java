@@ -4,7 +4,7 @@ import java.util.Enumeration;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import com.veadan.folib.authentication.api.nuget.SecurityTokenAuthentication;
 import com.veadan.folib.providers.layout.NugetLayoutProvider;

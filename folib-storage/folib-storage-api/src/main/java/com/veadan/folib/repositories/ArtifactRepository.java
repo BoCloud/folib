@@ -32,6 +32,7 @@ import org.apache.tinkerpop.gremlin.process.traversal.Order;
 import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.janusgraph.core.attribute.Text;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -49,12 +50,16 @@ import java.util.concurrent.TimeUnit;
 public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
 
     @Inject
+    @Lazy
     ArtifactAdapter artifactAdapter;
     @Inject
+    @Lazy
     ConfigurationManager configurationManager;
     @Inject
+    @Lazy
     ConfigurationManagementService configurationManagementService;
     @Inject
+    @Lazy
     DistributedLockComponent distributedLockComponent;
 
     @Override
@@ -1056,5 +1061,4 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     public long countByUUidPrefix(String uuid) {
         return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.UUID, Text.textPrefix(uuid)).count().tryNext().orElse(0L);
     }
-
 }

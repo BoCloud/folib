@@ -7,12 +7,11 @@
  <parent>
         <groupId>com.veadan.folib</groupId>
         <artifactId>folib-parent</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>3.0-SNAPSHOT</version>
         <relativePath/>
     </parent>
 
     <artifactId>folib-aql</artifactId>
-    <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Folib: AQL</name>
@@ -30,103 +29,110 @@
     </scm>
 
     <build>
-        <plugins>
-            <plugin>
-                <groupId>org.codehaus.gmavenplus</groupId>
-                <artifactId>gmavenplus-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>aql-dynamic-grammar</id>
-                        <goals>
-                            <goal>execute</goal>
-                        </goals>
-                        <phase>generate-sources</phase>
-                    </execution>
-                </executions>
-                <configuration>
-                    <scripts>
-                        <script>${basedir}/src/main/groovy/aql-dynamic-grammar.groovy</script>
-                    </scripts>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>${project.groupId}</groupId>
-                        <artifactId>folib-storage-maven-layout-provider</artifactId>
-                        <version>1.0-SNAPSHOT</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>${project.groupId}</groupId>
-                        <artifactId>folib-storage-nuget-layout-provider</artifactId>
-                        <version>1.0-SNAPSHOT</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>${project.groupId}</groupId>
-                        <artifactId>folib-storage-npm-layout-provider</artifactId>
-                        <version>1.0-SNAPSHOT</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>${project.groupId}</groupId>
-                        <artifactId>folib-commons</artifactId>
-                        <version>1.0-SNAPSHOT</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.codehaus.groovy</groupId>
-                        <artifactId>groovy-all</artifactId>
-                        <version>${version.groovy}</version>
-                        <scope>runtime</scope>
-                        <type>pom</type>
-                    </dependency>
-                </dependencies>
-            </plugin>
-            <plugin>
-                <groupId>org.antlr</groupId>
-                <artifactId>antlr4-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>aql-antlr-java</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>antlr4</goal>
-                        </goals>
-                        <configuration>
-                            <sourceDirectory>${project.build.directory}/antlr4</sourceDirectory>
-                            <visitor>true</visitor>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-jar-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>aql-grammar-artifact</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                        <phase>package</phase>
-                        <configuration>
-                            <classesDirectory>${project.build.directory}/antlr4</classesDirectory>
-                            <includes>
-                                <include>AQL.g4</include>
-                            </includes>
-                            <classifier>grammar</classifier>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
+<!--        <plugins>-->
+<!--            <plugin>-->
+<!--                <groupId>org.codehaus.gmavenplus</groupId>-->
+<!--                <artifactId>gmavenplus-plugin</artifactId>-->
+<!--                <version>2.1.0</version>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>aql-dynamic-grammar</id>-->
+<!--                        <goals>-->
+<!--                            <goal>execute</goal>-->
+<!--                        </goals>-->
+<!--                        <phase>generate-sources</phase>-->
+<!--                        <configuration>-->
+<!--                            <jvmArgs>-->
+<!--                                &#45;&#45;add-opens java.base/java.lang=ALL-UNNAMED-->
+<!--                                &#45;&#45;add-opens java.base/java.util=ALL-UNNAMED-->
+<!--                            </jvmArgs>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--                <configuration>-->
+<!--                    <scripts>-->
+<!--                        <script>${basedir}/src/main/groovy/aql-dynamic-grammar.groovy</script>-->
+<!--                    </scripts>-->
+<!--                </configuration>-->
+<!--                <dependencies>-->
+<!--                    <dependency>-->
+<!--                        <groupId>${project.groupId}</groupId>-->
+<!--                        <artifactId>folib-storage-maven-layout-provider</artifactId>-->
+<!--                        <version>${project.version}</version>-->
+<!--                    </dependency>-->
+<!--                    <dependency>-->
+<!--                        <groupId>${project.groupId}</groupId>-->
+<!--                        <artifactId>folib-storage-nuget-layout-provider</artifactId>-->
+<!--                        <version>${project.version}</version>-->
+<!--                    </dependency>-->
+<!--                    <dependency>-->
+<!--                        <groupId>${project.groupId}</groupId>-->
+<!--                        <artifactId>folib-storage-npm-layout-provider</artifactId>-->
+<!--                        <version>${project.version}</version>-->
+<!--                    </dependency>-->
+<!--                    <dependency>-->
+<!--                        <groupId>${project.groupId}</groupId>-->
+<!--                        <artifactId>folib-commons</artifactId>-->
+<!--                        <version>${project.version}</version>-->
+<!--                    </dependency>-->
+<!--                    <dependency>-->
+<!--                        <groupId>org.apache.groovy</groupId>-->
+<!--                        <artifactId>groovy-all</artifactId>-->
+<!--                        <version>4.0.24</version>-->
+<!--                        <scope>runtime</scope>-->
+<!--                        <type>pom</type>-->
+<!--                    </dependency>-->
+<!--                </dependencies>-->
+<!--            </plugin>-->
+<!--            <plugin>-->
+<!--                <groupId>org.antlr</groupId>-->
+<!--                <artifactId>antlr4-maven-plugin</artifactId>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>aql-antlr-java</id>-->
+<!--                        <phase>generate-sources</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>antlr4</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <sourceDirectory>${project.build.directory}/antlr4</sourceDirectory>-->
+<!--                            <visitor>true</visitor>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
+<!--            <plugin>-->
+<!--                <artifactId>maven-jar-plugin</artifactId>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>aql-grammar-artifact</id>-->
+<!--                        <goals>-->
+<!--                            <goal>jar</goal>-->
+<!--                        </goals>-->
+<!--                        <phase>package</phase>-->
+<!--                        <configuration>-->
+<!--                            <classesDirectory>${project.build.directory}/antlr4</classesDirectory>-->
+<!--                            <includes>-->
+<!--                                <include>AQL.g4</include>-->
+<!--                            </includes>-->
+<!--                            <classifier>grammar</classifier>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
+<!--        </plugins>-->
     </build>
 
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-data-service</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>3.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-api</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>3.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>

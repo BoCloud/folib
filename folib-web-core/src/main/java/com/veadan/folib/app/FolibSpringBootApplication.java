@@ -1,7 +1,9 @@
 package com.veadan.folib.app;
 
 import com.veadan.folib.config.WebConfig;
+import com.veadan.folib.config.janusgraph.FolibCassandraEmbeddedProperties;
 import com.veadan.folib.config.janusgraph.JanusGraphDbProfile;
+import org.mybatis.spring.annotation.MapperScan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -12,10 +14,11 @@ import org.springframework.boot.autoconfigure.data.neo4j.Neo4jDataAutoConfigurat
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.context.metrics.buffering.BufferingApplicationStartup;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Import;
 import org.springframework.scheduling.annotation.EnableAsync;
-import tk.mybatis.spring.annotation.MapperScan;
 
 /**
  * @author Veadan

@@ -1,5 +1,7 @@
 package com.veadan.folib.providers.storage;
 
+import org.springframework.context.annotation.Lazy;
+
 import javax.inject.Inject;
 
 /**
@@ -10,6 +12,7 @@ public abstract class AbstractStorageProvider
 {
 
     @Inject
+    @Lazy
     private StorageProviderRegistry storageProviderRegistry;
 
 

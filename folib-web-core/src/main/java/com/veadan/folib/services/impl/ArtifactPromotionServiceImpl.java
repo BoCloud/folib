@@ -7,6 +7,7 @@ import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
@@ -66,7 +67,6 @@ import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.model.Model;
@@ -85,11 +85,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.commons.CommonsMultipartFile;
+
 
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
@@ -585,7 +585,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.READY.getVal());
         artifactSyncRecord.setCreateBy(userName);
         artifactSyncRecord.setCreateTime(new Date());
-        artifactSyncRecordMapper.insertSelective(artifactSyncRecord);
+        artifactSyncRecordMapper.insert(artifactSyncRecord);
         promotionNodeOption.setSyncNo(syncNo);
         try {
             return this.nodeOptionV2(promotionNodeOption);
@@ -594,7 +594,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             artifactSyncRecord.setFailedReason(e.getMessage());
 
             // 更新日志结束开始时间
-            artifactSyncRecordMapper.updateByPrimaryKeySelective(artifactSyncRecord
+            artifactSyncRecordMapper.updateById(artifactSyncRecord
                     .setUpdateTime(new Date())
                     .setUpdateBy(userName));
             if (e instanceof RuntimeException) {
@@ -648,7 +648,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         }
         Date date = new Date();
         ArtifactSyncRecord updateArtifactSyncRecord = ArtifactSyncRecord.builder().id(artifactSyncRecord.getId()).status(ArtifactSyncRecordStatusEnum.READY.getVal()).retryCount(retryCount + 1).retryTime(date).updateBy(userName).updateTime(date).build();
-        artifactSyncRecordMapper.updateByPrimaryKeySelective(updateArtifactSyncRecord);
+        artifactSyncRecordMapper.updateById(updateArtifactSyncRecord);
         promotionNodeOption.setSyncNo(syncNo);
         try {
             return this.nodeOptionV2(promotionNodeOption);
@@ -657,7 +657,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             updateArtifactSyncRecord.setFailedReason(e.getMessage());
 
             // 更新日志结束开始时间
-            artifactSyncRecordMapper.updateByPrimaryKeySelective(updateArtifactSyncRecord);
+            artifactSyncRecordMapper.updateById(updateArtifactSyncRecord);
             if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
             } else {
@@ -680,7 +680,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
 
     @Override
     public ResponseEntity artifactPromotionInfo(String syncNo) {
-        final ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectOne(new ArtifactSyncRecord().setSyncNo(syncNo));
+        final ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectOne(Wrappers.<ArtifactSyncRecord>lambdaQuery().eq(ArtifactSyncRecord::getSyncNo, syncNo));
         if (null == artifactSyncRecord) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("查询制品晋级信息不存在或已被删除");
@@ -694,7 +694,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     @Override
     public ArtifactParse parseArtifact(String storageId, String repositoryId, MultipartFile file) {
         String uuid = UUID.fastUUID().toString();
-        String fileOriginalName = ((CommonsMultipartFile) file).getFileItem().getName();
+        String fileOriginalName = file.getOriginalFilename();
         String parentPath = "";
         ArtifactParse artifactParse = null;
         try (InputStream inputStream = file.getInputStream()) {
@@ -780,7 +780,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
                     new HashMap<>() : JSON.parseObject(fileMetaDataMap, Map.class);
             for (MultipartFile file : files) {
                 //file.getOriginalFilename() 有问题修改用下面api
-                String fileOriginalName = ((DiskFileItem) ((CommonsMultipartFile) file).getFileItem()).getName();
+                String fileOriginalName =  file.getOriginalFilename();
                 String fileRelativePath = mapType.get(fileOriginalName);
                 String metaData = metaDataMap.getOrDefault(fileRelativePath, "").toString();
                 //ArtifactUploadTask artifactUploadTask = new ArtifactUploadTask(storageId, repositoryId, file,
@@ -1661,7 +1661,7 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
             promotionUtil.deleteTask(syncNo);
         }
         artifactSyncSlaveRecordMapper.deleteBySyncNo(syncNo);
-        artifactSyncRecordMapper.delete(artifactSyncRecord);
+        artifactSyncRecordMapper.deleteById(artifactSyncRecord);
         return ResponseEntity.ok().build();
     }
 

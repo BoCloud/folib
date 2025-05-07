@@ -7,12 +7,12 @@ import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.util.PypiArtifactCoordinatesUtils;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import org.apache.commons.lang3.StringUtils;
 import org.neo4j.ogm.annotation.NodeEntity;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlRootElement;
 import java.net.URI;
 import java.util.List;
 

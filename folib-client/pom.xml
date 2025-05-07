@@ -154,7 +154,7 @@
         <dependency>
             <artifactId>jakarta.xml.bind-api</artifactId>
             <groupId>jakarta.xml.bind</groupId>
-            <version>2.3.3</version>
+            <version>4.0.1</version>
         </dependency>
     </dependencies>
     <repositories>

@@ -1,6 +1,6 @@
 package com.veadan.folib.configuration;
 
-import javax.enterprise.inject.Default;
+//import javax.enterprise.inject.Default;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -16,7 +16,7 @@ public class FolibSecurityConfig
 {
 
     @Bean
-    @Default
+   // @Default
     PasswordEncoder passwordEncoder()
     {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();

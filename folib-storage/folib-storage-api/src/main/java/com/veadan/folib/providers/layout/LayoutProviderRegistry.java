@@ -4,7 +4,6 @@ import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.providers.AbstractMappedProviderRegistry;
 import com.veadan.folib.providers.ProviderImplementationException;
-import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 
@@ -15,6 +14,7 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 /**
@@ -27,13 +27,12 @@ public class LayoutProviderRegistry
 
     private static final Logger logger = LoggerFactory.getLogger(LayoutProviderRegistry.class);
 
+    @Lazy
     @Inject
     private ConfigurationManager configurationManager;
 
     @Inject
-    private ConfigurationManagementService configurationManagementService;
-
-    @Inject
+    @Lazy
     private Optional<List<LayoutProvider>> layoutProviders;
 
     public static LayoutProvider getLayoutProvider(Repository repository,

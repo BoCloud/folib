@@ -4,10 +4,10 @@ import com.veadan.folib.yaml.repository.remote.CustomRemoteRepositoryConfigurati
 import com.veadan.folib.yaml.repository.remote.RemoteRepositoryConfigurationDto;
 
 import javax.annotation.concurrent.Immutable;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
 
 /**
  * @author veadan

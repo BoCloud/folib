@@ -28,6 +28,8 @@ import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.utils.ArtifactControllerHelper;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -48,8 +50,6 @@ import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URI;
 import java.nio.ByteBuffer;

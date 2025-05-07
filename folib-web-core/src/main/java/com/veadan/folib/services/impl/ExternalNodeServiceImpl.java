@@ -1,5 +1,6 @@
 package com.veadan.folib.services.impl;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.google.common.collect.Lists;
@@ -14,14 +15,16 @@ import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.ExternalNodeService;
 import com.veadan.folib.services.JFrogService;
 import com.veadan.folib.util.RSAUtils;
+import com.veadan.folib.ws.server.CheckTargetNodeRepositoryCommandProcessor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jfrog.artifactory.client.model.LightweightRepository;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
 import java.util.*;
@@ -37,11 +40,14 @@ public class ExternalNodeServiceImpl implements ExternalNodeService {
     @Inject
     private ExternalNodeMapper externalNodeMapper;
 
+    @Lazy
     @Inject
     private JFrogService jFrogService;
 
     @Inject
     private RSAUtils rsaUtils;
+    @Autowired
+    private CheckTargetNodeRepositoryCommandProcessor checkTargetNodeRepositoryCommandProcessor;
 
     @Override
     public TableResultResponse<ExternalNodeForm> queryExternalNodeList(Integer page, Integer limit, ExternalNodeForm externalNodeForm) {
@@ -51,15 +57,16 @@ public class ExternalNodeServiceImpl implements ExternalNodeService {
         if (Objects.isNull(limit)) {
             limit = 10;
         }
-        Example example = Example.builder(ExternalNode.class).build();
-        Example.Criteria criteria = example.createCriteria();
+        String nodeName = "";
         if (StringUtils.isNotBlank(externalNodeForm.getNodeName())) {
-            String nodeName = "%" + externalNodeForm.getNodeName() + "%";
-            criteria.andLike("nodeName", nodeName);
+             nodeName = "%" + externalNodeForm.getNodeName() + "%";
         }
-        example.setOrderByClause("create_time");
+
         Page<Object> result = PageHelper.startPage(page, limit);
-        List<ExternalNode> externalNodeList = externalNodeMapper.selectByExample(example);
+        List<ExternalNode> externalNodeList = externalNodeMapper.selectList(Wrappers.<ExternalNode>lambdaQuery()
+                .like(ExternalNode::getNodeName,nodeName)
+                .orderByAsc(ExternalNode::getCreateTime)
+        );
         return new TableResultResponse<ExternalNodeForm>(result.getTotal(), Optional.ofNullable(externalNodeList).orElse(Collections.emptyList()).stream().map(externalNode -> {
             ExternalNodeForm resultExternalNode = ExternalNodeForm.builder().build();
             BeanUtils.copyProperties(externalNode, resultExternalNode);
@@ -96,7 +103,8 @@ public class ExternalNodeServiceImpl implements ExternalNodeService {
     public void deleteExternalNode(Long id) {
         ExternalNode externalNode = selectExternalNode(ExternalNodeForm.builder().id(id).build());
         if (Objects.nonNull(externalNode)) {
-            externalNodeMapper.deleteByPrimaryKey(id);
+            //externalNodeMapper.deleteByPrimaryKey(id);
+            externalNodeMapper.selectById(id);
         }
     }
 
@@ -106,10 +114,7 @@ public class ExternalNodeServiceImpl implements ExternalNodeService {
             type = ArtifactoryFolibRepositoryTypeEnum.GENERIC.getFoLibraryName();
         }
         List<String> packageTypes = Lists.newArrayList(ArtifactoryFolibRepositoryTypeEnum.queryNameByFoLibraryName(type));
-        Example example = Example.builder(ExternalNode.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        example.setOrderByClause("create_time");
-        List<ExternalNode> externalNodeList = externalNodeMapper.selectByExample(example);
+        List<ExternalNode> externalNodeList = externalNodeMapper.selectList(Wrappers.<ExternalNode>lambdaQuery().orderByAsc(ExternalNode::getCreateTime));
         return Optional.ofNullable(externalNodeList).orElse(Collections.emptyList()).stream().map(externalNode -> {
             ExternalNodeRepositoryForm externalNodeRepositoryForm = ExternalNodeRepositoryForm.builder().build();
             BeanUtils.copyProperties(externalNode, externalNodeRepositoryForm);
@@ -132,14 +137,16 @@ public class ExternalNodeServiceImpl implements ExternalNodeService {
         validateArtifactory(externalNode);
         if (Objects.isNull(externalNode.getId())) {
             externalNode.setCreateTime(new Date());
-            externalNodeMapper.insertSelective(externalNode);
+            externalNodeMapper.insert(externalNode);
         } else {
             ExternalNode existsExternalNode = selectExternalNode(externalNodeForm);
             if (Objects.nonNull(existsExternalNode)) {
                 if (StringUtils.isBlank(externalNode.getPassword())) {
                     externalNode.setPassword(null);
                 }
-                externalNodeMapper.updateByPrimaryKeySelective(externalNode);
+                externalNodeMapper.update(externalNode,Wrappers.<ExternalNode>lambdaUpdate()
+                        .eq(ExternalNode::getId, existsExternalNode.getId())
+                );
             }
         }
     }
@@ -153,12 +160,9 @@ public class ExternalNodeServiceImpl implements ExternalNodeService {
     private ExternalNode selectExternalNode(ExternalNodeForm externalNodeForm) {
         ExternalNode externalNode = null;
         if (Objects.nonNull(externalNodeForm.getId())) {
-            externalNode = externalNodeMapper.selectByPrimaryKey(externalNodeForm.getId());
+            externalNode = externalNodeMapper.selectOne(Wrappers.<ExternalNode>lambdaQuery().eq(ExternalNode::getId, externalNodeForm.getId()));
         } else if (StringUtils.isNotBlank(externalNodeForm.getNodeName())) {
-            Example example = Example.builder(ExternalNode.class).build();
-            Example.Criteria criteria = example.createCriteria();
-            criteria.andEqualTo("nodeName", externalNodeForm.getNodeName());
-            List<ExternalNode> externalNodeList = externalNodeMapper.selectByExample(example);
+            List<ExternalNode> externalNodeList = externalNodeMapper.selectList(Wrappers.<ExternalNode>lambdaQuery().eq(ExternalNode::getNodeName, externalNodeForm.getNodeName()));
             if (CollectionUtils.isNotEmpty(externalNodeList)) {
                 externalNode = externalNodeList.get(0);
             }
@@ -173,13 +177,10 @@ public class ExternalNodeServiceImpl implements ExternalNodeService {
      * @param nodeName 节点名称
      */
     private void checkNodeName(Long id, String nodeName) {
-        Example example = Example.builder(ExternalNode.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        criteria.andEqualTo("nodeName", nodeName);
-        if (Objects.nonNull(id)) {
-            criteria.andNotEqualTo("id", id);
-        }
-        int count = externalNodeMapper.selectCountByExample(example);
+       long count =  externalNodeMapper.selectCount(Wrappers.<ExternalNode>lambdaQuery()
+                .eq(ExternalNode::getNodeName, nodeName)
+                .eq(Objects.nonNull(id),ExternalNode::getId, id)
+        );
         if (count > 0) {
             throw new BusinessException(String.format("节点%s已存在！！！", nodeName));
         }

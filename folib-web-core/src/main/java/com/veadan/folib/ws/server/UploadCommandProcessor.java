@@ -3,10 +3,10 @@ package com.veadan.folib.ws.server;
 import com.veadan.folib.model.request.ArtifactSliceUploadReq;
 import com.veadan.folib.scanner.common.util.SpringContextUtil;
 import com.veadan.folib.services.ArtifactPromotionService;
+import jakarta.websocket.Session;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import javax.websocket.Session;
 
 /**
  * @author pengYongQiang

@@ -3,12 +3,13 @@ package com.veadan.folib.ws.server;
 import com.veadan.folib.domain.RepositoryInfo;
 import com.veadan.folib.dto.DispatchRepoCheckDto;
 import com.veadan.folib.services.ArtifactPromotionService;
+import jakarta.websocket.Session;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
-import javax.websocket.Session;
+
 
 /**
  * @author pengYongQiang

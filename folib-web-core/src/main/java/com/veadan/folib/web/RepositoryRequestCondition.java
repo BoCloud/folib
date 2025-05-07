@@ -3,7 +3,7 @@ package com.veadan.folib.web;
 import com.veadan.folib.storage.repository.Repository;
 
 import javax.annotation.Nonnull;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.Collections;
 

@@ -18,6 +18,7 @@ import com.veadan.folib.ws.common.FolibWsRunManageV2;
 import com.veadan.folib.ws.server.DistributionService;
 import com.veadan.folib.ws.server.PromotionTaskQueue;
 import io.swagger.annotations.*;
+import jakarta.websocket.Session;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +31,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import javax.websocket.Session;
+
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;

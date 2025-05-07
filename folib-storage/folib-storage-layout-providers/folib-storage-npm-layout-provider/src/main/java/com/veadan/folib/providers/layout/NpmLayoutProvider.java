@@ -27,6 +27,7 @@ import com.veadan.folib.artifact.coordinates.NpmArtifactCoordinates;
 import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 /**
@@ -54,9 +55,10 @@ public class NpmLayoutProvider
     public static final Pattern NPM_URL_USERNAME_PATTERN = Pattern.compile(
             "(?:" + NpmLayoutProvider.NPM_USER_PATH + ")(.*)");
 
+    @Lazy
     @Inject
     private NpmRepositoryManagementStrategy npmRepositoryManagementStrategy;
-
+    @Lazy
     @Inject
     private NpmRepositoryFeatures npmRepositoryFeatures;
 

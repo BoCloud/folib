@@ -1,6 +1,7 @@
 package com.veadan.folib.cron.jobs;
 
 import cn.hutool.core.collection.CollUtil;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.ImmutableSet;
 import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
 import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
@@ -65,7 +66,7 @@ public class ClearArtifactSyncRecordCronJob extends JavaCronJob {
         final Long recordRetentionTime = Optional.ofNullable(config.getProperty(RECORD_RETENTION_TIME)).filter(StringUtils::isNotBlank).map(Long::valueOf).orElse(0L);
         final Instant instant = LocalDateTime.now(ZoneId.of("Asia/Shanghai")).minusSeconds(recordRetentionTime).toInstant(ZoneOffset.of("+8"));
         final Date time = Date.from(instant);
-        final List<ArtifactSyncRecord> clearRecordList = artifactSyncRecordMapper.selectClearRecordList(storageId, repositoryId, time);
+        //final List<ArtifactSyncRecord> clearRecordList = artifactSyncRecordMapper.selectClearRecordList(storageId, repositoryId, time);
         regenerateRepositoriesSyncRecord(storageId, repositoryId, time);
     }
 
@@ -110,7 +111,13 @@ public class ClearArtifactSyncRecordCronJob extends JavaCronJob {
                         updater.setStatus(ArtifactSyncRecordStatusEnum.SUCCESS.getVal());
                     }
                 }
-                artifactSyncRecordMapper.updateByPrimaryKeySelective(updater);
+                artifactSyncRecordMapper.update(Wrappers.<ArtifactSyncRecord>lambdaUpdate()
+                        .eq(ArtifactSyncRecord::getId, r.getId())
+                        .set(ArtifactSyncRecord::getSyncProgress, updater.getSyncProgress())
+                        .set(ArtifactSyncRecord::getStatus, updater.getStatus())
+                        .set(ArtifactSyncRecord::getUpdateTime, updater.getUpdateTime())
+                        .set(updater.getStatus()!=null,ArtifactSyncRecord::getStatus, updater.getStatus())
+                );
             });
             artifactSyncSlaveRecordMapper.batchDeleteBySyncNoList(clearSyncNoList);
             final int clearSlaveRecordCount = clearRecordList.size();

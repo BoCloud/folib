@@ -27,6 +27,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.maven.index.artifact.M2ArtifactRecognizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 /**
@@ -41,9 +42,10 @@ public class Maven2LayoutProvider
 
     private static final Logger logger = LoggerFactory.getLogger(Maven2LayoutProvider.class);
 
+    @Lazy
     @Inject
     private MavenRepositoryManagementStrategy mavenRepositoryManagementStrategy;
-
+    @Lazy
     @Inject
     private MavenRepositoryFeatures mavenRepositoryFeatures;
 

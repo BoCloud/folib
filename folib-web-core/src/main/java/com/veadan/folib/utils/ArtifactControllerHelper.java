@@ -12,13 +12,13 @@ import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.storage.repository.Repository;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.carlspring.commons.http.range.ByteRange;
 import org.carlspring.commons.http.range.ByteRangeHeaderParser;
 import org.carlspring.commons.http.range.validation.ByteRangeValidationException;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;

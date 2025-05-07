@@ -5,19 +5,20 @@ import static com.veadan.folib.web.Constants.REPOSITORY_REQUEST_ATTRIBUTE;
 import java.io.IOException;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringUtils;
 import com.veadan.folib.storage.repository.Repository;
+import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.HandlerMapping;
-import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+
 
 /**
  * @author xuxinping
  *
  */
-public abstract class ArtifactRequestInterceptor extends HandlerInterceptorAdapter
+public abstract class ArtifactRequestInterceptor implements HandlerInterceptor
 {
 
     private final String layout;
@@ -27,7 +28,7 @@ public abstract class ArtifactRequestInterceptor extends HandlerInterceptorAdapt
         this.layout = layout;
     }
 
-    @Override
+
     public final boolean preHandle(HttpServletRequest request,
                                    HttpServletResponse response,
                                    Object handler)

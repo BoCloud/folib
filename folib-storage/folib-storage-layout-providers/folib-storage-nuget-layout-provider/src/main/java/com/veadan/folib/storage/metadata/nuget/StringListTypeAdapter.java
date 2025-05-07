@@ -17,7 +17,9 @@
 
 package com.veadan.folib.storage.metadata.nuget;
 
-import javax.xml.bind.annotation.adapters.XmlAdapter;
+
+import jakarta.xml.bind.annotation.adapters.XmlAdapter;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;

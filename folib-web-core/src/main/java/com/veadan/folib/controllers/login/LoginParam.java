@@ -1,6 +1,6 @@
 package com.veadan.folib.controllers.login;
 
-import javax.xml.bind.annotation.XmlElement;
+
 
 public class LoginParam {
 

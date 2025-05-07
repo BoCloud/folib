@@ -1,5 +1,6 @@
 package com.veadan.folib.services.impl;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.github.pagehelper.PageHelper;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.entity.AccessToken;
@@ -19,7 +20,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
-import tk.mybatis.mapper.entity.Example;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
@@ -90,25 +90,23 @@ public class AccessTokenServiceImpl implements AccessTokenService, AccessTokenFi
 
     @Override
     public void delete(Long id, String tokenId) {
-        AccessToken accessToken = accessTokenMapper.selectByPrimaryKey(id);
+        AccessToken accessToken = accessTokenMapper.selectById(id);
         Assert.notNull(accessToken, "访问令牌不存在");
         Assert.isTrue(tokenId.equals(accessToken.getTokenId()), "无效的访问令牌");
-        accessTokenMapper.deleteByPrimaryKey(id);
+        accessTokenMapper.deleteById(id);
         distributedCacheComponent.delete(CACHE_KEY + tokenId);
     }
 
     @Override
     public List<AccessToken> list(Integer pageSize, Integer pageNum, String tokenId) {
-
-        Example example = Example.builder(AccessToken.class).build();
-        Example.Criteria where = example.createCriteria();
-        if (StringUtils.hasText(tokenId)) {
-            where.andEqualTo("tokenId", tokenId);
-        } else {
+        if (!StringUtils.hasText(tokenId)) {
             PageHelper.startPage(pageNum, pageSize);
         }
-        example.setOrderByClause("create_time DESC");
-        return accessTokenMapper.selectByExample(example);
+
+       return accessTokenMapper.selectList(Wrappers.<AccessToken>lambdaQuery()
+                .eq(StringUtils.hasText(tokenId),AccessToken::getId, tokenId)
+                .orderByDesc(AccessToken::getCreateTime)
+        );
     }
 
 
@@ -134,10 +132,7 @@ public class AccessTokenServiceImpl implements AccessTokenService, AccessTokenFi
         if (CACHE_KEY.equals(distributedCacheComponent.get(CACHE_KEY + jwtId))) {
             return true;
         } else {
-            Example example = Example.builder(AccessToken.class).build();
-            Example.Criteria where = example.createCriteria();
-            where.andEqualTo("tokenId", jwtId);
-            AccessToken accessToken = accessTokenMapper.selectOneByExample(example);
+            AccessToken accessToken = accessTokenMapper.selectOne(Wrappers.<AccessToken>lambdaQuery().eq(AccessToken::getTokenId,jwtId));
             if (accessToken == null) {
                 return false;
             } else {

@@ -1,6 +1,6 @@
 package com.veadan.folib.mapper;
 
-import com.veadan.folib.common.base.CommonMapper;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.veadan.folib.entity.License;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Component;
@@ -11,7 +11,7 @@ import java.util.List;
  * @author leipenghui
  */
 @Component
-public interface LicenseMapper extends CommonMapper<License> {
+public interface LicenseMapper extends BaseMapper<License> {
 
     /**
      * 查询License列表

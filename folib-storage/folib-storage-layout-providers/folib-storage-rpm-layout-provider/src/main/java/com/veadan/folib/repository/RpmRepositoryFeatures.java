@@ -35,6 +35,7 @@ import org.glassfish.jersey.apache.connector.ApacheClientProperties;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.context.event.EventListener;
@@ -59,34 +60,35 @@ public class RpmRepositoryFeatures implements RepositoryFeatures
 
     private static final boolean ALLOWS_UNPUBLISH_DEFAULT = true;
 
+    @Lazy
     @Inject
     private ConfigurationManagementService configurationManagementService;
-
+    @Lazy
     @Inject
     private RedeploymentValidator redeploymentValidator;
-
+    @Lazy
     @Inject
     private GenericReleaseVersionValidator genericReleaseVersionValidator;
-
+    @Lazy
     @Inject
     private GenericSnapshotVersionValidator genericSnapshotVersionValidator;
-
+    @Lazy
     @Inject
     private ProxyRepositoryConnectionPoolConfigurationService proxyRepositoryConnectionPoolConfigurationService;
-
+    @Lazy
     @Inject
     private ConfigurationManager configurationManager;
-
+    @Lazy
     @Inject
     private ArtifactIdGroupRepository artifactIdGroupRepository;
-
+    @Lazy
     @Inject
     private Executor eventTaskExecutor;
-
+    @Lazy
     @Inject
     @RpmLayoutProviderConfig.RpmObjectMapper
     private ObjectMapper rpmJacksonMapper;
-
+    @Lazy
     @Inject
     private RpmPackageFeedParser rpmPackageFeedParser;
 

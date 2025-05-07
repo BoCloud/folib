@@ -13,6 +13,7 @@ import com.veadan.folib.storage.ArtifactStorageException;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.validation.resource.ArtifactOperationsValidator;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -26,18 +27,19 @@ import java.security.NoSuchAlgorithmException;
 public class ArtifactResolutionServiceImpl
         implements ArtifactResolutionService {
 
+    @Lazy
     @Inject
     private ConfigurationManager configurationManager;
-
+    @Lazy
     @Inject
     private ArtifactOperationsValidator artifactOperationsValidator;
-
+    @Lazy
     @Inject
     private RepositoryProviderRegistry repositoryProviderRegistry;
-
+    @Lazy
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
-
+    @Lazy
     @Inject
     private ProxyRepositoryConnectionPoolConfigurationService proxyRepositoryConnectionPoolConfigurationService;
 

@@ -8,12 +8,11 @@
     <parent>
         <groupId>com.veadan.folib</groupId>
         <artifactId>folib-parent</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>3.0-SNAPSHOT</version>
         <relativePath/>
     </parent>
 
     <artifactId>folib-web-core</artifactId>
-    <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Folib: Web Core</name>
@@ -112,8 +111,12 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>11</source>
-                    <target>11</target>
+                    <parameters>true</parameters>
+                    <compilerArgs>
+                        <arg>-parameters</arg>
+                    </compilerArgs>
+                    <source>17</source>
+                    <target>17</target>
                 </configuration>
             </plugin>
         </plugins>
@@ -123,13 +126,13 @@
         <dependency>
             <groupId>com.veadan.folib</groupId>
             <artifactId>folib-core</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <!-- Strongbox dependencies -->
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-commons</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>cn.hutool</groupId>
@@ -144,27 +147,27 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-data-service</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-authentication-registry</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-default-authentication-provider</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.veadan.folib</groupId>
             <artifactId>folib-ldap-authentication-provider</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-ldap-authentication-provider</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -172,7 +175,7 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-cron-api</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -180,60 +183,60 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-api</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-maven-layout-provider</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-maven-layout-provider</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-nuget-layout-provider</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-npm-layout-provider</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-npm-layout-provider</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-nuget-layout-provider</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-pypi-layout-provider</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-pypi-layout-provider</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-raw-layout-provider</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -243,12 +246,12 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-helm-layout-provider</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-conan-layout-provider</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -266,13 +269,6 @@
             <artifactId>folib-storage-debian-layout-provider</artifactId>
             <version>${project.version}</version>
         </dependency>
-
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>folib-storage-cargo-layout-provider</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-client</artifactId>
@@ -281,7 +277,7 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-web-forms</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -300,47 +296,47 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-api-resources</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-common-resources</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-event-api</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
 <!--        <dependency>-->
 <!--            <groupId>${project.groupId}</groupId>-->
 <!--            <artifactId>folib-testing-core</artifactId>-->
-<!--            <version>1.0-SNAPSHOT</version>-->
+<!--            <version>${project.version}</version>-->
 <!--            <scope>test</scope>-->
 <!--        </dependency>-->
 <!--        <dependency>-->
 <!--            <groupId>${project.groupId}</groupId>-->
 <!--            <artifactId>folib-testing-core</artifactId>-->
-<!--            <version>1.0-SNAPSHOT</version>-->
+<!--            <version>${project.version}</version>-->
 <!--            <type>test-jar</type>-->
 <!--            <scope>test</scope>-->
 <!--        </dependency>-->
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-api</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-aql</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
 <!--        <dependency>-->
 <!--            <groupId>com.veadan.folib</groupId>-->
 <!--            <artifactId>strongbox-web-ui</artifactId>-->
-<!--            <version>1.0-SNAPSHOT</version>-->
+<!--            <version>${project.version}</version>-->
 <!--            <type>zip</type>-->
 <!--        </dependency>-->
 
@@ -364,6 +360,12 @@
             <groupId>org.owasp</groupId>
             <artifactId>dependency-check-core</artifactId>
             <version>7.1.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.h2database</groupId>
+                    <artifactId>h2</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.owasp</groupId>
@@ -382,23 +384,35 @@
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-core</artifactId>
             <version>4.15.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.liquibase</groupId>
+                    <artifactId>liquibase-cli</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.liquibase</groupId>
+                    <artifactId>liquibase-snowflake</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
-            <groupId>tk.mybatis</groupId>
-            <artifactId>mapper-spring-boot-starter</artifactId>
-            <version>4.2.1</version>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+            <version>3.5.9</version>
         </dependency>
         <dependency>
             <groupId>com.github.pagehelper</groupId>
             <artifactId>pagehelper-spring-boot-starter</artifactId>
-            <version>1.3.0</version>
+            <version>2.1.0</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/com.alibaba/druid-spring-boot-starter -->
         <dependency>
-            <groupId>com.github.drtrang</groupId>
-            <artifactId>druid-spring-boot2-starter</artifactId>
-            <version>1.1.10</version>
+            <groupId>com.alibaba</groupId>
+            <artifactId>druid-spring-boot-starter</artifactId>
+            <version>1.2.19</version>
         </dependency>
+
 
         <!-- Spring Framework dependencies -->
         <dependency>
@@ -488,8 +502,8 @@
         </dependency>
 
         <dependency>
-            <groupId>commons-fileupload</groupId>
-            <artifactId>commons-fileupload</artifactId>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-fileupload2-jakarta</artifactId>
         </dependency>
 
         <dependency>
@@ -583,14 +597,22 @@
             <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
 
+<!--        <dependency>-->
+<!--            <groupId>io.springfox</groupId>-->
+<!--            <artifactId>springfox-swagger2</artifactId>-->
+<!--            <version>3.0.0</version>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>io.springfox</groupId>-->
+<!--            <artifactId>springfox-swagger-ui</artifactId>-->
+<!--            <version>3.0.0</version>-->
+<!--        </dependency>-->
         <dependency>
-            <groupId>io.springfox</groupId>
-            <artifactId>springfox-swagger2</artifactId>
+            <groupId>com.github.xiaoymin</groupId>
+            <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
+            <version>4.4.0</version>
         </dependency>
-        <dependency>
-            <groupId>io.springfox</groupId>
-            <artifactId>springfox-swagger-ui</artifactId>
-        </dependency>
+
 
         <dependency>
             <groupId>javax.interceptor</groupId>
@@ -615,6 +637,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpmime</artifactId>
+            <version>4.5.13</version>
         </dependency>
 <!--        <dependency>-->
 <!--            <groupId>org.glassfish.jersey.media</groupId>-->
@@ -687,11 +710,6 @@
             <version>2.32</version>
         </dependency>
         <dependency>
-            <groupId>org.glassfish.jersey.connectors</groupId>
-            <artifactId>jersey-apache-connector</artifactId>
-            <version>2.32</version>
-        </dependency>
-        <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-core</artifactId>
         </dependency>
@@ -700,11 +718,11 @@
             <artifactId>folib-storage-php-layout-provider</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.tencentcloudapi</groupId>
-            <artifactId>tencentcloud-sdk-java-tmt</artifactId>
-            <version>3.1.754</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.tencentcloudapi</groupId>-->
+<!--            <artifactId>tencentcloud-sdk-java-tmt</artifactId>-->
+<!--            <version>3.1.754</version>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-cocoapods-layout-provider</artifactId>
@@ -769,8 +787,10 @@
         <dependency>
             <groupId>io.milton</groupId>
             <artifactId>milton-server-ce</artifactId>
-            <version>3.1.1.488</version>
+            <version>4.0.5.2400</version>
         </dependency>
+
+
 
     </dependencies>
 
@@ -778,7 +798,7 @@
         <profile>
             <id>jdk-default</id>
             <activation>
-                <jdk>11</jdk>
+                <jdk>17</jdk>
             </activation>
             <build>
                 <plugins>
@@ -795,9 +815,9 @@
             </build>
         </profile>
         <profile>
-            <id>jdk11</id>
+            <id>jdk17</id>
             <activation>
-                <jdk>11</jdk>
+                <jdk>17</jdk>
             </activation>
             <build>
                 <plugins>

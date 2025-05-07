@@ -1,8 +1,9 @@
 package com.veadan.folib.ws.server;
 
+import jakarta.websocket.Session;
 import org.springframework.stereotype.Component;
 
-import javax.websocket.Session;
+
 
 /**
  * @author pengYongQiang

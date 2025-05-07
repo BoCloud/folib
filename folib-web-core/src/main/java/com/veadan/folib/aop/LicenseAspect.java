@@ -4,6 +4,7 @@ import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.licence.ActivateVo;
 import com.veadan.folib.services.CodeActivateService;
 import com.veadan.folib.storage.repository.Repository;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -17,7 +18,6 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.HandlerMapping;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 import java.util.Objects;
 

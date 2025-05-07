@@ -1,5 +1,7 @@
 package com.veadan.folib.users.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.veadan.folib.entity.Resource;
@@ -7,12 +9,12 @@ import com.veadan.folib.mapper.ResourceMapper;
 import com.veadan.folib.users.service.ResourceService;
 import com.veadan.folib.users.service.RoleResourceRefService;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.validator.internal.util.stereotypes.Lazy;
 import org.parboiled.common.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tk.mybatis.mapper.entity.Example;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,6 +31,8 @@ import java.util.List;
 public class ResourceServiceImpl implements ResourceService {
     @Autowired
     private ResourceMapper resourceMapper;
+
+    @Lazy
     @Autowired
     private RoleResourceRefService roleResourceRefService;
 
@@ -150,18 +154,21 @@ public class ResourceServiceImpl implements ResourceService {
 
     @Override
     public Resource queryResource(Resource resource) {
-        return resourceMapper.selectOne(resource);
+       return resourceMapper.selectOne(Wrappers.<Resource>lambdaQuery()
+                .eq(Resource::getId, resource.getId())
+                .eq(Resource::getStorageId,resource.getStorageId()));
     }
 
-    @Override
-    public List<Resource> queryResourceList(Resource resource) {
-        return resourceMapper.select(resource);
-    }
+    //@Override
+    //public List<Resource> queryResourceList(Resource resource) {
+    //    return resourceMapper.selectList(resource);
+    //}
 
 
     @Override
     public List<Resource> findAll() {
-        return resourceMapper.selectAll();
+       return resourceMapper.selectList(Wrappers.<Resource>lambdaQuery());
+       // return resourceMapper.selectAll();
     }
 
     @Override
@@ -176,23 +183,17 @@ public class ResourceServiceImpl implements ResourceService {
 
     @Override
     public List<Resource> queryByIds(List<String> resourceIds) {
-        Example example = new Example(Resource.class);
-        example.createCriteria().andIn("id", resourceIds);
-        return resourceMapper.selectByExample(example);
+       return resourceMapper.selectList(Wrappers.<Resource>lambdaQuery().in(Resource::getId, resourceIds));
     }
 
     @Override
     public List<Resource> queryByStorageId(String storageId) {
-        Example example = new Example(Resource.class);
-        example.createCriteria().andEqualTo("storageId", storageId);
-        return resourceMapper.selectByExample(example);
+       return resourceMapper.selectList(Wrappers.<Resource>lambdaQuery().eq(Resource::getStorageId, storageId));
     }
 
     @Override
     public void deleteByIds(List<String> resourceIds) {
-        Example example = new Example(Resource.class);
-        example.createCriteria().andIn("id", resourceIds);
-        resourceMapper.selectByExample(example);
+        resourceMapper.selectList(Wrappers.<Resource>lambdaQuery().in(Resource::getId, resourceIds));
         //删除资源关联的权限信息
         roleResourceRefService.deleteByResourceIds(resourceIds);
     }

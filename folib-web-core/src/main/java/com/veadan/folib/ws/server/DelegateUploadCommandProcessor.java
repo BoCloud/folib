@@ -5,10 +5,11 @@ import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.services.ArtifactPromotionService;
 import com.veadan.folib.ws.common.FolibWsRunManageUtil;
 import com.veadan.folib.ws.common.FolibWsRunManageV2;
+import jakarta.websocket.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.websocket.Session;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 

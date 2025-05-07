@@ -9,7 +9,6 @@ import java.util.regex.Pattern;
 import com.veadan.folib.common.PathMatcher;
 import lombok.NonNull;
 import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.Nullable;
 
 public class PathUtils {
     private static final Pattern PATTERN_SLASHES = Pattern.compile("/+");
@@ -73,7 +72,7 @@ public class PathUtils {
         return getParent(path, 1);
     }
 
-    public static String getParent(@Nullable String path, @NonNull int depth) {
+    public static String getParent( String path, @NonNull int depth) {
         if (depth <= 0) {
             throw new IllegalArgumentException("Expected depth to be a positive number");
         }

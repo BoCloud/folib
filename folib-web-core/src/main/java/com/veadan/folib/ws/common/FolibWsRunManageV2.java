@@ -17,6 +17,7 @@ import com.veadan.folib.util.FileSizeConvertUtils;
 import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.ws.server.*;
 import com.veadan.folib.ws.server.config.WsConfig;
+import jakarta.websocket.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -28,7 +29,6 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-import javax.websocket.*;
 import java.io.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;

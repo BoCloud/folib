@@ -17,9 +17,11 @@
 
 package com.veadan.folib.storage.metadata.nuget;
 
+import jakarta.xml.bind.annotation.XmlAttribute;
+
 import java.io.Serializable;
 import java.util.Objects;
-import javax.xml.bind.annotation.XmlAttribute;
+
 
 /**
  * File reference

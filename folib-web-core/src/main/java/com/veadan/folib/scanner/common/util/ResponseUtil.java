@@ -2,7 +2,7 @@ package com.veadan.folib.scanner.common.util;
 
 import com.alibaba.fastjson.JSONObject;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 public class ResponseUtil {

@@ -16,7 +16,6 @@ import org.apache.tinkerpop.gremlin.structure.io.Io;
 import org.apache.tinkerpop.gremlin.structure.io.Io.Builder;
 import org.neo4j.ogm.session.Session;
 import org.opencypher.gremlin.neo4j.ogm.transaction.GremlinTransaction;
-import org.springframework.data.neo4j.transaction.SessionHolder;
 
 /**
  * Exposes current thread bound {@link Graph} transaction.
@@ -26,7 +25,6 @@ import org.springframework.data.neo4j.transaction.SessionHolder;
 public class GraphTransaction implements Graph
 {
 
-    private static final Class<SessionHolder> sessionHolderClass = SessionHolder.class;
 
     private static final Class<GremlinTransaction> gremlinTransactionClass = GremlinTransaction.class;
 

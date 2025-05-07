@@ -11,6 +11,8 @@ import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.utils.UrlUtils;
 import com.veadan.folib.ws.common.FolibWsRunManageV2;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.client.ClientProperties;
@@ -25,8 +27,7 @@ import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
@@ -110,7 +111,7 @@ public class WSForwardComponent {
         // 请求类型
         String method = request.getMethod();
         // 请求方式
-        HttpMethod httpMethod = HttpMethod.resolve(method);
+        HttpMethod httpMethod = HttpMethod.valueOf(method);
         // 请求头
         MultiValueMap<String, String> headers = parseRequestHeader(request);
         String params = getParamsString(request);

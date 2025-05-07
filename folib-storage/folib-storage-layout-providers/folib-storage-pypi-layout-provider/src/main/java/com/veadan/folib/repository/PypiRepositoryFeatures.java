@@ -28,6 +28,7 @@ import org.glassfish.jersey.apache.connector.ApacheClientProperties;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.context.event.EventListener;
@@ -55,22 +56,29 @@ public class PypiRepositoryFeatures
 
     private static final Logger logger = LoggerFactory.getLogger(PypiRepositoryFeatures.class);
     private static final Pattern PACKAGE_NAME_PATTERN = Pattern.compile(PypiPackageInfo.NAME_FORMAT);
+    @Lazy
     @Inject
     private ConfigurationManager configurationManager;
+    @Lazy
     @Inject
     private ArtifactIdGroupRepository artifactIdGroupRepository;
+    @Lazy
     @Inject
     private ProxyRepositoryConnectionPoolConfigurationService proxyRepositoryConnectionPoolConfigurationService;
+    @Lazy
     @Inject
     private PypiPackageFeedParser pypiPackageFeedParser;
+    @Lazy
     @Inject
     private Executor eventTaskExecutor;
+    @Lazy
     @Inject
     private RedeploymentValidator redeploymentValidator;
 
+    @Lazy
     @Inject
     private GenericReleaseVersionValidator genericReleaseVersionValidator;
-
+    @Lazy
     @Inject
     private GenericSnapshotVersionValidator genericSnapshotVersionValidator;
 

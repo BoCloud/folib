@@ -2,6 +2,7 @@ package com.veadan.folib.authentication;
 
 import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.veadan.folib.authentication.api.AuthenticationItem;
@@ -24,7 +25,6 @@ import com.veadan.folib.users.userdetails.UserDetailsMapper;
 import com.veadan.folib.util.LocalDateTimeInstance;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -46,7 +46,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import javax.transaction.Transactional;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -154,7 +154,7 @@ public class ConfigurableProviderManager extends ProviderManager implements User
         return loadExternalUserDetails(username);
     }
 
-    private static @NotNull UserEntity getUserEntity(String userInfo) {
+    private static  UserEntity getUserEntity(String userInfo) {
         UserEntity userEntity = JSONObject.parseObject(userInfo, UserEntity.class);
         JSONObject jsonObject = JSONObject.parseObject(userInfo);
         Object roles = jsonObject.get("roles");
@@ -171,7 +171,7 @@ public class ConfigurableProviderManager extends ProviderManager implements User
     protected Optional<User> loadExternalUserDetails(String username) {
         String userKey = String.format("user_%s", username);
         ObjectMapper objectMapper = new ObjectMapper();
-        FolibUser folibUser = folibUserMapper.selectByPrimaryKey(username);
+        FolibUser folibUser = folibUserMapper.selectOne(Wrappers.<FolibUser>lambdaQuery().eq(FolibUser::getUsername, username));
         if (Objects.nonNull(folibUser) && StringUtils.isNotBlank(folibUser.getSourceId())) {
             String sourceId = folibUser.getSourceId();
             UserDetailsService userDetailsService = userProviderMap.get(sourceId);

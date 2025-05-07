@@ -2,6 +2,7 @@ package com.veadan.folib.repositories;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import org.neo4j.ogm.cypher.Filter;
@@ -408,6 +409,7 @@ public class IdBlockQueueSession implements Session
     {
         return target.query(cypher, parameters);
     }
+
 
     public Result query(String cypher,
                         Map<String, ?> parameters,

@@ -1,13 +1,12 @@
 package com.veadan.folib.mapper;
 import java.util.List;
 
-import com.veadan.folib.common.base.CommonMapper;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.veadan.folib.dto.PermissionsDTO;
 import com.veadan.folib.dto.RoleDTO;
 import com.veadan.folib.dto.UserRoleDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.springframework.data.domain.Pageable;
 import com.veadan.folib.entity.RoleResourceRef;
 import org.springframework.stereotype.Component;
 
@@ -18,7 +17,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Mapper
-public interface RoleResourceRefMapper extends CommonMapper<RoleResourceRef> {
+public interface RoleResourceRefMapper extends BaseMapper<RoleResourceRef> {
     /** 
      * 通过ID查询单条数据 
      *
@@ -26,14 +25,14 @@ public interface RoleResourceRefMapper extends CommonMapper<RoleResourceRef> {
      * @return 实例对象
      */
     RoleResourceRef queryById(Long id);
-    /** 
-     * 分页查询指定行数据
-     *
-     * @param roleResourceRef 查询条件
-     * @param pageable 分页对象
-     * @return 对象列表
-     */
-    List<RoleResourceRef> queryAllByLimit(RoleResourceRef roleResourceRef, @Param("pageable") Pageable pageable);
+    ///**
+    // * 分页查询指定行数据
+    // *
+    // * @param roleResourceRef 查询条件
+    // * @param pageable 分页对象
+    // * @return 对象列表
+    // */
+    //List<RoleResourceRef> queryAllByLimit(RoleResourceRef roleResourceRef, @Param("pageable") Pageable pageable);
     /** 
      * 统计总行数
      *

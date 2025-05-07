@@ -18,26 +18,31 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.access.AccessDecisionManager;
+import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationTrustResolver;
 import org.springframework.security.authentication.AuthenticationTrustResolverImpl;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.method.configuration.GlobalMethodSecurityConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.access.ExceptionTranslationFilter;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
-import org.springframework.security.web.firewall.DefaultHttpFirewall;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.web.firewall.HttpFirewall;
+import org.springframework.security.web.firewall.StrictHttpFirewall;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -47,14 +52,17 @@ import javax.inject.Qualifier;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+
+
+@Configuration
 @ComponentScan({"com.veadan.folib.security"})
 @Import({DataServiceConfig.class,
         UsersConfig.class,
         AuthenticationConfig.class})
-@Configuration
 @EnableWebSecurity
-public class WebSecurityConfig
-        extends WebSecurityConfigurerAdapter {
+@EnableMethodSecurity(prePostEnabled = true)
+public class WebSecurityConfig {
 
     @Inject
     private AuthoritiesProvider authoritiesProvider;
@@ -65,47 +73,73 @@ public class WebSecurityConfig
     @Inject
     private List<AuthenticationSupplier> suppliers;
 
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .addFilterAfter(folibAuthenticationFilter(), ExceptionTranslationFilter.class)
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(exception -> exception
+                        .accessDeniedHandler(accessDeniedHandler())
+                        .authenticationEntryPoint(customBasicAuthenticationEntryPoint()))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/dav/**").authenticated()
+                        .requestMatchers(EndpointRequest.toAnyEndpoint()).hasAuthority("ADMIN")
+                        .anyRequest().permitAll())
+                .anonymous(anon -> anon
+                        .authenticationFilter(anonymousAuthenticationFilter()))
+                .cors(withDefaults())
+                .csrf(AbstractHttpConfigurer::disable);
 
-    @Override
-    public void init(WebSecurity web)
-            throws Exception {
-        super.init(web);
-        DefaultHttpFirewall httpFirewall = new DefaultHttpFirewall();
-        httpFirewall.setAllowUrlEncodedSlash(true);
-        web.httpFirewall(httpFirewall);
+        return http.build();
     }
-
-    @Override
-    protected void configure(HttpSecurity http)
-            throws Exception {
-        http.addFilterAfter(folibAuthenticationFilter(),
-                        ExceptionTranslationFilter.class)
-                .sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and()
-                .exceptionHandling()
-                .accessDeniedHandler(accessDeniedHandler())
-                // TODO SB-813
-                .authenticationEntryPoint(customBasicAuthenticationEntryPoint())
-                .and()
-                // this part of code is necessary to secure endpoints for not authorized users
-                .authorizeRequests().antMatchers("/dav/**").authenticated()
-                .requestMatchers(EndpointRequest.toAnyEndpoint())
-                .hasAuthority("ADMIN")
-                .and()
-                .anonymous()
-                .authenticationFilter(anonymousAuthenticationFilter())
-                .and()
-                .cors()
-                .and()
-                .csrf()
-                .disable();
+    // 替换 WebSecurity 自定义配置
+    @Bean
+    public HttpFirewall allowUrlEncodedSlashHttpFirewall() {
+        StrictHttpFirewall firewall = new StrictHttpFirewall();
+        firewall.setAllowUrlEncodedSlash(true);
+        return firewall;
     }
-
-    @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-
-    }
+    //@Override
+    //public void init(WebSecurity web)
+    //        throws Exception {
+    //    super.init(web);
+    //    DefaultHttpFirewall httpFirewall = new DefaultHttpFirewall();
+    //    httpFirewall.setAllowUrlEncodedSlash(true);
+    //    web.httpFirewall(httpFirewall);
+    //}
+    //
+    //@Override
+    //protected void configure(HttpSecurity http)
+    //        throws Exception {
+    //    http.addFilterAfter(folibAuthenticationFilter(),
+    //                    ExceptionTranslationFilter.class)
+    //            .sessionManagement()
+    //            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+    //            .and()
+    //            .exceptionHandling()
+    //            .accessDeniedHandler(accessDeniedHandler())
+    //            // TODO SB-813
+    //            .authenticationEntryPoint(customBasicAuthenticationEntryPoint())
+    //            .and()
+    //            // this part of code is necessary to secure endpoints for not authorized users
+    //            .authorizeRequests().antMatchers("/dav/**").authenticated()
+    //            .requestMatchers(EndpointRequest.toAnyEndpoint())
+    //            .hasAuthority("ADMIN")
+    //            .and()
+    //            .anonymous()
+    //            .authenticationFilter(anonymousAuthenticationFilter())
+    //            .and()
+    //            .cors()
+    //            .and()
+    //            .csrf()
+    //            .disable();
+    //}
+    //
+    //@Override
+    //protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+    //
+    //}
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource(ConfigurationManagementService configurationManagementService) {
@@ -168,24 +202,43 @@ public class WebSecurityConfig
     }
 
 
-    /**
-     * This Configuration enables @PreAuthorize annotations
-     *
-     * @author @author veadan
-     */
+    ///**
+    // * This Configuration enables @PreAuthorize annotations
+    // *
+    // * @author @author veadan
+    // */
+    //@Configuration
+    //@EnableGlobalMethodSecurity(prePostEnabled = true)
+    //public static class MethodSecurityConfig
+    //        extends GlobalMethodSecurityConfiguration {
+    //
+    //    @Inject
+    //    MethodAccessDecisionManager methodAccessDecisionManager;
+    //
+    //    @Override
+    //    protected AccessDecisionManager accessDecisionManager() {
+    //        return methodAccessDecisionManager;
+    //    }
+    //
+    //}
+
     @Configuration
-    @EnableGlobalMethodSecurity(prePostEnabled = true)
-    public static class MethodSecurityConfig
-            extends GlobalMethodSecurityConfiguration {
+    public static class MethodSecurityConfig {
 
         @Inject
         MethodAccessDecisionManager methodAccessDecisionManager;
 
-        @Override
-        protected AccessDecisionManager accessDecisionManager() {
-            return methodAccessDecisionManager;
+        @Bean
+        public MethodSecurityExpressionHandler methodSecurityExpressionHandler() {
+            DefaultMethodSecurityExpressionHandler handler = new DefaultMethodSecurityExpressionHandler();
+            // 根据需要配置表达式处理
+            return handler;
         }
 
+        @Bean
+        public AccessDecisionManager accessDecisionManager() {
+            return methodAccessDecisionManager;
+        }
     }
 
     @Configuration

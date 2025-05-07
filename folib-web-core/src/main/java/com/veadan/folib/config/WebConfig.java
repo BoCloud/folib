@@ -23,6 +23,7 @@ import com.veadan.folib.web.CustomRequestMappingHandlerMapping;
 import com.veadan.folib.web.DirectoryTraversalFilter;
 import com.veadan.folib.web.RepositoryMethodArgumentResolver;
 import com.veadan.folib.yaml.YAMLMapperFactory;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.StringUtils;
 import org.jtwig.environment.EnvironmentConfigurationBuilder;
 import org.jtwig.spring.boot.config.JtwigViewResolverConfigurer;
@@ -53,15 +54,13 @@ import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
-import org.springframework.web.servlet.resource.GzipResourceResolver;
 import org.springframework.web.servlet.resource.PathResourceResolver;
 import org.springframework.web.servlet.view.InternalResourceView;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
-import tk.mybatis.mapper.autoconfigure.MapperAutoConfiguration;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.servlet.http.HttpServletRequest;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -94,7 +93,6 @@ import java.util.List;
         ClientConfig.class,
         CronTasksConfig.class,
         DataSourceAutoConfiguration.class,
-        MapperAutoConfiguration.class,
         SwaggerConfig.class})
 @EnableCaching(order = 105)
 @ServletComponentScan(basePackages = {"com.veadan.folib.filter"})
@@ -248,13 +246,13 @@ public class WebConfig
                 .addResourceLocations("classpath:/ui/")
                 .setCachePeriod(3600)
                 .resourceChain(true)
-                .addResolver(new GzipResourceResolver())
+                //.addResolver(new GzipResourceResolver())
                 .addResolver(new PathResourceResolver());
         registry.addResourceHandler("/docs/**")
                 .addResourceLocations("classpath:/docs/")
                 .setCachePeriod(3600)
                 .resourceChain(true)
-                .addResolver(new GzipResourceResolver())
+               // .addResolver(new GzipResourceResolver())
                 .addResolver(new PathResourceResolver());
 
         registry.addResourceHandler("/webjars/**")
@@ -324,10 +322,10 @@ public class WebConfig
         return new RepositoryMethodArgumentResolver();
     }
 
-    @Bean(name = "multipartResolver")
-    public MultipartResolver multipartResolver() {
-        CustomMultipartResolver resolver = new CustomMultipartResolver();
-        resolver.setMaxInMemorySize(1024*1024*100);
-        return resolver;
-    }
+    //@Bean(name = "multipartResolver")
+    //public MultipartResolver multipartResolver() {
+    //    CustomMultipartResolver resolver = new CustomMultipartResolver();
+    //    resolver.setMaxInMemorySize(1024*1024*100);
+    //    return resolver;
+    //}
 }

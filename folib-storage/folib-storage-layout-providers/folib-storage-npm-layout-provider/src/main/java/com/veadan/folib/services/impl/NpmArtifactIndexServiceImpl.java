@@ -41,9 +41,6 @@ public class NpmArtifactIndexServiceImpl implements NpmArtifactIndexService {
     private DistributedLockComponent distributedLockComponent;
 
     @Inject
-    private NpmArtifactIndexService npmArtifactIndexService;
-
-    @Inject
     private NpmPackageMetadataIndexer npmPackageMetadataIndexer;
 
     @Override

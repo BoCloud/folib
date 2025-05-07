@@ -1,5 +1,6 @@
 package com.veadan.folib.users.service.impl;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.converts.ResourceConvert;
@@ -13,12 +14,9 @@ import com.veadan.folib.users.service.*;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tk.mybatis.mapper.entity.Example;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -34,13 +32,18 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
     @Autowired
     private RoleResourceRefMapper roleResourceRefMapper;
     @Autowired
+    @Lazy
     private ResourceService resourceService;
+    @Lazy
     @Autowired
     private UserGroupRefService userGroupRefService;
+    @Lazy
     @Autowired
     private FolibUserService folibUserService;
+    @Lazy
     @Autowired
     private FolibRoleService folibRoleService;
+    @Lazy
     @Autowired
     private UserGroupService userGroupService;
 
@@ -55,18 +58,18 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         return roleResourceRefMapper.queryById(id);
     }
     
-    /** 
-     * 分页查询
-     *
-     * @param roleResourceRef 筛选条件
-     * @param pageRequest 分页对象
-     * @return 查询结果
-     */
-    @Override
-    public Page<RoleResourceRef> paginQuery(RoleResourceRef roleResourceRef, PageRequest pageRequest){
-        long total = roleResourceRefMapper.count(roleResourceRef);
-        return new PageImpl<>(roleResourceRefMapper.queryAllByLimit(roleResourceRef, pageRequest), pageRequest, total);
-    }
+    ///**
+    // * 分页查询
+    // *
+    // * @param roleResourceRef 筛选条件
+    // * @param pageRequest 分页对象
+    // * @return 查询结果
+    // */
+    //@Override
+    //public Page<RoleResourceRef> paginQuery(RoleResourceRef roleResourceRef, PageRequest pageRequest){
+    //    long total = roleResourceRefMapper.count(roleResourceRef);
+    //    return new PageImpl<>(roleResourceRefMapper.queryAllByLimit(roleResourceRef, pageRequest), pageRequest, total);
+    //}
     
     /** 
      * 新增数据
@@ -197,7 +200,11 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
 
     @Override
     public List<RoleResourceRef> queryRefs(RoleResourceRef roleResourceRef) {
-        return roleResourceRefMapper.select(roleResourceRef);
+        return roleResourceRefMapper.selectList(Wrappers.<RoleResourceRef>lambdaQuery()
+                .eq(roleResourceRef.getRoleId()!=null,RoleResourceRef::getRoleId, roleResourceRef.getRoleId())
+                .eq(roleResourceRef.getRefType()!=null,RoleResourceRef::getRefType, roleResourceRef.getRefType())
+                .eq(roleResourceRef.getEntityId()!=null,RoleResourceRef::getEntityId, roleResourceRef.getEntityId())
+        );
     }
 
     @Override
@@ -240,12 +247,14 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
         if (CollectionUtils.isNotEmpty(userGroupRefs)) {
             groupIds = userGroupRefs.stream().map(UserGroupRef::getUserGroupId).collect(Collectors.toSet());
         }
-        Example example = Example.builder(RoleResourceRef.class).build();
-        example.createCriteria().andEqualTo("refType", GlobalConstants.ROLE_TYPE_USER).andEqualTo("entityId", userName);
-        if (CollectionUtils.isNotEmpty(groupIds)) {
-            example.or().andEqualTo("refType", GlobalConstants.ROLE_TYPE_USER_GROUP).andEqualTo("entityId", groupIds);
-        }
-        List<RoleResourceRef> roleResourceRefs = roleResourceRefMapper.selectByExample(example);
+
+        List<RoleResourceRef> roleResourceRefs = roleResourceRefMapper.selectList(Wrappers.<RoleResourceRef>lambdaQuery()
+                .eq(RoleResourceRef::getRefType, GlobalConstants.ROLE_TYPE_USER)
+                .eq(RoleResourceRef::getEntityId, userName)
+                .or(CollectionUtils.isNotEmpty(groupIds))
+                .eq(CollectionUtils.isNotEmpty(groupIds),RoleResourceRef::getRefType, GlobalConstants.ROLE_TYPE_USER_GROUP)
+                .eq(CollectionUtils.isNotEmpty(groupIds),RoleResourceRef::getEntityId, groupIds)
+        );
         return roleResourceRefs.stream().map(RoleResourceRef::getRoleId).distinct().collect(Collectors.toList());
     }
 
@@ -494,10 +503,7 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
             }
             folibRoleService.deleteUserRoleCache(userIds);
         }
-
-        Example example = new Example(RoleResourceRef.class);
-        example.createCriteria().andEqualTo("roleId", roleId).andIsNull("entityId");
-        roleResourceRefMapper.deleteByExample(example);
+        roleResourceRefMapper.delete(Wrappers.<RoleResourceRef>lambdaQuery().eq(RoleResourceRef::getRoleId, roleId).isNull(RoleResourceRef::getEntityId));
     }
     @Override
     public void deleteAnonymousRole(String roleId) {
@@ -577,23 +583,17 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
 
     @Override
     public void deleteByResourceIds(List<String> resourceIds) {
-        Example example = Example.builder(RoleResourceRef.class).build();
-        example.createCriteria().andIn("resourceId", resourceIds);
-        roleResourceRefMapper.deleteByExample(example);
+        roleResourceRefMapper.delete(Wrappers.<RoleResourceRef>lambdaQuery().in(RoleResourceRef::getResourceId, resourceIds));
     }
 
     @Override
     public List<RoleResourceRef> queryByResourceIds(List<String> resourceIds) {
-        Example example = Example.builder(RoleResourceRef.class).build();
-        example.createCriteria().andIn("resourceId", resourceIds);
-        return roleResourceRefMapper.selectByExample(example);
+        return roleResourceRefMapper.selectList(Wrappers.<RoleResourceRef>lambdaQuery().in(RoleResourceRef::getResourceId, resourceIds));
     }
 
     @Override
     public void deleteByentityId(String entityId, String refType) {
-        Example example = new Example(RoleResourceRef.class);
-        example.createCriteria().andEqualTo("entityId", entityId).andEqualTo("refType", refType);
-        roleResourceRefMapper.deleteByExample(example);
+        roleResourceRefMapper.delete(Wrappers.<RoleResourceRef>lambdaQuery().eq(RoleResourceRef::getEntityId, entityId).eq(RoleResourceRef::getRefType, refType));
 
         if (GlobalConstants.ROLE_TYPE_USER.equals(refType)) {
             folibRoleService.deleteUserRoleCache(Collections.singletonList(entityId));
@@ -606,9 +606,7 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
 
     @Override
     public void deleteByIds(List<Long> removeIds) {
-        Example example = new Example(RoleResourceRef.class);
-        example.createCriteria().andIn("id", removeIds);
-        roleResourceRefMapper.deleteByExample(example);
+        roleResourceRefMapper.delete(Wrappers.<RoleResourceRef>lambdaUpdate().in(RoleResourceRef::getId, removeIds));
 
         List<RoleResourceRef> roleResourceRefs = queryByIds(removeIds);
         if (CollectionUtils.isNotEmpty(roleResourceRefs)) {
@@ -620,17 +618,14 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
 
     @Override
     public List<RoleResourceRef> queryPermissionsByRoleIds(List<String> roleIds) {
-        Example example = Example.builder(RoleResourceRef.class).build();
-        example.createCriteria().andIn("roleId", roleIds);
-        return roleResourceRefMapper.selectByExample(example);
+        return roleResourceRefMapper.selectList(Wrappers.<RoleResourceRef>lambdaQuery().in(RoleResourceRef::getRoleId, roleIds));
     }
 
     @Override
     public List<RoleResourceRef> queryByUserIds(List<String> userIds) {
-        Example example = Example.builder(RoleResourceRef.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        criteria.andIn("entityId", userIds).andEqualTo("refType", GlobalConstants.ROLE_TYPE_USER);
-        return roleResourceRefMapper.selectByExample(example);
+        return roleResourceRefMapper.selectList(Wrappers.<RoleResourceRef>lambdaQuery()
+                .in(RoleResourceRef::getEntityId, userIds)
+                .eq(RoleResourceRef::getRefType, GlobalConstants.ROLE_TYPE_USER));
 
     }
 
@@ -688,9 +683,7 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
 
     @Override
     public List<RoleResourceRef> queryByIds(List<Long> ids) {
-        Example example = new Example(RoleResourceRef.class);
-        example.createCriteria().andIn("id", ids);
-        return roleResourceRefMapper.selectByExample(example);
+       return roleResourceRefMapper.selectList(Wrappers.<RoleResourceRef>lambdaQuery().in(RoleResourceRef::getId, ids));
     }
 
     @Override

@@ -6,6 +6,7 @@ import cn.hutool.core.map.MapUtil;
 import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.veadan.folib.components.DistributedCacheComponent;
@@ -76,7 +77,6 @@ import org.glassfish.jersey.media.multipart.Boundary;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
 import org.glassfish.jersey.media.multipart.internal.MultiPartWriter;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
@@ -286,7 +286,7 @@ public class PromotionUtil {
                 artifactSyncRecord.setCreateBy(UserUtils.getUsername());
                 artifactSyncRecord.setCreateTime(new Date());
                 artifactSyncRecord.setSyncModel(1);
-                artifactSyncRecordMapper.insertSelective(artifactSyncRecord);
+                artifactSyncRecordMapper.insert(artifactSyncRecord);
                 syncNoList.add(syncNo);
                 try {
                     handlerDispatch(map, artifactDispatch, targetDispatchRepositoryDto, syncNo, false);
@@ -294,7 +294,7 @@ public class PromotionUtil {
                     artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
                     artifactSyncRecord.setFailedReason(ex.getMessage());
                     // 更新日志结束开始时间
-                    artifactSyncRecordMapper.updateByPrimaryKeySelective(artifactSyncRecord
+                    artifactSyncRecordMapper.updateById(artifactSyncRecord
                             .setUpdateTime(new Date()));
                 }
             } catch (Exception ex) {
@@ -345,14 +345,14 @@ public class PromotionUtil {
                 updateArtifactSyncRecord = ArtifactSyncRecord.builder().id(artifactSyncRecord.getId()).retryCount(retryCount + 1).retryTime(date).updateBy(UserUtils.getUsername()).updateTime(date).build();
                 try {
                     updateArtifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.READY.getVal());
-                    artifactSyncRecordMapper.updateByPrimaryKeySelective(updateArtifactSyncRecord);
+                    artifactSyncRecordMapper.updateById(updateArtifactSyncRecord);
                     handlerDispatch(map, artifactDispatch, targetDispatchRepositoryDto, syncNo, true);
                 } catch (Exception ex) {
                     log.error("Distribution target [{}] error [{}]", JSONObject.toJSONString(targetDispatchRepositoryDto), ExceptionUtils.getStackTrace(ex));
                     updateArtifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.FAILED.getVal());
                     updateArtifactSyncRecord.setFailedReason(ex.getMessage());
                     // 更新日志结束开始时间
-                    artifactSyncRecordMapper.updateByPrimaryKeySelective(updateArtifactSyncRecord);
+                    artifactSyncRecordMapper.updateById(updateArtifactSyncRecord);
                 }
             } catch (Exception ex) {
                 log.error("Distribution target [{}] error [{}]", JSONObject.toJSONString(targetDispatchRepositoryDto), ExceptionUtils.getStackTrace(ex));
@@ -541,7 +541,7 @@ public class PromotionUtil {
                         .targetDispatchRepositoryList(targetDispatchRepositoryList).build();
                 if (folibWsRunManageV2.dispatch(targetNode, artifactDispatch)) {
                     //删除当前节点分发记录
-                    artifactSyncRecordMapper.delete(ArtifactSyncRecord.builder().syncNo(syncNo).build());
+                    artifactSyncRecordMapper.delete(Wrappers.<ArtifactSyncRecord>lambdaQuery().eq(ArtifactSyncRecord::getSyncNo, syncNo));
                     return;
                 }
             }
@@ -1519,7 +1519,7 @@ public class PromotionUtil {
         }
         ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectBySyncNo(syncNo);
         artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
-        artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord);
+        artifactSyncRecordMapper.updateById(artifactSyncRecord);
         final List<ArtifactSliceUploadHttpEntityBuilder> artifactSliceUploadHttpEntityList = this.getArtifactSliceUploadHttpEntityList(filePathMap, storageId, repositoryId, sliceByteSize);
         int size = artifactSliceUploadHttpEntityList.size();
         log.info("晋级编号 [{}] 共 [{}] 个分片", syncNo, size);
@@ -1583,7 +1583,7 @@ public class PromotionUtil {
 
         ArtifactSyncRecord artifactSyncRecord = artifactSyncRecordMapper.selectBySyncNo(syncNo);
         artifactSyncRecord.setStatus(ArtifactSyncRecordStatusEnum.IN_SYNC.getVal());
-        artifactSyncRecordMapper.updateByPrimaryKey(artifactSyncRecord);
+        artifactSyncRecordMapper.updateById(artifactSyncRecord);
 
         List<ArtifactSyncSlaveRecord> artifactSyncSlaveRecords = artifactSyncSlaveRecordMapper.selectBySyncNo(syncNo);
         artifactSyncSlaveRecords = artifactSyncSlaveRecords.stream()
@@ -1635,7 +1635,7 @@ public class PromotionUtil {
         }
     }
 
-    @NotNull
+
     private ArtifactSyncSlaveRecord insertArtifactSyncSlaveRecord(String syncNo, String sourcePath, String targetPath, Integer status, long fileSize) {
         final ArtifactSyncSlaveRecord artifactSyncSlaveRecord = new ArtifactSyncSlaveRecord();
         artifactSyncSlaveRecord.setSourcePath(sourcePath);
@@ -1731,7 +1731,7 @@ public class PromotionUtil {
         throw new RuntimeException("Synchronization record not found");
     }
 
-    public ArtifactSliceUploadHttpEntityBuilder getArtifactSliceUploadHttpEntity(@NotNull ArtifactSyncSlaveRecord artifactSyncSlaveRecord, String sourceStorageId, String sourceRepositoryId) {
+    public ArtifactSliceUploadHttpEntityBuilder getArtifactSliceUploadHttpEntity( ArtifactSyncSlaveRecord artifactSyncSlaveRecord, String sourceStorageId, String sourceRepositoryId) {
         try {
             String url = artifactSyncSlaveRecord.getTargetPath();
             URI uri = new URI(url);

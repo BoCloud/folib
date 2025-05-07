@@ -4,14 +4,14 @@ import cn.hutool.core.io.FileUtil;
 import com.veadan.folib.artifact.coordinates.versioning.SemanticVersion;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

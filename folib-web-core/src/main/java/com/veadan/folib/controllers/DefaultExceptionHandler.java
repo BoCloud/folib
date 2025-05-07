@@ -12,18 +12,15 @@ import com.veadan.folib.validation.RequestBodyValidationError;
 import com.veadan.folib.validation.RequestBodyValidationException;
 
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.lang.Nullable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
@@ -122,7 +119,7 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler
     protected ResponseEntity<Object> handleExceptionInternal(Exception ex,
                                                              @Nullable Object body,
                                                              HttpHeaders headers,
-                                                             HttpStatus status,
+                                                             HttpStatusCode statusCode,
                                                              WebRequest request)
     {
         MediaType contentType = requestedContent(request);
@@ -137,7 +134,7 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler
             body = new ErrorResponseEntityBody(ex.getMessage());
         }
 
-        return super.handleExceptionInternal(ex, body, headers, status, request);
+        return super.handleExceptionInternal(ex, body, headers, statusCode, request);
     }
 
     private ResponseEntity<?> provideValidationErrorResponse(final RequestBodyValidationException ex,

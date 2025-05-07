@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.veadan.folib</groupId>
         <artifactId>folib-storage-layout-providers</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>3.0-SNAPSHOT</version>
     </parent>
     <build>
         <plugins>
@@ -13,8 +13,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>11</source>
-                    <target>11</target>
+                    <source>17</source>
+                    <target>17</target>
                 </configuration>
             </plugin>
         </plugins>
@@ -22,7 +22,6 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>folib-storage-cocoapods-layout-provider</artifactId>
-    <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Folib: Storage [CocoaPods Layout Provider]</name>
 

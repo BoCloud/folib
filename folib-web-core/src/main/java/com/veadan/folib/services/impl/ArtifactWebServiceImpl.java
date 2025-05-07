@@ -13,6 +13,7 @@ import com.alibaba.excel.write.metadata.fill.FillConfig;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.parser.Feature;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
@@ -106,12 +107,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
-import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
 import java.io.*;
 import java.lang.management.ManagementFactory;
@@ -137,21 +136,27 @@ import java.util.stream.Stream;
 public class ArtifactWebServiceImpl implements ArtifactWebService {
 
     @Inject
+    @Lazy
     private ArtifactRepository artifactRepository;
 
     @Inject
+    @Lazy
     private ArtifactService artifactService;
 
     @Inject
+    @Lazy
     private RepositoryPathResolver repositoryPathResolver;
 
     @Inject
+    @Lazy
     private ConfigurationManagementService configurationManagementService;
 
     @Inject
+    @Lazy
     private ClusterSyncService clusterSyncService;
 
     @Inject
+    @Lazy
     private ScanRulesMapper scanRulesMapper;
 
     @Inject
@@ -163,12 +168,15 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     private DirectoryListingService directoryListingService;
 
     @Autowired
+    @Lazy
     private ArtifactEventListenerRegistry artifactEvent;
 
     @Inject
+    @Lazy
     private ArtifactManagementService artifactManagementService;
 
     @Inject
+    @Lazy
     private ThreadPoolTaskExecutor asyncThreadPoolTaskExecutor;
 
     @Inject
@@ -599,9 +607,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         if (CollectionUtils.isEmpty(storageIdAndRepositoryIdList)) {
             return Collections.emptyList();
         }
-        Example example = new Example(ScanRules.class);
-        example.createCriteria().andEqualTo("onScan", 1).andIn("id", storageIdAndRepositoryIdList);
-        List<ScanRules> scanRulesList = scanRulesMapper.selectByExample(example);
+        List<ScanRules> scanRulesList = scanRulesMapper.selectList(Wrappers.<ScanRules>lambdaQuery()
+                .eq(ScanRules::getOnScan, 1)
+                .in(ScanRules::getId, storageIdAndRepositoryIdList));
         Long zero = 0L;
         DecimalFormat decimalFormat = new DecimalFormat(".00");
         return Optional.ofNullable(scanRulesList).orElse(Collections.emptyList()).stream().map(scanRules -> {
@@ -901,8 +909,8 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             String fileOriginalName = null;
             if (file instanceof FileStreamMultipartFile) {
                 fileOriginalName = ((FileStreamMultipartFile) file).getOriginalFilename();
-            } else if (file instanceof CommonsMultipartFile) {
-                fileOriginalName = ((CommonsMultipartFile) file).getFileItem().getName();
+            } else if (file instanceof MultipartFile) {
+                fileOriginalName = ((MultipartFile) file).getOriginalFilename();
             }
 
             String tempPath = parentPath + File.separator + fileOriginalName;
@@ -1447,9 +1455,12 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         if (StringUtils.isBlank(resourceId)) {
             resourceId = Privileges.ARTIFACTS_RESOLVE.getAuthority();
         }
-        Example example = new Example(RoleResourceRef.class);
-        example.createCriteria().andIn("roleId", roleIds).andEqualTo("resourceId", resourceId).andIsNull("entityId");
-        roleResourceRefMapper.deleteByExample(example);
+
+        roleResourceRefMapper.delete(Wrappers.<RoleResourceRef>lambdaQuery()
+                .in(RoleResourceRef::getRoleId, roleIds)
+                .eq(RoleResourceRef::getResourceId, resourceId)
+                .isNull(RoleResourceRef::getEntityId)
+        );
     }
 
     @Override
@@ -2024,9 +2035,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         if (CollectionUtils.isEmpty(storageIdAndRepositoryIdList)) {
             return Collections.emptyList();
         }
-        Example example = new Example(ScanRules.class);
-        example.createCriteria().andEqualTo("onScan", onScan).andIn("id", storageIdAndRepositoryIdList);
-        List<ScanRules> scanRulesList = scanRulesMapper.selectByExample(example);
+        List<ScanRules> scanRulesList = scanRulesMapper.selectList(Wrappers.<ScanRules>lambdaQuery()
+                .eq(ScanRules::getOnScan, onScan)
+                .in(ScanRules::getId, storageIdAndRepositoryIdList)
+        );
         return Optional.ofNullable(scanRulesList).orElse(Collections.emptyList()).stream().map(item -> String.format("%s-%s", item.getStorage(), item.getRepository())).collect(Collectors.toList());
     }
 

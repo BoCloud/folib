@@ -1,6 +1,6 @@
 package com.veadan.folib.mapper;
 
-import com.veadan.folib.common.base.CommonMapper;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.veadan.folib.entity.AuditLogRecord;
 import org.springframework.stereotype.Component;
 
@@ -9,5 +9,5 @@ import org.springframework.stereotype.Component;
  * @since 2024-08-12 16:39
  */
 @Component
-public interface AuditLogRecordMapper extends CommonMapper<AuditLogRecord> {
+public interface AuditLogRecordMapper extends BaseMapper<AuditLogRecord> {
 }

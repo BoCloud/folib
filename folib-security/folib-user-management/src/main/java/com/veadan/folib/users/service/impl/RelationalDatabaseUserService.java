@@ -36,6 +36,7 @@ import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.jose4j.lang.JoseException;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -64,6 +65,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 public class RelationalDatabaseUserService implements UserService
 {
 
+    @Lazy
     @Inject
     private SecurityTokenProvider tokenProvider;
     @Inject
@@ -81,10 +83,12 @@ public class RelationalDatabaseUserService implements UserService
     private RoleResourceRefService roleResourceRefService;
     @Inject
     protected UserRepository userRepository;
+    @Lazy
     @Inject
     private FolibRoleService folibRoleService;
     @Inject
     private ResourceService resourceService;
+    @Lazy
     @Inject
     private ConfigurationManagementService configurationManagementService;
 

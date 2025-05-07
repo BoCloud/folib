@@ -1,5 +1,7 @@
 package com.veadan.folib.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -14,6 +16,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -25,18 +28,16 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @Accessors(chain = true)
-@Table(name = "access_token")
+@TableName("access_token")
 @ApiModel("访问令牌")
-public class AccessToken {
+public class AccessToken implements Serializable,Cloneable {
 
 
-    @Id
-    @GeneratedValue(generator = "JDBC", strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
+    @TableField("id")
     private long id;
 
 
-    @Column(name = "token_id")
+    @TableField( "token_id")
     @ApiModelProperty("令牌标识")
     private String tokenId;
 
@@ -49,7 +50,7 @@ public class AccessToken {
 
 
     @ApiModelProperty("过期时间")
-    @Column(name = "expire_time")
+    @TableField( "expire_time")
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
     private Date expireTime;
 
@@ -58,7 +59,7 @@ public class AccessToken {
     private String username;
 
     @ApiModelProperty("创建时间")
-    @Column(name = "create_time")
+    @TableField( "create_time")
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createTime;
 }

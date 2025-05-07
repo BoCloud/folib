@@ -1,5 +1,7 @@
 package com.veadan.folib.entity;
 
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -9,7 +11,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -25,14 +29,12 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @Accessors(chain = true)
-@Table(name = "artifact_sync_record")
+@TableName("artifact_sync_record")
 @ApiModel("ArtifactSyncRecord")
 public class ArtifactSyncRecord implements Serializable {
     private static final long serialVersionUID = 1L;
 
-
-    @Id
-    @GeneratedValue(generator = "JDBC", strategy = GenerationType.IDENTITY)
+    @TableId
     @ApiModelProperty("id")
     @Column(name = "id")
     private Long id;
@@ -72,7 +74,7 @@ public class ArtifactSyncRecord implements Serializable {
     private String targetPath;
     /**
      * 制品操作（1：制品晋级；2：制品分发）
-     * {@linkplain com.veadan.folib.enums.ArtifactSyncRecordOpsTypeEnum }
+     *
      */
     @ApiModelProperty("制品操作（1：制品晋级；2：制品分发）")
     @Column(name = "ops_type")
@@ -88,14 +90,14 @@ public class ArtifactSyncRecord implements Serializable {
     private String syncNo;
     /**
      * 同步模式（1：推；2：拉）
-     * {@linkplain  com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum }
+     *
      */
     @ApiModelProperty("同步模式（1：推；2：拉）")
     @Column(name = "sync_model")
     private Integer syncModel;
     /**
      * 同步状态（1：就绪；2：同步中；3：成功；4：失败）
-     * {@linkplain com.veadan.folib.enums.ArtifactSyncRecordStatusEnum }
+     *
      */
     @ApiModelProperty("同步状态（1：就绪；2：同步中；3：成功；4：失败）")
     @Column(name = "status")

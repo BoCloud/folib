@@ -10,7 +10,7 @@ import com.veadan.folib.util.CacheUtil;
 import org.springframework.web.servlet.mvc.condition.AbstractRequestCondition;
 
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;

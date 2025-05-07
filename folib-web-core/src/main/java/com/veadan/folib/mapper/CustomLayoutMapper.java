@@ -1,6 +1,6 @@
 package com.veadan.folib.mapper;
 
-import com.veadan.folib.common.base.CommonMapper;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.veadan.folib.entity.CustomLayout;
 import org.springframework.stereotype.Component;
 
@@ -8,5 +8,5 @@ import org.springframework.stereotype.Component;
  * @author leipenghui
  */
 @Component
-public interface CustomLayoutMapper extends CommonMapper<CustomLayout> {
+public interface CustomLayoutMapper extends BaseMapper<CustomLayout> {
 }

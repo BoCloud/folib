@@ -30,6 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.util.Assert;
 
@@ -50,6 +51,7 @@ public abstract class AbstractRepositoryProvider implements RepositoryProvider, 
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractRepositoryProvider.class);
 
+    @Lazy
     @Inject
     protected RepositoryProviderRegistry repositoryProviderRegistry;
 

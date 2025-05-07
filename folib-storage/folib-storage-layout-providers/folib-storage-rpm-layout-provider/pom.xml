@@ -8,24 +8,23 @@
     <parent>
         <artifactId>folib-storage-layout-providers</artifactId>
         <groupId>com.veadan.folib</groupId>
-        <version>1.0-SNAPSHOT</version>
+        <version>3.0-SNAPSHOT</version>
     </parent>
 
     <groupId>com.veadan.folib</groupId>
     <artifactId>folib-storage-rpm-layout-provider</artifactId>
-    <version>1.0-SNAPSHOT</version>
 
     <dependencies>
         <dependency>
             <groupId>com.veadan.folib</groupId>
             <artifactId>folib-storage-api</artifactId>
-            <version>1.0-SNAPSHOT</version>
+             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.veadan.folib</groupId>
             <artifactId>folib-cron-api</artifactId>
-            <version>1.0-SNAPSHOT</version>
+             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
         <!-- https://mvnrepository.com/artifact/xalan/serializer -->
@@ -48,8 +47,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>11</source>
-                    <target>11</target>
+                    <source>17</source>
+                    <target>17</target>
                 </configuration>
             </plugin>
         </plugins>

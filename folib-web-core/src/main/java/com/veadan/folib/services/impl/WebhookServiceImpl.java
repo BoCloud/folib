@@ -3,6 +3,7 @@ package com.veadan.folib.services.impl;
 import cn.hutool.core.net.NetUtil;
 import cn.hutool.core.util.IdUtil;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.veadan.folib.cluster.SyncWebhookEnum;
@@ -28,7 +29,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
 import javax.ws.rs.client.Client;
@@ -115,14 +115,14 @@ public class WebhookServiceImpl implements WebhookService {
                     if (CollectionUtils.isNotEmpty(webhookLogList) && webhookLogList.size() >= size) {
                         //每个url只保留50条记录
                         String id = webhookLogList.get(size - 1).getId() + "";
-                        webhookLogMapper.deleteByIds(id);
+                        webhookLogMapper.deleteById(id);
                     }
                     int artifactPathMaxLength = 255;
                     String artifactPath = webhookLog.getArtifactPath();
                     if (StringUtils.isNotBlank(artifactPath) && artifactPath.length() >= artifactPathMaxLength) {
                         webhookLog.setArtifactPath(artifactPath.substring(0, artifactPathMaxLength));
                     }
-                    webhookLogMapper.insertSelective(webhookLog);
+                    webhookLogMapper.insert(webhookLog);
                 } finally {
                     lock.unlock();
                 }
@@ -148,26 +148,20 @@ public class WebhookServiceImpl implements WebhookService {
 
     @Override
     public void deleteWebhookLog(WebhookLog webhookLog) {
-        webhookLogMapper.deleteByPrimaryKey(webhookLog.getId());
+        webhookLogMapper.deleteById(webhookLog.getId());
     }
 
     @Override
     public List<WebhookLog> queryWebhookLogList(WebhookLog webhookLog) {
-        Example example = Example.builder(WebhookLog.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        if (StringUtils.isNotBlank(webhookLog.getUrl())) {
-            criteria.andEqualTo("url", webhookLog.getUrl());
-        }
-        example.setOrderByClause("create_time desc");
-        return webhookLogMapper.selectByExample(example);
+        return webhookLogMapper.selectList(Wrappers.<WebhookLog>lambdaQuery()
+                .eq(StringUtils.isNotBlank(webhookLog.getUrl()),WebhookLog::getUrl, webhookLog.getUrl())
+                .orderByDesc(WebhookLog::getCreateTime)
+        );
     }
 
     @Override
     public WebhookLog queryWebhookLog(WebhookLog webhookLog) {
-        Example example = Example.builder(WebhookLog.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        criteria.andEqualTo("id", webhookLog.getId());
-        return webhookLogMapper.selectOne(webhookLog);
+        return webhookLogMapper.selectById(webhookLog);
     }
 
     private String generatorUuid() {
@@ -180,10 +174,7 @@ public class WebhookServiceImpl implements WebhookService {
      * @param url url
      */
     private void deleteWebhookLogByUrl(String url) {
-        Example example = Example.builder(WebhookLog.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        criteria.andEqualTo("url", url);
-        webhookLogMapper.deleteByExample(example);
+        webhookLogMapper.delete(Wrappers.<WebhookLog>lambdaQuery().eq(WebhookLog::getUrl, url));
     }
 
     public void handlerWebhookTest(WebhookConfigurationForm webhookConfiguration) {

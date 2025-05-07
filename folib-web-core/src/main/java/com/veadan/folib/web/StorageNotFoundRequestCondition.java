@@ -1,6 +1,6 @@
 package com.veadan.folib.web;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.Collections;
 

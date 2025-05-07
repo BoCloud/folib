@@ -1,6 +1,7 @@
 package com.veadan.folib.services.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.veadan.folib.annotation.AuditLog;
@@ -25,7 +26,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
-import tk.mybatis.mapper.entity.Example;
 
 import javax.annotation.Resource;
 import java.lang.reflect.Method;
@@ -103,22 +103,14 @@ public class AuditLogRecordServiceImpl implements AuditLogRecordService {
     @Override
     public TableResultResponse<AuditLogRecord> page(AuditLogForm model) {
         PageHelper.startPage(model.getPageNumber(), model.getPageSize());
-        Example example = Example.builder(AuditLogRecord.class).build();
-        Example.Criteria where = example.createCriteria();
-        if (StringUtils.isNotBlank(model.getModuleValue())) {
-            where.andEqualTo("module", model.getModuleValue());
-        }
-        if (StringUtils.isNotBlank(model.getEventValue())) {
-            where.andEqualTo("name", model.getEventValue());
-        }
-        if (model.getFromDate() != null) {
-            where.andGreaterThanOrEqualTo("createTime", model.getFromDate());
-        }
-        if (model.getToDate() != null) {
-            where.andLessThanOrEqualTo("createTime", model.getToDate());
-        }
-        example.setOrderByClause("create_time DESC");
-        List<AuditLogRecord> records = auditLogRecordMapper.selectByExample(example);
+        List<AuditLogRecord> records = auditLogRecordMapper.selectList(Wrappers.<AuditLogRecord>lambdaQuery()
+                .eq(StringUtils.isNotBlank(model.getModuleValue()),  AuditLogRecord::getModule, model.getModuleValue())
+                .eq(StringUtils.isNotBlank(model.getEventValue()), AuditLogRecord::getName, model.getEventValue())
+                .eq(model.getFromDate() != null, AuditLogRecord::getCreateTime, model.getFromDate())
+                .le(model.getToDate() != null, AuditLogRecord::getCreateTime, model.getToDate())
+                .orderByDesc(AuditLogRecord::getCreateTime)
+        );
+
         PageInfo<AuditLogRecord> pageInfo = new PageInfo<>(records);
         return new TableResultResponse<>(pageInfo.getTotal(), records);
     }

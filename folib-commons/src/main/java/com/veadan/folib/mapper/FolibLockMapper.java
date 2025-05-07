@@ -1,9 +1,10 @@
 package com.veadan.folib.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.veadan.folib.entity.FolibLock;
 import org.apache.ibatis.annotations.Param;
 
-public interface FolibLockMapper{
+public interface FolibLockMapper extends BaseMapper<FolibLock> {
     int insertLock(@Param("name") String name, @Param("lockUntil") String lockUntil,
                    @Param("lockedAt") String lockedAt, @Param("lockedBy") String lockedBy);
 

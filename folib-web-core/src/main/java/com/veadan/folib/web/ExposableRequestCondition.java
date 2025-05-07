@@ -1,7 +1,7 @@
 package com.veadan.folib.web;
 
-import javax.servlet.http.HttpServletRequest;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.servlet.mvc.condition.AbstractRequestCondition;
 
 /**

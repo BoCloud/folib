@@ -1,5 +1,6 @@
 package com.veadan.folib.services.impl;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.google.common.collect.Lists;
@@ -9,10 +10,7 @@ import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.domain.PackageNameBlockInfo;
 import com.veadan.folib.domain.blockstrategy.BlockStrategyRecord;
-import com.veadan.folib.entity.BlockStrategy;
-import com.veadan.folib.entity.BlockStrategyInfo;
-import com.veadan.folib.entity.BlockStrategyRepository;
-import com.veadan.folib.entity.License;
+import com.veadan.folib.entity.*;
 import com.veadan.folib.forms.blockstrategy.BlockStrategyForm;
 import com.veadan.folib.forms.packagenameblock.PackageNameBlockForm;
 import com.veadan.folib.mapper.BlockStrategyInfoMapper;
@@ -35,7 +33,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tk.mybatis.mapper.entity.Example;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -115,14 +112,13 @@ public class BlockStrategyServiceImpl implements BlockStrategyService {
             blockStrategyForm.setVulnerabilityLevels(Arrays.asList(existsBlockStrategy.getVulnerabilityLevels().split(",")));
         }
         //查询仓库
-        Example blockStrategyRepositoryExample = new Example(BlockStrategyRepository.class);
-        blockStrategyRepositoryExample.createCriteria().andEqualTo("blockStrategyId", existsBlockStrategy.getId());
-        List<BlockStrategyRepository> blockStrategyRepositories = blockStrategyRepositoryMapper.selectByExample(blockStrategyRepositoryExample);
+        List<BlockStrategyRepository> blockStrategyRepositories = blockStrategyRepositoryMapper.selectList(Wrappers.<BlockStrategyRepository>lambdaQuery()
+                .eq(BlockStrategyRepository::getBlockStrategyId,existsBlockStrategy.getId()));
+
         blockStrategyForm.setRepositories(Optional.ofNullable(blockStrategyRepositories).orElse(Collections.emptyList()).stream().map(blockStrategyRepository -> ConfigurationUtils.getStorageIdAndRepositoryId(blockStrategyRepository.getStorageId(), blockStrategyRepository.getRepositoryId())).collect(Collectors.toList()));
         //查询包名、license
-        Example blockStrategyInfoExample = new Example(BlockStrategyInfo.class);
-        blockStrategyInfoExample.createCriteria().andEqualTo("blockStrategyId", existsBlockStrategy.getId());
-        List<BlockStrategyInfo> blockStrategyInfos = blockStrategyInfoMapper.selectByExample(blockStrategyInfoExample);
+        List<BlockStrategyInfo> blockStrategyInfos = blockStrategyInfoMapper.selectList(Wrappers.<BlockStrategyInfo>lambdaQuery()
+                .eq(BlockStrategyInfo::getBlockStrategyId,existsBlockStrategy.getId()));
         List<String> packageNames = Lists.newArrayList(), licenses = Lists.newArrayList();
         if (CollectionUtils.isNotEmpty(blockStrategyInfos)) {
             blockStrategyInfos.forEach(blockStrategyInfo -> {
@@ -173,7 +169,7 @@ public class BlockStrategyServiceImpl implements BlockStrategyService {
         if (CollectionUtils.isNotEmpty(blockStrategyForm.getVulnerabilityLevels())) {
             blockStrategy.setVulnerabilityLevels(String.join(",", blockStrategyForm.getVulnerabilityLevels()));
         }
-        blockStrategyMapper.insertSelective(blockStrategy);
+        blockStrategyMapper.insert(blockStrategy);
         if (CollectionUtils.isNotEmpty(blockStrategyForm.getRepositories())) {
             String storageId = "", repositoryId = "";
             Storage storage = null;
@@ -278,7 +274,7 @@ public class BlockStrategyServiceImpl implements BlockStrategyService {
         if (CollectionUtils.isNotEmpty(blockStrategyForm.getVulnerabilityLevels())) {
             blockStrategy.setVulnerabilityLevels(String.join(",", blockStrategyForm.getVulnerabilityLevels()));
         }
-        blockStrategyMapper.updateByPrimaryKey(blockStrategy);
+        blockStrategyMapper.insert(blockStrategy);
         if (CollectionUtils.isNotEmpty(blockStrategyForm.getRepositories())) {
             String storageId = "", repositoryId = "";
             Storage storage = null;
@@ -303,9 +299,7 @@ public class BlockStrategyServiceImpl implements BlockStrategyService {
                 clearCache(storageId, repositoryId);
             }
             clearBlockStrategyRepositoryCache(existsBlockStrategy.getId());
-            Example example = new Example(BlockStrategyRepository.class);
-            example.createCriteria().andEqualTo("blockStrategyId", blockStrategyId);
-            blockStrategyRepositoryMapper.deleteByExample(example);
+            blockStrategyRepositoryMapper.delete(Wrappers.<BlockStrategyRepository>lambdaQuery().eq(BlockStrategyRepository::getBlockStrategyId,blockStrategyId));
             if (CollectionUtils.isNotEmpty(blockStrategyRepositoryList)) {
                 List<List<BlockStrategyRepository>> blockStrategyRepositories = Lists.partition(blockStrategyRepositoryList, 100);
                 for (List<BlockStrategyRepository> itemList : blockStrategyRepositories) {
@@ -340,9 +334,7 @@ public class BlockStrategyServiceImpl implements BlockStrategyService {
                 blockStrategyInfoList.add(blockStrategyInfo);
             }
         }
-        Example example = new Example(BlockStrategyInfo.class);
-        example.createCriteria().andEqualTo("blockStrategyId", blockStrategyId);
-        blockStrategyInfoMapper.deleteByExample(example);
+        blockStrategyInfoMapper.delete(Wrappers.<BlockStrategyInfo>lambdaQuery().eq(BlockStrategyInfo::getBlockStrategyId,blockStrategyId));
         if (CollectionUtils.isNotEmpty(blockStrategyInfoList)) {
             List<List<BlockStrategyInfo>> blockStrategyInfos = Lists.partition(blockStrategyInfoList, 100);
             for (List<BlockStrategyInfo> itemList : blockStrategyInfos) {
@@ -361,20 +353,20 @@ public class BlockStrategyServiceImpl implements BlockStrategyService {
         }
         clearBlockStrategyRepositoryCache(existsBlockStrategy.getId());
         Long blockStrategyId = existsBlockStrategy.getId();
-        blockStrategyMapper.deleteByPrimaryKey(blockStrategyId);
+        blockStrategyMapper.deleteById(blockStrategyId);
         //删除仓库
-        Example blockStrategyRepositoryExample = new Example(BlockStrategyRepository.class);
-        blockStrategyRepositoryExample.createCriteria().andEqualTo("blockStrategyId", blockStrategyId);
-        blockStrategyRepositoryMapper.deleteByExample(blockStrategyRepositoryExample);
+        blockStrategyRepositoryMapper.delete(Wrappers.<BlockStrategyRepository>lambdaQuery().eq(BlockStrategyRepository::getBlockStrategyId,blockStrategyId));
         //删除包名、license
-        Example blockStrategyInfoExample = new Example(BlockStrategyInfo.class);
-        blockStrategyInfoExample.createCriteria().andEqualTo("blockStrategyId", blockStrategyId);
-        blockStrategyInfoMapper.deleteByExample(blockStrategyInfoExample);
+        blockStrategyInfoMapper.delete(Wrappers.<BlockStrategyInfo>lambdaQuery().eq(BlockStrategyInfo::getBlockStrategyId,blockStrategyId));
     }
 
     @Override
     public BlockStrategy getBlockStrategy(BlockStrategy blockStrategy) {
-        return blockStrategyMapper.selectOne(blockStrategy);
+        return  blockStrategyMapper.selectOne(Wrappers.<BlockStrategy>lambdaQuery()
+                .eq(blockStrategy.getBlockStrategyName()!=null,BlockStrategy::getBlockStrategyName,blockStrategy.getBlockStrategyName())
+                .eq(blockStrategy.getId()!=null,BlockStrategy::getId,blockStrategy.getId())
+
+        );
     }
 
     /**
@@ -442,9 +434,7 @@ public class BlockStrategyServiceImpl implements BlockStrategyService {
      * @param id 阻断策略id
      */
     private void clearBlockStrategyRepositoryCache(Long id) {
-        Example blockStrategyRepositoryExample = new Example(BlockStrategyRepository.class);
-        blockStrategyRepositoryExample.createCriteria().andEqualTo("blockStrategyId", id);
-        List<BlockStrategyRepository> existsBlockStrategyRepositories = blockStrategyRepositoryMapper.selectByExample(blockStrategyRepositoryExample);
+        List<BlockStrategyRepository> existsBlockStrategyRepositories = blockStrategyRepositoryMapper.selectList(Wrappers.<BlockStrategyRepository>lambdaQuery().eq(BlockStrategyRepository::getBlockStrategyId,id));
         if (CollectionUtils.isNotEmpty(existsBlockStrategyRepositories)) {
             for (BlockStrategyRepository existsBlockStrategyRepository : existsBlockStrategyRepositories) {
                 //清理上次保存的仓库缓存

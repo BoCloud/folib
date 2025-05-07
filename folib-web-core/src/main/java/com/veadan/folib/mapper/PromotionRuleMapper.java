@@ -1,7 +1,6 @@
 package com.veadan.folib.mapper;
 
-import com.veadan.folib.common.base.CommonMapper;
-import com.veadan.folib.entity.FederalRepository;
+
 import com.veadan.folib.entity.PromotionRule;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;

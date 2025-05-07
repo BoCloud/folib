@@ -66,5 +66,4 @@ public class ArtifactorySearch extends GremlinVertexRepository<Artifact> {
                 .collect(Collectors.toList());
     }
 
-
 }

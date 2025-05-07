@@ -10,6 +10,7 @@ import javax.inject.Inject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 /**
@@ -22,6 +23,7 @@ public class NugetRepositoryManagementStrategy
 
     private static final Logger logger = LoggerFactory.getLogger(NugetRepositoryManagementStrategy.class);
 
+    @Lazy
     @Inject
     private CronTaskDataService cronTaskDataService;
 

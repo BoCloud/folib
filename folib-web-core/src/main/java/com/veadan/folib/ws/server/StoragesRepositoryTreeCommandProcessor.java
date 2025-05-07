@@ -3,11 +3,11 @@ package com.veadan.folib.ws.server;
 import com.veadan.folib.controllers.configuration.StoragesConfigurationController;
 import com.veadan.folib.domain.DispatchStorageTree;
 import com.veadan.folib.dto.ArtifactDispatchRepositoryDto;
+import jakarta.websocket.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
-import javax.websocket.Session;
 
 /**
  * @author pengYongQiang

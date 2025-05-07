@@ -18,6 +18,9 @@ import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
@@ -36,9 +39,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.inject.Inject;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -191,7 +191,7 @@ public class CocoapodsArtifactController extends BaseArtifactController
                                HttpHeaders httpHeaders,
                                String path,
                                HttpServletRequest request,
-                               HttpServletResponse response) throws Exception 
+                               HttpServletResponse response) throws Exception
     {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();

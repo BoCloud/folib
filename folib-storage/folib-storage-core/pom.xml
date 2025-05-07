@@ -8,12 +8,11 @@
  <parent>
         <groupId>com.veadan.folib</groupId>
         <artifactId>folib-parent</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>3.0-SNAPSHOT</version>
         <relativePath/>
     </parent>
 
     <artifactId>folib-storage-core</artifactId>
-    <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Folib: Storage [Core]</name>
@@ -62,12 +61,12 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-configuration</artifactId>
-            <version>1.0-SNAPSHOT</version>
+             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-data-service</artifactId>
-            <version>1.0-SNAPSHOT</version>
+             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -77,22 +76,22 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-security-api</artifactId>
-            <version>1.0-SNAPSHOT</version>
+             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-maven-metadata-api</artifactId>
-            <version>1.0-SNAPSHOT</version>
+             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-common-resources</artifactId>
-            <version>1.0-SNAPSHOT</version>
+             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-api-resources</artifactId>
-            <version>1.0-SNAPSHOT</version>
+             <version>${project.version}</version>
         </dependency>
 
         <dependency>
@@ -141,7 +140,7 @@
         <dependency>
             <groupId>com.veadan.folib</groupId>
             <artifactId>folib-s3fs-nio</artifactId>
-            <version>1.0-SNAPSHOT</version>
+             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 </project>

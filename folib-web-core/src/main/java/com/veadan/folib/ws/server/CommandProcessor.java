@@ -1,11 +1,11 @@
 package com.veadan.folib.ws.server;
 
 import com.veadan.folib.ws.common.FolibWsRunManageV2;
+import jakarta.websocket.Session;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.websocket.Session;
 
 /**
  * @author pengYongQiang

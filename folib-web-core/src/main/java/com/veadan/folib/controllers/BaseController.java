@@ -30,6 +30,7 @@ import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -46,7 +47,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -70,28 +70,36 @@ public abstract class BaseController {
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Inject
+    @Lazy
     protected ObjectMapper objectMapper;
 
     @Inject
+    @Lazy
     protected ConfigurationManagementService configurationManagementService;
 
     @Inject
+    @Lazy
     protected ConfigurationManager configurationManager;
 
     @Inject
+    @Lazy
     protected RepositoryPathResolver repositoryPathResolver;
 
     @Inject
+    @Lazy
     protected RepositoryPathLock repositoryPathLock;
 
     @Inject
+    @Lazy
     protected ArtifactResolutionService artifactResolutionService;
 
     @Inject
+    @Lazy
     @Qualifier("browseRepositoryDirectoryListingService")
     private DirectoryListingService directoryListingService;
 
     @Inject
+    @Lazy
     private ArtifactRepository artifactRepository;
 
     @Inject

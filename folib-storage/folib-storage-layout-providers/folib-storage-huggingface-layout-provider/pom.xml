@@ -5,17 +5,16 @@
     <parent>
         <groupId>com.veadan.folib</groupId>
         <artifactId>folib-parent</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>3.0-SNAPSHOT</version>
         <relativePath/>
     </parent>
 
     <artifactId>folib-storage-huggingface-layout-provider</artifactId>
     <name>Folib: Storage [Hugging Face Layout Provider]</name>
-    <version>1.0-SNAPSHOT</version>
     <description>folib-storage-huggingface-layout-provider</description>
 
     <properties>
-        <java.version>11</java.version>
+        <java.version>17</java.version>
     </properties>
 
     <packaging>jar</packaging>
@@ -33,8 +32,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>11</source>
-                    <target>11</target>
+                    <source>17</source>
+                    <target>17</target>
                 </configuration>
             </plugin>
             <plugin>
@@ -74,65 +73,65 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-commons</artifactId>
-            <version>1.0-SNAPSHOT</version>
+             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-event-api</artifactId>
-            <version>1.0-SNAPSHOT</version>
+             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-api</artifactId>
-            <version>1.0-SNAPSHOT</version>
+             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-cron-api</artifactId>
-            <version>1.0-SNAPSHOT</version>
+             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-cron-api</artifactId>
-            <version>1.0-SNAPSHOT</version>
+             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-cron-tasks</artifactId>
-            <version>1.0-SNAPSHOT</version>
+             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-cron-tasks</artifactId>
-            <version>1.0-SNAPSHOT</version>
+             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-common-resources</artifactId>
-            <version>1.0-SNAPSHOT</version>
+             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <!--        <dependency>-->
         <!--            <groupId>${project.groupId}</groupId>-->
         <!--            <artifactId>folib-testing-core</artifactId>-->
-        <!--            <version>1.0-SNAPSHOT</version>-->
+        <!--             <version>${project.version}</version>-->
         <!--            <scope>test</scope>-->
         <!--        </dependency>-->
         <!--        <dependency>-->
         <!--            <groupId>${project.groupId}</groupId>-->
         <!--            <artifactId>folib-testing-core</artifactId>-->
-        <!--            <version>1.0-SNAPSHOT</version>-->
+        <!--             <version>${project.version}</version>-->
         <!--            <type>test-jar</type>-->
         <!--            <scope>test</scope>-->
         <!--        </dependency>-->
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-api</artifactId>
-            <version>1.0-SNAPSHOT</version>
+             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -140,12 +139,6 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -187,12 +180,13 @@
             <artifactId>junit-jupiter</artifactId>
         </dependency>
         <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-parameter-names</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>6.0.0</version>
         </dependency>
     </dependencies>
 

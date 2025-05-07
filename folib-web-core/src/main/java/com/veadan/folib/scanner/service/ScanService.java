@@ -7,8 +7,9 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
-import com.beust.jcommander.internal.Sets;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.cluster.SyncCornJobEnum;
 import com.veadan.folib.components.DistributedCacheComponent;
@@ -76,7 +77,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import tk.mybatis.mapper.entity.Example;
+
 
 import javax.inject.Inject;
 import java.io.File;
@@ -901,9 +902,7 @@ public class ScanService {
     }
 
     private List<String> getScanStorageIdAndRepositoryIdList() {
-        Example example = new Example(ScanRules.class);
-        example.createCriteria().andEqualTo("onScan", 1);
-        List<ScanRules> scanRulesList = scanRulesMapper.selectByExample(example);
+        List<ScanRules> scanRulesList = scanRulesMapper.selectList(Wrappers.<ScanRules>lambdaQuery().eq(ScanRules::getOnScan, 1));
         if (CollectionUtils.isEmpty(scanRulesList)) {
             return null;
         }
@@ -929,9 +928,7 @@ public class ScanService {
     }
 
     public boolean validateRepositoryScan(String storageId, String repositoryId) {
-        Example example = new Example(ScanRules.class);
-        example.createCriteria().andEqualTo("id", String.format("%s-%s", storageId, repositoryId)).andEqualTo("onScan", true);
-        List<ScanRules> scanRulesList = scanRulesMapper.selectByExample(example);
+        List<ScanRules> scanRulesList = scanRulesMapper.selectList(Wrappers.<ScanRules>lambdaQuery().eq(ScanRules::getId, String.format("%s-%s", storageId, repositoryId)).eq(ScanRules::getOnScan, true));
         if (CollectionUtils.isEmpty(scanRulesList)) {
             return false;
         }

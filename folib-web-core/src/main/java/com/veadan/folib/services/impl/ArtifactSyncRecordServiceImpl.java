@@ -1,6 +1,7 @@
 package com.veadan.folib.services.impl;
 
 import cn.hutool.core.collection.CollUtil;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
@@ -19,7 +20,6 @@ import com.veadan.folib.services.ArtifactSyncRecordService;
 import io.micrometer.core.instrument.util.StringUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Service;
-import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
 import java.math.BigDecimal;
@@ -52,16 +52,12 @@ public class ArtifactSyncRecordServiceImpl implements ArtifactSyncRecordService 
         final Integer pageNumber = model.getPageNumber();
         final Integer pageSize = model.getPageSize();
         final Page<Object> page = PageHelper.startPage(pageNumber, pageSize);
-        final Example recordExample = Example.builder(ArtifactSyncRecord.class).build();
-        recordExample.setOrderByClause("create_time desc");
-        if (StringUtils.isNotEmpty(storageId)) {
-            recordExample.and().andEqualTo("sourceStorageId", storageId);
-        }
-        if (StringUtils.isNotEmpty(repositoryId)) {
-            recordExample.and().andEqualTo("sourceRepositoryId", repositoryId);
-        }
         
-        final List<ArtifactSyncRecordPageRes> pageResult = Optional.ofNullable(artifactSyncRecordMapper.selectByExample(recordExample))
+        final List<ArtifactSyncRecordPageRes> pageResult = Optional.ofNullable(artifactSyncRecordMapper.selectList(Wrappers.<ArtifactSyncRecord>lambdaQuery()
+                        .eq(StringUtils.isNotEmpty(storageId),  ArtifactSyncRecord::getSourceStorageId,storageId)
+                        .eq(StringUtils.isNotEmpty(repositoryId),  ArtifactSyncRecord::getSourceRepositoryId,repositoryId)
+                        .orderByDesc(ArtifactSyncRecord::getCreateTime)
+                ))
                 .filter(CollUtil::isNotEmpty)
                 .orElse(Collections.emptyList())
                 .stream().map(ArtifactSyncRecordPageRes::new)
@@ -70,9 +66,8 @@ public class ArtifactSyncRecordServiceImpl implements ArtifactSyncRecordService 
 
         final List<String> syncNoList = pageResult.stream().map(ArtifactSyncRecordPageRes::getSyncNo).collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(syncNoList)) {
-            final Example slaveRecordExample = Example.builder(ArtifactSyncSlaveRecord.class).build();
-            slaveRecordExample.and().andIn("syncNo", syncNoList);
-            final List<ArtifactSyncSlaveRecord> artifactSyncSlaveRecordList = Optional.ofNullable(artifactSyncSlaveRecordMapper.selectByExample(slaveRecordExample))
+            final List<ArtifactSyncSlaveRecord> artifactSyncSlaveRecordList = Optional.ofNullable(artifactSyncSlaveRecordMapper.selectList(Wrappers.<ArtifactSyncSlaveRecord>lambdaQuery()
+                            .in(ArtifactSyncSlaveRecord::getSyncNo,syncNoList)))
                     .orElse(Collections.emptyList());
             final Map<String, Map<Integer, Long>> groupSyncNoSlaveRecordCountMap = artifactSyncSlaveRecordList.stream()
                     .collect(Collectors.groupingBy(ArtifactSyncSlaveRecord::getSyncNo, 

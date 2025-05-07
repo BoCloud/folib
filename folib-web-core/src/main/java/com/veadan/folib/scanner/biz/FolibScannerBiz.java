@@ -2,6 +2,7 @@ package com.veadan.folib.scanner.biz;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.google.common.collect.Lists;
@@ -16,8 +17,8 @@ import com.veadan.folib.scanner.mapper.FolibScannerMapper;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import tk.mybatis.mapper.entity.Example;
 
 import java.text.DecimalFormat;
 import java.util.List;
@@ -31,18 +32,20 @@ import java.util.stream.Collectors;
  * @email xuxinping@126.com
  */
 @Service
-public class FolibScannerBiz extends BusinessBiz<FolibScannerMapper, FolibScanner> {
+public class FolibScannerBiz extends BusinessBiz {
 
+    @Autowired
+    private FolibScannerMapper folibScannerMapper;
     public List<FolibScanner> selectEnableScan() {
-        return this.mapper.selectEnableScan();
+        return folibScannerMapper.selectEnableScan();
     }
 
     public void updateScaning() {
-        this.mapper.updateScaning();
+        folibScannerMapper.updateScaning();
     }
 
     public ScanSumVo getScanSum() {
-        return this.mapper.getScanSum(getBaseQuery());
+        return folibScannerMapper.getScanSum(getBaseQuery());
     }
 
     public JSONObject getTotalSum() {
@@ -50,15 +53,15 @@ public class FolibScannerBiz extends BusinessBiz<FolibScannerMapper, FolibScanne
         JSONObject object = new JSONObject();
         FolibScanner folibScanner = new FolibScanner();
         folibScanner.setOnScan(true);
-        Integer onScanCount = this.mapper.selectFolibScannerCount(folibScanner, baseQuery);
+        Integer onScanCount = folibScannerMapper.selectFolibScannerCount(folibScanner, baseQuery);
         folibScanner.setOnScan(false);
-        Integer notScanCount = this.mapper.selectFolibScannerCount(folibScanner, baseQuery);
+        Integer notScanCount = folibScannerMapper.selectFolibScannerCount(folibScanner, baseQuery);
         folibScanner.setScanStatus(ScanConstans.UNSCAN).setOnScan(true);
-        Integer onScanAndUnScan = this.mapper.selectFolibScannerCount(folibScanner, baseQuery);
+        Integer onScanAndUnScan = folibScannerMapper.selectFolibScannerCount(folibScanner, baseQuery);
         folibScanner.setScanStatus(ScanConstans.SCANED).setOnScan(true);
-        Integer onScanAndScaned = this.mapper.selectFolibScannerCount(folibScanner, baseQuery);
+        Integer onScanAndScaned = folibScannerMapper.selectFolibScannerCount(folibScanner, baseQuery);
         folibScanner.setScanStatus(ScanConstans.SCANFAILED).setOnScan(true);
-        Integer onScanAndScanFailed = this.mapper.selectFolibScannerCount(folibScanner, baseQuery);
+        Integer onScanAndScanFailed = folibScannerMapper.selectFolibScannerCount(folibScanner, baseQuery);
         object.put("onScanCount", onScanCount);
         object.put("notScanCount", notScanCount);
         object.put("onScanAndUnScan", onScanAndUnScan);
@@ -69,7 +72,7 @@ public class FolibScannerBiz extends BusinessBiz<FolibScannerMapper, FolibScanne
     }
 
     public List<ScannerSumDifVo> getScannerSumDifVoList() {
-        List<ScannerSumDifVo> scannerSumDifVos = this.mapper.getScannerSumDifVoList(getBaseQuery());
+        List<ScannerSumDifVo> scannerSumDifVos = folibScannerMapper.getScannerSumDifVoList(getBaseQuery());
         DecimalFormat decimalFormat = new DecimalFormat(".00");
         scannerSumDifVos.forEach(scannerSumDifVo -> {
             String r;
@@ -88,10 +91,10 @@ public class FolibScannerBiz extends BusinessBiz<FolibScannerMapper, FolibScanne
     public JSONObject weekDayCount() {
         BaseQuery baseQuery = getBaseQuery();
         JSONObject object = new JSONObject();
-        object.put("weekCount", this.mapper.weekDayCount(baseQuery));
+        object.put("weekCount", folibScannerMapper.weekDayCount(baseQuery));
         ScanSumByDate scanSumByDate = new ScanSumByDate();
-        ScanSumByDate d14 = this.mapper.getCountByDayOne(14, baseQuery);
-        ScanSumByDate d7 = this.mapper.getCountByDayOne(7, baseQuery);
+        ScanSumByDate d14 = folibScannerMapper.getCountByDayOne(14, baseQuery);
+        ScanSumByDate d7 = folibScannerMapper.getCountByDayOne(7, baseQuery);
         scanSumByDate.setDenpendencySum(d14.getDenpendencySum() - d7.getDenpendencySum());
         scanSumByDate.setCountFolib(d14.getCountFolib() - d7.getCountFolib());
         scanSumByDate.setSuppressedSum(d14.getSuppressedSum() - d7.getSuppressedSum());
@@ -102,46 +105,9 @@ public class FolibScannerBiz extends BusinessBiz<FolibScannerMapper, FolibScanne
     }
 
     public List<ScanSumByDate> mounthDayCount() {
-        return this.mapper.mounthDayCount(getBaseQuery());
+        return folibScannerMapper.mounthDayCount(getBaseQuery());
     }
 
-    @Override
-    public TableResultResponse<FolibScanner> selectByQuery(Query query) {
-        TableResultResponse<FolibScanner> tableResultResponse = super.selectByQuery(query);
-        tableResultResponse.getData().getRows().forEach(folibScanner -> folibScanner.setReport(null));
-        return tableResultResponse;
-    }
-
-    @Override
-    public void query2criteria(Query query, Example example) {
-        if (query.entrySet().size() > 0) {
-            Query query1 = query;
-            query1.remove("page");
-            query1.remove("limit");
-            for (Map.Entry<String, Object> entry : query1.entrySet()) {
-                if (StringUtils.isBlank(entry.getValue().toString())) {
-                    continue;
-                }
-                Example.Criteria criteria = example.createCriteria();
-                if (entry.getKey().equals("artifactName")) {
-                    criteria.andLike("path", "%" + entry.getValue().toString() + "%");
-                } else {
-                    criteria.andEqualTo(entry.getKey(), entry.getValue().toString());
-                }
-                example.and(criteria);
-            }
-        }
-        BaseQuery baseQuery = getBaseQuery();
-        Example.Criteria criteria = example.createCriteria();
-        criteria.andNotEqualTo("vulnerableCount", 0);
-        if (CollectionUtils.isNotEmpty(baseQuery.getStorageIdList())) {
-            criteria.andIn("storage", baseQuery.getStorageIdList());
-        }
-        if (CollectionUtils.isNotEmpty(baseQuery.getNotInStorageIdList())) {
-            criteria.andNotIn("storage", baseQuery.getNotInStorageIdList());
-        }
-        example.and(criteria);
-    }
 
     /**
      * 获取制品的漏洞严重程度信息
@@ -156,12 +122,10 @@ public class FolibScannerBiz extends BusinessBiz<FolibScannerMapper, FolibScanne
         FolibScanner folibScanner = null;
         if (Objects.nonNull(fuzzy) && fuzzy.equals(1)) {
             //模糊匹配
-            Example folibScannerExample = new Example(FolibScanner.class);
             id = "%" + id;
-            folibScannerExample.createCriteria().andLike("path", id);
-            folibScanner = this.mapper.selectOneByExample(folibScannerExample);
+            folibScanner = folibScannerMapper.selectOne(Wrappers.<FolibScanner>lambdaQuery().like(FolibScanner::getPath, id));
         } else {
-            folibScanner = this.mapper.selectByPrimaryKey(id);
+            folibScanner = folibScannerMapper.selectById(id);
         }
         if (Objects.nonNull(folibScanner)) {
             BeanUtils.copyProperties(folibScanner, severityVO);
@@ -209,17 +173,21 @@ public class FolibScannerBiz extends BusinessBiz<FolibScannerMapper, FolibScanne
             artifactName = query.get(artifactNameKey).toString();
         }
         Page<Object> result = PageHelper.startPage(query.getPage(), query.getLimit());
-        List<FolibScannerDockerTableVO> list = this.mapper.selectDockerList(storage, repository, artifactName);
+        List<FolibScannerDockerTableVO> list = folibScannerMapper.selectDockerList(storage, repository, artifactName);
         if (CollectionUtils.isNotEmpty(list)) {
             list.forEach(item -> {
                 item.setPath(item.getVersionPath());
                 if (StringUtils.isNotBlank(item.getVersionPath())) {
                     //查询子表数据
-                    List<FolibScanner> childList = this.mapper.selectDockerChildList(item.getStorage(), item.getRepository(), item.getVersionPath());
+                    List<FolibScanner> childList = folibScannerMapper.selectDockerChildList(item.getStorage(), item.getRepository(), item.getVersionPath());
                     item.setChildList(childList);
                 }
             });
         }
         return new TableResultResponse<FolibScannerDockerTableVO>(result.getTotal(), list);
+    }
+
+   public FolibScanner selectById( String id){
+        return folibScannerMapper.selectById(id);
     }
 }

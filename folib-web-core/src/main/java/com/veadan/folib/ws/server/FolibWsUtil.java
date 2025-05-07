@@ -4,6 +4,8 @@ import com.veadan.folib.promotion.KryoSerializationUtil;
 import com.veadan.folib.scanner.common.util.SpringContextUtil;
 import com.veadan.folib.ws.common.FolibWsRunManageUtil;
 import com.veadan.folib.ws.common.FolibWsRunManageV2;
+import jakarta.websocket.CloseReason;
+import jakarta.websocket.Session;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.ObjectProvider;
@@ -11,8 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
-import javax.websocket.CloseReason;
-import javax.websocket.Session;
+
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.IllegalFormatFlagsException;

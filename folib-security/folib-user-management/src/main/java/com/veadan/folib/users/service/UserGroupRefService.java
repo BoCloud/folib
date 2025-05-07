@@ -1,5 +1,6 @@
 package com.veadan.folib.users.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.veadan.folib.dto.RoleResourceRefDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,14 +21,14 @@ public interface UserGroupRefService{
      * @return 实例对象
      */
     UserGroupRef queryById(Long id);
-    /** 
-     * 分页查询
-     *
-     * @param userGroupRef 筛选条件
-     * @param pageRequest 分页对象
-     * @return 查询结果
-     */
-    Page<UserGroupRef> paginQuery(UserGroupRef userGroupRef, PageRequest pageRequest);
+    ///**
+    // * 分页查询
+    // *
+    // * @param userGroupRef 筛选条件
+    // * @param pageRequest 分页对象
+    // * @return 查询结果
+    // */
+    //IPage<UserGroupRef> paginQuery(UserGroupRef userGroupRef, PageRequest pageRequest);
     /** 
      * 新增数据
      *

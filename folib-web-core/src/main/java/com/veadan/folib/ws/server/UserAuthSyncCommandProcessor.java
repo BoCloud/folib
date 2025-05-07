@@ -5,10 +5,11 @@ import com.veadan.folib.scanner.common.util.SpringContextUtil;
 import com.veadan.folib.services.UserSyncService;
 import com.veadan.folib.users.dto.UserAuthDTO;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
+import jakarta.websocket.Session;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import javax.websocket.Session;
+
 
 /**
  * 用户权限同步

@@ -1,9 +1,9 @@
 package com.veadan.folib.model.request;
 
 import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletRequest;
 
 import com.veadan.folib.storage.repository.Repository;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.Generated;
 
 @Generated

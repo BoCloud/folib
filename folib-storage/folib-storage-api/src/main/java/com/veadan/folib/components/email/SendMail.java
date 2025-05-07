@@ -5,6 +5,8 @@ import cn.hutool.core.io.FileUtil;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.SmtpConfiguration;
 import com.veadan.folib.enums.SMTPConnectionTypeEnum;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.io.FileSystemResource;
@@ -16,8 +18,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 import javax.inject.Inject;
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
 import java.io.File;
 import java.util.Properties;
 

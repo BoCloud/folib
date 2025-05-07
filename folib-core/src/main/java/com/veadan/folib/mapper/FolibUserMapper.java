@@ -3,12 +3,11 @@ package com.veadan.folib.mapper;
 import java.util.List;
 import java.util.Set;
 
-import com.veadan.folib.common.base.CommonMapper;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.veadan.folib.dto.RepositoryPrivilegeDTO;
 import com.veadan.folib.dto.UserDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.springframework.data.domain.Pageable;
 import com.veadan.folib.entity.FolibUser;
 
  /**
@@ -17,7 +16,7 @@ import com.veadan.folib.entity.FolibUser;
  * @date : 2024-7-9
  */
 @Mapper
-public interface FolibUserMapper extends CommonMapper<FolibUser> {
+public interface FolibUserMapper extends BaseMapper<FolibUser> {
      /**
       * 查询总数
       *

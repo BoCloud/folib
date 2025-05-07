@@ -1,5 +1,6 @@
 package com.veadan.folib.services.impl;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.github.pagehelper.PageHelper;
 import com.hazelcast.core.HazelcastInstance;
 import com.veadan.folib.components.artifact.ArtifactComponent;
@@ -21,7 +22,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
-import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -71,7 +71,7 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
             artifactCacheRecord.setUpdateTime(now);
             artifactCacheRecord.setLatestDownloadTime(now);
             artifactCacheRecord.setDownloadCount(1L);
-            artifactCacheRecordMapper.insertSelective(artifactCacheRecord);
+            artifactCacheRecordMapper.insert(artifactCacheRecord);
         } catch (Exception ex) {
             deleteCacheFile(artifactCacheRecord.getCachePath());
             throw ex;
@@ -90,7 +90,7 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
         artifactCacheRecord.setUpdateTime(now);
         artifactCacheRecord.setLatestDownloadTime(now);
         artifactCacheRecord.setDownloadCount(dbArtifactCacheRecord.getDownloadCount() + 1);
-        artifactCacheRecordMapper.updateByPrimaryKeySelective(artifactCacheRecord);
+        artifactCacheRecordMapper.updateById(artifactCacheRecord);
     }
 
     @Override
@@ -107,7 +107,7 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
                 //缓存制品文件不存在，删除缓存checksum文件
                 flag = handlerArtifactCacheDelete(artifactCachePath);
                 if (flag) {
-                    artifactCacheRecordMapper.deleteByPrimaryKey(dbArtifactCacheRecord.getId());
+                    artifactCacheRecordMapper.deleteById(dbArtifactCacheRecord.getId());
                 }
                 return;
             }
@@ -118,11 +118,11 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
                 flag = handlerArtifactCacheDelete(artifactCachePath);
             }
             if (flag) {
-                artifactCacheRecordMapper.deleteByPrimaryKey(dbArtifactCacheRecord.getId());
+                artifactCacheRecordMapper.deleteById(dbArtifactCacheRecord.getId());
             }
         } catch (Exception ex) {
             if (ex instanceof NoSuchFileException) {
-                artifactCacheRecordMapper.deleteByPrimaryKey(dbArtifactCacheRecord.getId());
+                artifactCacheRecordMapper.deleteById(dbArtifactCacheRecord.getId());
                 return;
             }
             log.error(ExceptionUtils.getStackTrace(ex));
@@ -145,16 +145,16 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
     public ArtifactCacheRecord selectOneArtifactCacheRecord(ArtifactCacheRecord artifactCacheRecord) {
         ArtifactCacheRecord resultArtifactCacheRecord = null;
         if (Objects.nonNull(artifactCacheRecord.getId())) {
-            resultArtifactCacheRecord = artifactCacheRecordMapper.selectByPrimaryKey(artifactCacheRecord.getId());
+            resultArtifactCacheRecord = artifactCacheRecordMapper.selectById(artifactCacheRecord.getId());
         } else if (StringUtils.isNotBlank(artifactCacheRecord.getArtifactPath())) {
-            Example example = Example.builder(ArtifactCacheRecord.class).build();
-            Example.Criteria criteria = example.createCriteria();
-            criteria.andEqualTo("nodeId", getHostname());
-            criteria.andEqualTo("storageId", artifactCacheRecord.getStorageId());
-            criteria.andEqualTo("repositoryId", artifactCacheRecord.getRepositoryId());
-            criteria.andEqualTo("artifactPath", artifactCacheRecord.getArtifactPath());
-            example.setOrderByClause("id desc");
-            List<ArtifactCacheRecord> packageNameBlockList = artifactCacheRecordMapper.selectByExample(example);
+            List<ArtifactCacheRecord> packageNameBlockList = artifactCacheRecordMapper.selectList(Wrappers.<ArtifactCacheRecord>lambdaQuery()
+                    .eq(ArtifactCacheRecord::getNodeId, getHostname())
+                    .eq(ArtifactCacheRecord::getStorageId, artifactCacheRecord.getStorageId())
+                    .eq(ArtifactCacheRecord::getRepositoryId, artifactCacheRecord.getRepositoryId())
+                    .like(ArtifactCacheRecord::getArtifactPathPrefix, artifactCacheRecord.getArtifactPath() + "%")
+                    .orderByDesc(ArtifactCacheRecord::getId)
+            );
+
             if (CollectionUtils.isNotEmpty(packageNameBlockList)) {
                 resultArtifactCacheRecord = packageNameBlockList.get(0);
             }
@@ -164,14 +164,14 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
 
     @Override
     public List<ArtifactCacheRecord> getArtifactCacheRecord(ArtifactCacheRecord artifactCacheRecord, Integer page, Integer limit) {
-        Example example = null;
+        List<ArtifactCacheRecord> list = null;
         if (Objects.nonNull(artifactCacheRecord)) {
-            example = Example.builder(ArtifactCacheRecord.class).build();
-            Example.Criteria criteria = example.createCriteria();
-            criteria.andEqualTo("nodeId", getHostname());
-            criteria.andEqualTo("storageId", artifactCacheRecord.getStorageId());
-            criteria.andEqualTo("repositoryId", artifactCacheRecord.getRepositoryId());
-            example.and().andLike("artifactPathPrefix", artifactCacheRecord.getArtifactPath() + "%");
+           list =  artifactCacheRecordMapper.selectList(Wrappers.<ArtifactCacheRecord>lambdaQuery()
+                    .eq(ArtifactCacheRecord::getNodeId,  getHostname())
+                     .eq(ArtifactCacheRecord::getStorageId, artifactCacheRecord.getStorageId())
+                     .eq(ArtifactCacheRecord::getRepositoryId, artifactCacheRecord.getRepositoryId())
+                     .like(ArtifactCacheRecord::getArtifactPathPrefix, artifactCacheRecord.getArtifactPath() + "%")
+            );
         }
         if (Objects.isNull(page)) {
             page = 1;
@@ -179,13 +179,13 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
         if (Objects.isNull(limit)) {
             limit = 1000;
         }
-        if (Objects.isNull(example)) {
-            example = Example.builder(ArtifactCacheRecord.class).build();
-            Example.Criteria criteria = example.createCriteria();
-            criteria.andEqualTo("nodeId", getHostname());
+        if (Objects.isNull(list)) {
+            list =  artifactCacheRecordMapper.selectList(Wrappers.<ArtifactCacheRecord>lambdaQuery()
+                    .eq(ArtifactCacheRecord::getNodeId,  getHostname())
+            );
         }
         PageHelper.startPage(page, limit);
-        List<ArtifactCacheRecord> list = artifactCacheRecordMapper.selectByExample(example);
+
         log.info("page {} limit {} list {}", page, limit, list.stream().map(ArtifactCacheRecord::getId).collect(Collectors.toList()).toString());
         return list;
     }
@@ -200,16 +200,13 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
 
     @Override
     public int getArtifactCacheRecordCount(ArtifactCacheRecord artifactCacheRecord) {
-        Example example = Example.builder(ArtifactCacheRecord.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        criteria.andEqualTo("nodeId", getHostname());
-        if (Objects.nonNull(artifactCacheRecord)) {
-            criteria.andEqualTo("storageId", artifactCacheRecord.getStorageId());
-            criteria.andEqualTo("repositoryId", artifactCacheRecord.getRepositoryId());
-            example.and().andLike("artifactPathPrefix", artifactCacheRecord.getArtifactPath() + "%");
-            return artifactCacheRecordMapper.selectCountByExample(example);
-        }
-        return artifactCacheRecordMapper.selectCountByExample(example);
+        return Math.toIntExact(artifactCacheRecordMapper.selectCount(Wrappers.<ArtifactCacheRecord>lambdaQuery()
+                .eq(ArtifactCacheRecord::getNodeId, getHostname())
+                .eq(Objects.nonNull(artifactCacheRecord) && artifactCacheRecord.getStorageId() != null, ArtifactCacheRecord::getStorageId, artifactCacheRecord.getStorageId())
+                .eq(Objects.nonNull(artifactCacheRecord) && artifactCacheRecord.getRepositoryId() != null, ArtifactCacheRecord::getRepositoryId, artifactCacheRecord.getRepositoryId())
+                .like(Objects.nonNull(artifactCacheRecord) && StringUtils.isNotBlank(artifactCacheRecord.getArtifactPath()), ArtifactCacheRecord::getArtifactPath, artifactCacheRecord.getArtifactPath() + "%")
+
+        ));
     }
 
     @Override
@@ -218,7 +215,7 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
         if (CollectionUtils.isEmpty(idList)) {
             return;
         }
-        artifactCacheRecordMapper.deleteByIds(idList.stream().map(String::valueOf).collect(Collectors.joining(",")));
+        artifactCacheRecordMapper.deleteByIds(idList.stream().map(String::valueOf).collect(Collectors.toList()));
     }
 
     @Override
@@ -226,10 +223,7 @@ public class ArtifactCacheRecordServiceImpl implements ArtifactCacheRecordServic
         File file = new File(directoryPath);
         if (file.exists()) {
             FileUtils.cleanDirectory(file);
-            Example example = Example.builder(ArtifactCacheRecord.class).build();
-            Example.Criteria criteria = example.createCriteria();
-            criteria.andEqualTo("nodeId", getHostname());
-            artifactCacheRecordMapper.deleteByExample(example);
+            artifactCacheRecordMapper.delete(Wrappers.<ArtifactCacheRecord>lambdaQuery().eq(ArtifactCacheRecord::getNodeId, getHostname()));
         }
     }
 

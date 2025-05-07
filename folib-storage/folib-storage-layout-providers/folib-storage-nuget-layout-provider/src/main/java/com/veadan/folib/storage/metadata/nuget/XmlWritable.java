@@ -17,9 +17,10 @@
 
 package com.veadan.folib.storage.metadata.nuget;
 
+import jakarta.xml.bind.JAXBException;
+
 import java.io.OutputStream;
 
-import javax.xml.bind.JAXBException;
 
 /**
  * The interface of an object that can write its XML representation to a stream

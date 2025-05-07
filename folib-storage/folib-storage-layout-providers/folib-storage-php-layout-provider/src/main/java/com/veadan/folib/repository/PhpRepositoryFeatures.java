@@ -18,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.glassfish.jersey.apache.connector.ApacheClientProperties;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.context.event.EventListener;
@@ -42,24 +43,25 @@ import java.util.concurrent.Executor;
 public class PhpRepositoryFeatures
         implements RepositoryFeatures {
 
+    @Lazy
     @Inject
     private ConfigurationManager configurationManager;
-
+    @Lazy
     @Inject
     private ArtifactIdGroupRepository artifactIdGroupRepository;
-
+    @Lazy
     @Inject
     private ProxyRepositoryConnectionPoolConfigurationService proxyRepositoryConnectionPoolConfigurationService;
-
+    @Lazy
     @Inject
     private Executor eventTaskExecutor;
-
+    @Lazy
     @Inject
     private PhpPackageFeedParser phpPackageFeedParser;
-
+    @Lazy
     @Inject
     protected ArtifactResolutionService artifactResolutionService;
-
+    @Lazy
     @Inject
     private RemoteRepositoryAlivenessService remoteRepositoryAlivenessCacheManager;
 

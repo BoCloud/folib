@@ -1,5 +1,6 @@
 package com.veadan.folib.components.block;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.components.DistributedCacheComponent;
@@ -33,7 +34,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
-import tk.mybatis.mapper.entity.Example;
+
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -417,10 +418,8 @@ public class ArtifactBlockComponent {
             String cacheValue = distributedCacheComponent.get(cacheKey);
             int count = 0;
             if (StringUtils.isBlank(cacheValue)) {
-                Example example = new Example(ScanRules.class);
-                example.createCriteria().andEqualTo("id", key)
-                        .andEqualTo("onScan", 1);
-                count = scanRulesMapper.selectCountByExample(example);
+
+                count = Math.toIntExact(scanRulesMapper.selectCount(Wrappers.<ScanRules>lambdaQuery().eq(ScanRules::getId, key)));
                 distributedCacheComponent.put(cacheKey, count + "");
             } else {
                 count = Integer.parseInt(cacheValue);

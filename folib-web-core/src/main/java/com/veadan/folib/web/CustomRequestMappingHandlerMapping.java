@@ -6,7 +6,7 @@ import com.veadan.folib.interceptors.PermissionCheckInterceptor;
 import com.veadan.folib.interceptors.RepositoryRequestInterceptor;
 
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
 import java.util.Optional;

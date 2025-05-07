@@ -1,13 +1,13 @@
 package com.veadan.folib.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.veadan.folib.entity.WebhookLog;
-import com.veadan.folib.common.base.CommonMapper;
 import org.springframework.stereotype.Component;
 
 /**
  * @author leipenghui
  */
 @Component
-public interface WebhookLogMapper extends CommonMapper<WebhookLog> {
+public interface WebhookLogMapper extends BaseMapper<WebhookLog> {
 
 }

@@ -7,7 +7,7 @@ import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.services.DirectoryListingServiceImpl;
 
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;

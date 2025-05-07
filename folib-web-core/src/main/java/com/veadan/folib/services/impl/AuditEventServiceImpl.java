@@ -1,10 +1,10 @@
 package com.veadan.folib.services.impl;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.veadan.folib.entity.AuditEvent;
 import com.veadan.folib.mapper.AuditEventMapper;
 import com.veadan.folib.services.AuditEventService;
 import org.springframework.stereotype.Service;
-import tk.mybatis.mapper.entity.Example;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -21,20 +21,19 @@ public class AuditEventServiceImpl implements AuditEventService {
 
     @Override
     public AuditEvent findUsedEventByName(String eventValue) {
-        Example example = Example.builder(AuditEvent.class).build();
-        Example.Criteria where = example.createCriteria();
-        where.andEqualTo("used", 1);
-        where.andEqualTo("eventValue", eventValue);
-        return auditEventMapper.selectOneByExample(example);
+       return auditEventMapper.selectOne(Wrappers.<AuditEvent>lambdaQuery()
+                .eq(AuditEvent::getUsed, 1)
+                .eq(AuditEvent::getEventValue, eventValue)
+        );
     }
 
     @Override
     public List<AuditEvent> findByModuleName(String moduleValue) {
-        Example example = Example.builder(AuditEvent.class).build();
-        Example.Criteria where = example.createCriteria();
-        where.andEqualTo("used", 1);
-        where.andEqualTo("moduleValue", moduleValue);
-        return auditEventMapper.selectByExample(example);
+
+       return auditEventMapper.selectList(Wrappers.<AuditEvent>lambdaQuery()
+                .eq(AuditEvent::getUsed, 1)
+                .eq(AuditEvent::getModuleValue, moduleValue)
+        );
 
     }
 
@@ -45,11 +44,11 @@ public class AuditEventServiceImpl implements AuditEventService {
 
     @Override
     public List<AuditEvent> findAll() {
-        return auditEventMapper.selectAll();
+        return  auditEventMapper.selectList(Wrappers.<AuditEvent>lambdaQuery());
     }
 
     @Override
     public boolean updateById(AuditEvent event) {
-        return auditEventMapper.updateById(event);
+        return auditEventMapper.updateById(event) == 1;
     }
 }

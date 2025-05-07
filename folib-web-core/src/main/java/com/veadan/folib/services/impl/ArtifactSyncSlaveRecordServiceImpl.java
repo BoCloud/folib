@@ -38,7 +38,7 @@ public class ArtifactSyncSlaveRecordServiceImpl implements ArtifactSyncSlaveReco
     @Override
     public Map<String, Long> batchAdd(List<ArtifactSyncSlaveRecordAddReq> models) {
         final List<ArtifactSyncSlaveRecord> newEntitiyList = models.stream().map(this::addModelToEntity).collect(Collectors.toList());
-        artifactSyncSlaveRecordMapper.insertList(newEntitiyList);
+        artifactSyncSlaveRecordMapper.insert(newEntitiyList);
         return newEntitiyList.stream().collect(Collectors.toMap(ArtifactSyncSlaveRecord::getTempId, ArtifactSyncSlaveRecord::getId));
     }
 
@@ -50,7 +50,7 @@ public class ArtifactSyncSlaveRecordServiceImpl implements ArtifactSyncSlaveReco
         final Date updateTime = model.getUpdateTime();
 ///        final String updateBy = model.getUpdateBy();
         boolean found = artifactSyncSlaveRecordMapper.updateRecordStatus(id, status, updateTime, failedReason);
-        ArtifactSyncSlaveRecord record = artifactSyncSlaveRecordMapper.selectByPrimaryKey(id);
+        ArtifactSyncSlaveRecord record = artifactSyncSlaveRecordMapper.selectById(id);
         updateRecordStatus( status, record.getSyncNo(),failedReason);
         return found;
 

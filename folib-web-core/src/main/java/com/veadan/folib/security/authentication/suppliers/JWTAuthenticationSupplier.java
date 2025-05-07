@@ -5,7 +5,9 @@ import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.security.authentication.JwtTokenFetcher;
 import com.veadan.folib.security.exceptions.InvalidTokenException;
 import com.veadan.folib.users.security.SecurityTokenProvider;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -17,7 +19,6 @@ import org.springframework.stereotype.Component;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -26,6 +27,7 @@ import java.util.Optional;
 public class JWTAuthenticationSupplier
         implements AuthenticationSupplier, JwtTokenFetcher {
 
+    @Lazy
     @Inject
     private SecurityTokenProvider securityTokenProvider;
 

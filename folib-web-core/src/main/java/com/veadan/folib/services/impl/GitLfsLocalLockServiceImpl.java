@@ -1,5 +1,6 @@
 package com.veadan.folib.services.impl;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.veadan.folib.entity.GitLfsLockEntity;
 import com.veadan.folib.mapper.GitLfsLockMapper;
 import com.veadan.folib.services.GitLfsLocalLockService;
@@ -43,7 +44,11 @@ public class GitLfsLocalLockServiceImpl implements GitLfsLocalLockService {
      */
     @Override
     public GitLfsLockEntity getOneLock(GitLfsLockEntity entity) {
-        return gitLfsLockMapper.selectOne(entity);
+        return gitLfsLockMapper.selectOne(Wrappers.<GitLfsLockEntity>lambdaQuery()
+                .eq(GitLfsLockEntity::getPath, entity.getPath())
+                .eq(GitLfsLockEntity::getOwner, entity.getOwner())
+                .eq(GitLfsLockEntity::getRef, entity.getRef())
+        );
     }
 
     /**
@@ -61,7 +66,13 @@ public class GitLfsLocalLockServiceImpl implements GitLfsLocalLockService {
     @Override
     public List<GitLfsLockEntity> listLocks(String storageId, String repositoryId, String path, String id, int cursor, int limit, String refSpec) {
         if (limit <= 0) {
-            limit = gitLfsLockMapper.selectCount(new GitLfsLockEntity().setPath(path).setRef(refSpec).setRepositoryId(repositoryId).setStorageId(storageId).setId(id));
+            limit = Math.toIntExact(gitLfsLockMapper.selectCount(Wrappers.<GitLfsLockEntity>lambdaQuery()
+                    .eq(GitLfsLockEntity::getPath, path)
+                    .eq(GitLfsLockEntity::getRef, refSpec)
+                    .eq(GitLfsLockEntity::getRepositoryId, repositoryId)
+                    .eq(GitLfsLockEntity::getStorageId, storageId)
+                    .eq(GitLfsLockEntity::getId, id)
+            ));
         }
         return gitLfsLockMapper.queryAllByLimit(storageId, repositoryId, path, id, cursor, limit, refSpec);
     }
@@ -75,8 +86,13 @@ public class GitLfsLocalLockServiceImpl implements GitLfsLocalLockService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public GitLfsLockEntity deleteLock(GitLfsLockEntity entity) {
-        GitLfsLockEntity lfsLock = gitLfsLockMapper.selectOne(entity);
-        gitLfsLockMapper.delete(lfsLock);
+        GitLfsLockEntity lfsLock = gitLfsLockMapper.selectOne(Wrappers.<GitLfsLockEntity>lambdaQuery()
+                .eq(GitLfsLockEntity::getId, entity.getId())
+                .eq(GitLfsLockEntity::getRepositoryId, entity.getRepositoryId()).eq(GitLfsLockEntity::getStorageId, entity.getStorageId())
+                .eq(GitLfsLockEntity::getPath, entity.getPath())
+                .eq(GitLfsLockEntity::getRef, entity.getRef())
+        );
+        gitLfsLockMapper.deleteById(entity.getId());
         return lfsLock;
     }
 }

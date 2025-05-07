@@ -6,6 +6,7 @@ import javax.transaction.Transactional;
 import com.veadan.folib.gremlin.adapters.ArtifactTagAdapter;
 import com.veadan.folib.artifact.ArtifactTag;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -21,6 +22,7 @@ public class ArtifactTagRepository extends GremlinVertexRepository<ArtifactTag>
     ArtifactTagAdapter adapter;
     
     @Inject
+    @Lazy
     ArtifactTagQueries queries;
 
     @Override

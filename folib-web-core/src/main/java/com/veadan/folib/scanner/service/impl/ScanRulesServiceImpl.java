@@ -1,5 +1,6 @@
 package com.veadan.folib.scanner.service.impl;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.thirdparty.foeyes.FoEyesComponent;
@@ -10,6 +11,7 @@ import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.Tree;
 import com.veadan.folib.scanner.biz.ScanRulesBiz;
 import com.veadan.folib.scanner.entity.ScanRules;
+import com.veadan.folib.scanner.mapper.ScanRulesMapper;
 import com.veadan.folib.scanner.service.ScanRulesService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.Storage;
@@ -19,7 +21,6 @@ import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tk.mybatis.mapper.entity.Example;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +36,7 @@ import java.util.stream.Collectors;
 public class ScanRulesServiceImpl implements ScanRulesService {
 
     @Autowired
-    private ScanRulesBiz scanRulesBiz;
+    private ScanRulesMapper scanRulesMapper;
 
     @Autowired
     private FoEyesComponent foEyesComponent;
@@ -49,18 +50,18 @@ public class ScanRulesServiceImpl implements ScanRulesService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void saveOrUpdateScanRules(ScanRules scanRules) {
-        ScanRules dbScanRules = scanRulesBiz.selectById(scanRules.getId());
+        ScanRules dbScanRules = scanRulesMapper.selectById(scanRules.getId());
         if (Objects.nonNull(dbScanRules)) {
-            scanRulesBiz.updateSelectiveById(scanRules);
+            scanRulesMapper.updateById(scanRules);
         } else {
-            scanRulesBiz.insertSelective(scanRules);
+            scanRulesMapper.insert(scanRules);
         }
         if (Boolean.TRUE.equals(scanRules.getBomOnScan()) && foEyesComponent.enable()) {
             //调用foeyes创建父项目
             CreateProjectRequest createProjectRequest = CreateProjectRequest.builder().name(String.format("%s/%s", scanRules.getStorage(), scanRules.getRepository())).classifier(ClassifierEnum.LIBRARY.getType()).build();
             ProjectInfo projectInfo = foEyesComponent.createProject(createProjectRequest);
             scanRules.setProjectUuid(projectInfo.getUuid());
-            scanRulesBiz.updateSelectiveById(scanRules);
+            scanRulesMapper.updateById(scanRules);
         }
         String cacheKey = String.format(GlobalConstants.SCAN_ENABLE_REPOSITORY_KEY, scanRules.getId().toUpperCase());
         distributedCacheComponent.delete(cacheKey);
@@ -68,9 +69,7 @@ public class ScanRulesServiceImpl implements ScanRulesService {
 
     @Override
     public List<ScanRules> queryBomOnScanList() {
-        Example example = new Example(ScanRules.class);
-        example.createCriteria().andEqualTo("bomOnScan", 1);
-        return scanRulesBiz.selectByExample(example);
+        return scanRulesMapper.selectList(Wrappers.<ScanRules>lambdaQuery().eq(ScanRules::getBomOnScan, 1));
     }
 
     @Override
@@ -89,9 +88,7 @@ public class ScanRulesServiceImpl implements ScanRulesService {
 
     @Override
     public List<ScanRules> queryOnScanList() {
-        Example example = new Example(ScanRules.class);
-        example.createCriteria().andEqualTo("onScan", 1);
-        return scanRulesBiz.selectByExample(example);
+       return scanRulesMapper.selectList(Wrappers.<ScanRules>lambdaQuery().eq(ScanRules::getOnScan, 1));
     }
 
     @Override

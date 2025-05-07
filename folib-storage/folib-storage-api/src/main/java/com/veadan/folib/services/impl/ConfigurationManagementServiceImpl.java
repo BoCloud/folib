@@ -1,6 +1,6 @@
 package com.veadan.folib.services.impl;
 
-import com.beust.jcommander.internal.Sets;
+import com.google.common.collect.Sets;
 import com.veadan.folib.client.MutableRemoteRepositoryRetryArtifactDownloadConfiguration;
 import com.veadan.folib.configuration.*;
 import com.veadan.folib.constant.GlobalConstants;
@@ -56,27 +56,30 @@ public class ConfigurationManagementServiceImpl
         implements ConfigurationManagementService {
 
     private final ReadWriteLock configurationLock = new ReentrantReadWriteLock();
-
+    @Lazy
     @Inject
     private ConfigurationFileManager configurationFileManager;
-
+    @Lazy
     @Inject
     private RepositoryEventListenerRegistry repositoryEventListenerRegistry;
 
     @Inject
     @Lazy
     private LayoutProviderRegistry layoutProviderRegistry;
-
+    @Lazy
     @Inject
     private ProxyRepositoryConnectionPoolConfigurationService proxyRepositoryConnectionPoolConfigurationService;
 
     @Inject
     @Lazy
     private PlatformTransactionManager transactionManager;
+    @Lazy
     @Inject
     protected RepositoryPathResolver repositoryPathResolver;
+    @Lazy
     @Inject
     private RepositoryManagementService repositoryManagementService;
+    @Lazy
     @Inject
     private ConversionService conversionService;
 

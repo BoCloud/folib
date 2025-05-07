@@ -12,6 +12,7 @@ import com.veadan.folib.services.ArtifactIdGroupService;
 import com.veadan.folib.services.ArtifactTagService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.LocalDateTimeInstance;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,12 +25,14 @@ import java.util.Set;
 @Component
 public class PhpPackageFeedParser {
 
+    @Lazy
     @Inject
     private ArtifactTagService artifactTagService;
 
+    @Lazy
     @Inject
     private ArtifactIdGroupService repositoryArtifactIdGroupService;
-
+    @Lazy
     @Inject
     private ArtifactRepository artifactRepository;
 

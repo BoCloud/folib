@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
-import javax.persistence.Id;
 import java.io.Serializable;
 
 /**
@@ -24,7 +23,6 @@ public class PermissionsDTO implements Serializable,Cloneable {
     /**
      * 主键
      */
-    @Id
     @ApiModelProperty(name = "主键", notes = "")
     private Long id;
     /**

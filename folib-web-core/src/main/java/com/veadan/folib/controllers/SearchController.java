@@ -6,7 +6,7 @@ import com.veadan.folib.storage.search.SearchRequest;
 import com.veadan.folib.storage.search.SearchResults;
 
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.URLDecoder;
 

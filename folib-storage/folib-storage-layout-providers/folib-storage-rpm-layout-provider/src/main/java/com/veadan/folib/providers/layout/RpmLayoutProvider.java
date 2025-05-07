@@ -21,6 +21,7 @@ import org.apache.tinkerpop.gremlin.structure.T;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
@@ -56,18 +57,19 @@ public class RpmLayoutProvider extends AbstractLayoutProvider<RpmArtifactCoordin
 //            "(?:" + RpmLayoutProvider.RPM_USER_PATH + ")(.*)");
 
 
+    @Lazy
     @Inject
     private RpmRepositoryManagementStrategy rpmRepositoryManagementStrategy;
-
+    @Lazy
     @Inject
     private RpmRepositoryFeatures rpmRepositoryFeatures;
-
+    @Lazy
     @Inject
     private ConfigurationManager configurationManager;
-
+    @Lazy
     @Inject
     protected RepositoryPathResolver repositoryPathResolver;
-
+    @Lazy
     @Inject
     protected ArtifactManagementService artifactManagementService;
 

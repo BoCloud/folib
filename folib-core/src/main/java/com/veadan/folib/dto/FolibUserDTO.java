@@ -9,8 +9,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
-import javax.persistence.Id;
-import javax.persistence.Table;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -28,7 +26,6 @@ import java.util.Date;
 public class FolibUserDTO implements Serializable,Cloneable{
     private static final long serialVersionUID = 1L;
    /** 主键 */
-   @Id
    @ApiModelProperty(name = "主键",notes = "")
    private String id ;
    /** 用户名 */

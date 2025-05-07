@@ -2,21 +2,19 @@
 
 package com.veadan.folib.scanner.common.base;
 
-
-import com.veadan.folib.common.base.CommonMapper;
 import com.veadan.folib.configuration.MutableConfiguration;
 import com.veadan.folib.security.authentication.JwtTokenFetcher;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.StorageManagementService;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.users.security.SecurityTokenProvider;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 
 /**
@@ -25,7 +23,7 @@ import java.util.*;
  * @author Veadan
  * @version 2018/1/13.
  */
-public abstract class BusinessBiz<M extends CommonMapper<T>, T> extends BaseBiz<M, T> implements JwtTokenFetcher {
+public abstract class BusinessBiz  implements JwtTokenFetcher {
 
     @Inject
     private ConfigurationManagementService configurationManagementService;
@@ -35,20 +33,6 @@ public abstract class BusinessBiz<M extends CommonMapper<T>, T> extends BaseBiz<
     @Inject
     private StorageManagementService storageManagementService;
 
-    @Override
-    public void insertSelective(T entity) {
-        super.insertSelective(entity);
-    }
-
-    @Override
-    public void updateById(T entity) {
-        super.updateById(entity);
-    }
-
-    @Override
-    public void updateSelectiveById(T entity) {
-        super.updateSelectiveById(entity);
-    }
 
     /**
      * 获取登录用户名

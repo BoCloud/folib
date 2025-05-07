@@ -2,8 +2,8 @@ package com.veadan.folib.security.authentication.suppliers;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
-import javax.servlet.http.HttpServletRequest;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.Authentication;
 
 /**

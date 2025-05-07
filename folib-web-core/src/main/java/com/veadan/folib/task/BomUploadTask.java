@@ -23,7 +23,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import tk.mybatis.mapper.entity.Example;
+
 
 import javax.inject.Inject;
 import java.nio.file.Files;

@@ -1,6 +1,7 @@
 package com.veadan.folib.mapper;
 
-import com.veadan.folib.common.base.CommonMapper;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.veadan.folib.entity.ArtifactCacheRecord;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Component;
@@ -12,7 +13,7 @@ import java.util.List;
  * @author leipenghui
  */
 @Component
-public interface ArtifactCacheRecordMapper extends CommonMapper<ArtifactCacheRecord> {
+public interface ArtifactCacheRecordMapper extends BaseMapper<ArtifactCacheRecord> {
 
     /**
      * 批量删除

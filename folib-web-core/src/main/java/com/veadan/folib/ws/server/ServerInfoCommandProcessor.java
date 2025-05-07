@@ -7,10 +7,10 @@ import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.ws.common.FolibWsRunManageUtil;
 import com.veadan.folib.ws.server.handler.command.FolibWsServerSaveNodeInfoCommand;
+import jakarta.websocket.Session;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import javax.websocket.Session;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;

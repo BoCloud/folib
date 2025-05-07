@@ -1,5 +1,6 @@
 package com.veadan.folib.users.service.impl;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.veadan.folib.authorization.dto.Role;
@@ -22,10 +23,10 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
 import java.util.*;
@@ -44,8 +45,10 @@ public class FolibUserServiceImpl implements FolibUserService {
 
     @Inject
     private FolibUserMapper folibUserMapper;
+    @Lazy
     @Autowired
     private UserGroupRefService userGroupRefService;
+    @Lazy
     @Autowired
     private RoleResourceRefService roleResourceRefService;
 
@@ -77,15 +80,13 @@ public class FolibUserServiceImpl implements FolibUserService {
 
     @Override
     public List<FolibUser> queryByIds(List<String> userIds) {
-        Example example = new Example(FolibUser.class);
-        example.createCriteria().andIn("id", userIds);
-        return folibUserMapper.selectByExample(example);
+        return folibUserMapper.selectList(Wrappers.<FolibUser>lambdaQuery().in(FolibUser::getId, userIds));
     }
 
     @Override
     public UserEntity save(UserEntity userEntity) {
         FolibUser folibUser = UserConvert.INSTANCE.UserEntityToFolibUser(userEntity);
-        FolibUser folibUserInfo = folibUserMapper.selectOne(FolibUser.builder().id(folibUser.getId()).build());
+        FolibUser folibUserInfo = folibUserMapper.selectOne(Wrappers.<FolibUser>lambdaQuery().eq(FolibUser::getId, folibUser.getId()));
         if (Objects.equals(folibUserInfo, null)) {
             if (StringUtils.isBlank(folibUser.getSourceId()) || !"ldapUserDetailsService".equalsIgnoreCase(folibUser.getSourceId())) {
                 folibUser.setSourceId("dataBaseUserDetailService");

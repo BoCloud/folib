@@ -1,7 +1,8 @@
 package com.veadan.folib.forms.configuration;
 
-import com.beust.jcommander.internal.Sets;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.common.collect.Sets;
 import com.veadan.folib.configuration.MutableUnionRepositoryConfiguration;
 import com.veadan.folib.configuration.MutableUnionTargetRepositoryConfiguration;
 import com.veadan.folib.configuration.UnionRepositoryConfiguration;

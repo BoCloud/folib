@@ -1,6 +1,7 @@
 package com.veadan.folib.task;
 
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.github.pagehelper.PageHelper;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.DistributedLockComponent;
@@ -18,7 +19,6 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import tk.mybatis.mapper.entity.Example;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -63,10 +63,10 @@ public class PromotionCompensationTask {
         log.info("Wait for the lock [{}]", lockName);
         if (distributedLockComponent.lock(lockName, waitTime)) {
             try {
-                Example recordExample = Example.builder(ArtifactSyncRecord.class).build();
-                recordExample.and().andEqualTo("status", ArtifactSyncRecordStatusEnum.FAILED.getVal());
-                recordExample.and().andLessThan("retryCount", getMaxRetryCount());
-                int totalCount = artifactSyncRecordMapper.selectCountByExample(recordExample);
+                int totalCount = Math.toIntExact(artifactSyncRecordMapper.selectCount(Wrappers.<ArtifactSyncRecord>lambdaQuery()
+                        .eq(ArtifactSyncRecord::getStatus, ArtifactSyncRecordStatusEnum.FAILED.getVal())
+                        .le(ArtifactSyncRecord::getRetryCount, getMaxRetryCount())
+                ));
                 log.info("Promotion compensation task find total [{}] artifact", totalCount);
                 if (totalCount <= 0) {
                     return;
@@ -75,11 +75,14 @@ public class PromotionCompensationTask {
                 // 计算总页数
                 int totalPages = (int) Math.ceil((double) totalCount / batchSize);
                 List<ArtifactSyncRecord> artifactSyncRecordList;
-                recordExample.setOrderByClause("id asc");
                 for (int currentPage = 1; currentPage <= totalPages; currentPage++) {
                     log.info("Promotion compensation task totalPages [{}] currentPage [{}] batchSize [{}]", totalPages, currentPage, batchSize);
                     PageHelper.startPage(currentPage, batchSize);
-                    artifactSyncRecordList = artifactSyncRecordMapper.selectByExample(recordExample);
+                    artifactSyncRecordList = artifactSyncRecordMapper.selectList(Wrappers.<ArtifactSyncRecord>lambdaQuery()
+                            .eq(ArtifactSyncRecord::getStatus, ArtifactSyncRecordStatusEnum.FAILED.getVal())
+                            .le(ArtifactSyncRecord::getRetryCount, getMaxRetryCount())
+                            .orderByAsc(ArtifactSyncRecord::getId)
+                    );
                     if (CollectionUtils.isEmpty(artifactSyncRecordList)) {
                         continue;
                     }

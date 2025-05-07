@@ -6,16 +6,17 @@ import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.scanner.biz.FolibScannerBiz;
-import com.veadan.folib.scanner.common.base.BaseController;
 import com.veadan.folib.scanner.common.msg.ObjectRestResponse;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.scanner.entity.FolibScanner;
 import com.veadan.folib.scanner.entity.FolibScannerDockerTableVO;
 import com.veadan.folib.scanner.entity.SeverityVO;
+import com.veadan.folib.scanner.mapper.FolibScannerMapper;
 import com.veadan.folib.scanner.service.ScanService;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.utils.UserUtils;
 import io.swagger.annotations.Api;
+import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -30,10 +31,14 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/folibScanner")
 @Api(tags = "")
-public class FolibScannerController extends BaseController<FolibScannerBiz, FolibScanner, String> {
+public class FolibScannerController  {
 
     @Autowired
     private ScanService scanService;
+    @Resource
+    private FolibScannerMapper folibScannerMapper;
+    @Autowired
+    private FolibScannerBiz folibScannerBiz;
 
 
     @GetMapping("/update")
@@ -54,29 +59,29 @@ public class FolibScannerController extends BaseController<FolibScannerBiz, Foli
     @GetMapping("/getCount")
     public ObjectRestResponse getCount() {
         JSONObject object = new JSONObject();
-        object.put("denpendencyCount", this.baseBiz.getScanSum());
-        object.put("totalCount", this.baseBiz.getTotalSum());
+        object.put("denpendencyCount", folibScannerBiz.getScanSum());
+        object.put("totalCount", folibScannerBiz.getTotalSum());
         return new ObjectRestResponse(true, object, "获取数据成功");
     }
 
     @GetMapping("/getScannerSumDifVoList")
     public ObjectRestResponse getScannerSumDifVoList() {
-        return new ObjectRestResponse(true, this.baseBiz.getScannerSumDifVoList(), "获取数据成功");
+        return new ObjectRestResponse(true, folibScannerBiz.getScannerSumDifVoList(), "获取数据成功");
     }
 
     @GetMapping("/weekDayCount")
     public ObjectRestResponse weekDayCount() {
-        return new ObjectRestResponse(true, this.baseBiz.weekDayCount(), "获取数据成功");
+        return new ObjectRestResponse(true, folibScannerBiz.weekDayCount(), "获取数据成功");
     }
 
     @GetMapping("/mounthDayCount")
     public ObjectRestResponse mounthDayCount() {
-        return new ObjectRestResponse(true, this.baseBiz.mounthDayCount(), "获取数据成功");
+        return new ObjectRestResponse(true, folibScannerBiz.mounthDayCount(), "获取数据成功");
     }
 
     @GetMapping("/folibScannerGetOne")
     public ObjectRestResponse folibScannerGetOne(@RequestParam("id") String id) {
-        FolibScanner folibScanner = this.baseBiz.selectById(id);
+        FolibScanner folibScanner = folibScannerBiz.selectById(id);
         JSONArray jsonArray = JSON.parseArray(folibScanner.getReport());
         return new ObjectRestResponse<>(true, jsonArray, "成功");
     }
@@ -90,7 +95,7 @@ public class FolibScannerController extends BaseController<FolibScannerBiz, Foli
      */
     @GetMapping("/severity")
     public ObjectRestResponse<SeverityVO> severity(@RequestParam("id") String id, @RequestParam(name = "fuzzy", required = false, defaultValue = "0") Integer fuzzy) {
-        return new ObjectRestResponse<SeverityVO>(true, this.baseBiz.severity(id, fuzzy), "成功");
+        return new ObjectRestResponse<SeverityVO>(true, folibScannerBiz.severity(id, fuzzy), "成功");
     }
 
     /**
@@ -101,7 +106,7 @@ public class FolibScannerController extends BaseController<FolibScannerBiz, Foli
      */
     @GetMapping(value = "/dockerPage")
     public TableResultResponse<FolibScannerDockerTableVO> dockerPage(@RequestParam(required = false) Map<String, Object> params) {
-        return this.baseBiz.dockerPage(params);
+        return folibScannerBiz.dockerPage(params);
     }
 
 }

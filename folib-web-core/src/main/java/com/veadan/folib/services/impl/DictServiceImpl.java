@@ -1,5 +1,6 @@
 package com.veadan.folib.services.impl;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.constant.GlobalConstants;
@@ -20,7 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tk.mybatis.mapper.entity.Example;
 
 import java.util.Date;
 import java.util.List;
@@ -53,7 +53,7 @@ public class DictServiceImpl implements DictService {
         }
         dict.setCreateTime(new Date());
         dict.setComment(handlerComment(dict));
-        dictMapper.insertSelective(dict);
+        dictMapper.insert(dict);
     }
 
     @Override
@@ -66,18 +66,12 @@ public class DictServiceImpl implements DictService {
         if (Objects.isNull(dbDict)) {
             saveDict(dict);
         } else {
-            Example example = Example.builder(Dict.class).build();
-            Example.Criteria criteria = example.createCriteria();
-            if (Objects.nonNull(dict.getId())) {
-                criteria.andEqualTo("id", dict.getId());
-            }
-            if (StringUtils.isNotBlank(dict.getDictKey())) {
-                criteria.andEqualTo("dictKey", dict.getDictKey());
-            }
-            if (StringUtils.isNotBlank(dict.getDictType())) {
-                criteria.andEqualTo("dictType", dict.getDictType());
-            }
-            dictMapper.updateByExampleSelective(dict, example);
+            dictMapper.update(dict, Wrappers.<Dict>lambdaUpdate()
+                    .eq(Objects.nonNull(dict.getId()), Dict::getId, dict.getId())
+                    .eq(Objects.nonNull(dict.getDictKey()), Dict::getDictKey, dict.getDictKey())
+                    .eq(Objects.nonNull(dict.getDictType()), Dict::getDictType, dict.getDictType())
+            );
+
         }
         if (Boolean.TRUE.equals(dictForm.getOverrideSystemProperty())) {
             System.setProperty(dict.getDictKey(), dict.getDictValue());
@@ -120,36 +114,34 @@ public class DictServiceImpl implements DictService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteDict(Dict dict) {
-        Example example = Example.builder(Dict.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        criteria.andEqualTo("dictType", dict.getDictType());
-        if (StringUtils.isNotBlank(dict.getDictKey())) {
-            criteria.andEqualTo("dictKey", dict.getDictKey());
-        }
-        int count = dictMapper.selectCountByExample(example);
+        int count = Math.toIntExact(dictMapper.selectCount(Wrappers.<Dict>lambdaQuery()
+                .eq(Dict::getDictType, dict.getDictType())
+                .eq(StringUtils.isNotBlank(dict.getDictKey()), Dict::getDictKey, dict.getDictKey())
+        ));
         if (count > 0) {
-            dictMapper.deleteByExample(example);
+            dictMapper.delete(Wrappers.<Dict>lambdaQuery()
+                    .eq(Dict::getDictType, dict.getDictType())
+                    .eq(StringUtils.isNotBlank(dict.getDictKey()), Dict::getDictKey, dict.getDictKey())
+            );
         }
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteDictById(Long id) {
-        dictMapper.deleteByPrimaryKey(id);
+        dictMapper.deleteById(id);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public List<Dict> selectDict(Dict dict) {
         deleteHistoryDataForUploadProcessBySeconds(null);
-        Example example = Example.builder(Dict.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        criteria.andEqualTo("dictType", dict.getDictType());
-        if (StringUtils.isNotBlank(dict.getDictKey())) {
-            criteria.andEqualTo("dictKey", dict.getDictKey());
-        }
-        example.setOrderByClause("create_time desc");
-        return dictMapper.selectByExample(example);
+       return dictMapper.selectList(Wrappers.<Dict>lambdaQuery()
+                .eq(Dict::getDictType, dict.getDictType())
+                .eq(StringUtils.isNotBlank(dict.getDictKey()), Dict::getDictKey, dict.getDictKey())
+                .eq(StringUtils.isNotBlank(dict.getComment()), Dict::getComment, dict.getComment())
+                .orderByDesc(Dict::getCreateTime)
+        );
     }
 
     @Override
@@ -162,19 +154,14 @@ public class DictServiceImpl implements DictService {
     @Override
     public Dict selectLatestOneDict(Dict dict) {
         if (Objects.nonNull(dict.getId())) {
-            return dictMapper.selectByPrimaryKey(dict.getId());
+            return dictMapper.selectById(dict.getId());
         }
-        Example example = Example.builder(Dict.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        criteria.andEqualTo("dictType", dict.getDictType());
-        if (StringUtils.isNotBlank(dict.getDictKey())) {
-            criteria.andEqualTo("dictKey", dict.getDictKey());
-        }
-        if (StringUtils.isNotBlank(dict.getComment())) {
-            criteria.andEqualTo("comment", dict.getComment());
-        }
-        example.setOrderByClause("create_time desc");
-        List<Dict> dictList = dictMapper.selectByExample(example);
+        List<Dict> dictList = dictMapper.selectList(Wrappers.<Dict>lambdaQuery()
+                .eq(Dict::getDictType, dict.getDictType())
+                .eq(StringUtils.isNotBlank(dict.getDictKey()), Dict::getDictKey, dict.getDictKey())
+                .eq(StringUtils.isNotBlank(dict.getComment()), Dict::getComment, dict.getComment())
+                .orderByDesc(Dict::getCreateTime)
+        );
         dict = null;
         if (CollectionUtils.isNotEmpty(dictList)) {
             dict = dictList.get(0);
@@ -184,38 +171,31 @@ public class DictServiceImpl implements DictService {
 
     @Override
     public List<Dict> selectLatestListDict(Dict dict) {
-        Example example = Example.builder(Dict.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        criteria.andEqualTo("dictType", dict.getDictType());
-        if (StringUtils.isNotBlank(dict.getDictKey())) {
-            criteria.andEqualTo("dictKey", dict.getDictKey());
-        }
-        if (StringUtils.isNotBlank(dict.getComment())) {
-            criteria.andEqualTo("comment", dict.getComment());
-        }
-        example.setOrderByClause("create_time desc");
-        return dictMapper.selectByExample(example);
+       return dictMapper.selectList(Wrappers.<Dict>lambdaQuery()
+                .eq(Dict::getDictType, dict.getDictType())
+                .eq(StringUtils.isNotBlank(dict.getDictKey()), Dict::getDictKey, dict.getDictKey())
+                .eq(StringUtils.isNotBlank(dict.getComment()), Dict::getComment, dict.getComment())
+                .orderByDesc(Dict::getCreateTime)
+        );
     }
 
     @Override
     public List<Dict> selectUnExecutedTask() {
-        Example example = Example.builder(Dict.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        criteria.andEqualTo("dictType", DictTypeEnum.FOLIB_UPGRADE_TASK.getType());
-        criteria.andIn("comment", Lists.newArrayList(UpgradeTaskStatusEnum.UN_EXECUTED.getStatus(), UpgradeTaskStatusEnum.EXECUTED_FAIL.getStatus()));
-        example.setOrderByClause("create_time asc");
-        return dictMapper.selectByExample(example);
+       return dictMapper.selectList(Wrappers.<Dict>lambdaQuery()
+                .eq(Dict::getDictType, DictTypeEnum.FOLIB_UPGRADE_TASK.getType())
+                .in(Dict::getComment, Lists.newArrayList(UpgradeTaskStatusEnum.UN_EXECUTED.getStatus(), UpgradeTaskStatusEnum.EXECUTED_FAIL.getStatus()))
+                .orderByAsc(Dict::getCreateTime)
+        );
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateUnExecutedTask(Dict dict) {
-        Example example = Example.builder(Dict.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        criteria.andEqualTo("dictType", dict.getDictType());
-        criteria.andEqualTo("dictKey", dict.getDictKey());
-        criteria.andEqualTo("dictValue", dict.getDictValue());
-        dictMapper.updateByExampleSelective(Dict.builder().comment(dict.getComment()).build(), example);
+        dictMapper.update(Dict.builder().createTime(new Date()).build(), Wrappers.<Dict>lambdaUpdate()
+                .eq(Dict::getDictType, dict.getDictType())
+                .eq(Dict::getDictKey, dict.getDictKey())
+                .eq(Dict::getDictValue, dict.getDictValue())
+        );
     }
 
     @Override
@@ -253,33 +233,27 @@ public class DictServiceImpl implements DictService {
 
     @Override
     public void updateById(Dict dict) {
-        dictMapper.updateByPrimaryKey(dict);
+        dictMapper.updateById(dict);
     }
 
     @Override
     public Dict getById(Long id) {
-        return dictMapper.selectByPrimaryKey(id);
+        return dictMapper.selectById(id);
     }
 
     public void  saveOrUpdateByTypeAndKey(Dict dict){
-        Example example = Example.builder(Dict.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        criteria.andEqualTo("dictType", dict.getDictType());
-        criteria.andEqualTo("dictKey", dict.getDictKey());
-        List<Dict> dicts = dictMapper.selectByExample(example);
+        List<Dict> dicts = dictMapper.selectList(Wrappers.<Dict>lambdaQuery()
+                .eq(Dict::getDictType, dict.getDictType())
+                .eq(Dict::getDictKey, dict.getDictKey()));
         if(dicts.isEmpty()){
             dictMapper.insert(dict);
         }else {
-            dictMapper.updateByExample(dict,example);
+            dictMapper.update(dict,Wrappers.<Dict>lambdaUpdate().eq(Dict::getId, dict.getId()).eq(Dict::getDictType, dict.getDictType()));
         }
     }
 
     public List<Dict> selectByTypeAndKey(String type,String key){
-        Example example = Example.builder(Dict.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        criteria.andEqualTo("dictType", type);
-        criteria.andEqualTo("dictKey", key);
-        return dictMapper.selectByExample(example);
+        return dictMapper.selectList(Wrappers.<Dict>lambdaQuery().eq(Dict::getDictType, type).eq(Dict::getDictKey, key));
     }
 
 

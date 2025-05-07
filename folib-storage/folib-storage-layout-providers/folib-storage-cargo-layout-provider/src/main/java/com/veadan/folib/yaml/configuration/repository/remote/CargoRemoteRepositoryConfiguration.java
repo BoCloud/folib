@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.veadan.folib.layout.providers.CargoLayoutProvider;
 import com.veadan.folib.yaml.repository.CustomRepositoryConfigurationDto;
 import com.veadan.folib.yaml.repository.remote.CustomRemoteRepositoryConfigurationData;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
 
 @JsonTypeName(CargoLayoutProvider.ALIAS)
 @XmlAccessorType(XmlAccessType.FIELD)

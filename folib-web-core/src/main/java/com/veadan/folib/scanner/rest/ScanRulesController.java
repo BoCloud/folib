@@ -2,8 +2,6 @@ package com.veadan.folib.scanner.rest;
 
 import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.enums.AuditEventNameEnum;
-import com.veadan.folib.scanner.biz.ScanRulesBiz;
-import com.veadan.folib.scanner.common.base.BaseController;
 import com.veadan.folib.scanner.common.msg.ObjectRestResponse;
 import com.veadan.folib.scanner.entity.ScanRules;
 import com.veadan.folib.scanner.service.ScanRulesService;
@@ -15,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/scanRules")
 @Api(tags = "规则扫描控制器", description = "规则扫描控制器")
-public class ScanRulesController extends BaseController<ScanRulesBiz, ScanRules, String> {
+public class ScanRulesController  {
 
     @Autowired
     private ScanRulesService scanRulesService;

@@ -1,5 +1,7 @@
 package com.veadan.folib.users.service.impl;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.veadan.folib.dto.RoleResourceRefDTO;
 import com.veadan.folib.entity.UserGroup;
 import com.veadan.folib.entity.UserGroupRef;
@@ -8,13 +10,14 @@ import com.veadan.folib.users.service.UserGroupRefService;
 import com.veadan.folib.users.service.UserGroupService;
 import org.parboiled.common.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
-import org.springframework.data.domain.Page;
+
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
-import tk.mybatis.mapper.entity.Example;
+
 
 import java.util.Collections;
 import java.util.List;
@@ -28,9 +31,10 @@ import java.util.stream.Collectors;
  */
 @Service
 @Transactional(rollbackFor=Exception.class)
-public class UserGroupRefServiceImpl implements UserGroupRefService {
+public class UserGroupRefServiceImpl implements UserGroupRefService  {
     @Autowired
     private UserGroupRefMapper userGroupRefMapper;
+    @Lazy
     @Autowired
     private UserGroupService userGroupService;
     
@@ -45,17 +49,18 @@ public class UserGroupRefServiceImpl implements UserGroupRefService {
         return userGroupRefMapper.queryById(id);
     }
     
-    /** 
-     * 分页查询
-     *
-     * @param userGroupRef 筛选条件
-     * @param pageRequest 分页对象
-     * @return 查询结果
-     */
-    public Page<UserGroupRef> paginQuery(UserGroupRef userGroupRef, PageRequest pageRequest){
-        long total = userGroupRefMapper.count(userGroupRef);
-        return new PageImpl<>(userGroupRefMapper.queryAllByLimit(userGroupRef, pageRequest), pageRequest, total);
-    }
+    ///**
+    // * 分页查询
+    // *
+    // * @param userGroupRef 筛选条件
+    // * @param pageRequest 分页对象
+    // * @return 查询结果
+    // */
+    //public IPage<UserGroupRef> paginQuery(UserGroupRef userGroupRef, PageRequest pageRequest){
+    //    long total = userGroupRefMapper.count(userGroupRef);
+    //    com.baomidou.mybatisplus.extension.plugins.pagination.Page<UserGroupRef> page = new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(pageRequest.getPageNumber(), pageRequest.getPageSize());
+    //  return   userGroupRefMapper.queryAllByLimit(page, userGroupRef);
+    //}
     
     /** 
      * 新增数据
@@ -126,12 +131,12 @@ public class UserGroupRefServiceImpl implements UserGroupRefService {
 
     @Override
     public void deleteByUserGroupId(Long id) {
-        userGroupRefMapper.delete(UserGroupRef.builder().userGroupId(id).build());
+        userGroupRefMapper.delete(Wrappers.<UserGroupRef>lambdaQuery().eq(UserGroupRef::getUserGroupId, id));
     }
 
     @Override
     public void deleteByUserId(String userId) {
-        userGroupRefMapper.delete(UserGroupRef.builder().userId(userId).build());
+        userGroupRefMapper.delete(Wrappers.<UserGroupRef>lambdaQuery().eq(UserGroupRef::getId, userId));
     }
 
     @Override
@@ -156,16 +161,12 @@ public class UserGroupRefServiceImpl implements UserGroupRefService {
 
     @Override
     public List<UserGroupRef> queryByUserId(String userId) {
-        Example example = Example.builder(UserGroupRef.class).build();
-        example.createCriteria().andEqualTo("userId", userId);
-        return userGroupRefMapper.selectByExample(example);
+        return userGroupRefMapper.selectList(Wrappers.<UserGroupRef>lambdaQuery().eq(UserGroupRef::getUserId, userId));
     }
 
     @Override
     public void deleteByIds(List<Long> refIds) {
-        Example example = Example.builder(UserGroupRef.class).build();
-        example.createCriteria().andIn("id", refIds);
-        userGroupRefMapper.deleteByExample(example);
+        userGroupRefMapper.delete(Wrappers.<UserGroupRef>lambdaQuery().in(UserGroupRef::getId, refIds));
     }
 
 

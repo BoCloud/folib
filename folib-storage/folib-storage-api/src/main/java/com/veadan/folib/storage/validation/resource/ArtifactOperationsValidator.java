@@ -24,6 +24,7 @@ import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.FileSizeConvertUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -50,21 +51,22 @@ import java.util.Objects;
 @Component("artifactOperationsValidator")
 public class ArtifactOperationsValidator {
 
+    @Lazy
     @Inject
     private ConfigurationManager configurationManager;
-
+    @Lazy
     @Inject
     private LayoutProviderRegistry layoutProviderRegistry;
-
+    @Lazy
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
-
+    @Lazy
     @Inject
     private ArtifactRepository artifactRepository;
-
+    @Lazy
     @Inject
     private DistributedCacheComponent distributedCacheComponent;
-
+    @Lazy
     @Inject
     private ValidatorEventListenerRegistry validatorEventListenerRegistry;
 

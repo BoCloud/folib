@@ -1,5 +1,6 @@
 package com.veadan.folib.services.impl;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.veadan.folib.components.DistributedLockComponent;
@@ -16,7 +17,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tk.mybatis.mapper.entity.Example;
 
 import java.util.Collections;
 import java.util.Date;
@@ -55,7 +55,7 @@ public class WebhookEventsLogServiceImpl implements WebhookEventsLogService {
                     webhookEventsLog.setId(idGenerateUtils.generateId("webhookEventsLogId"));
                     webhookEventsLog.setCreateBy(UserUtils.getUsername());
                     webhookEventsLog.setCreateTime(date);
-                    webhookEventsLogMapper.insertSelective(webhookEventsLog);
+                    webhookEventsLogMapper.insert(webhookEventsLog);
                 } else if (type != 1) {
                     WebhookEventsLog updateWebhookEventsLog = WebhookEventsLog.builder().id(webhookEventsLogExists.getId()).retryCount(webhookEventsLogExists.getRetryCount() + 1)
                             .retryTime(date).updateBy(UserUtils.getUsername()).updateTime(date).failureReason(webhookEventsLog.getFailureReason()).build();
@@ -71,9 +71,9 @@ public class WebhookEventsLogServiceImpl implements WebhookEventsLogService {
 
     @Override
     public void updateWebhookEventsLog(WebhookEventsLog webhookEventsLog) {
-        WebhookEventsLog existsWebhookEventsLog = webhookEventsLogMapper.selectByPrimaryKey(webhookEventsLog.getId());
+        WebhookEventsLog existsWebhookEventsLog = webhookEventsLogMapper.selectById(webhookEventsLog.getId());
         if (Objects.nonNull(existsWebhookEventsLog)) {
-            webhookEventsLogMapper.updateByPrimaryKeySelective(webhookEventsLog);
+            webhookEventsLogMapper.updateById(webhookEventsLog);
         }
     }
 
@@ -83,91 +83,52 @@ public class WebhookEventsLogServiceImpl implements WebhookEventsLogService {
         if (Objects.isNull(existsWebhookEventsLog)) {
             throw new RuntimeException(String.format("WebhookEvents [%s] not found", webhookEventsLog.getId()));
         }
-        webhookEventsLogMapper.deleteByPrimaryKey(webhookEventsLog.getId());
+        webhookEventsLogMapper.deleteById(webhookEventsLog.getId());
     }
 
     @Override
     public List<WebhookEventsLog> queryWebhookEventsLogList(WebhookEventsLog webhookEventsLog) {
-        Example example = Example.builder(WebhookEventsLog.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        if (StringUtils.isNotBlank(webhookEventsLog.getEventType())) {
-            criteria.andEqualTo("eventType", webhookEventsLog.getEventType());
-        }
-        if (StringUtils.isNotBlank(webhookEventsLog.getEventRepositoryId())) {
-            criteria.andEqualTo("eventRepositoryId", webhookEventsLog.getEventRepositoryId());
-        }
-        if (StringUtils.isNotBlank(webhookEventsLog.getStorageId())) {
-            criteria.andEqualTo("storageId", webhookEventsLog.getStorageId());
-        }
-        if (StringUtils.isNotBlank(webhookEventsLog.getRepositoryId())) {
-            criteria.andEqualTo("repositoryId", webhookEventsLog.getRepositoryId());
-        }
-        if (StringUtils.isNotBlank(webhookEventsLog.getArtifactName())) {
-            criteria.andEqualTo("artifactName", webhookEventsLog.getArtifactName());
-        }
-        if (Objects.nonNull(webhookEventsLog.getStatus())) {
-            criteria.andEqualTo("status", webhookEventsLog.getStatus());
-        }
-        if (Objects.nonNull(webhookEventsLog.getRetry())) {
-            criteria.andEqualTo("retry", webhookEventsLog.getRetry());
-        }
-        if (Objects.nonNull(webhookEventsLog.getRetryCount())) {
-            criteria.andLessThanOrEqualTo("retryCount", webhookEventsLog.getRetryCount());
-        }
-        example.setOrderByClause("create_time desc");
-        return webhookEventsLogMapper.selectByExample(example);
+        return webhookEventsLogMapper.selectList(Wrappers.<WebhookEventsLog>lambdaQuery()
+                .eq(StringUtils.isNotBlank(webhookEventsLog.getEventType()), WebhookEventsLog::getEventType, webhookEventsLog.getEventType())
+                .eq(StringUtils.isNotBlank(webhookEventsLog.getEventRepositoryId()), WebhookEventsLog::getEventRepositoryId, webhookEventsLog.getEventRepositoryId())
+                .eq(StringUtils.isNotBlank(webhookEventsLog.getStorageId()), WebhookEventsLog::getStorageId, webhookEventsLog.getStorageId())
+                .eq(StringUtils.isNotBlank(webhookEventsLog.getRepositoryId()), WebhookEventsLog::getRepositoryId, webhookEventsLog.getRepositoryId())
+                .eq(StringUtils.isNotBlank(webhookEventsLog.getArtifactName()), WebhookEventsLog::getArtifactName, webhookEventsLog.getArtifactName())
+                .eq(Objects.nonNull(webhookEventsLog.getStatus()), WebhookEventsLog::getStatus, webhookEventsLog.getStatus())
+                .eq(Objects.nonNull(webhookEventsLog.getRetry()), WebhookEventsLog::getRetry, webhookEventsLog.getRetry())
+                .le(Objects.nonNull(webhookEventsLog.getRetryCount()), WebhookEventsLog::getRetryCount, webhookEventsLog.getRetryCount())
+                .orderByDesc(WebhookEventsLog::getCreateTime)
+        );
     }
 
     @Override
     public WebhookEventsLog queryWebhookEventsLog(WebhookEventsLog webhookEventsLog) {
-        Example example = Example.builder(WebhookEventsLog.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        if (StringUtils.isNotBlank(webhookEventsLog.getEventType())) {
-            criteria.andEqualTo("eventType", webhookEventsLog.getEventType());
-        }
-        if (StringUtils.isNotBlank(webhookEventsLog.getEventRepositoryId())) {
-            criteria.andEqualTo("eventRepositoryId", webhookEventsLog.getEventRepositoryId());
-        }
-        if (StringUtils.isNotBlank(webhookEventsLog.getStorageId())) {
-            criteria.andEqualTo("storageId", webhookEventsLog.getStorageId());
-        }
-        if (StringUtils.isNotBlank(webhookEventsLog.getRepositoryId())) {
-            criteria.andEqualTo("repositoryId", webhookEventsLog.getRepositoryId());
-        }
-        if (StringUtils.isNotBlank(webhookEventsLog.getArtifactName())) {
-            criteria.andEqualTo("artifactName", webhookEventsLog.getArtifactName());
-        }
-        if (StringUtils.isNotBlank(webhookEventsLog.getArtifactPath())) {
-            criteria.andEqualTo("artifactPath", webhookEventsLog.getArtifactPath());
-        }
-        if (StringUtils.isNotBlank(webhookEventsLog.getSha256Checksum())) {
-            criteria.andEqualTo("sha256Checksum", webhookEventsLog.getSha256Checksum());
-        }
-        if (Objects.nonNull(webhookEventsLog.getStatus())) {
-            criteria.andEqualTo("status", webhookEventsLog.getStatus());
-        }
-        if (Objects.nonNull(webhookEventsLog.getRetry())) {
-            criteria.andEqualTo("retry", webhookEventsLog.getRetry());
-        }
-        if (Objects.nonNull(webhookEventsLog.getId())) {
-            criteria.andEqualTo("id", webhookEventsLog.getId());
-        }
-        List<WebhookEventsLog> webhookEventsLogs = webhookEventsLogMapper.selectByExample(example);
+        List<WebhookEventsLog> webhookEventsLogs = webhookEventsLogMapper.selectList(Wrappers.<WebhookEventsLog>lambdaQuery()
+                .eq(StringUtils.isNotBlank(webhookEventsLog.getEventType()), WebhookEventsLog::getEventType, webhookEventsLog.getEventType())
+                .eq(StringUtils.isNotBlank(webhookEventsLog.getEventRepositoryId()), WebhookEventsLog::getEventRepositoryId, webhookEventsLog.getEventRepositoryId())
+                .eq(StringUtils.isNotBlank(webhookEventsLog.getStorageId()), WebhookEventsLog::getStorageId, webhookEventsLog.getStorageId())
+                .eq(StringUtils.isNotBlank(webhookEventsLog.getRepositoryId()), WebhookEventsLog::getRepositoryId, webhookEventsLog.getRepositoryId())
+                .eq(StringUtils.isNotBlank(webhookEventsLog.getArtifactName()), WebhookEventsLog::getArtifactName, webhookEventsLog.getArtifactName())
+               .eq(StringUtils.isNotBlank(webhookEventsLog.getArtifactPath()), WebhookEventsLog::getArtifactPath, webhookEventsLog.getArtifactPath())
+                .eq(StringUtils.isNotBlank(webhookEventsLog.getSha256Checksum()), WebhookEventsLog::getSha256Checksum, webhookEventsLog.getSha256Checksum())
+                .eq(Objects.nonNull(webhookEventsLog.getStatus()), WebhookEventsLog::getStatus, webhookEventsLog.getStatus())
+                .eq(Objects.nonNull(webhookEventsLog.getRetry()), WebhookEventsLog::getRetry, webhookEventsLog.getRetry())
+                .eq(Objects.nonNull(webhookEventsLog.getId()), WebhookEventsLog::getId, webhookEventsLog.getId())
+        );
         return CollectionUtils.isNotEmpty(webhookEventsLogs) ? webhookEventsLogs.get(0) : null;
     }
 
     @Override
     public long count(Integer status, Integer retryCount) {
-        Example example = Example.builder(WebhookEventsLog.class).build();
-        Example.Criteria criteria = example.createCriteria();
-        criteria.andEqualTo("status", status);
-        criteria.andLessThanOrEqualTo("retryCount", retryCount);
-        return webhookEventsLogMapper.selectCountByExample(example);
+        return webhookEventsLogMapper.selectCount(Wrappers.<WebhookEventsLog>lambdaQuery()
+                .eq(WebhookEventsLog::getStatus, status)
+                .le(WebhookEventsLog::getRetryCount, retryCount)
+        );
     }
 
     @Override
     public void deleteSuccessLog() {
-        webhookEventsLogMapper.delete(WebhookEventsLog.builder().status(WebhookEventsStatusEnum.SUCCESS.getStatus()).build());
+        webhookEventsLogMapper.delete(Wrappers.<WebhookEventsLog>lambdaQuery().eq(WebhookEventsLog::getStatus, WebhookEventsStatusEnum.SUCCESS.getStatus()));
     }
 
     @Override

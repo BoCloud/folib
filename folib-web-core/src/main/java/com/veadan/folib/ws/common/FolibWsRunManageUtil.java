@@ -6,10 +6,10 @@ import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.scanner.common.util.SpringContextUtil;
 import com.veadan.folib.utils.UrlUtils;
+import jakarta.websocket.Session;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.websocket.Session;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Objects;

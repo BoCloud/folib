@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 
 /**

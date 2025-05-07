@@ -1,6 +1,6 @@
 package com.veadan.folib.domain.gitls.command;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.domain.gitls.model.GitLfsJson;

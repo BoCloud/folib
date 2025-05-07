@@ -24,19 +24,16 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+
 
 import com.veadan.folib.storage.metadata.nuget.Author;
 import com.veadan.folib.storage.metadata.nuget.NugetFormatException;
 import com.veadan.folib.storage.metadata.nuget.Nupkg;
 import com.veadan.folib.storage.metadata.nuget.Nuspec;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
+import jakarta.xml.bind.annotation.*;
 
 /**
  *

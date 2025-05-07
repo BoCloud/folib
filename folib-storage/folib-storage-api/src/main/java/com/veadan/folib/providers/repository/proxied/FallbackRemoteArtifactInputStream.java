@@ -1,7 +1,6 @@
 package com.veadan.folib.providers.repository.proxied;
 
 import com.veadan.folib.artifact.ArtifactNotFoundException;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -56,7 +55,7 @@ public class FallbackRemoteArtifactInputStream extends FilterInputStream {
     }
 
     @Override
-    public int read(@NotNull byte[] b) throws IOException {
+    public int read( byte[] b) throws IOException {
         try {
             return super.read(b);
         } catch (Exception e) {
@@ -67,7 +66,7 @@ public class FallbackRemoteArtifactInputStream extends FilterInputStream {
     }
 
     @Override
-    public int read(@NotNull byte[] b, int off, int len) throws IOException {
+    public int read( byte[] b, int off, int len) throws IOException {
         try {
             return super.read(b, off, len);
         } catch (Exception e) {

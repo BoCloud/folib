@@ -3,8 +3,6 @@ package com.veadan.folib.util;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletRequest;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonFactory;

@@ -35,9 +35,9 @@ import java.util.Date;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import javax.xml.bind.DatatypeConverter;
 
 import com.veadan.folib.artifact.coordinates.versioning.SemanticVersion;
+import jakarta.xml.bind.DatatypeConverter;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 
 /**
