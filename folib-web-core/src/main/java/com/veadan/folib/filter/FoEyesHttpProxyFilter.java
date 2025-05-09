@@ -1,6 +1,8 @@
 package com.veadan.folib.filter;
 
 import com.veadan.folib.components.thirdparty.foeyes.FoEyesProperties;
+import jakarta.servlet.*;
+import jakarta.servlet.annotation.WebFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.*;
@@ -9,8 +11,6 @@ import org.springframework.util.StreamUtils;
 import org.springframework.web.client.RestTemplate;
 
 import javax.inject.Inject;
-import javax.servlet.*;
-import javax.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;

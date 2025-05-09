@@ -3,9 +3,9 @@ package com.veadan.folib.event;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 
-import javax.servlet.ServletContext;
 
 import cn.hutool.extra.spring.SpringUtil;
+import jakarta.servlet.ServletContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.FactoryBean;

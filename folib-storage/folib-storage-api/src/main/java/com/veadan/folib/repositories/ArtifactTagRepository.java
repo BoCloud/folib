@@ -15,15 +15,15 @@ import org.springframework.stereotype.Repository;
 @Repository
 @Transactional
 public class ArtifactTagRepository extends GremlinVertexRepository<ArtifactTag>
-        implements ArtifactTagQueries
+      //  implements ArtifactTagQueries
 {
 
     @Inject
     ArtifactTagAdapter adapter;
     
-    @Inject
-    @Lazy
-    ArtifactTagQueries queries;
+    //@Inject
+    //@Lazy
+    //ArtifactTagQueries queries;
 
     @Override
     protected ArtifactTagAdapter adapter()
@@ -33,9 +33,9 @@ public class ArtifactTagRepository extends GremlinVertexRepository<ArtifactTag>
 
 }
 
-@Repository
-interface ArtifactTagQueries
-        extends org.springframework.data.repository.Repository<ArtifactTag, String>
-{
-
-}
+//@Repository
+//interface ArtifactTagQueries
+//        extends org.springframework.data.repository.Repository<ArtifactTag, String>
+//{
+//
+//}

@@ -33,9 +33,11 @@
             <artifactId>jackson-annotations</artifactId>
         </dependency>
         <dependency>
-            <groupId>javax.validation</groupId>
-            <artifactId>validation-api</artifactId>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>3.0.2</version> <!-- Spring Boot 3.2.x 默认管理此版本 -->
         </dependency>
+
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-api</artifactId>

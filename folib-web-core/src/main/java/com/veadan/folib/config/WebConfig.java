@@ -25,6 +25,8 @@ import com.veadan.folib.web.RepositoryMethodArgumentResolver;
 import com.veadan.folib.yaml.YAMLMapperFactory;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.StringUtils;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.ServerConnector;
 import org.jtwig.environment.EnvironmentConfigurationBuilder;
 import org.jtwig.spring.boot.config.JtwigViewResolverConfigurer;
 import org.jtwig.web.servlet.JtwigRenderer;
@@ -32,12 +34,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.servlet.WebMvcRegistrations;
+import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
 import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.*;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.*;
@@ -49,10 +50,7 @@ import org.springframework.web.filter.CommonsRequestLoggingFilter;
 import org.springframework.web.filter.RequestContextFilter;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.multipart.MultipartResolver;
-import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
-import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
+import org.springframework.web.servlet.config.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import org.springframework.web.servlet.resource.PathResourceResolver;
 import org.springframework.web.servlet.view.InternalResourceView;
@@ -97,7 +95,9 @@ import java.util.List;
 @EnableCaching(order = 105)
 @ServletComponentScan(basePackages = {"com.veadan.folib.filter"})
 public class WebConfig
-        extends WebMvcConfigurationSupport {
+        implements WebMvcConfigurer
+        //, WebMvcRegistrations
+{
 
     private static final Logger logger = LoggerFactory.getLogger(WebConfig.class);
 
@@ -146,8 +146,8 @@ public class WebConfig
         return result;
     }
 
-    @Override
-    protected RequestMappingHandlerMapping createRequestMappingHandlerMapping() {
+    @Bean
+    public RequestMappingHandlerMapping getRequestMappingHandlerMapping() {
         return new CustomRequestMappingHandlerMapping();
     }
 
@@ -328,4 +328,19 @@ public class WebConfig
     //    resolver.setMaxInMemorySize(1024*1024*100);
     //    return resolver;
     //}
+
+    @Bean
+    @Primary
+    public JettyServletWebServerFactory jettyFactory() {
+        JettyServletWebServerFactory factory = new JettyServletWebServerFactory();
+        factory.addServerCustomizers(server -> {
+            for (Connector conn : server.getConnectors()) {
+                if (conn instanceof ServerConnector sc) {
+                    sc.setReuseAddress(true);
+                }
+            }
+        });
+        return factory;
+    }
+
 }

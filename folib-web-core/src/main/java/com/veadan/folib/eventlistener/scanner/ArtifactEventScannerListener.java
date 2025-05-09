@@ -3,6 +3,7 @@ package com.veadan.folib.eventlistener.scanner;
 import cn.hutool.core.io.FileTypeUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
+import cn.hutool.core.util.HexUtil;
 import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
@@ -226,7 +227,7 @@ public class ArtifactEventScannerListener {
         //增加魔数类型
         FileTypeUtil.putFileType("1f8b08000000000000ff", "gz");
         try {
-            String hex = IoUtil.readHex28Lower(new FileInputStream(file));
+            String hex = HexUtil.encodeHexStr(IoUtil.readBytes(new FileInputStream(file), 28), true);
             log.debug("路径：{}，hex：{}", file.getAbsolutePath(), hex);
         } catch (Exception ex) {
             log.error("读取魔数类型失败：{}", ExceptionUtils.getStackTrace(ex));

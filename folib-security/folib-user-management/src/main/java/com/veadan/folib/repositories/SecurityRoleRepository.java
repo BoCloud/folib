@@ -21,20 +21,20 @@ import org.springframework.stereotype.Repository;
 @Repository
 @Transactional
 public class SecurityRoleRepository extends GremlinVertexRepository<SecurityRole>
-        implements SecurityRoleQueries
+        //implements SecurityRoleQueries
 {
-    @Lazy
-    @Inject
-    private SecurityRoleQueries queries;
+    //@Lazy
+    //@Inject
+    //private SecurityRoleQueries queries;
 
     @Inject
     private SecurityRoleAdapter roleAdapter;
 
-    @Override
-    public List<SecurityRole> findAllUserRoles()
-    {
-        return queries.findAllUserRoles();
-    }
+    //@Override
+    //public List<SecurityRole> findAllUserRoles()
+    //{
+    //    return queries.findAllUserRoles();
+    //}
 
     @Override
     protected EntityTraversalAdapter<Vertex, SecurityRole> adapter()
@@ -43,13 +43,13 @@ public class SecurityRoleRepository extends GremlinVertexRepository<SecurityRole
     }
 }
 
-@Repository
-interface SecurityRoleQueries
-        extends org.springframework.data.repository.Repository<SecurityRole, String>
-{
-
-    @Query("MATCH (securityRole:SecurityRole) " +
-           "RETURN securityRole")
-    List<SecurityRole> findAllUserRoles();
-
-}
+//@Repository
+//interface SecurityRoleQueries
+//        extends org.springframework.data.repository.Repository<SecurityRole, String>
+//{
+//
+//    @Query("MATCH (securityRole:SecurityRole) " +
+//           "RETURN securityRole")
+//    List<SecurityRole> findAllUserRoles();
+//
+//}

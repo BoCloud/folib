@@ -139,17 +139,4 @@ public abstract class GremlinRepository<S extends Element, E extends DomainObjec
 
     protected abstract EntityTraversalAdapter<S, E> adapter();
 
-    /**
-     * Deletes all instances of the type {@code T} with the given IDs.
-     * <p>
-     * Entities that aren't found in the persistence store are silently ignored.
-     *
-     * @param strings must not be {@literal null}. Must not contain {@literal null} elements.
-     * @throws IllegalArgumentException in case the given {@literal ids} or one of its elements is {@literal null}.
-     * @since 2.5
-     */
-    @Override
-    public void deleteAllById(Iterable<? extends String> strings) {
-
-    }
 }

@@ -218,7 +218,7 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "digest", value = "digest", required = true)
     })
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/{digest}", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/{digest}"}, method = {RequestMethod.HEAD}, consumes = MediaType.ALL_VALUE)
+    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/{digest}", "/v2/{storageId}/{repositoryId}/{name}/{path:.*}/blobs/{digest}"}, method = {RequestMethod.HEAD}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity existingLayers(@RequestHeader HttpHeaders httpHeaders,
                                          HttpServletRequest request,
                                          HttpServletResponse response,
@@ -272,7 +272,7 @@ public class DockerArtifactController extends BaseArtifactController {
     })
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 500, message = "An error occurred.")})
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/uploads/"}, method = {RequestMethod.POST}, consumes = MediaType.ALL_VALUE)
+    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/", "/v2/{storageId}/{repositoryId}/{name}/{path:.*}/blobs/uploads/"}, method = {RequestMethod.POST}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity<Object> startingAnUpload(@RequestHeader HttpHeaders httpHeaders,
                                                    HttpServletRequest request,
                                                    HttpServletResponse response,
@@ -327,7 +327,7 @@ public class DockerArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/{uuid}", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/uploads/{uuid}"}, method = {RequestMethod.PATCH}, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/{uuid}", "/v2/{storageId}/{repositoryId}/{name}/{path:.*}/blobs/uploads/{uuid}"}, method = {RequestMethod.PATCH}, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<String> chunkedUpload(
             @RepositoryMapping Repository repository,
             @RequestHeader HttpHeaders httpHeaders,
@@ -375,7 +375,7 @@ public class DockerArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/{uuid}", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/uploads/{uuid}"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
+    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/{uuid}", "/v2/{storageId}/{repositoryId}/{name}/{path:.*}/blobs/uploads/{uuid}"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity<String> uploadProgress(@RequestHeader HttpHeaders httpHeaders,
                                                  HttpServletRequest request,
                                                  HttpServletResponse response,
@@ -401,7 +401,7 @@ public class DockerArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/{uuid}", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/uploads/{uuid}"}, method = {RequestMethod.PUT}, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/uploads/{uuid}", "/v2/{storageId}/{repositoryId}/{name}/{path:.*}/blobs/uploads/{uuid}"}, method = {RequestMethod.PUT}, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<Object> monolithicUpload(@RequestHeader HttpHeaders httpHeaders,
                                                    HttpServletRequest request,
                                                    HttpServletResponse response,
@@ -485,7 +485,7 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "reference", value = "reference", required = true)
     })
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/manifests/{reference}", "/v2/{storageId}/{repositoryId}/{name}/**/manifests/{reference}"}, method = {RequestMethod.PUT})
+    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/manifests/{reference}", "/v2/{storageId}/{repositoryId}/{name}/{path:.*}/manifests/{reference}"}, method = {RequestMethod.PUT})
     public ResponseEntity pushingAnImageManifest(@RequestHeader HttpHeaders httpHeaders,
                                                  HttpServletRequest request,
                                                  HttpServletResponse response,
@@ -671,7 +671,7 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "name", value = "制品名", required = true),
             @ApiImplicitParam(name = "tag", value = "tag", required = true)
     })
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/manifests/{reference}", "/v2/{storageId}/{repositoryId}/{name}/**/manifests/{reference}"}, method = {RequestMethod.HEAD}, consumes = MediaType.ALL_VALUE)
+    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/manifests/{reference}", "/v2/{storageId}/{repositoryId}/{name}/{path:.*}/manifests/{reference}"}, method = {RequestMethod.HEAD}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity existingManifests(@RequestHeader HttpHeaders httpHeaders,
                                             HttpServletRequest request,
                                             HttpServletResponse response,
@@ -761,7 +761,7 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "name", value = "制品名", required = true),
             @ApiImplicitParam(name = "digest", value = "digest", required = true)
     })
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/manifests/{digest}", "/v2/{storageId}/{repositoryId}/{name}/**/manifests/{digest}"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
+    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/manifests/{digest}", "/v2/{storageId}/{repositoryId}/{name}/{path:.*}/manifests/{digest}"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity pullingAnImageManifest(@RequestHeader HttpHeaders httpHeaders,
                                                  HttpServletRequest request,
                                                  HttpServletResponse response,
@@ -816,7 +816,7 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "digest", value = "digest", required = true)
     })
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/{digest}", "/v2/{storageId}/{repositoryId}/{name}/**/blobs/{digest}"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
+    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/blobs/{digest}", "/v2/{storageId}/{repositoryId}/{name}/{path:.*}/blobs/{digest}"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity pullingALayer(@RequestHeader HttpHeaders httpHeaders,
                                         HttpServletRequest request,
                                         HttpServletResponse response,
@@ -874,7 +874,7 @@ public class DockerArtifactController extends BaseArtifactController {
             @ApiImplicitParam(name = "n", value = "返回个数"),
             @ApiImplicitParam(name = "last", value = "last")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/tags/list", "/v2/{storageId}/{repositoryId}/{name}/**/tags/list"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
+    @RequestMapping(value = {"/v2/{storageId}/{repositoryId}/{name}/tags/list", "/v2/{storageId}/{repositoryId}/{name}/{path:.*}/tags/list"}, method = {RequestMethod.GET}, consumes = MediaType.ALL_VALUE)
     public ResponseEntity<Object> listingImageTags(@RequestHeader HttpHeaders httpHeaders,
                                                    HttpServletRequest request,
                                                    HttpServletResponse response,

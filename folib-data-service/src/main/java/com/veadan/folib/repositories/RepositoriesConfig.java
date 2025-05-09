@@ -7,6 +7,7 @@ import org.apache.tinkerpop.gremlin.structure.Graph;
 import com.veadan.folib.gremlin.tx.GraphTransaction;
 import com.veadan.folib.gremlin.tx.TransactionContext;
 import org.janusgraph.core.JanusGraph;
+import org.neo4j.ogm.session.Session;
 import org.neo4j.ogm.session.SessionFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -15,6 +16,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.neo4j.repository.config.EnableNeo4jRepositories;
 import org.springframework.data.neo4j.transaction.Neo4jTransactionManager;
+import org.springframework.data.repository.query.QueryLookupStrategy;
 
 
 @Configuration
@@ -41,6 +43,11 @@ public class RepositoriesConfig
         throws Exception
     {
         return idBlockQueueSessionFactory.getSessionFactory("default");
+    }
+
+    @Bean
+    public Session session(TransactionalIdBlockQueueSuppiler idBlockQueueSessionFactory) throws Exception {
+        return sessionFactory(idBlockQueueSessionFactory).openSession();
     }
 
     @Bean

@@ -137,7 +137,7 @@
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
-            <version>5.7.20</version>
+            <version>5.8.26</version>
         </dependency>
         <dependency>
             <groupId>com.alibaba</groupId>
@@ -350,10 +350,10 @@
             <artifactId>maven-core</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>javax.servlet</groupId>-->
+<!--            <artifactId>javax.servlet-api</artifactId>-->
+<!--        </dependency>-->
 
         <!--安全扫描相关依赖-->
         <dependency>
@@ -383,7 +383,7 @@
         <dependency>
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-core</artifactId>
-            <version>4.15.0</version>
+            <version>4.24.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.liquibase</groupId>
@@ -409,8 +409,8 @@
         <!-- https://mvnrepository.com/artifact/com.alibaba/druid-spring-boot-starter -->
         <dependency>
             <groupId>com.alibaba</groupId>
-            <artifactId>druid-spring-boot-starter</artifactId>
-            <version>1.2.19</version>
+            <artifactId>druid-spring-boot-3-starter</artifactId>
+            <version>1.2.24</version>
         </dependency>
 
 
@@ -561,8 +561,8 @@
         </dependency>
 
         <dependency>
-            <groupId>javax.transaction</groupId>
-            <artifactId>javax.transaction-api</artifactId>
+            <groupId>jakarta.transaction</groupId>
+            <artifactId>jakarta.transaction-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>

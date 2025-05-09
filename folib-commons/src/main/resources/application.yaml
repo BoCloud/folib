@@ -15,7 +15,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://${folib.mysql.host:127.0.0.1}:${folib.mysql.port:3306}/${folib.mysql.db:folib_scanner}?createDatabaseIfNotExist=true&useSSL=false&tinyInt1isBit=false&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF8
     username: ${folib.mysql.user:root}
-    password: ${folib.mysql.password:123456}
+    password: ${folib.mysql.password:folib@v587}
     schema: classpath:db/sql/database-init.sql
   liquibase:
       change-log: classpath:db/changelog-master.xml
@@ -200,6 +200,9 @@ folib:
 # Changes to these properties must also be applied to [folib/folib-web-integration-tests] and possibly the pipeline.
 # Please ping us on our chat channel (https://chat.carlspring.org/) to confirm.
 logging:
+  #level:
+   # root: debug
+    #org.springframework: debug
   debug: false
   console:
     enabled: true

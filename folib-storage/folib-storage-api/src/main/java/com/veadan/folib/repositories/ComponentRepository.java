@@ -140,8 +140,8 @@ public class ComponentRepository extends GremlinVertexRepository<Component> {
     }
 }
 
-@Repository
-interface ComponentQueries
-        extends org.springframework.data.repository.Repository<Component, String> {
-
-}
+//@Repository
+//interface ComponentQueries
+//        extends org.springframework.data.repository.Repository<Component, String> {
+//
+//}

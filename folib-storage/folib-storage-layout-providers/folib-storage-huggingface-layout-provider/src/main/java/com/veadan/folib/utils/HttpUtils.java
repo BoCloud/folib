@@ -6,7 +6,8 @@ import java.net.URL;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nonnull;
-import javax.servlet.ServletRequest;
+
+import jakarta.servlet.ServletRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 

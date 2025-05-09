@@ -13,14 +13,14 @@ import org.springframework.stereotype.Repository;
 @Repository
 @Transactional
 public class ArtifactCoordinatesRepository extends GremlinVertexRepository<GenericArtifactCoordinates>
-        implements ArtifactCoordinatesQueries
+        //implements ArtifactCoordinatesQueries
 {
 
     @Inject
     ArtifactCoordinatesHierarchyAdapter artifactCoordinatesAdapter;
-    @Lazy
-    @Inject
-    ArtifactCoordinatesQueries queries;
+    //@Lazy
+    //@Inject
+    //ArtifactCoordinatesQueries queries;
 
     @Override
     protected ArtifactCoordinatesHierarchyAdapter adapter()
@@ -41,8 +41,8 @@ public class ArtifactCoordinatesRepository extends GremlinVertexRepository<Gener
 
 }
 
-@Repository
-interface ArtifactCoordinatesQueries extends org.springframework.data.repository.Repository<GenericArtifactCoordinates, String>
-{
-
-}
+//@Repository
+//interface ArtifactCoordinatesQueries extends org.springframework.data.repository.Repository<GenericArtifactCoordinates, String>
+//{
+//
+//}
