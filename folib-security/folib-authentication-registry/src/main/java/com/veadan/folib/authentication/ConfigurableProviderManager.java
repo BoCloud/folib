@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.veadan.folib.authentication.api.AuthenticationItem;
 import com.veadan.folib.authentication.api.AuthenticationItemConfigurationManager;
 import com.veadan.folib.authentication.api.AuthenticationItems;
@@ -23,6 +24,7 @@ import com.veadan.folib.users.service.UserAlreadyExistsException;
 import com.veadan.folib.users.userdetails.FolibExternalUsersCacheManager;
 import com.veadan.folib.users.userdetails.UserDetailsMapper;
 import com.veadan.folib.util.LocalDateTimeInstance;
+import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
@@ -47,7 +49,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
-import javax.transaction.Transactional;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -126,6 +127,7 @@ public class ConfigurableProviderManager extends ProviderManager implements User
         String userInfo = distributedCacheComponent.get(userKey);
 
         ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
         if (Strings.isNotEmpty(userInfo)) {
             UserEntity userEntity = getUserEntity(userInfo);
             return Optional.of(userEntity);
@@ -159,11 +161,11 @@ public class ConfigurableProviderManager extends ProviderManager implements User
         JSONObject jsonObject = JSONObject.parseObject(userInfo);
         Object roles = jsonObject.get("roles");
         List<SecurityRoleEntity> securityRoleEntityList = JSONObject.parseArray(roles.toString(), SecurityRoleEntity.class);
-        JSONObject lastUpdated = JSONObject.parseObject(jsonObject.get("lastUpdated").toString());
-        String datetimeString = lastUpdated.get("year") + "-" + String.format("%02d",lastUpdated.get("monthValue")) + "-" + String.format("%02d",lastUpdated.get("dayOfMonth")) + " " + String.format("%02d",lastUpdated.get("hour")) + ":" + String.format("%02d",lastUpdated.get("minute")) + ":" + String.format("%02d",lastUpdated.get("second"));
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        LocalDateTime localDateTime = LocalDateTime.parse(datetimeString, formatter);
-        userEntity.setLastUpdated(localDateTime);
+        //JSONObject lastUpdated = JSONObject.parseObject(jsonObject.get("lastUpdated").toString());
+        //String datetimeString = lastUpdated.get("year") + "-" + String.format("%02d",lastUpdated.get("monthValue")) + "-" + String.format("%02d",lastUpdated.get("dayOfMonth")) + " " + String.format("%02d",lastUpdated.get("hour")) + ":" + String.format("%02d",lastUpdated.get("minute")) + ":" + String.format("%02d",lastUpdated.get("second"));
+        //DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        //LocalDateTime localDateTime = LocalDateTime.parse(datetimeString, formatter);
+        //userEntity.setLastUpdated(localDateTime);
         userEntity.setRoles(new HashSet<>(securityRoleEntityList));
         return userEntity;
     }

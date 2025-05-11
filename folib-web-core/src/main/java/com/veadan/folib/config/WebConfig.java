@@ -95,8 +95,7 @@ import java.util.List;
 @EnableCaching(order = 105)
 @ServletComponentScan(basePackages = {"com.veadan.folib.filter"})
 public class WebConfig
-        implements WebMvcConfigurer
-        //, WebMvcRegistrations
+        implements WebMvcConfigurer ,WebMvcRegistrations
 {
 
     private static final Logger logger = LoggerFactory.getLogger(WebConfig.class);
@@ -146,10 +145,15 @@ public class WebConfig
         return result;
     }
 
-    @Bean
+    @Override
     public RequestMappingHandlerMapping getRequestMappingHandlerMapping() {
-        return new CustomRequestMappingHandlerMapping();
+       return new CustomRequestMappingHandlerMapping();
     }
+
+    //@Override
+    //protected RequestMappingHandlerMapping createRequestMappingHandlerMapping() {
+    //    return new CustomRequestMappingHandlerMapping();
+    //}
 
     @Bean
     DirectoryTraversalFilter directoryTraversalFilter() {
@@ -228,7 +232,7 @@ public class WebConfig
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.setOrder(-1);
+        //registry.setOrder(-1);
 
         registry.addResourceHandler("/rest/**")
                 .addResourceLocations("classpath:/META-INF/resources/docs/rest/")
@@ -329,18 +333,9 @@ public class WebConfig
     //    return resolver;
     //}
 
-    @Bean
-    @Primary
-    public JettyServletWebServerFactory jettyFactory() {
-        JettyServletWebServerFactory factory = new JettyServletWebServerFactory();
-        factory.addServerCustomizers(server -> {
-            for (Connector conn : server.getConnectors()) {
-                if (conn instanceof ServerConnector sc) {
-                    sc.setReuseAddress(true);
-                }
-            }
-        });
-        return factory;
+    @Override
+    public void addViewControllers(ViewControllerRegistry registry) {
+        registry.addRedirectViewController("/", "/ui/index.html");
     }
 
 }

@@ -26,34 +26,34 @@ public class UiController implements ErrorController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND.value()).build();
     }
 
-    @GetMapping(path = {"/**"}, produces = {MediaType.TEXT_HTML_VALUE})
-    public RedirectView indexWithRoute(HttpServletRequest request, HttpServletResponse response) {
-        String path = request.getRequestURI();
-        if (path.startsWith("/error")) {
-            // 适配webdav 能够401返回给客户端而不发生重定向
-            return null;
-        }
-        response.setStatus(HttpStatus.NOT_FOUND.value());
-        return new RedirectView(getUIIndex(), true, false);
-    }
-
-    @GetMapping(path = {"/"}, produces = {MediaType.TEXT_HTML_VALUE})
-    public RedirectView index() {
-        return new RedirectView(getUIIndex(), true, false);
-    }
+    //@GetMapping(path = {"/**"}, produces = {MediaType.TEXT_HTML_VALUE})
+    //public RedirectView indexWithRoute(HttpServletRequest request, HttpServletResponse response) {
+    //    String path = request.getRequestURI();
+    //    if (path.startsWith("/error")) {
+    //        // 适配webdav 能够401返回给客户端而不发生重定向
+    //        return null;
+    //    }
+    //    response.setStatus(HttpStatus.NOT_FOUND.value());
+    //    return new RedirectView(getUIIndex(), true, false);
+    //}
+    //
+    //@GetMapping(path = {"/"}, produces = {MediaType.TEXT_HTML_VALUE})
+    //public RedirectView index() {
+    //    return new RedirectView(getUIIndex(), true, false);
+    //}
 
 
     public String getErrorPath() {
         return "/error";
     }
 
-    private String getUIIndex() {
-        String webUrlPrefix = System.getProperty(GlobalConstants.WEB_URL_PREFIX);
-        if (StringUtils.isBlank(webUrlPrefix)) {
-            webUrlPrefix = "/ui/";
-        }
-        return webUrlPrefix + "index.html";
-    }
+    //private String getUIIndex() {
+    //    String webUrlPrefix = System.getProperty(GlobalConstants.WEB_URL_PREFIX);
+    //    if (StringUtils.isBlank(webUrlPrefix)) {
+    //        webUrlPrefix = "/ui/";
+    //    }
+    //    return webUrlPrefix + "index.html";
+    //}
 
 
 

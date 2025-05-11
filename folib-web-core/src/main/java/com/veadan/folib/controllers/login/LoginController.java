@@ -82,7 +82,7 @@ public class LoginController
                     "is not supported")})
 //    @PreAuthorize("hasAuthority('UI_LOGIN')")
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity formLogin(Authentication authentication) {
+    public ResponseEntity<?> formLogin(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new InsufficientAuthenticationException("unauthorized");
         }

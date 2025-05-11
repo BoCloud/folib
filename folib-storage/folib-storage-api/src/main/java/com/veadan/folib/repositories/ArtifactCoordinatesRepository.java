@@ -1,12 +1,12 @@
 package com.veadan.folib.repositories;
 
 import javax.inject.Inject;
-import javax.transaction.Transactional;
 
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.GenericArtifactCoordinates;
 import com.veadan.folib.gremlin.adapters.ArtifactCoordinatesHierarchyAdapter;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Repository;
 

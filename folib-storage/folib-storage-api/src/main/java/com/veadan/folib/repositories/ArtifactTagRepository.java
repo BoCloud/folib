@@ -1,11 +1,11 @@
 package com.veadan.folib.repositories;
 
 import javax.inject.Inject;
-import javax.transaction.Transactional;
 
 import com.veadan.folib.gremlin.adapters.ArtifactTagAdapter;
 import com.veadan.folib.artifact.ArtifactTag;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Repository;
 

@@ -10,6 +10,7 @@ import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.users.userdetails.FolibExternalUsersCacheManager;
 import com.veadan.folib.users.userdetails.FolibUserDetails;
 import com.veadan.folib.util.LocalDateTimeInstance;
+import jakarta.transaction.Transactional;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janusgraph.core.SchemaViolationException;
@@ -19,7 +20,6 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-import javax.transaction.Transactional;
 import java.util.Optional;
 
 /**

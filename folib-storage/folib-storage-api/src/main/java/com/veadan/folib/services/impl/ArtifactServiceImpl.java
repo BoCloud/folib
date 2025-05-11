@@ -23,6 +23,7 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.util.LocalDateTimeInstance;
 import com.veadan.folib.util.UserUtils;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.output.CountingOutputStream;
@@ -34,7 +35,6 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
-import javax.transaction.Transactional;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;

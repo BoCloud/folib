@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.databind.jsontype.NamedType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
 import com.veadan.folib.mapper.WebObjectMapperSubtypes;
 import org.springframework.context.annotation.Bean;
@@ -31,7 +32,7 @@ public class JacksonConfig {
                 .featuresToEnable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS) // 启用大小写不敏感枚举
                 .featuresToEnable(MapperFeature.DEFAULT_VIEW_INCLUSION)
                 .build();
-
+        objectMapper.registerModule(new GuavaModule());
         // 配置 AnnotationIntrospector
         AnnotationIntrospector jaxbIntrospector = new JaxbAnnotationIntrospector(TypeFactory.defaultInstance());
         AnnotationIntrospector jacksonIntrospector = new JacksonAnnotationIntrospector();

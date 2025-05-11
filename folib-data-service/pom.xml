@@ -69,10 +69,16 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>folib-db-import</artifactId>
+            <artifactId>folib-db-schema</artifactId>
             <version>${project.version}</version>
-            <classifier>schema</classifier>
         </dependency>
+
+<!--        <dependency>-->
+<!--            <groupId>${project.groupId}</groupId>-->
+<!--            <artifactId>folib-db-import</artifactId>-->
+<!--            <version>${project.version}</version>-->
+<!--            <classifier>schema</classifier>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-common-resources</artifactId>
@@ -197,9 +203,14 @@
         </dependency>
 
 
+<!--        <dependency>-->
+<!--            <groupId>javax.transaction</groupId>-->
+<!--            <artifactId>javax.transaction-api</artifactId>-->
+<!--        </dependency>-->
         <dependency>
-            <groupId>javax.transaction</groupId>
-            <artifactId>javax.transaction-api</artifactId>
+            <groupId>jakarta.transaction</groupId>
+            <artifactId>jakarta.transaction-api</artifactId>
+            <version>2.0.1</version> <!-- 最新稳定版 -->
         </dependency>
         <dependency>
             <groupId>org.neo4j</groupId>

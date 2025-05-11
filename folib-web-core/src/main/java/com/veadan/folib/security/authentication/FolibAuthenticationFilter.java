@@ -10,7 +10,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -52,6 +55,15 @@ public class FolibAuthenticationFilter
 
         authentication = provideAuthentication(authentication);
         SecurityContextHolder.getContext().setAuthentication(authentication);
+        if (authentication != null) {
+            SecurityContext context = SecurityContextHolder.createEmptyContext();
+            context.setAuthentication(authentication);
+            SecurityContextHolder.setContext(context);
+
+            // 显式保存认证信息
+            SecurityContextRepository repo = new HttpSessionSecurityContextRepository();
+            repo.saveContext(context, request, response);
+        }
 
         filterChain.doFilter(request, response);
     }

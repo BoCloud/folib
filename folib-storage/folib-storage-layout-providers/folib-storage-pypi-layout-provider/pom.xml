@@ -257,6 +257,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.jaxrs</groupId>
             <artifactId>jackson-jaxrs-json-provider</artifactId>
+
             <scope>test</scope>
         </dependency>
 
@@ -268,15 +269,16 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
         </dependency>
-        <dependency>
-            <groupId>javax.validation</groupId>
-            <artifactId>validation-api</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>javax.validation</groupId>-->
+<!--            <artifactId>validation-api</artifactId>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.glassfish</groupId>
             <artifactId>javax.el</artifactId>
         </dependency>
 
     </dependencies>
+
 
 </project>

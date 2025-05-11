@@ -404,11 +404,13 @@ public class RepositoryData
         return type.equalsIgnoreCase(compareType);
     }
 
+    @JsonIgnore
     @Override
     public Set<String> getGroupRepositories() {
         return groupRepositories.keySet();
     }
 
+    @JsonIgnore
     @Override
     public Set<String> getArtifactCoordinateValidators() {
         return artifactCoordinateValidators.keySet();

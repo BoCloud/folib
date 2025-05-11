@@ -70,9 +70,7 @@ public class UserEntity extends DomainEntity implements User
     private Set<String> userGroups;
     private Set<String> userGroupIds;
     private String securityTokenKey;
-
-    @Convert(DateConverter.class)
-    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime lastUpdated;
 
     private String sourceId;

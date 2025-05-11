@@ -1,5 +1,6 @@
 package com.veadan.folib.dto;
 
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.veadan.folib.common.handler.StringListTypeHandler;
@@ -10,7 +11,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
-import org.springframework.util.StringUtils;
 
 import java.io.Serializable;
 import java.util.Arrays;

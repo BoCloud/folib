@@ -17,6 +17,7 @@ import com.veadan.folib.gremlin.adapters.ArtifactIdGroupAdapter;
 import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
 import com.veadan.folib.util.CommonUtils;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -30,7 +31,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import javax.inject.Inject;
-import javax.transaction.Transactional;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 

@@ -11,11 +11,11 @@ import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.services.AqlSearchService;
 import com.veadan.folib.storage.search.SearchResults;
+import jakarta.transaction.Transactional;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import javax.transaction.Transactional;
 import java.io.IOException;
 
 @Component

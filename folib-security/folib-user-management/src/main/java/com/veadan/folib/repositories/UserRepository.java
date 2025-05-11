@@ -9,6 +9,7 @@ import com.veadan.folib.gremlin.adapters.EntityTraversalAdapter;
 import com.veadan.folib.gremlin.adapters.UserAdapter;
 import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
+import jakarta.transaction.Transactional;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tinkerpop.gremlin.process.traversal.P;
@@ -17,7 +18,6 @@ import org.janusgraph.core.attribute.Text;
 import org.springframework.stereotype.Repository;
 
 import javax.inject.Inject;
-import javax.transaction.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 

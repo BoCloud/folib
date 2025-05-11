@@ -122,19 +122,25 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler
                                                              HttpStatusCode statusCode,
                                                              WebRequest request)
     {
-        MediaType contentType = requestedContent(request);
-        headers.set(HttpHeaders.CONTENT_TYPE, contentType.toString());
-
-        if (contentType.equals(MediaType.TEXT_PLAIN))
-        {
-            body = ex.getMessage();
+        // 1. 创建可修改的 headers 副本（先复制，再操作）
+        HttpHeaders mutableHeaders = new HttpHeaders();
+        if (headers != null) {
+            mutableHeaders.putAll(headers);  // 避免原始 headers 被污染
         }
-        else if (body == null)
-        {
+
+        // 2. 在副本上设置 Content-Type
+        MediaType contentType = requestedContent(request);
+        mutableHeaders.set(HttpHeaders.CONTENT_TYPE, contentType.toString());
+
+        // 3. 处理 body 内容
+        if (contentType.equals(MediaType.TEXT_PLAIN)) {
+            body = ex.getMessage();
+        } else if (body == null) {
             body = new ErrorResponseEntityBody(ex.getMessage());
         }
 
-        return super.handleExceptionInternal(ex, body, headers, statusCode, request);
+        // 4. 传递 mutableHeaders 给父类方法
+        return super.handleExceptionInternal(ex, body, mutableHeaders, statusCode, request);
     }
 
     private ResponseEntity<?> provideValidationErrorResponse(final RequestBodyValidationException ex,

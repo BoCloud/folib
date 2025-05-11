@@ -29,6 +29,7 @@ import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.search.SearchResult;
 import com.veadan.folib.storage.search.SearchResults;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -43,7 +44,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import javax.transaction.Transactional;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;

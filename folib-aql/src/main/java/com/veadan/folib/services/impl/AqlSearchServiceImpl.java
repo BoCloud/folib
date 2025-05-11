@@ -7,7 +7,6 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.transaction.Transactional;
 
 import com.veadan.folib.data.criteria.OQueryTemplate;
 import com.veadan.folib.data.criteria.QueryTemplate;
@@ -25,6 +24,7 @@ import com.veadan.folib.storage.search.SearchResults;
 import com.veadan.folib.domain.ArtifactEntity;
 import com.veadan.folib.services.AqlSearchService;
 import com.veadan.folib.storage.repository.Repository;
+import jakarta.transaction.Transactional;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.springframework.stereotype.Component;
 

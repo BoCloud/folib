@@ -9,11 +9,11 @@ import com.veadan.folib.repositories.VulnerabilityRepository;
 import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.SecurityPolicyConfigurationService;
+import jakarta.transaction.Transactional;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
-import javax.transaction.Transactional;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.Set;

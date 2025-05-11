@@ -39,8 +39,10 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.access.ExceptionTranslationFilter;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.web.context.SecurityContextPersistenceFilter;
 import org.springframework.security.web.firewall.HttpFirewall;
 import org.springframework.security.web.firewall.StrictHttpFirewall;
 import org.springframework.web.cors.CorsConfiguration;
@@ -61,7 +63,7 @@ import static org.springframework.security.config.Customizer.withDefaults;
         UsersConfig.class,
         AuthenticationConfig.class})
 @EnableWebSecurity
-@EnableMethodSecurity(prePostEnabled = true)
+@EnableMethodSecurity
 public class WebSecurityConfig {
 
     @Inject
@@ -76,13 +78,14 @@ public class WebSecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .addFilterAfter(folibAuthenticationFilter(), ExceptionTranslationFilter.class)
+                .addFilterBefore(folibAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .exceptionHandling(exception -> exception
                         .accessDeniedHandler(accessDeniedHandler())
                         .authenticationEntryPoint(customBasicAuthenticationEntryPoint()))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/favicon.ico", "/ui/**", "/docs/**", "/webjars/**", "/rest/**").permitAll()
                         .requestMatchers("/dav/**").authenticated()
                         .requestMatchers(EndpointRequest.toAnyEndpoint()).hasAuthority("ADMIN")
                         .anyRequest().permitAll())
@@ -93,6 +96,7 @@ public class WebSecurityConfig {
 
         return http.build();
     }
+
     // 替换 WebSecurity 自定义配置
     @Bean
     public HttpFirewall allowUrlEncodedSlashHttpFirewall() {
@@ -100,46 +104,6 @@ public class WebSecurityConfig {
         firewall.setAllowUrlEncodedSlash(true);
         return firewall;
     }
-    //@Override
-    //public void init(WebSecurity web)
-    //        throws Exception {
-    //    super.init(web);
-    //    DefaultHttpFirewall httpFirewall = new DefaultHttpFirewall();
-    //    httpFirewall.setAllowUrlEncodedSlash(true);
-    //    web.httpFirewall(httpFirewall);
-    //}
-    //
-    //@Override
-    //protected void configure(HttpSecurity http)
-    //        throws Exception {
-    //    http.addFilterAfter(folibAuthenticationFilter(),
-    //                    ExceptionTranslationFilter.class)
-    //            .sessionManagement()
-    //            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-    //            .and()
-    //            .exceptionHandling()
-    //            .accessDeniedHandler(accessDeniedHandler())
-    //            // TODO SB-813
-    //            .authenticationEntryPoint(customBasicAuthenticationEntryPoint())
-    //            .and()
-    //            // this part of code is necessary to secure endpoints for not authorized users
-    //            .authorizeRequests().antMatchers("/dav/**").authenticated()
-    //            .requestMatchers(EndpointRequest.toAnyEndpoint())
-    //            .hasAuthority("ADMIN")
-    //            .and()
-    //            .anonymous()
-    //            .authenticationFilter(anonymousAuthenticationFilter())
-    //            .and()
-    //            .cors()
-    //            .and()
-    //            .csrf()
-    //            .disable();
-    //}
-    //
-    //@Override
-    //protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-    //
-    //}
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource(ConfigurationManagementService configurationManagementService) {
@@ -200,27 +164,6 @@ public class WebSecurityConfig {
                 "anonymousUser",
                 authorities);
     }
-
-
-    ///**
-    // * This Configuration enables @PreAuthorize annotations
-    // *
-    // * @author @author veadan
-    // */
-    //@Configuration
-    //@EnableGlobalMethodSecurity(prePostEnabled = true)
-    //public static class MethodSecurityConfig
-    //        extends GlobalMethodSecurityConfiguration {
-    //
-    //    @Inject
-    //    MethodAccessDecisionManager methodAccessDecisionManager;
-    //
-    //    @Override
-    //    protected AccessDecisionManager accessDecisionManager() {
-    //        return methodAccessDecisionManager;
-    //    }
-    //
-    //}
 
     @Configuration
     public static class MethodSecurityConfig {

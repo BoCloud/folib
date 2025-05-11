@@ -170,10 +170,10 @@
             <artifactId>javatuples</artifactId>
         </dependency>
         
-        <dependency>
-            <groupId>javax.transaction</groupId>
-            <artifactId>javax.transaction-api</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>javax.transaction</groupId>-->
+<!--            <artifactId>javax.transaction-api</artifactId>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>

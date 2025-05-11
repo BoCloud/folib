@@ -32,6 +32,7 @@ public class SecurityUtils {
 
         // 设置到 SecurityContext
         SecurityContextHolder.getContext().setAuthentication(adminAuth);
+
     }
 
     public void clearAuthentication() {

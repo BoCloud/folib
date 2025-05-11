@@ -86,6 +86,7 @@ import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.*;
 import com.veadan.folib.utils.TreeUtil;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -111,7 +112,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.inject.Inject;
 import jakarta.servlet.http.HttpServletResponse;
-import javax.transaction.Transactional;
 import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.net.URI;

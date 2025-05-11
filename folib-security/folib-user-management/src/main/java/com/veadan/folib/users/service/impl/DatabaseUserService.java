@@ -13,7 +13,6 @@ import java.util.stream.StreamSupport;
 
 import javax.inject.Inject;
 import javax.inject.Qualifier;
-import javax.transaction.Transactional;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -29,6 +28,7 @@ import com.veadan.folib.users.security.SecurityTokenProvider;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.users.userdetails.UserDetailsMapper;
+import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.UserEntity;

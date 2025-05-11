@@ -4,6 +4,8 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.annotation.JsonView;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.veadan.folib.annotation.AuditLog;
@@ -113,6 +115,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 /**
  * @author Veadan
  */
@@ -202,6 +206,9 @@ public class StoragesConfigurationController
     
     @Autowired
     private RepositoryComponent repositoryComponent;
+    @Lazy
+    @Autowired
+    private ObjectMapper objectMapper;
 
     public StoragesConfigurationController(ConfigurationManagementService configurationManagementService,
                                            StorageManagementService storageManagementService,
@@ -791,7 +798,7 @@ public class StoragesConfigurationController
                                                    @PathVariable final String storageId,
                                                    @ApiParam(value = "The filter")
                                                    @RequestParam(value = "filter", required = false) Boolean filter,
-                                                   Authentication authentication) {
+                                                   Authentication authentication) throws JsonProcessingException {
         StorageDto storage = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
         if (Objects.isNull(storage)) {
             return getFailedResponseEntity(HttpStatus.NOT_FOUND, STORAGE_NOT_FOUND, MediaType.APPLICATION_JSON_VALUE);

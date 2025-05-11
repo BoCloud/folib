@@ -4,11 +4,11 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import javax.inject.Inject;
-import javax.transaction.Transactional;
 
 import com.veadan.folib.data.domain.DomainObject;
 import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.dsl.EntityTraversalSource;
+import jakarta.transaction.Transactional;
 import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import com.veadan.folib.gremlin.adapters.EntityTraversalAdapter;

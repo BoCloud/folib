@@ -67,6 +67,10 @@ public class PermissionCheckInterceptor implements HandlerInterceptor {
 
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response,
                              Object handler) throws Exception {
+        // 仅处理 Controller 方法，跳过静态资源请求
+        if (!(handler instanceof HandlerMethod)) {
+            return true;
+        }
         HandlerMethod handlerMethod = (HandlerMethod) handler;
         PermissionCheck permission = findPermissionCheck(handlerMethod);
 

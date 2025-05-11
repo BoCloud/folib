@@ -6,10 +6,10 @@ import com.veadan.folib.gremlin.adapters.SecurityRoleAdapter;
 import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
 
 import javax.inject.Inject;
-import javax.transaction.Transactional;
 
 import java.util.List;
 
+import jakarta.transaction.Transactional;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.neo4j.annotation.Query;
@@ -41,6 +41,7 @@ public class SecurityRoleRepository extends GremlinVertexRepository<SecurityRole
     {
         return roleAdapter;
     }
+
 }
 
 //@Repository

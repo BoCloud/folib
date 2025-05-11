@@ -2,11 +2,12 @@ package com.veadan.folib.gremlin.repositories;
 
 import java.util.function.Supplier;
 
-import javax.transaction.Transactional;
+
 
 import com.veadan.folib.data.domain.DomainObject;
 import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.dsl.EntityTraversalSource;
+import jakarta.transaction.Transactional;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import com.veadan.folib.gremlin.adapters.UnfoldEntityTraversal;
 import org.slf4j.Logger;
