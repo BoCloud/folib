@@ -16,6 +16,7 @@ import com.veadan.folib.users.security.AnonymousAccessModel;
 import com.veadan.folib.users.security.AuthoritiesProvider;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.UserUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -28,7 +29,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;

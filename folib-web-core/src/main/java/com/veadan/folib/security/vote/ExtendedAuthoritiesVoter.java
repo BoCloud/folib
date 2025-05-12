@@ -26,6 +26,7 @@ import com.veadan.folib.users.security.AuthoritiesProvider;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.utils.UrlUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.SerializationUtils;
@@ -45,7 +46,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.stream.Collectors;
 

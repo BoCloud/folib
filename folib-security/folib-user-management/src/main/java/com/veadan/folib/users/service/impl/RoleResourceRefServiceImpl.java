@@ -540,9 +540,7 @@ public class RoleResourceRefServiceImpl implements RoleResourceRefService {
             }
             folibRoleService.deleteUserRoleCache(userIds);
         }
-        Example example = new Example(RoleResourceRef.class);
-        example.createCriteria().andEqualTo("roleId", roleId);
-        roleResourceRefMapper.deleteByExample(example);
+        roleResourceRefMapper.delete(Wrappers.<RoleResourceRef>lambdaQuery().eq(RoleResourceRef::getRoleId, roleId));
 
     }
 

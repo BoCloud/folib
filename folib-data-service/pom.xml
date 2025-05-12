@@ -69,9 +69,10 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>folib-db-import</artifactId>
+            <artifactId>folib-db-schema</artifactId>
             <version>${project.version}</version>
         </dependency>
+
 
 <!--        <dependency>-->
 <!--            <groupId>${project.groupId}</groupId>-->
