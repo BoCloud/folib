@@ -1,5 +1,7 @@
 package com.veadan.folib.artifact.coordinates;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
 import jakarta.xml.bind.annotation.XmlAccessType;
@@ -68,6 +70,7 @@ public class RawArtifactCoordinates
     {
     }
 
+    @JsonIgnore
     @Override
     public RawArtifactCoordinates getNativeVersion()
     {

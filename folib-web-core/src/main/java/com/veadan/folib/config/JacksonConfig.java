@@ -31,6 +31,7 @@ public class JacksonConfig {
                 .featuresToDisable(SerializationFeature.FAIL_ON_EMPTY_BEANS) // 禁用空对象错误
                 .featuresToEnable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS) // 启用大小写不敏感枚举
                 .featuresToEnable(MapperFeature.DEFAULT_VIEW_INCLUSION)
+                .featuresToEnable(SerializationFeature.FAIL_ON_SELF_REFERENCES)
                 .build();
         objectMapper.registerModule(new GuavaModule());
         // 配置 AnnotationIntrospector

@@ -4,6 +4,7 @@ import cn.hutool.core.date.DateUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Lists;
 import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
@@ -74,6 +75,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 
@@ -142,8 +144,8 @@ public class BrowseController
                                       @PathVariable String repositoryId,
                                       @RequestParam(value = "type", required = false) String type,
                                       @RequestParam(value = "digest", required = false) String digest,
-                                      @RequestParam(value = "report", required = false) Boolean report, @RepositoryMapping Repository repositoryParam) {
-        JSONObject jsonObject = new JSONObject();
+                                      @RequestParam(value = "report", required = false) Boolean report, @RepositoryMapping Repository repositoryParam) throws JsonProcessingException {
+        Map<String, Object> jsonObject = new HashMap<>();
         if (StringUtils.isBlank(type)) {
             type = repositoryParam.getLayout();
         }
@@ -667,7 +669,7 @@ public class BrowseController
         }
     }
 
-    private void getBom(JSONObject data, RepositoryPath repositoryPath) {
+    private void getBom(Map<String,Object> data, RepositoryPath repositoryPath) {
         try {
             data.put("bom", false);
             RepositoryPath bomRepositoryPath = artifactComponent.getBomRepositoryPath(repositoryPath);

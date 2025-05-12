@@ -28,7 +28,7 @@ public class ArtifactTagServiceImpl implements ArtifactTagService
     private JanusGraph janusGraph;
 
     @Override
-    @Cacheable(value = CacheName.Artifact.TAGS, key = "#name", sync = true)
+    @Cacheable(value = "tags", key = "#name != null ? #name : 'default'")
     public ArtifactTag findOneOrCreate(String name)
     {
         Optional<ArtifactTag> optionalResult = artifactTagRepository.findById(name);

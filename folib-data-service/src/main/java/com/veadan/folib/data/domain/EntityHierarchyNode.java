@@ -1,8 +1,10 @@
 package com.veadan.folib.data.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public interface EntityHierarchyNode<T extends EntityHierarchyNode<T>>
 {
-
+    @JsonIgnore
     default T getHierarchyChild()
     {
         return null;
@@ -12,7 +14,7 @@ public interface EntityHierarchyNode<T extends EntityHierarchyNode<T>>
     {
 
     }
-
+    @JsonIgnore
     default T getHierarchyParent()
     {
         return null;
