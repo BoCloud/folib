@@ -109,7 +109,7 @@ ENV FOLIB_CUSTOM_MAX_IN_MEMORY_SIZE="${FOLIB_CUSTOM_MAX_IN_MEMORY_SIZE:-10240}"
 
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 RUN mkdir ${RUN_WORKDIR} && chmod -R 777 ${RUN_WORKDIR}
-COPY folib-1.0-SNAPSHOT ${RUN_WORKDIR}/folib-1.0-SNAPSHOT
+COPY folib-3.0-SNAPSHOT ${RUN_WORKDIR}/folib-3.0-SNAPSHOT
 COPY folib-vault  ${RUN_WORKDIR}/folib-vault
 WORKDIR  ${RUN_WORKDIR}
 VOLUME  ${RUN_WORKDIR}/folib-vault/
@@ -119,4 +119,4 @@ EXPOSE 7011
 EXPOSE ${FOLIB_JMX_PORT}
 EXPOSE 49142
 EXPOSE 8182
-ENTRYPOINT exec ${RUN_WORKDIR}/folib-1.0-SNAPSHOT/bin/folib console
+ENTRYPOINT exec ${RUN_WORKDIR}/folib-3.0-SNAPSHOT/bin/folib console

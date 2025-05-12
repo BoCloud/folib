@@ -307,7 +307,7 @@ run()
     JAVA_OPTS+=" -Dhttp.port=${FOLIB_HTTP_PORT}"
     JAVA_OPTS+=" -Dserver.ssl.enabled=${FOLIB_SSL_ENABLED}"
     if [[ ${FOLIB_SSL_KEY_STORE} ]];then
-    JAVA_OPTS+=" -Dserver.ssl.key-store=/opt/folib/folib-1.0-SNAPSHOT/etc/ssl/${FOLIB_SSL_KEY_STORE}"
+    JAVA_OPTS+=" -Dserver.ssl.key-store=/opt/folib/folib-3.0-SNAPSHOT/etc/ssl/${FOLIB_SSL_KEY_STORE}"
     fi
     if [[ ${FOLIB_SSL_KEY_STORE_TYPE} ]];then
     JAVA_OPTS+=" -Dserver.ssl.key-store-type=${FOLIB_SSL_KEY_STORE_TYPE}"
@@ -322,7 +322,7 @@ run()
     JAVA_OPTS+=" -Dserver.ssl.key-password=${FOLIB_SSL_KEY_PASSWORD}"
     fi
     if [[ ${FOLIB_SSL_TRUST_STORE} ]];then
-    JAVA_OPTS+=" -Dserver.ssl.trust-store=/opt/folib/folib-1.0-SNAPSHOT/etc/ssl/${FOLIB_SSL_TRUST_STORE}"
+    JAVA_OPTS+=" -Dserver.ssl.trust-store=/opt/folib/folib-3.0-SNAPSHOT/etc/ssl/${FOLIB_SSL_TRUST_STORE}"
     fi
     if [[ ${FOLIB_SSL_TRUST_STORE_PASSWORD} ]];then
     JAVA_OPTS+=" -Dserver.ssl.trust-store-password=${FOLIB_SSL_TRUST_STORE_PASSWORD}"
