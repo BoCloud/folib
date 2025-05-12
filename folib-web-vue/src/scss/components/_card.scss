@@ -31,6 +31,14 @@
 		font-weight: $fw-bold;
 		margin-left: 5px;
 	}
+	.ant-switch-inner {
+		margin-left: 24px;
+	}
+	.ant-switch-checked {
+		.ant-switch-inner {
+			margin-left: 5px;
+		}
+	}
 }
 
 .header-solid .ant-card-head {

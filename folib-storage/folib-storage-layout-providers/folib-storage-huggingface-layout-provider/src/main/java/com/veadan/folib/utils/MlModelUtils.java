@@ -130,7 +130,7 @@ public final class MlModelUtils {
         return String.join("/", getModelPath(context.getOrg(), context.getModelName()), context.getRevision());
     }
 
-    private static String getModelPath(String organization, String modelName) {
+    public static String getModelPath(String organization, String modelName) {
         if (modelName == null) {
             throw new NullPointerException("modelName is marked non-null but is null");
         }

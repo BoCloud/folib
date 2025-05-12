@@ -104,14 +104,17 @@ public class HelmMetadataIndexer {
         long startedTime = System.currentTimeMillis();
         RootRepositoryPath repositoryPath = this.repositoryPathResolver.resolve(this.storageId, this.repositoryId);
         try {
-            Files.list(repositoryPath.getTarget()).filter(path -> {
-                if (path.getFileName().toString().endsWith(".tgz")) {
-                    return true;
-                }
-                return false;
-            }).forEach(path -> {
-                addIndex(path.getFileName().toString(), helmIndexYamlMetadata);
-            });
+            try (Stream<Path> pathStream = Files.list(repositoryPath.getTarget()))
+            {
+                pathStream.filter(path -> {
+                    if (path.getFileName().toString().endsWith(".tgz")) {
+                        return true;
+                    }
+                    return false;
+                }).forEach(path -> {
+                    addIndex(path.getFileName().toString(), helmIndexYamlMetadata);
+                });
+            }
         } catch (Exception e) {
             log.error("Error occurred while indexing: {}", e.getMessage());
             throw new RuntimeException(e);

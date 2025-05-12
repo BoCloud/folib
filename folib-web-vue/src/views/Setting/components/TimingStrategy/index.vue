@@ -66,14 +66,14 @@
                                             <span style="margin-left: 15px" class="mr-15"
                                                   v-else-if="!f.name.includes(artifactPathKey)">{{ f.name }}</span>
                                             <span style="margin-left: 15px" class="mr-15"
-                                                  v-else-if="f.name.includes(artifactPathKey)">{{ '制品目录' }}</span>
+                                                  v-else-if="f.name.includes(artifactPathKey)">{{ $t('TimingStrategy.ArtifactCatalog') }}</span>
                                             <a-input :min="1" v-if="f.name.includes(artifactPathKey)" v-model="f.label"
-                                                     size="small" class="font-regular text-sm text-dark mr-10"
+                                                     size="small" class="font-regular text-sm text-dark mr-10" :placeholder="$t('TimingStrategy.EnterArtifactCatalog')"
                                                      style="width: 120px;"/>
                                             <a-input-number :min="1" v-if="f.name.includes(artifactPathKey)"
-                                                            v-model="f.value"
+                                                            v-model="f.value" :formatter="value => `${value ? `${value}`.split('.')[0] : ''}`"
                                                             size="small" class="font-regular text-sm text-dark"
-                                                            style="width: 120px;"/>
+                                                            style="width: 120px;" :placeholder="$t('TimingStrategy.EnterRetentionPeriod')"/>
                                             <a-button v-if="f.name.includes(artifactPathKey)"
                                                       @click="deleteArtifactPath(i.fields, index)"
                                                       style="margin-left: 15px"
@@ -85,8 +85,8 @@
                                                             v-model="f.value"
                                                             size="small" class="font-regular text-sm text-dark"
                                                             style="width: 120px;"/>
-                                            <a-input-number :min="1" v-if="f.type === 'int' && f.name === 'storageDay'"
-                                                            v-model="f.value"
+                                            <a-input-number :min="1" v-if="f.type === 'int' && f.name === 'storageDay'" :formatter="value => `${ value ? `${value}`.split('.')[0] : ''}`"
+                                                            v-model="f.value" :placeholder="f.aliasName?$t('Cron.PleaseEnter') + f.aliasName: $t('Cron.EnterRetentionPeriod')"
                                                             size="small" class="font-regular text-sm text-dark"
                                                             style="width: 120px;"/>
                                             <a-input-number :min="1" v-if="f.type === 'int' && f.name === 'keepPeriod'"
@@ -97,25 +97,8 @@
                                                             v-model="f.value"
                                                             size="small" class="font-regular text-sm text-dark"
                                                             style="width: 120px;"/>
-                                            <a-switch v-if="f.type === 'boolean'" v-model="f.value"
-                                                      @change="() => { $forceUpdate() }"/>
+                                            <a-switch v-if="f.type === 'boolean'" v-model="f.value"/>
                                         </a-col>
-                                        <!--                            <a-col-->
-                                        <!--                                v-if="folibRepository.layout.toLowerCase() === 'docker' && f.name ==='storageCondition'"-->
-                                        <!--                                class="ml-auto">-->
-                                        <!--                                <span style="margin-left: 15px" class="mr-15"-->
-                                        <!--                                      v-if="f.aliasName && f.aliasName.length > 0">{{ f.aliasName }}</span>-->
-                                        <!--                                <span style="margin-left: 15px" class="mr-15" v-else>{{ f.name }}</span>-->
-                                        <!--                                <a-select v-model="f.value" style="width: 120px"-->
-                                        <!--                                          @change="storageConditionChange($event, i.fields)">-->
-                                        <!--                                    <a-select-option v-for="(item, index) in i18nStorageConditions"-->
-                                        <!--                                                     :label="item.label"-->
-                                        <!--                                                     :key="index"-->
-                                        <!--                                                     :value="item.value">-->
-                                        <!--                                        {{ item.label }}-->
-                                        <!--                                    </a-select-option>-->
-                                        <!--                                </a-select>-->
-                                        <!--                            </a-col>-->
                                     </div>
                                     <div class="mt-10 ml-15"
                                          v-if="i.isSetted.jobClass.includes('CleanupArtifactsRepositoryCronJob') || i.isSetted.jobClass.includes('ClearRepositoryTrashCronJob') || i.isSetted.jobClass.includes('RemoveRawArtifactCronJob')">
@@ -151,46 +134,18 @@
 <script>
 import {
     crontasksList,
-    crontasksByRepository,
     creatCronOne,
     updateCronOne,
     delCronOne, cronTasksGlobalList,
 } from "@/api/folib"
+import cronstrue from 'cronstrue';
 
 export default {
-    // props: {
-    //     folibRepository: {
-    //         type: Object,
-    //         default: {},
-    //     },
-    // },
     data() {
         return {
             cronCanSetList: [],
             cronSettedList: [],
-            storageConditions: [
-                {
-                    label: "Tag",
-                    i18nKey: 'TimingStrategy.Tag',
-                    value: "tag"
-                },
-                {
-                    label: '天数',
-                    i18nKey: 'TimingStrategy.Days',
-                    value: "day"
-                }
-            ],
             artifactPathKey: "artifactPath:"
-        }
-    },
-    computed: {
-        i18nStorageConditions() {
-            return this.storageConditions.map(column => {
-                if (column.i18nKey) {
-                    column.label = this.$t(column.i18nKey);
-                }
-                return column;
-            })
         }
     },
     created() {
@@ -217,18 +172,14 @@ export default {
         },
         crontasksListHandle() {
             crontasksList("GLOBAL").then(res => {
-                this.cronCanSetList = res
-
-                // Cocoapods: 本地仓库过滤掉代理仓库定时任务
-                // if (this.folibRepository.type === "hosted") {
-                //     this.cronCanSetList = this.cronCanSetList.filter(e => !(e.jobClass === "com.veadan.folib.cron.jobs.SyncProxyRepositoryIndexCronJob"))
-                // }
+                this.resetData()
+                let cronCanSetList = res
 
                 cronTasksGlobalList().then(res => {
                     //已经被设置的定时任务列表
                     this.cronSettedList = res.cronTaskConfigurations
                     //当前仓库可设置的全量列表
-                    this.cronCanSetList.forEach(c => {
+                    cronCanSetList.forEach(c => {
                         c.isShow = false
                         c.isSetted = {
                             jobClass: c.jobClass,
@@ -236,17 +187,8 @@ export default {
                             oneTimeExecution: true,
                             immediateExecution: false
                         }
-                        //循环给fields添加
-                        // c.fields.forEach(o => {
-                        //     if (o.name === 'storageId') {
-                        //         o.value = this.folibRepository.storageId
-                        //     } else if (o.name === 'repositoryId') {
-                        //         o.value = this.folibRepository.id
-                        //     }
-                        // })
                         //将已经设置好的properties写入给fields，便于后续update
                         this.cronSettedList.forEach(s => {
-                            console.log("---", c.jobClass === s.jobClass)
                             if (c.jobClass === s.jobClass) {
                                 c.isSetted = s;
                                 for (let key in s.properties) {
@@ -265,10 +207,10 @@ export default {
                                 }
                             }
                         })
+
+                        this.cronCanSetList.push(c)
                     })
-                    this.$forceUpdate()
                 })
-                this.$forceUpdate()
             })
         },
         cronShowHandle(i, index) {
@@ -277,16 +219,7 @@ export default {
             } else {
                 i.isShow = true
                 this.cronCanSetList.splice(index, i)
-                // if (this.folibRepository.layout.toLowerCase() === "docker") {
-                //     let storageCondition = 'day'
-                //     let cleanupTask = i.fields.filter(i => i.name === 'storageCondition')
-                //     if (cleanupTask && cleanupTask.length > 0) {
-                //         storageCondition = cleanupTask[0].value
-                //     }
-                //     this.storageConditionChange(storageCondition, i.fields)
-                // }
             }
-            this.$forceUpdate()
 
         },
         delCronOneSetHandle(i) {
@@ -311,18 +244,63 @@ export default {
                     })
                     return false
                 }
+                let isOk = true
+                try {
+                    cronstrue.toString(i.isSetted.cronExpression)
+                } catch (e) {
+                    isOk = false
+                }
+                if (!isOk) {
+                    this.$notification.open({
+                        class: 'ant-notification-warning',
+                        message: this.$t('TimingStrategy.TheOperationIsIncorrect'),
+                        description: this.$t('TimingStrategy.FillInTheCorrectCronExpression'),
+                    })
+                    return false
+                }
+                if (i.fields) {
+                    let storageDays = i.fields.filter(i => i.name === "storageDay")
+                    if (storageDays && storageDays[0] && !storageDays[0].value) {
+                        this.$notification.open({
+                            class: 'ant-notification-warning',
+                            message: this.$t('TimingStrategy.EnterRetentionPeriod')
+                        })
+                        return false
+                    }
+                }
                 let fiedsNew = []
+                let scopeValue='';
+                let hasRepeatError = false
+                const emptyData = i.fields.filter(item => item.name.includes(this.artifactPathKey) && (!item.label || !item.value))
+                if (emptyData.length) {
+                    this.$notification.open({
+                        class: 'ant-notification-warning',
+                        message: this.$t('TimingStrategy.EnterFull')
+                    })
+                    return
+                }
                 i.fields.forEach(f => {
-                    if (f.value !== null && f.value !== undefined) {
+                    if (f.value) {
                         if (f.label) {
                             if (f.value !== '') {
-                                fiedsNew.push({name: this.artifactPathKey + f.label, value: f.value})
+                                fiedsNew.push({ name: this.artifactPathKey + f.label, value: f.value })
+                                if (fiedsNew.filter(item => item.name == this.artifactPathKey + f.label).length > 1) {
+                                    hasRepeatError = true
+                                    return false
+                                }
                             }
                         } else {
-                            fiedsNew.push({name: f.name, value: f.value})
+                            fiedsNew.push({ name: f.name, value: f.value })
                         }
                     }
                 })
+                if (hasRepeatError) {
+                    this.$notification.open({
+                        class: 'ant-notification-warning',
+                        message: this.$t('TimingStrategy.DuplicateItemsPresent'),
+                    })
+                    return false
+                }
                 i.isSetted.fields = fiedsNew
                 if (i.isSetted.uuid) {
                     let uuid = i.isSetted.uuid
@@ -374,13 +352,11 @@ export default {
             if (value && item.immediateExecution) {
                 item.immediateExecution = false
             }
-            this.$forceUpdate()
         },
         immediateExecutionChange(value, item) {
             if (value && item.oneTimeExecution) {
                 item.oneTimeExecution = false
             }
-            this.$forceUpdate()
         },
         addArtifactPath(data) {
             data.push({name: this.artifactPathKey, value: "", label: ""})

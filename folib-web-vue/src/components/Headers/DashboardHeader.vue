@@ -2,7 +2,7 @@
   <!-- Main Sidebar -->
   <component :is="navbarFixed ? 'a-affix' : 'div'" :offset-top="top" class="header">
     <!-- Layout Header -->
-    <a-layout-header style="margin-bottom: 5px;margin-top: 15px;">
+    <a-layout-header style="margin-bottom: 5px;margin-top: 10px;">
       <a-row type="flex">
         <!-- Header Breadcrumbs & Title Column -->
         <a-col :span="4" :md="1" class="sidebar-toggler-col">
@@ -24,7 +24,7 @@
             </svg>
           </a-button>
         </a-col>
-        <a-col :span="8" :md="language === 'zh' ? 6 : 10">
+        <a-col :span="8" :md="language === 'zh' ? 6 : 10" class="by-flex">
           <!-- Header Breadcrumbs -->
           <a-breadcrumb>
             <template v-for="(item, key) in realPath">
@@ -41,11 +41,11 @@
           <!-- / Header Breadcrumbs -->
 
           <!-- Header Page Title -->
-          <div class="ant-page-header-heading">
+          <!-- <div class="ant-page-header-heading">
             <span class="ant-page-header-heading-title">{{
               $t(this.$route.meta.title) || $t(this.$route.name)
             }}</span>
-          </div>
+          </div>-->
           <!-- / Header Page Title -->
         </a-col>
         <!-- / Header Breadcrumbs & Title Column -->
@@ -492,7 +492,7 @@ export default {
 }
 
 .login-span {
-  color: white;
+  color: #8C8DA5;
   font-size: 14px;
   vertical-align: middle;
 }

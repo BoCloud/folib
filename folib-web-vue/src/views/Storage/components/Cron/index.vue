@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <a-spin :spinning="loading">
     <div v-for="(i, index) in cronCanSetList" :key="index">
       <a-row type="flex" align="middle">
         <a-col style="min-width: 40px;" class="text-center">
@@ -61,12 +61,12 @@
               <a-col v-if="f.name !== 'storageId' && f.name !== 'repositoryId' && f.name !=='storageCondition'" class="ml-auto">
                 <span style="margin-left: 15px" class="mr-15" v-if="f.aliasName && f.aliasName.length > 0">{{ f.aliasName }}</span>
                 <span style="margin-left: 15px" class="mr-15" v-else-if="!f.name.includes(artifactPathKey)&&!f.name.includes(debianScopeKey)">{{ f.name }}</span>
-                <span style="margin-left: 15px" class="mr-15" v-else-if="f.name.includes(artifactPathKey)">{{ '制品目录'}}</span>
+                <span style="margin-left: 15px" class="mr-15" v-else-if="f.name.includes(artifactPathKey)">{{ $t('Cron.ArtifactCatalog')}}</span>
                 <span style="margin-left: 15px" class="mr-15" v-else-if="f.name.includes(debianScopeKey)">{{ $t('Cron.SyncScope') }}</span>
                 <a-input :min="1" v-if="f.name.includes(artifactPathKey)" v-model="f.label"
-                size="small" class="font-regular text-sm text-dark mr-10" style="width: 120px;"/>
-                <a-input-number :min="1" v-if="f.name.includes(artifactPathKey)" v-model="f.value"
-                size="small" class="font-regular text-sm text-dark" style="width: 120px;" />
+                size="small" class="font-regular text-sm text-dark mr-10" style="width: 120px;" @blur="artifactPathChange(i.fields, f.label)" :placeholder="$t('Cron.EnterArtifactCatalog')"/>
+                <a-input-number :min="1" v-if="f.name.includes(artifactPathKey)" v-model="f.value" :formatter="value => `${value ? `${value}`.split('.')[0] : ''}`"
+                size="small" class="font-regular text-sm text-dark" style="width: 120px;" :placeholder="storageCondition === 'day' ? $t('Cron.EnterRetentionPeriod') : $t('Cron.EnterKeepTheNumber')"/>
                 <a-button v-if="f.name.includes(artifactPathKey)" @click="deleteArtifactPath(i.fields, index)" style="margin-left: 15px"
                 type="danger" size="small" shape="circle" icon="delete" />
 
@@ -85,13 +85,13 @@
                   class="font-regular text-sm text-dark" style="width: 250px;" />
                 <a-input-number :min="1" v-if="f.type === 'int' && f.name === 'numberToKeep'" v-model="f.value"
                   size="small" class="font-regular text-sm text-dark" style="width: 120px;" />
-                <a-input-number :min="1" v-if="f.type === 'int' && f.name === 'storageDay'" v-model="f.value"
-                                size="small" class="font-regular text-sm text-dark" style="width: 120px;"/>  
+                <a-input-number :min="1" v-if="f.type === 'int' && f.name === 'storageDay'" :formatter="value => `${ value ? `${value}`.split('.')[0] : ''}`" v-model="f.value"
+                                size="small" class="font-regular text-sm text-dark" style="width: 120px;" :placeholder="f.aliasName?$t('Cron.PleaseEnter') + f.aliasName: $t('Cron.EnterRetentionPeriod')"/>  
                 <a-input-number :min="1" v-if="f.type === 'int' && f.name === 'keepPeriod'" v-model="f.value"
                   size="small" class="font-regular text-sm text-dark" style="width: 120px;" />
                 <a-input-number :min="1" v-if="f.name === 'lastModifiedTime'" v-model="f.value"
                   size="small" class="font-regular text-sm text-dark" style="width: 120px;"/>
-                <a-switch v-if="f.type === 'boolean'" v-model="f.value" @change="() => { $forceUpdate() }" />
+                <a-switch v-if="f.type === 'boolean'" v-model="f.value" />
               </a-col>
               <a-col v-if="folibRepository.layout.toLowerCase() === 'docker' && f.name ==='storageCondition'" class="ml-auto">
                 <span style="margin-left: 15px" class="mr-15" v-if="f.aliasName && f.aliasName.length > 0">{{ f.aliasName }}</span>
@@ -128,7 +128,7 @@
       </a-card>
       <hr class="gradient-line my-10">
     </div>
-  </div>
+  </a-spin>
 </template>
 <script>
 import {
@@ -138,6 +138,7 @@ import {
   updateCronOne,
   delCronOne,
 } from "@/api/folib"
+import cronstrue from 'cronstrue';
 
 export default {
   props: {
@@ -148,6 +149,7 @@ export default {
 	},
   data() {
     return {
+      loading: false,
       cronCanSetList: [],
       cronSettedList: [],
       storageConditions: [
@@ -162,6 +164,7 @@ export default {
           value: "day"
         }
       ],
+      storageCondition: 'day',
       artifactPathKey: "artifactPath:",
       debianScopeKey:"debianScopeKey"
     }
@@ -177,7 +180,6 @@ export default {
     }
   },
   created() {
-    this.resetData()
     this.crontasksListHandle()
   },
   mounted() {
@@ -191,26 +193,32 @@ export default {
     storageConditionChange(event, fields) {
       let aliasName = this.$t('Cron.RetentionDaysNum')
       if (event === 'tag') {
+        this.storageCondition = 'tag'
         aliasName = this.$t('Cron.KeepTheNumber')
       } else if (event === 'day') {
+        this.storageCondition = 'day'
         aliasName = this.$t('Cron.RetentionDaysNum')
       }
       fields.filter(i => i.name === "storageDay").forEach(i => i.aliasName = aliasName)
-      this.$forceUpdate()
     },
     crontasksListHandle() {
+      this.loading = true
       crontasksList(this.folibRepository.layout === 'Maven 2' ? 'MAVEN' : this.folibRepository.layout.toUpperCase()).then(res => {
-        this.cronCanSetList = res
+        this.resetData()
+        let cronCanSetList = res
 
         // Cocoapods: 本地仓库过滤掉代理仓库定时任务
         if (this.folibRepository.type === "hosted")
-        { this.cronCanSetList = this.cronCanSetList.filter(e => !(e.jobClass === "com.veadan.folib.cron.jobs.SyncProxyRepositoryIndexCronJob")) }
+        { cronCanSetList = res.filter(e => !(e.jobClass === "com.veadan.folib.cron.jobs.SyncProxyRepositoryIndexCronJob")) }
+
+        if (this.folibRepository.type === "group")
+        { cronCanSetList = res.filter(e => !e.jobClass.includes("CleanupArtifactsRepositoryCronJob") && !e.jobClass.includes("ClearRepositoryTrashCronJob"))}
 
         crontasksByRepository(this.folibRepository.storageId, this.folibRepository.id).then(res => {
           //已经被设置的定时任务列表
           this.cronSettedList = res.cronTaskConfigurations
           //当前仓库可设置的全量列表
-          this.cronCanSetList.forEach(c => {
+          cronCanSetList.forEach(c => {
             c.isShow = false
             c.isSetted = { jobClass: c.jobClass, cronExpression: '0 0 2 * * ?', oneTimeExecution: true, immediateExecution: false }
             //循环给fields添加
@@ -243,10 +251,11 @@ export default {
                 }
               }
             })
+            this.cronCanSetList.push(c)
           })
-          this.$forceUpdate()
         })
-        this.$forceUpdate()
+      }).finally(() => {
+          this.loading = false
       })
     },
     cronShowHandle(i, index) {
@@ -259,13 +268,11 @@ export default {
           let storageCondition = 'day'
           let cleanupTask = i.fields.filter(i => i.name === 'storageCondition')
           if (cleanupTask && cleanupTask.length >0) {
-            storageCondition = cleanupTask[0].value
+             storageCondition = cleanupTask[0].value
           }
           this.storageConditionChange(storageCondition, i.fields)
         }
       }
-      this.$forceUpdate()
-
     },
     delCronOneSetHandle(i) {
       delCronOne(i.isSetted.uuid).then(res => {
@@ -289,16 +296,53 @@ export default {
           })
           return false
         }
+        let isOk = true
+        try {
+          cronstrue.toString(i.isSetted.cronExpression)
+        } catch (e) {
+          isOk = false
+        }
+        if (!isOk) {
+          this.$notification.open({
+              class: 'ant-notification-warning',
+              message: this.$t('Cron.TheOperationIsIncorrect'),
+              description: this.$t('Cron.FillInTheCorrectCronExpression'),
+          })
+          return false
+        }
+        if (i.fields) {
+          let storageDays = i.fields.filter(i => i.name === "storageDay")
+          if (storageDays && storageDays[0] && !storageDays[0].value) {
+            this.$notification.open({
+              class: 'ant-notification-warning',
+              message: this.storageCondition == 'day' ? this.$t('Cron.EnterRetentionPeriod') : this.$t('Cron.EnterKeepTheNumber'),
+            })
+            return false
+          }
+        }
         let fiedsNew = []
         let scopeValue='';
+        let hasRepeatError = false
+        const emptyData = i.fields.filter(item => item.name.includes(this.artifactPathKey) && (!item.label || !item.value))
+        if (emptyData.length) {
+            this.$notification.open({
+                class: 'ant-notification-warning',
+                message: this.$t('Cron.EnterFull')
+            })
+            return
+        }
         i.fields.forEach(f => {
-          if (f.value !== null && f.value !== undefined) {
+          if (f.value) {
             if(f.name === this.debianScopeKey){
               scopeValue=scopeValue+f.codename+":"+f.component+":"+f.architecture+","
             }else{
             if (f.label) {
               if (f.value !== '') {
                 fiedsNew.push({ name: this.artifactPathKey + f.label, value: f.value })
+                if (fiedsNew.filter(item => item.name == this.artifactPathKey + f.label).length > 1) {
+                  hasRepeatError = true
+                  return false
+                }
               }
             } else {
               fiedsNew.push({ name: f.name, value: f.value })
@@ -306,6 +350,13 @@ export default {
           }
           }
         })
+        if (hasRepeatError) {
+          this.$notification.open({
+            class: 'ant-notification-warning',
+            message: this.$t('Cron.DuplicateItemsPresent'),
+          })
+          return false
+        }
         if(scopeValue!==''){
           const value=scopeValue.slice(0, -1);
           fiedsNew.push({ name: this.debianScopeKey, value: value })
@@ -361,13 +412,11 @@ export default {
       if (value && item.immediateExecution) {
         item.immediateExecution = false
       }
-      this.$forceUpdate()
     },
     immediateExecutionChange(value, item) {
       if (value && item.oneTimeExecution) {
         item.oneTimeExecution = false
       }
-      this.$forceUpdate()
     },
     addArtifactPath(data) {
       data.push({name: this.artifactPathKey, value: "", label: ""})
@@ -380,8 +429,20 @@ export default {
     },
     deleteDebainScope(data,index){
       data.splice(index, 1)
+    },
+    artifactPathChange(fileIds, label) {
+      if (fileIds && label) {
+        let size = fileIds.filter(item => item.label == label).length
+        if (size > 1) {
+            this.$notification.open({
+                class: 'ant-notification-warning',
+                message: label + " " + this.$t('Cron.Exists'),
+            })
+            return false
+        }
+      }
+      return true
     }
-
   },
 };
 </script>

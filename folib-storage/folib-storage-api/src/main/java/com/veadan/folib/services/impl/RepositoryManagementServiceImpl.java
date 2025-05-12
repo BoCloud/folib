@@ -26,6 +26,7 @@ import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import com.veadan.folib.repository.RepositoryManagementStrategyException;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.RepositoryManagementService;
+import com.veadan.folib.storage.ArtifactResolutionException;
 import com.veadan.folib.storage.ArtifactStorageException;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
@@ -138,6 +139,12 @@ public class RepositoryManagementServiceImpl
     }
 
     @Override
+    public void cleanupRepository(String storageId, String repositoryId) throws IOException {
+        LayoutProvider provider = getLayoutProvider(storageId, repositoryId);
+        provider.getRepositoryManagementStrategy().removeRepository(storageId, repositoryId);
+    }
+
+    @Override
     public void deleteTrash(String storageId, String repositoryId, String storageDay, Map<String, String> cleanupArtifactPathMap)
             throws IOException {
         artifactOperationsValidator.checkStorageExists(storageId);
@@ -164,22 +171,23 @@ public class RepositoryManagementServiceImpl
     }
 
     @Override
-    public void deleteTrash(boolean checkTask)
+    public void deleteTrash(boolean checkTask, String storageDay, Map<String, String> cleanupArtifactPathMap)
             throws ArtifactStorageException {
         try {
+            String jobClass = "com.veadan.folib.cron.jobs.ClearRepositoryTrashCronJob";
             for (Map.Entry<String, Storage> entry : getConfiguration().getStorages().entrySet()) {
                 Storage storage = entry.getValue();
 
                 final Map<String, ? extends Repository> repositories = storage.getRepositories();
                 for (Repository repository : repositories.values()) {
-                    if (checkTask && existsRepositoryTask(storage.getId(), repository.getId())) {
+                    if (checkTask && existsRepositoryTask(storage.getId(), repository.getId(), jobClass)) {
                         logger.info("Emptying trash for repository {} exists custom cron task skip...", ConfigurationUtils.getStorageIdAndRepositoryId(storage.getId(), repository.getId()));
                         continue;
                     }
                     if (repository.isAllowsDeletion()) {
                         logger.info("Emptying trash for repository {}...", ConfigurationUtils.getStorageIdAndRepositoryId(storage.getId(), repository.getId()));
 
-                        deleteTrash(repository.getStorage().getId(), repository.getId(), null, null);
+                        deleteTrash(repository.getStorage().getId(), repository.getId(), storageDay, cleanupArtifactPathMap);
                     } else {
                         logger.warn("Repository {} does not support removal of trash.", ConfigurationUtils.getStorageIdAndRepositoryId(storage.getId(), repository.getId()));
                     }
@@ -337,6 +345,39 @@ public class RepositoryManagementServiceImpl
         } catch (Exception ex) {
             logger.error("delete storage {} repository {} user {} permission error：{}", storageId, repositoryId, username, ExceptionUtils.getStackTrace(ex));
             throw new RuntimeException(ex.getMessage());
+        }
+    }
+
+    @Override
+    public void deleteEmptyDirectory() {
+        try {
+            String jobClass = "com.veadan.folib.cron.jobs.ClearRepositoryEmptyDirectoryCronJob";
+            for (Map.Entry<String, Storage> entry : getConfiguration().getStorages().entrySet()) {
+                Storage storage = entry.getValue();
+                final Map<String, ? extends Repository> repositories = storage.getRepositories();
+                for (Repository repository : repositories.values()) {
+                    if (existsRepositoryTask(storage.getId(), repository.getId(), jobClass)) {
+                        logger.info("Clear empty directory for repository {} exists custom cron task skip...", ConfigurationUtils.getStorageIdAndRepositoryId(storage.getId(), repository.getId()));
+                        continue;
+                    }
+                    logger.info("Clear empty directory for repository {}...", ConfigurationUtils.getStorageIdAndRepositoryId(storage.getId(), repository.getId()));
+                    deleteEmptyDirectory(repository.getStorage().getId(), repository.getId());
+                }
+            }
+        } catch (Exception ex) {
+            logger.error(ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
+    @Override
+    public void deleteEmptyDirectory(String storageId, String repositoryId) {
+        try {
+            artifactOperationsValidator.checkStorageExists(storageId);
+            artifactOperationsValidator.checkRepositoryExists(storageId, repositoryId);
+            RootRepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
+            RepositoryFiles.deleteEmptyDirectory(repositoryPath);
+        } catch (Exception ex) {
+            logger.error(ExceptionUtils.getStackTrace(ex));
         }
     }
 
@@ -590,13 +631,12 @@ public class RepositoryManagementServiceImpl
         }
     }
 
-    private boolean existsRepositoryTask(String storageId, String repositoryId) {
+    private boolean existsRepositoryTask(String storageId, String repositoryId, String jobClass) {
         CronTasksConfigurationDto config = cronTaskConfigurationService.getTasksConfigurationDto();
         if (CollectionUtils.isEmpty(config.getCronTaskConfigurations())) {
             return false;
         }
-        String clearRepositoryTrashCronJob = "com.veadan.folib.cron.jobs.ClearRepositoryTrashCronJob";
-        return config.getCronTaskConfigurations().stream().anyMatch(cron -> storageId.equals(cron.getProperty("storageId")) && repositoryId.equals(cron.getProperty("repositoryId")) && clearRepositoryTrashCronJob.equals(cron.getJobClass()));
+        return config.getCronTaskConfigurations().stream().anyMatch(cron -> storageId.equals(cron.getProperty("storageId")) && repositoryId.equals(cron.getProperty("repositoryId")) && jobClass.equals(cron.getJobClass()));
     }
 
 }

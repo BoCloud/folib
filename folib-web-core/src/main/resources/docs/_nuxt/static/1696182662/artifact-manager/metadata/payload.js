@@ -1,1 +1,0 @@
-__NUXT_JSONP__("/artifact-manager/metadata", {data:[{}],fetch:{},mutations:void 0});

@@ -24,6 +24,15 @@ public class UrlUtils {
         return servletRequest.getRequestURI();
     }
 
+    public static HttpServletRequest getRequest() {
+        try {
+            return ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+        } catch (Exception ignore) {
+
+        }
+        return null;
+    }
+
     public static String getCurrentStorageId() {
         return getSubPath(getRequestUri(), 2);
     }
@@ -79,7 +88,7 @@ public class UrlUtils {
             return null;
         }
     }
-    
+
     public static String addQuery(String urlStr, String key, String value) {
         final StringBuilder builder = new StringBuilder(urlStr);
         if (!urlStr.contains("?")) {
@@ -88,7 +97,7 @@ public class UrlUtils {
         if (!builder.toString().endsWith("?")) {
             builder.append("&");
         }
-        
+
         builder.append(key).append("=").append(value);
         return builder.toString();
     }

@@ -270,11 +270,17 @@ public class ArtifactEventPromotionListener {
                 return;
             }
             String artifactPath = getArtifactPath(repositoryPath, artifact);
-            boolean promotionFlag = validatePath(repositoryPath, artifactPath, policyDetail);
-            boolean promotionMataDataFlag = validateMetadata(repositoryPath, artifact, artifactPath, policyDetail);
-            if (promotionFlag || promotionMataDataFlag) {
+
+            if(policyDetail.getPathRules().isEmpty() && policyDetail.getMetadataRules().isEmpty()){
+                handleFederalPromotion(repositoryPath, artifact, policyDetail);
+            }else {
+                boolean promotionFlag = validatePath(repositoryPath, artifactPath, policyDetail);
+                boolean promotionMataDataFlag =  validateMetadata(repositoryPath, artifact, artifactPath, policyDetail);
+                if (promotionFlag || promotionMataDataFlag) {
                     handleFederalPromotion(repositoryPath, artifact, policyDetail);
+                }
             }
+
             //联邦仓库删除同步
         }else if (policyDetail.getIsDeleteSync()  && validateArtifactDeleteEvent(artifactEventTypeEnum)) {
             String artifactPath ;
@@ -290,7 +296,7 @@ public class ArtifactEventPromotionListener {
     }
 
     public boolean validatePath(RepositoryPath repositoryPath, String artifactPath, FederalPromotionPolicyRes policyDetail) {
-        boolean promotionFlag = true;
+        boolean promotionFlag = false;
 
         if (!policyDetail.getPathRules().isEmpty()) {
             String storageId = repositoryPath.getStorageId();
@@ -308,7 +314,7 @@ public class ArtifactEventPromotionListener {
     }
 
     public boolean validateMetadata(RepositoryPath repositoryPath, Artifact artifact, String artifactPath, FederalPromotionPolicyRes policyDetail) {
-        boolean promotionMataDataFlag = true;
+        boolean promotionMataDataFlag = false;
 
         if (!policyDetail.getMetadataRules().isEmpty()) {
             String storageId = repositoryPath.getStorageId();

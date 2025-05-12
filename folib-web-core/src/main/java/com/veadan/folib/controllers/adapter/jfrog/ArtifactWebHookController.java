@@ -18,9 +18,8 @@ import com.veadan.folib.providers.layout.LayoutFileSystemProvider;
 import com.veadan.folib.security.exceptions.ExpiredTokenException;
 import com.veadan.folib.security.exceptions.InvalidTokenException;
 import com.veadan.folib.services.ArtifactResolutionService;
-import com.veadan.folib.services.DictService;
+import com.veadan.folib.services.JfrogMigrateService;
 import com.veadan.folib.storage.Storage;
-import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.users.security.SecurityTokenProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
@@ -65,7 +64,7 @@ public class ArtifactWebHookController {
     protected WebhookEventsProviderRegistry webhookEventsProviderRegistry;
 
     @Resource
-    private DictService dictService;
+    private JfrogMigrateService jfrogMigrateService;
 
     @PostMapping("/webhook")
     public ResponseEntity<Object> webhook(@RequestBody String data, HttpServletRequest request) {
@@ -114,9 +113,7 @@ public class ArtifactWebHookController {
             RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
             ArtifactData artifactData = webhookDto.getData();
             RepositoryPath repositoryPath = rootRepositoryPath.resolve(artifactData.getPath());
-            Dict dict = new Dict();
-            dict.setDictType("artifact_migrate_task");
-            dict = dictService.selectLatestOneDict(dict);
+            Dict dict = jfrogMigrateService.getWebhookSetting();
             if (Objects.isNull(dict)) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Cannot find JFrog artifact migrate info");
             }

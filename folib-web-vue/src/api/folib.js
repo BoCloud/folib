@@ -43,6 +43,13 @@ export function delRepositoryResponseEntity (storageId,repositoryId,force) {
   })
 }
 
+export function cleanupRepository (storageId,repositoryId,cleanup) {
+  return axios({
+    url: '/api/configuration/folib/storages/'+storageId+'/'+repositoryId+'?cleanup='+cleanup,
+    method: 'delete'
+  })
+}
+
 export function getLibraryByQuery (dataQuery) {
   return axios({
     url: '/api/formData/repositoryList',

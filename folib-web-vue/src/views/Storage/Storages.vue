@@ -26,7 +26,7 @@
       <a-col :span="24" :lg="6">
         <!-- Page Anchors -->
 <!--        <a-affix :offset-top="navbarFixed ? 100 : 10">-->
-          <a-card :bordered="false" :style="isChecked ? 'height:calc(100vh - 230px);margin-bottom:0px;' : ''" class="header-solid mb-24 left_menu">
+          <a-card :bordered="false" :style="isChecked ? 'height:calc(100vh - 180px);margin-bottom:0px;' : ''" class="header-solid mb-24 left_menu">
             <template #title>
               <a-row type="flex" align="middle" class="position:relative;">
                 <a-col :span="24" :md="14" class="col-info" style="display: flex; align-items: center;">
@@ -110,7 +110,7 @@
         />
         <a-tabs v-if="!isChecked" class="tabs-sliding self_tabs" style="margin-top:-20px;" default-active-key="1">
           <a-tab-pane key="1" :tab="$t('Storage.RepositoryList')">
-            <div style="height:calc(100vh - 270px);overflow-y: auto;overflow-x: hidden;border-radius: 12px;margin-top:0px;padding-left:4px;padding-right: 10px;">
+            <div style="height:calc(100vh - 224px);overflow-y: auto;overflow-x: hidden;border-radius: 12px;margin-top:0px;padding-left:4px;padding-right: 10px;">
               <a-row type="flex" :gutter="20">
                 <a-col :span="8" style="margin-bottom:20px;" v-if="hasStoragePermission()">
                   <a-card @click="folibVisibleShow()" class="crm-bar-line header-solid h-full xinjian"
@@ -145,7 +145,7 @@
             </div>
           </a-tab-pane>
           <a-tab-pane key="2" v-if="isLogin" :tab="$t('Storage.StorageOverview')">
-            <a-row type="flex" :gutter="24" style="height: calc(100vh - 270px);overflow:auto;margin-top:0px;padding-left:4px;margin-right: 4px;">
+            <a-row type="flex" :gutter="24" style="height: calc(100vh - 224px);overflow:auto;margin-top:0px;padding-left:4px;margin-right: 4px;">
               <a-col :span="24">
                 <Overview :storageId="currentStorage.id"/>
                 <StorageInfo class="mt-20" :storageId="currentStorage.id"/>
@@ -161,7 +161,7 @@
           @reloadTree="reloadTree"
           @handleMenuClick="handleMenuClick"
           :storageAdmin="currentStorage.admin" 
-          :style="isChecked ? 'margin-top:-105px;' : ''" style="border:none;transition: all 0.5s ease;" 
+          :style="isChecked ? 'margin-top:-121px;' : ''" style="border:none;transition: all 0.5s ease;"
           :isChecked="isChecked" 
         />
       </a-col>
@@ -427,9 +427,9 @@
             <a-button key="back" @click="deleteFormVisible = false" class="px-30 ml-10" size="small">{{ $t('Storage.Cancel') }}</a-button>
           </a-col>
           <a-col :span="12" class="text-right">
-            <a-button v-if="deleteBtnVisible" @click="delRepositoryResponseEntity" class="px-30 ml-10" type="danger"
+            <a-button v-if="deleteBtnVisible" @click="delRepositoryResponseEntity" class="ml-10" type="danger"
               size="small">{{ $t('Storage.Delete') }}</a-button>
-            <a-button v-if="forceDeleteBtnVisible" @click="delRepositoryResponseEntityForce" class="px-30 ml-10"
+            <a-button v-if="forceDeleteBtnVisible" @click="delRepositoryResponseEntityForce" class="ml-10"
               type="dashed" size="small">{{ $t('Storage.ForcedDeletion') }}
             </a-button>
           </a-col>
@@ -1061,7 +1061,7 @@
             (step === 4 && folibRepository.type === 'group')" :bordered="false" class="header-solid">
 
                 <a-row>
-                    <a-col :span="12">
+                    <a-col :span="24">
                         <CronTask :folibRepository="this.folibRepositoryData" @settingDrawerClose="settingDrawerClose"></CronTask>
                     </a-col>
                 </a-row>
@@ -1217,7 +1217,7 @@ export default {
       userInfo: {},
       showStorageUpdate: false,
       userList: [],
-      baseUrl: null,
+      baseUrl: '',
       folibVisible: false,
       storageData: [],
       cronCanSetList: [],
@@ -1305,6 +1305,7 @@ export default {
           id: "",
           storageId:"",
           layout: "",
+          type: "",
       },
       repositoryStorageMaxSize: 0,
       repositoryStorageThreshold:0,
@@ -1388,7 +1389,7 @@ export default {
         layout: null,
         type: null,
         page:1,
-        limit: 10,
+        limit: 30,
         total:0,
       },
       layoutType:'isFilter',
@@ -1421,14 +1422,13 @@ export default {
   },
   watch: {
     isChecked(val){
-      this.getDetailInfo(val)
+      if (!this.pageLoading) this.getDetailInfo(val)
     },
     '$i18n.locale'() {
       this.$forceUpdate();
     },
     currentStorage:{
       handler(val){
-        console.log(val);
 
       },
       deep:true
@@ -1441,12 +1441,11 @@ export default {
           }else {
               this.notEditPolicy=false;
           }
-          console.log("notEditPolicy",this.notEditPolicy);
-
       }
   },
   async created() {
     this.pageLoading = true
+    this.isChecked = storage.get('isChecked')
     this.userInfo = store.state.user
     await  this.getStorages();
     await  this.getBaseUrl();
@@ -1532,6 +1531,7 @@ export default {
       if(this.switchDisabled && !forced){
         return
       }
+      storage.set("isChecked", key)
       setTimeout(() => {
         this.isChecked = key
         this.$store.commit('setRepositoryLength', -1)
@@ -1566,6 +1566,7 @@ export default {
     // 展示存储概览
     showOverview(val){
       this.isShowOverview = val == 2
+      if(!this.isShowOverview) this.$nextTick(() => { this.reloadTree() })
     },
     changeMoudles(){
       // this.isChecked = !this.isChecked
@@ -1575,7 +1576,6 @@ export default {
       }
     },
     getDetailInfo(val,type){
-      console.log(val,type)
       if(this.repositories.length){
         const item = this.repositories[0]
         storage.set("libView_repository", { item, baseUrl: this.baseUrl })
@@ -1614,8 +1614,11 @@ export default {
       })
     },
     reloadTree(){
-      this.loadMore(0)
-      this.$refs.repositoryTree.getPosition()
+      this.$refs.repositoryTree.key ++
+      this.$refs.repositoryTree.recycleKey ++
+      this.$refs.repositoryTree.empty()
+      this.$refs.repositoryTree.loadingMoreShow(true)
+      this.getDetailInfo(this.isChecked)
     },
     // 点击仓库
     repositorySelect(item){
@@ -1659,7 +1662,6 @@ export default {
         const item = this.storageData.find(ele => ele.id === val)
         this.setCurrentStorage(item)
       }else{
-        console.log(val,'log of val')
         // 此时的val为queryParams
         const params = JSON.parse(JSON.stringify(val))
         params.layout = val.layout ? genLayoutType(val.layout) : ''
@@ -1986,10 +1988,10 @@ export default {
       if (this.currentStorage.basedir) {
         this.storagePrefix = this.currentStorage.basedir.replace("/" + this.currentStorage.id, "").replace("/", "")
       }
+      this.queryParams.page = 1
       this.getStorage(this.currentStorage.id)
     },
     loadMore(total){
-      console.log(total,total !== this.queryParams.total)
       if(total !== this.queryParams.total && !this.$refs.repositoryTree.loadingMore){
         this.$refs.repositoryTree.loadingMoreShow(true)
         this.queryParams.page ++
@@ -2335,7 +2337,7 @@ export default {
         this.$notification.open({
           class: 'ant-notification-warning',
           message: this.$t('Storage.FillInErrors'),
-          description: this.$t('Storage.RepositoryLimit'),
+          description: this.$t('Storage.RepositoryLengthLimit'),
         })
         return false
       }
@@ -2343,7 +2345,7 @@ export default {
       let description = this.$t('Storage.RepositoryLimit')
       if (this.layoutChecked === 'docker') {
         reg = /^(?![_.])[a-z0-9_.\\-]+$/
-        description = 'docker'+this.$t('Storage.RepositoryLimit')
+        description = 'docker'+this.$t('Storage.DockerRepositoryLimit')
       }
       if (reg.test(repositoryName) === false) {
         this.$notification.open({
@@ -2406,6 +2408,7 @@ export default {
       this.folibRepositoryData.id= this.folibRepository.id;
       this.folibRepositoryData.storageId= this.currentStorage.id;
       this.folibRepositoryData.layout = this.folibRepository.layout;
+      this.folibRepositoryData.type = this.folibRepository.type;
 
       this.folibRepository.artifactMaxSize = this.artifactMaxSize * 1024 * 1024
       this.folibRepository.storageMaxSize =  this.setRepoMaxSize(this.repositoryStorageMaxSize);
@@ -2602,9 +2605,10 @@ export default {
       } else if (e === "delete" && title !== null) {
         getRepositoryResponseEntity(this.currentStorage.id, title).then(res => {
           if (res.id === title) {
+            this.folibRepository = res
             this.willDelId = title
             this.deleteBtnVisible = false
-            if (res.allowsDeletion) {
+            if (res.allowsDeletion || res.type == 'group') {
               this.deleteBtnVisible = true
             }
             this.forceDeleteBtnVisible = false
@@ -2730,7 +2734,6 @@ export default {
           this.$emit('settingDrawerClose')
       },
       doPermission(){
-        console.log("this.folibRepository:",this.folibRepository)
         this.$refs.permission.permissionFormSubmit()
           this.moveStep(1);
       },
@@ -2911,9 +2914,9 @@ export default {
     cursor: pointer;
   }
 
-  .ant-anchor-link a svg g {
-    fill: #344767;
-  }
+  //.ant-anchor-link a svg g {
+  //  fill: #344767;
+  //}
 
   .ant-anchor-link a svg {
     margin-right: 8px;

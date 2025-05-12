@@ -1,5 +1,7 @@
 package com.veadan.folib.services.impl;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
 import com.veadan.folib.components.DistributedCacheComponent;
@@ -11,6 +13,7 @@ import com.veadan.folib.enums.UpgradeTaskStatusEnum;
 import com.veadan.folib.event.bucket.BucketEventListenerRegistry;
 import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.mapper.DictMapper;
+import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.DictService;
 import com.veadan.folib.util.CacheUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -66,12 +69,16 @@ public class DictServiceImpl implements DictService {
         if (Objects.isNull(dbDict)) {
             saveDict(dict);
         } else {
-            dictMapper.update(dict, Wrappers.<Dict>lambdaUpdate()
-                    .eq(Objects.nonNull(dict.getId()), Dict::getId, dict.getId())
-                    .eq(Objects.nonNull(dict.getDictKey()), Dict::getDictKey, dict.getDictKey())
-                    .eq(Objects.nonNull(dict.getDictType()), Dict::getDictType, dict.getDictType())
-            );
-
+            if (Objects.nonNull(dict.getId())) {
+                dictMapper.update(dict, Wrappers.<Dict>lambdaUpdate()
+                        .eq(Objects.nonNull(dict.getId()), Dict::getId, dict.getId())
+                );
+            }else {
+                dictMapper.update(dict, Wrappers.<Dict>lambdaUpdate()
+                        .eq(Objects.nonNull(dict.getDictKey()), Dict::getDictKey, dict.getDictKey())
+                        .eq(Objects.nonNull(dict.getDictType()), Dict::getDictType, dict.getDictType())
+                );
+            }
         }
         if (Boolean.TRUE.equals(dictForm.getOverrideSystemProperty())) {
             System.setProperty(dict.getDictKey(), dict.getDictValue());
@@ -253,7 +260,17 @@ public class DictServiceImpl implements DictService {
     }
 
     public List<Dict> selectByTypeAndKey(String type,String key){
-        return dictMapper.selectList(Wrappers.<Dict>lambdaQuery().eq(Dict::getDictType, type).eq(Dict::getDictKey, key));
+        return dictMapper.selectList(Wrappers.<Dict>lambdaQuery()
+                .eq(Dict::getDictType, type)
+                .eq(StringUtils.isNotBlank(key),Dict::getDictKey, key));
+    }
+
+    @Override
+    public TableResultResponse<Dict> getSystemDict(Integer page, Integer limit,String dictKey){
+        PageHelper.startPage(page, limit);
+        List<Dict> systems = selectByTypeAndKey(DictTypeEnum.SYSTEM_PROPERTY.getType(),dictKey);
+        PageInfo<Dict> pages = PageInfo.of(systems);
+        return new TableResultResponse<>(pages.getTotal(), pages.getList());
     }
 
 

@@ -134,7 +134,7 @@
                 <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
               </a-popover>
             </template>
-            <a-input-number :min="0" v-model="backupStrategyForm.retentionPeriod" :disabled="retentionPeriodDisabled" class="backup-form-common"/>
+            <a-input-number :min="0" :formatter="value => `${value.split('.')[0]}`" v-model="backupStrategyForm.retentionPeriod" :disabled="retentionPeriodDisabled" class="backup-form-common"/>
           </a-form-model-item>
           <a-form-model-item class="mb-10" :colon="false" prop="enabled">
             <template slot="label">
@@ -185,6 +185,7 @@ import {
 import {
   folderList
 } from "@/api/advanced"
+import cronstrue from 'cronstrue';
 
 export default {
   props: {
@@ -205,7 +206,14 @@ export default {
       if (!value) {
         callback(new Error(this.$t('BackupStrategy.EnterCronExpression')))
       } else {
-        callback()
+        let isOk = true
+        try {
+          cronstrue.toString(value)
+        } catch (e) {
+          isOk = false
+        }
+        if (!isOk) callback(new Error(this.$t('BackupStrategy.EnterCorrectCronExpression')))
+        else callback()
       }
     }
     const checkBackupPath = (rule, value, callback) => {
@@ -230,9 +238,9 @@ export default {
         strategyName: '',
         cronExpression: '',
         enabled: true,
-        backupPath: '',
+        backupPath: null,
         incremental: false,
-        retentionPeriod: 0,
+        retentionPeriod: 7,
         repositories: [],
       },
       directoryPaths: [],
@@ -530,9 +538,9 @@ export default {
         strategyName: '',
         cronExpression: '',
         enabled: true,
-        backupPath: '',
+        backupPath: null,
         incremental: false,
-        retentionPeriod: 0,
+        retentionPeriod: 7,
         repositories: [],
       }
       this.retentionPeriodDisabled = false
@@ -609,7 +617,7 @@ export default {
     },
     incrementalChange() {
       if (this.backupStrategyForm.incremental) {
-        this.backupStrategyForm.retentionPeriod = 0
+        this.backupStrategyForm.retentionPeriod = 7
         this.retentionPeriodDisabled = true
         return;
       }

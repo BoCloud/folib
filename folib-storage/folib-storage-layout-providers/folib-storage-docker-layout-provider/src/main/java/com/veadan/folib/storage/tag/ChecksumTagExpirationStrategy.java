@@ -3,6 +3,7 @@ package com.veadan.folib.storage.tag;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.DockerAuthComponent;
+import com.veadan.folib.config.CustomAuthenticationFeature;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.enums.DockerHeaderEnum;
 import com.veadan.folib.providers.io.RepositoryFiles;
@@ -17,7 +18,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.HttpStatus;
 import org.glassfish.jersey.client.ClientProperties;
-import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -125,9 +125,10 @@ public class ChecksumTagExpirationStrategy
             //读取内容超时时间
             client.property(ClientProperties.READ_TIMEOUT, 30000);
             WebTarget target = client.target(targetUrl);
-            final HttpAuthenticationFeature authenticationFeature = (StringUtils.isNotBlank(remoteRepository.getUsername()) && StringUtils.isNotBlank(remoteRepository.getPassword())) ? HttpAuthenticationFeature.basic(remoteRepository.getUsername(), remoteRepository.getPassword()) : null;
-            if (Objects.nonNull(authenticationFeature)) {
-                target.register(authenticationFeature);
+            String username = remoteRepository.getUsername(), password = remoteRepository.getPassword();
+            final CustomAuthenticationFeature customAuthenticationFeature = (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) ? CustomAuthenticationFeature.create(username, password) : null;
+            if (Objects.nonNull(customAuthenticationFeature)) {
+                target.register(customAuthenticationFeature);
             }
             Invocation.Builder builder = target.request();
             MultivaluedMap<String, Object> headers = DockerHeaderEnum.acceptHeaders();

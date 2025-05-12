@@ -1,1 +1,0 @@
-__NUXT_JSONP__("/tools/Cocoapods", {data:[{}],fetch:{},mutations:void 0});

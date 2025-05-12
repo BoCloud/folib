@@ -292,6 +292,9 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     public List<Artifact> findMatchingBySafeLevels(List<String> storageIdAndRepositoryIdList, List<String> safeLevels, String retryKey, Integer retryCount, String order) {
+        if (CollectionUtils.isEmpty(storageIdAndRepositoryIdList) || CollectionUtils.isEmpty(safeLevels)) {
+            return null;
+        }
         List<EntityTraversal<Vertex, Vertex>> orEntityTraversalList = Lists.newArrayList();
         orEntityTraversalList.add(__.has(Properties.METADATA, Text.textRegex(String.format(".*\\\"%s\\\":\\{[^}]*\\\"value\\\":\\\"[0-%s]\\\"[^}]*}.*", retryKey, retryCount - 1))));
         orEntityTraversalList.add(__.has(Properties.METADATA, P.eq(null)));
@@ -304,11 +307,17 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     }
 
     public long findMatchingCountBySafeLevels(List<String> storageIdAndRepositoryIdList, List<String> safeLevels) {
+        if (CollectionUtils.isEmpty(storageIdAndRepositoryIdList) || CollectionUtils.isEmpty(safeLevels)) {
+            return 0L;
+        }
         return buildEntityTraversalSafeLevels(storageIdAndRepositoryIdList, safeLevels).count().tryNext().orElse(0L);
     }
 
     public Page<Artifact> findMatchingPageBySafeLevels(Pageable pagination, List<String> storageIdAndRepositoryIdList, List<String> safeLevels, String order) {
         Long zero = 0L;
+        if (CollectionUtils.isEmpty(storageIdAndRepositoryIdList) || CollectionUtils.isEmpty(safeLevels)) {
+            return new PageImpl<>(Collections.emptyList(), pagination, zero);
+        }
         Long count = buildEntityTraversalSafeLevels(storageIdAndRepositoryIdList, safeLevels).count().tryNext().orElse(zero);
         if (zero.equals(count)) {
             return new PageImpl<>(Collections.emptyList(), pagination, count);
@@ -594,8 +603,8 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         }
         if (StringUtils.isNotBlank(query)) {
             List<EntityTraversal<Vertex, Vertex>> orEntityTraversalList = Lists.newArrayList();
-            orEntityTraversalList.add(__.has(Properties.ARTIFACT_NAME, Text.textContains(query)));
-            orEntityTraversalList.add(__.has(Properties.ARTIFACT_NAME, Text.textRegex(".*" + query + ".*")));
+            orEntityTraversalList.add(__.has(Properties.UUID, Text.textContains(query)));
+            orEntityTraversalList.add(__.has(Properties.UUID, Text.textRegex(".*" + query + ".*")));
             EntityTraversal[] orEntityTraversalArray = orEntityTraversalList.toArray(new EntityTraversal[orEntityTraversalList.size()]);
             entityTraversal = entityTraversal.or(orEntityTraversalArray);
         }
@@ -1061,4 +1070,46 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
     public long countByUUidPrefix(String uuid) {
         return g().V().hasLabel(Vertices.ARTIFACT).has(Properties.UUID, Text.textPrefix(uuid)).count().tryNext().orElse(0L);
     }
+
+    public long countGenericArtifactCoordinatesByUUid(String uuid, String artifactPath) {
+        return g().V()
+                .hasLabel(Vertices.GENERIC_ARTIFACT_COORDINATES).has(Properties.UUID, artifactPath)
+                .in(Edges.ARTIFACT_HAS_ARTIFACT_COORDINATES)
+                .hasLabel(Vertices.ARTIFACT).has(Properties.UUID, P.neq(uuid))
+                .count().tryNext().orElse(0L);
+    }
+
+    private void deleteLayoutArtifactCoordinates(Artifact artifact, String layout) {
+        long count = countGenericArtifactCoordinatesByUUid(artifact.getUuid(), artifact.getArtifactPath());
+        if (count != 0) {
+            return;
+        }
+        String artifactCoordinates = ProductTypeEnum.queryArtifactCoordinatesByFoLibraryName(layout);
+        if (StringUtils.isBlank(artifactCoordinates)) {
+            return;
+        }
+        log.info("Delete storageId [{}] repositoryId [{}] artifactPath [{}] artifactCoordinates [{}]", artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), artifactCoordinates);
+        g().V().hasLabel(Vertices.GENERIC_ARTIFACT_COORDINATES).has(Properties.UUID, artifact.getArtifactPath())
+                .in(Edges.EXTENDS)
+                .hasLabel(artifactCoordinates).drop().iterate();
+    }
+
+    public void delete(Artifact artifact, String layout) {
+        if (distributedLockComponent.lock(artifact.getArtifactPath(), GlobalConstants.WAIT_LOCK_TIME, TimeUnit.SECONDS)) {
+            try {
+                try {
+                    deleteLayoutArtifactCoordinates(artifact, layout);
+                    super.delete(artifact);
+                } catch (Exception ex) {
+                    log.error("Delete artifact [{}] error [{}]", artifact.getUuid(), ExceptionUtils.getStackTrace(ex));
+                    throw new RuntimeException(ex.getMessage());
+                }
+            } finally {
+                distributedLockComponent.unLock(artifact.getArtifactPath());
+            }
+        } else {
+            log.warn("Delete artifact [{}] was not get lock", artifact.getUuid());
+        }
+    }
+
 }

@@ -36,34 +36,34 @@ public class MavenRepositoryManagementStrategy
     @Inject
     private RepositoryPathResolver repositoryPathResolver;
 
-    @Override
-    protected void createRepositoryInternal(Storage storage,
-                                            Repository repository)
-            throws RepositoryManagementStrategyException
-    {
-        if (!repositoryFeatures.isIndexingEnabled(repository))
-        {
-            return;
-        }
-
-        String storageId = storage.getId();
-        String repositoryId = repository.getId();
-        MavenRepositoryConfiguration repositoryConfig =
-                (MavenRepositoryConfiguration) repository.getRepositoryConfiguration();
-
-        if (repository.isHostedRepository())
-        {
-            createRebuildMavenIndexCronJob(storageId, repositoryId, repositoryConfig.getCronExpression());
-        }
-        if (repository.isProxyRepository())
-        {
-            createRemoteIndexDownloaderCronTask(storageId, repositoryId, repositoryConfig.getCronExpression());
-        }
-        if (repository.isGroupRepository())
-        {
-            createMergeMavenGroupRepositoryIndexCronJob(storageId, repositoryId, repositoryConfig.getCronExpression());
-        }
-    }
+//    @Override
+//    protected void createRepositoryInternal(Storage storage,
+//                                            Repository repository)
+//            throws RepositoryManagementStrategyException
+//    {
+//        if (!repositoryFeatures.isIndexingEnabled(repository))
+//        {
+//            return;
+//        }
+//
+//        String storageId = storage.getId();
+//        String repositoryId = repository.getId();
+//        MavenRepositoryConfiguration repositoryConfig =
+//                (MavenRepositoryConfiguration) repository.getRepositoryConfiguration();
+//
+//        if (repository.isHostedRepository())
+//        {
+//            createRebuildMavenIndexCronJob(storageId, repositoryId, repositoryConfig.getCronExpression());
+//        }
+//        if (repository.isProxyRepository())
+//        {
+//            createRemoteIndexDownloaderCronTask(storageId, repositoryId, repositoryConfig.getCronExpression());
+//        }
+//        if (repository.isGroupRepository())
+//        {
+//            createMergeMavenGroupRepositoryIndexCronJob(storageId, repositoryId, repositoryConfig.getCronExpression());
+//        }
+//    }
 
     private void createRemoteIndexDownloaderCronTask(String storageId,
                                                      String repositoryId,

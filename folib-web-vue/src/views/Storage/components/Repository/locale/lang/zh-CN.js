@@ -11,6 +11,7 @@ export default {
     'Cleared': '已清除',
     'NotCleared': '未清除',
     'CurrentProductIsSynchronizing': '当前制品正在同步中，',
+    'CurrentProductIsFailure': '当前制品同步失败，',
     'SureMakeProductCompensation': '确定要进行制品补偿吗',
     'Confirm': '确定',
     'Cancel': '取消',

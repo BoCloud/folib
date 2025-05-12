@@ -87,7 +87,7 @@ public class WebhookEventsLogServiceImpl implements WebhookEventsLogService {
     }
 
     @Override
-    public List<WebhookEventsLog> queryWebhookEventsLogList(WebhookEventsLog webhookEventsLog) {
+    public List<WebhookEventsLog> queryWebhookEventsLogList(List<Integer> statsList, WebhookEventsLog webhookEventsLog) {
         return webhookEventsLogMapper.selectList(Wrappers.<WebhookEventsLog>lambdaQuery()
                 .eq(StringUtils.isNotBlank(webhookEventsLog.getEventType()), WebhookEventsLog::getEventType, webhookEventsLog.getEventType())
                 .eq(StringUtils.isNotBlank(webhookEventsLog.getEventRepositoryId()), WebhookEventsLog::getEventRepositoryId, webhookEventsLog.getEventRepositoryId())
@@ -97,6 +97,7 @@ public class WebhookEventsLogServiceImpl implements WebhookEventsLogService {
                 .eq(Objects.nonNull(webhookEventsLog.getStatus()), WebhookEventsLog::getStatus, webhookEventsLog.getStatus())
                 .eq(Objects.nonNull(webhookEventsLog.getRetry()), WebhookEventsLog::getRetry, webhookEventsLog.getRetry())
                 .le(Objects.nonNull(webhookEventsLog.getRetryCount()), WebhookEventsLog::getRetryCount, webhookEventsLog.getRetryCount())
+                .in(CollectionUtils.isNotEmpty(statsList),WebhookEventsLog::getStatus, statsList)
                 .orderByDesc(WebhookEventsLog::getCreateTime)
         );
     }
@@ -119,9 +120,9 @@ public class WebhookEventsLogServiceImpl implements WebhookEventsLogService {
     }
 
     @Override
-    public long count(Integer status, Integer retryCount) {
+    public long count(List<Integer> statsList, Integer retryCount) {
         return webhookEventsLogMapper.selectCount(Wrappers.<WebhookEventsLog>lambdaQuery()
-                .eq(WebhookEventsLog::getStatus, status)
+                .in(WebhookEventsLog::getStatus, statsList)
                 .le(WebhookEventsLog::getRetryCount, retryCount)
         );
     }
@@ -132,7 +133,7 @@ public class WebhookEventsLogServiceImpl implements WebhookEventsLogService {
     }
 
     @Override
-    public TableResultResponse<WebhookEventsLog> queryWebhookEventLogPage(Integer page, Integer limit, WebhookEventsLog webhookEventsLog) {
+    public TableResultResponse<WebhookEventsLog> queryWebhookEventLogPage(Integer page, Integer limit, List<Integer> statsList, WebhookEventsLog webhookEventsLog) {
         if (Objects.isNull(page)) {
             page = 1;
         }
@@ -140,7 +141,7 @@ public class WebhookEventsLogServiceImpl implements WebhookEventsLogService {
             limit = 10;
         }
         Page<Object> result = PageHelper.startPage(page, limit);
-        List<WebhookEventsLog> webhookEventsLogs = queryWebhookEventsLogList(webhookEventsLog);
+        List<WebhookEventsLog> webhookEventsLogs = queryWebhookEventsLogList(statsList, webhookEventsLog);
         return new TableResultResponse<WebhookEventsLog>(result.getTotal(), CollectionUtils.isEmpty(webhookEventsLogs) ? Collections.emptyList() : webhookEventsLogs);
     }
 

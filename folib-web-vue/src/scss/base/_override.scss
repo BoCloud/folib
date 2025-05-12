@@ -792,6 +792,7 @@ textarea.ant-pagination-options-quick-jumper input {
 	color: $color-warning ;
 }
 .ant-select-selection {
+	border-radius: .5rem;
 	border: 1px solid $select-border-color ;
 }
 .ant-select-selection:hover {
@@ -1150,6 +1151,8 @@ textarea.ant-time-picker-input {
 .ant-steps-horizontal:not(.ant-steps-label-vertical) .ant-steps-item-description {
 	max-width: 240px;
 }
-
+.ant-transfer-customize-list .ant-transfer-list-body-customize-wrapper {
+	padding: 0 0 0 12px;
+}
 
 // / Overriding Ant Design's default variables, such as colors, shadows and... .

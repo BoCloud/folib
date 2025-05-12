@@ -31,6 +31,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.janusgraph.core.JanusGraph;
+import org.janusgraph.core.JanusGraphTransaction;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
@@ -78,7 +79,10 @@ public class ArtifactServiceImpl implements ArtifactService {
 
     @Override
     public void saveOrUpdateArtifact(Artifact artifact) {
-        saveOrUpdateArtifact(artifact, true);
+        Optional<Artifact> exist = artifactRepository.findById(artifact.getUuid());
+        ArtifactEntity artifactEntity = (ArtifactEntity)artifact ;
+        exist.ifPresent(value -> artifactEntity.setNativeId(value.getNativeId()));
+        saveOrUpdateArtifact(artifactEntity, true);
     }
 
     @Override
@@ -189,7 +193,8 @@ public class ArtifactServiceImpl implements ArtifactService {
         }
     }
 
-    protected Artifact provideArtifact(RepositoryPath repositoryPath) throws IOException {
+    @Override
+    public Artifact provideArtifact(RepositoryPath repositoryPath) throws IOException {
         return Optional.ofNullable(repositoryPath.getArtifactEntry())
                 .orElse(new ArtifactEntity(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(),
                         RepositoryFiles.readCoordinates(repositoryPath)));
@@ -214,7 +219,7 @@ public class ArtifactServiceImpl implements ArtifactService {
                     byte[] byteArray = byteArrayOutputStream.toByteArray();
                     Files.write(artifactRepositoryPath, byteArray);
                 } catch (Exception ex) {
-                    log.warn("写入制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
+                    log.debug("写入制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
                 }
             }
         } catch (Exception ex) {

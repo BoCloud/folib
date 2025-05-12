@@ -151,6 +151,8 @@ public class StoragesConfigurationController
 
     static final String SUCCESSFUL_REPOSITORY_REMOVAL = "The repository was removed successfully.";
 
+    static final String SUCCESSFUL_REPOSITORY_CLEANUP = "The repository was cleanup successfully.";
+
     private static final String FAILED_STORAGE_REMOVAL = "Failed to remove the storage !";
 
     private static final String STORAGE_NOT_FOUND = "The storage was not found.";
@@ -1391,6 +1393,7 @@ public class StoragesConfigurationController
     public ResponseEntity removeRepository(@RepositoryMapping(allowOutOfServiceRepository = true) Repository repository,
                                            @ApiParam(value = "Whether to force delete the repository from the file system")
                                            @RequestParam(name = "force", defaultValue = "false") final boolean force,
+                                           @RequestParam(name = "cleanup", defaultValue = "false") final boolean cleanup,
                                            @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         final String storageId = repository.getStorage().getId();
         final String repositoryId = repository.getId();
@@ -1402,11 +1405,15 @@ public class StoragesConfigurationController
             final RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository);
             RepositoryDto repositoryDto = getMutableConfigurationClone().getStorage(storageId)
                     .getRepository(repositoryId);
+            if (cleanup && Files.exists(repositoryPath)) {
+                logger.info("Cleanup repository {}:{}.", storageId, repositoryId);
+                repositoryManagementService.cleanupRepository(storageId, repository.getId());
+                return getSuccessfulResponseEntity(SUCCESSFUL_REPOSITORY_CLEANUP, accept);
+            }
             if (force && Files.exists(repositoryPath)) {
                 repositoryManagementService.removeRepository(storageId, repository.getId());
                 repositoryEventListenerRegistry.dispatchRepoDelteToCronJobDeleteEvent(storageId, repositoryId);
             }
-
             configurationManagementService.removeRepository(storageId, repositoryId);
             SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repositoryDto, storageId, repositoryId, SyncRepositoryEnum.DELETE, force);
             clusterSyncService.syncRepository(syncRepositoryDto);

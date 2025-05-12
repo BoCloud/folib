@@ -20,7 +20,7 @@ export default {
     'ProductUpgrade':'Product upgrade',
     'Distribution':'Distribution of products',
     'SynchronousMode':'synchronous mode',
-    'SetTop': 'Set Top',
+    'SetTop': 'Priority promotion',
     'EnterVulnerabilitySourceStorageId': 'Input source storage space',
     'EnterVulnerabilitySourceRepositoryId': 'Input source warehouse',
     'Uncharted': 'uncharted',

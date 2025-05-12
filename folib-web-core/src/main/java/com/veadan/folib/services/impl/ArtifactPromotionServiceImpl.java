@@ -21,8 +21,20 @@ import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.promotion.ArtifactPromotionController;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
-import com.veadan.folib.domain.*;
-import com.veadan.folib.dto.*;
+import com.veadan.folib.domain.AnalysisHtmlGetDirAndFilePath;
+import com.veadan.folib.domain.ArtifactDispatch;
+import com.veadan.folib.domain.ArtifactParse;
+import com.veadan.folib.domain.ArtifactPromotion;
+import com.veadan.folib.domain.PromotionFileRelativePath;
+import com.veadan.folib.domain.PromotionNodeOption;
+import com.veadan.folib.domain.PromotionRepositoryInfo;
+import com.veadan.folib.domain.RepositoryInfo;
+import com.veadan.folib.dto.ArtifactDto;
+import com.veadan.folib.dto.ArtifactPromotionInfoDto;
+import com.veadan.folib.dto.PromotionArtifactDto;
+import com.veadan.folib.dto.PromotionNodeOptionDto;
+import com.veadan.folib.dto.TargetDispatchRepositoryDto;
+import com.veadan.folib.dto.TargetRepositoyDto;
 import com.veadan.folib.entity.ArtifactSyncRecord;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.ArtifactSyncRecordOpsTypeEnum;
@@ -46,7 +58,14 @@ import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repository.MavenRepositoryFeatures;
 import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
-import com.veadan.folib.services.*;
+import com.veadan.folib.services.ArtifactManagementService;
+import com.veadan.folib.services.ArtifactMetadataService;
+import com.veadan.folib.services.ArtifactPromotionService;
+import com.veadan.folib.services.ArtifactResolutionService;
+import com.veadan.folib.services.ArtifactWebService;
+import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.services.DictService;
+import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
@@ -94,18 +113,35 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static com.veadan.folib.utils.UrlUtils.parsePath;
 
@@ -315,28 +351,44 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
     private void singleCopy(ArtifactPromotion artifactPromotion, Repository srcRepository, String destStorageId, String destRepositoryId) {
         Repository destRepository = repositoryManagementService.getStorage(destStorageId).getRepository(destRepositoryId);
         RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, artifactPromotion.getPath());
-        RepositoryPath targetPath = artifactPromotion.getTargetPath() == null ? null : repositoryPathResolver.resolve(destRepository, artifactPromotion.getTargetPath());
+        RepositoryPath targetPath = promotionUtil.getTargetPath(artifactPromotion, srcPath, destRepository);
         promotionUtil.executeCopy(srcPath, srcRepository, targetPath, destRepository);
     }
 
     private void singleSyncCopy(ArtifactPromotion artifactPromotion, Repository srcRepository, String destStorageId, String destRepositoryId) {
         Repository destRepository = repositoryManagementService.getStorage(destStorageId).getRepository(destRepositoryId);
         RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, artifactPromotion.getPath());
-        RepositoryPath targetPath = artifactPromotion.getTargetPath() == null ? null : repositoryPathResolver.resolve(destRepository, artifactPromotion.getTargetPath());
+        RepositoryPath targetPath = promotionUtil.getTargetPath(artifactPromotion, srcPath, destRepository);
         promotionUtil.executeSyncCopy(srcPath, srcRepository, targetPath, destRepository);
     }
+
+//    private RepositoryPath getTargetPath(ArtifactPromotion artifactPromotion, RepositoryPath srcPath ,Repository destRepository) {
+//        if(ProductTypeEnum.Debian.getFoLibraryName().equals(srcPath.getRepository().getLayout())) {
+//            try {
+//                Map<String, String> coordinates = srcPath.getArtifactEntry().getArtifactCoordinates().getCoordinates();
+//                String arrtString = DebianUtils.getArrtString(coordinates.get(DebianConstant.DISTRIBUTION), coordinates.get(DebianConstant.COMPONENT), coordinates.get(DebianConstant.ARCHITECTURE));
+//                String target = artifactPromotion.getTargetPath()+";"+arrtString;
+//                return artifactPromotion.getTargetPath() == null ? null : repositoryPathResolver.resolve(destRepository, target);
+//            } catch (IOException e) {
+//                throw new IllegalArgumentException("The source path does not exist!");
+//            }
+//        }else {
+//            return  artifactPromotion.getTargetPath() == null ? null : repositoryPathResolver.resolve(destRepository, artifactPromotion.getTargetPath());
+//
+//        }
+//    }
 
     private void singleFastSyncCopy(ArtifactPromotion artifactPromotion, Repository srcRepository, String destStorageId, String destRepositoryId) {
         Repository destRepository = repositoryManagementService.getStorage(destStorageId).getRepository(destRepositoryId);
         RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, artifactPromotion.getPath());
-        RepositoryPath targetPath = artifactPromotion.getTargetPath() == null ? null : repositoryPathResolver.resolve(destRepository, artifactPromotion.getTargetPath());
+        RepositoryPath targetPath = promotionUtil.getTargetPath(artifactPromotion, srcPath, destRepository);
         promotionUtil.executeFastSyncCopy(srcPath, srcRepository, targetPath, destRepository);
     }
 
     private void singleFastSyncMove(ArtifactPromotion artifactPromotion, Repository srcRepository, String destStorageId, String destRepositoryId) {
         Repository destRepository = repositoryManagementService.getStorage(destStorageId).getRepository(destRepositoryId);
         RepositoryPath srcPath = repositoryPathResolver.resolve(srcRepository, artifactPromotion.getPath());
-        RepositoryPath targetPath = artifactPromotion.getTargetPath() == null ? null : repositoryPathResolver.resolve(destRepository, artifactPromotion.getTargetPath());
+        RepositoryPath targetPath = promotionUtil.getTargetPath(artifactPromotion, srcPath, destRepository);
         promotionUtil.executeFastSyncMove(srcPath, srcRepository, targetPath, destRepository);
     }
 
@@ -1179,40 +1231,37 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         }
     }
 
-///    @Override
-///    public Boolean querySupportSliceDownload(ArtifactSupportSliceDownloadQueryReq model) {
-///        final String storageId = model.getStorageId();
-///        final String repositoryId = model.getRepositoryId();
-///        final String path = model.getPath();
-///        final RepositoryPath artifactPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
-///        if (!Files.exists(artifactPath)) {
-///            throw new BusinessException("需要获取切片下载信息的制品不存在或已被删除");
-///        }
-///
-///        try {
-///            final long artifactFileLength = Files.size(artifactPath);
-///            final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
-///            return artifactFileLength > kbps;
-///        } catch (Exception ex) {
-///            log.error(ExceptionUtils.getStackTrace(ex));
-///            throw new RuntimeException(ex);
-///        }
-///    }
-///
-///    @Override
-///    public Map<String, Boolean> batchQuerySupportSliceDownload
-///            (List<ArtifactSupportSliceDownloadQueryReq> models) {
-///        final Map<String, Boolean> resultMap = new HashMap<>();
-///        for (ArtifactSupportSliceDownloadQueryReq model : models) {
-///            final String storageId = model.getStorageId();
-///            final String repositoryId = model.getRepositoryId();
-///            final String path = model.getPath();
-///            final String fullPath = String.format("%s/%s/%s", storageId, repositoryId, path);
-///            resultMap.put(fullPath, this.querySupportSliceDownload(model));
-///        }
-///
-///        return resultMap;
-///    }
+    /// @Override public Boolean querySupportSliceDownload(ArtifactSupportSliceDownloadQueryReq model) {
+    ///        final String storageId = model.getStorageId();
+    ///        final String repositoryId = model.getRepositoryId();
+    ///        final String path = model.getPath();
+    ///        final RepositoryPath artifactPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+    ///        if (!Files.exists(artifactPath)) {
+    ///            throw new BusinessException("需要获取切片下载信息的制品不存在或已被删除");
+    ///        }
+    ///
+    ///        try {
+    ///            final long artifactFileLength = Files.size(artifactPath);
+    ///            final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
+    ///            return artifactFileLength > kbps;
+    ///        } catch (Exception ex) {
+    ///            log.error(ExceptionUtils.getStackTrace(ex));
+    ///            throw new RuntimeException(ex);
+    ///        }
+    ///    }
+    /// @Override public Map<String, Boolean> batchQuerySupportSliceDownload
+    ///            (List<ArtifactSupportSliceDownloadQueryReq> models) {
+    ///        final Map<String, Boolean> resultMap = new HashMap<>();
+    ///        for (ArtifactSupportSliceDownloadQueryReq model : models) {
+    ///            final String storageId = model.getStorageId();
+    ///            final String repositoryId = model.getRepositoryId();
+    ///            final String path = model.getPath();
+    ///            final String fullPath = String.format("%s/%s/%s", storageId, repositoryId, path);
+    ///            resultMap.put(fullPath, this.querySupportSliceDownload(model));
+    ///        }
+    ///
+    ///        return resultMap;
+    ///    }
 
     @Override
     public ArtifactSliceDownloadInfoRes querySliceDownloadInfo(ArtifactSliceDownloadInfoReq model) {
@@ -1279,104 +1328,103 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         return artifactSliceDownloadInfoDto;
     }
 
-///    @Override
-///    public ArtifactSliceDownloadInfoRes querySliceDownloadInfoStoreTemp(ArtifactSliceDownloadInfoReq model) {
-///        final String storageId = model.getStorageId();
-///        final String repositoryId = model.getRepositoryId();
-///        final String path = model.getPath();
-///        final ArtifactSliceDownloadInfoRes artifactSliceDownloadInfoDto = new ArtifactSliceDownloadInfoRes();
-///        final RepositoryPath artifactPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
-///        if (!Files.exists(artifactPath)) {
-///            throw new BusinessException("需要获取切片下载信息的制品不存在或已被删除");
-///        }
-///        if (Files.isDirectory(artifactPath)) {
-///            return null;
-///        }
-///
-///        try {
-///            final Repository repository = artifactPath.getRepository();
-///            final Path fileName = artifactPath.getTarget().getFileName();
-///            final String baseUrl = StringUtils.chomp(configurationManagementService.getConfiguration().getBaseUrl(), "/");
-///            final String md5 = null != artifactPath.getArtifactEntry() ? Optional.ofNullable(artifactPath.getArtifactEntry().getChecksums()).orElse(Collections.emptyMap()).get("MD5") : null;
-///            final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
-///            if (kbps <= 0) {
-///                throw new BusinessException("制品传输切片大小不能为空，请前往全局配置进行配置");
-///            }
-///
-///            final long artifactFileLength = Files.size(artifactPath);
-///            String artifactFilePath = artifactPath.toString();
-///            final String artifactParentUri = Optional.of(artifactPath.relativize()).map(p -> {
-///                try {
-///                    return p.getParent().toString();
-///                } catch (Exception e) {
-///                    return StringUtils.EMPTY;
-///                }
-///            }).get();
-///
-///            artifactSliceDownloadInfoDto.setStorageId(storageId);
-///            artifactSliceDownloadInfoDto.setRepositoryId(repositoryId);
-///            artifactSliceDownloadInfoDto.setPath(path);
-///            artifactSliceDownloadInfoDto.setUsedSlice(artifactFileLength > kbps);
-///            artifactSliceDownloadInfoDto.setArtifactMd5(md5);
-///
-///            if (artifactSliceDownloadInfoDto.getUsedSlice()) {
-///                try {
-///                    final String sliceStoreFolderUri = String.format("%s.slice", StringUtils.isNotBlank(artifactParentUri) ? artifactParentUri + "/" : StringUtils.EMPTY);
-//////                    final String sliceGenJsonFileUri = String.format("%s/slice-gen.json", sliceStoreFolderUri);
-///                    final String artifactFileSliceRootFolderPathStr = String.format("%s/artifactSlice/%s/%s", StringUtils.chomp(tempPath, "/"), storageId, repositoryId);
-///                    final String artifactFileSliceFolderPathStr = String.format("%s/%s", artifactFileSliceRootFolderPathStr, sliceStoreFolderUri);
-//////                    final String sliceGenJsonFilePathStr = String.format("%s/%s", artifactFileSliceRootFolderPathStr, sliceGenJsonFileUri);
-///
-///                    if (S3FileSystemStorageProvider.ALIAS.equals(repository.getStorageProvider())) {
-///                        // 由于是网络路径，需要暂存到本地进行暂存
-///                        artifactFilePath = String.format("%s/artifactTemp/%s/%s", StringUtils.chomp(tempPath, "/"), UUID.randomUUID().toString(true), fileName);
-///                        FileUtil.writeFromStream(new BufferedInputStream(Files.newInputStream(artifactPath)), artifactFilePath);
-///                    }
-///                    final List<String> splitFilePathList = FileUtils.splitFile(artifactFilePath, artifactFileSliceFolderPathStr, kbps);
-///
-///                    // 生成下载路径
-///                    final List<ArtifactSliceDownloadInfoRes.DownloadPartInfo> downloadPartInfoList = splitFilePathList.stream()
-///                            .map(splitFilePath -> {
-///                                final String splitFileName = FileUtil.getName(splitFilePath);
-///                                final String splitFileStoreUri = String.format("%s/%s", sliceStoreFolderUri, splitFileName);
-///                                return new ArtifactSliceDownloadInfoRes.DownloadPartInfo()
-///                                        .setDownloadUri(splitFileStoreUri)
-///                                        /** {@linkplain ArtifactPromotionController#speedLimitDownload(Repository, String, String, HttpServletResponse)} */
-///                                        .setDownloadUrl(String.format("%s/api/artifact/folib/promotion/file/speedLimitDownload/%s/%s/%s", baseUrl, storageId, repositoryId, splitFileStoreUri));
-///                            })
-///                            .collect(Collectors.toList());
-///                    artifactSliceDownloadInfoDto.setDownloadPartList(downloadPartInfoList);
-///
-///                    // 持久化切片数据
-//////                    if (!Files.exists(sliceGenJsonFilePath)) {
-//////                        FileUtil.touch(sliceGenJsonFilePath.toFile());
-//////                    }
-//////                    Files.write(sliceGenJsonFilePath, JSON.toJSONString(artifactSliceDownloadInfoDto).getBytes(StandardCharsets.UTF_8));
-///                } catch (IOException e) {
-///                    log.error("切片制品文件失败", e);
-///                    throw new BusinessException("切片制品文件失败");
-///                }
-///            } else {
-///                final String artifactUri = String.format("%s/%s/%s", storageId, repositoryId, artifactPath.relativize());
-///                artifactSliceDownloadInfoDto.setDownloadPartList(Collections.singletonList(
-///                        new ArtifactSliceDownloadInfoRes.DownloadPartInfo()
-///                                .setDownloadUri(artifactUri)
-///                                .setDownloadUrl(String.format("%s/api/artifact/folib/promotion/file/speedLimitDownload/%s", baseUrl, artifactUri))
-///                ));
-///            }
-///        } catch (BusinessException e) {
-///            throw e;
-///        } catch (Exception e) {
-///            log.error("获取制品切片下载信息失败", e);
-///            throw new BusinessException("获取制品切片下载信息失败");
-///        }
-///
-///        return artifactSliceDownloadInfoDto;
-///    }
+    /// @Override public ArtifactSliceDownloadInfoRes querySliceDownloadInfoStoreTemp(ArtifactSliceDownloadInfoReq model) {
+    ///        final String storageId = model.getStorageId();
+    ///        final String repositoryId = model.getRepositoryId();
+    ///        final String path = model.getPath();
+    ///        final ArtifactSliceDownloadInfoRes artifactSliceDownloadInfoDto = new ArtifactSliceDownloadInfoRes();
+    ///        final RepositoryPath artifactPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+    ///        if (!Files.exists(artifactPath)) {
+    ///            throw new BusinessException("需要获取切片下载信息的制品不存在或已被删除");
+    ///        }
+    ///        if (Files.isDirectory(artifactPath)) {
+    ///            return null;
+    ///        }
+    ///
+    ///        try {
+    ///            final Repository repository = artifactPath.getRepository();
+    ///            final Path fileName = artifactPath.getTarget().getFileName();
+    ///            final String baseUrl = StringUtils.chomp(configurationManagementService.getConfiguration().getBaseUrl(), "/");
+    ///            final String md5 = null != artifactPath.getArtifactEntry() ? Optional.ofNullable(artifactPath.getArtifactEntry().getChecksums()).orElse(Collections.emptyMap()).get("MD5") : null;
+    ///            final long kbps = Optional.ofNullable(configurationManagementService.getConfiguration().getSliceMbSize()).orElse(0L) * (1024 * 1024);
+    ///            if (kbps <= 0) {
+    ///                throw new BusinessException("制品传输切片大小不能为空，请前往全局配置进行配置");
+    ///            }
+    ///
+    ///            final long artifactFileLength = Files.size(artifactPath);
+    ///            String artifactFilePath = artifactPath.toString();
+    ///            final String artifactParentUri = Optional.of(artifactPath.relativize()).map(p -> {
+    ///                try {
+    ///                    return p.getParent().toString();
+    ///                } catch (Exception e) {
+    ///                    return StringUtils.EMPTY;
+    ///                }
+    ///            }).get();
+    ///
+    ///            artifactSliceDownloadInfoDto.setStorageId(storageId);
+    ///            artifactSliceDownloadInfoDto.setRepositoryId(repositoryId);
+    ///            artifactSliceDownloadInfoDto.setPath(path);
+    ///            artifactSliceDownloadInfoDto.setUsedSlice(artifactFileLength > kbps);
+    ///            artifactSliceDownloadInfoDto.setArtifactMd5(md5);
+    ///
+    ///            if (artifactSliceDownloadInfoDto.getUsedSlice()) {
+    ///                try {
+    ///                    final String sliceStoreFolderUri = String.format("%s.slice", StringUtils.isNotBlank(artifactParentUri) ? artifactParentUri + "/" : StringUtils.EMPTY);
+    /// ///                    final String sliceGenJsonFileUri = String.format("%s/slice-gen.json", sliceStoreFolderUri);
+    ///                    final String artifactFileSliceRootFolderPathStr = String.format("%s/artifactSlice/%s/%s", StringUtils.chomp(tempPath, "/"), storageId, repositoryId);
+    ///                    final String artifactFileSliceFolderPathStr = String.format("%s/%s", artifactFileSliceRootFolderPathStr, sliceStoreFolderUri);
+    /// ///                    final String sliceGenJsonFilePathStr = String.format("%s/%s", artifactFileSliceRootFolderPathStr, sliceGenJsonFileUri);
+    ///
+    ///                    if (S3FileSystemStorageProvider.ALIAS.equals(repository.getStorageProvider())) {
+    ///                        // 由于是网络路径，需要暂存到本地进行暂存
+    ///                        artifactFilePath = String.format("%s/artifactTemp/%s/%s", StringUtils.chomp(tempPath, "/"), UUID.randomUUID().toString(true), fileName);
+    ///                        FileUtil.writeFromStream(new BufferedInputStream(Files.newInputStream(artifactPath)), artifactFilePath);
+    ///                    }
+    ///                    final List<String> splitFilePathList = FileUtils.splitFile(artifactFilePath, artifactFileSliceFolderPathStr, kbps);
+    ///
+    ///                    // 生成下载路径
+    ///                    final List<ArtifactSliceDownloadInfoRes.DownloadPartInfo> downloadPartInfoList = splitFilePathList.stream()
+    ///                            .map(splitFilePath -> {
+    ///                                final String splitFileName = FileUtil.getName(splitFilePath);
+    ///                                final String splitFileStoreUri = String.format("%s/%s", sliceStoreFolderUri, splitFileName);
+    ///                                return new ArtifactSliceDownloadInfoRes.DownloadPartInfo()
+    ///                                        .setDownloadUri(splitFileStoreUri)
+    ///                                        /** {@linkplain ArtifactPromotionController#speedLimitDownload(Repository, String, String, HttpServletResponse)} */
+    ///                                        .setDownloadUrl(String.format("%s/api/artifact/folib/promotion/file/speedLimitDownload/%s/%s/%s", baseUrl, storageId, repositoryId, splitFileStoreUri));
+    ///                            })
+    ///                            .collect(Collectors.toList());
+    ///                    artifactSliceDownloadInfoDto.setDownloadPartList(downloadPartInfoList);
+    ///
+    ///                    // 持久化切片数据
+    /// ///                    if (!Files.exists(sliceGenJsonFilePath)) {
+    /// ///                        FileUtil.touch(sliceGenJsonFilePath.toFile());
+    /// ///                    }
+    /// ///                    Files.write(sliceGenJsonFilePath, JSON.toJSONString(artifactSliceDownloadInfoDto).getBytes(StandardCharsets.UTF_8));
+    ///                } catch (IOException e) {
+    ///                    log.error("切片制品文件失败", e);
+    ///                    throw new BusinessException("切片制品文件失败");
+    ///                }
+    ///            } else {
+    ///                final String artifactUri = String.format("%s/%s/%s", storageId, repositoryId, artifactPath.relativize());
+    ///                artifactSliceDownloadInfoDto.setDownloadPartList(Collections.singletonList(
+    ///                        new ArtifactSliceDownloadInfoRes.DownloadPartInfo()
+    ///                                .setDownloadUri(artifactUri)
+    ///                                .setDownloadUrl(String.format("%s/api/artifact/folib/promotion/file/speedLimitDownload/%s", baseUrl, artifactUri))
+    ///                ));
+    ///            }
+    ///        } catch (BusinessException e) {
+    ///            throw e;
+    ///        } catch (Exception e) {
+    ///            log.error("获取制品切片下载信息失败", e);
+    ///            throw new BusinessException("获取制品切片下载信息失败");
+    ///        }
+    ///
+    ///        return artifactSliceDownloadInfoDto;
+    ///    }
 
     @Override
     public List<ArtifactSliceDownloadInfoRes> batchQuerySliceDownloadInfo
-            (List<ArtifactSliceDownloadInfoReq> models) {
+    (List<ArtifactSliceDownloadInfoReq> models) {
         return models.stream().map(this::querySliceDownloadInfo).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
@@ -1830,16 +1878,15 @@ public class ArtifactPromotionServiceImpl implements ArtifactPromotionService {
         return true;
     }
 
-    public boolean canMerger(long updatedSliceSize, long chunkNoMax, String artifactFileSliceUploadRootFolderPathStr) throws IOException {
-        long chunkSize = Files.list(Path.of(artifactFileSliceUploadRootFolderPathStr)).filter(p -> p.getFileName().toString().startsWith("chunkFile_")).count();
-        log.info("chunkSize:{},updatedSliceSize:{},chunkNoMax:{}", chunkSize, updatedSliceSize, chunkNoMax);
-        boolean result = chunkSize == chunkNoMax || updatedSliceSize == chunkNoMax;
-        log.info("canMerger:{}", result);
-        return result;
+    public long countChunkFiles(String artifactFileSliceUploadRootFolderPathStr) throws IOException {
+        // 使用 try-with-resources 自动关闭流
+        try (Stream<Path> files = Files.list(Path.of(artifactFileSliceUploadRootFolderPathStr))) {
+            return files.filter(p -> p.getFileName().toString().startsWith("chunkFile_")).count();
+        }
     }
 
     public boolean canMerger(long chunkNoMax, String artifactFileSliceUploadRootFolderPathStr) throws IOException {
-        long chunkSize = Files.list(Path.of(artifactFileSliceUploadRootFolderPathStr)).filter(p -> p.getFileName().toString().startsWith("chunkFile_")).count();
+        long chunkSize = countChunkFiles(artifactFileSliceUploadRootFolderPathStr);
         log.info("chunkSize:{},chunkNoMax:{}", chunkSize, chunkNoMax);
         boolean result = chunkSize == chunkNoMax;
         log.info("canMerger:{}", result);

@@ -55,6 +55,7 @@ import com.veadan.folib.services.DictService;
 import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.services.impl.FileStreamMultipartFile;
 import com.veadan.folib.storage.metadata.MetadataHelper;
+import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.util.DebianUtils;
 import com.veadan.folib.util.MessageDigestUtils;
@@ -76,16 +77,12 @@ import org.mockito.internal.util.collections.Sets;
 import org.springframework.web.multipart.MultipartFile;
 
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringReader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
@@ -195,6 +192,24 @@ public class ArtifactUploadTask implements Callable<String> {
         this.storageId = storageId;
         this.repositoryId = repositoryId;
         this.file = file;
+        this.tempPath = tempPath;
+        this.fileRelativePath = fileRelativePath;
+        this.artifactComponent = SpringUtil.getBean(ArtifactComponent.class);
+        this.repositoryPathResolver = SpringUtil.getBean(RepositoryPathResolver.class);
+        this.artifactManagementService= SpringUtil.getBean(ArtifactManagementService.class);
+        this.promotionUtil = SpringUtil.getBean(PromotionUtil.class);
+        this.layoutProviderRegistry = SpringUtil.getBean(LayoutProviderRegistry.class);
+        this.artifactMetadataService = SpringUtil.getBean(ArtifactMetadataService.class);
+        this.artifactRepository = SpringUtil.getBean(ArtifactRepository.class);
+        this.mavenRepositoryFeatures = SpringUtil.getBean(MavenRepositoryFeatures.class);
+
+
+    }
+
+    public ArtifactUploadTask(String storageId, String repositoryId, InputStream inputStream, String fileRelativePath,String tempPath) {
+        this.storageId = storageId;
+        this.repositoryId = repositoryId;
+        this.inputStream = inputStream;
         this.tempPath = tempPath;
         this.fileRelativePath = fileRelativePath;
         this.artifactComponent = SpringUtil.getBean(ArtifactComponent.class);
@@ -853,6 +868,7 @@ public class ArtifactUploadTask implements Callable<String> {
     private void handlerDockerSubsidiary(final String storageId, final String repositoryId, final String path, final MultipartFile multipartFile) throws Exception {
         String artifactPath = path.replace(":", File.separator);
         RepositoryPath dockerTagRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
+        dockerTagRepositoryPath = artifactManagementService.validateRepositoryPathPrivilege(dockerTagRepositoryPath);
         if (!Files.exists(dockerTagRepositoryPath)) {
             String msg = String.format("Docker tag [%s] [%s] [%s] not found", storageId, repositoryId, artifactPath);
             throw new IllegalArgumentException(msg);
@@ -919,6 +935,7 @@ public class ArtifactUploadTask implements Callable<String> {
 
         } catch (Exception e) {
             log.error("docker upload error uuid: {} ,storageId:{} ,repositoryId:{} ,tag:{} error: {}", uuid, storageId, repositoryId, tag, ExceptionUtils.getStackTrace(e));
+            throw new RuntimeException(e);
         } finally {
             if (tempDirectory != null) {
                 Files.walk(tempDirectory)
@@ -986,7 +1003,7 @@ public class ArtifactUploadTask implements Callable<String> {
                 promotionUtil.setMetaData(repositoryPath, metaData);
                 artifactManagementService.store(repositoryPath, is);
             }
-            artifactManagementService.store(tempPath, is);
+            writeFile(tempPath, is);
 
             CargoMetadataExtractor extractor = new CargoMetadataExtractor();
             CargoMetadata metadata = extractor.extract(tempPath);
@@ -1006,7 +1023,7 @@ public class ArtifactUploadTask implements Callable<String> {
             RepositoryPath path = repositoryPathResolver.resolve(storageId, repositoryId, metadataFilePath);
             CargoUtil.writeLongMetadata(metadata, path, artifactManagementService);
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            e.printStackTrace();
             throw new RuntimeException(e.getMessage());
         } finally {
             try {
@@ -1017,7 +1034,24 @@ public class ArtifactUploadTask implements Callable<String> {
         }
     }
 
-
+    public void writeFile(RepositoryPath path, InputStream inputStream) {
+        try (
+                OutputStream out = Files.newOutputStream(path, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                InputStream in = inputStream
+        ) {
+            byte[] buffer = new byte[8192]; // 使用缓冲区逐块写入
+            int bytesRead;
+            while ((bytesRead = in.read(buffer)) != -1) {
+                out.write(buffer, 0, bytesRead);
+            }
+        } catch (IOException e) {
+            // 记录详细日志信息
+            log.error("Error writing file to path: {}", path, e);
+            // 包装异常并重新抛出，以便调用方能够处理
+            throw new RuntimeException("Failed to write file to path: " + path, e);
+        }
+    }
 
 
 }
+

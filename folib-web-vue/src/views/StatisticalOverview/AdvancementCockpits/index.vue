@@ -286,7 +286,7 @@
                                                      @ok="confirmRecord(record)"
                                             >
                                                 <p>{{
-                                                        (record != null && record.status === 4) ? $t('Repository.CurrentProductIsSynchronizing') + $t('Repository.SureMakeProductCompensation') : $t('Repository.SureMakeProductCompensation')
+                                                        (record != null && record.status === 4) ? $t('Repository.CurrentProductIsFailure') + $t('Repository.SureMakeProductCompensation') : $t('Repository.SureMakeProductCompensation')
                                                     }}</p>
                                             </a-modal>
                                         </a-menu-item>
@@ -700,7 +700,7 @@ export default {
                 this.$message.success("success");
                 this.getData();
             }).catch(errorReason => {
-                this.$message.error(errorReason.response.data)
+                this.$message.error(errorReason.response.data.error || errorReason.response.data.message)
             }).finally(() => {
                 this.vulnerabilityTableLoading = false
                 this.stopVisible = false;

@@ -1023,7 +1023,7 @@ public class ArtifactComponent {
                     byte[] byteArray = byteArrayOutputStream.toByteArray();
                     Files.write(artifactRepositoryPath, byteArray);
                 } catch (Exception ex) {
-                    log.warn("写入制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
+                    log.debug("写入制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
                 }
                 if (StringUtils.isNotBlank(artifact.getMetadata())) {
                     cacheArtifactMetadata(repositoryPath, artifact.getMetadata());
@@ -1051,7 +1051,7 @@ public class ArtifactComponent {
                     byte[] byteArray = byteArrayOutputStream.toByteArray();
                     Files.write(artifactRepositoryPath, byteArray);
                 } catch (Exception ex) {
-                    log.warn("写入制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
+                    log.debug("写入制品 [{}] 本地缓存.metadata文件错误", ExceptionUtils.getStackTrace(ex));
                 }
             }
         } catch (Exception ex) {
@@ -1426,25 +1426,75 @@ public class ArtifactComponent {
             if (statusCode == HttpStatus.OK.value()) {
                 InputStream inputStream = response.readEntity(InputStream.class);
                 DefaultHandler handler = new DefaultHandler() {
+                    private StringBuilder content = new StringBuilder();
+                    private boolean isATag = false;
+                    private String href = "";
                     @Override
                     public void startElement(String uri, String localName, String qName, Attributes attributes) {
                         if ("a".equalsIgnoreCase(qName)) {
-                            String href = attributes.getValue("href");
+                            // 标识进入 <a> 标签
+                            isATag = true;
+                            href = attributes.getValue("href");
                             log.info("StorageId [{}] repositoryId [{}] href [{}]", repository.getStorage().getId(), repository.getId(), href);
-                            if (href != null) {
-                                try {
-                                    // 检查是否是相对路径
-                                    if (isRelativePath(href)) {
-                                        // 将相对路径转换为绝对路径
-                                        URL absoluteUrl = new URL(new URL(url), href);
-                                        linkConsumer.accept(absoluteUrl.toString());
-                                    }
-                                } catch (MalformedURLException e) {
-                                    log.info("Invalid URL: " + href);
+                        }
+                    }
+
+                    @Override
+                    public void characters(char[] ch, int start, int length) {
+                        if (isATag) {
+                            // 捕获 <a> 标签内的文本内容
+                            content.append(ch, start, length);
+                        }
+                    }
+
+                    @Override
+                    public void endElement(String uri, String localName, String qName) {
+                        if ("a".equalsIgnoreCase(qName)) {
+                            // 标识离开 <a> 标签
+                            try {
+                                String value = content.toString();
+                                if (href.endsWith(GlobalConstants.SEPARATOR)) {
+                                    value = StringUtils.removeEnd(value, GlobalConstants.SEPARATOR) + GlobalConstants.SEPARATOR;
                                 }
+                                if ("../".equals(href)) {
+                                    value = href;
+                                }
+                                // 检查是否是相对路径
+                                if (isRelativePath(value)) {
+                                    // 将相对路径转换为绝对路径
+                                    URL absoluteUrl = new URL(new URL(url), value);
+                                    linkConsumer.accept(absoluteUrl.toString());
+                                }
+                            } catch (Exception e) {
+                                log.info("Invalid URL: " + uri);
+                            } finally {
+                                href = "";
+                                isATag = false;
+                                content.setLength(0);
                             }
                         }
                     }
+
+//                    @Override
+//                    public void startElement(String uri, String localName, String qName, Attributes attributes) {
+//                        if ("a".equalsIgnoreCase(qName)) {
+//                            String href = attributes.getValue("href");
+//                            log.info("StorageId [{}] repositoryId [{}] href [{}]", repository.getStorage().getId(), repository.getId(), href);
+//                            if (href != null) {
+//                                try {
+//                                    href = StringUtils.removeStart(href, remoteUrl);
+//                                    // 检查是否是相对路径
+//                                    if (isRelativePath(href)) {
+//                                        // 将相对路径转换为绝对路径
+//                                        URL absoluteUrl = new URL(new URL(url), href);
+//                                        linkConsumer.accept(absoluteUrl.toString());
+//                                    }
+//                                } catch (Exception e) {
+//                                    log.info("Invalid URL: " + href);
+//                                }
+//                            }
+//                        }
+//                    }
                 };
                 saxParser.parse(inputStream, handler);
                 return true;
@@ -1493,6 +1543,9 @@ public class ArtifactComponent {
     }
 
     private boolean isRelativePath(String href) {
+        if (StringUtils.isBlank(href)) {
+            return false;
+        }
         // 判断是否以 "http://" 或 "https://" 开头
         return !href.startsWith("http://") && !href.startsWith("https://");
     }

@@ -1,1 +1,0 @@
-__NUXT_JSONP__("/foundation/icons", {data:[{}],fetch:{},mutations:void 0});

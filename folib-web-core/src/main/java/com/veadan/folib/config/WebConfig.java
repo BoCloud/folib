@@ -23,6 +23,7 @@ import com.veadan.folib.web.CustomRequestMappingHandlerMapping;
 import com.veadan.folib.web.DirectoryTraversalFilter;
 import com.veadan.folib.web.RepositoryMethodArgumentResolver;
 import com.veadan.folib.yaml.YAMLMapperFactory;
+import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.jetty.server.Connector;
@@ -33,12 +34,17 @@ import org.jtwig.web.servlet.JtwigRenderer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcRegistrations;
 import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
 import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.*;
@@ -53,6 +59,7 @@ import org.springframework.web.multipart.MultipartResolver;
 import org.springframework.web.servlet.config.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import org.springframework.web.servlet.resource.PathResourceResolver;
+import org.springframework.web.servlet.resource.ResourceResolverChain;
 import org.springframework.web.servlet.view.InternalResourceView;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 
@@ -112,6 +119,9 @@ public class WebConfig
 
     @Inject
     private ConfigurationManager configurationManager;
+
+    @Value("${folib.custom.maxInMemorySize:10240}")
+    private int maxInMemorySize;
 
     WebConfig() {
         logger.info("Initialized web configuration.");
@@ -230,6 +240,8 @@ public class WebConfig
                 .setPathMatcher(antPathMatcher);
     }
 
+
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         //registry.setOrder(-1);
@@ -250,14 +262,14 @@ public class WebConfig
                 .addResourceLocations("classpath:/ui/")
                 .setCachePeriod(3600)
                 .resourceChain(true)
-                //.addResolver(new GzipResourceResolver())
+                .addResolver(new GzipResourceResolver())
                 .addResolver(new PathResourceResolver());
-        registry.addResourceHandler("/docs/**")
+        registry.addResourceHandler("/help","/help/","/help/**")
                 .addResourceLocations("classpath:/docs/")
                 .setCachePeriod(3600)
                 .resourceChain(true)
-               // .addResolver(new GzipResourceResolver())
-                .addResolver(new PathResourceResolver());
+                .addResolver(new GzipResourceResolver())
+                .addResolver(new HtmlFallbackResourceResolver()); // 替换为自定义解析器
 
         registry.addResourceHandler("/webjars/**")
                 .addResourceLocations("classpath:/META-INF/resources/webjars/");
@@ -329,13 +341,28 @@ public class WebConfig
     //@Bean(name = "multipartResolver")
     //public MultipartResolver multipartResolver() {
     //    CustomMultipartResolver resolver = new CustomMultipartResolver();
-    //    resolver.setMaxInMemorySize(1024*1024*100);
+    //    resolver.setMaxInMemorySize(maxInMemorySize);
     //    return resolver;
-    //}
+    ////}
 
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
         registry.addRedirectViewController("/", "/ui/index.html");
+    }
+
+    public class HtmlFallbackResourceResolver extends PathResourceResolver {
+        @Override
+        protected Resource resolveResourceInternal(
+                HttpServletRequest request, String requestPath,
+                List<? extends Resource> locations, ResourceResolverChain chain) {
+
+            Resource resource = super.resolveResourceInternal(request,  requestPath, locations, chain);
+            if (resource == null )  {
+                // 尝试添加 .html 后缀
+                return super.resolveResourceInternal(request,"index.html", locations, chain);
+            }
+            return resource;
+        }
     }
 
 }

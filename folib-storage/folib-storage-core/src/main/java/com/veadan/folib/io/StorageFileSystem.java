@@ -46,7 +46,7 @@ public abstract class StorageFileSystem
         this.propertiesBooter = propertiesBooter;
     }
 
-    protected FileSystem getTarget()
+    public FileSystem getTarget()
     {
         return target;
     }

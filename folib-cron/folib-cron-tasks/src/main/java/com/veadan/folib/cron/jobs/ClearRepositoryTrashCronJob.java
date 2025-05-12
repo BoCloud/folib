@@ -60,7 +60,7 @@ public class ClearRepositoryTrashCronJob
         }
         if (storageId == null && repositoryId == null)
         {
-            repositoryManagementService.deleteTrash(true);
+            repositoryManagementService.deleteTrash(true,  storageDay, cleanupArtifactPathMap);
         }
         else
         {

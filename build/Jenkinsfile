@@ -2,14 +2,14 @@
 pipeline {
     agent { label 'master' }
     parameters {
-        string(name: 'repoUrl', defaultValue: 'http://58.210.154.140:8888/folib/folib-server.git', description: '')
+        string(name: 'repoUrl', defaultValue: 'http://192.168.1.25:8888/folib/folib-server.git', description: '')
         string(name: 'repoCred', defaultValue: 'folib', description: '')
-        string(name: 'repoBranch', defaultValue: 'dev', description: '')
+        choice(name: 'repoBranch', choices: ['artifactory', 'dev', 'master'], description: '选择代码分支')
         string(name: 'dockerUrl', defaultValue: 'https://public.folib.com', description: 'Hub地址')
         string(name: 'hub_certificate', defaultValue: 'public-folib-key', description: 'Hub凭证')
         string(name: 'docker_repo', defaultValue: 'mufan/mufan-docker', description: '镜像仓库名称')
         string(name: 'docker_name', defaultValue: 'folib-server', description: '镜像名称')
-        string(name: 'dockerTag', defaultValue: '1.2.8.1', description: '镜像版本')
+        string(name: 'dockerTag', defaultValue: '1.2.8-dev', description: '镜像版本')
         string(name: 'buildPackageType', defaultValue: 'k8s', description: '部署包名称')
         string(name: 'platform', defaultValue: 'linux/amd64', description: '支持linux/amd64')
         string(name: 'maven_settings_id', defaultValue: 'devops-settings-folib', description: 'maven-settings的id')
@@ -44,6 +44,10 @@ pipeline {
 
                                      yarn install
                                      yarn run build
+                                     cd ..
+                                     cd folib-docs
+                                     yarn install
+                                     yarn run docs:build
                                      cd ..
                                      mvn  package -U -T 8 --settings folib-settings.xml -DskipTests -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true -Dmaven.wagon.http.ssl.ignore.validity.dates=true
                                      cd folib-distribution/target

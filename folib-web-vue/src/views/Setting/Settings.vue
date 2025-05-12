@@ -78,12 +78,30 @@
                   </a-col>
                   <a-col :span="24" :lg="8">
                     <a-form-item class="mb-10" :label="$t('Setting.NodeTransmissionRateLimit')" :colon="false">
-                      <a-input placeholder="KB/s" type="number" v-model="serverSettings.kbps" />
+                      <a-input-number
+                          style="width: 100%"
+                          placeholder="KB/s"
+                          :min="1"
+                          :max="999999"
+                          :step="1"
+                          :formatter="value => `${ value ? `${value}`.split('.')[0] : ''}`"
+                          v-model="serverSettings.kbps"
+                          @blur="val => { if (!val) serverSettings.kbps = 1 }"
+                      />
                     </a-form-item>
                   </a-col>
                   <a-col :span="24" :lg="8">
                     <a-form-item class="mb-10" :label="$t('Setting.ProductTransferSliceSize')" :colon="false">
-                      <a-input placeholder="MB" type="number" v-model="serverSettings.sliceMbSize" />
+                      <a-input-number
+                          style="width: 100%"
+                          placeholder="MB"
+                          :min="1"
+                          :max="1024"
+                          :step="1"
+                          :formatter="value => `${ value ? `${value}`.split('.')[0] : ''}`"
+                          v-model="serverSettings.sliceMbSize"
+                          @blur="val => { if (!val) serverSettings.sliceMbSize = 1 }"
+                      />
                     </a-form-item>
                   </a-col>
                 </a-row>
@@ -1035,8 +1053,14 @@
             </a-form-model-item>
           </a-col>
           <a-col :span="24">
-            <a-form-model-item class="mb-10" :label="$t('Setting.WhetherToDisplay')" :colon="false" prop="viewShow">
-              <a-switch v-model="metadataForm.viewShow" />
+            <a-form-model-item class="mb-10" :colon="false" prop="viewShow">
+                <span slot="label">
+                    {{ $t('Setting.WhetherToDisplay') }}
+                    <a-tooltip :title="$t('Setting.DisplayDesc')">
+                      <a-icon type="question-circle-o" />
+                    </a-tooltip>
+                </span>
+                <a-switch v-model="metadataForm.viewShow" />
             </a-form-model-item>
           </a-col>
         </a-row>
@@ -1404,8 +1428,8 @@ export default {
         instanceName: 'folib',
         baseUrl: 'http://localhost:38080/',
         port: 38080,
-        kbps: 0,
-        sliceMbSize: 0,
+        kbps: '',
+        sliceMbSize: 1024,
         advancedConfigurationForm: {
           allowAnonymous: true,
           showChecksum: true,

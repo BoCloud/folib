@@ -1,13 +1,16 @@
 package com.veadan.folib.providers.io;
 
+import com.google.common.collect.Lists;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.constant.GlobalConstants;
+import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.RepositoryPathUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.output.ProxyOutputStream;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileSystemUtils;
@@ -174,10 +177,6 @@ public abstract class StorageFileSystemProvider
         }
 
         RepositoryPath repositoryPath = (RepositoryPath) path;
-//        if (!Files.exists(repositoryPath.getTarget())) {
-//            throw new NoSuchFileException(unwrap(repositoryPath).toString());
-//
-//        }
         if (!Files.isDirectory(repositoryPath)) {
             doDeletePath(repositoryPath, force, true);
 
@@ -206,6 +205,13 @@ public abstract class StorageFileSystemProvider
         RootRepositoryPath root = repositoryPath.getFileSystem().getRootDirectory();
 
         Files.walkFileTree(repositoryPath, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                log.warn(exc.getMessage());
+                // 目录或文件已删除，继续遍历
+                return FileVisitResult.CONTINUE;
+            }
+
             @Override
             public FileVisitResult visitFile(Path file,
                                              BasicFileAttributes attrs)
@@ -292,11 +298,19 @@ public abstract class StorageFileSystemProvider
             FileTime newTime = FileTime.fromMillis(System.currentTimeMillis());
             Files.setLastModifiedTime(trashPath.getTarget(), newTime);
         } catch (Exception e) {
-            Files.move(repositoryPath.getTarget(),
-                    trashPath.getTarget(),
-                    StandardCopyOption.REPLACE_EXISTING);
-            FileTime newTime = FileTime.fromMillis(System.currentTimeMillis());
-            Files.setLastModifiedTime(trashPath.getTarget(), newTime);
+            logger.error("DoDeletePath [{}] error [{}]", repositoryPath, ExceptionUtils.getStackTrace(e));
+            if (e instanceof FileSystemException && e.getMessage().contains("Not a directory")) {
+                throw new RuntimeException("CreateTrashDirectoryError");
+            }
+            try {
+                Files.move(repositoryPath.getTarget(),
+                        trashPath.getTarget(),
+                        StandardCopyOption.REPLACE_EXISTING);
+                FileTime newTime = FileTime.fromMillis(System.currentTimeMillis());
+                Files.setLastModifiedTime(trashPath.getTarget(), newTime);
+            } catch (Exception ignore) {
+
+            }
         }
 
         if (force && repository.isAllowsForceDeletion()) {
@@ -371,6 +385,7 @@ public abstract class StorageFileSystemProvider
             if (isTrash) {
                 Files.createDirectories(trashPath);
             }
+            logger.info("Deleting hidden folders [{}] for [{}]", LayoutFileSystem.TRASH, trashPath.getTarget());
             return;
         }
         Files.walkFileTree(trashPath, new SimpleFileVisitor<Path>() {
@@ -425,7 +440,7 @@ public abstract class StorageFileSystemProvider
                 if (Files.isSameFile(dirPath, trashPath)) {
                     return FileVisitResult.CONTINUE;
                 }
-                if (Files.list(dirPath).count() == 0) {
+                if (RepositoryFiles.isDirectoryEmpty(dirPath)) {
                     boolean result = Files.deleteIfExists(dirPath);
                     log.info("Delete trash storageId [{}] repositoryId [{}] directory path [{}] result [{}]", path.getStorageId(), path.getRepositoryId(), dirPath.getFileName().toString(), result);
                 }
@@ -445,11 +460,63 @@ public abstract class StorageFileSystemProvider
 
         if (!Files.exists(trashPath.getParent().getTarget())) {
             logger.debug("Creating: [{}]", trashPath.getParent());
-
-            Files.createDirectories(trashPath.getParent().getTarget());
+            try {
+                Files.createDirectories(trashPath.getParent().getTarget());
+            } catch (Exception ex) {
+                if (ex instanceof FileSystemException && ex.getMessage().contains("Not a directory")) {
+                    throw new RuntimeException("CreateTrashDirectoryError");
+                }
+                throw ex;
+            }
         }
 
         return trashPath;
+    }
+
+    public void deleteEmptyDirectory(RepositoryPath repositoryPath)
+            throws IOException {
+        if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath) || !Files.isDirectory(repositoryPath)) {
+            return;
+        }
+        List<String> includeDirectoryList = Lists.newArrayList(LayoutFileSystem.TRASH);
+        RepositoryPathUtil.handlerDirectories(repositoryPath.getRepository().getLayout(), repositoryPath, includeDirectoryList,
+                (RepositoryPath filePath) -> {
+                    deleteEmptyPath(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), filePath);
+                },
+                (RepositoryPath dirPath) -> {
+                    deleteEmptyDirectory(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), dirPath);
+                });
+        RepositoryPathUtil.handlerDirectories(repositoryPath.getRepository().getLayout(), repositoryPath.resolve(LayoutFileSystem.TRASH), includeDirectoryList,
+                (RepositoryPath filePath) -> {
+                    deleteEmptyPath(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), filePath);
+                },
+                (RepositoryPath dirPath) -> {
+                    deleteEmptyDirectory(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), dirPath);
+                });
+        RootRepositoryPath root = repositoryPath.getFileSystem().getRootDirectory();
+        FileSystemUtils.deleteRecursively(unwrap(root).resolve(LayoutFileSystem.TEMP));
+    }
+
+    private void deleteEmptyPath(String storageId, String repositoryId, RepositoryPath repositoryPath) {
+        try {
+            if (Files.exists(repositoryPath) && RepositoryFiles.canDeleteArtifactMetadata(repositoryPath)) {
+                Files.deleteIfExists(repositoryPath);
+                log.info("Empty path storageId [{}] repositoryId [{}] path [{}] do delete", storageId, repositoryId, repositoryPath.toString());
+            }
+        } catch (Exception ex) {
+            log.error("Empty path storageId [{}] repositoryId [{}] path [{}] error [{}]", storageId, repositoryId, repositoryPath, ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
+    private void deleteEmptyDirectory(String storageId, String repositoryId, RepositoryPath repositoryPath) {
+        try {
+            if (Files.exists(repositoryPath) && !Files.isSameFile(repositoryPath.getRoot().resolve(LayoutFileSystem.TRASH), repositoryPath) && !Files.isSameFile(repositoryPath.getRoot(), repositoryPath) && RepositoryFiles.isDirectoryEmpty(repositoryPath)) {
+                Files.deleteIfExists(repositoryPath);
+                log.info("Empty directory storageId [{}] repositoryId [{}] dir path [{}] do delete", storageId, repositoryId, repositoryPath.toString());
+            }
+        } catch (Exception ex) {
+            log.error("Empty directory storageId [{}] repositoryId [{}] dir path [{}] error [{}]", storageId, repositoryId, repositoryPath, ExceptionUtils.getStackTrace(ex));
+        }
     }
 
     protected static RepositoryPath rebase(RepositoryPath source,
@@ -475,8 +542,8 @@ public abstract class StorageFileSystemProvider
                                         OpenOption... options)
             throws IOException {
         TempRepositoryPath temp = RepositoryFiles.temporary((RepositoryPath) path);
-
-        return new TempOutputStream(temp, options);
+//        return new TempOutputStream(temp, options);
+        return new ProxyOutputStream(StorageFileSystemProvider.super.newOutputStream(unwrap(path), options));
     }
 
     @Override

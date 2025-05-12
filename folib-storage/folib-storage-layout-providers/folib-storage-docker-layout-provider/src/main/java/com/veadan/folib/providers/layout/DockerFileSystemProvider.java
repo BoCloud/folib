@@ -74,7 +74,7 @@ public class DockerFileSystemProvider
         try {
             if (!artifactPath.equals(rootArtifactPath)) {
                 RepositoryPath parent = repositoryPath.getParent();
-                if (Files.exists(parent) && !Files.isSameFile(repositoryPath.getRoot(), parent) && DockerArtifactCoordinates.DOCKER_LAYER_DIR_NAME_LIST.stream().noneMatch(item -> item.equals(parent.getFileName().toString())) && Files.list(parent).count() == 0) {
+                if (Files.exists(parent) && !Files.isSameFile(repositoryPath.getRoot(), parent) && DockerArtifactCoordinates.DOCKER_LAYER_DIR_NAME_LIST.stream().noneMatch(item -> item.equals(parent.getFileName().toString())) && RepositoryFiles.isDirectoryEmpty(parent)) {
                     Files.deleteIfExists(parent);
                     logger.info("Delete parent root path {}", parent.toString());
                 }
@@ -200,6 +200,20 @@ public class DockerFileSystemProvider
             logger.error(ExceptionUtils.getStackTrace(ex));
         }
         return existsRelation;
+    }
+
+    @Override
+    public void deleteMetadata(RepositoryPath repositoryPath) {
+        try {
+            if (DockerArtifactCoordinates.isTrashDockerTag(repositoryPath)) {
+                RepositoryPath tempRepositoryPath = repositoryPath.resolveSibling("temp");
+                RepositoryFiles.deleteTrash(tempRepositoryPath, null, null);
+                RepositoryPath hiddenTempRepositoryPath = repositoryPath.resolveSibling(".temp");
+                RepositoryFiles.deleteTrash(hiddenTempRepositoryPath, null, null);
+            }
+        } catch (Exception ex) {
+            logger.error("Docker deleteMetadata error [{}]", ExceptionUtils.getStackTrace(ex));
+        }
     }
 
 }

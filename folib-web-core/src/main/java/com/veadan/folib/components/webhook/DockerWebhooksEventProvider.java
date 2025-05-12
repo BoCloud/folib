@@ -13,6 +13,7 @@ import com.veadan.folib.entity.Dict;
 import com.veadan.folib.entity.WebhookEventsLog;
 import com.veadan.folib.enums.WebhookEventsStatusEnum;
 import com.veadan.folib.enums.WebhookEventsTypeEnum;
+import com.veadan.folib.promotion.PromotionUtil;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -70,8 +71,8 @@ public class DockerWebhooksEventProvider extends BaseWebhookEventsProvider {
     private volatile DirectoryListingService directoryListingService;
 
     @Autowired
-    public DockerWebhooksEventProvider(ArtifactResolutionService artifactResolutionService, ArtifactManagementService artifactManagementService, SecurityUtils securityUtils, WebhookEventsLogService webhookEventsLogService) {
-        super(artifactResolutionService, artifactManagementService, securityUtils, webhookEventsLogService);
+    public DockerWebhooksEventProvider(RepositoryPathResolver repositoryPathResolver, ArtifactResolutionService artifactResolutionService, ArtifactManagementService artifactManagementService, SecurityUtils securityUtils, WebhookEventsLogService webhookEventsLogService, PromotionUtil promotionUtil) {
+        super(repositoryPathResolver, artifactResolutionService, artifactManagementService, securityUtils, webhookEventsLogService, promotionUtil);
     }
 
     @Override
@@ -281,6 +282,7 @@ public class DockerWebhooksEventProvider extends BaseWebhookEventsProvider {
         repositoryPath = rootRepositoryPath.resolve(imagePath).resolve(tag);
         try {
             if (Files.isDirectory(repositoryPath)) {
+                securityUtils.setAdminAuthentication();
                 DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
                 List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.isManifestPath(file.getName())).collect(Collectors.toList());
                 if (CollectionUtils.isEmpty(fileContents)) {
@@ -292,18 +294,146 @@ public class DockerWebhooksEventProvider extends BaseWebhookEventsProvider {
                     return true;
                 }
                 if (Files.exists(repositoryPath)) {
-                    RepositoryFiles.delete(repositoryPath);
-                    result = checkNotExists(repositoryPath);
+                    if (2 == type) {
+                        //定时任务触发，直接删除
+                        RepositoryFiles.delete(repositoryPath);
+                        result = checkNotExists(repositoryPath);
+                    } else {
+                        //webhook触发，保存至数据库，异步定时任务处理
+                        WebhookEventsLog webhookEventsLog = WebhookEventsLog.builder().eventType(webhook.getEventType()).eventRepositoryId(artifactData.getRepoKey()).storageId(storageId).repositoryId(repositoryId).artifactName(name)
+                                .artifactPath(path).sha256Checksum(artifactData.getSha256()).size(artifactData.getSize()).status(WebhookEventsStatusEnum.INIT.getStatus()).build();
+                        webhookEventsLogService.saveWebhookEventsLog(webhookEventsLog, type);
+                        result = true;
+                    }
                 }
             }
         } catch (Exception ex) {
             log.error("Webhook event handler eventRepositoryId [{}] storageId [{}] repositoryId [{}] path [{}] error [{}]", artifactData.getRepoKey(), storageId, repositoryId, path, ExceptionUtils.getStackTrace(ex));
             result = false;
             failureReason = ex.getMessage();
+        } finally {
+            securityUtils.clearAuthentication();
         }
         if (!result) {
             WebhookEventsLog webhookEventsLog = WebhookEventsLog.builder().eventType(webhook.getEventType()).eventRepositoryId(artifactData.getRepoKey()).storageId(storageId).repositoryId(repositoryId).artifactName(name)
                     .artifactPath(path).sha256Checksum(artifactData.getSha256()).size(artifactData.getSize()).status(WebhookEventsStatusEnum.FAILURE.getStatus()).failureReason(failureReason).build();
+            webhookEventsLogService.saveWebhookEventsLog(webhookEventsLog, type);
+        }
+        return result;
+    }
+
+    @Override
+    protected boolean movedEvent(WebhookDto webhook, RepositoryPath repositoryPath, Dict artifactMigrateInfo, int type) {
+        boolean result = true;
+        ArtifactData artifactData = webhook.getData();
+        String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId(), name = repositoryPath.getFileName().toString(), path = artifactData.getPath(),
+                sourceRepoPath = artifactData.getSourceRepoPath(), targetRepoPath = artifactData.getTargetRepoPath(), targetRepositoryId = "", targetArtifactPath = "", failureReason = "";
+        if (name.startsWith("sha256")) {
+            return result;
+        }
+        RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
+        try {
+            securityUtils.setAdminAuthentication();
+            String tag = artifactData.getTag();
+            if (StringUtils.isBlank(tag)) {
+                String[] arr = artifactData.getPath().split("/");
+                tag = arr[arr.length - 2];
+            }
+            String imagePath = StringUtils.removeEnd(path.substring(0, path.indexOf(tag)), GlobalConstants.SEPARATOR);
+            repositoryPath = rootRepositoryPath.resolve(imagePath).resolve(tag);
+            targetRepositoryId = targetRepoPath.split("/")[0];
+            targetArtifactPath = targetRepoPath.replace(targetRepositoryId + "/", "");
+            String[] arr = targetArtifactPath.split("/");
+            String targetTag  = arr[arr.length - 2];
+            String targetImagePath = StringUtils.removeEnd(targetArtifactPath.substring(0, targetArtifactPath.indexOf(targetTag)), GlobalConstants.SEPARATOR);
+            RepositoryPath targetRepositoryPath = repositoryPathResolver.resolve(storageId, targetRepositoryId, targetImagePath).resolve(targetTag);
+            if (Files.isDirectory(repositoryPath)) {
+                DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+                List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.isManifestPath(file.getName())).collect(Collectors.toList());
+                if (CollectionUtils.isEmpty(fileContents)) {
+                    return true;
+                }
+                FileContent fileContent = fileContents.get(0);
+                repositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), fileContent.getArtifactPath());
+                if (checkNotExists(repositoryPath)) {
+                    return true;
+                }
+                if (Files.exists(repositoryPath)) {
+                    promotionUtil.executeFastSyncMove(repositoryPath.getParent(), repositoryPath.getRepository(), targetRepositoryPath, targetRepositoryPath.getRepository());
+                }
+                if (Files.exists(targetRepositoryPath)) {
+                    RepositoryFiles.delete(repositoryPath.getParent());
+                    return true;
+                }
+            }
+        } catch (Exception ex) {
+            log.error("Webhook event handler eventRepositoryId [{}] storageId [{}] repositoryId [{}] path [{}] error [{}]", artifactData.getRepoKey(), storageId, repositoryId, path, ExceptionUtils.getStackTrace(ex));
+            result = false;
+            failureReason = ex.getMessage();
+        } finally {
+            securityUtils.clearAuthentication();
+        }
+        if (!result) {
+            WebhookEventsLog webhookEventsLog = WebhookEventsLog.builder().eventType(webhook.getEventType()).eventRepositoryId(artifactData.getRepoKey()).storageId(storageId).repositoryId(repositoryId).artifactName(name)
+                    .artifactPath(path).sha256Checksum(artifactData.getSha256()).size(artifactData.getSize()).sourceArtifactPath(sourceRepoPath).targetArtifactPath(targetRepoPath).status(WebhookEventsStatusEnum.FAILURE.getStatus()).failureReason(failureReason).build();
+            webhookEventsLogService.saveWebhookEventsLog(webhookEventsLog, type);
+        }
+        return result;
+    }
+
+    @Override
+    protected boolean copiedEvent(WebhookDto webhook, RepositoryPath repositoryPath, Dict artifactMigrateInfo, int type) {
+        boolean result = true;
+        ArtifactData artifactData = webhook.getData();
+        String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId(), name = repositoryPath.getFileName().toString(), path = artifactData.getPath(),
+                sourceRepoPath = artifactData.getSourceRepoPath(), targetRepoPath = artifactData.getTargetRepoPath(), targetRepositoryId = "", targetArtifactPath = "", failureReason = "";
+        if (name.startsWith("sha256")) {
+            return result;
+        }
+        RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
+        try {
+            securityUtils.setAdminAuthentication();
+            String tag = artifactData.getTag();
+            if (StringUtils.isBlank(tag)) {
+                String[] arr = artifactData.getPath().split("/");
+                tag = arr[arr.length - 2];
+            }
+            String imagePath = StringUtils.removeEnd(path.substring(0, path.indexOf(tag)), GlobalConstants.SEPARATOR);
+            repositoryPath = rootRepositoryPath.resolve(imagePath).resolve(tag);
+            targetRepositoryId = targetRepoPath.split("/")[0];
+            targetArtifactPath = targetRepoPath.replace(targetRepositoryId + "/", "");
+            String[] arr = targetArtifactPath.split("/");
+            String targetTag  = arr[arr.length - 2];
+            String targetImagePath = StringUtils.removeEnd(targetArtifactPath.substring(0, targetArtifactPath.indexOf(targetTag)), GlobalConstants.SEPARATOR);
+            RepositoryPath targetRepositoryPath = repositoryPathResolver.resolve(storageId, targetRepositoryId, targetImagePath).resolve(targetTag);
+            if (Files.isDirectory(repositoryPath)) {
+                DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+                List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.isManifestPath(file.getName())).collect(Collectors.toList());
+                if (CollectionUtils.isEmpty(fileContents)) {
+                    return true;
+                }
+                FileContent fileContent = fileContents.get(0);
+                repositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), fileContent.getArtifactPath());
+                if (checkNotExists(repositoryPath)) {
+                    return true;
+                }
+                if (Files.exists(repositoryPath)) {
+                    promotionUtil.executeFastSyncCopy(repositoryPath.getParent(), repositoryPath.getRepository(), targetRepositoryPath, targetRepositoryPath.getRepository());
+                }
+                if (Files.exists(targetRepositoryPath)) {
+                    return true;
+                }
+            }
+        } catch (Exception ex) {
+            log.error("Webhook event handler eventRepositoryId [{}] storageId [{}] repositoryId [{}] path [{}] error [{}]", artifactData.getRepoKey(), storageId, repositoryId, path, ExceptionUtils.getStackTrace(ex));
+            result = false;
+            failureReason = ex.getMessage();
+        } finally {
+            securityUtils.clearAuthentication();
+        }
+        if (!result) {
+            WebhookEventsLog webhookEventsLog = WebhookEventsLog.builder().eventType(webhook.getEventType()).eventRepositoryId(artifactData.getRepoKey()).storageId(storageId).repositoryId(repositoryId).artifactName(name)
+                    .artifactPath(path).sha256Checksum(artifactData.getSha256()).size(artifactData.getSize()).sourceArtifactPath(sourceRepoPath).targetArtifactPath(targetRepoPath).status(WebhookEventsStatusEnum.FAILURE.getStatus()).failureReason(failureReason).build();
             webhookEventsLogService.saveWebhookEventsLog(webhookEventsLog, type);
         }
         return result;

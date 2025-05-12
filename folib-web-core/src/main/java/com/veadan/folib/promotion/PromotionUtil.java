@@ -9,6 +9,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.veadan.folib.artifact.coordinates.DebianArtifactCoordinates;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.layout.DockerComponent;
@@ -16,14 +17,36 @@ import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.config.PromotionConfig;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
+import com.veadan.folib.constant.DebianConstant;
 import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
-import com.veadan.folib.domain.*;
-import com.veadan.folib.dto.*;
+import com.veadan.folib.domain.Artifact;
+import com.veadan.folib.domain.ArtifactDispatch;
+import com.veadan.folib.domain.ArtifactEntity;
+import com.veadan.folib.domain.ArtifactPromotion;
+import com.veadan.folib.domain.DispatchStorageTree;
+import com.veadan.folib.domain.DockerSubsidiary;
+import com.veadan.folib.domain.PromotionFileRelativePath;
+import com.veadan.folib.domain.PromotionNodeOption;
+import com.veadan.folib.domain.RepositoryPathExistCheck;
+import com.veadan.folib.dto.ArtifactDispatchRepositoryDto;
+import com.veadan.folib.dto.PromotionArtifactDto;
+import com.veadan.folib.dto.PromotionNodeOptionDto;
+import com.veadan.folib.dto.TargetDispatchRepositoryDto;
+import com.veadan.folib.dto.TargetRepositoyDto;
 import com.veadan.folib.entity.ArtifactSyncRecord;
 import com.veadan.folib.entity.ArtifactSyncSlaveRecord;
-import com.veadan.folib.enums.*;
+import com.veadan.folib.enums.ArtifactSyncRecordOpsTypeEnum;
+import com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum;
+import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
+import com.veadan.folib.enums.DeltaIndexEventType;
+import com.veadan.folib.enums.ProductTypeEnum;
+import com.veadan.folib.enums.PromotionStatusEnum;
+import com.veadan.folib.enums.ThreadLocalContextFieldNameEnum;
+import com.veadan.folib.event.DebianIndexEvent;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.forms.common.StorageTreeForm;
+import com.veadan.folib.indexer.DebianIncrementalIndexer;
+import com.veadan.folib.indexer.DebianReleaseMetadataIndexer;
 import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
 import com.veadan.folib.mapper.ArtifactSyncSlaveRecordMapper;
 import com.veadan.folib.metadata.indexer.RpmRepoIndexer;
@@ -34,11 +57,19 @@ import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.providers.layout.LayoutFileSystemProvider;
 import com.veadan.folib.scanner.common.exception.BusinessException;
+import com.veadan.folib.scanner.common.util.SpringContextUtil;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
-import com.veadan.folib.services.*;
+import com.veadan.folib.services.ArtifactManagementService;
+import com.veadan.folib.services.ArtifactMetadataService;
+import com.veadan.folib.services.ArtifactResolutionService;
+import com.veadan.folib.services.ArtifactService;
+import com.veadan.folib.services.ArtifactWebService;
+import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.util.DebianUtils;
 import com.veadan.folib.util.MessageDigestUtils;
 import com.veadan.folib.util.RepositoryPathUtil;
 import com.veadan.folib.util.ThreadLocalUtil;
@@ -50,7 +81,14 @@ import com.veadan.folib.ws.client.handler.command.FolibWsClientArtifactPullComma
 import com.veadan.folib.ws.common.FolibWsAction;
 import com.veadan.folib.ws.common.FolibWsRunManageUtil;
 import com.veadan.folib.ws.common.FolibWsRunManageV2;
-import com.veadan.folib.ws.server.*;
+import com.veadan.folib.ws.server.Command;
+import com.veadan.folib.ws.server.DistributionService;
+import com.veadan.folib.ws.server.Priority;
+import com.veadan.folib.ws.server.PromotionTaskQueue;
+import com.veadan.folib.ws.server.RetryTask;
+import com.veadan.folib.ws.server.TargetTaskQueueV2Manager;
+import com.veadan.folib.ws.server.WSMessageRequest;
+import com.veadan.folib.ws.server.WSMessageResponse;
 import com.veadan.folib.ws.server.config.WsConfig;
 import com.veadan.folib.ws.server.manage.FolibWsServerRunManage;
 import com.veadan.folib.ws.task.DistributionTask;
@@ -77,6 +115,7 @@ import org.glassfish.jersey.media.multipart.Boundary;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
 import org.glassfish.jersey.media.multipart.internal.MultiPartWriter;
+import org.mockito.internal.util.collections.Sets;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
@@ -90,7 +129,6 @@ import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 import scala.collection.mutable.StringBuilder;
 
-import javax.annotation.Resource;
 import javax.inject.Inject;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
@@ -98,7 +136,11 @@ import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URI;
@@ -108,7 +150,16 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.FutureTask;
 import java.util.regex.Matcher;
@@ -225,6 +276,7 @@ public class PromotionUtil {
         try {
             handleCopy(sourcePath, srcRepository, targetPath, targetRepository);
             handleRpm(targetRepository);
+            handleDebian(targetPath);
             log.info("Execute copy srcRepository [{}] [{}] targetRepository [{}] [{}] path [{}] finished", srcRepository.getStorage().getId(), srcRepository.getId(), targetRepository.getStorage().getId(), targetRepository.getId(), sourcePath);
         } catch (Exception e) {
             log.info("Execute copy srcRepository [{}] [{}] targetRepository [{}] [{}] path [{}] error [{}]", srcRepository.getStorage().getId(), srcRepository.getId(), targetRepository.getStorage().getId(), targetRepository.getId(), sourcePath, ExceptionUtils.getStackTrace(e));
@@ -579,7 +631,7 @@ public class PromotionUtil {
             String targetStorageId = target.getTargetStorageId();
             String targetRepositoryId = target.getTargetRepositoryId();
             Repository targetRepository = repositoryManagementService.getStorage(targetStorageId).getRepository(targetRepositoryId);
-            RepositoryPath targetPath = artifactPromotion.getTargetPath() == null ? null : repositoryPathResolver.resolve(targetRepository, artifactPromotion.getTargetPath());
+            RepositoryPath targetPath = getTargetPath(artifactPromotion, srcRepositoryPath, targetRepository);
             FutureTask<String> future = new FutureTask<String>(
                     new ArtifactPromotionCopyTask(srcPath, srcRepository, targetPath, targetRepository));
             listTask.add(future);
@@ -620,7 +672,7 @@ public class PromotionUtil {
             String targetStorageId = target.getTargetStorageId();
             String targetRepositoryId = target.getTargetRepositoryId();
             Repository targetRepository = repositoryManagementService.getStorage(targetStorageId).getRepository(targetRepositoryId);
-            RepositoryPath targetPath = artifactPromotion.getTargetPath() == null ? null : repositoryPathResolver.resolve(targetRepository, artifactPromotion.getTargetPath());
+            RepositoryPath targetPath = getTargetPath(artifactPromotion, srcRepositoryPath, targetRepository);
             FutureTask<String> future = new FutureTask<String>(
                     new ArtifactPromotionCopyTask(srcPath, srcRepository, targetPath, targetRepository));
             listTask.add(future);
@@ -921,6 +973,7 @@ public class PromotionUtil {
             task.get();
         }
         handleRpm(targetRepository);
+        handleDebian(targetPath);
     }
 
     public void copyFile(RepositoryPath sourcePath, RepositoryPath targetPath) throws IOException {
@@ -1085,6 +1138,29 @@ public class PromotionUtil {
 
     }
 
+    private void handleDebian(RepositoryPath repositoryPath) {
+        try {
+            if (!ProductTypeEnum.Debian.getFoLibraryName().equals(repositoryPath.getRepository().getLayout())) {
+                return;
+            }
+            String distribution = repositoryPath.getExtAttribute().get(DebianConstant.ATTR_DISTRIBUTION);
+            String component = repositoryPath.getExtAttribute().get(DebianConstant.ATTR_COMPONENT);
+            String architecture = repositoryPath.getExtAttribute().get(DebianConstant.ATTR_ARCHITECTURE);
+            DebianArtifactCoordinates coordinate = new DebianArtifactCoordinates();
+            coordinate.setArchitecture(architecture);
+            coordinate.setDistribution(distribution);
+            coordinate.setComponent(component);
+            DebianIndexEvent addEvent = DebianUtils.generateEvent(coordinate, repositoryPath.getArtifactEntry(), DeltaIndexEventType.ADD);
+            DebianIncrementalIndexer debianIncrementalIndexer = (DebianIncrementalIndexer) SpringContextUtil.getBean("debianIncrementalIndexer");
+            debianIncrementalIndexer.index(repositoryPath.getRepository(), Sets.newSet(addEvent));
+            DebianReleaseMetadataIndexer debianIndexer = new DebianReleaseMetadataIndexer(repositoryPath.getRepository(), Collections.emptyList(), repositoryPathResolver);
+            debianIndexer.indexRelease(distribution);
+        } catch (Exception ex) {
+            log.error("Rebuild debian index storage [{}] repository [{}] error [{}]", repositoryPath.getRepository().getStorage().getId(), repositoryPath.getRepositoryId(), ExceptionUtils.getStackTrace(ex));
+        }
+
+    }
+
     public void handleFastMove(RepositoryPath sourcePath, Repository srcRepository, RepositoryPath targetPath, Repository targetRepository) throws Exception {
         List<RepositoryPath> list = RepositoryPathUtil.getPaths(srcRepository.getLayout(), sourcePath);
         List<FutureTask<String>> futureTaskList = Lists.newArrayList();
@@ -1102,6 +1178,7 @@ public class PromotionUtil {
             task.get();
         }
         handleRpm(targetRepository);
+        handleDebian(targetPath);
     }
 
     private void repositoryPathMove(RepositoryPath sourcePath, Repository srcRepository, RepositoryPath targetPath, Repository targetRepository, RepositoryPath srcRepositoryPath, boolean isDocker) throws IOException {
@@ -2065,6 +2142,22 @@ public class PromotionUtil {
             }
 
             return map;
+        }
+    }
+
+    public RepositoryPath getTargetPath(ArtifactPromotion artifactPromotion, RepositoryPath srcPath, Repository destRepository) {
+        if (ProductTypeEnum.Debian.getFoLibraryName().equals(srcPath.getRepository().getLayout())) {
+            try {
+                Map<String, String> coordinates = srcPath.getArtifactEntry().getArtifactCoordinates().getCoordinates();
+                String arrtString = DebianUtils.getArrtString(coordinates.get(DebianConstant.DISTRIBUTION), coordinates.get(DebianConstant.COMPONENT), coordinates.get(DebianConstant.ARCHITECTURE));
+                String target = artifactPromotion.getTargetPath() + ";" + arrtString;
+                return artifactPromotion.getTargetPath() == null ? null : repositoryPathResolver.resolve(destRepository, target);
+            } catch (IOException e) {
+                throw new IllegalArgumentException("The source path does not exist!");
+            }
+        } else {
+            return artifactPromotion.getTargetPath() == null ? null : repositoryPathResolver.resolve(destRepository, artifactPromotion.getTargetPath());
+
         }
     }
 

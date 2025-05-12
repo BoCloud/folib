@@ -1,1 +1,0 @@
-__NUXT_JSONP__("/open-source-govern/artifact-analysis", {data:[{}],fetch:{},mutations:void 0});

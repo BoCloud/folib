@@ -1,6 +1,7 @@
 package com.veadan.folib.providers.layout;
 
 
+import cn.hutool.crypto.digest.SM3;
 import com.veadan.folib.providers.io.RepositoryFileAttributeType;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -22,7 +23,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.maven.index.artifact.M2ArtifactRecognizer;
 import org.slf4j.Logger;
@@ -64,6 +68,12 @@ public class Maven2LayoutProvider
         MavenArtifact artifact = MavenArtifactUtils.convertPathToArtifact(repositoryPath);
 
         return new MavenArtifactCoordinates(artifact);
+    }
+
+    @Override
+    public Set<String> getDigestAlgorithmSet() {
+        return Stream.of(MessageDigestAlgorithms.MD5, MessageDigestAlgorithms.SHA_1, MessageDigestAlgorithms.SHA_256, MessageDigestAlgorithms.SHA_512, SM3.ALGORITHM_NAME)
+                .collect(Collectors.toSet());
     }
 
     @Override

@@ -21,7 +21,7 @@ public enum JFrogEventTypeEnum {
     /**
      * copied
      */
-    COPIED("copied", false),
+    COPIED("copied", true),
     /**
      * deleted
      */
@@ -29,7 +29,7 @@ public enum JFrogEventTypeEnum {
     /**
      * moved
      */
-    MOVED("moved", false),
+    MOVED("moved", true),
     /**
      * pushed
      */

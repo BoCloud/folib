@@ -70,4 +70,9 @@ public interface JfrogMigrateService {
     void restartRepo(String migrateId);
 
     List<String> getAllRepo(String migrateId);
+
+     Dict getWebhookSetting();
+
+
+
 }

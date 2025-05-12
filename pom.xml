@@ -41,6 +41,7 @@
         <module>folib-distribution</module>
         <module>folib-web-vue</module>
         <module>folib-core</module>
+        <module>folib-docs</module>
     </modules>
 
     <profiles>

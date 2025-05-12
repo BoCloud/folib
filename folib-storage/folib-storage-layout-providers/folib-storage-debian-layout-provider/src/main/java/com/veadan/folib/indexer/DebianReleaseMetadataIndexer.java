@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -209,10 +210,10 @@ public class DebianReleaseMetadataIndexer {
         log.info("Writing Debian {} index at path {}", name, releaseFilePath);
         try (InputStream relContent = new StringInputStream(releaseFileContent)) {
             RepositoryPath repositoryPath = resolver.resolve(this.repo, releaseFilePath);
-            Files.copy(relContent, repositoryPath);
-            log.trace("Finished writing Debian {} index at path {}.", name, releaseFilePath);
+            Files.copy(relContent, repositoryPath, StandardCopyOption.REPLACE_EXISTING);
+            log.debug("Finished writing Debian {} index at path {}.", name, releaseFilePath);
         } catch (RuntimeException e) {
-            log.error("write release failed");
+            log.error("write release failed{}",e.getMessage(),e);
             throw e;
         }
 
@@ -331,7 +332,7 @@ public class DebianReleaseMetadataIndexer {
         try(Stream<Path> paths = Files.walk(repositoryPath)){
             List<Path> packages = paths.map(p->(RepositoryPath)p).filter(p -> {
                 try {
-                    return !p.toString().contains("by-hash")&& !RepositoryFiles.isChecksum((p))&&!RepositoryFiles.isArtifactMetadata(p)&&!Files.isDirectory(p);
+                    return !p.toString().contains("by-hash")&& !RepositoryFiles.isChecksum((p))&&!RepositoryFiles.isArtifactMetadata(p)&&!Files.isDirectory(p)&&!"Release".equals(p.getFileName().toString());
                 } catch (IOException e) {
                     return false;
                 }
@@ -358,16 +359,8 @@ public class DebianReleaseMetadataIndexer {
             DebianReleaseContext releaseContext = new DebianReleaseContext(distribution, components, architectures);
             List<DebianReleaseMetadataEntry> releaseEntryList = correctPackages.stream().filter(Objects::nonNull).map(p -> {
                 try {
-//                    RootRepositoryPath rootRepositoryPath=resolver.resolve(this.repo);
-//                    RepositoryPath resolve = resolver.resolve(this.repo, rootRepositoryPath.relativize(p));
-//                    Artifact artifact = resolve.getArtifactEntry();
-//                    if(Objects.nonNull(artifact)) {
                         RepositoryPath repoPath =(RepositoryPath)p;
                         return this.createReleaseEntry(repoPath, releaseContext);
-//                    }else {
-//                        return null;
-//                    }
-
                 } catch (Exception e) {
                     log.error(e.getMessage());
                     return null;
@@ -375,7 +368,7 @@ public class DebianReleaseMetadataIndexer {
             }).filter(Objects::nonNull).sorted(this.orderByPath).collect(Collectors.toList());
             this.writeIndexFiles(releaseEntryList, releaseContext);
         }catch (Exception e){
-            log.info("release index failed : {}", e.getMessage());
+            log.info("release index failed : {}", e.getMessage(),e);
         }
     }
 }

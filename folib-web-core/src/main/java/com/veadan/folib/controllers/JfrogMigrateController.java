@@ -70,7 +70,7 @@ public class JfrogMigrateController {
     }
 
     @PostMapping("/task")
-    public ResponseEntity<String> AddTask(@RequestBody ArtifactMigrateInfo info) {
+    public ResponseEntity<String> addTask(@RequestBody ArtifactMigrateInfo info) {
         jfrogMigrateService.addTask(info);
         return ResponseEntity.ok("update success");
     }

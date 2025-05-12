@@ -189,6 +189,19 @@ public enum Privileges
         return set;
     }
 
+    public static Set<Privileges> restricted() {
+        Set<Privileges> set = new HashSet<>();
+        set.add(ARTIFACTS_RESOLVE);
+        set.add(ARTIFACTS_DEPLOY);
+        set.add(ARTIFACTS_DELETE);
+        set.add(ARTIFACTS_COPY);
+        set.add(ARTIFACTS_MOVE);
+        set.add(ARTIFACTS_PROMOTION);
+        set.add(ARTIFACTS_MANAGE);
+        set.add(ARTIFACTS_METADATA);
+        return set;
+    }
+
     @Override
     public String getAuthority() {
         return this.name();

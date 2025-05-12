@@ -8,7 +8,6 @@ import com.veadan.folib.constant.DebianConstant;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactWithMetadata;
 import com.veadan.folib.domain.DebianPackagesContext;
-import com.veadan.folib.domain.DebianReleaseContext;
 import com.veadan.folib.enums.DeltaIndexEventType;
 import com.veadan.folib.event.DebianIndexEvent;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -152,7 +151,7 @@ public class DebianIncrementalIndexer {
 
 
     private void addEventsForComponent(Repository repo, String distribution, String component, List<DebianIndexEvent> componentEvents, Set<DebianIndexEvent> result) {
-        Set<String> forcedArchitectures = Sets.newHashSet();
+        Set<String> forcedArchitectures = Sets.newHashSet("amd64","arm64");
         try {
             List<Artifact> componentArtifacts = artifactorySearch.findByDistributionAndComponent(distribution, component, repo);
             componentEvents.forEach((componentEvent) -> {
@@ -183,23 +182,26 @@ public class DebianIncrementalIndexer {
 
 
     public void removeByPath(Repository repo, String path) {
-        List<Artifact> packages = artifactorySearch.findAllPackage(repo);
-        Map<String, List<Artifact>> collects = packages.stream().collect(Collectors.groupingBy(e -> e.getArtifactCoordinates().getCoordinates().get(DebianConstant.DISTRIBUTION)));
-        for (Map.Entry<String, List<Artifact>> architectures : collects.entrySet()) {
+        // 1.找到仓库所有的package包 从dist-开始找到packages
+//        List<Artifact> packages = artifactorySearch.findAllPackage(repo);
+//        Map<String, List<Artifact>> collects = packages.stream().collect(Collectors.groupingBy(e -> e.getArtifactCoordinates().getCoordinates().get(DebianConstant.DISTRIBUTION)));
+        List<Path> allPackages = getAllPackages(repo);
+        Map<String, List<Path>> collects = allPackages.stream().collect(Collectors.groupingBy(p -> DebianUtils.getDistributionName((RepositoryPath) p)));
+
+        for (Map.Entry<String, List<Path>> architectures : collects.entrySet()) {
             String distribution = architectures.getKey();
-            List<Artifact> packageFile = architectures.getValue();
+            List<Path> packageFile = architectures.getValue();
             List<String> indicesToDelete = Lists.newArrayList();
-            for (Artifact artifact : packageFile) {
-                log.info("reindex for {}", artifact.getArtifactPath());
-                String artifactPath = artifact.getArtifactPath();
+            for (Path packagePath : packageFile) {
                 File tempPackagesFile = null;
-                RepositoryPath repositoryPath = resolver.resolve(repo, artifactPath);
+                RepositoryPath repositoryPath = (RepositoryPath) packagePath;
                 try (InputStream currentPackagesFile = Files.newInputStream(repositoryPath)) {
                     tempPackagesFile = this.getTempPackagesFilePath(tempPath);
                     DebianIndexIncrementalFilter indexFilter = new DebianIndexIncrementalFilter(Collections.emptySet(), Collections.singleton(path));
                     IncrementalIndexStreamer indexStream = new IncrementalIndexStreamer(currentPackagesFile, tempPackagesFile, indexFilter);
                     indexStream.write();
-                    DebianArtifactCoordinates co = DebianArtifactCoordinates.parse(artifactPath);
+
+                    DebianArtifactCoordinates co = DebianArtifactCoordinates.parse(getRelativePath(repositoryPath));
                     DebianPackagesContext context = new DebianPackagesContext(co.getDistribution(), co.getComponent(), co.getArchitecture());
                     if (DebianPackagesMetadataIncrementalIndexer.isMarkedForDeletion(tempPackagesFile)) {
                         indicesToDelete.addAll(DebianUtils.pathsToPackagesFiles(context));
@@ -210,7 +212,7 @@ public class DebianIncrementalIndexer {
                         indexerBase.writePackagesFileContentToRepo(context, tempPackagesFile);
                     }
                 } catch (Exception e) {
-                    log.error("index {} failed", artifact.getArtifactPath(), e);
+                    log.error("index {} failed", packagePath, e);
                 } finally {
                     DebianUtils.deleteTempFile(tempPackagesFile);
                 }
@@ -234,5 +236,27 @@ public class DebianIncrementalIndexer {
                 log.error("delete package:{} failed", repositoryPath.getTarget(), e);
             }
         }
+    }
+
+    //
+    List<Path> getAllPackages(Repository repo) {
+        RepositoryPath rootPath = resolver.resolve(repo, DebianConstant.PACKAGE_PREFIX);
+        if(Files.exists(rootPath)) {
+            try (Stream<Path> stream = Files.walk(rootPath)) {
+                return stream.filter(Files::isRegularFile).filter(path -> path.getFileName().toString().equals("Packages")).collect(Collectors.toList());
+            } catch (Exception e) {
+                log.info("getAllPackages failed", e);
+                return null;
+            }
+        }else {
+            return Collections.emptyList();
+        }
+
+    }
+
+    private String getRelativePath(RepositoryPath repoPath) {
+        RepositoryPath root = repoPath.getRoot();
+        String relativize = root.relativize(repoPath).toString();
+        return relativize;
     }
 }

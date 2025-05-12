@@ -10,6 +10,7 @@ tmp/
 *.jar
 *.war
 *.class
+dist
 
 # eclipse specific
 .settings
@@ -51,3 +52,4 @@ lib/*
 /folib-web-vue/dist/
 /folib-web-core/src/main/resources/ui/
 /folib-web-vue/yarn.lock
+*/node_modules/

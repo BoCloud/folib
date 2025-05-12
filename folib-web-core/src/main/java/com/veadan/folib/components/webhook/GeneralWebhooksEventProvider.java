@@ -1,6 +1,8 @@
 package com.veadan.folib.components.webhook;
 
 import com.veadan.folib.enums.WebhookEventsTypeEnum;
+import com.veadan.folib.promotion.PromotionUtil;
+import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.WebhookEventsLogService;
@@ -23,8 +25,8 @@ public class GeneralWebhooksEventProvider extends BaseWebhookEventsProvider {
     private WebhookEventsProviderRegistry webhookEventsProviderRegistry;
 
     @Autowired
-    public GeneralWebhooksEventProvider(ArtifactResolutionService artifactResolutionService, ArtifactManagementService artifactManagementService, SecurityUtils securityUtils, WebhookEventsLogService webhookEventsLogService) {
-        super(artifactResolutionService, artifactManagementService, securityUtils, webhookEventsLogService);
+    public GeneralWebhooksEventProvider(RepositoryPathResolver repositoryPathResolver, ArtifactResolutionService artifactResolutionService, ArtifactManagementService artifactManagementService, SecurityUtils securityUtils, WebhookEventsLogService webhookEventsLogService, PromotionUtil promotionUtil) {
+        super(repositoryPathResolver, artifactResolutionService, artifactManagementService, securityUtils, webhookEventsLogService, promotionUtil);
     }
 
     @Override

@@ -1,7 +1,10 @@
 package com.veadan.folib.security.vote;
 
+import cn.hutool.extra.spring.SpringUtil;
+import com.google.common.collect.Lists;
 import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.controllers.BrowseController;
@@ -25,6 +28,7 @@ import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.utils.UrlUtils;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -35,10 +39,13 @@ import org.springframework.security.access.ConfigAttribute;
 import org.springframework.security.access.expression.method.ExpressionBasedPreInvocationAdvice;
 import org.springframework.security.access.prepost.PreInvocationAuthorizationAdviceVoter;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -152,7 +159,21 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
             storageId = storageId == null ? UrlUtils.getCurrentStorageId() : storageId;
             repositoryId = repositoryId == null ? UrlUtils.getCurrentRepositoryId() : repositoryId;
             Object principal = authentication.getPrincipal();
-            Collection<? extends GrantedAuthority> apiAuthorities = authentication.getAuthorities();
+            Collection<? extends GrantedAuthority> globalAuthorities = authentication.getAuthorities();
+            List<GrantedAuthority> apiAuthorities = Lists.newArrayList();
+            globalAuthorities.forEach(item -> {
+                apiAuthorities.add(SerializationUtils.clone(item));
+            });
+            final boolean result = handlerRestrictedRepository(apiAuthorities, storageId, repositoryId);
+            if (result) {
+                Authentication newAuthentication = new UsernamePasswordAuthenticationToken(
+                        authentication.getPrincipal(),
+                        authentication.getCredentials(),
+                        apiAuthorities
+                );
+                SecurityContextHolder.getContext().setAuthentication(newAuthentication);
+                return apiAuthorities;
+            }
             logger.debug("Privileges for [{}] are [{}]", principal, apiAuthorities);
             String requestUri = path == null ? parseRequestUri(UrlUtils.getRequestUri()) : path;
             Repository repository = getRepositoryFromCacheOrLoad(storageId, repositoryId);
@@ -306,4 +327,74 @@ public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVo
         return requestUri;
     }
 
+    /**
+     * 获取设置默认的存储空间
+     *
+     * @param repositoryId 仓库名称
+     * @return 存储空间
+     */
+    public String getDefaultStorageId(String repositoryId) {
+        DistributedCacheComponent distributedCacheComponent = SpringUtil.getBean(DistributedCacheComponent.class);
+        if (StringUtils.isNotBlank(repositoryId)) {
+            //按照仓库查询对应的存储空间
+            String key = "JFrogAdapterStorage_" + repositoryId;
+            String jFrogAdapterStorage = distributedCacheComponent.get(key);
+            if (StringUtils.isNotBlank(jFrogAdapterStorage)) {
+                return jFrogAdapterStorage;
+            }
+        }
+        String key = "JFrogAdapterDefaultStorage";
+        String jFrogAdapterDefaultStorage = distributedCacheComponent.get(key);
+        if (StringUtils.isBlank(jFrogAdapterDefaultStorage)) {
+            throw new RuntimeException("Default storage not found,Please Set the default storageId");
+        }
+        return jFrogAdapterDefaultStorage;
+    }
+
+    public boolean handlerRestrictedRepository(List<GrantedAuthority> grantedAuthorities, String storageId, String repositoryId) {
+        HttpServletRequest request = UrlUtils.getRequest();
+        if (Objects.isNull(request)) {
+            return false;
+        }
+        String serverName = request.getServerName();
+        List<String> restrictedSourceList = getRestrictedSource();
+        if (CollectionUtils.isEmpty(restrictedSourceList)) {
+            return false;
+        }
+        if (!restrictedSourceList.contains(serverName)) {
+            return false;
+        }
+        List<String> restrictedRepositoryList = getRestrictedRepository();
+        if (CollectionUtils.isEmpty(restrictedRepositoryList)) {
+            return false;
+        }
+        if (!restrictedRepositoryList.contains(ConfigurationUtils.getStorageIdAndRepositoryId(storageId, repositoryId))) {
+            grantedAuthorities.removeAll(Privileges.restricted());
+            return true;
+        }
+        return false;
+    }
+
+    public List<String> getRestrictedSource() {
+        List<String> restrictedSourceList = Lists.newArrayList();
+        DistributedCacheComponent distributedCacheComponent = SpringUtil.getBean(DistributedCacheComponent.class);
+        String key = "RESTRICTED_SOURCE";
+        String restrictedSource = distributedCacheComponent.get(key);
+        if (StringUtils.isNotBlank(restrictedSource)) {
+            restrictedSourceList = Arrays.asList(restrictedSource.split(","));
+        }
+        return restrictedSourceList;
+    }
+
+    public List<String> getRestrictedRepository() {
+        List<String> restrictedRepositoryList = Lists.newArrayList();
+        DistributedCacheComponent distributedCacheComponent = SpringUtil.getBean(DistributedCacheComponent.class);
+        String key = "RESTRICTED_REPOSITORY";
+        String restrictedRepository = distributedCacheComponent.get(key);
+        if (StringUtils.isNotBlank(restrictedRepository)) {
+            restrictedRepositoryList = Arrays.asList(restrictedRepository.split(","));
+        }
+        return restrictedRepositoryList;
+    }
+    
 }

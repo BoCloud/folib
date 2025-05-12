@@ -1,8 +1,11 @@
 package com.veadan.folib.services.impl;
 
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Lists;
+import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.configuration.MutableProxyConfiguration;
 import com.veadan.folib.configuration.ProxyConfiguration;
+import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.ext.jersey.ContentTypeFixerFilter;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
@@ -12,6 +15,7 @@ import com.veadan.folib.storage.repository.remote.RemoteRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
+import org.apache.http.HttpStatus;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.routing.HttpRoute;
@@ -46,6 +50,8 @@ import javax.ws.rs.client.ClientBuilder;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -66,6 +72,9 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
     @Lazy
     @Autowired
     private ConfigurationManagementService configurationManagementService;
+
+    @Autowired
+    private DistributedCacheComponent distributedCacheComponent;
 
     @Value("${pool.maxConnections:500}")
     private int maxTotal;
@@ -380,9 +389,24 @@ public class ProxyRepositoryConnectionPoolConfigurationServiceImpl
         if (StringUtils.isBlank(url)) {
             return;
         }
-        if (url.startsWith("https://registry-1.docker.io")) {
+        if (getDisableDomainList().stream().anyMatch(url::startsWith)) {
             //禁用自动重定向
             config.property(ClientProperties.FOLLOW_REDIRECTS, false);
         }
+    }
+
+    private List<String> getDisableDomainList() {
+        List<String> disableDomainList = Lists.newArrayList("https://registry-1.docker.io", "https://docker.m.daocloud.io");
+        String key = "REMOTE_REPOSITORY_DISABLE_FOLLOW_REDIRECTS_DOMAIN";
+        String values = distributedCacheComponent.get(key);
+        if (StringUtils.isNotBlank(values)) {
+            Arrays.asList(values.split(",")).forEach(item -> {
+                if (StringUtils.isNotBlank(item) && !disableDomainList.contains(item)) {
+                    disableDomainList.add(item);
+                }
+            });
+        }
+        logger.info("Docker disable follow redirects domain [{}]", String.join(",", disableDomainList));
+        return disableDomainList;
     }
 }

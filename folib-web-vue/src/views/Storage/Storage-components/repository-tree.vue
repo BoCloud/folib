@@ -167,7 +167,7 @@ export default {
             currentTreeNodeRecycle: {},
             rightClickTop: '0px',
             rightClickLeft: '0px',
-            enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm', 'go', 'GitLfs', 'pub', 'debian'],
+            enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm', 'go','GitLfs', 'pub','debian','cargo', 'Docker'],
             expandedKeys: [],
             expandedRecycleKeys: [],
             topHeight: 500, // 初始顶部 div 的高度 (容器高度 - 底部高度 - 分隔条高度)
@@ -359,6 +359,8 @@ export default {
             }
             recursionGetChildren(sourceArr, artifactPath)
             currentTreeRef.updateKeyChildren(parentKey, updatedChildren)
+            const parentNode = this.recursionGetItems(sourceArr, parentKey)
+            if (parentNode) this.treeSelect(parentNode, isTrashView)
         },
         // 远程节点从回收站还原成功后，调用本地新增节点方法（实现删除后树表展开结构不变）
         localRestoreNode(tarNode) {
@@ -372,7 +374,7 @@ export default {
                 artifactPath: parentKeyArr.join('/'),
                 key: parentKey
             }
-            console.log(updateNode);
+            this.isTrashView = false
             this.handleRefresh(updateNode)
         },
         // 右键菜单选择操作
@@ -383,23 +385,23 @@ export default {
             }
             this.$emit('handleMenuClick', active, this.isTrashView ? this.currentTreeNodeRecycle : this.currentTreeNode, this.folibRepository)
         },
-        // 递归根据key判断是否为当前选中数据项
-        recursionGetItems(source, key, children, loading) {
+        // 递归根据key获取当前数据项
+        recursionGetItems(source, key) {
+            let target = null
             source.forEach(item => {
                 if (item.key === key) {
-                    if (children) this.$refs.tree.updateKeyChildren(key, children)
-                    item.loading = loading
+                    target = item
                 } else if (item.children?.length) {
-                    this.recursionGetItems(item.children, key, children, loading)
+                    target = this.recursionGetItems(item.children, key)
                 }
             })
+            return target
         },
         handleRefresh(refreshNode) {
             // const nowDataKey = this.isTrashView ? 'recycleTreeData' : 'treeData'
             const { storageId, id, layout } = this.folibRepository
             const currentNode = refreshNode || (this.isTrashView ? this.currentTreeNodeRecycle : this.currentTreeNode)
             const currentTreeRef =  this.isTrashView && !refreshNode ? this.$refs.recycleTree : this.$refs.storeTree
-            // this.recursionGetItems(this[nowDataKey], currentNode.key, null, true)
             if (layout === 'Docker') {
                 getDockerArtifact(
                     storageId,
@@ -421,6 +423,7 @@ export default {
                             item.type = 'dir'
                             item.isLeaf = false
                             item.key = id + item.artifactPath
+                            item.currentRepositoryId = id
                             children.push(item)
                         })
                     }
@@ -430,13 +433,12 @@ export default {
                             item.isLeaf = !this.getFileIsOpen(item.name)
                             item.type = 'file'
                             item.key = id + item.artifactPath
+                            item.currentRepositoryId = id
                             children.push(item)
                         })
                     }
 
                     currentTreeRef.updateKeyChildren(currentNode.key, children)
-                    // this.recursionGetItems(this[nowDataKey], currentNode.key, children, false)
-                    // this.setKeyValue()
                 })
                 return
             }
@@ -459,6 +461,7 @@ export default {
                     d.forEach((item, index, d) => {
                         item.type = 'dir'
                         item.key = id + item.artifactPath
+                        item.currentRepositoryId = id
                     })
                     children = d
                 }
@@ -468,12 +471,11 @@ export default {
                         item.isLeaf = !this.getFileIsOpen(item.name)
                         item.type = 'file'
                         item.key = id + item.artifactPath
+                        item.currentRepositoryId = id
                     })
                     children = children.concat(a)
                 }
                 currentTreeRef.updateKeyChildren(currentNode.key, children)
-                // this.recursionGetItems(this[nowDataKey], currentNode.key, children, false)
-                // this.setKeyValue()
             })
         },
         setKeyValue() {
@@ -507,7 +509,7 @@ export default {
             let target = null
             // 获取当前子节点的最顶层父节点（仓库节点）
             this.treeData.forEach(ele => {
-                if (ele.id === data.repositoryId || ele.id === data.id) {
+                if (ele.id === data.currentRepositoryId || ele.id === data.id) {
                     target = ele
                 }
             })
@@ -525,8 +527,9 @@ export default {
             if (target.layout && data.type === 'file') {
                 const params = {
                     storageId: target.storageId,
-                    id: target.id,
-                    artifactPath: data.artifactPath
+                    repositoryId: data.repositoryId,
+                    artifactPath: data.artifactPath,
+                    currentRepositoryId: data.currentRepositoryId
                 }
                 this.getPackagePreview(params)
             }
@@ -620,7 +623,7 @@ export default {
                 let target = null
                 // 获取当前子节点的最顶层父节点（仓库节点）
                 this.treeData.forEach(ele => {
-                    if (ele.id === data.repositoryId) {
+                    if (ele.id === data.currentRepositoryId) {
                         target = ele
                     }
                 })
@@ -684,21 +687,22 @@ export default {
                 let target = null
                 // 获取当前子节点的最顶层父节点（仓库节点）
                 this.treeData.forEach(ele => {
-                    if (ele.id === treeNode.data.repositoryId) {
+                    if (ele.id === treeNode.data.currentRepositoryId) {
                         target = ele
                     }
                 })
                 this.folibRepository = target
             }
             const { storageId, id, layout } = this.folibRepository
-            const { artifactPath, name } = treeNode.data
+            const { artifactPath, name, repositoryId, currentRepositoryId } = treeNode.data
             const params = {
                 treeNode,
                 storageId,
-                id,
+                repositoryId,
                 layout,
                 artifactPath,
-                name
+                name,
+                currentRepositoryId
             }
             if (this.getFileIsOpen(name)) {
                 this.getPackagePreview(params, resolve)
@@ -728,6 +732,7 @@ export default {
                         const d = f
                         d.forEach((item, index, d) => {
                             item.type = 'dir'
+                            item.currentRepositoryId = id
                             item.key = id + item.artifactPath
                             treeNode.data.children.push(item)
                         })
@@ -737,6 +742,7 @@ export default {
                         a.forEach((item, index, a) => {
                             item.isLeaf = !this.getFileIsOpen(item.name)
                             item.type = 'file'
+                            item.currentRepositoryId = id
                             item.key = id + item.artifactPath
                             treeNode.data.children.push(item)
                         })
@@ -772,6 +778,7 @@ export default {
                     const d = f
                     d.forEach((item, index, d) => {
                         item.type = 'dir'
+                        item.currentRepositoryId = id
                         item.key = id + item.artifactPath
                     })
                     treeNode.data.children = d
@@ -781,6 +788,7 @@ export default {
                     a.forEach((item, index, a) => {
                         item.isLeaf = isTrashView || !this.getFileIsOpen(item.name)
                         item.type = 'file'
+                        item.currentRepositoryId = id
                         item.key = id + item.artifactPath
                     })
                     treeNode.data.children = treeNode.data.children.concat(a)
@@ -791,7 +799,7 @@ export default {
             })
         },
         // 获取可以继续打开的文件的目录（对应包预览）
-        getPackagePreview({ treeNode, storageId, id, artifactPath }, resolve) {
+        getPackagePreview({ treeNode, storageId, repositoryId, artifactPath, currentRepositoryId }, resolve) {
             if (treeNode?.data.children) {
                 resolve(treeNode.data.children)
                 return
@@ -799,27 +807,28 @@ export default {
             getArtifact(
                 this.repositoryType,
                 storageId,
-                id,
+                repositoryId,
                 artifactPath
             ).then(res => {
                 this.currentFileDetial = res
                 if (!resolve) return
-                function setNewDetailPage(arr) {
+                function setNewDetailPage(arr, parentKey) {
                     arr.forEach(ele => {
                         ele.newDetailPage = true
                         ele.treeType = 'lastRoot'
                         ele.storageId = storageId
-                        ele.repositoryId = id
-                        ele.key = ele.name
-                        ele.artifactPath = `${id}/${artifactPath}/${ele.name}`
+                        ele.repositoryId = repositoryId
+                        ele.currentRepositoryId = currentRepositoryId
+                        ele.key = `${parentKey}/${ele.name}`
+                        ele.artifactPath = `${currentRepositoryId}/${artifactPath}/${ele.name}`
                         if (ele?.children?.length) {
-                            setNewDetailPage(ele.children)
+                            setNewDetailPage(ele.children, ele.key)
                         }
                     })
                 }
                 treeNode.data.children = []
                 if (res.listTree) {
-                    setNewDetailPage(res.listTree)
+                    setNewDetailPage(res.listTree, `${currentRepositoryId}/${artifactPath}`)
                     treeNode.data.children = treeNode.data.children.concat(res.listTree)
                 }
                 // this[nowDataKey] = [...this[nowDataKey]]
@@ -944,7 +953,7 @@ export default {
 <style lang="scss">
 .left_tree-container {
     position: relative;
-    height: calc(100vh - 282px);
+    height: calc(100vh - 235px);
     display: flex;
     flex-direction: column;
 
@@ -988,6 +997,6 @@ export default {
     overflow-x: auto;
 }
 .vue-recycle-scroller__item-wrapper {
-    overflow: visible;
+    overflow: visible!important;
 }
 </style>

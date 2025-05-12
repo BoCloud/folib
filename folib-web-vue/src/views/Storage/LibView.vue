@@ -13,7 +13,25 @@
         <search-box @mouse="searchBoxMouseStatus" @search="search"/>
       </a-row>
     </div>
-    <a-tabs
+    <store
+      :style="isChecked ? 'margin-top:-70px;' : 'padding-top:20px;'"
+      ref="store"
+      @reload="reloadTree"
+      :isChecked="isChecked"
+      :isShowEdit="isShowEdit"
+      :isShowDelete="isShowDelete"
+      :eventSettingEnabled="eventSettingEnabled"
+      :settingsEnabled="settingsEnabled"
+      :i18nVulnerabilityColumns="i18nVulnerabilityColumns"
+      :metadataTypes="i18nMetadataTypes"
+      :quillOptions="quillOptions"
+      :propScanReport="scanReport"
+      :successMsg="successMsg"
+      :formateDate="formateDate"
+      @openDetial="openDetial"
+      @handleLibMenuClick="handleLibMenuClick"
+    />
+    <!-- <a-tabs
       class="tabs-sliding"
       :default-active-key="1"
       :activeKey="tabActiveKey"
@@ -25,12 +43,17 @@
           ref="store"
           @reload="reloadTree"
           :isChecked="isChecked"
+          :isShowEdit="isShowEdit"
+          :isShowDelete="isShowDelete"
+          :eventSettingEnabled="eventSettingEnabled"
+          :settingsEnabled="settingsEnabled"
           :metadataTypes="i18nMetadataTypes"
           :quillOptions="quillOptions"
           :propScanReport="scanReport"
           :successMsg="successMsg"
           :formateDate="formateDate"
           @openDetial="openDetial"
+          @handleLibMenuClick="handleLibMenuClick"
         />
       </a-tab-pane>
       <a-tab-pane :key="2" :tab="$t('Storage.Statistics')" v-if="$store.state.user.token">
@@ -42,7 +65,7 @@
           :vulnerabilityColumns="i18nVulnerabilityColumns"
         />
       </a-tab-pane>
-      <template v-if="repositoryLength">
+       <template v-if="repositoryLength">
         <a-button v-if="isShowEdit && isChecked && !isTrashView" class="repository-setting" slot="tabBarExtraContent" size="small" icon="edit" @click="handleMenuClick('edit')"></a-button>
         <a-button v-if="isShowDelete && isChecked && !isTrashView" class="repository-setting" slot="tabBarExtraContent" size="small" icon="delete" @click="handleMenuClick('delete')"></a-button>
         <a-button v-if="eventSettingEnabled" slot="tabBarExtraContent" class="repository-setting ant-btn ant-btn-sm ant-btn-icon-only" size="small" @click="eventPageVisible = true" >
@@ -52,7 +75,7 @@
         </a-button>
         <a-button v-if="settingsEnabled" slot="tabBarExtraContent" icon="setting" class="repository-setting" size="small" @click="settingDrawerShow()" />
       </template>
-    </a-tabs>
+    </a-tabs>-->
     <!-- / Header Background Image -->
     <SettingsDrawer :folibRepository="this.folibRepository" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></SettingsDrawer>
     <EventPageDrawer :folibRepository="this.folibRepository" :eventPageVisible="eventPageVisible" @eventDrawerClose="eventPageVisible=false"></EventPageDrawer>
@@ -453,6 +476,17 @@ export default {
     reloadTree(){
       this.$emit('reloadTree')
     },
+    handleLibMenuClick(active){
+      if (active === '1') {
+        this.handleMenuClick('edit')
+      } else if (active === '2') {
+        this.handleMenuClick('delete')
+      } else if (active === '3') {
+        this.eventPageVisible = true
+      } else if (active === '4') {
+        this.settingDrawerShow()
+      }
+    },
     handleMenuClick(type){
       this.$emit("handleMenuClick",type,this.folibRepository.id)
     },
@@ -464,7 +498,7 @@ export default {
       await this.createData()
       await this.getStorage(this.folibRepository.storageId)
       this.isShowEdit = (isAdmin() || this.storageAdmin === this.$store.state.user.name)
-      this.isShowDelete = (isAdmin() || this.storageAdmin === this.$store.state.user.name) && (this.folibRepository.allowsDeletion || this.folibRepository.allowsForceDeletion)
+      this.isShowDelete = (isAdmin() || this.storageAdmin === this.$store.state.user.name) && (this.folibRepository.type == 'group' || this.folibRepository.allowsDeletion || this.folibRepository.allowsForceDeletion)
     },
     handleMenuClickTree(active,currentTreeNode,folibRepository){
       this.$refs.store.handleMenuClickTree(active,currentTreeNode,folibRepository)
@@ -484,7 +518,7 @@ export default {
     createData() {
       //上个页面通过缓存传参，目的防止页面刷新，路由数据消失
       const params = storage.get("libView_repository");
-      this.folibRepository = params?.item;
+      this.folibRepository = params?.item || {};
       if (!this.folibRepository || this.folibRepository.type !== "hosted") {
         this.enabled = false;
       }

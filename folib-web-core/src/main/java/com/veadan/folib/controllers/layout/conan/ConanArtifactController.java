@@ -21,6 +21,7 @@ import com.veadan.folib.users.security.JwtAuthenticationClaimsProvider;
 import com.veadan.folib.users.security.JwtClaimsProvider;
 import com.veadan.folib.users.security.SecurityTokenProvider;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
+import com.veadan.folib.utils.ArtifactControllerHelper;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.Api;
@@ -412,7 +413,9 @@ public class ConanArtifactController extends BaseArtifactController {
             @PathVariable("user") String user,
             @PathVariable("channel") String channel,
             @PathVariable("revisions") String revisions,
-            HttpServletRequest request) throws Exception {
+            HttpServletRequest request,
+            HttpServletResponse response) throws Exception {
+        setContentType(response);
         String artifactPath = String.format("%s/%s/%s/%s/%s", user, name, version, channel, ConanArtifactIndex.INDEX_JSON_NAME);
         String targetUrl = String.format("/v2/conans/%s/%s/%s/%s/revisions", name, version, user, channel);
         JSONObject data = conanService.revisions(repository, artifactPath, targetUrl);
@@ -510,7 +513,10 @@ public class ConanArtifactController extends BaseArtifactController {
             @PathVariable("channel") String channel,
             @PathVariable("revisionId") String revisionId,
             @PathVariable("packageId") String packageId,
-            @PathVariable("revisions") String revisions) throws Exception {
+            @PathVariable("revisions") String revisions,
+            HttpServletRequest request,
+            HttpServletResponse response) throws Exception {
+        setContentType(response);
         String artifactPath = String.format("%s/%s/%s/%s/%s/package/%s/%s", user, name, version, channel, revisionId, packageId, ConanArtifactIndex.INDEX_JSON_NAME);
         String targetUrl = String.format("/v2/conans/%s/%s/%s/%s/revisions/%s/packages/%s/revisions", name, version, user, channel, revisionId, packageId);
         JSONObject data = conanService.revisions(repository, artifactPath, targetUrl);
@@ -760,5 +766,9 @@ public class ConanArtifactController extends BaseArtifactController {
 
     private String getTargetUrl(String uri, String prefix) {
         return uri.substring(uri.indexOf(prefix));
+    }
+
+    private void setContentType(HttpServletResponse response) {
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
     }
 }

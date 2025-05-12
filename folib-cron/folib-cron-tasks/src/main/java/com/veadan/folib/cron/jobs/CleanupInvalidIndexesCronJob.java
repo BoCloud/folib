@@ -141,7 +141,7 @@ public class CleanupInvalidIndexesCronJob
                         artifactPath = artifact.getArtifactCoordinates().buildPath();
                         repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
                         if (!Files.exists(repositoryPath)) {
-                            artifactRepository.delete(artifact);
+                            artifactRepository.delete(artifact, repositoryPath.getRepository().getLayout());
                             if (CollectionUtils.isNotEmpty(artifact.getVulnerabilities())) {
                                 vulnerabilityRepository.handlerVulnerabilityForArtifactDelete(repositoryPath, artifact.getVulnerabilities());
                             }

@@ -29,4 +29,9 @@ public class FolderInfo {
      * 是否有下级目录 true 有 false 没有
      */
     private boolean hasSubDirectories;
+
+    /**
+     * 是否是文件
+     */
+    private boolean file;
 }

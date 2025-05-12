@@ -4,6 +4,7 @@ import com.datastax.oss.driver.shaded.guava.common.util.concurrent.AtomicDouble;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
 import java.util.concurrent.atomic.AtomicLong;
 @Getter
 @Setter
@@ -22,4 +23,6 @@ public class MetricData {
     private double value;
 
     private String metricName;
+
+    private Instant timestamp;
 }

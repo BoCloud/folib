@@ -1,6 +1,7 @@
 package com.veadan.folib.task;
 
 
+import com.google.common.collect.Lists;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.components.webhook.WebhookEventsProvider;
@@ -65,9 +66,9 @@ public class WebhookEventsLogTask {
     private DictService dictService;
 
     /**
-     * 每2分钟
+     * 每3分钟
      */
-    @Scheduled(cron = "0 0/2 * * * ? ")
+    @Scheduled(cron = "0 0/3 * * * ? ")
     public void run() {
         String lockName = "WebhookEventsLogTask";
         long waitTime = 3L;
@@ -77,7 +78,8 @@ public class WebhookEventsLogTask {
             try {
                 log.info("Locked for [{}]", lockName);
                 webhookEventsLogService.deleteSuccessLog();
-                long totalCount = webhookEventsLogService.count(WebhookEventsStatusEnum.FAILURE.getStatus(), getMaxRetryCount());
+                List<Integer> statsList = Lists.newArrayList(WebhookEventsStatusEnum.INIT.getStatus(), WebhookEventsStatusEnum.FAILURE.getStatus());
+                long totalCount = webhookEventsLogService.count(statsList, getMaxRetryCount());
                 log.info("Webhook events log find total [{}]", totalCount);
                 if (totalCount <= 0) {
                     return;
@@ -87,7 +89,7 @@ public class WebhookEventsLogTask {
                 int totalPages = (int) Math.ceil((double) totalCount / batchSize);
                 for (int currentPage = 1; currentPage <= totalPages; currentPage++) {
                     log.info("Webhook events totalPages [{}] currentPage [{}] batchSize [{}]", totalPages, currentPage, batchSize);
-                    TableResultResponse<WebhookEventsLog> webhookEventsLogTableResultResponse = webhookEventsLogService.queryWebhookEventLogPage(currentPage, batchSize, WebhookEventsLog.builder().status(WebhookEventsStatusEnum.FAILURE.getStatus()).retryCount(getMaxRetryCount()).build());
+                    TableResultResponse<WebhookEventsLog> webhookEventsLogTableResultResponse = webhookEventsLogService.queryWebhookEventLogPage(currentPage, batchSize, statsList, WebhookEventsLog.builder().retryCount(getMaxRetryCount()).build());
                     List<WebhookEventsLog> webhookEventsLogs = webhookEventsLogTableResultResponse.getData().getRows();
                     String storageId = "", repositoryId = "";
                     RepositoryPath repositoryPath;
@@ -99,7 +101,8 @@ public class WebhookEventsLogTask {
                                 storageId = webhookEventsLog.getStorageId();
                                 repositoryId = webhookEventsLog.getRepositoryId();
                                 artifactData = ArtifactData.builder().name(webhookEventsLog.getArtifactName()).path(webhookEventsLog.getArtifactPath())
-                                        .repoKey(webhookEventsLog.getEventRepositoryId()).sha256(webhookEventsLog.getSha256Checksum()).size(webhookEventsLog.getSize()).build();
+                                        .repoKey(webhookEventsLog.getEventRepositoryId()).sha256(webhookEventsLog.getSha256Checksum()).size(webhookEventsLog.getSize()).sourceRepoPath(webhookEventsLog.getSourceArtifactPath())
+                                        .targetRepoPath(webhookEventsLog.getTargetArtifactPath()).build();
                                 repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, webhookEventsLog.getArtifactPath());
                                 WebhookEventsProvider webhookEventsProvider = webhookEventsProviderRegistry.getProvider(WebhookEventsTypeEnum.resolveType(repositoryPath.getRepository().getLayout()));
                                 webhook = WebhookDto.builder().eventType(webhookEventsLog.getEventType()).data(artifactData).build();

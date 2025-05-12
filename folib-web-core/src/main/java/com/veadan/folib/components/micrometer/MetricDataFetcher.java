@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,7 +32,6 @@ public class MetricDataFetcher {
         this.storageMonitoringMapper = storageMonitoringMapper;
     }
 
-    @Scheduled(fixedRate = 60000) // 每5秒查询一次
     public List<MetricData> fetchAllMetrics() {
         return saveMetricData(storageMonitoringMapper.getTodayData());
 
@@ -49,18 +49,19 @@ public class MetricDataFetcher {
             storageMonitoringList = storageMonitoringList.stream()
                     .filter(d -> d.getRepositoryId() != null && !d.getRepositoryId().isEmpty())
                     .collect(Collectors.toList());
+            Instant timestamp = Instant.now();
             for (StorageMonitoring monitoring : storageMonitoringList) {
-                metricDataList.add(setMetric(monitoring.getStorageId(),monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), METRIC_FILES, monitoring.getFilesCount()));
-                metricDataList.add(setMetric(monitoring.getStorageId(),monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), METRIC_FOLDERS, monitoring.getFoldersCount()));
-                metricDataList.add(setMetric(monitoring.getStorageId(),monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), METRIC_ITEMS, monitoring.getItemsCount()));
+                metricDataList.add(setMetric(monitoring.getStorageId(),monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), METRIC_FILES, monitoring.getFilesCount(),timestamp));
+                metricDataList.add(setMetric(monitoring.getStorageId(),monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), METRIC_FOLDERS, monitoring.getFoldersCount(),timestamp));
+                metricDataList.add(setMetric(monitoring.getStorageId(),monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), METRIC_ITEMS, monitoring.getItemsCount(),timestamp));
                 double percentage = monitoring.getUsedStorageQuotaSizePercentage() == null ? 0 : monitoring.getUsedStorageQuotaSizePercentage().doubleValue();
-                metricDataList.add(setMetric(monitoring.getStorageId(),monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), METRIC_PERCENTAGE, percentage));
+                metricDataList.add(setMetric(monitoring.getStorageId(),monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), METRIC_PERCENTAGE, percentage,timestamp));
                 double artifactsSize = monitoring.getArtifactsSize() == null ? 0 : monitoring.getArtifactsSize().doubleValue();
-                metricDataList.add(setMetric(monitoring.getStorageId(),monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), METRIC_ARTIFACTS_SIZE, artifactsSize));
+                metricDataList.add(setMetric(monitoring.getStorageId(),monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), METRIC_ARTIFACTS_SIZE, artifactsSize,timestamp));
                 double artifactsCount = monitoring.getArtifactsCount() == null ? 0 : monitoring.getArtifactsCount().doubleValue();
-                metricDataList.add(setMetric(monitoring.getStorageId(),monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), metric_artifacts_count, artifactsCount));
+                metricDataList.add(setMetric(monitoring.getStorageId(),monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), metric_artifacts_count, artifactsCount,timestamp));
                 double diskPercentage = monitoring.getUsedStorageDeviceSizePercentage() == null ? 0 : monitoring.getUsedStorageDeviceSizePercentage().doubleValue();
-                metricDataList.add(setMetric(monitoring.getStorageId(),monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), METRIC_DISK_PERCENTAGE, diskPercentage));
+                metricDataList.add(setMetric(monitoring.getStorageId(),monitoring.getRepositoryId(), monitoring.getRepositoryType(), monitoring.getRepositoryLayout(), METRIC_DISK_PERCENTAGE, diskPercentage,timestamp));
             }
             return metricDataList;
         }
@@ -77,7 +78,7 @@ public class MetricDataFetcher {
      * @param value
      * @return
      */
-    public MetricData setMetric(String storageId,String repositoryId, String type, String repositoryLayout, String metricName, double value) {
+    public MetricData setMetric(String storageId, String repositoryId, String type, String repositoryLayout, String metricName, double value, Instant timestamp) {
         MetricData metricData = new MetricData();
         metricData.setName(repositoryId);
         metricData.setType(type);
@@ -85,6 +86,7 @@ public class MetricDataFetcher {
         metricData.setValue(value);
         metricData.setMetricName(metricName);
         metricData.setStorageId(storageId);
+        metricData.setTimestamp(timestamp);
         return metricData;
     }
 }

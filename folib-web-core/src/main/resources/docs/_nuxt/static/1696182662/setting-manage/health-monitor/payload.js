@@ -1,1 +1,0 @@
-__NUXT_JSONP__("/setting-manage/health-monitor", {data:[{}],fetch:{},mutations:void 0});

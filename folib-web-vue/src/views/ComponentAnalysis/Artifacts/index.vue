@@ -1,7 +1,7 @@
 <template>
   <div class="wrapper">
     <!-- <HeaderEcharts></HeaderEcharts> -->
-    <a-card :bordered="false" style="margin-top: 20px; margin-bottom: 20px; overflow-y: auto" class="header-solid">
+    <a-card :bordered="false" style="margin-top: 10px; margin-bottom: 20px; overflow-y: auto" class="header-solid">
       <div class="mx-25 search">
         <a-row type="flex" justify="end">
           <a-col :span="3" class="ml-16">

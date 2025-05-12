@@ -1,0 +1,135 @@
+# Docker Compose 安装 
+
+- 创建docker-compose.yaml文件
+
+```sh
+vim docker-compose.yaml
+```
+
+- 复制以下脚本进行粘贴
+
+```sh
+version: "3.8"  #指定本yaml依从的compose哪个版本制定的
+services:
+  mysql:  #服务名称
+    container_name: mysql #容器名称，可与服务报名保持一致
+    image: docker.folib.com/folib-common/folib-docker/mysql5.7:latest
+    environment:
+      - MYSQL_ROOT_PASSWORD=folib@v587
+      - lower_case_table_names=1
+    volumes:
+      - ~/folib/mysql/logs:/var/log/mysql
+      - ~/folib/mysql/data:/var/lib/mysql
+#      - ~/folib/etc/localtime:/etc/localtime:ro
+    restart: always
+    privileged: true
+    ports:
+      - 3306:3306
+  elasticsearch:  #服务名称
+    container_name: elasticsearch #容器名称，可与服务报名保持一致
+    image: docker.folib.com/folib-common/folib-docker/elasticsearch:7.3.1
+    environment:
+      - node.name=node-1 #节点名称，与另外一个节点区分开
+      - cluster.initial_master_nodes=node-1 #初始主节点
+      - discovery.seed_hosts=elasticsearch:9300 #配置集群的主机地址
+      - cluster.name=docker-elasticsearch-cluster #集群名称，两个节点需要保持一致
+      - bootstrap.memory_lock=true  #禁用交换内存，提升效率
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - ~/folib/es/conf:/usr/share/elasticsearch/conf
+      - ~/folib/es/data:/usr/share/elasticsearch/data
+      - ~/folib/es/plugins:/usr/share/elasticsearch/plugins
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    restart: always
+    privileged: true
+    ports:
+      - 9200:9200 #重要：该集群对外出去的http端口号
+      - 9300:9300 #重要：该集群对外映射出去的transport端口号
+  folib-mirror:  #服务名称
+    container_name: folib-mirror #容器名称，可与服务报名保持一致
+    image: docker.folib.com/folib-common/folib-docker/folib-mirror:1.0
+    volumes:
+      - ~/folib/mirror:/usr/local/apache2/htdocs
+    restart: always
+    privileged: true
+    ports:
+      - 8919:80
+  folib-server:  #服务名称
+    container_name: folib-server #容器名称，可与服务报名保持一致
+    image: docker.folib.com/folib-common/folib-docker/folib-server:1.0
+    environment:
+      - RUN_WORKDIR=/opt/folib
+      - FOLIB_PORT=38080
+      - FOLIB_JVM_XMX=512
+      - FOLIB_DB_PROFILE=db_EMBEDDED
+      - FOLIB_GREMLIN_SERVER_ENABLED=false
+      - FOLIB_LOG_CONSOLE_ENABLED=false
+      - FOLIB_LOG_FILE_ENABLED=true
+      - FOLIB_LOG_FILE_SIZE_SINGLE=128MB
+      - FOLIB_LOG_FILE_SIZE_TOTAL=1GB
+      - FOLIB_LOG_FILE_HISTORY=31
+      - FOLIB_DEBUG=false
+      - FOLIB_NPM_REMOTE_CHANGES_ENABLED=false
+      - FOLIB_NUGET_DOWNLOAD_FEED=false
+      - FOLIB_DOWNLOAD_INDEXES=false
+      - FOLIB_ES_HOST=elasticsearch:9200
+      - FOLIB_MYSQL_HOST=mysql
+      - FOLIB_MYSQL_PORT=3306
+      - FOLIB_MYSQL_DB=folib_scanner
+      - FOLIB_MYSQL_USER=root
+      - FOLIB_MYSQL_PASSWORD=folib@v587
+      - FOLIB_NVD=folib-mirror
+      - FOLIB_JMX_PORT=7199
+      - FOLIB_DISTRIBUTED_LOCKIP=127.0.0.1
+      - FOLIB_CLUSTER_OPENFLAG=false
+      - FOLIB_CLUSTER_HOSTNODE=http://127.0.0.1:38080
+      - FOLIB_REMOTE_DB_HOST=127.0.0.1
+      - FOLIB_REMOTE_DB_PORT=49142
+      - FOLIB_REMOTE_DB_USER=root
+      - FOLIB_REMOTE_DB_PASS=folib-cassandra
+      - FOLIB_S3_REGION=folib
+      - FOLIB_S3_URI=s3://localhost:9000/
+      - FOLIB_S3_ACCESS_KEY=folib
+      - FOLIB_S3_SECRET_KEY=folib
+    volumes:
+      - ~/folib/folib-conf:/opt/folib/folib-1.0-SNAPSHOT/etc/conf
+      - ~/folib/folib-vault:/opt/folib/folib-vault
+    restart: always
+    privileged: true
+    ports:
+      - 38080:38080
+      - 7010:7010
+      - 7011:7011
+      - 7199:7199
+      - 49142:49142
+      - 8182:8182
+    links:
+      - mysql:mysql
+      - elasticsearch:elasticsearch
+      - folib-mirror:folib-mirror
+    depends_on:
+      - mysql
+      - elasticsearch
+      - folib-mirror
+
+```
+
+:::warning 注意事项
+环境变量可以参考上方[***环境变量表***](#配置参数详解)  进行参考配置
+:::
+
+- 执行启动命令
+
+```sh
+docker-compose up -d
+```
+
+:::warning 注意事项
+执行前请确保：您的服务器上安装了docker与docker-compose工具
+:::

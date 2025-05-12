@@ -104,9 +104,9 @@ public class SpringSecurityUser
     public Collection<Privileges> getAuthorities() {
         return roles.stream().flatMap(r -> {
             AccessModel accessModel = r.getAccessModel();
-            if (accessModel != null){
+            if (accessModel != null) {
                 return accessModel.getApiAuthorities().stream();
-            }else {
+            } else {
                 return Stream.empty();
             }
         }).collect(Collectors.toSet());
@@ -128,12 +128,14 @@ public class SpringSecurityUser
                 .collect(Collectors.toSet());
     }
 
-    public Collection<Privileges> getStorageAuthorities(String storageId, String repositoryId, List<String> paths) {
-        return getRoles().stream()
+    public Collection<Privileges> getStorageAuthorities(String serverName, String storageId, String repositoryId, List<String> paths) {
+        Collection<Privileges> privilegesCollection = getRoles().stream()
                 .flatMap(r -> r.getAccessModel()
                         .getPathAuthorities(storageId, repositoryId, paths)
                         .stream())
                 .collect(Collectors.toSet());
+        UserPrivileges.handlerRestrictedRepository(serverName, privilegesCollection, storageId, repositoryId);
+        return privilegesCollection;
     }
 
     public String getUrl() {
