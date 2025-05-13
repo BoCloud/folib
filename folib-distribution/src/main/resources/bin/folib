@@ -370,7 +370,7 @@ run()
 
     JDK_VERSION=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}')
 
-    if [[ "$JDK_VERSION" == 11* ]]; then
+    if [[ "$JDK_VERSION" == 17* ]]; then
        JAVA_OPTS+=" -Dsun.misc.URLClassPath.disableJarChecking=true
                     -Djdk.attach.allowAttachSelf=true
                     --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
@@ -387,7 +387,10 @@ run()
                     --add-opens java.base/jdk.internal.math=ALL-UNNAMED
                     --add-opens java.base/jdk.internal.module=ALL-UNNAMED
                     --add-opens java.base/jdk.internal.util.jar=ALL-UNNAMED
-                    --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED"
+                    --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
+                    --add-opens java.base/java.lang=ALL-UNNAMED
+                    --add-opens java.base/java.nio=ALL-UNNAMED
+                    --add-opens java.base/java.io=ALL-UNNAMED"
     fi
 
     JAR_ARGS="-showversion -jar ${JAVA_OPTS} ./lib/folib-web-core-*-spring-boot.jar"
