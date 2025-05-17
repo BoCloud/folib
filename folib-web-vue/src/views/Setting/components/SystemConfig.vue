@@ -179,6 +179,7 @@ export default {
         handleAdd(){
             this.isAdd=true;
             this.modalVisible=true;
+            this.form.id=null;
         },
         handleModalOk(){
             this.$refs.formRef.validate(valid => {
