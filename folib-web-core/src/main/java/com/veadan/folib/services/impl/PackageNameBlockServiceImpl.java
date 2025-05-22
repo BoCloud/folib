@@ -137,6 +137,7 @@ public class PackageNameBlockServiceImpl implements PackageNameBlockService {
         } else {
             PackageNameBlockInfo packageNameBlock = selectOnePackageNameBlock(packageNameBlockForm);
             if (Objects.nonNull(packageNameBlock)) {
+                packageNameBlockMapper.deleteById(packageNameBlock.getId());
                 packageNameBlockMapper.selectById(packageNameBlock.getId());
             }
         }

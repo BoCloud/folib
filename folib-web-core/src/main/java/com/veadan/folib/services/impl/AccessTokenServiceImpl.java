@@ -104,7 +104,7 @@ public class AccessTokenServiceImpl implements AccessTokenService, AccessTokenFi
         }
 
        return accessTokenMapper.selectList(Wrappers.<AccessToken>lambdaQuery()
-                .eq(StringUtils.hasText(tokenId),AccessToken::getId, tokenId)
+                .eq(StringUtils.hasText(tokenId),AccessToken::getTokenId, tokenId)
                 .orderByDesc(AccessToken::getCreateTime)
         );
     }

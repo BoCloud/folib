@@ -22,7 +22,7 @@
         select id,storage_id,repository_id from backup_strategy_repository where backup_strategy_id = #{backupStrategyId}
     </select>
 
-    <select id="selectList" resultMap="selectListMap">
+    <select id="selectBackupList" resultMap="selectListMap">
         SELECT
             DISTINCT
             bs.id,

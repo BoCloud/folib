@@ -106,7 +106,7 @@ public class AuditLogRecordServiceImpl implements AuditLogRecordService {
         List<AuditLogRecord> records = auditLogRecordMapper.selectList(Wrappers.<AuditLogRecord>lambdaQuery()
                 .eq(StringUtils.isNotBlank(model.getModuleValue()),  AuditLogRecord::getModule, model.getModuleValue())
                 .eq(StringUtils.isNotBlank(model.getEventValue()), AuditLogRecord::getName, model.getEventValue())
-                .eq(model.getFromDate() != null, AuditLogRecord::getCreateTime, model.getFromDate())
+                .ge(model.getFromDate() != null, AuditLogRecord::getCreateTime, model.getFromDate())
                 .le(model.getToDate() != null, AuditLogRecord::getCreateTime, model.getToDate())
                 .orderByDesc(AuditLogRecord::getCreateTime)
         );

@@ -21,7 +21,7 @@ public interface BackupStrategyMapper extends BaseMapper<BackupStrategy> {
      * @param backupStrategyForm 参数
      * @return 备份策略列表
      */
-    List<BackupStrategyRecord> selectList(@Param("backupStrategy") BackupStrategyForm backupStrategyForm);
+    List<BackupStrategyRecord> selectBackupList(@Param("backupStrategy") BackupStrategyForm backupStrategyForm);
 
     /**
      * 查询备份策略列表

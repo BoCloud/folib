@@ -54,7 +54,7 @@ public class BackupClearTask {
         if (distributedLockComponent.lock(lockName, waitTime)) {
             try {
                 String incremental = "incremental";
-                List<BackupStrategyRecord> backupStrategyList = backupStrategyMapper.selectList(BackupStrategyForm.builder().build());
+                List<BackupStrategyRecord> backupStrategyList = backupStrategyMapper.selectBackupList(BackupStrategyForm.builder().build());
                 if (CollectionUtils.isNotEmpty(backupStrategyList)) {
                     for (BackupStrategyRecord backupStrategyRecord : backupStrategyList) {
                         try {

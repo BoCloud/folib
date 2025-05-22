@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.databind.jsontype.NamedType;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
@@ -38,7 +40,10 @@ public class JacksonConfig {
         AnnotationIntrospector jaxbIntrospector = new JaxbAnnotationIntrospector(TypeFactory.defaultInstance());
         AnnotationIntrospector jacksonIntrospector = new JacksonAnnotationIntrospector();
         objectMapper.setAnnotationIntrospector(AnnotationIntrospector.pair(jacksonIntrospector, jaxbIntrospector));
-
+        // 将 Long 自动转为 String
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(Long.class, new ToStringSerializer());
+        objectMapper.registerModule(module);
         // 注册子类型
         WebObjectMapperSubtypes.INSTANCE.subtypes().forEach(contextClass ->
                 objectMapper.registerSubtypes(new NamedType(contextClass,

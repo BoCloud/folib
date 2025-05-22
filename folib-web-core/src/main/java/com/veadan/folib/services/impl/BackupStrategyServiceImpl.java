@@ -79,7 +79,7 @@ public class BackupStrategyServiceImpl implements BackupStrategyService {
             limit = 10;
         }
         Page<Object> result = PageHelper.startPage(page, limit);
-        List<BackupStrategyRecord> backupStrategyList = backupStrategyMapper.selectList(backupStrategyForm);
+        List<BackupStrategyRecord> backupStrategyList = backupStrategyMapper.selectBackupList(backupStrategyForm);
         if (CollectionUtils.isEmpty(backupStrategyList)) {
             backupStrategyList = Collections.emptyList();
         }

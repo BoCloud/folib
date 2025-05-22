@@ -390,7 +390,8 @@ run()
                     --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
                     --add-opens java.base/java.lang=ALL-UNNAMED
                     --add-opens java.base/java.nio=ALL-UNNAMED
-                    --add-opens java.base/java.io=ALL-UNNAMED"
+                    --add-opens java.base/java.io=ALL-UNNAMED
+                    --add-opens java.base/sun.nio.ch=ALL-UNNAMED"
     fi
 
     JAR_ARGS="-showversion -jar ${JAVA_OPTS} ./lib/folib-web-core-*-spring-boot.jar"

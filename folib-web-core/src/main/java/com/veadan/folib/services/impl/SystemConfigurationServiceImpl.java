@@ -34,7 +34,13 @@ public class SystemConfigurationServiceImpl implements SystemConfigurationServic
     public void exportSystemConfiguration(ExportSystemConfigurationReq exportSystemConfiguration) {
         try {
             Path targetParentPath = Path.of(exportSystemConfiguration.getPath());
-            Files.createDirectories(targetParentPath);
+            if (!Files.exists(targetParentPath)) {
+                Files.createDirectories(targetParentPath);
+            }
+            // 统一权限检查逻辑，避免重复代码
+            checkPermission(Files.isExecutable(targetParentPath), "执行", targetParentPath);
+            checkPermission(Files.isReadable(targetParentPath), "读", targetParentPath);
+            checkPermission(Files.isWritable(targetParentPath), "写", targetParentPath);
             Path confPath = getConfPath();
             if (Boolean.TRUE.equals(exportSystemConfiguration.getZipArchive())) {
                 Path targetZipPath = targetParentPath.resolve("conf.zip");
@@ -109,6 +115,13 @@ public class SystemConfigurationServiceImpl implements SystemConfigurationServic
         includeFilenames.add("janusgraph-cassandra.properties");
         includeFilenames.add("janusgraph-inmemory.properties");
         return includeFilenames;
+    }
+
+    // 辅助方法用于权限检查
+    private  void checkPermission(boolean hasPermission, String permissionName, Path path) throws IOException {
+        if (!hasPermission) {
+            throw new IOException(String.format("目标路径[%s]没有%s权限", path, permissionName));
+        }
     }
 
 }
