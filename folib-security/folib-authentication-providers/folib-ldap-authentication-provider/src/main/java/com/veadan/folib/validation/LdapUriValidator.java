@@ -1,9 +1,10 @@
 package com.veadan.folib.validation;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+
 import java.net.URISyntaxException;
 
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 import org.apache.commons.lang.StringUtils;
 
 /**

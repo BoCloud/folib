@@ -3,10 +3,10 @@ package com.veadan.folib.validation.configuration.routing;
 import com.veadan.folib.forms.storage.routing.RoutingRuleRepositoryForm;
 import com.veadan.folib.services.ConfigurationManagementService;
 
-import javax.inject.Inject;
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
 
+import jakarta.inject.Inject;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

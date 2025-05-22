@@ -1,10 +1,11 @@
 package com.veadan.folib.validation.configuration;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+
 import java.util.Set;
 
 import com.google.common.collect.ImmutableSet;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 public class ShouldNotContainValidator
         implements ConstraintValidator<ShouldNotContain, String>

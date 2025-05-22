@@ -10,14 +10,14 @@ import com.veadan.folib.validation.cron.autocomplete.CronTaskConfigurationFormFi
 import com.veadan.folib.validation.cron.type.CronTaskConfigurationFormFieldTypeValidator;
 import com.veadan.folib.validation.cron.type.CronTaskConfigurationFormFieldTypeValidatorsRegistry;
 
-import javax.inject.Inject;
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
 
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import jakarta.inject.Inject;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 import org.apache.commons.lang3.StringUtils;
 import org.quartz.CronExpression;
 

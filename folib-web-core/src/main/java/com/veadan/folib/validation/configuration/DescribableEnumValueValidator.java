@@ -1,9 +1,10 @@
 package com.veadan.folib.validation.configuration;
 
 import com.veadan.folib.api.Describable;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+
 import java.util.Arrays;
 
 /**

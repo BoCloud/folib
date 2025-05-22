@@ -27,6 +27,7 @@ import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.security.AuthoritiesProvider;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.*;
+import jakarta.inject.Inject;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,7 +46,6 @@ import org.springframework.validation.ValidationUtils;
 import org.springframework.validation.Validator;
 import org.springframework.web.bind.annotation.*;
 
-import javax.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;

@@ -23,6 +23,8 @@ import com.veadan.folib.web.CustomRequestMappingHandlerMapping;
 import com.veadan.folib.web.DirectoryTraversalFilter;
 import com.veadan.folib.web.RepositoryMethodArgumentResolver;
 import com.veadan.folib.yaml.YAMLMapperFactory;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.StringUtils;
 import org.jtwig.environment.EnvironmentConfigurationBuilder;
@@ -60,8 +62,6 @@ import org.springframework.web.servlet.resource.ResourceResolverChain;
 import org.springframework.web.servlet.view.InternalResourceView;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 
-import javax.inject.Inject;
-import javax.inject.Named;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;

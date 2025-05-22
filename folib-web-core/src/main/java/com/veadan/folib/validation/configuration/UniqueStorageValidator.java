@@ -2,12 +2,13 @@ package com.veadan.folib.validation.configuration;
 
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.Storage;
-import com.veadan.folib.storage.StorageDto;
+
+import jakarta.inject.Inject;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
-import javax.inject.Inject;
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+
 import java.util.Map;
 
 /**

@@ -1,10 +1,10 @@
 package com.veadan.folib.validation.configuration;
 
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
+import jakarta.inject.Inject;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
-import javax.inject.Inject;
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
 
 /**
  * @author veadan

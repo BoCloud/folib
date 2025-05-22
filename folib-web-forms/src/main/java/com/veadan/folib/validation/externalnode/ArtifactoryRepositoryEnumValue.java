@@ -2,8 +2,8 @@ package com.veadan.folib.validation.externalnode;
 
 import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
 
-import javax.validation.Constraint;
-import javax.validation.Payload;
+import jakarta.validation.Constraint;
+import jakarta.validation.Payload;
 import java.lang.annotation.*;
 
 /**
