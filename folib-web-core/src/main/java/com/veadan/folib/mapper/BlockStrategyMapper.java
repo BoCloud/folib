@@ -20,7 +20,7 @@ public interface BlockStrategyMapper extends BaseMapper<BlockStrategy> {
      * @param blockStrategyForm 参数
      * @return 阻断策略列表
      */
-    List<BlockStrategy> selectList(@Param("blockStrategy") BlockStrategyForm blockStrategyForm);
+    List<BlockStrategy> selectBlockList(@Param("blockStrategy") BlockStrategyForm blockStrategyForm);
 
     /**
      * 查询阻断策略列表

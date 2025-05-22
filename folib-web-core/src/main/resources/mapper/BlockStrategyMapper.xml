@@ -3,7 +3,7 @@
 
 <mapper namespace="com.veadan.folib.mapper.BlockStrategyMapper">
 
-    <select id="selectList" resultType="com.veadan.folib.entity.BlockStrategy">
+    <select id="selectBlockList" resultType="com.veadan.folib.entity.BlockStrategy">
         SELECT
             DISTINCT
             bs.id,

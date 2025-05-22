@@ -45,4 +45,12 @@ public interface ScanRulesService {
      * @return 开启扫描的仓库树结构
      */
     List<Tree> queryOnScanTree();
+
+    /**
+     * 根据扫描ID查询扫描规则
+     *
+     * @param scanId 扫描ID
+     * @return 扫描规则
+     */
+    ScanRules findByScanId(String scanId);
 }

@@ -39,4 +39,9 @@ public class ScanRulesController  {
     public ResponseEntity queryOnScanTree() {
         return ResponseEntity.ok(scanRulesService.queryOnScanTree());
     }
+
+    @GetMapping("/{scanId}")
+    public ResponseEntity queryOnScan(@PathVariable("scanId") String scanId) {
+        return ResponseEntity.ok(scanRulesService.findByScanId(scanId));
+    }
 }

@@ -114,4 +114,15 @@ public class ScanRulesServiceImpl implements ScanRulesService {
         }
         return treeList;
     }
+
+    /**
+     * 根据扫描ID查询扫描规则
+     *
+     * @param scanId 扫描ID
+     * @return 扫描规则
+     */
+    @Override
+    public ScanRules findByScanId(String scanId) {
+        return scanRulesMapper.selectById(scanId);
+    }
 }
