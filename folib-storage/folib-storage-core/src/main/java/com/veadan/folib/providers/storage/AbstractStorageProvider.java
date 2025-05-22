@@ -2,7 +2,7 @@ package com.veadan.folib.providers.storage;
 
 import org.springframework.context.annotation.Lazy;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /**
  * @author Veadan

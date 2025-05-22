@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.veadan.folib.providers.AbstractMappedProviderRegistry;
 import org.slf4j.Logger;

@@ -2,7 +2,7 @@ package com.veadan.folib.cron.config;
 
 import java.util.concurrent.*;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import cn.hutool.core.thread.ThreadFactoryBuilder;
 import com.veadan.folib.config.DataServiceConfig;

@@ -82,7 +82,7 @@ public class BlockStrategyServiceImpl implements BlockStrategyService {
             limit = 10;
         }
         Page<Object> result = PageHelper.startPage(page, limit);
-        List<BlockStrategy> blockStrategyList = blockStrategyMapper.selectList(blockStrategyForm);
+        List<BlockStrategy> blockStrategyList = blockStrategyMapper.selectBlockList(blockStrategyForm);
         return new TableResultResponse<BlockStrategyRecord>(result.getTotal(), Optional.ofNullable(blockStrategyList).orElse(Collections.emptyList()).stream().map(blockStrategy -> {
             BlockStrategyRecord blockStrategyRecord = BlockStrategyRecord.builder().build();
             BeanUtils.copyProperties(blockStrategy, blockStrategyRecord);

@@ -28,7 +28,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;

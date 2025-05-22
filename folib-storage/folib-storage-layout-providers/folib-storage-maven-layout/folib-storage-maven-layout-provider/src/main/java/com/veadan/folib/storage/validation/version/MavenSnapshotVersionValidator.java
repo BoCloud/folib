@@ -7,7 +7,7 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryPolicyEnum;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

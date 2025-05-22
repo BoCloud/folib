@@ -11,7 +11,7 @@ import com.veadan.folib.storage.repository.remote.heartbeat.RemoteRepositoryAliv
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import javax.ws.rs.client.Client;
 import java.util.Objects;
 

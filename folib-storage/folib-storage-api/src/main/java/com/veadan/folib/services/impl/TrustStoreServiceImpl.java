@@ -6,7 +6,7 @@ import com.veadan.folib.security.certificates.KeyStoreManager;
 import com.veadan.folib.services.TrustStoreService;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URL;

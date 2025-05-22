@@ -8,7 +8,7 @@ import com.veadan.folib.storage.indexing.RepositoryIndexingContextFactory.Reposi
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.springframework.stereotype.Component;
 

@@ -4,7 +4,7 @@ import com.veadan.folib.booters.StorageBooter;
 import com.veadan.folib.storage.checksum.ChecksumCacheManager;
 import com.veadan.folib.storage.validation.ArtifactCoordinatesValidator;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.LinkedHashSet;
 import java.util.List;
 

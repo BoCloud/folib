@@ -20,7 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.util.List;

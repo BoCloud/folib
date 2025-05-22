@@ -3,7 +3,7 @@ package com.veadan.folib.storage.repository;
 import com.veadan.folib.providers.layout.Maven2LayoutProvider;
 import com.veadan.folib.repository.MavenRepositoryFeatures;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.LinkedHashSet;
 
 import org.springframework.stereotype.Component;

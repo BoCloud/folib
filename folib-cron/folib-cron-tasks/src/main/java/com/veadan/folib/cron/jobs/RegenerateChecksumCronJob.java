@@ -9,7 +9,7 @@ import com.veadan.folib.cron.jobs.fields.*;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Set;

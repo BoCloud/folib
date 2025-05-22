@@ -5,7 +5,7 @@ import com.veadan.folib.cron.domain.GroovyScriptNamesDto;
 import com.veadan.folib.cron.jobs.GroovyCronJob;
 import com.veadan.folib.cron.services.CronJobSchedulerService;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.Set;
 import java.util.UUID;
 

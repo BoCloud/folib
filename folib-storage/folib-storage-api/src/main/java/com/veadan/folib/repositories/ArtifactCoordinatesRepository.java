@@ -1,6 +1,6 @@
 package com.veadan.folib.repositories;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.GenericArtifactCoordinates;

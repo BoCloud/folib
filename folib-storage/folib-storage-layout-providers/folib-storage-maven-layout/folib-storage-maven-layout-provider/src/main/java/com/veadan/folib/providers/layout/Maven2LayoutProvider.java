@@ -14,7 +14,7 @@ import com.veadan.folib.artifact.coordinates.MavenArtifactCoordinates;
 import com.veadan.folib.storage.metadata.MetadataHelper;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;

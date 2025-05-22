@@ -8,7 +8,7 @@ import com.veadan.folib.services.ArtifactMetadataService;
 import com.veadan.folib.storage.metadata.MavenMetadataManager;
 import com.veadan.folib.storage.repository.Repository;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.function.Function;
 
 import org.slf4j.Logger;

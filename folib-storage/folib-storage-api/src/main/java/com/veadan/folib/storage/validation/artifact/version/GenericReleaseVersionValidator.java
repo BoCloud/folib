@@ -6,7 +6,7 @@ import com.veadan.folib.storage.validation.ArtifactCoordinatesValidator;
 import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidatorRegistry;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;

@@ -3,7 +3,7 @@ package com.veadan.folib.providers.storage;
 import com.veadan.folib.providers.AbstractMappedProviderRegistry;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.List;
 
 import org.slf4j.Logger;

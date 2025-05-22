@@ -11,7 +11,7 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.validation.MavenArtifactCoordinatesValidator;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 

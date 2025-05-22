@@ -3,7 +3,7 @@ package com.veadan.folib.services.impl;
 import com.veadan.folib.services.VersionValidatorService;
 import com.veadan.folib.storage.validation.ArtifactCoordinatesValidator;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.LinkedHashSet;
 import java.util.Set;
 

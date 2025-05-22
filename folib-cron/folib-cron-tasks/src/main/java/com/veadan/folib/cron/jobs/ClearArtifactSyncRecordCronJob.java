@@ -20,7 +20,7 @@ import com.veadan.folib.mapper.ArtifactSyncSlaveRecordMapper;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;

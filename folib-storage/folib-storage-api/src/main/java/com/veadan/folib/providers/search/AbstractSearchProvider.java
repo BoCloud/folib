@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.dependency.snippet.CodeSnippet;

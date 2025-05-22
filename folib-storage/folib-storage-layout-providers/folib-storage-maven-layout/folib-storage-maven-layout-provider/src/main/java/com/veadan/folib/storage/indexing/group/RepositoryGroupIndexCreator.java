@@ -12,7 +12,7 @@ import com.veadan.folib.storage.indexing.RepositoryIndexingContextFactory.Reposi
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.locks.Lock;

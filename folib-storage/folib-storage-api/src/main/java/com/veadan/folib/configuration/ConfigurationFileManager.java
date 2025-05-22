@@ -5,7 +5,7 @@ import com.veadan.folib.yaml.YamlFileManager;
 import com.veadan.folib.yaml.repository.CustomRepositoryConfigurationDto;
 import com.veadan.folib.yaml.repository.remote.RemoteRepositoryConfigurationDto;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;

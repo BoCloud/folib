@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.TimeUnit;

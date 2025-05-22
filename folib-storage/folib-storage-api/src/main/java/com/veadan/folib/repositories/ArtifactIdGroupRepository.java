@@ -30,7 +30,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 

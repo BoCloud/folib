@@ -19,7 +19,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.util.List;

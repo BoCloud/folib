@@ -16,7 +16,7 @@ import com.veadan.folib.storage.validation.resource.ArtifactOperationsValidator;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 

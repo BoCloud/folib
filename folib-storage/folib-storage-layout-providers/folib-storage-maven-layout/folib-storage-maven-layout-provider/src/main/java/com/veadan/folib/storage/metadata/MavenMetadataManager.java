@@ -18,7 +18,7 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryPolicyEnum;
 import com.veadan.folib.storage.repository.UnknownRepositoryTypeException;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.*;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.nio.file.Files;

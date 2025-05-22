@@ -11,7 +11,7 @@ import com.veadan.folib.storage.validation.artifact.ArtifactCoordinatesValidator
 import com.veadan.folib.storage.validation.artifact.version.VersionValidationException;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.IOException;
 
 import org.slf4j.Logger;

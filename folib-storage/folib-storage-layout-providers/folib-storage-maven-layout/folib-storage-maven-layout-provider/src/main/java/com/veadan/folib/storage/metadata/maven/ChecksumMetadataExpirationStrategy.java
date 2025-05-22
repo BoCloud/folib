@@ -4,7 +4,7 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.repository.proxied.ProxyRepositoryArtifactResolver;
 import org.carlspring.commons.encryption.EncryptionAlgorithmsEnum;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 

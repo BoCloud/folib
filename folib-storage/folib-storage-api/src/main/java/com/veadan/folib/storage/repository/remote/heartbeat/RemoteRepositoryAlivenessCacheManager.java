@@ -2,7 +2,7 @@ package com.veadan.folib.storage.repository.remote.heartbeat;
 
 import java.util.Objects;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.apache.commons.lang3.BooleanUtils;
 import com.veadan.folib.data.CacheName;

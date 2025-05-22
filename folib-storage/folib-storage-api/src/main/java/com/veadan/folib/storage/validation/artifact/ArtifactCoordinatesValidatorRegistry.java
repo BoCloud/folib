@@ -5,7 +5,7 @@ import com.veadan.folib.providers.AbstractMappedProviderRegistry;
 import com.veadan.folib.services.ConfigurationManagementService;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;

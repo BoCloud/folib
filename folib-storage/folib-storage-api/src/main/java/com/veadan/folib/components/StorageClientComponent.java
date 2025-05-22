@@ -18,7 +18,8 @@ import org.apache.http.HttpStatus;
 import org.glassfish.jersey.client.ClientProperties;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
+import jakarta.inject.Inject;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;

@@ -3,11 +3,12 @@ package com.veadan.folib.gremlin.repositories;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import javax.inject.Inject;
+
 
 import com.veadan.folib.data.domain.DomainObject;
 import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.dsl.EntityTraversalSource;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Graph;

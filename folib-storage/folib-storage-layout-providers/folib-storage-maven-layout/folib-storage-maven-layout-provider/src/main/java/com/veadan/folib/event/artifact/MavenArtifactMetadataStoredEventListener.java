@@ -5,7 +5,7 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.Maven2LayoutProvider;
 import com.veadan.folib.storage.repository.Repository;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;

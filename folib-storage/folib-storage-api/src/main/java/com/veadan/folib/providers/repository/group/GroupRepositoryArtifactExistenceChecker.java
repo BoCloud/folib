@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.veadan.folib.configuration.ConfigurationManager;
 import org.apache.commons.compress.utils.Lists;

@@ -10,7 +10,7 @@ import com.veadan.folib.cron.jobs.CronJobsDefinitionsRegistry;
 import com.veadan.folib.cron.jobs.CronJobDuplicationCheckStrategiesRegistry;
 import com.veadan.folib.cron.services.CronTaskDataService;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import java.io.IOException;
 import java.util.*;

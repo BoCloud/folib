@@ -5,7 +5,7 @@ import static com.veadan.folib.gremlin.dsl.EntityTraversalUtils.extractObject;
 
 import java.util.*;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.veadan.folib.enums.VulnerabilityPlatformEnum;
 import com.veadan.folib.gremlin.dsl.EntityTraversal;

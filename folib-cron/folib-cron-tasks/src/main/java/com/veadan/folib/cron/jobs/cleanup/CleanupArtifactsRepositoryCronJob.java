@@ -17,7 +17,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;

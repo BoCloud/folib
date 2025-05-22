@@ -8,7 +8,7 @@ import com.veadan.folib.storage.routing.RepositoryIdentifiable;
 import com.veadan.folib.storage.routing.RoutingRule;
 import com.veadan.folib.storage.routing.RoutingRules;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.util.List;
 

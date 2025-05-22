@@ -17,7 +17,7 @@ import org.springframework.core.env.Profiles;
 import org.springframework.scheduling.quartz.QuartzJobBean;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;

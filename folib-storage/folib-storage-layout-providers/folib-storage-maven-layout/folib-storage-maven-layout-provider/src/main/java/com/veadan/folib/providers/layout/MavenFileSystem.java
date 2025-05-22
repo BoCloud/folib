@@ -9,7 +9,7 @@ import com.veadan.folib.storage.indexing.RepositoryIndexCreator.RepositoryIndexC
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.util.Set;

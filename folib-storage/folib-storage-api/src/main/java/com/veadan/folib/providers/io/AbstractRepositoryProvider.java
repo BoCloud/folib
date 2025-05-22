@@ -34,7 +34,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.util.Assert;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;

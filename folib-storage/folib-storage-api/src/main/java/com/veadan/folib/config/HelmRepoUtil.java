@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;

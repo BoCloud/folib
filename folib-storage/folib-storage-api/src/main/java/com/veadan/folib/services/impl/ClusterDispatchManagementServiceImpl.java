@@ -5,7 +5,7 @@ import com.veadan.folib.services.ClusterDispatchManagementService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import org.springframework.stereotype.Service;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.IOException;
 
 /**

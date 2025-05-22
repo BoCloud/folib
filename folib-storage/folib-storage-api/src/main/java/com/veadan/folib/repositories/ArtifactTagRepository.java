@@ -1,6 +1,6 @@
 package com.veadan.folib.repositories;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.veadan.folib.gremlin.adapters.ArtifactTagAdapter;
 import com.veadan.folib.artifact.ArtifactTag;

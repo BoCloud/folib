@@ -10,7 +10,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;

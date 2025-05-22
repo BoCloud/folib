@@ -36,6 +36,8 @@ public class WrapperRequestFilter implements Filter {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         String path = request.getRequestURI().substring(request.getContextPath().length()).replaceAll("[/]+$", "");
         boolean allowedPath = ALLOWED_PATHS.contains(path);
+        boolean isMultipart = request.getContentType() != null
+                && request.getContentType().toLowerCase().startsWith("multipart/");
         if (allowedPath) {
             filterChain.doFilter(servletRequest, servletResponse);
             return;
@@ -43,7 +45,7 @@ public class WrapperRequestFilter implements Filter {
             filterChain.doFilter(servletRequest, servletResponse);
             return;
         }
-        else if (FILTER_PATHS.stream().anyMatch(path::startsWith)){
+        else if (FILTER_PATHS.stream().anyMatch(path::startsWith) && !isMultipart){
             ServletRequest requestWrapper = new RequestWrapper((HttpServletRequest) servletRequest);
             // 将请求封装并传递下去
             filterChain.doFilter(requestWrapper, servletResponse);
@@ -51,7 +53,6 @@ public class WrapperRequestFilter implements Filter {
         }
         filterChain.doFilter(servletRequest, servletResponse);
     }
-
     @Override
     public void destroy() {
 

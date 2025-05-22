@@ -3,7 +3,7 @@ package com.veadan.folib.providers.repository.proxied;
 import java.io.IOException;
 import java.util.*;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.veadan.folib.configuration.ConfigurationManager;
 import org.apache.commons.collections4.CollectionUtils;

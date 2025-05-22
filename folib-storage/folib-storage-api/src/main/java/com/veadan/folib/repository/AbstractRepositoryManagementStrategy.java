@@ -8,7 +8,7 @@ import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 

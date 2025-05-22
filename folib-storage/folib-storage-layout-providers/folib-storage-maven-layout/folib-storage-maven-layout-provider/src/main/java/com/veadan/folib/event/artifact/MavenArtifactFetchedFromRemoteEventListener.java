@@ -16,7 +16,7 @@ import com.veadan.folib.storage.metadata.MetadataType;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;

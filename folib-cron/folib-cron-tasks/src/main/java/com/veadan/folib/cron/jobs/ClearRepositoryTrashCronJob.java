@@ -6,7 +6,7 @@ import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
 import com.veadan.folib.cron.jobs.fields.*;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.Map;
 import java.util.Set;
 

@@ -11,7 +11,7 @@ import com.veadan.folib.providers.storage.StorageProvider;
 import com.veadan.folib.providers.storage.StorageProviderRegistry;
 import com.veadan.folib.storage.repository.Repository;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.nio.file.FileSystem;
 import java.nio.file.spi.FileSystemProvider;
 

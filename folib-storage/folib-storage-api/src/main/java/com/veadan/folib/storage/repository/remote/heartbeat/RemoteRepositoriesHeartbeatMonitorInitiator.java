@@ -6,7 +6,7 @@ import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.veadan.folib.configuration.ConfigurationManager;
 import org.apache.commons.lang3.ObjectUtils;

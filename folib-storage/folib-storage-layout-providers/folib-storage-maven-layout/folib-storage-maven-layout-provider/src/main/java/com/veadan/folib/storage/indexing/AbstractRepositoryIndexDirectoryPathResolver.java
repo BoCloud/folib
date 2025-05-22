@@ -6,7 +6,7 @@ import com.veadan.folib.providers.io.RootRepositoryPath;
 import com.veadan.folib.repository.MavenRepositoryFeatures;
 import com.veadan.folib.storage.repository.Repository;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /**
  * @author veadan

@@ -15,7 +15,7 @@ import jakarta.transaction.Transactional;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.IOException;
 
 @Component

@@ -136,7 +136,7 @@ public class UserGroupRefServiceImpl implements UserGroupRefService  {
 
     @Override
     public void deleteByUserId(String userId) {
-        userGroupRefMapper.delete(Wrappers.<UserGroupRef>lambdaQuery().eq(UserGroupRef::getId, userId));
+        userGroupRefMapper.delete(Wrappers.<UserGroupRef>lambdaQuery().eq(UserGroupRef::getUserId, userId));
     }
 
     @Override

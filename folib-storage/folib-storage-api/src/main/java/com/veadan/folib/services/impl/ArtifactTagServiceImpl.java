@@ -3,7 +3,7 @@ package com.veadan.folib.services.impl;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Optional;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import com.veadan.folib.artifact.ArtifactTag;

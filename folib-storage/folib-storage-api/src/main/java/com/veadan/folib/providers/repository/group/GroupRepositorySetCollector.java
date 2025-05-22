@@ -6,7 +6,7 @@ import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
