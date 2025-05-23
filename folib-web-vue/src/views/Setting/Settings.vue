@@ -2133,7 +2133,8 @@ export default {
       securityPolicyConfig()
         .then(res => {
           this.$nextTick(() => {
-            if (this.$refs.ruleForm) {
+              console.log(this.$refs.ruleForm);
+              if (this.$refs.ruleForm) {
               this.ruleForm.setFieldsValue({
                 levels: res.levels,
                 notifyScopes: res.notifyScopes,
@@ -2159,11 +2160,10 @@ export default {
     },
     vulnerabilityTabChange(key) {
       this.securityPolicyActiveKey = key
+      this.getSecurityPolicy()
+
       if (key === '3') {
-        this.getSecurityPolicy()
         this.getUsersList()
-      } else if (key === '4') {
-        this.getSecurityPolicy()
       } else {
         this.getVulnerabilities()
       }
@@ -2810,5 +2810,9 @@ export default {
 
 /deep/ .ant-card-extra {
   display: flex;
+}
+
+/deep/ .ant-descriptions-item > span {
+  line-break: anywhere;
 }
 </style>

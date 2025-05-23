@@ -109,13 +109,20 @@ export default ({
 			}
 			// 可以返回默认值或者处理其他情况
 			return '';
-		}
+		},
+        deleteEnabled() {
+            return (isAdmin() || this.storageAdmin === this.$store.state.user.name) && (this.repository.type == 'group' || this.repository.allowsDeletion || this.repository.allowsForceDeletion)
+        },
+        editEnabled() {
+            return (isAdmin() || this.storageAdmin === this.$store.state.user.name)
+        },
+        operatorEnabled() {
+            return this.editEnabled || this.deleteEnabled
+        }
 	},
 	data() {
 		return {
-			operatorEnabled: false,
-			editEnabled: false,
-			deleteEnabled: false,
+
 		}
 	},
 	created() {
@@ -134,10 +141,10 @@ export default ({
 			this.$emit("goToDetial", e.key, this.title)
 		},
 		init() {
-			this.editEnabled = (isAdmin() || this.storageAdmin === this.$store.state.user.name)
+			/*this.editEnabled = (isAdmin() || this.storageAdmin === this.$store.state.user.name)
 			this.deleteEnabled = (isAdmin() || this.storageAdmin === this.$store.state.user.name) && (this.repository.type == 'group' || this.repository.allowsDeletion || this.repository.allowsForceDeletion)
 			// console.log(this.repository.storageId, this.repository.id, this.storageAdmin ,  this.$store.state.user.name, this.editEnabled, this.deleteEnabled)
-			this.operatorEnabled = this.editEnabled || this.deleteEnabled
+			this.operatorEnabled = this.editEnabled || this.deleteEnabled*/
 		},
 	}
 })

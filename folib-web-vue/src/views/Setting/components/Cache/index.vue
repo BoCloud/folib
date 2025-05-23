@@ -422,10 +422,10 @@ export default {
       })
     },
     getCacheSettings() {
+      this.directoryPathShow = true
       getSingleDict({ dictType: this.cacheKey }).then(res => {
         if (res) {
           if (res.dictValue) {
-            this.directoryPathShow = true
             let data = JSON.parse(res.dictValue)
             this.cacheForm = data
             this.artifactCacheDirectoryUseSize()

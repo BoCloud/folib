@@ -193,7 +193,7 @@ export default {
   data() {
     return {
       metadataRules: {
-        key: [{ required: true, message: this.$t('Store.PleaseSelect')+this.$t('Store.Metadata')+'KEY',trigger: "blur" }],
+        key: [{ required: true, message: this.$t('Store.PleaseSelect')+this.$t('Store.Metadata')+'KEY',trigger: "change" }],
         customKey: [
           { required: true, message: this.$t('Store.PleaseEnter')+this.$t('Store.Metadata')+'KEY',trigger: "blur"},
           {
@@ -204,7 +204,7 @@ export default {
           },
         ],
         type: [
-          { required: true, message: this.$t('Store.PleaseSelect')+this.$t('Store.Metadata')+this.$t('Store.Type'), trigger: "blur" },
+          { required: true, message: this.$t('Store.PleaseSelect')+this.$t('Store.Metadata')+this.$t('Store.Type'), trigger: "change" },
         ],
         value: [{ required: true, message: this.$t('Store.PleaseEnter')+this.$t('Store.Metadata')+this.$t('Store.value'), trigger: "blur" }],
       },
