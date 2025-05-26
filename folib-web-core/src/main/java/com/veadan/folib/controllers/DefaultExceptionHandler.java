@@ -11,11 +11,12 @@ import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.validation.RequestBodyValidationError;
 import com.veadan.folib.validation.RequestBodyValidationException;
 
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
+import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -23,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
 import org.springframework.lang.Nullable;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.accept.ContentNegotiationManager;
@@ -113,6 +115,11 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler
         logger.error("Request [{}] failed.", request, ex);
         
         return provideDefaultErrorResponse(ex, request, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<?> handleAuthenticationException(AuthenticationException ex) {
+        return ResponseEntity.status(401).body(Map.of("error", ex.getMessage()));
     }
 
     @Override

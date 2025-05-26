@@ -17,12 +17,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDecisionManager;
 import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
 import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationTrustResolver;
 import org.springframework.security.authentication.AuthenticationTrustResolverImpl;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -63,7 +65,7 @@ import static org.springframework.security.config.Customizer.withDefaults;
         UsersConfig.class,
         AuthenticationConfig.class})
 @EnableWebSecurity
-@EnableMethodSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfig {
 
     @Inject
@@ -77,17 +79,15 @@ public class WebSecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .addFilterBefore(folibAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+        http .addFilterBefore(folibAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(exception -> exception
                         .accessDeniedHandler(accessDeniedHandler())
-                        .authenticationEntryPoint(customBasicAuthenticationEntryPoint()))
+                        //.authenticationEntryPoint(customBasicAuthenticationEntryPoint())
+                )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/favicon.ico", "/ui/**", "/docs/**", "/webjars/**", "/rest/**").permitAll()
-                        .requestMatchers("/dav/**").authenticated()
                         .requestMatchers(EndpointRequest.toAnyEndpoint()).hasAuthority("ADMIN")
+                        .requestMatchers("/dav/**").authenticated()
+                        .requestMatchers("/favicon.ico", "/ui/**", "/docs/**", "/webjars/**", "/rest/**").permitAll()
                         .anyRequest().permitAll())
                 .anonymous(anon -> anon
                         .authenticationFilter(anonymousAuthenticationFilter()))
@@ -150,7 +150,7 @@ public class WebSecurityConfig {
 
     @Bean
     FolibAuthenticationFilter folibAuthenticationFilter() {
-        return new FolibAuthenticationFilter(new AuthenticationSuppliers(suppliers), authenticationManager);
+        return new FolibAuthenticationFilter(new AuthenticationSuppliers(suppliers), authenticationManager,customBasicAuthenticationEntryPoint());
     }
 
 
