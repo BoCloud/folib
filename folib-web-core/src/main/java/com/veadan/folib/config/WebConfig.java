@@ -176,8 +176,9 @@ public class WebConfig
         converters.add(new ByteArrayHttpMessageConverter());
         converters.add(stringConverter);
         converters.add(new FormHttpMessageConverter());
+
+        //converters.add(yamlConverter());
         converters.add(jackson2Converter());
-        converters.add(yamlConverter());
         converters.add(new ResourceHttpMessageConverter());
     }
 
@@ -188,14 +189,14 @@ public class WebConfig
     }
 
     // TODO consider using the same MappingJackson2HttpMessageConverter for yaml and json !
-    @Bean
-    public MappingJackson2HttpMessageConverter yamlConverter() {
-        MappingJackson2HttpMessageConverter yamlConverter = new MappingJackson2HttpMessageConverter(
-                yamlMapperFactory.create(WebObjectMapperSubtypes.INSTANCE.subtypes()));
-        yamlConverter.setSupportedMediaTypes(
-                Arrays.asList(MediaType.valueOf(com.veadan.folib.net.MediaType.APPLICATION_YML_VALUE), MediaType.valueOf(com.veadan.folib.net.MediaType.APPLICATION_YAML_VALUE)));
-        return yamlConverter;
-    }
+    //@Bean
+    //public MappingJackson2HttpMessageConverter yamlConverter() {
+    //    MappingJackson2HttpMessageConverter yamlConverter = new MappingJackson2HttpMessageConverter(
+    //            yamlMapperFactory.create(WebObjectMapperSubtypes.INSTANCE.subtypes()));
+    //    yamlConverter.setSupportedMediaTypes(
+    //            Arrays.asList(MediaType.valueOf(com.veadan.folib.net.MediaType.APPLICATION_YML_VALUE), MediaType.valueOf(com.veadan.folib.net.MediaType.APPLICATION_YAML_VALUE)));
+    //    return yamlConverter;
+    //}
 
     @Bean
     public MappingJackson2HttpMessageConverter jackson2Converter() {

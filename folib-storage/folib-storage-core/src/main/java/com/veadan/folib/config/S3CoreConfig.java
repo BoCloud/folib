@@ -34,16 +34,26 @@ public class S3CoreConfig {
         return new S3FileSystemProvider();
     }
 
+    //@Bean
+    //public FileSystem s3FileSystem()
+    //        throws IOException {
+    //    Map<String, String> env = new HashMap<>();
+    //    env.put(ACCESS_KEY, accessKey);
+    //    env.put(SECRET_KEY, secretKey);
+    //    env.put(REGION, region);
+    //    return FileSystems.newFileSystem(URI.create(s3Uri),
+    //            env,
+    //            Thread.currentThread().getContextClassLoader());
+    //}
+
     @Bean
-    public FileSystem s3FileSystem()
-            throws IOException {
+    public FileSystem s3FileSystem(S3FileSystemProvider s3FileSystemProvider) {
         Map<String, String> env = new HashMap<>();
         env.put(ACCESS_KEY, accessKey);
         env.put(SECRET_KEY, secretKey);
         env.put(REGION, region);
-        return FileSystems.newFileSystem(URI.create(s3Uri),
-                env,
-                Thread.currentThread().getContextClassLoader());
+        return s3FileSystemProvider.newFileSystem(URI.create(s3Uri), env);
     }
+
 
 }
