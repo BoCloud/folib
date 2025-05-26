@@ -8,12 +8,12 @@
  <parent>
         <groupId>com.veadan.folib</groupId>
         <artifactId>folib-parent</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>2.0-SNAPSHOT</version>
         <relativePath/>
     </parent>
 
     <artifactId>folib-distribution</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>2.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Folib: Distribution</name>
@@ -142,7 +142,7 @@
                                 <artifactItem>
                                     <groupId>${project.groupId}</groupId>
                                     <artifactId>folib-storage-api-resources</artifactId>
-                                    <version>1.0-SNAPSHOT</version>
+                                    <version>${project.version}</version>
                                     <type>jar</type>
 
                                     <overWrite>true</overWrite>
@@ -370,7 +370,7 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-web-core</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
             <classifier>spring-boot</classifier>
         </dependency>
     </dependencies>
