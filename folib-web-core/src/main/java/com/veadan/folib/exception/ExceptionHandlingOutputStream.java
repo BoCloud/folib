@@ -3,10 +3,11 @@
  */
 package com.veadan.folib.exception;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.OutputStream;
 import org.apache.commons.io.output.ProxyOutputStream;
-import org.eclipse.jetty.io.EofException;
+
 
 /**
  * @author Bogdan Sukonnov
@@ -27,7 +28,7 @@ public class ExceptionHandlingOutputStream extends ProxyOutputStream
     protected void handleIOException(IOException e)
         throws IOException
     {
-        if (e.getClass().equals(EofException.class))
+        if (e.getClass().equals(EOFException.class))
         {
             throw new Http202PropogateException("Socket has been closed. Possibly, user cancelled download.", e);            
         }

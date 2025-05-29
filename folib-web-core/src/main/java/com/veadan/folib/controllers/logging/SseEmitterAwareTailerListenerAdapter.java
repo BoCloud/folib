@@ -1,12 +1,13 @@
 package com.veadan.folib.controllers.logging;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.util.Objects;
 
 import org.apache.commons.io.input.Tailer;
 import org.apache.commons.io.input.TailerListenerAdapter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.eclipse.jetty.io.EofException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -92,7 +93,7 @@ public class SseEmitterAwareTailerListenerAdapter
                 stopListeningAndCleanupResources();
             }
         }
-        catch (EofException eofEx)
+        catch (EOFException eofEx)
         {
             stopListeningAndCleanupResources();
         }

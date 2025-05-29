@@ -16,15 +16,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.util.thread.QueuedThreadPool;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
-import org.springframework.boot.web.embedded.jetty.JettyWebServer;
+
+import org.springframework.boot.web.embedded.undertow.UndertowWebServer;
 import org.springframework.boot.web.server.WebServer;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
@@ -61,12 +62,13 @@ public class FolibApplicationRunner implements ApplicationRunner, ApplicationLis
     @Autowired
     private ClusterProperties clusterProperties;
 
-    private Server jettyServer;
+    //private Server jettyServer;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
         this.initData();
-        jetty();
+        //jetty();
+
     }
 
     /**
@@ -197,23 +199,32 @@ public class FolibApplicationRunner implements ApplicationRunner, ApplicationLis
     @Override
     public void onApplicationEvent(WebServerInitializedEvent event) {
         WebServer webServer = event.getWebServer();
-        if (webServer instanceof JettyWebServer) {
-            JettyWebServer jettyWebServer = (JettyWebServer) webServer;
-            this.jettyServer = jettyWebServer.getServer();
+        if (webServer instanceof UndertowWebServer undertowWebServer) {
+
+            // 通过反射获取底层的 XnioWorker（Spring Boot 封装了直接访问方法）
+            //this.xnioWorker = extractXnioWorker(undertowWebServer);
         }
     }
 
-    private void jetty() {
-        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
-        executor.scheduleAtFixedRate(() -> {
-            if (jettyServer.getThreadPool() instanceof QueuedThreadPool) {
-                QueuedThreadPool threadPool = (QueuedThreadPool) jettyServer.getThreadPool();
-                int max = threadPool.getMaxThreads();
-                int busy = threadPool.getBusyThreads();
-                int queue = threadPool.getQueueSize();
-                System.out.printf("[Jetty线程池监控] Max=%d, Busy=%d, Queue=%d\n", max, busy, queue);
-            }
-        }, 0, 10, TimeUnit.SECONDS);
-    }
-
+    //@Override
+    //public void onApplicationEvent(WebServerInitializedEvent event) {
+    //    WebServer webServer = event.getWebServer();
+    //    if (webServer instanceof JettyWebServer) {
+    //        JettyWebServer jettyWebServer = (JettyWebServer) webServer;
+    //        this.jettyServer = jettyWebServer.getServer();
+    //    }
+    //}
+    //
+    //private void jetty() {
+    //    ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+    //    executor.scheduleAtFixedRate(() -> {
+    //        if (jettyServer.getThreadPool() instanceof QueuedThreadPool) {
+    //            QueuedThreadPool threadPool = (QueuedThreadPool) jettyServer.getThreadPool();
+    //            int max = threadPool.getMaxThreads();
+    //            int busy = threadPool.getBusyThreads();
+    //            int queue = threadPool.getQueueSize();
+    //            System.out.printf("[Jetty线程池监控] Max=%d, Busy=%d, Queue=%d\n", max, busy, queue);
+    //        }
+    //    }, 0, 10, TimeUnit.SECONDS);
+    //}
 }

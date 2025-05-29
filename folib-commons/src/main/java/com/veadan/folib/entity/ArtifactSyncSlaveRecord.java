@@ -1,5 +1,6 @@
 package com.veadan.folib.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -115,6 +116,7 @@ public class ArtifactSyncSlaveRecord implements Serializable {
 
     @ApiModelProperty("临时ID，用于返回给请求端")
     @Transient
+    @TableField(exist = false)
     private String tempId;
 
     @ApiModelProperty("文件大小")

@@ -37,7 +37,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.carlspring.commons.http.range.ByteRange;
 import org.carlspring.commons.http.range.ByteRangeHeaderParser;
 import org.carlspring.commons.io.reloading.FSReloadableInputStreamHandler;
-import org.eclipse.jetty.io.EofException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
@@ -199,7 +199,7 @@ public abstract class BaseArtifactController
                         left -= fileChannel.transferTo((fileSize - left), left, responseChannel);
                     } catch (IOException e){
                         // 检查是否为客户端断开连接
-                        if (e instanceof ClosedChannelException || e instanceof EofException) {
+                        if (e instanceof ClosedChannelException || e instanceof EOFException) {
                             logger.error("Client disconnected, stopping transfer userAgent [{}] path [{}] error [{}]", request.getHeader("User-Agent"), path, ExceptionUtils.getStackTrace(e));
                         }
                         //其他IO异常重新抛出
