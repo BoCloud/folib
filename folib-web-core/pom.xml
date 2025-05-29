@@ -272,7 +272,7 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-client</artifactId>
-            <version>1.1.1-RELEASE</version>
+            <version>3.0.0-RELEASE</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -282,13 +282,13 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-rest-client</artifactId>
-            <version>1.1.1-RELEASE</version>
+            <version>3.0.0-RELEASE</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-rest-client</artifactId>
-            <version>1.1.1-RELEASE</version>
+            <version>3.0.0-RELEASE</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -580,9 +580,13 @@
                 </exclusion>
             </exclusions>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.springframework.boot</groupId>-->
+<!--            <artifactId>spring-boot-starter-jetty</artifactId>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-jetty</artifactId>
+            <artifactId>spring-boot-starter-undertow</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -760,7 +764,7 @@
         <dependency>
             <groupId>com.google.cloud.tools</groupId>
             <artifactId>jib-core</artifactId>
-            <version>0.27.1-folib</version>
+            <version>0.27.1</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
