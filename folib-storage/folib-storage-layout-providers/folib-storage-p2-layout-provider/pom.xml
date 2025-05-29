@@ -7,21 +7,13 @@
 
  <parent>
         <groupId>com.veadan.folib</groupId>
-        <artifactId>folib-parent</artifactId>
+        <artifactId>folib-storage-layout-providers</artifactId>
         <version>2.0-SNAPSHOT</version>
-        <relativePath/>
     </parent>
 
     <artifactId>folib-storage-p2-layout-provider</artifactId>
-    <version>2.0-SNAPSHOT</version>
     <packaging>jar</packaging>
-
     <name>Folib: Storage [P2 Layout Provider]</name>
-
-
-
-
-
     <inceptionYear>2019</inceptionYear>
 
      <scm>
@@ -82,7 +74,6 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-common-resources</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
@@ -114,10 +105,6 @@
             <artifactId>groovy</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-        </dependency>
     </dependencies>
 
 </project>

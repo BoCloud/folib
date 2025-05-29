@@ -7,17 +7,13 @@
 
     <parent>
         <groupId>com.veadan.folib</groupId>
-        <artifactId>folib-parent</artifactId>
+        <artifactId>folib-server</artifactId>
         <version>2.0-SNAPSHOT</version>
-        <relativePath/>
     </parent>
 
     <artifactId>folib-web-core</artifactId>
-    <version>2.0-SNAPSHOT</version>
     <packaging>jar</packaging>
-
     <name>Folib: Web Core</name>
-
     <inceptionYear>2019</inceptionYear>
 
      <scm>
@@ -182,6 +178,7 @@
             <artifactId>folib-storage-api</artifactId>
             <version>${project.version}</version>
         </dependency>
+
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-maven-layout-provider</artifactId>
@@ -266,6 +263,7 @@
             <artifactId>folib-storage-debian-layout-provider</artifactId>
             <version>${project.version}</version>
         </dependency>
+
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-client</artifactId>
@@ -298,7 +296,6 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-common-resources</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -677,11 +674,6 @@
         <dependency>
             <groupId>org.glassfish.jersey.inject</groupId>
             <artifactId>jersey-hk2</artifactId>
-            <version>2.32</version>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jersey.connectors</groupId>
-            <artifactId>jersey-apache-connector</artifactId>
             <version>2.32</version>
         </dependency>
         <dependency>

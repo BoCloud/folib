@@ -13,13 +13,9 @@
     </parent>
 
     <artifactId>folib-server</artifactId>
-    <version>2.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-
+    <version>2.0-SNAPSHOT</version>
     <name>Folib: Server</name>
-
-
-
     <inceptionYear>2019</inceptionYear>
 
      <scm>
@@ -46,6 +42,38 @@
         <module>folib-core</module>
         <module>folib-docs</module>
     </modules>
+
+
+    <properties>
+        <version.db>2.0-SNAPSHOT</version.db>
+        <version.resources>2.0-SNAPSHOT</version.resources>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.veadan.folib</groupId>
+                <artifactId>folib-common-resources</artifactId>
+                <version>${version.resources}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>folib-db-server</artifactId>
+                <version>${version.db}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>folib-db-import</artifactId>
+                <version>${version.db}</version>
+                <classifier>schema</classifier>
+            </dependency>
+
+        </dependencies>
+
+
+
+    </dependencyManagement>
 
     <profiles>
         <profile>

@@ -3,15 +3,13 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>folib-parent</artifactId>
+        <artifactId>folib-server</artifactId>
         <groupId>com.veadan.folib</groupId>
         <version>2.0-SNAPSHOT</version>
-        <relativePath/>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>folib-data-service</artifactId>
-    <version>2.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Folib: Data Service</name>
     <inceptionYear>2019</inceptionYear>
@@ -23,21 +21,17 @@
 
     <build>
         <plugins>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <annotationProcessors>
-                        <annotationProcessor>org.apache.tinkerpop.gremlin.process.traversal.dsl.GremlinDslProcessor</annotationProcessor>
-                    </annotationProcessors>
-                </configuration>
-            </plugin>
+<!--            <plugin>-->
+<!--                <artifactId>maven-compiler-plugin</artifactId>-->
+<!--                <configuration>-->
+<!--                    <annotationProcessors>-->
+<!--                        <annotationProcessor>org.apache.tinkerpop.gremlin.process.traversal.dsl.GremlinDslProcessor</annotationProcessor>-->
+<!--                    </annotationProcessors>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -60,6 +54,9 @@
                 <configuration>
                     <source>9</source>
                     <target>9</target>
+                    <annotationProcessors>
+                        <annotationProcessor>org.apache.tinkerpop.gremlin.process.traversal.dsl.GremlinDslProcessor</annotationProcessor>
+                    </annotationProcessors>
                 </configuration>
             </plugin>
 
@@ -75,18 +72,15 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-db-server</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-db-import</artifactId>
-            <version>${project.version}</version>
             <classifier>schema</classifier>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-common-resources</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>

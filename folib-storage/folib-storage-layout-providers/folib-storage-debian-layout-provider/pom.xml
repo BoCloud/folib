@@ -12,7 +12,6 @@
     </parent>
 
     <artifactId>folib-storage-debian-layout-provider</artifactId>
-    <version>2.0-SNAPSHOT</version>
 
     <dependencies>
         <dependency>

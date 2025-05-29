@@ -7,18 +7,13 @@
 
     <parent>
         <groupId>com.veadan.folib</groupId>
-        <artifactId>folib-parent</artifactId>
+        <artifactId>folib-server</artifactId>
         <version>2.0-SNAPSHOT</version>
-        <relativePath/>
     </parent>
 
     <artifactId>folib-commons</artifactId>
     <packaging>jar</packaging>
-    <version>2.0-SNAPSHOT</version>
-
     <name>Folib: Commons</name>
-
-
     <inceptionYear>2019</inceptionYear>
 
     <scm>
@@ -108,7 +103,6 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-common-resources</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>

@@ -7,22 +7,14 @@
 
  <parent>
         <groupId>com.veadan.folib</groupId>
-        <artifactId>folib-parent</artifactId>
+        <artifactId>folib-server</artifactId>
         <version>2.0-SNAPSHOT</version>
-        <relativePath/>
     </parent>
 
     <artifactId>folib-distribution</artifactId>
-    <version>2.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-
     <name>Folib: Distribution</name>
     <description>The folib distribution.</description>
-
-
-
-
-
     <inceptionYear>2019</inceptionYear>
 
     <properties>
@@ -90,9 +82,7 @@
                                 <artifactItem>
                                     <groupId>${project.groupId}</groupId>
                                     <artifactId>folib-common-resources</artifactId>
-                                    <version>${project.version}</version>
                                     <type>jar</type>
-
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${dir.folib.standalone}/etc</outputDirectory>
                                     <includes>logback*xml</includes>
@@ -111,7 +101,6 @@
                                 <artifactItem>
                                     <groupId>${project.groupId}</groupId>
                                     <artifactId>folib-common-resources</artifactId>
-                                    <version>${project.version}</version>
                                     <type>jar</type>
 
                                     <overWrite>true</overWrite>
@@ -132,7 +121,6 @@
                                 <artifactItem>
                                     <groupId>${project.groupId}</groupId>
                                     <artifactId>folib-common-resources</artifactId>
-                                    <version>${project.version}</version>
                                     <type>jar</type>
 
                                     <overWrite>true</overWrite>
@@ -152,7 +140,6 @@
                                 <artifactItem>
                                     <groupId>${project.groupId}</groupId>
                                     <artifactId>folib-db-server</artifactId>
-                                    <version>${project.version}</version>
                                     <type>jar</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${dir.folib.standalone}</outputDirectory>
