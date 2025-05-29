@@ -81,6 +81,12 @@ public class FolibAuthenticationFilter
             throws ServletException,
             IOException {
         try {
+            // 如果是WebSocket请求，直接跳过认证逻辑
+            if (isWebSocketRequest(request)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             // 仅对非排除路径执行认证逻辑
             if (!shouldNotFilter(request)) {
                 // 执行自定义认证逻辑（例如解析 Token、设置 SecurityContext 等）
@@ -110,7 +116,6 @@ public class FolibAuthenticationFilter
                     response.getWriter().write("Invalid or expired token");
                     response.setContentType("application/json");
                     response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                    logger.error("authentication 无效，返回 401 Unauthorized");
                     return;
 
                 }
@@ -122,7 +127,12 @@ public class FolibAuthenticationFilter
         }
 
     }
-
+    private boolean isWebSocketRequest(HttpServletRequest request) {
+        return "GET".equalsIgnoreCase(request.getMethod())
+                && "websocket".equalsIgnoreCase(request.getHeader("Upgrade"))
+                && request.getHeader("Connection") != null
+                && request.getHeader("Connection").toLowerCase().contains("upgrade");
+    }
     private Authentication provideAuthentication(Authentication authentication) {
         String authenticationName = Optional.ofNullable(authentication)
                 .map(a -> a.getClass().getSimpleName())

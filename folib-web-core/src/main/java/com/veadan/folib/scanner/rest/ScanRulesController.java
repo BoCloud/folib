@@ -42,6 +42,10 @@ public class ScanRulesController  {
 
     @GetMapping("/{scanId}")
     public ResponseEntity queryOnScan(@PathVariable("scanId") String scanId) {
-        return ResponseEntity.ok(scanRulesService.findByScanId(scanId));
+        ObjectRestResponse<ScanRules> entityObjectRestResponse = new ObjectRestResponse<>();
+        ScanRules rules = scanRulesService.findByScanId(scanId);
+        entityObjectRestResponse.data(rules);
+        entityObjectRestResponse.setRel(rules != null);
+        return ResponseEntity.ok(entityObjectRestResponse);
     }
 }
