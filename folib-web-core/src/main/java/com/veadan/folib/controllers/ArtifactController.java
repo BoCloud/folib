@@ -505,4 +505,13 @@ public class ArtifactController extends BaseController {
         artifactWebService.deleteArtifactsResolve(roleId, resourceId);
         return ResponseEntity.ok("");
     }
+
+    @GetMapping(value = "/queryImageArtifact")
+    public ResponseEntity<?> queryImageArtifact(
+            @RequestParam(name = "imageSize") long imagesSize,
+            @RequestParam(name = "imageNumber",defaultValue = "10") Integer imageNumber) {
+        // 默认单位MB
+        long size = imagesSize  == 0 ? 0 : imagesSize * 8388608;
+        return ResponseEntity.ok(artifactWebService.queryDockerImages(imageNumber,size));
+    }
 }

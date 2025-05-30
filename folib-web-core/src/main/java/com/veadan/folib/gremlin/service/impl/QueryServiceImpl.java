@@ -1,11 +1,15 @@
 package com.veadan.folib.gremlin.service.impl;
 
 import cn.hutool.core.date.DateUtil;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.veadan.folib.gremlin.common.ArtifactsResult;
 import com.veadan.folib.gremlin.common.Constant;
 import com.veadan.folib.gremlin.component.ClusterCache;
 import com.veadan.folib.gremlin.entity.*;
 import com.veadan.folib.gremlin.entity.vo.PropertyVo;
 import com.veadan.folib.gremlin.service.QueryService;
+import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import org.apache.tinkerpop.gremlin.driver.Client;
 import org.apache.tinkerpop.gremlin.driver.Result;
 import org.apache.tinkerpop.gremlin.driver.ResultSet;
@@ -173,4 +177,48 @@ public class QueryServiceImpl implements QueryService {
         return graphVertex;
     }
 
+
+    public TableResultResponse<ArtifactsResult> queryArtifacts(String host, int port, int pageNum, int pageSize, long artifactSize){
+
+        int totalCount = getArtifactSize(host, port,artifactSize);
+        int pageCount =   (totalCount % pageSize == 0) ? (totalCount /  pageSize) : (totalCount / pageSize + 1);
+        int page = (Math.min(pageCount, pageNum)-1) * pageSize;
+        if(totalCount == 0){
+            return new TableResultResponse<ArtifactsResult>(0,new ArrayList<ArtifactsResult>() );
+        }
+        int ende = Math.min(pageNum * pageSize, totalCount);
+        String gremlin =  String.format("g.V().hasLabel(\"Artifact\").has(\"sizeInBytes\", gt(%s)).order().by(\"sizeInBytes\", desc).range(%s,%s).valueMap(true)",artifactSize,page,ende);
+        Client client = getClient(host, port);
+        ResultSet set = client.submit(gremlin);
+        Iterator<Result> iterator = set.iterator();
+        List<ArtifactsResult> list = new ArrayList<>();
+        while (iterator.hasNext()) {
+
+            Result next = iterator.next();
+            Object object = next.getObject();
+            JSONObject jsonObject = JSON.parseObject(JSON.toJSONString(object));
+            ArtifactsResult result = new ArtifactsResult();
+            //"artifactName", "artifactPath", "storageId", "repositoryId", "sizeInBytes"
+            result.setArtifactName(jsonObject.getJSONArray("artifactName").get(0).toString());
+            result.setArtifactPath(jsonObject.getJSONArray("artifactPath").get(0).toString());
+            result.setStorageId(jsonObject.getJSONArray("storageId").get(0).toString());
+            result.setRepositoryId(jsonObject.getJSONArray("repositoryId").get(0).toString());
+            result.setSizeInBytes(Long.valueOf(jsonObject.getJSONArray("sizeInBytes").get(0).toString()));
+            result.setPath(String.format("%s/%s/%s",result.getStorageId(),result.getRepositoryId(),result.getArtifactPath()));
+            list.add(result);
+        }
+        return new TableResultResponse<ArtifactsResult>(totalCount,  list);
+    }
+
+    public  int getArtifactSize(String host, int port,long artifactSize){
+        String gremlin = String.format("g.V().hasLabel(\"Artifact\").has(\"sizeInBytes\", gt(%s)).order().by(id).count()",artifactSize);
+        Client client = getClient(host, port);
+        ResultSet set = client.submit(gremlin);
+        Iterator<Result> iterator = set.iterator();
+        if (iterator.hasNext()) {
+            Result next = iterator.next();
+            return Integer.valueOf(next.getObject().toString());
+        }
+        return 0;
+    }
 }
