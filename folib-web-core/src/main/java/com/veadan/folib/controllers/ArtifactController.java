@@ -511,7 +511,6 @@ public class ArtifactController extends BaseController {
             @RequestParam(name = "imageSize") long imagesSize,
             @RequestParam(name = "imageNumber",defaultValue = "10") Integer imageNumber) {
         // 默认单位MB
-        long size = imagesSize  == 0 ? 0 : imagesSize * 8388608;
-        return ResponseEntity.ok(artifactWebService.queryDockerImages(imageNumber,size));
+        return ResponseEntity.ok(artifactWebService.queryDockerImages(imageNumber,imagesSize));
     }
 }

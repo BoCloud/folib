@@ -115,6 +115,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
 import java.io.*;
 import java.lang.management.ManagementFactory;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
@@ -2675,8 +2677,8 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 imageResults.addAll(results);
             }
         }
-
-        return imageResults.stream().filter(item -> item.getSize() > imageSize).collect(Collectors.toList());
+        BigDecimal totalSize = BigDecimal.valueOf(imageSize);
+        return imageResults.stream().filter(item -> item.getSize().compareTo(totalSize)>=0).collect(Collectors.toList());
     }
 
     public long getDockerImageSize(String storageId, String repositoryId, String path) throws IOException {
@@ -2866,7 +2868,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     dockeerImageResult.setTag(tag);
                     dockeerImageResult.setRepositoryId(repositoryId);
                     long  imageSize = getDockerImageSize(storageId, repositoryId,imagePath+"/"+tag);
-                    dockeerImageResult.setSize(imageSize);
+                    dockeerImageResult.setSize(FileSizeConvertUtils.convertBytesWithDecimal(imageSize, "MB"));
                     results.add(dockeerImageResult);
                 }
                 return results;

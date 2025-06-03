@@ -4,6 +4,8 @@ package com.veadan.folib.domain;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
+import java.math.BigDecimal;
+
 @Data
 @Accessors(chain = true)
 public class DockeerImageResult {
@@ -13,6 +15,6 @@ public class DockeerImageResult {
     private String artifactName;
     private String tag;
     private String path;
-    private long size;
+    private BigDecimal size;
 
 }

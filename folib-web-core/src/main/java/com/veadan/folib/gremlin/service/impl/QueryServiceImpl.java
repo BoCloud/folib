@@ -2,6 +2,7 @@ package com.veadan.folib.gremlin.service.impl;
 
 import cn.hutool.core.date.DateUtil;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.gremlin.common.ArtifactsResult;
 import com.veadan.folib.gremlin.common.Constant;
@@ -10,6 +11,7 @@ import com.veadan.folib.gremlin.entity.*;
 import com.veadan.folib.gremlin.entity.vo.PropertyVo;
 import com.veadan.folib.gremlin.service.QueryService;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
+import com.veadan.folib.util.FileSizeConvertUtils;
 import org.apache.tinkerpop.gremlin.driver.Client;
 import org.apache.tinkerpop.gremlin.driver.Result;
 import org.apache.tinkerpop.gremlin.driver.ResultSet;
@@ -203,7 +205,15 @@ public class QueryServiceImpl implements QueryService {
             result.setArtifactPath(jsonObject.getJSONArray("artifactPath").get(0).toString());
             result.setStorageId(jsonObject.getJSONArray("storageId").get(0).toString());
             result.setRepositoryId(jsonObject.getJSONArray("repositoryId").get(0).toString());
-            result.setSizeInBytes(Long.valueOf(jsonObject.getJSONArray("sizeInBytes").get(0).toString()));
+            String sizeInBytes = "0";
+            JSONArray array = jsonObject.getJSONArray("sizeInBytes");
+            if (array != null && array.size() > 0) {
+                Object firstElement = array.get(0);
+                if (firstElement != null) {
+                    sizeInBytes = firstElement.toString();
+                }
+            }
+            result.setSizeInBytes(FileSizeConvertUtils.convertBytesWithDecimal(Long.parseLong(sizeInBytes), "MB"));
             result.setPath(String.format("%s/%s/%s",result.getStorageId(),result.getRepositoryId(),result.getArtifactPath()));
             list.add(result);
         }
