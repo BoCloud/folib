@@ -309,6 +309,7 @@ export default {
         this.metadataNumber = false;
         this.prismEditor = false;
       }
+      this.$refs.metadataForm?.clearValidate('type')
     },
     metadataHandlerConfirm() {
       this.$refs.metadataForm.validate((valid) => {
