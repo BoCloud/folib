@@ -12,9 +12,7 @@
     </parent>
 
     <artifactId>folib-cron-api</artifactId>
-
     <name>Folib: Cron [API]</name>
-
     <inceptionYear>2019</inceptionYear>
 
      <scm>

@@ -14,13 +14,7 @@
 
     <artifactId>folib-security</artifactId>
     <packaging>pom</packaging>
-
     <name>Folib: Security</name>
-
-
-
-
-
     <inceptionYear>2019</inceptionYear>
 
      <scm>

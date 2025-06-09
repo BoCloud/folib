@@ -14,11 +14,7 @@
 
     <artifactId>folib-ldap-authentication-provider</artifactId>
     <packaging>jar</packaging>
-
     <name>Folib: Authentication Provider [LDAP]</name>
-
-
-
     <inceptionYear>2019</inceptionYear>
 
      <scm>

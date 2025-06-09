@@ -13,10 +13,7 @@
 
     <artifactId>folib-storage</artifactId>
     <packaging>pom</packaging>
-
     <name>Folib: Storage</name>
-
-
     <inceptionYear>2019</inceptionYear>
 
      <scm>

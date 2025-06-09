@@ -13,14 +13,7 @@
     </parent>
 
     <artifactId>folib-event-api</artifactId>
-    <version>3.0-SNAPSHOT</version>
-
     <name>Folib: Event API</name>
-
-
-
-
-
     <inceptionYear>2019</inceptionYear>
 
      <scm>

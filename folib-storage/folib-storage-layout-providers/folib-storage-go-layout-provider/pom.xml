@@ -13,11 +13,7 @@
 
     <artifactId>folib-storage-go-layout-provider</artifactId>
     <packaging>jar</packaging>
-
     <name>Folib: Storage [Go Layout Provider]</name>
-
-
-
     <inceptionYear>2019</inceptionYear>
 
     <scm>

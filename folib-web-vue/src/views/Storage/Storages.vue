@@ -527,7 +527,7 @@
               <a-row :gutter="[24]">
                 <a-col :span="12">
                   <a-form-item class="mb-10" :label="$t('Storage.WarehouseName')" :colon="false">
-                    <a-input ref="inputName" :disabled="folibRepositoryEditDisabled" :placeholder="$t('Storage.KeywordPrompt')"
+                    <a-input ref="inputName" :disabled="folibRepositoryEditDisabled" :placeholder="$t('Storage.WarehouseName')"
                       v-model="folibRepositoryIds" @blur="getFolibRepositoryIds(folibRepositoryIds)" />
                   </a-form-item>
                 </a-col>
@@ -565,12 +565,12 @@
                 </a-col>
                 <a-col :span="12">
                   <a-form-item class="mb-10" :label="$t('Storage.RepositorySizeLimit')" :colon="false">
-                    <a-input  :placeholder="$t('Storage.RepositorySizeLimit')" :maxLength="6" @input="handleInput($event,'repositoryStorageMaxSize')" addon-after="GB" v-model="repositoryStorageMaxSize" />
+                    <a-input  :placeholder="$t('Storage.RepositorySizeLimitPlaceholder')" :maxLength="6" @input="handleInput($event,'repositoryStorageMaxSize')" addon-after="GB" v-model="repositoryStorageMaxSize" />
                   </a-form-item>
                 </a-col>
                 <a-col :span="6">
                   <a-form-item class="mb-10" :label="$t('Storage.ItemLimit')" :colon="false">
-                    <a-input v-model="artifactMaxSize" :maxLength="6" @input="handleInput($event,'artifactMaxSize')" addon-after="MB">
+                    <a-input :placeholder="$t('Storage.ItemLimitPlaceholder')" v-model="artifactMaxSize" :maxLength="6" @input="handleInput($event,'artifactMaxSize')" addon-after="MB">
                     </a-input>
                   </a-form-item>
                 </a-col>
@@ -1389,7 +1389,7 @@ export default {
         layout: null,
         type: null,
         page:1,
-        limit: 30,
+        limit: 50,
         total:0,
       },
       layoutType:'isFilter',
@@ -1585,7 +1585,7 @@ export default {
         if(val){
           this.$refs.repositoryTree.loadingMoreShow(true)
           // this.$refs.libview.myMounted()
-          this.queryParams.limit = 30 // 20
+          this.queryParams.limit = 50 // 20
         }else{
           this.$store.commit('setNewDetailPage',false) // 将newDetailPage参数复原，以免影响到原有模式的详情页面
           this.queryParams.limit = 10
@@ -1649,7 +1649,7 @@ export default {
       })
       this.queryParams.page = 1
       if(this.isChecked){
-        this.queryParams.limit = 30
+        this.queryParams.limit = 50
       }else{
         this.queryParams.limit = 10
       }
@@ -1666,7 +1666,7 @@ export default {
         const params = JSON.parse(JSON.stringify(val))
         params.layout = val.layout ? genLayoutType(val.layout) : ''
         params.page = 1
-        params.limit = 30 // 20
+        params.limit = 50 // 20
         // 给当前页面搜索条赋值
         this.queryParams.layout = params.layout
         this.queryParams.type = params.type
@@ -2066,7 +2066,7 @@ export default {
             layout: this.queryParams.layout,
             type: this.queryParams.type,
             name: this.queryParams.name,
-            limit: this.isChecked ? 30 : this.queryParams.limit,
+            limit: this.isChecked ? 50 : this.queryParams.limit,
             page: this.queryParams.page
           }
           this.getQueryStorage(params)
@@ -2105,6 +2105,7 @@ export default {
       this.folibVisible = false
       this.resetFolibRepository()
       this.step = 0
+      this.stepsStatus = "process"
     },
     repositoryList() {
       let layout = this.genLayoutType(this.layoutChecked)
@@ -2373,7 +2374,7 @@ export default {
         this.folibRepository.storageProvider = 'local'
       }
       //将选中的layout图标转换为接口识别的
-      this.folibRepository.subLayout = this.layoutChecked
+      this.folibRepository.subLayout = this.layoutChecked === 'cocoapods' ? 'cocoaPods' : this.layoutChecked
       this.folibRepository.layout = genLayoutType(this.layoutChecked)
       //将组合好的仓库转为groupRepository
       if (this.step === 2 && this.folibRepository.type === 'group') {
@@ -2415,6 +2416,7 @@ export default {
       this.folibRepository.storageThreshold = this.setRepoThreshold(this.repositoryStorageThreshold);
       addOrUpdateRepository(this.currentStorage.id, this.folibRepository.id, this.folibRepository).then(res => {
         if (!res.error) {
+          // if (!this.isChecked) this.refreshCurrentPageWarehouse()
           setTimeout(() => {
               //this.moveStep(1);
               this.stepsStatus="process";
@@ -2462,6 +2464,17 @@ export default {
       this.resetFolibRepository()
       this.cronCanSetList = []
       this.cronSettedList = []
+    },
+
+    refreshCurrentPageWarehouse() {
+        const params = {
+            storageId: this.currentStorage.id,
+            layout: null,
+            type: null,
+            limit: this.queryParams.limit,
+            page: this.queryParams.page
+        }
+        this.getQueryStorage(params)
     },
 
     crontasksListHandle() {

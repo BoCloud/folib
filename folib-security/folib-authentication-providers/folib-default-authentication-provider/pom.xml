@@ -14,13 +14,7 @@
 
     <artifactId>folib-default-authentication-provider</artifactId>
     <packaging>jar</packaging>
-
     <name>Folib: Authentication Provider [Default]</name>
-
-
-
-
-
     <inceptionYear>2019</inceptionYear>
 
      <scm>

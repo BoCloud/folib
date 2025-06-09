@@ -13,13 +13,7 @@
     </parent>
 
     <artifactId>folib-authentication-support</artifactId>
-
     <name>Folib: Authentication Support</name>
-
-
-
-
-
     <inceptionYear>2019</inceptionYear>
 
      <scm>

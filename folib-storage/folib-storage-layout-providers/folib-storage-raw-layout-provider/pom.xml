@@ -14,13 +14,7 @@
 
     <artifactId>folib-storage-raw-layout-provider</artifactId>
     <packaging>jar</packaging>
-
     <name>Folib: Storage [Raw Layout Provider]</name>
-
-
-
-
-
     <inceptionYear>2019</inceptionYear>
 
      <scm>

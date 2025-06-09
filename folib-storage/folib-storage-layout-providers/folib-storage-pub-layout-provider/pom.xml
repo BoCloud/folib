@@ -14,10 +14,7 @@
 
     <artifactId>folib-storage-pub-layout-provider</artifactId>
     <packaging>jar</packaging>
-
     <name>Folib: Storage [Pub Layout Provider]</name>
-
-
     <inceptionYear>2024</inceptionYear>
 
     <scm>

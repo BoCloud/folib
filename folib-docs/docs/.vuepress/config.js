@@ -600,6 +600,9 @@ module.exports = {
             }, {
               title: 'Jenkins插件',
               link: '/qa/jenkins-plugin'
+            }, {
+              title: 'Harbor同步方法',
+              link: '/qa/harbor'
             }
           ]
         }

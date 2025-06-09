@@ -14,10 +14,7 @@
 
     <artifactId>folib-commons</artifactId>
     <packaging>jar</packaging>
-
     <name>Folib: Commons</name>
-
-
     <inceptionYear>2019</inceptionYear>
 
     <scm>

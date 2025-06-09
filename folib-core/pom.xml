@@ -14,9 +14,7 @@
 
     <artifactId>folib-core</artifactId>
     <packaging>jar</packaging>
-
     <name>Folib: Core</name>
-
     <inceptionYear>2024</inceptionYear>
 
      <scm>

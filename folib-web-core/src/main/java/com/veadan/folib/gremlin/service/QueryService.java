@@ -1,8 +1,9 @@
 package com.veadan.folib.gremlin.service;
 
+import com.veadan.folib.gremlin.common.ArtifactsResult;
 import com.veadan.folib.gremlin.entity.QueryResult;
 import com.veadan.folib.gremlin.entity.vo.PropertyVo;
-import org.springframework.stereotype.Component;
+import com.veadan.folib.scanner.common.msg.TableResultResponse;
 
 /**
  * @Author: haifeng
@@ -15,5 +16,7 @@ public interface QueryService {
     QueryResult query(String host, int port, String gremlin, String sourceName);
 
     PropertyVo getValueMap(String host, int port, String sourceName, String id, boolean vertex);
+
+    TableResultResponse<ArtifactsResult> queryArtifacts(String host, int port, int pageNum, int pageSize, long artifactSize);
 
 }

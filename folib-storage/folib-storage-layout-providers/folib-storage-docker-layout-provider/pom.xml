@@ -14,7 +14,6 @@
 
     <artifactId>folib-storage-docker-layout-provider</artifactId>
     <packaging>jar</packaging>
-
     <name>Folib: Storage [Docker Layout Provider]</name>
 
 

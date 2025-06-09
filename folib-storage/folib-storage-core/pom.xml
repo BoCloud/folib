@@ -14,13 +14,7 @@
 
     <artifactId>folib-storage-core</artifactId>
     <packaging>jar</packaging>
-
     <name>Folib: Storage [Core]</name>
-
-
-
-
-
     <inceptionYear>2019</inceptionYear>
 
      <scm>

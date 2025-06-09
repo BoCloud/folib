@@ -13,7 +13,6 @@
 
     <artifactId>folib-storage-helm-layout-provider</artifactId>
     <packaging>jar</packaging>
-
     <name>Folib: Storage [Helm Layout Provider]</name>
 
     <build>

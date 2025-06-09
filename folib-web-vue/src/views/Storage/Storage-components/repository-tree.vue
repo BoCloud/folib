@@ -681,6 +681,13 @@ export default {
             }
             if (treeNode.data.fileType === 'document') {
                 this.folibRepository = treeNode.data
+                if (!this.folibRepository.allowsDirectoryBrowsing) {
+                    this.$notification.warning({
+                        message: this.$t('Store.BrowseNotEnabled')
+                    })
+                    resolve([])
+                    return false
+                }
                 this.repositoryType = getLayoutType(this.folibRepository)
                 this.queryPermission()
             } else if (treeNode.data.type !== 'recycle'){

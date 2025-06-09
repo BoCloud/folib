@@ -176,7 +176,7 @@
             <a-card :bordered="false" class="header-solid h-full" :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }"
                     v-if="currentUser">
               <template #title>
-                <h6 class="font-semibold m-0">{{ userNotEdit ? $t('Users.UserInformation') : $t('Users.UserEdit') }}</h6>
+                <h6 class="font-semibold m-0">{{ userNotEdit ? $t('Users.UserInformation') : isCreate ? $t('Users.Adduser') : $t('Users.UserEdit') }}</h6>
               </template>
               <template slot="extra">
                 <div class="col-action mb-0">
@@ -370,6 +370,7 @@ export default ({
       userTotal: 0,
       currentUser: null,
       userNotEdit: true,
+      isCreate: false,
       type: null,
       deleteVisible: false,
       willDelUserName: null,
@@ -444,6 +445,7 @@ export default ({
       this.queryUsers()
     },
     getUserDetial(username) {
+      this.isCreate = false
       getUserDetial(username).then(res => {
 
         const roles = res.user.roles
@@ -493,6 +495,7 @@ export default ({
       })
     },
     userEditHandle() {
+      this.isCreate = false
       this.userNotEdit = false
       this.passwordRequired = false
       if (this.$refs.userForm) {
@@ -531,6 +534,7 @@ export default ({
           }
           if (this.type == 1) {
             saveUser(user).then(res => {
+              this.isCreate = false
               this.userNotEdit = true
               this.type = null
               this.reload()
@@ -545,6 +549,7 @@ export default ({
             })
           } else {
             putUserDetial(user).then(res => {
+              this.isCreate = false
               this.userNotEdit = true
               this.type = null
               this.reload()
@@ -576,6 +581,7 @@ export default ({
           if (item.joinGroup === '1') { userGroupIds.push(`${item.id}`) }
         })
         this.currentUser = { user: { userGroupIds, username:null}, assignableRoles: roles }
+        this.isCreate = true
         this.userNotEdit = false
         this.passwordRequired = true
         if (this.$refs.userForm) {
@@ -585,6 +591,7 @@ export default ({
       this.type = 1
     },
     userEditCancelHandle() {
+      this.isCreate = false
       this.userNotEdit = true
       this.currentUser = null
       this.$refs.userForm.resetFields()

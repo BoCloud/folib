@@ -14,13 +14,7 @@
 
     <artifactId>folib-configuration</artifactId>
     <packaging>jar</packaging>
-
     <name>Folib: Configuration</name>
-
-
-
-
-
     <inceptionYear>2019</inceptionYear>
 
      <scm>

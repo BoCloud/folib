@@ -14,13 +14,7 @@
 
     <artifactId>folib-storage-layout-providers</artifactId>
     <packaging>pom</packaging>
-
     <name>Folib: Storage Layout Providers</name>
-
-
-
-
-
     <inceptionYear>2019</inceptionYear>
 
      <scm>

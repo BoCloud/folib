@@ -14,13 +14,7 @@
 
     <artifactId>folib-storage-gitlfs-layout-provider</artifactId>
     <packaging>jar</packaging>
-
     <name>Folib: Storage [Git Lfs Layout Provider]</name>
-
-
-
-
-
     <inceptionYear>2019</inceptionYear>
 
     <scm>

@@ -12,9 +12,7 @@
     </parent>
 
     <artifactId>folib-cron-tasks</artifactId>
-
     <name>Folib: Cron [Tasks]</name>
-
     <inceptionYear>2019</inceptionYear>
 
      <scm>

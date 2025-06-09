@@ -14,13 +14,7 @@
 
     <artifactId>folib-storage-api</artifactId>
     <packaging>jar</packaging>
-
     <name>Folib: Storage [API]</name>
-
-
-
-
-
     <inceptionYear>2019</inceptionYear>
 
      <scm>

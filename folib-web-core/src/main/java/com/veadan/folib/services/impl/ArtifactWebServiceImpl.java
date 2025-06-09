@@ -1,5 +1,6 @@
 package com.veadan.folib.services.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
@@ -10,6 +11,7 @@ import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.write.metadata.WriteSheet;
 import com.alibaba.excel.write.metadata.fill.FillConfig;
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.parser.Feature;
@@ -45,10 +47,7 @@ import com.veadan.folib.domain.thirdparty.ArtifactInfo;
 import com.veadan.folib.domain.thirdparty.ArtifactQuery;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.entity.RoleResourceRef;
-import com.veadan.folib.enums.ArtifactMetadataEnum;
-import com.veadan.folib.enums.DictTypeEnum;
-import com.veadan.folib.enums.ProductTypeEnum;
-import com.veadan.folib.enums.RepositoryScopeEnum;
+import com.veadan.folib.enums.*;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.forms.dict.DictForm;
@@ -77,6 +76,7 @@ import com.veadan.folib.scanner.service.ScanService;
 import com.veadan.folib.schema2.ContainerConfigurationManifest;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
+import com.veadan.folib.schema2.Manifests;
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.repository.Repository;
@@ -114,6 +114,8 @@ import javax.inject.Inject;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.lang.management.ManagementFactory;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
@@ -2671,4 +2673,225 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             throw new RuntimeException(ex);
         }
     }
+
+
+    @Override
+    public List<DockeerImageResult> queryDockerImages(Integer numImages, long imageSize) {
+        //获取docker 镜像列表
+        DockerCatalog dockerCatalog = getDockerCatalog(numImages,  null);
+        if(Objects.isNull(dockerCatalog) || dockerCatalog.getRepositories().isEmpty()){
+            return Collections.emptyList();
+        }
+        List<DockeerImageResult> imageResults = new ArrayList<>();
+        for(String name : dockerCatalog.getRepositories()){
+            List<DockeerImageResult> results = getDockerTsags(null,  null, name);
+            if(results != null && !results.isEmpty()){
+                imageResults.addAll(results);
+            }
+        }
+        BigDecimal totalSize = BigDecimal.valueOf(imageSize);
+        return imageResults.stream().filter(item -> item.getSize().compareTo(totalSize)>=0).collect(Collectors.toList());
+    }
+
+    public long getDockerImageSize(String storageId, String repositoryId, String path) throws IOException {
+
+        RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
+        DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+        List<FileContent> fileContents = directoryListing.getFiles().stream().filter(file -> DockerArtifactCoordinates.include(file.getName())).collect(Collectors.toList());
+        FileContent fileContent = fileContents.get(0);
+        RepositoryPath versionPath = repositoryPathResolver.resolve(storageId, repositoryId, path + File.separator + fileContent.getName());
+
+        String manifestString = Files.readString(versionPath);
+        ImageManifest imageManifest = JSON.parseObject(manifestString, ImageManifest.class);
+        if (CollectionUtils.isNotEmpty(imageManifest.getManifests())) {
+            Manifests manifests = imageManifest.getManifests().get(0);
+            RepositoryPath manifestPath = repositoryPathResolver.resolve(storageId, repositoryId, "manifest/" + manifests.getDigest());
+            if (Objects.nonNull(manifestPath) && Files.exists(manifestPath)) {
+                ImageManifest manifest = JSON.parseObject(Files.readString(manifestPath), ImageManifest.class);
+                if (Objects.nonNull(manifest)) {
+                    List<Manifests> manifestsList = imageManifest.getManifests();
+                    imageManifest = manifest;
+                    imageManifest.setManifests(manifestsList);
+                }
+            }
+        }
+        return Optional.ofNullable(imageManifest.getLayers()).orElse(Collections.emptyList()).stream().filter(item -> Objects.nonNull(item.getSize())).mapToLong(LayerManifest::getSize).sum();
+    }
+
+   public DockerCatalog  getDockerCatalog(Integer n , String last){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        try {
+            log.info("GET Catalog n [{}] last [{}]", n, last);
+            List<Storage> storageList = new ArrayList<>(configurationManagementService.getConfiguration()
+                    .getStorages()
+                    .values());
+            String username = "";
+            if (Objects.nonNull(authentication)) {
+                final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
+                username = loggedUser.getUsername();
+            }
+            String link = "", next = "";
+            List<String> resultList = Collections.emptyList(), dataList = Lists.newArrayList();
+            if (CollectionUtil.isNotEmpty(storageList)) {
+                //查询数据库中存储空间绑定的用户
+                storageManagementService.getStorageUsers(storageList);
+                boolean filterByUser = !hasAdmin();
+                String finalUsername = username;
+                storageList = storageList.stream()
+                        .distinct()
+                        .filter(s -> !filterByUser || (CollectionUtil.isNotEmpty(s.getUsers()) && s.getUsers().contains(finalUsername)) ||
+                                (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope()))))
+                        .collect(Collectors.toCollection(LinkedList::new));
+                List<Repository> repositories;
+                String dockerLevel = System.getProperty("DockerLevel");
+                for (Storage storage : storageList) {
+                    boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username));
+                    repositories = new LinkedList<Repository>(storage.getRepositories().values());
+                    repositories = repositories.stream().distinct()
+                            .filter(r -> DockerLayoutProvider.ALIAS.equalsIgnoreCase(r.getLayout()))
+                            .collect(Collectors.toCollection(LinkedList::new));
+                    if (flag) {
+                        repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()))).collect(Collectors.toList());
+                    }
+                    if (CollectionUtils.isNotEmpty(repositories)) {
+                        repositories.forEach(repository -> {
+                            try {
+                                RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository.getStorage().getId(), repository.getId());
+                                String prefix = String.format("%s/%s", repository.getStorage().getId(), repository.getId());
+                                if (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath)) {
+                                    if (GlobalConstants.DOCKER_LEVEL_SINGLE.equals(dockerLevel)) {
+                                        DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+                                        if (Objects.nonNull(directoryListing) && CollectionUtils.isNotEmpty(directoryListing.getDirectories())) {
+                                            dataList.addAll(directoryListing.getDirectories().stream().filter(item -> StringUtils.isNotBlank(item.getName()) && !item.getName().startsWith(".")).map(item -> String.format("%s/%s", prefix, item.getName())).collect(Collectors.toList()));
+                                        }
+                                    } else {
+                                        List<RepositoryPath> repositoryPathList = RepositoryPathUtil.getDockerImagePaths(repositoryPath);
+                                        if (CollectionUtils.isNotEmpty(repositoryPathList)) {
+                                            repositoryPathList.forEach(item -> {
+                                                String path = "";
+                                                try {
+                                                    path = RepositoryFiles.relativizePath(item);
+                                                } catch (Exception ex) {
+                                                    log.error(ExceptionUtils.getStackTrace(ex));
+                                                }
+                                                if (StringUtils.isNotBlank(path)) {
+                                                    dataList.add(String.format("%s/%s", prefix, path));
+                                                }
+                                            });
+                                        }
+                                    }
+                                }
+                            } catch (Exception ex) {
+                                log.error("GET Catalog directory listing error [{}]", ExceptionUtils.getStackTrace(ex));
+                            }
+                        });
+                    }
+                }
+                int size = dataList.size(), startIndex = 0, endIndex = size;
+                if (StringUtils.isNotBlank(last)) {
+                    int index = dataList.indexOf(last);
+                    if (index != -1) {
+                        startIndex = index + 1;
+                    }
+                }
+                if (startIndex > size) {
+                    startIndex = size;
+                }
+                if (Objects.nonNull(n)) {
+                    if (n < 1) {
+                        n = size;
+                    }
+                    endIndex = startIndex + n;
+                }
+                if (endIndex > size) {
+                    endIndex = size;
+                }
+                resultList = dataList.subList(startIndex, endIndex);
+
+                log.info("GET Catalog n [{}] last [{}] startIndex [{}] endIndex [{}] link [{}]", n, last, startIndex, endIndex, link);
+            }
+            DockerCatalog dockerCatalog = DockerCatalog.builder().next(next).repositories(resultList).build();
+
+            return dockerCatalog;
+        } catch (Exception ex) {
+            log.error("GET Catalog [n:{}, last:{} error {}]", n, last, ExceptionUtils.getStackTrace(ex));
+
+        }
+        return null;
+    }
+
+
+    public List<DockeerImageResult> getDockerTsags(Integer n , String last,String path ) {
+        // 1. 去除首尾斜杠，避免空元素
+        String trimmed = path.replaceAll("^/+|/+$", "");
+
+        // 2. 按斜杠分割
+        String[] parts = trimmed.split("/");
+
+        // 3. 校验分段数量
+        if (parts.length < 3) {
+            throw new IllegalArgumentException("路径格式错误，path:"+path);
+        }
+
+        // 4. 提取各段
+        String storageId = parts[0];
+        String repositoryId = parts[1];
+        String imagePath =String.join("/", Arrays.copyOfRange(parts, 2, parts.length));
+
+        try {
+            log.info("Listing Image Tags storageId [{}] repositoryId [{}] imagePath [{}] n [{}] last [{}]", storageId, repositoryId, imagePath, n, last);
+            RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, imagePath);
+            List<FileContent> tagDirList = null;
+            if (Files.exists(repositoryPath)) {
+                DirectoryListing directoryListing = directoryListingService.fromRepositoryPath(repositoryPath);
+                tagDirList = Optional.ofNullable(directoryListing.getDirectories()).orElse(Collections.emptyList()).stream().filter(item -> RepositoryPathUtil.isDockerTag(repositoryPathResolver.resolve(storageId, repositoryId, item.getArtifactPath()))).collect(Collectors.toList());
+            }
+            List<String> tagList = Optional.ofNullable(tagDirList).orElse(Collections.emptyList()).stream().map(FileContent::getName).collect(Collectors.toList());
+            List<String> resultList;
+            int size = tagList.size(), startIndex = 0, endIndex = size;
+            if (StringUtils.isNotBlank(last)) {
+                int index = tagList.indexOf(last);
+                if (index != -1) {
+                    startIndex = index + 1;
+                }
+            }
+            if (startIndex > size) {
+                startIndex = size;
+            }
+            if (Objects.nonNull(n)) {
+                if (n < 1) {
+                    n = size;
+                }
+                endIndex = startIndex + n;
+            }
+            if (endIndex > size) {
+                endIndex = size;
+            }
+            resultList = tagList.subList(startIndex, endIndex);
+            DockerTags dockerTags = DockerTags.builder().name(imagePath).tags(resultList).build();
+
+            if(dockerTags !=null && !dockerTags.getTags().isEmpty()){
+                List<DockeerImageResult> results  = new ArrayList<>(dockerTags.getTags().size());
+                for (String tag : dockerTags.getTags()){
+                    DockeerImageResult dockeerImageResult = new DockeerImageResult();
+                    dockeerImageResult.setArtifactName(dockerTags.getName());
+                    dockeerImageResult.setPath(String.format("%s/%s/%s:%s", storageId,repositoryId,dockerTags.getName(),tag));
+                    dockeerImageResult.setStorageId(storageId);
+                    dockeerImageResult.setTag(tag);
+                    dockeerImageResult.setRepositoryId(repositoryId);
+                    long  imageSize = getDockerImageSize(storageId, repositoryId,imagePath+"/"+tag);
+                    dockeerImageResult.setSize(FileSizeConvertUtils.convertBytesWithDecimal(imageSize, "MB"));
+                    results.add(dockeerImageResult);
+                }
+                return results;
+            }else {
+                return null;
+            }
+
+        } catch (Exception ex) {
+            log.error("Listing Image Tags storageId [{}] repositoryId [{}] imagePath [{}] n [{}] last [{}] error [{}]", storageId, repositoryId, imagePath, n, last, ExceptionUtils.getStackTrace(ex));
+        }
+        return null;
+    }
+
 }

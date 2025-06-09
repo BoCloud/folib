@@ -14,13 +14,7 @@
 
     <artifactId>folib-storage-pypi-layout-provider</artifactId>
     <packaging>jar</packaging>
-
     <name>Folib: Storage [PyPi Layout Provider]</name>
-
-
-
-
-
     <inceptionYear>2014</inceptionYear>
 
      <scm>

@@ -14,13 +14,7 @@
 
     <artifactId>folib-storage-php-layout-provider</artifactId>
     <packaging>jar</packaging>
-
     <name>Folib: Storage [PHP Layout Provider]</name>
-
-
-
-
-
     <inceptionYear>2019</inceptionYear>
 
      <scm>

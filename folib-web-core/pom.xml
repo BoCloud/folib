@@ -14,9 +14,7 @@
 
     <artifactId>folib-web-core</artifactId>
     <packaging>jar</packaging>
-
     <name>Folib: Web Core</name>
-
     <inceptionYear>2019</inceptionYear>
 
      <scm>

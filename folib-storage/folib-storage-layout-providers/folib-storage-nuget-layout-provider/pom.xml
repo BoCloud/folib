@@ -14,13 +14,7 @@
 
     <artifactId>folib-storage-nuget-layout-provider</artifactId>
     <packaging>jar</packaging>
-
     <name>Folib: Storage [Nuget Layout Provider]</name>
-
-
-
-
-
     <inceptionYear>2019</inceptionYear>
 
      <scm>

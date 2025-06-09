@@ -14,13 +14,7 @@
 
     <artifactId>folib-storage-p2-layout-provider</artifactId>
     <packaging>jar</packaging>
-
     <name>Folib: Storage [P2 Layout Provider]</name>
-
-
-
-
-
     <inceptionYear>2019</inceptionYear>
 
      <scm>

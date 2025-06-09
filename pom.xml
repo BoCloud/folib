@@ -13,9 +13,7 @@
     </parent>
 
     <artifactId>folib-server</artifactId>
-    <version>${revision}</version>
     <packaging>pom</packaging>
-
     <name>Folib: Server</name>
     <inceptionYear>2019</inceptionYear>
 

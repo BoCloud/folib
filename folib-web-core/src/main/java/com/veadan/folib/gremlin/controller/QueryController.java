@@ -4,10 +4,9 @@ import com.veadan.folib.gremlin.entity.QueryResult;
 import com.veadan.folib.gremlin.entity.vo.PropertyVo;
 import com.veadan.folib.gremlin.service.QueryService;
 import io.swagger.annotations.Api;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * @Author: haifeng
@@ -44,5 +43,14 @@ public class QueryController {
         return queryService.getValueMap(gremlinHost, gremlinPort, sourceName, id, false);
     }
 
+    @GetMapping("/artifacts")
+    public ResponseEntity<?> queryArtifacts(@RequestParam (value = "pageNum", defaultValue = "1") int pageNum,
+                                         @RequestParam (value = "pageSize", defaultValue = "10") int pageSize,
+                                         @RequestParam(value = "artifactSize", defaultValue = "0") long artifactSize
+    ) {
+        // 默认单位MB
+        long size = artifactSize  == 0 ? 0 : artifactSize * 8388608;
+        return ResponseEntity.ok(queryService.queryArtifacts(gremlinHost, gremlinPort, pageNum, pageSize, size));
+    }
 
 }

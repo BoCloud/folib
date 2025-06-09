@@ -12,7 +12,6 @@
     <artifactId>folib-storage-cargo-layout-provider</artifactId>
     <name>Folib: Storage [cargo Layout Provider]</name>
     <description>folib-storage-cargo-layout-provider</description>
-
     <packaging>jar</packaging>
 
 

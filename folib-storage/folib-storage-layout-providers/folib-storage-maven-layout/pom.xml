@@ -13,13 +13,7 @@
 
 <artifactId>folib-storage-maven-layout</artifactId>
 <packaging>pom</packaging>
-
 <name>Folib: Storage Maven Layout</name>
-
-
-
-
-
 <inceptionYear>2019</inceptionYear>
 
 

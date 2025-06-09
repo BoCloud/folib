@@ -11,15 +11,8 @@
         <version>3.0-SNAPSHOT</version>
         <relativePath/>
     </parent>
-
     <artifactId>folib-authentication-api</artifactId>
-
     <name>Folib: Authentication API</name>
-
-
-
-
-
     <inceptionYear>2019</inceptionYear>
 
      <scm>

@@ -225,17 +225,17 @@ export default {
       formData.append("parseArtifact", JSON.stringify(artifact))
       this.loading = true
       singleArtifactUpload(formData).then((res) => {
-        this.loading = false
+        // this.loading = false
         this.close()
         this.reload()
         this.message(0, "success", this.$t("Store.OperationSuccess"))
       }).catch((err) => {
-        this.loading = true
+        // this.loading = true
         let msg = err.response.data.error ? err.response.data.error : err.response.data
         console.log('upload error：', msg)
         this.message(err.response.status, "error", msg)
       }).finally(() => {
-        // this.loading = false
+        this.loading = false
       })
     },
   }

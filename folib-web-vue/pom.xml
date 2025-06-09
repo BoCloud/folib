@@ -14,7 +14,6 @@
 
     <artifactId>folib-web-vue</artifactId>
     <packaging>pom</packaging>
-
     <name>Folib: Web-vue</name>
 
 

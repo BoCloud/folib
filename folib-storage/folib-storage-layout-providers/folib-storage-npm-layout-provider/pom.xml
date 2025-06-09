@@ -16,11 +16,6 @@
     <packaging>jar</packaging>
 
     <name>Folib: Storage [NPM Layout Provider]</name>
-
-
-
-
-
     <inceptionYear>2019</inceptionYear>
 
      <scm>

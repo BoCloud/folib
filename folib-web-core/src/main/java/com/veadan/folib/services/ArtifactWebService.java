@@ -2,6 +2,7 @@ package com.veadan.folib.services;
 
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactStatistics;
+import com.veadan.folib.domain.DockeerImageResult;
 import com.veadan.folib.domain.StatusInfo;
 import com.veadan.folib.domain.thirdparty.ArtifactInfo;
 import com.veadan.folib.domain.thirdparty.ArtifactQuery;
@@ -337,4 +338,12 @@ public interface ArtifactWebService {
      */
     void doForceDelete(RepositoryPath repositoryPath);
 
+    /**
+     * 查询docker镜像信息
+     *
+     * @param imageNumber 镜像数量
+     * @param imageSize 镜像大小
+     * @return 镜像信息
+     */
+    List<DockeerImageResult> queryDockerImages(Integer imageNumber,long imageSize);
 }
