@@ -142,14 +142,20 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         }
         long low = pagination.getPageNumber() * pagination.getPageSize();
         long high = (pagination.getPageNumber() + 1) * pagination.getPageSize();
+        List<Artifact> artifactList =null;
+        if(Optional.ofNullable(repository).isEmpty()){
+            artifactList = buildEntityTraversal(regex, artifactName, metadataSearch, storageIdAndRepositoryIdList, storageId, repositoryId, repositoryIds, beginDate, endDate, safeLevel, digestAlgorithm, digest, query, sortField, sortOrder)
+                    .range(low, high)
+                    .map(artifactAdapter.searchFold(Optional.of(GenericArtifactCoordinatesEntity.class))).toList();
+        }else {
+             artifactList = buildEntityTraversal(regex, artifactName, metadataSearch, storageIdAndRepositoryIdList, storageId, repositoryId, repositoryIds, beginDate, endDate, safeLevel, digestAlgorithm, digest, query, sortField, sortOrder)
+                    .range(low, high)
+                    .map(artifactAdapter.searchFold(Optional.ofNullable(repository)
+                            .map(com.veadan.folib.storage.repository.Repository::getLayout)
+                            .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
+                            .map(ArtifactLayoutDescription::getArtifactCoordinatesClass))).toList();
+        }
 
-
-        List<Artifact> artifactList = buildEntityTraversal(regex, artifactName, metadataSearch, storageIdAndRepositoryIdList, storageId, repositoryId, repositoryIds, beginDate, endDate, safeLevel, digestAlgorithm, digest, query, sortField, sortOrder)
-                .range(low, high)
-                .map(artifactAdapter.searchFold(Optional.ofNullable(repository)
-                        .map(com.veadan.folib.storage.repository.Repository::getLayout)
-                        .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
-                        .map(ArtifactLayoutDescription::getArtifactCoordinatesClass))).toList();
         return new PageImpl<>(artifactList, pagination, count);
     }
 
