@@ -81,9 +81,11 @@ public class HelmArtifactController extends BaseArtifactController {
                 repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, path);
                 if (!Files.exists(repositoryPath)) {
                     // 创建刷新索引
-                    RepositoryPath repoPath = repositoryPathResolver.resolve(repository, "");
-                    String absolutePath = repoPath.toAbsolutePath().toString();
-                    helmRepoUtil.createIndex(absolutePath, repository);
+                    //RepositoryPath repoPath = repositoryPathResolver.resolve(repository, "");
+                    //String absolutePath = repoPath.toAbsolutePath().toString();
+                    //helmRepoUtil.createIndex(absolutePath, repository);
+                    HelmMetadataIndexer indexer = new HelmMetadataIndexer(storageId, repositoryId, artifactManagementService, repositoryPathResolver);
+                    indexer.reindexAsSystem();
                 }
                 try (InputStream in = Files.newInputStream(repositoryPath);) {
                     OutputStream out = response.getOutputStream();

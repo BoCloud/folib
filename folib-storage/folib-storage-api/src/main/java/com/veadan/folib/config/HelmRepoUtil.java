@@ -48,31 +48,6 @@ public class HelmRepoUtil {
         OPTIONS.setPrettyFlow(false);
     }
 
-    /**
-     * 创建与更新Helm 仓库 索引文件
-     *
-     * @param fileAbsolutePath 仓库路径
-     * @throws IOException          io 异常
-     * @throws InterruptedException 中断的异常
-     */
-    public void createIndex(String fileAbsolutePath, Repository repository) throws IOException, InterruptedException {
-        Runtime runtime = Runtime.getRuntime();
-        StringBuilder helmCommand = new StringBuilder();
-        helmCommand
-                .append("helm repo index ")
-                .append(fileAbsolutePath)
-                .append(" --url ")
-                .append(getRepositoryBaseUrl(repository));
-        String command = helmCommand.toString();
-        Process pro = runtime.exec(command);
-        int status = pro.waitFor();
-        if (status != 0) {
-            log.error("Failed to call shell's command ");
-        }
-//        RepositoryPath path = repositoryPathResolver.resolve(repository,"index.yaml");
-//        Files.setAttribute(path, RepositoryFiles.formatAttributes(RepositoryFileAttributeType.METADATA),"index.yaml");
-
-    }
 
     public void reloadIndex(RepositoryPath repositoryPath) {
         String fileName = repositoryPath.getTarget().toString();

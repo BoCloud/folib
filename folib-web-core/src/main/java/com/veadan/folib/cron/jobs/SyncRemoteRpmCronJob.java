@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
 import javax.annotation.Resource;
 import javax.xml.parsers.DocumentBuilder;
@@ -189,9 +190,20 @@ public class SyncRemoteRpmCronJob extends JavaCronJob {
 
 
     // 解析repomd.xml文件获取保存check
-    private Dict extractPrimaryXmlPath(InputStream repomdXml, Repository repository,List<String> packageList) throws Exception {
-        DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        Document doc = builder.parse(repomdXml);
+    private Dict extractPrimaryXmlPath(InputStream repomdXml, Repository repository, List<String> packageList) throws Exception {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+
+        // 禁用各种可能引发 XXE 的功能
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        factory.setXIncludeAware(false);
+        factory.setExpandEntityReferences(false);
+
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        Document doc = builder.parse(new InputSource(repomdXml));
+
         NodeList nodes = doc.getElementsByTagName("data");
         Dict update = null;
         for (int i = 0; i < nodes.getLength(); i++) {
@@ -201,15 +213,19 @@ public class SyncRemoteRpmCronJob extends JavaCronJob {
             artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(), localPath);
             packageList.add(localPath);
             if ("primary".equals(dataElement.getAttribute("type"))) {
-                update=new Dict();
-                update.setDictType(DICT_TYPE).setDictKey(repository.getStorageIdAndRepositoryId()).setDictValue(localPath);
+                update = new Dict();
+                update.setDictType(DICT_TYPE)
+                        .setDictKey(repository.getStorageIdAndRepositoryId())
+                        .setDictValue(localPath);
             }
         }
+
         RepositoryPath repomd = repositoryPathResolver.resolve(repository, "repodata/repomd.xml");
         if (Files.exists(repomd)) {
             Files.delete(repomd);
         }
-        artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(),"repodata/repomd.xml" );
+        artifactResolutionService.resolvePath(repository.getStorage().getId(), repository.getId(), "repodata/repomd.xml");
+
         return update;
     }
 

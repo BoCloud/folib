@@ -5,6 +5,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -15,7 +16,9 @@ import org.apache.maven.artifact.repository.metadata.*;
 import org.apache.maven.project.artifact.PluginArtifact;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
 
 public class MetadataMerger
 {
@@ -187,26 +190,47 @@ public class MetadataMerger
     }
 
 
-    private HashMap<String, String> readPluginXmlFile(ZipInputStream zis)
-    {
-
+    private HashMap<String, String> readPluginXmlFile(ZipInputStream zis) {
         PluginHandler handler = new PluginHandler();
         SAXParserFactory saxParserFactory;
         SAXParser saxParser;
 
-        try
-        {
+        try {
             saxParserFactory = SAXParserFactory.newInstance();
+
+            // 禁用 DTD 和外部实体（通过 XMLReader 设置）
+            saxParserFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            saxParserFactory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            saxParserFactory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            saxParserFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            saxParserFactory.setXIncludeAware(false);
+            saxParserFactory.setValidating(false);
+
             saxParser = saxParserFactory.newSAXParser();
-            saxParser.parse(zis, handler);
-        }
-        catch (IOException | SAXException | ParserConfigurationException e)
-        {
+
+            // 获取 XMLReader 实例并关闭实体解析
+            XMLReader xmlReader = saxParser.getXMLReader();
+            xmlReader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            xmlReader.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            xmlReader.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            xmlReader.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            xmlReader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            xmlReader.setFeature("http://sun.com/xml/internal/parser/dtd/fully-supported", false);
+
+            // 使用自定义 EntityResolver 防止实体扩展
+            xmlReader.setEntityResolver((publicId, systemId) -> new InputSource(new StringReader("")));
+
+            // 开始解析
+            xmlReader.setContentHandler(handler);
+            xmlReader.parse(new InputSource(zis));
+
+        } catch (Exception e) {
             logger.error("*** Error occurred while trying to parse the plugin.xml File ", e);
         }
 
         return handler.getPluginMap();
     }
+
 
     private Collection<SnapshotVersion> createNewSnapshotVersions(String version,
                                                                   String timestamp,

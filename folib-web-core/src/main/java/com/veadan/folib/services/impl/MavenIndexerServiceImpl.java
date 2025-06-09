@@ -15,6 +15,10 @@ import com.veadan.folib.services.MavenIndexerService;
 import com.veadan.folib.storage.repository.Repository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.ExecuteWatchdog;
+import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.LineIterator;
 import org.apache.commons.lang3.StringUtils;
@@ -27,6 +31,7 @@ import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -74,17 +79,38 @@ public class MavenIndexerServiceImpl implements MavenIndexerService {
             File file = new File(targetPath);
             long startTime = System.currentTimeMillis();
             log.info("存储MavenIndexer format [{}] indexId [{}] chainId [{}] url [{}] targetPath [{}] 开始", format, indexId, chainId, url, targetPath);
+
             binPath = getBinPath();
-            String command = binPath + " --format " + format + "  --indexId " + indexId + " --chainId " + chainId + " --url " + url;
-            Process process = Runtime.getRuntime().exec(command);
-            //获取命令输出结果
-            try (InputStream inputStream = process.getInputStream()) {
-                FileUtil.writeFromStream(inputStream, file);
-            }
-            //等待命令执行完成
-            process.waitFor();
-            log.info("存储MavenIndexer format [{}] indexId [{}] chainId [{}] url [{}] 结束 targetPath [{}] 耗时约为 [{}] 秒", format, indexId, chainId, url, targetPath, (System.currentTimeMillis() - startTime) / 1000);
+
+            // 构建命令行参数
+            CommandLine commandLine = CommandLine.parse(binPath)
+                    .addArgument("--format").addArgument(format)
+                    .addArgument("--indexId").addArgument(indexId)
+                    .addArgument("--chainId").addArgument(chainId)
+                    .addArgument("--url").addArgument(url);
+
+            // 设置执行器和输出流处理器
+            DefaultExecutor executor = new DefaultExecutor();
+            executor.setExitValue(0); // 假设正常退出码为 0
+
+            // 设置超时（60秒）
+            ExecuteWatchdog watchdog = new ExecuteWatchdog(60_000);
+            executor.setWatchdog(watchdog);
+
+            // 将标准输出写入文件
+            FileOutputStream outputStream = new FileOutputStream(file);
+            PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
+            executor.setStreamHandler(streamHandler);
+
+            // 执行命令
+            int exitCode = executor.execute(commandLine);
+            log.info("命令执行结束，退出码: {}", exitCode);
+
+            log.info("存储MavenIndexer format [{}] indexId [{}] chainId [{}] url [{}] 结束 targetPath [{}] 耗时约为 [{}] 秒",
+                    format, indexId, chainId, url, targetPath, (System.currentTimeMillis() - startTime) / 1000);
+
             return targetPath;
+
         } catch (Exception e) {
             log.error("存储MavenIndexer format [{}] indexId [{}] chainId [{}] url [{}] 错误 [{}]", format, indexId, chainId, url, ExceptionUtils.getStackTrace(e));
         } finally {
@@ -94,6 +120,7 @@ public class MavenIndexerServiceImpl implements MavenIndexerService {
         }
         return targetPath;
     }
+
 
     @Async
     @Override

@@ -819,7 +819,11 @@
             <artifactId>h2</artifactId>
             <version>2.1.214</version> <!-- Use latest stable version -->
         </dependency>
-
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-exec</artifactId>
+            <version>1.3</version>
+        </dependency>
     </dependencies>
 
     <profiles>
