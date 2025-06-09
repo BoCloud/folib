@@ -80,7 +80,7 @@ public class ArtifactIdGroupAdapter implements VertexEntityTraversalAdapter<Arti
     @Override
     public EntityTraversal<Vertex, ArtifactIdGroup> fold()
     {
-        return fold(Optional.empty(), Optional.empty());
+        return fold(Optional.of(GenericArtifactCoordinates.class), Optional.empty());
     }
 
     private ArtifactIdGroup map(Traverser<Map<String, Object>> t)

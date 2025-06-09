@@ -31,7 +31,7 @@ public class GoArtifactCoordinates extends LayoutArtifactCoordinatesEntity<GoArt
     private static final Logger logger = LoggerFactory.getLogger(GoArtifactCoordinates.class);
 
 
-    private static final String NAME = "name";
+    public static final String NAME = "name";
     public static final String VERSION = "version";
     public static final String EXTENSION = "extension";
 

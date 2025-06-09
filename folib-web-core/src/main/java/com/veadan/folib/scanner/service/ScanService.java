@@ -214,9 +214,10 @@ public class ScanService {
             dependencyList.clear();
             dependencyList = null;
         } catch (Exception e) {
+            log.error("执行扫描失败 [{}]", artifact.getUuid());
+            log.error("执行扫描失败 [{}]", ExceptionUtils.getStackTrace(e));
             artifact.setSafeLevel(SafeLevelEnum.SCAN_FAIL.getLevel());
             artifactService.saveOrUpdateArtifact(artifact);
-            log.error("执行扫描失败 [{}]", ExceptionUtils.getStackTrace(e));
             handleRetryCount(artifact);
         }
         artifact.setReport("");

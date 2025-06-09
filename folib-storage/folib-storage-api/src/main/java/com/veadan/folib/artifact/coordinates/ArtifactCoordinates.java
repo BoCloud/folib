@@ -10,7 +10,7 @@ import java.net.URI;
  * @author xuxinping
  */
 @XmlRootElement(name = "artifactCoordinates")
-public interface ArtifactCoordinates<C extends ArtifactCoordinates<C, V>, V extends Comparable<V>>
+public interface  ArtifactCoordinates<C extends ArtifactCoordinates<C, V>, V extends Comparable<V>>
         extends Comparable<C>, GenericArtifactCoordinates
 {
 

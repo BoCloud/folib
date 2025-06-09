@@ -1,8 +1,11 @@
 package com.veadan.folib.gremlin.adapters;
 
+import cn.hutool.extra.spring.SpringUtil;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.artifact.ArtifactTag;
-import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
-import com.veadan.folib.artifact.coordinates.GenericArtifactCoordinates;
+import com.veadan.folib.artifact.coordinates.*;
+import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.db.schema.Edges;
 import com.veadan.folib.db.schema.Properties;
 import com.veadan.folib.db.schema.Vertices;
@@ -10,20 +13,34 @@ import com.veadan.folib.domain.*;
 import com.veadan.folib.gremlin.dsl.EntityTraversal;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
 import com.veadan.folib.gremlin.dsl.__;
+import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.strategy.ArtifactCoordinatesStrategyFactory;
 import com.veadan.folib.util.UserUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.maven.Maven;
 import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.apache.tinkerpop.gremlin.process.traversal.Traversal;
 import org.apache.tinkerpop.gremlin.process.traversal.Traverser;
 import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import jakarta.inject.Inject;
+
+import com.veadan.folib.gremlin.dsl.EntityTraversal;
+import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
+import com.veadan.folib.gremlin.dsl.__;
+import com.veadan.folib.gremlin.repositories.GremlinVertexRepository;
+import com.veadan.folib.gremlin.repositories.GremlinRepository;
+
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -45,6 +62,12 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
     VulnerabilityAdapter vulnerabilityAdapter;
     @Inject
     ComponentAdapter componentAdapter;
+    @Inject
+    @Lazy
+    ConfigurationManager configurationManager;
+    @Inject
+    @Lazy
+    ArtifactCoordinatesStrategyFactory strategyFactory;
 
     @Override
     public String label() {
@@ -53,7 +76,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
 
     @Override
     public EntityTraversal<Vertex, Artifact> fold() {
-        return fold(Optional.empty());
+        return fold(Optional.of(GenericArtifactCoordinatesEntity.class));
     }
 
     public EntityTraversal<Vertex, Artifact> fold(Optional<Class<? extends GenericArtifactCoordinates>> layoutArtifactCoordinatesClass) {
@@ -297,12 +320,11 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 .by(__.enrichPropertyValue("downloadCount"))
                 .by(__.enrichPropertyValue("safeLevel"))
                 .by(__.enrichPropertyValues("filePaths"))
-                .by(__.outE(Edges.ARTIFACT_HAS_ARTIFACT_COORDINATES)
-                        .mapToObject(__.inV()
+                .by(__.mapToObject(__.outE(Edges.ARTIFACT_HAS_ARTIFACT_COORDINATES).inV()
                                 .map(artifactCoordinatesAdapter.fold(layoutArtifactCoordinatesClass))
-                                .map(EntityTraversalUtils::castToObject)))
-                .by(__.outE(Edges.ARTIFACT_HAS_TAGS)
-                        .inV()
+                                .map(EntityTraversalUtils::castToObject)
+                        ))
+                .by(__.out(Edges.ARTIFACT_HAS_TAGS)
                         .map(artifactTagAdapter.fold())
                         .map(EntityTraversalUtils::castToObject)
                         .fold())
@@ -488,7 +510,7 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 .by(__.enrichPropertyValues("checksums"))
                 .by(__.outE(Edges.ARTIFACT_HAS_ARTIFACT_COORDINATES)
                         .mapToObject(__.inV()
-                                .map(artifactCoordinatesAdapter.fold(Optional.empty()))
+                                .map(artifactCoordinatesAdapter.fold(Optional.of(GenericArtifactCoordinatesEntity.class)))
                                 .map(EntityTraversalUtils::castToObject)))
                 .by(__.outE(Edges.ARTIFACT_HAS_TAGS)
                         .inV()
@@ -507,9 +529,22 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
     private VulnerabilityArtifactDomain vulnerabilityMap(Traverser<Map<String, Object>> t) {
         String storageId = extractObject(String.class, t.get().get("storageId"));
         String repositoryId = extractObject(String.class, t.get().get("repositoryId"));
-        ArtifactCoordinates artifactCoordinates = extractObject(ArtifactCoordinates.class,
-                t.get().get("artifactCoordinates"));
+        ArtifactCoordinates artifactCoordinates = null;
+        if (t.get().get("artifactCoordinates") instanceof GenericArtifactCoordinatesEntity entity) {
+            Repository repository = configurationManager.getRepository(storageId, repositoryId);
+            if (repository == null) {
+                throw new IllegalStateException("Repository not found: " + storageId + ":" + repositoryId);
+            }
+            Class<? extends GenericArtifactCoordinates> clazz = Optional.ofNullable(repository.getLayout())
+                    .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
+                    .map(ArtifactLayoutDescription::getArtifactCoordinatesClass)
+                    .orElseThrow(() -> new IllegalStateException("Coordinates class not found"));
 
+            artifactCoordinates =   strategyFactory.getArtifactCoordinates(clazz, entity);
+        } else {
+            artifactCoordinates = extractObject(ArtifactCoordinates.class,
+                    t.get().get("artifactCoordinates"));
+        }
         VulnerabilityArtifactDomain result = new VulnerabilityArtifactDomain();
         result.setStorageId(storageId);
         result.setRepositoryId(repositoryId);
@@ -563,8 +598,22 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
     private Artifact map(Traverser<Map<String, Object>> t) {
         String storageId = extractObject(String.class, t.get().get("storageId"));
         String repositoryId = extractObject(String.class, t.get().get("repositoryId"));
-        ArtifactCoordinates artifactCoordinates = extractObject(ArtifactCoordinates.class,
-                t.get().get("artifactCoordinates"));
+        ArtifactCoordinates artifactCoordinates = null;
+        if (t.get().get("artifactCoordinates") instanceof GenericArtifactCoordinatesEntity entity) {
+            Repository repository = configurationManager.getRepository(storageId, repositoryId);
+            if (repository == null) {
+                throw new IllegalStateException("Repository not found: " + storageId + ":" + repositoryId);
+            }
+            Class<? extends GenericArtifactCoordinates> clazz = Optional.ofNullable(repository.getLayout())
+                    .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
+                    .map(ArtifactLayoutDescription::getArtifactCoordinatesClass)
+                    .orElseThrow(() -> new IllegalStateException("Coordinates class not found"));
+
+            artifactCoordinates =   strategyFactory.getArtifactCoordinates(clazz, entity);
+        } else {
+            artifactCoordinates = extractObject(ArtifactCoordinates.class,
+                    t.get().get("artifactCoordinates"));
+        }
 
         ArtifactEntity result = new ArtifactEntity(storageId, repositoryId, artifactCoordinates);
         result.setNativeId(extractObject(Long.class, t.get().get("id")));
@@ -861,5 +910,45 @@ public class ArtifactAdapter implements VertexEntityTraversalAdapter<Artifact> {
                 .select("x")
                 .unfold();
     }
+
+    public Artifact mapFromMap(Map<String, Object> data)
+    {
+        ArtifactEntity result = new ArtifactEntity();
+        result.setNativeId(extractObject(Long.class, data.get("id")));
+        result.setUuid(extractObject(String.class, data.get("uuid")));
+        result.setStorageId(extractObject(String.class, data.get("storageId")));
+        result.setRepositoryId(extractObject(String.class, data.get("repositoryId")));
+        result.setStorageIdAndRepositoryId(extractObject(String.class, data.get("storageIdAndRepositoryId")));
+        result.setLastUpdated(extractObject(LocalDateTime.class, data.get("lastUpdated")));
+        result.setLastUsed(extractObject(LocalDateTime.class, data.get("lastUsed")));
+        System.out.println("result.created() = " + JSON.toJSONString(data.get("created")));
+
+        if (data.get("created") instanceof Long created) {
+            LocalDateTime dateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(created), ZoneId.systemDefault());
+            result.setCreated(dateTime);
+        }
+        result.setSizeInBytes(extractObject(Long.class, data.get("sizeInBytes")));
+        result.setDownloadCount(extractObject(Integer.class, data.get("downloadCount")));
+        result.setSafeLevel(extractObject(String.class, data.get("safeLevel")));
+        result.setFilePaths(extractObject(Set.class, data.get("filePaths")));
+        result.setArtifactCoordinates(extractObject(ArtifactCoordinates.class, data.get("artifactCoordinates")));
+        result.setTagSet(extractObject(Set.class, data.get("tagSet")));
+
+        result.setArtifactFileExists(extractObject(Boolean.class, data.get("artifactFileExists")));
+        result.setDependencyCount(extractObject(Integer.class, data.get("dependencyCount")));
+        result.setPromotion(extractObject(String.class, data.get("promotion")));
+        result.setPromotionNodes(extractObject(Set.class, data.get("promotionNodes")));
+        result.setEnabled(extractObject(Boolean.class, data.get("enabled")));
+        result.setComponentSet(extractObject(Set.class, data.get("componentSet")));
+        result.setCreatedBy(extractObject(String.class, data.get("createdBy")));
+        result.setUpdatedBy(extractObject(String.class, data.get("updatedBy")));
+        result.setArtifactName(extractObject(String.class, data.get("artifactName")));
+        result.setArtifactPath(extractObject(String.class, data.get("artifactPath")));
+        result.setScanDateTime(extractObject(LocalDateTime.class, data.get("scanDateTime")));
+        result.setMetadata(extractObject(String.class, data.get("metadata")));
+        return result;
+    }
+
+
 
 }

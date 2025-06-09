@@ -65,15 +65,15 @@ public class NpmArtifactCoordinates extends LayoutArtifactCoordinatesEntity<NpmA
 
     public static final Pattern NPM_EXTENSION_PATTERN = Pattern.compile(NPM_EXTENSION_REGEX);
 
-    private static final String SCOPE = "scope";
+    public static final String SCOPE = "scope";
 
-    private static final String NAME = "name";
+    public static final String NAME = "name";
 
-    private static final String VERSION = "version";
+    public static final String VERSION = "version";
 
-    private static final String EXTENSION = "extension";
+    public static final String EXTENSION = "extension";
 
-    private static final String DISTRIBUTION = "distribution";
+    public static final String DISTRIBUTION = "distribution";
 
     public static final List<String> NPM_EXTENSION_LIST = Lists.newArrayList(".tgz", ".har");
 

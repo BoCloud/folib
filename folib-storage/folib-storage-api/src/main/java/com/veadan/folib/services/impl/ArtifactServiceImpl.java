@@ -79,8 +79,13 @@ public class ArtifactServiceImpl implements ArtifactService {
 
     @Override
     public void saveOrUpdateArtifact(Artifact artifact) {
-        Optional<Artifact> exist = artifactRepository.findById(artifact.getUuid());
+        Optional<Artifact> exist = artifactRepository.findById(artifact.getStorageId(),  artifact.getRepositoryId(), artifact.getArtifactPath());
+
+        //Artifact  artifactBase = artifactRepository.findOneArtifactBase(artifact.getStorageId(), artifact.getRepositoryId(),artifact.getArtifactPath());
         ArtifactEntity artifactEntity = (ArtifactEntity)artifact ;
+        //if(artifactBase!=null){
+        //    artifactEntity.setNativeId(artifactBase.getNativeId());
+        //}
         exist.ifPresent(value -> artifactEntity.setNativeId(value.getNativeId()));
         saveOrUpdateArtifact(artifactEntity, true);
     }

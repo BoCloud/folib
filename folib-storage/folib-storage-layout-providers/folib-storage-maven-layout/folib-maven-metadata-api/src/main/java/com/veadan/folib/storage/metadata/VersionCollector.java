@@ -9,7 +9,7 @@ import com.veadan.folib.storage.metadata.maven.comparators.SnapshotVersionCompar
 import com.veadan.folib.storage.metadata.maven.io.filters.ArtifactVersionDirectoryFilter;
 import com.veadan.folib.storage.metadata.maven.versions.MetadataVersion;
 import com.veadan.folib.storage.metadata.maven.visitors.ArtifactVersionDirectoryVisitor;
-import com.veadan.folib.vo.Repository;
+
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.maven.artifact.Artifact;

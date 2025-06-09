@@ -7,6 +7,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutDescription;
 import com.veadan.folib.artifact.coordinates.ArtifactLayoutLocator;
+import com.veadan.folib.artifact.coordinates.GenericArtifactCoordinates;
 import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
@@ -194,7 +195,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         artifactSearchRange.setEndPos(count);
         artifactSearchRange.setTotal(count);
         List<Artifact> artifactList = entityTraversal.skip(offset).limit(limit)
-                .map(artifactAdapter.aqlSearchFold(Optional.empty())).toList();
+                .map(artifactAdapter.aqlSearchFold(Optional.of(GenericArtifactCoordinatesEntity.class))).toList();
         artifactSearch.setResults(artifactList);
         return artifactSearch;
     }
@@ -302,8 +303,8 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         orEntityTraversalList.add(__.has(Properties.METADATA, P.eq("{}")));
         EntityTraversal[] orEntityTraversalArray = orEntityTraversalList.toArray(new EntityTraversal[orEntityTraversalList.size()]);
         List<Artifact> artifactList = g().V().hasLabel(Vertices.ARTIFACT).has(Properties.STORAGE_ID_AND_REPOSITORY_ID, P.within(storageIdAndRepositoryIdList)).has(Properties.SAFE_LEVEL, P.within(safeLevels))
-                .or(orEntityTraversalArray).order().by(Properties.CREATED, Order.valueOf(order)).range(0, 250).map(artifactAdapter.baseFold(Optional.empty())).toList();
-        return EntityTraversalUtils.reduceHierarchy(artifactList);
+                .or(orEntityTraversalArray).order().by(Properties.CREATED, Order.valueOf(order)).range(0, 250).map(artifactAdapter.baseFold(Optional.of(GenericArtifactCoordinates.class))).toList();
+        return artifactList;
     }
 
     public long findMatchingCountBySafeLevels(List<String> storageIdAndRepositoryIdList, List<String> safeLevels) {
@@ -326,7 +327,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         long high = (pagination.getPageNumber() + 1) * pagination.getPageSize();
         List<Artifact> artifactList = buildEntityTraversalSafeLevels(storageIdAndRepositoryIdList, safeLevels).order().by(Properties.CREATED, Order.valueOf(order))
                 .range(low, high)
-                .map(artifactAdapter.baseFold(Optional.empty())).toList();
+                .map(artifactAdapter.baseFold(Optional.of(GenericArtifactCoordinates.class))).toList();
         return new PageImpl<>(artifactList, pagination, count);
     }
 
@@ -369,7 +370,7 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         long high = (pageable.getPageNumber() + 1) * pageable.getPageSize();
         return buildEntityTraversalByStorageIdAndRepositoryId(storageId, repositoryId)
                 .range(low, high)
-                .map(artifactAdapter.baseFold(Optional.empty())).toList();
+                .map(artifactAdapter.baseFold(Optional.of(GenericArtifactCoordinates.class))).toList();
     }
 
     public Long artifactsBytesStatistics(List<String> storageIdAndRepositoryIdList) {
@@ -1110,6 +1111,23 @@ public class ArtifactRepository extends GremlinVertexRepository<Artifact> {
         } else {
             log.warn("Delete artifact [{}] was not get lock", artifact.getUuid());
         }
+    }
+
+    public Optional<Artifact> findById(String storageId, String repositoryId, String path)
+    {
+        log.debug("findById storageId [{}] repositoryId [{}] path [{}]", storageId, repositoryId, path);
+        com.veadan.folib.storage.repository.Repository repository = configurationManager.getRepository(storageId, repositoryId);
+        long startTime = System.currentTimeMillis();
+        EntityTraversal<Vertex, Artifact> t = g().V()
+                .hasLabel(Vertices.ARTIFACT)
+                .has(Properties.UUID, String.format("%s-%s-%s", storageId, repositoryId, path))
+                .map(artifactAdapter.fold(Optional.ofNullable(repository)
+                        .map(com.veadan.folib.storage.repository.Repository::getLayout)
+                        .map(ArtifactLayoutLocator.getLayoutByNameEntityMap()::get)
+                        .map(ArtifactLayoutDescription::getArtifactCoordinatesClass)));
+        Artifact artifact = t.tryNext().orElse(null);
+        log.debug("findById storageId [{}] repositoryId [{}] path [{}] artifactExists [{}] take time [{}] ms", storageId, repositoryId, path, Objects.nonNull(artifact), System.currentTimeMillis() - startTime);
+        return Optional.ofNullable(artifact);
     }
 
 }
