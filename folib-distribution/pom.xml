@@ -83,7 +83,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>${project.groupId}</groupId>
-                                    <artifactId>folib-common-resources</artifactId>
+                                    <artifactId>folib-commons-resources</artifactId>
                                     <version>${project.version}</version>
                                     <type>jar</type>
 
@@ -104,7 +104,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>${project.groupId}</groupId>
-                                    <artifactId>folib-common-resources</artifactId>
+                                    <artifactId>folib-commons-resources</artifactId>
                                     <version>${project.version}</version>
                                     <type>jar</type>
 
@@ -125,7 +125,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>${project.groupId}</groupId>
-                                    <artifactId>folib-common-resources</artifactId>
+                                    <artifactId>folib-commons-resources</artifactId>
                                     <version>${project.version}</version>
                                     <type>jar</type>
 

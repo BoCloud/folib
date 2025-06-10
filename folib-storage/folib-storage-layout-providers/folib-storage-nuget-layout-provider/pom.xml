@@ -98,7 +98,7 @@
 
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>folib-common-resources</artifactId>
+            <artifactId>folib-commons-resources</artifactId>
              <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
