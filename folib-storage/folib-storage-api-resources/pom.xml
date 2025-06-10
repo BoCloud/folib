@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.veadan.folib</groupId>
+    <artifactId>folib-parent</artifactId>
+    <version>3.0-SNAPSHOT</version>
+    <relativePath/>
+  </parent>
+
+  <artifactId>folib-storage-api-resources</artifactId>
+  <packaging>jar</packaging>
+  <name>Folib: Resources [Storage API]</name>
+
+  <inceptionYear>2019</inceptionYear>
+  <scm>
+    <url>http://git.folib.com/folib/folib-server</url>
+    <connection>scm:git:git://git.folib.com/folib/folib-server.git</connection>
+    <developerConnection>scm:git:git://git.folib.com/folib/folib-server.git</developerConnection>
+  </scm>
+
+  <build>
+    <resources>
+      <resource>
+        <directory>${basedir}/src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

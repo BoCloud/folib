@@ -13,7 +13,7 @@ public class HuggingfaceArtifactCoordinatesStrategy implements  ArtifactCoordina
         huggingFaceArtifactCoordinates.setUuid(entity.getUuid());
         huggingFaceArtifactCoordinates.setVersion(entity.getVersion());
         huggingFaceArtifactCoordinates.setNativeId(entity.getNativeId());
-        huggingFaceArtifactCoordinates.setHierarchyParent(entity.getHierarchyParent());
+        huggingFaceArtifactCoordinates.setHierarchyParent(entity);
         entity.setHierarchyChild(huggingFaceArtifactCoordinates);
         return huggingFaceArtifactCoordinates;
     }

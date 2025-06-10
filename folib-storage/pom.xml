@@ -23,6 +23,7 @@
     </scm>
 
     <modules>
+        <module>folib-storage-api-resources</module>
         <module>folib-storage-core</module>
         <module>folib-storage-api</module>
         <module>folib-storage-layout-providers</module>

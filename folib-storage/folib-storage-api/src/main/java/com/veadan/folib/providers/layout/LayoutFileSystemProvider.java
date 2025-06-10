@@ -5,6 +5,7 @@ import cn.hutool.core.date.DateUtil;
 import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.ArtifactNotFoundException;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
+import com.veadan.folib.commons.io.reloading.FSReloadableInputStreamHandler;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactIdGroup;
 import com.veadan.folib.domain.ArtifactIdGroupEntity;
@@ -31,7 +32,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.carlspring.commons.io.reloading.FSReloadableInputStreamHandler;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

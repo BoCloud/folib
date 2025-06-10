@@ -2,7 +2,7 @@ package com.veadan.folib.storage.metadata.maven;
 
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.repository.proxied.ProxyRepositoryArtifactResolver;
-import org.carlspring.commons.encryption.EncryptionAlgorithmsEnum;
+import com.veadan.folib.commons.encryption.EncryptionAlgorithmsEnum;
 
 import jakarta.inject.Inject;
 import java.io.IOException;

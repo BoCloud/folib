@@ -14,7 +14,7 @@ public class GifLfsArtifactCoordinatesStrategy implements ArtifactCoordinatesStr
         gitLfsArtifactCoordinates.setUuid(entity.getUuid());
         gitLfsArtifactCoordinates.setVersion(entity.getVersion());
         gitLfsArtifactCoordinates.setNativeId(entity.getNativeId());
-        gitLfsArtifactCoordinates.setHierarchyParent(entity.getHierarchyParent());
+        gitLfsArtifactCoordinates.setHierarchyParent(entity);
         entity.setHierarchyChild(gitLfsArtifactCoordinates);
         return gitLfsArtifactCoordinates;
     }

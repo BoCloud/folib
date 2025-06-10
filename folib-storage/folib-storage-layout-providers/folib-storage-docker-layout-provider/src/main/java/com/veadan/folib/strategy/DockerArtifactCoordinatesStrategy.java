@@ -20,7 +20,7 @@ public class DockerArtifactCoordinatesStrategy implements ArtifactCoordinatesStr
             dockerArtifactCoordinates = new DockerArtifactCoordinates(imageName, reference, layers, artifactPath);
             dockerArtifactCoordinates.setUuid(entity.getUuid());
             dockerArtifactCoordinates.setNativeId(entity.getNativeId());
-            dockerArtifactCoordinates.setHierarchyParent(entity.getHierarchyParent());
+            dockerArtifactCoordinates.setHierarchyParent(entity);
             dockerArtifactCoordinates.setVersion(entity.getVersion());
             entity.setHierarchyParent(dockerArtifactCoordinates);
         }

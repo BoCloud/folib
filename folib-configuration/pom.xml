@@ -55,7 +55,7 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>folib-commons</artifactId>
+            <artifactId>folib-commons-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -65,8 +65,9 @@
         </dependency>
 
         <dependency>
-            <groupId>org.carlspring.commons</groupId>
-            <artifactId>commons-io</artifactId>
+            <groupId>com.veadan.folib.commons</groupId>
+            <artifactId>folib-commons-io</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
 

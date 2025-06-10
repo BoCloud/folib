@@ -1,9 +1,10 @@
 package com.veadan.folib.io;
 
+import com.veadan.folib.commons.io.MultipleDigestOutputStream;
 import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.util.MessageDigestUtils;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
-import org.carlspring.commons.io.MultipleDigestOutputStream;
+
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;

@@ -19,7 +19,7 @@ public class HelmArtifactCoordinatesStrategy implements ArtifactCoordinatesStrat
         helmArtifactCoordinates.setUuid(entity.getUuid());
         helmArtifactCoordinates.setNativeId(entity.getNativeId());
         helmArtifactCoordinates.setVersion(entity.getVersion());
-        helmArtifactCoordinates.setHierarchyParent(entity.getHierarchyParent());
+        helmArtifactCoordinates.setHierarchyParent(entity);
         entity.setHierarchyChild(helmArtifactCoordinates);
         return helmArtifactCoordinates;
     }

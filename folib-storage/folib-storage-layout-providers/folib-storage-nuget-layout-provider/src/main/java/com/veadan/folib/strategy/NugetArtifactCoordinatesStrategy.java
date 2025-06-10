@@ -17,7 +17,7 @@ public class NugetArtifactCoordinatesStrategy implements ArtifactCoordinatesStra
         nugetArtifactCoordinates.setNativeId(entity.getNativeId());
         nugetArtifactCoordinates.setUuid(entity.getUuid());
         nugetArtifactCoordinates.setVersion(entity.getVersion());
-        nugetArtifactCoordinates.setHierarchyParent(entity.getHierarchyParent());
+        nugetArtifactCoordinates.setHierarchyParent(entity);
         entity.setHierarchyParent(nugetArtifactCoordinates);
         return nugetArtifactCoordinates;
     }

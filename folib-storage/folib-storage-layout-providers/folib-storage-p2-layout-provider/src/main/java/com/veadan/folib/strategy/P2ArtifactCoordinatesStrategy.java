@@ -16,7 +16,7 @@ public class P2ArtifactCoordinatesStrategy implements ArtifactCoordinatesStrateg
         p2ArtifactCoordinates.setUuid(entity.getUuid());
         p2ArtifactCoordinates.setNativeId(entity.getNativeId());
         p2ArtifactCoordinates.setVersion(entity.getVersion());
-        p2ArtifactCoordinates.setHierarchyParent(entity.getHierarchyParent());
+        p2ArtifactCoordinates.setHierarchyParent(entity);
         entity.setHierarchyChild(p2ArtifactCoordinates);
         return p2ArtifactCoordinates;
     }

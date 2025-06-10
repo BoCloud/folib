@@ -22,7 +22,7 @@ public class NpmArtifactCoordinatesStrategy implements ArtifactCoordinatesStrate
         npmArtifactCoordinates.setNativeId(entity.getNativeId());
         npmArtifactCoordinates.setUuid(entity.getUuid());
         npmArtifactCoordinates.setVersion(entity.getVersion());
-        npmArtifactCoordinates.setHierarchyParent(entity.getHierarchyParent());
+        npmArtifactCoordinates.setHierarchyParent(entity);
         entity.setHierarchyChild(npmArtifactCoordinates);
         return npmArtifactCoordinates;
     }

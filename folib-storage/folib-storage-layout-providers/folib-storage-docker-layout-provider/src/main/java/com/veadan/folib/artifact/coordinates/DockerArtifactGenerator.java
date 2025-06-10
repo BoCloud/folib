@@ -1,6 +1,7 @@
 package com.veadan.folib.artifact.coordinates;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.veadan.folib.commons.io.RandomInputStream;
 import com.veadan.folib.io.LayoutOutputStream;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.schema2.ContainerConfigurationManifest;
@@ -10,7 +11,6 @@ import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
-import org.carlspring.commons.io.RandomInputStream;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;

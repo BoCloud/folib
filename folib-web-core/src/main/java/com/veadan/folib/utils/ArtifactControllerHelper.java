@@ -15,9 +15,9 @@ import com.veadan.folib.storage.repository.Repository;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.carlspring.commons.http.range.ByteRange;
-import org.carlspring.commons.http.range.ByteRangeHeaderParser;
-import org.carlspring.commons.http.range.validation.ByteRangeValidationException;
+import com.veadan.folib.commons.http.range.ByteRange;
+import com.veadan.folib.commons.http.range.ByteRangeHeaderParser;
+import com.veadan.folib.commons.http.range.validation.ByteRangeValidationException;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;

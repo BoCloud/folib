@@ -13,7 +13,7 @@
 
     <groupId>com.veadan.folib</groupId>
     <artifactId>folib-storage-rpm-layout-provider</artifactId>
-
+    <name>Folib: Storage [Rpm  Layout Provider]</name>
     <dependencies>
         <dependency>
             <groupId>com.veadan.folib</groupId>
@@ -39,7 +39,6 @@
             <artifactId>redline</artifactId>
             <scope>compile</scope>
         </dependency>
-
     </dependencies>
     <build>
         <plugins>

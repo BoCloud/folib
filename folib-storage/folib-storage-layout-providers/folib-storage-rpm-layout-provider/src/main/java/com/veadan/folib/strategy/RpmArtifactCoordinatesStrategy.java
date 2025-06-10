@@ -38,7 +38,7 @@ public class RpmArtifactCoordinatesStrategy implements ArtifactCoordinatesStrate
         rpmArtifactCoordinates.setUuid(entity.getUuid());
         rpmArtifactCoordinates.setNativeId(entity.getNativeId());
         rpmArtifactCoordinates.setVersion(entity.getVersion());
-        rpmArtifactCoordinates.setHierarchyParent(entity.getHierarchyParent());
+        rpmArtifactCoordinates.setHierarchyParent(entity);
         entity.setHierarchyChild(rpmArtifactCoordinates);
 
         return rpmArtifactCoordinates;

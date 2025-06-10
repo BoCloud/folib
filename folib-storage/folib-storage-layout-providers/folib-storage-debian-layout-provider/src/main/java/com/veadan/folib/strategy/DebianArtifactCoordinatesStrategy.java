@@ -21,7 +21,7 @@ public class DebianArtifactCoordinatesStrategy implements ArtifactCoordinatesStr
         }
         debianArtifactCoordinates.setUuid(entity.getUuid());
         debianArtifactCoordinates.setNativeId(entity.getNativeId());
-        debianArtifactCoordinates.setHierarchyParent(entity.getHierarchyParent());
+        debianArtifactCoordinates.setHierarchyParent(entity);
         debianArtifactCoordinates.setVersion(entity.getVersion());
         entity.setHierarchyChild(debianArtifactCoordinates);
         return debianArtifactCoordinates;

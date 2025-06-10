@@ -65,7 +65,7 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>folib-commons</artifactId>
+            <artifactId>folib-commons-core</artifactId>
              <version>${project.version}</version>
         </dependency>
         <dependency>

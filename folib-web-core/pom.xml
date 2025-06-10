@@ -129,7 +129,7 @@
         <!-- Strongbox dependencies -->
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>folib-commons</artifactId>
+            <artifactId>folib-commons-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -510,8 +510,9 @@
         </dependency>
 
         <dependency>
-            <groupId>org.carlspring.commons</groupId>
-            <artifactId>commons-http</artifactId>
+            <groupId>com.veadan.commons</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>1.2-SNAPSHOT</version>
         </dependency>
 
         <dependency>

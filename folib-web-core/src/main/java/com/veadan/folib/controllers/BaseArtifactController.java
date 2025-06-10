@@ -34,9 +34,9 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.carlspring.commons.http.range.ByteRange;
-import org.carlspring.commons.http.range.ByteRangeHeaderParser;
-import org.carlspring.commons.io.reloading.FSReloadableInputStreamHandler;
+import com.veadan.folib.commons.http.range.ByteRange;
+import com.veadan.folib.commons.http.range.ByteRangeHeaderParser;
+import com.veadan.folib.commons.io.reloading.FSReloadableInputStreamHandler;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;

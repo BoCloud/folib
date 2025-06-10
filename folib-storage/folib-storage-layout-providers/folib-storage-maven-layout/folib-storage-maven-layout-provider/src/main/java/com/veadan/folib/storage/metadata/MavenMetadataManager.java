@@ -9,7 +9,7 @@ import com.veadan.folib.providers.io.RepositoryPathLock;
 import com.veadan.folib.providers.layout.LayoutProvider;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import org.apache.commons.collections4.CollectionUtils;
-import org.carlspring.commons.io.MultipleDigestOutputStream;
+import com.veadan.folib.commons.io.MultipleDigestOutputStream;
 import com.veadan.folib.providers.ProviderImplementationException;
 import com.veadan.folib.storage.metadata.maven.comparators.SnapshotVersionComparator;
 import com.veadan.folib.storage.metadata.maven.comparators.VersionComparator;
