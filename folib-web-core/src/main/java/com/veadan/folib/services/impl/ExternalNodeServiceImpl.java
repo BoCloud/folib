@@ -179,7 +179,7 @@ public class ExternalNodeServiceImpl implements ExternalNodeService {
     private void checkNodeName(Long id, String nodeName) {
        long count =  externalNodeMapper.selectCount(Wrappers.<ExternalNode>lambdaQuery()
                 .eq(ExternalNode::getNodeName, nodeName)
-                .eq(Objects.nonNull(id),ExternalNode::getId, id)
+                .ne(Objects.nonNull(id),ExternalNode::getId, id)
         );
         if (count > 0) {
             throw new BusinessException(String.format("节点%s已存在！！！", nodeName));

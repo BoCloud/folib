@@ -183,7 +183,7 @@ export default {
               this.$emit("externalNodeReflesh")
             }).catch((err) => {
               this.$notification["error"]({
-                message: err.response.data.error,
+                message: err.response.data.message,
               })
             }).finally(() => { })
           } else {
@@ -193,7 +193,7 @@ export default {
               this.$emit("externalNodeReflesh")
             }).catch((err) => {
               this.$notification["error"]({
-                message: err.response.data.error,
+                message: err.response.data.message,
               })
             }).finally(() => { })
           }
