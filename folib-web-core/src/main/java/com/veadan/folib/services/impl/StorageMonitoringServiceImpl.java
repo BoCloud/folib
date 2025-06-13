@@ -97,9 +97,9 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
         storageMonitoringList = trashStorageMonitoring(storageMonitoringList, trashStorageMonitoringList, date);
 
         LocalDateTime deleteDeadlineDate = LocalDateTime.now().minusDays(60);
-        storageMonitoringMapper.delete(Wrappers.<StorageMonitoring>lambdaQuery().eq(StorageMonitoring::getCreateTime, deleteDeadlineDate));
+        storageMonitoringMapper.delete(Wrappers.<StorageMonitoring>lambdaQuery().le(StorageMonitoring::getCreateTime, deleteDeadlineDate));
 
-        storageMonitoringMapper.update(StorageMonitoring.builder().isLatest(Boolean.TRUE).build(), Wrappers.<StorageMonitoring>lambdaUpdate().eq(StorageMonitoring::getIsLatest,true));
+        storageMonitoringMapper.update(StorageMonitoring.builder().isLatest(Boolean.FALSE).build(), Wrappers.<StorageMonitoring>lambdaUpdate().eq(StorageMonitoring::getIsLatest,true));
         List<List<StorageMonitoring>> lists = Lists.partition(storageMonitoringList, 50);
         for (List<StorageMonitoring> itemList : lists) {
             storageMonitoringMapper.batchInsertStorageMonitoring(itemList);
