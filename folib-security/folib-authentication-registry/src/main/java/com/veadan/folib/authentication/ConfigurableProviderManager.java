@@ -173,6 +173,7 @@ public class ConfigurableProviderManager extends ProviderManager implements User
     protected Optional<User> loadExternalUserDetails(String username) {
         String userKey = String.format("user_%s", username);
         ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
         FolibUser folibUser = folibUserMapper.selectOne(Wrappers.<FolibUser>lambdaQuery().eq(FolibUser::getUsername, username));
         if (Objects.nonNull(folibUser) && StringUtils.isNotBlank(folibUser.getSourceId())) {
             String sourceId = folibUser.getSourceId();
