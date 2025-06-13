@@ -274,7 +274,7 @@ public class BlockStrategyServiceImpl implements BlockStrategyService {
         if (CollectionUtils.isNotEmpty(blockStrategyForm.getVulnerabilityLevels())) {
             blockStrategy.setVulnerabilityLevels(String.join(",", blockStrategyForm.getVulnerabilityLevels()));
         }
-        blockStrategyMapper.insert(blockStrategy);
+        blockStrategyMapper.updateById(blockStrategy);
         if (CollectionUtils.isNotEmpty(blockStrategyForm.getRepositories())) {
             String storageId = "", repositoryId = "";
             Storage storage = null;
