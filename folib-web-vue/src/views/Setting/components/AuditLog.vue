@@ -177,8 +177,8 @@ export default {
     },
     onDateChange() {
       if (this.dateRange && this.dateRange.length === 2) {
-        this.queryParam.fromDate = this.dateRange[0].format("YYYY-MM-DD HH:mm:ss");
-        this.queryParam.toDate = this.dateRange[1].format("YYYY-MM-DD HH:mm:ss");
+        this.queryParam.fromDate = this.dateRange[0].format("YYYY-MM-DD") + " 00:00:00";
+        this.queryParam.toDate = this.dateRange[1].format("YYYY-MM-DD") + " 23:59:59";
       } else {
         this.queryParam.fromDate = null;
         this.queryParam.toDate = null;

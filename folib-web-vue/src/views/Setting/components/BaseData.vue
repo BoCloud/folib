@@ -132,7 +132,6 @@
             ref="thread"
             :labels="threadLabels"
             :dataOne="threadDataOne"
-            :dataTwo="threadDataTwo"
             :dataOneTag="$t('Setting.NumberOfActiveThreads')"
             dataTwoTag="BLOCKED"
           />
@@ -254,7 +253,7 @@ export default {
         getMetrics("jvm.threads.live").then((res) => {
           this.threadDataOne.push(res.measurements[0].value);
         });
-        getMetrics("jetty.threads.current").then((res) => {
+        getMetrics("tasks.scheduled.execution").then((res) => {
           this.threadDataTwo.push(res.measurements[0].value);
           this.threadLabels.push(this.threadDataTwo.length);
           this.monitorData.jettyCurrent = res.measurements[0].value;

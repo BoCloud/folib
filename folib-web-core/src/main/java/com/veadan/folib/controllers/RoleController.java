@@ -46,6 +46,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -168,7 +170,27 @@ public class RoleController extends BaseController {
                                       Authentication authentication,
                                       @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (bindingResult.hasErrors()) {
-            throw new RequestBodyValidationException(FAILED_CREATE_ROLE, bindingResult);
+                // 处理字段级错误
+                String message = "";
+                List<FieldError> fieldErrors = bindingResult.getFieldErrors();
+                for (FieldError error : fieldErrors) {
+                    String fieldName = error.getField();       // 字段名（如 "username"）
+                    Object rejectedValue = error.getRejectedValue(); // 被拒绝的值（如空字符串）
+                    String errorMsg = error.getDefaultMessage();    // 错误消息（如 "用户名不能为空"）
+                    log.warn("字段:{} 验证失败，值：{}}，错误信息：{}", fieldName, rejectedValue, errorMsg);
+                    message = String.format("%s %s", rejectedValue, errorMsg);
+                }
+
+                // 处理全局错误（如果有）
+                List<ObjectError> globalErrors = bindingResult.getGlobalErrors();
+                for (ObjectError error : globalErrors) {
+                    String objectName = error.getObjectName();    // 对象名（如 "user"）
+                    String errorMsg = error.getDefaultMessage();  // 错误消息（如 "用户信息无效"）
+                    log.warn("全局错误，对象：{}，错误信息：{}", objectName, errorMsg);
+                    message = String.format("%s %n %s", message, errorMsg);
+                }
+
+            throw new RequestBodyValidationException(message, bindingResult);
         }
         final UserDetails loggedUser = (UserDetails) authentication.getPrincipal();
         String username = loggedUser.getUsername();

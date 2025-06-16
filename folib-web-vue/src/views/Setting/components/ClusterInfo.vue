@@ -30,14 +30,14 @@
                   <a-descriptions :title="$t('Setting.BasicInformation')" :column="1">
                     <a-descriptions-item :label="$t('Setting.Status')">
                       <a-badge
-                        v-if="cassandraClusterInfo.liveNodeList.indexOf(item.endpointWithPort.hostAddressAndPort) != -1"
+                        v-if="cassandraClusterInfo.liveNodeList.indexOf(item.endpointWithPort) != -1"
                         color="#87d068" :text="$t('Setting.Online')" />
                       <a-badge
-                        v-if="cassandraClusterInfo.unreachableNodeList.indexOf(item.endpointWithPort.hostAddressAndPort) != -1"
+                        v-if="cassandraClusterInfo.unreachableNodeList.indexOf(item.endpointWithPort) != -1"
                         color="#f50" :text="$t('Setting.Offline')" />
                     </a-descriptions-item>
                     <a-descriptions-item :label="$t('Setting.UsingPorts')">
-                      {{ item.endpointWithPort.port }}
+                      {{ parseAddressRegex(item.endpointWithPort).port }}
                     </a-descriptions-item>
                     <a-descriptions-item :label="$t('Setting.TotalNumberOfDataTables')">
                       {{ cassandraClusterInfo.statsHolderMap.total_number_of_tables }}
@@ -47,7 +47,7 @@
                       <span v-else>{{ '100.00%' }}</span>
                     </a-descriptions-item>
                     <a-descriptions-item :label="$t('Setting.EstimatedDataSize')">
-                      {{ cassandraClusterInfo.loadMap[item.endpointWithPort.hostAddressAndPort] }}
+                      {{ cassandraClusterInfo.loadMap[item.endpointWithPort] }}
                     </a-descriptions-item>
                   </a-descriptions>
                 </a-card>
@@ -159,7 +159,32 @@ export default {
           message: err.response.data.error,
         })
       })
-    }
+    },
+      parseAddressRegex(str) {
+          // 正则解释：匹配IPv4和端口（端口0-65535）
+          const regex = /^((?:\d{1,3}\.){3}\d{1,3}):(0|(?:[1-9]\d{0,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5]))$/;
+          const match = str.match(regex);
+
+          if (!match) {
+              return { ip: null, port: null, error: '格式错误或端口超出范围（0-65535）' };
+          }
+
+          const ip = match[1];
+          const port = parseInt(match[2], 10);
+
+          // 校验IP每段是否为0-255（正则已限制整体格式，但需细化每段）
+          const ipSegments = ip.split('.');
+          const isIpValid = ipSegments.every(seg => {
+              const num = parseInt(seg, 10);
+              return num >= 0 && num <= 255;
+          });
+
+          if (!isIpValid) {
+              return { ip, port, error: 'IP段无效（每段0-255）' };
+          }
+
+          return { ip, port, error: null };
+      }
   },
 
 };
