@@ -30,6 +30,7 @@ import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.accept.ContentNegotiationManager;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
@@ -50,12 +51,14 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler
     }
 
     @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
     protected ResponseEntity<?> handleAccessDeniedException(AccessDeniedException ex,
                                                             WebRequest request,
                                                             HttpServletRequest httpRequest,
                                                             HttpServletResponse httpResponse)
     {
-        throw ex;
+       // throw ex;
+        return ResponseEntity.status(HttpStatus.FORBIDDEN.value()).body(ex.getMessage());
     }
 
     @ExceptionHandler(RequestBodyValidationException.class)
