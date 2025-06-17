@@ -510,11 +510,15 @@
         </dependency>
 
         <dependency>
-            <groupId>com.veadan.commons</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>1.2-SNAPSHOT</version>
+            <groupId>com.veadan.folib.commons</groupId>
+            <artifactId>folib-commons-io</artifactId>
+            <version>${project.version}</version>
         </dependency>
-
+        <dependency>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <groupId>jakarta.xml.bind</groupId>
+            <version>4.0.1</version>
+        </dependency>
         <dependency>
             <groupId>io.reactivex.rxjava2</groupId>
             <artifactId>rxjava</artifactId>

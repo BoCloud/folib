@@ -11,6 +11,7 @@ import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.*;
+import jakarta.xml.bind.JAXBException;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -24,7 +25,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
-import javax.xml.bind.JAXBException;
 import java.io.IOException;
 import java.util.List;
 import java.util.function.Supplier;
