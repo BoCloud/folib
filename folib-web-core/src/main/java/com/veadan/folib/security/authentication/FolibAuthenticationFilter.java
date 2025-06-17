@@ -21,6 +21,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -67,6 +68,8 @@ public class FolibAuthenticationFilter
             "/rest/**"
     );
 
+    private  static final  List<String> ANONYMOUS_URL = List.of("/storages/**");
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         // 使用 AntPathMatcher 检查当前请求是否匹配排除路径
@@ -92,7 +95,7 @@ public class FolibAuthenticationFilter
                 // 执行自定义认证逻辑（例如解析 Token、设置 SecurityContext 等）
                 Authentication authentication = authenticationSuppliers.supply(request);
                 if (authentication == null) {
-                    authentication = SecurityContextHolder.getContext().getAuthentication();
+                    //authentication = SecurityContextHolder.getContext().getAuthentication();
                     logger.debug("Authentication not supplied by any authentication supplier, using [{}] context authentication.",
                             Optional.ofNullable(authentication).map(a -> a.getClass().getSimpleName()).orElse("empty"));
                 } else {
@@ -108,16 +111,30 @@ public class FolibAuthenticationFilter
                     SecurityContextRepository repo = new HttpSessionSecurityContextRepository();
                     repo.saveContext(context, request, response);
                 } else {
-                    SecurityContextHolder.clearContext();
-                    SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
 
-                    //校验token是否有效
-                    // Token 无效，返回 401 Unauthorized
-                    response.getWriter().write("Invalid or expired token");
-                    response.setContentType("application/json");
-                    response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                    return;
-
+                    // 如果是匿名访问，则创建一个匿名认证信息
+                    if (isAnonymousUrl(request)) {
+                        authentication = new AnonymousAuthenticationToken(
+                                "anonymousUser", // key
+                                "anonymousUser", // principal
+                                AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS")
+                        );
+                        SecurityContext context = SecurityContextHolder.createEmptyContext();
+                        context.setAuthentication(authentication);
+                        SecurityContextHolder.setContext(context);
+                        // 显式保存认证信息
+                        SecurityContextRepository repo = new HttpSessionSecurityContextRepository();
+                        repo.saveContext(context, request, response);
+                    } else {
+                        SecurityContextHolder.clearContext();
+                        SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
+                        //校验token是否有效
+                        // Token 无效，返回 401 Unauthorized
+                        response.getWriter().write("Invalid or expired token");
+                        response.setContentType("application/json");
+                        response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                        return;
+                    }
                 }
             }
             // 继续执行后续过滤器
@@ -147,5 +164,10 @@ public class FolibAuthenticationFilter
         logger.debug("Authenticated with {}", authenticationName);
 
         return authResult;
+    }
+
+    private boolean isAnonymousUrl(HttpServletRequest request) {
+        AntPathMatcher matcher = new AntPathMatcher();
+        return ANONYMOUS_URL.stream().anyMatch(pattern -> matcher.match(pattern, request.getServletPath()));
     }
 }

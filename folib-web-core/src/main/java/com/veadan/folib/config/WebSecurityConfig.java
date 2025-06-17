@@ -6,7 +6,9 @@ import com.veadan.folib.security.CustomAccessDeniedHandler;
 import com.veadan.folib.security.authentication.FolibAuthenticationFilter;
 import com.veadan.folib.security.authentication.suppliers.AuthenticationSupplier;
 import com.veadan.folib.security.authentication.suppliers.AuthenticationSuppliers;
-import com.veadan.folib.security.vote.MethodAccessDecisionManager;
+import com.veadan.folib.security.vote.ExtendedAuthoritiesVoter;
+import com.veadan.folib.security.vote.ExtendedAuthorizationManager;
+
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.security.AuthoritiesProvider;
@@ -25,6 +27,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationTrustResolver;
 import org.springframework.security.authentication.AuthenticationTrustResolverImpl;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authorization.method.AuthorizationManagerBeforeMethodInterceptor;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -166,24 +169,24 @@ public class WebSecurityConfig {
                 authorities);
     }
 
-    @Configuration
-    public static class MethodSecurityConfig {
-
-        @Inject
-        MethodAccessDecisionManager methodAccessDecisionManager;
-
-        @Bean
-        public MethodSecurityExpressionHandler methodSecurityExpressionHandler() {
-            DefaultMethodSecurityExpressionHandler handler = new DefaultMethodSecurityExpressionHandler();
-            // 根据需要配置表达式处理
-            return handler;
-        }
-
-        @Bean
-        public AccessDecisionManager accessDecisionManager() {
-            return methodAccessDecisionManager;
-        }
-    }
+    //@Configuration
+    //public static class MethodSecurityConfig {
+    //
+    //    @Inject
+    //    MethodAccessDecisionManager methodAccessDecisionManager;
+    //
+    //    @Bean
+    //    public MethodSecurityExpressionHandler methodSecurityExpressionHandler() {
+    //        DefaultMethodSecurityExpressionHandler handler = new DefaultMethodSecurityExpressionHandler();
+    //        // 根据需要配置表达式处理
+    //        return handler;
+    //    }
+    //
+    //    @Bean
+    //    public AccessDecisionManager accessDecisionManager() {
+    //        return methodAccessDecisionManager;
+    //    }
+    //}
 
     @Configuration
     public static class SharedObjectsConfig {
@@ -209,5 +212,11 @@ public class WebSecurityConfig {
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer(HttpFirewall firewall) {
         return web -> web.httpFirewall(firewall);
+    }
+
+    @Bean
+    public AuthorizationManagerBeforeMethodInterceptor extendedInterceptor(ExtendedAuthoritiesVoter extendedAuthoritiesVoter) {
+        return AuthorizationManagerBeforeMethodInterceptor
+                .preAuthorize(new ExtendedAuthorizationManager(extendedAuthoritiesVoter));
     }
 }

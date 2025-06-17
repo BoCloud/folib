@@ -30,7 +30,6 @@ import java.util.Objects;
  */
 @Slf4j
 @RestController
-@PreAuthorize("authenticated")
 @RequestMapping("/api/dict")
 @Api(description = "字典管理", tags = "字典管理")
 public class DictController extends BaseController {
@@ -40,6 +39,7 @@ public class DictController extends BaseController {
 
     @ApiOperation(value = "查询最新的单个字典信息")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("authenticated")
     @GetMapping(value = "/single")
     public ResponseEntity<Dict> getDict(Dict dict) {
         Dict dictData = dictService.selectLatestOneDict(dict);
@@ -48,6 +48,7 @@ public class DictController extends BaseController {
 
     @ApiOperation(value = "更新单个字典信息")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("authenticated")
     @PostMapping(value = "/single")
     public ResponseEntity<String> updateDict(@RequestBody DictForm dict) {
         if (Objects.isNull(dict.getId()) && StringUtils.isBlank(dict.getDictKey())) {
@@ -59,6 +60,7 @@ public class DictController extends BaseController {
 
     @ApiOperation(value = "查询最新的字典列表信息")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("authenticated")
     @GetMapping(value = "/list")
     public ResponseEntity<List<Dict>> dictList(Dict dict) {
         return ResponseEntity.ok(dictService.selectLatestListDict(dict));
@@ -66,6 +68,7 @@ public class DictController extends BaseController {
 
     @ApiOperation(value = "删除字典信息")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("authenticated")
     @DeleteMapping(value = "/delete")
     public ResponseEntity<String> delete(@RequestParam("id") Long id) {
         dictService.deleteDictById(id);
@@ -74,6 +77,7 @@ public class DictController extends BaseController {
 
     @ApiOperation(value = "获取所有系统参数字典")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
+    @PreAuthorize("authenticated")
     @GetMapping(value = "/system")
     public TableResultResponse<Dict> systemDict(@RequestParam(name = "page", defaultValue = "1") Integer page, @RequestParam(name = "limit", defaultValue = "10") Integer limit, @RequestParam(required = false) String dictKey) {
         return dictService.getSystemDict(page, limit, dictKey);
