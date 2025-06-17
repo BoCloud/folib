@@ -65,7 +65,8 @@ public class FolibAuthenticationFilter
             "/ui/**",
             "/docs/**",
             "/webjars/**",
-            "/rest/**"
+            "/rest/**",
+            "/"
     );
 
     private  static final  List<String> ANONYMOUS_URL = List.of("/storages/**");
