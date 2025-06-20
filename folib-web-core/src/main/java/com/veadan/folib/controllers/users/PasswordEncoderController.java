@@ -1,6 +1,6 @@
 package com.veadan.folib.controllers.users;
 
-import com.veadan.folib.forms.users.PasswordEncodeForm;
+import com.veadan.folib.dto.users.PasswordEncodeDto;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.validation.RequestBodyValidationException;
 
@@ -44,7 +44,7 @@ public class PasswordEncoderController
                               MediaType.TEXT_PLAIN_VALUE })
     @ResponseBody
     public ResponseEntity encode(@RequestHeader(HttpHeaders.ACCEPT) String accept,
-                                 @Validated @RequestBody PasswordEncodeForm form,
+                                 @Validated @RequestBody PasswordEncodeDto form,
                                  BindingResult bindingResult)
     {
         if (bindingResult.hasErrors())

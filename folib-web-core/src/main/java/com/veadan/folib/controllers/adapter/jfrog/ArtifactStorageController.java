@@ -1,6 +1,5 @@
 package com.veadan.folib.controllers.adapter.jfrog;
 
-import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -8,7 +7,7 @@ import com.veadan.folib.controllers.adapter.jfrog.res.FileRes;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.adapter.jfrog.ArtifactStorageInfo;
 import com.veadan.folib.enums.ArtifactMetadataEnum;
-import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
+import com.veadan.folib.dto.artifact.ArtifactMetadataDto;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -168,8 +167,8 @@ public class ArtifactStorageController extends JFrogBaseController {
         if (properties.contains(splitVerticalLine)) {
             propertyList = Arrays.asList(properties.split(splitVerticalLineEncode));
         }
-        List<ArtifactMetadataForm> artifactMetadataFormList = Lists.newArrayList();
-        ArtifactMetadataForm artifactMetadataForm = null;
+        List<ArtifactMetadataDto> artifactMetadataFormList = Lists.newArrayList();
+        ArtifactMetadataDto artifactMetadataForm = null;
         String metadataKey, metadataValue;
         if (CollectionUtils.isNotEmpty(propertyList)) {
             for (String propertyGroup : propertyList) {
@@ -180,7 +179,7 @@ public class ArtifactStorageController extends JFrogBaseController {
                 } else {
                     metadataValue = "";
                 }
-                artifactMetadataForm = ArtifactMetadataForm.builder().storageId(storageId).repositoryId(repositoryId).artifactPath(artifactPath).type(ArtifactMetadataEnum.STRING.toString()).key(metadataKey).viewShow(1).recursive(recursive).build();
+                artifactMetadataForm = ArtifactMetadataDto.builder().storageId(storageId).repositoryId(repositoryId).artifactPath(artifactPath).type(ArtifactMetadataEnum.STRING.toString()).key(metadataKey).viewShow(1).recursive(recursive).build();
                 itemPropertyList = Arrays.asList(metadataValue.split(splitComma));
                 if (metadataValue.contains(splitSlashSemicolon)) {
                     itemPropertyList = Arrays.asList(metadataValue.split(splitSlashSemicolonEncode));
@@ -395,10 +394,10 @@ public class ArtifactStorageController extends JFrogBaseController {
         if (Objects.isNull(storage.getRepository(repositoryId))) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(handlerErrors(null, REPOSITORY_NOT_FOUND_MESSAGE));
         }
-        List<ArtifactMetadataForm> artifactMetadataFormList = Lists.newArrayList();
+        List<ArtifactMetadataDto> artifactMetadataFormList = Lists.newArrayList();
         // 遍历所有接收到的参数
         for (Map.Entry<String, String> entry : customProperties.entrySet()) {
-            ArtifactMetadataForm artifactMetadataForm = ArtifactMetadataForm.builder()
+            ArtifactMetadataDto artifactMetadataForm = ArtifactMetadataDto.builder()
                     .storageId(storageId)
                     .repositoryId(repositoryId)
                     .artifactPath(artifactPath)

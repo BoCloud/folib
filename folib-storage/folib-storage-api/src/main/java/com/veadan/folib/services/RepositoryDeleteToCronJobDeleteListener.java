@@ -1,8 +1,8 @@
 package com.veadan.folib.services;
 
-import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
-import com.veadan.folib.cron.domain.CronTasksConfigurationDto;
-import com.veadan.folib.cron.services.CronTaskConfigurationService;
+import com.veadan.folib.job.cron.domain.CronTaskConfigurationDto;
+import com.veadan.folib.job.cron.domain.CronTasksConfigurationDto;
+import com.veadan.folib.job.cron.services.CronTaskConfigurationService;
 import com.veadan.folib.event.repository.RepositoryEvent;
 import com.veadan.folib.event.repository.RepositoryEventTypeEnum;
 import org.apache.commons.lang3.StringUtils;

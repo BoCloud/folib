@@ -11,12 +11,12 @@ import com.veadan.folib.components.backup.BackupComponent;
 import com.veadan.folib.components.cron.CronComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
-import com.veadan.folib.cron.jobs.backups.ArtifactBackupCronJob;
+import com.veadan.folib.job.tasks.backups.ArtifactBackupCronJob;
 import com.veadan.folib.domain.backupstrategy.BackupStrategyRecord;
 import com.veadan.folib.entity.BackupStrategy;
 import com.veadan.folib.entity.BackupStrategyRepository;
 import com.veadan.folib.entity.License;
-import com.veadan.folib.forms.backupstrategy.BackupStrategyForm;
+import com.veadan.folib.dto.backupstrategy.BackupStrategyDto;
 import com.veadan.folib.mapper.BackupStrategyMapper;
 import com.veadan.folib.mapper.BackupStrategyRepositoryMapper;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
@@ -71,7 +71,7 @@ public class BackupStrategyServiceImpl implements BackupStrategyService {
     private BackupComponent backupComponent;
 
     @Override
-    public TableResultResponse<BackupStrategyRecord> queryBackupStrategyPage(Integer page, Integer limit, BackupStrategyForm backupStrategyForm) {
+    public TableResultResponse<BackupStrategyRecord> queryBackupStrategyPage(Integer page, Integer limit, BackupStrategyDto backupStrategyForm) {
         if (Objects.isNull(page)) {
             page = 1;
         }
@@ -87,20 +87,20 @@ public class BackupStrategyServiceImpl implements BackupStrategyService {
     }
 
     @Override
-    public List<BackupStrategyRecord> queryBackupStrategyList(BackupStrategyForm backupStrategyForm) {
+    public List<BackupStrategyRecord> queryBackupStrategyList(BackupStrategyDto backupStrategyForm) {
         List<BackupStrategyRecord> backupStrategyList = backupStrategyMapper.selectInfoList(backupStrategyForm);
         return backupStrategyList;
     }
 
     @Override
-    public BackupStrategyForm queryBackupStrategy(BackupStrategy backupStrategy) {
-        BackupStrategyForm backupStrategyForm = null;
+    public BackupStrategyDto queryBackupStrategy(BackupStrategy backupStrategy) {
+        BackupStrategyDto backupStrategyForm = null;
         String backupStrategyName = backupStrategy.getStrategyName();
         BackupStrategy existsBackupStrategy = getBackupStrategy(BackupStrategy.builder().strategyName(backupStrategyName).build());
         if (Objects.isNull(existsBackupStrategy)) {
             return null;
         }
-        backupStrategyForm = BackupStrategyForm.builder().build();
+        backupStrategyForm = BackupStrategyDto.builder().build();
         BeanUtils.copyProperties(existsBackupStrategy, backupStrategyForm);
         backupStrategyForm.setId(existsBackupStrategy.getId().toString());
 
@@ -111,7 +111,7 @@ public class BackupStrategyServiceImpl implements BackupStrategyService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void saveBackupStrategy(BackupStrategyForm backupStrategyForm) {
+    public void saveBackupStrategy(BackupStrategyDto backupStrategyForm) {
         String backupStrategyName = backupStrategyForm.getStrategyName();
         BackupStrategy existsBackupStrategy = getBackupStrategy(BackupStrategy.builder().strategyName(backupStrategyName).build());
         if (Objects.nonNull(existsBackupStrategy)) {
@@ -161,7 +161,7 @@ public class BackupStrategyServiceImpl implements BackupStrategyService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void updateBackupStrategy(BackupStrategyForm backupStrategyForm) {
+    public void updateBackupStrategy(BackupStrategyDto backupStrategyForm) {
         String backupStrategyName = backupStrategyForm.getStrategyName();
         BackupStrategy existsBackupStrategy = null;
         if (StringUtils.isNotBlank(backupStrategyForm.getId())) {
@@ -246,7 +246,7 @@ public class BackupStrategyServiceImpl implements BackupStrategyService {
         String repositoryCacheKey = String.format("%s-%s", storageId, repositoryId);
         List<BackupStrategyRecord> backupStrategyRecordList = getCache(repositoryCacheKey);
         if (CollectionUtils.isEmpty(backupStrategyRecordList)) {
-            backupStrategyRecordList = queryBackupStrategyList(BackupStrategyForm.builder().storageId(storageId).repositoryId(repositoryId).build());
+            backupStrategyRecordList = queryBackupStrategyList(BackupStrategyDto.builder().storageId(storageId).repositoryId(repositoryId).build());
             putCache(repositoryCacheKey, backupStrategyRecordList, 8);
         }
         return backupStrategyRecordList;
@@ -254,7 +254,7 @@ public class BackupStrategyServiceImpl implements BackupStrategyService {
 
     @Override
     @Async("asyncThreadPoolTaskExecutor")
-    public void executeBackup(BackupStrategyForm backupStrategyForm) {
+    public void executeBackup(BackupStrategyDto backupStrategyForm) {
         BackupStrategy existsBackupStrategy = getBackupStrategy(BackupStrategy.builder().strategyName(backupStrategyForm.getStrategyName()).build());
         if (Objects.isNull(existsBackupStrategy)) {
             return;

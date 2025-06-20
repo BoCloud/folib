@@ -102,7 +102,7 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>folib-data-service</artifactId>
+            <artifactId>folib-gremlin-service</artifactId>
              <version>${project.version}</version>
         </dependency>
 

@@ -17,12 +17,11 @@ import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.cluster.dto.SyncAuthorizationDto;
 import com.veadan.folib.controllers.cluster.dto.SyncCronJobDto;
 import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
-import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
-import com.veadan.folib.cron.domain.CronTasksConfigurationDto;
-import com.veadan.folib.cron.jobs.AlarmNoticeCronJob;
-import com.veadan.folib.cron.services.CronTaskConfigurationService;
+import com.veadan.folib.job.cron.domain.CronTaskConfigurationDto;
+import com.veadan.folib.job.tasks.AlarmNoticeCronJob;
+import com.veadan.folib.job.cron.services.CronTaskConfigurationService;
 import com.veadan.folib.enums.StorageProviderEnum;
-import com.veadan.folib.forms.configuration.ServerSettingsForm;
+import com.veadan.folib.dto.configuration.ServerSettingsDto;
 import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.StorageManagementService;
@@ -54,7 +53,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.stream.Collectors;
 
 /**
  * @author leipenghui
@@ -120,7 +118,7 @@ public class CommonComponent {
      * @param serverSettingsForm 全局配置
      * @throws Exception 异常
      */
-    public void updateServerSettings(ServerSettingsForm serverSettingsForm) throws Exception {
+    public void updateServerSettings(ServerSettingsDto serverSettingsForm) throws Exception {
         configurationManagementService.setBaseUrl(serverSettingsForm.getBaseUrl());
         configurationManagementService.setPort(serverSettingsForm.getPort());
         configurationManagementService.setKbps(serverSettingsForm.getKbps());

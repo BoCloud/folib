@@ -3,11 +3,10 @@ package com.veadan.folib.converters.users;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-import com.veadan.folib.forms.users.AccessModelForm;
-import com.veadan.folib.forms.users.RepositoryAccessModelForm;
+import com.veadan.folib.dto.users.AccessModelDto;
+import com.veadan.folib.dto.users.RepositoryAccessModelDto;
 import org.apache.commons.lang3.StringUtils;
 import com.veadan.folib.users.domain.Privileges;
-import com.veadan.folib.users.dto.AccessModelDto;
 import com.veadan.folib.users.dto.PathPrivilegesDto;
 import com.veadan.folib.users.dto.RepositoryPrivilegesDto;
 import com.veadan.folib.users.dto.StoragePrivilegesDto;
@@ -18,26 +17,26 @@ import org.springframework.core.convert.converter.Converter;
  * @author veadan
  */
 public enum AccessModelFormToUserAccessModelDtoConverter
-        implements Converter<AccessModelForm, AccessModelDto>
+        implements Converter<AccessModelDto, com.veadan.folib.users.dto.AccessModelDto>
 {
 
     INSTANCE;
 
     @Override
-    public AccessModelDto convert(AccessModelForm accessModelForm)
+    public com.veadan.folib.users.dto.AccessModelDto convert(AccessModelDto accessModelForm)
     {
         if (accessModelForm == null)
         {
             return null;
         }
         
-        AccessModelDto userAccessModelDto = new AccessModelDto();
+        com.veadan.folib.users.dto.AccessModelDto userAccessModelDto = new com.veadan.folib.users.dto.AccessModelDto();
         accessModelForm.getApiAccess()
                        .stream()
                        .map(p -> Privileges.valueOf(p))
                        .forEach(p -> userAccessModelDto.getApiAuthorities().add(p));
         
-        for (RepositoryAccessModelForm repositoryAccess : accessModelForm.getRepositoriesAccess())
+        for (RepositoryAccessModelDto repositoryAccess : accessModelForm.getRepositoriesAccess())
         {
             StoragePrivilegesDto storage = userAccessModelDto.getStorageAuthorities(repositoryAccess.getStorageId())
                                                        .orElseGet(
@@ -93,7 +92,7 @@ public enum AccessModelFormToUserAccessModelDtoConverter
         return userAccessModelDto;
     }
 
-    private Collection<Privileges> pullPrivileges(final RepositoryAccessModelForm repositoryAccess)
+    private Collection<Privileges> pullPrivileges(final RepositoryAccessModelDto repositoryAccess)
     {
         return repositoryAccess.getPrivileges()
                                .stream()

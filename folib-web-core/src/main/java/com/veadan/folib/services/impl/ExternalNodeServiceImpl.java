@@ -6,9 +6,9 @@ import com.github.pagehelper.PageHelper;
 import com.google.common.collect.Lists;
 import com.veadan.folib.entity.ExternalNode;
 import com.veadan.folib.enums.ArtifactoryFolibRepositoryTypeEnum;
-import com.veadan.folib.forms.externalnode.ExternalNodeForm;
-import com.veadan.folib.forms.externalnode.ExternalNodeRepositoryForm;
-import com.veadan.folib.forms.externalnode.RepositoryForm;
+import com.veadan.folib.dto.externalnode.ExternalNodeDto;
+import com.veadan.folib.dto.externalnode.ExternalNodeRepositoryDto;
+import com.veadan.folib.dto.externalnode.RepositoryDto;
 import com.veadan.folib.mapper.ExternalNodeMapper;
 import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
@@ -50,7 +50,7 @@ public class ExternalNodeServiceImpl implements ExternalNodeService {
     private CheckTargetNodeRepositoryCommandProcessor checkTargetNodeRepositoryCommandProcessor;
 
     @Override
-    public TableResultResponse<ExternalNodeForm> queryExternalNodeList(Integer page, Integer limit, ExternalNodeForm externalNodeForm) {
+    public TableResultResponse<ExternalNodeDto> queryExternalNodeList(Integer page, Integer limit, ExternalNodeDto externalNodeForm) {
         if (Objects.isNull(page)) {
             page = 1;
         }
@@ -67,8 +67,8 @@ public class ExternalNodeServiceImpl implements ExternalNodeService {
                 .like(ExternalNode::getNodeName,nodeName)
                 .orderByAsc(ExternalNode::getCreateTime)
         );
-        return new TableResultResponse<ExternalNodeForm>(result.getTotal(), Optional.ofNullable(externalNodeList).orElse(Collections.emptyList()).stream().map(externalNode -> {
-            ExternalNodeForm resultExternalNode = ExternalNodeForm.builder().build();
+        return new TableResultResponse<ExternalNodeDto>(result.getTotal(), Optional.ofNullable(externalNodeList).orElse(Collections.emptyList()).stream().map(externalNode -> {
+            ExternalNodeDto resultExternalNode = ExternalNodeDto.builder().build();
             BeanUtils.copyProperties(externalNode, resultExternalNode);
             resultExternalNode.setPassword("");
             return resultExternalNode;
@@ -76,11 +76,11 @@ public class ExternalNodeServiceImpl implements ExternalNodeService {
     }
 
     @Override
-    public ExternalNodeForm getExternalNode(ExternalNodeForm externalNodeForm) {
-        ExternalNodeForm resultExternalNode = null;
+    public ExternalNodeDto getExternalNode(ExternalNodeDto externalNodeForm) {
+        ExternalNodeDto resultExternalNode = null;
         ExternalNode externalNode = selectExternalNode(externalNodeForm);
         if (Objects.nonNull(externalNode)) {
-            resultExternalNode = ExternalNodeForm.builder().build();
+            resultExternalNode = ExternalNodeDto.builder().build();
             BeanUtils.copyProperties(externalNode, resultExternalNode);
         }
         return resultExternalNode;
@@ -88,20 +88,20 @@ public class ExternalNodeServiceImpl implements ExternalNodeService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void saveExternalNode(ExternalNodeForm externalNodeForm) {
+    public void saveExternalNode(ExternalNodeDto externalNodeForm) {
         saveOrUpdateExternalNode(externalNodeForm);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void updateExternalNode(ExternalNodeForm externalNodeForm) {
+    public void updateExternalNode(ExternalNodeDto externalNodeForm) {
         saveOrUpdateExternalNode(externalNodeForm);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteExternalNode(Long id) {
-        ExternalNode externalNode = selectExternalNode(ExternalNodeForm.builder().id(id).build());
+        ExternalNode externalNode = selectExternalNode(ExternalNodeDto.builder().id(id).build());
         if (Objects.nonNull(externalNode)) {
             //externalNodeMapper.deleteByPrimaryKey(id);
             externalNodeMapper.selectById(id);
@@ -109,18 +109,18 @@ public class ExternalNodeServiceImpl implements ExternalNodeService {
     }
 
     @Override
-    public List<ExternalNodeRepositoryForm> getExternalNodeRepositories(String type) {
+    public List<ExternalNodeRepositoryDto> getExternalNodeRepositories(String type) {
         if (StringUtils.isBlank(type)) {
             type = ArtifactoryFolibRepositoryTypeEnum.GENERIC.getFoLibraryName();
         }
         List<String> packageTypes = Lists.newArrayList(ArtifactoryFolibRepositoryTypeEnum.queryNameByFoLibraryName(type));
         List<ExternalNode> externalNodeList = externalNodeMapper.selectList(Wrappers.<ExternalNode>lambdaQuery().orderByAsc(ExternalNode::getCreateTime));
         return Optional.ofNullable(externalNodeList).orElse(Collections.emptyList()).stream().map(externalNode -> {
-            ExternalNodeRepositoryForm externalNodeRepositoryForm = ExternalNodeRepositoryForm.builder().build();
+            ExternalNodeRepositoryDto externalNodeRepositoryForm = ExternalNodeRepositoryDto.builder().build();
             BeanUtils.copyProperties(externalNode, externalNodeRepositoryForm);
             externalNodeRepositoryForm.setKey(externalNodeRepositoryForm.getNodeName());
             List<LightweightRepository> lightweightRepositories = jFrogService.listRepository(externalNode.getAddress(), externalNode.getUsername(), rsaUtils.decrypt(externalNode.getPassword()), packageTypes);
-            externalNodeRepositoryForm.setRepositories(Optional.ofNullable(lightweightRepositories).orElse(Collections.emptyList()).stream().map(lightweightRepository -> RepositoryForm.builder().name(lightweightRepository.getKey()).key(String.format("%s,%s", externalNodeRepositoryForm.getKey(), lightweightRepository.getKey())).artifactoryRepositoryType(externalNodeRepositoryForm.getType()).build()).collect(Collectors.toList()));
+            externalNodeRepositoryForm.setRepositories(Optional.ofNullable(lightweightRepositories).orElse(Collections.emptyList()).stream().map(lightweightRepository -> RepositoryDto.builder().name(lightweightRepository.getKey()).key(String.format("%s,%s", externalNodeRepositoryForm.getKey(), lightweightRepository.getKey())).artifactoryRepositoryType(externalNodeRepositoryForm.getType()).build()).collect(Collectors.toList()));
             return externalNodeRepositoryForm;
         }).collect(Collectors.toList());
     }
@@ -130,7 +130,7 @@ public class ExternalNodeServiceImpl implements ExternalNodeService {
      *
      * @param externalNodeForm 表单参数
      */
-    private void saveOrUpdateExternalNode(ExternalNodeForm externalNodeForm) {
+    private void saveOrUpdateExternalNode(ExternalNodeDto externalNodeForm) {
         ExternalNode externalNode = ExternalNode.builder().build();
         BeanUtils.copyProperties(externalNodeForm, externalNode);
         checkNodeName(externalNode.getId(), externalNode.getNodeName());
@@ -157,7 +157,7 @@ public class ExternalNodeServiceImpl implements ExternalNodeService {
      * @param externalNodeForm 表单参数
      * @return 外部节点
      */
-    private ExternalNode selectExternalNode(ExternalNodeForm externalNodeForm) {
+    private ExternalNode selectExternalNode(ExternalNodeDto externalNodeForm) {
         ExternalNode externalNode = null;
         if (Objects.nonNull(externalNodeForm.getId())) {
             externalNode = externalNodeMapper.selectOne(Wrappers.<ExternalNode>lambdaQuery().eq(ExternalNode::getId, externalNodeForm.getId()));
@@ -194,7 +194,7 @@ public class ExternalNodeServiceImpl implements ExternalNodeService {
     private void validateArtifactory(ExternalNode externalNode) {
         String nodeName = externalNode.getNodeName();
         if (StringUtils.isBlank(externalNode.getPassword())) {
-            externalNode = selectExternalNode(ExternalNodeForm.builder().nodeName(externalNode.getNodeName()).build());
+            externalNode = selectExternalNode(ExternalNodeDto.builder().nodeName(externalNode.getNodeName()).build());
         }
         if (Objects.isNull(externalNode)) {
             throw new BusinessException(String.format("未找到外部节点%s信息", nodeName));

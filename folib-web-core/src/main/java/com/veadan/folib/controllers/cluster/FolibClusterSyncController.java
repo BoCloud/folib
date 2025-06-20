@@ -8,7 +8,7 @@ import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
 import com.veadan.folib.configuration.MutableWebhookConfiguration;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.cluster.dto.*;
-import com.veadan.folib.cron.services.CronTaskConfigurationService;
+import com.veadan.folib.job.cron.services.CronTaskConfigurationService;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.services.ClusterDispatchManagementService;

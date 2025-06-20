@@ -13,7 +13,7 @@ import com.veadan.folib.entity.UserGroup;
 import com.veadan.folib.entity.UserGroupRef;
 import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
-import com.veadan.folib.forms.users.UserGroupForm;
+import com.veadan.folib.dto.users.UserGroupDto;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.users.service.UserGroupRefService;
 import com.veadan.folib.users.service.UserGroupService;
@@ -89,7 +89,7 @@ public class UserGroupController
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     public ResponseEntity delete(@ApiParam(value = "The name of the user group") @PathVariable Long groupId,
-                                 @RequestBody @Validated(UserGroupForm.NewUserGroup.class) UserGroupForm userGroupForm,
+                                 @RequestBody @Validated(UserGroupDto.NewUserGroup.class) UserGroupDto userGroupForm,
                                  Authentication authentication,
                                  @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (!(authentication.getPrincipal() instanceof UserDetails)) {
@@ -117,7 +117,7 @@ public class UserGroupController
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    public ResponseEntity createGroup(@RequestBody @Validated(UserGroupForm.NewUserGroup.class) UserGroupForm userGroupForm,
+    public ResponseEntity createGroup(@RequestBody @Validated(UserGroupDto.NewUserGroup.class) UserGroupDto userGroupForm,
                                       BindingResult bindingResult,
                                       @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (bindingResult.hasErrors()) {
@@ -190,7 +190,7 @@ public class UserGroupController
     @ResponseBody
     public ResponseEntity update(@ApiParam(value = "The name of the user", required = true)
                                  @PathVariable Long groupId,
-                                 @RequestBody @Validated(UserGroupForm.ExistingUserGroup.class) UserGroupForm userGroupToUpdate,
+                                 @RequestBody @Validated(UserGroupDto.ExistingUserGroup.class) UserGroupDto userGroupToUpdate,
                                  BindingResult bindingResult,
                                  @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (bindingResult.hasErrors()) {

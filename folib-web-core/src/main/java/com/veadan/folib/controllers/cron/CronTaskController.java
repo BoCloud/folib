@@ -5,16 +5,15 @@ import com.veadan.folib.booters.PropertiesBooter;
 import com.veadan.folib.cluster.SyncCornJobEnum;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.cluster.dto.SyncCronJobDto;
-import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
-import com.veadan.folib.cron.domain.CronTasksConfigurationDto;
-import com.veadan.folib.cron.domain.GroovyScriptNamesDto;
-import com.veadan.folib.cron.jobs.CronJobDefinition;
-import com.veadan.folib.cron.jobs.CronJobsDefinitionsRegistry;
-import com.veadan.folib.cron.jobs.GroovyCronJob;
-import com.veadan.folib.cron.services.CronJobSchedulerService;
-import com.veadan.folib.cron.services.CronTaskConfigurationService;
+import com.veadan.folib.job.cron.domain.CronTasksConfigurationDto;
+import com.veadan.folib.job.cron.domain.GroovyScriptNamesDto;
+import com.veadan.folib.job.cron.jobs.CronJobDefinition;
+import com.veadan.folib.job.cron.jobs.CronJobsDefinitionsRegistry;
+import com.veadan.folib.job.cron.jobs.GroovyCronJob;
+import com.veadan.folib.job.cron.services.CronJobSchedulerService;
+import com.veadan.folib.job.cron.services.CronTaskConfigurationService;
 import com.veadan.folib.enums.AuditEventNameEnum;
-import com.veadan.folib.forms.cron.CronTaskConfigurationForm;
+import com.veadan.folib.dto.cron.CronTaskConfigurationDto;
 import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.Api;
@@ -112,7 +111,7 @@ public class CronTaskController
     @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
-    public ResponseEntity create(@RequestBody @Validated CronTaskConfigurationForm cronTaskConfigurationForm,
+    public ResponseEntity create(@RequestBody @Validated CronTaskConfigurationDto cronTaskConfigurationForm,
                                  BindingResult bindingResult,
                                  @RequestHeader(HttpHeaders.ACCEPT) String acceptHeader) {
         if (bindingResult.hasErrors()) {
@@ -120,8 +119,8 @@ public class CronTaskController
         }
 
         try {
-            CronTaskConfigurationDto cronTaskConfiguration = conversionService.convert(cronTaskConfigurationForm,
-                    CronTaskConfigurationDto.class);
+            com.veadan.folib.job.cron.domain.CronTaskConfigurationDto cronTaskConfiguration = conversionService.convert(cronTaskConfigurationForm,
+                    com.veadan.folib.job.cron.domain.CronTaskConfigurationDto.class);
             UUID uuid = cronTaskConfigurationService.saveConfiguration(cronTaskConfiguration);
             SyncCronJobDto syncCronJobDto = new SyncCronJobDto(cronTaskConfiguration, SyncCornJobEnum.ADD_OR_UPDATE);
             clusterSyncService.syncCronJob(syncCronJobDto);
@@ -148,21 +147,21 @@ public class CronTaskController
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity updateConfiguration(@PathVariable("UUID") UUID uuid,
-                                              @RequestBody @Validated CronTaskConfigurationForm cronTaskConfigurationForm,
+                                              @RequestBody @Validated CronTaskConfigurationDto cronTaskConfigurationForm,
                                               BindingResult bindingResult,
                                               @RequestHeader(HttpHeaders.ACCEPT) String acceptHeader) {
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException(FAILED_UPDATE_CONFIGURATION, bindingResult);
         }
 
-        CronTaskConfigurationDto configuration = cronTaskConfigurationService.getTaskConfigurationDto(uuid);
+        com.veadan.folib.job.cron.domain.CronTaskConfigurationDto configuration = cronTaskConfigurationService.getTaskConfigurationDto(uuid);
         if (configuration == null) {
             return getBadRequestResponseEntity(FAILED_UPDATE_CONFIGURATION, acceptHeader);
         }
 
         try {
-            CronTaskConfigurationDto cronTaskConfiguration = conversionService.convert(cronTaskConfigurationForm,
-                    CronTaskConfigurationDto.class);
+            com.veadan.folib.job.cron.domain.CronTaskConfigurationDto cronTaskConfiguration = conversionService.convert(cronTaskConfigurationForm,
+                    com.veadan.folib.job.cron.domain.CronTaskConfigurationDto.class);
             cronTaskConfiguration.setUuid(uuid);
             cronTaskConfigurationService.saveConfiguration(cronTaskConfiguration);
 
@@ -185,7 +184,7 @@ public class CronTaskController
                     MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity deleteConfiguration(@PathVariable("UUID") UUID uuid,
                                               @RequestHeader(HttpHeaders.ACCEPT) String acceptHeader) {
-        final CronTaskConfigurationDto config = cronTaskConfigurationService.getTaskConfigurationDto(uuid);
+        final com.veadan.folib.job.cron.domain.CronTaskConfigurationDto config = cronTaskConfigurationService.getTaskConfigurationDto(uuid);
         if (config == null) {
             return getNotFoundResponseEntity(NOT_FOUND_CONFIGURATION, acceptHeader);
         }
@@ -251,7 +250,7 @@ public class CronTaskController
                     com.veadan.folib.net.MediaType.APPLICATION_YAML_VALUE})
     public ResponseEntity getConfiguration(@PathVariable("UUID") UUID uuid,
                                            @RequestHeader(HttpHeaders.ACCEPT) String acceptHeader) {
-        CronTaskConfigurationDto config = cronTaskConfigurationService.getTaskConfigurationDto(uuid);
+        com.veadan.folib.job.cron.domain.CronTaskConfigurationDto config = cronTaskConfigurationService.getTaskConfigurationDto(uuid);
         if (config == null) {
             return getNotFoundResponseEntity(NOT_FOUND_CONFIGURATION, acceptHeader);
         }
@@ -325,7 +324,7 @@ public class CronTaskController
             return getBadRequestResponseEntity("The uploaded file must be a Groovy one!", acceptHeader);
         }
 
-        CronTaskConfigurationDto cronTaskConfiguration = cronTaskConfigurationService.getTaskConfigurationDto(uuid);
+        com.veadan.folib.job.cron.domain.CronTaskConfigurationDto cronTaskConfiguration = cronTaskConfigurationService.getTaskConfigurationDto(uuid);
         if (cronTaskConfiguration == null) {
             return getNotFoundResponseEntity(NOT_FOUND_CONFIGURATION, acceptHeader);
         }

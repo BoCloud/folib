@@ -4,7 +4,7 @@ import com.veadan.folib.domain.migrate.AddRepositoryForm;
 import com.veadan.folib.domain.migrate.ArtifactMigrateInfo;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.entity.MigrateInfo;
-import com.veadan.folib.forms.JfrogMigrateForm;
+import com.veadan.folib.dto.JfrogMigrateDto;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 
 import java.util.LinkedList;
@@ -35,7 +35,7 @@ public interface JfrogMigrateService {
     Queue<String> PAUSED_QUEUE = new LinkedList<>();
 
 
-    void migrate(JfrogMigrateForm form);
+    void migrate(JfrogMigrateDto form);
 
     List<Dict> getMigrateTask();
 

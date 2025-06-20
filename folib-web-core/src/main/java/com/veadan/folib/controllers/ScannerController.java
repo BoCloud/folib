@@ -1,6 +1,6 @@
 package com.veadan.folib.controllers;
 
-import com.veadan.folib.forms.scanner.*;
+import com.veadan.folib.dto.scanner.*;
 import com.veadan.folib.services.ArtifactWebService;
 import io.swagger.annotations.Api;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,31 +24,31 @@ public class ScannerController extends BaseController {
 
     @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping("/getCount")
-    public ResponseEntity<CountForm> getCount(Authentication authentication) {
+    public ResponseEntity<CountDto> getCount(Authentication authentication) {
         return ResponseEntity.ok(artifactWebService.getCount(authentication));
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping("/weekCount")
-    public ResponseEntity<WeekCountForm> weekCount(Authentication authentication) {
+    public ResponseEntity<WeekCountDto> weekCount(Authentication authentication) {
         return ResponseEntity.ok(artifactWebService.weekCount(authentication));
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping("/monthCount")
-    public ResponseEntity<List<DayCountForm>> monthCount(Authentication authentication) {
+    public ResponseEntity<List<DayCountDto>> monthCount(Authentication authentication) {
         return ResponseEntity.ok(artifactWebService.monthCount(authentication));
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping("/repositories")
-    public ResponseEntity<List<RepositoryCountForm>> repositories(Authentication authentication) {
+    public ResponseEntity<List<RepositoryCountDto>> repositories(Authentication authentication) {
         return ResponseEntity.ok(artifactWebService.repositories(authentication));
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @GetMapping("/repository")
-    public ResponseEntity<RepositoryScannerForm> repository(@RequestParam("storage") String storage, @RequestParam("repository") String repository, String artifactName, Integer page, Integer limit) {
+    public ResponseEntity<RepositoryScannerDto> repository(@RequestParam("storage") String storage, @RequestParam("repository") String repository, String artifactName, Integer page, Integer limit) {
         return ResponseEntity.ok(artifactWebService.repository(storage, repository, artifactName, page, limit));
     }
 

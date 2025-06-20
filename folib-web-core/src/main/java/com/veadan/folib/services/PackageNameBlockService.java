@@ -2,7 +2,7 @@ package com.veadan.folib.services;
 
 import com.veadan.folib.domain.PackageNameBlockInfo;
 import com.veadan.folib.entity.PackageNameBlock;
-import com.veadan.folib.forms.packagenameblock.PackageNameBlockForm;
+import com.veadan.folib.dto.packagenameblock.PackageNameBlockDto;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 
 import java.util.List;
@@ -20,28 +20,28 @@ public interface PackageNameBlockService {
      * @param packageNameBlockForm 表单参数
      * @return 包名阻断分页列表
      */
-    TableResultResponse<PackageNameBlockInfo> queryPackageNameBlockList(Integer page, Integer limit, PackageNameBlockForm packageNameBlockForm);
+    TableResultResponse<PackageNameBlockInfo> queryPackageNameBlockList(Integer page, Integer limit, PackageNameBlockDto packageNameBlockForm);
 
     /**
      * 保存包名阻断
      *
      * @param packageNameBlockForm 表单参数
      */
-    void savePackageNameBlock(PackageNameBlockForm packageNameBlockForm);
+    void savePackageNameBlock(PackageNameBlockDto packageNameBlockForm);
 
     /**
      * 更新包名阻断
      *
      * @param packageNameBlockForm 表单参数
      */
-    void updatePackageNameBlock(PackageNameBlockForm packageNameBlockForm);
+    void updatePackageNameBlock(PackageNameBlockDto packageNameBlockForm);
 
     /**
      * 删除包名阻断
      *
      * @param packageNameBlockForm 表单参数
      */
-    void deletePackageNameBlock(PackageNameBlockForm packageNameBlockForm);
+    void deletePackageNameBlock(PackageNameBlockDto packageNameBlockForm);
 
     /**
      * 包名阻断
@@ -49,7 +49,7 @@ public interface PackageNameBlockService {
      * @param packageNameBlockForm 表单参数
      * @return 包名阻断
      */
-    PackageNameBlockInfo selectOnePackageNameBlock(PackageNameBlockForm packageNameBlockForm);
+    PackageNameBlockInfo selectOnePackageNameBlock(PackageNameBlockDto packageNameBlockForm);
 
     /**
      * 解析配置信息到数据库

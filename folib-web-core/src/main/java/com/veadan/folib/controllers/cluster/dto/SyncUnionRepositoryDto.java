@@ -1,7 +1,7 @@
 package com.veadan.folib.controllers.cluster.dto;
 
 import com.veadan.folib.cluster.SyncUnionRepositoryEnum;
-import com.veadan.folib.forms.configuration.UnionRepositoryConfigurationForm;
+import com.veadan.folib.dto.configuration.UnionRepositoryConfigurationDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,7 +20,7 @@ public class SyncUnionRepositoryDto {
 
     private String repositoryId;
 
-    private UnionRepositoryConfigurationForm unionRepositoryConfigurationForm;
+    private UnionRepositoryConfigurationDto unionRepositoryConfigurationForm;
 
     private SyncUnionRepositoryEnum syncUnionRepositoryEnum;
 }

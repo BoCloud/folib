@@ -2,7 +2,7 @@ package com.veadan.folib.services;
 
 import com.veadan.folib.domain.customlayout.CustomLayoutRecord;
 import com.veadan.folib.entity.CustomLayout;
-import com.veadan.folib.forms.customlayout.CustomLayoutForm;
+import com.veadan.folib.dto.customlayout.CustomLayoutDto;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 
 import java.util.List;
@@ -21,7 +21,7 @@ public interface CustomLayoutService {
      * @param customLayoutForm 表单参数
      * @return 自定义布局分页列表
      */
-    TableResultResponse<CustomLayoutRecord> queryCustomLayoutPage(Integer page, Integer limit, CustomLayoutForm customLayoutForm);
+    TableResultResponse<CustomLayoutRecord> queryCustomLayoutPage(Integer page, Integer limit, CustomLayoutDto customLayoutForm);
 
     /**
      * 查询自定义布局列表
@@ -29,7 +29,7 @@ public interface CustomLayoutService {
      * @param customLayoutForm 表单参数
      * @return 自定义布局分页列表
      */
-    List<CustomLayoutRecord> queryCustomLayoutList(CustomLayoutForm customLayoutForm);
+    List<CustomLayoutRecord> queryCustomLayoutList(CustomLayoutDto customLayoutForm);
 
     /**
      * 查询自定义布局
@@ -37,21 +37,21 @@ public interface CustomLayoutService {
      * @param customLayout 自定义布局
      * @return 自定义布局
      */
-    CustomLayoutForm queryCustomLayout(CustomLayout customLayout);
+    CustomLayoutDto queryCustomLayout(CustomLayout customLayout);
 
     /**
      * 新增自定义布局
      *
      * @param customLayoutForm 参数
      */
-    void saveCustomLayout(CustomLayoutForm customLayoutForm);
+    void saveCustomLayout(CustomLayoutDto customLayoutForm);
 
     /**
      * 更新自定义布局
      *
      * @param customLayoutForm 参数
      */
-    void updateCustomLayout(CustomLayoutForm customLayoutForm);
+    void updateCustomLayout(CustomLayoutDto customLayoutForm);
 
     /**
      * 删除自定义布局

@@ -1,7 +1,7 @@
 package com.veadan.folib.controllers.cluster.dto;
 
 import com.veadan.folib.cluster.SyncCornJobEnum;
-import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
+import com.veadan.folib.job.cron.domain.CronTaskConfigurationDto;
 
 public class SyncCronJobDto {
     private CronTaskConfigurationDto configurationDto;

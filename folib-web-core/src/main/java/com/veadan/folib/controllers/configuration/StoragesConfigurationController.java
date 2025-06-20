@@ -7,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.annotation.LicenseAnnotation;
 import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
@@ -15,7 +14,6 @@ import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.cluster.SyncAuthorizationEnum;
 import com.veadan.folib.cluster.SyncRepositoryEnum;
 import com.veadan.folib.cluster.SyncStorageEnum;
-import com.veadan.folib.cluster.SyncUnionRepositoryEnum;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.components.repository.RepositoryComponent;
 import com.veadan.folib.config.PermissionCheck;
@@ -24,7 +22,6 @@ import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.cluster.dto.SyncAuthorizationDto;
 import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
 import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
-import com.veadan.folib.controllers.cluster.dto.SyncUnionRepositoryDto;
 import com.veadan.folib.controllers.federal.req.FederalPromotionPolicyCreateReq;
 import com.veadan.folib.controllers.federal.req.FederalRepositoryCreateReq;
 import com.veadan.folib.controllers.federal.req.PromotionRuleCreateReq;
@@ -37,13 +34,14 @@ import com.veadan.folib.domain.policy.FederalPromotionPolicyService;
 import com.veadan.folib.dto.ArtifactDispatchRepositoryDto;
 import com.veadan.folib.dto.PermissionsDTO;
 import com.veadan.folib.dto.UserDTO;
-import com.veadan.folib.entity.FederalPromotionPolicy;
+import com.veadan.folib.dto.configuration.*;
+import com.veadan.folib.dto.configuration.RepositoryDto;
+import com.veadan.folib.dto.configuration.RepositoryPermissionDto;
 import com.veadan.folib.entity.Resource;
 import com.veadan.folib.enums.*;
 import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
-import com.veadan.folib.forms.common.StorageTreeForm;
-import com.veadan.folib.forms.configuration.*;
+import com.veadan.folib.dto.common.StorageTreeDto;
 import com.veadan.folib.layout.providers.CargoLayoutProvider;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.LayoutProvider;
@@ -59,7 +57,6 @@ import com.veadan.folib.services.StorageManagementService;
 import com.veadan.folib.services.support.ConfigurationException;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.storage.StorageData;
-import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.Views;
 import com.veadan.folib.storage.repository.*;
 import com.veadan.folib.storage.repository.remote.heartbeat.RemoteRepositoryAlivenessService;
@@ -232,9 +229,9 @@ public class StoragesConfigurationController
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity createStorage(@RequestBody
                                         @Validated({Default.class,
-                                                StorageForm.NewStorage.class,
-                                                ProxyConfigurationForm.ProxyConfigurationFormChecks.class})
-                                                StorageForm storageForm,
+                                                StorageDto.NewStorage.class,
+                                                ProxyConfigurationDto.ProxyConfigurationFormChecks.class})
+                                            StorageDto storageForm,
                                         BindingResult bindingResult,
                                         @RequestHeader(HttpHeaders.ACCEPT)
                                                 String accept) {
@@ -242,7 +239,7 @@ public class StoragesConfigurationController
             throw new RequestBodyValidationException(FAILED_SAVE_STORAGE_FORM_ERROR, bindingResult);
         }
         try {
-            StorageDto storage = conversionService.convert(storageForm, StorageDto.class);
+            com.veadan.folib.storage.StorageDto storage = conversionService.convert(storageForm, com.veadan.folib.storage.StorageDto.class);
             if (StringUtils.isBlank(storage.getAdmin())) {
                 storage.setAdmin(NotifyScopesTypeEnum.ADMIN.getScope());
             }
@@ -274,8 +271,8 @@ public class StoragesConfigurationController
             @ApiParam(value = "The storageId", required = true)
             @PathVariable String storageId,
             @RequestBody @Validated({Default.class,
-                    StorageForm.ExistingStorage.class,
-                    ProxyConfigurationForm.ProxyConfigurationFormChecks.class}) StorageForm storageFormToUpdate,
+                    StorageDto.ExistingStorage.class,
+                    ProxyConfigurationDto.ProxyConfigurationFormChecks.class}) StorageDto storageFormToUpdate,
             BindingResult bindingResult,
             @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (bindingResult.hasErrors()) {
@@ -287,19 +284,19 @@ public class StoragesConfigurationController
         }
 
         try {
-            StorageDto storage = conversionService.convert(storageFormToUpdate, StorageDto.class);
+            com.veadan.folib.storage.StorageDto storage = conversionService.convert(storageFormToUpdate, com.veadan.folib.storage.StorageDto.class);
             if (storage != null) {
                 storage.setSyncEnabled(storageFormToUpdate.isSyncEnabled());
 
-                StorageDto storageInfo = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
+                com.veadan.folib.storage.StorageDto storageInfo = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
                 //更新仓库：同步状态开启或关闭，同步状态到仓库
                 boolean syncEnabled = storageFormToUpdate.isSyncEnabled();
                 if (storageInfo != null && !Objects.equals(storageInfo.isSyncEnabled(), syncEnabled)) {
                     Collection<? extends Repository> repositorys = storageInfo.getRepositories().values();
-                    Map<String, RepositoryDto> repositoryMap = new HashMap<>();
+                    Map<String, com.veadan.folib.storage.repository.RepositoryDto> repositoryMap = new HashMap<>();
                     repositorys.forEach(repository -> {
                         if (!Objects.equals(repository.isSyncEnabled(), syncEnabled)) {
-                            RepositoryDto repositoryDto = conversionService.convert(repository, RepositoryDto.class);
+                            com.veadan.folib.storage.repository.RepositoryDto repositoryDto = conversionService.convert(repository, com.veadan.folib.storage.repository.RepositoryDto.class);
                             if (repositoryDto != null) {
                                 repositoryDto.setSyncEnabled(syncEnabled);
                                 repositoryMap.put(repository.getId(), repositoryDto);
@@ -442,7 +439,7 @@ public class StoragesConfigurationController
                 .getStorages()
                 .values());
         List<Repository> repositoriesList = new ArrayList<>();
-        List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
+        List<StorageTreeDto> storageTreeForms = Lists.newArrayList();
 
         if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
             Map<String, List<String>> storageRepMap = new HashMap<>();
@@ -484,11 +481,11 @@ public class StoragesConfigurationController
                             (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope()))))
                     .filter(s -> !filterByStorageId || s.getId().equalsIgnoreCase(storageId))
                     .collect(Collectors.toCollection(LinkedList::new));
-            StorageTreeForm storageTreeForm;
+            StorageTreeDto storageTreeForm;
             List<Repository> repositories;
             for (Storage storage : storages) {
                 boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username) || storage.getRepositoryUsers().contains(username));
-                storageTreeForm = StorageTreeForm.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
+                storageTreeForm = StorageTreeDto.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
                 repositories = new LinkedList<Repository>(storage.getRepositories().values());
                 repositories = repositories.stream().distinct()
                         .filter(r -> !filterByType || r.getType().equalsIgnoreCase(type))
@@ -502,7 +499,7 @@ public class StoragesConfigurationController
                     repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || hasRepositoryResolve(item))).collect(Collectors.toList());
                 }
                 repositoriesList.addAll(repositories);
-                storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeForm.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout())
+                storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeDto.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout())
                         .scope(repository.getScope()).build()).collect(Collectors.toList()));
                 storageTreeForms.add(storageTreeForm);
             }
@@ -540,7 +537,7 @@ public class StoragesConfigurationController
         List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
                 .getStorages()
                 .values());
-        List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
+        List<StorageTreeDto> storageTreeForms = Lists.newArrayList();
         List<Repository> repositorieList = new ArrayList<>();
 
         if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
@@ -577,12 +574,12 @@ public class StoragesConfigurationController
                             (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope()))))
                     .filter(s -> !filterByStorageId || s.getId().equalsIgnoreCase(storageId))
                     .collect(Collectors.toCollection(LinkedList::new));
-            StorageTreeForm storageTreeForm;
+            StorageTreeDto storageTreeForm;
             List<Repository> repositories;
             for (Storage storage : storages) {
                 boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username)
                         || storage.getRepositoryUsers().contains(username));
-                storageTreeForm = StorageTreeForm.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
+                storageTreeForm = StorageTreeDto.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
                 repositories = new LinkedList<Repository>(storage.getRepositories().values());
                 repositories = repositories.stream().distinct()
                         .filter(r -> !filterByType || r.getType().equalsIgnoreCase(type))
@@ -594,7 +591,7 @@ public class StoragesConfigurationController
                 if (flag) {
                     repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || hasRepositoryResolve(item))).collect(Collectors.toList());
                 }
-                storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeForm.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout())
+                storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeDto.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout())
                         .scope(repository.getScope()).build()).collect(Collectors.toList()));
                 storageTreeForms.add(storageTreeForm);
             }
@@ -622,7 +619,7 @@ public class StoragesConfigurationController
         List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
                 .getStorages()
                 .values());
-        List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
+        List<StorageTreeDto> storageTreeForms = Lists.newArrayList();
         List<Repository> repositorieList = new ArrayList<>();
 
         if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
@@ -654,12 +651,12 @@ public class StoragesConfigurationController
                     .distinct()
                     .filter(s -> !filterByUser || username.equals(s.getAdmin()))
                     .collect(Collectors.toCollection(LinkedList::new));
-            StorageTreeForm storageTreeForm;
+            StorageTreeDto storageTreeForm;
             List<Repository> repositories;
             for (Storage storage : storages) {
                 boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username)
                         || storage.getRepositoryUsers().contains(username));
-                storageTreeForm = StorageTreeForm.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
+                storageTreeForm = StorageTreeDto.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
                 repositories = new LinkedList<Repository>(storage.getRepositories().values());
                 repositories = repositories.stream().distinct()
                         .filter(r -> !filterByType || r.getType().equalsIgnoreCase(type))
@@ -670,7 +667,7 @@ public class StoragesConfigurationController
                 if (flag) {
                     repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || hasRepositoryResolve(item))).collect(Collectors.toList());
                 }
-                storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeForm.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout()).build()).collect(Collectors.toList()));
+                storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeDto.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout()).build()).collect(Collectors.toList()));
                 storageTreeForms.add(storageTreeForm);
             }
         }
@@ -689,9 +686,9 @@ public class StoragesConfigurationController
                 .values());
         //查询数据库中存储空间绑定的用户
         storageManagementService.getStorageUsers(storages);
-        List<StorageTreeForm> dispatchTreeForms = Lists.newArrayList();
-        List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
-        StorageTreeForm dispatchTreeForm = StorageTreeForm.builder()
+        List<StorageTreeDto> dispatchTreeForms = Lists.newArrayList();
+        List<StorageTreeDto> storageTreeForms = Lists.newArrayList();
+        StorageTreeDto dispatchTreeForm = StorageTreeDto.builder()
                 .id(dispatchEnName)
                 .key(dispatchEnName)
                 .name(dispatchEnName).artifactoryRepositoryType(ArtifactoryRepositoryTypeEnum.INNER.getType()).build();
@@ -704,7 +701,7 @@ public class StoragesConfigurationController
                     .collect(Collectors.toCollection(LinkedList::new));
             List<Repository> repositories;
             for (Storage storage : storages) {
-                StorageTreeForm storageTreeForm = StorageTreeForm.builder()
+                StorageTreeDto storageTreeForm = StorageTreeDto.builder()
                         .id(storage.getId())
                         .key(dispatchEnName + "," + storage.getId())
                         .name(storage.getId()).artifactoryRepositoryType(ArtifactoryRepositoryTypeEnum.INNER.getType()).build();
@@ -718,7 +715,7 @@ public class StoragesConfigurationController
                     continue;
                 }
                 storageTreeForm.setChildren(repositories.stream().map(repository ->
-                        StorageTreeForm.builder()
+                        StorageTreeDto.builder()
                                 .id(repository.getId())
                                 .key(dispatchEnName + "," + storage.getId() + "," + repository.getId())
                                 .name(repository.getId())
@@ -762,7 +759,7 @@ public class StoragesConfigurationController
                 .type(type)
                 .layout(layout)
                 .policy(policy).build();
-        List<StorageTreeForm> repoList = new LinkedList<>();
+        List<StorageTreeDto> repoList = new LinkedList<>();
         WSMessageRequest wsMessageRequest = null;
         WSMessageResponse messageResponse = null;
         for (ClusterDispatchNodeDto clusterDispatchNodeDto : listDispatch) {
@@ -801,7 +798,7 @@ public class StoragesConfigurationController
                                                    @ApiParam(value = "The filter")
                                                    @RequestParam(value = "filter", required = false) Boolean filter,
                                                    Authentication authentication) throws JsonProcessingException {
-        StorageDto storage = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
+        com.veadan.folib.storage.StorageDto storage = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
         if (Objects.isNull(storage)) {
             return getFailedResponseEntity(HttpStatus.NOT_FOUND, STORAGE_NOT_FOUND, MediaType.APPLICATION_JSON_VALUE);
         }
@@ -815,7 +812,7 @@ public class StoragesConfigurationController
                 if (Objects.nonNull(repositoryMap) && CollectionUtils.isNotEmpty(repositoryMap.values())) {
                     List<String> anonymousRepositories = storageRepMap.get(storage.getId());
                     repositoryMap = repositoryMap.values().stream().filter(item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || (CollectionUtils.isNotEmpty(anonymousRepositories) && anonymousRepositories.contains(item.getId()))).collect(Collectors.toMap(Repository::getId, Function.identity()));
-                    storage.setRepositories((Map<String, RepositoryDto>) repositoryMap);
+                    storage.setRepositories((Map<String, com.veadan.folib.storage.repository.RepositoryDto>) repositoryMap);
                 }
             }
 
@@ -833,13 +830,13 @@ public class StoragesConfigurationController
                         .filter(item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || hasRepositoryResolve(item))
                         .map(item -> {
                             if (RepositoryTypeEnum.PROXY.getType().equals(item.getType())) {
-                                RepositoryDto repositoryDto = (RepositoryDto) item;
-                                repositoryDto.setHealthStatus(remoteRepositoryAlivenessCacheManager.isAlive(((RepositoryDto) item).getRemoteRepository()));
+                                com.veadan.folib.storage.repository.RepositoryDto repositoryDto = (com.veadan.folib.storage.repository.RepositoryDto) item;
+                                repositoryDto.setHealthStatus(remoteRepositoryAlivenessCacheManager.isAlive(((com.veadan.folib.storage.repository.RepositoryDto) item).getRemoteRepository()));
                             }
                             return item;
                         })
                         .collect(Collectors.toMap(Repository::getId, Function.identity()));
-                storage.setRepositories((Map<String, RepositoryDto>) repositoryMap);
+                storage.setRepositories((Map<String, com.veadan.folib.storage.repository.RepositoryDto>) repositoryMap);
             }
         }
         Map<String, ? extends Repository> repositoryMap = storage.getRepositories();
@@ -847,13 +844,13 @@ public class StoragesConfigurationController
             repositoryMap = repositoryMap.values().stream()
                     .map(item -> {
                         if (RepositoryTypeEnum.PROXY.getType().equals(item.getType())) {
-                            RepositoryDto repositoryDto = (RepositoryDto) item;
-                            repositoryDto.setHealthStatus(remoteRepositoryAlivenessCacheManager.isAlive(((RepositoryDto) item).getRemoteRepository()));
+                            com.veadan.folib.storage.repository.RepositoryDto repositoryDto = (com.veadan.folib.storage.repository.RepositoryDto) item;
+                            repositoryDto.setHealthStatus(remoteRepositoryAlivenessCacheManager.isAlive(((com.veadan.folib.storage.repository.RepositoryDto) item).getRemoteRepository()));
                         }
                         return item;
                     })
                     .collect(Collectors.toMap(Repository::getId, Function.identity()));
-            storage.setRepositories((Map<String, RepositoryDto>) repositoryMap);
+            storage.setRepositories((Map<String, com.veadan.folib.storage.repository.RepositoryDto>) repositoryMap);
         }
         StorageData storageData = new StorageData(storage);
         return ResponseEntity.ok(storageData);
@@ -875,7 +872,7 @@ public class StoragesConfigurationController
                                         @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (configurationManagementService.getConfiguration().getStorage(storageId) != null) {
             try {
-                StorageDto storageDto = getMutableConfigurationClone().getStorage(storageId);
+                com.veadan.folib.storage.StorageDto storageDto = getMutableConfigurationClone().getStorage(storageId);
                 if (MapUtils.isNotEmpty(storageDto.getRepositories())) {
                     return getFailedResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_STORAGE_REMOVAL_EXISTS_REPOSITORY, accept);
                 }
@@ -912,8 +909,8 @@ public class StoragesConfigurationController
                                        @PathVariable
                                                String repositoryType) {
         List<Repository> repositories = configurationManagementService.getRepositoriesWithType(storageId, repositoryType);
-        List<RepositoryForm> repositoryForms = Optional.ofNullable(repositories).orElse(Lists.newArrayList()).stream().map(item -> {
-            RepositoryForm repository = new RepositoryForm();
+        List<RepositoryDto> repositoryForms = Optional.ofNullable(repositories).orElse(Lists.newArrayList()).stream().map(item -> {
+            RepositoryDto repository = new RepositoryDto();
             BeanUtils.copyProperties(item, repository);
             repository.setStorageId(item.getStorage().getId());
             if (FileSystemStorageProvider.ALIAS.equalsIgnoreCase(item.getStorageProvider())) {
@@ -943,8 +940,8 @@ public class StoragesConfigurationController
                                                 @ApiParam(value = "The repository object", required = true)
                                                 @RequestBody
                                                 @Validated({Default.class,
-                                                        ProxyConfigurationForm.ProxyConfigurationFormChecks.class})
-                                                        RepositoryForm repositoryForm,
+                                                        ProxyConfigurationDto.ProxyConfigurationFormChecks.class})
+                                                    RepositoryDto repositoryForm,
                                                 BindingResult bindingResult,
                                                 @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         Storage storage = configurationManagementService.getConfiguration().getStorage(storageId);
@@ -952,7 +949,7 @@ public class StoragesConfigurationController
             if (bindingResult.hasErrors()) {
                 throw new RequestBodyValidationException(FAILED_SAVE_REPOSITORY, bindingResult);
             }
-            RepositoryDto repository = conversionService.convert(repositoryForm, RepositoryDto.class);
+            com.veadan.folib.storage.repository.RepositoryDto repository = conversionService.convert(repositoryForm, com.veadan.folib.storage.repository.RepositoryDto.class);
             if (Objects.isNull(repository)) {
                 return getFailedResponseEntity(HttpStatus.BAD_REQUEST, "The repository params is null", accept);
             }
@@ -973,7 +970,7 @@ public class StoragesConfigurationController
                 logger.info("Creating repository {}:{}...", storageId, repositoryId);
                 groupRepositoryValid(storageId, repository);
                 configurationManagementService.saveRepository(storageId, repository);
-                RepositoryDto repositoryDto = getMutableConfigurationClone().getStorage(storageId)
+                com.veadan.folib.storage.repository.RepositoryDto repositoryDto = getMutableConfigurationClone().getStorage(storageId)
                         .getRepository(repositoryId);
                 final RepositoryPath repositoryPath = repositoryPathResolver.resolve(new RepositoryData(repository));
                 try {
@@ -1046,24 +1043,24 @@ public class StoragesConfigurationController
     @PostMapping(value = "/{storageId}/{repositoryId}/alive",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<RepositoryAliveForm> aliveRepository(@ApiParam(value = "The storageId", required = true)
+    public ResponseEntity<RepositoryAliveDto> aliveRepository(@ApiParam(value = "The storageId", required = true)
                                                                @PathVariable String storageId,
-                                                               @ApiParam(value = "The repositoryId", required = true)
+                                                              @ApiParam(value = "The repositoryId", required = true)
                                                                @PathVariable
                                                                        String repositoryId,
-                                                               @ApiParam(value = "The repository object", required = true)
+                                                              @ApiParam(value = "The repository object", required = true)
                                                                @RequestBody
                                                                @Validated({Default.class,
-                                                                       ProxyConfigurationForm.ProxyConfigurationFormChecks.class})
-                                                                       RepositoryForm repositoryForm,
-                                                               BindingResult bindingResult,
-                                                               @RequestHeader(HttpHeaders.ACCEPT) String accept) {
+                                                                       ProxyConfigurationDto.ProxyConfigurationFormChecks.class})
+                                                                  RepositoryDto repositoryForm,
+                                                              BindingResult bindingResult,
+                                                              @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         Storage storage = configurationManagementService.getConfiguration().getStorage(storageId);
         if (storage != null) {
             if (bindingResult.hasErrors()) {
                 throw new RequestBodyValidationException(PARAMS_ERROR, bindingResult);
             }
-            RepositoryDto repository = conversionService.convert(repositoryForm, RepositoryDto.class);
+            com.veadan.folib.storage.repository.RepositoryDto repository = conversionService.convert(repositoryForm, com.veadan.folib.storage.repository.RepositoryDto.class);
             boolean isAlive = false;
             Response response = null;
             int statusCode = 0;
@@ -1086,10 +1083,10 @@ public class StoragesConfigurationController
                             HttpStatus.FOUND.value() == statusCode;
                     logger.info("Verify if the storage [{}] repository [{}] remoteUrl [{}] is alive responseStatus [{}] response [{}]", storageId, repositoryId, repository.getRemoteRepository().getUrl(), statusCode, response.readEntity(String.class));
                 }
-                return ResponseEntity.ok(RepositoryAliveForm.builder().alive(isAlive).statusCode(statusCode).build());
+                return ResponseEntity.ok(RepositoryAliveDto.builder().alive(isAlive).statusCode(statusCode).build());
             } catch (Exception e) {
                 logger.info("Verify if the storage [{}] repository [{}] is alive error [{}]", storageId, repositoryId, ExceptionUtils.getStackTrace(e));
-                return ResponseEntity.ok(RepositoryAliveForm.builder().alive(false).build());
+                return ResponseEntity.ok(RepositoryAliveDto.builder().alive(false).build());
             } finally {
                 if (Objects.nonNull(response)) {
                     response.close();
@@ -1114,8 +1111,8 @@ public class StoragesConfigurationController
                                                       String repositoryId,
                                               @ApiParam(value = "The repository object", required = true)
                                               @RequestBody
-                                              @Validated({RepositoryForm.WhiteGroup.class})
-                                                      RepositoryForm repositoryForm,
+                                              @Validated({RepositoryDto.WhiteGroup.class})
+                                                  RepositoryDto repositoryForm,
                                               BindingResult bindingResult,
                                               @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (configurationManagementService.getConfiguration().getStorage(storageId) != null) {
@@ -1124,7 +1121,7 @@ public class StoragesConfigurationController
             }
 
             try {
-                RepositoryDto repository = getMutableConfigurationClone().getStorage(storageId)
+                com.veadan.folib.storage.repository.RepositoryDto repository = getMutableConfigurationClone().getStorage(storageId)
                         .getRepository(repositoryId);
                 repository.setVulnerabilityWhites(repositoryForm.getVulnerabilityWhites());
                 logger.info("新增仓库级别白名单 {}:{}...", storageId, repositoryId);
@@ -1158,8 +1155,8 @@ public class StoragesConfigurationController
                                                          String repositoryId,
                                                  @ApiParam(value = "The repository object", required = true)
                                                  @RequestBody
-                                                 @Validated({RepositoryForm.WhiteGroup.class})
-                                                         RepositoryForm repositoryForm,
+                                                 @Validated({RepositoryDto.WhiteGroup.class})
+                                                     RepositoryDto repositoryForm,
                                                  BindingResult bindingResult,
                                                  @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (configurationManagementService.getConfiguration().getStorage(storageId) != null) {
@@ -1168,7 +1165,7 @@ public class StoragesConfigurationController
             }
 
             try {
-                RepositoryDto repository = getMutableConfigurationClone().getStorage(storageId)
+                com.veadan.folib.storage.repository.RepositoryDto repository = getMutableConfigurationClone().getStorage(storageId)
                         .getRepository(repositoryId);
                 repository.setVulnerabilityWhites(repositoryForm.getVulnerabilityWhites());
                 logger.info("删除仓库级别白名单 {}:{}...", storageId, repositoryId);
@@ -1200,8 +1197,8 @@ public class StoragesConfigurationController
                                                       String repositoryId,
                                               @ApiParam(value = "The repository object", required = true)
                                               @RequestBody
-                                              @Validated({RepositoryForm.BlackGroup.class})
-                                                      RepositoryForm repositoryForm,
+                                              @Validated({RepositoryDto.BlackGroup.class})
+                                                  RepositoryDto repositoryForm,
                                               BindingResult bindingResult,
                                               @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (configurationManagementService.getConfiguration().getStorage(storageId) != null) {
@@ -1210,7 +1207,7 @@ public class StoragesConfigurationController
             }
 
             try {
-                RepositoryDto repository = getMutableConfigurationClone().getStorage(storageId)
+                com.veadan.folib.storage.repository.RepositoryDto repository = getMutableConfigurationClone().getStorage(storageId)
                         .getRepository(repositoryId);
                 repository.setVulnerabilityBlacks(repositoryForm.getVulnerabilityBlacks());
                 logger.info("新增仓库级别黑名单 {}:{}...", storageId, repositoryId);
@@ -1244,8 +1241,8 @@ public class StoragesConfigurationController
                                                          String repositoryId,
                                                  @ApiParam(value = "The repository object", required = true)
                                                  @RequestBody
-                                                 @Validated({RepositoryForm.BlackGroup.class})
-                                                         RepositoryForm repositoryForm,
+                                                 @Validated({RepositoryDto.BlackGroup.class})
+                                                     RepositoryDto repositoryForm,
                                                  BindingResult bindingResult,
                                                  @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (configurationManagementService.getConfiguration().getStorage(storageId) != null) {
@@ -1254,7 +1251,7 @@ public class StoragesConfigurationController
             }
 
             try {
-                RepositoryDto repository = getMutableConfigurationClone().getStorage(storageId)
+                com.veadan.folib.storage.repository.RepositoryDto repository = getMutableConfigurationClone().getStorage(storageId)
                         .getRepository(repositoryId);
                 repository.setVulnerabilityBlacks(repositoryForm.getVulnerabilityBlacks());
                 logger.info("删除仓库级别黑名单 {}:{}...", storageId, repositoryId);
@@ -1287,7 +1284,7 @@ public class StoragesConfigurationController
                                               @PathVariable
                                                       String repositoryId,
                                               @ApiParam(value = "The repository object", required = true)
-                                              @RequestBody RepositoryForm repositoryForm,
+                                              @RequestBody RepositoryDto repositoryForm,
                                               BindingResult bindingResult,
                                               @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (configurationManagementService.getConfiguration().getStorage(storageId) != null) {
@@ -1296,7 +1293,7 @@ public class StoragesConfigurationController
             }
 
             try {
-                RepositoryDto repository = getMutableConfigurationClone().getStorage(storageId)
+                com.veadan.folib.storage.repository.RepositoryDto repository = getMutableConfigurationClone().getStorage(storageId)
                         .getRepository(repositoryId);
                 repository.setVulnerabilityWhites(repositoryForm.getVulnerabilityWhites());
                 logger.info("设置仓库级别白名单 {}:{}...", storageId, repositoryId);
@@ -1329,7 +1326,7 @@ public class StoragesConfigurationController
                                               @PathVariable
                                                       String repositoryId,
                                               @ApiParam(value = "The repository object", required = true)
-                                              @RequestBody RepositoryForm repositoryForm,
+                                              @RequestBody RepositoryDto repositoryForm,
                                               BindingResult bindingResult,
                                               @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (configurationManagementService.getConfiguration().getStorage(storageId) != null) {
@@ -1338,7 +1335,7 @@ public class StoragesConfigurationController
             }
 
             try {
-                RepositoryDto repository = getMutableConfigurationClone().getStorage(storageId)
+                com.veadan.folib.storage.repository.RepositoryDto repository = getMutableConfigurationClone().getStorage(storageId)
                         .getRepository(repositoryId);
                 repository.setVulnerabilityBlacks(repositoryForm.getVulnerabilityBlacks());
                 logger.info("设置仓库级别黑名单 {}:{}...", storageId, repositoryId);
@@ -1359,7 +1356,7 @@ public class StoragesConfigurationController
     }
 
     @ApiOperation(value = "Returns the configuration of a repository.")
-    @ApiResponses(value = {@ApiResponse(code = 200, message = "The repository was updated successfully.", response = RepositoryDto.class),
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "The repository was updated successfully.", response = com.veadan.folib.storage.repository.RepositoryDto.class),
             @ApiResponse(code = 404, message = "The repository ${storageId}:${repositoryId} was not found!")})
     @PreAuthorize("hasAuthority('CONFIGURATION_VIEW_REPOSITORY')")
     @GetMapping(value = "/{storageId}/{repositoryId}",
@@ -1403,7 +1400,7 @@ public class StoragesConfigurationController
                 return getFailedResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, String.format(FAILED_REPOSITORY_REMOVAL_EXISTS_GROUP_REPOSITORY, repositoryList.stream().map(item -> String.format("%s:%s", item.getStorage().getId(), item.getId())).collect(Collectors.joining(","))), accept);
             }
             final RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository);
-            RepositoryDto repositoryDto = getMutableConfigurationClone().getStorage(storageId)
+            com.veadan.folib.storage.repository.RepositoryDto repositoryDto = getMutableConfigurationClone().getStorage(storageId)
                     .getRepository(repositoryId);
             if (cleanup && Files.exists(repositoryPath)) {
                 logger.info("Cleanup repository {}:{}.", storageId, repositoryId);
@@ -1445,7 +1442,7 @@ public class StoragesConfigurationController
                                                        String repositoryId,
                                                @ApiParam(value = "The repository object", required = true)
                                                @RequestBody
-                                               @Validated RepositoryPermissionForm repositoryPermissionForm,
+                                               @Validated RepositoryPermissionDto repositoryPermissionForm,
                                                BindingResult bindingResult,
                                                @RequestHeader(HttpHeaders.ACCEPT) String accept) throws IOException {
         final Storage storage = configurationManagementService.getConfiguration().getStorage(storageId);
@@ -1453,7 +1450,7 @@ public class StoragesConfigurationController
             if (bindingResult.hasErrors()) {
                 throw new RequestBodyValidationException(FAILED_SAVE_REPOSITORY_PERMISSION, bindingResult);
             }
-            RepositoryPermissionDto repositoryPermissionDto = conversionService.convert(repositoryPermissionForm, RepositoryPermissionDto.class);
+            com.veadan.folib.storage.repository.RepositoryPermissionDto repositoryPermissionDto = conversionService.convert(repositoryPermissionForm, com.veadan.folib.storage.repository.RepositoryPermissionDto.class);
             if (Objects.isNull(repositoryPermissionDto)) {
                 return getFailedResponseEntity(HttpStatus.BAD_REQUEST, FAILED_SAVE_REPOSITORY_PERMISSION, accept);
             }
@@ -1473,7 +1470,7 @@ public class StoragesConfigurationController
             //TODO 检查用户的权限是否小于仓库权限
 //            roleService.updateRepostoryPermission(storageId, repositoryId, repositoryPermissionDto);
 
-            RepositoryDto repository = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId);
+            com.veadan.folib.storage.repository.RepositoryDto repository = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId);
             repository.setScope(repositoryPermissionDto.getScope());
             repository.setAllowAnonymous(repositoryPermissionDto.isAllowAnonymous());
             groupRepositoryValid(storageId, repository);
@@ -1680,7 +1677,7 @@ public class StoragesConfigurationController
                                           @ApiParam(value = "The repository object", required = true)
                                           @RequestBody
                                           @Validated
-                                                  UnionRepositoryConfigurationForm unionRepositoryConfigurationForm,
+                                              UnionRepositoryConfigurationDto unionRepositoryConfigurationForm,
                                           BindingResult bindingResult,
                                           @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (configurationManagementService.getConfiguration().getStorage(storageId) != null) {
@@ -1718,7 +1715,7 @@ public class StoragesConfigurationController
         }
     }
 
-    public FederalPromotionPolicyCreateReq convertPolicy(UnionRepositoryConfigurationForm unionRepositoryConfigurationForm,String storageId,String repositoryId) {
+    public FederalPromotionPolicyCreateReq convertPolicy(UnionRepositoryConfigurationDto unionRepositoryConfigurationForm, String storageId, String repositoryId) {
         SecurityContext securityContext = SecurityContextHolder.getContext();
         Authentication authentication = securityContext.getAuthentication();
         SpringSecurityUser user = (SpringSecurityUser) authentication.getPrincipal();

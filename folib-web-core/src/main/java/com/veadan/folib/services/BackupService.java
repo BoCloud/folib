@@ -1,6 +1,6 @@
 package com.veadan.folib.services;
 
-import com.veadan.folib.forms.backup.BackupForm;
+import com.veadan.folib.dto.backup.BackupDto;
 
 /**
  * @author leipenghui
@@ -13,5 +13,5 @@ public interface BackupService {
      *
      * @param backupForm 备份策略
      */
-    void saveBackup(BackupForm backupForm);
+    void saveBackup(BackupDto backupForm);
 }

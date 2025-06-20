@@ -1,20 +1,19 @@
 package com.veadan.folib.converters.configuration;
 
-import com.veadan.folib.forms.configuration.MavenRepositoryConfigurationForm;
-import com.veadan.folib.yaml.configuration.repository.MavenRepositoryConfigurationDto;
+import com.veadan.folib.dto.configuration.MavenRepositoryConfigurationDto;
 
 import org.springframework.core.convert.converter.Converter;
 
 public enum MavenRepositoryConfigurationConverter
-        implements Converter<MavenRepositoryConfigurationForm, MavenRepositoryConfigurationDto>
+        implements Converter<MavenRepositoryConfigurationDto, com.veadan.folib.yaml.configuration.repository.MavenRepositoryConfigurationDto>
 {
 
     INSTANCE;
 
     @Override
-    public MavenRepositoryConfigurationDto convert(MavenRepositoryConfigurationForm mavenRepositoryConfigurationForm)
+    public com.veadan.folib.yaml.configuration.repository.MavenRepositoryConfigurationDto convert(MavenRepositoryConfigurationDto mavenRepositoryConfigurationForm)
     {
-        MavenRepositoryConfigurationDto configuration = new MavenRepositoryConfigurationDto();
+        com.veadan.folib.yaml.configuration.repository.MavenRepositoryConfigurationDto configuration = new com.veadan.folib.yaml.configuration.repository.MavenRepositoryConfigurationDto();
         configuration.setIndexingClassNamesEnabled(mavenRepositoryConfigurationForm.isIndexingClassNamesEnabled());
         configuration.setIndexingEnabled(mavenRepositoryConfigurationForm.isIndexingEnabled());
         configuration.setCronExpression(mavenRepositoryConfigurationForm.getCronExpression());

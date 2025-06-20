@@ -1,6 +1,6 @@
 package com.veadan.folib.services;
 
-import com.veadan.folib.forms.configuration.SecurityPolicyConfigurationForm;
+import com.veadan.folib.dto.configuration.SecurityPolicyConfigurationDto;
 
 import java.io.IOException;
 
@@ -64,7 +64,7 @@ public interface SecurityPolicyConfigurationService {
      * @param securityPolicyConfigurationForm 参数
      * @throws IOException io异常
      */
-    void saveOrUpdateNotify(SecurityPolicyConfigurationForm securityPolicyConfigurationForm) throws IOException;
+    void saveOrUpdateNotify(SecurityPolicyConfigurationDto securityPolicyConfigurationForm) throws IOException;
 
     /**
      * 保存或者更新平台阻断配置
@@ -72,7 +72,7 @@ public interface SecurityPolicyConfigurationService {
      * @param securityPolicyConfigurationForm 参数
      * @throws IOException io异常
      */
-    void saveOrUpdateBlock(SecurityPolicyConfigurationForm securityPolicyConfigurationForm) throws IOException;
+    void saveOrUpdateBlock(SecurityPolicyConfigurationDto securityPolicyConfigurationForm) throws IOException;
 
     /**
      * 新增包名阻断配置
@@ -80,7 +80,7 @@ public interface SecurityPolicyConfigurationService {
      * @param securityPolicyConfigurationForm 参数
      * @throws IOException io异常
      */
-    void addPackageName(SecurityPolicyConfigurationForm securityPolicyConfigurationForm) throws IOException;
+    void addPackageName(SecurityPolicyConfigurationDto securityPolicyConfigurationForm) throws IOException;
 
     /**
      * 删除包名阻断配置
@@ -88,12 +88,12 @@ public interface SecurityPolicyConfigurationService {
      * @param securityPolicyConfigurationForm 参数
      * @throws IOException io异常
      */
-    void deletePackageName(SecurityPolicyConfigurationForm securityPolicyConfigurationForm) throws IOException;
+    void deletePackageName(SecurityPolicyConfigurationDto securityPolicyConfigurationForm) throws IOException;
 
     /**
      * 查询安全策略配置
      *
      * @return 安全策略配置
      */
-    SecurityPolicyConfigurationForm config();
+    SecurityPolicyConfigurationDto config();
 }

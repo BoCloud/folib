@@ -1,6 +1,5 @@
 package com.veadan.folib.controllers.adapter.jfrog.req;
 
-import com.veadan.folib.forms.backupstrategy.BackupStrategyForm;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

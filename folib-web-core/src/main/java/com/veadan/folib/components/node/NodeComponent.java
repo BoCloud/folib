@@ -1,7 +1,7 @@
 package com.veadan.folib.components.node;
 
 import com.google.common.collect.Maps;
-import com.veadan.folib.forms.node.CassandraClusterForm;
+import com.veadan.folib.dto.node.CassandraClusterDto;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.cassandra.repair.RepairParallelism;
 import org.apache.cassandra.repair.messages.RepairOption;
@@ -57,8 +57,8 @@ public class NodeComponent {
      *
      * @return 集群信息
      */
-    public CassandraClusterForm cassandraClusterInfo() {
-        CassandraClusterForm cassandraClusterForm = CassandraClusterForm.builder().build();
+    public CassandraClusterDto cassandraClusterInfo() {
+        CassandraClusterDto cassandraClusterForm = CassandraClusterDto.builder().build();
         try {
             //本地主机id
             String localHostId = nodeProbe.getLocalHostId();

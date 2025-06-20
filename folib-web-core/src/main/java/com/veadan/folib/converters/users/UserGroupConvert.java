@@ -3,7 +3,7 @@ package com.veadan.folib.converters.users;
 import com.veadan.folib.controllers.users.support.UserGroupOutput;
 import com.veadan.folib.dto.UserGroupListDTO;
 import com.veadan.folib.entity.UserGroup;
-import com.veadan.folib.forms.users.UserGroupForm;
+import com.veadan.folib.dto.users.UserGroupDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mappings;
 import org.mapstruct.factory.Mappers;
@@ -26,7 +26,7 @@ public interface UserGroupConvert {
     List<UserGroupOutput> UserGroupsToOutput(List<UserGroup> userGroups);
 
     @Mappings({})
-    UserGroup UserGroupToUserGroupForm(UserGroupForm userGroupForm);
+    UserGroup UserGroupToUserGroupForm(UserGroupDto userGroupForm);
     @Mappings({})
     UserGroupOutput UserGroupToOutput(UserGroup userGroup);
 }

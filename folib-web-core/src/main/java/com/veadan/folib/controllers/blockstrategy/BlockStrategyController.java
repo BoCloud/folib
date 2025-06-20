@@ -3,7 +3,7 @@ package com.veadan.folib.controllers.blockstrategy;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.domain.blockstrategy.BlockStrategyRecord;
 import com.veadan.folib.entity.BlockStrategy;
-import com.veadan.folib.forms.blockstrategy.BlockStrategyForm;
+import com.veadan.folib.dto.blockstrategy.BlockStrategyDto;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.BlockStrategyService;
 import io.swagger.annotations.Api;
@@ -36,16 +36,16 @@ public class BlockStrategyController extends BaseController {
     @GetMapping(value = "/page")
     public TableResultResponse<BlockStrategyRecord> page(@RequestParam(name = "page", required = false) Integer page,
                                                          @RequestParam(name = "limit", required = false) Integer limit,
-                                                         BlockStrategyForm blockStrategyForm) {
+                                                         BlockStrategyDto blockStrategyForm) {
         return blockStrategyService.queryBlockStrategyPage(page, limit, blockStrategyForm);
     }
 
-    @ApiOperation(value = "查询阻断策略信息", response = BlockStrategyForm.class)
+    @ApiOperation(value = "查询阻断策略信息", response = BlockStrategyDto.class)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping(value = "/info")
-    public ResponseEntity<BlockStrategyForm> blockStrategyInfo(BlockStrategy blockStrategy) {
-        BlockStrategyForm blockStrategyForm = blockStrategyService.queryBlockStrategy(blockStrategy);
+    public ResponseEntity<BlockStrategyDto> blockStrategyInfo(BlockStrategy blockStrategy) {
+        BlockStrategyDto blockStrategyForm = blockStrategyService.queryBlockStrategy(blockStrategy);
         return ResponseEntity.ok(blockStrategyForm);
     }
 
@@ -53,7 +53,7 @@ public class BlockStrategyController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping
-    public ResponseEntity<String> saveBlockStrategy(@RequestBody @Validated(BlockStrategyForm.SaveGroup.class) BlockStrategyForm blockStrategyForm) {
+    public ResponseEntity<String> saveBlockStrategy(@RequestBody @Validated(BlockStrategyDto.SaveGroup.class) BlockStrategyDto blockStrategyForm) {
         if (validateBlockStrategy(blockStrategyForm.getBlockStrategyName())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(String.format("%s阻断策略名称已存在", blockStrategyForm.getBlockStrategyName()));
         }
@@ -65,7 +65,7 @@ public class BlockStrategyController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping
-    public ResponseEntity<String> updateBlockStrategy(@RequestBody @Validated(BlockStrategyForm.UpdateGroup.class) BlockStrategyForm blockStrategyForm) {
+    public ResponseEntity<String> updateBlockStrategy(@RequestBody @Validated(BlockStrategyDto.UpdateGroup.class) BlockStrategyDto blockStrategyForm) {
         if (Objects.isNull(blockStrategyForm.getId()) && !validateBlockStrategy(blockStrategyForm.getBlockStrategyName())) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("未找到阻断策略信息");
         }
@@ -81,7 +81,7 @@ public class BlockStrategyController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping
-    public ResponseEntity<String> deleteBlockStrategy(@RequestBody @Validated(BlockStrategyForm.DeleteGroup.class) BlockStrategyForm blockStrategyForm) {
+    public ResponseEntity<String> deleteBlockStrategy(@RequestBody @Validated(BlockStrategyDto.DeleteGroup.class) BlockStrategyDto blockStrategyForm) {
         if (!validateBlockStrategy(blockStrategyForm.getBlockStrategyName())) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("未找到阻断策略信息");
         }

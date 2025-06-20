@@ -2,13 +2,12 @@ package com.veadan.folib.controllers.users;
 
 import com.github.pagehelper.PageInfo;
 import com.veadan.folib.entity.AccessToken;
-import com.veadan.folib.forms.accesstoken.AccessTokenForm;
-import com.veadan.folib.forms.accesstoken.AccessTokenResponse;
+import com.veadan.folib.dto.accesstoken.AccessTokenDto;
+import com.veadan.folib.dto.accesstoken.AccessTokenResponse;
 import com.veadan.folib.services.AccessTokenService;
 import io.swagger.annotations.Api;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,7 +35,7 @@ public class AccessTokenController {
 
 
     @PostMapping
-    public ResponseEntity<AccessTokenResponse> generateToken(@RequestBody @Validated AccessTokenForm form) {
+    public ResponseEntity<AccessTokenResponse> generateToken(@RequestBody @Validated AccessTokenDto form) {
         AccessTokenResponse response = accessTokenService.generate(form);
         return ResponseEntity.ok(response);
     }

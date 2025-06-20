@@ -1,7 +1,6 @@
 package com.veadan.folib.converters.users;
 
-import com.veadan.folib.forms.users.UserForm;
-import com.veadan.folib.users.dto.UserDto;
+import com.veadan.folib.dto.users.UserDto;
 
 import org.springframework.core.convert.converter.Converter;
 
@@ -10,15 +9,15 @@ import org.springframework.core.convert.converter.Converter;
  * @author veadan
  */
 public enum UserFormToUserDtoConverter
-        implements Converter<UserForm, UserDto>
+        implements Converter<UserDto, com.veadan.folib.users.dto.UserDto>
 {
 
     INSTANCE;
 
     @Override
-    public UserDto convert(UserForm userForm)
+    public com.veadan.folib.users.dto.UserDto convert(UserDto userForm)
     {
-        UserDto user = new UserDto();
+        com.veadan.folib.users.dto.UserDto user = new com.veadan.folib.users.dto.UserDto();
         user.setUsername(userForm.getUsername());
         user.setPassword(userForm.getPassword());
         user.setOriginalPassword(userForm.getOriginalPassword());

@@ -11,7 +11,7 @@ import com.veadan.folib.enums.CategoryEnum;
 import com.veadan.folib.enums.RuleEnum;
 import com.veadan.folib.entity.AllowlistDenylistBlock;
 import com.veadan.folib.enums.TagEnum;
-import com.veadan.folib.forms.configuration.SecurityPolicyConfigurationForm;
+import com.veadan.folib.dto.configuration.SecurityPolicyConfigurationDto;
 import com.veadan.folib.mapper.AllowlistDenylistBlockMapper;
 import com.veadan.folib.mapper.LicenseMapper;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
@@ -19,8 +19,6 @@ import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.SecurityPolicyConfigurationService;
 import com.veadan.folib.storage.repository.RepositoryDto;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +28,6 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -128,7 +125,7 @@ public class AllowlistDenylistBlockServiceImpl implements AllowlistDenylistBlock
 
     @Transactional(rollbackFor = Exception.class)
     public void initPlatformVulnerabilities() {
-        SecurityPolicyConfigurationForm source = securityPolicyConfigurationService.config();
+        SecurityPolicyConfigurationDto source = securityPolicyConfigurationService.config();
         List<AllowlistDenylistBlock> vulnerabilityList = new ArrayList<>();
         Date createdTime = new Date();
         for (String vulnerability : source.getWhites()) {

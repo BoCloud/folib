@@ -2,25 +2,19 @@ package com.veadan.folib.controllers;
 
 import javax.inject.Inject;
 
-import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.components.auth.AuthComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.controllers.users.UserController;
 import com.veadan.folib.controllers.users.support.UserOutput;
 import com.veadan.folib.domain.UserRepositoryPermission;
-import com.veadan.folib.forms.users.UserForm;
+import com.veadan.folib.dto.users.UserDto;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.storage.Storage;
-import com.veadan.folib.users.domain.Privileges;
-import com.veadan.folib.users.domain.SystemRole;
-import com.veadan.folib.users.dto.UserDto;
 import com.veadan.folib.users.security.AuthoritiesProvider;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.EncodedPasswordUser;
-import com.veadan.folib.users.service.impl.DatabaseUserService.Database;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
-import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.util.RSAUtils;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.*;
@@ -31,9 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -41,10 +33,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author Steve Todorov
@@ -115,7 +105,7 @@ public class AccountController
                 consumes = MediaType.APPLICATION_JSON_VALUE,
                 produces = { MediaType.APPLICATION_JSON_VALUE })
     @ResponseBody
-    public ResponseEntity updateAccount(@RequestBody @Validated(UserForm.UpdateAccount.class) UserForm userToUpdate,
+    public ResponseEntity updateAccount(@RequestBody @Validated(UserDto.UpdateAccount.class) UserDto userToUpdate,
                                         BindingResult bindingResult,
                                         Authentication authentication)
     {
@@ -126,7 +116,7 @@ public class AccountController
         // Updating account details currently only allows changing password and security token.
         // However, we're reusing the UserForm which includes other fields. Just to be on the safe side,
         // we are creating a new UserDto which contains only password & securityToken field changes.
-        UserDto user = new UserDto();
+        com.veadan.folib.users.dto.UserDto user = new com.veadan.folib.users.dto.UserDto();
         user.setUsername(userToUpdate.getUsername());
         if (StringUtils.isNotBlank(userToUpdate.getPassword())) {
             user.setOriginalPassword(userToUpdate.getPassword());

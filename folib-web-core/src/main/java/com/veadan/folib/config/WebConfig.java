@@ -12,7 +12,7 @@ import com.veadan.folib.converters.cron.CronTaskConfigurationFormToCronTaskConfi
 import com.veadan.folib.converters.storage.routing.RoutingRuleFormToMutableConverter;
 import com.veadan.folib.converters.users.AccessModelFormToUserAccessModelDtoConverter;
 import com.veadan.folib.converters.users.UserFormToUserDtoConverter;
-import com.veadan.folib.cron.config.CronTasksConfig;
+import com.veadan.folib.job.cron.config.CronTasksConfig;
 import com.veadan.folib.interceptors.PermissionCheckInterceptor;
 import com.veadan.folib.jtwig.extensions.ByteSizeConversionExtension;
 

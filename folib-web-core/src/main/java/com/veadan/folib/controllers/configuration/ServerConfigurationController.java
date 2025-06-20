@@ -1,6 +1,5 @@
 package com.veadan.folib.controllers.configuration;
 
-import com.google.common.collect.Lists;
 import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
@@ -13,26 +12,21 @@ import com.veadan.folib.controllers.cluster.dto.SyncServerSettingsDto;
 import com.veadan.folib.controllers.support.BaseUrlEntityBody;
 import com.veadan.folib.controllers.support.InstanceNameEntityBody;
 import com.veadan.folib.controllers.support.PortEntityBody;
-import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
-import com.veadan.folib.cron.domain.CronTasksConfigurationDto;
-import com.veadan.folib.cron.jobs.AlarmNoticeCronJob;
-import com.veadan.folib.cron.services.CronTaskConfigurationService;
+import com.veadan.folib.dto.configuration.*;
+import com.veadan.folib.job.cron.domain.CronTasksConfigurationDto;
+import com.veadan.folib.job.tasks.AlarmNoticeCronJob;
+import com.veadan.folib.job.cron.services.CronTaskConfigurationService;
 import com.veadan.folib.enums.AuditEventNameEnum;
-import com.veadan.folib.forms.configuration.*;
 import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.support.ConfigurationException;
 import com.veadan.folib.task.AlarmNoticeTask;
-import com.veadan.folib.users.domain.Privileges;
-import com.veadan.folib.users.security.AuthoritiesProvider;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.*;
 import jakarta.inject.Inject;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -252,7 +246,7 @@ public class ServerConfigurationController
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
-    public ResponseEntity setServerSettings(@RequestBody ServerSettingsForm serverSettingsForm,
+    public ResponseEntity setServerSettings(@RequestBody ServerSettingsDto serverSettingsForm,
                                             BindingResult bindingResult,
                                             @RequestHeader(HttpHeaders.ACCEPT) String acceptHeader) throws Exception {
         if (serverSettingsForm == null) {
@@ -278,28 +272,28 @@ public class ServerConfigurationController
         return ResponseEntity.ok("success");
     }
 
-    private void validateServerSettingsForm(ServerSettingsForm form,
+    private void validateServerSettingsForm(ServerSettingsDto form,
                                             BindingResult bindingResult) {
         if (!isProxyConfigurationFormEmpty(form.getProxyConfigurationForm())) {
             ValidationUtils.invokeValidator(validator, form, bindingResult,
-                    ProxyConfigurationForm.ProxyConfigurationFormChecks.class);
+                    ProxyConfigurationDto.ProxyConfigurationFormChecks.class);
         }
 
         if (!isSmtpConfigurationFormEmpty(form.getSmtpConfigurationForm())) {
             ValidationUtils.invokeValidator(validator, form, bindingResult,
-                    SmtpConfigurationForm.SmtpConfigurationFormChecks.class);
+                    SmtpConfigurationDto.SmtpConfigurationFormChecks.class);
         }
 
         ValidationUtils.invokeValidator(validator, form, bindingResult);
 
     }
 
-    private boolean isProxyConfigurationFormEmpty(ProxyConfigurationForm form) {
+    private boolean isProxyConfigurationFormEmpty(ProxyConfigurationDto form) {
         return Stream.of(form.getHost(), form.getPort(), form.getType())
                 .allMatch(this::isNullOrEmpty);
     }
 
-    private boolean isSmtpConfigurationFormEmpty(SmtpConfigurationForm form) {
+    private boolean isSmtpConfigurationFormEmpty(SmtpConfigurationDto form) {
         return Stream.of(form.getHost(), form.getPort(), form.getConnection())
                 .allMatch(this::isNullOrEmpty);
     }
@@ -339,24 +333,24 @@ public class ServerConfigurationController
 
         Configuration configuration = configurationManagementService.getConfiguration();
 
-        ServerSettingsForm settings = new ServerSettingsForm();
+        ServerSettingsDto settings = new ServerSettingsDto();
         settings.setBaseUrl(configuration.getBaseUrl());
         settings.setInstanceName(configuration.getInstanceName());
         settings.setPort(configuration.getPort());
         settings.setKbps(configuration.getKbps());
         settings.setSliceMbSize(configuration.getSliceMbSize());
         settings.setCorsConfigurationForm(
-                CorsConfigurationForm.fromConfiguration(configuration.getCorsConfiguration())
+                CorsConfigurationDto.fromConfiguration(configuration.getCorsConfiguration())
         );
         settings.setSmtpConfigurationForm(
-                SmtpConfigurationForm.fromConfiguration(configuration.getSmtpConfiguration())
+                SmtpConfigurationDto.fromConfiguration(configuration.getSmtpConfiguration())
         );
         settings.setProxyConfigurationForm(
-                ProxyConfigurationForm.fromConfiguration(configuration.getProxyConfiguration())
+                ProxyConfigurationDto.fromConfiguration(configuration.getProxyConfiguration())
         );
-        settings.setAdvancedConfigurationForm(AdvancedConfigurationForm.fromConfiguration(configuration.getAdvancedConfiguration()));
+        settings.setAdvancedConfigurationForm(AdvancedConfigurationDto.fromConfiguration(configuration.getAdvancedConfiguration()));
         if(configuration.getAlarmConfiguration()!=null){
-            settings.setAlarmConfigurationForm(AlarmConfigurationForm.formConfiguration(configuration.getAlarmConfiguration()));
+            settings.setAlarmConfigurationForm(AlarmConfigurationDto.formConfiguration(configuration.getAlarmConfiguration()));
             CronTasksConfigurationDto config = cronTaskConfigurationService.getTasksConfigurationDto();
             final String className = AlarmNoticeCronJob.class.getName();
             config.setCronTaskConfigurations(config.getCronTaskConfigurations().stream().filter(cron -> className.equals(cron.getJobClass())).collect(Collectors.toSet()));

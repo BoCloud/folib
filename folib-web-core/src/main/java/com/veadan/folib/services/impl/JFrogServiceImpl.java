@@ -12,7 +12,7 @@ import com.veadan.folib.components.layout.DockerComponent;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.enums.DockerHeaderEnum;
 import com.veadan.folib.enums.PromotionStatusEnum;
-import com.veadan.folib.forms.externalnode.ExternalNodeForm;
+import com.veadan.folib.dto.externalnode.ExternalNodeDto;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
@@ -116,7 +116,7 @@ public class JFrogServiceImpl implements JFrogService {
     @Override
     public void uploadItem(String nodeName, String repositoryName, RepositoryPath repositoryPath, String artifactPath, Boolean recordStatus) {
         asyncPromotionPoolTaskExecutor.execute(() -> {
-            ExternalNodeForm externalNodeForm = getExternalNodeForm(nodeName);
+            ExternalNodeDto externalNodeForm = getExternalNodeForm(nodeName);
             if (Objects.isNull(externalNodeForm)) {
                 try {
                     artifactComponent.deleteArtifactPromotionNode(repositoryPath.getArtifactEntry(), nodeName);
@@ -238,8 +238,8 @@ public class JFrogServiceImpl implements JFrogService {
      * @param nodeName 节点名称
      * @return 制品库节点信息
      */
-    private ExternalNodeForm getExternalNodeForm(String nodeName) {
-        ExternalNodeForm externalNode = externalNodeService.getExternalNode(ExternalNodeForm.builder().nodeName(nodeName).build());
+    private ExternalNodeDto getExternalNodeForm(String nodeName) {
+        ExternalNodeDto externalNode = externalNodeService.getExternalNode(ExternalNodeDto.builder().nodeName(nodeName).build());
         if (Objects.nonNull(externalNode)) {
             externalNode.setPassword(rsaUtils.decrypt(externalNode.getPassword()));
         }
@@ -543,7 +543,7 @@ public class JFrogServiceImpl implements JFrogService {
     @Override
     public void deletePat(String nodeName, String repositoryName, String artifactPath) {
         log.info("Delete nodeName [{}]  repositoryName [{}] artifact [{}]",nodeName, repositoryName ,artifactPath);
-        ExternalNodeForm externalNodeForm = getExternalNodeForm(nodeName);
+        ExternalNodeDto externalNodeForm = getExternalNodeForm(nodeName);
         String address = externalNodeForm.getAddress(), username = externalNodeForm.getUsername(), password = externalNodeForm.getPassword();
         Artifactory artifactory = getArtifactory(address, username, password);
         if(artifactory!=null){

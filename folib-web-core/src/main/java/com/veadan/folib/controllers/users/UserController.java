@@ -11,10 +11,9 @@ import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.UserPermissionForm;
 import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
-import com.veadan.folib.forms.users.UserForm;
+import com.veadan.folib.dto.users.UserDto;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.StorageManagementService;
-import com.veadan.folib.users.dto.UserDto;
 import com.veadan.folib.users.dto.UserPermissionDTO;
 import com.veadan.folib.users.security.AuthoritiesProvider;
 import com.veadan.folib.users.service.FolibRoleService;
@@ -170,7 +169,7 @@ public class UserController
     @PreAuthorize("hasAuthority('VIEW_USER')")
     @PostMapping(value = "/queryUser", produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    public TableResultResponse<UserOutput> queryUser(@RequestBody UserDto user, Integer page, Integer limit) {
+    public TableResultResponse<UserOutput> queryUser(@RequestBody com.veadan.folib.users.dto.UserDto user, Integer page, Integer limit) {
         PageResultResponse<User> pageResultResponse = userService.queryUser(user, page, limit);
         if (Objects.isNull(pageResultResponse)) {
             return new TableResultResponse<>(0, Collections.emptyList());
@@ -218,7 +217,7 @@ public class UserController
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    public ResponseEntity create(@RequestBody @Validated(UserForm.NewUser.class) UserForm userForm,
+    public ResponseEntity create(@RequestBody @Validated(UserDto.NewUser.class) UserDto userForm,
                                  BindingResult bindingResult,
                                  @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (bindingResult.hasErrors()) {
@@ -227,7 +226,7 @@ public class UserController
         if (StringUtils.isBlank(userForm.getPassword()) && StringUtils.isBlank(userForm.getOriginalPassword())) {
             return getBadRequestResponseEntity(PASSWORD_FIELD_IS_REQUIRED, accept);
         }
-        UserDto user = conversionService.convert(userForm, UserDto.class);
+        com.veadan.folib.users.dto.UserDto user = conversionService.convert(userForm, com.veadan.folib.users.dto.UserDto.class);
         user.setUserGroupIds(userForm.getUserGroupIds());
         user.setNickname(userForm.getNickname());
         if (StringUtils.isNotBlank(user.getPassword())) {
@@ -260,7 +259,7 @@ public class UserController
     @ResponseBody
     public ResponseEntity update(@ApiParam(value = "The name of the user", required = true)
                                  @PathVariable String username,
-                                 @RequestBody @Validated(UserForm.ExistingUser.class) UserForm userToUpdate,
+                                 @RequestBody @Validated(UserDto.ExistingUser.class) UserDto userToUpdate,
                                  BindingResult bindingResult,
                                  Authentication authentication,
                                  @RequestHeader(HttpHeaders.ACCEPT) String accept) {
@@ -279,7 +278,7 @@ public class UserController
             return getFailedResponseEntity(HttpStatus.NOT_FOUND, NOT_FOUND_USER, accept);
         }
 
-        UserDto user = conversionService.convert(userToUpdate, UserDto.class);
+        com.veadan.folib.users.dto.UserDto user = conversionService.convert(userToUpdate, com.veadan.folib.users.dto.UserDto.class);
         user.setUserGroupIds(userToUpdate.getUserGroupIds());
         user.setNickname(userToUpdate.getNickname());
         if (StringUtils.isNotBlank(user.getPassword())) {

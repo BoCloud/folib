@@ -4,7 +4,7 @@ import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.domain.PackageNameBlockInfo;
 import com.veadan.folib.enums.AuditEventNameEnum;
-import com.veadan.folib.forms.packagenameblock.PackageNameBlockForm;
+import com.veadan.folib.dto.packagenameblock.PackageNameBlockDto;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.PackageNameBlockService;
 import io.swagger.annotations.Api;
@@ -34,7 +34,7 @@ public class PackageNameBlockController extends BaseController {
     @GetMapping(value = "/page")
     public TableResultResponse<PackageNameBlockInfo> page(@RequestParam(name = "page", required = false) Integer page,
                                                           @RequestParam(name = "limit", required = false) Integer limit,
-                                                          PackageNameBlockForm packageNameBlockForm) {
+                                                          PackageNameBlockDto packageNameBlockForm) {
         return packageNameBlockService.queryPackageNameBlockList(page, limit, packageNameBlockForm);
     }
 
@@ -42,7 +42,7 @@ public class PackageNameBlockController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('CONFIGURATION_VIEW_SECURITY_POLICY_CONFIGURATION')")
     @GetMapping(value = "/info")
-    public ResponseEntity<PackageNameBlockInfo> packageNameBlockInfo(PackageNameBlockForm packageNameBlockForm) {
+    public ResponseEntity<PackageNameBlockInfo> packageNameBlockInfo(PackageNameBlockDto packageNameBlockForm) {
         PackageNameBlockInfo packageNameBlockInfo = packageNameBlockService.selectOnePackageNameBlock(packageNameBlockForm);
         return ResponseEntity.ok(packageNameBlockInfo);
     }
@@ -52,7 +52,7 @@ public class PackageNameBlockController extends BaseController {
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_SECURITY_POLICY')")
     @AuditLog(value = AuditEventNameEnum.SAFE_STRATEGY, target = "'新增包名黑名单:' + #packageNameBlockForm.getPackageName()")
     @PutMapping
-    public ResponseEntity<Void> savePackageNameBlock(@RequestBody PackageNameBlockForm packageNameBlockForm) {
+    public ResponseEntity<Void> savePackageNameBlock(@RequestBody PackageNameBlockDto packageNameBlockForm) {
         packageNameBlockService.savePackageNameBlock(packageNameBlockForm);
         return ResponseEntity.ok().build();
     }
@@ -62,7 +62,7 @@ public class PackageNameBlockController extends BaseController {
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_SECURITY_POLICY')")
     @AuditLog(value = AuditEventNameEnum.SAFE_STRATEGY, target = "'修改包名黑名单:' + #packageNameBlockForm.getPackageName()")
     @PostMapping
-    public ResponseEntity<Void> updatePackageNameBlock(@RequestBody PackageNameBlockForm packageNameBlockForm) {
+    public ResponseEntity<Void> updatePackageNameBlock(@RequestBody PackageNameBlockDto packageNameBlockForm) {
         packageNameBlockService.updatePackageNameBlock(packageNameBlockForm);
         return ResponseEntity.ok().build();
     }
@@ -72,7 +72,7 @@ public class PackageNameBlockController extends BaseController {
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_SECURITY_POLICY')")
     @AuditLog(value = AuditEventNameEnum.SAFE_STRATEGY, target = "'删除包名黑名单:' + #packageNameBlockForm.getPackageName()")
     @DeleteMapping
-    public ResponseEntity<Void> deletePackageNameBlock(@RequestBody PackageNameBlockForm packageNameBlockForm) {
+    public ResponseEntity<Void> deletePackageNameBlock(@RequestBody PackageNameBlockDto packageNameBlockForm) {
         packageNameBlockService.deletePackageNameBlock(packageNameBlockForm);
         return ResponseEntity.ok().build();
     }

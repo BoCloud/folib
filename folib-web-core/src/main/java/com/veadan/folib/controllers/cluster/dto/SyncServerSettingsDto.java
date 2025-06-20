@@ -1,7 +1,7 @@
 package com.veadan.folib.controllers.cluster.dto;
 
 import com.veadan.folib.cluster.SyncServerSettingsEnum;
-import com.veadan.folib.forms.configuration.ServerSettingsForm;
+import com.veadan.folib.dto.configuration.ServerSettingsDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class SyncServerSettingsDto {
 
-    private ServerSettingsForm serverSettingsForm;
+    private ServerSettingsDto serverSettingsForm;
 
     private SyncServerSettingsEnum syncServerSettingsEnum;
 }

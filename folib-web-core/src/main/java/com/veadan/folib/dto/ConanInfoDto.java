@@ -1,6 +1,5 @@
 package com.veadan.folib.dto;
 
-import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

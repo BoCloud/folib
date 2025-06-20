@@ -28,15 +28,13 @@
         <module>folib-configuration</module>
         <module>folib-event-api</module>
         <module>folib-security</module>
-        <module>folib-client</module>
-        <module>folib-rest-client</module>
-        <module>folib-cron</module>
+        <module>folib-api</module>
+        <module>folib-job</module>
         <module>folib-storage</module>
-        <module>folib-data-service</module>
-        <module>folib-aql</module>
-        <module>folib-web-forms</module>
+        <module>folib-gremlin-service</module>
+        <module>folib-web-dto</module>
         <module>folib-web-core</module>
-        <module>folib-distribution</module>
+        <module>folib-build</module>
         <module>folib-web-vue</module>
         <module>folib-core</module>
         <module>folib-docs</module>

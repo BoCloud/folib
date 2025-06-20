@@ -3,7 +3,7 @@ package com.veadan.folib.services;
 import com.veadan.folib.domain.backupstrategy.BackupStrategyRecord;
 import com.veadan.folib.entity.BackupStrategy;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
-import com.veadan.folib.forms.backupstrategy.BackupStrategyForm;
+import com.veadan.folib.dto.backupstrategy.BackupStrategyDto;
 import java.util.List;
 
 /**
@@ -20,7 +20,7 @@ public interface BackupStrategyService {
      * @param backupStrategyForm 表单参数
      * @return 备份策略分页列表
      */
-    TableResultResponse<BackupStrategyRecord> queryBackupStrategyPage(Integer page, Integer limit, BackupStrategyForm backupStrategyForm);
+    TableResultResponse<BackupStrategyRecord> queryBackupStrategyPage(Integer page, Integer limit, BackupStrategyDto backupStrategyForm);
 
     /**
      * 查询备份策略列表
@@ -28,7 +28,7 @@ public interface BackupStrategyService {
      * @param backupStrategyForm 表单参数
      * @return 备份策略分页列表
      */
-    List<BackupStrategyRecord> queryBackupStrategyList(BackupStrategyForm backupStrategyForm);
+    List<BackupStrategyRecord> queryBackupStrategyList(BackupStrategyDto backupStrategyForm);
 
     /**
      * 查询备份策略
@@ -36,21 +36,21 @@ public interface BackupStrategyService {
      * @param backupStrategy 备份策略
      * @return 备份策略
      */
-    BackupStrategyForm queryBackupStrategy(BackupStrategy backupStrategy);
+    BackupStrategyDto queryBackupStrategy(BackupStrategy backupStrategy);
 
     /**
      * 新增备份策略
      *
      * @param backupStrategyForm 参数
      */
-    void saveBackupStrategy(BackupStrategyForm backupStrategyForm);
+    void saveBackupStrategy(BackupStrategyDto backupStrategyForm);
 
     /**
      * 更新备份策略
      *
      * @param backupStrategyForm 参数
      */
-    void updateBackupStrategy(BackupStrategyForm backupStrategyForm);
+    void updateBackupStrategy(BackupStrategyDto backupStrategyForm);
 
     /**
      * 删除备份策略
@@ -80,5 +80,5 @@ public interface BackupStrategyService {
      * 执行备份
      * @param backupStrategyForm 备份策略
      */
-    void executeBackup(BackupStrategyForm backupStrategyForm);
+    void executeBackup(BackupStrategyDto backupStrategyForm);
 }

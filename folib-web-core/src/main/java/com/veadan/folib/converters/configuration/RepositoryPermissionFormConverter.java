@@ -1,7 +1,6 @@
 package com.veadan.folib.converters.configuration;
 
-import com.veadan.folib.forms.configuration.RepositoryPermissionForm;
-import com.veadan.folib.storage.repository.RepositoryPermissionDto;
+import com.veadan.folib.dto.configuration.RepositoryPermissionDto;
 import com.veadan.folib.storage.repository.RepositoryPermissionUserDto;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.BeanUtils;
@@ -14,12 +13,12 @@ import java.util.stream.Collectors;
  * @author leipenghui
  */
 public enum RepositoryPermissionFormConverter
-        implements Converter<RepositoryPermissionForm, RepositoryPermissionDto> {
+        implements Converter<RepositoryPermissionDto, com.veadan.folib.storage.repository.RepositoryPermissionDto> {
     INSTANCE;
 
     @Override
-    public RepositoryPermissionDto convert(final RepositoryPermissionForm source) {
-        RepositoryPermissionDto result = new RepositoryPermissionDto();
+    public com.veadan.folib.storage.repository.RepositoryPermissionDto convert(final RepositoryPermissionDto source) {
+        com.veadan.folib.storage.repository.RepositoryPermissionDto result = new com.veadan.folib.storage.repository.RepositoryPermissionDto();
         result.setScope(source.getScope());
         result.setAllowAnonymous(source.isAllowAnonymous());
         if (CollectionUtils.isNotEmpty(source.getUserList())) {

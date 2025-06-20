@@ -1,6 +1,6 @@
 package com.veadan.folib.controllers;
 
-import com.veadan.folib.forms.node.CassandraClusterForm;
+import com.veadan.folib.dto.node.CassandraClusterDto;
 import com.veadan.folib.services.NodeService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -30,10 +30,10 @@ public class NodeController extends BaseController {
      *
      * @return 集群信息
      */
-    @ApiOperation(value = "获取cassandra集群信息", response = CassandraClusterForm.class)
+    @ApiOperation(value = "获取cassandra集群信息", response = CassandraClusterDto.class)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @GetMapping(value = "/cassandraClusterInfo")
-    public ResponseEntity<CassandraClusterForm> cassandraClusterInfo() {
+    public ResponseEntity<CassandraClusterDto> cassandraClusterInfo() {
         return ResponseEntity.ok(nodeService.cassandraClusterInfo());
     }
 

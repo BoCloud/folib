@@ -1,8 +1,7 @@
 package com.veadan.folib.controllers.cluster.dto;
 
 import com.veadan.folib.cluster.SyncWebhookEnum;
-import com.veadan.folib.configuration.MutableWebhookConfiguration;
-import com.veadan.folib.forms.configuration.WebhookConfigurationForm;
+import com.veadan.folib.dto.configuration.WebhookConfigurationDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,7 +16,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class SyncWebhookDto {
 
-    private WebhookConfigurationForm webhookConfigurationForm;
+    private WebhookConfigurationDto webhookConfigurationForm;
 
     private SyncWebhookEnum syncWebhookEnum;
 }

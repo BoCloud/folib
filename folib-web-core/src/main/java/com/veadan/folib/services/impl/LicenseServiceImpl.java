@@ -13,7 +13,7 @@ import com.veadan.folib.entity.License;
 import com.veadan.folib.enums.BlockDomainEnum;
 import com.veadan.folib.enums.CategoryEnum;
 import com.veadan.folib.enums.RuleEnum;
-import com.veadan.folib.forms.license.LicenseTableForm;
+import com.veadan.folib.dto.license.LicenseTableDto;
 import com.veadan.folib.mapper.LicenseMapper;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
@@ -21,10 +21,8 @@ import com.veadan.folib.services.LicenseService;
 //import com.veadan.folib.utils.Translate;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -214,7 +212,7 @@ public class LicenseServiceImpl implements LicenseService {
     }
 
     @Override
-    public TableResultResponse<LicenseTableForm> queryLicensePage(Integer page, Integer limit, String searchKeyword, String licenseId, Integer blackWhiteType) {
+    public TableResultResponse<LicenseTableDto> queryLicensePage(Integer page, Integer limit, String searchKeyword, String licenseId, Integer blackWhiteType) {
         if (Objects.isNull(page)) {
             page = 1;
         }
@@ -243,18 +241,18 @@ public class LicenseServiceImpl implements LicenseService {
            }
         }
 
-        return new TableResultResponse<LicenseTableForm>(result.getTotal(), Optional.ofNullable(licenseList).orElse(Collections.emptyList()).stream().map(license -> {
-            LicenseTableForm licenseTableForm = LicenseTableForm.builder().build();
+        return new TableResultResponse<LicenseTableDto>(result.getTotal(), Optional.ofNullable(licenseList).orElse(Collections.emptyList()).stream().map(license -> {
+            LicenseTableDto licenseTableForm = LicenseTableDto.builder().build();
             BeanUtils.copyProperties(license, licenseTableForm);
             return licenseTableForm;
         }).collect(Collectors.toList()));
     }
 
     @Override
-    public List<LicenseTableForm> queryLicense(String searchKeyword, String licenseId, Integer blackWhiteType, Integer excludeBlackWhiteType) {
+    public List<LicenseTableDto> queryLicense(String searchKeyword, String licenseId, Integer blackWhiteType, Integer excludeBlackWhiteType) {
         List<License> licenseList = licenseMapper.selectLicense(searchKeyword, licenseId, blackWhiteType, excludeBlackWhiteType, null);
         return Optional.ofNullable(licenseList).orElse(Collections.emptyList()).stream().map(license -> {
-            LicenseTableForm licenseTableForm = LicenseTableForm.builder().build();
+            LicenseTableDto licenseTableForm = LicenseTableDto.builder().build();
             BeanUtils.copyProperties(license, licenseTableForm);
             return licenseTableForm;
         }).collect(Collectors.toList());

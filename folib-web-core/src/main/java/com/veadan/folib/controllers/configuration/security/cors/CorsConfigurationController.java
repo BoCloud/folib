@@ -1,6 +1,6 @@
 package com.veadan.folib.controllers.configuration.security.cors;
 
-import com.veadan.folib.forms.configuration.CorsConfigurationForm;
+import com.veadan.folib.dto.configuration.CorsConfigurationDto;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.services.ConfigurationManagementService;
 
@@ -78,7 +78,7 @@ public class CorsConfigurationController
     @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE,
                 produces = { MediaType.TEXT_PLAIN_VALUE,
                              MediaType.APPLICATION_JSON_VALUE })
-    public ResponseEntity setAllowedOrigins(@RequestBody @Validated CorsConfigurationForm corsSettingsForm,
+    public ResponseEntity setAllowedOrigins(@RequestBody @Validated CorsConfigurationDto corsSettingsForm,
                                             BindingResult bindingResult,
                                             @RequestHeader(HttpHeaders.ACCEPT) String acceptHeader)
     {

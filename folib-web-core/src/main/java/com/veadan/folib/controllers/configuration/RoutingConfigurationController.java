@@ -1,6 +1,6 @@
 package com.veadan.folib.controllers.configuration;
 
-import com.veadan.folib.forms.storage.routing.RoutingRuleForm;
+import com.veadan.folib.dto.storage.routing.RoutingRuleDto;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.storage.routing.MutableRoutingRule;
 import com.veadan.folib.storage.routing.MutableRoutingRules;
@@ -94,7 +94,7 @@ public class RoutingConfigurationController
     @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE,
                 produces = { MediaType.TEXT_PLAIN_VALUE,
                              MediaType.APPLICATION_JSON_VALUE })
-    public ResponseEntity add(@RequestBody @Validated RoutingRuleForm routingRule,
+    public ResponseEntity add(@RequestBody @Validated RoutingRuleDto routingRule,
                               BindingResult bindingResult,
                               @RequestHeader(HttpHeaders.ACCEPT) String acceptHeader) throws IOException
     {
@@ -132,7 +132,7 @@ public class RoutingConfigurationController
                 produces = { MediaType.TEXT_PLAIN_VALUE,
                              MediaType.APPLICATION_JSON_VALUE })
     public ResponseEntity update(@PathVariable UUID uuid,
-                                 @RequestBody @Validated RoutingRuleForm routingRule,
+                                 @RequestBody @Validated RoutingRuleDto routingRule,
                                  BindingResult bindingResult,
                                  @RequestHeader(HttpHeaders.ACCEPT) String acceptHeader) throws IOException
     {

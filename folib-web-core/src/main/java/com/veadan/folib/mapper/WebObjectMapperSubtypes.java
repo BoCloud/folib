@@ -1,6 +1,6 @@
 package com.veadan.folib.mapper;
 
-import com.veadan.folib.forms.configuration.CustomRepositoryConfigurationForm;
+import com.veadan.folib.dto.configuration.CustomRepositoryConfigurationDto;
 import com.veadan.folib.yaml.ObjectMapperSubtypes;
 
 import java.util.Set;
@@ -16,7 +16,7 @@ public class WebObjectMapperSubtypes
 
     public static final WebObjectMapperSubtypes INSTANCE = new WebObjectMapperSubtypes();
 
-    private static final Set<Class<?>> ADDITIONAL_TYPES = ImmutableSet.of(CustomRepositoryConfigurationForm.class);
+    private static final Set<Class<?>> ADDITIONAL_TYPES = ImmutableSet.of(CustomRepositoryConfigurationDto.class);
 
     private WebObjectMapperSubtypes()
     {

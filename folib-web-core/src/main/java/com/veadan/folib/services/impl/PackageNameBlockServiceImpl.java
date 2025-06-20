@@ -12,7 +12,7 @@ import com.veadan.folib.entity.PackageNameBlock;
 import com.veadan.folib.enums.BlockTypeEnum;
 import com.veadan.folib.enums.ConditionTypeEnum;
 import com.veadan.folib.enums.VersionConditionTypeEnum;
-import com.veadan.folib.forms.packagenameblock.PackageNameBlockForm;
+import com.veadan.folib.dto.packagenameblock.PackageNameBlockDto;
 import com.veadan.folib.mapper.PackageNameBlockMapper;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.ConfigurationManagementService;
@@ -53,7 +53,7 @@ public class PackageNameBlockServiceImpl implements PackageNameBlockService {
     private HazelcastInstance hazelcastInstance;
 
     @Override
-    public TableResultResponse<PackageNameBlockInfo> queryPackageNameBlockList(Integer page, Integer limit, PackageNameBlockForm packageNameBlockForm) {
+    public TableResultResponse<PackageNameBlockInfo> queryPackageNameBlockList(Integer page, Integer limit, PackageNameBlockDto packageNameBlockForm) {
         if (Objects.isNull(page)) {
             page = 1;
         }
@@ -74,7 +74,7 @@ public class PackageNameBlockServiceImpl implements PackageNameBlockService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void savePackageNameBlock(PackageNameBlockForm packageNameBlockForm) {
+    public void savePackageNameBlock(PackageNameBlockDto packageNameBlockForm) {
         String username = UserUtils.getUsername();
         Date date = new Date();
         try {
@@ -87,7 +87,7 @@ public class PackageNameBlockServiceImpl implements PackageNameBlockService {
         if (CollectionUtils.isNotEmpty(packageNameBlockForm.getPackageNameBlocks())) {
             List<PackageNameBlock> packageNameBlockList = Lists.newArrayList();
             PackageNameBlock packageNameBlock;
-            for (PackageNameBlockForm item : packageNameBlockForm.getPackageNameBlocks()) {
+            for (PackageNameBlockDto item : packageNameBlockForm.getPackageNameBlocks()) {
                 packageNameBlock = PackageNameBlock.builder().build();
                 BeanUtils.copyProperties(item, packageNameBlock);
                 packageNameBlock.setCreateBy(username);
@@ -111,7 +111,7 @@ public class PackageNameBlockServiceImpl implements PackageNameBlockService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void updatePackageNameBlock(PackageNameBlockForm packageNameBlockForm) {
+    public void updatePackageNameBlock(PackageNameBlockDto packageNameBlockForm) {
         PackageNameBlockInfo packageNameBlock = selectOnePackageNameBlock(packageNameBlockForm);
         if (Objects.nonNull(packageNameBlock)) {
             PackageNameBlock updatePackageNameBlock = PackageNameBlock.builder().build();
@@ -128,7 +128,7 @@ public class PackageNameBlockServiceImpl implements PackageNameBlockService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void deletePackageNameBlock(PackageNameBlockForm packageNameBlockForm) {
+    public void deletePackageNameBlock(PackageNameBlockDto packageNameBlockForm) {
         if (CollectionUtils.isNotEmpty(packageNameBlockForm.getPackageNames())) {
             List<PackageNameBlock> packageNameBlockList = queryPackageNameBlock(packageNameBlockForm.getPackageNames());
             if (CollectionUtils.isNotEmpty(packageNameBlockList)) {
@@ -145,7 +145,7 @@ public class PackageNameBlockServiceImpl implements PackageNameBlockService {
     }
 
     @Override
-    public PackageNameBlockInfo selectOnePackageNameBlock(PackageNameBlockForm packageNameBlockForm) {
+    public PackageNameBlockInfo selectOnePackageNameBlock(PackageNameBlockDto packageNameBlockForm) {
         PackageNameBlockInfo packageNameBlockInfo = null;
         if (Objects.nonNull(packageNameBlockForm.getId())) {
             PackageNameBlock packageNameBlock = packageNameBlockMapper.selectById(packageNameBlockForm.getId());
@@ -223,7 +223,7 @@ public class PackageNameBlockServiceImpl implements PackageNameBlockService {
      * @param packageNameBlockForm 参数
      * @return id
      */
-    private Long exists(PackageNameBlockForm packageNameBlockForm) {
+    private Long exists(PackageNameBlockDto packageNameBlockForm) {
         PackageNameBlockInfo packageNameBlockInfo = selectOnePackageNameBlock(packageNameBlockForm);
         return Objects.nonNull(packageNameBlockInfo) ? packageNameBlockInfo.getId() : null;
     }

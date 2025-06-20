@@ -1,6 +1,5 @@
 package com.veadan.folib.services.impl;
 
-import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
@@ -10,7 +9,6 @@ import com.veadan.folib.data.criteria.Selector;
 import com.veadan.folib.dependency.snippet.SnippetGenerator;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactEntity;
-import com.veadan.folib.enums.RepositoryScopeEnum;
 import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.gremlin.adapters.ArtifactAdapter;
 import com.veadan.folib.gremlin.adapters.EntityTraversalAdapter;
@@ -22,7 +20,7 @@ import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
-import com.veadan.folib.services.AqlSearchService;
+import com.veadan.folib.aql.services.AqlSearchService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.Storage;
@@ -49,7 +47,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.time.ZoneId;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component

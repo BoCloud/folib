@@ -1,6 +1,6 @@
 package com.veadan.folib.converters.configuration;
 
-import com.veadan.folib.forms.configuration.ProxyConfigurationForm;
+import com.veadan.folib.dto.configuration.ProxyConfigurationDto;
 import com.veadan.folib.configuration.MutableProxyConfiguration;
 
 import org.springframework.core.convert.converter.Converter;
@@ -9,13 +9,13 @@ import org.springframework.core.convert.converter.Converter;
  * @author Veadan
  */
 public enum ProxyConfigurationFormConverter
-        implements Converter<ProxyConfigurationForm, MutableProxyConfiguration>
+        implements Converter<ProxyConfigurationDto, MutableProxyConfiguration>
 {
 
     INSTANCE;
 
     @Override
-    public MutableProxyConfiguration convert(ProxyConfigurationForm proxyConfigurationForm)
+    public MutableProxyConfiguration convert(ProxyConfigurationDto proxyConfigurationForm)
     {
         MutableProxyConfiguration proxyConfiguration = new MutableProxyConfiguration();
         proxyConfiguration.setHost(proxyConfigurationForm.getHost());

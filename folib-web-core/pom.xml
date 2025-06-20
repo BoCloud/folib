@@ -144,7 +144,7 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>folib-data-service</artifactId>
+            <artifactId>folib-gremlin-service</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -172,7 +172,7 @@
 
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>folib-cron-api</artifactId>
+            <artifactId>folib-job-api</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
@@ -274,7 +274,7 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>folib-web-forms</artifactId>
+            <artifactId>folib-web-dto</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -325,11 +325,6 @@
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>folib-aql</artifactId>
-            <version>${project.version}</version>
         </dependency>
 <!--        <dependency>-->
 <!--            <groupId>com.veadan.folib</groupId>-->

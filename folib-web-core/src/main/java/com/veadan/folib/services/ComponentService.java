@@ -1,9 +1,9 @@
 package com.veadan.folib.services;
 
-import com.veadan.folib.forms.component.ArtifactGraphForm;
-import com.veadan.folib.forms.component.ArtifactStatisticsForm;
-import com.veadan.folib.forms.component.ComponentTableForm;
-import com.veadan.folib.forms.vulnerability.AffectedArtifactsForm;
+import com.veadan.folib.dto.component.ArtifactGraphDto;
+import com.veadan.folib.dto.component.ArtifactStatisticsDto;
+import com.veadan.folib.dto.component.ComponentTableDto;
+import com.veadan.folib.dto.vulnerability.AffectedArtifactsDto;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 
 /**
@@ -23,7 +23,7 @@ public interface ComponentService {
      * @param searchKeyword 搜索关键词
      * @return 组件列表
      */
-    TableResultResponse<ComponentTableForm> queryComponentPage(Integer page, Integer limit, String name, String groupId, String version, String searchKeyword);
+    TableResultResponse<ComponentTableDto> queryComponentPage(Integer page, Integer limit, String name, String groupId, String version, String searchKeyword);
 
     /**
      * 根据制品分页查询组件列表
@@ -34,7 +34,7 @@ public interface ComponentService {
      * @param searchKeyword 搜索关键词
      * @return 组件列表
      */
-    TableResultResponse<ComponentTableForm> queryComponentPageByArtifact(Integer page, Integer limit, String artifactPath, String searchKeyword);
+    TableResultResponse<ComponentTableDto> queryComponentPageByArtifact(Integer page, Integer limit, String artifactPath, String searchKeyword);
 
     /**
      * 查询组件信息
@@ -42,7 +42,7 @@ public interface ComponentService {
      * @param uuid uuid
      * @return 组件信息
      */
-    ComponentTableForm queryComponentOne(String uuid);
+    ComponentTableDto queryComponentOne(String uuid);
 
     /**
      * 根据组件id分页查询关联制品
@@ -53,7 +53,7 @@ public interface ComponentService {
      * @param searchKeyword 搜索关键词
      * @return 制品列表
      */
-    TableResultResponse<AffectedArtifactsForm> queryArtifactByComponentUuid(Integer page, Integer limit, String componentUuid, String searchKeyword);
+    TableResultResponse<AffectedArtifactsDto> queryArtifactByComponentUuid(Integer page, Integer limit, String componentUuid, String searchKeyword);
 
     /**
      * 组件关联的制品图谱展示
@@ -61,7 +61,7 @@ public interface ComponentService {
      * @param componentUuid 组件id
      * @return 数据
      */
-    ArtifactGraphForm artifactGraph(String componentUuid);
+    ArtifactGraphDto artifactGraph(String componentUuid);
 
     /**
      * 组件关联的制品统计数据
@@ -69,5 +69,5 @@ public interface ComponentService {
      * @param componentUuid 组件id
      * @return 数据
      */
-    ArtifactStatisticsForm artifactStatistics(String componentUuid);
+    ArtifactStatisticsDto artifactStatistics(String componentUuid);
 }

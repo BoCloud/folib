@@ -2,7 +2,7 @@ package com.veadan.folib.controllers.backup;
 
 import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.enums.AuditEventNameEnum;
-import com.veadan.folib.forms.backup.BackupForm;
+import com.veadan.folib.dto.backup.BackupDto;
 import com.veadan.folib.services.BackupService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -41,7 +41,7 @@ public class BackupController {
     @AuditLog(value = AuditEventNameEnum.BACKUP_STRATEGY,target ="" )
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PostMapping
-    public ResponseEntity<String> saveBackup(@RequestBody @Validated BackupForm backupForm) {
+    public ResponseEntity<String> saveBackup(@RequestBody @Validated BackupDto backupForm) {
         backupService.saveBackup(backupForm);
         return ResponseEntity.ok("");
     }

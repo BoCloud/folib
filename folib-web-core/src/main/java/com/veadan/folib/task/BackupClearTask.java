@@ -7,7 +7,7 @@ import cn.hutool.core.util.NumberUtil;
 import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.backupstrategy.BackupStrategyRecord;
-import com.veadan.folib.forms.backupstrategy.BackupStrategyForm;
+import com.veadan.folib.dto.backupstrategy.BackupStrategyDto;
 import com.veadan.folib.mapper.BackupStrategyMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -54,7 +54,7 @@ public class BackupClearTask {
         if (distributedLockComponent.lock(lockName, waitTime)) {
             try {
                 String incremental = "incremental";
-                List<BackupStrategyRecord> backupStrategyList = backupStrategyMapper.selectBackupList(BackupStrategyForm.builder().build());
+                List<BackupStrategyRecord> backupStrategyList = backupStrategyMapper.selectBackupList(BackupStrategyDto.builder().build());
                 if (CollectionUtils.isNotEmpty(backupStrategyList)) {
                     for (BackupStrategyRecord backupStrategyRecord : backupStrategyList) {
                         try {

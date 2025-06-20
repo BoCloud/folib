@@ -1,11 +1,10 @@
 package com.veadan.folib.controllers.configuration.security.authorization;
 
 import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
-import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.controllers.BaseController;
-import com.veadan.folib.forms.PrivilegeListForm;
-import com.veadan.folib.forms.RoleForm;
+import com.veadan.folib.dto.PrivilegeListDto;
+import com.veadan.folib.dto.RoleDto;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
@@ -74,7 +73,7 @@ public class AuthorizationConfigController
     @PostMapping(value = "/role",
                  consumes = MediaType.APPLICATION_JSON_VALUE,
                  produces = { MediaType.TEXT_PLAIN_VALUE, MediaType.APPLICATION_JSON_VALUE })
-    public ResponseEntity addRole(@RequestBody @Validated RoleForm roleForm,
+    public ResponseEntity addRole(@RequestBody @Validated RoleDto roleForm,
                                   BindingResult bindingResult,
                                   @RequestHeader(HttpHeaders.ACCEPT) String acceptHeader) throws IOException
     {
@@ -83,7 +82,7 @@ public class AuthorizationConfigController
             throw new RequestBodyValidationException(FAILED_ADD_ROLE, bindingResult);
         }
 
-        RoleDto role = conversionService.convert(roleForm, RoleDto.class);
+        com.veadan.folib.authorization.dto.RoleDto role = conversionService.convert(roleForm, com.veadan.folib.authorization.dto.RoleDto.class);
 
         authorizationConfigService.addRole(role);
 
@@ -142,7 +141,7 @@ public class AuthorizationConfigController
     @PostMapping(value = "/anonymous/privileges",
                  consumes = MediaType.APPLICATION_JSON_VALUE,
                  produces = { MediaType.TEXT_PLAIN_VALUE, MediaType.APPLICATION_JSON_VALUE })
-    public ResponseEntity addPrivilegesToAnonymous(@RequestBody @Validated PrivilegeListForm privilegeListForm,
+    public ResponseEntity addPrivilegesToAnonymous(@RequestBody @Validated PrivilegeListDto privilegeListForm,
                                                    BindingResult bindingResult,
                                                    @RequestHeader(HttpHeaders.ACCEPT) String acceptHeader) throws IOException
     {

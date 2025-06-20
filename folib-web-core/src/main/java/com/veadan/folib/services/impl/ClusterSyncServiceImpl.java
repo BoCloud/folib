@@ -12,7 +12,7 @@ import com.veadan.folib.controllers.cluster.dto.*;
 import com.veadan.folib.entity.ClusterDataSyncTaskPo;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.DictTypeEnum;
-import com.veadan.folib.forms.node.CassandraClusterForm;
+import com.veadan.folib.dto.node.CassandraClusterDto;
 import com.veadan.folib.mapper.ClusterDataSyncTaskMapper;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ClusterSyncService;
@@ -116,7 +116,7 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
     public Set<String> getHostNodeList() {
         Set<String> nodeSet = Sets.newLinkedHashSet();
         try {
-            CassandraClusterForm cassandraClusterForm = nodeComponent.cassandraClusterInfo();
+            CassandraClusterDto cassandraClusterForm = nodeComponent.cassandraClusterInfo();
             SetHostStatWithPort statWithPorts = null;
             Iterator<HostStatWithPort> hostStatWithPortIterator = null;
             HostStatWithPort hostStatWithPort = null;

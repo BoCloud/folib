@@ -7,7 +7,7 @@ import com.veadan.folib.components.auth.AuthComponent;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.dto.PermissionsDTO;
 import com.veadan.folib.enums.RepositoryScopeEnum;
-import com.veadan.folib.forms.common.StorageTreeForm;
+import com.veadan.folib.dto.common.StorageTreeDto;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.StorageManagementService;
 import com.veadan.folib.storage.Storage;
@@ -149,7 +149,7 @@ public class RepositoryComponent {
         ).collect(Collectors.toList());
     }
 
-    public void getAnonymousUserRepositories(String storageId, String name, String type, String excludeType, String excludeRepositoryId, String layout, String policy, List<Storage> collect, Map<String, List<String>> storageRepMap, List<Repository> repositoriesList, List<StorageTreeForm> storageTreeForms) {
+    public void getAnonymousUserRepositories(String storageId, String name, String type, String excludeType, String excludeRepositoryId, String layout, String policy, List<Storage> collect, Map<String, List<String>> storageRepMap, List<Repository> repositoriesList, List<StorageTreeDto> storageTreeForms) {
         boolean filterByStorageId = StringUtils.isNotBlank(storageId);
         boolean filterByType = StringUtils.isNotBlank(type);
         boolean filterByLayout = StringUtils.isNotBlank(layout);
@@ -168,10 +168,10 @@ public class RepositoryComponent {
                 .distinct()
                 .filter(s -> !filterByStorageId || s.getId().equalsIgnoreCase(storageId))
                 .collect(Collectors.toCollection(LinkedList::new));
-        StorageTreeForm storageTreeForm;
+        StorageTreeDto storageTreeForm;
         for (Storage storage : collect) {
             List<Repository> repositories;
-            storageTreeForm = StorageTreeForm.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
+            storageTreeForm = StorageTreeDto.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
             repositories = new LinkedList<>(storage.getRepositories().values());
             repositories = repositories.stream().distinct()
                     .filter(Repository::isAllowAnonymous)
@@ -187,7 +187,7 @@ public class RepositoryComponent {
                     || (CollectionUtils.isNotEmpty(anonymousRepositories) && anonymousRepositories.contains(item.getId()))))
                     .collect(Collectors.toList());
             repositoriesList.addAll(repositories);
-            storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeForm.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout())
+            storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeDto.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout())
                     .scope(repository.getScope()).build()).collect(Collectors.toList()));
             storageTreeForms.add(storageTreeForm);
         }
@@ -235,7 +235,7 @@ public class RepositoryComponent {
             Map<String, List<String>> storageRepMap = Maps.newHashMap();
             //获取匿名角色关联的存储空间
             List<Storage> anonymousUserStorageList = getAnonymousUserStorages(storageList, storageRepMap);
-            List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
+            List<StorageTreeDto> storageTreeForms = Lists.newArrayList();
             //获取匿名角色关联的仓库
             getAnonymousUserRepositories("", "","", "", "", "", "", anonymousUserStorageList, storageRepMap, repositoriesList, storageTreeForms);
         } else {

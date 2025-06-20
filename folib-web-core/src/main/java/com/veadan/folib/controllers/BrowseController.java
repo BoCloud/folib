@@ -34,7 +34,7 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.utils.DockerUtils;
-import com.veadan.folib.utils.TreeUtil;
+import com.veadan.folib.aql.utils.TreeUtil;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;

@@ -11,7 +11,6 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.veadan.folib.cloud.storage.s3fs.S3Path;
-import com.veadan.folib.cluster.SyncCornJobEnum;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
@@ -21,11 +20,8 @@ import com.veadan.folib.components.sbom.BomComponent;
 import com.veadan.folib.components.sbom.SbomComponent;
 import com.veadan.folib.components.scan.ScanComponent;
 import com.veadan.folib.constant.GlobalConstants;
-import com.veadan.folib.controllers.cluster.dto.SyncCronJobDto;
-import com.veadan.folib.cron.domain.CronTaskConfigurationDto;
-import com.veadan.folib.cron.jobs.ArtifactScanCronJob;
-import com.veadan.folib.cron.jobs.VulnerabilityRefreshCronJob;
-import com.veadan.folib.cron.services.CronTaskConfigurationService;
+import com.veadan.folib.job.tasks.ArtifactScanCronJob;
+import com.veadan.folib.job.tasks.VulnerabilityRefreshCronJob;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.Component;
 import com.veadan.folib.domain.ComponentEntity;
@@ -38,9 +34,9 @@ import com.veadan.folib.enums.SafeLevelEnum;
 import com.veadan.folib.enums.VulnerabilityPlatformEnum;
 import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
 import com.veadan.folib.eventlistener.scanner.ArtifactEventScannerListener;
-import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
-import com.veadan.folib.forms.dict.DictForm;
-import com.veadan.folib.forms.scanner.ScannerReportForm;
+import com.veadan.folib.dto.artifact.ArtifactMetadataDto;
+import com.veadan.folib.dto.dict.DictDto;
+import com.veadan.folib.dto.scanner.ScannerReportDto;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerFileSystem;
@@ -242,7 +238,7 @@ public class ScanService {
             String retryKey = getRetryKey();
             int retryCount = 0;
             boolean save = true;
-            ArtifactMetadataForm artifactMetadata = ArtifactMetadataForm.builder().type(ArtifactMetadataEnum.NUMERICAL.toString()).viewShow(0).storageId(artifact.getStorageId()).repositoryId(artifact.getRepositoryId()).artifactPath(artifact.getArtifactPath()).key(retryKey).value(Integer.toString(retryCount)).build();
+            ArtifactMetadataDto artifactMetadata = ArtifactMetadataDto.builder().type(ArtifactMetadataEnum.NUMERICAL.toString()).viewShow(0).storageId(artifact.getStorageId()).repositoryId(artifact.getRepositoryId()).artifactPath(artifact.getArtifactPath()).key(retryKey).value(Integer.toString(retryCount)).build();
             if (StringUtils.isNotBlank(metadata) && JSONUtil.isJson(metadata) && JSONObject.parseObject(metadata).containsKey(retryKey)) {
                 Object obj = JSONObject.parseObject(metadata).getJSONObject(retryKey).getInteger("value");
                 if (Objects.nonNull(obj) && StringUtils.isNumeric(obj.toString())) {
@@ -302,10 +298,10 @@ public class ScanService {
 
     private String parseFilePath(String filePath) {
         if (JSONUtil.isJson(filePath)) {
-            ScannerReportForm scannerReportForm = JSONObject.parseObject(filePath, ScannerReportForm.class);
+            ScannerReportDto scannerReportForm = JSONObject.parseObject(filePath, ScannerReportDto.class);
             filePath = scannerReportForm.getFilePath();
             if (JSONUtil.isJson(filePath)) {
-                scannerReportForm = JSONObject.parseObject(filePath, ScannerReportForm.class);
+                scannerReportForm = JSONObject.parseObject(filePath, ScannerReportDto.class);
                 filePath = scannerReportForm.getFilePath();
             }
         }
@@ -773,18 +769,18 @@ public class ScanService {
             XpEngine engine = new XpEngine(settings);
             boolean result = engine.doUpdates();
             if (!result) {
-                dictService.updateDict(DictForm.builder().id(dict.getId()).comment("漏洞数据没有任何更新").build());
+                dictService.updateDict(DictDto.builder().id(dict.getId()).comment("漏洞数据没有任何更新").build());
                 log.info("漏洞数据实际没有进行任何更新");
             } else {
                 try {
-                    dictService.updateDict(DictForm.builder().id(dict.getId()).comment("更新完成").build());
+                    dictService.updateDict(DictDto.builder().id(dict.getId()).comment("更新完成").build());
                 } catch (Exception ex) {
                     log.warn(ExceptionUtils.getStackTrace(ex));
                 }
                 log.info("漏洞数据更新完成");
             }
         } catch (UpdateException e) {
-            dictService.updateDict(DictForm.builder().id(dict.getId()).comment("更新错误").build());
+            dictService.updateDict(DictDto.builder().id(dict.getId()).comment("更新错误").build());
             throw new BusinessException("更新出错");
         }
     }

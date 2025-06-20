@@ -1,10 +1,8 @@
 package com.veadan.folib.controllers;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.veadan.folib.data.CacheName;
 import com.veadan.folib.entity.Dict;
-import com.veadan.folib.enums.DictTypeEnum;
-import com.veadan.folib.forms.dict.DictForm;
+import com.veadan.folib.dto.dict.DictDto;
 import com.veadan.folib.licence.ActivateVo;
 import com.veadan.folib.licence.MacUtil;
 import com.veadan.folib.services.CodeActivateService;
@@ -12,10 +10,6 @@ import com.veadan.folib.services.DictService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -171,7 +165,7 @@ public class PingController
         } catch (Exception ignore) {
 
         }
-        DictForm dictForm = DictForm.builder().id(dict.getId()).dictKey("def").build();
+        DictDto dictForm = DictDto.builder().id(dict.getId()).dictKey("def").build();
         dictService.updateDict(dictForm);
         return ResponseEntity.ok().build();
     }

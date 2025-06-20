@@ -4,10 +4,9 @@ package com.veadan.folib.controllers.configuration;
 import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.cluster.SyncClusterDispatchEnum;
 import com.veadan.folib.controllers.cluster.dto.SyncClusterDispatchDto;
-import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.enums.SyncStrategyEnum;
-import com.veadan.folib.forms.configuration.ClusterDispatchNodeForm;
+import com.veadan.folib.dto.configuration.ClusterDispatchNodeDto;
 import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.services.ClusterDispatchManagementService;
 import com.veadan.folib.services.ClusterSyncService;
@@ -80,9 +79,9 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_STORAGE')")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity queryClusterDispatch() {
-        Map<String, ClusterDispatchNodeDto> map = configurationManagementService.
+        Map<String, com.veadan.folib.dispatch.ClusterDispatchNodeDto> map = configurationManagementService.
                 getMutableConfigurationClone().getClusterDispatchNode();
-        final Collection<ClusterDispatchNodeDto> values = map.values();
+        final Collection<com.veadan.folib.dispatch.ClusterDispatchNodeDto> values = map.values();
         values.forEach(nodeDto -> {
             String syncStrategy = nodeDto.getSyncStrategy();
             if (StringUtils.isEmpty(syncStrategy)) {
@@ -105,7 +104,7 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_STORAGE')")
     @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity createClusterNode(@RequestBody ClusterDispatchNodeForm clusterDispatchNodeForm,
+    public ResponseEntity createClusterNode(@RequestBody ClusterDispatchNodeDto clusterDispatchNodeForm,
                                             BindingResult bindingResult,
                                             @RequestHeader(HttpHeaders.ACCEPT)
                                             String accept) {
@@ -113,14 +112,14 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
             throw new RequestBodyValidationException("参数异常", bindingResult);
         }
 
-            ClusterDispatchNodeDto existingNode;
-            ClusterDispatchNodeDto nodeDto;
+            com.veadan.folib.dispatch.ClusterDispatchNodeDto existingNode;
+            com.veadan.folib.dispatch.ClusterDispatchNodeDto nodeDto;
             synchronized (this) {
-                Map<String, ClusterDispatchNodeDto> clusterDispatchNode = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode();
+                Map<String, com.veadan.folib.dispatch.ClusterDispatchNodeDto> clusterDispatchNode = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode();
                 existingNode = clusterDispatchNode.get(clusterDispatchNodeForm.getClusterEnName());
 
                 // 创建分发节点
-                nodeDto = new ClusterDispatchNodeDto();
+                nodeDto = new com.veadan.folib.dispatch.ClusterDispatchNodeDto();
                 BeanUtils.copyProperties(clusterDispatchNodeForm, nodeDto);
                 String syncStrategy = nodeDto.getSyncStrategy();
                 if (StringUtils.isEmpty(syncStrategy)) {
@@ -132,7 +131,7 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
                 if (existingNode == null) {//新增操作
                     nodeDto.setAutoRegister(false);
                     String newHostName = FolibWsRunManageUtil.getSimpleTargetHostName(nodeDto);
-                    ClusterDispatchNodeDto exitedHostNameNodeDto = clusterDispatchNode.values().stream().filter(dto -> {
+                    com.veadan.folib.dispatch.ClusterDispatchNodeDto exitedHostNameNodeDto = clusterDispatchNode.values().stream().filter(dto -> {
                         String exitedHostName = FolibWsRunManageUtil.getSimpleTargetHostName(dto);
                         return exitedHostName.equals(newHostName);
                     }).findAny().orElse(null);
@@ -175,7 +174,7 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
     public ResponseEntity updateClusterDispatch(
             @ApiParam(value = "The clusterEnName", required = true)
             @PathVariable String clusterEnName,
-            @RequestBody ClusterDispatchNodeForm clusterDispatchNodeForm,
+            @RequestBody ClusterDispatchNodeDto clusterDispatchNodeForm,
             BindingResult bindingResult,
             @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (bindingResult.hasErrors()) {
@@ -183,21 +182,21 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
         }
 
 
-            ClusterDispatchNodeDto existingNode;
-            ClusterDispatchNodeDto nodeDto;
+            com.veadan.folib.dispatch.ClusterDispatchNodeDto existingNode;
+            com.veadan.folib.dispatch.ClusterDispatchNodeDto nodeDto;
             synchronized (this) {
-                Map<String, ClusterDispatchNodeDto> clusterDispatchNode = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode();
+                Map<String, com.veadan.folib.dispatch.ClusterDispatchNodeDto> clusterDispatchNode = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode();
                 existingNode = clusterDispatchNode.get(clusterDispatchNodeForm.getClusterEnName());
 
                 // 创建分发节点
-                nodeDto = new ClusterDispatchNodeDto();
+                nodeDto = new com.veadan.folib.dispatch.ClusterDispatchNodeDto();
                 BeanUtils.copyProperties(clusterDispatchNodeForm, nodeDto);
                 nodeDto.setCreateTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
                 if (existingNode == null) {//新增操作
                     nodeDto.setAutoRegister(false);
                     String newHostName = FolibWsRunManageUtil.getSimpleTargetHostName(nodeDto);
-                    ClusterDispatchNodeDto exitedHostNameNodeDto = clusterDispatchNode.values().stream().filter(dto -> {
+                    com.veadan.folib.dispatch.ClusterDispatchNodeDto exitedHostNameNodeDto = clusterDispatchNode.values().stream().filter(dto -> {
                         String exitedHostName = FolibWsRunManageUtil.getSimpleTargetHostName(dto);
                         return exitedHostName.equals(newHostName);
                     }).findAny().orElse(null);
@@ -251,14 +250,14 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
     @AuditLog(value = AuditEventNameEnum.NODE_DISPATCH,target =" '删除节点:'+#clusterEnName" )
     @PreAuthorize("hasAuthority('CONFIGURATION_DELETE_STORAGE_CONFIGURATION')")
     public ResponseEntity deleteClusterDispatch(
-            @RequestBody ClusterDispatchNodeDto dispatchNodeDto,
+            @RequestBody com.veadan.folib.dispatch.ClusterDispatchNodeDto dispatchNodeDto,
             @RequestHeader(HttpHeaders.ACCEPT) String accept) {
 
-        final ClusterDispatchNodeDto nodeDto = new ClusterDispatchNodeDto();
+        final com.veadan.folib.dispatch.ClusterDispatchNodeDto nodeDto = new com.veadan.folib.dispatch.ClusterDispatchNodeDto();
         final SyncClusterDispatchDto syncClusterDispatchDto =
                 new SyncClusterDispatchDto(nodeDto, SyncClusterDispatchEnum.DELETE);
 
-        final ClusterDispatchNodeDto clusterDispatchNodeDto = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode().get(dispatchNodeDto.getClusterEnName());
+        final com.veadan.folib.dispatch.ClusterDispatchNodeDto clusterDispatchNodeDto = configurationManagementService.getMutableConfigurationClone().getClusterDispatchNode().get(dispatchNodeDto.getClusterEnName());
         if (clusterDispatchNodeDto == null) {
             throw new RuntimeException(String.format("not found ClusterDispatchNode info with clusterEnName %s", dispatchNodeDto.getClusterEnName()));
         }
@@ -282,7 +281,7 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
         }
     }
 
-    private void handleWsServer(ClusterDispatchNodeDto nodeDto) {
+    private void handleWsServer(com.veadan.folib.dispatch.ClusterDispatchNodeDto nodeDto) {
 
 //        try {
 //            folibWsRunManageV2.connectToServerV2(nodeDto);

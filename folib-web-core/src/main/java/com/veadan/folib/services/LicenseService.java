@@ -2,7 +2,7 @@ package com.veadan.folib.services;
 
 import com.veadan.folib.domain.license.LicenseBlackWhite;
 import com.veadan.folib.entity.License;
-import com.veadan.folib.forms.license.LicenseTableForm;
+import com.veadan.folib.dto.license.LicenseTableDto;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 
 import java.util.List;
@@ -62,7 +62,7 @@ public interface LicenseService {
      * @param blackWhiteType 黑白名单类型
      * @return license列表
      */
-    TableResultResponse<LicenseTableForm> queryLicensePage(Integer page, Integer limit, String searchKeyword, String licenseId, Integer blackWhiteType);
+    TableResultResponse<LicenseTableDto> queryLicensePage(Integer page, Integer limit, String searchKeyword, String licenseId, Integer blackWhiteType);
 
     /**
      * 查询license列表
@@ -73,7 +73,7 @@ public interface LicenseService {
      * @param excludeBlackWhiteType 排除黑白名单类型
      * @return license列表
      */
-    List<LicenseTableForm> queryLicense(String searchKeyword, String licenseId, Integer blackWhiteType, Integer excludeBlackWhiteType);
+    List<LicenseTableDto> queryLicense(String searchKeyword, String licenseId, Integer blackWhiteType, Integer excludeBlackWhiteType);
 
     /**
      * 设置黑白名单

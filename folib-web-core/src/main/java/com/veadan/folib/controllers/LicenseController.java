@@ -2,7 +2,7 @@ package com.veadan.folib.controllers;
 
 import com.veadan.folib.domain.license.LicenseBlackWhite;
 import com.veadan.folib.entity.License;
-import com.veadan.folib.forms.license.LicenseTableForm;
+import com.veadan.folib.dto.license.LicenseTableDto;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.LicenseService;
 import io.swagger.annotations.Api;
@@ -31,38 +31,38 @@ public class LicenseController extends BaseController {
     @Inject
     private LicenseService licenseService;
 
-    @ApiOperation(value = "查询license分页列表", response = LicenseTableForm.class)
+    @ApiOperation(value = "查询license分页列表", response = LicenseTableDto.class)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('LICENSES_VIEW')")
     @GetMapping(value = "/page")
-    public TableResultResponse<LicenseTableForm> page(@RequestParam(name = "page", required = false) Integer page,
-                                                      @RequestParam(name = "limit", required = false) Integer limit,
-                                                      @RequestParam(name = "searchKeyword", required = false) String searchKeyword,
-                                                      @RequestParam(name = "licenseId", required = false) String licenseId,
-                                                      @RequestParam(name = "blackWhiteType", required = false) Integer blackWhiteType) {
+    public TableResultResponse<LicenseTableDto> page(@RequestParam(name = "page", required = false) Integer page,
+                                                     @RequestParam(name = "limit", required = false) Integer limit,
+                                                     @RequestParam(name = "searchKeyword", required = false) String searchKeyword,
+                                                     @RequestParam(name = "licenseId", required = false) String licenseId,
+                                                     @RequestParam(name = "blackWhiteType", required = false) Integer blackWhiteType) {
         return licenseService.queryLicensePage(page, limit, searchKeyword, licenseId, blackWhiteType);
     }
 
-    @ApiOperation(value = "查询license列表", response = LicenseTableForm.class)
+    @ApiOperation(value = "查询license列表", response = LicenseTableDto.class)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('LICENSES_VIEW')")
     @GetMapping(value = "/list")
-    public ResponseEntity<List<LicenseTableForm>> list(@RequestParam(name = "searchKeyword", required = false) String searchKeyword,
-                                                       @RequestParam(name = "licenseId", required = false) String licenseId,
-                                                       @RequestParam(name = "blackWhiteType", required = false) Integer blackWhiteType,
-                                                       @RequestParam(name = "excludeBlackWhiteType", required = false) Integer excludeBlackWhiteType) {
+    public ResponseEntity<List<LicenseTableDto>> list(@RequestParam(name = "searchKeyword", required = false) String searchKeyword,
+                                                      @RequestParam(name = "licenseId", required = false) String licenseId,
+                                                      @RequestParam(name = "blackWhiteType", required = false) Integer blackWhiteType,
+                                                      @RequestParam(name = "excludeBlackWhiteType", required = false) Integer excludeBlackWhiteType) {
         return ResponseEntity.ok(licenseService.queryLicense(searchKeyword, licenseId, blackWhiteType, excludeBlackWhiteType));
     }
 
-    @ApiOperation(value = "查询license信息", response = LicenseTableForm.class)
+    @ApiOperation(value = "查询license信息", response = LicenseTableDto.class)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('LICENSES_VIEW')")
     @GetMapping(value = "/detail/{licenseId}")
-    public ResponseEntity<LicenseTableForm> licenseInfo(@PathVariable(name = "licenseId") String licenseId) {
+    public ResponseEntity<LicenseTableDto> licenseInfo(@PathVariable(name = "licenseId") String licenseId) {
         License license = licenseService.selectOneLicense(License.builder().licenseId(licenseId).build());
-        LicenseTableForm licenseTableForm = null;
+        LicenseTableDto licenseTableForm = null;
         if (Objects.nonNull(license)) {
-            licenseTableForm = LicenseTableForm.builder().build();
+            licenseTableForm = LicenseTableDto.builder().build();
             BeanUtils.copyProperties(license, licenseTableForm);
         }
         return ResponseEntity.ok(licenseTableForm);

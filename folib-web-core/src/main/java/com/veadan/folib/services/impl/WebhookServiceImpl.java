@@ -12,7 +12,7 @@ import com.veadan.folib.configuration.WebhookConfiguration;
 import com.veadan.folib.controllers.cluster.dto.SyncWebhookDto;
 import com.veadan.folib.entity.WebhookLog;
 import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
-import com.veadan.folib.forms.configuration.WebhookConfigurationForm;
+import com.veadan.folib.dto.configuration.WebhookConfigurationDto;
 import com.veadan.folib.mapper.WebhookLogMapper;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.services.ClusterSyncService;
@@ -23,7 +23,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.glassfish.jersey.client.ClientProperties;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -67,7 +66,7 @@ public class WebhookServiceImpl implements WebhookService {
     private ProxyRepositoryConnectionPoolConfigurationService clientPool;
 
     @Override
-    public void addWebhookConfiguration(WebhookConfigurationForm webhookConfigurationForm) throws IOException {
+    public void addWebhookConfiguration(WebhookConfigurationDto webhookConfigurationForm) throws IOException {
         MutableWebhookConfiguration mutableWebhookConfiguration = MutableWebhookConfiguration.builder().build();
         BeanUtils.copyProperties(webhookConfigurationForm, mutableWebhookConfiguration);
         if (StringUtils.isBlank(webhookConfigurationForm.getUuid())) {
@@ -79,7 +78,7 @@ public class WebhookServiceImpl implements WebhookService {
     }
 
     @Override
-    public void updateWebhookConfiguration(WebhookConfigurationForm webhookConfigurationForm) throws IOException {
+    public void updateWebhookConfiguration(WebhookConfigurationDto webhookConfigurationForm) throws IOException {
         MutableWebhookConfiguration mutableWebhookConfiguration = MutableWebhookConfiguration.builder().build();
         BeanUtils.copyProperties(webhookConfigurationForm, mutableWebhookConfiguration);
         configurationManagementService.updateWebhookConfiguration(mutableWebhookConfiguration);
@@ -92,13 +91,13 @@ public class WebhookServiceImpl implements WebhookService {
         if (Objects.nonNull(webhookConfiguration)) {
             configurationManagementService.deleteWebhookConfiguration(uuid);
             deleteWebhookLogByUrl(webhookConfiguration.getUrl());
-            syncWebhookConfiguration(WebhookConfigurationForm.fromConfiguration(webhookConfiguration), SyncWebhookEnum.DELETE);
+            syncWebhookConfiguration(WebhookConfigurationDto.fromConfiguration(webhookConfiguration), SyncWebhookEnum.DELETE);
         }
     }
 
     @Override
-    public List<WebhookConfigurationForm> getWebhookConfiguration() throws IOException {
-        return Optional.ofNullable(configurationManagementService.getConfiguration().getWebhookConfiguration()).orElse(Collections.emptyMap()).values().stream().map(WebhookConfigurationForm::fromConfiguration).collect(Collectors.toList());
+    public List<WebhookConfigurationDto> getWebhookConfiguration() throws IOException {
+        return Optional.ofNullable(configurationManagementService.getConfiguration().getWebhookConfiguration()).orElse(Collections.emptyMap()).values().stream().map(WebhookConfigurationDto::fromConfiguration).collect(Collectors.toList());
     }
 
     @Override
@@ -136,11 +135,11 @@ public class WebhookServiceImpl implements WebhookService {
     }
 
     @Override
-    public void testWebhook(WebhookConfigurationForm webhookConfigurationForm) {
+    public void testWebhook(WebhookConfigurationDto webhookConfigurationForm) {
         WebhookConfiguration webhookConfiguration = configurationManagementService.getConfiguration().getWebhookConfiguration().get(webhookConfigurationForm.getUuid());
         if (Objects.nonNull(webhookConfiguration)) {
             Set<String> events = webhookConfigurationForm.getEvents();
-            webhookConfigurationForm = WebhookConfigurationForm.fromConfiguration(webhookConfiguration);
+            webhookConfigurationForm = WebhookConfigurationDto.fromConfiguration(webhookConfiguration);
             webhookConfigurationForm.setEvents(events);
             handlerWebhookTest(webhookConfigurationForm);
         }
@@ -177,7 +176,7 @@ public class WebhookServiceImpl implements WebhookService {
         webhookLogMapper.delete(Wrappers.<WebhookLog>lambdaQuery().eq(WebhookLog::getUrl, url));
     }
 
-    public void handlerWebhookTest(WebhookConfigurationForm webhookConfiguration) {
+    public void handlerWebhookTest(WebhookConfigurationDto webhookConfiguration) {
         String instance = NetUtil.getLocalhost().getHostAddress();
         Map<String, String> headerMap = Maps.newHashMap();
         headerMap.put("Content-Type", "application/json");
@@ -222,7 +221,7 @@ public class WebhookServiceImpl implements WebhookService {
     }
 
     @Override
-    public void handlerWebhook(WebhookConfigurationForm webhookConfiguration, String storageId, String repositoryId, String artifactPath, String eventType, String body, Map<String, String> headerMap) {
+    public void handlerWebhook(WebhookConfigurationDto webhookConfiguration, String storageId, String repositoryId, String artifactPath, String eventType, String body, Map<String, String> headerMap) {
         BigDecimal startTime = BigDecimal.valueOf(System.currentTimeMillis()), endTime, completionTime;
         if (StringUtils.isBlank(storageId)) {
             storageId = "folib-common";
@@ -273,7 +272,7 @@ public class WebhookServiceImpl implements WebhookService {
      * @param webhookConfigurationForm webhook配置
      * @param syncWebhookEnum          操作类型枚举
      */
-    private void syncWebhookConfiguration(WebhookConfigurationForm webhookConfigurationForm, SyncWebhookEnum syncWebhookEnum) {
+    private void syncWebhookConfiguration(WebhookConfigurationDto webhookConfigurationForm, SyncWebhookEnum syncWebhookEnum) {
         SyncWebhookDto syncWebhookDto = new SyncWebhookDto();
         syncWebhookDto.setWebhookConfigurationForm(webhookConfigurationForm);
         syncWebhookDto.setSyncWebhookEnum(syncWebhookEnum);

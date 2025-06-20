@@ -2,7 +2,7 @@ package com.veadan.folib.controllers.audit;
 
 import com.veadan.folib.entity.AuditEvent;
 import com.veadan.folib.entity.AuditLogRecord;
-import com.veadan.folib.forms.audit.AuditLogForm;
+import com.veadan.folib.dto.audit.AuditLogDto;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.AuditEventService;
 import com.veadan.folib.services.AuditLogRecordService;
@@ -40,7 +40,7 @@ public class AuditController {
 
     @ApiOperation(value = "审计日志分页查询")
     @PostMapping(value = "/log")
-    public TableResultResponse<AuditLogRecord> page(@RequestBody AuditLogForm model) {
+    public TableResultResponse<AuditLogRecord> page(@RequestBody AuditLogDto model) {
         return auditLogRecordService.page(model);
 
     }

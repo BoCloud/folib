@@ -1,6 +1,6 @@
 package com.veadan.folib.converters.storage.routing;
 
-import com.veadan.folib.forms.storage.routing.RoutingRuleForm;
+import com.veadan.folib.dto.storage.routing.RoutingRuleDto;
 import com.veadan.folib.storage.routing.MutableRoutingRule;
 import com.veadan.folib.storage.routing.MutableRoutingRuleRepository;
 
@@ -14,11 +14,11 @@ import org.springframework.core.convert.converter.Converter;
  * @author veadan
  */
 public class RoutingRuleFormToMutableConverter
-        implements Converter<RoutingRuleForm, MutableRoutingRule>
+        implements Converter<RoutingRuleDto, MutableRoutingRule>
 {
 
     @Override
-    public MutableRoutingRule convert(RoutingRuleForm routingRuleForm)
+    public MutableRoutingRule convert(RoutingRuleDto routingRuleForm)
     {
         MutableRoutingRule rule = new MutableRoutingRule();
         rule.setGroupRepositoryId(StringUtils.trimToEmpty(routingRuleForm.getGroupRepositoryId()));

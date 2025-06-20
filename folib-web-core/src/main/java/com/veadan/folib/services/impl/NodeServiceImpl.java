@@ -2,7 +2,7 @@ package com.veadan.folib.services.impl;
 
 import com.veadan.folib.components.cassandra.CassandraComponent;
 import com.veadan.folib.components.node.NodeComponent;
-import com.veadan.folib.forms.node.CassandraClusterForm;
+import com.veadan.folib.dto.node.CassandraClusterDto;
 import com.veadan.folib.services.NodeService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -24,7 +24,7 @@ public class NodeServiceImpl implements NodeService {
     private CassandraComponent cassandraComponent;
 
     @Override
-    public CassandraClusterForm cassandraClusterInfo() {
+    public CassandraClusterDto cassandraClusterInfo() {
         return nodeComponent.cassandraClusterInfo();
     }
 

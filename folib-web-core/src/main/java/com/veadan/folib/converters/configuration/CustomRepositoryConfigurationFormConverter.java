@@ -1,36 +1,32 @@
 package com.veadan.folib.converters.configuration;
 
-import com.veadan.folib.forms.configuration.*;
-import com.veadan.folib.yaml.configuration.repository.GoRepositoryConfigurationDto;
-import com.veadan.folib.yaml.configuration.repository.MavenRepositoryConfigurationDto;
-import com.veadan.folib.yaml.configuration.repository.NugetRepositoryConfigurationDto;
-import com.veadan.folib.yaml.configuration.repository.RawRepositoryConfigurationDto;
+import com.veadan.folib.dto.configuration.*;
 import com.veadan.folib.yaml.repository.CustomRepositoryConfigurationDto;
 
 /**
  * @author veadan
  */
 public enum CustomRepositoryConfigurationFormConverter
-        implements CustomRepositoryConfigurationFormVisitor<CustomRepositoryConfigurationDto>
+        implements CustomRepositoryConfigurationDtoVisitor<CustomRepositoryConfigurationDto>
 {
     INSTANCE;
 
-    public MavenRepositoryConfigurationDto visit(MavenRepositoryConfigurationForm form)
+    public com.veadan.folib.yaml.configuration.repository.MavenRepositoryConfigurationDto visit(MavenRepositoryConfigurationDto form)
     {
         return MavenRepositoryConfigurationConverter.INSTANCE.convert(form);
     }
 
-    public NugetRepositoryConfigurationDto visit(NugetRepositoryConfigurationForm form)
+    public com.veadan.folib.yaml.configuration.repository.NugetRepositoryConfigurationDto visit(NugetRepositoryConfigurationDto form)
     {
         return NugetRepositoryConfigurationConverter.INSTANCE.convert(form);
     }
 
-    public RawRepositoryConfigurationDto visit(RawRepositoryConfigurationForm form)
+    public com.veadan.folib.yaml.configuration.repository.RawRepositoryConfigurationDto visit(RawRepositoryConfigurationDto form)
     {
         return RawRepositoryConfigurationConverter.INSTANCE.convert(form);
     }
 
-    public GoRepositoryConfigurationDto visit(GoRepositoryConfigurationForm form)
+    public com.veadan.folib.yaml.configuration.repository.GoRepositoryConfigurationDto visit(GoRepositoryConfigurationDto form)
     {
         return GoRepositoryConfigurationConverter.INSTANCE.convert(form);
     }

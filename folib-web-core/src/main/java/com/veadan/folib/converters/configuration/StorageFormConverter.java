@@ -1,9 +1,7 @@
 package com.veadan.folib.converters.configuration;
 
-import com.veadan.folib.forms.configuration.RepositoryForm;
-import com.veadan.folib.forms.configuration.StorageForm;
-import com.veadan.folib.storage.StorageDto;
-import com.veadan.folib.storage.repository.RepositoryDto;
+import com.veadan.folib.dto.configuration.RepositoryDto;
+import com.veadan.folib.dto.configuration.StorageDto;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -15,24 +13,24 @@ import org.springframework.core.convert.converter.Converter;
  * @author veadan
  */
 public enum StorageFormConverter
-        implements Converter<StorageForm, StorageDto>
+        implements Converter<StorageDto, com.veadan.folib.storage.StorageDto>
 {
     INSTANCE;
 
     @Override
-    public StorageDto convert(final StorageForm source)
+    public com.veadan.folib.storage.StorageDto convert(final StorageDto source)
     {
-        StorageDto result = new StorageDto();
+        com.veadan.folib.storage.StorageDto result = new com.veadan.folib.storage.StorageDto();
         result.setBasedir(source.getBasedir());
         result.setId(source.getId());
         result.setAdmin(source.getAdmin());
         result.setStorageProvider(source.getStorageProvider());
         result.setStorageMaxSize(source.getStorageMaxSize());
         result.setUsers(source.getUsers());
-        List<RepositoryForm> repositories = source.getRepositories();
+        List<RepositoryDto> repositories = source.getRepositories();
         if (repositories != null)
         {
-            Map<String, RepositoryDto> internalMap = new LinkedHashMap<>();
+            Map<String, com.veadan.folib.storage.repository.RepositoryDto> internalMap = new LinkedHashMap<>();
             result.setRepositories(internalMap);
             repositories.stream()
                         .map(RepositoryFormConverter.INSTANCE::convert)

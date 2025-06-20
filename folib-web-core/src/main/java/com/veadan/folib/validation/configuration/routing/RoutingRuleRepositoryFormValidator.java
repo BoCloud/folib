@@ -1,6 +1,6 @@
 package com.veadan.folib.validation.configuration.routing;
 
-import com.veadan.folib.forms.storage.routing.RoutingRuleRepositoryForm;
+import com.veadan.folib.dto.storage.routing.RoutingRuleRepositoryDto;
 import com.veadan.folib.services.ConfigurationManagementService;
 
 
@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class RoutingRuleRepositoryFormValidator
-        implements ConstraintValidator<RoutingRuleRepositoryFormValid, RoutingRuleRepositoryForm>
+        implements ConstraintValidator<RoutingRuleRepositoryDtoValid, RoutingRuleRepositoryDto>
 {
 
     private final Logger logger = LoggerFactory.getLogger(RoutingRuleRepositoryFormValidator.class);
@@ -23,13 +23,13 @@ public class RoutingRuleRepositoryFormValidator
     private String message;
 
     @Override
-    public void initialize(RoutingRuleRepositoryFormValid constraintAnnotation)
+    public void initialize(RoutingRuleRepositoryDtoValid constraintAnnotation)
     {
         message = constraintAnnotation.message();
     }
 
     @Override
-    public boolean isValid(RoutingRuleRepositoryForm form,
+    public boolean isValid(RoutingRuleRepositoryDto form,
                            ConstraintValidatorContext context)
     {
         Boolean valid = false;
