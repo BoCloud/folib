@@ -13,7 +13,7 @@
     theme="light"
     :style="{ backgroundColor: 'transparent' }"
   >
-    <div class="brand"><img src="images/folib/foliblogo.png" alt="" /> <span>{{ instanceName }}</span></div>
+    <div class="brand"><img src="images/folib/foliblogo.png" alt="foliblogo" /> <span>{{ instanceName }}</span></div>
     <hr class="gradient-line"/>
     <!-- Sidebar Navigation Menu -->
      <div class="left-menu_list">
@@ -185,7 +185,7 @@
           </span>
           <h6>{{ $t('Sidebars.DoNotKnowHowToUseIt') }}</h6>
           <p>{{ $t('Sidebars.CheckTheHelpDocumentation') }}</p>
-          <a-button block size="small" href="/help/index.html" target="_blank"> {{ $t('Sidebars.userManual') }} </a-button>
+          <a-button block size="small" href="/help/index.html" target="_blank" rel="noopenner noreferrer"> {{ $t('Sidebars.userManual') }} </a-button>
         </div>
     </div>
   </div>

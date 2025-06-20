@@ -85,7 +85,7 @@
 					<!-- Payment Details -->
 					<h6 class="mb-15">Payment Details</h6>
 					<a-card class="payment-method-card mb-24">
-						<img src="images/logos/mastercard-logo.png" alt="">
+						<img src="images/logos/mastercard-logo.png" alt="logo">
 						<h6 class="card-number">**** **** **** 7362</h6>
 						<a-tooltip>
 							<template slot="title">We do not store card details</template>

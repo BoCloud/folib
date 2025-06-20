@@ -270,7 +270,7 @@ export default {
           this.graphData.edges = res.edges.map((p) => {
             return { source: p.source.id, target: p.target.id };
           });
-          console.log(this.graphData);
+          // console.log(this.graphData);
         })
         .then(() => {
           if (this.graph) {

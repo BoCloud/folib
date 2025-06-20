@@ -38,7 +38,7 @@
 			<a-icon :type="aIcon" :theme="theme?theme:'outlined'" style="font-size: 24px;"/>
 		</div>
 		<div class="icon icon-src" v-if="src">
-			<img :src="src" width="48"/>
+			<img :src="src" width="48" alt="icon"/>
 		</div>
 	</a-card>
 	<!-- / Counter widget -->

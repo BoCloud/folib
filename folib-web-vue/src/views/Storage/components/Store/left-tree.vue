@@ -135,8 +135,8 @@ export default {
     watch: {
         trashData: {
             handler(val) {
-                console.log(val);
-                console.log(this.treeData);
+                // console.log(val);
+                // console.log(this.treeData);
             },
             deep: true
         }

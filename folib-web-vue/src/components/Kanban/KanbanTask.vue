@@ -6,7 +6,7 @@
 		:bordered="false" class="kanban-card mb-24"
 	>
 
-		<img v-if="task.cover" :src="task.cover" class="mb-15">
+		<img v-if="task.cover" :src="task.cover" class="mb-15" alt="cover">
 
 		<a-tag v-if="task.badge" class="mb-15" :class="[task.badge.class]">{{ task.badge.text }}</a-tag>
 

@@ -89,7 +89,7 @@ const installer = {
 
 // 防止出现多个提示框的解决办法
 export function messageCtl(messageContrl, type, message, description) {
-  console.log("messageContrl ", messageContrl.status)
+  // console.log("messageContrl ", messageContrl.status)
   if(!messageContrl.status){
     messageContrl.status = true
     setTimeout(() => {

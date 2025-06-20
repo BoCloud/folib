@@ -40,7 +40,7 @@
               <a-statistic :value="scanCurrentData.dependencyCount">
                 <template #title>
                   <div class="icon">
-                    <img src="images/folib/denpendencySum.svg" alt="">
+                    <img src="images/folib/denpendencySum.svg" alt="denpendencySum">
                   </div>
                   <h6>扫描依赖数量</h6>
                   <p>依赖指的是包底层依赖</p>
@@ -53,7 +53,7 @@
               <a-statistic :value="scanCurrentData.vulnerabilitiesCount">
                 <template #title>
                   <div class="icon">
-                    <img src="images/folib/vulnerabilitesSum.svg" alt="">
+                    <img src="images/folib/vulnerabilitesSum.svg" alt="vulnerabilitesSum">
                   </div>
                   <h6>依赖漏洞数</h6>
                   <p>指包底层依赖有一定的风险</p>
@@ -66,7 +66,7 @@
               <a-statistic :value="scanCurrentData.dependencyVulnerabilitiesCount">
                 <template #title>
                   <div class="icon">
-                    <img src="images/folib/vulnerableSum.svg" alt="">
+                    <img src="images/folib/vulnerableSum.svg" alt="vulnerableSum">
                   </div>
                   <h6>有漏洞的包数量</h6>
                   <p>底层依赖有漏洞的包数量之和</p>
@@ -79,7 +79,7 @@
               <a-statistic :value="scanCurrentData.suppressedVulnerabilitiesCount">
                 <template #title>
                   <div class="icon">
-                    <img src="images/folib/suppressedSum.svg" alt="">
+                    <img src="images/folib/suppressedSum.svg" alt="suppressedSum">
                   </div>
                   <h6>被封锁的漏洞数量</h6>
                   <p>指存在漏洞但是已经被封锁</p>

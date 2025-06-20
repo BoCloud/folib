@@ -52,9 +52,9 @@
 				<a-switch default-checked v-model="navbarFixedModel" @change="$emit('toggleNavbarPosition', navbarFixedModel)" />
 			</div>
 <!--			<div class="download">-->
-<!--				<a-button type="secondary" href="https://www.creative-tim.com/product/muse-vue-ant-design-dashboard" target="_blank" block>FREE DOWNLOAD</a-button>-->
-<!--				<a-button type="dark" href="https://www.creative-tim.com/product/muse-vue-ant-design-dashboard-pro" target="_blank" block>BUY NOW</a-button>-->
-<!--				<a-button type="secondary" href="https://demos.creative-tim.com/muse-vue-ant-design-dashboard-pro/documentation" block target="_blank">VIEW DOCUMENTATION</a-button>-->
+<!--				<a-button type="secondary" href="https://www.creative-tim.com/product/muse-vue-ant-design-dashboard" target="_blank" rel="noopenner noreferrer" block>FREE DOWNLOAD</a-button>-->
+<!--				<a-button type="dark" href="https://www.creative-tim.com/product/muse-vue-ant-design-dashboard-pro" target="_blank" rel="noopenner noreferrer" block>BUY NOW</a-button>-->
+<!--				<a-button type="secondary" href="https://demos.creative-tim.com/muse-vue-ant-design-dashboard-pro/documentation" block target="_blank" rel="noopenner noreferrer">VIEW DOCUMENTATION</a-button>-->
 <!--			</div>-->
 <!--			<div class="github-stars">-->
 <!--				<a-button-group>-->

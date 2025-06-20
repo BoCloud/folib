@@ -133,7 +133,7 @@
           {{ $t('Store.Preview') }}
           <a-icon :size="24" shape="square" type="eye"></a-icon>
         </a-button>
-        <a class="text-dark" v-if="searchDataCurrentSelect.layout !== 'Docker'" :href="searchDataCurrentSelect ? searchDataCurrentSelect.url : ''" target="_blank">{{
+        <a class="text-dark" v-if="searchDataCurrentSelect.layout !== 'Docker'" :href="searchDataCurrentSelect ? searchDataCurrentSelect.url : ''" target="_blank" rel="noopenner noreferrer">{{
           searchDataCurrentSelect ? searchDataCurrentSelect.url : "" }}</a>
         <hr class="my-25" />
         <ArtifactData ref="artifactData" v-if="artifactVisible && searchDataCurrentSelectItem" :artifactName="searchDataCurrentSelect.artifactName" :artifactPath="searchDataCurrentSelect.artifactPath" :currentArtifact="searchDataCurrentSelectItem" :repositoryType="searchDataCurrentSelect.layout" :artifact="searchDataCurrentSelectItem.artifact"

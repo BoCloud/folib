@@ -281,11 +281,11 @@
       <a-tab-pane key="6" :tab="$t('Store.SubsidiaryFiles')" v-if="currentArtifact && currentArtifact.subsidiaryFiles">
         <a-list item-layout="horizontal" :data-source="currentArtifact.subsidiaryFiles" :pagination="currentArtifact.subsidiaryFiles.length === 0 ? false : { pageSize: 5, total: currentArtifact.subsidiaryFiles.length, showLessItems: true }" >
           <a-list-item slot="renderItem" :key="index" slot-scope="item, index">
-            <a slot="actions" :href="item.url" target="_blank">{{$t('Store.DownLoad')}}</a>
+            <a slot="actions" :href="item.url" target="_blank" rel="noopenner noreferrer">{{$t('Store.DownLoad')}}</a>
             <a-list-item-meta
               :description="item.url"
             >
-              <a slot="title" :href="item.url" target="_blank">{{ item.name }}</a>
+              <a slot="title" :href="item.url" target="_blank" rel="noopenner noreferrer">{{ item.name }}</a>
             </a-list-item-meta>
           </a-list-item>
         </a-list>

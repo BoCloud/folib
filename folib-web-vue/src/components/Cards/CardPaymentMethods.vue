@@ -17,7 +17,7 @@
 		<a-row :gutter="[24, 24]">
 			<a-col :span="24" :md="12">
 				<a-card class="payment-method-card">
-					<img src="images/folib/userAdmin.svg" alt="">
+					<img src="images/folib/userAdmin.svg" alt="userAdmin">
 					<h6 class="card-number">用户总数</h6>
 					<a-button type="link">
             <h6 class="card-number">20</h6>
@@ -26,7 +26,7 @@
 			</a-col>
 			<a-col :span="24" :md="12">
 				<a-card class="payment-method-card">
-					<img src="images/folib/userCount.svg" alt="">
+					<img src="images/folib/userCount.svg" alt="userCount">
 					<h6 class="card-number">管理员数量</h6>
           <a-button type="link">
             <h6 class="card-number">1</h6>

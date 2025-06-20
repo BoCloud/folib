@@ -96,7 +96,7 @@ export default {
     handleAdd() {},
     handleExpand(expanded, record) {
       this.policy = record;
-      console.log(record);
+      // console.log(record);
       if (record.policyConditions && record.policyConditions.length > 0) {
         this.condition = record.policyConditions;
       }
@@ -173,7 +173,7 @@ export default {
     // 修改政策名
     postPolicy(params) {
       postPolicyList(params).then((res) => {
-        console.log(res);
+        // console.log(res);
       });
     },
   },

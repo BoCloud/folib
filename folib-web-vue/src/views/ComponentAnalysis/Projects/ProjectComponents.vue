@@ -337,7 +337,7 @@ export default {
         handleAdd() {
             getLicenseConcise().then((res) => {
                 this.licenses = res.data
-                console.log(res, 'df')
+                // console.log(res, 'df')
             })
             this.visible = true
         },
@@ -368,7 +368,7 @@ export default {
                                 notes: this.addForm5.notes
                             }
                             addProjectComponent(this.$route.params.id, params).then((res) => {
-                                console.log(res)
+                                // console.log(res)
                                 this.getData()
                                 this.$notification.success({
                                     message: "新增成功",
@@ -394,7 +394,7 @@ export default {
         },
         handleSelectionChange(selectedRowKeys, selectedRows) {
             this.selectedRows = selectedRows
-            console.log(this.selectedRows, 'dfdf')
+            // console.log(this.selectedRows, 'dfdf')
         },
         // 获取表格数据
         getData() {
@@ -428,7 +428,7 @@ export default {
             this.$router.push(`/componentDetail/${row.uuid}`)
         },
         handleGoLicense(row) {
-            console.log(row)
+            // console.log(row)
             this.$router.push(`/licenses/licensesDetail/${row.licenseId}`)
         },
         handheTableSearch() {

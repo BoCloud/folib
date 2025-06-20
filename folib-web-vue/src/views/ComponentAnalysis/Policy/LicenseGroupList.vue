@@ -195,7 +195,7 @@ export default {
         name: val.name,
       };
       editLicenseGroup(params).then((res) => {
-        console.log(res);
+        // console.log(res);
         this.$notification["success"]({
           message: "修改成功",
         });
@@ -242,7 +242,7 @@ export default {
           });
         }
         this.getData();
-        console.log(res);
+        // console.log(res);
       });
     },
     //   新增证书
