@@ -66,6 +66,7 @@ public class FolibAuthenticationFilter
             "/docs/**",
             "/webjars/**",
             "/rest/**",
+            "/help/**",
             "/"
     );
 
