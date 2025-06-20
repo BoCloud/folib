@@ -206,7 +206,7 @@
                           <a>
                             <h6 class="m-0">
                               <a-avatar :size="48" shape="square" class="icon_sty">
-                                <img :src="'images/folib/' +LayoutTypeBuild(record) + '.svg'" width="36" style="width: 150%;margin-left: -10px;" alt="">
+                                <img :src="'images/folib/' +LayoutTypeBuild(record) + '.svg'" width="36" style="width: 150%;margin-left: -10px;" alt="type">
                               </a-avatar>
                               {{ record.repository }}
                             </h6>

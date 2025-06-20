@@ -31,7 +31,7 @@
               </template>
               <div class="export_excel_sty" :title="$t('Artifacts.exportExcel')"> 
                 <a-spin :spinning="confirmLoading">
-                  <img src="./export-excel.svg" width="20" />
+                  <img src="./export-excel.svg" width="20" alt="excel"/>
                 </a-spin>
               </div>
             </a-popconfirm>

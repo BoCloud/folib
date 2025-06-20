@@ -57,11 +57,11 @@
 
 		</div>
 		<div v-if="dalyOut||haveError" class="header-col header-btn">
-			<a-button size="small" type="dark" class="px-30 border-dark" shape="round" href="https://www.bocloud.com.cn/product/BeyondFolibrary" target="_blank">{{ $t('Headers.PurchaseFullVersion') }}</a-button>
+			<a-button size="small" type="dark" class="px-30 border-dark" shape="round" href="https://www.bocloud.com.cn/product/BeyondFolibrary" target="_blank" rel="noopenner noreferrer">{{ $t('Headers.PurchaseFullVersion') }}</a-button>
 		</div>
 
     <div v-if="!(dalyOut||haveError)" class="header-col header-btn">
-      <a-button size="small" type="dark" class="px-30 border-dark" shape="round" href="/docs/overview/index.html" target="_blank">{{ $t('Headers.UserManual') }}</a-button>
+      <a-button size="small" type="dark" class="px-30 border-dark" shape="round" href="/docs/overview/index.html" target="_blank" rel="noopenner noreferrer">{{ $t('Headers.UserManual') }}</a-button>
     </div>
     <div v-if="!(dalyOut||haveError)" class="language-style">
       <a-dropdown :trigger="['click']" placement="bottomRight" :getPopupContainer="getContainer">

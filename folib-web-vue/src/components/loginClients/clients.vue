@@ -21,6 +21,8 @@
 </template>
 
 <script>
+import { encryptData } from "@/utils/windowCrypt"
+
 export default {
   props: {
     clients: {
@@ -48,7 +50,11 @@ export default {
     // 可以在输入的时候限定格式
     url= url.startsWith("http")? url:"http://"+url
     // 缓存SSO退出地址
-    localStorage.setItem('SSOLogout',client.loginOutUrl+"?client_id="+client.clientId+"&post_logout_redirect_uri="+client.loginOutRedPath)
+    const logoutUrl = client.loginOutUrl+"?client_id="+client.clientId+"&post_logout_redirect_uri="+client.loginOutRedPath
+    encryptData(logoutUrl).then((res) => {
+      localStorage.setItem("SSOLogout", JSON.stringify(res))
+    })
+    // localStorage.setItem('SSOLogout',client.loginOutUrl+"?client_id="+client.clientId+"&post_logout_redirect_uri="+client.loginOutRedPath)
     // 跳转到SSO登录页面
     window.location.href=url
     }

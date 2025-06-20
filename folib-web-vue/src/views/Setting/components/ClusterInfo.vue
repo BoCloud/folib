@@ -140,7 +140,7 @@ export default {
       const key = 'removeNode_' + hostId
       const flag = Storage.prototype.getCanExpireLocal(key);
       if (flag) {
-        console.log("=====>>>>>存在", key)
+        // console.log("=====>>>>>存在", key)
         return
       }
       Storage.prototype.setCanExpireLocal(key, true, 30 * 1000)

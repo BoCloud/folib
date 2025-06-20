@@ -1875,11 +1875,11 @@ export default {
       return strategy ? strategy.label : '';
     },
     getSyncStrategyDefaultValue(){
-      console.log('=================' + this.artifactDispatchForm.syncStrategy)
-      console.log('=================' + this.syncStrategySelects[0].value)
+      // console.log('=================' + this.artifactDispatchForm.syncStrategy)
+      // console.log('=================' + this.syncStrategySelects[0].value)
       if (this.artifactDispatchForm.syncStrategy === undefined) {
         this.$set(this.artifactDispatchForm, 'syncStrategy', this.syncStrategySelects[0].value);
-        console.log('=================' + this.artifactDispatchForm.syncStrategy)
+        // console.log('=================' + this.artifactDispatchForm.syncStrategy)
       }
     },
     getSsoList(){
@@ -1891,8 +1891,8 @@ export default {
     handleSubmit(e) {
       e.preventDefault()
       this.form.validateFields((err, values) => {
-        if (!err) {
-        }
+        // if (!err) {
+        // }
       })
     },
     tabChange(key) {
@@ -2133,7 +2133,7 @@ export default {
       securityPolicyConfig()
         .then(res => {
           this.$nextTick(() => {
-              console.log(this.$refs.ruleForm);
+              // console.log(this.$refs.ruleForm);
               if (this.$refs.ruleForm) {
               this.ruleForm.setFieldsValue({
                 levels: res.levels,
@@ -2521,7 +2521,7 @@ export default {
     },
 
     uploadLicense(info) {
-      console.log("开始上传文件,info:", info);
+      // console.log("开始上传文件,info:", info);
       const formData = new FormData()
       formData.append("file", info.file)
       uploadLicenseFile(formData).then(() => {

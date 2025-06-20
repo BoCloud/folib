@@ -160,7 +160,7 @@ export default {
         getData() {
             const uuid = this.$route.params.id
             getFindingProjectNVD(uuid, this.queryParams).then((res) => {
-                console.log(res)
+                // console.log(res)
                 this.projectsData = res.data
             })
         },
@@ -183,7 +183,7 @@ export default {
             this.getData()
         },
         handleGoCom(row) {
-            console.log(row)
+            // console.log(row)
             this.$router.push(`/componentDetail/${row.component.uuid}`)
         },
 

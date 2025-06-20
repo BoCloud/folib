@@ -73,7 +73,7 @@
 					</a-col>
 					<a-col :span="5">
 						<a-card class="payment-method-card storage-info">
-							<img class="m-20" src="images/folib/public.svg" alt="">
+							<img class="m-20" src="images/folib/public.svg" alt="public">
 							<h6 class="card-number">
 								<a-tag color="#2db7f5">
 									{{ $t('StorageMonitoring.StorageCount') }} 
@@ -84,7 +84,7 @@
 					</a-col>
 					<a-col :span="5">
 						<a-card class="payment-method-card storage-info">
-							<img class="m-20" src="images/folib/repository.svg" alt="">
+							<img class="m-20" src="images/folib/repository.svg" alt="repository">
 							<h6 class="card-number">
 								<a-tag color="#87d068">
 									{{ $t('StorageMonitoring.RepositoryCount') }} 

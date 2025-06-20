@@ -77,7 +77,7 @@ export default {
     },
     computed:{
         currentTreeNode(val) {
-          console.log(val,'currentTreeNode')
+          // console.log(val,'currentTreeNode')
           if(this.isStoreView){
             let currentTreeNode={...this.folibRepository};
             currentTreeNode.name=this.folibRepository.id;

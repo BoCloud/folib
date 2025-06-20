@@ -510,7 +510,7 @@ export default {
             this.getData()
         },
         handleGoCom(row) {
-            console.log(row)
+            // console.log(row)
             this.$router.push(`/componentDetail/${row.component.uuid}`)
         },
 

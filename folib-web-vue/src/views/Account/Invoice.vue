@@ -9,7 +9,7 @@
 
 		<a-card :bordered="false" class="card-invoice header-solid mb-24 mx-auto my-50" style="max-width: 800px;">
 			<template #title>
-				<img src="images/logo-ct-black.png" class="brand">
+				<img src="images/logo-ct-black.png" class="brand" alt="logo">
 			</template>
 			<a-row :gutter="[24]" type="flex" class="invoice-header">
 				<a-col :span="24" :md="8">

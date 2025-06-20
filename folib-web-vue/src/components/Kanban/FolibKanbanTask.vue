@@ -11,7 +11,7 @@
             shape="square"
             class="icon_sty"
         >
-          <img :src="'images/folib/'+getLayoutType(task)+'.svg'" style="width: 100%;" alt="">
+          <img :src="'images/folib/'+getLayoutType(task)+'.svg'" style="width: 100%;" alt="icon">
         </a-avatar>
       </a-col >
       <a-col :span="15">

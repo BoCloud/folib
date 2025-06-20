@@ -37,7 +37,7 @@ export default {
       this.search()
     },
     onSearch(){
-      console.log("onSearch");
+      // console.log("onSearch");
       this.searchType=1;
       this.search()
     },

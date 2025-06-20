@@ -25,11 +25,13 @@
 							<img 
 								:src="'https://raw.githubusercontent.com/creativetimofficial/public-assets/master/soft-ui-design-system/assets/img/ecommerce/chair-pink.jpg'"
 								v-pswp="'https://raw.githubusercontent.com/creativetimofficial/public-assets/master/soft-ui-design-system/assets/img/ecommerce/chair-pink.jpg'"
-							/>
+							    alt="swipe"
+                            />
 							<img 
 								:src="'https://raw.githubusercontent.com/creativetimofficial/public-assets/master/soft-ui-design-system/assets/img/ecommerce/black-chair.jpg'"
 								v-pswp="'https://raw.githubusercontent.com/creativetimofficial/public-assets/master/soft-ui-design-system/assets/img/ecommerce/black-chair.jpg'"
-							/>
+                                alt="swipe"
+                            />
 							<img 
 								:src="'https://raw.githubusercontent.com/creativetimofficial/public-assets/master/soft-ui-design-system/assets/img/ecommerce/chair-steel.jpg'"
 								v-pswp="'https://raw.githubusercontent.com/creativetimofficial/public-assets/master/soft-ui-design-system/assets/img/ecommerce/chair-steel.jpg'"
@@ -37,7 +39,8 @@
 							<img 
 								:src="'https://raw.githubusercontent.com/creativetimofficial/public-assets/master/soft-ui-design-system/assets/img/ecommerce/chair-wood.jpg'"
 								v-pswp="'https://raw.githubusercontent.com/creativetimofficial/public-assets/master/soft-ui-design-system/assets/img/ecommerce/chair-wood.jpg'"
-							/>
+                                alt="swipe"
+                            />
 						</Photoswipe>
 					</div>
 

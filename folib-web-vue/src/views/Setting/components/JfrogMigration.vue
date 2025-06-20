@@ -238,11 +238,11 @@ export default {
             data.basedir = '/' + data.storageId + '/' + data.basedir;
           }
           this.loading = true;
-          console.log('this.loading',this.loading);
+          // console.log('this.loading',this.loading);
           jfrogMigrate(data).then(res => {
             this.$message.success(this.$t('Setting.MigrateSuccess'))
           }).catch(err => {
-            console.log('err',err);
+            // console.log('err',err);
             const errMsg=err.response?err.response.data.error:err.message;
             this.$notification['error']({
               message: errMsg,
@@ -250,10 +250,10 @@ export default {
             })
           }).finally(() => {
             this.loading = false;
-            console.log('this.loading',this.loading);
+            // console.log('this.loading',this.loading);
           });
         } else {
-          console.log('表单验证失败');
+          // console.log('表单验证失败');
           return false;
         }
       })
@@ -347,7 +347,7 @@ export default {
 
     // 处理文件上传
     customUploadRequest({ file, onSuccess }) {
-      console.log('file',file);
+      // console.log('file',file);
       this.fileList=[];
       this.fileList.push(file);
       onSuccess();

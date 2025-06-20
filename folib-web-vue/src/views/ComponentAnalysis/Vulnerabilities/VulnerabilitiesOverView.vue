@@ -27,7 +27,7 @@
     <div v-if="vulnerability.cweList" style="margin-bottom: 20px">
       <a-card :title="$t('Vulnerabilities.VulnerabilityType')">
         <div v-for="(item, index) in vulnerability.cweList" :key="index">
-          <a :href="cweLink(item)" target="_blank">{{ item }}</a>
+          <a :href="cweLink(item)" target="_blank" rel="noopenner noreferrer">{{ item }}</a>
         </div>
       </a-card>
     </div>
@@ -35,7 +35,7 @@
     <div v-if="vulnerability.references" style="margin-bottom: 20px">
       <a-card :title="$t('Vulnerabilities.Reference')">
         <div v-for="(item, index) in vulnerability.references" :key="index">
-          <a :href="item" target="_blank" > {{ item }} </a>
+          <a :href="item" target="_blank" rel="noopenner noreferrer" > {{ item }} </a>
         </div>
       </a-card>
     </div>

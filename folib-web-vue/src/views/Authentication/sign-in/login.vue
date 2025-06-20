@@ -130,7 +130,7 @@ export default {
   created(){
     getSsoList().then(res=>{
       this.clientList=res
-      console.log(this.clientList);
+      // console.log(this.clientList);
     })
   },
 

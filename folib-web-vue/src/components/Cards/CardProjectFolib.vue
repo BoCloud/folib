@@ -8,7 +8,7 @@
 				<a-col>
 					<a-avatar :size="48" shape="square"
 						style="border-radius: 8px; background-image: linear-gradient( 310deg, #fafbfc, #ddd  );">
-						<img :src="logo" style="width: 150%;margin-left: -6px;margin-top: -3px;" alt="">
+						<img :src="logo" style="width: 150%;margin-left: -6px;margin-top: -3px;" alt="logo">
 					</a-avatar>
 				</a-col>
 				<a-col @click="goToDetial">

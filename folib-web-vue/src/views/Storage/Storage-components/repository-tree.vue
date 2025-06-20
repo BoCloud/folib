@@ -33,7 +33,7 @@
                         <div class="title_box">
                         <span>
                             <a-icon v-if="node.loading && !node.expanded" type="loading" :style="{color: '#1890ff'}"/>
-                            <img v-if="data.fileType === 'document'" :src="getSrc(data.selected, data.type)" alt="" width="24">
+                            <img v-if="data.fileType === 'document'" :src="getSrc(data.selected, data.type)" alt="document" width="24">
                             <span v-if="data.fileType === 'document'" class="tree_title">
                                 {{ data.id }}
                             </span>
@@ -81,7 +81,7 @@
                         <div class="title_box">
                         <span>
                             <a-icon v-if="node.loading && !node.expanded" type="loading" :style="{color: '#1890ff'}"/>
-                            <img v-if="data.fileType === 'document'" :src="getSrc(data.selected, data.type)" alt="" width="24">
+                            <img v-if="data.fileType === 'document'" :src="getSrc(data.selected, data.type)" alt="document" width="24">
                             <span v-if="data.fileType === 'document'" class="tree_title">
                                 {{ data.id }}
                             </span>

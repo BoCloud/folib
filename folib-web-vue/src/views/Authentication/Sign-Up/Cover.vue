@@ -72,7 +72,7 @@
 			<a-col :span="24" :md="12" :lg="12" :xl="12" class="col-img">
 				<!-- Sign Up Image -->
 				<div>
-					<img src="images/img-signin.png">
+					<img src="images/img-signin.png" alt="signin">
 				</div>
 				
 				<!-- / Sign Up Image -->
@@ -99,7 +99,7 @@
 				e.preventDefault();
 				this.form.validateFields((err, values) => {
 					if ( !err ) {
-						console.log('Received values of form: ', values) ;
+						// console.log('Received values of form: ', values) ;
 					}
 				});
 			},

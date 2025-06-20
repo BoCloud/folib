@@ -24,7 +24,7 @@
 				<h6>11/22</h6>
 			</div>
 			<div class="card-footer-col col-logo ml-auto">
-				<img src="images/logos/mastercard-logo.png">
+				<img src="images/logos/mastercard-logo.png" alt="logo">
 			</div>
 		</div>
 	</a-card>

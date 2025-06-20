@@ -13,6 +13,7 @@ import { ssoLogin,
 import {
   getConfig,
 } from '@/api/foEyes'
+import { encryptData } from "@/utils/windowCrypt"
 const key = 'login'
 export default ({
   created() {
@@ -48,7 +49,10 @@ export default ({
 				return false
 			}
 			if (idToken) {
-				localStorage.setItem("SSOIdToken",idToken)
+                encryptData(idToken).then((res) => {
+                    localStorage.setItem("SSOIdToken",JSON.stringify(res))
+                })
+				// localStorage.setItem("SSOIdToken",idToken)
 			}
 			store.dispatch("Token", token)
 			getConfig().then((res) => {

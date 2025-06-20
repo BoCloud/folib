@@ -4,6 +4,8 @@ import {ACCESS_TOKEN, USER_INFO} from '@/store/mutation-types'
 import jwt_decode from "jwt-decode";
 import router from "../../router";
 import store from '@/store'
+import { decryptData } from "@/utils/windowCrypt"
+
 
 const user = {
   state: {
@@ -102,8 +104,14 @@ const user = {
         storage.remove(USER_INFO)
         storage.remove("libView_repository")
         if (localStorage.getItem("SSOIdToken") && localStorage.getItem("SSOLogout")) {
+          const SSOLogout = JSON.parse(localStorage.getItem("SSOLogout"));
+          const SSOIdToken = JSON.parse(localStorage.getItem("SSOIdToken"));
+          decryptData(SSOLogout).then((logoutUrl) => {
+            decryptData(SSOIdToken).then((token) => {
+              window.location.href = logoutUrl + "&id_token_hint=" + token
+            });
+          });
           //退出单点登录系统
-          window.location.href = localStorage.getItem("SSOLogout") + "&id_token_hint=" + localStorage.getItem("SSOIdToken")
         }
         document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
         localStorage.clear()
