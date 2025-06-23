@@ -530,6 +530,9 @@ public class RpmRepoIndexer {
             if(entry.getRelease()!=null){
                 conflictsEntryElement1.setAttribute("rel", entry.getRelease());
             }
+            if(entry.getName()!=null){
+                conflictsEntryElement1.setAttribute("name", entry.getName());
+            }
             conflictsElement.appendChild(conflictsEntryElement1);
         }
         formatElement.appendChild(conflictsElement);
