@@ -2,8 +2,10 @@ package com.veadan.folib.config;
 
 import com.veadan.folib.authentication.AuthenticationConfig;
 import com.veadan.folib.authorization.dto.Role;
+import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.security.CustomAccessDeniedHandler;
 import com.veadan.folib.security.authentication.FolibAuthenticationFilter;
+import com.veadan.folib.security.authentication.Http401AuthenticationEntryPoint;
 import com.veadan.folib.security.authentication.suppliers.AuthenticationSupplier;
 import com.veadan.folib.security.authentication.suppliers.AuthenticationSuppliers;
 import com.veadan.folib.security.vote.ExtendedAuthoritiesVoter;
@@ -15,10 +17,7 @@ import com.veadan.folib.users.security.AuthoritiesProvider;
 import org.apache.commons.lang.BooleanUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDecisionManager;
 import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
@@ -81,12 +80,18 @@ public class WebSecurityConfig {
     @Inject
     private List<AuthenticationSupplier> suppliers;
 
+    @Inject
+    private Http401AuthenticationEntryPoint customEntryPoint;
+
+    @Inject
+    @Lazy
+    private ConfigurationManager configurationManager;
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http .addFilterBefore(folibAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(exception -> exception
                         .accessDeniedHandler(accessDeniedHandler())
-                        //.authenticationEntryPoint(customBasicAuthenticationEntryPoint())
+                        .authenticationEntryPoint(customBasicAuthenticationEntryPoint())
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(EndpointRequest.toAnyEndpoint()).hasAuthority("ADMIN")
@@ -95,6 +100,9 @@ public class WebSecurityConfig {
                         .anyRequest().permitAll())
                 .anonymous(anon -> anon
                         .authenticationFilter(anonymousAuthenticationFilter()))
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(customEntryPoint)  // 关键点
+                )
                 .cors(withDefaults())
                 .csrf(AbstractHttpConfigurer::disable);
 
@@ -154,7 +162,7 @@ public class WebSecurityConfig {
 
     @Bean
     FolibAuthenticationFilter folibAuthenticationFilter() {
-        return new FolibAuthenticationFilter(new AuthenticationSuppliers(suppliers), authenticationManager,customBasicAuthenticationEntryPoint());
+        return new FolibAuthenticationFilter(new AuthenticationSuppliers(suppliers), authenticationManager,customBasicAuthenticationEntryPoint(), configurationManager);
     }
 
 

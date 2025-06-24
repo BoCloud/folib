@@ -2,10 +2,14 @@ package com.veadan.folib.security.authentication;
 
 import cn.hutool.extra.spring.SpringUtil;
 import com.veadan.folib.authentication.DatabaseExternalUsersCacheManager;
+import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.security.authentication.suppliers.AuthenticationSuppliers;
 import com.veadan.folib.services.ConfigurationManagementService;
+import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.storage.repository.RepositoryData;
 import com.veadan.folib.users.userdetails.DataBaseUserDetailService;
+import com.veadan.folib.utils.RequestUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -50,14 +54,17 @@ public class FolibAuthenticationFilter
     private final AuthenticationSuppliers authenticationSuppliers;
 
     private final AuthenticationEntryPoint authenticationEntryPoint;
+    private final ConfigurationManager configurationManager;
 
     public FolibAuthenticationFilter(AuthenticationSuppliers authenticationSuppliers,
                                      AuthenticationManager authenticationManager,
-                                     AuthenticationEntryPoint authenticationEntryPoint) {
+                                     AuthenticationEntryPoint authenticationEntryPoint,
+                                     ConfigurationManager configurationManager  ) {
         super();
         this.authenticationSuppliers = authenticationSuppliers;
         this.authenticationManager = authenticationManager;
         this.authenticationEntryPoint=authenticationEntryPoint;
+        this.configurationManager = configurationManager;
     }
     // 需要跳过的路径列表（与 SecurityConfig 中的路径一致）
     private static final List<String> EXCLUDED_PATHS = List.of(
@@ -116,7 +123,7 @@ public class FolibAuthenticationFilter
                 } else {
 
                     // 如果是匿名访问，则创建一个匿名认证信息
-                    if (isAnonymousUrl(request)) {
+                    if (isAnonymousAuthenticated(request)) {
                         authentication = new AnonymousAuthenticationToken(
                                 "anonymousUser", // key
                                 "anonymousUser", // principal
@@ -173,4 +180,20 @@ public class FolibAuthenticationFilter
         AntPathMatcher matcher = new AntPathMatcher();
         return ANONYMOUS_URL.stream().anyMatch(pattern -> matcher.match(pattern, request.getServletPath()));
     }
+
+    //是否匿名访问
+    public boolean isAnonymousAuthenticated(HttpServletRequest request) {
+        if (!isAnonymousUrl(request)) {
+            return false;
+        }
+        String storageId = RequestUtils.getStorageId();
+        String repositoryId = RequestUtils.getRepositoryId();
+        RepositoryData repository = (RepositoryData) configurationManager.getRepository(String.format("%s:%s", storageId, repositoryId));
+        if (repository == null || !repository.isAllowAnonymous()) {
+            return false;
+        } else {
+            return repository.isAllowAnonymous();
+        }
+    }
+
 }
