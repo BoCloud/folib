@@ -54,7 +54,7 @@ public class ExtendedAuthorizationManager implements AuthorizationManager<Method
             }
             // 如果没有显式注解就默认拒绝
             if (requiredAuthority == null) {
-                return new AuthorizationDecision(false);
+                return new AuthorizationDecision(true);
             }
             String storageId = RequestUtils.getStorageId();
             String repositoryId = RequestUtils.getRepositoryId();
@@ -69,10 +69,11 @@ public class ExtendedAuthorizationManager implements AuthorizationManager<Method
                 SecurityContextHolder.clearContext();
                 SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
                 // 设置匿名身份 用于 @PreAuthorize("hasAuthority('')")
+                List<String> anonymousAuthorities = extendedAuthorities != null ? extendedAuthorities.stream().toList() : requiredAuthority;
                 authentication = new AnonymousAuthenticationToken(
                         "anonymousUser",
                         "anonymousUser",
-                        AuthorityUtils.createAuthorityList(requiredAuthority)
+                        AuthorityUtils.createAuthorityList(anonymousAuthorities)
                 );
                 log.info("Using anonymous authentication");
                 SecurityContextHolder.getContext().setAuthentication(authentication);
