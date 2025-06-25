@@ -9,6 +9,7 @@ import com.veadan.folib.metadata.extractor.RpmMetadata;
 import com.veadan.folib.metadata.extractor.RpmMetadataExtractor;
 import com.veadan.folib.metadata.model.Entry;
 import com.veadan.folib.metadata.model.RepomdMetadata;
+import com.veadan.folib.providers.io.LayoutFileSystem;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.io.RootRepositoryPath;
@@ -184,9 +185,9 @@ public class RpmRepoIndexer {
 
     public List<Path> listPaths(Path path) throws IOException {
         return Files.walk(path)
-                .filter(p -> !p.getFileName().toString().contains("/.temp/") &&
-                        !p.getFileName().toString().contains("/.trash/") &&
-                         isFileExist(p))
+                .filter(p -> !p.getFileName().toString().equals(LayoutFileSystem.TEMP) &&
+                        !p.getFileName().toString().equals(LayoutFileSystem.TRASH) &&
+                        isFileExist(p))
                 .collect(Collectors.toList());
     }
 
