@@ -22,6 +22,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -54,17 +55,21 @@ public class FolibAuthenticationFilter
     private final AuthenticationSuppliers authenticationSuppliers;
 
     private final AuthenticationEntryPoint authenticationEntryPoint;
+
     private final ConfigurationManager configurationManager;
+
+    private final Http401AuthenticationEntryPoint customEntryPoint;
 
     public FolibAuthenticationFilter(AuthenticationSuppliers authenticationSuppliers,
                                      AuthenticationManager authenticationManager,
                                      AuthenticationEntryPoint authenticationEntryPoint,
-                                     ConfigurationManager configurationManager  ) {
+                                     ConfigurationManager configurationManager  ,Http401AuthenticationEntryPoint customEntryPoint) {
         super();
         this.authenticationSuppliers = authenticationSuppliers;
         this.authenticationManager = authenticationManager;
         this.authenticationEntryPoint=authenticationEntryPoint;
         this.configurationManager = configurationManager;
+        this.customEntryPoint =customEntryPoint;
     }
     // 需要跳过的路径列表（与 SecurityConfig 中的路径一致）
     private static final List<String> EXCLUDED_PATHS = List.of(
@@ -140,9 +145,10 @@ public class FolibAuthenticationFilter
                         SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
                         //校验token是否有效
                         // Token 无效，返回 401 Unauthorized
-                        response.getWriter().write("Invalid or expired token");
-                        response.setContentType("application/json");
-                        response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                        //response.getWriter().write("Invalid or expired token");
+                        //response.setContentType("application/json");
+                        //response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                        customEntryPoint.commence(request, response, new BadCredentialsException("Invalid or expired Credentials"));
                         return;
                     }
                 }

@@ -100,9 +100,6 @@ public class WebSecurityConfig {
                         .anyRequest().permitAll())
                 .anonymous(anon -> anon
                         .authenticationFilter(anonymousAuthenticationFilter()))
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(customEntryPoint)  // 关键点
-                )
                 .cors(withDefaults())
                 .csrf(AbstractHttpConfigurer::disable);
 
@@ -162,7 +159,7 @@ public class WebSecurityConfig {
 
     @Bean
     FolibAuthenticationFilter folibAuthenticationFilter() {
-        return new FolibAuthenticationFilter(new AuthenticationSuppliers(suppliers), authenticationManager,customBasicAuthenticationEntryPoint(), configurationManager);
+        return new FolibAuthenticationFilter(new AuthenticationSuppliers(suppliers), authenticationManager,customBasicAuthenticationEntryPoint(), configurationManager,customEntryPoint);
     }
 
 
