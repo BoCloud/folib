@@ -30,10 +30,14 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 import java.nio.file.*;
 
+import java.nio.file.attribute.BasicFileAttributes;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
 
@@ -184,11 +188,27 @@ public class RpmRepoIndexer {
     }
 
     public List<Path> listPaths(Path path) throws IOException {
-        return Files.walk(path)
-                .filter(p -> !p.getFileName().toString().equals(LayoutFileSystem.TEMP) &&
-                        !p.getFileName().toString().equals(LayoutFileSystem.TRASH) &&
-                        isFileExist(p))
-                .collect(Collectors.toList());
+        Set<String> excludedDirs = Set.of(LayoutFileSystem.TEMP, LayoutFileSystem.TRASH);
+        List<Path> paths = new ArrayList<>();
+        Files.walkFileTree(path, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+                if (excludedDirs.contains(dir.getFileName().toString())) {
+                    // 跳过整个目录树
+                    return FileVisitResult.SKIP_SUBTREE;
+                }
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                if( isFileExist(file)){
+                    paths.add(file);
+                }
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        return paths;
     }
 
     //校验是否有效文件
@@ -486,11 +506,7 @@ public class RpmRepoIndexer {
         Element providesElement = doc.createElement("rpm:provides");
         for (Entry entry : metadata.getProvide()) {
             Element providesEntryElement1 = doc.createElement("rpm:entry");
-            providesEntryElement1.setAttribute("name", entry.getName());
-            providesEntryElement1.setAttribute("flags", entry.getFlags());
-            providesEntryElement1.setAttribute("epoch", entry.getEpoch());
-            providesEntryElement1.setAttribute("ver", entry.getVersion());
-            providesEntryElement1.setAttribute("rel", entry.getRelease());
+            setElementValue(providesEntryElement1, entry);
             providesElement.appendChild(providesEntryElement1);
         }
         formatElement.appendChild(providesElement);
@@ -498,19 +514,7 @@ public class RpmRepoIndexer {
         Element requiresElement = doc.createElement("rpm:requires");
         for (Entry entry : metadata.getRequire()) {
             Element requiresEntryElement1 = doc.createElement("rpm:entry");
-            requiresEntryElement1.setAttribute("name", entry.getName());
-            if(entry.getFlags()!=null){
-                requiresEntryElement1.setAttribute("flags", entry.getFlags());
-            }
-            if(entry.getEpoch()!=null){
-                requiresEntryElement1.setAttribute("epoch", entry.getEpoch());
-            }
-            if(entry.getVersion()!=null){
-                requiresEntryElement1.setAttribute("ver", entry.getVersion());
-            }
-            if(entry.getRelease()!=null){
-                requiresEntryElement1.setAttribute("rel", entry.getRelease());
-            }
+            setElementValue(requiresEntryElement1, entry);
             requiresElement.appendChild(requiresEntryElement1);
         }
         formatElement.appendChild(requiresElement);
@@ -519,21 +523,7 @@ public class RpmRepoIndexer {
         // No conflicts in this example
         for (Entry entry : metadata.getConflict()) {
             Element conflictsEntryElement1 = doc.createElement("rpm:entry");
-            if(entry.getFlags()!=null){
-                conflictsEntryElement1.setAttribute("flags", entry.getFlags());
-            }
-            if(entry.getEpoch()!=null){
-                conflictsEntryElement1.setAttribute("epoch", entry.getEpoch());
-            }
-            if(entry.getVersion()!=null){
-                conflictsEntryElement1.setAttribute("ver", entry.getVersion());
-            }
-            if(entry.getRelease()!=null){
-                conflictsEntryElement1.setAttribute("rel", entry.getRelease());
-            }
-            if(entry.getName()!=null){
-                conflictsEntryElement1.setAttribute("name", entry.getName());
-            }
+            setElementValue(conflictsEntryElement1, entry);
             conflictsElement.appendChild(conflictsEntryElement1);
         }
         formatElement.appendChild(conflictsElement);
@@ -542,18 +532,36 @@ public class RpmRepoIndexer {
         Element obsoletesElement = doc.createElement("rpm:obsoletes");
         for (Entry entry : metadata.getObsolete()) {
             Element obsoletesEntryElement1 = doc.createElement("rpm:entry");
-            obsoletesEntryElement1.setAttribute("name", entry.getName());
-            obsoletesEntryElement1.setAttribute("flags", entry.getFlags());
-            obsoletesEntryElement1.setAttribute("epoch", entry.getEpoch());
-            obsoletesEntryElement1.setAttribute("ver", entry.getVersion());
-            obsoletesEntryElement1.setAttribute("rel", entry.release);
+            setElementValue(obsoletesEntryElement1, entry);
             obsoletesElement.appendChild(obsoletesEntryElement1);
         }
         formatElement.appendChild(obsoletesElement); // No obsoletes in this example
 
-        // Files
+        // Recommends
+        if(metadata.getRecommends()!=null){
+            Element recommendsElement = doc.createElement("rpm:recommends");
+            for (Entry entry : metadata.getRecommends()) {
+                Element recommendsEntryElement1 = doc.createElement("rpm:entry");
+                setElementValue(recommendsEntryElement1, entry);
+                recommendsElement.appendChild(recommendsEntryElement1);
+            }
+            formatElement.appendChild(recommendsElement);
+        }
 
-        for (com.veadan.folib.metadata.model.File file : metadata.getFiles()) {
+        // Suggests
+        if(metadata.getSuggests()!=null){
+            Element suggestsElement = doc.createElement("rpm:suggests");
+            for (Entry entry : metadata.getSuggests()) {
+                Element suggestsEntryElement1 = doc.createElement("rpm:entry");
+                setElementValue(suggestsEntryElement1, entry);
+                suggestsElement.appendChild(suggestsEntryElement1);
+            }
+            formatElement.appendChild(suggestsElement);
+        }
+
+        // Files
+        List<com.veadan.folib.metadata.model.File> files = metadata.getFiles().stream().filter(file -> file.path.contains("/bin/") || file.path.startsWith("/etc/")  || file.path.equals("/usr/lib/sendmail")).collect(Collectors.toList());
+        for (com.veadan.folib.metadata.model.File file : files) {
             if (StrUtil.isNotEmpty(file.path)) {
                 Element filesElement = doc.createElement("file");
                 filesElement.appendChild(doc.createTextNode(file.path));
@@ -601,6 +609,7 @@ public class RpmRepoIndexer {
         Element versionElement = doc.createElement("version");
         versionElement.setAttribute("ver", metadata.getVersion());
         versionElement.setAttribute("rel", metadata.getRelease());
+        versionElement.setAttribute("epoch", Integer.toString(metadata.getEpoch()));
         packageElement.appendChild(versionElement);
 
         // Files
@@ -714,6 +723,30 @@ public class RpmRepoIndexer {
         revisionElement.appendChild(doc.createTextNode(""));
         dataElement.appendChild(revisionElement);
         return dataElement;
+    }
+
+    public void setElementValue(Element element, Entry entry) {
+        if(entry == null || element == null) {
+            return;
+        }
+        if(entry.getName()!=null){
+            element.setAttribute("name", entry.getName());
+        }
+        if(entry.getFlags()!=null){
+            element.setAttribute("flags", entry.getFlags());
+        }
+        if(entry.getEpoch()!=null){
+            element.setAttribute("epoch", entry.getEpoch());
+        }
+        if(entry.getVersion()!=null){
+            element.setAttribute("ver", entry.getVersion());
+        }
+        if(entry.getRelease()!=null){
+            element.setAttribute("rel", entry.getRelease());
+        }
+        if(entry.getPre()!=null){
+            element.setAttribute("pre", entry.getPre());
+        }
     }
 }
 

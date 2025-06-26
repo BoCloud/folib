@@ -45,6 +45,8 @@ public class RpmMetadata implements Serializable {
     private List<Entry> require;
     private List<Entry> conflict;
     private List<Entry> obsolete;
+    private List<Entry> recommends;
+    private List<Entry> suggests;
     private List<File> files;
     private List<ChangelogEntry> changeLogs;
 }

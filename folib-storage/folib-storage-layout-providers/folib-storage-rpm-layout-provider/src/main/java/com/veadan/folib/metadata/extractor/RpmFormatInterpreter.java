@@ -8,8 +8,6 @@ import com.veadan.folib.metadata.model.File;
 import com.veadan.folib.util.InternalStringUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
-import org.apache.tinkerpop.gremlin.structure.T;
-import org.redline_rpm.Dependency;
 import org.redline_rpm.changelog.ChangelogEntry;
 import org.redline_rpm.header.*;
 import org.slf4j.Logger;
