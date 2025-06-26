@@ -24,6 +24,8 @@ public class FileContent
 
     private String path;
 
+    private String description;
+
     public FileContent()
     {
 
@@ -118,6 +120,14 @@ public class FileContent
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     @Override

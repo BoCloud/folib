@@ -83,7 +83,7 @@ public class FolibAuthenticationFilter
             "/"
     );
 
-    private  static final  List<String> ANONYMOUS_URL = List.of("/storages/**");
+    private  static final  List<String> ANONYMOUS_URL = List.of("/storages/**","/api/browse/**");
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -194,12 +194,17 @@ public class FolibAuthenticationFilter
         }
         String storageId = RequestUtils.getStorageId();
         String repositoryId = RequestUtils.getRepositoryId();
-        RepositoryData repository = (RepositoryData) configurationManager.getRepository(String.format("%s:%s", storageId, repositoryId));
-        if (repository == null || !repository.isAllowAnonymous()) {
-            return false;
-        } else {
-            return repository.isAllowAnonymous();
+        if(storageId==null || repositoryId==null){
+            return true;
+        }else {
+            RepositoryData repository = (RepositoryData) configurationManager.getRepository(String.format("%s:%s", storageId, repositoryId));
+            if (repository == null || !repository.isAllowAnonymous()) {
+                return false;
+            } else {
+                return repository.isAllowAnonymous();
+            }
         }
+
     }
 
 }

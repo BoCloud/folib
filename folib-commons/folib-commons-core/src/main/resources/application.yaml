@@ -19,7 +19,11 @@ spring:
     schema: classpath:db/sql/database-init.sql
   liquibase:
     change-log: classpath:db/changelog-master.xml
-
+  thymeleaf:
+    enabled: true
+    prefix: classpath:/views/
+    suffix: .html
+    cache: false
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: GMT+8
