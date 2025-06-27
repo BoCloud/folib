@@ -10,7 +10,7 @@
 						shape="square"
 						style="border-radius: 8px; background-image: linear-gradient( 310deg, #141727, #3a416f );"
 					>
-						<img :src="logo" style="width: 100%;" alt="">
+						<img :src="logo" style="width: 100%;" alt="logo">
 					</a-avatar>
 				</a-col>
 				<a-col>

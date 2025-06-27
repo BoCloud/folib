@@ -264,7 +264,7 @@ export default {
             this.uuid = this.$route.params.id
             getProjectsHeaderDetail(this.uuid).then((res) => {
                 this.project = res.data
-                console.log("project",this.project)
+                // console.log("project",this.project)
                 this.showVersion = res.data.version
                 this.availableProjectVersions = res.data.versions
             })

@@ -124,7 +124,7 @@ export default {
                     const params = {
                         ...values
                     }
-                    console.log("params", params);
+                    // console.log("params", params);
                     addProjectProperty(this.projectUuid,params).then((res) => {
                         if (res.status === 200) {
                             this.$notification.success({

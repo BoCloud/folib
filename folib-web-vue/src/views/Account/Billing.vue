@@ -115,7 +115,7 @@
 			value: 49000,
 			prefix: "+$",
 			icon: `
-										<img src="images/logos/paypal-logo-2.png" alt="">`,
+										<img src="images/logos/paypal-logo-2.png" alt="logo">`,
 			title: "Paypal",
 			content: "Freelance Payment",
 		},

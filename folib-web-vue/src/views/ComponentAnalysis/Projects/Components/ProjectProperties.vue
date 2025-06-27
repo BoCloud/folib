@@ -99,7 +99,7 @@ export default {
                     groupName: map.get(item).groupName,
                     propertyName: map.get(item).propertyName,
                 }
-                console.log("data", data)
+                // console.log("data", data)
                 deleteProjectProperty(this.projectUuid, data).then((res) => {
                     this.loading = true;
                     if (res.status === 200) {

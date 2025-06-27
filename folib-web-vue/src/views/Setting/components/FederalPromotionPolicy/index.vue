@@ -930,7 +930,7 @@ export default {
                             this.queryFederalPromotionPolicy();
                             this.federalPromotionPolicyClose();
                         }).catch((err) => {
-                            console.log("err",err)
+                            // console.log("err",err)
                             this.$notification.error({
                                 message: this.$t('FederalPromotionPolicy.OperationFailure'),
                                 description: ""
@@ -942,7 +942,7 @@ export default {
                             this.queryFederalPromotionPolicy();
                             this.federalPromotionPolicyClose();
                         }).catch((err) => {
-                            console.log("err",err)
+                            // console.log("err",err)
                             this.$notification.error({
                                 message: this.$t('FederalPromotionPolicy.OperationFailure'),
                                 description: ""
@@ -1009,7 +1009,7 @@ export default {
                 this.successMsg(this.$t('FederalPromotionPolicy.OperationSuccessful'))
                 this.queryFederalPromotionPolicy();
             }).catch((err) => {
-                console.log("err",err)
+                // console.log("err",err)
                 let msg = err.response.data.message ? err.response.data.message : err.response.data.error ? err.response.data.error : err.response.data
                 if (msg && msg.length > 0) {
                     this.$notification.error({
@@ -1079,7 +1079,7 @@ export default {
                 this.visibleDrawer = true;
                 this.updateStatus = true;
             }).catch((err) => {
-                console.log("err",err)
+                // console.log("err",err)
                 this.$notification.error({
                     message: this.$t('FederalPromotionPolicy.OperationFailure'),
                     description: ""

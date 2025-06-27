@@ -617,7 +617,6 @@ export default {
     tabChange(activeTab) {
       if (activeTab === 1) {
         this.buildGraphIndexResetForm()
-      } else if (activeTab === 2) {
       } else if (activeTab === 3) {
         this.getCrontaskByClass()
         this.getSingleDict('vulnerability_update')

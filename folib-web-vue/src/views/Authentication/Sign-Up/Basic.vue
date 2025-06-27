@@ -22,13 +22,13 @@
 			</template>
 			<div class="sign-up-gateways">
     			<a-button>
-					<img src="images/logos/logos-facebook.svg" alt="">
+					<img src="images/logos/logos-facebook.svg" alt="logo">
 				</a-button>
     			<a-button>
-					<img src="images/logos/logo-apple.svg" alt="">
+					<img src="images/logos/logo-apple.svg" alt="logo">
 				</a-button>
     			<a-button>
-					<img src="images/logos/Google__G__Logo.svg.png" alt="">
+					<img src="images/logos/Google__G__Logo.svg.png" alt="logo">
 				</a-button>
 			</div>
 			<div class="divider my-25">
@@ -117,7 +117,7 @@
 				e.preventDefault();
 				this.form.validateFields((err, values) => {
 					if ( !err ) {
-						console.log('Received values of form: ', values) ;
+						// console.log('Received values of form: ', values) ;
 					}
 				});
 			},

@@ -22,7 +22,7 @@
                   <a style="justify-content: center;align-items: center;display: flex;">
                     <a-avatar @click="createData" :size="64" shape="square"
                       style="border-radius: 8px; background-image: linear-gradient(310deg, #f1f7ff, #f9fbff);">
-                        <img v-if="folibRepository.id" :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" style="width: 150%;margin-left: -11px;" alt=""></img>
+                        <img v-if="folibRepository.id" :src="'images/folib/' + getLayoutTypeHandle() + '.svg'" style="width: 150%;margin-left: -11px;" alt="type">
                         <span v-else style="color: #BFBFBF; margin-left: -10px; font-size: 14px;">No Data</span>
                     </a-avatar>
                   </a>
@@ -35,7 +35,7 @@
                         'api/browse/' +
                         folibRepository.storageId +
                         '/' +
-                        folibRepository.id" target="_blank">
+                        folibRepository.id" target="_blank" rel="noopenner noreferrer">
                         <h6 class="font-semibold m-0" @click="createData">
                           {{ folibRepository.id }}
                         </h6>
@@ -51,7 +51,7 @@
                             'api/browse/' +
                             folibRepository.storageId +
                             '/' +
-                            folibRepository.id" target="_blank">
+                            folibRepository.id" target="_blank" rel="noopenner noreferrer">
                             <p class="copy-p">
                               {{ baseUrl +
                                 'api/browse/' +
@@ -484,7 +484,7 @@
           </template>
 
           <a v-if="currentTreeNode.url && folibRepository.layout !== 'Docker'" class="text-dark ellipsis-link"
-            :href="getFormattedUrl(currentTreeNode.url)" target="_blank" :title="getFormattedUrl(currentTreeNode.url)">
+            :href="getFormattedUrl(currentTreeNode.url)" target="_blank" rel="noopenner noreferrer" :title="getFormattedUrl(currentTreeNode.url)">
             {{ getFormattedUrl(currentTreeNode.url) }}
           </a>
           <a v-if="currentTreeNode.url && folibRepository.layout !== 'Docker'" class="ml-10"><a-icon type="copy"
@@ -1943,7 +1943,7 @@ export default {
           let msg = err.response.data.error
             ? err.response.data.error
             : err.response.data
-          console.log('rpm upload error：', msg)
+          // console.log('rpm upload error：', msg)
           let errStatusArr = [200, 500, 403, 304, 401]
           if (!errStatusArr.includes(err.response.status)) {
             this.$notification['error']({
@@ -2060,12 +2060,12 @@ export default {
             let metaStr=null;
              if(this.folibRepository.layout==='debian'){
               let metadata={}
-              console.log(values)
+              // console.log(values)
               metadata.distribution=values.distribution
               metadata.component=values.component
               metadata.architecture=values.architecture
               metaStr=JSON.stringify(metadata)
-              console.log("debian的坐标为",metaStr)
+              // console.log("debian的坐标为",metaStr)
              }
             this.uploadFiles(values.targetPath,false,metaStr,null,null)
           }
@@ -2092,7 +2092,7 @@ export default {
           let msg = err.response.data.error
             ? err.response.data.error
             : err.response.data
-          console.log('upload error：', msg)
+          // console.log('upload error：', msg)
           let errStatusArr = [200, 500, 403, 304, 401]
           if (!errStatusArr.includes(err.response.status)) {
             this.$notification['error']({
@@ -2117,7 +2117,7 @@ export default {
           let msg = err.response.data.error
             ? err.response.data.error
             : err.response.data
-          console.log('upload error：', msg)
+          // console.log('upload error：', msg)
           let errStatusArr = [200, 500, 403, 304, 401]
           if (!errStatusArr.includes(err.response.status)) {
             this.$notification['error']({
@@ -2456,7 +2456,7 @@ export default {
           active.key === '2' ? this.$t('Store.CopyCustomDirectory') : this.$t('Store.MoveCustomDirectory')
       } else if (active.key === '4') {
         //删除
-        console.log("删除")
+        // console.log("删除")
       } else if (active.key === '5') {
         this.showOperationDispatchFormModal = true
         this.getArtifactDispatchStoragesAndRepositories(
@@ -2530,7 +2530,7 @@ export default {
                 resolve();
               }
             }).catch(error => {
-              console.log(error);
+              // console.log(error);
               self.$notification.error({
                 message: self.$t('Store.RestoreFailed')
               })
@@ -2753,7 +2753,7 @@ export default {
       this.prismEditor = false
     },
     dispatchPackageHandle() {
-      console.log('分发处理 todo')
+      // console.log('分发处理 todo')
     },
     deletePackageHandle() {
       deleteArtifact(

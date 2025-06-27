@@ -21,7 +21,7 @@
                             shape="square"
                             class="icon_sty"
                         >
-                            <img :src="item.src" width="48" alt="">
+                            <img :src="item.src" width="48" alt="avatar">
                         </a-avatar>
                     </a-tooltip>
                     <a-avatar 
@@ -30,7 +30,7 @@
                         shape="square"
                         class="icon_sty"
                     >
-                        <img :src="item.src" width="48" alt="">
+                        <img :src="item.src" width="48" alt="avatar">
                     </a-avatar>
                 </div>
                 <h6>{{ item.name }}</h6>

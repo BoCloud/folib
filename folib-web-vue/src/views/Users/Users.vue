@@ -28,7 +28,7 @@
               <a-row :gutter="[24, 24]">
                 <a-col :span="24" :md="8">
                   <a-card class="payment-method-card">
-                    <img src="images/folib/userAdmin.svg" alt="">
+                    <img src="images/folib/userAdmin.svg" alt="userAdmin">
                     <div v-if="currentUser"  class="en-number">
                       <textOver
                           :text="$t('Users.TotalNumberOfUsers')"
@@ -42,7 +42,7 @@
                 </a-col>
                 <a-col :span="24" :md="8">
                   <a-card class="payment-method-card">
-                    <img src="images/folib/userAdmin.svg" alt="">
+                    <img src="images/folib/userAdmin.svg" alt="userAdmin">
                     <div v-if="currentUser"  class="en-number">
                       <textOver
                           :text="$t('Users.NumberOfAdministrators')"
@@ -56,7 +56,7 @@
                 </a-col>
                 <a-col :span="24" :md="8">
                   <a-card class="payment-method-card">
-                    <img src="images/folib/userAdmin.svg" alt="">
+                    <img src="images/folib/userAdmin.svg" alt="userAdmin">
                     <div v-if="currentUser" class="en-number">
                       <textOver
                           :text="$t('Users.NumberOfAnonymousUsers')"

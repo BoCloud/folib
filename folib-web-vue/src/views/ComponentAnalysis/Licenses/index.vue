@@ -35,14 +35,14 @@
                             @confirm="addBlackWhite(record, 'WHITES')"
                             v-if="operatorEnabled && record.blackWhiteType == 0">
                 <div class="o-btn">
-                  <img src="images/folib/white.svg" />
+                  <img src="images/folib/white.svg" alt="white"/>
                 </div>
               </a-popconfirm>
               <a-popconfirm :title="$t('Vulnerabilities.SureRemovedWhitelist')" okType="danger" :ok-text="$t('Vulnerabilities.BeSure')" :cancel-text="$t('Vulnerabilities.Cancel')"
                             @confirm="removeBlackWhite(record, 'WHITES')"
                             v-if="operatorEnabled && record.blackWhiteType == 1">
                 <div class="o-btn o-rm">
-                  <img src="images/folib/white.svg" />
+                  <img src="images/folib/white.svg" alt="white"/>
                 </div>
               </a-popconfirm>
             </a-tooltip>
@@ -54,14 +54,14 @@
                             @confirm="addBlackWhite(record, 'BLACKLIST')"
                             v-if="operatorEnabled && record.blackWhiteType == 0">
                 <div class="o-btn o-black">
-                  <img src="images/folib/black.svg" />
+                  <img src="images/folib/black.svg" alt="black"/>
                 </div>
               </a-popconfirm>
               <a-popconfirm :title="$t('Vulnerabilities.SureRemovedBlacklisted')" okType="danger" :ok-text="$t('Vulnerabilities.BeSure')" :cancel-text="$t('Vulnerabilities.Cancel')"
                             @confirm="removeBlackWhite(record, 'BLACKLIST')"
                             v-if="operatorEnabled && record.blackWhiteType == 2">
                 <div class="o-btn o-rm">
-                  <img src="images/folib/black.svg" />
+                  <img src="images/folib/black.svg" alt="black"/>
                 </div>
               </a-popconfirm>
             </a-tooltip>

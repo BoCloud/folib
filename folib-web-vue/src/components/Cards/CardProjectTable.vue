@@ -27,7 +27,7 @@
 
 			<template slot="company" slot-scope="company">
 				<h6 class="m-0">
-					<img :src="company.logo" width="25" class="mr-10">
+					<img :src="company.logo" width="25" class="mr-10" alt="logo">
 					{{ company.name }}
 				</h6>
 			</template>

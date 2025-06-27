@@ -366,9 +366,6 @@ export default {
         formatTimestamp,
         tabChange(activeKey) {
             this.tabActiveKey = activeKey;
-            if (activeKey == 2) {
-                         
-            }
         },
         handleChange(value) {
             getProjectsList({searchText: value, excludeInactive: true}).then((res) => {
@@ -400,7 +397,7 @@ export default {
                         swidTagId: this.addForm2.swidTagId
                     }
                     addProject(params).then((res) => {
-                        console.log(res)
+                        // console.log(res)
                         this.getData()
                         this.$notification.success({
                             message: "新增成功",

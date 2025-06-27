@@ -115,9 +115,9 @@ export default {
       getAllowAnonymous().then(res => {
         this.allowAnonymous = res
         let login = isLogin()
-        console.log("isLogin: " + login)
+        // console.log("isLogin: " + login)
         if(!login &&!this.allowAnonymous) {
-          console.log("allowAnonymous: " + this.allowAnonymous + " to /login")
+          // console.log("allowAnonymous: " + this.allowAnonymous + " to /login")
           this.$router.push('/login')
         }
       })

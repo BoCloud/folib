@@ -195,7 +195,7 @@ export default {
         }
       }).catch((err) => {
         let msg = err.response.data.error ? err.response.data.error : err.response.data
-        console.log('upload error：', msg)
+        // console.log('upload error：', msg)
         let errStatusArr = [200, 500, 403, 304, 401]
         if (!errStatusArr.includes(err.response.status)) {
           this.message(err.response.status, "error", "err code:" + err.response.status)
@@ -232,7 +232,7 @@ export default {
       }).catch((err) => {
         // this.loading = true
         let msg = err.response.data.error ? err.response.data.error : err.response.data
-        console.log('upload error：', msg)
+        // console.log('upload error：', msg)
         this.message(err.response.status, "error", msg)
       }).finally(() => {
         this.loading = false

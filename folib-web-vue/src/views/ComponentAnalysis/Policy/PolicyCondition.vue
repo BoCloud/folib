@@ -50,7 +50,7 @@ export default {
     condition: Object,
   },
   created() {
-    console.log(this.condition);
+    // console.log(this.condition);
     if (this.condition) {
       this.subject = this.condition.subject;
       this.subjectChanged();
@@ -157,7 +157,7 @@ export default {
   beforeMount() {
     if (this.subject === "COORDINATES") {
       let v = JSON.parse(this.value);
-      console.log(v);
+      // console.log(v);
 
       if (v) {
         this.coordinatesGroup = v.group;

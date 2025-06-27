@@ -20,7 +20,7 @@
 			</a-space>
 
 			<template slot="flag" slot-scope="flag">
-				<img :src="flag" width="25">
+				<img :src="flag" width="25" alt="flag">
 			</template>
 
 			<template slot="country" slot-scope="country">

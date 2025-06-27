@@ -137,7 +137,6 @@ public class DockerArtifactController extends BaseArtifactController {
      * @throws Exception
      */
     @ApiOperation(value = "v2")
-    @PreAuthorize("isAuthenticated()")
     @RequestMapping(value = {"/v2/"}, method = {RequestMethod.GET})
     public ResponseEntity v2(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization,
                              @RequestHeader HttpHeaders httpHeaders,

@@ -376,7 +376,6 @@ export default {
       }
     }
     const eventsValidator = (rule, value, callBack) => {
-      console.log(value, 1)
       if (!value.length) {
           callBack(this.$t('Setting.selectATriggerEvent'))
       } else {
@@ -785,7 +784,7 @@ export default {
         try {
           response = JSON.stringify(JSON.parse(this.webhookLogInfo.response), null, '\t')
         } catch (e){
-          console.log('不是JSON格式');
+          // console.log('不是JSON格式');
         }
         this.webhookLogInfo.response = response
       }

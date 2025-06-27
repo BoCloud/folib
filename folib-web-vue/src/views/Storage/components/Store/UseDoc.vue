@@ -540,7 +540,7 @@
           ></prism-editor>
           <p>
             {{ $t('Store.HelmCommand') }}
-            <a href="https://docs.conan.io/en/latest/reference/commands.html" target="_blank">https://docs.conan.io/en/latest/reference/commands.html</a>
+            <a href="https://docs.conan.io/en/latest/reference/commands.html" target="_blank" rel="noopenner noreferrer">https://docs.conan.io/en/latest/reference/commands.html</a>
           </p>
         </a-timeline-item>
       </a-timeline>
@@ -904,7 +904,7 @@
           {{ $t('Store.CommandOperation') }}
           <small>composer {{ $t('Store.UsuallyCommand') }}</small>
           <p>
-            {{ $t('Store.UsuallyUse') }}composer{{ $t('Store.specificRefer') }} <a target="_blank" href="https://getcomposer.org/doc/03-cli.md">https://getcomposer.org/doc/03-cli.md</a>
+            {{ $t('Store.UsuallyUse') }}composer{{ $t('Store.specificRefer') }} <a target="_blank" rel="noopenner noreferrer" href="https://getcomposer.org/doc/03-cli.md">https://getcomposer.org/doc/03-cli.md</a>
           </p>
 
           <prism-editor class="my-editor height-300" :value="'composer init\n' +
@@ -1449,8 +1449,8 @@ export default {
     };
   },
   created() {
-      console.log("repositoryType",this.repositoryType )
-      console.log("folibRepository",this.folibRepository )
+      // console.log("repositoryType",this.repositoryType )
+      // console.log("folibRepository",this.folibRepository )
     if (this.baseUrl) {
       this.repositoryUrl = this.baseUrl + 'storages/' + this.folibRepository.storageId + '/' + this.folibRepository.id
       if (this.repositoryType && this.repositoryType === 'docker') {

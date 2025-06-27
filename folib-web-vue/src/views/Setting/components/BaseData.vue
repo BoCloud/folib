@@ -6,7 +6,7 @@
           <a-statistic :value="monitorData.folibFilenOpen">
             <template #title>
               <div class="icon">
-                <img src="images/folib/process-files-open.svg" alt="" />
+                <img src="images/folib/process-files-open.svg" alt="files" />
               </div>
               <h6>{{ $t('Setting.handleCase') }}</h6>
               <p>{{ $t('Setting.maximumSystemHandle') }}: {{ monitorData.fileOpenMax }}</p>
@@ -19,7 +19,7 @@
           <a-statistic :value="monitorData.diskfree">
             <template #title>
               <div class="icon">
-                <img src="images/folib/disk.svg" alt="" />
+                <img src="images/folib/disk.svg" alt="disk" />
               </div>
               <h6>{{ $t('Setting.StorageSize') }}</h6>
               <p>{{ $t('Setting.MaximumSystemSpace') }}: {{ monitorData.disktotal | filterTwoNum }}</p>
@@ -32,7 +32,7 @@
           <a-statistic :value="fileSizeConver(monitorData.jvmCommitted)">
             <template #title>
               <div class="icon">
-                <img src="images/folib/jvmCommitted.svg" alt="" />
+                <img src="images/folib/jvmCommitted.svg" alt="jvmCommitted" />
               </div>
               <h6>{{ $t('Setting.AvailableMemory') }}</h6>
               <p>{{ $t('Setting.availableJVM') }}</p>
@@ -45,7 +45,7 @@
           <a-statistic :value="monitorData.jettyCurrent">
             <template #title>
               <div class="icon">
-                <img src="images/folib/jetty.svg" alt="" />
+                <img src="images/folib/jetty.svg" alt="jetty" />
               </div>
               <h6>{{ $t('Setting.NumberOfThreads') }}</h6>
               <p>{{ $t('Setting.currentProgramNum') }}</p>
@@ -58,7 +58,7 @@
           <a-statistic :value="monitorData.loadAverage">
             <template #title>
               <div class="icon">
-                <img src="images/folib/loadAverage.svg" alt="" />
+                <img src="images/folib/loadAverage.svg" alt="loadAverage" />
               </div>
               <h6>{{ $t('Setting.SystemLoad') }}</h6>
               <p>{{ $t('Setting.CurrentSystemLoadEstimate') }}</p>
@@ -71,7 +71,7 @@
           <a-statistic :value="monitorData.gcpause.count + 's'">
             <template #title>
               <div class="icon">
-                <img src="images/folib/gc.svg" alt="" />
+                <img src="images/folib/gc.svg" alt="gc" />
               </div>
               <h6>GC{{ $t('Setting.TimeConsuming') }}</h6>
               <p>{{ $t('Setting.ExecutionTime') }}: {{ monitorData.gcpause.total | filterTwoNum }}s</p>

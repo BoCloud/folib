@@ -25,21 +25,21 @@ const store = new Vuex.Store({
   mutations: {
     setNewDetailPage(state, key) {
       state.newDetailPage = key
-      console.log(state.newDetailPage, 'state.newDetailPage')
+      // console.log(state.newDetailPage, 'state.newDetailPage')
     },
     setCurrentTreeNode(state, info) {
       state.currentTreeNode = info
-      console.log(state.currentTreeNode, 'state.currentTreeNode')
+      // console.log(state.currentTreeNode, 'state.currentTreeNode')
     },
     // 切换制品仓库页面展示模式
     setIsChecked(state, key) {
       state.isChecked = key
-      console.log(state.isChecked, 'state.setIsChecked')
+      // console.log(state.isChecked, 'state.setIsChecked')
     },
     // 控制顶部切换模式按钮不可点击，需等列表接口加载完之后才可点击
     setSwitchDisabled(state, key) {
       state.switchDisabled = key
-      console.log(state.switchDisabled, 'state.switchDisabled')
+      // console.log(state.switchDisabled, 'state.switchDisabled')
     },
     // 设置仓库列表长度
     setRepositoryLength(state, val) {

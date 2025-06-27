@@ -213,7 +213,7 @@
 					description:
 					'This is the content of the notification. This is the content of the notification. This is the content of the notification.',
 					onClick: () => {
-						console.log('Notification Clicked!');
+						// console.log('Notification Clicked!');
 					},
 				});
 			},
@@ -265,9 +265,9 @@
 			openCustomCloseButtonNotification() {
 
 				const close = () => {
-					console.log(
-						'Notification was closed. Either the close button was clicked or duration time elapsed.',
-					);
+					// console.log(
+					// 	'Notification was closed. Either the close button was clicked or duration time elapsed.',
+					// );
 				};
 
 				const key = `open${Date.now()}`;

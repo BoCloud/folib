@@ -12,8 +12,6 @@ import exportExcel from './exportExcel.js'
 import scrollable from './directives/scrollable.js'
 import getPopupContainer from './directives/getPopupContainer.js';
 
-console.log(exportExcel);
-
 Vue.prototype.$exportExcel = exportExcel
 Vue.use(Antd)
 

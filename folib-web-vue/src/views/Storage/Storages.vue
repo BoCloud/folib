@@ -59,10 +59,10 @@
                     </a> -->
                     <div class="switch_mode">
                     <div @click="checkMode(false)" class="img-sty" :class="isChecked ? '' : 'isActive'">
-                      <img src="./images/list.svg" width="20" alt="">
+                      <img src="./images/list.svg" width="20" alt="list">
                     </div>
                     <div @click="checkMode(true)" class="img-sty" :class="isChecked ? 'isActive' : ''">
-                      <img src="./images/tree.svg" width="20" alt="">
+                      <img src="./images/tree.svg" width="20" alt="tree">
                     </div>
                     <div :style="switchDisabled || !storageData || !storageData.length ?'display:block;':'display:none;'" class="disabled_sty"></div>
                   </div>
@@ -1637,7 +1637,7 @@ export default {
       })
     },
     onExpand() {
-      console.log('Trigger Expand');
+      // console.log('Trigger Expand');
     },
     handheTableSearch(val,type,queryParams){
       this.repositories = []
@@ -1995,7 +1995,7 @@ export default {
       if(total !== this.queryParams.total && !this.$refs.repositoryTree.loadingMore){
         this.$refs.repositoryTree.loadingMoreShow(true)
         this.queryParams.page ++
-        console.log('滚动加载...')
+        // console.log('滚动加载...')
         const params = {
           storageId: this.currentStorage.id,
           layout: this.queryParams.layout,
@@ -2727,7 +2727,7 @@ export default {
       this.folibRepository.repositoryConfiguration.gitVCS.splice(index, 1);
     },
       handleStepChange(){
-        console.log("step:",this.step)
+        // console.log("step:",this.step)
       },
       scopeChange (e) {
           this.userReset()

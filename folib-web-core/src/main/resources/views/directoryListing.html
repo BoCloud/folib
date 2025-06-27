@@ -1,0 +1,69 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Folib</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <base th:href="${currentUrl + '/'}"/>
+    <style type="text/css">
+        body {
+            font-family: "Open Sans", "Trebuchet MS", verdana, lucida, arial, helvetica, sans-serif;
+        }
+
+        table {
+            padding-left: 5px;
+        }
+
+        table thead th,
+        table tbody td {
+            padding: 0px 30px 0px 0px;
+            vertical-align: middle;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+<h1 th:text="'FOLIB Index of ' + ${currentUrl} + '/'">FOLIB Index</h1>
+
+<table>
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Last modified</th>
+        <th>Size</th>
+        <th>Description</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:if="${showBack == null or showBack}">
+        <td colspan="4">
+            <a href="../">..</a>
+        </td>
+    </tr>
+
+    <tr th:each="directory : ${directories}">
+        <td>
+            <a th:href="@{${directory.name + '/'}}" th:text="${directory.name + '/'}"></a>
+        </td>
+        <td th:text='${#strings.isEmpty(directory.lastModified) ? "-" : directory.lastModified}'></td>
+        <td th:text='${directory.size != null ? directory.size : "-"}'></td>
+        <td th:text='${directory.description != null ? directory.description : "-"}'></td>
+
+
+    </tr>
+
+    <tr th:each="file : ${files}">
+        <td>
+            <a class="file file-icon" th:href="@{${file.name}}"
+               th:text="${file.name}"></a>
+        </td>
+        <!-- 使用安全导航和空值处理 -->
+        <td th:text="${file?.lastModified} ?: '-'">-</td>
+        <td th:text="${file?.size} ?: '-'">-</td>
+        <td th:text="${file?.description} ?: '-'">-</td>
+    </tr>
+    </tbody>
+</table>
+
+</body>
+</html>

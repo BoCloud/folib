@@ -603,7 +603,7 @@ export default {
       }
     },
     successMsg(message) {
-      console.log(message, '--------')
+      // console.log(message, '--------')
       if (!message) {
         message = this.$t('Storage.OperationSuccessful');
       }

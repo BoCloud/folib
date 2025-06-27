@@ -600,7 +600,6 @@ export default {
 
                     this.barChartData.labels.push(item.repositoryId)
                     this.barChartData.datasets[0].data.push(item.fileSize)
-                    console.log("barChartData", this.barChartData)
                 })
                 if (this.$refs.volFolib) {
                     this.$refs.volFolib.buildData()

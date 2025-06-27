@@ -95,7 +95,7 @@
       </a-row>
       <div v-if="showBtn" class="export_excel_sty" :title="$t('Artifacts.exportPdf')" @click="exportPdf"> 
         <a-spin :spinning="confirmLoading">
-          <img src="./export-pdf.svg" width="25" />
+          <img src="./export-pdf.svg" width="25" alt="pdf"/>
         </a-spin>
       </div>
     </a-card>

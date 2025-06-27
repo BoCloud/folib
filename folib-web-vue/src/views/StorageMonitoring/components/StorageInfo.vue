@@ -51,7 +51,7 @@
 			<template slot="repositoryLayout" slot-scope="repositoryLayout, row">
 				<span v-if="repositoryLayout">
 					<a-avatar :size="48" shape="square" class="icon_sty">
-						<img :src="'images/folib/' + getLayoutType({ layout: row.repositoryLayout, subLayout: row.repositorySubLayout }) + '.svg'" width="36" alt="">
+						<img :src="'images/folib/' + getLayoutType({ layout: row.repositoryLayout, subLayout: row.repositorySubLayout }) + '.svg'" width="36" alt="type">
 					</a-avatar>
 					<span class="ml-10">{{ showLayout(row.repositorySubLayout) }}</span>
 				</span>

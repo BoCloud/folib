@@ -118,8 +118,8 @@ export default {
                     const params = {
                         ...values
                     }
-                    console.log("params", params);
-                    console.log("projectData",     this.projectData);
+                    // console.log("params", params);
+                    // console.log("projectData",     this.projectData);
                     const data = {
                         "project": this.projectData.uuid,
                         "version": params.version,

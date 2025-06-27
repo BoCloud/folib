@@ -151,22 +151,23 @@
                                 allowClear
                                 option-label-prop="label"
                             >
-                                <a-select-option
-                                    v-for="(item,index) in typeList"
-                                    :key="index"
-                                    :value="item.type"
-                                    :label="item.name"
-                                    v-if="!item.disabled"
-                                >
-                                    <div class="option_style_item">
-                                        <div class="image_item">
-                                            <img :src="item.src" style="width: 100%;" alt="">  
+                                <template v-for="(item,index) in typeList">
+                                    <a-select-option
+                                        :key="index"
+                                        :value="item.type"
+                                        :label="item.name"
+                                        v-if="!item.disabled"
+                                    >
+                                        <div class="option_style_item">
+                                            <div class="image_item">
+                                                <img :src="item.src" style="width: 100%;" alt="type">
+                                            </div>
+                                            <div>
+                                                {{ item.name }}
+                                            </div>
                                         </div>
-                                        <div>
-                                            {{ item.name }}
-                                        </div>
-                                    </div>
-                                </a-select-option>
+                                    </a-select-option>
+                                </template>
                             </a-select>
                         </a-form-item>
                         <a-form-item>
@@ -183,7 +184,7 @@
                                 <a-select-option value="hosted" :label="$t('Storage.Local')">
                                     <div style="width:100%;display: flex;justify-content: space-between;align-items: center;">
                                         <div class="img-back-sty">
-                                            <img src="./images/local.svg" style="width: 100%;" alt="">
+                                            <img src="./images/local.svg" style="width: 100%;" alt="local">
                                         </div>
                                         {{ $t('Storage.Local') }}
                                     </div>
@@ -191,7 +192,7 @@
                                 <a-select-option value="proxy" :label="$t('Storage.Agent')">
                                     <div style="width:100%;display: flex;justify-content: space-between;align-items: center;">
                                         <div class="img-back-sty">
-                                            <img src="./images/remote.svg" style="width: 100%;" alt="">
+                                            <img src="./images/remote.svg" style="width: 100%;" alt="remote">
                                         </div>        
                                         {{ $t('Storage.Agent') }}
                                     </div>
@@ -199,7 +200,7 @@
                                 <a-select-option value="group" :label="$t('Storage.Combination')">
                                     <div style="width:100%;display: flex;justify-content: space-between;align-items: center;">
                                         <div class="img-back-sty">
-                                            <img src="./images/virtual.svg" style="width: 100%;" alt="">
+                                            <img src="./images/virtual.svg" style="width: 100%;" alt="virtual">
                                         </div>   
                                         {{ $t('Storage.Combination') }}
                                     </div>
