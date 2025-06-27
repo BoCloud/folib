@@ -39,10 +39,8 @@ import java.util.List;
 
 /***
  *
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/8/2 14:58
- * @since x.x.x
  */
 @RestController
 @LayoutRequestMapping(CocoapodsArtifactCoordinates.LAYOUT_NAME)

@@ -5,7 +5,7 @@ import com.veadan.folib.entity.AuditEvent;
 import java.util.List;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-08-13 16:54
  */
 public interface AuditEventService {

@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 @JsonRootName("artifacts")
 public class SearchResults

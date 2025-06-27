@@ -16,7 +16,7 @@ import java.io.Serializable;
 import java.util.*;
 
 /**
- * @author mtodorov
+ * @author veadan
  * @author Veadan
  * @author veadan
  */

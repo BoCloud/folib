@@ -38,7 +38,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * @author stodorov
- * @author mtodorov
+ * @author veadan
  */
 @Component
 public class ArtifactMetadataServiceImpl

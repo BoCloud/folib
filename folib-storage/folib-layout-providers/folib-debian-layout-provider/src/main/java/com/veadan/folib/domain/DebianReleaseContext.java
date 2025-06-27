@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-09-04 16:37
  */
 public class DebianReleaseContext {

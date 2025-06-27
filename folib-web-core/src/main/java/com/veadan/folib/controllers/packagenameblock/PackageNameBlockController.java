@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.inject.Inject;
 
 /**
- * @author leipenghui
+ * @author veadan
  */
 @RestController
 @RequestMapping("/api/packageNameBlock")

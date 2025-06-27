@@ -14,10 +14,8 @@ import javax.inject.Inject;
 
 /**
  *
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/9/6 23:58
- * @since x.x.x
  */
 @Component
 public class CocoapodsDependencyFormatter

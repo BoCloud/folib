@@ -1,7 +1,7 @@
 package com.veadan.folib.model;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2024/7/3
  **/
 

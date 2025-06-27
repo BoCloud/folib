@@ -10,7 +10,7 @@ import java.io.Serializable;
 /**
  * 组件图谱vo
  *
- * @author leipenghui
+ * @author veadan
  **/
 @Data
 @Builder

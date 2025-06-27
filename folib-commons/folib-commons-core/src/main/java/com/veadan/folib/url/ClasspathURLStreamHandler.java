@@ -6,7 +6,7 @@ import java.net.URLConnection;
 import java.net.URLStreamHandler;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public class ClasspathURLStreamHandler extends URLStreamHandler
 {

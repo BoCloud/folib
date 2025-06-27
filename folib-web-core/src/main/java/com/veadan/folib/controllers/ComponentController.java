@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.inject.Inject;
 
 /**
- * @author leipenghui
+ * @author veadan
  */
 @RestController
 @RequestMapping("/api/component")

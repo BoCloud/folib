@@ -3,7 +3,7 @@ package com.veadan.folib.interceptor;
 import com.veadan.folib.providers.io.RepositoryPath;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2025-03-07 17:04
  */
 public interface GroupInterceptor {

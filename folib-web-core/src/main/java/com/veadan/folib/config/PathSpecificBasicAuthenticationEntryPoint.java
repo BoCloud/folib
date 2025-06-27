@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2025-03-12 08:42
  */
 public class PathSpecificBasicAuthenticationEntryPoint extends BasicAuthenticationEntryPoint {

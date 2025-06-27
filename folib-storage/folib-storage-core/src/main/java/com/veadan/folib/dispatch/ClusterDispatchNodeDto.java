@@ -10,7 +10,7 @@ import java.io.Serializable;
 /**
  * 制品节点分发实体
  *
- * @author qijianping
+ * @author veadan
  */
 @Data
 @AllArgsConstructor

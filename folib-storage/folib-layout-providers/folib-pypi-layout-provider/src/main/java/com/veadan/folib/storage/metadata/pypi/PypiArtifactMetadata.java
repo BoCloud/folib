@@ -1,7 +1,7 @@
 package com.veadan.folib.storage.metadata.pypi;
 
 /**
- * @author ankit.tomar
+ * @author veadan
  */
 public class PypiArtifactMetadata
 {

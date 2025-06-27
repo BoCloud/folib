@@ -3,7 +3,7 @@ package com.veadan.folib.commons.encryption;
 import java.io.IOException;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public enum EncryptionAlgorithmsEnum
 {

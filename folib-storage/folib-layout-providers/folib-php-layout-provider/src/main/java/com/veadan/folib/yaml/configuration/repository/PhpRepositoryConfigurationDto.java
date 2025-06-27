@@ -6,7 +6,7 @@ import com.veadan.folib.yaml.repository.CustomRepositoryConfiguration;
 import com.veadan.folib.yaml.repository.CustomRepositoryConfigurationDto;
 
 /**
- * @author leipenghui
+ * @author veadan
  */
 @JsonTypeName(PhpLayoutProvider.ALIAS)
 public class PhpRepositoryConfigurationDto

@@ -8,10 +8,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/11/13 14:11
- * @since x.x.x
  */
 @Slf4j
 public abstract class FolibWsRunManage {

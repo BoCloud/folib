@@ -16,7 +16,7 @@ import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.springframework.stereotype.Component;
 
 /**
- * @author ankit.tomar
+ * @author veadan
  */
 @Component
 public class SecurityRoleAdapter implements VertexEntityTraversalAdapter<SecurityRole>

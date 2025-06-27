@@ -25,7 +25,7 @@ import com.veadan.folib.db.schema.Edges;
 /**
  * Adapts hierarchical entities to the Graph structure. 
  * 
- * @author xuxinping
+ * @author veadan
  */
 public abstract class EntityUpwardHierarchyAdapter<E extends DomainObject & EntityHierarchyNode,
                                                    A extends EntityUpwardHierarchyNodeAdapter<E>>

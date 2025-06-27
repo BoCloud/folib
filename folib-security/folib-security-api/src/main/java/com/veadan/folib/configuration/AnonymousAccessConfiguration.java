@@ -6,7 +6,7 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 @XmlRootElement(name = "anonymous-access")
 @XmlAccessorType(XmlAccessType.FIELD)

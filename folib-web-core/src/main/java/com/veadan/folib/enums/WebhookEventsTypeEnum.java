@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 /**
  * 制品同步
  *
- * @author leipenghui
+ * @author veadan
  */
 @AllArgsConstructor
 @NoArgsConstructor

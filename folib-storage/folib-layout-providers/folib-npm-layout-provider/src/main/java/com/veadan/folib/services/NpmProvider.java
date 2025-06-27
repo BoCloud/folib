@@ -5,7 +5,7 @@ import com.veadan.folib.npm.metadata.PackageVersion;
 import com.veadan.folib.storage.repository.Repository;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 public interface NpmProvider {
 

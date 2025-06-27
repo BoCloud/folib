@@ -3,7 +3,7 @@ package com.veadan.folib.job.event.cron;
 import com.veadan.folib.event.Event;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public class CronTaskEvent
         extends Event

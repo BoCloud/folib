@@ -9,7 +9,7 @@ import com.veadan.folib.aql.grammar.AQLParser.QueryExpContext;
 import com.veadan.folib.domain.ArtifactEntity;
 
 /**
- * @author xuxinping
+ * @author veadan
  *
  */
 public class AqlStatementVisitor extends AQLBaseVisitor<Selector<ArtifactEntity>>

@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 /**
  * This utility class contains common methods to work with {@link RepositoryPath}
  *
- * @author xuxinping
+ * @author veadan
  * @see RepositoryPath
  * @see Files
  */

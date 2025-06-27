@@ -67,7 +67,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 @Component
 public class ArtifactManagementService {

@@ -5,7 +5,7 @@ import com.veadan.folib.domain.DebianMetadata;
 import com.veadan.folib.storage.repository.Repository;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-09-03 17:31
  */
 public interface DebianPackagesMetadataCache {

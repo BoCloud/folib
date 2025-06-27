@@ -6,7 +6,7 @@ import lombok.Data;
 import java.util.Date;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-08-20 14:24
  */
 @Data

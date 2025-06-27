@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
- * @author leipenghui
+ * @author veadan
  */
 @Component
 public interface BlockStrategyInfoMapper extends BaseMapper<BlockStrategyInfo> {

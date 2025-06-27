@@ -8,7 +8,7 @@ import javax.ws.rs.client.ClientResponseFilter;
 import java.io.IOException;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2025/2/11
  **/
 public class ContentTypeFixerFilter implements ClientResponseFilter {

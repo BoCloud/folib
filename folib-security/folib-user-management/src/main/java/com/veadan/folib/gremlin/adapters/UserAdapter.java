@@ -24,7 +24,7 @@ import static com.veadan.folib.gremlin.dsl.EntityTraversalUtils.*;
 import static org.apache.tinkerpop.gremlin.structure.VertexProperty.Cardinality.single;
 
 /**
- * @author xuxinping
+ * @author veadan
  */
 @Component
 public class UserAdapter implements VertexEntityTraversalAdapter<User> {

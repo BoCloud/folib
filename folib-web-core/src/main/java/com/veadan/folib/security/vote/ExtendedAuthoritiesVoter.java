@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
 import static com.veadan.folib.web.Constants.*;
 
 /**
- * @author xuxinping
+ * @author veadan
  */
 @Component
 public class ExtendedAuthoritiesVoter extends PreInvocationAuthorizationAdviceVoter {

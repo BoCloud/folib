@@ -11,7 +11,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 @Data
 @Builder

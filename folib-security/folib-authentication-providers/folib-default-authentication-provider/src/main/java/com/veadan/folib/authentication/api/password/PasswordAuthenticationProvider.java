@@ -25,7 +25,7 @@ import java.util.Optional;
 
 /**
  * @author veadan
- * @author xuxinping
+ * @author veadan
  */
 public class PasswordAuthenticationProvider extends DaoAuthenticationProvider {
 

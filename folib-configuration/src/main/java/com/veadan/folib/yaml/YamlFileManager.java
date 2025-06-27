@@ -31,8 +31,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * @author veadan
- * @author Veadan
- * @author cbono
+ *
  */
 public abstract class YamlFileManager<T> {
     private final Logger logger = LoggerFactory.getLogger(getClass());

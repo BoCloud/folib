@@ -19,7 +19,7 @@ import java.nio.charset.Charset;
 import java.util.*;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 @Slf4j
 public class TranslateUtil {

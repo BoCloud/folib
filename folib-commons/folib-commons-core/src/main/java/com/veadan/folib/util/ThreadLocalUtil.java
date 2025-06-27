@@ -5,10 +5,8 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/12/5 21:36
- * @since x.x.x
  */
 public class ThreadLocalUtil {
     private static final ThreadLocal<Map<String, Object>> THREAD_LOCAL = new ThreadLocal<>();

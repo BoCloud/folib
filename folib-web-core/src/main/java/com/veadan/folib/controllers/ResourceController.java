@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * @author Fengmaogen
+ * @author veadan
  */
 @RestController
 @RequestMapping("/api/resource")

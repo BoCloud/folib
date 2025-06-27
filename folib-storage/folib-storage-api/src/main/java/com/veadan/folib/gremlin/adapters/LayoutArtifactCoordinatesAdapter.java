@@ -13,7 +13,7 @@ import com.veadan.folib.artifact.coordinates.GenericArtifactCoordinates;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
 
 /**
- * @author xuxinping
+ * @author veadan
  */
 public abstract class LayoutArtifactCoordinatesAdapter<C extends LayoutArtifactCoordinatesEntity<C, V>, V extends Comparable<V>>
         implements VertexEntityTraversalAdapter<GenericArtifactCoordinates>, ArtifactCoodrinatesNodeAdapter

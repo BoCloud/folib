@@ -10,7 +10,7 @@ import javax.annotation.concurrent.Immutable;
 import java.io.Serializable;
 
 /**
- * @author leipenghui
+ * @author veadan
  */
 @Immutable
 @Data

@@ -7,7 +7,7 @@ import com.veadan.folib.dto.vulnerability.AffectedArtifactsDto;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2023/5/24
  **/
 public interface ComponentService {

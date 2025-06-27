@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @author Kate Novik.
+ * @author veadan
  */
 public class ArtifactLocationGenerateChecksumOperation
         extends AbstractArtifactLocationHandler

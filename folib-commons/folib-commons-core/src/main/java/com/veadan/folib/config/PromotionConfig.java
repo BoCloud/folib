@@ -8,7 +8,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import javax.annotation.PostConstruct;
 
 /**
- * @author pengYongQiang
+ * @author veadan
  * @date 2024/2/21 18:56
  */
 @ConfigurationProperties(prefix = "folib.promotion")

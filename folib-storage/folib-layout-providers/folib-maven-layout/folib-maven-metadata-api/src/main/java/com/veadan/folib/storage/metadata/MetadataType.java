@@ -1,7 +1,7 @@
 package com.veadan.folib.storage.metadata;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public enum MetadataType
 {

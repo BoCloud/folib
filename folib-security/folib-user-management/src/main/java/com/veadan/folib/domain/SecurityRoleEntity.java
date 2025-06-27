@@ -10,7 +10,7 @@ import org.neo4j.ogm.annotation.NodeEntity;
 import static com.veadan.folib.db.schema.Vertices.SECURITY_ROLE;
 
 /**
- * @author ankit.tomar
+ * @author veadan
  */
 @NodeEntity(SECURITY_ROLE)
 @Data

@@ -21,6 +21,14 @@
         <connection>scm:git:git://git.folib.com/folib/folib-server.git</connection>
         <developerConnection>scm:git:git://git.folib.com/folib/folib-server.git</developerConnection>
     </scm>
+    <licenses>
+        <license>
+             <name>Mulan Public License, Version 2</name>
+             <url>https://license.coscl.org.cn/MulanPubL-2.0</url>
+            <distribution>repo</distribution>
+            <comments>Mulan PubL v2 is a copyleft license with terms on code disclosure and attribution. Approved by OSI.</comments>
+        </license>
+    </licenses>
 
     <dependencies>
         <dependency>
@@ -30,7 +38,7 @@
         <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
-            <version>3.0.2</version> <!-- Spring Boot 3.2.x 默认管理此版本 -->
+            <version>3.0.2</version>
         </dependency>
 
         <dependency>
@@ -84,6 +92,4 @@
             <version>${project.version}</version>
         </dependency>
     </dependencies>
-
-
 </project>

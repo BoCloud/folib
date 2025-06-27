@@ -37,10 +37,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/12/6 13:23
- * @since x.x.x
  */
 public class ClearArtifactSyncRecordCronTask extends JavaCronJob {
     private static final String PROPERTY_STORAGE_ID = "storageId";

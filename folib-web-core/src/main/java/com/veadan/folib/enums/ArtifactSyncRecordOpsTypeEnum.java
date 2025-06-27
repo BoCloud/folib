@@ -2,10 +2,8 @@ package com.veadan.folib.enums;
 
 /**
  * 制品同步记录-操作类型
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/10/10 14:32
- * @since x.x.x
  */
 public enum ArtifactSyncRecordOpsTypeEnum 
 {

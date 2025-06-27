@@ -3,7 +3,7 @@ package com.veadan.folib.services;
 import com.veadan.folib.storage.repository.Repository;
 
 /**
- * @author leipenghui
+ * @author veadan
  */
 public interface MavenIndexerService {
 

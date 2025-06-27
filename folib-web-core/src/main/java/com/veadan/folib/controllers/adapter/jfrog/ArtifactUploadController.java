@@ -37,7 +37,7 @@ import java.nio.file.Files;
 import java.util.*;
 
 /**
- * @author leipenghui
+ * @author veadan
  */
 @Slf4j
 @RequestMapping("/artifactory")

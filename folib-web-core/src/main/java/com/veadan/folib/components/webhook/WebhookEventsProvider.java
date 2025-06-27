@@ -6,7 +6,7 @@ import com.veadan.folib.entity.Dict;
 import com.veadan.folib.providers.io.RepositoryPath;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 public interface WebhookEventsProvider {
 

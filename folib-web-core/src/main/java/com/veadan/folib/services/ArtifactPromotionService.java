@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * 制品晋级service
  *
- * @author qijianping
+ * @author veadan
  */
 public interface ArtifactPromotionService {
 
@@ -101,7 +101,6 @@ public interface ArtifactPromotionService {
      * @param nodeMark
      * @param response
      * @return
-     * @since x.x.x
      */
     Boolean speedLimitDownload(Repository repository, String artifactPath, String nodeMark, HttpServletResponse response);
 
@@ -114,7 +113,6 @@ public interface ArtifactPromotionService {
      * @param startDownloadIndex
      * @param readLength
      * @param response
-     * @since x.x.x
      */
     Boolean speedLimitSliceDownload(Repository repository, String artifactPath, String nodeMark, String artifactMd5, Long startDownloadIndex, Long readLength, HttpServletResponse response);
     
@@ -142,7 +140,6 @@ public interface ArtifactPromotionService {
      * 查询制品下载信息
      * @param model
      * @return
-     * @since x.x.x
      */
     ArtifactSliceDownloadInfoRes querySliceDownloadInfo(ArtifactSliceDownloadInfoReq model);
     
@@ -152,7 +149,6 @@ public interface ArtifactPromotionService {
     /**
      * 查询文件切片预信息
      * @return
-     * @since x.x.x
      */
     ArtifactSliceUploadInfoRes querySliceUploadInfo();
 
@@ -161,7 +157,6 @@ public interface ArtifactPromotionService {
      *
      * @param model
      * @return
-     * @since x.x.x
      */
     Boolean sliceUpload(ArtifactSliceUploadReq model);
 
@@ -170,7 +165,6 @@ public interface ArtifactPromotionService {
      *
      * @param model
      * @return
-     * @since x.x.x
      */
     Boolean sliceUpload(ArtifactSliceUploadReq model, String metaDataMap);
 

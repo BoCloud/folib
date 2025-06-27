@@ -15,7 +15,7 @@ import org.folib.db.server.JanusGraphProperties;
 import org.folib.db.server.JanusGraphServer;
 
 /**
- * @author xuxinping
+ * @author veadan
  */
 @Configuration
 @Conditional(InMemoryDbServerConfiguration.class)

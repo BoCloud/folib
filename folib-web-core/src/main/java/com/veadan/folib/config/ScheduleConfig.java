@@ -10,7 +10,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2024/3/11
  **/
 @Configuration

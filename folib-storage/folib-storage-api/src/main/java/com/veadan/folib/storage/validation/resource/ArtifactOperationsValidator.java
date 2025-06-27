@@ -45,7 +45,7 @@ import java.util.Collections;
 import java.util.Objects;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 @Slf4j
 @Component("artifactOperationsValidator")

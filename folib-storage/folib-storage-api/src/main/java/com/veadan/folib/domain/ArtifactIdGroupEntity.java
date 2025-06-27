@@ -12,7 +12,7 @@ import org.neo4j.ogm.annotation.Relationship;
 
 /**
  * @author veadan
- * @author xuxinping
+ * @author veadan
  */
 @NodeEntity(Vertices.ARTIFACT_ID_GROUP)
 public class ArtifactIdGroupEntity extends DomainEntity implements ArtifactIdGroup

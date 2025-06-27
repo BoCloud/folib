@@ -26,7 +26,7 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author xuxinping
+ * @author veadan
  */
 public class RepositoryStreamSupport {
 

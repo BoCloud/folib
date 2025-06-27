@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 @Slf4j
 public class RebuildPubMetadataCronJob extends JavaCronJob {

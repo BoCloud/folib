@@ -7,7 +7,7 @@ import com.veadan.folib.scanner.service.ScanService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 public class ArtifactScanCronJob extends JavaCronJob {
 

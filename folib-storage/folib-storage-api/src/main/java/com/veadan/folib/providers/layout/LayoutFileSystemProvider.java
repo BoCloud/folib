@@ -55,7 +55,7 @@ import java.util.*;
  * This class decorates {@link StorageFileSystemProvider} with common layout specific
  * logic. <br>
  *
- * @author xuxinping
+ * @author veadan
  * @see LayoutProvider
  */
 public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider {

@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * @author Kate Novik.
+ * @author veadan
  */
 public interface JobManager
 {

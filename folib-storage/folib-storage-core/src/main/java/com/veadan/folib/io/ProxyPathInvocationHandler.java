@@ -10,7 +10,7 @@ import java.nio.file.Path;
  * This {@link InvocationHandler} should be used to avoid errors when
  * {@link Path} wrapped by {@link Proxy}.
  * 
- * @author xuxinping
+ * @author veadan
  * 
  * @see ProxyFileSystemProvider
  * @see ProxyPathFileSystem

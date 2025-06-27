@@ -5,7 +5,7 @@ import java.nio.file.Path;
 import com.veadan.folib.domain.Artifact;
 
 /**
- * @author xuxinping
+ * @author veadan
  *
  */
 public class RootRepositoryPath extends RepositoryPath

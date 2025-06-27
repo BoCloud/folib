@@ -3,7 +3,7 @@ package com.veadan.folib.data.criteria;
 import com.veadan.folib.data.domain.DomainObject;
 
 /**
- * @author xuxinping
+ * @author veadan
  *
  */
 public abstract class ExpressionBuilder<E extends ExpressionBuilder<E, T>, T extends DomainObject>

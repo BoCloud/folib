@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 import org.apache.commons.collections4.CollectionUtils;
 
 /**
- * @author mtodorov
+ * @author veadan
  * @author Veadan
  */
 @JsonRootName("users")

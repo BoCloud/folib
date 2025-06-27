@@ -6,7 +6,7 @@ import com.veadan.folib.yaml.repository.CustomRepositoryConfiguration;
 import com.veadan.folib.yaml.repository.CustomRepositoryConfigurationDto;
 
 /**
- * @author huayanjun
+ * @author veadan
  */
 @JsonTypeName(DebianLayoutProvider.ALIAS)
 public class DebianRepositoryConfigurationDto

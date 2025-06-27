@@ -10,7 +10,7 @@ import com.veadan.folib.providers.io.LayoutFileSystem;
 import com.veadan.folib.storage.repository.Repository;
 
 /**
- * @author xuxinping
+ * @author veadan
  *
  */
 public class NugetFileSystem extends LayoutFileSystem

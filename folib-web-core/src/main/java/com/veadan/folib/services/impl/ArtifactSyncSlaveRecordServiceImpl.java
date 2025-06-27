@@ -16,10 +16,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
+
  * @date 2023/12/20 14:05
- * @since x.x.x
  */
 @Service
 public class ArtifactSyncSlaveRecordServiceImpl implements ArtifactSyncSlaveRecordService {

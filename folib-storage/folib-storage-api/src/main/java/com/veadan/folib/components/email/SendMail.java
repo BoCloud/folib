@@ -22,7 +22,7 @@ import java.io.File;
 import java.util.Properties;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 @Slf4j
 @Component("sendMail")

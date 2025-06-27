@@ -9,7 +9,7 @@ import org.springframework.scheduling.quartz.SpringBeanJobFactory;
 /**
  * This is a workaround for @Autowired annotations in cron job classes.
  *
- * @author Kate Novik.
+ * @author veadan
  */
 public final class AutowiringSpringBeanJobFactory
         extends SpringBeanJobFactory

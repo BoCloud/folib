@@ -50,7 +50,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * @author leipenghui
+ * @author veadan
  * 事件监听，处理制品自动晋级
  **/
 @Slf4j

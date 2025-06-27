@@ -5,7 +5,7 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.storage.repository.Repository;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 public interface PypiProvider {
 

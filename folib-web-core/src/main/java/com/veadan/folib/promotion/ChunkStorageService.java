@@ -1,7 +1,7 @@
 package com.veadan.folib.promotion;
 
 /**
- * @author pengYongQiang
+ * @author veadan
  * @date 2024/2/10 15:06
  */
 

@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 /**
  * 节点分发配置form
  *
- * @author qijianping
+ * @author veadan
  */
 @Data
 @AllArgsConstructor

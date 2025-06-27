@@ -10,7 +10,7 @@ import javax.validation.constraints.NotEmpty;
 import java.util.List;
 
 /**
- * @author leipenghui
+ * @author veadan
  */
 @Data
 @Builder

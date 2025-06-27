@@ -15,7 +15,7 @@ import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public class RecursiveMover
         implements FileVisitor<Path>

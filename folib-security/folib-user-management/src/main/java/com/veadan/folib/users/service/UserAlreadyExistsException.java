@@ -3,7 +3,7 @@ package com.veadan.folib.users.service;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 
 /**
- * @author xuxinping
+ * @author veadan
  */
 public class UserAlreadyExistsException extends InternalAuthenticationServiceException
 {

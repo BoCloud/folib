@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * @author leipenghui
+ * @author veadan
  * 日志处理task
  */
 @Slf4j

@@ -17,7 +17,7 @@ import java.util.Map;
 /**
  * This class is based on java.security.DigestInputStream.
  *
- * @author mtodorov
+ * @author veadan
  */
 public class MultipleDigestInputStream
         extends ByteRangeInputStream

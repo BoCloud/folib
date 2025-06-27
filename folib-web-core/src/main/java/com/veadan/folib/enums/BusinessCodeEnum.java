@@ -6,10 +6,8 @@ import lombok.Getter;
 /**
  * 业务代码定义
  *
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/12/19 16:34
- * @since x.x.x
  */
 @Getter
 @AllArgsConstructor

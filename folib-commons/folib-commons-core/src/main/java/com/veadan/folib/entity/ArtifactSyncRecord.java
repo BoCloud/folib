@@ -19,10 +19,8 @@ import java.util.Date;
 
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/10/5 17:04
- * @since x.x.x
  */
 @Data
 @Builder

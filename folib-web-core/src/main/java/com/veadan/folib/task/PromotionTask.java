@@ -36,7 +36,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * @author leipenghui
+ * @author veadan
  * 自动晋级task
  */
 @Slf4j

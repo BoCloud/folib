@@ -16,7 +16,7 @@ import java.util.Date;
 
  /**
  * 资源表;
- * @author : Fengmaogen
+ * @author veadan
  * @date : 2024-7-17
  */
  @Data

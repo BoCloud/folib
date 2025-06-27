@@ -12,7 +12,7 @@ import com.veadan.folib.entity.FolibUser;
 
  /**
  * 用户信息;(folib_user)表数据库访问层
- * @author : fengmaogen
+ * @author veadan
  * @date : 2024-7-9
  */
 @Mapper

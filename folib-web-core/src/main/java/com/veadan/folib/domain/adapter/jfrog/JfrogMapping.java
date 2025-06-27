@@ -10,7 +10,7 @@ import static org.jfrog.artifactory.client.model.Privilege.DEPLOY;
 import static org.jfrog.artifactory.client.model.Privilege.READ;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-10-24 10:24
  */
 public class JfrogMapping {

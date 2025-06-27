@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author mtodorov
+ * @author veadan
  * @author Veadan
  */
 public class MutableRoutingRules

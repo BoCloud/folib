@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * @author Kate Novik.
+ * @author veadan
  */
 @Component
 public class MavenSnapshotManager {

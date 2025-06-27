@@ -3,7 +3,7 @@ package com.veadan.folib.utils.directory;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2024/7/18
  **/
 public class Result {

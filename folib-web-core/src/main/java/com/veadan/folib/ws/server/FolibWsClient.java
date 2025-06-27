@@ -16,7 +16,7 @@ import org.springframework.beans.BeanUtils;
 import java.nio.ByteBuffer;
 
 /**
- * @author pengYongQiang
+ * @author veadan
  * @date 2024/2/12 23:09
  */
 @ClientEndpoint

@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @author xuxinping
+ * @author veadan
  *
  */
 public class NpmFileSystemProvider extends LayoutFileSystemProvider

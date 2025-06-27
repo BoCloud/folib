@@ -48,10 +48,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/8/3 15:29
- * @since x.x.x
  */
 @RestController
 @LayoutRequestMapping(CocoapodsArtifactCoordinates.LAYOUT_NAME)

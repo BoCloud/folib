@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
  * See <a href="https://getcomposer.org/doc/04-schema.md#json-schema">Official php package
  * specification</a>.
  *
- * @author leipenghui
+ * @author veadan
  */
 @NodeEntity(Vertices.PHP_ARTIFACT_COORDINATES)
 @XmlRootElement(name = "phpArtifactCoordinates")

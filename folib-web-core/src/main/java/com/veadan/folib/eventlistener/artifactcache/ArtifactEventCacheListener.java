@@ -34,7 +34,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * @author leipenghui
+ * @author veadan
  * 事件监听，处理制品缓存
  **/
 @Slf4j

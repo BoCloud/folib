@@ -20,10 +20,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/8/2 11:23
- * @since x.x.x
  */
 public class CocoapodsArtifactUtil {
     private static final Pattern PODSPEC_HEAD_LINE_PATTERN = Pattern.compile("Pod\\:\\:Spec\\.new\\s+?do\\s+?\\|(.*?)\\|");
@@ -35,7 +33,6 @@ public class CocoapodsArtifactUtil {
      * @param newSourceUrl     新的SourceUrl（非 Pod.tar.gz Url，例如：http://10.10.33.149:8081/artifactory/api/pods/Cocoapad-Local/pod/pkg/AFNetworking/4.0.1 ）
      * @param newTarGzFilePath 新的Pod.tar.gz存储路径
      * @return 结果
-     * @since x.x.x
      */
     public static boolean replacePodspecSourceSaveAsNewTarGzFile(InputStream inputStream, String newSourceUrl, String newTarGzFilePath) {
         try (InputStream gzipInputStream = new GzipCompressorInputStream(inputStream);
@@ -94,7 +91,6 @@ public class CocoapodsArtifactUtil {
      * @param inputStream  Pod.tar.gz文件输入流
      * @param newSourceUrl 新的SourceUrl（非 Pod.tar.gz Url，例如：http://10.10.33.149:8081/artifactory/api/pods/Cocoapad-Local/pod/pkg/AFNetworking/4.0.1 ）
      * @return 新的*.podspec文件内容
-     * @since x.x.x
      */
     public static String fetchReplacePodspecSourceContent(InputStream inputStream, String newSourceUrl) {
         try (InputStream gzipInputStream = new GzipCompressorInputStream(inputStream);
@@ -133,7 +129,6 @@ public class CocoapodsArtifactUtil {
      * @param podspecContent
      * @param newSourceUrl
      * @return
-     * @since x.x.x
      */
     public static String replaceNewSourceUrlOfPodspecContent(String podspecContent, String newSourceUrl) {
         final Matcher matcher = PODSPEC_HEAD_LINE_PATTERN.matcher(podspecContent);
@@ -225,7 +220,6 @@ public class CocoapodsArtifactUtil {
      * @param podSpecContent
      * @param attr
      * @return
-     * @since x.x.x
      */
     private static String findAttr(String podSpecContent, String attr) {
         final String podspecHeadName = podspecHeadName(podSpecContent);
@@ -239,10 +233,8 @@ public class CocoapodsArtifactUtil {
     }
 
     /**
-     * @author xiaodong.wang
-     * @email wangxiaodong@beyondcent.com
+     * @author veadan
      * @date 2023/8/3 16:14
-     * @since x.x.x
      */
     @Data
     public static class PodSpec {

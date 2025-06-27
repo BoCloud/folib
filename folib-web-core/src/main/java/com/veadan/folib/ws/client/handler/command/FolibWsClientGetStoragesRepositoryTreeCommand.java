@@ -14,10 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/11/10 00:38
- * @since x.x.x
  */
 @Component
 @Slf4j

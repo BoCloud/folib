@@ -5,7 +5,7 @@ import com.veadan.folib.commons.http.range.validation.ByteRangeCheck;
 import javax.validation.constraints.Min;
 
 /**
- * @author mtodorov
+ * @author veadan
  * @author Pablo Tirado
  */
 @ByteRangeCheck(message = "Range limit must be greater than or equal to offset")

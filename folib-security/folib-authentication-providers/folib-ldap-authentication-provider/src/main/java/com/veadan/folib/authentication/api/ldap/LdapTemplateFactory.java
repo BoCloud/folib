@@ -1,7 +1,7 @@
 package com.veadan.folib.authentication.api.ldap;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2023/6/19
  **/
 
@@ -10,7 +10,7 @@ import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.LdapContextSource;
 
 /**
- * @author leipenhui
+ * @author veadan
  * 初始化LDAP连接
  */
 @Slf4j

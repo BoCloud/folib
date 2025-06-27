@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.zip.GZIPInputStream;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-09-03 10:15
  */
 public class SmarchiveInputStream extends ArchiveInputStream {

@@ -7,10 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/12/20 14:04
- * @since x.x.x
  */
 public interface ArtifactSyncSlaveRecordService {
     

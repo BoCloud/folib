@@ -15,10 +15,8 @@ import java.util.List;
 
 /**
  *
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/12/1 16:14
- * @since x.x.x
  */
 @Component
 public interface ArtifactSyncSlaveRecordMapper extends BaseMapper<ArtifactSyncSlaveRecord> {

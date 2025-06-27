@@ -23,7 +23,7 @@ import org.apache.tinkerpop.gremlin.structure.Graph;
  * @param <S>
  * @param <E>
  *
- * @author xuxinping
+ * @author veadan
  */
 public class UnfoldEntityTraversal<S, E> implements EntityTraversal<S, E>
 {

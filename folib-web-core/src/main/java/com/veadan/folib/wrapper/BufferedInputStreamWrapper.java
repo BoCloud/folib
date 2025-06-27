@@ -7,10 +7,8 @@ import java.io.InputStream;
 import java.io.RandomAccessFile;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/12/16 17:33
- * @since x.x.x
  */
 public class BufferedInputStreamWrapper extends InputStream {
     private RandomAccessFile randomAccessFile;

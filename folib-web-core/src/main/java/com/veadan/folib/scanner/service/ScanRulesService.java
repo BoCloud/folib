@@ -6,7 +6,7 @@ import com.veadan.folib.scanner.entity.ScanRules;
 import java.util.List;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2024/4/22
  **/
 public interface ScanRulesService {

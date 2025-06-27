@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * 制品分发实体
  *
- * @author qijianping
+ * @author veadan
  */
 @AllArgsConstructor
 @NoArgsConstructor

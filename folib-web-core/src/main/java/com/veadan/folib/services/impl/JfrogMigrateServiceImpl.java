@@ -125,7 +125,7 @@ import static org.jfrog.artifactory.client.model.impl.RepositoryTypeImpl.REMOTE;
 import static org.jfrog.artifactory.client.model.impl.RepositoryTypeImpl.VIRTUAL;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-10-22 17:01
  */
 

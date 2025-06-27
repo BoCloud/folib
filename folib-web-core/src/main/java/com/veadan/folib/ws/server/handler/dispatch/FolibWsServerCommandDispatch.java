@@ -7,10 +7,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/10/19 19:40
- * @since x.x.x
  */
 @Slf4j
 @Component

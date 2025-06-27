@@ -10,7 +10,7 @@ import javax.validation.constraints.NotNull;
 import java.util.List;
 
 /**
- * @author leipenghui
+ * @author veadan
  */
 @Component
 public interface ArtifactCacheRecordMapper extends BaseMapper<ArtifactCacheRecord> {

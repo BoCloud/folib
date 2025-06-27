@@ -9,10 +9,8 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/11/8 17:34
- * @since x.x.x
  */
 @Data
 @Accessors(chain = true)

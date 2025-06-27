@@ -1,7 +1,7 @@
 package com.veadan.folib.storage.validation.artifact.version;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public class VersionValidationException
         extends Exception

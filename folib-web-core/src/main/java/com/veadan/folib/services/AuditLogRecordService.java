@@ -7,7 +7,7 @@ import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import org.aspectj.lang.ProceedingJoinPoint;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-08-12 16:12
  */
 public interface AuditLogRecordService {

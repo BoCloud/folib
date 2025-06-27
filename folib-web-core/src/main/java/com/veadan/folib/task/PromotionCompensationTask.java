@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * @author leipenghui
+ * @author veadan
  * 晋级、分发补偿task
  */
 @Slf4j

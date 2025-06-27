@@ -9,7 +9,7 @@ import org.eclipse.jetty.util.thread.ThreadPool;
 import org.eclipse.jetty.util.thread.ThreadPool.SizedThreadPool;
 
 /**
- * @author xuxinping
+ * @author veadan
  */
 public class DelayedExecutor implements Executor
 {

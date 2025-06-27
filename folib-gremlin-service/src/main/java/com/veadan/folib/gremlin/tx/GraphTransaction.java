@@ -20,7 +20,7 @@ import org.opencypher.gremlin.neo4j.ogm.transaction.GremlinTransaction;
 /**
  * Exposes current thread bound {@link Graph} transaction.
  *
- * @author xuxinping
+ * @author veadan
  */
 public class GraphTransaction implements Graph
 {

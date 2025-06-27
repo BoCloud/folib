@@ -10,7 +10,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2025-03-09 16:14
  */
 public interface FileStorageService {

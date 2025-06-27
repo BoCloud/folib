@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Repository;
 
 /**
- * @author xuxinping
+ * @author veadan
  */
 @Repository
 @Transactional

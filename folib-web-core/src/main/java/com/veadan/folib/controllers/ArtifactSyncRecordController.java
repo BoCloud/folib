@@ -17,10 +17,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/12/6 14:36
- * @since x.x.x
  */
 @RestController
 @RequestMapping("/api/artifactSyncRecord")

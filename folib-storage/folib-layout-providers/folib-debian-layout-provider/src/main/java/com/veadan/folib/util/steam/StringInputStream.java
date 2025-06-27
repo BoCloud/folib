@@ -6,7 +6,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-09-02 17:35
  */
 public class StringInputStream extends ByteArrayInputStream {

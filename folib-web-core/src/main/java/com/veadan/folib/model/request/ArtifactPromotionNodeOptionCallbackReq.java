@@ -6,10 +6,8 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/11/23 15:25
- * @since x.x.x
  */
 @Data
 @Accessors(chain = true)

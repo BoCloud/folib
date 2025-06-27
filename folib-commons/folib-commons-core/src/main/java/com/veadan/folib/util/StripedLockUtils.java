@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.concurrent.locks.Lock;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2023/3/1
  **/
 @Slf4j

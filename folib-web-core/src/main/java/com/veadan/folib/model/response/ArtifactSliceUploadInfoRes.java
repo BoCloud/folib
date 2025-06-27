@@ -4,10 +4,8 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/11/22 14:39
- * @since x.x.x
  */
 @Data
 public class ArtifactSliceUploadInfoRes {

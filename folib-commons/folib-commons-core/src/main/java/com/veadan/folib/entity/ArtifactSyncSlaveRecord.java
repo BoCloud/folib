@@ -25,10 +25,8 @@ import java.util.Date;
 
 /**
  * 制品同步从记录
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/12/1 16:08
- * @since x.x.x
  */
 @Data
 @Builder

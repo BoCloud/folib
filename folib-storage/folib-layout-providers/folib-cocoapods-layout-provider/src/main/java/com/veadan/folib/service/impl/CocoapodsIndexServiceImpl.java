@@ -35,10 +35,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/9/21 15:24
- * @since x.x.x
  */
 @Component
 public class CocoapodsIndexServiceImpl implements CocoapodsIndexService

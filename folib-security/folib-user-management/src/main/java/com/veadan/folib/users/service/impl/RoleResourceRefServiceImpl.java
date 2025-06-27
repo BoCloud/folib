@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 /**
  * 权限表;(role_resource_ref)表服务实现类
- * @author : Fengmaogen
+ * @author veadan
  * @date : 2024-7-18
  */
 @Service

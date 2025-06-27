@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @author mtodorov
+ * @author veadan
  * @author stodorov
  */
 public class ArtifactLocationReportOperation

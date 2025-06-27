@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
 /**
  * helm 仓库工具类
  *
- * @author qijianping
+ * @author veadan
  */
 @Component
 @Slf4j

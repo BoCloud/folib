@@ -8,7 +8,7 @@ import org.jfrog.artifactory.client.model.LightweightRepository;
 import java.util.List;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 public interface JFrogService {
 

@@ -3,7 +3,7 @@ package com.veadan.folib.services;
 import com.veadan.folib.dto.node.CassandraClusterDto;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2022/11/1
  **/
 public interface NodeService {

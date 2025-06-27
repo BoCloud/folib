@@ -12,7 +12,7 @@ import java.util.concurrent.Callable;
 /**
  * 制品copy 任务
  *
- * @author qijianping
+ * @author veadan
  */
 @Slf4j
 public class ArtifactPromotionCopyTask implements Callable<String> {

@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2023/10/12
  **/
 public abstract class JFrogBaseController extends BaseArtifactController {

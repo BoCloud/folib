@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
  * See <a href="https://docs.npmjs.com/files/package.json">Official npm package
  * specification</a>.
  *
- * @author xuxinping
+ * @author veadan
  */
 @Slf4j
 @NodeEntity(Vertices.NPM_ARTIFACT_COORDINATES)

@@ -29,7 +29,7 @@ import java.util.concurrent.ExecutorService;
  * This {@link FileSystemProvider} implementation allows to have original
  * {@link Path} wrapped by {@link Proxy} wihout errors.
  * 
- * @author xuxinping
+ * @author veadan
  *
  * @see ProxyPathInvocationHandler
  * @see ProxyPathFileSystem

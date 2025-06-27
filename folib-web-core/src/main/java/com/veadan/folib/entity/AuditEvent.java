@@ -15,7 +15,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-08-13 16:49
  */
 

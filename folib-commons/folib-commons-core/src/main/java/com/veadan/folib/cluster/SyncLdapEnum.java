@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * @author leipenghui
+ * @author veadan
  * Ldap配置同步类型枚举
  */
 @AllArgsConstructor

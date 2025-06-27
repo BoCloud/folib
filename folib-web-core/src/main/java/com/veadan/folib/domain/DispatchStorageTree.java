@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * 三级联动实体
  *
- * @author qijianping
+ * @author veadan
  */
 @Data
 @AllArgsConstructor

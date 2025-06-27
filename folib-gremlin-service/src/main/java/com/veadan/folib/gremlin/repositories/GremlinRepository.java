@@ -22,7 +22,7 @@ import org.springframework.data.repository.CrudRepository;
 /**
  * Base implementation for Gremlin repositories.
  *
- * @author xuxinping
+ * @author veadan
  */
 @Transactional
 public abstract class GremlinRepository<S extends Element, E extends DomainObject> implements CrudRepository<E, String>

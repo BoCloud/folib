@@ -6,7 +6,7 @@ import lombok.Getter;
 /**
  * 条件类型枚举
  *
- * @author huayanjun
+ * @author veadan
  **/
 @Getter
 public enum DebianRepositoryTypeEnum {

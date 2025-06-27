@@ -18,7 +18,14 @@
     <name>Folib: Build</name>
     <description>The folib distribution.</description>
     <inceptionYear>2019</inceptionYear>
-
+    <licenses>
+        <license>
+             <name>Mulan Public License, Version 2</name>
+             <url>https://license.coscl.org.cn/MulanPubL-2.0</url>
+            <distribution>repo</distribution>
+            <comments>Mulan PubL v2 is a copyleft license with terms on code disclosure and attribution. Approved by OSI.</comments>
+        </license>
+    </licenses>
     <properties>
         <dir.assembly>${project.build.directory}/assembly</dir.assembly>
         <dir.folib.standalone>${dir.assembly}/folib-${project.version}</dir.folib.standalone>

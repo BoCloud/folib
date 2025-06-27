@@ -17,7 +17,7 @@ import java.nio.file.Files;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 /**
- * @author leipenghui
+ * @author veadan
  */
 @Slf4j
 @RequestMapping("/artifactory")

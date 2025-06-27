@@ -30,7 +30,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
 /**
  * @author veadan
- * @author xuxinping
+ * @author veadan
  */
 @Component
 public class AuthenticationProvidersRegistry

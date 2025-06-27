@@ -6,7 +6,7 @@ import com.veadan.folib.event.RepositoryBasedEvent;
 import java.nio.file.Path;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public class PrivilegeEvent extends Event
 {

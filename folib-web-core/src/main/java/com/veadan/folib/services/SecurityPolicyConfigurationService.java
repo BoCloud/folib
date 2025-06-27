@@ -5,7 +5,7 @@ import com.veadan.folib.dto.configuration.SecurityPolicyConfigurationDto;
 import java.io.IOException;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2022/10/21
  **/
 public interface SecurityPolicyConfigurationService {

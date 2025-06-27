@@ -30,7 +30,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
- * @author Kate Novik.
+ * @author veadan
  */
 @Component
 public class MavenArtifactManager {

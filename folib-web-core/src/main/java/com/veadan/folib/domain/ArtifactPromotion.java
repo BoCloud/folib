@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * 制品晋级参数
  *
- * @author qijianping
+ * @author veadan
  */
 @AllArgsConstructor
 @NoArgsConstructor

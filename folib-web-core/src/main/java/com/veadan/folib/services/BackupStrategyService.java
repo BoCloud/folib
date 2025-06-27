@@ -7,7 +7,7 @@ import com.veadan.folib.dto.backupstrategy.BackupStrategyDto;
 import java.util.List;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 public interface BackupStrategyService {
 

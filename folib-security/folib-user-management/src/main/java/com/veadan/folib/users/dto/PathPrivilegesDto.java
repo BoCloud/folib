@@ -13,9 +13,8 @@ import lombok.Builder;
 import lombok.Data;
 
 /**
- * @author 
  * @author veadan
- * @author Veadan
+ *
  */
 @Data
 @Builder

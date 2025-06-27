@@ -5,7 +5,7 @@ import com.veadan.folib.entity.AuditLogRecord;
 import org.springframework.stereotype.Component;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-08-12 16:39
  */
 @Component

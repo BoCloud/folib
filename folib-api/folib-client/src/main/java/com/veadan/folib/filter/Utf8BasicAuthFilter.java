@@ -13,7 +13,7 @@ import java.util.Base64;
 import java.util.Objects;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2025/4/10
  **/
 public class Utf8BasicAuthFilter implements ClientRequestFilter {

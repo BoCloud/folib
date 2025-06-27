@@ -11,7 +11,7 @@ import org.springframework.util.Assert;
 /**
  * This class used to provice AQL specific {@link Expression} parseing.
  * 
- * @author xuxinping
+ * @author veadan
  *
  */
 public class AqlExpressionDialect extends DefaultExpressionDialect

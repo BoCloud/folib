@@ -9,7 +9,7 @@ import java.nio.file.FileSystem;
 import java.util.Set;
 
 /**
- * @author pengYongQiang
+ * @author veadan
  * @date 1/3/2024 15:31
  */
 public class GoFileSystem extends LayoutFileSystem {

@@ -6,7 +6,7 @@ import com.veadan.folib.yaml.repository.remote.CustomRemoteRepositoryConfigurati
 import com.veadan.folib.yaml.repository.remote.RemoteRepositoryConfigurationDto;
 
 /**
- * @author pengYongQiang
+ * @author veadan
  * @date 1/3/2024 15:31
  */
 @JsonTypeName(GoLayoutProvider.ALIAS)

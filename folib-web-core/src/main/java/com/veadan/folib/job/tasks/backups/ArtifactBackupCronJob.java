@@ -14,7 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.Map;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 @Slf4j
 public class ArtifactBackupCronJob extends JavaCronJob {

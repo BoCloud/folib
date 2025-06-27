@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * @author leipenghui
+ * @author veadan
  */
 @Slf4j
 @RequestMapping("/artifactory")

@@ -6,7 +6,7 @@ import jakarta.validation.ConstraintValidatorContext;
 import java.util.Arrays;
 
 /**
- * @author leipenghui
+ * @author veadan
  */
 public class ArtifactoryRepositoryEnumValueValidator
         implements ConstraintValidator<ArtifactoryRepositoryEnumValue, String> {

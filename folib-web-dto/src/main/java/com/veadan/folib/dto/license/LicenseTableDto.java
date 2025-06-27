@@ -15,7 +15,7 @@ import java.util.Date;
 @NoArgsConstructor
 /**
  * license vo
- * @author leipenghui
+ * @author veadan
  */
 public class LicenseTableDto implements Serializable {
 

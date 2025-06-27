@@ -13,7 +13,7 @@ import java.util.List;
 
 /**
 * 权限表;
-* @author : Fengmaogen
+* @author veadan
 * @date : 2024-7-17
 */
 @Data

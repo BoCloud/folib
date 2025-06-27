@@ -9,7 +9,7 @@ import javax.validation.constraints.NotEmpty;
 import java.util.List;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2024/12/23
  **/
 @Data

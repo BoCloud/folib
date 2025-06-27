@@ -6,7 +6,7 @@ import com.veadan.folib.yaml.repository.remote.CustomRemoteRepositoryConfigurati
 import com.veadan.folib.yaml.repository.remote.RemoteRepositoryConfigurationDto;
 
 /**
- * @author leipenghui
+ * @author veadan
  */
 @JsonTypeName(PhpLayoutProvider.ALIAS)
 public class PhpRemoteRepositoryConfigurationDto

@@ -49,7 +49,7 @@ import java.util.Set;
  * Rest End Points for Pypi Artifacts requests.
  * This controller will be Entry point for various pip commands.
  *
- * @author ankit.tomar
+ * @author veadan
  */
 @RestController
 @LayoutRequestMapping(PypiArtifactCoordinates.LAYOUT_NAME)

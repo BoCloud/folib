@@ -3,7 +3,7 @@ package com.veadan.folib.event.repository;
 import com.veadan.folib.event.Event;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public class RepositoryEvent extends Event
 {

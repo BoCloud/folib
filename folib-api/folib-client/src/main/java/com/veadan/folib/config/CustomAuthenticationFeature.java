@@ -7,7 +7,7 @@ import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.FeatureContext;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2025/4/11
  **/
 public class CustomAuthenticationFeature implements Feature {

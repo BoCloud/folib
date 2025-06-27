@@ -3,7 +3,7 @@ package com.veadan.folib.domain.migrate;
 import lombok.Data;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-12-26 16:25
  */
 @Data

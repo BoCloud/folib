@@ -6,10 +6,8 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/8/3 13:59
- * @since x.x.x
  */
 @Component
 public class CocoapodsRepositoryFeatures implements RepositoryFeatures

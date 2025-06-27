@@ -3,7 +3,7 @@ package com.veadan.folib.security;
 import com.veadan.folib.security.exceptions.NotSupportedException;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public interface Group
 {

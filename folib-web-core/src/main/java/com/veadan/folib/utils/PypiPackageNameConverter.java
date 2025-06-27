@@ -3,7 +3,7 @@ package com.veadan.folib.utils;
 /**
  * Utility class for various operations on python package name. 
  * 
- * @author ankit.tomar
+ * @author veadan
  */
 public class PypiPackageNameConverter
 {

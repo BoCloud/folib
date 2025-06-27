@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * @author xuxinping
+ * @author veadan
  */
 @Controller
 @RequestMapping("/api/fql")

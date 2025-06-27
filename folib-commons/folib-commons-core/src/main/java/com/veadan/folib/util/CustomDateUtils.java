@@ -8,7 +8,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2022/12/28
  **/
 public class CustomDateUtils extends DateFormatUtils {

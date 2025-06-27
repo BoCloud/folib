@@ -4,7 +4,7 @@ import java.io.InputStream;
 import java.util.Random;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public class RandomInputStream
         extends InputStream

@@ -3,7 +3,7 @@ package com.veadan.folib.config.redis;
 import java.util.List;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 public class Cluster {
 

@@ -4,7 +4,7 @@ import lombok.Data;
 
 /**
  * 在repository 中加一个 frogSync
- * @author huayanjun
+ * @author veadan
  * @since 2024-12-20 16:56
  */
 @Data

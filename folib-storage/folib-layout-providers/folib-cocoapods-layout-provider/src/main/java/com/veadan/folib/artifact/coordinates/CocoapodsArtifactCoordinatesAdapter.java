@@ -5,10 +5,8 @@ import com.veadan.folib.gremlin.adapters.LayoutArtifactCoordinatesAdapter;
 import org.springframework.stereotype.Component;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/8/1 16:00
- * @since x.x.x
  */
 @Component
 public class CocoapodsArtifactCoordinatesAdapter extends

@@ -9,7 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2024/3/5
  **/
 public class ConcurrentFileWriterUtil {

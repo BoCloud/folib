@@ -10,7 +10,7 @@ import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-09-03 10:53
  */
 @Getter

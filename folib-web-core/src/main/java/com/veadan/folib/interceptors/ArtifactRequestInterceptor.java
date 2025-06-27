@@ -15,7 +15,7 @@ import org.springframework.web.servlet.HandlerMapping;
 
 
 /**
- * @author xuxinping
+ * @author veadan
  *
  */
 public abstract class ArtifactRequestInterceptor implements HandlerInterceptor

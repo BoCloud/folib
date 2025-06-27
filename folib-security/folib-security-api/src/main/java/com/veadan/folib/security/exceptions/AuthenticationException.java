@@ -3,7 +3,7 @@ package com.veadan.folib.security.exceptions;
 import javax.security.auth.login.LoginException;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public class AuthenticationException extends LoginException
 {

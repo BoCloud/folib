@@ -7,7 +7,7 @@ import java.net.URI;
 
 /**
  * @author Veadan
- * @author xuxinping
+ * @author veadan
  */
 @XmlRootElement(name = "artifactCoordinates")
 public interface  ArtifactCoordinates<C extends ArtifactCoordinates<C, V>, V extends Comparable<V>>

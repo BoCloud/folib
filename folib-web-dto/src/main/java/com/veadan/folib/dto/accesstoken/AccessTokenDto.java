@@ -9,7 +9,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-08-20 14:11
  */
 @Data

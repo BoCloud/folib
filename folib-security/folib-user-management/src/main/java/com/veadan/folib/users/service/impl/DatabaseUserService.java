@@ -42,7 +42,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 
 /**
- * @author xuxinping
+ * @author veadan
  */
 @Component
 @Database

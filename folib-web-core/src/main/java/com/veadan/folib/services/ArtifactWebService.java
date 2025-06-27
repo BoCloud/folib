@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2022/10/8
  **/
 public interface ArtifactWebService {

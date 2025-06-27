@@ -9,7 +9,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 
 /**
- * @author pengYongQiang
+ * @author veadan
  * @date 2024/2/18 11:43
  */
 public class FileStreamMultipartFile  implements MultipartFile {

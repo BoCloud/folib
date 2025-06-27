@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @author leipenghui
+ * @author veadan
  */
 public class RemoveRawArtifactCronJob
         extends JavaCronJob {

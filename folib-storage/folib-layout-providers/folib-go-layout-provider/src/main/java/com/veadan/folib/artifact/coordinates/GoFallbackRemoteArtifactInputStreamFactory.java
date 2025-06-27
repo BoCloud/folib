@@ -9,7 +9,7 @@ import java.io.InputStream;
 import java.util.function.Function;
 
 /**
- * @author pengYongQiang
+ * @author veadan
  * @date 1/15/2024 14:30
  */
 @Component()
@@ -26,14 +26,6 @@ public class GoFallbackRemoteArtifactInputStreamFactory extends FallbackRemoteAr
         };
     }
 
-    public static void main(String[] args) {
-        String s = "github.com/pengyongqiang666/hello-world-go-private/@v/list";
-        if (s.endsWith("/@v/list")){
-            String substring = s.substring(0, s.length()-"/@v/list".length());
-            System.out.println(substring);
-        }
-
-    }
     @Override
     protected String getLayout() {
         return "go";

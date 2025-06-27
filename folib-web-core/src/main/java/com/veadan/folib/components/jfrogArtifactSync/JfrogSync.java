@@ -1,7 +1,7 @@
 package com.veadan.folib.components.jfrogArtifactSync;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-12-31 11:18
  */
 public class JfrogSync {

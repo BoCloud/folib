@@ -8,7 +8,7 @@ import com.veadan.folib.aql.grammar.AQLParser.QueryExpContext;
 import com.veadan.folib.aql.grammar.AQLParser.TokenExpContext;
 
 /**
- * @author xuxinping
+ * @author veadan
  *
  */
 public class AqlQueryVisitor extends AQLBaseVisitor<Predicate>

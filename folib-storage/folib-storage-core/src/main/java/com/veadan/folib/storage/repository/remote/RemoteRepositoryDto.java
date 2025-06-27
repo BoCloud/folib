@@ -6,7 +6,7 @@ import com.veadan.folib.yaml.repository.remote.RemoteRepositoryConfigurationDto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
- * @author mtodorov
+ * @author veadan
  * @author Veadan
  */
 @JsonIgnoreProperties(ignoreUnknown = true)

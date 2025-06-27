@@ -5,7 +5,7 @@
 
     <modelVersion>4.0.0</modelVersion>
 
- <parent>
+    <parent>
         <groupId>com.veadan.folib</groupId>
         <artifactId>folib-parent</artifactId>
         <version>3.0-SNAPSHOT</version>
@@ -14,21 +14,21 @@
 
     <artifactId>folib-maven-layout-provider</artifactId>
     <packaging>jar</packaging>
-
     <name>Folib: [Maven Layout Provider]</name>
-
-
-
-
-
     <inceptionYear>2019</inceptionYear>
-
-     <scm>
+    <scm>
         <url>http://git.folib.com/folib/folib-server</url>
         <connection>scm:git:git://git.folib.com/folib/folib-server.git</connection>
         <developerConnection>scm:git:git://git.folib.com/folib/folib-server.git</developerConnection>
     </scm>
-
+    <licenses>
+        <license>
+             <name>Mulan Public License, Version 2</name>
+             <url>https://license.coscl.org.cn/MulanPubL-2.0</url>
+            <distribution>repo</distribution>
+            <comments>Mulan PubL v2 is a copyleft license with terms on code disclosure and attribution. Approved by OSI.</comments>
+        </license>
+    </licenses>
     <build>
         <plugins>
             <plugin>
@@ -72,47 +72,47 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-commons-core</artifactId>
-             <version>${project.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-event-api</artifactId>
-             <version>${project.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-storage-api</artifactId>
-             <version>${project.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-job-api</artifactId>
-             <version>${project.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-job-tasks</artifactId>
-             <version>${project.version}</version>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>folib-commons-resources</artifactId>
-             <version>${project.version}</version>
+            <version>${project.version}</version>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>${project.groupId}</groupId>-->
-<!--            <artifactId>folib-testing-core</artifactId>-->
-<!--             <version>${project.version}</version>-->
-<!--            <scope>test</scope>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>${project.groupId}</groupId>-->
-<!--            <artifactId>folib-testing-core</artifactId>-->
-<!--             <version>${project.version}</version>-->
-<!--            <type>test-jar</type>-->
-<!--            <scope>test</scope>-->
-<!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>${project.groupId}</groupId>-->
+        <!--            <artifactId>folib-testing-core</artifactId>-->
+        <!--             <version>${project.version}</version>-->
+        <!--            <scope>test</scope>-->
+        <!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>${project.groupId}</groupId>-->
+        <!--            <artifactId>folib-testing-core</artifactId>-->
+        <!--             <version>${project.version}</version>-->
+        <!--            <type>test-jar</type>-->
+        <!--            <scope>test</scope>-->
+        <!--        </dependency>-->
         <dependency>
             <groupId>com.veadan.folib.commons</groupId>
             <artifactId>folib-commons-io</artifactId>
@@ -123,15 +123,15 @@
             <artifactId>commons-io</artifactId>
         </dependency>
 
-<!--        <dependency>-->
-<!--            <groupId>javax.servlet</groupId>-->
-<!--            <artifactId>javax.servlet-api</artifactId>-->
-<!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>javax.servlet</groupId>-->
+        <!--            <artifactId>javax.servlet-api</artifactId>-->
+        <!--        </dependency>-->
 
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-tx</artifactId>
-        </dependency>        
+        </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>

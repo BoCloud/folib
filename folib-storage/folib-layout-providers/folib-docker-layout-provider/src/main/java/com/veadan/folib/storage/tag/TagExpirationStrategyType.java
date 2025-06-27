@@ -5,7 +5,7 @@ import com.veadan.folib.api.Describable;
 import java.util.stream.Stream;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2024/1/19
  **/
 public enum TagExpirationStrategyType

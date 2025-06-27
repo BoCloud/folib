@@ -20,10 +20,8 @@ import java.nio.file.Files;
 import java.util.Set;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/8/2 15:09
- * @since x.x.x
  */
 @Component
 public class CocoapodsLayoutProvider extends AbstractLayoutProvider<CocoapodsArtifactCoordinates>

@@ -7,7 +7,7 @@ import com.veadan.folib.dto.accesstoken.AccessTokenResponse;
 import java.util.List;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-08-20 13:49
  */
 public interface AccessTokenService {

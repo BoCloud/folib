@@ -5,7 +5,7 @@ import com.veadan.folib.entity.CustomLayout;
 import org.springframework.stereotype.Component;
 
 /**
- * @author leipenghui
+ * @author veadan
  */
 @Component
 public interface CustomLayoutMapper extends BaseMapper<CustomLayout> {

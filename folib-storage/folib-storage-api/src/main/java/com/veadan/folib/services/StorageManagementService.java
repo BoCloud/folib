@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public interface StorageManagementService
 {

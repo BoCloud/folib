@@ -3,7 +3,7 @@ package com.veadan.folib.enums;
 import lombok.Getter;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-08-12 16:31
  */
 @Getter

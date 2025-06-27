@@ -3,7 +3,7 @@ package com.veadan.folib.domain;
 import java.util.List;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2023/3/17
  **/
 public class PageResultResponse<T> {

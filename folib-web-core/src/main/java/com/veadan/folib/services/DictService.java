@@ -7,7 +7,7 @@ import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import java.util.List;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2023/2/28
  **/
 public interface DictService {

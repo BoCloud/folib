@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
  * This annotation maps Artifact Controller classes to `/storages` URL using
  * repository layout from folib storages configuration.
  * 
- * @author xuxinping
+ * @author veadan
  * 
  * @see CustomRequestMappingHandlerMapping
  * @see LayoutRequestCondition

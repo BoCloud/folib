@@ -34,7 +34,7 @@ import java.util.stream.Stream;
 
 /**
  * 角色信息;(folib_role)表服务实现类
- * @author : Fengmaogen
+ * @author veadan
  * @date : 2024-7-17
  */
 @Slf4j

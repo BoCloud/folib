@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 
 /**
- * @author mtodorov
+ * @author veadan
  * @author Veadan
  */
 @JsonRootName("storage")

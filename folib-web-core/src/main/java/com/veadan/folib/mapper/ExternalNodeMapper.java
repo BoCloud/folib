@@ -5,7 +5,7 @@ import com.veadan.folib.entity.ExternalNode;
 import org.springframework.stereotype.Component;
 
 /**
- * @author leipenghui
+ * @author veadan
  */
 @Component
 public interface ExternalNodeMapper extends BaseMapper<ExternalNode> {

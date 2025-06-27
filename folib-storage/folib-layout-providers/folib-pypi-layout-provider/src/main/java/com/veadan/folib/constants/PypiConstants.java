@@ -7,7 +7,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2024/7/2
  **/
 public interface PypiConstants {

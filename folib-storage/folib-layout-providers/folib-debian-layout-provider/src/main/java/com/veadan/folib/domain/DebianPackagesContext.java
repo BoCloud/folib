@@ -5,7 +5,7 @@ import com.veadan.folib.util.DebianUtils;
 import lombok.Data;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-09-02 16:28
  */
 @Data

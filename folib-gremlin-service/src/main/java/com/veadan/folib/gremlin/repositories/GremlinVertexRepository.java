@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
  *
  * @param <E>
  *
- * @author xuxinping
+ * @author veadan
  */
 @Transactional
 public abstract class GremlinVertexRepository<E extends DomainObject> extends GremlinRepository<Vertex, E>

@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 /**
  * 制品元数据类型枚举
  *
- * @author leipenghui
+ * @author veadan
  * @date 2022/11/29
  **/
 @AllArgsConstructor

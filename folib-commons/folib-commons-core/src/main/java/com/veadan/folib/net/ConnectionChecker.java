@@ -7,7 +7,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public class ConnectionChecker
 {

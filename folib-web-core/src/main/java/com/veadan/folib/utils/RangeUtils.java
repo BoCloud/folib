@@ -4,7 +4,7 @@ package com.veadan.folib.utils;
 import com.google.common.collect.Range;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2023/10/24
  **/
 public class RangeUtils {

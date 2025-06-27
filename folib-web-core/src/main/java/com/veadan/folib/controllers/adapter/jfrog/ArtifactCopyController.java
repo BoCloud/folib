@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author leipenghui
+ * @author veadan
  * 需要验证仓库的唯一性
  */
 @Slf4j

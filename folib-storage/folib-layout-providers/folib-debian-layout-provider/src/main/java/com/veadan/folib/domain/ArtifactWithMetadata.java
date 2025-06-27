@@ -1,7 +1,7 @@
 package com.veadan.folib.domain;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-09-03 17:25
  */
 public class ArtifactWithMetadata {

@@ -8,7 +8,7 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import java.util.List;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 public interface ArtifactPromotionProvider {
 

@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * @author mtodorov
+ * @author veadan
  * @author Veadan
  */
 public class MutableRoutingRule

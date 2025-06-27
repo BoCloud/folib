@@ -8,7 +8,7 @@ import java.util.List;
 
 /**
  * 资源表;(resource)表服务接口
- * @author : Fengmaogen
+ * @author veadan
  * @date : 2024-7-17
  */
 public interface ResourceService{

@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * @author leipenghui
+ * @author veadan
  * 授权配置同步类型枚举
  */
 @AllArgsConstructor

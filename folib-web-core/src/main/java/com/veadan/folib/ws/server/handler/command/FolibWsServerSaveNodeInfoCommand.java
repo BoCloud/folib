@@ -19,10 +19,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/11/8 14:26
- * @since x.x.x
  */
 @Component
 @Slf4j

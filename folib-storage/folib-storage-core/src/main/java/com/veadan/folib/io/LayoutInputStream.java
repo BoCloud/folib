@@ -27,7 +27,7 @@ import org.apache.commons.io.input.ProxyInputStream;
  *     ArtifactInputStream aos = (ArtifactInputStream) Files.newInputStream(repositoryPath);
  * </pre>
  *
- * @author mtodorov
+ * @author veadan
  *
  */
 

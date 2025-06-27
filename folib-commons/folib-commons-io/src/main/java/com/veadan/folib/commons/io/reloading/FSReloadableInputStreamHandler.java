@@ -11,7 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public class FSReloadableInputStreamHandler
     implements ReloadableInputStreamHandler

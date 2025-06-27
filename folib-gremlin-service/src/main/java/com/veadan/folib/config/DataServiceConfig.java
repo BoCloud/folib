@@ -25,7 +25,7 @@ import com.hazelcast.spring.cache.HazelcastCacheManager;
  *
  * @author 
  * @author veadan
- * @author xuxinping
+ * @author veadan
  */
 @Configuration
 @Lazy(false)

@@ -9,7 +9,7 @@ import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.dto.AccessModel;
 
 /**
- * @author xuxinping
+ * @author veadan
  *
  */
 public class AuthenticatedAccessModel implements AccessModel

@@ -1,7 +1,7 @@
 package com.veadan.folib.storage.repository;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public enum RepositoryChecksumPolicyValidationTypeEnum
 {

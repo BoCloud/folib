@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 import javax.validation.constraints.NotBlank;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 @Data
 @Builder

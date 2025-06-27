@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public interface ReloadableInputStreamHandler extends Reloading
 {

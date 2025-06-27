@@ -7,7 +7,7 @@ import java.time.ZoneId;
 import org.neo4j.ogm.typeconversion.AttributeConverter;
 
 /**
- * @author xuxinping
+ * @author veadan
  */
 public class DateConverter implements AttributeConverter<LocalDateTime, Long>
 {

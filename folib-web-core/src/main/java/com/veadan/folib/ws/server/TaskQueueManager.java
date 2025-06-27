@@ -8,7 +8,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * @author pengYongQiang
+ * @author veadan
  * @date 2024/2/20 14:30
  * <p>
  * 用一个单线程池模拟一个串行可动态添加取消任务的任务队列

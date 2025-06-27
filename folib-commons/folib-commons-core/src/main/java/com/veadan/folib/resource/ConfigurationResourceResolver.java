@@ -17,7 +17,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 @Component
 public class ConfigurationResourceResolver

@@ -9,7 +9,7 @@ import java.nio.file.FileSystem;
 import java.util.Set;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-08-27 17:16
  */
 public class DebianFileSystem extends LayoutFileSystem {

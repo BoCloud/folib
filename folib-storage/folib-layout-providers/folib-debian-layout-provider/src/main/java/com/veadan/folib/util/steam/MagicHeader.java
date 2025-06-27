@@ -6,7 +6,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-09-03 10:18
  */
 public enum MagicHeader {

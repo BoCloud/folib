@@ -7,7 +7,7 @@ import java.util.List;
 import com.veadan.folib.providers.io.RepositoryPath;
 
 /**
- * @author mtodorov
+ * @author veadan
  * @author stodorov
  */
 public interface ArtifactDirectoryOperation

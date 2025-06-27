@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 import javax.validation.constraints.NotNull;
 
 /**
- * @author leipenghui
+ * @author veadan
  *
  */
 @Data

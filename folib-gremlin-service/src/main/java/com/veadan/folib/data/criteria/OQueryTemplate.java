@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 /**
  * {@link QueryTemplate} implementation for OrientDB engine.
  * 
- * @author xuxinping
+ * @author veadan
  *
  */
 public class OQueryTemplate<R, T extends DomainObject> implements QueryTemplate<R, T>

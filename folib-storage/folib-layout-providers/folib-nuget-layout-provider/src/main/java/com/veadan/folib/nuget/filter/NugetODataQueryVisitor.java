@@ -14,7 +14,7 @@ import com.veadan.folib.artifact.ArtifactTag;
  * Every method here should produce {@link Predicate} instance according to
  * filter expression it visit.
  * 
- * @author xuxinping
+ * @author veadan
  *
  */
 public class NugetODataQueryVisitor extends NugetODataFilterBaseVisitor<Predicate>

@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * @Author: fengmg
+ * @author veadan
  * @Date: 2024/10/10 22:04
  * @Description: 同步用户权限策略枚举
  */

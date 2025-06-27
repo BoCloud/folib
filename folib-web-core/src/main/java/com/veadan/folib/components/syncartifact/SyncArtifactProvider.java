@@ -4,7 +4,7 @@ package com.veadan.folib.components.syncartifact;
 import com.veadan.folib.domain.migrate.SyncArtifactForm;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 public interface SyncArtifactProvider {
     /**

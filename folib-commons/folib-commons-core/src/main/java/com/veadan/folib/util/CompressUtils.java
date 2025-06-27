@@ -11,7 +11,7 @@ import java.nio.file.Paths;
 import java.util.Objects;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 @Slf4j
 public class CompressUtils {

@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * 组件顶点图数据交互
  *
- * @author leipenghui
+ * @author veadan
  **/
 @Slf4j
 @Repository

@@ -7,7 +7,7 @@ import com.veadan.folib.aql.grammar.AQLParser.OrderExpContext;
 import com.veadan.folib.aql.grammar.AQLParser.PageExpContext;
 
 /**
- * @author xuxinping
+ * @author veadan
  *
  */
 public class AqlPaginatorVisitor extends AQLBaseVisitor<Paginator>

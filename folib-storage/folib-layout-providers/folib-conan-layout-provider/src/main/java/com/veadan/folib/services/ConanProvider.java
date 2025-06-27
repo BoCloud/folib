@@ -6,7 +6,7 @@ import com.veadan.folib.domain.SearchResults;
 import com.veadan.folib.storage.repository.Repository;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 public interface ConanProvider {
 

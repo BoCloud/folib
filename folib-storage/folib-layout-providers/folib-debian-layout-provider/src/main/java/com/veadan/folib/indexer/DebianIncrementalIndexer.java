@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-09-03 14:57
  * 增量更新只是更新特定/发行版/组件/架构的索引
  */

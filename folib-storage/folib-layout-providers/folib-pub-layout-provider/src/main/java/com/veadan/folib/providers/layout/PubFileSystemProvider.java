@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @author leipenghui
+ * @author veadan
  *
  */
 public class PubFileSystemProvider extends LayoutFileSystemProvider

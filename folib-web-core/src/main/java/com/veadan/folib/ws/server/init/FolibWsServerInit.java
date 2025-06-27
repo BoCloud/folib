@@ -7,10 +7,8 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/10/19 16:25
- * @since x.x.x
  */
 @Component
 public class FolibWsServerInit implements ApplicationRunner {

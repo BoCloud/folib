@@ -10,7 +10,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 
 /**
- * @author mtodorov
+ * @author veadan
  * @author Veadan
  */
 public class MutableProxyConfiguration

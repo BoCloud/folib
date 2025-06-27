@@ -35,7 +35,7 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * @author xuxinping
+ * @author veadan
  */
 @Component
 public class NpmPackageSupplier implements Function<Path, NpmPackageDesc> {

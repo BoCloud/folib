@@ -1,7 +1,7 @@
 package com.veadan.folib.util;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2024/7/2
  **/
 

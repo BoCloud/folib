@@ -6,7 +6,7 @@ import com.veadan.folib.entity.WebhookEventsLog;
 import org.springframework.stereotype.Component;
 
 /**
- * @author leipenghui
+ * @author veadan
  */
 @Component
 public interface WebhookEventsLogMapper extends BaseMapper<WebhookEventsLog> {

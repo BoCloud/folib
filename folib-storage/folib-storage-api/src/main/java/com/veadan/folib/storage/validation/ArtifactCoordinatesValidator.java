@@ -11,7 +11,7 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public interface ArtifactCoordinatesValidator
 {

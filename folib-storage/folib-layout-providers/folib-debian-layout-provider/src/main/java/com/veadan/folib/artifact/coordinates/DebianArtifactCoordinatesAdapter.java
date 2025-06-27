@@ -6,7 +6,7 @@ import com.veadan.folib.gremlin.adapters.LayoutArtifactCoordinatesAdapter;
 import org.springframework.stereotype.Component;
 
 /**
- * @author huayanjun
+ * @author veadan
  */
 @Component
 public class DebianArtifactCoordinatesAdapter extends LayoutArtifactCoordinatesAdapter<DebianArtifactCoordinates, SemanticVersion> {

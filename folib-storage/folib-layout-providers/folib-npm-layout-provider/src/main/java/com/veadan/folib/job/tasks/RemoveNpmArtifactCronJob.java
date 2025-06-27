@@ -33,7 +33,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 @Slf4j
 public class RemoveNpmArtifactCronJob extends JavaCronJob {

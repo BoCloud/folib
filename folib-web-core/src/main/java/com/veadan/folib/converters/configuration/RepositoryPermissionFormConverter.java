@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * @author leipenghui
+ * @author veadan
  */
 public enum RepositoryPermissionFormConverter
         implements Converter<RepositoryPermissionDto, com.veadan.folib.storage.repository.RepositoryPermissionDto> {

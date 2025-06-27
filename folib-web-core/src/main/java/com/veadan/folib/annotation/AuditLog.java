@@ -8,7 +8,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-08-12 15:37
  */
 

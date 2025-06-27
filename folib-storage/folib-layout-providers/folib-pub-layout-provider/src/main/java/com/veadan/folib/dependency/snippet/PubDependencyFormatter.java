@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
- * @author leipenghui
+ * @author veadan
  */
 @Component
 public class PubDependencyFormatter

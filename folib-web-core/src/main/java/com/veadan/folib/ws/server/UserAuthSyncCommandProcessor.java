@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * 用户权限同步
- * @author fengmaogen
+ * @author veadan
  * @date 2024/2/13 16:32
  */
 @Slf4j

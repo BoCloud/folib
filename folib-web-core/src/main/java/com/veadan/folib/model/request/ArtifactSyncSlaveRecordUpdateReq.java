@@ -9,10 +9,8 @@ import lombok.experimental.Accessors;
 import java.util.Date;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/12/20 14:06
- * @since x.x.x
  */
 @Data
 @Accessors(chain = true)

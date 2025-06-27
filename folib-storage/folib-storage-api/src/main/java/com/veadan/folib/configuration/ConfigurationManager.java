@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 @Slf4j
 @Component

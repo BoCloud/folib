@@ -6,7 +6,7 @@ import ch.qos.logback.core.spi.FilterReply;
 
 /**
  * 
- * @author ankit.tomar
+ * @author veadan
  *
  */
 public class JaninoClassLoaderLogDeclineFilter extends Filter<ILoggingEvent>

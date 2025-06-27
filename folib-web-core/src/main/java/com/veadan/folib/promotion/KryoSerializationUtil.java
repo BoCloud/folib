@@ -9,7 +9,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 /**
- * @author pengYongQiang
+ * @author veadan
  * @date 2024/2/13 14:41
  */
 public class KryoSerializationUtil {

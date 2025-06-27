@@ -11,10 +11,8 @@ import org.neo4j.ogm.annotation.NodeEntity;
 
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/7/28 17:44
- * @since x.x.x
  */
 @NodeEntity(Vertices.COCOAPODS_ARTIFACT_COORDINATES)
 @XmlRootElement(name = "CocoapodsArtifactCoordinates")

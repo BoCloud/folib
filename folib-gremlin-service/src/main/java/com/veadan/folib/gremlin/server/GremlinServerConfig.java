@@ -19,7 +19,7 @@ import javax.annotation.PostConstruct;
 
 /**
  * @author veadan
- * @author xuxinping
+ * @author veadan
  */
 @Configuration
 @ConditionalOnProperty(prefix = "folib.graph.gremlin.server", name = "enabled", havingValue = "true")

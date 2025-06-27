@@ -11,7 +11,7 @@ import java.io.IOException;
 /**
  * 分发配置服务实现
  *
- * @author qijianping
+ * @author veadan
  */
 @Service
 public class ClusterDispatchManagementServiceImpl implements ClusterDispatchManagementService {

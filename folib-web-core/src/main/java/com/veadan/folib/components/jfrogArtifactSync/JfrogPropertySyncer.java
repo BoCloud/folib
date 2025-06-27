@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2025-01-02 08:45
  */
 public class JfrogPropertySyncer {

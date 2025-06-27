@@ -49,7 +49,7 @@ import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2025-02-06 17:14
  */
 @Slf4j

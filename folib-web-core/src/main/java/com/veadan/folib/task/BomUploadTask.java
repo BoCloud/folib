@@ -33,7 +33,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
- * @author leipenghui
+ * @author veadan
  * bom重传task
  */
 @Slf4j

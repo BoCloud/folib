@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionInterceptor;
 
 /**
- * @author xuxinping
+ * @author veadan
  *
  */
 @Aspect

@@ -5,7 +5,7 @@ import com.veadan.folib.api.Describable;
 import java.util.stream.Stream;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public enum RepositoryPolicyEnum implements Describable
 {

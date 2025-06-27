@@ -3,7 +3,7 @@ package com.veadan.folib.services;
 import java.io.IOException;
 
 /**
- * @author Kate Novik.
+ * @author veadan
  */
 public interface ChecksumService
 {

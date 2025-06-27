@@ -1,7 +1,7 @@
 package com.veadan.folib.providers.io;
 
 /**
- * @author pengYongQiang
+ * @author veadan
  * @date 1/9/2024 16:51
  */
 public interface GoExpiredRepositoryPathHandler extends ExpiredRepositoryPathHandler{

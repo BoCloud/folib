@@ -8,7 +8,7 @@ import javax.inject.Inject;
 import java.util.LinkedHashSet;
 
 /**
- * @author leipenghui
+ * @author veadan
  */
 @Component
 public class PubRepositoryFactory

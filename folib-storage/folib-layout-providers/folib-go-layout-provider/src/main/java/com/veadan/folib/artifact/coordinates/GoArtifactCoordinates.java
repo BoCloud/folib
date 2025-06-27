@@ -17,7 +17,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * @author pengYongQiang
+ * @author veadan
  * @date 1/3/2024 15:36
  */
 @NodeEntity(Vertices.GO_ARTIFACT_COORDINATES)

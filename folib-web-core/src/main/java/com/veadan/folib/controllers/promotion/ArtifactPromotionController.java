@@ -53,7 +53,7 @@ import java.util.*;
 /**
  * 制品晋级控制层
  *
- * @author qijianping
+ * @author veadan
  */
 @RestController
 @RequestMapping("/api/artifact/folib/promotion")

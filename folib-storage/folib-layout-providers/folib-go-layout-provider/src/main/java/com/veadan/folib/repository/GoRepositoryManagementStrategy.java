@@ -3,7 +3,7 @@ package com.veadan.folib.repository;
 import org.springframework.stereotype.Component;
 
 /**
- * @author pengYongQiang
+ * @author veadan
  * @date 1/3/2024 15:31
  */
 @Component

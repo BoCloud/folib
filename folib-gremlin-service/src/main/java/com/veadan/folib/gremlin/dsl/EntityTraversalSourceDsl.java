@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Helper class to create {@link EntityTraversalDsl} instance.
  *
- * @author xuxinping
+ * @author veadan
  */
 public class EntityTraversalSourceDsl extends GraphTraversalSource
 {

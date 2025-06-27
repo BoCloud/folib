@@ -6,7 +6,7 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import java.io.IOException;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2022/10/8
  **/
 public interface ArtifactService {

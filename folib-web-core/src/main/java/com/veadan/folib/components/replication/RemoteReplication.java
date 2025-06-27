@@ -3,7 +3,7 @@ package com.veadan.folib.components.replication;
 import com.veadan.folib.storage.repository.Repository;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2025-01-23 15:48
  */
 public abstract class RemoteReplication {

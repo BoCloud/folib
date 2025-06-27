@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 /**
  * RestTemplate配置，主要用来提供RestTemplate对象
  *
- * @author leipenghui
+ * @author veadan
  * @date 2024/5/17
  **/
 @Configuration

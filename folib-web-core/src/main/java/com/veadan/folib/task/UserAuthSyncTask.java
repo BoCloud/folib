@@ -41,7 +41,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * @author leipenghui
+ * @author veadan
  * 同步用户权限定时task
  */
 @Slf4j

@@ -15,7 +15,7 @@ import java.io.InputStream;
  * is to provide a way to understand where multiple digest streams start having
  * differences, thus serving as a sort of debug tool.
  *
- * @author mtodorov
+ * @author veadan
  */
 public class BinaryDiff
 {

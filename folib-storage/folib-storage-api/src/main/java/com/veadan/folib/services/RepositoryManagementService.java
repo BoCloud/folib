@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public interface RepositoryManagementService {
 

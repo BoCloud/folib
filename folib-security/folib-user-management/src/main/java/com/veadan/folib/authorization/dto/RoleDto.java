@@ -6,7 +6,7 @@ import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.dto.AccessModelDto;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public class RoleDto
         implements Serializable, Role

@@ -13,7 +13,14 @@
     <artifactId>folib-conan-layout-provider</artifactId>
     <packaging>jar</packaging>
     <name>Folib: [Conan Layout Provider]</name>
-
+    <licenses>
+        <license>
+             <name>Mulan Public License, Version 2</name>
+             <url>https://license.coscl.org.cn/MulanPubL-2.0</url>
+            <distribution>repo</distribution>
+            <comments>Mulan PubL v2 is a copyleft license with terms on code disclosure and attribution. Approved by OSI.</comments>
+        </license>
+    </licenses>
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>

@@ -11,7 +11,7 @@ import javax.validation.constraints.NotEmpty;
 /**
  * 节点之间的晋级
  *
- * @author qijianping
+ * @author veadan
  */
 @AllArgsConstructor
 @NoArgsConstructor

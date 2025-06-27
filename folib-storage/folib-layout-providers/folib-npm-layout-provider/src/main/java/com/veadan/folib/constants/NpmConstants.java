@@ -5,7 +5,7 @@ import com.google.common.collect.Lists;
 import java.util.List;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 public interface NpmConstants {
 

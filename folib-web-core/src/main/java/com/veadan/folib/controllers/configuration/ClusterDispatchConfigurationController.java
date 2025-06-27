@@ -41,7 +41,7 @@ import java.util.Map;
 /**
  * 制品分发集群配置逻辑控制层
  *
- * @author qijianping
+ * @author veadan
  */
 @RestController
 @RequestMapping("/api/configuration/folib/dispatch")

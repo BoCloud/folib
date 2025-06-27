@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.stream.Stream;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public enum RoutingRuleTypeEnum
 {

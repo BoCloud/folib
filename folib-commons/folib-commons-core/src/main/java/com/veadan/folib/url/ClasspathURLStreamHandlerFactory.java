@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public class ClasspathURLStreamHandlerFactory
         implements URLStreamHandlerFactory

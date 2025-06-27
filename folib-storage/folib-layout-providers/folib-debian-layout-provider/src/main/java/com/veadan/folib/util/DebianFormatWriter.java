@@ -9,7 +9,7 @@ import java.io.File;
 import java.io.InputStream;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-09-02 16:26
  */
 public interface DebianFormatWriter {

@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public abstract class AbstractRawArtifactLocatorOperation
         extends AbstractArtifactLocationHandler {

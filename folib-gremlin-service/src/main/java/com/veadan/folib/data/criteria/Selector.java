@@ -6,7 +6,7 @@ import com.veadan.folib.data.domain.DomainObject;
  * This class represent a final and ready to perform Query with target
  * projection and search expressions.
  * 
- * @author xuxinping
+ * @author veadan
  *
  */
 public class Selector<T extends DomainObject>

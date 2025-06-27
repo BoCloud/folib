@@ -1,7 +1,7 @@
 package com.veadan.folib.constants;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2024/6/13
  **/
 public interface PubConstants {

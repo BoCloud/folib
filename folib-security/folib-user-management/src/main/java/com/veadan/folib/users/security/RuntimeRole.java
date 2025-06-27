@@ -8,7 +8,7 @@ import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.users.dto.AccessModel;
 
 /**
- * @author xuxinping
+ * @author veadan
  */
 @Immutable
 public class RuntimeRole implements Role

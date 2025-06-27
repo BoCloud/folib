@@ -15,7 +15,7 @@ import java.util.Date;
 
 /**
 * 用户组;
-* @author : Fengmaogen
+* @author veadan
 * @date : 2024-7-17
 */
 @Data

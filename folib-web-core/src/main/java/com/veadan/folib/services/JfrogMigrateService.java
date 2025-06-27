@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Queue;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-10-22 17:01
  */
 public interface JfrogMigrateService {

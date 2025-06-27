@@ -3,7 +3,7 @@ package com.veadan.folib.services;
 import com.veadan.folib.providers.io.RepositoryPath;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2024/3/20
  **/
 public interface ArtifactIndexService {

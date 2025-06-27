@@ -14,10 +14,8 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/10/19 19:40
- * @since x.x.x
  */
 @Slf4j
 public abstract class FolibWsCommandDispatch<T extends FolibWsCommand>

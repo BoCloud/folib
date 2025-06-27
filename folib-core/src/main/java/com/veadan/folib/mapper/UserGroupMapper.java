@@ -11,7 +11,7 @@ import java.util.List;
 
  /**
  * 用户组;(user_group)表数据库访问层
- * @author : Fengmaogen
+ * @author veadan
  * @date : 2024-7-17
  */
 @Mapper

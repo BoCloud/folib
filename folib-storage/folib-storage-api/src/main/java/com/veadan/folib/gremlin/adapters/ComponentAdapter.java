@@ -23,7 +23,7 @@ import static com.veadan.folib.gremlin.dsl.EntityTraversalUtils.*;
 import static org.apache.tinkerpop.gremlin.structure.VertexProperty.Cardinality.single;
 
 /**
- * @author leipenghui
+ * @author veadan
  */
 @org.springframework.stereotype.Component
 public class ComponentAdapter implements VertexEntityTraversalAdapter<Component> {

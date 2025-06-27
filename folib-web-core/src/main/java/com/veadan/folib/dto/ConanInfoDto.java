@@ -10,7 +10,7 @@ import javax.validation.constraints.NotBlank;
 /**
  * conanInfo
  *
- * @author leipenghui
+ * @author veadan
  */
 @Data
 @AllArgsConstructor

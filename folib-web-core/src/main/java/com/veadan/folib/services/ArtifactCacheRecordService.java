@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 public interface ArtifactCacheRecordService {
 

@@ -10,7 +10,7 @@ import java.io.OutputStream;
  * when writing directly occures. <br>
  * For example this needed if resource should be locked before writing.
  * 
- * @author xuxinping
+ * @author veadan
  *
  */
 public class LazyOutputStream extends FilterOutputStream

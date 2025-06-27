@@ -13,10 +13,8 @@ import java.util.Date;
 import java.util.function.Consumer;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/11/23 21:51
- * @since x.x.x
  */
 @Slf4j
 @Component

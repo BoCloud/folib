@@ -3,7 +3,7 @@ package com.veadan.folib.job.tasks.cleanup;
 import java.util.Map;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 public interface CleanupArtifactsProvider {
 

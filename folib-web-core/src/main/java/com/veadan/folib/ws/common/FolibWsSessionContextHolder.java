@@ -6,10 +6,8 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/11/8 17:02
- * @since x.x.x
  */
 public class FolibWsSessionContextHolder {
 

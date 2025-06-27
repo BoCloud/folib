@@ -7,7 +7,7 @@ import com.veadan.folib.entity.MigrateInfo;
 import java.util.List;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-12-31 20:49
  */
 public interface MigrateInfoService {

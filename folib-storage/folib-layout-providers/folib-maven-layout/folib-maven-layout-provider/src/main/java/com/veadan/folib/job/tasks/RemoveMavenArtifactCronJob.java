@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @author Kate Novik.
+ * @author veadan
  */
 public class RemoveMavenArtifactCronJob
         extends JavaCronJob {

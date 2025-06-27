@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * @author leipenghui
+ * @author veadan
  * 事件处理task
  */
 @Slf4j

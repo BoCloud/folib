@@ -12,7 +12,7 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 @WebFilter(urlPatterns = "/api/artifact/folib/promotion/*")
 public class WrapperRequestFilter implements Filter {

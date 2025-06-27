@@ -1,7 +1,7 @@
 package com.veadan.folib.services;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 public interface RedLockService {
 

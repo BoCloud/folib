@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 
 /**
  * @author Veadan
- * @author xuxinping
+ * @author veadan
  */
 @Slf4j
 @NodeEntity(Vertices.ARTIFACT)

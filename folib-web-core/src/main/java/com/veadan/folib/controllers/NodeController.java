@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 /**
  * 集群节点
  *
- * @author leipenghui
+ * @author veadan
  */
 @RestController
 @PreAuthorize("hasAuthority('ADMIN')")

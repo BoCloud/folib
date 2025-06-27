@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * 组件图谱vo
  *
- * @author leipenghui
+ * @author veadan
  **/
 @Data
 @Builder

@@ -4,7 +4,7 @@
 //import com.veadan.folib.domain.DebianMetadata;
 //
 ///**
-// * @author huayanjun
+// * @author veadan
 // * @since 2024-09-04 14:04
 // */
 //public class DebianPropertyWriter {

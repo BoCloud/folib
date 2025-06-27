@@ -1,7 +1,7 @@
 package com.veadan.folib.ws.server;
 
 /**
- * @author pengYongQiang
+ * @author veadan
  * @date 2024/2/13 16:31
  */
 public enum Command {

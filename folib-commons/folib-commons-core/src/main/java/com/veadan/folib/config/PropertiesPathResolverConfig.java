@@ -13,7 +13,7 @@ import org.springframework.util.StringUtils;
  * Configures a {@link PropertiesPathResolver} under the name "propertiesPathResolver" - it can then be used in SpEL
  * expressions to resolve properties lookup path's such as {@code @Value("#{propertiesPathResolver.resolve('customPropName','defaultPropPath')}")}.
  *
- * @author cbono
+ * @author veadan
  */
 @Configuration
 class PropertiesPathResolverConfig

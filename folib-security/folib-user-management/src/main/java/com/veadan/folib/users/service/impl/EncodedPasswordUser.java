@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * @author xuxinping
+ * @author veadan
  */
 public class EncodedPasswordUser implements User {
 

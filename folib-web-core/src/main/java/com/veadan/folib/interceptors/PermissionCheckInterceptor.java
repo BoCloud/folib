@@ -34,7 +34,7 @@ import java.util.*;
 /**
  * 自定义权限拦截器 校验节点间请求的白名单
  *
- * @author qijianping
+ * @author veadan
  */
 @Slf4j
 public class PermissionCheckInterceptor implements HandlerInterceptor {

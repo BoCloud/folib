@@ -14,7 +14,7 @@ import java.util.Set;
 /**
  * 组件
  *
- * @author leipenghui
+ * @author veadan
  **/
 @NodeEntity(Vertices.COMPONENT)
 public class ComponentEntity extends DomainEntity implements Component {

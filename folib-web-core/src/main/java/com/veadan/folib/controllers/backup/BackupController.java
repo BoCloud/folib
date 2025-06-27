@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.inject.Inject;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2023/9/26
  **/
 @PreAuthorize("hasAuthority('ADMIN')")

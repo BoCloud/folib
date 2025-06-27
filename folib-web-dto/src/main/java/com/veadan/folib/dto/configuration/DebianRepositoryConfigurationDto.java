@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.veadan.folib.constant.DebianConstant;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-09-06 09:48
  */
 

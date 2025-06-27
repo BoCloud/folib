@@ -10,7 +10,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-12-31 20:36
  */
 @Data

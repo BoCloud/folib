@@ -22,6 +22,14 @@
         <connection>scm:git:git://git.folib.com/folib/folib-server.git</connection>
         <developerConnection>scm:git:git://git.folib.com/folib/folib-server.git</developerConnection>
     </scm>
+    <licenses>
+        <license>
+             <name>Mulan Public License, Version 2</name>
+             <url>https://license.coscl.org.cn/MulanPubL-2.0</url>
+            <distribution>repo</distribution>
+            <comments>Mulan PubL v2 is a copyleft license with terms on code disclosure and attribution. Approved by OSI.</comments>
+        </license>
+    </licenses>
 
     <build>
         <plugins>
@@ -69,11 +77,6 @@
                     </execution>
                 </executions>
             </plugin>
-
-<!--            <plugin>-->
-<!--                <groupId>org.apache.maven.plugins</groupId>-->
-<!--                <artifactId>maven-dependency-plugin</artifactId>-->
-<!--            </plugin>-->
 
             <plugin>
                 <groupId>org.springframework.boot</groupId>

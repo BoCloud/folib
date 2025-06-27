@@ -23,6 +23,16 @@
         <developerConnection>scm:git:git://git.folib.com/folib/folib-server.git</developerConnection>
     </scm>
 
+    <licenses>
+        <license>
+             <name>Mulan Public License, Version 2</name>
+             <url>https://license.coscl.org.cn/MulanPubL-2.0</url>
+            <distribution>repo</distribution>
+            <comments>Mulan PubL v2 is a copyleft license with terms on code disclosure and attribution. Approved by OSI.</comments>
+        </license>
+    </licenses>
+
+
     <modules>
         <module>folib-commons</module>
         <module>folib-configuration</module>
@@ -66,31 +76,31 @@
             </activation>
 
             <build>
-                <plugins>
-<!--                    <plugin>-->
-<!--                        <artifactId>exec-maven-plugin</artifactId>-->
-<!--                        <groupId>org.codehaus.mojo</groupId>-->
-<!--                        <version>3.1.0</version>-->
-<!--                        <executions>-->
-<!--                            <execution>-->
-<!--                                <id>build web</id>-->
-<!--                                <phase>package</phase>-->
-<!--                                <goals>-->
-<!--                                    <goal>exec</goal>-->
-<!--                                </goals>-->
-<!--                                <configuration>-->
-<!--                                    <executable>/bin/bash</executable>-->
-<!--                                    <arguments>-->
-<!--                                        <argument>-->
-<!--                                            ${basedir}/folib-package.sh-->
-<!--                                        </argument>-->
-<!--                                    </arguments>-->
-<!--                                </configuration>-->
-<!--                            </execution>-->
-<!--                        </executions>-->
-<!--                    </plugin>-->
-
-                </plugins>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>com.mycila</groupId>
+                            <artifactId>license-maven-plugin</artifactId>
+                            <version>5.0.0</version>
+                            <configuration>
+                                <header>${project.basedir}/license-header.txt</header>
+                                <includes>
+                                    <include>**/*.java</include>
+                                </includes>
+                                <mapping>
+                                    <java>SLASHSTAR_STYLE</java>
+                                </mapping>
+                            </configuration>
+                            <executions>
+                                <execution>
+                                    <goals>
+                                        <goal>format</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
             </build>
         </profile>
     </profiles>

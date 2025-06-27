@@ -3,7 +3,7 @@ package com.veadan.folib.users.service;
 import com.veadan.folib.domain.SecurityRole;
 
 /**
- * @author ankit.tomar
+ * @author veadan
  */
 public interface SecurityRoleService
 {

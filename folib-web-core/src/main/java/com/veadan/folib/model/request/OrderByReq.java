@@ -9,7 +9,7 @@ import lombok.experimental.Accessors;
 import java.io.Serializable;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2024/7/18
  **/
 @Data

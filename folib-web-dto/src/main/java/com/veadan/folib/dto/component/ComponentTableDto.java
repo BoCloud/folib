@@ -11,7 +11,7 @@ import java.util.Set;
 /**
  * 组件vo
  *
- * @author leipenghui
+ * @author veadan
  **/
 @Data
 @Builder

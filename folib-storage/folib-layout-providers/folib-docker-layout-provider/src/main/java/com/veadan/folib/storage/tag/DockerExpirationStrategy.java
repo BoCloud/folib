@@ -5,7 +5,7 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import java.io.IOException;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2024/1/19
  **/
 public interface DockerExpirationStrategy {

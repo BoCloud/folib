@@ -1,7 +1,7 @@
 package com.veadan.folib.security.exceptions;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public class UserResolutionException extends Exception
 {

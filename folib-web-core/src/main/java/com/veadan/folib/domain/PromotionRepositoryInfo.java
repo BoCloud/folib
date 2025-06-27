@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 /**
  * 节点之间的晋级
  *
- * @author leipenghui
+ * @author veadan
  */
 @AllArgsConstructor
 @NoArgsConstructor

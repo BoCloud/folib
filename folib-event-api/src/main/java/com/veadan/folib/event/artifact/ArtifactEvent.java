@@ -5,7 +5,7 @@ import java.nio.file.Path;
 import com.veadan.folib.event.RepositoryBasedEvent;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public class ArtifactEvent<T extends Path> extends RepositoryBasedEvent<T>
 {

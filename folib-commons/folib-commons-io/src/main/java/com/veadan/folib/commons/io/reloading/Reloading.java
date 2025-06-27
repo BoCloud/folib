@@ -3,7 +3,7 @@ package com.veadan.folib.commons.io.reloading;
 import java.io.IOException;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public interface Reloading
 {

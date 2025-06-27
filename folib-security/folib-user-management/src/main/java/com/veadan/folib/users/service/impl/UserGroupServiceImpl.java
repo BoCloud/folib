@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 
 /**
  * 用户组;(user_group)表服务实现类
- * @author : Fengmaogen
+ * @author veadan
  * @date : 2024-7-17
  */
 @Service

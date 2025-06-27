@@ -7,10 +7,8 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/12/19 16:31
- * @since x.x.x
  */
 @Data
 public class Result<T> implements Serializable {

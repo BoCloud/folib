@@ -15,7 +15,7 @@ import java.util.Date;
 
  /**
  * 角色信息;
- * @author : Fengmaogen
+ * @author veadan
  * @date : 2024-7-17
  */
 

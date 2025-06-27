@@ -9,10 +9,8 @@ import java.nio.file.FileSystem;
 import java.util.Set;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/8/2 15:03
- * @since x.x.x
  */
 public class CocoapodsFileSystem extends LayoutFileSystem 
 {

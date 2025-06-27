@@ -1,7 +1,7 @@
 package com.veadan.folib.validator;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-09-03 13:44
  */
 public class MetadataValidationException extends RuntimeException {

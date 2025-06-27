@@ -3,7 +3,7 @@ package com.veadan.folib.domain.debian;
 import lombok.Data;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-09-06 11:22
  */
 @Data

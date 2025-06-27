@@ -3,7 +3,7 @@ package com.veadan.folib.client;
 /**
  * This exception is thrown during the management of artifacts.
  *
- * @author mtodorov
+ * @author veadan
  */
 public class ArtifactOperationException extends Exception
 {

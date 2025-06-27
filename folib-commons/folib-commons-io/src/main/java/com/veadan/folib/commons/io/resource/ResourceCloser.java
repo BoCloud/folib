@@ -9,7 +9,7 @@ import java.io.IOException;
  * A utility class for safely closing resources and logging eventual errors.
  * The purpose of this class is to avoid boiler-plate code.
  *
- * @author mtodorov
+ * @author veadan
  */
 public class ResourceCloser
 {

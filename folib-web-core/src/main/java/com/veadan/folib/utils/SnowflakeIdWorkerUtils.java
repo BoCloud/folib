@@ -1,7 +1,7 @@
 package com.veadan.folib.utils;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2023/11/13
  * Twitter_Snowflake<br>
  * SnowFlake的结构如下(每部分用-分开):<br>

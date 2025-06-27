@@ -3,7 +3,7 @@ package com.veadan.folib.authentication.api.ldap;
 import javax.validation.constraints.NotEmpty;
 
 /**
- * @author ankit.tomar
+ * @author veadan
  */
 public class LdapUserSearch
 {

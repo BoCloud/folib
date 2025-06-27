@@ -14,7 +14,7 @@ import org.springframework.util.Assert;
 import java.util.regex.Matcher;
 
 /**
- * @author huayanjun
+ * @author veadan
  * <p>
  * 1.下载包索引文件 /dists/{distribution}/{component}/binary-{architecture}/Packages.gz
  * 2.下载包 路径   /pool/[component]/[first-letter]/[package-name]/[package-filename]

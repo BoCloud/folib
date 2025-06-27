@@ -8,7 +8,7 @@ import com.veadan.folib.storage.search.SearchResults;
 import org.springframework.stereotype.Component;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 @Component
 public class ArtifactSearchServiceImpl

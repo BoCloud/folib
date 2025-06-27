@@ -3,7 +3,7 @@ package com.veadan.folib.client;
 /**
  * This exception is thrown during the resolution or deployment of artifacts.
  *
- * @author mtodorov
+ * @author veadan
  */
 public class ArtifactTransportException
         extends Exception

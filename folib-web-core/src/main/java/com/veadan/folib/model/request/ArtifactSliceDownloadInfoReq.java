@@ -6,10 +6,8 @@ import lombok.experimental.Accessors;
 import javax.validation.constraints.NotEmpty;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/11/14 23:50
- * @since x.x.x
  */
 @Data
 @Accessors(chain = true)

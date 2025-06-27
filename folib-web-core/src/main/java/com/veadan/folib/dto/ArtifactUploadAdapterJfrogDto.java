@@ -8,10 +8,8 @@ import lombok.experimental.Accessors;
 
 /**
  *
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/10/9 10:13
- * @since x.x.x
  */
 @Data
 @AllArgsConstructor

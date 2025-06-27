@@ -9,10 +9,8 @@ import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import java.util.List;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/12/6 14:10
- * @since x.x.x
  */
 public interface ArtifactSyncRecordService {
     TableResultResponse<ArtifactSyncRecordPageRes> page(ArtifactSyncRecordPageReq model);

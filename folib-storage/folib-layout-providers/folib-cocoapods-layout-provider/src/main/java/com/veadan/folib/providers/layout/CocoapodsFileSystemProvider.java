@@ -4,10 +4,8 @@ import javax.inject.Inject;
 import java.nio.file.spi.FileSystemProvider;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/8/2 15:08
- * @since x.x.x
  */
 public class CocoapodsFileSystemProvider extends LayoutFileSystemProvider
 {

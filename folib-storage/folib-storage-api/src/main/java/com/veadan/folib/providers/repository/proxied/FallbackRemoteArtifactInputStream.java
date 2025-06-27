@@ -8,7 +8,7 @@ import java.io.InputStream;
 import java.util.function.Function;
 
 /**
- * @author pengYongQiang
+ * @author veadan
  * @date 1/12/2024 20:36
  * <p>
  * Non Thread safe

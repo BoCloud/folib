@@ -10,7 +10,7 @@ import javax.validation.ValidatorFactory;
 import java.util.*;
 
 /**
- * @author mtodorov
+ * @author veadan
  * @author Pablo Tirado
  */
 public class ByteRangeHeaderParser

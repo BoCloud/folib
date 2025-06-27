@@ -10,7 +10,7 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import javax.annotation.concurrent.Immutable;
 
 /**
- * @author huayanjun
+ * @author veadan
  */
 @Immutable
 @XmlAccessorType(XmlAccessType.FIELD)

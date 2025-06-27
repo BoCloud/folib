@@ -19,10 +19,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/10/18 14:05
- * @since x.x.x
  */
 @Slf4j
 public class FolibWsServerRunManage extends FolibWsRunManage {
@@ -74,10 +72,8 @@ public class FolibWsServerRunManage extends FolibWsRunManage {
     }
 
     /**
-     * @author xiaodong.wang
-     * @email wangxiaodong@beyondcent.com
+     * @author veadan
      * @date 2023/10/18 14:07
-     * @since x.x.x
      */
     @Data
     @AllArgsConstructor

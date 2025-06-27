@@ -20,10 +20,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/12/20 14:16
- * @since x.x.x
  */
 @RestController
 @RequestMapping("/api/artifactSyncSlaveRecord")

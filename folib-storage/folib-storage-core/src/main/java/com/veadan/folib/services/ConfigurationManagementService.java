@@ -16,7 +16,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public interface ConfigurationManagementService {
 

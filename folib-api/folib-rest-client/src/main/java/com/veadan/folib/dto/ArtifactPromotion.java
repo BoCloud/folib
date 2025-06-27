@@ -8,7 +8,7 @@ import javax.validation.constraints.NotEmpty;
 import java.util.List;
 
 /**
- * @author qijianping
+ * @author veadan
  * @date 2022-11-18
  */
 @AllArgsConstructor

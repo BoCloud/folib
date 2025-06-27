@@ -22,7 +22,7 @@ import java.util.List;
 
 /**
  * 资源表;(resource)表服务实现类
- * @author : Fengmaogen
+ * @author veadan
  * @date : 2024-7-17
  */
 @Slf4j

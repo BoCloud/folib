@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author Kate Novik.
+ * @author veadan
  */
 @Component
 public class RawArtifactManager {

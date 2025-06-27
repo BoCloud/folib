@@ -19,7 +19,7 @@ import java.util.Date;
 /**
  * 审计日志记录
  *
- * @author huayanjun
+ * @author veadan
  * @since 2024-08-12 15:52
  */
 @Data

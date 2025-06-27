@@ -19,7 +19,7 @@ import java.util.Set;
 
 /**
  * 用户信息;
- * @author : fengmaogen
+ * @author veadan
  * @date : 2024-7-9
  */
 @Data

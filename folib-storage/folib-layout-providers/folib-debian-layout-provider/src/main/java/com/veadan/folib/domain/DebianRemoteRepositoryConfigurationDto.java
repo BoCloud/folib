@@ -6,7 +6,7 @@ import com.veadan.folib.yaml.repository.remote.CustomRemoteRepositoryConfigurati
 import com.veadan.folib.yaml.repository.remote.RemoteRepositoryConfigurationDto;
 
 /**
- * @author huayanjun
+ * @author veadan
  */
 @JsonTypeName(DebianLayoutProvider.ALIAS)
 public class DebianRemoteRepositoryConfigurationDto

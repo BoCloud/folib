@@ -3,7 +3,7 @@ package com.veadan.folib.services;
 import com.veadan.folib.providers.io.RepositoryPath;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 public interface PypiArtifactIndexService {
 

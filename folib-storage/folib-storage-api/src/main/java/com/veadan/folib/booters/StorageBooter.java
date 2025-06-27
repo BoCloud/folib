@@ -29,7 +29,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.lock.FencedLock;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public class StorageBooter
 {

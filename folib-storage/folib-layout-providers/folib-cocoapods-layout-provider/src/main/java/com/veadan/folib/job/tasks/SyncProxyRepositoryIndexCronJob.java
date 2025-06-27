@@ -22,10 +22,8 @@ import java.util.Set;
 
 /**
  * 通过代理远程仓库索引定时任务
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/9/21 13:30
- * @since x.x.x
  */
 public class SyncProxyRepositoryIndexCronJob extends JavaCronJob
 {

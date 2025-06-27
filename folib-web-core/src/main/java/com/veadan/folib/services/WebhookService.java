@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 public interface WebhookService {
 

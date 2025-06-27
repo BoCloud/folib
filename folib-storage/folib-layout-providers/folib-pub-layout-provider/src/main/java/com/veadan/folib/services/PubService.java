@@ -5,7 +5,7 @@ import com.veadan.folib.domain.PubPackageVersionMetadata;
 import com.veadan.folib.storage.repository.Repository;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 public interface PubService {
 

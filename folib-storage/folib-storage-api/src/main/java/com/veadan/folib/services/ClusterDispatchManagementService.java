@@ -7,7 +7,7 @@ import java.io.IOException;
 /**
  * 分发配置服务service
  *
- * @author qijianping
+ * @author veadan
  */
 public interface ClusterDispatchManagementService {
     void createClusterNode(ClusterDispatchNodeDto clusterDispatchNodeDto) throws IOException;

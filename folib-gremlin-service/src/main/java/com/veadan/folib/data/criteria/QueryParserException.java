@@ -1,7 +1,7 @@
 package com.veadan.folib.data.criteria;
 
 /**
- * @author xuxinping
+ * @author veadan
  *
  */
 public class QueryParserException extends RuntimeException

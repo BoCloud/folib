@@ -6,7 +6,7 @@ import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import java.util.List;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 public interface WebhookEventsLogService {
 

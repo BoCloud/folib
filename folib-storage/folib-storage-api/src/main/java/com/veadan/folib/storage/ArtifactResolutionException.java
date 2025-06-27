@@ -3,7 +3,7 @@ package com.veadan.folib.storage;
 import java.io.IOException;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public class ArtifactResolutionException
         extends IOException

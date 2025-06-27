@@ -55,7 +55,7 @@ import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 @Slf4j
 @Component

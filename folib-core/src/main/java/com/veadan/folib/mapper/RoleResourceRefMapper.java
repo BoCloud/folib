@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * 权限表;(role_resource_ref)表数据库访问层
- * @author : Fengmaogen
+ * @author veadan
  * @date : 2024-7-17
  */
 @Component

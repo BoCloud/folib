@@ -19,7 +19,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 
 /**
- * @author leipenghui
+ * @author veadan
  */
 @RestController
 @RequestMapping("/api/configuration/folib/securityPolicy")

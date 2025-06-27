@@ -9,7 +9,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-10-23 10:43
  */
 

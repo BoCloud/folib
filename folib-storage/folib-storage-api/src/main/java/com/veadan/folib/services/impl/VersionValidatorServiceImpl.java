@@ -10,7 +10,7 @@ import java.util.Set;
 import org.springframework.stereotype.Component;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 @Component("versionValidatorService")
 public class VersionValidatorServiceImpl

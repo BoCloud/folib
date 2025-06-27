@@ -22,7 +22,7 @@ import java.util.Enumeration;
 import java.util.List;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2024/4/25
  **/
 @WebFilter(urlPatterns = "/dependency/*", filterName = "foEyesHttpProxyFilter")

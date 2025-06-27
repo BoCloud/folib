@@ -20,7 +20,7 @@ import javax.inject.Inject;
 import java.util.Objects;
 
 /**
- * @author leipenghui
+ * @author veadan
  */
 @RestController
 @RequestMapping("/api/blockStrategy")

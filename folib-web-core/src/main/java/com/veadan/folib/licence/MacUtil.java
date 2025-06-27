@@ -10,7 +10,7 @@ import java.util.Properties;
 import java.util.Set;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 @Slf4j
 public class MacUtil {

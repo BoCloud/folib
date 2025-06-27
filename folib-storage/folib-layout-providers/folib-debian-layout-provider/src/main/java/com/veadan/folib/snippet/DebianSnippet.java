@@ -12,7 +12,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 /**
- * @author huayanjun
+ * @author veadan
  */
 @Slf4j
 @Component

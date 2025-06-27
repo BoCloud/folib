@@ -10,7 +10,7 @@ import java.util.List;
 
 /**
  * 用户组关联表;(user_group_ref)表服务接口
- * @author : Fengmaogen
+ * @author veadan
  * @date : 2024-7-18
  */
 public interface UserGroupRefService{

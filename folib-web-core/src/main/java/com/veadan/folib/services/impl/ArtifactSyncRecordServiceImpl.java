@@ -29,10 +29,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/12/6 14:16
- * @since x.x.x
  */
 @Service
 public class ArtifactSyncRecordServiceImpl implements ArtifactSyncRecordService {

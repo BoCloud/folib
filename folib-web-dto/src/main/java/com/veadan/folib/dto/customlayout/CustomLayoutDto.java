@@ -12,7 +12,7 @@ import javax.validation.constraints.NotBlank;
 import java.io.Serializable;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 @Data
 @Builder

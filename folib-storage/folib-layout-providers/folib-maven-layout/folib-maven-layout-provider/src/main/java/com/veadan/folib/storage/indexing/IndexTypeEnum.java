@@ -1,7 +1,7 @@
 package com.veadan.folib.storage.indexing;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public enum IndexTypeEnum
 {

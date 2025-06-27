@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 /**
  * 远程仓库状态vo
  *
- * @author leipenghui
+ * @author veadan
  **/
 @Data
 @Builder

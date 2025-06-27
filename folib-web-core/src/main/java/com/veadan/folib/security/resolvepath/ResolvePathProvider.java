@@ -3,7 +3,7 @@ package com.veadan.folib.security.resolvepath;
 import com.veadan.folib.storage.repository.Repository;
 
 /**
- * @author leipenghui
+ * @author veadan
  **/
 public interface ResolvePathProvider {
 

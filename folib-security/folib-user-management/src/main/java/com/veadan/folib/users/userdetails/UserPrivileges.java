@@ -13,7 +13,7 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2025/4/16
  **/
 public class UserPrivileges {

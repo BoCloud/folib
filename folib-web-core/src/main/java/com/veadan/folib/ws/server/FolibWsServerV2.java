@@ -11,8 +11,7 @@ import org.springframework.stereotype.Component;
 import java.nio.ByteBuffer;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/10/19 15:18
  * @since x.x.x
  */

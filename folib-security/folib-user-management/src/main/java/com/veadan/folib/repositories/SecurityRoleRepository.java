@@ -16,7 +16,7 @@ import org.springframework.data.neo4j.annotation.Query;
 import org.springframework.stereotype.Repository;
 
 /**
- * @author ankit.tomar
+ * @author veadan
  */
 @Repository
 @Transactional

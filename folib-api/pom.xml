@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.veadan.folib</groupId>
+        <artifactId>folib-parent</artifactId>
+        <version>3.0-SNAPSHOT</version>
+        <relativePath/>
+    </parent>
+
+    <artifactId>folib-api</artifactId>
+    <packaging>pom</packaging>
+
+    <name>Folib: api</name>
+
+    <inceptionYear>2019</inceptionYear>
+    <scm>
+        <url>http://git.folib.com/folib/folib-server</url>
+        <connection>scm:git:git://git.folib.com/folib/folib-server.git</connection>
+        <developerConnection>scm:git:git://git.folib.com/folib/folib-server.git</developerConnection>
+    </scm>
+    <licenses>
+        <license>
+             <name>Mulan Public License, Version 2</name>
+             <url>https://license.coscl.org.cn/MulanPubL-2.0</url>
+            <distribution>repo</distribution>
+            <comments>Mulan PubL v2 is a copyleft license with terms on code disclosure and attribution. Approved by OSI.</comments>
+        </license>
+    </licenses>
+    <modules>
+        <module>folib-client</module>
+        <module>folib-rest-client</module>
+    </modules>
+
+</project>

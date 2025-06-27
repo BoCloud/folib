@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 /**
- * @author Kate Novik.
+ * @author veadan
  */
 public class RemoveMavenArtifactOperation
         extends AbstractArtifactLocationHandler

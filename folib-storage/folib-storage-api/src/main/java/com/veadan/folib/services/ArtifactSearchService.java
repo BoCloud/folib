@@ -5,7 +5,7 @@ import com.veadan.folib.storage.search.SearchRequest;
 import com.veadan.folib.storage.search.SearchResults;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public interface ArtifactSearchService
 {

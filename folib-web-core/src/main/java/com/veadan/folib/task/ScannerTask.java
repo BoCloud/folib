@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
- * @author leipenghui
+ * @author veadan
  * 扫描task
  */
 @Slf4j

@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 @Component("storageManagementService")
 public class StorageManagementServiceImpl implements StorageManagementService {

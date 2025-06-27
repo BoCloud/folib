@@ -8,7 +8,7 @@ import java.util.Set;
 /**
  * 组件
  *
- * @author leipenghui
+ * @author veadan
  **/
 public interface Component extends DomainObject {
 

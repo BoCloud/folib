@@ -18,10 +18,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/9/5 00:56
- * @since x.x.x
  */
 public class CompressUtil 
 {

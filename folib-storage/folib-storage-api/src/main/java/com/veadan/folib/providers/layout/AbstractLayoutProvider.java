@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinatesEntity>
         implements LayoutProvider<T> {

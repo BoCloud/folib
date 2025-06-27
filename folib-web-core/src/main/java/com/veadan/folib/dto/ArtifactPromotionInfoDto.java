@@ -14,10 +14,8 @@ import javax.persistence.Id;
 import java.util.Date;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/10/12 14:35
- * @since x.x.x
  */
 @Data
 @AllArgsConstructor

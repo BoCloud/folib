@@ -3,7 +3,7 @@ package com.veadan.folib.event.server;
 import com.veadan.folib.event.Event;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public class ServerEvent extends Event
 {

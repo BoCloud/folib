@@ -14,7 +14,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2024/12/26
  **/
 @Data

@@ -4,7 +4,7 @@ import com.veadan.folib.dto.configuration.GoRepositoryConfigurationDto;
 import org.springframework.core.convert.converter.Converter;
 
 /**
- * @author pengYongQiang
+ * @author veadan
  * @date 1/16/2024 10:34
  */
 public enum GoRepositoryConfigurationConverter  implements Converter<GoRepositoryConfigurationDto, com.veadan.folib.yaml.configuration.repository.GoRepositoryConfigurationDto> {

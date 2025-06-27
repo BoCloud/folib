@@ -8,7 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-09-06 11:20
  */
 public interface DebianService {

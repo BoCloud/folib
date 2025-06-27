@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.veadan.folib.data.domain.DomainObject;
 
 /**
- * @author ankit.tomar
+ * @author veadan
  */
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,

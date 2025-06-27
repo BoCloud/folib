@@ -24,7 +24,7 @@ import java.util.Objects;
 /**
  * license切面
  *
- * @author leipenghui
+ * @author veadan
  * @date 2023/6/27
  **/
 @Slf4j

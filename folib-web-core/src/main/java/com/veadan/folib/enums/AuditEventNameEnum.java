@@ -8,7 +8,7 @@ import static com.veadan.folib.enums.AuditEventModuleEnum.SYSTEM_SETTING;
 import static com.veadan.folib.enums.AuditEventModuleEnum.USER_MANAGEMENT;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-08-12 16:35
  * 新建仓库
  * 删除仓库

@@ -13,9 +13,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * @author 
  * @author Veadan
- * @author veadan
+ *
  */
 @Data
 @AllArgsConstructor

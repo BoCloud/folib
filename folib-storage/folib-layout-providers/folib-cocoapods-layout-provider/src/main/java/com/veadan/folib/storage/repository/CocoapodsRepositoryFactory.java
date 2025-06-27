@@ -10,10 +10,8 @@ import javax.inject.Inject;
 import java.util.LinkedHashSet;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/8/3 13:58
- * @since x.x.x
  */
 @Component
 public class CocoapodsRepositoryFactory implements RepositoryFactory 

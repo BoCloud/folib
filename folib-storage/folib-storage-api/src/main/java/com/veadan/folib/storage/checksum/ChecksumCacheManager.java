@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
  * this, then remove the checksum from the cache. (If this checksums set is empty,
  * remove the respective Checksum from the cachedChecksums).
  *
- * @author mtodorov
+ * @author veadan
  */
 public class ChecksumCacheManager
 {

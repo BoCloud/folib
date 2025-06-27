@@ -4,7 +4,7 @@ import com.veadan.folib.storage.repository.Repository;
 import lombok.Data;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2025-03-06 08:52
  */
 @Data

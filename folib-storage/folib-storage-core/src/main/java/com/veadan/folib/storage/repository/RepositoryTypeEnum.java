@@ -3,7 +3,7 @@ package com.veadan.folib.storage.repository;
 import com.veadan.folib.api.Describable;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public enum RepositoryTypeEnum
         implements Describable {

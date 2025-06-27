@@ -8,10 +8,8 @@ import org.springframework.stereotype.Component;
 import javax.inject.Inject;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/11/8 14:26
- * @since x.x.x
  */
 @Component
 @Slf4j

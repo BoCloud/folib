@@ -8,7 +8,7 @@ import org.apache.tinkerpop.gremlin.structure.Vertex;
  *
  * @param <E>
  *
- * @author xuxinping
+ * @author veadan
  */
 public interface VertexEntityTraversalAdapter<E extends DomainObject> extends EntityTraversalAdapter<Vertex, E>
 {

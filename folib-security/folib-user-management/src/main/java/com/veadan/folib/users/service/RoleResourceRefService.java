@@ -14,7 +14,7 @@ import java.util.Set;
 
 /**
  * 权限表;(role_resource_ref)表服务接口
- * @author : Fengmaogen
+ * @author veadan
  * @date : 2024-7-18
  */
 public interface RoleResourceRefService{

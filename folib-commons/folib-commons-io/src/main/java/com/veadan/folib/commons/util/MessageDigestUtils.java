@@ -4,7 +4,7 @@ import java.io.*;
 import java.security.MessageDigest;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public class MessageDigestUtils
 {

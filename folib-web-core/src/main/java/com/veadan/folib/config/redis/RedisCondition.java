@@ -5,7 +5,7 @@
 //import org.springframework.core.type.AnnotatedTypeMetadata;
 //
 ///**
-// * @author leipenghui
+// * @author veadan
 // **/
 //public class RedisCondition implements Condition {
 //

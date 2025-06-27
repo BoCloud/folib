@@ -16,7 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public abstract class AbstractMavenArtifactLocatorOperation
         extends AbstractArtifactLocationHandler

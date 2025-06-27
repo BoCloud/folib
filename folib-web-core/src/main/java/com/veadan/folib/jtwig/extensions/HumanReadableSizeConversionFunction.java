@@ -9,7 +9,7 @@ import org.jtwig.functions.JtwigFunction;
 
 /**
  * 
- * @author ankit.tomar
+ * @author veadan
  *
  */
 public class HumanReadableSizeConversionFunction implements JtwigFunction

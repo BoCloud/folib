@@ -6,7 +6,7 @@ import com.veadan.folib.gremlin.adapters.LayoutArtifactCoordinatesAdapter;
 import org.springframework.stereotype.Component;
 
 /**
- * @author leipenghui
+ * @author veadan
  */
 @Component
 public class PhpArtifactCoordinatesAdapter

@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
- * @author Kate Novik.
+ * @author veadan
  */
 public class RemoveRawArtifactOperation
         extends AbstractArtifactLocationHandler {

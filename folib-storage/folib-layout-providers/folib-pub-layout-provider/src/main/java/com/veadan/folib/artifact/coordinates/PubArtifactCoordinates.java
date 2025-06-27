@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
  * See <a href="https://dart.cn/tools/pub/pubspec">Official pub pubspec
  * specification</a>.
  *
- * @author leipenghui
+ * @author veadan
  */
 @Slf4j
 @NodeEntity(Vertices.PUB_ARTIFACT_COORDINATES)

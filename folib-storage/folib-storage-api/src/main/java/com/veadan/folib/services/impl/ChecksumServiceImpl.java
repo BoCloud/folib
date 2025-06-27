@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
- * @author Kate Novik.
+ * @author veadan
  */
 @Component
 public class ChecksumServiceImpl

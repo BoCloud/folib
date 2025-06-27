@@ -6,7 +6,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public class ArtifactChecksum
 {

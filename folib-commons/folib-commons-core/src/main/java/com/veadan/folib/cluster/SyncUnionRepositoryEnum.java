@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * @author leipenghui
+ * @author veadan
  * 联邦仓库配置同步类型枚举
  */
 @AllArgsConstructor

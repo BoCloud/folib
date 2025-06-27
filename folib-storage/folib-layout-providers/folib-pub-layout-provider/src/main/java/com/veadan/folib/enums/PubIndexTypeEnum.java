@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 /**
  * 索引类型枚举
  *
- * @author leipenghui
+ * @author veadan
  **/
 @AllArgsConstructor
 @NoArgsConstructor

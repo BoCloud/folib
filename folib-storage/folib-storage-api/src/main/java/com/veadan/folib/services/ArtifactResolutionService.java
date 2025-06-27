@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public interface ArtifactResolutionService {
 

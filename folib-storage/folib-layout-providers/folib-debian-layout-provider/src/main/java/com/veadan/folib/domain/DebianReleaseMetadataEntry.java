@@ -7,7 +7,7 @@ import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import java.io.Serializable;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-09-04 16:22
  */
 @Data

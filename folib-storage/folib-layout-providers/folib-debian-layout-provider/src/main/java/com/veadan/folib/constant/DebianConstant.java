@@ -3,7 +3,7 @@ package com.veadan.folib.constant;
 import java.util.regex.Pattern;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-08-27 17:16
  */
 public class DebianConstant {

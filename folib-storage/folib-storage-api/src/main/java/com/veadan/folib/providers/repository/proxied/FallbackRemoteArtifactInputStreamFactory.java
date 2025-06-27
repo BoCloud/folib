@@ -6,7 +6,7 @@ import java.io.InputStream;
 import java.util.function.Function;
 
 /**
- * @author pengYongQiang
+ * @author veadan
  * @date 1/15/2024 10:31
  */
 public abstract class FallbackRemoteArtifactInputStreamFactory {

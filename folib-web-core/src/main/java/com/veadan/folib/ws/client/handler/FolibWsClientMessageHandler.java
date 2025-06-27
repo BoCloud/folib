@@ -14,10 +14,8 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.BinaryWebSocketHandler;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/10/19 16:24
- * @since x.x.x
  */
 @Slf4j
 public class FolibWsClientMessageHandler extends BinaryWebSocketHandler {

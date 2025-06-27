@@ -27,7 +27,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import static com.veadan.folib.ws.common.FolibWsRunManageV2.FOLIB_WS_PROTOCOL;
 
 /**
- * @author pengYongQiang
+ * @author veadan
  * @date 2024/2/17 13:42
  */
 @Slf4j

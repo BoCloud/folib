@@ -23,7 +23,7 @@ import org.springframework.util.StringUtils;
  *  {ALG}md5/sha1/bcrypt(mypassword)
  * </p>
  *
- * @author mbharti
+ * @author veadan
  * @date 19/10/20
  */
 public class CustomLdapUserDetailsMapper

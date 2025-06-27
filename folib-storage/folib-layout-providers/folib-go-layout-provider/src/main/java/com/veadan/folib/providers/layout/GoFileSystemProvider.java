@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.nio.file.spi.FileSystemProvider;
 
 /**
- * @author pengYongQiang
+ * @author veadan
  * @date 1/3/2024 15:31
  */
 public class GoFileSystemProvider extends LayoutFileSystemProvider {

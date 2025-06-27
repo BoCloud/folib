@@ -15,7 +15,7 @@ import java.util.Set;
  * This {@link FileSystem} implementation allows to have original
  * {@link Path} wrapped by {@link Proxy} wihout errors.
  * 
- * @author xuxinping
+ * @author veadan
  *
  * @see ProxyPathInvocationHandler
  * @see ProxyFileSystemProvider

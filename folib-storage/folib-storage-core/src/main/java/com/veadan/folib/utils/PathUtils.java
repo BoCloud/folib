@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2025-02-26 11:18
  */
 public class PathUtils {

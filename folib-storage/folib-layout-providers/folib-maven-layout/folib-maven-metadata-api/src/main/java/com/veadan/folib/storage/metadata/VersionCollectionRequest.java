@@ -11,7 +11,7 @@ import org.apache.maven.artifact.repository.metadata.SnapshotVersion;
 import org.apache.maven.artifact.repository.metadata.Versioning;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public class VersionCollectionRequest
 {

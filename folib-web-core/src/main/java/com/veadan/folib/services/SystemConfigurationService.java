@@ -4,7 +4,7 @@ import com.veadan.folib.model.request.ExportSystemConfigurationReq;
 import com.veadan.folib.model.request.ImportSystemConfigurationReq;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2025/3/28
  **/
 public interface SystemConfigurationService {

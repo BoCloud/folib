@@ -9,7 +9,7 @@ import java.util.List;
 
  /**
  * 资源表;(resource)表数据库访问层
- * @author : Fengmaogen
+ * @author veadan
  * @date : 2024-7-17
  */
 @Mapper

@@ -272,7 +272,6 @@ public class FileUtils {
      * @param destinationFolderPath
      * @param chunkSize 切割大小（KB） 
      * @throws IOException
-     * @since x.x.x
      */
     public static List<String> splitFile(String sourceFilePath, String destinationFolderPath, long chunkSize) throws IOException {
         final List<String> sliceFilePathList = new ArrayList<>();
@@ -317,7 +316,6 @@ public class FileUtils {
      * @param targetFilePath
      * @param sourceFilePaths 需要合并路径的集合
      * @return
-     * @since x.x.x
      */
     public static boolean mergeFiles(String targetFilePath, List<String> sourceFilePaths)  {
         final File targetFile = new File(targetFilePath);

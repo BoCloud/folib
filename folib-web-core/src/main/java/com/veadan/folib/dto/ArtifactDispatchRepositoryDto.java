@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 /**
  * 制品分发仓库参数
  *
- * @author qijianping
+ * @author veadan
  */
 @Data
 @AllArgsConstructor

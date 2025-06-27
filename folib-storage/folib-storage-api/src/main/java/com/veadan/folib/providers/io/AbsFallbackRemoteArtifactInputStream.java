@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * @author pengYongQiang
+ * @author veadan
  * @date 1/13/2024 12:04
  */
 public abstract class AbsFallbackRemoteArtifactInputStream extends InputStream {

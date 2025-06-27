@@ -12,7 +12,7 @@ import java.util.Set;
 
 /**
  * 角色信息;(folib_role)表服务接口
- * @author : Fengmaogen
+ * @author veadan
  * @date : 2024-7-17
  */
 public interface FolibRoleService{

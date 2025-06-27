@@ -10,7 +10,7 @@ import java.io.OutputStream;
 import java.util.zip.GZIPOutputStream;
 
 /**
- * @author huayanjun
+ * @author veadan
  * @since 2024-09-02 16:47
  */
 @Slf4j

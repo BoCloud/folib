@@ -3,7 +3,7 @@ package com.veadan.folib.services;
 import com.veadan.folib.users.dto.UserAuthDTO;
 
 /**
- * @author xuxinping
+ * @author veadan
  */
 public interface UserSyncService {
 

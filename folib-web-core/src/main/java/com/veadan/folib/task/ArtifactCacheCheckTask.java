@@ -27,7 +27,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * @author leipenghui
+ * @author veadan
  * 制品缓存检查task
  */
 @Slf4j

@@ -12,7 +12,7 @@ import javax.persistence.*;
 import java.util.Date;
 
 /**
- * @author leipenghui
+ * @author veadan
  * @date 2023/10/27
  * 制品缓存记录
  **/

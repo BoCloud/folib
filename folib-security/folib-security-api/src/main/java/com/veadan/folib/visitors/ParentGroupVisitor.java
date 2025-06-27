@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * @author mtodorov
+ * @author veadan
  */
 public class ParentGroupVisitor implements Visitor
 {

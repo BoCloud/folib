@@ -9,10 +9,8 @@ import javax.validation.constraints.NotNull;
 import java.util.Map;
 
 /**
- * @author xiaodong.wang
- * @email wangxiaodong@beyondcent.com
+ * @author veadan
  * @date 2023/11/22 14:39
- * @since x.x.x
  */
 @Data
 public class ArtifactSliceUploadReq {

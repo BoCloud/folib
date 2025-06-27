@@ -54,7 +54,7 @@ import java.util.Objects;
 /**
  * This Controller used to handle pub requests.
  *
- * @author leipenghui
+ * @author veadan
  */
 @RestController
 @LayoutRequestMapping(PubArtifactCoordinates.LAYOUT_NAME)

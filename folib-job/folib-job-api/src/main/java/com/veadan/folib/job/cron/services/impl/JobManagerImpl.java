@@ -10,7 +10,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Component;
 
 /**
- * @author Kate Novik.
+ * @author veadan
  */
 @Component
 public class JobManagerImpl
