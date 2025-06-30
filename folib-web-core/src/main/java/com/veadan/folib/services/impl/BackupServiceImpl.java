@@ -3,8 +3,8 @@ package com.veadan.folib.services.impl;
 import com.google.common.collect.Lists;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.DictTypeEnum;
-import com.veadan.folib.dto.backup.BackupDto;
-import com.veadan.folib.dto.common.RepositoryDto;
+import com.veadan.folib.forms.backup.BackupForm;
+import com.veadan.folib.forms.common.RepositoryForm;
 import com.veadan.folib.services.BackupService;
 import com.veadan.folib.services.DictService;
 import lombok.extern.slf4j.Slf4j;
@@ -28,11 +28,11 @@ public class BackupServiceImpl implements BackupService {
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public void saveBackup(BackupDto backupForm) {
+    public void saveBackup(BackupForm backupForm) {
         String dictKey = "", dictValue = backupForm.getDirectoryPath();
         List<Dict> dictList = Lists.newArrayList();
         Dict dict = null, dbDict = null;
-        for (RepositoryDto repositoryForm : backupForm.getRepositoryList()) {
+        for (RepositoryForm repositoryForm : backupForm.getRepositoryList()) {
             dictKey = String.format("%s:%s", repositoryForm.getStorageId(), repositoryForm.getRepositoryId());
             dict = Dict.builder().dictType(DictTypeEnum.BACKUP_SETTINGS.getType()).dictKey(dictKey).dictValue(dictValue).build();
             dbDict = dictService.selectLatestOneDict(dict);

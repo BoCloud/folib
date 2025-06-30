@@ -6,8 +6,9 @@ import com.veadan.folib.domain.DockeerImageResult;
 import com.veadan.folib.domain.StatusInfo;
 import com.veadan.folib.domain.thirdparty.ArtifactInfo;
 import com.veadan.folib.domain.thirdparty.ArtifactQuery;
-import com.veadan.folib.dto.artifact.ArtifactMetadataDto;
-import com.veadan.folib.dto.scanner.*;
+
+import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
+import com.veadan.folib.forms.scanner.*;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import org.springframework.security.core.Authentication;
@@ -57,7 +58,7 @@ public interface ArtifactWebService {
      * @param artifactMetadataForm 参数
      * @throws IOException 异常
      */
-    void globalSettingAddOrUpdateMetadata(ArtifactMetadataDto artifactMetadataForm) throws IOException;
+    void globalSettingAddOrUpdateMetadata(ArtifactMetadataForm artifactMetadataForm) throws IOException;
 
     /**
      * 全局设置删除元数据
@@ -65,14 +66,14 @@ public interface ArtifactWebService {
      * @param artifactMetadataForm 参数
      * @throws IOException 异常
      */
-    void globalSettingDeleteMetadata(ArtifactMetadataDto artifactMetadataForm) throws IOException;
+    void globalSettingDeleteMetadata(ArtifactMetadataForm artifactMetadataForm) throws IOException;
 
     /**
      * 获取全局设置的元数据
      *
      * @return 全局设置的元数据
      */
-    List<ArtifactMetadataDto> getMetadataConfiguration();
+    List<ArtifactMetadataForm> getMetadataConfiguration();
 
     /**
      * 新增制品元数据
@@ -80,7 +81,7 @@ public interface ArtifactWebService {
      * @param artifactMetadataForm 参数
      * @return 结果
      */
-    String saveArtifactMetadata(ArtifactMetadataDto artifactMetadataForm);
+    String saveArtifactMetadata(ArtifactMetadataForm artifactMetadataForm);
 
     /**
      * 修改制品元数据
@@ -88,14 +89,14 @@ public interface ArtifactWebService {
      * @param artifactMetadataForm 参数
      * @return 结果
      */
-    String updateArtifactMetadata(ArtifactMetadataDto artifactMetadataForm);
+    String updateArtifactMetadata(ArtifactMetadataForm artifactMetadataForm);
 
     /**
      * 删除制品元数据
      *
      * @param artifactMetadataForm 参数
      */
-    void deleteArtifactMetadata(ArtifactMetadataDto artifactMetadataForm);
+    void deleteArtifactMetadata(ArtifactMetadataForm artifactMetadataForm);
 
     /**
      * 扫描信息统计
@@ -103,7 +104,7 @@ public interface ArtifactWebService {
      * @param authentication 登录用户
      * @return 扫描信息统计
      */
-    CountDto getCount(Authentication authentication);
+    CountForm getCount(Authentication authentication);
 
     /**
      * 近一个月内统计信息
@@ -111,7 +112,7 @@ public interface ArtifactWebService {
      * @param authentication 登录用户
      * @return 近一个月内统计信息
      */
-    List<DayCountDto> monthCount(Authentication authentication);
+    List<DayCountForm> monthCount(Authentication authentication);
 
     /**
      * 近一周内数据
@@ -119,7 +120,7 @@ public interface ArtifactWebService {
      * @param authentication 登录用户
      * @return 近一周内数据
      */
-    WeekCountDto weekCount(Authentication authentication);
+    WeekCountForm weekCount(Authentication authentication);
 
     /**
      * 仓库扫描情况
@@ -127,7 +128,7 @@ public interface ArtifactWebService {
      * @param authentication 登录用户
      * @return 仓库扫描情况
      */
-    List<RepositoryCountDto> repositories(Authentication authentication);
+    List<RepositoryCountForm> repositories(Authentication authentication);
 
     /**
      * 仓库扫描情况
@@ -139,14 +140,14 @@ public interface ArtifactWebService {
      * @param limit        每页数量
      * @return 仓库扫描情况
      */
-    RepositoryScannerDto repository(String storageId, String repositoryId, String artifactName, Integer page, Integer limit);
+    RepositoryScannerForm repository(String storageId, String repositoryId, String artifactName, Integer page, Integer limit);
 
     /**
      * 批量存储或更新元数据
      *
      * @param artifactMetadataFormList artifactMetadataFormList
      */
-    void batchArtifactMetadata(List<ArtifactMetadataDto> artifactMetadataFormList);
+    void batchArtifactMetadata(List<ArtifactMetadataForm> artifactMetadataFormList);
 
     /***
      * 获取制品信息

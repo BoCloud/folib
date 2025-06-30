@@ -11,7 +11,7 @@ import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.UserPermissionForm;
 import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
-import com.veadan.folib.dto.users.UserDto;
+import com.veadan.folib.forms.users.UserForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.StorageManagementService;
 import com.veadan.folib.users.dto.UserPermissionDTO;
@@ -217,7 +217,7 @@ public class UserController
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    public ResponseEntity create(@RequestBody @Validated(UserDto.NewUser.class) UserDto userForm,
+    public ResponseEntity create(@RequestBody @Validated(UserForm.NewUser.class) UserForm userForm,
                                  BindingResult bindingResult,
                                  @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (bindingResult.hasErrors()) {
@@ -259,7 +259,7 @@ public class UserController
     @ResponseBody
     public ResponseEntity update(@ApiParam(value = "The name of the user", required = true)
                                  @PathVariable String username,
-                                 @RequestBody @Validated(UserDto.ExistingUser.class) UserDto userToUpdate,
+                                 @RequestBody @Validated(UserForm.ExistingUser.class) UserForm userToUpdate,
                                  BindingResult bindingResult,
                                  Authentication authentication,
                                  @RequestHeader(HttpHeaders.ACCEPT) String accept) {

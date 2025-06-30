@@ -1,8 +1,8 @@
 package com.veadan.folib.services;
 
 import com.veadan.folib.entity.AccessToken;
-import com.veadan.folib.dto.accesstoken.AccessTokenDto;
-import com.veadan.folib.dto.accesstoken.AccessTokenResponse;
+import com.veadan.folib.forms.accesstoken.AccessTokenForm;
+import com.veadan.folib.forms.accesstoken.AccessTokenResponse;
 
 import java.util.List;
 
@@ -12,7 +12,7 @@ import java.util.List;
  */
 public interface AccessTokenService {
 
-    AccessTokenResponse generate(AccessTokenDto form);
+    AccessTokenResponse generate(AccessTokenForm form);
 
     void delete(Long id,String tokenId);
 

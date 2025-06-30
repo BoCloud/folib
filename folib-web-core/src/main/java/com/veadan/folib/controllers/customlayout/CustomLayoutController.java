@@ -3,7 +3,7 @@ package com.veadan.folib.controllers.customlayout;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.domain.customlayout.CustomLayoutRecord;
 import com.veadan.folib.entity.CustomLayout;
-import com.veadan.folib.dto.customlayout.CustomLayoutDto;
+import com.veadan.folib.forms.customlayout.CustomLayoutForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.CustomLayoutService;
 import io.swagger.annotations.Api;
@@ -36,22 +36,22 @@ public class CustomLayoutController extends BaseController {
     @GetMapping(value = "/page")
     public TableResultResponse<CustomLayoutRecord> page(@RequestParam(name = "page", required = false) Integer page,
                                                         @RequestParam(name = "limit", required = false) Integer limit,
-                                                        CustomLayoutDto customLayoutForm) {
+                                                        CustomLayoutForm customLayoutForm) {
         return customLayoutService.queryCustomLayoutPage(page, limit, customLayoutForm);
     }
 
     @ApiOperation(value = "查询自定义布局列表", response = CustomLayoutRecord.class)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @GetMapping(value = "/list")
-    public ResponseEntity<List<CustomLayoutRecord>> list(CustomLayoutDto customLayoutForm) {
+    public ResponseEntity<List<CustomLayoutRecord>> list(CustomLayoutForm customLayoutForm) {
         return ResponseEntity.ok(customLayoutService.queryCustomLayoutList(customLayoutForm));
     }
 
-    @ApiOperation(value = "查询自定义布局信息", response = CustomLayoutDto.class)
+    @ApiOperation(value = "查询自定义布局信息", response = CustomLayoutForm.class)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @GetMapping(value = "/info")
     public ResponseEntity<Object> customLayoutInfo(CustomLayout customLayout) {
-        CustomLayoutDto customLayoutForm = customLayoutService.queryCustomLayout(customLayout);
+        CustomLayoutForm customLayoutForm = customLayoutService.queryCustomLayout(customLayout);
         if (Objects.isNull(customLayoutForm)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(String.format("%s自定义布局不存在", customLayout.getLayoutName()));
         }
@@ -62,7 +62,7 @@ public class CustomLayoutController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping
-    public ResponseEntity<String> saveCustomLayout(@RequestBody @Validated(CustomLayoutDto.SaveGroup.class) CustomLayoutDto customLayoutForm) {
+    public ResponseEntity<String> saveCustomLayout(@RequestBody @Validated(CustomLayoutForm.SaveGroup.class) CustomLayoutForm customLayoutForm) {
         if (validateCustomLayout(customLayoutForm.getLayoutName())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(String.format("%s自定义布局名称已存在", customLayoutForm.getLayoutName()));
         }
@@ -74,7 +74,7 @@ public class CustomLayoutController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping
-    public ResponseEntity<String> updateCustomLayout(@RequestBody @Validated(CustomLayoutDto.UpdateGroup.class) CustomLayoutDto customLayoutForm) {
+    public ResponseEntity<String> updateCustomLayout(@RequestBody @Validated(CustomLayoutForm.UpdateGroup.class) CustomLayoutForm customLayoutForm) {
         if (Objects.isNull(customLayoutForm.getId()) && !validateCustomLayout(customLayoutForm.getLayoutName())) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(String.format("%s自定义布局不存在", customLayoutForm.getLayoutName()));
         }
@@ -90,7 +90,7 @@ public class CustomLayoutController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping
-    public ResponseEntity<String> deleteCustomLayout(@RequestBody @Validated(CustomLayoutDto.DeleteGroup.class) CustomLayoutDto customLayoutForm) {
+    public ResponseEntity<String> deleteCustomLayout(@RequestBody @Validated(CustomLayoutForm.DeleteGroup.class) CustomLayoutForm customLayoutForm) {
         if (!validateCustomLayout(customLayoutForm.getLayoutName())) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(String.format("%s自定义布局不存在", customLayoutForm.getLayoutName()));
         }

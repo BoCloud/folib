@@ -45,13 +45,13 @@ import com.veadan.folib.domain.bom.Bom;
 import com.veadan.folib.domain.bom.FoEyes;
 import com.veadan.folib.domain.thirdparty.ArtifactInfo;
 import com.veadan.folib.domain.thirdparty.ArtifactQuery;
-import com.veadan.folib.dto.scanner.*;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.entity.RoleResourceRef;
 import com.veadan.folib.enums.*;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
-import com.veadan.folib.dto.artifact.ArtifactMetadataDto;
-import com.veadan.folib.dto.dict.DictDto;
+import com.veadan.folib.forms.dict.DictForm;
+import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
+import com.veadan.folib.forms.scanner.*;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
 import com.veadan.folib.gremlin.entity.vo.ArtifactVo;
 import com.veadan.folib.indexer.DebianReleaseMetadataIndexer;
@@ -414,7 +414,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
     @Override
-    public void globalSettingAddOrUpdateMetadata(ArtifactMetadataDto artifactMetadataForm) throws IOException {
+    public void globalSettingAddOrUpdateMetadata(ArtifactMetadataForm artifactMetadataForm) throws IOException {
         MutableMetadataConfiguration mutableMetadataConfiguration = MutableMetadataConfiguration.builder().build();
         BeanUtils.copyProperties(artifactMetadataForm, mutableMetadataConfiguration);
         configurationManagementService.addOrUpdateMetadataConfiguration(mutableMetadataConfiguration);
@@ -423,28 +423,28 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
     @Override
-    public void globalSettingDeleteMetadata(ArtifactMetadataDto artifactMetadataForm) throws IOException {
+    public void globalSettingDeleteMetadata(ArtifactMetadataForm artifactMetadataForm) throws IOException {
         configurationManagementService.deleteMetadataConfig(artifactMetadataForm.getKey());
         //向其他节点同步
         syncDataMetadataConfiguration(MutableMetadataConfiguration.builder().key(artifactMetadataForm.getKey()).build(), SyncMetadataEnum.DELETE);
     }
 
     @Override
-    public List<ArtifactMetadataDto> getMetadataConfiguration() {
+    public List<ArtifactMetadataForm> getMetadataConfiguration() {
         return Optional.of(configurationManagementService.getConfiguration().getMetadataConfiguration().values().stream().collect(Collectors.toCollection(LinkedList::new))).orElse(Lists.newLinkedList()).stream().map(item -> {
-            ArtifactMetadataDto artifactMetadata = ArtifactMetadataDto.builder().build();
+            ArtifactMetadataForm artifactMetadata = ArtifactMetadataForm.builder().build();
             BeanUtils.copyProperties(item, artifactMetadata);
             return artifactMetadata;
         }).collect(Collectors.toList());
     }
 
     @Override
-    public String saveArtifactMetadata(ArtifactMetadataDto artifactMetadataForm) {
+    public String saveArtifactMetadata(ArtifactMetadataForm artifactMetadataForm) {
         return updateArtifactMetadata(artifactMetadataForm);
     }
 
     @Override
-    public String updateArtifactMetadata(ArtifactMetadataDto artifactMetadataForm) {
+    public String updateArtifactMetadata(ArtifactMetadataForm artifactMetadataForm) {
         String lockKey = String.format("%s-%s-%s-%s", "metadata", artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
         if (distributedLockComponent.lock(lockKey, GlobalConstants.WAIT_LOCK_TIME)) {
             try {
@@ -483,7 +483,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
     @Override
-    public void deleteArtifactMetadata(ArtifactMetadataDto artifactMetadataForm) {
+    public void deleteArtifactMetadata(ArtifactMetadataForm artifactMetadataForm) {
         String lockKey = String.format("%s-%s-%s-%s", "metadata", artifactMetadataForm.getStorageId(), artifactMetadataForm.getRepositoryId(), artifactMetadataForm.getArtifactPath());
         if (distributedLockComponent.lock(lockKey, GlobalConstants.WAIT_LOCK_TIME)) {
             try {
@@ -520,9 +520,9 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
     @Override
-    public CountDto getCount(Authentication authentication) {
+    public CountForm getCount(Authentication authentication) {
         Long zero = 0L;
-        CountDto countForm = CountDto.builder().scanCount(zero).notScanCount(zero).scanSuccessCount(zero).scanFailCount(zero)
+        CountForm countForm = CountForm.builder().scanCount(zero).notScanCount(zero).scanSuccessCount(zero).scanFailCount(zero)
                 .dependencyCount(zero).dependencyVulnerabilitiesCount(zero).vulnerabilitiesCount(zero).suppressedVulnerabilitiesCount(zero).build();
         List<String> storageIds = havePermissionStorageIdList(authentication);
         List<String> storageIdAndRepositoryIdList = getStorageIdsRepositoryIdsByOnScanAndStorageIds(1, storageIds);
@@ -544,11 +544,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
     @Override
-    public List<DayCountDto> monthCount(Authentication authentication) {
+    public List<DayCountForm> monthCount(Authentication authentication) {
         List<String> storageIds = havePermissionStorageIdList(authentication);
         List<String> dayList = CustomDateUtils.getDaysBetween(30);
         Map<String, Long> map = null;
-        List<DayCountDto> list = Lists.newArrayList();
+        List<DayCountForm> list = Lists.newArrayList();
         Long zero = 0L, dependencyCount, vulnerabilitiesCount;
         List<String> storageIdAndRepositoryIdList = getStorageIdsRepositoryIdsByOnScanAndStorageIds(1, storageIds);
         if (CollectionUtils.isEmpty(storageIdAndRepositoryIdList)) {
@@ -559,21 +559,21 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
             dependencyCount = map.getOrDefault("dependencyCount", zero);
             vulnerabilitiesCount = map.getOrDefault("vulnerabilitiesCount", zero);
             if (dependencyCount > zero || vulnerabilitiesCount > zero) {
-                list.add(DayCountDto.builder().date(date).dependencyCount(dependencyCount).vulnerabilitiesCount(vulnerabilitiesCount).build());
+                list.add(DayCountForm.builder().date(date).dependencyCount(dependencyCount).vulnerabilitiesCount(vulnerabilitiesCount).build());
             }
         }
         return list;
     }
 
     @Override
-    public WeekCountDto weekCount(Authentication authentication) {
+    public WeekCountForm weekCount(Authentication authentication) {
         List<String> storageIds = havePermissionStorageIdList(authentication);
         List<String> currentWeekList = CustomDateUtils.getDaysBetween(7);
         List<String> lastWeekList = CustomDateUtils.getDaysBetween(14);
         lastWeekList.removeAll(currentWeekList);
         Map<String, Long> map = null;
-        WeekCountDto weekCountForm = WeekCountDto.builder().build();
-        List<WeekDayCountDto> list = Lists.newArrayList();
+        WeekCountForm weekCountForm = WeekCountForm.builder().build();
+        List<WeekDayCountForm> list = Lists.newArrayList();
         Long zero = 0L, vulnerabilitiesCount;
         List<String> storageIdAndRepositoryIdList = getStorageIdsRepositoryIdsByOnScanAndStorageIds(1, storageIds);
         if (CollectionUtils.isEmpty(storageIdAndRepositoryIdList)) {
@@ -582,13 +582,13 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         for (String date : currentWeekList) {
             map = artifactRepository.countArtifactByStorageIdsAndRepositoryIdsAndDate(storageIdAndRepositoryIdList, date, null, null);
             vulnerabilitiesCount = map.getOrDefault("vulnerabilitiesCount", zero);
-            list.add(WeekDayCountDto.builder().date(date.substring(5)).vulnerabilitiesCount(vulnerabilitiesCount).build());
+            list.add(WeekDayCountForm.builder().date(date.substring(5)).vulnerabilitiesCount(vulnerabilitiesCount).build());
         }
         weekCountForm.setDayCountList(list);
 
         Map<String, Long> currentWeekMap = artifactRepository.countFullArtifactByStorageIdsAndRepositoryIdsAndDate(storageIdAndRepositoryIdList, getStartLong(currentWeekList.get(0)), getEndLong(currentWeekList.get(currentWeekList.size() - 1)));
         Map<String, Long> lastWeekMap = artifactRepository.countFullArtifactByStorageIdsAndRepositoryIdsAndDate(storageIdAndRepositoryIdList, getStartLong(lastWeekList.get(0)), getEndLong(lastWeekList.get(lastWeekList.size() - 1)));
-        CompareCountDto compareCountForm = CompareCountDto.builder().build();
+        CompareCountForm compareCountForm = CompareCountForm.builder().build();
         compareCountForm.setScanCount(currentWeekMap.getOrDefault("scanCount", zero) - lastWeekMap.getOrDefault("scanCount", zero));
         compareCountForm.setDependencyCount(currentWeekMap.getOrDefault("dependencyCount", zero) - lastWeekMap.getOrDefault("dependencyCount", zero));
         compareCountForm.setDependencyVulnerabilitiesCount(currentWeekMap.getOrDefault("dependencyVulnerabilitiesCount", zero) - lastWeekMap.getOrDefault("dependencyVulnerabilitiesCount", zero));
@@ -599,7 +599,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
     @Override
-    public List<RepositoryCountDto> repositories(Authentication authentication) {
+    public List<RepositoryCountForm> repositories(Authentication authentication) {
         List<String> storageIds = havePermissionStorageIdList(authentication);
         if (CollectionUtils.isEmpty(storageIds)) {
             return Collections.emptyList();
@@ -614,7 +614,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         Long zero = 0L;
         DecimalFormat decimalFormat = new DecimalFormat(".00");
         return Optional.ofNullable(scanRulesList).orElse(Collections.emptyList()).stream().map(scanRules -> {
-            RepositoryCountDto repositoryCountForm = RepositoryCountDto.builder().storage(scanRules.getStorage()).repository(scanRules.getRepository())
+            RepositoryCountForm repositoryCountForm = RepositoryCountForm.builder().storage(scanRules.getStorage()).repository(scanRules.getRepository())
                     .layout(scanRules.getLayout()).build();
             Map<String, Long> map = artifactRepository.countRepositoryArtifactByStorageIdAndRepositoryId(scanRules.getStorage(), scanRules.getRepository());
             repositoryCountForm.setScanCount(map.getOrDefault("scanCount", zero));
@@ -636,7 +636,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
     @Override
-    public RepositoryScannerDto repository(String storageId, String repositoryId, String artifactName, Integer page, Integer limit) {
+    public RepositoryScannerForm repository(String storageId, String repositoryId, String artifactName, Integer page, Integer limit) {
         Pageable pageable = null;
         if (Objects.isNull(page)) {
             page = 1;
@@ -653,14 +653,14 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         prefix = String.format(prefix, storageId, repositoryId);
         Repository repository = configurationManagementService.getConfiguration().getRepository(storageId, repositoryId);
         Page<Artifact> artifactPage = artifactRepository.scannerListByParams(pageable, artifactName, storageId, repositoryId);
-        RepositoryScannerDto repositoryScannerForm = RepositoryScannerDto.builder().total(artifactPage.getTotalElements()).build();
+        RepositoryScannerForm repositoryScannerForm = RepositoryScannerForm.builder().total(artifactPage.getTotalElements()).build();
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         repositoryScannerForm.setList(artifactPage.getContent().stream().map(artifact -> {
             String scanTime = DateUtil.format(Date.from(artifact.getScanDateTime().atZone(ZoneId.of("Asia/Shanghai")).toOffsetDateTime().toInstant()), df);
-            RepositoryDto repositoryForm = RepositoryDto.builder().dependencyCount(artifact.getDependencyCount()).dependencyVulnerabilitiesCount(artifact.getDependencyVulnerabilitiesCount())
+            RepositoryForm repositoryForm = RepositoryForm.builder().dependencyCount(artifact.getDependencyCount()).dependencyVulnerabilitiesCount(artifact.getDependencyVulnerabilitiesCount())
                     .uuid(artifact.getUuid()).scanTime(scanTime).suppressedVulnerabilitiesCount(artifact.getSuppressedVulnerabilitiesCount())
                     .vulnerabilitiesCount(artifact.getVulnerabilitiesCount()).storageId(artifact.getStorageId()).repositoryId(artifact.getRepositoryId()).artifactPath(artifact.getArtifactPath()).build();
-            repositoryForm.setFilePaths(Optional.ofNullable(artifact.getFilePaths()).orElse(Collections.emptySet()).stream().map(item -> JSONObject.parseObject(item, ScannerReportDto.class)).collect(Collectors.toList()));
+            repositoryForm.setFilePaths(Optional.ofNullable(artifact.getFilePaths()).orElse(Collections.emptySet()).stream().map(item -> JSONObject.parseObject(item, ScannerReportForm.class)).collect(Collectors.toList()));
             if (DockerLayoutProvider.ALIAS.equals(repository.getLayout())) {
                 //docker
                 DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) artifact.getArtifactCoordinates();
@@ -677,10 +677,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
     }
 
     @Override
-    public void batchArtifactMetadata(List<ArtifactMetadataDto> artifactMetadataFormList) {
+    public void batchArtifactMetadata(List<ArtifactMetadataForm> artifactMetadataFormList) {
         // 批量的新增或更新 path Artifact 是一致的
         if (CollectionUtils.isNotEmpty(artifactMetadataFormList)) {
-            ArtifactMetadataDto artifactMetaData = artifactMetadataFormList.get(0);
+            ArtifactMetadataForm artifactMetaData = artifactMetadataFormList.get(0);
             Artifact artifact = null;
             String lockKey = String.format("%s-%s-%s-%s", "metadata", artifactMetaData.getStorageId(), artifactMetaData.getRepositoryId(), artifactMetaData.getArtifactPath());
             if (distributedLockComponent.lock(lockKey, GlobalConstants.WAIT_LOCK_TIME)) {
@@ -845,10 +845,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                     }
                 }
             }
-            dictService.updateDict(DictDto.builder().id(dictId).comment("构建完成").build());
+            dictService.updateDict(DictForm.builder().id(dictId).comment("构建完成").build());
         } catch (Exception ex) {
             log.error("BuildGraphIndex is error [{}]", ExceptionUtils.getStackTrace(ex));
-            dictService.updateDict(DictDto.builder().id(dictId).comment("构建错误").build());
+            dictService.updateDict(DictForm.builder().id(dictId).comment("构建错误").build());
         }
         log.info("BuildGraphIndex is finished");
     }
@@ -2411,7 +2411,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         artifactComponent.storeArtifactMetadataFile(repositoryPath);
     }
 
-    private void saveOrUpdateArtifactMetadata(RepositoryPath repositoryPath, Artifact artifact, ArtifactMetadataDto artifactMetadataForm) throws IOException {
+    private void saveOrUpdateArtifactMetadata(RepositoryPath repositoryPath, Artifact artifact, ArtifactMetadataForm artifactMetadataForm) throws IOException {
         JSONObject metadataJson = getMetadata(artifact);
         metadataJson = metadataJson == null ? new JSONObject() : metadataJson;
         ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
@@ -2424,7 +2424,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         cacheMetadata(repositoryPath);
     }
 
-    private void saveOrUpdateDirectoryMetadata(RepositoryPath repositoryPath, ArtifactMetadataDto artifactMetadataForm) {
+    private void saveOrUpdateDirectoryMetadata(RepositoryPath repositoryPath, ArtifactMetadataForm artifactMetadataForm) {
         String metadata = artifactComponent.getCacheArtifactMetadata(repositoryPath);
         JSONObject metadataJson = StringUtils.isNotBlank(metadata) ? JSONObject.parseObject(metadata) : new JSONObject();
         ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
@@ -2433,7 +2433,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         artifactComponent.cacheArtifactMetadata(repositoryPath, metadataJson.toJSONString());
     }
 
-    private void recursiveMetadata(RepositoryPath repositoryPath, ArtifactMetadataDto artifactMetaData) {
+    private void recursiveMetadata(RepositoryPath repositoryPath, ArtifactMetadataForm artifactMetaData) {
         //目录级别元数据
         Boolean recursive = artifactMetaData.getRecursive();
         if (Objects.isNull(recursive) || Boolean.FALSE.equals(recursive)) {
@@ -2496,10 +2496,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         }
     }
 
-    private void saveOrUpdateArtifactBatchMetadata(RepositoryPath repositoryPath, Artifact artifact, List<ArtifactMetadataDto> artifactMetadataFormList) throws IOException {
+    private void saveOrUpdateArtifactBatchMetadata(RepositoryPath repositoryPath, Artifact artifact, List<ArtifactMetadataForm> artifactMetadataFormList) throws IOException {
         JSONObject metadataJson = getMetadata(artifact);
         metadataJson = metadataJson == null ? new JSONObject() : metadataJson;
-        for (ArtifactMetadataDto artifactMetadataForm : artifactMetadataFormList) {
+        for (ArtifactMetadataForm artifactMetadataForm : artifactMetadataFormList) {
             String key = artifactMetadataForm.getKey();
             ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
             BeanUtils.copyProperties(artifactMetadataForm, artifactMetadata);
@@ -2512,10 +2512,10 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         cacheMetadata(repositoryPath);
     }
 
-    private void saveOrUpdateDirectoryBatchMetadata(RepositoryPath repositoryPath, List<ArtifactMetadataDto> artifactMetadataFormList) {
+    private void saveOrUpdateDirectoryBatchMetadata(RepositoryPath repositoryPath, List<ArtifactMetadataForm> artifactMetadataFormList) {
         String metadata = artifactComponent.getCacheArtifactMetadata(repositoryPath);
         JSONObject metadataJson = StringUtils.isNotBlank(metadata) ? JSONObject.parseObject(metadata) : new JSONObject();
-        for (ArtifactMetadataDto artifactMetadataForm : artifactMetadataFormList) {
+        for (ArtifactMetadataForm artifactMetadataForm : artifactMetadataFormList) {
             String key = artifactMetadataForm.getKey();
             ArtifactMetadata artifactMetadata = ArtifactMetadata.builder().build();
             BeanUtils.copyProperties(artifactMetadataForm, artifactMetadata);
@@ -2524,7 +2524,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         artifactComponent.cacheArtifactMetadata(repositoryPath, metadataJson.toJSONString());
     }
 
-    private void recursiveBatchMetadata(RepositoryPath repositoryPath, ArtifactMetadataDto artifactMetaData, List<ArtifactMetadataDto> artifactMetadataFormList) {
+    private void recursiveBatchMetadata(RepositoryPath repositoryPath, ArtifactMetadataForm artifactMetaData, List<ArtifactMetadataForm> artifactMetadataFormList) {
         //目录级别元数据
         Boolean recursive = artifactMetaData.getRecursive();
         if (Objects.isNull(recursive) || Boolean.FALSE.equals(recursive)) {
@@ -2587,7 +2587,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         }
     }
 
-    private void deleteArtifactMetadata(RepositoryPath repositoryPath, Artifact artifact, ArtifactMetadataDto artifactMetadataForm) throws IOException {
+    private void deleteArtifactMetadata(RepositoryPath repositoryPath, Artifact artifact, ArtifactMetadataForm artifactMetadataForm) throws IOException {
         JSONObject metadataJson = getMetadata(artifact);
         if (Objects.nonNull(metadataJson) && metadataJson.containsKey(artifactMetadataForm.getKey())) {
             validateAuth(repositoryPath);
@@ -2600,7 +2600,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         }
     }
 
-    private void deleteDirectoryMetadata(RepositoryPath repositoryPath, ArtifactMetadataDto artifactMetadataForm) {
+    private void deleteDirectoryMetadata(RepositoryPath repositoryPath, ArtifactMetadataForm artifactMetadataForm) {
         String metadata = artifactComponent.getCacheArtifactMetadata(repositoryPath);
         if (StringUtils.isBlank(metadata)) {
             return;
@@ -2610,7 +2610,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         artifactComponent.cacheArtifactMetadata(repositoryPath, metadataJson.toJSONString());
     }
 
-    private void recursiveDeleteMetadata(RepositoryPath repositoryPath, ArtifactMetadataDto artifactMetaData) {
+    private void recursiveDeleteMetadata(RepositoryPath repositoryPath, ArtifactMetadataForm artifactMetaData) {
         //目录级别元数据
         Boolean recursive = artifactMetaData.getRecursive();
         if (Objects.isNull(recursive) || Boolean.FALSE.equals(recursive)) {

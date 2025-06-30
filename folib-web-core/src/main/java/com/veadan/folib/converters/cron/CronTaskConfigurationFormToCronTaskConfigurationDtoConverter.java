@@ -1,7 +1,7 @@
 package com.veadan.folib.converters.cron;
 
-import com.veadan.folib.dto.cron.CronTaskConfigurationDto;
-import com.veadan.folib.dto.cron.CronTaskConfigurationDtoField;
+import com.veadan.folib.forms.cron.CronTaskConfigurationForm;
+import com.veadan.folib.forms.cron.CronTaskConfigurationFormField;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -13,17 +13,17 @@ import org.springframework.core.convert.converter.Converter;
  * @author Veadan
  */
 public enum CronTaskConfigurationFormToCronTaskConfigurationDtoConverter
-        implements Converter<CronTaskConfigurationDto, com.veadan.folib.job.cron.domain.CronTaskConfigurationDto>
+        implements Converter<CronTaskConfigurationForm, com.veadan.folib.job.cron.domain.CronTaskConfigurationDto>
 {
 
     INSTANCE;
 
     @Override
-    public com.veadan.folib.job.cron.domain.CronTaskConfigurationDto convert(CronTaskConfigurationDto configurationForm)
+    public com.veadan.folib.job.cron.domain.CronTaskConfigurationDto convert(CronTaskConfigurationForm configurationForm)
     {
         com.veadan.folib.job.cron.domain.CronTaskConfigurationDto configuration = new com.veadan.folib.job.cron.domain.CronTaskConfigurationDto();
 
-        List<CronTaskConfigurationDtoField> fields = configurationForm.getFields();
+        List<CronTaskConfigurationFormField> fields = configurationForm.getFields();
         if (CollectionUtils.isNotEmpty(fields))
         {
             configuration.setProperties(fields.stream()

@@ -3,8 +3,8 @@ package com.veadan.folib.validation.cron;
 import com.veadan.folib.job.cron.jobs.CronJobDefinition;
 import com.veadan.folib.job.cron.jobs.CronJobsDefinitionsRegistry;
 import com.veadan.folib.job.cron.jobs.fields.CronJobField;
-import com.veadan.folib.dto.cron.CronTaskConfigurationDto;
-import com.veadan.folib.dto.cron.CronTaskConfigurationDtoField;
+import com.veadan.folib.forms.cron.CronTaskConfigurationForm;
+import com.veadan.folib.forms.cron.CronTaskConfigurationFormField;
 import com.veadan.folib.validation.cron.autocomplete.CronTaskConfigurationFormFieldAutocompleteValidator;
 import com.veadan.folib.validation.cron.autocomplete.CronTaskConfigurationFormFieldAutocompleteValidatorsRegistry;
 import com.veadan.folib.validation.cron.type.CronTaskConfigurationFormFieldTypeValidator;
@@ -25,7 +25,7 @@ import org.quartz.CronExpression;
  * @author veadan
  */
 public class CronTaskConfigurationFormValidator
-        implements ConstraintValidator<CronTaskConfigurationDtoValid, CronTaskConfigurationDto>
+        implements ConstraintValidator<CronTaskConfigurationFormValid, CronTaskConfigurationForm>
 {
 
     @Inject
@@ -38,7 +38,7 @@ public class CronTaskConfigurationFormValidator
     private CronTaskConfigurationFormFieldAutocompleteValidatorsRegistry cronTaskConfigurationFormFieldAutocompleteValidatorsRegistry;
 
     @Override
-    public boolean isValid(CronTaskConfigurationDto form,
+    public boolean isValid(CronTaskConfigurationForm form,
                            ConstraintValidatorContext context)
     {
 
@@ -89,11 +89,11 @@ public class CronTaskConfigurationFormValidator
         for (CronJobField definitionField : cronJobDefinition.getFields())
         {
             String definitionFieldName = definitionField.getName();
-            CronTaskConfigurationDtoField correspondingFormField = null;
+            CronTaskConfigurationFormField correspondingFormField = null;
             int correspondingFormFieldIndex = -1;
             for (int i = 0; i < form.getFields().size(); i++)
             {
-                CronTaskConfigurationDtoField formField = form.getFields().get(i);
+                CronTaskConfigurationFormField formField = form.getFields().get(i);
 
                 String formFieldName = formField.getName();
                 if (StringUtils.equals(definitionFieldName, formFieldName))
@@ -176,7 +176,7 @@ public class CronTaskConfigurationFormValidator
         return Arrays.stream(value.split("\\$")).collect(Collectors.joining("\\$"));
     }
 
-    private CronJobDefinition getCorrespondingCronJobDefinition(CronTaskConfigurationDto form,
+    private CronJobDefinition getCorrespondingCronJobDefinition(CronTaskConfigurationForm form,
                                                                 ConstraintValidatorContext context)
     {
         String id = StringUtils.trimToEmpty(form.getJobClass());

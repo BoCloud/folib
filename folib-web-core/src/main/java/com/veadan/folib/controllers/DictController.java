@@ -1,7 +1,7 @@
 package com.veadan.folib.controllers;
 
 import com.veadan.folib.entity.Dict;
-import com.veadan.folib.dto.dict.DictDto;
+import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.DictService;
@@ -50,7 +50,7 @@ public class DictController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("authenticated")
     @PostMapping(value = "/single")
-    public ResponseEntity<String> updateDict(@RequestBody DictDto dict) {
+    public ResponseEntity<String> updateDict(@RequestBody DictForm dict) {
         if (Objects.isNull(dict.getId()) && StringUtils.isBlank(dict.getDictKey())) {
             throw new BusinessException("参数错误");
         }

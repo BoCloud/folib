@@ -1,4 +1,0 @@
-com.veadan.folib.dto.configuration.MavenRepositoryConfigurationDto
-com.veadan.folib.dto.configuration.NugetRepositoryConfigurationDto
-com.veadan.folib.dto.configuration.RawRepositoryConfigurationDto
-com.veadan.folib.dto.configuration.GoRepositoryConfigurationDto

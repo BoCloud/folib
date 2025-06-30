@@ -13,7 +13,7 @@ import com.veadan.folib.job.cron.jobs.GroovyCronJob;
 import com.veadan.folib.job.cron.services.CronJobSchedulerService;
 import com.veadan.folib.job.cron.services.CronTaskConfigurationService;
 import com.veadan.folib.enums.AuditEventNameEnum;
-import com.veadan.folib.dto.cron.CronTaskConfigurationDto;
+import com.veadan.folib.forms.cron.CronTaskConfigurationForm;
 import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.Api;
@@ -111,7 +111,7 @@ public class CronTaskController
     @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
-    public ResponseEntity create(@RequestBody @Validated CronTaskConfigurationDto cronTaskConfigurationForm,
+    public ResponseEntity create(@RequestBody @Validated CronTaskConfigurationForm cronTaskConfigurationForm,
                                  BindingResult bindingResult,
                                  @RequestHeader(HttpHeaders.ACCEPT) String acceptHeader) {
         if (bindingResult.hasErrors()) {
@@ -147,7 +147,7 @@ public class CronTaskController
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity updateConfiguration(@PathVariable("UUID") UUID uuid,
-                                              @RequestBody @Validated CronTaskConfigurationDto cronTaskConfigurationForm,
+                                              @RequestBody @Validated CronTaskConfigurationForm cronTaskConfigurationForm,
                                               BindingResult bindingResult,
                                               @RequestHeader(HttpHeaders.ACCEPT) String acceptHeader) {
         if (bindingResult.hasErrors()) {

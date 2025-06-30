@@ -7,7 +7,7 @@ import com.github.pagehelper.PageInfo;
 import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.entity.AuditLogRecord;
 import com.veadan.folib.enums.AuditEventNameEnum;
-import com.veadan.folib.dto.audit.AuditLogDto;
+import com.veadan.folib.forms.audit.AuditLogForm;
 import com.veadan.folib.mapper.AuditLogRecordMapper;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.AuditEventService;
@@ -101,7 +101,7 @@ public class AuditLogRecordServiceImpl implements AuditLogRecordService {
     }
 
     @Override
-    public TableResultResponse<AuditLogRecord> page(AuditLogDto model) {
+    public TableResultResponse<AuditLogRecord> page(AuditLogForm model) {
         PageHelper.startPage(model.getPageNumber(), model.getPageSize());
         List<AuditLogRecord> records = auditLogRecordMapper.selectList(Wrappers.<AuditLogRecord>lambdaQuery()
                 .eq(StringUtils.isNotBlank(model.getModuleValue()),  AuditLogRecord::getModule, model.getModuleValue())

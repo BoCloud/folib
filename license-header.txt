@@ -1,17 +1,16 @@
 Folib - [新一代AI制品仓库]
 Copyright (C) 2025 bocloud.com.cn <folib@beyondcent.com>
 
-This program is licensed under the Mulan Public License, Version 2.
-You may use this software according to the terms and conditions of the Mulan Public License, Version 2.
-You may obtain a copy of the license at:
-     https://license.coscl.org.cn/MulanPubL-2.0
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
-EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
-MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+本程序是自由软件：您可依据GNU通用公共许可证（GPL-3.0+）条款重新发布和修改，
+但禁止任何形式的商业售卖行为（包括但不限于：直接销售、捆绑销售、云服务商用）。
 
+This program is distributed WITHOUT ANY WARRANTY.
 Commercial sale of this software is expressly prohibited.
-商业售卖本软件（包括但不限于：直接销售、捆绑销售、云服务商用）被明确禁止。
 
-For commercial licensing, please contact: folib@beyondcent.com
-
+For license details, see: https://www.gnu.org/licenses/gpl-3.0.html
+商业授权咨询请联系：folib@beyondcent.com

@@ -9,10 +9,10 @@ import com.veadan.folib.controllers.users.support.UserResponseEntity;
 import com.veadan.folib.converters.users.RoleConvert;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.dto.RoleDTO;
-import com.veadan.folib.dto.users.auth.*;
 import com.veadan.folib.entity.UserGroup;
 import com.veadan.folib.entity.UserGroupRef;
 import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
+import com.veadan.folib.forms.users.auth.*;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.users.security.AuthoritiesProvider;
 import com.veadan.folib.users.service.FolibRoleService;
@@ -162,7 +162,7 @@ public class ArtifactSecurityController extends JFrogBaseController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("The user "+users.toString()+" provided in the request parameter does not exist。");
         }
 
-        RoleDto roleForm = reqToRoleForm.apply(req);
+        RoleForm roleForm = reqToRoleForm.apply(req);
 
         RoleDTO roleDTO = RoleConvert.INSTANCE.formToDto(roleForm);
         if (roleDTO == null || roleDTO.getResources().isEmpty()) {
@@ -242,7 +242,7 @@ public class ArtifactSecurityController extends JFrogBaseController {
         return list;
     };
 
-    Function<PermissionTargetReq, RoleDto> reqToRoleForm = req -> {
+    Function<PermissionTargetReq, RoleForm> reqToRoleForm = req -> {
         if (req == null) {
             return null;
         }
@@ -256,15 +256,15 @@ public class ArtifactSecurityController extends JFrogBaseController {
                 return accessResources;
             }).collect(Collectors.toList());
         }
-        AccessModelDto privileges = null;
+        AccessModelForm privileges = null;
         if (req.getPrincipals() != null) {
-            privileges = new AccessModelDto();
+            privileges = new AccessModelForm();
             privileges.setUsers(mapToAccessUsers.apply(req.getPrincipals().getUsers()));
             privileges.setGroups(mapToAccessUserGroups.apply(req.getPrincipals().getGroups()));
 
         }
 
-        RoleDto roleForm = new RoleDto();
+        RoleForm roleForm = new RoleForm();
         roleForm.setResources(resources);
         roleForm.setName(req.getName());
         roleForm.setPrivileges(privileges);

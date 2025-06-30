@@ -6,7 +6,7 @@ import com.veadan.folib.cluster.SyncClusterDispatchEnum;
 import com.veadan.folib.controllers.cluster.dto.SyncClusterDispatchDto;
 import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.enums.SyncStrategyEnum;
-import com.veadan.folib.dto.configuration.ClusterDispatchNodeDto;
+import com.veadan.folib.forms.configuration.ClusterDispatchNodeForm;
 import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.services.ClusterDispatchManagementService;
 import com.veadan.folib.services.ClusterSyncService;
@@ -104,7 +104,7 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_STORAGE')")
     @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity createClusterNode(@RequestBody ClusterDispatchNodeDto clusterDispatchNodeForm,
+    public ResponseEntity createClusterNode(@RequestBody ClusterDispatchNodeForm clusterDispatchNodeForm,
                                             BindingResult bindingResult,
                                             @RequestHeader(HttpHeaders.ACCEPT)
                                             String accept) {
@@ -174,7 +174,7 @@ public class ClusterDispatchConfigurationController extends BaseConfigurationCon
     public ResponseEntity updateClusterDispatch(
             @ApiParam(value = "The clusterEnName", required = true)
             @PathVariable String clusterEnName,
-            @RequestBody ClusterDispatchNodeDto clusterDispatchNodeForm,
+            @RequestBody ClusterDispatchNodeForm clusterDispatchNodeForm,
             BindingResult bindingResult,
             @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (bindingResult.hasErrors()) {

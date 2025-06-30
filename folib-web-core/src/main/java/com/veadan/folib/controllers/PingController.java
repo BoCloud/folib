@@ -2,7 +2,7 @@ package com.veadan.folib.controllers;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.veadan.folib.entity.Dict;
-import com.veadan.folib.dto.dict.DictDto;
+import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.licence.ActivateVo;
 import com.veadan.folib.licence.MacUtil;
 import com.veadan.folib.services.CodeActivateService;
@@ -165,7 +165,7 @@ public class PingController
         } catch (Exception ignore) {
 
         }
-        DictDto dictForm = DictDto.builder().id(dict.getId()).dictKey("def").build();
+        DictForm dictForm = DictForm.builder().id(dict.getId()).dictKey("def").build();
         dictService.updateDict(dictForm);
         return ResponseEntity.ok().build();
     }

@@ -21,7 +21,7 @@ import com.veadan.folib.job.cron.domain.CronTaskConfigurationDto;
 import com.veadan.folib.job.tasks.AlarmNoticeCronJob;
 import com.veadan.folib.job.cron.services.CronTaskConfigurationService;
 import com.veadan.folib.enums.StorageProviderEnum;
-import com.veadan.folib.dto.configuration.ServerSettingsDto;
+import com.veadan.folib.forms.configuration.ServerSettingsForm;
 import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.StorageManagementService;
@@ -118,7 +118,7 @@ public class CommonComponent {
      * @param serverSettingsForm 全局配置
      * @throws Exception 异常
      */
-    public void updateServerSettings(ServerSettingsDto serverSettingsForm) throws Exception {
+    public void updateServerSettings(ServerSettingsForm serverSettingsForm) throws Exception {
         configurationManagementService.setBaseUrl(serverSettingsForm.getBaseUrl());
         configurationManagementService.setPort(serverSettingsForm.getPort());
         configurationManagementService.setKbps(serverSettingsForm.getKbps());

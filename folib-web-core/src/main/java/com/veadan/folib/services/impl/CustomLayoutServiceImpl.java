@@ -6,7 +6,7 @@ import com.github.pagehelper.PageHelper;
 import com.veadan.folib.components.IdGenerateUtils;
 import com.veadan.folib.domain.customlayout.CustomLayoutRecord;
 import com.veadan.folib.entity.CustomLayout;
-import com.veadan.folib.dto.customlayout.CustomLayoutDto;
+import com.veadan.folib.forms.customlayout.CustomLayoutForm;
 import com.veadan.folib.mapper.CustomLayoutMapper;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.CustomLayoutService;
@@ -36,7 +36,7 @@ public class CustomLayoutServiceImpl implements CustomLayoutService {
     private IdGenerateUtils idGenerateUtils;
 
     @Override
-    public TableResultResponse<CustomLayoutRecord> queryCustomLayoutPage(Integer page, Integer limit, CustomLayoutDto customLayoutForm) {
+    public TableResultResponse<CustomLayoutRecord> queryCustomLayoutPage(Integer page, Integer limit, CustomLayoutForm customLayoutForm) {
         if (Objects.isNull(page)) {
             page = 1;
         }
@@ -59,7 +59,7 @@ public class CustomLayoutServiceImpl implements CustomLayoutService {
     }
 
     @Override
-    public List<CustomLayoutRecord> queryCustomLayoutList(CustomLayoutDto customLayoutForm) {
+    public List<CustomLayoutRecord> queryCustomLayoutList(CustomLayoutForm customLayoutForm) {
         List<CustomLayout> customLayoutList = customLayoutMapper.selectList(Wrappers.<CustomLayout>lambdaQuery()
                 .ge(CustomLayout::getId,0)
                 .eq(StringUtils.isNotBlank(customLayoutForm.getLayoutName()), CustomLayout::getLayoutName, customLayoutForm.getLayoutName())
@@ -75,11 +75,11 @@ public class CustomLayoutServiceImpl implements CustomLayoutService {
     }
 
     @Override
-    public CustomLayoutDto queryCustomLayout(CustomLayout customLayout) {
-        CustomLayoutDto customLayoutForm = null;
+    public CustomLayoutForm queryCustomLayout(CustomLayout customLayout) {
+        CustomLayoutForm customLayoutForm = null;
         CustomLayout existsCustomLayout = getCustomLayout(customLayout);
         if (Objects.nonNull(existsCustomLayout)) {
-            customLayoutForm = CustomLayoutDto.builder().build();
+            customLayoutForm = CustomLayoutForm.builder().build();
             BeanUtils.copyProperties(existsCustomLayout, customLayoutForm);
             customLayoutForm.setId(existsCustomLayout.getId().toString());
         }
@@ -88,7 +88,7 @@ public class CustomLayoutServiceImpl implements CustomLayoutService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void saveCustomLayout(CustomLayoutDto customLayoutForm) {
+    public void saveCustomLayout(CustomLayoutForm customLayoutForm) {
         String username = UserUtils.getUsername();
         Date now = new Date();
         Long customLayoutId = idGenerateUtils.generateId("customLayoutId");
@@ -99,7 +99,7 @@ public class CustomLayoutServiceImpl implements CustomLayoutService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void updateCustomLayout(CustomLayoutDto customLayoutForm) {
+    public void updateCustomLayout(CustomLayoutForm customLayoutForm) {
         CustomLayout existsCustomLayout = getCustomLayout(CustomLayout.builder().layoutName(customLayoutForm.getLayoutName()).build());
         if (Objects.isNull(existsCustomLayout)) {
             return;

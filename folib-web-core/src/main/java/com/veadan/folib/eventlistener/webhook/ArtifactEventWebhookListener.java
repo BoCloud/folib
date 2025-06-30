@@ -10,7 +10,7 @@ import com.veadan.folib.event.AsyncEventListener;
 import com.veadan.folib.event.artifact.ArtifactEvent;
 import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
 import com.veadan.folib.event.artifact.PromoteDispenseEvent;
-import com.veadan.folib.dto.configuration.WebhookConfigurationDto;
+import com.veadan.folib.forms.configuration.WebhookConfigurationForm;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.DockerFileSystem;
 import com.veadan.folib.services.WebhookService;
@@ -69,7 +69,7 @@ public class ArtifactEventWebhookListener {
     public void handleEventRecord(ArtifactEventTypeEnum artifactEventTypeEnum, RepositoryPath repositoryPath) {
         if (validateArtifactEvent(artifactEventTypeEnum) && artifactComponent.layoutSupports(repositoryPath)) {
             try {
-                List<WebhookConfigurationDto> webhookConfigurationList = webhookService.getWebhookConfiguration();
+                List<WebhookConfigurationForm> webhookConfigurationList = webhookService.getWebhookConfiguration();
                 if (CollectionUtils.isEmpty(webhookConfigurationList)) {
                     log.debug("webhook尚未配置，无后续操作");
                     return;
@@ -98,7 +98,7 @@ public class ArtifactEventWebhookListener {
                     artifactPath = getArtifactPath(repositoryPath, artifact);
                 }
                 String instance = NetUtil.getLocalhost().getHostAddress();
-                for (WebhookConfigurationDto webhookConfiguration : webhookConfigurationList) {
+                for (WebhookConfigurationForm webhookConfiguration : webhookConfigurationList) {
                     if (!webhookConfiguration.getEvents().contains(artifactEventTypeEnum.toString())) {
                         continue;
                     }
@@ -165,7 +165,7 @@ public class ArtifactEventWebhookListener {
     public void handlePromoteDispenseEventRecord(ArtifactEventTypeEnum artifactEventTypeEnum, PromoteDispenseEvent event) {
         if (validateArtifactEvent(artifactEventTypeEnum)) {
             try {
-                List<WebhookConfigurationDto> webhookConfigurationList = webhookService.getWebhookConfiguration();
+                List<WebhookConfigurationForm> webhookConfigurationList = webhookService.getWebhookConfiguration();
                 if (CollectionUtils.isEmpty(webhookConfigurationList)) {
                     log.debug("webhook尚未配置，无后续操作");
                     return;
@@ -184,7 +184,7 @@ public class ArtifactEventWebhookListener {
                 defaultBodyJson.put("targetUrl",event.getTargetUrl());
                 body = defaultBodyJson.toJSONString();
                 String instance = NetUtil.getLocalhost().getHostAddress();
-                for (WebhookConfigurationDto webhookConfiguration : webhookConfigurationList) {
+                for (WebhookConfigurationForm webhookConfiguration : webhookConfigurationList) {
                     if (!webhookConfiguration.getEvents().contains(artifactEventTypeEnum.toString())) {
                         continue;
                     }

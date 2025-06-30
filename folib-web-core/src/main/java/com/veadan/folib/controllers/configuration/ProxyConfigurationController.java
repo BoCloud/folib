@@ -1,6 +1,6 @@
 package com.veadan.folib.controllers.configuration;
 
-import com.veadan.folib.dto.configuration.ProxyConfigurationDto;
+import com.veadan.folib.forms.configuration.ProxyConfigurationForm;
 import com.veadan.folib.configuration.MutableProxyConfiguration;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.validation.RequestBodyValidationException;
@@ -60,8 +60,8 @@ public class ProxyConfigurationController
                                                         String repositoryId,
                                                 @ApiParam(value = "此代理存储库的代理配置", required = true)
                                                 @RequestBody @Validated({ Default.class,
-                                                                          ProxyConfigurationDto.ProxyConfigurationFormChecks.class })
-                                                    ProxyConfigurationDto proxyConfigurationForm,
+                                                                          ProxyConfigurationForm.ProxyConfigurationFormChecks.class })
+                                                    ProxyConfigurationForm proxyConfigurationForm,
                                                 BindingResult bindingResult,
                                                 @RequestHeader(HttpHeaders.ACCEPT) String acceptHeader)
     {

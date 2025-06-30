@@ -1,9 +1,9 @@
 package com.veadan.folib.controllers;
 
-import com.veadan.folib.dto.component.ArtifactGraphDto;
-import com.veadan.folib.dto.component.ArtifactStatisticsDto;
-import com.veadan.folib.dto.component.ComponentTableDto;
-import com.veadan.folib.dto.vulnerability.AffectedArtifactsDto;
+import com.veadan.folib.forms.component.ArtifactGraphForm;
+import com.veadan.folib.forms.component.ArtifactStatisticsForm;
+import com.veadan.folib.forms.component.ComponentTableForm;
+import com.veadan.folib.forms.vulnerability.AffectedArtifactsForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.ComponentService;
 import io.swagger.annotations.Api;
@@ -30,62 +30,62 @@ public class ComponentController extends BaseController {
     @Inject
     private ComponentService componentService;
 
-    @ApiOperation(value = "查询组件分页列表", response = ComponentTableDto.class)
+    @ApiOperation(value = "查询组件分页列表", response = ComponentTableForm.class)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('COMPONENTS_VIEW')")
     @GetMapping(value = "/page")
-    public TableResultResponse<ComponentTableDto> page(@RequestParam(name = "page", required = false) Integer page,
-                                                       @RequestParam(name = "limit", required = false) Integer limit,
-                                                       @RequestParam(name = "name", required = false) String name,
-                                                       @RequestParam(name = "groupId", required = false) String groupId,
-                                                       @RequestParam(name = "version", required = false) String version,
-                                                       @RequestParam(name = "searchKeyword", required = false) String searchKeyword) {
+    public TableResultResponse<ComponentTableForm> page(@RequestParam(name = "page", required = false) Integer page,
+                                                        @RequestParam(name = "limit", required = false) Integer limit,
+                                                        @RequestParam(name = "name", required = false) String name,
+                                                        @RequestParam(name = "groupId", required = false) String groupId,
+                                                        @RequestParam(name = "version", required = false) String version,
+                                                        @RequestParam(name = "searchKeyword", required = false) String searchKeyword) {
         return componentService.queryComponentPage(page, limit, name, groupId, version, searchKeyword);
     }
 
-    @ApiOperation(value = "查询组件分页列表", response = ComponentTableDto.class)
+    @ApiOperation(value = "查询组件分页列表", response = ComponentTableForm.class)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('COMPONENTS_VIEW')")
     @GetMapping(value = "/pageByArtifact")
-    public TableResultResponse<ComponentTableDto> pageByArtifact(@RequestParam(name = "page", required = false) Integer page,
-                                                                 @RequestParam(name = "limit", required = false) Integer limit,
-                                                                 @RequestParam(name = "artifactPath") String artifactPath,
-                                                                 @RequestParam(name = "searchKeyword", required = false) String searchKeyword) {
+    public TableResultResponse<ComponentTableForm> pageByArtifact(@RequestParam(name = "page", required = false) Integer page,
+                                                                  @RequestParam(name = "limit", required = false) Integer limit,
+                                                                  @RequestParam(name = "artifactPath") String artifactPath,
+                                                                  @RequestParam(name = "searchKeyword", required = false) String searchKeyword) {
         return componentService.queryComponentPageByArtifact(page, limit, artifactPath, searchKeyword);
     }
 
-    @ApiOperation(value = "查询组件信息", response = ComponentTableDto.class)
+    @ApiOperation(value = "查询组件信息", response = ComponentTableForm.class)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('COMPONENTS_VIEW')")
     @GetMapping(value = "/single")
-    public ResponseEntity<ComponentTableDto> queryComponentOne(@RequestParam(name = "uuid") String uuid) {
+    public ResponseEntity<ComponentTableForm> queryComponentOne(@RequestParam(name = "uuid") String uuid) {
         return ResponseEntity.ok(componentService.queryComponentOne(uuid));
     }
 
-    @ApiOperation(value = "根据组件id分页查询关联制品", response = AffectedArtifactsDto.class)
+    @ApiOperation(value = "根据组件id分页查询关联制品", response = AffectedArtifactsForm.class)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('COMPONENTS_VIEW')")
     @GetMapping(value = "/artifactPage")
-    public TableResultResponse<AffectedArtifactsDto> artifactPage(@RequestParam(name = "page", required = false) Integer page,
-                                                                  @RequestParam(name = "limit", required = false) Integer limit,
-                                                                  @RequestParam(name = "componentUuid") String componentUuid,
-                                                                  @RequestParam(name = "searchKeyword", required = false) String searchKeyword) {
+    public TableResultResponse<AffectedArtifactsForm> artifactPage(@RequestParam(name = "page", required = false) Integer page,
+                                                                   @RequestParam(name = "limit", required = false) Integer limit,
+                                                                   @RequestParam(name = "componentUuid") String componentUuid,
+                                                                   @RequestParam(name = "searchKeyword", required = false) String searchKeyword) {
         return componentService.queryArtifactByComponentUuid(page, limit, componentUuid, searchKeyword);
     }
 
-    @ApiOperation(value = "根据组件id分页查询关联制品", response = ArtifactGraphDto.class)
+    @ApiOperation(value = "根据组件id分页查询关联制品", response = ArtifactGraphForm.class)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('COMPONENTS_VIEW')")
     @GetMapping(value = "/artifactGraph")
-    public ResponseEntity<ArtifactGraphDto> artifactPage(@RequestParam(name = "componentUuid") String componentUuid) {
+    public ResponseEntity<ArtifactGraphForm> artifactPage(@RequestParam(name = "componentUuid") String componentUuid) {
         return ResponseEntity.ok(componentService.artifactGraph(componentUuid));
     }
 
-    @ApiOperation(value = "组件关联的制品统计数据", response = ArtifactStatisticsDto.class)
+    @ApiOperation(value = "组件关联的制品统计数据", response = ArtifactStatisticsForm.class)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('COMPONENTS_VIEW')")
     @GetMapping(value = "/artifactStatistics")
-    public ResponseEntity<ArtifactStatisticsDto> artifactStatistics(@RequestParam(name = "componentUuid") String componentUuid) {
+    public ResponseEntity<ArtifactStatisticsForm> artifactStatistics(@RequestParam(name = "componentUuid") String componentUuid) {
         return ResponseEntity.ok(componentService.artifactStatistics(componentUuid));
     }
 }

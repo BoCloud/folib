@@ -1,6 +1,6 @@
 package com.veadan.folib.converters.configuration;
 
-import com.veadan.folib.dto.configuration.RepositoryDto;
+import com.veadan.folib.forms.configuration.RepositoryForm;
 import com.veadan.folib.storage.repository.MutableHttpConnectionPool;
 
 import org.springframework.core.convert.converter.Converter;
@@ -11,12 +11,12 @@ import java.util.Objects;
  * @author veadan
  */
 public enum RepositoryFormConverter
-        implements Converter<RepositoryDto, com.veadan.folib.storage.repository.RepositoryDto>
+        implements Converter<RepositoryForm, com.veadan.folib.storage.repository.RepositoryDto>
 {
     INSTANCE;
 
     @Override
-    public com.veadan.folib.storage.repository.RepositoryDto convert(final RepositoryDto source)
+    public com.veadan.folib.storage.repository.RepositoryDto convert(final RepositoryForm source)
     {
         com.veadan.folib.storage.repository.RepositoryDto result = new com.veadan.folib.storage.repository.RepositoryDto();
         result.setId(source.getId());

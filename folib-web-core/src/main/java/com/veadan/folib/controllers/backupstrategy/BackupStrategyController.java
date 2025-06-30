@@ -3,7 +3,7 @@ package com.veadan.folib.controllers.backupstrategy;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.domain.backupstrategy.BackupStrategyRecord;
 import com.veadan.folib.entity.BackupStrategy;
-import com.veadan.folib.dto.backupstrategy.BackupStrategyDto;
+import com.veadan.folib.forms.backupstrategy.BackupStrategyForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.BackupStrategyService;
 import io.swagger.annotations.Api;
@@ -38,16 +38,16 @@ public class BackupStrategyController extends BaseController {
     @GetMapping(value = "/page")
     public TableResultResponse<BackupStrategyRecord> page(@RequestParam(name = "page", required = false) Integer page,
                                                           @RequestParam(name = "limit", required = false) Integer limit,
-                                                          BackupStrategyDto backupStrategyForm) {
+                                                          BackupStrategyForm backupStrategyForm) {
         return backupStrategyService.queryBackupStrategyPage(page, limit, backupStrategyForm);
     }
 
-    @ApiOperation(value = "查询备份策略信息", response = BackupStrategyDto.class)
+    @ApiOperation(value = "查询备份策略信息", response = BackupStrategyForm.class)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping(value = "/info")
     public ResponseEntity<Object> backupStrategyInfo(BackupStrategy backupStrategy) {
-        BackupStrategyDto backupStrategyForm = backupStrategyService.queryBackupStrategy(backupStrategy);
+        BackupStrategyForm backupStrategyForm = backupStrategyService.queryBackupStrategy(backupStrategy);
         if (Objects.isNull(backupStrategyForm)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(String.format("%s备份策略不存在", backupStrategy.getStrategyName()));
         }
@@ -58,7 +58,7 @@ public class BackupStrategyController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping
-    public ResponseEntity<String> saveBackupStrategy(@RequestBody @Validated(BackupStrategyDto.SaveGroup.class) BackupStrategyDto backupStrategyForm) {
+    public ResponseEntity<String> saveBackupStrategy(@RequestBody @Validated(BackupStrategyForm.SaveGroup.class) BackupStrategyForm backupStrategyForm) {
         if (validateBackupStrategy(backupStrategyForm.getStrategyName())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(String.format("%s备份策略名称已存在", backupStrategyForm.getStrategyName()));
         }
@@ -74,7 +74,7 @@ public class BackupStrategyController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping
-    public ResponseEntity<String> updateBackupStrategy(@RequestBody @Validated(BackupStrategyDto.UpdateGroup.class) BackupStrategyDto backupStrategyForm) {
+    public ResponseEntity<String> updateBackupStrategy(@RequestBody @Validated(BackupStrategyForm.UpdateGroup.class) BackupStrategyForm backupStrategyForm) {
         if (Objects.isNull(backupStrategyForm.getId()) && !validateBackupStrategy(backupStrategyForm.getStrategyName())) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(String.format("%s备份策略不存在", backupStrategyForm.getStrategyName()));
         }
@@ -94,7 +94,7 @@ public class BackupStrategyController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping
-    public ResponseEntity<String> deleteBackupStrategy(@RequestBody @Validated(BackupStrategyDto.DeleteGroup.class) BackupStrategyDto backupStrategyForm) {
+    public ResponseEntity<String> deleteBackupStrategy(@RequestBody @Validated(BackupStrategyForm.DeleteGroup.class) BackupStrategyForm backupStrategyForm) {
         if (!validateBackupStrategy(backupStrategyForm.getStrategyName())) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(String.format("%s备份策略不存在", backupStrategyForm.getStrategyName()));
         }
@@ -106,7 +106,7 @@ public class BackupStrategyController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping("/executeBackup")
-    public ResponseEntity<String> executeBackup(@RequestBody @Validated(BackupStrategyDto.ExecuteGroup.class) BackupStrategyDto backupStrategyForm) {
+    public ResponseEntity<String> executeBackup(@RequestBody @Validated(BackupStrategyForm.ExecuteGroup.class) BackupStrategyForm backupStrategyForm) {
         if (!validateBackupStrategy(backupStrategyForm.getStrategyName())) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(String.format("%s备份策略不存在", backupStrategyForm.getStrategyName()));
         }

@@ -5,7 +5,7 @@ import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.ResponseMessage;
 import com.veadan.folib.entity.WebhookLog;
 import com.veadan.folib.enums.AuditEventNameEnum;
-import com.veadan.folib.dto.configuration.WebhookConfigurationDto;
+import com.veadan.folib.forms.configuration.WebhookConfigurationForm;
 import com.veadan.folib.services.WebhookService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -36,7 +36,7 @@ public class WebhookConfigurationController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @AuditLog(value = AuditEventNameEnum.WEB_HOOK,target =" '新增webhook url:'+#webhookConfigurationForm.url" )
     @PutMapping
-    public ResponseEntity<ResponseMessage> addWebhookConfiguration(@RequestBody @Validated(WebhookConfigurationDto.AddGroup.class) WebhookConfigurationDto webhookConfigurationForm) throws IOException {
+    public ResponseEntity<ResponseMessage> addWebhookConfiguration(@RequestBody @Validated(WebhookConfigurationForm.AddGroup.class) WebhookConfigurationForm webhookConfigurationForm) throws IOException {
         webhookService.addWebhookConfiguration(webhookConfigurationForm);
         return ResponseEntity.ok(ResponseMessage.ok());
     }
@@ -45,7 +45,7 @@ public class WebhookConfigurationController extends BaseController {
     @AuditLog(value = AuditEventNameEnum.WEB_HOOK,target =" '更新webhook:'+#webhookConfigurationForm.uuid" )
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PostMapping
-    public ResponseEntity<ResponseMessage> updateWebhookConfiguration(@RequestBody @Validated(WebhookConfigurationDto.UpdateGroup.class) WebhookConfigurationDto webhookConfigurationForm) throws IOException {
+    public ResponseEntity<ResponseMessage> updateWebhookConfiguration(@RequestBody @Validated(WebhookConfigurationForm.UpdateGroup.class) WebhookConfigurationForm webhookConfigurationForm) throws IOException {
         webhookService.updateWebhookConfiguration(webhookConfigurationForm);
         return ResponseEntity.ok(ResponseMessage.ok());
     }
@@ -54,7 +54,7 @@ public class WebhookConfigurationController extends BaseController {
     @AuditLog(value = AuditEventNameEnum.WEB_HOOK,target ="'删除webhook:'+#webhookConfigurationForm.uuid" )
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @DeleteMapping
-    public ResponseEntity<ResponseMessage> deleteWebhookConfiguration(@RequestBody @Validated(WebhookConfigurationDto.DeleteGroup.class) WebhookConfigurationDto webhookConfigurationForm) throws IOException {
+    public ResponseEntity<ResponseMessage> deleteWebhookConfiguration(@RequestBody @Validated(WebhookConfigurationForm.DeleteGroup.class) WebhookConfigurationForm webhookConfigurationForm) throws IOException {
         webhookService.deleteWebhookConfiguration(webhookConfigurationForm.getUuid());
         return ResponseEntity.ok(ResponseMessage.ok());
     }
@@ -62,7 +62,7 @@ public class WebhookConfigurationController extends BaseController {
     @ApiOperation(value = "查询webhook")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @GetMapping
-    public ResponseEntity<List<WebhookConfigurationDto>> getWebhookConfiguration() throws IOException {
+    public ResponseEntity<List<WebhookConfigurationForm>> getWebhookConfiguration() throws IOException {
         return ResponseEntity.ok(webhookService.getWebhookConfiguration());
     }
 
@@ -76,7 +76,7 @@ public class WebhookConfigurationController extends BaseController {
     @ApiOperation(value = "测试webhook")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PutMapping("/test")
-    public ResponseEntity<Void> webhook(@RequestBody @Validated(WebhookConfigurationDto.TestGroup.class) WebhookConfigurationDto webhookConfigurationForm) throws IOException {
+    public ResponseEntity<Void> webhook(@RequestBody @Validated(WebhookConfigurationForm.TestGroup.class) WebhookConfigurationForm webhookConfigurationForm) throws IOException {
         webhookService.testWebhook(webhookConfigurationForm);
         return ResponseEntity.ok().build();
     }

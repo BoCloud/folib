@@ -1,6 +1,6 @@
 package com.veadan.folib.converters.configuration;
 
-import com.veadan.folib.dto.configuration.RemoteRepositoryDto;
+import com.veadan.folib.forms.configuration.RemoteRepositoryForm;
 
 import org.springframework.core.convert.converter.Converter;
 
@@ -8,13 +8,13 @@ import org.springframework.core.convert.converter.Converter;
  * @author veadan
  */
 public enum RemoteRepositoryFormConverter
-        implements Converter<RemoteRepositoryDto, com.veadan.folib.storage.repository.remote.RemoteRepositoryDto>
+        implements Converter<RemoteRepositoryForm, com.veadan.folib.storage.repository.remote.RemoteRepositoryDto>
 {
 
     INSTANCE;
 
     @Override
-    public com.veadan.folib.storage.repository.remote.RemoteRepositoryDto convert(final RemoteRepositoryDto source)
+    public com.veadan.folib.storage.repository.remote.RemoteRepositoryDto convert(final RemoteRepositoryForm source)
     {
         com.veadan.folib.storage.repository.remote.RemoteRepositoryDto result = new com.veadan.folib.storage.repository.remote.RemoteRepositoryDto();
         result.setUrl(source.getUrl());

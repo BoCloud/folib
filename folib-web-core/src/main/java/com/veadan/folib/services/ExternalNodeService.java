@@ -1,7 +1,7 @@
 package com.veadan.folib.services;
 
-import com.veadan.folib.dto.externalnode.ExternalNodeDto;
-import com.veadan.folib.dto.externalnode.ExternalNodeRepositoryDto;
+import com.veadan.folib.forms.externalnode.ExternalNodeForm;
+import com.veadan.folib.forms.externalnode.ExternalNodeRepositoryForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 
 import java.util.List;
@@ -19,7 +19,7 @@ public interface ExternalNodeService {
      * @param externalNodeForm 表单参数
      * @return 外部节点分页列表
      */
-    TableResultResponse<ExternalNodeDto> queryExternalNodeList(Integer page, Integer limit, ExternalNodeDto externalNodeForm);
+    TableResultResponse<ExternalNodeForm> queryExternalNodeList(Integer page, Integer limit, ExternalNodeForm externalNodeForm);
 
     /**
      * 查询外部节点
@@ -27,21 +27,21 @@ public interface ExternalNodeService {
      * @param externalNodeForm 表单参数
      * @return 外部节点
      */
-    ExternalNodeDto getExternalNode(ExternalNodeDto externalNodeForm);
+    ExternalNodeForm getExternalNode(ExternalNodeForm externalNodeForm);
 
     /**
      * 保存外部节点
      *
      * @param externalNodeForm 表单参数
      */
-    void saveExternalNode(ExternalNodeDto externalNodeForm);
+    void saveExternalNode(ExternalNodeForm externalNodeForm);
 
     /**
      * 更新外部节点
      *
      * @param externalNodeForm 表单参数
      */
-    void updateExternalNode(ExternalNodeDto externalNodeForm);
+    void updateExternalNode(ExternalNodeForm externalNodeForm);
 
     /**
      * 删除外部节点
@@ -56,5 +56,5 @@ public interface ExternalNodeService {
      * @param type 仓库类型
      * @return 外部节点仓库列表
      */
-    List<ExternalNodeRepositoryDto> getExternalNodeRepositories(String type);
+    List<ExternalNodeRepositoryForm> getExternalNodeRepositories(String type);
 }

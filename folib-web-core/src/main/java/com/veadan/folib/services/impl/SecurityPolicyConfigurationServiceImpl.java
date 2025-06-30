@@ -4,7 +4,7 @@ import com.google.common.collect.Sets;
 import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
 import com.veadan.folib.domain.Vulnerability;
 import com.veadan.folib.enums.BlockTypeEnum;
-import com.veadan.folib.dto.configuration.SecurityPolicyConfigurationDto;
+import com.veadan.folib.forms.configuration.SecurityPolicyConfigurationForm;
 import com.veadan.folib.repositories.VulnerabilityRepository;
 import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
@@ -77,7 +77,7 @@ public class SecurityPolicyConfigurationServiceImpl implements SecurityPolicyCon
     }
 
     @Override
-    public void saveOrUpdateNotify(SecurityPolicyConfigurationDto securityPolicyConfigurationForm) throws IOException {
+    public void saveOrUpdateNotify(SecurityPolicyConfigurationForm securityPolicyConfigurationForm) throws IOException {
         MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration = MutableSecurityPolicyConfiguration.builder().levels(securityPolicyConfigurationForm.getLevels())
                 .notifyScopes(securityPolicyConfigurationForm.getNotifyScopes()).receiverUsers(securityPolicyConfigurationForm.getReceiverUsers()).receiverEmails(securityPolicyConfigurationForm.getReceiverEmails()).build();
         configurationManagementService.saveOrUpdateNotify(mutableSecurityPolicyConfiguration);
@@ -85,7 +85,7 @@ public class SecurityPolicyConfigurationServiceImpl implements SecurityPolicyCon
     }
 
     @Override
-    public void saveOrUpdateBlock(SecurityPolicyConfigurationDto securityPolicyConfigurationForm) throws IOException {
+    public void saveOrUpdateBlock(SecurityPolicyConfigurationForm securityPolicyConfigurationForm) throws IOException {
         MutableSecurityPolicyConfiguration oldMutableSecurityPolicyConfiguration = configurationManagementService.getMutableConfigurationClone().getSecurityPolicyConfiguration();
         MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration = MutableSecurityPolicyConfiguration.builder().blockType(securityPolicyConfigurationForm.getBlockType())
                 .blockLevels(securityPolicyConfigurationForm.getBlockLevels()).filterWhites(securityPolicyConfigurationForm.getFilterWhites()).packageNames(oldMutableSecurityPolicyConfiguration.getPackageNames()).build();
@@ -94,7 +94,7 @@ public class SecurityPolicyConfigurationServiceImpl implements SecurityPolicyCon
     }
 
     @Override
-    public void addPackageName(SecurityPolicyConfigurationDto securityPolicyConfigurationForm) throws IOException {
+    public void addPackageName(SecurityPolicyConfigurationForm securityPolicyConfigurationForm) throws IOException {
         if (CollectionUtils.isNotEmpty(securityPolicyConfigurationForm.getPackageNames())) {
             MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration = configurationManagementService.getMutableConfigurationClone().getSecurityPolicyConfiguration();
             Set<String> packageNames = mutableSecurityPolicyConfiguration.getPackageNames();
@@ -110,7 +110,7 @@ public class SecurityPolicyConfigurationServiceImpl implements SecurityPolicyCon
     }
 
     @Override
-    public void deletePackageName(SecurityPolicyConfigurationDto securityPolicyConfigurationForm) throws IOException {
+    public void deletePackageName(SecurityPolicyConfigurationForm securityPolicyConfigurationForm) throws IOException {
         if (CollectionUtils.isNotEmpty(securityPolicyConfigurationForm.getPackageNames())) {
             MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration = configurationManagementService.getMutableConfigurationClone().getSecurityPolicyConfiguration();
             Set<String> packageNames = mutableSecurityPolicyConfiguration.getPackageNames();
@@ -124,8 +124,8 @@ public class SecurityPolicyConfigurationServiceImpl implements SecurityPolicyCon
     }
 
     @Override
-    public SecurityPolicyConfigurationDto config() {
-        return SecurityPolicyConfigurationDto.fromConfiguration(configurationManagementService.getConfiguration().getSecurityPolicyConfiguration());
+    public SecurityPolicyConfigurationForm config() {
+        return SecurityPolicyConfigurationForm.fromConfiguration(configurationManagementService.getConfiguration().getSecurityPolicyConfiguration());
     }
 
     private void checkParams(String uuid) {

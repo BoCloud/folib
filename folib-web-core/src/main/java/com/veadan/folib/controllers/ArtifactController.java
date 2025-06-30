@@ -14,10 +14,11 @@ import com.veadan.folib.domain.ArtifactStatistics;
 import com.veadan.folib.domain.migrate.SyncArtifactForm;
 import com.veadan.folib.domain.thirdparty.ArtifactInfo;
 import com.veadan.folib.domain.thirdparty.ArtifactQuery;
+import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.enums.ArtifactSyncTypeEnum;
 import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.enums.ProductTypeEnum;
-import com.veadan.folib.dto.artifact.ArtifactMetadataDto;
+import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.gremlin.entity.KeyValue;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
@@ -121,7 +122,7 @@ public class ArtifactController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_METADATA')")
     @PutMapping(value = "/globalSettingAddOrUpdateMetadata")
-    public ResponseEntity<ResponseMessage> globalSettingAddOrUpdateMetadata(@RequestBody @Validated({ArtifactMetadataDto.ConfigurationAddOrUpdateGroup.class}) ArtifactMetadataDto artifactMetadataForm, BindingResult bindingResult) throws IOException {
+    public ResponseEntity<ResponseMessage> globalSettingAddOrUpdateMetadata(@RequestBody @Validated({ArtifactMetadataForm.ConfigurationAddOrUpdateGroup.class}) ArtifactMetadataForm artifactMetadataForm, BindingResult bindingResult) throws IOException {
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException(GlobalConstants.REQUEST_PARAMS_ERROR, bindingResult);
         }
@@ -133,7 +134,7 @@ public class ArtifactController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('CONFIGURATION_DELETE_METADATA_CONFIGURATION')")
     @DeleteMapping(value = "/globalSettingDeleteMetadata")
-    public ResponseEntity<ResponseMessage> globalSettingDeleteMetadata(@RequestBody @Validated({ArtifactMetadataDto.ConfigurationDeleteGroup.class}) ArtifactMetadataDto artifactMetadataForm, BindingResult bindingResult) throws IOException {
+    public ResponseEntity<ResponseMessage> globalSettingDeleteMetadata(@RequestBody @Validated({ArtifactMetadataForm.ConfigurationDeleteGroup.class}) ArtifactMetadataForm artifactMetadataForm, BindingResult bindingResult) throws IOException {
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException(GlobalConstants.REQUEST_PARAMS_ERROR, bindingResult);
         }
@@ -145,7 +146,7 @@ public class ArtifactController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK", response = MetadataConfiguration.class)})
     @PreAuthorize("hasAuthority('CONFIGURATION_VIEW_METADATA_CONFIGURATION')")
     @GetMapping(value = "/getMetadataConfiguration", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<ArtifactMetadataDto>> getMetadataConfiguration() {
+    public ResponseEntity<List<ArtifactMetadataForm>> getMetadataConfiguration() {
         return ResponseEntity.ok(artifactWebService.getMetadataConfiguration());
     }
 
@@ -164,7 +165,7 @@ public class ArtifactController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @PutMapping(value = "/artifactMetadata")
-    public ResponseEntity<String> saveArtifactMetadata(@RequestBody @Validated({ArtifactMetadataDto.AddOrUpdateGroup.class}) ArtifactMetadataDto artifactMetadataForm, BindingResult bindingResult) {
+    public ResponseEntity<String> saveArtifactMetadata(@RequestBody @Validated({ArtifactMetadataForm.AddOrUpdateGroup.class}) ArtifactMetadataForm artifactMetadataForm, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException(GlobalConstants.REQUEST_PARAMS_ERROR, bindingResult);
         }
@@ -175,7 +176,7 @@ public class ArtifactController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @PostMapping(value = "/artifactMetadata")
-    public ResponseEntity<String> updateArtifactMetadata(@RequestBody @Validated({ArtifactMetadataDto.AddOrUpdateGroup.class}) ArtifactMetadataDto artifactMetadataForm, BindingResult bindingResult) {
+    public ResponseEntity<String> updateArtifactMetadata(@RequestBody @Validated({ArtifactMetadataForm.AddOrUpdateGroup.class}) ArtifactMetadataForm artifactMetadataForm, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException(GlobalConstants.REQUEST_PARAMS_ERROR, bindingResult);
         }
@@ -186,7 +187,7 @@ public class ArtifactController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @PostMapping(value = "/deleteArtifactMetadata")
-    public ResponseEntity<ResponseMessage> deleteArtifactMetadata(@RequestBody @Validated({ArtifactMetadataDto.DeleteGroup.class}) ArtifactMetadataDto artifactMetadataForm, BindingResult bindingResult) {
+    public ResponseEntity<ResponseMessage> deleteArtifactMetadata(@RequestBody @Validated({ArtifactMetadataForm.DeleteGroup.class}) ArtifactMetadataForm artifactMetadataForm, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException(GlobalConstants.REQUEST_PARAMS_ERROR, bindingResult);
         }
@@ -198,7 +199,7 @@ public class ArtifactController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @PostMapping(value = "/batchArtifactMetadata")
-    public ResponseEntity<String> batchArtifactMetadata(@RequestBody @Validated({ArtifactMetadataDto.DeleteGroup.class}) List<ArtifactMetadataDto> list, BindingResult bindingResult) {
+    public ResponseEntity<String> batchArtifactMetadata(@RequestBody @Validated({ArtifactMetadataForm.DeleteGroup.class}) List<ArtifactMetadataForm> list, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException(GlobalConstants.REQUEST_PARAMS_ERROR, bindingResult);
         }

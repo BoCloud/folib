@@ -7,7 +7,7 @@ import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.controllers.users.UserController;
 import com.veadan.folib.controllers.users.support.UserOutput;
 import com.veadan.folib.domain.UserRepositoryPermission;
-import com.veadan.folib.dto.users.UserDto;
+import com.veadan.folib.forms.users.UserForm;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.storage.Storage;
@@ -105,7 +105,7 @@ public class AccountController
                 consumes = MediaType.APPLICATION_JSON_VALUE,
                 produces = { MediaType.APPLICATION_JSON_VALUE })
     @ResponseBody
-    public ResponseEntity updateAccount(@RequestBody @Validated(UserDto.UpdateAccount.class) UserDto userToUpdate,
+    public ResponseEntity updateAccount(@RequestBody @Validated(UserForm.UpdateAccount.class) UserForm userToUpdate,
                                         BindingResult bindingResult,
                                         Authentication authentication)
     {

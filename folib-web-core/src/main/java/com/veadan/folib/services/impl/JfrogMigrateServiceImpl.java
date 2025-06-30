@@ -40,8 +40,8 @@ import com.veadan.folib.enums.MigrateStatusEnum;
 import com.veadan.folib.enums.NotifyScopesTypeEnum;
 import com.veadan.folib.enums.StorageProviderEnum;
 import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
-import com.veadan.folib.dto.JfrogMigrateDto;
-import com.veadan.folib.dto.dict.DictDto;
+import com.veadan.folib.forms.JfrogMigrateForm;
+import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.mapper.UserGroupMapper;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.LayoutProvider;
@@ -232,7 +232,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
 
     @Async
     @Override
-    public void migrate(JfrogMigrateDto form) {
+    public void migrate(JfrogMigrateForm form) {
         try (Artifactory artifactory = ArtifactoryClientBuilder.create().setUrl(form.getUrl() + JFROG_PREFIX).setUsername(form.getUsername()).setPassword(form.getPassword()).build()) {
             Map<String, Long> groupMap = null;
             // 先更新用户组
@@ -359,7 +359,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         int count = migrateInfoService.countByMigrateId(migrateId);
         info.setTotal(count);
         Dict dict = createDictByMigrate(info);
-        DictDto dictForm = DictDto.builder().build();
+        DictForm dictForm = DictForm.builder().build();
         BeanUtils.copyProperties(dict, dictForm);
         dictService.updateDict(dictForm);
     }
@@ -794,7 +794,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
     }
 
     // 增加添加迁移任务
-    private void repositoryMigrate(String storageId, Artifactory artifactory, JfrogMigrateDto form) {
+    private void repositoryMigrate(String storageId, Artifactory artifactory, JfrogMigrateForm form) {
         Repositories repositories = artifactory.repositories();
         Storage storage = configurationManagementService.getConfiguration().getStorage(storageId);
         // 生成迁移信息
@@ -872,7 +872,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
     }
 
     void setRepositoryInfo(LightweightRepository repository, RepositoryDto repositoryDto, Artifactory
-            artifactory, String storageId, JfrogMigrateDto form, ArtifactMigrateInfo migrateInfo, Map<String, String> reposUsed) {
+            artifactory, String storageId, JfrogMigrateForm form, ArtifactMigrateInfo migrateInfo, Map<String, String> reposUsed) {
         if (repository.getType() == LOCAL) {
             if ("2".equals(form.getArtifactType())) {
                 repositoryDto.setType(RepositoryTypeEnum.PROXY.getType());
@@ -960,7 +960,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         }
     }
 
-    private ArtifactMigrateInfo getMigrateInfo(JfrogMigrateDto form, String storageId) {
+    private ArtifactMigrateInfo getMigrateInfo(JfrogMigrateForm form, String storageId) {
         ArtifactMigrateInfo info = new ArtifactMigrateInfo();
         // 生成迁移id
         info.setMigrateId("jfrog-migrate:" + storageId);
@@ -1080,7 +1080,7 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         }
     }
 
-    public boolean createStorageIfNotExist(JfrogMigrateDto form) {
+    public boolean createStorageIfNotExist(JfrogMigrateForm form) {
         // 判断存储空间是否存在
         String storageId = form.getStorageId();
         Storage existStorage = configurationManagementService.getConfiguration().getStorage(storageId);

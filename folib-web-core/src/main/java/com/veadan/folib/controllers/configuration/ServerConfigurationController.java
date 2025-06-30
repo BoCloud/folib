@@ -12,7 +12,7 @@ import com.veadan.folib.controllers.cluster.dto.SyncServerSettingsDto;
 import com.veadan.folib.controllers.support.BaseUrlEntityBody;
 import com.veadan.folib.controllers.support.InstanceNameEntityBody;
 import com.veadan.folib.controllers.support.PortEntityBody;
-import com.veadan.folib.dto.configuration.*;
+import com.veadan.folib.forms.configuration.*;
 import com.veadan.folib.job.cron.domain.CronTasksConfigurationDto;
 import com.veadan.folib.job.tasks.AlarmNoticeCronJob;
 import com.veadan.folib.job.cron.services.CronTaskConfigurationService;
@@ -246,7 +246,7 @@ public class ServerConfigurationController
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
-    public ResponseEntity setServerSettings(@RequestBody ServerSettingsDto serverSettingsForm,
+    public ResponseEntity setServerSettings(@RequestBody ServerSettingsForm serverSettingsForm,
                                             BindingResult bindingResult,
                                             @RequestHeader(HttpHeaders.ACCEPT) String acceptHeader) throws Exception {
         if (serverSettingsForm == null) {
@@ -272,28 +272,28 @@ public class ServerConfigurationController
         return ResponseEntity.ok("success");
     }
 
-    private void validateServerSettingsForm(ServerSettingsDto form,
+    private void validateServerSettingsForm(ServerSettingsForm form,
                                             BindingResult bindingResult) {
         if (!isProxyConfigurationFormEmpty(form.getProxyConfigurationForm())) {
             ValidationUtils.invokeValidator(validator, form, bindingResult,
-                    ProxyConfigurationDto.ProxyConfigurationFormChecks.class);
+                    ProxyConfigurationForm.ProxyConfigurationFormChecks.class);
         }
 
         if (!isSmtpConfigurationFormEmpty(form.getSmtpConfigurationForm())) {
             ValidationUtils.invokeValidator(validator, form, bindingResult,
-                    SmtpConfigurationDto.SmtpConfigurationFormChecks.class);
+                    SmtpConfigurationForm.SmtpConfigurationFormChecks.class);
         }
 
         ValidationUtils.invokeValidator(validator, form, bindingResult);
 
     }
 
-    private boolean isProxyConfigurationFormEmpty(ProxyConfigurationDto form) {
+    private boolean isProxyConfigurationFormEmpty(ProxyConfigurationForm form) {
         return Stream.of(form.getHost(), form.getPort(), form.getType())
                 .allMatch(this::isNullOrEmpty);
     }
 
-    private boolean isSmtpConfigurationFormEmpty(SmtpConfigurationDto form) {
+    private boolean isSmtpConfigurationFormEmpty(SmtpConfigurationForm form) {
         return Stream.of(form.getHost(), form.getPort(), form.getConnection())
                 .allMatch(this::isNullOrEmpty);
     }
@@ -333,24 +333,24 @@ public class ServerConfigurationController
 
         Configuration configuration = configurationManagementService.getConfiguration();
 
-        ServerSettingsDto settings = new ServerSettingsDto();
+        ServerSettingsForm settings = new ServerSettingsForm();
         settings.setBaseUrl(configuration.getBaseUrl());
         settings.setInstanceName(configuration.getInstanceName());
         settings.setPort(configuration.getPort());
         settings.setKbps(configuration.getKbps());
         settings.setSliceMbSize(configuration.getSliceMbSize());
         settings.setCorsConfigurationForm(
-                CorsConfigurationDto.fromConfiguration(configuration.getCorsConfiguration())
+                CorsConfigurationForm.fromConfiguration(configuration.getCorsConfiguration())
         );
         settings.setSmtpConfigurationForm(
-                SmtpConfigurationDto.fromConfiguration(configuration.getSmtpConfiguration())
+                SmtpConfigurationForm.fromConfiguration(configuration.getSmtpConfiguration())
         );
         settings.setProxyConfigurationForm(
-                ProxyConfigurationDto.fromConfiguration(configuration.getProxyConfiguration())
+                ProxyConfigurationForm.fromConfiguration(configuration.getProxyConfiguration())
         );
-        settings.setAdvancedConfigurationForm(AdvancedConfigurationDto.fromConfiguration(configuration.getAdvancedConfiguration()));
+        settings.setAdvancedConfigurationForm(AdvancedConfigurationForm.fromConfiguration(configuration.getAdvancedConfiguration()));
         if(configuration.getAlarmConfiguration()!=null){
-            settings.setAlarmConfigurationForm(AlarmConfigurationDto.formConfiguration(configuration.getAlarmConfiguration()));
+            settings.setAlarmConfigurationForm(AlarmConfigurationForm.formConfiguration(configuration.getAlarmConfiguration()));
             CronTasksConfigurationDto config = cronTaskConfigurationService.getTasksConfigurationDto();
             final String className = AlarmNoticeCronJob.class.getName();
             config.setCronTaskConfigurations(config.getCronTaskConfigurations().stream().filter(cron -> className.equals(cron.getJobClass())).collect(Collectors.toSet()));

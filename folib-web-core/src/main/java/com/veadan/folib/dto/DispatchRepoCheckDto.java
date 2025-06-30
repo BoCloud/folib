@@ -1,7 +1,7 @@
 package com.veadan.folib.dto;
 
-import com.veadan.folib.dto.configuration.RepositoryDto;
-import com.veadan.folib.dto.configuration.StorageDto;
+import com.veadan.folib.forms.configuration.RepositoryForm;
+import com.veadan.folib.forms.configuration.StorageForm;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,8 +13,8 @@ import lombok.NoArgsConstructor;
 @Builder
 public class DispatchRepoCheckDto {
 
-    private RepositoryDto repositoryForm;
+    private RepositoryForm repositoryForm;
 
-    private StorageDto storageForm;
+    private StorageForm storageForm;
 
 }

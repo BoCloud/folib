@@ -1,10 +1,10 @@
 package com.veadan.folib.controllers.externalnode;
 
 import com.veadan.folib.controllers.BaseController;
-import com.veadan.folib.dto.externalnode.ExternalNodeDto;
-import com.veadan.folib.dto.externalnode.ExternalNodeRepositoryDto;
-import com.veadan.folib.dto.validate.SaveGroup;
-import com.veadan.folib.dto.validate.UpdateGroup;
+import com.veadan.folib.forms.externalnode.ExternalNodeForm;
+import com.veadan.folib.forms.externalnode.ExternalNodeRepositoryForm;
+import com.veadan.folib.forms.validate.SaveGroup;
+import com.veadan.folib.forms.validate.UpdateGroup;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.ExternalNodeService;
 import io.swagger.annotations.Api;
@@ -30,22 +30,22 @@ public class ExternalNodeController extends BaseController {
     @Inject
     private ExternalNodeService externalNodeService;
 
-    @ApiOperation(value = "查询外部节点分页列表", response = ExternalNodeDto.class)
+    @ApiOperation(value = "查询外部节点分页列表", response = ExternalNodeForm.class)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('EXTERNAL_NODE_VIEW')")
     @GetMapping(value = "/page")
-    public TableResultResponse<ExternalNodeDto> page(@RequestParam(name = "page", required = false) Integer page,
-                                                     @RequestParam(name = "limit", required = false) Integer limit,
-                                                     ExternalNodeDto externalNodeForm) {
+    public TableResultResponse<ExternalNodeForm> page(@RequestParam(name = "page", required = false) Integer page,
+                                                      @RequestParam(name = "limit", required = false) Integer limit,
+                                                      ExternalNodeForm externalNodeForm) {
         return externalNodeService.queryExternalNodeList(page, limit, externalNodeForm);
     }
 
-    @ApiOperation(value = "查询外部节点信息", response = ExternalNodeDto.class)
+    @ApiOperation(value = "查询外部节点信息", response = ExternalNodeForm.class)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('EXTERNAL_NODE_VIEW')")
     @GetMapping(value = "/{id}")
-    public ResponseEntity<ExternalNodeDto> externalNodeInfo(@PathVariable(name = "id") Long id) {
-        ExternalNodeDto externalNodeForm = externalNodeService.getExternalNode(ExternalNodeDto.builder().id(id).build());
+    public ResponseEntity<ExternalNodeForm> externalNodeInfo(@PathVariable(name = "id") Long id) {
+        ExternalNodeForm externalNodeForm = externalNodeService.getExternalNode(ExternalNodeForm.builder().id(id).build());
         return ResponseEntity.ok(externalNodeForm);
     }
 
@@ -53,7 +53,7 @@ public class ExternalNodeController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('EXTERNAL_NODE_SAVE')")
     @PutMapping
-    public ResponseEntity<Void> saveExternalNode(@RequestBody @Validated(SaveGroup.class) ExternalNodeDto externalNodeForm) {
+    public ResponseEntity<Void> saveExternalNode(@RequestBody @Validated(SaveGroup.class) ExternalNodeForm externalNodeForm) {
         externalNodeService.saveExternalNode(externalNodeForm);
         return ResponseEntity.ok().build();
     }
@@ -62,7 +62,7 @@ public class ExternalNodeController extends BaseController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('EXTERNAL_NODE_UPDATE')")
     @PostMapping
-    public ResponseEntity<Void> updateExternalNode(@RequestBody @Validated(UpdateGroup.class) ExternalNodeDto externalNodeForm) {
+    public ResponseEntity<Void> updateExternalNode(@RequestBody @Validated(UpdateGroup.class) ExternalNodeForm externalNodeForm) {
         externalNodeService.updateExternalNode(externalNodeForm);
         return ResponseEntity.ok().build();
     }
@@ -76,11 +76,11 @@ public class ExternalNodeController extends BaseController {
         return ResponseEntity.ok().build();
     }
 
-    @ApiOperation(value = "查询外部节点仓库列表", response = ExternalNodeRepositoryDto.class)
+    @ApiOperation(value = "查询外部节点仓库列表", response = ExternalNodeRepositoryForm.class)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('EXTERNAL_NODE_VIEW')")
     @GetMapping(value = "/repositories")
-    public ResponseEntity<List<ExternalNodeRepositoryDto>> getExternalNodeRepositories(@RequestParam(name = "type", required = false) String type) {
+    public ResponseEntity<List<ExternalNodeRepositoryForm>> getExternalNodeRepositories(@RequestParam(name = "type", required = false) String type) {
         return ResponseEntity.ok(externalNodeService.getExternalNodeRepositories(type));
     }
 }

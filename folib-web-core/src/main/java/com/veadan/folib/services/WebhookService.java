@@ -1,7 +1,7 @@
 package com.veadan.folib.services;
 
 import com.veadan.folib.entity.WebhookLog;
-import com.veadan.folib.dto.configuration.WebhookConfigurationDto;
+import com.veadan.folib.forms.configuration.WebhookConfigurationForm;
 
 import java.io.IOException;
 import java.util.List;
@@ -18,7 +18,7 @@ public interface WebhookService {
      * @param webhookConfigurationForm 参数
      * @throws IOException io异常
      */
-    void addWebhookConfiguration(WebhookConfigurationDto webhookConfigurationForm) throws IOException;
+    void addWebhookConfiguration(WebhookConfigurationForm webhookConfigurationForm) throws IOException;
 
     /**
      * 更新webhook配置信息
@@ -26,7 +26,7 @@ public interface WebhookService {
      * @param webhookConfigurationForm 参数
      * @throws IOException io异常
      */
-    void updateWebhookConfiguration(WebhookConfigurationDto webhookConfigurationForm) throws IOException;
+    void updateWebhookConfiguration(WebhookConfigurationForm webhookConfigurationForm) throws IOException;
 
     /**
      * 删除webhook配置信息
@@ -42,7 +42,7 @@ public interface WebhookService {
      * @return webhook 列表
      * @throws IOException 异常
      */
-    List<WebhookConfigurationDto> getWebhookConfiguration() throws IOException;
+    List<WebhookConfigurationForm> getWebhookConfiguration() throws IOException;
 
     /**
      * 新增WebhookLog
@@ -56,7 +56,7 @@ public interface WebhookService {
      *
      * @param webhookConfigurationForm 参数
      */
-    void testWebhook(WebhookConfigurationDto webhookConfigurationForm);
+    void testWebhook(WebhookConfigurationForm webhookConfigurationForm);
 
     /**
      * 删除WebhookLog
@@ -92,5 +92,5 @@ public interface WebhookService {
      * @param body                 请求体
      * @param headerMap            headers
      */
-    void handlerWebhook(WebhookConfigurationDto webhookConfigurationForm, String storageId, String repositoryId, String artifactPath, String eventType, String body, Map<String, String> headerMap);
+    void handlerWebhook(WebhookConfigurationForm webhookConfigurationForm, String storageId, String repositoryId, String artifactPath, String eventType, String body, Map<String, String> headerMap);
 }

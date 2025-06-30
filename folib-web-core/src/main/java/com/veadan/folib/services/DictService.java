@@ -1,7 +1,7 @@
 package com.veadan.folib.services;
 
 import com.veadan.folib.entity.Dict;
-import com.veadan.folib.dto.dict.DictDto;
+import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 
 import java.util.List;
@@ -24,7 +24,7 @@ public interface DictService {
      *
      * @param dict 字典
      */
-    void updateDict(DictDto dict);
+    void updateDict(DictForm dict);
 
     /**
      * 新增或更新字典

@@ -16,7 +16,7 @@ import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.enums.SyncStrategyEnum;
 import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
 import com.veadan.folib.event.privilege.PrivilegeEventTypeEnum;
-import com.veadan.folib.dto.users.auth.RoleDto;
+import com.veadan.folib.forms.users.auth.RoleForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.RepositoryDto;
@@ -165,7 +165,7 @@ public class RoleController extends BaseController {
             produces = {MediaType.TEXT_PLAIN_VALUE,
                     MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    public ResponseEntity create(@RequestBody @Validated(RoleDto.NewRole.class) RoleDto roleForm,
+    public ResponseEntity create(@RequestBody @Validated(RoleForm.NewRole.class) RoleForm roleForm,
                                       BindingResult bindingResult,
                                       Authentication authentication,
                                       @RequestHeader(HttpHeaders.ACCEPT) String accept) {
@@ -235,7 +235,7 @@ public class RoleController extends BaseController {
     @ResponseBody
     public ResponseEntity update(@ApiParam(value = "角色id必填", required = true)
                                  @PathVariable String roleId,
-                                 @RequestBody @Validated(RoleDto.UpdateRole.class) RoleDto roleForm,
+                                 @RequestBody @Validated(RoleForm.UpdateRole.class) RoleForm roleForm,
                                  Authentication authentication,
                                  BindingResult bindingResult,
                                  @RequestHeader(HttpHeaders.ACCEPT) String accept) {

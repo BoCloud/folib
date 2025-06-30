@@ -44,7 +44,7 @@ import com.veadan.folib.enums.PromotionStatusEnum;
 import com.veadan.folib.enums.ThreadLocalContextFieldNameEnum;
 import com.veadan.folib.event.DebianIndexEvent;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
-import com.veadan.folib.dto.common.StorageTreeDto;
+import com.veadan.folib.forms.common.StorageTreeForm;
 import com.veadan.folib.indexer.DebianIncrementalIndexer;
 import com.veadan.folib.indexer.DebianReleaseMetadataIndexer;
 import com.veadan.folib.mapper.ArtifactSyncRecordMapper;
@@ -454,20 +454,20 @@ public class PromotionUtil {
             }
             DispatchStorageTree dispatchStorageTree = (DispatchStorageTree) messageResponse.getDate();
 
-            List<StorageTreeDto> storageTreeForms = dispatchStorageTree.getList();
+            List<StorageTreeForm> storageTreeForms = dispatchStorageTree.getList();
             // 选存储空间下的全部仓库（同类型 同策略 同布局）
-            for (StorageTreeDto storageTreeForm : storageTreeForms) {
-                List<StorageTreeDto> storages = storageTreeForm.getChildren();
+            for (StorageTreeForm storageTreeForm : storageTreeForms) {
+                List<StorageTreeForm> storages = storageTreeForm.getChildren();
                 if (CollectionUtil.isEmpty(storages)) {
                     continue;
                 }
-                for (StorageTreeDto storage : storages) {
+                for (StorageTreeForm storage : storages) {
                     targetStorageId = storage.getName();
-                    List<StorageTreeDto> repos = storage.getChildren();
+                    List<StorageTreeForm> repos = storage.getChildren();
                     if (CollectionUtil.isEmpty(repos)) {
                         continue;
                     }
-                    for (StorageTreeDto repo : repos) {
+                    for (StorageTreeForm repo : repos) {
                         String tempRepoId = repo.getName();
                         executeDispatchV2(artifactPath, srcRepositoryId, srcStorageId, targetStorageId, tempRepoId, dispatchNodeDto, syncNo, recordStatus, isRetry);
                     }

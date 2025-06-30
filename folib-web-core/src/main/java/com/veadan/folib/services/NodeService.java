@@ -1,6 +1,6 @@
 package com.veadan.folib.services;
 
-import com.veadan.folib.dto.node.CassandraClusterDto;
+import com.veadan.folib.forms.node.CassandraClusterForm;
 
 /**
  * @author veadan
@@ -13,7 +13,7 @@ public interface NodeService {
      *
      * @return 集群信息
      */
-    CassandraClusterDto cassandraClusterInfo();
+    CassandraClusterForm cassandraClusterInfo();
 
     /**
      * 移除节点

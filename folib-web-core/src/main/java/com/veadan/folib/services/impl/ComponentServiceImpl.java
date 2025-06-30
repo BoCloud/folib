@@ -4,10 +4,10 @@ import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.Component;
-import com.veadan.folib.dto.component.ArtifactGraphDto;
-import com.veadan.folib.dto.component.ArtifactStatisticsDto;
-import com.veadan.folib.dto.component.ComponentTableDto;
-import com.veadan.folib.dto.vulnerability.AffectedArtifactsDto;
+import com.veadan.folib.forms.component.ArtifactGraphForm;
+import com.veadan.folib.forms.component.ArtifactStatisticsForm;
+import com.veadan.folib.forms.component.ComponentTableForm;
+import com.veadan.folib.forms.vulnerability.AffectedArtifactsForm;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.repositories.ComponentRepository;
@@ -50,7 +50,7 @@ public class ComponentServiceImpl implements ComponentService {
     private ArtifactComponent artifactComponent;
 
     @Override
-    public TableResultResponse<ComponentTableDto> queryComponentPage(Integer page, Integer limit, String name, String groupId, String version, String searchKeyword) {
+    public TableResultResponse<ComponentTableForm> queryComponentPage(Integer page, Integer limit, String name, String groupId, String version, String searchKeyword) {
         Pageable pageable = null;
         if (Objects.isNull(page)) {
             page = 1;
@@ -64,11 +64,11 @@ public class ComponentServiceImpl implements ComponentService {
             pageable = PageRequest.of(page, limit).previous();
         }
         Page<Component> componentPage = componentRepository.queryComponentPage(pageable, name, groupId, version, searchKeyword);
-        return new TableResultResponse<ComponentTableDto>(componentPage.getTotalElements(), transform(componentPage));
+        return new TableResultResponse<ComponentTableForm>(componentPage.getTotalElements(), transform(componentPage));
     }
 
     @Override
-    public TableResultResponse<ComponentTableDto> queryComponentPageByArtifact(Integer page, Integer limit, String artifactPath, String searchKeyword) {
+    public TableResultResponse<ComponentTableForm> queryComponentPageByArtifact(Integer page, Integer limit, String artifactPath, String searchKeyword) {
         Pageable pageable = null;
         if (Objects.isNull(page)) {
             page = 1;
@@ -82,22 +82,22 @@ public class ComponentServiceImpl implements ComponentService {
             pageable = PageRequest.of(page, limit).previous();
         }
         Page<Component> componentPage = componentRepository.queryComponentPageByArtifact(pageable, artifactPath, searchKeyword);
-        return new TableResultResponse<ComponentTableDto>(componentPage.getTotalElements(), transform(componentPage));
+        return new TableResultResponse<ComponentTableForm>(componentPage.getTotalElements(), transform(componentPage));
     }
 
     @Override
-    public ComponentTableDto queryComponentOne(String uuid) {
+    public ComponentTableForm queryComponentOne(String uuid) {
         Optional<Component> optionalComponent = componentRepository.findById(uuid);
-        ComponentTableDto componentTableForm = null;
+        ComponentTableForm componentTableForm = null;
         if (optionalComponent.isPresent()) {
-            componentTableForm = ComponentTableDto.builder().build();
+            componentTableForm = ComponentTableForm.builder().build();
             BeanUtils.copyProperties(optionalComponent.get(), componentTableForm);
         }
         return componentTableForm;
     }
 
     @Override
-    public TableResultResponse<AffectedArtifactsDto> queryArtifactByComponentUuid(Integer page, Integer limit, String componentUuid, String searchKeyword) {
+    public TableResultResponse<AffectedArtifactsForm> queryArtifactByComponentUuid(Integer page, Integer limit, String componentUuid, String searchKeyword) {
         Pageable pageable = null;
         if (Objects.isNull(page)) {
             page = 1;
@@ -111,10 +111,10 @@ public class ComponentServiceImpl implements ComponentService {
             pageable = PageRequest.of(page, limit).previous();
         }
         org.springframework.data.domain.Page<Artifact> artifactPage = artifactRepository.queryArtifactByComponentUuid(pageable, componentUuid, searchKeyword);
-        List<AffectedArtifactsDto> affectedArtifacts = Collections.emptyList();
+        List<AffectedArtifactsForm> affectedArtifacts = Collections.emptyList();
         if (Objects.nonNull(artifactPage) && CollectionUtils.isNotEmpty(artifactPage.getContent())) {
             affectedArtifacts = artifactPage.getContent().stream().map(artifact -> {
-                AffectedArtifactsDto affectedArtifactsForm = AffectedArtifactsDto.builder().uuid(artifact.getUuid()).storageId(artifact.getStorageId()).repositoryId(artifact.getRepositoryId()).build();
+                AffectedArtifactsForm affectedArtifactsForm = AffectedArtifactsForm.builder().uuid(artifact.getUuid()).storageId(artifact.getStorageId()).repositoryId(artifact.getRepositoryId()).build();
                 Repository repository = configurationManager.getRepository(artifact.getStorageId(), artifact.getRepositoryId());
                 affectedArtifactsForm.setLayout(repository.getLayout());
                 String path = artifact.getArtifactCoordinates().buildPath();
@@ -129,48 +129,48 @@ public class ComponentServiceImpl implements ComponentService {
                 return affectedArtifactsForm;
             }).collect(Collectors.toList());
         }
-        return new TableResultResponse<AffectedArtifactsDto>(artifactPage.getTotalElements(), affectedArtifacts);
+        return new TableResultResponse<AffectedArtifactsForm>(artifactPage.getTotalElements(), affectedArtifacts);
     }
 
     @Override
-    public ArtifactGraphDto artifactGraph(String componentUuid) {
-        ArtifactGraphDto artifactGraphForm = null;
+    public ArtifactGraphForm artifactGraph(String componentUuid) {
+        ArtifactGraphForm artifactGraphForm = null;
         Optional<Component> optionalComponent = componentRepository.findById(componentUuid);
         if (optionalComponent.isPresent()) {
             List<Artifact> artifactList = artifactRepository.queryArtifactByComponentUuid(componentUuid);
             if (CollectionUtils.isNotEmpty(artifactList)) {
-                artifactGraphForm = ArtifactGraphDto.builder().build();
+                artifactGraphForm = ArtifactGraphForm.builder().build();
                 artifactGraphForm.setId(componentUuid);
                 artifactGraphForm.setTitle("组件信息");
                 artifactGraphForm.setName(optionalComponent.get().getName());
                 artifactGraphForm.setVersion(optionalComponent.get().getVersion());
 
-                List<ArtifactGraphDto> storageGraphList = Lists.newArrayList();
-                ArtifactGraphDto storageGraph, artifactGraph;
+                List<ArtifactGraphForm> storageGraphList = Lists.newArrayList();
+                ArtifactGraphForm storageGraph, artifactGraph;
                 Map<String, List<Artifact>> repositoryIdMap;
-                List<ArtifactGraphDto> repositoryGraphList, artifactGraphList;
+                List<ArtifactGraphForm> repositoryGraphList, artifactGraphList;
                 String artifactName;
-                ArtifactGraphDto repositoryGraph;
+                ArtifactGraphForm repositoryGraph;
                 Repository repository;
                 boolean isDockerLayout;
                 //存储空间分组
                 Map<String, List<Artifact>> storageIdMap = artifactList.stream().collect(Collectors.groupingBy(Artifact::getStorageId, Collectors.toCollection(LinkedList::new)));
                 for (Map.Entry<String, List<Artifact>> storageEntry : storageIdMap.entrySet()) {
-                    storageGraph = ArtifactGraphDto.builder().id(storageEntry.getKey()).title("所属空间").name(storageEntry.getKey()).build();
+                    storageGraph = ArtifactGraphForm.builder().id(storageEntry.getKey()).title("所属空间").name(storageEntry.getKey()).build();
                     //仓库分组
                     repositoryIdMap = storageEntry.getValue().stream().collect(Collectors.groupingBy(Artifact::getRepositoryId, Collectors.toCollection(LinkedList::new)));
                     repositoryGraphList = Lists.newArrayList();
                     for (Map.Entry<String, List<Artifact>> repositoryEntry : repositoryIdMap.entrySet()) {
                         repository = configurationManager.getRepository(storageEntry.getKey(), repositoryEntry.getKey());
                         isDockerLayout = Objects.nonNull(repository) && DockerLayoutProvider.ALIAS.equalsIgnoreCase(repository.getLayout());
-                        repositoryGraph = ArtifactGraphDto.builder().id(String.format("%s-%s", storageEntry.getKey(), repositoryEntry.getKey())).title("所属仓库").name(repositoryEntry.getKey()).build();
+                        repositoryGraph = ArtifactGraphForm.builder().id(String.format("%s-%s", storageEntry.getKey(), repositoryEntry.getKey())).title("所属仓库").name(repositoryEntry.getKey()).build();
                         artifactGraphList = Lists.newArrayList();
                         for (Artifact artifact : repositoryEntry.getValue()) {
                             artifactName = artifact.getArtifactPath();
                             if (isDockerLayout) {
                                 artifactName = artifactComponent.getDockerImage(artifact.getArtifactPath());
                             }
-                            artifactGraph = ArtifactGraphDto.builder().id(artifact.getUuid()).title("制品信息").name(artifactName).count(artifact.getDownloadCount()).up(false)
+                            artifactGraph = ArtifactGraphForm.builder().id(artifact.getUuid()).title("制品信息").name(artifactName).count(artifact.getDownloadCount()).up(false)
                                     .count(artifact.getDownloadCount()).color("B").build();
                             artifactGraphList.add(artifactGraph);
                         }
@@ -187,9 +187,9 @@ public class ComponentServiceImpl implements ComponentService {
     }
 
     @Override
-    public ArtifactStatisticsDto artifactStatistics(String componentUuid) {
+    public ArtifactStatisticsForm artifactStatistics(String componentUuid) {
         int zero = 0;
-        ArtifactStatisticsDto artifactStatisticsForm = ArtifactStatisticsDto.builder().storageCount(zero).repositoryCount(zero).artifactCount(zero).build();
+        ArtifactStatisticsForm artifactStatisticsForm = ArtifactStatisticsForm.builder().storageCount(zero).repositoryCount(zero).artifactCount(zero).build();
         List<Artifact> artifactList = artifactRepository.queryArtifactByComponentUuid(componentUuid);
         if (CollectionUtils.isNotEmpty(artifactList)) {
             artifactStatisticsForm.setStorageCount((int) artifactList.stream().map(Artifact::getStorageId).distinct().count());
@@ -199,9 +199,9 @@ public class ComponentServiceImpl implements ComponentService {
         return artifactStatisticsForm;
     }
 
-    private List<ComponentTableDto> transform(Page<Component> componentPage) {
-        List<ComponentTableDto> list = componentPage.getContent().stream().map(component -> {
-            ComponentTableDto componentTableForm = ComponentTableDto.builder().build();
+    private List<ComponentTableForm> transform(Page<Component> componentPage) {
+        List<ComponentTableForm> list = componentPage.getContent().stream().map(component -> {
+            ComponentTableForm componentTableForm = ComponentTableForm.builder().build();
             BeanUtils.copyProperties(component, componentTableForm);
             return componentTableForm;
         }).collect(Collectors.toList());

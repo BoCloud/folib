@@ -1,10 +1,10 @@
 package com.veadan.folib.controllers.configuration.security.authorization;
 
 import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
+import com.veadan.folib.authorization.dto.RoleDto;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.controllers.BaseController;
-import com.veadan.folib.dto.PrivilegeListDto;
-import com.veadan.folib.dto.RoleDto;
+import com.veadan.folib.forms.PrivilegeListForm;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.service.UserService;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
@@ -141,7 +141,7 @@ public class AuthorizationConfigController
     @PostMapping(value = "/anonymous/privileges",
                  consumes = MediaType.APPLICATION_JSON_VALUE,
                  produces = { MediaType.TEXT_PLAIN_VALUE, MediaType.APPLICATION_JSON_VALUE })
-    public ResponseEntity addPrivilegesToAnonymous(@RequestBody @Validated PrivilegeListDto privilegeListForm,
+    public ResponseEntity addPrivilegesToAnonymous(@RequestBody @Validated PrivilegeListForm privilegeListForm,
                                                    BindingResult bindingResult,
                                                    @RequestHeader(HttpHeaders.ACCEPT) String acceptHeader) throws IOException
     {

@@ -11,7 +11,7 @@ import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.UpgradeTaskStatusEnum;
 import com.veadan.folib.event.bucket.BucketEventListenerRegistry;
-import com.veadan.folib.dto.dict.DictDto;
+import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.mapper.DictMapper;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.DictService;
@@ -61,7 +61,7 @@ public class DictServiceImpl implements DictService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void updateDict(DictDto dictForm) {
+    public void updateDict(DictForm dictForm) {
         Dict dict = Dict.builder().build();
         BeanUtils.copyProperties(dictForm, dict);
         dict.setComment(handlerComment(dict));
@@ -110,7 +110,7 @@ public class DictServiceImpl implements DictService {
             if (flag) {
                 return;
             }
-            DictDto dictForm = DictDto.builder().build();
+            DictForm dictForm = DictForm.builder().build();
             BeanUtils.copyProperties(dict, dictForm);
             updateDict(dictForm);
         } else {

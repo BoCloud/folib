@@ -2,7 +2,7 @@ package com.veadan.folib.services;
 
 import com.veadan.folib.domain.blockstrategy.BlockStrategyRecord;
 import com.veadan.folib.entity.BlockStrategy;
-import com.veadan.folib.dto.blockstrategy.BlockStrategyDto;
+import com.veadan.folib.forms.blockstrategy.BlockStrategyForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 
 import java.util.List;
@@ -21,7 +21,7 @@ public interface BlockStrategyService {
      * @param blockStrategyForm 表单参数
      * @return 阻断策略分页列表
      */
-    TableResultResponse<BlockStrategyRecord> queryBlockStrategyPage(Integer page, Integer limit, BlockStrategyDto blockStrategyForm);
+    TableResultResponse<BlockStrategyRecord> queryBlockStrategyPage(Integer page, Integer limit, BlockStrategyForm blockStrategyForm);
 
     /**
      * 查询阻断策略列表
@@ -29,7 +29,7 @@ public interface BlockStrategyService {
      * @param blockStrategyForm 表单参数
      * @return 阻断策略分页列表
      */
-    List<BlockStrategyRecord> queryBlockStrategyList(BlockStrategyDto blockStrategyForm);
+    List<BlockStrategyRecord> queryBlockStrategyList(BlockStrategyForm blockStrategyForm);
 
     /**
      * 查询阻断策略
@@ -37,21 +37,21 @@ public interface BlockStrategyService {
      * @param blockStrategy 阻断策略
      * @return 阻断策略
      */
-    BlockStrategyDto queryBlockStrategy(BlockStrategy blockStrategy);
+    BlockStrategyForm queryBlockStrategy(BlockStrategy blockStrategy);
 
     /**
      * 新增阻断策略
      *
      * @param blockStrategyForm 参数
      */
-    void saveBlockStrategy(BlockStrategyDto blockStrategyForm);
+    void saveBlockStrategy(BlockStrategyForm blockStrategyForm);
 
     /**
      * 更新阻断策略
      *
      * @param blockStrategyForm 参数
      */
-    void updateBlockStrategy(BlockStrategyDto blockStrategyForm);
+    void updateBlockStrategy(BlockStrategyForm blockStrategyForm);
 
     /**
      * 删除阻断策略

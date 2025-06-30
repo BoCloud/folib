@@ -4,8 +4,8 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.github.pagehelper.PageHelper;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.entity.AccessToken;
-import com.veadan.folib.dto.accesstoken.AccessTokenDto;
-import com.veadan.folib.dto.accesstoken.AccessTokenResponse;
+import com.veadan.folib.forms.accesstoken.AccessTokenForm;
+import com.veadan.folib.forms.accesstoken.AccessTokenResponse;
 import com.veadan.folib.mapper.AccessTokenMapper;
 import com.veadan.folib.scanner.common.util.UUIDUtils;
 import com.veadan.folib.services.AccessTokenService;
@@ -55,7 +55,7 @@ public class AccessTokenServiceImpl implements AccessTokenService, AccessTokenFi
     private DistributedCacheComponent distributedCacheComponent;
 
     @Override
-    public AccessTokenResponse generate(AccessTokenDto form) {
+    public AccessTokenResponse generate(AccessTokenForm form) {
         UserDetails userDetails = userDetailsService.loadUserByUsername(form.getUsername());
         Assert.notNull(userDetails, "用户不存在");
         Assert.isTrue(userDetails.isEnabled(), "用户不可用");

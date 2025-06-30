@@ -3,8 +3,8 @@ package com.veadan.folib.converters.users;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-import com.veadan.folib.dto.users.AccessModelDto;
-import com.veadan.folib.dto.users.RepositoryAccessModelDto;
+import com.veadan.folib.forms.users.AccessModelForm;
+import com.veadan.folib.forms.users.RepositoryAccessModelForm;
 import org.apache.commons.lang3.StringUtils;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.users.dto.PathPrivilegesDto;
@@ -17,13 +17,13 @@ import org.springframework.core.convert.converter.Converter;
  * @author veadan
  */
 public enum AccessModelFormToUserAccessModelDtoConverter
-        implements Converter<AccessModelDto, com.veadan.folib.users.dto.AccessModelDto>
+        implements Converter<AccessModelForm, com.veadan.folib.users.dto.AccessModelDto>
 {
 
     INSTANCE;
 
     @Override
-    public com.veadan.folib.users.dto.AccessModelDto convert(AccessModelDto accessModelForm)
+    public com.veadan.folib.users.dto.AccessModelDto convert(AccessModelForm accessModelForm)
     {
         if (accessModelForm == null)
         {
@@ -36,7 +36,7 @@ public enum AccessModelFormToUserAccessModelDtoConverter
                        .map(p -> Privileges.valueOf(p))
                        .forEach(p -> userAccessModelDto.getApiAuthorities().add(p));
         
-        for (RepositoryAccessModelDto repositoryAccess : accessModelForm.getRepositoriesAccess())
+        for (RepositoryAccessModelForm repositoryAccess : accessModelForm.getRepositoriesAccess())
         {
             StoragePrivilegesDto storage = userAccessModelDto.getStorageAuthorities(repositoryAccess.getStorageId())
                                                        .orElseGet(
@@ -92,7 +92,7 @@ public enum AccessModelFormToUserAccessModelDtoConverter
         return userAccessModelDto;
     }
 
-    private Collection<Privileges> pullPrivileges(final RepositoryAccessModelDto repositoryAccess)
+    private Collection<Privileges> pullPrivileges(final RepositoryAccessModelForm repositoryAccess)
     {
         return repositoryAccess.getPrivileges()
                                .stream()

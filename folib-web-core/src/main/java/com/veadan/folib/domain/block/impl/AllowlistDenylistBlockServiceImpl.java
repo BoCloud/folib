@@ -11,7 +11,7 @@ import com.veadan.folib.enums.CategoryEnum;
 import com.veadan.folib.enums.RuleEnum;
 import com.veadan.folib.entity.AllowlistDenylistBlock;
 import com.veadan.folib.enums.TagEnum;
-import com.veadan.folib.dto.configuration.SecurityPolicyConfigurationDto;
+import com.veadan.folib.forms.configuration.SecurityPolicyConfigurationForm;
 import com.veadan.folib.mapper.AllowlistDenylistBlockMapper;
 import com.veadan.folib.mapper.LicenseMapper;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
@@ -125,7 +125,7 @@ public class AllowlistDenylistBlockServiceImpl implements AllowlistDenylistBlock
 
     @Transactional(rollbackFor = Exception.class)
     public void initPlatformVulnerabilities() {
-        SecurityPolicyConfigurationDto source = securityPolicyConfigurationService.config();
+        SecurityPolicyConfigurationForm source = securityPolicyConfigurationService.config();
         List<AllowlistDenylistBlock> vulnerabilityList = new ArrayList<>();
         Date createdTime = new Date();
         for (String vulnerability : source.getWhites()) {

@@ -1,8 +1,8 @@
 package com.veadan.folib.controllers.forms;
 
-import com.veadan.folib.dto.configuration.MavenRepositoryConfigurationDto;
-import com.veadan.folib.dto.configuration.NugetRepositoryConfigurationDto;
-import com.veadan.folib.dto.configuration.RawRepositoryConfigurationDto;
+import com.veadan.folib.forms.configuration.MavenRepositoryConfigurationForm;
+import com.veadan.folib.forms.configuration.NugetRepositoryConfigurationForm;
+import com.veadan.folib.forms.configuration.RawRepositoryConfigurationForm;
 import com.veadan.folib.util.FieldSpy;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.providers.storage.StorageProviderRegistry;
@@ -84,13 +84,13 @@ public class FormDataController
                                  FormDataValues.fromCollection("layout", Arrays.asList(
                                          FormDataValues.fromCollection(Maven2LayoutProvider.ALIAS,
                                                                        FieldSpy.getAllFieldsInfo(
-                                                                               MavenRepositoryConfigurationDto.class)),
+                                                                               MavenRepositoryConfigurationForm.class)),
                                          FormDataValues.fromCollection(NugetLayoutProvider.ALIAS,
                                                                        FieldSpy.getAllFieldsInfo(
-                                                                               NugetRepositoryConfigurationDto.class)),
+                                                                               NugetRepositoryConfigurationForm.class)),
                                          FormDataValues.fromCollection(RawLayoutProvider.ALIAS,
                                                                        FieldSpy.getAllFieldsInfo(
-                                                                               RawRepositoryConfigurationDto.class)))))));
+                                                                               RawRepositoryConfigurationForm.class)))))));
     }
 
     @ApiOperation(value = "Used to retrieve storage names")

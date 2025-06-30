@@ -4,7 +4,7 @@ import com.veadan.folib.domain.migrate.AddRepositoryForm;
 import com.veadan.folib.domain.migrate.ArtifactMigrateInfo;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.entity.MigrateInfo;
-import com.veadan.folib.dto.JfrogMigrateDto;
+import com.veadan.folib.forms.JfrogMigrateForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.JfrogMigrateService;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +42,7 @@ public class JfrogMigrateController {
     private final static String JFROG_PREFIX = "/artifactory";
 
     @PostMapping("")
-    public ResponseEntity<String> migrate(@Validated @RequestBody JfrogMigrateDto form) {
+    public ResponseEntity<String> migrate(@Validated @RequestBody JfrogMigrateForm form) {
         try (Artifactory artifactory = ArtifactoryClientBuilder.create().setUrl(form.getUrl() + JFROG_PREFIX).setUsername(form.getUsername()).setPassword(form.getPassword()).build()) {
             artifactory.security().groupNames();
             jfrogMigrateService.migrate(form);

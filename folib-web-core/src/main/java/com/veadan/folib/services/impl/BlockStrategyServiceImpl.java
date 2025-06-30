@@ -11,8 +11,8 @@ import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.domain.PackageNameBlockInfo;
 import com.veadan.folib.domain.blockstrategy.BlockStrategyRecord;
 import com.veadan.folib.entity.*;
-import com.veadan.folib.dto.blockstrategy.BlockStrategyDto;
-import com.veadan.folib.dto.packagenameblock.PackageNameBlockDto;
+import com.veadan.folib.forms.blockstrategy.BlockStrategyForm;
+import com.veadan.folib.forms.packagenameblock.PackageNameBlockForm;
 import com.veadan.folib.mapper.BlockStrategyInfoMapper;
 import com.veadan.folib.mapper.BlockStrategyMapper;
 import com.veadan.folib.mapper.BlockStrategyRepositoryMapper;
@@ -74,7 +74,7 @@ public class BlockStrategyServiceImpl implements BlockStrategyService {
     private HazelcastInstance hazelcastInstance;
 
     @Override
-    public TableResultResponse<BlockStrategyRecord> queryBlockStrategyPage(Integer page, Integer limit, BlockStrategyDto blockStrategyForm) {
+    public TableResultResponse<BlockStrategyRecord> queryBlockStrategyPage(Integer page, Integer limit, BlockStrategyForm blockStrategyForm) {
         if (Objects.isNull(page)) {
             page = 1;
         }
@@ -92,20 +92,20 @@ public class BlockStrategyServiceImpl implements BlockStrategyService {
     }
 
     @Override
-    public List<BlockStrategyRecord> queryBlockStrategyList(BlockStrategyDto blockStrategyForm) {
+    public List<BlockStrategyRecord> queryBlockStrategyList(BlockStrategyForm blockStrategyForm) {
         List<BlockStrategyRecord> blockStrategyList = blockStrategyMapper.selectInfoList(blockStrategyForm);
         return blockStrategyList;
     }
 
     @Override
-    public BlockStrategyDto queryBlockStrategy(BlockStrategy blockStrategy) {
-        BlockStrategyDto blockStrategyForm = null;
+    public BlockStrategyForm queryBlockStrategy(BlockStrategy blockStrategy) {
+        BlockStrategyForm blockStrategyForm = null;
         String blockStrategyName = blockStrategy.getBlockStrategyName();
         BlockStrategy existsBlockStrategy = getBlockStrategy(BlockStrategy.builder().blockStrategyName(blockStrategyName).build());
         if (Objects.isNull(existsBlockStrategy)) {
             return null;
         }
-        blockStrategyForm = BlockStrategyDto.builder().build();
+        blockStrategyForm = BlockStrategyForm.builder().build();
         BeanUtils.copyProperties(existsBlockStrategy, blockStrategyForm);
         blockStrategyForm.setId(existsBlockStrategy.getId().toString());
         if (StringUtils.isNotBlank(existsBlockStrategy.getVulnerabilityLevels())) {
@@ -136,7 +136,7 @@ public class BlockStrategyServiceImpl implements BlockStrategyService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void saveBlockStrategy(BlockStrategyDto blockStrategyForm) {
+    public void saveBlockStrategy(BlockStrategyForm blockStrategyForm) {
         String blockStrategyName = blockStrategyForm.getBlockStrategyName();
         BlockStrategy existsBlockStrategy = getBlockStrategy(BlockStrategy.builder().blockStrategyName(blockStrategyName).build());
         if (Objects.nonNull(existsBlockStrategy)) {
@@ -204,7 +204,7 @@ public class BlockStrategyServiceImpl implements BlockStrategyService {
             PackageNameBlockInfo packageNameBlockInfo = null;
             BlockStrategyInfo blockStrategyInfo = null;
             for (String packageName : blockStrategyForm.getPackageNames()) {
-                packageNameBlockInfo = packageNameBlockService.selectOnePackageNameBlock(PackageNameBlockDto.builder().packageName(packageName).build());
+                packageNameBlockInfo = packageNameBlockService.selectOnePackageNameBlock(PackageNameBlockForm.builder().packageName(packageName).build());
                 if (Objects.isNull(packageNameBlockInfo)) {
                     continue;
                 }
@@ -236,7 +236,7 @@ public class BlockStrategyServiceImpl implements BlockStrategyService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void updateBlockStrategy(BlockStrategyDto blockStrategyForm) {
+    public void updateBlockStrategy(BlockStrategyForm blockStrategyForm) {
         String blockStrategyName = blockStrategyForm.getBlockStrategyName();
         BlockStrategy existsBlockStrategy = null;
         if (StringUtils.isNotBlank(blockStrategyForm.getId())) {
@@ -312,7 +312,7 @@ public class BlockStrategyServiceImpl implements BlockStrategyService {
             PackageNameBlockInfo packageNameBlockInfo = null;
             BlockStrategyInfo blockStrategyInfo = null;
             for (String packageName : blockStrategyForm.getPackageNames()) {
-                packageNameBlockInfo = packageNameBlockService.selectOnePackageNameBlock(PackageNameBlockDto.builder().packageName(packageName).build());
+                packageNameBlockInfo = packageNameBlockService.selectOnePackageNameBlock(PackageNameBlockForm.builder().packageName(packageName).build());
                 if (Objects.isNull(packageNameBlockInfo)) {
                     continue;
                 }
@@ -422,7 +422,7 @@ public class BlockStrategyServiceImpl implements BlockStrategyService {
         String repositoryCacheKey = String.format("%s-%s", storageId, repositoryId);
         List<BlockStrategyRecord> blockStrategyRecordList = getCache(repositoryCacheKey);
         if (CollectionUtils.isEmpty(blockStrategyRecordList)) {
-            blockStrategyRecordList = queryBlockStrategyList(BlockStrategyDto.builder().storageId(storageId).repositoryId(repositoryId).build());
+            blockStrategyRecordList = queryBlockStrategyList(BlockStrategyForm.builder().storageId(storageId).repositoryId(repositoryId).build());
             putCache(repositoryCacheKey, blockStrategyRecordList, 8);
         }
         return blockStrategyRecordList;

@@ -34,14 +34,14 @@ import com.veadan.folib.domain.policy.FederalPromotionPolicyService;
 import com.veadan.folib.dto.ArtifactDispatchRepositoryDto;
 import com.veadan.folib.dto.PermissionsDTO;
 import com.veadan.folib.dto.UserDTO;
-import com.veadan.folib.dto.configuration.*;
-import com.veadan.folib.dto.configuration.RepositoryDto;
-import com.veadan.folib.dto.configuration.RepositoryPermissionDto;
+import com.veadan.folib.forms.configuration.*;
 import com.veadan.folib.entity.Resource;
 import com.veadan.folib.enums.*;
 import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
-import com.veadan.folib.dto.common.StorageTreeDto;
+import com.veadan.folib.forms.common.StorageTreeForm;
+import com.veadan.folib.forms.configuration.RepositoryForm;
+import com.veadan.folib.forms.configuration.RepositoryPermissionForm;
 import com.veadan.folib.layout.providers.CargoLayoutProvider;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.LayoutProvider;
@@ -229,9 +229,9 @@ public class StoragesConfigurationController
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity createStorage(@RequestBody
                                         @Validated({Default.class,
-                                                StorageDto.NewStorage.class,
-                                                ProxyConfigurationDto.ProxyConfigurationFormChecks.class})
-                                            StorageDto storageForm,
+                                                StorageForm.NewStorage.class,
+                                                ProxyConfigurationForm.ProxyConfigurationFormChecks.class})
+                                            StorageForm storageForm,
                                         BindingResult bindingResult,
                                         @RequestHeader(HttpHeaders.ACCEPT)
                                                 String accept) {
@@ -271,8 +271,8 @@ public class StoragesConfigurationController
             @ApiParam(value = "The storageId", required = true)
             @PathVariable String storageId,
             @RequestBody @Validated({Default.class,
-                    StorageDto.ExistingStorage.class,
-                    ProxyConfigurationDto.ProxyConfigurationFormChecks.class}) StorageDto storageFormToUpdate,
+                    StorageForm.ExistingStorage.class,
+                    ProxyConfigurationForm.ProxyConfigurationFormChecks.class}) StorageForm storageFormToUpdate,
             BindingResult bindingResult,
             @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (bindingResult.hasErrors()) {
@@ -439,7 +439,7 @@ public class StoragesConfigurationController
                 .getStorages()
                 .values());
         List<Repository> repositoriesList = new ArrayList<>();
-        List<StorageTreeDto> storageTreeForms = Lists.newArrayList();
+        List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
 
         if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
             Map<String, List<String>> storageRepMap = new HashMap<>();
@@ -481,11 +481,11 @@ public class StoragesConfigurationController
                             (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope()))))
                     .filter(s -> !filterByStorageId || s.getId().equalsIgnoreCase(storageId))
                     .collect(Collectors.toCollection(LinkedList::new));
-            StorageTreeDto storageTreeForm;
+            StorageTreeForm storageTreeForm;
             List<Repository> repositories;
             for (Storage storage : storages) {
                 boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username) || storage.getRepositoryUsers().contains(username));
-                storageTreeForm = StorageTreeDto.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
+                storageTreeForm = StorageTreeForm.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
                 repositories = new LinkedList<Repository>(storage.getRepositories().values());
                 repositories = repositories.stream().distinct()
                         .filter(r -> !filterByType || r.getType().equalsIgnoreCase(type))
@@ -499,7 +499,7 @@ public class StoragesConfigurationController
                     repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || hasRepositoryResolve(item))).collect(Collectors.toList());
                 }
                 repositoriesList.addAll(repositories);
-                storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeDto.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout())
+                storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeForm.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout())
                         .scope(repository.getScope()).build()).collect(Collectors.toList()));
                 storageTreeForms.add(storageTreeForm);
             }
@@ -537,7 +537,7 @@ public class StoragesConfigurationController
         List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
                 .getStorages()
                 .values());
-        List<StorageTreeDto> storageTreeForms = Lists.newArrayList();
+        List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
         List<Repository> repositorieList = new ArrayList<>();
 
         if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
@@ -574,12 +574,12 @@ public class StoragesConfigurationController
                             (CollectionUtils.isNotEmpty(s.getRepositories().values()) && s.getRepositories().values().stream().anyMatch(repository -> RepositoryScopeEnum.OPEN.getType().equals(repository.getScope()))))
                     .filter(s -> !filterByStorageId || s.getId().equalsIgnoreCase(storageId))
                     .collect(Collectors.toCollection(LinkedList::new));
-            StorageTreeDto storageTreeForm;
+            StorageTreeForm storageTreeForm;
             List<Repository> repositories;
             for (Storage storage : storages) {
                 boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username)
                         || storage.getRepositoryUsers().contains(username));
-                storageTreeForm = StorageTreeDto.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
+                storageTreeForm = StorageTreeForm.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
                 repositories = new LinkedList<Repository>(storage.getRepositories().values());
                 repositories = repositories.stream().distinct()
                         .filter(r -> !filterByType || r.getType().equalsIgnoreCase(type))
@@ -591,7 +591,7 @@ public class StoragesConfigurationController
                 if (flag) {
                     repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || hasRepositoryResolve(item))).collect(Collectors.toList());
                 }
-                storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeDto.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout())
+                storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeForm.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout())
                         .scope(repository.getScope()).build()).collect(Collectors.toList()));
                 storageTreeForms.add(storageTreeForm);
             }
@@ -619,7 +619,7 @@ public class StoragesConfigurationController
         List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
                 .getStorages()
                 .values());
-        List<StorageTreeDto> storageTreeForms = Lists.newArrayList();
+        List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
         List<Repository> repositorieList = new ArrayList<>();
 
         if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
@@ -651,12 +651,12 @@ public class StoragesConfigurationController
                     .distinct()
                     .filter(s -> !filterByUser || username.equals(s.getAdmin()))
                     .collect(Collectors.toCollection(LinkedList::new));
-            StorageTreeDto storageTreeForm;
+            StorageTreeForm storageTreeForm;
             List<Repository> repositories;
             for (Storage storage : storages) {
                 boolean flag = !hasAdmin() && !username.equals(storage.getAdmin()) && (CollectionUtils.isNotEmpty(storage.getUsers()) && !storage.getUsers().contains(username)
                         || storage.getRepositoryUsers().contains(username));
-                storageTreeForm = StorageTreeDto.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
+                storageTreeForm = StorageTreeForm.builder().id(storage.getId()).key(storage.getId()).name(storage.getId()).build();
                 repositories = new LinkedList<Repository>(storage.getRepositories().values());
                 repositories = repositories.stream().distinct()
                         .filter(r -> !filterByType || r.getType().equalsIgnoreCase(type))
@@ -667,7 +667,7 @@ public class StoragesConfigurationController
                 if (flag) {
                     repositories = repositories.stream().filter((item -> RepositoryScopeEnum.OPEN.getType().equals(item.getScope()) || hasRepositoryResolve(item))).collect(Collectors.toList());
                 }
-                storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeDto.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout()).build()).collect(Collectors.toList()));
+                storageTreeForm.setChildren(repositories.stream().map(repository -> StorageTreeForm.builder().id(repository.getId()).key(storage.getId() + "," + repository.getId()).name(repository.getId()).type(repository.getType()).layout(repository.getLayout()).build()).collect(Collectors.toList()));
                 storageTreeForms.add(storageTreeForm);
             }
         }
@@ -686,9 +686,9 @@ public class StoragesConfigurationController
                 .values());
         //查询数据库中存储空间绑定的用户
         storageManagementService.getStorageUsers(storages);
-        List<StorageTreeDto> dispatchTreeForms = Lists.newArrayList();
-        List<StorageTreeDto> storageTreeForms = Lists.newArrayList();
-        StorageTreeDto dispatchTreeForm = StorageTreeDto.builder()
+        List<StorageTreeForm> dispatchTreeForms = Lists.newArrayList();
+        List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
+        StorageTreeForm dispatchTreeForm = StorageTreeForm.builder()
                 .id(dispatchEnName)
                 .key(dispatchEnName)
                 .name(dispatchEnName).artifactoryRepositoryType(ArtifactoryRepositoryTypeEnum.INNER.getType()).build();
@@ -701,7 +701,7 @@ public class StoragesConfigurationController
                     .collect(Collectors.toCollection(LinkedList::new));
             List<Repository> repositories;
             for (Storage storage : storages) {
-                StorageTreeDto storageTreeForm = StorageTreeDto.builder()
+                StorageTreeForm storageTreeForm = StorageTreeForm.builder()
                         .id(storage.getId())
                         .key(dispatchEnName + "," + storage.getId())
                         .name(storage.getId()).artifactoryRepositoryType(ArtifactoryRepositoryTypeEnum.INNER.getType()).build();
@@ -715,7 +715,7 @@ public class StoragesConfigurationController
                     continue;
                 }
                 storageTreeForm.setChildren(repositories.stream().map(repository ->
-                        StorageTreeDto.builder()
+                        StorageTreeForm.builder()
                                 .id(repository.getId())
                                 .key(dispatchEnName + "," + storage.getId() + "," + repository.getId())
                                 .name(repository.getId())
@@ -759,7 +759,7 @@ public class StoragesConfigurationController
                 .type(type)
                 .layout(layout)
                 .policy(policy).build();
-        List<StorageTreeDto> repoList = new LinkedList<>();
+        List<StorageTreeForm> repoList = new LinkedList<>();
         WSMessageRequest wsMessageRequest = null;
         WSMessageResponse messageResponse = null;
         for (ClusterDispatchNodeDto clusterDispatchNodeDto : listDispatch) {
@@ -909,8 +909,8 @@ public class StoragesConfigurationController
                                        @PathVariable
                                                String repositoryType) {
         List<Repository> repositories = configurationManagementService.getRepositoriesWithType(storageId, repositoryType);
-        List<RepositoryDto> repositoryForms = Optional.ofNullable(repositories).orElse(Lists.newArrayList()).stream().map(item -> {
-            RepositoryDto repository = new RepositoryDto();
+        List<RepositoryForm> repositoryForms = Optional.ofNullable(repositories).orElse(Lists.newArrayList()).stream().map(item -> {
+            RepositoryForm repository = new RepositoryForm();
             BeanUtils.copyProperties(item, repository);
             repository.setStorageId(item.getStorage().getId());
             if (FileSystemStorageProvider.ALIAS.equalsIgnoreCase(item.getStorageProvider())) {
@@ -940,8 +940,8 @@ public class StoragesConfigurationController
                                                 @ApiParam(value = "The repository object", required = true)
                                                 @RequestBody
                                                 @Validated({Default.class,
-                                                        ProxyConfigurationDto.ProxyConfigurationFormChecks.class})
-                                                    RepositoryDto repositoryForm,
+                                                        ProxyConfigurationForm.ProxyConfigurationFormChecks.class})
+                                                    RepositoryForm repositoryForm,
                                                 BindingResult bindingResult,
                                                 @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         Storage storage = configurationManagementService.getConfiguration().getStorage(storageId);
@@ -1043,18 +1043,18 @@ public class StoragesConfigurationController
     @PostMapping(value = "/{storageId}/{repositoryId}/alive",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<RepositoryAliveDto> aliveRepository(@ApiParam(value = "The storageId", required = true)
+    public ResponseEntity<RepositoryAliveForm> aliveRepository(@ApiParam(value = "The storageId", required = true)
                                                                @PathVariable String storageId,
-                                                              @ApiParam(value = "The repositoryId", required = true)
+                                                               @ApiParam(value = "The repositoryId", required = true)
                                                                @PathVariable
                                                                        String repositoryId,
-                                                              @ApiParam(value = "The repository object", required = true)
+                                                               @ApiParam(value = "The repository object", required = true)
                                                                @RequestBody
                                                                @Validated({Default.class,
-                                                                       ProxyConfigurationDto.ProxyConfigurationFormChecks.class})
-                                                                  RepositoryDto repositoryForm,
-                                                              BindingResult bindingResult,
-                                                              @RequestHeader(HttpHeaders.ACCEPT) String accept) {
+                                                                       ProxyConfigurationForm.ProxyConfigurationFormChecks.class})
+                                                                   RepositoryForm repositoryForm,
+                                                               BindingResult bindingResult,
+                                                               @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         Storage storage = configurationManagementService.getConfiguration().getStorage(storageId);
         if (storage != null) {
             if (bindingResult.hasErrors()) {
@@ -1083,10 +1083,10 @@ public class StoragesConfigurationController
                             HttpStatus.FOUND.value() == statusCode;
                     logger.info("Verify if the storage [{}] repository [{}] remoteUrl [{}] is alive responseStatus [{}] response [{}]", storageId, repositoryId, repository.getRemoteRepository().getUrl(), statusCode, response.readEntity(String.class));
                 }
-                return ResponseEntity.ok(RepositoryAliveDto.builder().alive(isAlive).statusCode(statusCode).build());
+                return ResponseEntity.ok(RepositoryAliveForm.builder().alive(isAlive).statusCode(statusCode).build());
             } catch (Exception e) {
                 logger.info("Verify if the storage [{}] repository [{}] is alive error [{}]", storageId, repositoryId, ExceptionUtils.getStackTrace(e));
-                return ResponseEntity.ok(RepositoryAliveDto.builder().alive(false).build());
+                return ResponseEntity.ok(RepositoryAliveForm.builder().alive(false).build());
             } finally {
                 if (Objects.nonNull(response)) {
                     response.close();
@@ -1111,8 +1111,8 @@ public class StoragesConfigurationController
                                                       String repositoryId,
                                               @ApiParam(value = "The repository object", required = true)
                                               @RequestBody
-                                              @Validated({RepositoryDto.WhiteGroup.class})
-                                                  RepositoryDto repositoryForm,
+                                              @Validated({RepositoryForm.WhiteGroup.class})
+                                                  RepositoryForm repositoryForm,
                                               BindingResult bindingResult,
                                               @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (configurationManagementService.getConfiguration().getStorage(storageId) != null) {
@@ -1155,8 +1155,8 @@ public class StoragesConfigurationController
                                                          String repositoryId,
                                                  @ApiParam(value = "The repository object", required = true)
                                                  @RequestBody
-                                                 @Validated({RepositoryDto.WhiteGroup.class})
-                                                     RepositoryDto repositoryForm,
+                                                 @Validated({RepositoryForm.WhiteGroup.class})
+                                                     RepositoryForm repositoryForm,
                                                  BindingResult bindingResult,
                                                  @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (configurationManagementService.getConfiguration().getStorage(storageId) != null) {
@@ -1197,8 +1197,8 @@ public class StoragesConfigurationController
                                                       String repositoryId,
                                               @ApiParam(value = "The repository object", required = true)
                                               @RequestBody
-                                              @Validated({RepositoryDto.BlackGroup.class})
-                                                  RepositoryDto repositoryForm,
+                                              @Validated({RepositoryForm.BlackGroup.class})
+                                                  RepositoryForm repositoryForm,
                                               BindingResult bindingResult,
                                               @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (configurationManagementService.getConfiguration().getStorage(storageId) != null) {
@@ -1241,8 +1241,8 @@ public class StoragesConfigurationController
                                                          String repositoryId,
                                                  @ApiParam(value = "The repository object", required = true)
                                                  @RequestBody
-                                                 @Validated({RepositoryDto.BlackGroup.class})
-                                                     RepositoryDto repositoryForm,
+                                                 @Validated({RepositoryForm.BlackGroup.class})
+                                                     RepositoryForm repositoryForm,
                                                  BindingResult bindingResult,
                                                  @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (configurationManagementService.getConfiguration().getStorage(storageId) != null) {
@@ -1284,7 +1284,7 @@ public class StoragesConfigurationController
                                               @PathVariable
                                                       String repositoryId,
                                               @ApiParam(value = "The repository object", required = true)
-                                              @RequestBody RepositoryDto repositoryForm,
+                                              @RequestBody RepositoryForm repositoryForm,
                                               BindingResult bindingResult,
                                               @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (configurationManagementService.getConfiguration().getStorage(storageId) != null) {
@@ -1326,7 +1326,7 @@ public class StoragesConfigurationController
                                               @PathVariable
                                                       String repositoryId,
                                               @ApiParam(value = "The repository object", required = true)
-                                              @RequestBody RepositoryDto repositoryForm,
+                                              @RequestBody RepositoryForm repositoryForm,
                                               BindingResult bindingResult,
                                               @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (configurationManagementService.getConfiguration().getStorage(storageId) != null) {
@@ -1442,7 +1442,7 @@ public class StoragesConfigurationController
                                                        String repositoryId,
                                                @ApiParam(value = "The repository object", required = true)
                                                @RequestBody
-                                               @Validated RepositoryPermissionDto repositoryPermissionForm,
+                                               @Validated RepositoryPermissionForm repositoryPermissionForm,
                                                BindingResult bindingResult,
                                                @RequestHeader(HttpHeaders.ACCEPT) String accept) throws IOException {
         final Storage storage = configurationManagementService.getConfiguration().getStorage(storageId);
@@ -1677,7 +1677,7 @@ public class StoragesConfigurationController
                                           @ApiParam(value = "The repository object", required = true)
                                           @RequestBody
                                           @Validated
-                                              UnionRepositoryConfigurationDto unionRepositoryConfigurationForm,
+                                              UnionRepositoryConfigurationForm unionRepositoryConfigurationForm,
                                           BindingResult bindingResult,
                                           @RequestHeader(HttpHeaders.ACCEPT) String accept) {
         if (configurationManagementService.getConfiguration().getStorage(storageId) != null) {
@@ -1715,7 +1715,7 @@ public class StoragesConfigurationController
         }
     }
 
-    public FederalPromotionPolicyCreateReq convertPolicy(UnionRepositoryConfigurationDto unionRepositoryConfigurationForm, String storageId, String repositoryId) {
+    public FederalPromotionPolicyCreateReq convertPolicy(UnionRepositoryConfigurationForm unionRepositoryConfigurationForm, String storageId, String repositoryId) {
         SecurityContext securityContext = SecurityContextHolder.getContext();
         Authentication authentication = securityContext.getAuthentication();
         SpringSecurityUser user = (SpringSecurityUser) authentication.getPrincipal();
