@@ -462,8 +462,8 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
             boolean isValid = (!p.toString().startsWith(".")) &&
                     !DockerLayoutProvider.MANIFEST.equalsIgnoreCase(p.getFileName().toString()) &&
                     !DockerLayoutProvider.BLOBS.equalsIgnoreCase(p.getFileName().toString()) &&
-                    (!p.toString().contains("/.") || p.toString().contains(".specs") || isTrashNotHiddenPath(p)) &&
-                    (!Files.isHidden(p) || p.toString().contains(".specs") || isTrashNotHiddenPath(p));
+                    (!p.toString().contains("/.") || p.toString().contains(".specs")) &&
+                    (!Files.isHidden(p) || p.toString().contains(".specs"));
             if (isValid) {
                 //校验权限
                 if (p instanceof RepositoryPath) {
@@ -478,15 +478,6 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
             logger.info("Error accessing path {}", p);
             return false;
         }
-    }
-
-    private boolean isTrashNotHiddenPath(Path p) {
-        String path = p.toString();
-        if (path.contains(LayoutFileSystem.TRASH)) {
-            path = path.replace(LayoutFileSystem.TRASH, "");
-            return !path.contains("/.");
-        }
-        return false;
     }
 
     /**
@@ -673,8 +664,7 @@ public class DirectoryListingServiceImpl implements DirectoryListingService {
     protected boolean isPermittedForDirectoryListing(final RepositoryPath repositoryPath)
             throws IOException {
         //TODO: RepositoryFiles.isIndex(repositoryPath) || (
-        return !Files.isHidden(repositoryPath) && !RepositoryFiles.isTrash(repositoryPath)
-                && !RepositoryFiles.isTemp(repositoryPath);
+        return !Files.isHidden(repositoryPath) && !RepositoryFiles.isTemp(repositoryPath);
     }
 
     @Data

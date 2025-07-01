@@ -68,8 +68,6 @@ public class RepositoryData
 
     private long artifactMaxSize;
 
-    private boolean trashEnabled;
-
     private boolean allowsForceDeletion;
 
     private boolean allowsDeployment;
@@ -168,7 +166,6 @@ public class RepositoryData
         this.secured = delegate.isSecured();
         this.status = delegate.getStatus();
         this.artifactMaxSize = delegate.getArtifactMaxSize();
-        this.trashEnabled = delegate.isTrashEnabled();
         this.allowsForceDeletion = delegate.isAllowsForceDeletion();
         this.allowsDeployment = delegate.isAllowsDeployment();
         this.allowsRedeployment = delegate.isAllowsRedeployment();
@@ -203,8 +200,6 @@ public class RepositoryData
         if (delegate.getHealthStatus() != null) {
             this.healthStatus = delegate.getHealthStatus();
         }
-        this.storageMaxSize = delegate.getStorageMaxSize();
-        this.storageThreshold = delegate.getStorageThreshold();
     }
 
     private ProxyConfiguration immuteProxyConfiguration(final MutableProxyConfiguration source) {
@@ -312,11 +307,6 @@ public class RepositoryData
     }
 
     @Override
-    public boolean isTrashEnabled() {
-        return trashEnabled;
-    }
-
-    @Override
     public boolean isAllowsForceDeletion() {
         return allowsForceDeletion;
     }
@@ -344,16 +334,6 @@ public class RepositoryData
     @Override
     public boolean isChecksumHeadersEnabled() {
         return checksumHeadersEnabled;
-    }
-
-    @Override
-    public long getStorageMaxSize() {
-        return this.storageMaxSize;
-    }
-
-    @Override
-    public double getStorageThreshold() {
-        return this.storageThreshold;
     }
 
     public ProxyConfiguration getProxyConfiguration() {

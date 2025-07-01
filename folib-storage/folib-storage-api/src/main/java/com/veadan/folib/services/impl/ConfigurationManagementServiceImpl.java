@@ -1000,20 +1000,4 @@ public class ConfigurationManagementServiceImpl
             log.error("移除仓库缓存错误 storageId [{}] repositoryId [{}] error [{}]", storageId, repositoryId, ExceptionUtils.getStackTrace(ex));
         }
     }
-
-    /**
-     * 设置告警配置
-     *
-     * @param alarmConfiguration 告警配置
-     */
-    @Override
-    public void setAlarmConfiguration(MutableAlarmConfiguration alarmConfiguration) throws IOException {
-        modifyInLock(configuration -> {
-            configuration.getAlarmConfiguration().setNotificationPolicy(alarmConfiguration.getNotificationPolicy());
-            configuration.getAlarmConfiguration().setRecipients(alarmConfiguration.getRecipients());
-            configuration.getAlarmConfiguration().setEmails(alarmConfiguration.getEmails());
-            configuration.getAlarmConfiguration().setStorageThreshold(alarmConfiguration.getStorageThreshold());
-
-        });
-    }
 }

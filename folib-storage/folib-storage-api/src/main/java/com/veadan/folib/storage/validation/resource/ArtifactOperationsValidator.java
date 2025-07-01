@@ -2,13 +2,9 @@ package com.veadan.folib.storage.validation.resource;
 
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
 import com.veadan.folib.components.DistributedCacheComponent;
-import com.veadan.folib.configuration.AlarmConfiguration;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.enums.FileUnitTypeEnum;
-import com.veadan.folib.event.validator.ValidatorEvent;
-import com.veadan.folib.event.validator.ValidatorEventListenerRegistry;
-import com.veadan.folib.event.validator.ValidatorEventTypeEnum;
 import com.veadan.folib.providers.ProviderImplementationException;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
@@ -29,18 +25,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.inject.Inject;
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
+
 import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.nio.channels.FileChannel;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Objects;
 
@@ -66,9 +55,6 @@ public class ArtifactOperationsValidator {
     @Lazy
     @Inject
     private DistributedCacheComponent distributedCacheComponent;
-    @Lazy
-    @Inject
-    private ValidatorEventListenerRegistry validatorEventListenerRegistry;
 
     private static final long MINUTES_TO_MILLIS = 1L;
 
@@ -194,15 +180,8 @@ public class ArtifactOperationsValidator {
         log.info("The size [{}] of the storage [{}]", storageBytesSize, storageId);
         BigDecimal storageMaxTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageMaxSize, FileUnitTypeEnum.TB.getUnit());
         BigDecimal storageRealTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageBytesSize, FileUnitTypeEnum.TB.getUnit());
-        double threshold = 0.90;
-        AlarmConfiguration alarmConfiguration = getConfiguration().getAlarmConfiguration();
-        if(alarmConfiguration.getStorageThreshold()>0){
-            threshold = alarmConfiguration.getStorageThreshold();
-        }
-        BigDecimal useStorageProportion = storageRealTbSize.divide(storageMaxTbSize, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
-        if (useStorageProportion.compareTo(BigDecimal.valueOf(threshold*100)) >= 0) {
+        if (storageRealTbSize.compareTo(storageMaxTbSize) >= 0) {
             removeLastTime(STORAGE_SIZE_VERIFICATION_LAST_TIME_KEY);
-            alarmNotification();
             throw new ArtifactResolutionException(String.format("The size of the storage [%s] artifact [%s] exceeds the maximum size accepted by " +
                     "this storage (%s/%s) unit %s.", storageId, repositoryPath, storageRealTbSize, storageMaxTbSize, FileUnitTypeEnum.TB.getUnit()));
         }
@@ -295,149 +274,4 @@ public class ArtifactOperationsValidator {
         return configurationManager.getConfiguration();
     }
 
-//public long calculateStreamSize(InputStream inputStream) {
-//       try (BufferedInputStream bis = new BufferedInputStream(inputStream)) {
-//           byte[] buffer = new byte[8192];  // 使用 8KB 的缓冲区
-//           int bytesRead;
-//           long totalBytes = 0;
-//           while ((bytesRead = bis.read(buffer)) != -1) {
-//               totalBytes += bytesRead;  // 累加已读取的字节数
-//           }
-//           return totalBytes;
-//       } catch (IOException e) {
-//           log.error("Error calculating stream size: " + e.getMessage());
-//       }
-//       return 0;
-//   }
-
-   //  public long calculateStreamSize(InputStream inputStream) throws IOException {
-   //    if (!inputStream.markSupported()) {
-   //        throw new IllegalArgumentException("InputStream does not support mark/reset");
-   //    }
-   //    inputStream.mark(Integer.MAX_VALUE);
-   //    try (BufferedInputStream bis = new BufferedInputStream(inputStream)) {
-   //        byte[] buffer = new byte[8192];  // 使用 8KB 的缓冲区
-   //        int bytesRead;
-   //        long totalBytes = 0;
-   //        while ((bytesRead = bis.read(buffer)) != -1) {
-   //            totalBytes += bytesRead;  // 累加已读取的字节数
-   //        }
-   //        return totalBytes;
-   //    } finally {
-   //        inputStream.reset();
-   //    }
-   //}
-
-    public long calculateStreamSize(InputStream inputStream) throws IOException {
-        // 使用 BufferedInputStream 包装 inputStream，但不要关闭原始流
-        BufferedInputStream bis = new BufferedInputStream(inputStream);
-
-        try {
-            // 检查 BufferedInputStream 是否支持 mark/reset
-            if (!bis.markSupported()) {
-                throw new IllegalArgumentException("InputStream does not support mark/reset");
-            }
-
-            // 标记当前位置，读取数据后可以通过 reset 恢复
-            bis.mark(Integer.MAX_VALUE);
-
-            byte[] buffer = new byte[8192];  // 使用 8KB 的缓冲区
-            int bytesRead;
-            long totalBytes = 0;
-
-            // 读取并计算流的大小
-            while ((bytesRead = bis.read(buffer)) != -1) {
-                totalBytes += bytesRead;
-            }
-
-            return totalBytes;
-        } finally {
-            // 仅关闭 BufferedInputStream，而不是原始 inputStream
-            bis.close();
-        }
-    }
-
-
-
-    public long getFileSize(String filePath) throws IOException {
-        try (FileChannel fileChannel = new FileInputStream(filePath).getChannel()) {
-            return fileChannel.size();
-        }
-    }
-
-    /**
-     * 检查仓库存储大小
-     * @param repositoryPath 仓库路径
-     * @throws IOException 异常
-     */
-    public void checkRepositorySize(RepositoryPath repositoryPath)
-            throws IOException {
-        String storageId = repositoryPath.getStorageId();
-        AlarmConfiguration alarmConfiguration = getConfiguration().getAlarmConfiguration();
-        Repository repository = getConfiguration().getStorage(storageId).getRepository(repositoryPath.getRepositoryId());
-        Long storageMaxSize = repository.getStorageMaxSize();
-        if (Objects.isNull(storageMaxSize) || storageMaxSize <= 0) {
-            return;
-        }
-        String REPOSITORY_SIZE_VERIFICATION_INTERVAL_KEY = "REPOSITORY_SIZE_VERIFICATION_INTERVAL";
-        String REPOSITORY_SIZE_VERIFICATION_LAST_TIME_KEY = "REPOSITORY_SIZE_VERIFICATION_LAST_TIME";
-        if (!isRefresh(REPOSITORY_SIZE_VERIFICATION_LAST_TIME_KEY, REPOSITORY_SIZE_VERIFICATION_INTERVAL_KEY)) {
-            return;
-        }
-        long storageBytesSize = artifactRepository.artifactsBytesStatistics(Collections.singletonList(String.format("%s-%s", storageId, repositoryPath.getRepositoryId())));
-
-        log.info("The size [{}] of the repository [{}/{}]", storageBytesSize, storageId,repositoryPath.getRepositoryId());
-        BigDecimal storageMaxGbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageMaxSize, FileUnitTypeEnum.GB.getUnit());
-        BigDecimal storageRealGbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageBytesSize, FileUnitTypeEnum.GB.getUnit());
-        double threshold = 0.90;
-        if(repository.getStorageThreshold() > 0 ){
-            threshold = repository.getStorageThreshold();
-        }else if(alarmConfiguration.getStorageThreshold()>0){
-            threshold = alarmConfiguration.getStorageThreshold();
-        }
-        BigDecimal useStorageProportion = storageRealGbSize.divide(storageMaxGbSize, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
-        if (useStorageProportion.compareTo(BigDecimal.valueOf(threshold*100)) >= 0) {
-            removeLastTime(REPOSITORY_SIZE_VERIFICATION_LAST_TIME_KEY);
-            alarmNotification();
-            throw new ArtifactResolutionException(String.format("The size of the repository [%s/%s] artifact [%s] exceeds the maximum size accepted by " +
-                    "this storage (%s/%s) unit %s.", storageId,repositoryPath.getRepositoryId(), repositoryPath, storageRealGbSize, storageMaxGbSize, FileUnitTypeEnum.GB.getUnit()));
-        }
-    }
-
-    /**
-     * 告警通知
-     */
-    public void alarmNotification() {
-        String key = "NOTIFICATION_VALID_FROM";
-        Long validFrom = this.getNotificationValidFrom(key);
-        boolean flag = false;
-        Instant now = Instant.now();
-        if (validFrom == null) {
-            flag = true;
-        } else if (validFrom < now.getEpochSecond()) {
-            flag = true;
-        }
-        if (flag) {
-            setNotificationValidFrom(key, now);
-            validatorEventListenerRegistry.dispatchEvent(new ValidatorEvent(ValidatorEventTypeEnum.STORAGE_VALIDATOR.getType()));
-        }
-    }
-
-    /**
-     * 设置通知有效时间
-     * @param key
-     * @param now
-     */
-    public void setNotificationValidFrom(String key, Instant now){
-        distributedCacheComponent.put(key, Long.toString(now.plus(4, ChronoUnit.HOURS).getEpochSecond()));
-        //distributedCacheComponent.put(key, Long.toString(now.plus(1, ChronoUnit.MINUTES).getEpochSecond()));
-    }
-
-    public Long getNotificationValidFrom(String key){
-        String value = distributedCacheComponent.get(key);
-        if(Objects.isNull(value)){
-            return null;
-        }
-        return Long.valueOf(value);
-    }
 }

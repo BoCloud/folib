@@ -62,12 +62,6 @@ public class RepositoryForm {
     private long artifactMaxSize = 107374182400L;
 
     /**
-     * 回收站
-     */
-    @Builder.Default
-    private boolean trashEnabled = true;
-
-    /**
      * 允许强制删除
      */
     @Builder.Default

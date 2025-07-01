@@ -1522,7 +1522,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 try {
                     RepositoryPath imageRepositoryPath = (RepositoryPath) path;
                     String filename = imageRepositoryPath.getFileName().toString();
-                    if (!filename.startsWith(GlobalConstants.POINT) && !RepositoryFiles.isTemp(imageRepositoryPath) && !RepositoryFiles.isTrash(imageRepositoryPath) && !Files.isHidden(imageRepositoryPath) && Files.isDirectory(imageRepositoryPath)) {
+                    if (!filename.startsWith(GlobalConstants.POINT) && !RepositoryFiles.isTemp(imageRepositoryPath) && !Files.isHidden(imageRepositoryPath) && Files.isDirectory(imageRepositoryPath)) {
                         log.info("Find image path [{}] [{}] [{}]", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(imageRepositoryPath));
                         imageAl.getAndIncrement();
                         RepositoryPath blobsRepositoryPath = imageRepositoryPath.resolve(DockerLayoutProvider.BLOBS);
@@ -1688,7 +1688,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
                 try {
                     RepositoryPath imageRepositoryPath = (RepositoryPath) path;
                     String filename = imageRepositoryPath.getFileName().toString();
-                    if (!filename.startsWith(GlobalConstants.POINT) && !RepositoryFiles.isTemp(imageRepositoryPath) && !RepositoryFiles.isTrash(imageRepositoryPath) && !Files.isHidden(imageRepositoryPath) && Files.isDirectory(imageRepositoryPath)) {
+                    if (!filename.startsWith(GlobalConstants.POINT) && !RepositoryFiles.isTemp(imageRepositoryPath) && !Files.isHidden(imageRepositoryPath) && Files.isDirectory(imageRepositoryPath)) {
                         log.info("Find image path [{}] [{}] [{}]", imageRepositoryPath.getStorageId(), imageRepositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(imageRepositoryPath));
                         imageAl.getAndIncrement();
                         if (Files.exists(imageRepositoryPath)) {

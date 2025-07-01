@@ -463,50 +463,6 @@ public class BrowseController
     }
 
 
-    @ApiOperation(value = "recover a path from a repository.")
-    @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was restore"),
-            @ApiResponse(code = 400, message = "Bad request.")})
-    @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
-    @PostMapping(value = "/{storageId}/{repositoryId}/{artifactPath:.+}")
-    public ResponseEntity restore(@PathVariable String storageId, @PathVariable String repositoryId, @PathVariable String artifactPath)
-            throws IOException {
-        logger.info("restore {}:{}/{}...", storageId, repositoryId, artifactPath);
-        try {
-            final RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-            if (!Files.exists(repositoryPath)) {
-                return ResponseEntity.status(NOT_FOUND)
-                        .body("The specified path does not exist!");
-            }
-            restoreArtifactService.restoreArtifact(repositoryPath);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(e.getMessage());
-        }
-        return ResponseEntity.ok("The artifact was restore.");
-    }
-
-
-    private boolean notMetadata(String path) {
-        return !(path.endsWith(".metadata") || path.endsWith(".md5") || path.endsWith(".sha256") || path.endsWith(".sha1") || path.endsWith(".sm3"));
-    }
-
-    private Artifact parseArtifact(Path path) {
-        Artifact artifact = null;
-        try (InputStream inputStream = Files.newInputStream(path);
-             ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
-            artifact = (Artifact) objectInputStream.readObject();
-        } catch (Exception ex) {
-            try {
-                Files.deleteIfExists(path);
-            } catch (Exception e) {
-                logger.debug("解析制品 [{}] 本地缓存.metadata文件错误 [{}]", path, ExceptionUtils.getStackTrace(ex));
-            }
-        }
-        return artifact;
-    }
-
-
     @ApiOperation(value = "List the contents for a repository.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The list was returned."),
             @ApiResponse(code = 404, message = "The requested storage, repository, or path was not found."),
@@ -583,7 +539,7 @@ public class BrowseController
         //TODO: RepositoryFiles.isIndex(repositoryPath) || (
         return (!Files.isHidden(repositoryPath)
                 // 支持Cocoapods索引目录的显示
-                || repositoryPath.toString().contains(".specs") || repositoryPath.toString().contains(LayoutFileSystem.TRASH))
+                || repositoryPath.toString().contains(".specs"))
                 && !RepositoryFiles.isTemp(repositoryPath);
     }
 

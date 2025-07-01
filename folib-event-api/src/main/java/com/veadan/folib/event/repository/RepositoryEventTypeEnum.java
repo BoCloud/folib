@@ -40,26 +40,6 @@ public enum RepositoryEventTypeEnum
      */
     EVENT_REPOSITORY_REMOTE_AVAILABLE(6),
 
-    /**
-     * Occurs when a repository's trash has been removed.
-     */
-    EVENT_REPOSITORY_EMTPY_TRASH(7),
-
-    /**
-     * Occurs when all the trash for repositories has been deleted.
-     */
-    EVENT_REPOSITORY_EMTPY_TRASH_FOR_ALL_REPOSITORIES(8),
-
-    /**
-     * Occurs when a repository's trash has been deleted.
-     */
-    EVENT_REPOSITORY_UNDELETE_TRASH(9),
-
-    /**
-     * Occurs when all the trash for repositories has been undeleted.
-     */
-    EVENT_REPOSITORY_UNDELETE_TRASH_FOR_ALL_REPOSITORIES(10),
-
     EVENT_REPOSITORY_DELETE_TO_CRON_JOB_DELETED(11),
 
     EVENT_REPOSITORY_DELETE_ALL_TO_CRON_JOB_DELETED(12);

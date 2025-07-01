@@ -957,7 +957,6 @@ public class StoragesConfigurationController
             if (repositoryForm.getArtifactMaxSize() == 0) {
                 repository.setArtifactMaxSize(107374182400L);
             }
-            repository.setStorageThreshold(repositoryForm.getStorageThreshold());
 
             Repository existRepository = storage.getRepository(repositoryId);
             //TODO (存储空间+仓库) 唯一性判断

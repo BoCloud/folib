@@ -32,8 +32,6 @@ import java.util.Set;
 public abstract class LayoutFileSystem
         extends StorageFileSystem
 {
-
-    public static final String TRASH = ".trash";
     public static final String TEMP = ".temp";
 
     private final Repository repository;
@@ -111,11 +109,6 @@ public abstract class LayoutFileSystem
                                 .toAbsolutePath()
                                 .normalize();
         return rootPath;
-    }
-
-    public RepositoryPath getTrashPath()
-    {
-        return getRootDirectory().resolve(TRASH).toAbsolutePath();
     }
 
     public RepositoryPath getTempPath()

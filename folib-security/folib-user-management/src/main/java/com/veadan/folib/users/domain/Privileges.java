@@ -11,8 +11,6 @@ import java.util.stream.Collectors;
  * Read, Deploy, Admin, View Log etc.
  *
  * @author
- * @see {@linkplain https://dev.carlspring.org/youtrack/issue/SB-122}
- * @see {@linkplain https://dev.carlspring.org/youtrack/issue/SB-126}
  */
 public enum Privileges
         implements GrantedAuthority {

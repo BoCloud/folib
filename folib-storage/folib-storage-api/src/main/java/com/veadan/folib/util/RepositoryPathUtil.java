@@ -672,102 +672,6 @@ public class RepositoryPathUtil {
             throw new RuntimeException(ex);
         }
     }
-
-    /**
-     * 回收站内获取绝对路径下的所有文件
-     *
-     * @param repositoryPath 路径
-     * @return 列表
-     * @throws IOException 异常
-     */
-    public static List<RepositoryPath> getTrashPaths(RepositoryPath repositoryPath) throws IOException {
-        return getTrashPaths(repositoryPath, null, null, null);
-    }
-
-    /**
-     * 回收站内获取绝对路径下的所有文件
-     *
-     * @param repositoryPath       路径
-     * @param excludeDirectoryList 排除的目录列表
-     * @param beginDate            开始日期
-     * @param endDate              结束日期
-     * @return 列表
-     * @throws IOException 异常
-     */
-    public static List<RepositoryPath> getTrashPaths(RepositoryPath repositoryPath, List<String> excludeDirectoryList, LocalDateTime beginDate, LocalDateTime endDate) throws IOException {
-        List<RepositoryPath> pathList = Lists.newArrayList();
-        if (!Files.exists(repositoryPath)) {
-            log.warn("Path [{}] not exists", repositoryPath);
-            return pathList;
-        }
-        if (Files.isSameFile(repositoryPath, repositoryPath.getRoot())) {
-            return pathList;
-        }
-        RepositoryPathResolver repositoryPathResolver = SpringUtil.getBean(RepositoryPathResolver.class);
-        if (!Files.isDirectory(repositoryPath) && withinTimeFrame(repositoryPath, beginDate, endDate)) {
-            //是一个文件
-            pathList.add(repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(repositoryPath)));
-            log.info("Path [{}] find paths [{}]", repositoryPath, pathList.size());
-            return pathList;
-        }
-        String layout = repositoryPath.getRepository().getLayout();
-        final boolean isDockerLayout = ProductTypeEnum.Docker.getFoLibraryName().equalsIgnoreCase(layout);
-        try {
-            Files.walkFileTree(repositoryPath, new SimpleFileVisitor<Path>() {
-
-                @Override
-                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-                    if (exc instanceof NoSuchFileException) {
-                        // 目录或文件已删除，继续遍历
-                        log.warn("Find path [{}] no such file skip...", file);
-                        return FileVisitResult.CONTINUE;
-                    }
-                    return super.visitFileFailed(file, exc);
-                }
-
-                @Override
-                public FileVisitResult visitFile(Path file,
-                                                 BasicFileAttributes attrs)
-                        throws IOException {
-                    RepositoryPath itemPath = (RepositoryPath) file;
-                    if (include(1, itemPath, isDockerLayout, layout, repositoryPathResolver) && withinTimeFrame(itemPath, beginDate, endDate)) {
-                        log.info("Find path [{}]", itemPath);
-                        pathList.add(repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath)));
-                    }
-                    return FileVisitResult.CONTINUE;
-                }
-
-                @Override
-                public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
-                    try {
-                        RepositoryPath itemPath = (RepositoryPath) dir;
-                        if (Files.isSameFile(itemPath, repositoryPath.getRoot().resolve(LayoutFileSystem.TRASH))) {
-                            return FileVisitResult.CONTINUE;
-                        }
-                        if (!Files.isSameFile(itemPath, itemPath.getRoot()) && !include(2, itemPath, isDockerLayout, layout, repositoryPathResolver) || (CollectionUtils.isNotEmpty(excludeDirectoryList) && excludeDirectoryList.stream().anyMatch(item -> itemPath.getFileName().toString().equalsIgnoreCase(item)))) {
-                            log.info("RepositoryPath [{}] skip...", itemPath.toString());
-                            return FileVisitResult.SKIP_SUBTREE;
-                        }
-                        if (include(2, itemPath, isDockerLayout, layout, repositoryPathResolver)) {
-                            log.info("Find directory path [{}]", itemPath);
-                            pathList.add(repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), RepositoryFiles.relativizePath(itemPath)));
-                        }
-                        return FileVisitResult.CONTINUE;
-                    } catch (NoSuchFileException e) {
-                        // 文件已删除，跳过处理
-                        log.warn("Find path directory [{}] no such directory skip...", dir);
-                        return FileVisitResult.CONTINUE;
-                    }
-                }
-            });
-        } catch (Exception ex) {
-            log.error(ExceptionUtils.getStackTrace(ex));
-            throw new RuntimeException(ex);
-        }
-        log.info("Path [{}] find paths [{}]", repositoryPath, pathList.size());
-        return pathList;
-    }
-
     public static boolean exclude(String name) {
         if (StringUtils.isBlank(name)) {
             return true;
@@ -785,23 +689,19 @@ public class RepositoryPathUtil {
     }
 
     public static boolean include(int type, RepositoryPath repositoryPath, boolean isDockerLayout, String layout) throws IOException {
-        return include(type, repositoryPath, isDockerLayout, true, layout, false, null);
+        return include(type, repositoryPath, isDockerLayout, true, layout);
     }
+
+    //public static boolean include(int type, RepositoryPath repositoryPath, boolean isDockerLayout, boolean filterArtifact, String layout) throws IOException {
+    //    return include(type, repositoryPath, isDockerLayout, filterArtifact, layout);
+    //}
+
+    //public static boolean include(int type, RepositoryPath repositoryPath, boolean isDockerLayout, String layout) throws IOException {
+    //    return include(type, repositoryPath, isDockerLayout, true, layout);
+    //}
 
     public static boolean include(int type, RepositoryPath repositoryPath, boolean isDockerLayout, boolean filterArtifact, String layout) throws IOException {
-        return include(type, repositoryPath, isDockerLayout, filterArtifact, layout, false, null);
-    }
-
-    public static boolean include(int type, RepositoryPath repositoryPath, boolean isDockerLayout, String layout, RepositoryPathResolver repositoryPathResolver) throws IOException {
-        return include(type, repositoryPath, isDockerLayout, true, layout, true, repositoryPathResolver);
-    }
-
-    public static boolean include(int type, RepositoryPath repositoryPath, boolean isDockerLayout, boolean filterArtifact, String layout, boolean isTrash, RepositoryPathResolver repositoryPathResolver) throws IOException {
         RepositoryPath tempRepositoryPath = repositoryPath;
-        if (isTrash) {
-            String artifactPath = RepositoryFiles.relativizePath(repositoryPath).replace(LayoutFileSystem.TRASH + File.separator, "");
-            tempRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), artifactPath);
-        }
         String name = tempRepositoryPath.getFileName().toString();
         if (StringUtils.isBlank(name)) {
             return false;

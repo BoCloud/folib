@@ -259,7 +259,7 @@ public class FolibFileStorageService implements FileStorageService {
             throws IOException {
         return (!Files.isHidden(repositoryPath)
                 // 支持Cocoapods索引目录的显示
-                || repositoryPath.toString().contains(".specs") || repositoryPath.toString().contains(LayoutFileSystem.TRASH))
+                || repositoryPath.toString().contains(".specs"))
                 && !RepositoryFiles.isTemp(repositoryPath);
     }
 

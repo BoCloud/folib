@@ -13,14 +13,11 @@ import com.veadan.folib.controllers.support.BaseUrlEntityBody;
 import com.veadan.folib.controllers.support.InstanceNameEntityBody;
 import com.veadan.folib.controllers.support.PortEntityBody;
 import com.veadan.folib.forms.configuration.*;
-import com.veadan.folib.job.cron.domain.CronTasksConfigurationDto;
-import com.veadan.folib.job.tasks.AlarmNoticeCronJob;
 import com.veadan.folib.job.cron.services.CronTaskConfigurationService;
 import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.support.ConfigurationException;
-import com.veadan.folib.task.AlarmNoticeTask;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.*;
 import jakarta.inject.Inject;
@@ -41,10 +38,8 @@ import org.springframework.validation.Validator;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -78,9 +73,6 @@ public class ServerConfigurationController
     @Inject
     @Lazy
     private CronTaskConfigurationService cronTaskConfigurationService;
-    @Inject
-    @Lazy
-    private AlarmNoticeTask alarmNoticeTask;
 
     public ServerConfigurationController(ConfigurationManagementService configurationManagementService,
                                          @Qualifier("localValidatorFactoryBean") Validator validator) {
@@ -349,15 +341,6 @@ public class ServerConfigurationController
                 ProxyConfigurationForm.fromConfiguration(configuration.getProxyConfiguration())
         );
         settings.setAdvancedConfigurationForm(AdvancedConfigurationForm.fromConfiguration(configuration.getAdvancedConfiguration()));
-        if(configuration.getAlarmConfiguration()!=null){
-            settings.setAlarmConfigurationForm(AlarmConfigurationForm.formConfiguration(configuration.getAlarmConfiguration()));
-            CronTasksConfigurationDto config = cronTaskConfigurationService.getTasksConfigurationDto();
-            final String className = AlarmNoticeCronJob.class.getName();
-            config.setCronTaskConfigurations(config.getCronTaskConfigurations().stream().filter(cron -> className.equals(cron.getJobClass())).collect(Collectors.toSet()));
-            if(!config.getCronTaskConfigurations().isEmpty()){
-                settings.getAlarmConfigurationForm().setCronExpression(new ArrayList<>(config.getCronTaskConfigurations()).get(0).getCronExpression());
-            }
-        }
 
         return ResponseEntity.ok(settings);
     }
@@ -387,15 +370,5 @@ public class ServerConfigurationController
         } else {
             return String.valueOf(port);
         }
-    }
-
-    @ApiOperation(value = "immediate Execution Notice")
-    @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_SAVE_SERVER_SETTINGS),
-            @ApiResponse(code = 400, message = FAILED_SAVE_SERVER_SETTINGS)})
-    @PreAuthorize("hasAnyAuthority('CONFIGURATION_SET_BASE_URL', 'CONFIGURATION_SET_PORT', 'GLOBAL_CONFIGURATION_MANAGE')")
-    @GetMapping(value = "/serverSettings/executionNotice")
-    public ResponseEntity<Object> immediateExecutionNotice() {
-         alarmNoticeTask.immediateExecutionNotice();
-        return ResponseEntity.ok("ok");
     }
 }

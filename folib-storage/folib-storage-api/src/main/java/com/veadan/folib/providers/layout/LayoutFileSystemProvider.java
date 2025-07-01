@@ -171,12 +171,6 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
         return result;
     }
 
-    public void storeChecksum(RepositoryPath basePath,
-                              boolean forceRegeneration)
-            throws IOException {
-        storeChecksum(basePath, "", forceRegeneration);
-    }
-
     private LocalDateTime getFileUpdateTime(RepositoryPath repositoryPath) {
         LocalDateTime lastModifiedDateTime = null;
         try {
@@ -367,38 +361,6 @@ public abstract class LayoutFileSystemProvider extends StorageFileSystemProvider
                 repository.getId(),
                 path);
     }
-
-    @Override
-    public void deleteTrash(RepositoryPath path, String storageDay, Map<String, String> cleanupArtifactPathMap)
-            throws IOException {
-        Repository repository = path.getRepository();
-        Storage storage = repository.getStorage();
-
-        logger.info("Emptying trash for {}:{}...", storage.getId(), repository.getId());
-
-        super.deleteTrash(path, storageDay, cleanupArtifactPathMap);
-
-        repositoryEventListenerRegistry.dispatchEmptyTrashEvent(storage.getId(), repository.getId());
-
-        logger.info("Trash for {}:{} removed.", storage.getId(), repository.getId());
-    }
-
-
-    @Override
-    public void undelete(RepositoryPath path)
-            throws IOException {
-        Repository repository = path.getRepository();
-        Storage storage = repository.getStorage();
-
-        logger.info("Attempting to restore: [{}]; ", path);
-
-        super.undelete(path);
-
-        repositoryEventListenerRegistry.dispatchUndeleteTrashEvent(storage.getId(), repository.getId());
-
-        logger.info("The trash for {}:{} has been undeleted.", storage.getId(), repository.getId());
-    }
-
     @Override
     protected Map<RepositoryFileAttributeType, Object> getRepositoryFileAttributes(RepositoryPath repositoryRelativePath,
                                                                                    RepositoryFileAttributeType... attributeTypes)

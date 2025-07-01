@@ -65,8 +65,6 @@ public class RepositoryForm {
 
     private long artifactMaxSize;
 
-    private boolean trashEnabled = true;
-
     private boolean allowsForceDeletion;
 
     private boolean allowsDeployment = true;
@@ -78,10 +76,6 @@ public class RepositoryForm {
     private boolean allowsDirectoryBrowsing = true;
 
     private boolean checksumHeadersEnabled;
-
-    private long storageMaxSize;
-
-    private double storageThreshold;
 
     @Valid
     private ProxyConfigurationForm proxyConfiguration;
@@ -224,14 +218,6 @@ public class RepositoryForm {
         this.artifactMaxSize = artifactMaxSize;
     }
 
-    public boolean isTrashEnabled() {
-        return trashEnabled;
-    }
-
-    public void setTrashEnabled(final boolean trashEnabled) {
-        this.trashEnabled = trashEnabled;
-    }
-
     public boolean isAllowsForceDeletion() {
         return allowsForceDeletion;
     }
@@ -278,22 +264,6 @@ public class RepositoryForm {
 
     public void setChecksumHeadersEnabled(final boolean checksumHeadersEnabled) {
         this.checksumHeadersEnabled = checksumHeadersEnabled;
-    }
-
-    public long getStorageMaxSize() {
-        return storageMaxSize;
-    }
-
-    public void setStorageMaxSize(final long storageMaxSize) {
-        this.storageMaxSize = storageMaxSize;
-    }
-
-    public double getStorageThreshold() {
-        return storageThreshold;
-    }
-
-    public void setStorageThreshold(final double storageThreshold) {
-        this.storageThreshold = storageThreshold;
     }
 
     public ProxyConfigurationForm getProxyConfiguration() {

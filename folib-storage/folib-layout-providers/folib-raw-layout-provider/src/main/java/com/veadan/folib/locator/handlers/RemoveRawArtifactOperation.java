@@ -121,7 +121,7 @@ public class RemoveRawArtifactOperation
     private Map<RepositoryPath, RepositoryPath> matcherPath(Pattern pattern, Path path) {
         try {
             RepositoryPath repositoryPath = (RepositoryPath) path;
-            if (RepositoryFiles.isTrash(repositoryPath) || RepositoryFiles.isHidden(repositoryPath) || !RepositoryFiles.isArtifact(repositoryPath)) {
+            if (RepositoryFiles.isHidden(repositoryPath) || !RepositoryFiles.isArtifact(repositoryPath)) {
                 return null;
             }
             String artifactPath = RepositoryFiles.relativizePath(repositoryPath);

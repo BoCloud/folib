@@ -30,14 +30,12 @@ public enum RepositoryFormConverter
         result.setSecured(source.isSecured());
         result.setStatus(source.getStatus());
         result.setArtifactMaxSize(source.getArtifactMaxSize());
-        result.setTrashEnabled(source.isTrashEnabled());
         result.setAllowsForceDeletion(source.isAllowsForceDeletion());
         result.setAllowsDeployment(source.isAllowsDeployment());
         result.setAllowsRedeployment(source.isAllowsRedeployment());
         result.setAllowsDeletion(source.isAllowsDeletion());
         result.setAllowsDirectoryBrowsing(source.isAllowsDirectoryBrowsing());
         result.setChecksumHeadersEnabled(source.isChecksumHeadersEnabled());
-        result.setStorageMaxSize(source.getStorageMaxSize());
         result.setGroupDefaultRepository(source.getGroupDefaultRepository());
         if (source.getRepositoryConfiguration() != null)
         {

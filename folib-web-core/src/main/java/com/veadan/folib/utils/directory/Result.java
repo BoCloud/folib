@@ -33,31 +33,6 @@ public class Result {
      */
     private final AtomicLong totalArtifactsSize = new AtomicLong();
 
-    /**
-     * 回收站文件数量
-     */
-    private final AtomicLong trashFilesCount = new AtomicLong();
-
-    /**
-     * 回收站目录数量
-     */
-    private final AtomicLong trashDirectoriesCount = new AtomicLong();
-
-    /**
-     * 回收站文件大小
-     */
-    private final AtomicLong trashTotalFilesSize = new AtomicLong();
-
-    /**
-     * 回收站制品数量
-     */
-    private final AtomicLong trashArtifactsCount = new AtomicLong();
-
-    /**
-     * 回收站制品大小
-     */
-    private final AtomicLong trashTotalArtifactsSize = new AtomicLong();
-
     public long getFilesCount() {
         return filesCount.get();
     }
@@ -116,66 +91,6 @@ public class Result {
 
     public void addToArtifactsSize(long size) {
         this.totalArtifactsSize.addAndGet(size);
-    }
-
-    public long getTrashFilesCount() {
-        return trashFilesCount.get();
-    }
-
-    public void setTrashFilesCount(long trashFilesCount) {
-        this.trashFilesCount.set(trashFilesCount);
-    }
-
-    public long getTrashDirectoriesCount() {
-        return trashDirectoriesCount.get();
-    }
-
-    public void setTrashDirectoriesCount(long trashDirectoriesCount) {
-        this.trashDirectoriesCount.set(trashDirectoriesCount);
-    }
-
-    public long getTrashTotalFilesSize() {
-        return trashTotalFilesSize.get();
-    }
-
-    public void setTrashTotalFilesSize(long trashTotalFilesSize) {
-        this.trashTotalFilesSize.set(trashTotalFilesSize);
-    }
-
-    public long getTrashArtifactsCount() {
-        return trashArtifactsCount.get();
-    }
-
-    public void setTrashArtifactsCount(long trashArtifactsCount) {
-        this.trashArtifactsCount.set(trashArtifactsCount);
-    }
-
-    public long getTrashTotalArtifactsSize() {
-        return trashTotalArtifactsSize.get();
-    }
-
-    public void setTrashTotalArtifactsSize(long trashTotalArtifactsSize) {
-        this.trashTotalArtifactsSize.set(trashTotalArtifactsSize);
-    }
-
-    public void incrementTrashFilesCount() {
-        this.trashFilesCount.incrementAndGet();
-    }
-
-    public void incrementTrashDirectoriesCount() {
-        this.trashDirectoriesCount.incrementAndGet();
-    }
-
-    public void addToTrashFilesSize(long size) {
-        this.trashTotalFilesSize.addAndGet(size);
-    }
-
-    public void incrementTrashArtifactsCount() {
-        this.trashArtifactsCount.incrementAndGet();
-    }
-
-    public void addToTrashArtifactsSize(long size) {
-        this.trashTotalArtifactsSize.addAndGet(size);
     }
 
 }

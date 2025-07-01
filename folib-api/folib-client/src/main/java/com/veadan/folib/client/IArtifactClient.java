@@ -81,46 +81,4 @@ public interface IArtifactClient {
      * @throws ArtifactOperationException 制品操作异常
      */
     void delete(String storageId, String repositoryId, String path, boolean force) throws ArtifactOperationException;
-
-    /**
-     * 删除垃圾箱
-     *
-     * @throws ArtifactOperationException 制品操作异常
-     */
-    void deleteTrash() throws ArtifactOperationException;
-
-    /**
-     * 删除垃圾箱
-     *
-     * @param storageId    存储空间名称
-     * @param repositoryId 仓库名称
-     * @throws ArtifactOperationException 制品操作异常
-     */
-    void deleteTrash(String storageId, String repositoryId) throws ArtifactOperationException;
-
-    /**
-     * 从垃圾箱中恢复
-     *
-     * @throws ArtifactOperationException 制品操作异常
-     */
-    void unDeleteTrash() throws ArtifactOperationException;
-
-    /**
-     * 从垃圾箱中恢复
-     *
-     * @param storageId    存储空间名称
-     * @param repositoryId 仓库名称
-     * @param path         路径
-     * @throws ArtifactOperationException 制品操作异常
-     */
-    void unDelete(String storageId, String repositoryId, String path) throws ArtifactOperationException;
-
-    /**
-     * 从垃圾箱中恢复
-     *
-     * @param storageId    存储空间名称
-     * @param repositoryId 仓库名称
-     * @throws ArtifactOperationException 制品操作异常
-     */
-    void unDeleteTrash(String storageId, String repositoryId) throws ArtifactOperationException;
 }

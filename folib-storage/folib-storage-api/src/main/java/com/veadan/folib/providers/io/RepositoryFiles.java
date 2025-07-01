@@ -127,11 +127,6 @@ public abstract class RepositoryFiles {
         return CHECK_SUM_LIST.stream().anyMatch(name::endsWith);
     }
 
-    public static Boolean isTrash(RepositoryPath path)
-            throws IOException {
-        return (Boolean) Files.getAttribute(path, formatAttributes(RepositoryFileAttributeType.TRASH));
-    }
-
     public static Boolean isTemp(RepositoryPath path)
             throws IOException {
         return (Boolean) Files.getAttribute(path, formatAttributes(RepositoryFileAttributeType.TEMP));
@@ -200,28 +195,16 @@ public abstract class RepositoryFiles {
             throws IOException {
         URI result = p.getFileSystem().getRootDirectory().toUri();
 
-        if (isTrash(p)) {
-            result = result.resolve(LayoutFileSystem.TRASH);
-        } else if (isTemp(p)) {
+       if (isTemp(p)) {
             result = result.resolve(LayoutFileSystem.TEMP);
         }
 
         return result.relativize(p.toUri());
     }
 
-    public static void undelete(RepositoryPath p)
-            throws IOException {
-        p.getFileSystem().provider().undelete(p);
-    }
-
     public static TempRepositoryPath temporary(RepositoryPath p)
             throws IOException {
         return TempRepositoryPath.of(p);
-    }
-
-    public static RepositoryPath trash(RepositoryPath p)
-            throws IOException {
-        return p.getFileSystem().provider().getTrashPath(p);
     }
 
     public static String relativizePath(RepositoryPath p)
@@ -275,19 +258,9 @@ public abstract class RepositoryFiles {
         return exists;
     }
 
-    public static void deleteTrash(RepositoryPath repositoryPath, String storageDay, Map<String, String> cleanupArtifactPathMap)
-            throws IOException {
-        repositoryPath.getFileSystem().provider().deleteTrash(repositoryPath, storageDay, cleanupArtifactPathMap);
-    }
-
     public static void deleteEmptyDirectory(RepositoryPath repositoryPath)
             throws IOException {
         repositoryPath.getFileSystem().provider().deleteEmptyDirectory(repositoryPath);
-    }
-
-    public static void undeleteTrash(RepositoryPath repositoryPath)
-            throws IOException {
-        repositoryPath.getFileSystem().provider().undelete(repositoryPath);
     }
 
     public static void delete(RepositoryPath path,

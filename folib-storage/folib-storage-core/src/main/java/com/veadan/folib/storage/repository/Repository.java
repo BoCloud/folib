@@ -34,8 +34,6 @@ public interface Repository {
 
     long getArtifactMaxSize();
 
-    boolean isTrashEnabled();
-
     boolean isAllowsForceDeletion();
 
     boolean isAllowsDeployment();
@@ -47,10 +45,6 @@ public interface Repository {
     boolean isAllowsDirectoryBrowsing();
 
     boolean isChecksumHeadersEnabled();
-
-    long getStorageMaxSize();
-
-    double getStorageThreshold();
 
     Set<String> getGroupRepositories();
 

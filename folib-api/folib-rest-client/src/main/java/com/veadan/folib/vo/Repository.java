@@ -58,11 +58,6 @@ public class Repository {
     private long artifactMaxSize;
 
     /**
-     * 回收站
-     */
-    private boolean trashEnabled;
-
-    /**
      * 删除
      */
     private boolean allowsDeletion;

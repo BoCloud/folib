@@ -100,7 +100,7 @@ public class PypiArtifactIndexServiceImpl implements PypiArtifactIndexService {
         boolean flag = false;
         try {
             RepositoryPath repositoryPath = (RepositoryPath) path;
-            boolean ignore = RepositoryFiles.isHidden(repositoryPath) || RepositoryFiles.isArtifactMetadata(repositoryPath) || RepositoryFiles.isTrash(repositoryPath) || RepositoryFiles.isTemp(repositoryPath);
+            boolean ignore = RepositoryFiles.isHidden(repositoryPath) || RepositoryFiles.isArtifactMetadata(repositoryPath) || RepositoryFiles.isTemp(repositoryPath);
             if (ignore) {
                 return false;
             }

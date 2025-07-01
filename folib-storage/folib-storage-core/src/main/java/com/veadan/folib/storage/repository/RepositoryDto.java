@@ -54,8 +54,6 @@ public class RepositoryDto
 
     private long artifactMaxSize;
 
-    private boolean trashEnabled;
-
     private boolean allowsForceDeletion;
 
     private boolean allowsDeployment = true;
@@ -67,10 +65,6 @@ public class RepositoryDto
     private boolean allowsDirectoryBrowsing = true;
 
     private boolean checksumHeadersEnabled;
-
-    private long storageMaxSize;
-
-    private double storageThreshold;
 
     /**
      * The per-repository proxy settings that override the overall global proxy settings.
@@ -249,15 +243,6 @@ public class RepositoryDto
     }
 
     @Override
-    public boolean isTrashEnabled() {
-        return trashEnabled;
-    }
-
-    public void setTrashEnabled(boolean trashEnabled) {
-        this.trashEnabled = trashEnabled;
-    }
-
-    @Override
     public boolean isAllowsDeletion() {
         return allowsDeletion;
     }
@@ -287,28 +272,11 @@ public class RepositoryDto
         return checksumHeadersEnabled;
     }
 
-    @Override
-    public long getStorageMaxSize() {
-        return this.storageMaxSize;
-    }
-
-    public void setStorageMaxSize(long storageMaxSize) {
-        this.storageMaxSize = storageMaxSize;
-    }
-
-
 
     public void setChecksumHeadersEnabled(boolean checksumHeadersEnabled) {
         this.checksumHeadersEnabled = checksumHeadersEnabled;
     }
 
-    public double getStorageThreshold() {
-        return storageThreshold;
-    }
-
-    public void setStorageThreshold(double storageThreshold) {
-        this.storageThreshold = storageThreshold;
-    }
 
     public MutableProxyConfiguration getProxyConfiguration() {
         return proxyConfiguration;

@@ -64,7 +64,7 @@ public class ConanArtifactIndex {
         boolean flag = false;
         try {
             RepositoryPath repositoryPath = (RepositoryPath) path;
-            boolean ignore = RepositoryFiles.isHidden(repositoryPath) || RepositoryFiles.isArtifactMetadata(repositoryPath) || RepositoryFiles.isTrash(repositoryPath) || RepositoryFiles.isTemp(repositoryPath);
+            boolean ignore = RepositoryFiles.isHidden(repositoryPath) || RepositoryFiles.isArtifactMetadata(repositoryPath) || RepositoryFiles.isTemp(repositoryPath);
             if (ignore) {
                 return false;
             }
@@ -86,7 +86,7 @@ public class ConanArtifactIndex {
         boolean flag = false;
         try {
             RepositoryPath repositoryPath = (RepositoryPath) path;
-            boolean ignore = RepositoryFiles.isHidden(repositoryPath) || RepositoryFiles.isArtifactMetadata(repositoryPath) || RepositoryFiles.isTrash(repositoryPath) || RepositoryFiles.isTemp(repositoryPath);
+            boolean ignore = RepositoryFiles.isHidden(repositoryPath) || RepositoryFiles.isArtifactMetadata(repositoryPath) || RepositoryFiles.isTemp(repositoryPath);
             if (ignore) {
                 return false;
             }
@@ -107,7 +107,7 @@ public class ConanArtifactIndex {
         }
         try {
             RepositoryPath repositoryPath = (RepositoryPath) path;
-            boolean ignore = !Files.isDirectory(path) || RepositoryFiles.isHidden(repositoryPath) || RepositoryFiles.isArtifactMetadata(repositoryPath) || RepositoryFiles.isTrash(repositoryPath) || RepositoryFiles.isTemp(repositoryPath);
+            boolean ignore = !Files.isDirectory(path) || RepositoryFiles.isHidden(repositoryPath) || RepositoryFiles.isArtifactMetadata(repositoryPath) || RepositoryFiles.isTemp(repositoryPath);
             if (ignore) {
                 return false;
             }

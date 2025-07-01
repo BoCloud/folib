@@ -818,7 +818,6 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 repositoryDto.setBasedir(basedir);
             }
             repositoryDto.setStorageProvider(storage.getStorageProvider());
-            repositoryDto.setTrashEnabled(true);
             repositoryDto.setAllowsDeletion(true);
             repositoryDto.setAllowsDeployment(true);
             repositoryDto.setAllowsDirectoryBrowsing(true);

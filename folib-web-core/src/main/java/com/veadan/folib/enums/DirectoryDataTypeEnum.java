@@ -20,11 +20,6 @@ public enum DirectoryDataTypeEnum {
     REPOSITORY(1),
 
     /**
-     * 回收站
-     */
-    TRASH(2),
-
-    /**
      * 存储空间
      */
     STORAGE(3),

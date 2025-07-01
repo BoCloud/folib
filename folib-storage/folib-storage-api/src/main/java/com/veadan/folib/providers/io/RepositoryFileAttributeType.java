@@ -12,8 +12,6 @@ public enum RepositoryFileAttributeType {
 
     CHECKSUM("checksum"),
 
-    TRASH("trash"),
-
     TEMP("temp"),
 
     EXPIRED("expired"),

@@ -58,16 +58,6 @@ public class DirectorySizeCalculatorUtils {
                         }
                         String artifactPath = path.substring(path.indexOf(repositoryPrefix) + repositoryPrefix.length());
                         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-                        boolean isTrash = RepositoryFiles.isTrash(repositoryPath);
-                        if (isTrash) {
-                            result.incrementTrashFilesCount();
-                            result.addToTrashFilesSize(attrs.size());
-                            if (RepositoryFiles.isArtifact(repositoryPath)) {
-                                result.incrementTrashArtifactsCount();
-                                result.addToTrashArtifactsSize(attrs.size());
-                            }
-                            return FileVisitResult.CONTINUE;
-                        }
                         result.incrementFilesCount();
                         result.addToFilesSize(attrs.size());
                         log.debug("Pre visit directory [{}] path [{}]", directory, path);
@@ -92,11 +82,6 @@ public class DirectorySizeCalculatorUtils {
                         String path = dir.toString();
                         String artifactPath = path.substring(path.indexOf(repositoryPrefix) + repositoryPrefix.length());
                         RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, artifactPath);
-                        boolean isTrash = RepositoryFiles.isTrash(repositoryPath);
-                        if (isTrash) {
-                            result.incrementTrashDirectoriesCount();
-                            return FileVisitResult.CONTINUE;
-                        }
                         result.incrementDirectoriesCount();
                     } catch (Exception ex) {
                         log.error("DirectorySizeCalculatorUtils dir [{}] error [{}]", dir, ExceptionUtils.getStackTrace(ex));

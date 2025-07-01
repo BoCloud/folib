@@ -86,15 +86,14 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
         log.info("Update storage monitoring data start [{}]", DateUtil.now());
         long start = System.currentTimeMillis();
         Map<String, Storage> storageMap = getStorageMap();
-        List<StorageMonitoring> storageMonitoringList = Lists.newArrayList(), trashStorageMonitoringList = Lists.newArrayList();
+        List<StorageMonitoring> storageMonitoringList = Lists.newArrayList();
         List<StorageDevice> storageDeviceList = Lists.newArrayList();
         Map<String, StorageDevice> storageDeviceMap = Maps.newConcurrentMap();
-        handlerStorage(storageMap, storageMonitoringList, trashStorageMonitoringList, storageDeviceList, storageDeviceMap);
+        handlerStorage(storageMap, storageMonitoringList, storageDeviceList, storageDeviceMap);
         Date date = new Date();
         storageStorageMonitoring(storageMonitoringList, date);
         platformStorageMonitoring(storageMap, storageMonitoringList, date);
         storageDeviceStorageMonitoring(storageMonitoringList, storageDeviceList, date);
-        storageMonitoringList = trashStorageMonitoring(storageMonitoringList, trashStorageMonitoringList, date);
 
         LocalDateTime deleteDeadlineDate = LocalDateTime.now().minusDays(60);
         storageMonitoringMapper.delete(Wrappers.<StorageMonitoring>lambdaQuery().le(StorageMonitoring::getCreateTime, deleteDeadlineDate));
@@ -211,7 +210,7 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
         return configurationManager.getConfiguration().getStorages();
     }
 
-    private void handlerStorage(Map<String, Storage> storageMap, List<StorageMonitoring> storageMonitoringList, List<StorageMonitoring> trashStorageMonitoringList, List<StorageDevice> storageDeviceList, Map<String, StorageDevice> storageDeviceMap) {
+    private void handlerStorage(Map<String, Storage> storageMap, List<StorageMonitoring> storageMonitoringList, List<StorageDevice> storageDeviceList, Map<String, StorageDevice> storageDeviceMap) {
         Storage storage;
         Repository repository;
         RootRepositoryPath rootRepositoryPath;
@@ -256,7 +255,7 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
                         storageDeviceList.add(storageDevice);
                     }
                     start = System.currentTimeMillis();
-                    calculatorRepository(storageMonitoringList, trashStorageMonitoringList, storageDeviceMap, storage, repository, rootRepositoryPath);
+                    calculatorRepository(storageMonitoringList, storageDeviceMap, storage, repository, rootRepositoryPath);
                     log.info("Calculator repository [{}] [{}] data end [{}] take time [{}] ms", storage.getId(), repository.getId(), DateUtil.now(), System.currentTimeMillis() - start);
                 } catch (Exception ex) {
                     log.error("Calculator storage monitoring data storageId [{}] repositoryId [{}] error [{}]", storageId, repositoryId, ExceptionUtils.getStackTrace(ex));
@@ -281,7 +280,7 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
             storageDeviceItemsCount = 0L;
             storageSet = Sets.newHashSet();
             //存储设备级别相关数据统计，包含回收站数据
-            repositoryStorageMonitoringList = storageMonitoringList.stream().filter(item -> (DirectoryDataTypeEnum.REPOSITORY.getType().equals(item.getDataType()) || DirectoryDataTypeEnum.TRASH.getType().equals(item.getDataType())) && itemStorageDevice.getName().equals(item.getStorageDeviceName())).collect(Collectors.toList());
+            repositoryStorageMonitoringList = storageMonitoringList.stream().filter(item -> (DirectoryDataTypeEnum.REPOSITORY.getType().equals(item.getDataType())) && itemStorageDevice.getName().equals(item.getStorageDeviceName())).collect(Collectors.toList());
 
             for (StorageMonitoring itemStorageDeviceStorageMonitoring : repositoryStorageMonitoringList) {
                 storageSet.add(itemStorageDeviceStorageMonitoring.getStorageId());
@@ -339,7 +338,7 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
         Integer platformRepositoryCount = 0;
         for (StorageMonitoring itemStorageMonitoring : storageMonitoringList) {
             //平台级别相关数据统计，包含回收站数据
-            if (!DirectoryDataTypeEnum.REPOSITORY.getType().equals(itemStorageMonitoring.getDataType()) && !DirectoryDataTypeEnum.TRASH.getType().equals(itemStorageMonitoring.getDataType())) {
+            if (!DirectoryDataTypeEnum.REPOSITORY.getType().equals(itemStorageMonitoring.getDataType())) {
                 continue;
             }
             platformStorageSet.add(itemStorageMonitoring.getStorageId());
@@ -421,43 +420,18 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
         }
     }
 
-    private List<StorageMonitoring> trashStorageMonitoring(List<StorageMonitoring> storageMonitoringList, List<StorageMonitoring> trashStorageMonitoringList, Date date) {
-        storageMonitoringList = storageMonitoringList.stream().filter(item -> !DirectoryDataTypeEnum.TRASH.getType().equals(item.getDataType())).collect(Collectors.toList());
-
-        BigDecimal trashArtifactsSize = BigDecimal.ZERO, trashFilesSize = BigDecimal.ZERO;
-        long trashArtifactsCount = 0L, trashFilesCount = 0L, trashFoldersCount = 0L, trashItemsCount = 0L;
-        //回收站级别相关数据统计
-        StorageMonitoring trashStorageMonitoring = StorageMonitoring.builder().id(idGenerateUtils.generateId("storageMonitoringId")).dataType(DirectoryDataTypeEnum.TRASH.getType()).isLatest(Boolean.TRUE).updateTime(date).build();
-        for (StorageMonitoring itemStorageMonitoring : trashStorageMonitoringList) {
-            trashArtifactsCount = trashArtifactsCount + itemStorageMonitoring.getArtifactsCount();
-            trashArtifactsSize = trashArtifactsSize.add(itemStorageMonitoring.getArtifactsSize());
-            trashFilesCount = trashFilesCount + itemStorageMonitoring.getFilesCount();
-            trashFilesSize = trashFilesSize.add(itemStorageMonitoring.getFilesSize());
-            trashFoldersCount = trashFoldersCount + itemStorageMonitoring.getFoldersCount();
-            trashItemsCount = trashItemsCount + itemStorageMonitoring.getItemsCount();
-        }
-        trashStorageMonitoring.setArtifactsCount(trashArtifactsCount);
-        trashStorageMonitoring.setArtifactsSize(trashArtifactsSize);
-        trashStorageMonitoring.setFilesCount(trashFilesCount);
-        trashStorageMonitoring.setFilesSize(trashFilesSize);
-        trashStorageMonitoring.setFoldersCount(trashFoldersCount);
-        trashStorageMonitoring.setItemsCount(trashItemsCount);
-        storageMonitoringList.add(trashStorageMonitoring);
-        return storageMonitoringList;
-    }
-
-    private void calculatorRepository(List<StorageMonitoring> storageMonitoringList, List<StorageMonitoring> trashStorageMonitoringList, Map<String, StorageDevice> storageDeviceMap, Storage storage, Repository repository, RepositoryPath repositoryPath) {
+    private void calculatorRepository(List<StorageMonitoring> storageMonitoringList, Map<String, StorageDevice> storageDeviceMap, Storage storage, Repository repository, RepositoryPath repositoryPath) {
         //计算目录相关信息
         DirectorySizeCalculatorUtils directorySizeCalculatorUtils = new DirectorySizeCalculatorUtils(repositoryPath);
         Result result = directorySizeCalculatorUtils.compute();
-        long itemsCount = result.getArtifactsCount() + result.getDirectoriesCount(), trashItemsCount = result.getTrashArtifactsCount() + result.getTrashDirectoriesCount(), artifactsDownloadedCount = 0;
+        long itemsCount = result.getArtifactsCount() + result.getDirectoriesCount(), artifactsDownloadedCount = 0;
         Date date = new Date();
         StorageDevice storageDevice = storageDeviceMap.get(storage.getId());
         Long storageMaxSize = 0L;
         if (Objects.nonNull(storage.getStorageMaxSize())) {
             storageMaxSize = storage.getStorageMaxSize();
         }
-        BigDecimal artifactsSize, filesSize, trashArtifactsSize, trashFilesSize, storageQuotaSize = BigDecimal.valueOf(storageMaxSize), usedStorageQuotaSizePercentage = BigDecimal.ZERO, storageDeviceSize = BigDecimal.valueOf(storageDevice.getTotalSpace()), usedStorageDeviceSizePercentage = BigDecimal.ONE;
+        BigDecimal artifactsSize, filesSize, storageQuotaSize = BigDecimal.valueOf(storageMaxSize), usedStorageQuotaSizePercentage = BigDecimal.ZERO, storageDeviceSize = BigDecimal.valueOf(storageDevice.getTotalSpace()), usedStorageDeviceSizePercentage = BigDecimal.ONE;
         artifactsSize = BigDecimal.valueOf(result.getTotalArtifactsSize());
         filesSize = BigDecimal.valueOf(result.getTotalFilesSize());
         if (storageQuotaSize.compareTo(BigDecimal.ZERO) > 0) {
@@ -470,16 +444,6 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
                 .filesSize(filesSize).foldersCount(result.getDirectoriesCount()).createTime(date).dataType(DirectoryDataTypeEnum.REPOSITORY.getType()).itemsCount(itemsCount).storagePath(repositoryPath.toString()).isLatest(Boolean.TRUE).updateTime(date).storageQuotaSize(storageQuotaSize).usedStorageQuotaSizePercentage(usedStorageQuotaSizePercentage).storageProvider(storage.getStorageProvider()).storageDeviceName(storageDevice.getName())
                 .storageDeviceSize(storageDeviceSize).usedStorageDeviceSizePercentage(usedStorageDeviceSizePercentage).storageDeviceType(storageDevice.getType()).build();
         storageMonitoringList.add(storageMonitoring);
-
-        trashArtifactsSize = BigDecimal.valueOf(result.getTrashTotalArtifactsSize());
-        trashFilesSize = BigDecimal.valueOf(result.getTrashTotalFilesSize());
-        //回收站目录相关数据
-        StorageMonitoring trashStorageMonitoring = StorageMonitoring.builder().id(idGenerateUtils.generateId("storageMonitoringId")).storageId(repositoryPath.getStorageId()).repositoryId(repositoryPath.getRepositoryId()).repositoryType(repository.getType()).repositoryLayout(repository.getLayout()).repositorySubLayout(repository.getSubLayout()).artifactsSize(trashArtifactsSize).artifactsCount(result.getTrashArtifactsCount()).filesCount(result.getTrashFilesCount())
-                .filesSize(trashFilesSize).foldersCount(result.getTrashDirectoriesCount()).createTime(date).dataType(DirectoryDataTypeEnum.TRASH.getType()).itemsCount(trashItemsCount).storagePath(repositoryPath.toString()).isLatest(Boolean.TRUE).updateTime(date).storageQuotaSize(storageQuotaSize).storageProvider(storage.getStorageProvider()).storageDeviceName(storageDevice.getName())
-                .storageDeviceSize(storageDeviceSize).storageDeviceType(storageDevice.getType()).build();
-
-        storageMonitoringList.add(trashStorageMonitoring);
-        trashStorageMonitoringList.add(trashStorageMonitoring);
     }
 
     private List<String> getIncludeRepositories() {
@@ -498,35 +462,6 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
             return Arrays.asList(cacheValue.split(","));
         }
         return null;
-    }
-
-    //获取当天数据
-    public Map<String, String>  getTodayData(){
-        String cacheKey = "STORAGE_MONITORING_DATA";
-        String cacheValue = distributedCacheComponent.get(cacheKey);
-        if (StringUtils.isNotBlank(cacheValue)) {
-            return JSONObject.parseObject(cacheValue, Map.class);
-        }
-
-        List<StorageMonitoring> storageMonitoringList = storageMonitoringMapper.getTodayData();
-        if(storageMonitoringList.isEmpty()){
-            log.warn("存储告警:当天存储监控数据为空");
-            return null;
-        }
-
-        Map<String, String> map = Maps.newConcurrentMap();
-        for (StorageMonitoring item : storageMonitoringList){
-            BigDecimal usedFilesSizePercentage = item.getFilesSize() == null ? BigDecimal.ZERO : item.getFilesSize();
-            if(item.getDataType() == 1){
-                map.put(String.join(":",item.getStorageId(),item.getRepositoryId()),usedFilesSizePercentage.toEngineeringString());
-            }else  if(item.getDataType() == 3){
-                map.put(item.getStorageId(),usedFilesSizePercentage.toEngineeringString());
-            }
-        }
-        if(!map.isEmpty()){
-            distributedCacheComponent.put(cacheKey, JSONObject.toJSONString(map),4, TimeUnit.HOURS);
-        }
-        return map;
     }
 
 }

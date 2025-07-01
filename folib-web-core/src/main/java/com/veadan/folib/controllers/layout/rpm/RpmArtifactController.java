@@ -86,11 +86,6 @@ public class RpmArtifactController extends BaseArtifactController {
                 return ResponseEntity.status(NOT_FOUND)
                         .body("The specified path does not exist!");
             }
-            RepositoryPath trashPath = repositoryPathResolver.resolve(storageId, repositoryId, ".trash");
-
-            if (!Files.exists(trashPath)) {
-                Files.createDirectories(trashPath);
-            }
             artifactManagementService.delete(repositoryPath, force);
             // 刷新索引
             RepositoryPath repoPath = repositoryPathResolver.resolve(repository, "");

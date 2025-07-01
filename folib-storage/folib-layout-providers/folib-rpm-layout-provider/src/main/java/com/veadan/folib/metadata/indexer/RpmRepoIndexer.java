@@ -188,7 +188,7 @@ public class RpmRepoIndexer {
     }
 
     public List<Path> listPaths(Path path) throws IOException {
-        Set<String> excludedDirs = Set.of(LayoutFileSystem.TEMP, LayoutFileSystem.TRASH);
+        Set<String> excludedDirs = Set.of(LayoutFileSystem.TEMP);
         List<Path> paths = new ArrayList<>();
         Files.walkFileTree(path, new SimpleFileVisitor<>() {
             @Override

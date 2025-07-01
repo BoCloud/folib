@@ -287,7 +287,7 @@ public class ArtifactUploadTask implements Callable<String> {
                 is = inputStream;
             }
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(storageId, repositoryId, fileRelativePath);
-            if (RepositoryFiles.isChecksum(repositoryPath) || RepositoryFiles.isTrash(repositoryPath)) {
+            if (RepositoryFiles.isChecksum(repositoryPath)) {
                 log.warn(String.format("RepositoryPath：%s is checksum or trash file skip", repositoryPath.toString()));
                 return rs;
             }

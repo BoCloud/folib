@@ -11,6 +11,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.output.ProxyOutputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.checkerframework.checker.units.qual.A;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileSystemUtils;
@@ -192,7 +193,6 @@ public abstract class StorageFileSystemProvider
         logger.debug("Deleting hidden folders for [{}]", path);
 
         FileSystemUtils.deleteRecursively(unwrap(root).resolve(LayoutFileSystem.TEMP));
-        FileSystemUtils.deleteRecursively(unwrap(root).resolve(LayoutFileSystem.TRASH));
         Files.delete(unwrap(root));
 
         logger.debug("Hidden folders deleted [{}]", path);
@@ -280,64 +280,7 @@ public abstract class StorageFileSystemProvider
     protected void doDeletePath(RepositoryPath repositoryPath,
                                 boolean force)
             throws IOException {
-        Repository repository = repositoryPath.getFileSystem().getRepository();
-        if (!repository.isTrashEnabled() || RepositoryFiles.isTrash(repositoryPath)) {
-            Files.deleteIfExists(repositoryPath.getTarget());
-
-            return;
-        }
-
-        RepositoryPath trashPath = getTrashPath(repositoryPath);
-        if (!Files.exists(repositoryPath)) {
-            return;
-        }
-        try {
-            Files.move(repositoryPath.getTarget(),
-                    trashPath.getTarget(),
-                    StandardCopyOption.REPLACE_EXISTING);
-            FileTime newTime = FileTime.fromMillis(System.currentTimeMillis());
-            Files.setLastModifiedTime(trashPath.getTarget(), newTime);
-        } catch (Exception e) {
-            logger.error("DoDeletePath [{}] error [{}]", repositoryPath, ExceptionUtils.getStackTrace(e));
-            if (e instanceof FileSystemException && e.getMessage().contains("Not a directory")) {
-                throw new RuntimeException("CreateTrashDirectoryError");
-            }
-            try {
-                Files.move(repositoryPath.getTarget(),
-                        trashPath.getTarget(),
-                        StandardCopyOption.REPLACE_EXISTING);
-                FileTime newTime = FileTime.fromMillis(System.currentTimeMillis());
-                Files.setLastModifiedTime(trashPath.getTarget(), newTime);
-            } catch (Exception ignore) {
-
-            }
-        }
-
-        if (force && repository.isAllowsForceDeletion()) {
-            deleteTrash(repositoryPath, null, null);
-        }
-    }
-
-    public void undelete(RepositoryPath path)
-            throws IOException {
-        Repository repository = path.getFileSystem().getRepository();
-        if (!repository.isTrashEnabled()) {
-            return;
-        }
-
-        RepositoryPath trashPath = getTrashPath(path);
-        if (!Files.exists(trashPath.getTarget())) {
-            return;
-        }
-
-        if (!Files.isDirectory(trashPath.getTarget())) {
-            Files.move(trashPath.getTarget(), path.getTarget(), StandardCopyOption.REPLACE_EXISTING);
-        } else {
-            Files.walkFileTree(trashPath.getTarget(),
-                    new MoveDirectoryVisitor(trashPath.getTarget(),
-                            path.getTarget(),
-                            StandardCopyOption.REPLACE_EXISTING));
-        }
+        Files.deleteIfExists(repositoryPath.getTarget());
     }
 
     public RepositoryPath moveFromTemporaryDirectory(TempRepositoryPath tempPath)
@@ -368,131 +311,11 @@ public abstract class StorageFileSystemProvider
         return path;
     }
 
-    public void deleteTrash(RepositoryPath path, String storageDay, Map<String, String> cleanupArtifactPathMap)
-            throws IOException {
-        Repository repository = path.getFileSystem().getRepository();
-        if (!repository.isTrashEnabled()) {
-            return;
-        }
-
-        RepositoryPath trashPath = getTrashPath(path);
-        if (!Files.exists(trashPath.getTarget())) {
-            return;
-        }
-        if (StringUtils.isBlank(storageDay)) {
-            boolean isTrash = Files.isSameFile(trashPath, trashPath.getRoot().resolve(LayoutFileSystem.TRASH));
-            FileSystemUtils.deleteRecursively(trashPath.getTarget());
-            if (isTrash) {
-                Files.createDirectories(trashPath);
-            }
-            logger.info("Deleting hidden folders [{}] for [{}]", LayoutFileSystem.TRASH, trashPath.getTarget());
-            return;
-        }
-        Files.walkFileTree(trashPath, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file,
-                                             BasicFileAttributes attrs)
-                    throws IOException {
-                try {
-                    RepositoryPath itemPath = (RepositoryPath) file;
-                    if (RepositoryFiles.isChecksum(itemPath) || RepositoryFiles.isArtifactMetadata(itemPath)) {
-                        return FileVisitResult.CONTINUE;
-                    }
-                    String artifactTrashPath = RepositoryFiles.relativizePath(itemPath);
-                    artifactTrashPath = StringUtils.removeStart(artifactTrashPath.replace(LayoutFileSystem.TRASH, ""), GlobalConstants.SEPARATOR);
-                    String cleanupDay = getCleanupDay(artifactTrashPath, storageDay, cleanupArtifactPathMap);
-                    LocalDateTime createTime = RepositoryPathUtil.getFileLastModifiedTime(itemPath);
-                    log.info("Delete trash storageId [{}] repositoryId [{}] path [{}] storageDay [{}] time [{}] current time [{}]", path.getStorageId(), path.getRepositoryId(), artifactTrashPath, cleanupDay, createTime, LocalDateTime.now());
-                    if (!LocalDateTime.now().minusDays(Integer.parseInt(cleanupDay)).isBefore(createTime)) {
-                        boolean result = Files.deleteIfExists(itemPath);
-                        log.info("Delete trash storageId [{}] repositoryId [{}] path [{}] result [{}]", path.getStorageId(), path.getRepositoryId(), artifactTrashPath, result);
-                    }
-                } catch (NoSuchFileException e) {
-                    // 文件已删除，跳过处理
-                    return FileVisitResult.CONTINUE;
-                }
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-                if (exc instanceof NoSuchFileException) {
-                    // 目录或文件已删除，继续遍历
-                    return FileVisitResult.CONTINUE;
-                }
-                return super.visitFileFailed(file, exc);
-            }
-
-            @Override
-            public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
-                RepositoryPath dirPath = (RepositoryPath) dir;
-                if (RepositoryFiles.isArtifactMetadata(dirPath)) {
-                    return FileVisitResult.SKIP_SUBTREE;
-                }
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult postVisitDirectory(Path dir,
-                                                      IOException exc)
-                    throws IOException {
-                RepositoryPath dirPath = (RepositoryPath) dir;
-                if (Files.isSameFile(dirPath, trashPath)) {
-                    return FileVisitResult.CONTINUE;
-                }
-                if (RepositoryFiles.isDirectoryEmpty(dirPath)) {
-                    boolean result = Files.deleteIfExists(dirPath);
-                    log.info("Delete trash storageId [{}] repositoryId [{}] directory path [{}] result [{}]", path.getStorageId(), path.getRepositoryId(), dirPath.getFileName().toString(), result);
-                }
-                return FileVisitResult.CONTINUE;
-            }
-        });
-    }
-
-    protected RepositoryPath getTrashPath(RepositoryPath path)
-            throws IOException {
-        if (RepositoryFiles.isTrash(path)) {
-            return path;
-        }
-
-        RepositoryPath trashBasePath = path.getFileSystem().getTrashPath();
-        RepositoryPath trashPath = rebase(path, trashBasePath);
-
-        if (!Files.exists(trashPath.getParent().getTarget())) {
-            logger.debug("Creating: [{}]", trashPath.getParent());
-            try {
-                Files.createDirectories(trashPath.getParent().getTarget());
-            } catch (Exception ex) {
-                if (ex instanceof FileSystemException && ex.getMessage().contains("Not a directory")) {
-                    throw new RuntimeException("CreateTrashDirectoryError");
-                }
-                throw ex;
-            }
-        }
-
-        return trashPath;
-    }
-
     public void deleteEmptyDirectory(RepositoryPath repositoryPath)
             throws IOException {
         if (Objects.isNull(repositoryPath) || !Files.exists(repositoryPath) || !Files.isDirectory(repositoryPath)) {
             return;
         }
-        List<String> includeDirectoryList = Lists.newArrayList(LayoutFileSystem.TRASH);
-        RepositoryPathUtil.handlerDirectories(repositoryPath.getRepository().getLayout(), repositoryPath, includeDirectoryList,
-                (RepositoryPath filePath) -> {
-                    deleteEmptyPath(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), filePath);
-                },
-                (RepositoryPath dirPath) -> {
-                    deleteEmptyDirectory(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), dirPath);
-                });
-        RepositoryPathUtil.handlerDirectories(repositoryPath.getRepository().getLayout(), repositoryPath.resolve(LayoutFileSystem.TRASH), includeDirectoryList,
-                (RepositoryPath filePath) -> {
-                    deleteEmptyPath(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), filePath);
-                },
-                (RepositoryPath dirPath) -> {
-                    deleteEmptyDirectory(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), dirPath);
-                });
         RootRepositoryPath root = repositoryPath.getFileSystem().getRootDirectory();
         FileSystemUtils.deleteRecursively(unwrap(root).resolve(LayoutFileSystem.TEMP));
     }
@@ -510,7 +333,7 @@ public abstract class StorageFileSystemProvider
 
     private void deleteEmptyDirectory(String storageId, String repositoryId, RepositoryPath repositoryPath) {
         try {
-            if (Files.exists(repositoryPath) && !Files.isSameFile(repositoryPath.getRoot().resolve(LayoutFileSystem.TRASH), repositoryPath) && !Files.isSameFile(repositoryPath.getRoot(), repositoryPath) && RepositoryFiles.isDirectoryEmpty(repositoryPath)) {
+            if (Files.exists(repositoryPath) && !Files.isSameFile(repositoryPath.getRoot(), repositoryPath) && RepositoryFiles.isDirectoryEmpty(repositoryPath)) {
                 Files.deleteIfExists(repositoryPath);
                 log.info("Empty directory storageId [{}] repositoryId [{}] dir path [{}] do delete", storageId, repositoryId, repositoryPath.toString());
             }
@@ -774,7 +597,6 @@ public abstract class StorageFileSystemProvider
         }
 
         @Override
-        //为了展示回收站 去掉回收站判断&& !p.startsWith(root.resolve(LayoutFileSystem.TRASH)
         public boolean accept(Path p)
                 throws IOException {
             if (p.isAbsolute()
@@ -785,27 +607,6 @@ public abstract class StorageFileSystemProvider
             return false;
         }
 
-    }
-
-    private String getCleanupDay(String artifactPath, String cleanupDay, Map<String, String> cleanupArtifactPathMap) {
-        if (MapUtils.isEmpty(cleanupArtifactPathMap)) {
-            return cleanupDay;
-        }
-        String cleanupArtifactPath, cleanupArtifactPathValue, cleanupArtifactPathPrefix;
-        for (Map.Entry<String, String> entry : cleanupArtifactPathMap.entrySet()) {
-            cleanupArtifactPath = entry.getKey();
-            cleanupArtifactPathValue = entry.getValue();
-            if (StringUtils.isBlank(cleanupArtifactPath) || StringUtils.isBlank(cleanupArtifactPathValue)) {
-                continue;
-            }
-            //获取目录、制品级别生命周期，优先级第一
-            cleanupArtifactPathPrefix = cleanupArtifactPath + GlobalConstants.SEPARATOR;
-            if (artifactPath.equals(cleanupArtifactPath) || artifactPath.startsWith(cleanupArtifactPathPrefix) || artifactPath.matches(cleanupArtifactPath)) {
-                return entry.getValue();
-            }
-        }
-        //仓库级别生命周期，优先级最低
-        return cleanupDay;
     }
 
 }

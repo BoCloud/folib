@@ -53,12 +53,6 @@ public abstract class AbstractRepositoryManagementStrategy
         {
             rootRepositoryPath.getFileSystem().createRootDirectory();
         }
-
-        final RepositoryPath trashRepositoryPath = rootRepositoryPath.resolve(LayoutFileSystem.TRASH);
-        if (!Files.exists(trashRepositoryPath))
-        {
-            Files.createDirectories(trashRepositoryPath);
-        }
     }
 
     protected void createRepositoryInternal(Storage storage,

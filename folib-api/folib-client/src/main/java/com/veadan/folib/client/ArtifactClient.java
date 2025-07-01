@@ -202,80 +202,6 @@ public class ArtifactClient extends BaseArtifactClient implements Closeable {
     }
 
     @Override
-    public void deleteTrash(String storageId,
-                            String repositoryId)
-            throws ArtifactOperationException {
-        String url = getUrlForTrash(storageId, repositoryId);
-
-        WebTarget resource = getClientInstance().target(url);
-        setupAuthentication(resource);
-
-        Response response = resource.request().header(HEADER_NAME_USER_AGENT, HEADER_VALUE_MAVEN).delete();
-
-        handleFailures(response, "Failed to delete the trash for " + storageId + ":" + repositoryId + "!");
-    }
-
-    @Override
-    public void deleteTrash()
-            throws ArtifactOperationException {
-        String url = getContextBaseUrl() + "/api/trash";
-
-        WebTarget resource = getClientInstance().target(url);
-        setupAuthentication(resource);
-
-        Response response = resource.request().header(HEADER_NAME_USER_AGENT, HEADER_VALUE_MAVEN).delete();
-
-        handleFailures(response, "Failed to delete trash for all repositories!");
-    }
-
-    @Override
-    public void unDelete(String storageId,
-                         String repositoryId,
-                         String path)
-            throws ArtifactOperationException {
-        @SuppressWarnings("ConstantConditions")
-        String url = getUrlForTrash(storageId, repositoryId) + "/" + path;
-
-        WebTarget resource = getClientInstance().target(url);
-        setupAuthentication(resource);
-
-        Response response = resource.request(MediaType.TEXT_PLAIN)
-                .header(HEADER_NAME_USER_AGENT, HEADER_VALUE_MAVEN)
-                .post(Entity.entity("Undelete", MediaType.TEXT_PLAIN));
-
-        handleFailures(response, "Failed to delete the trash for " + storageId + ":" + repositoryId + "!");
-    }
-
-    @Override
-    public void unDeleteTrash(String storageId,
-                              String repositoryId)
-            throws ArtifactOperationException {
-        String url = getUrlForTrash(storageId, repositoryId);
-
-        WebTarget resource = getClientInstance().target(url);
-        setupAuthentication(resource);
-
-        Response response = resource.request(MediaType.TEXT_PLAIN)
-                .header(HEADER_NAME_USER_AGENT, HEADER_VALUE_MAVEN)
-                .post(Entity.entity("Undelete", MediaType.TEXT_PLAIN));
-
-        handleFailures(response, "Failed to delete the trash for " + storageId + ":" + repositoryId + "!");
-    }
-
-    @Override
-    public void unDeleteTrash()
-            throws ArtifactOperationException {
-        String url = getContextBaseUrl() + "/api/trash";
-        WebTarget resource = getClientInstance().target(url);
-        setupAuthentication(resource);
-        Response response = resource.request(MediaType.TEXT_PLAIN)
-                .header(HEADER_NAME_USER_AGENT, HEADER_VALUE_MAVEN)
-                .post(Entity.entity("Undelete", MediaType.TEXT_PLAIN));
-        handleFailures(response, "Failed to delete the trash!");
-    }
-
-
-    @Override
     public boolean pathExists(String path) {
         String url = escapeUrl(path);
 
@@ -312,11 +238,6 @@ public class ArtifactClient extends BaseArtifactClient implements Closeable {
             }
             logger.error(messageBuilder.toString());
         }
-    }
-
-    public String getUrlForTrash(String storageId,
-                                 String repositoryId) {
-        return getContextBaseUrl() + "/api/trash/" + storageId + "/" + repositoryId;
     }
 
     public WebTarget setupAuthentication(WebTarget target) {

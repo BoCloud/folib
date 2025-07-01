@@ -120,13 +120,6 @@ public abstract class AbstractLayoutProvider<T extends LayoutArtifactCoordinates
                             .resolve(LayoutFileSystem.TEMP));
 
                     break;
-                case TRASH:
-                    value = repositoryPath.isAbsolute()
-                            && repositoryPath.startsWith(repositoryPath.getFileSystem()
-                            .getRootDirectory()
-                            .resolve(LayoutFileSystem.TRASH));
-
-                    break;
                 case METADATA:
                     value = isArtifactMetadata(repositoryPath);
 

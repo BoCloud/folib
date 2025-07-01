@@ -139,10 +139,6 @@ public class GeneralCleanupArtifactsProvider implements CleanupArtifactsProvider
             log.warn("Cleanup storageId [{}] repositoryId [{}] path [{}] is directory skip", storageId, repositoryId, repositoryPath);
             return null;
         }
-        if (RepositoryFiles.isTrash(repositoryPath)) {
-            log.info("Cleanup storageId [{}] repositoryId [{}] path [{}] is trash file skip", storageId, repositoryId, path);
-            return null;
-        }
         if (RepositoryFiles.isTemp(repositoryPath)) {
             log.info("Cleanup storageId [{}] repositoryId [{}] path [{}] is temp file skip", storageId, repositoryId, path);
             return null;

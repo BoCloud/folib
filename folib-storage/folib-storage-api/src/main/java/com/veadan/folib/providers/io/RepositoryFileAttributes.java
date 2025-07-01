@@ -105,16 +105,6 @@ public class RepositoryFileAttributes
         attributes.put(RepositoryFileAttributeType.CHECKSUM, isChecksum);
     }
 
-    public boolean isTrash()
-    {
-        return Boolean.TRUE.equals(attributes.get(RepositoryFileAttributeType.TRASH));
-    }
-
-    protected void setTrash(boolean isTrash)
-    {
-        attributes.put(RepositoryFileAttributeType.TRASH, isTrash);
-    }
-
     public boolean isTemp()
     {
         return Boolean.TRUE.equals(attributes.get(RepositoryFileAttributeType.TEMP));

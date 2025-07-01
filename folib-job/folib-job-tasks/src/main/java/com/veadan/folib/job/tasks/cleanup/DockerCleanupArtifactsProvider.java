@@ -238,10 +238,6 @@ public class DockerCleanupArtifactsProvider implements CleanupArtifactsProvider 
             log.info("Cleanup storageId [{}] repositoryId [{}] path [{}] not a docker tag file skip", storageId, repositoryId, path);
             return null;
         }
-        if (RepositoryFiles.isTrash(repositoryPath)) {
-            log.info("Cleanup storageId [{}] repositoryId [{}] path [{}] is trash file skip", storageId, repositoryId, path);
-            return null;
-        }
         if (RepositoryFiles.isTemp(repositoryPath)) {
             log.info("Cleanup storageId [{}] repositoryId [{}] path [{}] is temp file skip", storageId, repositoryId, path);
             return null;

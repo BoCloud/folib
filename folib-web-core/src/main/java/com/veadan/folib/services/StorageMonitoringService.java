@@ -56,11 +56,4 @@ public interface StorageMonitoringService {
      * @return 存储监控列表
      */
     TableResultResponse<StorageMonitoringRes> queryStorageMonitoringPage(StorageMonitoringReq storageMonitoringReq);
-
-    /**
-     * 获取今日数据
-     *
-     * @return 今日数据
-     */
-    Map<String, String> getTodayData();
 }

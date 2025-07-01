@@ -18,7 +18,6 @@ import com.veadan.folib.controllers.cluster.dto.SyncAuthorizationDto;
 import com.veadan.folib.controllers.cluster.dto.SyncCronJobDto;
 import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
 import com.veadan.folib.job.cron.domain.CronTaskConfigurationDto;
-import com.veadan.folib.job.tasks.AlarmNoticeCronJob;
 import com.veadan.folib.job.cron.services.CronTaskConfigurationService;
 import com.veadan.folib.enums.StorageProviderEnum;
 import com.veadan.folib.forms.configuration.ServerSettingsForm;
@@ -150,13 +149,6 @@ public class CommonComponent {
                 authorizationConfigService.addPrivilegesToAnonymous(Lists.newArrayList(Privileges.ARTIFACTS_RESOLVE, Privileges.SEARCH_ARTIFACTS, Privileges.ARTIFACTS_VIEW, Privileges.CONFIGURATION_VIEW_METADATA_CONFIGURATION));
                 updateAnonymous();
             }
-        }
-        if(serverSettingsForm.getAlarmConfigurationForm()!=null && StringUtils.isNotBlank(serverSettingsForm.getAlarmConfigurationForm().getCronExpression())){
-            configurationManagementService.setAlarmConfiguration(serverSettingsForm.getAlarmConfigurationForm().getMutableAlarmConfiguration());
-            final String className = AlarmNoticeCronJob.class.getName();;
-            final String cronName = "Alarm NoticeCron Job";
-            configCronTask(cronName, className, serverSettingsForm.getAlarmConfigurationForm().getCronExpression());
-
         }
     }
 
