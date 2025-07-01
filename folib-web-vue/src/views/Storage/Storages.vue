@@ -43,7 +43,7 @@
                   </a>
                 </a-col>
                 <a-col :span="24" :md="10" style="display: flex; align-items: center; justify-content: flex-end">
-                  <!-- <a-switch 
+                  <!-- <a-switch
                     :disabled="switchDisabled"
                     style="margin-right:10px;"
                     v-model="isChecked"
@@ -70,28 +70,28 @@
               </a-row>
             </template>
             <!-- 仓库列表树 -->
-            <repositoryTree 
+            <repositoryTree
               v-if="isChecked"
-              ref="repositoryTree" 
-              @loadMore="loadMore" 
+              ref="repositoryTree"
+              @loadMore="loadMore"
               @handleMenuClick="handleMenuClickTree"
-              @treeSelect="treeSelect" 
-              @repositorySelect="repositorySelect" 
-              @expand="onExpand" 
+              @treeSelect="treeSelect"
+              @repositorySelect="repositorySelect"
+              @expand="onExpand"
               @getDetailInfo="getDetailInfo"
-              :repositories="repositories" 
+              :repositories="repositories"
               :isTrashView="isTrashView"
               :storageId="currentStorage.id"
               :baseUrl="baseUrl"
             />
             <!-- 存储列表 -->
-            <storageList 
-                v-else 
+            <storageList
+                v-else
                 ref="storageList"
-                :navbarFixed="navbarFixed" 
-                :storageData="storageData" 
+                :navbarFixed="navbarFixed"
+                :storageData="storageData"
                 :currentStorage="currentStorage"
-                @setCurrentStorage="setCurrentStorage" 
+                @setCurrentStorage="setCurrentStorage"
             />
           </a-card>
 <!--        </a-affix>-->
@@ -154,15 +154,15 @@
           </a-tab-pane>
         </a-tabs>
         <!-- 存储空间模式下 直接展示仓库内容 -->
-        <LibView 
+        <LibView
           v-else
           :key="libViewKey"
-          ref="libview" 
+          ref="libview"
           @reloadTree="reloadTree"
           @handleMenuClick="handleMenuClick"
-          :storageAdmin="currentStorage.admin" 
+          :storageAdmin="currentStorage.admin"
           :style="isChecked ? 'margin-top:-121px;' : ''" style="border:none;transition: all 0.5s ease;"
-          :isChecked="isChecked" 
+          :isChecked="isChecked"
         />
       </a-col>
     </a-row>
@@ -563,11 +563,6 @@
                     </a-select>
                   </a-form-item>
                 </a-col>
-                <a-col :span="12">
-                  <a-form-item class="mb-10" :label="$t('Storage.RepositorySizeLimit')" :colon="false">
-                    <a-input  :placeholder="$t('Storage.RepositorySizeLimitPlaceholder')" :maxLength="6" @input="handleInput($event,'repositoryStorageMaxSize')" addon-after="GB" v-model="repositoryStorageMaxSize" />
-                  </a-form-item>
-                </a-col>
                 <a-col :span="6">
                   <a-form-item class="mb-10" :label="$t('Storage.ItemLimit')" :colon="false">
                     <a-input :placeholder="$t('Storage.ItemLimitPlaceholder')" v-model="artifactMaxSize" :maxLength="6" @input="handleInput($event,'artifactMaxSize')" addon-after="MB">
@@ -586,20 +581,6 @@
                     </a-select>
                   </a-form-item>
                 </a-col>
-              </a-row>
-              <a-row :gutter="[24]">
-                  <a-col :span="12">
-                      <a-form-item class="mb-10" :label="$t('Storage.StorageThreshold')" :colon="false">
-                          <a-input-number style="width: 100%"
-                              :default-value="100"
-                              :min="0"
-                              :max="100"
-                              :formatter="value => `${value}%`"
-                              :parser="value => value.replace('%', '')"
-                              v-model="repositoryStorageThreshold"
-                          />
-                      </a-form-item>
-                  </a-col>
                 <a-col :span="6">
                   <a-form-item class="mb-10" :label="$t('Storage.EnableCustomLayout')" :colon="false">
                     <a-switch v-model="folibRepository.enableCustomLayout" @change="enableCustomLayoutChange"></a-switch>
@@ -608,20 +589,15 @@
                 <a-col :span="6" v-if="folibRepository.enableCustomLayout">
                   <a-form-item class="mb-10" :label="$t('Storage.CustomLayout')" :colon="false">
                     <a-select v-model="folibRepository.customLayout" style="width: 100%" model="default" show-search allowClear
-                      :dropdown-style="{ maxHeight: '240px', overflow: 'auto' }"
-                      :filter-option="true"
-                      :placeholder="$t('Storage.CustomLayoutTip')">
+                              :dropdown-style="{ maxHeight: '240px', overflow: 'auto' }"
+                              :filter-option="true"
+                              :placeholder="$t('Storage.CustomLayoutTip')">
                       <a-select-option v-for="(layout, index) in customLayoutList" :key="index" :value="layout.artifactPathPattern">
                         {{ layout.layoutName }}
                       </a-select-option>
                     </a-select>
                   </a-form-item>
                 </a-col>
-<!--                <a-col :span="6">-->
-<!--                    <a-form-item class="mb-10" :label="$t('Storage.StorageThreshold')" :colon="false">-->
-<!--                        <a-input  addon-after="%" v-model="repositoryStorageThreshold" />-->
-<!--                    </a-form-item>-->
-<!--                </a-col>-->
               </a-row>
               <a-row :gutter="[24]">
                 <a-col :span="6">
@@ -666,7 +642,7 @@
                 <a-col :span="6">
                   <a-form-item class="mb-10" label="" :colon="false">
                     <a-checkbox v-model="folibRepository.allowsDirectoryBrowsing">
-                      {{ $t('Storage.Allowed') }}{{ $t('Storage.DirectoryBrowsing') }} 
+                      {{ $t('Storage.Allowed') }}{{ $t('Storage.DirectoryBrowsing') }}
                       <!-- {{ folibRepository.allowsDirectoryBrowsing ? $t('Storage.Allowed') : $t('Storage.NotAllowed') }} -->
                     </a-checkbox>
                   </a-form-item>
@@ -1307,8 +1283,6 @@ export default {
           layout: "",
           type: "",
       },
-      repositoryStorageMaxSize: 0,
-      repositoryStorageThreshold:0,
       folibRepository: {
         allowsDeletion: true,
         allowsDeployment: true,
@@ -1492,7 +1466,7 @@ export default {
     this.switchDisabled = true
   },
   methods: {
-    
+
     getFolibRepositoryIds(val){
       this.loadingNameKey = true
       if(!val){
@@ -1670,7 +1644,7 @@ export default {
         // 给当前页面搜索条赋值
         this.queryParams.layout = params.layout
         this.queryParams.type = params.type
-        this.getQueryStorage(params) 
+        this.getQueryStorage(params)
       }
     },
     changeSyncEnabled(val){
@@ -2235,7 +2209,7 @@ export default {
       if(!this.folibRepositoryEditDisabled){
         // this.moveStep(1);
       }
-      
+
     },
 
     cronShowHandle(i, index) {
@@ -2412,8 +2386,6 @@ export default {
       this.folibRepositoryData.type = this.folibRepository.type;
 
       this.folibRepository.artifactMaxSize = this.artifactMaxSize * 1024 * 1024
-      this.folibRepository.storageMaxSize =  this.setRepoMaxSize(this.repositoryStorageMaxSize);
-      this.folibRepository.storageThreshold = this.setRepoThreshold(this.repositoryStorageThreshold);
       addOrUpdateRepository(this.currentStorage.id, this.folibRepository.id, this.folibRepository).then(res => {
         if (!res.error) {
           // if (!this.isChecked) this.refreshCurrentPageWarehouse()
@@ -2538,8 +2510,6 @@ export default {
           this.folibRepositoryIds = this.folibRepository.id
           this.folibRepositoryEditDisabled = true
           this.folibVisible = true
-          this.repositoryStorageMaxSize = this.getRepoMaxSize(this.folibRepository.storageMaxSize);
-          this.repositoryStorageThreshold = this.getRepoThreshold(this.folibRepository.storageThreshold);
         }
       })
 
@@ -2905,7 +2875,7 @@ export default {
 
     &.slectActive{
       background-color: #bae7ff !important;
-    } 
+    }
 
     &:hover{
       background-color: #e6f7ff;
@@ -3056,8 +3026,8 @@ export default {
   position: absolute;
   top: 9px;
   right: 10px;
-  display: flex; 
-  -items: center; 
+  display: flex;
+  -items: center;
   justify-content: flex-end;
   margin-bottom:40px;
   * {
@@ -3108,7 +3078,7 @@ export default {
   border-radius: 4px;
   // left: 0px;
   // margin-right: 10px;
-  
+
   .img-sty{
     opacity: 1 !important;
     cursor: pointer;
