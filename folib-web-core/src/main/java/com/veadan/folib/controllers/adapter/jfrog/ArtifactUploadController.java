@@ -2,7 +2,6 @@ package com.veadan.folib.controllers.adapter.jfrog;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.json.JSONUtil;
-import com.veadan.folib.components.promotion.ArtifactPromotionProviderRegistry;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.dto.ArtifactUploadAdapterJfrogDto;
 import com.veadan.folib.dto.ArtifactUploadAdapterJfrogDto.Checksums;
@@ -58,8 +57,6 @@ public class ArtifactUploadController extends JFrogBaseController {
     private LayoutProviderRegistry layoutProviderRegistry;
     @Inject
     private ArtifactRepository artifactRepository;
-    @Inject
-    private ArtifactPromotionProviderRegistry artifactPromotionProviderRegistry;
     @Inject
     @Lazy
     private MavenRepositoryFeatures mavenRepositoryFeatures;

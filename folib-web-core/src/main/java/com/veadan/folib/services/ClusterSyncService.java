@@ -21,8 +21,6 @@ public interface ClusterSyncService {
 
     void syncCronJob(SyncCronJobDto syncCronJobDto);
 
-    void syncClusterDispatch(SyncClusterDispatchDto syncClusterDispatchDto);
-
     /**
      * 同步授权配置信息
      *
@@ -75,8 +73,6 @@ public interface ClusterSyncService {
     ClusterSyncResultEnum handleSyncAuthorization(SyncAuthorizationDto syncAuthorizationDto, String nodeUrl, Boolean isScheduled);
 
     ClusterSyncResultEnum handleSyncWebhookConfiguration(SyncWebhookDto syncWebhookDto, String nodeUrl, Boolean isScheduled);
-
-    ClusterSyncResultEnum handleSyncClusterDispatch(SyncClusterDispatchDto syncClusterDispatchDto, String nodeUrl, Boolean isScheduled);
 
     ClusterSyncResultEnum handleSyncUnionRepositoryConfiguration(SyncUnionRepositoryDto syncUnionRepositoryDto, String nodeUrl, Boolean isScheduled);
 

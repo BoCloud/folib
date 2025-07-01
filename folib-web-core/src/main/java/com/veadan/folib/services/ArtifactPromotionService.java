@@ -1,9 +1,7 @@
 package com.veadan.folib.services;
 
-import com.veadan.folib.domain.ArtifactDispatch;
 import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.domain.ArtifactPromotion;
-import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.model.request.ArtifactPromotionNodeOptionCallbackReq;
@@ -36,18 +34,6 @@ public interface ArtifactPromotionService {
 
     ResponseEntity move(ArtifactPromotion artifactPromotion);
 
-    @Deprecated
-    ResponseEntity<String> nodeOption(PromotionNodeOption promotionNodeOption, HttpServletRequest request);
-    CompletableFuture<Void> nodeOptionV2(PromotionNodeOption promotionNodeOption);
-
-    ResponseEntity nodeOptionAttachRecord(PromotionNodeOption promotionNodeOption, String requestHostName, HttpServletResponse response);
-
-    ResponseEntity<?> retryNodeOptionAttachRecord(String syncNo, HttpServletResponse response);
-    CompletableFuture<Void> uploadArtifact(String syncNo, PromotionNodeOption promotionNodeOption, String requestHostName);
-    Boolean artifactPullCallback(ArtifactPromotionNodeOptionCallbackReq model);
-
-    ResponseEntity artifactPromotionInfo(String syncNo);
-
     ResponseEntity upload(MultipartFile[] files, String storageId, String repositoryId, String filePathMap, String fileMetaDataMap, String uuid, String imageTag, String fileType, String baseUrl, String token);
 
     ResponseEntity upload(String parseArtifact, String storageId, String repositoryId);
@@ -56,15 +42,8 @@ public interface ArtifactPromotionService {
 
     ResponseEntity getFileRelativePaths(ArtifactDto artifactDto);
 
-    List<String> artifactDispatchAttachRecord(ArtifactDispatch artifactDispatch, HttpServletRequest request);
-
-    String retryArtifactDispatchAttachRecord(String syncNo,String type, HttpServletRequest request);
-
-    List<String> artifactDispatch(ArtifactDispatch artifactDispatch);
-
     void validateStorageAndRepository(String storageId, String repositoryId);
 
-    void validateRemoteRepository(String targetNode, String storageId, String repositoryId);
 
     /**
      * 查询上传进度
@@ -92,49 +71,6 @@ public interface ArtifactPromotionService {
      * @return 制品结果
      */
     ArtifactParse parseArtifact(String storageId, String repositoryId, MultipartFile file);
-
-
-    /**
-     * 限速下载
-     * @param repository
-     * @param artifactPath
-     * @param nodeMark
-     * @param response
-     * @return
-     */
-    Boolean speedLimitDownload(Repository repository, String artifactPath, String nodeMark, HttpServletResponse response);
-
-    /**
-     * 切片&限速下载
-     * @param repository
-     * @param artifactPath
-     * @param nodeMark
-     * @param artifactMd5
-     * @param startDownloadIndex
-     * @param readLength
-     * @param response
-     */
-    Boolean speedLimitSliceDownload(Repository repository, String artifactPath, String nodeMark, String artifactMd5, Long startDownloadIndex, Long readLength, HttpServletResponse response);
-    
-    
-///    /**
-///     * 判断制品是否支持切片下载
-///     * @param model
-///     * @return
-///     * @since x.x.x
-///     */
-///    Boolean querySupportSliceDownload(ArtifactSupportSliceDownloadQueryReq model);
-///
-///
-///    Map<String, Boolean> batchQuerySupportSliceDownload(List<ArtifactSupportSliceDownloadQueryReq> models);
-    
-///    /**
-///     * 获取制品切片下载信息（基于临时文件目录存储）
-///     * @param model
-///     * @return
-///     * @since x.x.x
-///     */
-///    ArtifactSliceDownloadInfoRes querySliceDownloadInfoStoreTemp(ArtifactSliceDownloadInfoReq model);
 
     /**
      * 查询制品下载信息
@@ -168,19 +104,6 @@ public interface ArtifactPromotionService {
      */
     Boolean sliceUpload(ArtifactSliceUploadReq model, String metaDataMap);
 
-    /**
-     * 更新任务队列优先级
-     * @param syncNo 同步编号
-     * @param priority 优先级
-     * @return
-     */
-   ResponseEntity<?>  updateTaskQueuePriority(String syncNo,int priority);
-
-   /**
-    * 删除任务
-    * @param syncNo
-    */
-   ResponseEntity<?> deleteTask(String syncNo);
 
    /**
     * web切片上传

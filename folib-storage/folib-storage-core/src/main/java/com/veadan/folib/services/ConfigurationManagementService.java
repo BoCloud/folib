@@ -2,7 +2,6 @@ package com.veadan.folib.services;
 
 import com.veadan.folib.client.MutableRemoteRepositoryRetryArtifactDownloadConfiguration;
 import com.veadan.folib.configuration.*;
-import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryDto;
@@ -43,10 +42,6 @@ public interface ConfigurationManagementService {
                                MutableProxyConfiguration proxyConfiguration) throws IOException;
 
     void createStorage(StorageDto storage) throws IOException;
-
-    void createClusterDispatchConfig(ClusterDispatchNodeDto clusterDispatchNodeDto) throws IOException;
-
-    void removeClusterDispatchConfig(ClusterDispatchNodeDto clusterDispatchNodeDto) throws IOException;
 
     void addStorageIfNotExists(StorageDto storage) throws IOException;
 

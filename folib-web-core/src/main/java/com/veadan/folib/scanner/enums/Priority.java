@@ -1,4 +1,4 @@
-package com.veadan.folib.ws.server;
+package com.veadan.folib.scanner.enums;
 
 /**
  * 队列优先级（值越小等级越高）

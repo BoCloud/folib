@@ -1,4 +1,4 @@
-package com.veadan.folib.ws.task;
+package com.veadan.folib.scanner.task;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

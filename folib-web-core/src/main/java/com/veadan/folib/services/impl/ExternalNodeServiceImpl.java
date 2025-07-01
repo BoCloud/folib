@@ -15,7 +15,6 @@ import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.ExternalNodeService;
 import com.veadan.folib.services.JFrogService;
 import com.veadan.folib.util.RSAUtils;
-import com.veadan.folib.ws.server.CheckTargetNodeRepositoryCommandProcessor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -46,8 +45,6 @@ public class ExternalNodeServiceImpl implements ExternalNodeService {
 
     @Inject
     private RSAUtils rsaUtils;
-    @Autowired
-    private CheckTargetNodeRepositoryCommandProcessor checkTargetNodeRepositoryCommandProcessor;
 
     @Override
     public TableResultResponse<ExternalNodeForm> queryExternalNodeList(Integer page, Integer limit, ExternalNodeForm externalNodeForm) {

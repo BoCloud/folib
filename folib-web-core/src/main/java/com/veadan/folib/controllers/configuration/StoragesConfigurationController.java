@@ -25,15 +25,14 @@ import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
 import com.veadan.folib.controllers.federal.req.FederalPromotionPolicyCreateReq;
 import com.veadan.folib.controllers.federal.req.FederalRepositoryCreateReq;
 import com.veadan.folib.controllers.federal.req.PromotionRuleCreateReq;
-import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.DispatchStorageTree;
 import com.veadan.folib.domain.RepositoryPermission;
 import com.veadan.folib.domain.RepositoryUser;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.policy.FederalPromotionPolicyService;
-import com.veadan.folib.dto.ArtifactDispatchRepositoryDto;
 import com.veadan.folib.dto.PermissionsDTO;
 import com.veadan.folib.dto.UserDTO;
+import com.veadan.folib.dto.configuration.ClusterDispatchNodeDto;
 import com.veadan.folib.forms.configuration.*;
 import com.veadan.folib.entity.Resource;
 import com.veadan.folib.enums.*;
@@ -71,11 +70,6 @@ import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import com.veadan.folib.web.RepositoryMapping;
-import com.veadan.folib.ws.common.FolibWsRunManageUtil;
-import com.veadan.folib.ws.common.FolibWsRunManageV2;
-import com.veadan.folib.ws.server.Command;
-import com.veadan.folib.ws.server.WSMessageRequest;
-import com.veadan.folib.ws.server.WSMessageResponse;
 import io.swagger.annotations.*;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -186,8 +180,6 @@ public class StoragesConfigurationController
     private AuthorizationConfigService authorizationConfigService;
     @Autowired
     private CommonComponent commonComponent;
-    @Autowired
-    private FolibWsRunManageV2 folibWsRunManageV2;
     @Inject
     private LayoutProviderRegistry layoutProviderRegistry;
     @Inject
@@ -672,118 +664,6 @@ public class StoragesConfigurationController
             }
         }
         return ResponseEntity.ok(storageTreeForms);
-    }
-
-    @PostMapping(value = "/getDispatchRepositories", produces = MediaType.APPLICATION_JSON_VALUE)
-    @PermissionCheck(resourceKey = "ARTIFACTS_VIEW")
-    public ResponseEntity<DispatchStorageTree> getDispatchRepositories(@RequestBody ArtifactDispatchRepositoryDto dispatchRepositoryDto) {
-        String dispatchEnName = dispatchRepositoryDto.getDispatchEnName();
-        String type = dispatchRepositoryDto.getType();
-        String layout = dispatchRepositoryDto.getLayout();
-        String policy = dispatchRepositoryDto.getPolicy();
-        List<Storage> storages = new ArrayList<>(configurationManagementService.getConfiguration()
-                .getStorages()
-                .values());
-        //查询数据库中存储空间绑定的用户
-        storageManagementService.getStorageUsers(storages);
-        List<StorageTreeForm> dispatchTreeForms = Lists.newArrayList();
-        List<StorageTreeForm> storageTreeForms = Lists.newArrayList();
-        StorageTreeForm dispatchTreeForm = StorageTreeForm.builder()
-                .id(dispatchEnName)
-                .key(dispatchEnName)
-                .name(dispatchEnName).artifactoryRepositoryType(ArtifactoryRepositoryTypeEnum.INNER.getType()).build();
-        if (CollectionUtil.isNotEmpty(storages)) {
-            boolean filterByType = StringUtils.isNotBlank(type);
-            boolean filterByLayout = StringUtils.isNotBlank(layout);
-            boolean filterByPolicy = StringUtils.isNotBlank(policy);
-            storages = storages.stream()
-                    .distinct()
-                    .collect(Collectors.toCollection(LinkedList::new));
-            List<Repository> repositories;
-            for (Storage storage : storages) {
-                StorageTreeForm storageTreeForm = StorageTreeForm.builder()
-                        .id(storage.getId())
-                        .key(dispatchEnName + "," + storage.getId())
-                        .name(storage.getId()).artifactoryRepositoryType(ArtifactoryRepositoryTypeEnum.INNER.getType()).build();
-                repositories = new LinkedList<Repository>(storage.getRepositories().values());
-                repositories = repositories.stream().distinct()
-                        .filter(r -> !filterByType || r.getType().equalsIgnoreCase(type))
-                        .filter(r -> !filterByLayout || r.getLayout().equalsIgnoreCase(layout))
-                        .filter(r -> !filterByPolicy || r.getPolicy().equalsIgnoreCase(policy))
-                        .collect(Collectors.toCollection(LinkedList::new));
-                if (repositories.size() == 0) {
-                    continue;
-                }
-                storageTreeForm.setChildren(repositories.stream().map(repository ->
-                        StorageTreeForm.builder()
-                                .id(repository.getId())
-                                .key(dispatchEnName + "," + storage.getId() + "," + repository.getId())
-                                .name(repository.getId())
-                                .type(repository.getType())
-                                .layout(repository.getLayout())
-                                .artifactoryRepositoryType(ArtifactoryRepositoryTypeEnum.INNER.getType())
-                                .build()).collect(Collectors.toList()));
-                storageTreeForms.add(storageTreeForm);
-            }
-            dispatchTreeForm.setChildren(storageTreeForms);
-            dispatchTreeForms.add(dispatchTreeForm);
-        }
-        return ResponseEntity.ok(new DispatchStorageTree(dispatchTreeForms));
-    }
-
-
-    @ApiOperation(value = "Retrieve the basic info about storages and repositories.")
-    @ApiResponses(value = {@ApiResponse(code = 200, message = "")})
-    @PermissionCheck(resourceKey = "ARTIFACTS_VIEW")
-    @GetMapping(value = "/getDispatchStoragesAndRepositories", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity getDispatchStoragesAndRepositories(@ApiParam(value = "Search for repository names in a specific storageId")
-                                                             @RequestParam(value = "storageId", required = false)
-                                                                     String storageId,
-                                                             @ApiParam(value = "Filter repository names by type (i.e. hosted, group, proxy)")
-                                                             @RequestParam(value = "type", required = false)
-                                                                     String type,
-                                                             @ApiParam(value = "Filter repository names by repository layout")
-                                                             @RequestParam(value = "layout", required = false)
-                                                                     String layout,
-                                                             @ApiParam(value = "Filter repository names by repository policy")
-                                                             @RequestParam(value = "policy", required = false)
-                                                                     String policy, Authentication authentication) {
-
-        logger.info("start getDispatchStoragesAndRepositories");
-        // 获取制品分发配置列表(非本集群)
-        Map<String, ClusterDispatchNodeDto> map = configurationManagementService.
-                getMutableConfigurationClone().getClusterDispatchNode();
-        List<ClusterDispatchNodeDto> listDispatch =
-                map.values().stream().filter(x -> !x.getIsThisCluster()).collect(Collectors.toList());
-        ArtifactDispatchRepositoryDto dispatchRepositoryDto = ArtifactDispatchRepositoryDto.builder()
-                .type(type)
-                .layout(layout)
-                .policy(policy).build();
-        List<StorageTreeForm> repoList = new LinkedList<>();
-        WSMessageRequest wsMessageRequest = null;
-        WSMessageResponse messageResponse = null;
-        for (ClusterDispatchNodeDto clusterDispatchNodeDto : listDispatch) {
-            try {
-                final String dispatchEnName = clusterDispatchNodeDto.getClusterEnName();
-                dispatchRepositoryDto.setDispatchEnName(dispatchEnName);
-                wsMessageRequest = new WSMessageRequest(Command.STORAGES_REPOSITORY_TREE, dispatchRepositoryDto);
-                String targetHostName = FolibWsRunManageUtil.getTargetNode(clusterDispatchNodeDto.getClusterNodeHost());
-                if (StringUtils.isBlank(targetHostName)) {
-                    //WS目标节点未找到，尝试转发到集群中其他节点处理
-                    targetHostName = FolibWsRunManageUtil.getTargetHostName(clusterDispatchNodeDto.getClusterNodeHost());
-                    if (folibWsRunManageV2.forward(targetHostName)) {
-                        return null;
-                    }
-                }
-                messageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
-                DispatchStorageTree dispatchStorageTree = (DispatchStorageTree) messageResponse.getDate();
-                repoList.addAll(dispatchStorageTree.getList());
-            } catch (Exception e) {
-                logger.warn("sendRequest fail,wsMessageRequest:{}", wsMessageRequest, e);
-            }
-        }
-        // 发送获取仓库信息Task
-        return ResponseEntity.ok(repoList);
     }
 
 

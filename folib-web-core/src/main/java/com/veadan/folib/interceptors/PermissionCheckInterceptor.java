@@ -10,8 +10,8 @@ import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.auth.AuthComponent;
 import com.veadan.folib.config.PermissionCheck;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
-import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.ArtifactParse;
+import com.veadan.folib.dto.configuration.ClusterDispatchNodeDto;
 import com.veadan.folib.scanner.common.util.IPUtil;
 import com.veadan.folib.security.vote.ExtendedAuthoritiesVoter;
 import com.veadan.folib.services.ConfigurationManagementService;
@@ -40,32 +40,6 @@ import java.util.*;
 public class PermissionCheckInterceptor implements HandlerInterceptor {
     private final Set<String> currentWhiteList = new HashSet<>();
 
-    public Set<String> getWhiteList(String ipAddr) {
-        if (currentWhiteList.contains(ipAddr)) {
-            return currentWhiteList;
-        }
-        ConfigurationManagementService configurationManagementService =
-                SpringUtil.getBean(ConfigurationManagementService.class);
-        Map<String, ClusterDispatchNodeDto> map = configurationManagementService.
-                getMutableConfigurationClone().getClusterDispatchNode();
-        if (CollectionUtil.isEmpty(map)) {
-            return currentWhiteList;
-        }
-        map.values().forEach(clusterDispatchNodeDto -> {
-            try {
-                String host = clusterDispatchNodeDto.getClusterNodeHost();
-                host = host.replaceAll("http|https|//|/", "");
-                String[] arry = host.split(":");
-                if (arry.length >= 2) {
-                    currentWhiteList.add(arry[arry.length - 2].trim());
-                }
-            } catch (Exception e) {
-                log.error("Exception {}", e.getMessage());
-            }
-        });
-        return currentWhiteList;
-    }
-
 
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response,
                              Object handler) throws Exception {
@@ -86,10 +60,6 @@ public class PermissionCheckInterceptor implements HandlerInterceptor {
         //是否在白名单中
         String ipAddr = IPUtil.getIpAddr(request);
         log.info("Current request ip [{}]", ipAddr);
-        if (getWhiteList(ipAddr).contains(ipAddr)) {
-            log.info("Whitelist call [{}] [{}]", ipAddr, handlerMethod.toString());
-            return true;
-        }
         //获取用的角色权限列表中是否拥有该权限
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (Objects.isNull(authentication) || !authentication.isAuthenticated()) {

@@ -4,7 +4,6 @@ import com.google.common.collect.Sets;
 import com.veadan.folib.client.MutableRemoteRepositoryRetryArtifactDownloadConfiguration;
 import com.veadan.folib.configuration.*;
 import com.veadan.folib.constant.GlobalConstants;
-import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.event.repository.RepositoryEvent;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
 import com.veadan.folib.event.repository.RepositoryEventTypeEnum;
@@ -251,11 +250,6 @@ public class ConfigurationManagementServiceImpl
     }
 
     @Override
-    public void createClusterDispatchConfig(ClusterDispatchNodeDto clusterDispatchNodeDto) throws IOException {
-        modifyInLock(configuration -> configuration.addClusterDispatchNode(clusterDispatchNodeDto));
-    }
-
-    @Override
     public void addStorageIfNotExists(StorageDto storage) throws IOException {
         modifyInLock(configuration -> configuration.addStorageIfNotExist(storage));
     }
@@ -265,10 +259,6 @@ public class ConfigurationManagementServiceImpl
         modifyInLock(configuration -> configuration.getStorages().remove(storageId));
     }
 
-    @Override
-    public void removeClusterDispatchConfig(ClusterDispatchNodeDto clusterDispatchNodeDto) throws IOException {
-        modifyInLock(configuration -> configuration.getClusterDispatchNode().remove(clusterDispatchNodeDto.getClusterEnName()));
-    }
 
     @Override
     public void saveRepository(String storageId,

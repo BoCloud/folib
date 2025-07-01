@@ -8,9 +8,9 @@ import com.veadan.folib.controllers.users.UserController;
 import com.veadan.folib.converters.users.RoleConvert;
 import com.veadan.folib.converters.users.UserGroupConvert;
 import com.veadan.folib.converts.UserConvert;
-import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.domain.PrivilegeDispatch;
 import com.veadan.folib.dto.*;
+import com.veadan.folib.dto.configuration.ClusterDispatchNodeDto;
 import com.veadan.folib.entity.*;
 import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.enums.SyncStrategyEnum;
@@ -25,11 +25,6 @@ import com.veadan.folib.users.dto.UserAuthDTO;
 import com.veadan.folib.users.service.*;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.validation.RequestBodyValidationException;
-import com.veadan.folib.ws.common.FolibWsRunManageUtil;
-import com.veadan.folib.ws.common.FolibWsRunManageV2;
-import com.veadan.folib.ws.server.Command;
-import com.veadan.folib.ws.server.WSMessageRequest;
-import com.veadan.folib.ws.server.WSMessageResponse;
 import io.swagger.annotations.*;
 import jakarta.websocket.Session;
 import lombok.extern.slf4j.Slf4j;
@@ -97,11 +92,8 @@ public class RoleController extends BaseController {
     private UserGroupService userGroupService;
     @Autowired
     private UserGroupRefService userGroupRefService;
-
     @Autowired
     private ResourceService resourceService;
-    @Autowired
-    private FolibWsRunManageV2 folibWsRunManageV2;
     @Autowired
     private PrivilegeEventListenerRegistry privilegeEventListenerRegistry;
 
@@ -284,116 +276,6 @@ public class RoleController extends BaseController {
         }
         return new TableResultResponse<>(folibRoles.getTotal(), folibRoles.getList());
 
-    }
-
-    @ApiOperation(value = "Used to retrieve users")
-    @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_GET_ROLE)})
-    @PreAuthorize("hasAuthority('ADMIN')")
-    @PostMapping(value = "/privilegeDispatch", produces = {MediaType.APPLICATION_JSON_VALUE})
-    @ResponseBody
-    public ResponseEntity privilegeDispatch(@RequestBody @Validated PrivilegeDispatch dispatch, HttpServletRequest request, BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            throw new RequestBodyValidationException("请求参数错误", bindingResult);
-        }
-        PrivilegeEventTypeEnum privilegeEventTypeEnum = dispatch.getPrivilegeEventTypeEnum();
-        if (PrivilegeEventTypeEnum.EVENT_ALL_SYNC.getType() == privilegeEventTypeEnum.getType()) {
-            syncAllPrivilege(dispatch.getTargetHostName());
-        }else {
-            //发送用户权限消息
-            WSMessageRequest wsMessageRequest = null;
-            WSMessageResponse messageResponse = null;
-            try {
-                //查询请求参数
-                UserAuthDTO userAuthReq = getUserAuthReq(privilegeEventTypeEnum, dispatch.getUuId());
-                wsMessageRequest = new WSMessageRequest(Command.USER_AUTH_SYNC, userAuthReq);
-                messageResponse = folibWsRunManageV2.sendRequest(dispatch.getTargetHostName(), wsMessageRequest);
-
-                log.debug("sendRequest result,wsMessageRequest:{},messageResponse:{}", wsMessageRequest, messageResponse);
-            }  catch (Exception e) {
-                log.error("sendRequest fail,wsMessageRequest:{}", wsMessageRequest, e);
-            }
-
-        }
-        return ResponseEntity.ok("分发处理成功");
-    }
-
-    private void syncAllPrivilege(String targetHostName) {
-        Map<String, ClusterDispatchNodeDto> map = configurationManagementService.
-                getMutableConfigurationClone().getClusterDispatchNode();
-        if (MapUtils.isEmpty(map)) {
-            return;
-        }
-        final Collection<ClusterDispatchNodeDto> values = map.values();
-        values.forEach(nodeDto -> {
-            String targetHostName1 = FolibWsRunManageUtil.getSimpleTargetHostName(nodeDto);
-            Session session = folibWsRunManageV2.getSession(targetHostName1);
-            nodeDto.setWsClientOnline(session != null && session.isOpen());
-        });
-        map.forEach((key, dispatchNodeDto) -> {
-            if (targetHostName.equalsIgnoreCase(dispatchNodeDto.getClusterNodeHost())) {
-                Boolean isThisCluster = dispatchNodeDto.getIsThisCluster();
-                Boolean wsClientOnline = dispatchNodeDto.getWsClientOnline();
-                Boolean isSyncPrivilege = dispatchNodeDto.getIsSyncPrivilege();
-                String syncStrategy = dispatchNodeDto.getSyncStrategy();
-                Boolean autoRegister = dispatchNodeDto.getAutoRegister();
-
-                if (!isThisCluster && !Objects.equals(wsClientOnline, null) && wsClientOnline
-                            && !Objects.equals(isSyncPrivilege, null) && isSyncPrivilege) {
-                    if (SyncStrategyEnum.TARGET_TO_SOURCE.getValue().equalsIgnoreCase(syncStrategy) && autoRegister){
-                        syncAuthSourceToTarget(dispatchNodeDto);
-                    }  else if (SyncStrategyEnum.SOURCE_TO_TARGET.getValue().equalsIgnoreCase(syncStrategy) && !autoRegister){
-                        syncAuthSourceToTarget(dispatchNodeDto);
-                    } else if (SyncStrategyEnum.TWO_WAY_SYNC.getValue().equalsIgnoreCase(syncStrategy)){
-                        syncAuthSourceToTarget(dispatchNodeDto);
-                    }
-                }
-            }
-        });
-        log.info("UserAuthSyncTask thread name [{}] time [{}]", Thread.currentThread().getName(), DateUtil.now());
-    }
-
-    private void syncAuthTargetToSource(String clusterNodeHost) {
-        String baseUrl = configurationManagementService.getConfiguration().getBaseUrl();
-        boolean dispatch = folibWsRunManageV2.dispatchTargetNode(clusterNodeHost, PrivilegeDispatch.builder().privilegeEventTypeEnum(PrivilegeEventTypeEnum.EVENT_ALL_SYNC).targetHostName(baseUrl).build());
-        log.info("dispatch:{}", dispatch);
-    }
-    private void syncAuthSourceToTarget(ClusterDispatchNodeDto value) {
-        WSMessageRequest wsMessageRequest = null;
-        WSMessageResponse messageResponse = null;
-        String clusterNodeHost = value.getClusterNodeHost();
-        String targetHostName = FolibWsRunManageUtil.getTargetNode(clusterNodeHost);
-        if (StringUtils.isBlank(targetHostName)) {
-            //WS目标节点未找到，尝试转发到集群中其他节点处理
-            targetHostName = FolibWsRunManageUtil.getTargetHostName(clusterNodeHost);
-            log.info("targetHostName:{}", targetHostName);
-            if (folibWsRunManageV2.dispatch(targetHostName, PrivilegeDispatch.builder().privilegeEventTypeEnum(PrivilegeEventTypeEnum.EVENT_ALL_SYNC).targetHostName(targetHostName).build())) {
-                return;
-            }
-        }
-        int page = 1;
-        int size = 100;
-        boolean flag = true;
-        while (flag) {
-            //发送用户权限消息
-            try {
-                //分页查询请求参数
-                UserAuthDTO userAuthReq = getUserAuthReq(page, size);
-                if (userAuthReq != null && userAuthReq.isNextPage()) {
-                    page++;
-                    size += 100;
-                }else {
-                    flag = false;
-                }
-                wsMessageRequest = new WSMessageRequest(Command.USER_AUTH_SYNC, userAuthReq);
-                messageResponse = folibWsRunManageV2.sendRequest(targetHostName, wsMessageRequest);
-
-                log.debug("sendRequest result,wsMessageRequest:{},messageResponse:{}", wsMessageRequest, messageResponse);
-
-            }  catch (Exception e) {
-                log.error("sendRequest fail,wsMessageRequest:{}", wsMessageRequest, e);
-                flag = false;
-            }
-        }
     }
 
     private UserAuthDTO getUserAuthReq(int page, int size) {

@@ -6,13 +6,9 @@ import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.config.PermissionCheck;
-import com.veadan.folib.configuration.Configuration;
-import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.controllers.BaseArtifactController;
-import com.veadan.folib.domain.ArtifactDispatch;
 import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.domain.ArtifactPromotion;
-import com.veadan.folib.domain.PromotionNodeOption;
 import com.veadan.folib.dto.ArtifactDto;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.AuditEventNameEnum;
@@ -107,54 +103,6 @@ public class ArtifactPromotionController extends BaseArtifactController {
         return artifactPromotionService.move(artifactPromotion);
     }
 
-
-    /**
-     * @param promotionNodeOption sourcePath targetPath  制品晋级的来源和晋级的目标机器
-     * @param request             源请求
-     * @param bindingResult       校验
-     * @return 晋级的结果
-     */
-    @PostMapping("/nodeOption")
-    @PermissionCheck(resourceKey = "ARTIFACTS_PROMOTION")
-    public ResponseEntity nodeOption(@RequestBody @Validated PromotionNodeOption promotionNodeOption,
-                                     HttpServletRequest request,
-                                     HttpServletResponse response,
-                                     BindingResult bindingResult) {
-        logger.info("NodeOption params [{}]", JSONObject.toJSONString(promotionNodeOption));
-        if (bindingResult.hasErrors()) {
-            throw new RequestBodyValidationException("请求参数错误", bindingResult);
-        }
-        return artifactPromotionService.nodeOptionAttachRecord(promotionNodeOption, request.getServerName(), response);
-    }
-
-    /**
-     * 重试晋级
-     * @param syncNo 同步任务号
-     * @param request
-     * @param response
-     * @return
-     */
-    @PostMapping("/retryNodeOption/{syncNo}")
-    @PermissionCheck(resourceKey = "ARTIFACTS_PROMOTION")
-    public ResponseEntity retryNodeOption(@PathVariable("syncNo") String syncNo,
-                                     HttpServletRequest request,
-                                     HttpServletResponse response) {
-        return artifactPromotionService.retryNodeOptionAttachRecord(syncNo, response);
-    }
-
-///    @PostMapping("/nodeOptionCallback")
-///    @PermissionCheck(resourceKey = "ARTIFACTS_PROMOTION")
-///    public ResponseEntity<Boolean> nodeOptionCallback(@RequestBody @Validated ArtifactPromotionNodeOptionCallbackReq model) {
-///        return ResponseEntity.ok(artifactPromotionService.nodeOptionCallback(model));
-///    }
-
-    @GetMapping("/info/{syncNo}")
-    @PermissionCheck(resourceKey = "ARTIFACTS_PROMOTION")
-    public ResponseEntity artifactPromotionInfo(@PathVariable("syncNo") String syncNo) {
-        return artifactPromotionService.artifactPromotionInfo(syncNo);
-    }
-
-
     @PostMapping(value = "/upload-files")
     @ApiOperation(value = "文件上传(支持批量)", notes = "文件上传(支持批量)")
     @PermissionCheck(resourceKey = "ARTIFACTS_DEPLOY", storageKey = "storageId", repositoryKey = "repostoryId")
@@ -204,29 +152,6 @@ public class ArtifactPromotionController extends BaseArtifactController {
         return artifactPromotionService.getFileRelativePaths(artifactDto);
     }
 
-    @PostMapping(value = "/artifactDispatch")
-    @PermissionCheck(resourceKey = "ADMIN")
-    public ResponseEntity artifactDispatch(@RequestBody @Validated ArtifactDispatch artifactDispatch, HttpServletRequest request, BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            throw new RequestBodyValidationException("请求参数错误", bindingResult);
-        }
-        return ResponseEntity.ok(artifactPromotionService.artifactDispatchAttachRecord(artifactDispatch, request));
-    }
-
-    /**
-     * 重试制品分发
-     *
-     * @param syncNo  syncNo
-     * @param type    type
-     * @param request request
-     * @return ResponseEntity
-     */
-    @PostMapping(value = "/retryArtifactDispatch/{syncNo}/{type}")
-    @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
-    public ResponseEntity<?> retryArtifactDispatch(@PathVariable("syncNo") String syncNo, @PathVariable("type") String type, HttpServletRequest request) {
-        return ResponseEntity.ok(artifactPromotionService.retryArtifactDispatchAttachRecord(syncNo,type, request));
-    }
-
     @PostMapping("/parseArtifact")
     @PermissionCheck(resourceKey = "ARTIFACTS_DEPLOY", storageKey = "storageId", repositoryKey = "repositoryId")
     public ResponseEntity<ArtifactParse> parseArtifact(@RequestParam("storageId") String storageId,
@@ -258,39 +183,6 @@ public class ArtifactPromotionController extends BaseArtifactController {
         artifactPromotionService.deleteUploadProcess(dictType, uuid);
         return ResponseEntity.ok("");
     }
-
-
-    @GetMapping(value = "/file/speedLimitDownload/{storageId}/{repositoryId}/{artifactPath:.+}")
-    @Deprecated
-    public void speedLimitDownload(@RepositoryMapping Repository repository,
-                                   @PathVariable String artifactPath, @RequestParam("nodeMark") String nodeMark,
-                                   HttpServletResponse response) {
-        artifactPromotionService.speedLimitDownload(repository, artifactPath, nodeMark, response);
-    }
-
-    @GetMapping(value = "/file/speedLimitSliceDownload/{storageId}/{repositoryId}/{artifactPath:.+}")
-    public void speedLimitSliceDownload(@RepositoryMapping Repository repository,
-                                        @PathVariable String artifactPath,
-                                        @RequestParam("nodeMark") String nodeMark,
-                                        @RequestParam("artifactMd5") String artifactMd5,
-                                        @RequestParam("startDownloadIndex") Long startDownloadIndex,
-                                        @RequestParam("readLength") Long readLength,
-                                        HttpServletResponse response) {
-        artifactPromotionService.speedLimitSliceDownload(repository, artifactPath, nodeMark, artifactMd5,
-                startDownloadIndex, readLength, response);
-    }
-
-///    @PostMapping(value = "/query/support/slice/download")
-///    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
-///    public ResponseEntity<Boolean> querySupportSliceDownload(@RequestBody @Validated ArtifactSupportSliceDownloadQueryReq model) {
-///        return ResponseEntity.ok(artifactPromotionService.querySupportSliceDownload(model));
-///    }
-///
-///    @PostMapping(value = "/batch/query/support/slice/download")
-///    @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
-///    public ResponseEntity<Map<String, Boolean>> batchQuerySupportSliceDownload(@RequestBody @Validated List<ArtifactSupportSliceDownloadQueryReq> models) {
-///        return ResponseEntity.ok(artifactPromotionService.batchQuerySupportSliceDownload(models));
-///    }
 
     @PostMapping(value = "/query/slice/download/info")
     @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
@@ -348,24 +240,6 @@ public class ArtifactPromotionController extends BaseArtifactController {
             log.error("通过Header传参方式，文件切片上传失败", e);
             return Result.error(e);
         }
-    }
-
-    /**
-     * 更新任务优先级
-     * @param syncNo 同步编号
-     * @param priority 优先级
-     * @return
-     */
-    @PostMapping(value = "/updateTaskQueuePriority/{syncNo}/{priority}")
-    @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
-    public ResponseEntity<?> updateTaskQueuePriority(@PathVariable("syncNo") String syncNo, @PathVariable("priority") int priority) {
-        return artifactPromotionService.updateTaskQueuePriority(syncNo,priority);
-    }
-    @DeleteMapping(value = "/deleteTask/{syncNo}")
-    @PermissionCheck(resourceKey = "CONFIGURATION_ADD_UPDATE_STORAGE")
-    public ResponseEntity<?> deleteTask(@PathVariable("syncNo") String syncNo) {
-
-        return  artifactPromotionService.deleteTask(syncNo);
     }
 
 

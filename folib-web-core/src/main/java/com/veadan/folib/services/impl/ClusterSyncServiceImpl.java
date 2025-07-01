@@ -257,58 +257,6 @@ public class ClusterSyncServiceImpl implements ClusterSyncService {
     }
 
     @Override
-    @Async("asyncConfigThreadPoolExecutor")
-    public void syncClusterDispatch(SyncClusterDispatchDto syncClusterDispatchDto) {
-        if (!isNeedClusterSync()) {
-            logger.info("Cluster mode not opened");
-            return;
-        }
-        logger.info("Sync cluster dispatch job");
-        getHostNodeList().forEach(nodeUrl -> {
-            handleSyncClusterDispatch(syncClusterDispatchDto, nodeUrl, false);
-        });
-    }
-
-    @Override
-    public ClusterSyncResultEnum handleSyncClusterDispatch(SyncClusterDispatchDto syncClusterDispatchDto,
-                                                           String nodeUrl, Boolean isScheduled) {
-        Response response = null;
-        Client client = null;
-        String clusterEnName = syncClusterDispatchDto.getNodeDto().getClusterEnName();
-        try {
-            client = clientPool.getRestClient();
-            WebTarget target = client.target(nodeUrl + SYNC_CLUSTER_DISPATCH_URI);
-            response = target.request().post(Entity.entity(syncClusterDispatchDto, MediaType.APPLICATION_JSON));
-            if (response.getStatus() != 200) {
-                logger.error("Sync cluster dispatch error {} {}", nodeUrl, JSONObject.toJSONString(response));
-                throw new RuntimeException("Failed with HTTP error code : " + response.getStatus());
-            }
-        } catch (Exception e) {
-            logger.error("Sync cluster dispatch [{}] error {} ", clusterEnName, e.getMessage());
-            if (!isScheduled) {
-                addScheduledTask(
-                        new ClusterDataSyncTaskPo(UUID.randomUUID().toString(),
-                                ipProperties.getFolibLockIp(),
-                                JSON.toJSONString(syncClusterDispatchDto),
-                                SyncDataTypeEnum.CLUSTER_DISPATCH.getValue(),
-                                SyncDataStatusEnum.WILL_EXECUTE_STATUS.getStatus()
-                                , nodeUrl, BigInteger.valueOf(System.currentTimeMillis())
-                        ));
-            }
-            return ClusterSyncResultEnum.FAIL;
-        } finally {
-            if (null != response) {
-                response.close();
-            }
-
-            if (null != client) {
-                client.close();
-            }
-        }
-        return ClusterSyncResultEnum.SUCCESS;
-    }
-
-    @Override
     public ClusterSyncResultEnum handleSyncUnionRepositoryConfiguration(SyncUnionRepositoryDto syncUnionRepositoryDto, String nodeUrl, Boolean isScheduled) {
         Response response = null;
         Client client = null;

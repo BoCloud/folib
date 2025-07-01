@@ -132,14 +132,8 @@ public class JFrogServiceImpl implements JFrogService {
                 //Docker镜像
                 try {
                     uploadImageTag(artifactory, repositoryName, repositoryPath);
-                    if (Boolean.TRUE.equals(recordStatus)) {
-                        artifactComponent.handlerArtifactPromotion(nodeName, repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), artifactPath, PromotionStatusEnum.SUCCESS.getStatus());
-                    }
                 } catch (Exception ex) {
                     log.error(ExceptionUtils.getStackTrace(ex));
-                    if (Boolean.TRUE.equals(recordStatus)) {
-                        artifactComponent.handlerArtifactPromotion(nodeName, repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), artifactPath, PromotionStatusEnum.FAIL.getStatus());
-                    }
                 }
                 return;
             }
@@ -150,18 +144,9 @@ public class JFrogServiceImpl implements JFrogService {
                 if (Objects.nonNull(file)) {
                     syncMetadata(artifactory, repositoryName, repositoryPath);
                 }
-                if (Boolean.TRUE.equals(recordStatus)) {
-                    if (Objects.nonNull(file)) {
-                        artifactComponent.handlerArtifactPromotion(nodeName, repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), realArtifactPath, PromotionStatusEnum.SUCCESS.getStatus());
-                    } else {
-                        artifactComponent.handlerArtifactPromotion(nodeName, repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), realArtifactPath, PromotionStatusEnum.FAIL.getStatus());
-                    }
-                }
                 log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 目标路径：{} 上传结果：{}", repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), realArtifactPath, externalNodeForm.getNodeName(), externalNodeForm.getType(), repositoryName, realArtifactPath, Objects.nonNull(file));
             } catch (Exception ex) {
-                if (Boolean.TRUE.equals(recordStatus)) {
-                    artifactComponent.handlerArtifactPromotion(nodeName, repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), realArtifactPath, PromotionStatusEnum.FAIL.getStatus());
-                }
+
                 log.error("上传制品失败：{}", ExceptionUtils.getStackTrace(ex));
                 log.info("存储空间：{} 仓库：{} 制品：{} 目标节点：{} 目标节点类型：{} 目标仓库：{} 目标路径：{} 上传结果：{}", repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), realArtifactPath, externalNodeForm.getNodeName(), externalNodeForm.getType(), repositoryName, realArtifactPath, PromotionStatusEnum.FAIL.getStatus());
                 getExceptionCode(ex);

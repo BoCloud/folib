@@ -1,7 +1,7 @@
 package com.veadan.folib.scanner.service;
 
+import com.veadan.folib.scanner.task.OptimizedDynamicPriorityBlockingQueue;
 import com.veadan.folib.scanner.task.ScannerTask;
-import com.veadan.folib.ws.task.OptimizedDynamicPriorityBlockingQueue;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.stereotype.Service;

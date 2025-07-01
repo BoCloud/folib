@@ -6,7 +6,6 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.veadan.folib.dispatch.ClusterDispatchNodeDto;
 import com.veadan.folib.storage.StorageDto;
 import com.veadan.folib.storage.routing.MutableRoutingRules;
 import org.apache.commons.collections4.CollectionUtils;
@@ -60,11 +59,6 @@ public class MutableConfiguration
      */
     private Map<String, StorageDto> storages = new LinkedHashMap<>();
 
-    /**
-     * k: clusterDispatch enname
-     * v: clusterDispatchNode
-     */
-    private Map<String, ClusterDispatchNodeDto> clusterDispatchNode = new LinkedHashMap<>();
 
     /**
      * 安全策略配置
@@ -172,13 +166,6 @@ public class MutableConfiguration
         return storages;
     }
 
-    public Map<String, ClusterDispatchNodeDto> getClusterDispatchNode() {
-        return clusterDispatchNode;
-    }
-
-    public void setClusterDispatchNode(Map<String, ClusterDispatchNodeDto> clusterDispatchNode) {
-        this.clusterDispatchNode = clusterDispatchNode;
-    }
 
     public void setStorages(Map<String, StorageDto> storages) {
         this.storages = storages;
@@ -193,13 +180,6 @@ public class MutableConfiguration
         storages.put(key, storage);
     }
 
-    public void addClusterDispatchNode(ClusterDispatchNodeDto clusterDispatchNodeDto) {
-        String key = clusterDispatchNodeDto.getClusterEnName();
-        if (key == null || key.isEmpty()) {
-            throw new IllegalArgumentException("Null keys are not supported!");
-        }
-        clusterDispatchNode.put(key, clusterDispatchNodeDto);
-    }
 
     public Map<String, MutableMetadataConfiguration> getMetadataConfiguration() {
         return metadataConfiguration;
