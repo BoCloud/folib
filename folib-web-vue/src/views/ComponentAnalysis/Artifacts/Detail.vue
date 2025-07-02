@@ -93,11 +93,6 @@
           >
         </a-col>
       </a-row>
-      <div v-if="showBtn" class="export_excel_sty" :title="$t('Artifacts.exportPdf')" @click="exportPdf"> 
-        <a-spin :spinning="confirmLoading">
-          <img src="./export-pdf.svg" width="25" alt="pdf"/>
-        </a-spin>
-      </div>
     </a-card>
 
     <a-tabs class="tabs-sliding" default-active-key="1" @change="handleChangeTabs">
@@ -183,23 +178,23 @@ export default {
         }).then((canvas) => {
           // 获取内容的高度
           const contentHeight = canvas.height;
-  
+
           // 创建 jsPDF 实例
           const pdf = new jsPDF('p', 'mm', 'a4'); // A4 尺寸（210mm x 297mm）
           const pdfWidth = 210; // A4 宽度（单位：mm）
           const pdfHeight = (contentHeight * pdfWidth) / canvas.width; // 动态计算 PDF 高度
-  
+
           // 如果高度超过 A4 大小，按比例缩放
           if (pdfHeight > 297) {
             const scaleFactor = 297 / pdfHeight;
             pdfHeight = 297;
             canvas = this.scaleCanvas(canvas, scaleFactor);
           }
-  
+
           const imgData = canvas.toDataURL('image/png');
-          
+
           // 将图像添加到 PDF 中
-          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight); 
+          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
           pdf.save( `${this.$t('Artifacts.ProductScanDetail')}.pdf`); // 导出 PDF 文件
           // 显示按钮
           this.showBtn = true

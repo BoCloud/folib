@@ -13,29 +13,6 @@
             <a-input-search :placeholder="$t('Artifacts.ArtifactPathQuery')" class="v-search"
               v-model="queryParams.artifactName" @search="handheTableSearch()" />
           </a-col>
-          <a-col :span="1">
-            <a-popconfirm :disabled="confirmLoading" :ok-text="$t('Artifacts.OK')" :cancel-text="$t('Artifacts.CANCEL')" @confirm="getExportData">
-              <template #title>
-                  <span style="font-weight: 600;font-size:14px;">{{ $t('Artifacts.printExportCount') }}</span>
-                  <div style="padding-top: 10px;padding-bottom: 10px;">
-                    <a-input
-                      v-model:value="exportCount"
-                      :placeholder="$t('Artifacts.printExportCount')"
-                      style="width: 120px"
-                      :max="1000"
-                      :min="0"
-                      @input="handleInput"
-                      size="small"
-                    />
-                  </div>
-              </template>
-              <div class="export_excel_sty" :title="$t('Artifacts.exportExcel')"> 
-                <a-spin :spinning="confirmLoading">
-                  <img src="./export-excel.svg" width="20" alt="excel"/>
-                </a-spin>
-              </div>
-            </a-popconfirm>
-          </a-col>
         </a-row>
       </div>
       <a-table rowKey="uuid" class="mt-20" :columns="i18nColumns" :data-source="artifactsData"
