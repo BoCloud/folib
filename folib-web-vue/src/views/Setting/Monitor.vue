@@ -14,9 +14,6 @@
       <a-tab-pane key="4" :tab="$t('Setting.clusterInformation')" class="cluster">
              <cluster-info v-if="activeTab==='4'" />
       </a-tab-pane>
-      <a-tab-pane key="5" :tab="$t('Setting.auditLog')" class="cluster">
-          <audit-log></audit-log>
-      </a-tab-pane>
     </a-tabs>
   </div>
 </template>
@@ -25,7 +22,6 @@ import QueryData from './components/QueryData';
 import BaseData from './components/BaseData';
 import SystemLog from './components/SystemLog';
 import ClusterInfo from './components/ClusterInfo';
-import AuditLog from "./components/AuditLog.vue";
 
 export default {
   props: ['navbarFixed'],
@@ -39,8 +35,7 @@ export default {
     QueryData,
     BaseData,
     SystemLog,
-    ClusterInfo,
-    AuditLog,
+    ClusterInfo
   },
   created() {
 

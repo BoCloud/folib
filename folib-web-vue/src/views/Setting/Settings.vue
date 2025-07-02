@@ -48,15 +48,6 @@
                       </h4>
                     </div>
                   </a-anchor-link>
-                    <a-anchor-link href="#alarm">
-                        <div slot="title" class="ant-list-item-meta">
-<!--                            <a-icon type="setting" theme="filled" class="text-gray-6 text-lg"/>-->
-                            <a-icon type="alert"  theme="filled" class="text-gray-6 text-lg" />
-                            <h4 class="ant-list-item-meta-title">
-                                <span class="font-regular">{{ $t('Setting.AlarmConfiguration') }}</span>
-                            </h4>
-                        </div>
-                    </a-anchor-link>
                 </a-anchor>
               </a-card>
             </a-affix>
@@ -304,85 +295,6 @@
                 </ul>
               </a-form>
             </a-card>
-
-              <a-card :bordered="false" id="alarm" class="header-solid mb-24">
-                  <template #title>
-                      <h5 class="mb-0 font-semibold">{{ $t('Setting.AlarmConfiguration') }}</h5>
-                  </template>
-                  <a-form :hideRequiredMark="true">
-                      <a-row :gutter="[24]">
-                          <a-col :span="24" :lg="8">
-                              <a-form-item class="mb-10" :label="$t('Setting.TimingNotifying')" :colon="false">
-                                  <a-input v-model="serverSettings.alarmConfigurationForm.cronExpression"
-                                      :placeholder="$t('Setting.CronRules')">
-                                      <a-icon slot="suffix" type="clock-circle"/>
-                                  </a-input>
-                              </a-form-item>
-                          </a-col>
-                          <a-col :span="24" :lg="8">
-                              <a-form-item class="mb-10" :label="$t('Setting.StorageThreshold')" :colon="false">
-                                  <a-input-number style="width: 100%"
-                                                  :default-value="100"
-                                                  :min="0"
-                                                  :max="100"
-                                                  :formatter="value => `${value}%`"
-                                                  :parser="value => value.replace('%', '')"
-                                                  v-model="platformStorageThreshold"
-                                  />
-                              </a-form-item>
-                          </a-col>
-                      </a-row>
-                      <a-row :gutter="[24]">
-                          <a-col :span="24">
-                              <a-form-item class="mb-10" :label="$t('Setting.NotificationPolicy')"  :colon="false">
-                                  <a-checkbox-group v-model="serverSettings.alarmConfigurationForm.notificationPolicy" style="width: 100%">
-                                      <a-col  :lg="8">
-                                          <a-checkbox value="admin">
-                                              {{ $t('Setting.NotifyPlatformAdministrator') }}
-                                          </a-checkbox>
-                                      </a-col>
-                                      <a-col  :lg="8">
-                                          <a-checkbox value="storageAdmin">
-                                              {{ $t('Setting.NotifyStorageAdministrator') }}
-                                          </a-checkbox>
-                                      </a-col>
-                                  </a-checkbox-group>
-
-                              </a-form-item>
-                          </a-col>
-                      </a-row>
-
-                      <a-row :gutter="[24]">
-                         <a-col :span="24" :lg="8">
-                             <a-form-item class="mb-10" :label="$t('Setting.DesignatedUser')" :colon="false">
-                                 <a-select
-                                     mode="multiple"
-                                     show-search
-                                     style="width: 100%"
-                                     v-model="serverSettings.alarmConfigurationForm.recipients"
-                                     :placeholder="$t('Setting.selectUser')"
-                                 >
-                                     <a-select-option v-for="(user , index ) in userList" :key="user.username">
-                                         {{ user.username }}
-                                     </a-select-option>
-                                 </a-select>
-                             </a-form-item>
-                         </a-col>
-                          <a-col :span="24" :lg="8">
-                              <a-form-item class="mb-10" :label="$t('Setting.SpecifyEmailAddress')" :colon="false">
-                                  <a-select
-                                      mode="tags"
-                                      style="width: 100%"
-                                      :placeholder="$t('Setting.EnterEmail')"
-                                      v-model="serverSettings.alarmConfigurationForm.emails"
-                                  >
-                                  </a-select>
-                              </a-form-item>
-                          </a-col>
-                      </a-row>
-                  </a-form>
-              </a-card>
-
             <a-card :bordered="false" id="delete-account" class="header-solid mb-24">
               <a-form id="components-form-demo-normal-login" class="login-form list-settings-sessions"
                 :hideRequiredMark="true">
@@ -570,128 +482,8 @@
           </a-table>
         </a-card>
       </a-tab-pane>
-      <a-tab-pane key="6"
-                  :tab="$t('Setting.NodeDistributeConfig')">
-        <a-tabs class="tabs-sliding"
-            default-active-key="1"
-            @change="tabChange($event)">
-            <a-tab-pane key="1"
-              :tab="$t('Setting.InternalNodes')">
-              <a-card class="header-solid block">
-                <div class="mx-25 mb-50">
-                  <a-col :span="24"
-                        class="text-right">
-                    <a-tooltip @click="artifactDispatchHandler(1)">
-                      <template slot="title">{{ $t('Setting.Add') }}</template>
-                      <a-icon type="plus-circle"
-                              theme="filled"
-                              class="cursor-pointer"
-                              :style="{ fontSize: '28px', color: '#1890FF' }" />
-                    </a-tooltip>
-                  </a-col>
-                </div>
-                <a-table :columns="i18nArtifactDispatchColumns"
-                        :scroll="{ x: true }"
-                        :data-source="artifactDispatchList"
-                        :row-key="(r, i) => i.toString()">
-                  <div slot="isThisCluster"
-                      slot-scope="text, record">
-                    {{ record.isThisCluster === true ? $t('Setting.Yes') : $t('Setting.No') }}
-                  </div>
-                  <div slot="isSyncPrivilege"
-                       slot-scope="text, record">
-                    {{ record.isSyncPrivilege === true ? $t('Setting.Yes') : $t('Setting.No') }}
-                  </div>
-                  <div slot="wsClientOnline"
-                      slot-scope="text, record">
-                    <span v-if="record.wsClientOnline && record.wsClientOnline === true" class="text-success">{{ $t('Setting.Online') }}</span>
-                    <span v-else class="text-danger">{{ $t('Setting.Offline') }}</span>
-<!--                    {{ record.online && record.online === true ? $t('Setting.Online') : $t('Setting.Offline') }}-->
-                  </div>
-                  <div slot="autoRegister"
-                      slot-scope="text, record">
-                    {{ record.autoRegister && record.autoRegister === true ? $t('Setting.Auto') : $t('Setting.Manual') }}
-                  </div>
-                  <div slot="kbps"
-                      slot-scope="text, record">
-                    {{ record.kbps && record.kbps > 0 ? record.kbps+' KB/s' : $t('Setting.NoSpeedLimit') }}
-                  </div>
-                  <template slot="syncStrategy" slot-scope="syncStrategy, record">
-                    <span v-if="record.isSyncPrivilege && syncStrategy === 'sourceToTarget'"> {{ $t('StorageMonitoring.SourceToTarget') }}</span>
-                    <span v-else-if="record.isSyncPrivilege && syncStrategy === 'targetToSource'">{{ $t('StorageMonitoring.TargetToSource') }}</span>
-                    <span v-else-if="record.isSyncPrivilege && syncStrategy === 'twoWaySync'">{{ $t('StorageMonitoring.TwoWaySync') }}</span>
-                    <span v-else>N/A</span>
-                  </template>
-                  <div slot="operation"
-                      slot-scope="text, record">
-<!--                    <div class="col-action" v-if="!record.autoRegister">-->
-                    <div class="col-action">
-                      <a-popconfirm :title="$t('Setting.SureDelete')"
-                                    okType="danger"
-                                    :ok-text="$t('Setting.BeSure')"
-                                    :cancel-text="$t('Setting.Cancel')"
-                                    @confirm="artifactDispatchHandlerDelete(record)">
-                        <a-button type="link"
-                                  size="small">
-                          <svg width="16"
-                              height="16"
-                              viewBox="0 0 20 20"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg">
-                            <path class="fill-danger"
-                                  fill-rule="evenodd"
-                                  clip-rule="evenodd"
-                                  d="M9 2C8.62123 2 8.27497 2.214 8.10557 2.55279L7.38197 4H4C3.44772 4 3 4.44772 3 5C3 5.55228 3.44772 6 4 6L4 16C4 17.1046 4.89543 18 6 18H14C15.1046 18 16 17.1046 16 16V6C16.5523 6 17 5.55228 17 5C17 4.44772 16.5523 4 16 4H12.618L11.8944 2.55279C11.725 2.214 11.3788 2 11 2H9ZM7 8C7 7.44772 7.44772 7 8 7C8.55228 7 9 7.44772 9 8V14C9 14.5523 8.55228 15 8 15C7.44772 15 7 14.5523 7 14V8ZM12 7C11.4477 7 11 7.44772 11 8V14C11 14.5523 11.4477 15 12 15C12.5523 15 13 14.5523 13 14V8C13 7.44772 12.5523 7 12 7Z"
-                                  fill="#111827" />
-                          </svg>
-                          <span class="text-danger">DELETE</span>
-                        </a-button>
-                      </a-popconfirm>
-                      <a-button type="link"
-                                v-if="!record.autoRegister"
-                                size="small"
-                                @click="artifactDispatchHandler(2, record)">
-                        <svg width="16"
-                            height="16"
-                            viewBox="0 0 20 20"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg">
-                          <path class="fill-muted"
-                                d="M13.5858 3.58579C14.3668 2.80474 15.6332 2.80474 16.4142 3.58579C17.1953 4.36683 17.1953 5.63316 16.4142 6.41421L15.6213 7.20711L12.7929 4.37868L13.5858 3.58579Z"
-                                fill="#111827" />
-                          <path class="fill-muted"
-                                d="M11.3787 5.79289L3 14.1716V17H5.82842L14.2071 8.62132L11.3787 5.79289Z"
-                                fill="#111827" />
-                        </svg>
-                        <span class="text-dark">EDIT</span>
-                      </a-button>
-                    </div>
-                  </div>
-                </a-table>
-              </a-card>
-            </a-tab-pane>
-            <a-tab-pane key="2"
-              :tab="$t('Setting.ExternalNodes')">
-              <ExternalNode/>
-            </a-tab-pane>
-        </a-tabs>
-      </a-tab-pane>
-
-      <a-tab-pane key="10"
-                    :tab="$t('Setting.FederalPromotionPolicy')">
-          <FederalPromotionPolicy></FederalPromotionPolicy>
-      </a-tab-pane>
-      <a-tab-pane key="11" :tab="$t('Setting.CustomLayout')">
-        <CustomLayout/>
-      </a-tab-pane>
       <a-tab-pane key="7" tab="Webhook">
         <Webhook :activeKey="activeKey"></Webhook>
-      </a-tab-pane>
-      <a-tab-pane key="9" :tab="$t('Setting.auditConfig')">
-        <audit-config></audit-config>
-      </a-tab-pane>
-      <a-tab-pane key="12" :tab="$t('Setting.TimingStrategy')">
-        <TimingStrategy></TimingStrategy>
       </a-tab-pane>
 
     </a-tabs>
@@ -1020,10 +812,6 @@ import ExternalNode from './components/ExternalNode/index.vue'
 import { upperCase } from "@antv/util";
 import PackageName from "./components/Package/index.vue"
 import AddPackageName from "./components/Package/add.vue"
-import AuditConfig from "./components/AuditConfig.vue";
-import FederalPromotionPolicy from './components/FederalPromotionPolicy/index.vue'
-import CustomLayout from './components/CustomLayout/index.vue'
-import TimingStrategy from "./components/TimingStrategy/index.vue";
 
 export default {
   props: ['navbarFixed'],
@@ -1031,11 +819,7 @@ export default {
     Webhook,
     ExternalNode,
     PackageName,
-    AddPackageName,
-    AuditConfig,
-    FederalPromotionPolicy,
-    CustomLayout,
-    TimingStrategy,
+    AddPackageName
   },
   data() {
     const checkClusterEnName = (rule, value, callback) => {
