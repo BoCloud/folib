@@ -93,7 +93,7 @@
                             " />
                         </a>
                       </a-descriptions-item>
-                      
+
                     </a-descriptions>
                   </div>
                 </a-col>
@@ -170,9 +170,6 @@
                             </a-menu-item>
                             <a-menu-item key="2" v-if="isShowDelete && isChecked && !isTrashView" class="overlay-item">
                                 <a-icon type="delete" />{{ $t('Store.Delete') }}
-                            </a-menu-item>
-                            <a-menu-item key="3" v-if="eventSettingEnabled" class="overlay-item">
-                                <a-icon type="file-done" />{{ $t('Repository.EventRecord') }}
                             </a-menu-item>
                             <a-menu-item key="4" v-if="settingsEnabled" class="overlay-item">
                                 <a-icon type="setting" />{{ $t('Store.Setting') }}
@@ -941,114 +938,6 @@
               </a-row>
           </a-form>
       </a-modal>
-    <!--分发 -->
-    <a-modal v-model="showOperationDispatchFormModal" width="50%" :footer="null" :forceRender="true" :centered="true"
-      :title="operationTitle">
-      <a-form :form="operationForm" ref="operationForm" layout="vertical" @submit.prevent="handleOperationSubmit">
-        <a-row :gutter="[24]">
-          <a-col :span="24">
-            <a-form-item class="tags-field mb-10" :label="$t('Store.NodeType')" :colon="true"
-              v-if="this.enableUnionRepository.includes(this.folibRepository.layout)">
-              <a-radio-group v-decorator="[
-                'type',
-                {
-                  rules: [{ required: true, message: $t('Store.NodeTypeSelect') }],
-                },
-              ]" @change="typeChange">
-                <a-radio :value="1">
-                  <span>{{ $t('Store.InternalNode') }}</span>
-                  <a-popover placement="topLeft">
-                    <template slot="content">
-                      <p class="mb-0">{{ instanceName + $t('Store.ProductWarehouseNode') }}</p>
-                    </template>
-                    <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
-                  </a-popover>
-                </a-radio>
-                <a-radio :value="2">
-                  <span>{{ $t('Store.ExternalNode') }}</span>
-                  <a-popover placement="topLeft">
-                    <template slot="content">
-                      <p class="mb-0">{{ $t('Store.OtherTypeNode') }}</p>
-                    </template>
-                    <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
-                  </a-popover>
-                </a-radio>
-              </a-radio-group>
-            </a-form-item>
-            <a-form-item class="tags-field mb-10" :label="$t('Store.TargetWarehouse')" :colon="false"
-              ref="targetRepositories" prop="targetRepositories">
-              <div class="selectdrop">
-                <a-tree-select v-decorator="[
-                  'targetRepositories',
-                  {
-                    initialValue: [],
-                    rules: [
-                      {
-                        required: true,
-                        message: $t('Store.SelectTargetWarehouse'),
-                        type: 'array',
-                      },
-                    ],
-                  },
-                ]" style="width: 100%" treeCheckable :maxTagCount="6"
-                  :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }" :tree-data="repositories"
-                  :placeholder="$t('Store.SelectTargetWarehouse')" allow-clear show-search
-                  :replaceFields="{ children: 'children', title: 'key', key: 'key', value: 'key' }"
-                  v-if="artifactoryType === 1">
-                </a-tree-select>
-                <gb-ant-select-two-cascader allowClear style="width:100%;"
-                  :placeholder="$t('Store.SelectTargetWarehouse')" v-decorator="[
-                    'targetRepositories',
-                    {
-                      initialValue: [],
-                      rules: [
-                        {
-                          required: true,
-                          message: $t('Store.SelectTargetWarehouse'),
-                          type: 'array',
-                        },
-                      ],
-                    },
-                  ]" :selectOptionsConfig="{
-                      key: 'key',
-                      value: 'key',
-                      text: 'key',
-                      children: 'children'
-                    }" :allText="$t('Store.selectAll')" :noDataText="$t('Store.NoData')" dropdownClassName="customer-multiple-cascader"
-                  :treeData="externalNodeRepositories" v-if="artifactoryType === 2" />
-              </div>
-            </a-form-item>
-            <a-form-item class="tags-field mb-10" v-if="!custom" :label="$t('Store.TargetDirectory')" prop="path"
-              :colon="false">
-              <a-input v-decorator="[
-                'path',
-                {
-                  rules: [{ required: true, message: $t('Store.TargetDirectory') }],
-                },
-              ]" :disabled="true" :placeholder="$t('Store.InputTargetDirectory')">
-              </a-input>
-            </a-form-item>
-            <a-form-item class="tags-field mb-10" v-if="custom" :label="$t('Store.TargetDirectory')" prop="path"
-              :colon="false">
-              <a-input v-decorator="[
-                'path',
-                {
-                  rules: [{ required: true, message: $t('Store.InputTargetDirectory') }],
-                },
-              ]" :disabled="false" :placeholder="$t('Store.InputTargetDirectory')">
-              </a-input>
-            </a-form-item>
-          </a-col>
-          <a-col :span="24" class="text-center">
-            <a-button key="submit" class="px-30" size="small" type="primary" htmlType="submit">{{ $t('Store.Submit')
-              }}</a-button>
-            <a-button key="back" @click="operationFormModalClose()" class="px-30 ml-10" size="small">{{
-              $t('Store.Cancel')
-            }}</a-button>
-          </a-col>
-        </a-row>
-      </a-form>
-    </a-modal>
 
     <a-modal :title="$t('Store.Prompts')" :visible="downLoadVisible" :okText="$t('Store.Confirm')"
       :cancelText="$t('Store.Cancel')" centered @ok="handleDownLoadDir"
@@ -1087,10 +976,6 @@
           <a-icon type="delete" />
           {{ $t('Store.Delete') }}
           <!-- </a-popconfirm> -->
-        </a-menu-item>
-        <a-menu-item key="5" v-if="dispatchEnabled && !isTrashView">
-          <a-icon type="retweet" />
-          {{ $t('Store.Distribute') }}
         </a-menu-item>
 
         <a-menu-item key="6"
@@ -1368,7 +1253,6 @@ export default {
       },
       operationTitle: '',
       showOperationFormModal: false,
-      showOperationDispatchFormModal: false,
       repositories: [],
       custom: false,
       enablUploadedLayout: ['Raw', 'php', 'Maven 2', 'npm', 'rpm', 'go','GitLfs', 'pub','debian','cargo', 'Docker'],
@@ -1384,11 +1268,6 @@ export default {
         size: 4,
         unit: 'GB',
       },
-      enableUnionRepository: [
-        "Raw",
-        "Maven 2",
-        "Docker"
-      ],
       sliceUploadData: {
           file: null,
           chunkSize: 5 * 1024 * 1024, // 分片大小 5MB
@@ -2457,17 +2336,6 @@ export default {
       } else if (active.key === '4') {
         //删除
         // console.log("删除")
-      } else if (active.key === '5') {
-        this.showOperationDispatchFormModal = true
-        this.getArtifactDispatchStoragesAndRepositories(
-          folibRepository.type,
-          folibRepository.layout,
-          folibRepository.policy
-        )
-        this.getExternalNodeRepositories({ type: folibRepository.layout })
-        this.operationTitle = this.$t('Store.Distribute')
-        this.customTitle = this.$t('Store.DistributeCustomDirectory')
-        // 下载
       } else if (active.key === '6') {
         let url = this.currentTreeNode.url
         if (url) {
@@ -2678,7 +2546,6 @@ export default {
     },
     operationFormModalClose() {
       this.showOperationFormModal = false
-      this.showOperationDispatchFormModal = false
     },
     getArtifactDispatchStoragesAndRepositories(
       type,
