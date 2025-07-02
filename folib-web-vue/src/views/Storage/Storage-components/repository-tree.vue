@@ -53,71 +53,71 @@
                 </vue-easy-tree>
             </div>
         </a-spin>
-        <div class="line" :class="isDragging ? 'line-drag' : ''" @mousedown="startDragging"></div>
-        <a-spin :spinning="loadingMore">
-            <div ref="tree_container" class="tree_container recycle" :style="{ height: bottomHeight + 'px' }"
-                @scroll="handleScroll">
-                <vue-easy-tree
-                    :key="recycleKey" 
-                    class="repositoryTree" 
-                    ref="recycleTree"
-                    node-key="key"
-                    :props="props"
-                    icon-class="el-icon-arrow-right"
-                    lazy
-                    :height="`${bottomHeight}px`"
-                    :load="(treeNode,resolve) => onLoadData(treeNode, resolve, true)"
-                    :data="recycleTreeData"
-                    :show-line="true"
-                    @node-click="(data)=>treeSelect(data,true)"
-                    @node-expand="(data,node) => onExpand(data,node, true)"
-                    @node-collapse="(data,node) => onCollapse(data,node, true)"
-                    @node-contextmenu="(event, data) => rightClick(event, data,'recycleTree')"
-                    :expandedKeys="expandedRecycleKeys"
-                    show-icon
-                    :selectedKeys="selectRecycleKeys"
-                >
-                    <template slot-scope="{data,node}">
-                        <div class="title_box">
-                        <span>
-                            <a-icon v-if="node.loading && !node.expanded" type="loading" :style="{color: '#1890ff'}"/>
-                            <img v-if="data.fileType === 'document'" :src="getSrc(data.selected, data.type)" alt="document" width="24">
-                            <span v-if="data.fileType === 'document'" class="tree_title">
-                                {{ data.id }}
-                            </span>
-                            <span v-else>
-                                <a-icon class="tree_icon" style="margin-left: 5px;"
-                                        v-if="data.type === 'dir' || data.type === 'DIR'"
-                                        :type="node.expanded ? 'folder-open' : 'folder'" />
-                                <a-icon class="tree_icon" style="margin-left: 10px;" v-else :style="data.type === 'recycle'? 'color:#393b3e':''"
-                                        :type="getIconType(data.name, data.type)"></a-icon>
-                                <span class="tree_title" :style="data.type === 'recycle'? 'color:#393b3e':''">
-                                    {{ data.name }}
-                                </span>
-                            </span>
-                        </span>
-                        </div>
-                    </template>
-                </vue-easy-tree>
-            </div>
-        </a-spin>
-        <rightMenu 
-            ref="rightMenu" 
-            v-show="showContextMenu" 
-            :style="contextMenuStyle" 
+<!--        <div class="line" :class="isDragging ? 'line-drag' : ''" @mousedown="startDragging"></div>-->
+<!--        <a-spin :spinning="loadingMore">-->
+<!--            <div ref="tree_container" class="tree_container recycle" :style="{ height: bottomHeight + 'px' }"-->
+<!--                @scroll="handleScroll">-->
+<!--                <vue-easy-tree-->
+<!--                    :key="recycleKey"-->
+<!--                    class="repositoryTree"-->
+<!--                    ref="recycleTree"-->
+<!--                    node-key="key"-->
+<!--                    :props="props"-->
+<!--                    icon-class="el-icon-arrow-right"-->
+<!--                    lazy-->
+<!--                    :height="`${bottomHeight}px`"-->
+<!--                    :load="(treeNode,resolve) => onLoadData(treeNode, resolve, true)"-->
+<!--                    :data="recycleTreeData"-->
+<!--                    :show-line="true"-->
+<!--                    @node-click="(data)=>treeSelect(data,true)"-->
+<!--                    @node-expand="(data,node) => onExpand(data,node, true)"-->
+<!--                    @node-collapse="(data,node) => onCollapse(data,node, true)"-->
+<!--                    @node-contextmenu="(event, data) => rightClick(event, data,'recycleTree')"-->
+<!--                    :expandedKeys="expandedRecycleKeys"-->
+<!--                    show-icon-->
+<!--                    :selectedKeys="selectRecycleKeys"-->
+<!--                >-->
+<!--                    <template slot-scope="{data,node}">-->
+<!--                        <div class="title_box">-->
+<!--                        <span>-->
+<!--                            <a-icon v-if="node.loading && !node.expanded" type="loading" :style="{color: '#1890ff'}"/>-->
+<!--                            <img v-if="data.fileType === 'document'" :src="getSrc(data.selected, data.type)" alt="document" width="24">-->
+<!--                            <span v-if="data.fileType === 'document'" class="tree_title">-->
+<!--                                {{ data.id }}-->
+<!--                            </span>-->
+<!--                            <span v-else>-->
+<!--                                <a-icon class="tree_icon" style="margin-left: 5px;"-->
+<!--                                        v-if="data.type === 'dir' || data.type === 'DIR'"-->
+<!--                                        :type="node.expanded ? 'folder-open' : 'folder'" />-->
+<!--                                <a-icon class="tree_icon" style="margin-left: 10px;" v-else :style="data.type === 'recycle'? 'color:#393b3e':''"-->
+<!--                                        :type="getIconType(data.name, data.type)"></a-icon>-->
+<!--                                <span class="tree_title" :style="data.type === 'recycle'? 'color:#393b3e':''">-->
+<!--                                    {{ data.name }}-->
+<!--                                </span>-->
+<!--                            </span>-->
+<!--                        </span>-->
+<!--                        </div>-->
+<!--                    </template>-->
+<!--                </vue-easy-tree>-->
+<!--            </div>-->
+<!--        </a-spin>-->
+        <rightMenu
+            ref="rightMenu"
+            v-show="showContextMenu"
+            :style="contextMenuStyle"
             :folibRepository="folibRepository"
-            :repositoryType="repositoryType" 
-            :currentFileDetial="currentFileDetial" 
+            :repositoryType="repositoryType"
+            :currentFileDetial="currentFileDetial"
             :uploadEnabled="uploadEnabled"
-            :copyEnabled='copyEnabled' 
-            :dispatchEnabled="dispatchEnabled" 
+            :copyEnabled='copyEnabled'
+            :dispatchEnabled="dispatchEnabled"
             :moveEnabled="moveEnabled"
             :showContextMenu="showContextMenu"
             :currentTreeNode="isTrashView ? currentTreeNodeRecycle : currentTreeNode"
-            :isTrashView="isTrashView" 
-            @reload="reload" 
+            :isTrashView="isTrashView"
+            @reload="reload"
             @localDelNode="localDelNode"
-            @handleMenuClick="handleMenuClick" 
+            @handleMenuClick="handleMenuClick"
         />
     </div>
 </template>

@@ -43,7 +43,7 @@
                 </template>
             </vue-easy-tree>
         </div>
-        <div class="line-box" :class="isDragging ? 'line-drag' : ''" @mousedown="startDragging"></div>
+<!--        <div class="line-box" :class="isDragging ? 'line-drag' : ''" @mousedown="startDragging"></div>
         <div ref="tree_container_sty" class="tree_container_sty recycle" :style="{ height: bottomHeight + 'px' }">
             <vue-easy-tree
                 :props="{
@@ -80,7 +80,7 @@
                     </div>
                 </template>
             </vue-easy-tree>
-        </div>
+        </div>-->
     </div>
 </template>
 
