@@ -10,7 +10,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.archive.JarArchiveListingFunction;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
-import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.config.NpmLayoutProviderConfig;
@@ -262,28 +261,7 @@ public class ArtifactComponent {
      * @throws IOException io异常
      */
     public String readRepositoryPathContent(RepositoryPath repositoryPath) throws IOException {
-        String artifactContent = "";
-        if (repositoryPath.getTarget() instanceof S3Path) {
-            String parentPath = "";
-            try (InputStream inputStream = Files.newInputStream(repositoryPath)) {
-                S3Path s3Path = (S3Path) repositoryPath.getTarget();
-                parentPath = tempPath + File.separator + UUID.randomUUID();
-                String filePath = parentPath + File.separator + s3Path.getFileName();
-                File tempFile = new File(filePath);
-                FileUtil.writeFromStream(inputStream, tempFile);
-                artifactContent = FileUtil.readString(tempFile, StandardCharsets.UTF_8);
-            } catch (IOException ex) {
-                throw new IOException(ex);
-            } finally {
-                //删除临时文件
-                if (StringUtils.isNotBlank(parentPath)) {
-                    FileUtil.del(new File(parentPath));
-                }
-            }
-        } else {
-            artifactContent = FileUtil.readString(repositoryPath.toAbsolutePath().toString(), StandardCharsets.UTF_8);
-        }
-        return artifactContent;
+        return FileUtil.readString(repositoryPath.toAbsolutePath().toString(), StandardCharsets.UTF_8);
     }
 
     /**

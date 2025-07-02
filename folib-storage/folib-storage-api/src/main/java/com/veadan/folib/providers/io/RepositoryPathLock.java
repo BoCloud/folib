@@ -2,9 +2,9 @@ package com.veadan.folib.providers.io;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
-import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.enums.ProductTypeEnum;
+import com.veadan.folib.util.UriUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -14,6 +14,7 @@ import org.springframework.util.Assert;
 
 import javax.annotation.Nonnull;
 import jakarta.inject.Inject;
+
 import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.TimeUnit;

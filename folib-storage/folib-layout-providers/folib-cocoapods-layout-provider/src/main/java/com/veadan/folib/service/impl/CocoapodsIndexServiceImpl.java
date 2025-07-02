@@ -6,7 +6,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
-import com.veadan.folib.providers.storage.S3FileSystemStorageProvider;
 import com.veadan.folib.service.CocoapodsIndexService;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ArtifactResolutionService;
@@ -30,7 +29,6 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 

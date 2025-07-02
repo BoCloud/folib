@@ -1,13 +1,7 @@
 package com.veadan.folib.controllers;
 
-import cn.hutool.extra.spring.SpringUtil;
+
 import com.veadan.folib.artifact.ArtifactNotFoundException;
-import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
-import com.veadan.folib.cloud.storage.s3fs.S3FileSystemProvider;
-import com.veadan.folib.cloud.storage.s3fs.S3Path;
-import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
-import com.veadan.folib.components.ArtifactSecurityComponent;
-import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.block.ArtifactBlockComponent;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
@@ -27,6 +21,7 @@ import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import com.veadan.folib.users.domain.Privileges;
 import com.veadan.folib.util.CacheUtil;
+import com.veadan.folib.util.UriUtils;
 import com.veadan.folib.utils.ArtifactControllerHelper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -179,15 +174,9 @@ public abstract class BaseArtifactController
                     throw new ArtifactNotFoundException(path.toUri(),
                             String.format("The artifact path is a directory: [%s]", path.toString()));
                 }
-                StorageFileSystemProvider storageFileSystemProvider = (StorageFileSystemProvider) path.getFileSystem().provider();
-                S3FileSystemProvider s3FileSystemProvider =  (S3FileSystemProvider) storageFileSystemProvider.getTarget();
-                Path s3Path = unwrap(path);
-                try (InputStream s3FileSystem = s3FileSystemProvider.newInputStream(s3Path);) {
-                    copyToResponse(s3FileSystem, response);
+                try (InputStream is = artifactResolutionService.getInputStream((RepositoryPath) path)) {
+                    copyToResponse(is, response);
                 }
-                //try (InputStream is = artifactResolutionService.getInputStream((RepositoryPath) path)) {
-                //    copyToResponse(is, response);
-                //}
             }
         } else {
             try (FileChannel fileChannel = FileChannel.open(path);
@@ -326,23 +315,6 @@ public abstract class BaseArtifactController
             return null;
         }
         String fileName = "." + FilenameUtils.getName(repositoryPath.getFileName().toString()) + ".metadata";
-        if (repositoryPath.getTarget() instanceof S3Path) {
-            CacheUtil<String, String> cacheUtil = CacheUtil.getInstance();
-            String cacheRootPathDir = cacheUtil.get("ARTIFACT_CACHE_ROOT_PATH");
-            if (StringUtils.isNotBlank(cacheRootPathDir)) {
-                Path cacheRootPath = Path.of(cacheRootPathDir);
-                String sourcePath = repositoryPath.toString();
-                String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId();
-                String prefix = String.format("/%s/%s/", storageId, repositoryId);
-                String targetSubPath = sourcePath.substring(sourcePath.indexOf(prefix) + 1);
-                Path cacheArtifactPath = cacheRootPath.resolve(targetSubPath);
-                Path cacheArtifactMetadataPath = cacheArtifactPath.getParent().resolve(fileName);
-                if (Files.exists(cacheArtifactMetadataPath)) {
-                    //获取metadata缓存文件
-                    artifact = parseArtifact(cacheArtifactMetadataPath);
-                }
-            }
-        }
         if (Objects.isNull(artifact)) {
             RepositoryPath artifactMetadataRepositoryPath = repositoryPath.getParent().resolve(fileName);
             if (Files.exists(artifactMetadataRepositoryPath)) {

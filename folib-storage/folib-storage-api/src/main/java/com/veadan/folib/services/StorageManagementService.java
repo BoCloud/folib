@@ -29,5 +29,8 @@ public interface StorageManagementService
     void syncYamlStorageUsers(Collection<Storage> values);
 
     void getStorageUsers(List<Storage> storages);
+
     Map<String, Set<String>> getStorageUser(Set<String> storageIds);
+
+    long getStorageCount();
 }

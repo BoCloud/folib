@@ -9,7 +9,6 @@ import com.github.pagehelper.PageHelper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.IdGenerateUtils;
 import com.veadan.folib.configuration.ConfigurationManager;
@@ -245,9 +244,6 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
                     long usedSpace = fileStore.getTotalSpace() - fileStore.getUsableSpace();
                     storageDevice = StorageDevice.builder().name(fileStore.name()).totalSpace(fileStore.getTotalSpace()).usableSpace(fileStore.getUsableSpace()).usedSpace(usedSpace).build();
                     storageDevice.setType(StorageDeviceTypeEnum.NAS.getType());
-                    if (rootRepositoryPath.getTarget() instanceof S3Path) {
-                        storageDevice.setType(StorageDeviceTypeEnum.S3.getType());
-                    }
                     if (!storageDeviceMap.containsKey(storageId)) {
                         storageDeviceMap.put(storageId, storageDevice);
                     }

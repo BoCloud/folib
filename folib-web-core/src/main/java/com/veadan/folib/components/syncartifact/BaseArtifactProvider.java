@@ -2,7 +2,6 @@ package com.veadan.folib.components.syncartifact;
 
 import cn.hutool.core.io.FileUtil;
 import com.google.common.collect.Lists;
-import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
 import com.veadan.folib.components.jfrogArtifactSync.JfrogPropertySyncer;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.migrate.SyncArtifactForm;
@@ -11,6 +10,7 @@ import com.veadan.folib.enums.MigrateStatusEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.services.MigrateInfoService;
 import com.veadan.folib.storage.repository.Repository;
+import com.veadan.folib.util.UriUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;

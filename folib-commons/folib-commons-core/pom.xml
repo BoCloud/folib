@@ -251,12 +251,6 @@
             <artifactId>spring-boot</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.veadan.folib</groupId>
-            <artifactId>folib-s3fs-nio</artifactId>
-            <version>2.0-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk15on</artifactId>
             <version>1.70</version>
@@ -266,11 +260,6 @@
             <artifactId>hutool-all</artifactId>
             <version>5.8.26</version>
         </dependency>
-        <!--        <dependency>-->
-        <!--            <groupId>org.redisson</groupId>-->
-        <!--            <artifactId>redisson</artifactId>-->
-        <!--            <version>3.22.0</version>-->
-        <!--        </dependency>-->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
@@ -293,6 +282,11 @@
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
             <version>1.15.3</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>1.16.1</version>
         </dependency>
     </dependencies>
 

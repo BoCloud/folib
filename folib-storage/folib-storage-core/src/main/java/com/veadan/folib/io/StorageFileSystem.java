@@ -14,8 +14,6 @@ import java.util.Set;
 
 import cn.hutool.extra.spring.SpringUtil;
 import com.veadan.folib.booters.PropertiesBooter;
-import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
-import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.providers.storage.StorageProvider;
 import com.veadan.folib.services.ConfigurationManagementService;
@@ -86,15 +84,6 @@ public abstract class StorageFileSystem
 
     public Path getRootDirectory() {
         String basedir = storage.getBasedir();
-        if (target instanceof S3FileSystem) {
-            ConfigurationManagementService configurationManagementService = SpringUtil.getBean(ConfigurationManagementService.class);
-            String globalS3Bucket = configurationManagementService.getConfiguration().getAdvancedConfiguration().getGlobalS3Bucket();
-            if (StringUtils.isNotBlank(globalS3Bucket)) {
-                globalS3Bucket = GlobalConstants.SEPARATOR + StringUtils.removeEnd(StringUtils.removeStart(globalS3Bucket, GlobalConstants.SEPARATOR), GlobalConstants.SEPARATOR);
-                basedir = globalS3Bucket + basedir;
-            }
-            return new S3Path((S3FileSystem) target, basedir);
-        }
 
         Path storagesRoot = Optional.ofNullable(propertiesBooter.getStorageBooterBasedir())
                                     .filter(p -> !p.trim().isEmpty())

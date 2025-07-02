@@ -2,9 +2,6 @@ package com.veadan.folib.util;
 
 import cn.hutool.extra.spring.SpringUtil;
 import com.google.common.collect.Lists;
-import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
-import com.veadan.folib.cloud.storage.s3fs.S3Path;
-import com.veadan.folib.cloud.storage.s3fs.attribute.S3BasicFileAttributes;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.providers.io.LayoutFileSystem;
@@ -35,51 +32,6 @@ public class RepositoryPathUtil {
     public final static List<String> EXCLUDE_LIST = Lists.newArrayList("blobs", "manifest", ".temp");
 
     public final static String DS_STORE = ".DS_Store";
-
-    public static List<S3Path> getS3FiePaths(S3Path s3Path) throws Exception {
-        List<S3Path> listFile = new ArrayList<S3Path>();
-        List<S3Path> listDir = new ArrayList<S3Path>();
-        if (Files.exists(s3Path) && !Files.isDirectory(s3Path)) {
-            if (!exclude(s3Path.getFileName().toString())) {
-                log.info("S3 file {}", s3Path.getFileName().toString());
-                listFile.add(s3Path);
-            }
-        }
-        S3Iterator s3Iterator = new S3Iterator(s3Path);
-        while (s3Iterator.hasNext()) {
-            S3Path s3PathTemp = s3Iterator.next();
-            if (s3PathTemp.getFileAttributes(S3BasicFileAttributes.class) == null || s3PathTemp.getFileAttributes(S3BasicFileAttributes.class).isDirectory()) {
-                if (!exclude(s3PathTemp.getFileName().toString())) {
-                    listDir.add(s3PathTemp);
-                }
-            } else {
-                if (!exclude(s3PathTemp.getFileName().toString())) {
-                    log.info("S3 file {}", s3PathTemp);
-                    listFile.add(s3PathTemp);
-                }
-            }
-        }
-        while (!listDir.isEmpty()) {
-            S3Path currentPath = listDir.get(0);
-            listDir.remove(currentPath);
-            s3Iterator = new S3Iterator(currentPath);
-            while (s3Iterator.hasNext()) {
-                S3Path s3PathTemp = s3Iterator.next();
-                if (s3PathTemp.getFileAttributesCache() == null || s3PathTemp.getFileAttributes(S3BasicFileAttributes.class).isDirectory()) {
-                    if (!exclude(s3PathTemp.getFileName().toString())) {
-                        listDir.add(s3PathTemp);
-                    }
-                } else {
-                    if (!exclude(s3PathTemp.getFileName().toString())) {
-                        log.info("S3 file {}", s3PathTemp);
-                        listFile.add(s3PathTemp);
-                    }
-                }
-            }
-        }
-        log.info("s3Path [{}]  文件数量：{}", s3Path.toUri().toString(), listFile.size());
-        return listFile;
-    }
 
     /**
      * 获取绝对路径下的所有文件

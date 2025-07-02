@@ -234,6 +234,14 @@ public class StorageManagementServiceImpl implements StorageManagementService {
         });
     }
 
+    @Override
+    public long getStorageCount() {
+        if(configurationManagementService.getConfiguration() !=null && !configurationManagementService.getConfiguration().getStorages().isEmpty()){
+            return configurationManagementService.getConfiguration().getStorages().size();
+        }
+        return 0;
+    }
+
     private Map<String, List<PermissionsDTO>> getRepositoryResolves(List<Storage> storages) {
         List<String> repResourceIds = new ArrayList<>();
         storages.forEach(storage -> {

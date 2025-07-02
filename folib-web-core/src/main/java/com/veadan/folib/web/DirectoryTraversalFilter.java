@@ -1,6 +1,7 @@
 package com.veadan.folib.web;
 
-import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
+
+import com.veadan.folib.util.UriUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import org.springframework.web.filter.OncePerRequestFilter;

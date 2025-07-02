@@ -219,6 +219,9 @@ public class StoragesConfigurationController
         if (bindingResult.hasErrors()) {
             throw new RequestBodyValidationException(FAILED_SAVE_STORAGE_FORM_ERROR, bindingResult);
         }
+        if(storageManagementService.getStorageCount()>3){
+            return getFailedResponseEntity(HttpStatus.BAD_REQUEST, "存储空间数量3已满，请删除存储空间后再添加", accept);
+        }
         try {
             com.veadan.folib.storage.StorageDto storage = conversionService.convert(storageForm, com.veadan.folib.storage.StorageDto.class);
             if (StringUtils.isBlank(storage.getAdmin())) {

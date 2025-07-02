@@ -2,8 +2,6 @@ package com.veadan.folib.storage.metadata;
 
 import cn.hutool.extra.spring.SpringUtil;
 import com.google.common.collect.Lists;
-import com.veadan.folib.cloud.storage.s3fs.S3FileSystem;
-import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.storage.metadata.maven.comparators.MetadataVersionComparator;
 import com.veadan.folib.storage.metadata.maven.comparators.SnapshotVersionComparator;
 import com.veadan.folib.storage.metadata.maven.io.filters.ArtifactVersionDirectoryFilter;
@@ -142,9 +140,6 @@ public class VersionCollector {
             Path path = Paths.get(versionDirectoryPath.toAbsolutePath().toString(),
                     artifactBasePath.getFileName().toString() + "-" +
                             versionDirectoryPath.getFileName() + ".pom");
-            if (artifactBasePath.toString().startsWith("s3://")) {
-                return new S3Path(SpringUtil.getBean(S3FileSystem.class), path.toString());
-            }
             return path;
         } else {
             // Attempt to get the latest available POM
@@ -162,12 +157,7 @@ public class VersionCollector {
 
             if (!filePaths.isEmpty()) {
                 Collections.sort(filePaths);
-                if (versionDirectoryPath.toString().startsWith("s3://")) {
-                    logger.info("filePaths [{}]", filePaths);
-                    return new S3Path(SpringUtil.getBean(S3FileSystem.class), filePaths.get(filePaths.size() - 1));
-                } else {
                     return Paths.get(filePaths.get(filePaths.size() - 1));
-                }
             } else {
                 return null;
             }

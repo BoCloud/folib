@@ -1,7 +1,7 @@
 package com.veadan.folib.artifact.coordinates;
 
-import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
-import lombok.extern.slf4j.Slf4j;
+
+import com.veadan.folib.util.UriUtils;
 
 import java.net.URI;
 

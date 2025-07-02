@@ -1,11 +1,6 @@
 package com.veadan.folib.providers.io;
 
-import com.google.common.collect.Lists;
-import com.veadan.folib.cloud.storage.s3fs.S3Path;
-import com.veadan.folib.constant.GlobalConstants;
-import com.veadan.folib.enums.ProductTypeEnum;
-import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.util.RepositoryPathUtil;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.output.ProxyOutputStream;
@@ -299,11 +294,9 @@ public abstract class StorageFileSystemProvider
         if (Files.exists(path.getTarget())) {
             Files.delete(path.getTarget());
         }
-        if (path.getTarget() instanceof S3Path) {
-            Files.move(tempPath.getTarget(), path.getTarget(), StandardCopyOption.REPLACE_EXISTING);
-        } else {
-            Files.move(tempPath.getTarget(), path.getTarget(), StandardCopyOption.ATOMIC_MOVE);
-        }
+
+        Files.move(tempPath.getTarget(), path.getTarget(), StandardCopyOption.ATOMIC_MOVE);
+
 
         logger.debug("Moving finished [{}] task time [{}] ms", tempPath.getTarget(), System.currentTimeMillis() - startTime);
         //path.artifactEntry = tempPath.artifactEntry;

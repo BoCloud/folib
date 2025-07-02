@@ -2,7 +2,6 @@ package com.veadan.folib.providers.io;
 
 import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.ArtifactCoordinates;
-import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.util.CacheUtil;
@@ -239,19 +238,6 @@ public abstract class RepositoryFiles {
     public static boolean artifactExists(RepositoryPath repositoryPath)
             throws IOException {
         boolean exists = false;
-        if (repositoryPath.getTarget() instanceof S3Path) {
-            CacheUtil<String, String> cacheUtil = CacheUtil.getInstance();
-            String cacheRootPathDir = cacheUtil.get("ARTIFACT_CACHE_ROOT_PATH");
-            if (StringUtils.isNotBlank(cacheRootPathDir)) {
-                Path cacheRootPath = Path.of(cacheRootPathDir);
-                String sourcePath = repositoryPath.toString();
-                String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId();
-                String prefix = String.format("/%s/%s/", storageId, repositoryId);
-                String targetSubPath = sourcePath.substring(sourcePath.indexOf(prefix) + 1);
-                Path cachePath = cacheRootPath.resolve(targetSubPath);
-                exists = Files.exists(cachePath) && (ProductTypeEnum.Docker.getFoLibraryName().equals(repositoryPath.getRepository().getLayout()) || RepositoryFiles.validateChecksum(repositoryPath, cachePath));
-            }
-        }
         if (!exists) {
             exists = Files.exists(repositoryPath);
         }

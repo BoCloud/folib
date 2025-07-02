@@ -10,7 +10,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.components.DistributedLockComponent;
 import com.veadan.folib.components.artifact.ArtifactComponent;
@@ -310,28 +309,6 @@ public class ScanService {
 
     private String getFilePath(String parentPath, Artifact artifact, String filePath) {
         try {
-            RepositoryPath repositoryPath = resolvePath(artifact);
-            if (repositoryPath.getTarget() instanceof S3Path) {
-                Path artifactPath;
-                S3Path s3RepositoryPath = (S3Path) repositoryPath.getTarget();
-                //s3存储
-                if (repositoryPath.getFileSystem() instanceof DockerFileSystem) {
-                    String temp = filePath.substring(filePath.indexOf(repositoryPath.getStorageId()));
-                    if (!temp.startsWith(File.separator)) {
-                        temp = File.separator + temp;
-                    }
-                    S3Path s3Path = new S3Path(s3RepositoryPath.getFileSystem(), temp);
-                    filePath = parentPath + File.separator + s3Path.getFileName();
-                    artifactPath = s3Path;
-                } else {
-                    filePath = parentPath + File.separator + s3RepositoryPath.getFileName();
-                    artifactPath = repositoryPath;
-                }
-                File tempFile = new File(filePath);
-                try (InputStream inputStream = Files.newInputStream(artifactPath)) {
-                    FileUtil.writeFromStream(inputStream, tempFile);
-                }
-            }
             Path path = Path.of(filePath);
             if (!Files.exists(path)) {
                 log.warn("File does not exist [{}]", path.toString());

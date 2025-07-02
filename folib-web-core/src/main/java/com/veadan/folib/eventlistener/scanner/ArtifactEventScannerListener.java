@@ -6,7 +6,6 @@ import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.util.HexUtil;
 import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
-import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.layout.DockerComponent;
 import com.veadan.folib.domain.Artifact;
@@ -36,7 +35,6 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import javax.inject.Inject;
 import java.io.*;
@@ -109,12 +107,7 @@ public class ArtifactEventScannerListener {
             boolean isStoredEvent = ArtifactEventTypeEnum.EVENT_ARTIFACT_PATH_DELETED.getType() != source && ArtifactEventTypeEnum.EVENT_ARTIFACT_DIRECTORY_PATH_DELETED.getType() != source;
             if (isStoredEvent) {
                 Path path = repositoryPath.getTarget();
-                if (path instanceof S3Path) {
-                    //S3存储
-                    return handlerDockerS3Path(repositoryPath, path, source);
-                } else {
-                    return handlerDockerFilePath(repositoryPath, source);
-                }
+                return handlerDockerFilePath(repositoryPath, source);
             } else {
                 return handlerScan(repositoryPath, source);
             }
@@ -122,56 +115,6 @@ public class ArtifactEventScannerListener {
             //非docker布局
             return handlerScan(repositoryPath, source);
         }
-    }
-
-    /**
-     * 处理S3存储docker布局制品事件
-     *
-     * @param repositoryPath 制品路径
-     * @param path           path
-     * @param source         事件类型
-     */
-    private Artifact handlerDockerS3Path(RepositoryPath repositoryPath, Path path, Integer source) {
-        String parentPath = "";
-        try {
-            //S3存储
-            S3Path s3Path = (S3Path) path;
-            String key = s3Path.getKey();
-            DockerArtifactCoordinates dockerArtifactCoordinates = (DockerArtifactCoordinates) repositoryPath.getArtifactEntry().getArtifactCoordinates();
-            parentPath = tempPath + File.separator + UUID.randomUUID();
-            String filePath = parentPath + File.separator + s3Path.getFileName();
-            try (InputStream inputStream = Files.newInputStream(repositoryPath)) {
-                File tempFile = new File(filePath);
-                FileUtil.writeFromStream(inputStream, tempFile);
-            }
-            //获取图层中的digest列表
-            List<String> digestList = getImageManifest(repositoryPath);
-            if (CollectionUtils.isNotEmpty(digestList)) {
-                String blobsItemPath = "", tempPath = "", blobs = "blobs";
-                Set<String> filePaths = Sets.newLinkedHashSet();
-                File digestTempFile;
-                for (String digest : digestList) {
-                    blobsItemPath = String.format("%s/%s", blobs, digest);
-                    RepositoryPath blobsRepositoryPath = repositoryPathResolver.resolve(repositoryPath.getStorageId(), repositoryPath.getRepositoryId(), blobsItemPath);
-                    filePath = parentPath + File.separator + digest;
-                    digestTempFile = new File(filePath);
-                    try (InputStream digestInputStream = Files.newInputStream(blobsRepositoryPath)) {
-                        FileUtil.writeFromStream(digestInputStream, digestTempFile);
-                    }
-                    tempPath = parentPath + File.separator + temp;
-                    handlerDockerBlobFile(repositoryPath, filePaths, digestTempFile.getPath(), tempPath);
-                }
-                return handlerScan(repositoryPath, source, filePaths);
-            }
-        } catch (Exception ex) {
-            log.error("处理S3存储docker布局制品事件错误：{}", ExceptionUtils.getStackTrace(ex));
-        } finally {
-            //删除临时文件
-            if (StringUtils.isNotBlank(parentPath)) {
-                FileUtil.del(new File(parentPath));
-            }
-        }
-        return null;
     }
 
 
@@ -240,31 +183,12 @@ public class ArtifactEventScannerListener {
             List<String> filePathList = readTarFile(file, tempPath);
             if (CollectionUtils.isNotEmpty(filePathList)) {
                 Path path = repositoryPath.getTarget();
-                final boolean isS3 = (path instanceof S3Path);
-                S3Path s3Path = null;
-                String prefix = null, versionKey = null;
-                if (isS3) {
-                    s3Path = (S3Path) path;
-                    String key = s3Path.getKey();
-                    versionKey = key.substring(0, key.lastIndexOf("/"));
-                    prefix = versionKey.substring(0, versionKey.lastIndexOf("/"));
-                }
-                S3Path finalS3Path = s3Path;
-                String finalPrefix = prefix;
-                String finalVersionKey = versionKey;
                 for (String filePath : filePathList) {
                     if (filePaths.size() >= maxSize) {
                         log.info("Docker制品扫描结果过多超出限制 [{}] size [{}] maxSize [{}]", path.toString(), filePaths.size(), maxSize);
                         return;
                     }
-                    if (isS3) {
-                        S3Path s3PathObject = new S3Path(finalS3Path.getFileSystem(), finalVersionKey + File.separator + temp + File.separator + FileUtil.getName(filePath));
-                        //将docker镜像中解压出来的文件上传到S3
-                        finalS3Path.getFileSystem().getClient().putObject(PutObjectRequest.builder().bucket(finalS3Path.getBucketName()).key(s3PathObject.getKey()).build(), Path.of(filePath));
-                        filePaths.add(finalS3Path.toString().substring(0, finalS3Path.toString().indexOf(finalS3Path.getKey())) + s3PathObject.toString());
-                    } else {
-                        filePaths.add(filePath);
-                    }
+                    filePaths.add(filePath);
                 }
             }
         }
