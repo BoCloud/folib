@@ -253,33 +253,6 @@
               </div>
             </a-card>
           </a-col>
-          <a-col :span="24" class="mb-24">
-            <a-card :bordered="false" class="header-solid h-full" :bodyStyle="{ paddingTop: 0, paddingBottom: '16px' }"
-                    v-if="currentUser">
-              <template #title>
-                <h6 class="font-semibold m-0">{{ userNotEdit ? $t('Users.GroupInformation') : $t('Users.GroupEdit') }}</h6>
-              </template>
-              <div class="group-list">
-                <div v-for="(item, index) in groupList" :key="index">
-                  <hr class="gradient-line">
-                  <a-row type="flex" align="middle">
-                    <a-col>
-                      <a-avatar :size="48" src="images/folib/anonymous.svg" />
-                    </a-col>
-                    <a-col class="pl-15">
-                      <h6 class="mb-0">{{ item.groupName }}</h6>
-                      <a class="text-dark">{{ item.description }}</a>
-                    </a-col>
-                    <a-col :span="24" :md="8" class="ml-auto"
-                           style="display: flex; align-items: center; justify-content: flex-end">
-                      <span class="mr-15">{{ item.enabled ? $t('Users.TurnOn') : $t('Users.ShutDown') }}</span>
-                      <a-switch :disabled="userNotEdit" v-model="item.enabled" @change="groupChange($event, item.id)" />
-                    </a-col>
-                  </a-row>
-                </div>
-              </div>
-            </a-card>
-          </a-col>
         </a-row>
       </a-col>
     </a-row>

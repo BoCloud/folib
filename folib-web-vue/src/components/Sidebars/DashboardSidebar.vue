@@ -112,14 +112,14 @@
              <span class="label">{{ $t('Sidebars.UserManagement') }}</span>
            </router-link>
          </a-menu-item>
-          <a-menu-item v-if="userInfo.roles.indexOf('ADMIN') > -1">
-           <router-link to="/groups">
-             <span class="icon">
-               <a-icon type="smile" theme="filled" class="m-0" />
-             </span>
-             <span class="label">{{ $t('Sidebars.Groups') }}</span>
-           </router-link>
-         </a-menu-item>
+<!--          <a-menu-item v-if="userInfo.roles.indexOf('ADMIN') > -1">-->
+<!--           <router-link to="/groups">-->
+<!--             <span class="icon">-->
+<!--               <a-icon type="smile" theme="filled" class="m-0" />-->
+<!--             </span>-->
+<!--             <span class="label">{{ $t('Sidebars.Groups') }}</span>-->
+<!--           </router-link>-->
+<!--         </a-menu-item>-->
           <a-menu-item v-if="userInfo.roles.indexOf('ADMIN') > -1" >
            <router-link to="/permissions">
              <span class="icon">

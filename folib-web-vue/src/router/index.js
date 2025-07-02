@@ -169,17 +169,6 @@ let routes = [
 		component: () => import('../views/AccessToken/index.vue'),
 	},
 	{
-		path: '/groups',
-		name: 'groups',
-		layout: "dashboard",
-		meta: {
-			title: 'router.Groups',
-			sidebarMap: ['router.Groups', 'router.GroupList'],
-			breadcrumbs: ['router.Groups', 'router.GroupList'],
-		},
-		component: () => import('../views/Groups/index.vue'),
-	},
-	{
 		path: '/settings',
 		name: 'settings',
 		layout: "dashboard",
@@ -388,7 +377,7 @@ let routes = [
     },
     component: () => import("../views/ComponentAnalysis/Licenses/Detail.vue"),
   },
-	
+
 	{
 		path: "/advancementCockpits",
 		name: "advancementCockpits",
@@ -400,8 +389,8 @@ let routes = [
 		},
 		component: () => import("../views/StatisticalOverview/AdvancementCockpits/index.vue"),
 	},
-	
-	
+
+
 	{
 		// will match sso
 		path: '/sso',
