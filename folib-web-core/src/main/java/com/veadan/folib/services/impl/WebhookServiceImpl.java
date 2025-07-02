@@ -15,7 +15,6 @@ import com.veadan.folib.event.artifact.ArtifactEventTypeEnum;
 import com.veadan.folib.forms.configuration.WebhookConfigurationForm;
 import com.veadan.folib.mapper.WebhookLogMapper;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
-import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.WebhookService;
 import com.veadan.folib.util.StripedLockUtils;
@@ -55,8 +54,6 @@ public class WebhookServiceImpl implements WebhookService {
     @Inject
     private ConfigurationManagementService configurationManagementService;
 
-    @Inject
-    private ClusterSyncService clusterSyncService;
 
     @Inject
     private WebhookLogMapper webhookLogMapper;
@@ -276,6 +273,5 @@ public class WebhookServiceImpl implements WebhookService {
         SyncWebhookDto syncWebhookDto = new SyncWebhookDto();
         syncWebhookDto.setWebhookConfigurationForm(webhookConfigurationForm);
         syncWebhookDto.setSyncWebhookEnum(syncWebhookEnum);
-        clusterSyncService.syncWebhookConfiguration(syncWebhookDto);
     }
 }

@@ -18,7 +18,6 @@ import com.veadan.folib.dto.SSOSessionDto;
 import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.security.authentication.JwtTokenFetcher;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
-import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.users.domain.SystemRole;
 import com.veadan.folib.users.dto.UserDto;
 import com.veadan.folib.users.service.UserService;
@@ -51,7 +50,6 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -73,9 +71,6 @@ public class SSOController {
 
     @Inject
     private ProxyRepositoryConnectionPoolConfigurationService clientPool;
-
-    @Inject
-    private ClusterSyncService clusterSyncService;
 
     @Inject
     protected ConfigurationManager configurationManager;
@@ -203,7 +198,6 @@ public class SSOController {
         boolean exist = clients.stream().anyMatch(s -> s.getClientId().equals(client.getClientId()));
         if (!exist) {
             authorizationConfigService.addClient(client);
-            syncAuthorizationConfig();
             return ResponseEntity.ok(client);
         } else {
             throw new RuntimeException("clientId已存在，不能重复添加！");
@@ -217,7 +211,6 @@ public class SSOController {
     public ResponseEntity updateClient(@RequestBody Client client) throws Exception {
         authorizationConfigService.deleteClient(client.getClientId());
         authorizationConfigService.addClient(client);
-        syncAuthorizationConfig();
         return ResponseEntity.ok(client);
     }
 
@@ -228,15 +221,9 @@ public class SSOController {
     @ResponseBody
     public ResponseEntity delClient(@PathVariable(name = "clientId") String clientId) throws Exception {
         authorizationConfigService.deleteClient(clientId);
-        syncAuthorizationConfig();
         return ResponseEntity.ok(clientId);
     }
 
-    private void syncAuthorizationConfig() {
-        AuthorizationConfigDto authorizationConfigDto = authorizationConfigService.getDto();
-        SyncAuthorizationDto syncAuthorizationDto = new SyncAuthorizationDto(authorizationConfigDto, SyncAuthorizationEnum.UPDATE);
-        clusterSyncService.syncAuthorization(syncAuthorizationDto);
-    }
 
     /**
      * 获取accessToken

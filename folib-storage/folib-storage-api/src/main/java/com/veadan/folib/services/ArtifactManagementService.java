@@ -490,7 +490,6 @@ public class ArtifactManagementService {
         logger.info("Repository checkAllows [{}] take time [{}] ms.", path.toString(), System.currentTimeMillis() - checkAllowsStartTime);
         if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
             long checkStorageSizeStartTime = System.currentTimeMillis();
-            artifactOperationsValidator.checkStorageSize(path);
             logger.info("Repository checkStorageSize [{}] take time [{}] ms.", path.toString(), System.currentTimeMillis() - checkStorageSizeStartTime);
         }
         logger.info("Repository acceptance validation [{}] take time [{}] ms.", path.toString(), System.currentTimeMillis() - startTime);
@@ -529,12 +528,6 @@ public class ArtifactManagementService {
             }
         } catch (Exception e) {
             throw new ArtifactStorageException(e);
-        }
-//
-//        artifactOperationsValidator.checkAllowsRedeployment(repository, coordinates);
-//        artifactOperationsValidator.checkAllowsDeployment(repository);
-        if (RepositoryTypeEnum.HOSTED.getType().equals(repository.getType())) {
-            artifactOperationsValidator.checkStorageSize(path);
         }
         return path;
     }

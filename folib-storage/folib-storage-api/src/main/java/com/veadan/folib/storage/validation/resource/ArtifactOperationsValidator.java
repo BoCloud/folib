@@ -163,30 +163,6 @@ public class ArtifactOperationsValidator {
         }
     }
 
-    public void checkStorageSize(RepositoryPath repositoryPath)
-            throws IOException {
-        String storageId = repositoryPath.getStorageId();
-        Storage storage = getConfiguration().getStorage(storageId);
-        Long storageMaxSize = storage.getStorageMaxSize();
-        if (Objects.isNull(storageMaxSize) || storageMaxSize <= 0) {
-            return;
-        }
-        String STORAGE_SIZE_VERIFICATION_INTERVAL_KEY = "STORAGE_SIZE_VERIFICATION_INTERVAL";
-        String STORAGE_SIZE_VERIFICATION_LAST_TIME_KEY = "STORAGE_SIZE_VERIFICATION_LAST_TIME";
-        if (!isRefresh(STORAGE_SIZE_VERIFICATION_LAST_TIME_KEY, STORAGE_SIZE_VERIFICATION_INTERVAL_KEY)) {
-            return;
-        }
-        long storageBytesSize = artifactRepository.artifactsBytesStatisticsByStorageIds(Collections.singletonList(storageId));
-        log.info("The size [{}] of the storage [{}]", storageBytesSize, storageId);
-        BigDecimal storageMaxTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageMaxSize, FileUnitTypeEnum.TB.getUnit());
-        BigDecimal storageRealTbSize = FileSizeConvertUtils.convertBytesWithDecimal(storageBytesSize, FileUnitTypeEnum.TB.getUnit());
-        if (storageRealTbSize.compareTo(storageMaxTbSize) >= 0) {
-            removeLastTime(STORAGE_SIZE_VERIFICATION_LAST_TIME_KEY);
-            throw new ArtifactResolutionException(String.format("The size of the storage [%s] artifact [%s] exceeds the maximum size accepted by " +
-                    "this storage (%s/%s) unit %s.", storageId, repositoryPath, storageRealTbSize, storageMaxTbSize, FileUnitTypeEnum.TB.getUnit()));
-        }
-    }
-
     /**
      * 根据给定的键从分布式缓存中获取内容刷新间隔设置
      * 如果没有找到对应的值或者值为空，则返回默认的内容刷新间隔

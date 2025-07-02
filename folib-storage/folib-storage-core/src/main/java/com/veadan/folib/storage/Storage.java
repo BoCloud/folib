@@ -24,8 +24,6 @@ public interface Storage
 
     String getStorageProvider();
 
-    Long getStorageMaxSize();
-
     void setUsers(Set<String> users);
 
     void setAdmin(String username);
@@ -33,6 +31,4 @@ public interface Storage
     Set<String> getRepositoryUsers();
 
     void setRepositoryUsers(Set<String> repositoryUsers);
-
-    boolean isSyncEnabled();
 }

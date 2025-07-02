@@ -4,17 +4,13 @@ import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
 import com.veadan.folib.artifact.coordinates.RawArtifactCoordinates;
 import com.veadan.folib.cluster.SyncRepositoryEnum;
-import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
-import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.ArtifactManagementService;
 import com.veadan.folib.services.ArtifactResolutionService;
-import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.storage.repository.RepositoryData;
 import com.veadan.folib.storage.repository.RepositoryDto;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
 import lombok.extern.slf4j.Slf4j;
@@ -23,11 +19,8 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -58,13 +51,6 @@ public class ReplicationBackup {
 
     @Resource
     private ConfigurationManagementService configurationManagementService;
-
-    @Resource
-    private ClusterSyncService clusterSyncService;
-
-    @Lazy
-    @Resource
-    private PrivilegeEventListenerRegistry privilegeEventListenerRegistry;
 
     @Resource
     private RepositoryManagementService repositoryManagementService;
@@ -169,11 +155,6 @@ public class ReplicationBackup {
                     }
                     throw new RuntimeException(ex.getMessage());
                 }
-
-                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(newRepo, storageId, backupName, SyncRepositoryEnum.ADD_OR_UPDATE);
-                clusterSyncService.syncRepository(syncRepositoryDto);
-                //同步资源信息到其他节点
-                privilegeEventListenerRegistry.dispatchResourceSyncEvent(storageId + "_" + backupName);
             }
             String path=src.substring(src.lastIndexOf("/")+1);
             RepositoryPath repositoryPath = repositoryPathResolver.resolve(backupRepo,path );

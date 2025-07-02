@@ -218,12 +218,6 @@ public class ConfigurationManagementServiceImpl
         if (StringUtils.isBlank(storageDto.getStorageProvider()) && StringUtils.isNotBlank(storage.getStorageProvider())) {
             storageDto.setStorageProvider(storage.getStorageProvider());
         }
-        if (Objects.nonNull(storage.getStorageMaxSize()) && storage.getStorageMaxSize() > 0) {
-            storageDto.setStorageMaxSize(storage.getStorageMaxSize());
-        } else {
-            storageDto.setStorageMaxSize(0L);
-        }
-        storageDto.setSyncEnabled(storage.isSyncEnabled());
         if (!storage.getRepositories().isEmpty()) {
             storage.getRepositories().values().forEach(repository -> {
                 RepositoryDto repositoryDto = conversionService.convert(repository, RepositoryDto.class);

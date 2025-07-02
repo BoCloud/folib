@@ -428,9 +428,7 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
         Date date = new Date();
         StorageDevice storageDevice = storageDeviceMap.get(storage.getId());
         Long storageMaxSize = 0L;
-        if (Objects.nonNull(storage.getStorageMaxSize())) {
-            storageMaxSize = storage.getStorageMaxSize();
-        }
+
         BigDecimal artifactsSize, filesSize, storageQuotaSize = BigDecimal.valueOf(storageMaxSize), usedStorageQuotaSizePercentage = BigDecimal.ZERO, storageDeviceSize = BigDecimal.valueOf(storageDevice.getTotalSpace()), usedStorageDeviceSizePercentage = BigDecimal.ONE;
         artifactsSize = BigDecimal.valueOf(result.getTotalArtifactsSize());
         filesSize = BigDecimal.valueOf(result.getTotalFilesSize());
@@ -439,7 +437,7 @@ public class StorageMonitoringServiceImpl implements StorageMonitoringService {
         }
         usedStorageDeviceSizePercentage = artifactsSize.divide(storageDeviceSize, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
         artifactsDownloadedCount = artifactRepository.sumDownloadCountByStorageIdAndRepositoryId(Lists.newArrayList(repositoryPath.getStorageId() + "-" + repositoryPath.getRepositoryId()));
-        //仓库根目录相关数据，不包含回收站
+        //仓库根目录相关数据
         StorageMonitoring storageMonitoring = StorageMonitoring.builder().id(idGenerateUtils.generateId("storageMonitoringId")).storageId(repositoryPath.getStorageId()).repositoryId(repositoryPath.getRepositoryId()).repositoryType(repository.getType()).repositoryLayout(repository.getLayout()).repositorySubLayout(repository.getSubLayout()).artifactsDownloadedCount(artifactsDownloadedCount).artifactsSize(artifactsSize).artifactsCount(result.getArtifactsCount()).filesCount(result.getFilesCount())
                 .filesSize(filesSize).foldersCount(result.getDirectoriesCount()).createTime(date).dataType(DirectoryDataTypeEnum.REPOSITORY.getType()).itemsCount(itemsCount).storagePath(repositoryPath.toString()).isLatest(Boolean.TRUE).updateTime(date).storageQuotaSize(storageQuotaSize).usedStorageQuotaSizePercentage(usedStorageQuotaSizePercentage).storageProvider(storage.getStorageProvider()).storageDeviceName(storageDevice.getName())
                 .storageDeviceSize(storageDeviceSize).usedStorageDeviceSizePercentage(usedStorageDeviceSizePercentage).storageDeviceType(storageDevice.getType()).build();

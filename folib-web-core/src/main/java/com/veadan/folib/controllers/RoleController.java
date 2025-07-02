@@ -1,6 +1,5 @@
 package com.veadan.folib.controllers;
 
-import cn.hutool.core.date.DateUtil;
 import com.github.pagehelper.PageInfo;
 import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.constant.GlobalConstants;
@@ -8,13 +7,9 @@ import com.veadan.folib.controllers.users.UserController;
 import com.veadan.folib.converters.users.RoleConvert;
 import com.veadan.folib.converters.users.UserGroupConvert;
 import com.veadan.folib.converts.UserConvert;
-import com.veadan.folib.domain.PrivilegeDispatch;
 import com.veadan.folib.dto.*;
-import com.veadan.folib.dto.configuration.ClusterDispatchNodeDto;
 import com.veadan.folib.entity.*;
 import com.veadan.folib.enums.AuditEventNameEnum;
-import com.veadan.folib.enums.SyncStrategyEnum;
-import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
 import com.veadan.folib.event.privilege.PrivilegeEventTypeEnum;
 import com.veadan.folib.forms.users.auth.RoleForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
@@ -26,10 +21,8 @@ import com.veadan.folib.users.service.*;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.*;
-import jakarta.websocket.Session;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -47,7 +40,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -94,8 +86,6 @@ public class RoleController extends BaseController {
     private UserGroupRefService userGroupRefService;
     @Autowired
     private ResourceService resourceService;
-    @Autowired
-    private PrivilegeEventListenerRegistry privilegeEventListenerRegistry;
 
     @ApiOperation(value = "获取用户的关联角色")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "Returns account details"),
@@ -141,9 +131,6 @@ public class RoleController extends BaseController {
         }
 
         folibRoleService.deleteRole(roleId);
-
-        //同步角色信息到其他节点
-        privilegeEventListenerRegistry.dispatchDeleteRoleSyncEvent(roleId);
 
         return getSuccessfulResponseEntity(SUCCESSFUL_DELETE_ROLE, accept);
     }
@@ -192,8 +179,6 @@ public class RoleController extends BaseController {
             return getFailedResponseEntity(HttpStatus.BAD_REQUEST, FAILED_CREATE_ROLE, accept);
         }
         folibRoleService.save(roleDTO, username);
-        //同步角色信息到其他节点
-        privilegeEventListenerRegistry.dispatchRoleSyncEvent(roleDTO.getName());
         return getSuccessfulResponseEntity(SUCCESSFUL_CREATE_ROLE, accept);
     }
 
@@ -242,9 +227,6 @@ public class RoleController extends BaseController {
             return getFailedResponseEntity(HttpStatus.BAD_REQUEST, FAILED_CREATE_ROLE, accept);
         }
         folibRoleService.updateRoleInfo(roleDTO, roleId, username);
-
-        //同步角色信息到其他节点
-        privilegeEventListenerRegistry.dispatchRoleSyncEvent(roleId);
         return getSuccessfulResponseEntity(SUCCESSFUL_UPDATE_ROLE, accept);
     }
 
@@ -344,7 +326,7 @@ public class RoleController extends BaseController {
                 }
             }else if (StringUtils.isNotEmpty(storageId)){
                 StorageDto storage = configurationManagementService.getMutableConfigurationClone().getStorage(storageId);
-                if (storage != null && !storages.contains(storage) && storage.isSyncEnabled()) {
+                if (storage != null && !storages.contains(storage)) {
                     storages.add(storage);
                 }
             }

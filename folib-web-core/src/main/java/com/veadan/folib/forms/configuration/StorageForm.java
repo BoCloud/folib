@@ -33,10 +33,6 @@ public class StorageForm {
      */
     private String storageProvider;
 
-    /**
-     * 存储配额
-     */
-    private Long storageMaxSize;
 
     /**
      * 普通用户
@@ -53,17 +49,6 @@ public class StorageForm {
 
     @Valid
     private List<RepositoryForm> repositories;
-
-    public boolean isSyncEnabled() {
-        return syncEnabled;
-    }
-
-    public void setSyncEnabled(boolean syncEnabled) {
-        this.syncEnabled = syncEnabled;
-    }
-
-    /**是否同步存储空间到其他节点*/
-    private boolean syncEnabled;
 
     public String getId() {
         return id;
@@ -103,14 +88,6 @@ public class StorageForm {
 
     public void setStorageProvider(String storageProvider) {
         this.storageProvider = storageProvider;
-    }
-
-    public Long getStorageMaxSize() {
-        return storageMaxSize;
-    }
-
-    public void setStorageMaxSize(Long storageMaxSize) {
-        this.storageMaxSize = storageMaxSize;
     }
 
     public interface NewStorage

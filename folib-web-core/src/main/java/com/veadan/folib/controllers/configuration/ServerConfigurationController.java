@@ -15,7 +15,6 @@ import com.veadan.folib.controllers.support.PortEntityBody;
 import com.veadan.folib.forms.configuration.*;
 import com.veadan.folib.job.cron.services.CronTaskConfigurationService;
 import com.veadan.folib.enums.AuditEventNameEnum;
-import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.support.ConfigurationException;
 import com.veadan.folib.validation.RequestBodyValidationException;
@@ -62,10 +61,6 @@ public class ServerConfigurationController
     @Inject
     @Lazy
     private CommonComponent commonComponent;
-
-    @Inject
-    @Lazy
-    private ClusterSyncService clusterSyncService;
 
     @Inject
     @Lazy
@@ -250,10 +245,8 @@ public class ServerConfigurationController
 
         }
         commonComponent.updateServerSettings(serverSettingsForm);
-        clusterSyncService.syncServerSettings(SyncServerSettingsDto.builder().serverSettingsForm(serverSettingsForm).syncServerSettingsEnum(SyncServerSettingsEnum.ADD_OR_UPDATE).build());
         AuthorizationConfigDto authorizationConfigDto = authorizationConfigService.getDto();
         SyncAuthorizationDto syncAuthorizationDto = new SyncAuthorizationDto(authorizationConfigDto, SyncAuthorizationEnum.UPDATE);
-        clusterSyncService.syncAuthorization(syncAuthorizationDto);
         return getSuccessfulResponseEntity(SUCCESSFUL_SAVE_SERVER_SETTINGS, acceptHeader);
     }
 

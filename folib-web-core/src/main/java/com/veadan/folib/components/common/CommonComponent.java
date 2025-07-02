@@ -21,7 +21,6 @@ import com.veadan.folib.job.cron.domain.CronTaskConfigurationDto;
 import com.veadan.folib.job.cron.services.CronTaskConfigurationService;
 import com.veadan.folib.enums.StorageProviderEnum;
 import com.veadan.folib.forms.configuration.ServerSettingsForm;
-import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.StorageManagementService;
 import com.veadan.folib.storage.StorageDto;
@@ -75,10 +74,6 @@ public class CommonComponent {
     @Inject
     @Lazy
     private StorageManagementService storageManagementService;
-
-    @Inject
-    @Lazy
-    private ClusterSyncService clusterSyncService;
 
     @Inject
     private DistributedCacheComponent distributedCacheComponent;
@@ -224,9 +219,6 @@ public class CommonComponent {
         for (Map.Entry<String, StorageDto> entry : configurationManagementService.getMutableConfigurationClone().getStorages().entrySet()) {
             StorageDto storage = entry.getValue();
             storageManagementService.handleStorageProvider(storage);
-            // 向其他集群节点同步storage
-            SyncStorageDto syncStorageDto = new SyncStorageDto(storage, storage.getId(), SyncStorageEnum.UPDATE);
-            clusterSyncService.syncStorage(syncStorageDto);
         }
     }
 
@@ -280,16 +272,6 @@ public class CommonComponent {
         return springSecurityUser.getUsername();
     }
 
-    public void handlerRole(String roleInfo) {
-        authorizationConfigService.handlerRole(roleInfo);
-        syncAuthorizationConfig();
-    }
-
-    public void syncAuthorizationConfig() {
-        AuthorizationConfigDto authorizationConfigDto = authorizationConfigService.getDto();
-        SyncAuthorizationDto syncAuthorizationDto = new SyncAuthorizationDto(authorizationConfigDto, SyncAuthorizationEnum.UPDATE);
-        clusterSyncService.syncAuthorization(syncAuthorizationDto);
-    }
 
     public ThreadPoolTaskExecutor buildThreadPoolTaskExecutor(Integer corePoolSize, Integer maxPoolSize, Integer queueCapacity, Integer keepAliveSeconds, String threadNamePrefix, Integer awaitTerminationSeconds, RejectedExecutionHandler rejectedExecutionHandler) {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
@@ -408,30 +390,5 @@ public class CommonComponent {
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         executor.initialize();
         return executor;
-    }
-
-    private void configCronTask(String cronName, String className, String cron) {
-        CronTaskConfigurationDto cronTaskConfiguration = new CronTaskConfigurationDto();
-        cronTaskConfiguration.setName(cronName);
-        cronTaskConfiguration.setJobClass(className);
-        cronTaskConfiguration.setCronExpression(cron);
-        cronTaskConfiguration.setOneTimeExecution(false);
-        cronTaskConfiguration.setImmediateExecution(false);
-        try {
-            Optional<CronTaskConfigurationDto> cronTaskConfigurationOptional = cronTaskConfigurationService.getTasksConfigurationDto().getCronTaskConfigurations().stream().filter(item -> item.getJobClass().equals(className)).findFirst();
-            if (cronTaskConfigurationOptional.isPresent()) {
-                CronTaskConfigurationDto cronTaskConfigurationDto = cronTaskConfigurationOptional.get();
-                cronTaskConfigurationService.deleteConfiguration(cronTaskConfigurationDto.getUuid());
-                SyncCronJobDto syncCronJobDto = new SyncCronJobDto(cronTaskConfiguration, SyncCornJobEnum.DELETE);
-                clusterSyncService.syncCronJob(syncCronJobDto);
-            }
-            UUID uuid = cronTaskConfigurationService.saveConfiguration(cronTaskConfiguration);
-            cronTaskConfiguration.setUuid(uuid);
-            SyncCronJobDto syncCronJobDto = new SyncCronJobDto(cronTaskConfiguration, SyncCornJobEnum.ADD_OR_UPDATE);
-            clusterSyncService.syncCronJob(syncCronJobDto);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e.getMessage(), e);
-        }
     }
 }

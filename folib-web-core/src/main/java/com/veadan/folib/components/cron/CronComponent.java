@@ -4,7 +4,6 @@ import com.veadan.folib.cluster.SyncCornJobEnum;
 import com.veadan.folib.controllers.cluster.dto.SyncCronJobDto;
 import com.veadan.folib.job.cron.domain.CronTaskConfigurationDto;
 import com.veadan.folib.job.cron.services.CronTaskConfigurationService;
-import com.veadan.folib.services.ClusterSyncService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.springframework.stereotype.Component;
@@ -25,9 +24,6 @@ public class CronComponent {
     @Inject
     private CronTaskConfigurationService cronTaskConfigurationService;
 
-    @Inject
-    private ClusterSyncService clusterSyncService;
-
     public void configCronTask(String cronName, String className, String cron) {
         configCronTask(cronName, className, cron, null);
     }
@@ -46,8 +42,6 @@ public class CronComponent {
             deleteTask(cronTaskConfiguration);
             UUID uuid = cronTaskConfigurationService.saveConfiguration(cronTaskConfiguration);
             cronTaskConfiguration.setUuid(uuid);
-            SyncCronJobDto syncCronJobDto = new SyncCronJobDto(cronTaskConfiguration, SyncCornJobEnum.ADD_OR_UPDATE);
-            clusterSyncService.syncCronJob(syncCronJobDto);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e.getMessage(), e);
@@ -74,8 +68,6 @@ public class CronComponent {
         if (cronTaskConfigurationOptional.isPresent()) {
             CronTaskConfigurationDto cronTaskConfigurationDto = cronTaskConfigurationOptional.get();
             cronTaskConfigurationService.deleteConfiguration(cronTaskConfigurationDto.getUuid());
-            SyncCronJobDto syncCronJobDto = new SyncCronJobDto(cronTaskConfiguration, SyncCornJobEnum.DELETE);
-            clusterSyncService.syncCronJob(syncCronJobDto);
         }
     }
 

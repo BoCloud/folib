@@ -16,7 +16,6 @@ import com.veadan.folib.components.syncartifact.SyncArtifactProviderRegistry;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.BaseController;
-import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
 import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
 import com.veadan.folib.converters.migrate.JfrogMigrateConvert;
 import com.veadan.folib.domain.SecurityRole;
@@ -39,7 +38,6 @@ import com.veadan.folib.enums.ArtifactSyncTypeEnum;
 import com.veadan.folib.enums.MigrateStatusEnum;
 import com.veadan.folib.enums.NotifyScopesTypeEnum;
 import com.veadan.folib.enums.StorageProviderEnum;
-import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
 import com.veadan.folib.forms.JfrogMigrateForm;
 import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.mapper.UserGroupMapper;
@@ -48,7 +46,6 @@ import com.veadan.folib.providers.layout.LayoutProvider;
 import com.veadan.folib.providers.layout.LayoutProviderRegistry;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.scanner.common.util.UUIDUtils;
-import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.JfrogMigrateService;
 import com.veadan.folib.services.MigrateInfoService;
@@ -152,13 +149,9 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
 
     @Inject
     private PasswordEncoder passwordEncoder;
-    @Resource
-    private PrivilegeEventListenerRegistry privilegeEventListenerRegistry;
 
     @Resource
     private RepositoryManagementService repositoryManagementService;
-    @Resource
-    private ClusterSyncService clusterSyncService;
 
     @Resource
     private StorageManagementService storageManagementService;
@@ -327,8 +320,6 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             repository.setRemoteRepository(remoteDTO);
             try {
                 configurationManagementService.saveRepository(storageId, repository);
-                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
-                clusterSyncService.syncRepository(syncRepositoryDto);
             } catch (IOException e) {
                 log.error("存储空间{},仓库{}修改失败", storageId, repositoryId);
                 continue;
@@ -560,8 +551,6 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             repository.setAllowsRedeployment(Boolean.TRUE);
             try {
                 configurationManagementService.saveRepository(storageId, repository);
-                SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
-                clusterSyncService.syncRepository(syncRepositoryDto);
             } catch (Exception e) {
                 log.error("更新状态失败");
             }
@@ -590,8 +579,6 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
         try {
 
             configurationManagementService.saveRepository(info.getStorageId(), repository);
-            SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, info.getStorageId(), info.getRepositoryId(), SyncRepositoryEnum.ADD_OR_UPDATE);
-            clusterSyncService.syncRepository(syncRepositoryDto);
         } catch (Exception e) {
             log.error("更新状态失败");
         }
@@ -647,8 +634,6 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 repository.setRemoteRepository(remoteDTO);
                 try {
                     configurationManagementService.saveRepository(storageId, repository);
-                    SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
-                    clusterSyncService.syncRepository(syncRepositoryDto);
                 } catch (IOException e) {
                     log.error("存储空间{},仓库{}修改失败", storageId, repositoryId);
                 }
@@ -740,8 +725,6 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 List<AccessUserGroupsDTO> distinctGroups = new ArrayList<>(roleGroups.stream().collect(Collectors.toMap(AccessUserGroupsDTO::getId, g -> g, (existing, replacement) -> existing)).values());
                 roleDetail.getPrivileges().setGroups(distinctGroups);
                 folibRoleService.save(roleDetail, UserUtils.getUsername());
-                //同步角色信息到其他节点
-                privilegeEventListenerRegistry.dispatchRoleSyncEvent(roleDetail.getName());
             }
             log.info("group info sync edn");
             return groupMap;
@@ -855,10 +838,6 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                         .repositoryId(repositoryId)
                         .build());
             }
-            SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(newRepo, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
-            clusterSyncService.syncRepository(syncRepositoryDto);
-            //同步资源信息到其他节点
-            privilegeEventListenerRegistry.dispatchResourceSyncEvent(storageId + "_" + repositoryId);
         }
         // 查看是否有对应的迁移id
         int cnt = migrateInfoService.countByMigrateId(migrateInfo.getMigrateId());
@@ -1060,8 +1039,6 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             roleDTO.setPrivileges(folibPrincipals);
             roleDTO.setResources(folibResources);
             folibRoleService.save(roleDTO, UserUtils.getUsername());
-            //同步角色信息到其他节点
-            privilegeEventListenerRegistry.dispatchRoleSyncEvent(roleDTO.getName());
         }
     }
 
@@ -1095,9 +1072,6 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
                 storageManagementService.createStorage(storage);
                 // 向其他集群节点同步storage
                 SyncStorageDto syncStorageDto = new SyncStorageDto(storage, storageId, SyncStorageEnum.CREATE);
-                clusterSyncService.syncStorage(syncStorageDto);
-                //同步资源信息到其他节点
-                privilegeEventListenerRegistry.dispatchResourceSyncEvent(storage.getId());
             } catch (Exception e) {
                 log.error("create storage failed{}", e.getMessage(), e);
                 return false;

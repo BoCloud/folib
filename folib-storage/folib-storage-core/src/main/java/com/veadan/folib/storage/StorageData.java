@@ -64,11 +64,9 @@ public class StorageData implements Storage {
         this.basedir = delegate.getBasedir();
         this.admin = delegate.getAdmin();
         this.storageProvider = delegate.getStorageProvider();
-        this.storageMaxSize = delegate.getStorageMaxSize();
         this.users = delegate.getUsers();
         this.repositories = immuteRepositories(delegate.getRepositories());
         this.repositoryUsers = delegate.getRepositoryUsers();
-        this.syncEnabled = delegate.isSyncEnabled();
     }
 
     private Map<String, ? extends Repository> immuteRepositories(final Map<String, ? extends Repository> source) {
@@ -91,10 +89,6 @@ public class StorageData implements Storage {
         return storageProvider;
     }
 
-    @Override
-    public Long getStorageMaxSize() {
-        return storageMaxSize;
-    }
 
     @Override
     public void setUsers(Set<String> users) {
@@ -140,12 +134,6 @@ public class StorageData implements Storage {
     @Override
     public void setRepositoryUsers(Set<String> repositoryUsers) {
         this.repositoryUsers = repositoryUsers;
-    }
-
-
-    @Override
-    public boolean isSyncEnabled() {
-        return syncEnabled;
     }
 
     public void setSyncEnabled(boolean syncEnabled) {

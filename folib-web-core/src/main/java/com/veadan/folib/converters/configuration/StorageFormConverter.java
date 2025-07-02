@@ -25,7 +25,6 @@ public enum StorageFormConverter
         result.setId(source.getId());
         result.setAdmin(source.getAdmin());
         result.setStorageProvider(source.getStorageProvider());
-        result.setStorageMaxSize(source.getStorageMaxSize());
         result.setUsers(source.getUsers());
         List<RepositoryForm> repositories = source.getRepositories();
         if (repositories != null)

@@ -10,7 +10,6 @@ import com.veadan.folib.domain.PageResultResponse;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.UserPermissionForm;
 import com.veadan.folib.enums.AuditEventNameEnum;
-import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
 import com.veadan.folib.forms.users.UserForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.StorageManagementService;
@@ -105,8 +104,6 @@ public class UserController
     @Inject
     private StorageManagementService storageManagementService;
     @Autowired
-    private PrivilegeEventListenerRegistry privilegeEventListenerRegistry;
-    @Autowired
     private RoleResourceRefService roleResourceRefService;
 
     @ApiOperation(value = "sync yaml users and roles")
@@ -142,9 +139,6 @@ public class UserController
 
         UserPermissionDTO userPermission = UserConvert.INSTANCE.UserPermissionFormToUserPermissionDTO(userPermissionForm);
         roleResourceRefService.updateStorageUser(userPermission);
-
-        //同步用户信息到其他节点
-        privilegeEventListenerRegistry.dispatchUserSyncEvent(userPermission.getUserId());
         return getSuccessfulResponseEntity(SUCCESSFUL_UPDATE_USER, accept);
     }
 
@@ -242,8 +236,6 @@ public class UserController
             user.setOriginalPassword(rsaUtils.encrypt(password));
         }
         userService.save(new EncodedPasswordUser(user, passwordEncoder));
-        //同步用户信息到其他节点
-        privilegeEventListenerRegistry.dispatchUserSyncEvent(user.getUuid());
         return getSuccessfulResponseEntity(SUCCESSFUL_CREATE_USER, accept);
     }
 
@@ -294,10 +286,6 @@ public class UserController
             user.setOriginalPassword(rsaUtils.encrypt(password));
         }
         userService.save(new EncodedPasswordUser(user, passwordEncoder));
-
-        //同步用户信息到其他节点
-        privilegeEventListenerRegistry.dispatchUserSyncEvent(user.getUuid());
-
         return getSuccessfulResponseEntity(SUCCESSFUL_UPDATE_USER, accept);
     }
 
@@ -335,9 +323,6 @@ public class UserController
         }
 
         userService.deleteByUsername(user.getUsername());
-
-        //同步用户信息到其他节点
-        privilegeEventListenerRegistry.dispatchDeleteUserSyncEvent(username);
 
         return getSuccessfulResponseEntity(SUCCESSFUL_DELETE_USER, accept);
     }

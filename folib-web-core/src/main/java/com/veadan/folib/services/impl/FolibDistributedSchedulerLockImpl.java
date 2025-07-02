@@ -3,7 +3,6 @@ package com.veadan.folib.services.impl;
 import com.veadan.folib.cluster.FolibLockProperties;
 import com.veadan.folib.entity.FolibLock;
 import com.veadan.folib.mapper.FolibLockMapper;
-import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.services.FolibDistributedSchedulerLock;
 import com.veadan.folib.util.LocalDateTimeInstance;
 import org.slf4j.Logger;
@@ -25,16 +24,12 @@ public class FolibDistributedSchedulerLockImpl implements FolibDistributedSchedu
     @Autowired
     private FolibLockProperties properties;
 
-    @Autowired
-    private ClusterSyncService clusterSyncService;
+
 
     @Override
     public Boolean getLock(String name, Long lockAtMostSeconds) {
         boolean result = false;
         try {
-            if (!clusterSyncService.clusterOpenFlag()) {
-                return true;
-            }
             FolibLock folibLock = folibLockMapper.selectFolibLock(name);
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", Locale.ROOT);
             LocalDateTime localDateTime = LocalDateTimeInstance.now();

@@ -14,7 +14,6 @@ import com.veadan.folib.job.cron.services.CronJobSchedulerService;
 import com.veadan.folib.job.cron.services.CronTaskConfigurationService;
 import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.forms.cron.CronTaskConfigurationForm;
-import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -99,9 +98,6 @@ public class CronTaskController
     @Inject
     private PropertiesBooter propertiesBooter;
 
-    @Autowired
-    private ClusterSyncService clusterSyncService;
-
 
 
     @ApiOperation(value = "Used to save a new cron task job")
@@ -122,8 +118,6 @@ public class CronTaskController
             com.veadan.folib.job.cron.domain.CronTaskConfigurationDto cronTaskConfiguration = conversionService.convert(cronTaskConfigurationForm,
                     com.veadan.folib.job.cron.domain.CronTaskConfigurationDto.class);
             UUID uuid = cronTaskConfigurationService.saveConfiguration(cronTaskConfiguration);
-            SyncCronJobDto syncCronJobDto = new SyncCronJobDto(cronTaskConfiguration, SyncCornJobEnum.ADD_OR_UPDATE);
-            clusterSyncService.syncCronJob(syncCronJobDto);
 
             HttpHeaders httpHeaders = new HttpHeaders();
             httpHeaders.add(HEADER_NAME_CRON_TASK_ID, uuid.toString());
@@ -165,8 +159,6 @@ public class CronTaskController
             cronTaskConfiguration.setUuid(uuid);
             cronTaskConfigurationService.saveConfiguration(cronTaskConfiguration);
 
-            clusterSyncService.syncCronJob(new SyncCronJobDto(cronTaskConfiguration, SyncCornJobEnum.ADD_OR_UPDATE));
-
             return getSuccessfulResponseEntity(SUCCESSFUL_SAVE_CONFIGURATION, acceptHeader);
         } catch (Exception e) {
             return getExceptionResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR,
@@ -191,7 +183,6 @@ public class CronTaskController
 
         try {
             cronTaskConfigurationService.deleteConfiguration(config.getUuid());
-            clusterSyncService.syncCronJob(new SyncCronJobDto(config, SyncCornJobEnum.DELETE));
             if (config.getJobClass().equals(GroovyCronJob.class.getName()) &&
                     config.getProperty(CRON_CONFIG_SCRIPT_PATH_KEY) != null) {
                 Path path = Paths.get(config.getProperty(CRON_CONFIG_SCRIPT_PATH_KEY));

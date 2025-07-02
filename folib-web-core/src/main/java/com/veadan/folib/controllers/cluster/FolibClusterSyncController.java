@@ -112,35 +112,6 @@ public class FolibClusterSyncController extends BaseController {
         return ResponseEntity.ok("Sync syncMetadataConfiguration ok");
     }
 
-    @PostMapping("syncRepository")
-    public ResponseEntity syncRepository(@RequestBody SyncRepositoryDto syncRepositoryDto) {
-        try {
-            if (syncRepositoryDto.getSycnRepositoryEnum().getType() == 1) {
-                configurationManagementService.saveRepository(syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryDto());
-                logger.info("Sync save repository [{}] [{}] success", syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryId());
-            } else if (syncRepositoryDto.getSycnRepositoryEnum().getType() == 2) {
-                if (syncRepositoryDto.getDeleteForceFlag()) {
-                    Repository repository = getRepository(syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryId());
-                    if (Objects.nonNull(repository)) {
-                        RepositoryPath repositoryPath = repositoryPathResolver.resolve(repository);
-                        if (Objects.nonNull(repositoryPath) && Files.exists(repositoryPath)) {
-                            repositoryManagementService.removeRepository(syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryId());
-                        }
-                    }
-                    repositoryEventListenerRegistry.
-                            dispatchRepoDelteToCronJobDeleteEvent(syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryId());
-                }
-                configurationManagementService.removeRepository(syncRepositoryDto.getStorageId(),
-                        syncRepositoryDto.getRepositoryId());
-                logger.info("Sync remove repository [{}] [{}] success", syncRepositoryDto.getStorageId(), syncRepositoryDto.getRepositoryId());
-            }
-        } catch (Exception e) {
-            logger.error("Sync repository error {}", ExceptionUtils.getStackTrace(e));
-            return getBadRequestResponseEntity(e.getMessage(), "");
-        }
-        return ResponseEntity.ok("Sync repository ok");
-    }
-
     /**
      * 同步定时任务
      *

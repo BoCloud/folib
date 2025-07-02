@@ -12,7 +12,6 @@ import com.veadan.folib.dto.UserGroupListDTO;
 import com.veadan.folib.entity.UserGroup;
 import com.veadan.folib.entity.UserGroupRef;
 import com.veadan.folib.enums.AuditEventNameEnum;
-import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
 import com.veadan.folib.forms.users.UserGroupForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.users.service.UserGroupRefService;
@@ -74,8 +73,6 @@ public class UserGroupController
     private UserGroupService userGroupService;
     @Inject
     private UserGroupRefService userGroupRefService;
-    @Autowired
-    private PrivilegeEventListenerRegistry privilegeEventListenerRegistry;
 
     @ApiOperation(value = "用户组删除")
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_DELETE_USER_GROUP),
@@ -102,8 +99,6 @@ public class UserGroupController
         }
 
         userGroupService.deleteById(groupId);
-        //同步用户组信息到其他节点
-        privilegeEventListenerRegistry.dispatchDeleteUserGroupSyncEvent(String.valueOf(userGroup.getId()));
 
         return getSuccessfulResponseEntity(SUCCESSFUL_DELETE_USER, accept);
     }
@@ -143,8 +138,6 @@ public class UserGroupController
 
             userGroupRefService.saveBath(userGroupRefs);
         }
-        //同步用户组信息到其他节点
-        privilegeEventListenerRegistry.dispatchUserGroupSyncEvent(String.valueOf(userGroup.getId()));
 
         return getSuccessfulResponseEntity(SUCCESSFUL_CREATE_USER_GROUP, accept);
     }
@@ -217,8 +210,6 @@ public class UserGroupController
 
             userGroupRefService.saveBath(userGroupRefs);
         }
-        //同步用户组信息到其他节点
-        privilegeEventListenerRegistry.dispatchUserGroupSyncEvent(String.valueOf(userGroup.getId()));
 
         return getSuccessfulResponseEntity(SUCCESSFUL_UPDATE_USER_GROUP, accept);
     }

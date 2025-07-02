@@ -9,10 +9,8 @@ import com.veadan.folib.cluster.SyncLdapEnum;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.cluster.dto.SyncLdapDto;
-import com.veadan.folib.controllers.cluster.dto.SyncServerSettingsDto;
 import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.forms.configuration.security.ldap.LdapConfigurationTestForm;
-import com.veadan.folib.services.ClusterSyncService;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
@@ -67,10 +65,6 @@ public class LdapAuthenticatorConfigurationController
     @Inject
     @Lazy
     private CommonComponent commonComponent;
-
-    @Inject
-    @Lazy
-    private ClusterSyncService clusterSyncService;
     
     @ApiOperation(value = "测试 LDAP 配置设置")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "LDAP 配置测试已通过。") })
@@ -119,7 +113,6 @@ public class LdapAuthenticatorConfigurationController
         try
         {
             commonComponent.updateLdap(configuration);
-            clusterSyncService.syncLdapConfiguration(SyncLdapDto.builder().ldapConfiguration(configuration).syncLdapEnum(SyncLdapEnum.ADD_OR_UPDATE).build());
         }
         catch (Exception e)
         {

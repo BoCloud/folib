@@ -11,7 +11,6 @@ import com.veadan.folib.domain.User;
 import com.veadan.folib.dto.RoleDTO;
 import com.veadan.folib.entity.UserGroup;
 import com.veadan.folib.entity.UserGroupRef;
-import com.veadan.folib.event.privilege.PrivilegeEventListenerRegistry;
 import com.veadan.folib.forms.users.auth.*;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.users.security.AuthoritiesProvider;
@@ -72,8 +71,6 @@ public class ArtifactSecurityController extends JFrogBaseController {
     private UserService userService;
     @Inject
     private AuthoritiesProvider authoritiesProvider;
-    @Autowired
-    private PrivilegeEventListenerRegistry privilegeEventListenerRegistry;
 
 
     @ApiOperation(value = "创建用户组")
@@ -109,8 +106,6 @@ public class ArtifactSecurityController extends JFrogBaseController {
             }).collect(Collectors.toList());
             userGroupRefService.saveBath(userGroupRefs);
         }
-        //同步用户组信息到其他节点
-        privilegeEventListenerRegistry.dispatchUserGroupSyncEvent(String.valueOf(userGroup.getId()));
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
@@ -169,8 +164,6 @@ public class ArtifactSecurityController extends JFrogBaseController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(FAILED_CREATE_ROLE);
         }
         folibRoleService.save(roleDTO, username);
-        //同步角色信息到其他节点
-        privilegeEventListenerRegistry.dispatchRoleSyncEvent(roleDTO.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body("");
 
     }

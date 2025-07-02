@@ -1,14 +1,11 @@
 package com.veadan.folib.services.impl;
 
-import com.alibaba.fastjson.JSONObject;
 import com.veadan.folib.cluster.SyncRepositoryEnum;
 import com.veadan.folib.cluster.SyncStorageEnum;
-import com.veadan.folib.controllers.cluster.dto.SyncRepositoryDto;
 import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
 import com.veadan.folib.entity.*;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
 import com.veadan.folib.licence.ActivateVo;
-import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.Storage;
@@ -28,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -56,8 +52,6 @@ public class UserSyncServiceImpl implements UserSyncService
     private ResourceService resourceService;
     @Inject
     private ConfigurationManagementService configurationManagementService;
-    @Autowired
-    private ClusterSyncService clusterSyncService;
     @Autowired
     private StorageManagementService storageManagementService;
     @Autowired
@@ -142,16 +136,12 @@ public class UserSyncServiceImpl implements UserSyncService
                 if (storageInfo == null) {
                     try {
                         configurationManagementService.createStorage(storage);
-                        SyncStorageDto syncStorageDto = new SyncStorageDto(storage, storage.getId(), SyncStorageEnum.CREATE);
-                        clusterSyncService.syncStorage(syncStorageDto);
                     } catch (IOException e) {
                         log.error("创建存储失败", e);
                     }
                 }else {
                     try {
                         configurationManagementService.updateStorage(storage);
-                        SyncStorageDto syncStorageDto = new SyncStorageDto(storage, storage.getId(), SyncStorageEnum.UPDATE);
-                        clusterSyncService.syncStorage(syncStorageDto);
                     } catch (IOException e) {
                         log.error("更新存储失败", e);
                     }
@@ -167,8 +157,6 @@ public class UserSyncServiceImpl implements UserSyncService
                 if (storageDto == null) {
                     try {
                         configurationManagementService.createStorage(storageDto);
-                        SyncStorageDto syncStorageDto = new SyncStorageDto(storageDto, storageDto.getId(), SyncStorageEnum.CREATE);
-                        clusterSyncService.syncStorage(syncStorageDto);
                     } catch (IOException e) {
                         log.error("创建仓库关联的存储失败", e);
                     }
@@ -179,8 +167,6 @@ public class UserSyncServiceImpl implements UserSyncService
                     try {
                         //判断重复
                         configurationManagementService.addOrUpdateRepository(storageId, repository);
-                        SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repository, storageId, repositoryId, SyncRepositoryEnum.ADD_OR_UPDATE);
-                        clusterSyncService.syncRepository(syncRepositoryDto);
                     } catch (Exception e) {
                         log.error("新增、更新仓库失败", e);
                     }

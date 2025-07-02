@@ -154,10 +154,6 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
 
     @Inject
     @Lazy
-    private ClusterSyncService clusterSyncService;
-
-    @Inject
-    @Lazy
     private ScanRulesMapper scanRulesMapper;
 
     @Inject
@@ -418,15 +414,11 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         MutableMetadataConfiguration mutableMetadataConfiguration = MutableMetadataConfiguration.builder().build();
         BeanUtils.copyProperties(artifactMetadataForm, mutableMetadataConfiguration);
         configurationManagementService.addOrUpdateMetadataConfiguration(mutableMetadataConfiguration);
-        //向其他节点同步
-        syncDataMetadataConfiguration(mutableMetadataConfiguration, SyncMetadataEnum.ADD_OR_UPDATE);
     }
 
     @Override
     public void globalSettingDeleteMetadata(ArtifactMetadataForm artifactMetadataForm) throws IOException {
         configurationManagementService.deleteMetadataConfig(artifactMetadataForm.getKey());
-        //向其他节点同步
-        syncDataMetadataConfiguration(MutableMetadataConfiguration.builder().key(artifactMetadataForm.getKey()).build(), SyncMetadataEnum.DELETE);
     }
 
     @Override
@@ -1972,18 +1964,6 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
      */
     private void handleRepository(String storageId, String repositoryId, String path, Boolean metadata, Integer batch) {
         handleRepository(storageId, repositoryId, path, metadata, batch, null, null, null);
-    }
-
-    /**
-     * 向其他集群节点同步元数据配置
-     *
-     * @param mutableMetadataConfiguration 元数据
-     * @param syncMetadataEnum             枚举类型
-     */
-    private void syncDataMetadataConfiguration(MutableMetadataConfiguration mutableMetadataConfiguration, SyncMetadataEnum syncMetadataEnum) {
-        SyncMetadataDto syncMetadataDto = SyncMetadataDto.builder().syncMetadataEnum(syncMetadataEnum).
-                mutableMetadataConfiguration(mutableMetadataConfiguration).build();
-        clusterSyncService.syncMetadataConfiguration(syncMetadataDto);
     }
 
     public Set<String> roleNames(Authentication authentication) {
