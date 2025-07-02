@@ -220,27 +220,8 @@
                       storagePrefix ? '/' + storagePrefix : storageCreateData.storageProvider ==='local' ? '/storages' : ''
                     }}/{{ storageCreateData.id }}</strong>
                   </a-col>
-                  <a-col class="ml-auto">
-                    <a-input v-if="customStorage" v-model="storagePrefix" :placeholder="storageCreateData.storageProvider ==='s3' ? $t('Storage.BucketName') : $t('Storage.ParentDirectory')"
-                      class="font-regular text-sm text-dark" style="width: 150px;">
-                      <a-icon slot="prefix" type="cloud" v-if="storageCreateData.storageProvider ==='s3'"/>
-                      <a-icon slot="prefix" type="appstore" v-else/>
-                    </a-input>
-                    <a-button v-if="!customStorage"
-                      @click="() => (customStorage = true)" size="small" type="link"
-                      class="ml-10 px-25 font-bold">{{ $t('Storage.Custom') }}
-                    </a-button>
-                    <a-button v-if="customStorage"
-                      @click="() => (customStorage = false, storagePrefix = null)"
-                      size="small" type="link" class="ml-10 px-25 font-bold">{{ $t('Storage.cancelCustom') }}
-                    </a-button>
-                  </a-col>
                 </a-row>
               </a-card>
-            </a-form-model-item>
-            <a-form-model-item class="mb-10" :label="$t('Storage.StorageSizeLimit')" :colon="false">
-                <a-input v-model="storageMaxSize" @input="handleInput($event,'storageMaxSize')" :maxLength="6" addon-after="TB">
-                </a-input>
             </a-form-model-item>
             <a-form-model-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN') > -1" :label="$t('Storage.Administrator')"
               :colon="false">
@@ -325,27 +306,8 @@
                       storagePrefix ? '/' + storagePrefix : currentStorage.storageProvider ==='local' ? '/storages' : ''
                     }}/{{ currentStorage.id }}</strong>
                   </a-col>
-                  <a-col class="ml-auto">
-                    <a-input v-if="customStorage" v-model="storagePrefix" :placeholder="currentStorage.storageProvider ==='s3' ? $t('Storage.BucketName') : $t('Storage.ParentDirectory')"
-                      class="font-regular text-sm text-dark" style="width: 150px;">
-                      <a-icon slot="prefix" type="cloud" v-if="currentStorage.storageProvider === 's3'"/>
-                      <a-icon slot="prefix" type="appstore" v-else />
-                    </a-input>
-                    <a-button disabled v-if="!customStorage"
-                      @click="() => (customStorage = true)" size="small" type="link"
-                      class="ml-10 px-25 font-bold">{{ $t('Storage.Custom') }}
-                    </a-button>
-                    <a-button v-if="customStorage"
-                      @click="() => (customStorage = false, storagePrefix = null)" size="small"
-                      type="link" class="ml-10 px-25 font-bold">{{ $t('Storage.cancelCustom') }}
-                    </a-button>
-                  </a-col>
                 </a-row>
               </a-card>
-            </a-form-item>
-            <a-form-item class="mb-10" :label="$t('Storage.StorageSizeLimit')" :colon="false">
-                <a-input v-model="storageMaxSize" @input="handleInput($event,'storageMaxSize')"  :maxLength="6" addon-after="TB">
-                </a-input>
             </a-form-item>
             <a-form-item class="tags-field mb-10" v-if="userInfo.roles.indexOf('ADMIN') > -1" :label="$t('Storage.Administrator')"
               :colon="false">
@@ -1206,7 +1168,6 @@ export default {
         admin: undefined,
         users: [],
         storageProvider: 'local',
-        storageMaxSize: 0,
         bucket: null,
         syncEnabled: false
       },
@@ -1227,7 +1188,6 @@ export default {
         basedir: null,
         admin: undefined,
         storageProvider: 'local',
-        storageMaxSize: 0,
         bucket: null,
         users: [],
         syncEnabled: false
@@ -1274,7 +1234,6 @@ export default {
       form: this.$form.createForm(this, { name: 'steps' }),
       folibRepositoryIds: "",
       artifactMaxSize: 100,
-      storageMaxSize: 0,
       folibRepositoryEditDisabled: false,
       isShow:false,
       folibRepositoryData:{
@@ -1844,9 +1803,6 @@ export default {
             } else {
               this.storageCreateData.basedir = this.storagePrefix ? '/' + this.storagePrefix + '/' + this.storageCreateData.id : null
             }
-            if (this.storageMaxSize) {
-              this.storageCreateData.storageMaxSize = this.storageMaxSize * 1024 * 1024 * 1024 * 1024
-            }
             createStorages(this.storageCreateData).then(response => {
               setTimeout(() => {
                 this.$notification.success({
@@ -1871,9 +1827,6 @@ export default {
     },
     handleUpdateSubmit(e) {
       if (this.currentStorage.id != null) {
-        if (this.storageMaxSize) {
-          this.currentStorage.storageMaxSize = this.storageMaxSize * 1024 * 1024 * 1024 * 1024
-        }
         this.currentStorage
         updateStorages(this.currentStorage).then(response => {
           setTimeout(() => {
