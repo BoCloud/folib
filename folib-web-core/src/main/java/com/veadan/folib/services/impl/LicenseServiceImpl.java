@@ -6,7 +6,6 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.google.common.collect.Maps;
 import com.hazelcast.core.HazelcastInstance;
-import com.veadan.folib.domain.block.AllowlistDenylistBlockService;
 import com.veadan.folib.domain.license.LicenseBlackWhite;
 import com.veadan.folib.entity.AllowlistDenylistBlock;
 import com.veadan.folib.entity.License;
@@ -60,8 +59,6 @@ public class LicenseServiceImpl implements LicenseService {
     @Autowired
     private HazelcastInstance hazelcastInstance;
 
-    @Inject
-    private AllowlistDenylistBlockService allowlistDenylistBlockService;
 
     /**
      * 将字符串按照指定长度分割成字符串数组
@@ -226,20 +223,6 @@ public class LicenseServiceImpl implements LicenseService {
                 .category(CategoryEnum.LICENSE.toString())
                 .domain(BlockDomainEnum.PLATFORM.toString())
                 .build();
-
-        List<AllowlistDenylistBlock>  list = allowlistDenylistBlockService.queryAllowlistDenylistBlockList(block);
-        Set<String>  blackList = list.stream().filter(item-> RuleEnum.BLACKLIST.toString().equals(item.getType())).map(AllowlistDenylistBlock::getIdentifier).collect(Collectors.toSet());
-        Set<String>  whiteList = list.stream().filter(item-> RuleEnum.WHITES.toString().equals(item.getType())).map(AllowlistDenylistBlock::getIdentifier).collect(Collectors.toSet());
-
-        for (License  item : licenseList){
-           if(blackList.stream().anyMatch(data-> item.getLicenseId().equals(data))){
-               item.setBlackWhiteType(2);
-           }else if(whiteList.stream().anyMatch(data-> item.getLicenseId().equals(data))){
-               item.setBlackWhiteType(1);
-           }else{
-               item.setBlackWhiteType(0);
-           }
-        }
 
         return new TableResultResponse<LicenseTableForm>(result.getTotal(), Optional.ofNullable(licenseList).orElse(Collections.emptyList()).stream().map(license -> {
             LicenseTableForm licenseTableForm = LicenseTableForm.builder().build();

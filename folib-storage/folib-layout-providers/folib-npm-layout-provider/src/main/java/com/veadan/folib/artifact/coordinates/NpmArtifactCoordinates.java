@@ -2,12 +2,12 @@ package com.veadan.folib.artifact.coordinates;
 
 import com.google.common.collect.Lists;
 import com.veadan.folib.artifact.coordinates.versioning.SemanticVersion;
-import com.veadan.folib.cloud.storage.s3fs.util.UriUtils;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.db.schema.Vertices;
 import com.veadan.folib.domain.LayoutArtifactCoordinatesEntity;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.NpmLayoutProvider;
+import com.veadan.folib.util.UriUtils;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlRootElement;

@@ -12,9 +12,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import com.veadan.folib.utils.CollectionUtils;
 import lombok.*;
 import org.apache.commons.compress.utils.Lists;
-import software.amazon.awssdk.utils.CollectionUtils;
 
 /**
  * @author veadan

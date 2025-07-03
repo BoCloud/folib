@@ -3,24 +3,15 @@ package com.veadan.folib.controllers;
 
 import com.veadan.folib.artifact.ArtifactNotFoundException;
 import com.veadan.folib.components.artifact.ArtifactComponent;
-import com.veadan.folib.components.block.ArtifactBlockComponent;
 import com.veadan.folib.controllers.support.ErrorResponseEntityBody;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.CacheSettings;
-import com.veadan.folib.domain.DirectoryListing;
-import com.veadan.folib.enums.ProductTypeEnum;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
-import com.veadan.folib.io.ByteRangeInputStream;
 import com.veadan.folib.providers.io.*;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
 import com.veadan.folib.services.ArtifactManagementService;
-import com.veadan.folib.services.DictService;
-import com.veadan.folib.services.DirectoryListingService;
 import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.storage.repository.Repository;
-import com.veadan.folib.storage.repository.RepositoryTypeEnum;
-import com.veadan.folib.users.domain.Privileges;
-import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.util.UriUtils;
 import com.veadan.folib.utils.ArtifactControllerHelper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,39 +22,24 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import com.veadan.folib.commons.http.range.ByteRange;
 import com.veadan.folib.commons.http.range.ByteRangeHeaderParser;
-import com.veadan.folib.commons.io.reloading.FSReloadableInputStreamHandler;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.http.*;
-import org.springframework.ui.ModelMap;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.HandlerMapping;
-import org.springframework.web.servlet.ModelAndView;
 
 import javax.inject.Inject;
 import java.io.*;
-import java.net.URI;
-import java.nio.ByteBuffer;
-import java.nio.MappedByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
-import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.nio.file.spi.FileSystemProvider;
-import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-
-import static org.springframework.http.HttpStatus.PARTIAL_CONTENT;
 
 public abstract class BaseArtifactController
         extends BaseController {
@@ -79,9 +55,6 @@ public abstract class BaseArtifactController
 
     @Autowired
     private ArtifactComponent artifactComponent;
-
-    @Autowired
-    private ArtifactBlockComponent artifactBlockComponent;
 
     protected boolean provideArtifactDownloadResponse(HttpServletRequest request,
                                                       HttpServletResponse response,
@@ -240,15 +213,6 @@ public abstract class BaseArtifactController
         Artifact artifact = getArtifact(repositoryPath);
         if (Objects.isNull(artifact)) {
             return null;
-        }
-        boolean block = artifactBlockComponent.artifactBlockStrategy(artifact, repositoryPath.getRepository().getLayout());
-        if (block) {
-            httpServletResponse.setContentType(org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
-            httpServletResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            String msg = "The artifact " + artifact.getUuid() + " has a vulnerability, and downloading is prohibited";
-            httpServletResponse.getWriter().println(objectMapper.writeValueAsString(new ErrorResponseEntityBody(msg)));
-            httpServletResponse.flushBuffer();
-            artifactEventListenerRegistry.dispatchArtifactDownloadBlockedEvent(repositoryPath);
         }
         return artifact;
     }

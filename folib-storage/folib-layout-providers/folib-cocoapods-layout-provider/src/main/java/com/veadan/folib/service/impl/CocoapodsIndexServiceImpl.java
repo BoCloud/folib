@@ -109,21 +109,6 @@ public class CocoapodsIndexServiceImpl implements CocoapodsIndexService
 
             ziFilePath = specIndexZipTempPath.getTarget().toString();
             String tarGzFilePath = specIndexZipTempPath.getTarget().getParent().getParent().toString()+"/master.tar.gz";
-            if (S3FileSystemStorageProvider.ALIAS.equals(repository.getStorageProvider()))
-            { // 转换网路路径为本地路径
-                final String localZipFileTempPath = String.format("%s%s/master.zip", indexTempFolderPath, UUID.randomUUID());
-                final String localTarGzFileTempPath = String.format("%s%s/master.tar.gz", indexTempFolderPath, UUID.randomUUID());
-                ziFilePath = localZipFileTempPath;
-                tarGzFilePath = localTarGzFileTempPath;
-                FileUtil.touch(new File(ziFilePath));
-                FileUtil.touch(new File(tarGzFilePath));
-                try (InputStream inputStream = new BufferedInputStream(Files.newInputStream(specIndexZipTempPath))) {
-                    // 将S3网络路径缓存到本地
-                    FileUtil.writeFromStream(inputStream, localZipFileTempPath);
-                    logger.info("S3存储，转存S3文件到本本地：{}", specIndexZipTempPath);
-                }
-            }
-
             logger.info("开始转换Cocoapods仓库代理仓库Zip（{}:{}）", specIndexZipTempPath, ziFilePath);
             final JSONObject podNewSourceObj = new JSONObject();
             CompressUtil.zip2Targz(ziFilePath, tarGzFilePath,
@@ -164,14 +149,6 @@ public class CocoapodsIndexServiceImpl implements CocoapodsIndexService
                     }));
             logger.info("结束转换Cocoapods仓库代理仓库Zip（{}）", specIndexZipTempUri);
 
-            if (S3FileSystemStorageProvider.ALIAS.equals(repository.getStorageProvider()))
-            { // 存储模式为S3将转换后的索引TarGz上传到S3
-                final RepositoryPath indexTarZipPath = repositoryPathResolver.resolve(storageId, repositoryId, specIndexTarGzTempUri);
-                try (InputStream inputStream = Files.newInputStream(Path.of(tarGzFilePath))) {
-                    artifactManagementService.store(indexTarZipPath, inputStream);
-                }
-                logger.info("S3存储，回传本地转换后TarGz文件成功：{}", specIndexTarGzTempUri);
-            }
 
             { // 转换成功后把临时文件删除
                 try {

@@ -1,8 +1,6 @@
 package com.veadan.folib.providers.layout;
 
 import com.veadan.folib.artifact.MavenArtifact;
-import com.veadan.folib.cloud.storage.s3fs.S3Iterator;
-import com.veadan.folib.cloud.storage.s3fs.S3Path;
 import com.veadan.folib.providers.io.*;
 import com.veadan.folib.providers.search.SearchException;
 import com.veadan.folib.services.ArtifactSearchService;

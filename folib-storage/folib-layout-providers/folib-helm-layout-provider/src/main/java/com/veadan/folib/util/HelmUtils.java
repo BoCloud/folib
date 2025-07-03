@@ -1,7 +1,9 @@
 package com.veadan.folib.util;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.Instant;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -17,9 +19,7 @@ import lombok.NonNull;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.LoaderOptions;
-import software.amazon.awssdk.utils.StringInputStream;
+
 
 public abstract class HelmUtils {
     @Generated
@@ -91,7 +91,7 @@ public abstract class HelmUtils {
     public static InputStream indexYamlToInputStream(HelmIndexYamlMetadata indexYaml) {
         try {
             indexYaml.generated = Instant.now().toString();
-            return (InputStream)new StringInputStream(writeIndexYaml(indexYaml));
+           return new ByteArrayInputStream( writeIndexYaml(indexYaml).getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             log.error("Failed to write index.yaml:{}", e.getMessage());
             log.debug("Failed to write index.yaml:", e);
