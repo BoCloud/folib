@@ -7,7 +7,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.veadan.folib.artifact.archive.JarArchiveListingFunction;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.components.DistributedLockComponent;
@@ -15,7 +14,6 @@ import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.config.NpmLayoutProviderConfig;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
-import com.veadan.folib.configuration.SecurityPolicyConfiguration;
 import com.veadan.folib.configuration.UnionRepositoryConfiguration;
 import com.veadan.folib.configuration.UnionTargetRepositoryConfiguration;
 import com.veadan.folib.constant.GlobalConstants;
@@ -26,12 +24,8 @@ import com.veadan.folib.domain.ArtifactIdGroup;
 import com.veadan.folib.domain.CacheSettings;
 import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
-import com.veadan.folib.domain.Vulnerability;
 import com.veadan.folib.entity.ArtifactCacheRecord;
 import com.veadan.folib.entity.Dict;
-import com.veadan.folib.entity.PackageNameBlock;
-import com.veadan.folib.enums.BlockTypeEnum;
-import com.veadan.folib.enums.ConditionTypeEnum;
 import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.FileUnitTypeEnum;
 import com.veadan.folib.enums.PromotionStatusEnum;
@@ -41,7 +35,6 @@ import com.veadan.folib.npm.metadata.PackageVersion;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
-import com.veadan.folib.providers.io.RootRepositoryPath;
 import com.veadan.folib.providers.layout.CocoapodsFileSystem;
 import com.veadan.folib.providers.layout.CocoapodsLayoutProvider;
 import com.veadan.folib.providers.layout.ConanFileSystem;
@@ -82,14 +75,12 @@ import com.veadan.folib.services.ArtifactService;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.DictService;
 import com.veadan.folib.services.DirectoryListingService;
-import com.veadan.folib.services.PackageNameBlockService;
 import com.veadan.folib.storage.metadata.MetadataHelper;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.util.CacheUtil;
 import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.util.FileSizeConvertUtils;
 import com.veadan.folib.util.LocalDateTimeInstance;
-import com.veadan.folib.utils.VersionUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.collections4.CollectionUtils;
@@ -134,7 +125,6 @@ import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -146,10 +136,8 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -214,10 +202,6 @@ public class ArtifactComponent {
     @Inject
     @Lazy
     private ArtifactEventListenerRegistry artifactEventListenerRegistry;
-
-    @Inject
-    @Lazy
-    private PackageNameBlockService packageNameBlockService;
 
     @Inject
     @Lazy
@@ -597,117 +581,6 @@ public class ArtifactComponent {
             log.error(String.format("groupId：%s, artifactId：%s，version：%s，pomPath：%s，保存pom.xml错误：%s", groupId, artifactId, version, pomPath, ExceptionUtils.getStackTrace(ex)));
             throw new RuntimeException(ex);
         }
-    }
-
-    /**
-     * 判断是否需要阻断
-     *
-     * @param artifact 制品
-     * @param layout   layout
-     * @return true
-     */
-    private boolean vulnerabilityBlock(Artifact artifact, String layout) {
-        if (Objects.isNull(artifact)) {
-            return false;
-        }
-        boolean block = false;
-        try {
-            String storageId = artifact.getStorageId(), repositoryId = artifact.getRepositoryId();
-            if (StringUtils.isBlank(layout)) {
-                RootRepositoryPath rootRepositoryPath = repositoryPathResolver.resolve(storageId, repositoryId);
-                layout = rootRepositoryPath.getRepository().getLayout();
-            }
-            boolean isDockerLayout = DockerLayoutProvider.ALIAS.equals(layout);
-            Set<Vulnerability> vulnerabilitySet = artifact.getVulnerabilitySet();
-            if (isDockerLayout) {
-                String manifest = "manifest";
-                String path = artifact.getUuid();
-                if (DockerArtifactCoordinates.include(path) && path.contains(manifest)) {
-                    String keywords = path.substring(path.lastIndexOf("manifest/") + "manifest/".length());
-                    vulnerabilitySet = artifactRepository.fetchVulnerabilitiesByKeywords(storageId, repositoryId, keywords);
-                }
-            }
-            Set<String> vulnerabilities = Optional.ofNullable(vulnerabilitySet).orElse(Collections.emptySet()).stream().map(Vulnerability::getUuid).collect(Collectors.toSet());
-            final SecurityPolicyConfiguration mutableSecurityPolicyConfiguration = configurationManagementService.getConfiguration().getSecurityPolicyConfiguration();
-            if (Objects.nonNull(mutableSecurityPolicyConfiguration)) {
-                final Repository repositoryDto = configurationManagementService.getConfiguration().getStorage(storageId).getRepository(repositoryId);
-                Set<String> repositoryBlacks = repositoryDto.getVulnerabilityBlacks();
-                Set<String> repositoryWhites = repositoryDto.getVulnerabilityWhites();
-                Set<String> platformBlacks = mutableSecurityPolicyConfiguration.getBlacks();
-                Set<String> platformWhites = mutableSecurityPolicyConfiguration.getWhites();
-                if (BlockTypeEnum.ALL.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
-                    if (CollectionUtils.isEmpty(vulnerabilitySet)) {
-                        return false;
-                    }
-                    //过滤仓库级别黑名单
-                    block = vulnerabilities.stream().anyMatch(repositoryBlacks::contains);
-                    if (!block) {
-                        Set<String> allSet = Sets.newLinkedHashSet(), blackSet;
-                        //不在阻断漏洞等级内的漏洞集合，需要过滤黑名单
-                        Set<Vulnerability> unIncludeVulnerabilitySet = Sets.newLinkedHashSet();
-                        if (CollectionUtils.isNotEmpty(mutableSecurityPolicyConfiguration.getBlockLevels())) {
-                            for (Vulnerability vulnerability : vulnerabilitySet) {
-                                //开启白名单过滤
-                                if (Boolean.TRUE.equals(mutableSecurityPolicyConfiguration.getFilterWhites())) {
-                                    //过滤仓库级别白名单、平台级别白名单
-                                    if (repositoryWhites.contains(vulnerability.getUuid()) || platformWhites.contains(vulnerability.getUuid())) {
-                                        continue;
-                                    }
-                                }
-                                if (mutableSecurityPolicyConfiguration.getBlockLevels().contains(vulnerability.getHighestSeverityText())) {
-                                    allSet.add(vulnerability.getUuid());
-                                } else {
-                                    unIncludeVulnerabilitySet.add(vulnerability);
-                                }
-                            }
-                        }
-                        //过滤平台级别黑名单
-                        blackSet = unIncludeVulnerabilitySet.stream().filter(item -> platformBlacks.contains(item.getUuid())).map(Vulnerability::getUuid).collect(Collectors.toCollection(LinkedHashSet::new));
-                        allSet.addAll(blackSet);
-                        block = CollectionUtils.isNotEmpty(allSet);
-                    }
-                } else if (BlockTypeEnum.BLACK.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
-                    if (CollectionUtils.isEmpty(vulnerabilitySet)) {
-                        return false;
-                    }
-                    //黑名单阻断
-                    block = vulnerabilities.stream().anyMatch(item -> repositoryBlacks.contains(item) ||
-                            (!repositoryWhites.contains(item) && platformBlacks.contains(item)));
-                } else if (BlockTypeEnum.PACKAGE_NAME.getType().equals(mutableSecurityPolicyConfiguration.getBlockType())) {
-                    //包名阻断
-                    List<PackageNameBlock> packageNameBlockList = packageNameBlockService.getPackageNameBlockCache();
-                    if (CollectionUtils.isNotEmpty(packageNameBlockList)) {
-                        packageNameBlockList = packageNameBlockList.stream().filter(item -> artifact.getArtifactPath().contains(item.getPackageName())).collect(Collectors.toList());
-                        if (CollectionUtils.isEmpty(packageNameBlockList)) {
-                            return false;
-                        }
-                        block = packageNameBlockList.stream().anyMatch(packageNameBlock -> {
-                            if (ConditionTypeEnum.RANGE.getCondition().equals(packageNameBlock.getConditionValue())) {
-                                String artifactVersion = artifact.getArtifactCoordinates().getVersion();
-                                if (StringUtils.isBlank(artifactVersion)) {
-                                    return false;
-                                }
-                                long startTime = System.currentTimeMillis();
-                                boolean flag = VersionUtils.versionInRange(artifactVersion, packageNameBlock.getVersion());
-                                long endTime = System.currentTimeMillis();
-                                log.debug("比较版本耗时：[{}] 毫秒", endTime - startTime);
-                                return flag;
-                            } else if (ConditionTypeEnum.EQ.getCondition().equals(packageNameBlock.getConditionValue())) {
-                                String artifactVersion = artifact.getArtifactCoordinates().getVersion();
-                                if (StringUtils.isBlank(artifactVersion)) {
-                                    return false;
-                                }
-                                return artifact.getArtifactPath().contains(packageNameBlock.getPackageName()) && artifactVersion.equals(packageNameBlock.getVersion());
-                            }
-                            return artifact.getArtifactPath().contains(packageNameBlock.getPackageName());
-                        });
-                    }
-                }
-            }
-        } catch (Exception ex) {
-            log.warn("判断制品 [{}] [{}] [{}] 是否需要阻断错误 [{}]", artifact.getStorageId(), artifact.getRepositoryId(), artifact.getArtifactPath(), ExceptionUtils.getStackTrace(ex));
-        }
-        return block;
     }
 
     /**

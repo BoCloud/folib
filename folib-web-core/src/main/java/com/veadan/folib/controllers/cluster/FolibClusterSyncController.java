@@ -4,17 +4,14 @@ package com.veadan.folib.controllers.cluster;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.cluster.*;
 import com.veadan.folib.components.common.CommonComponent;
-import com.veadan.folib.configuration.MutableSecurityPolicyConfiguration;
 import com.veadan.folib.configuration.MutableWebhookConfiguration;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.cluster.dto.*;
 import com.veadan.folib.job.cron.services.CronTaskConfigurationService;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
-import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.services.RepositoryManagementService;
 import com.veadan.folib.services.StorageManagementService;
 import com.veadan.folib.storage.Storage;
-import com.veadan.folib.storage.repository.Repository;
 import io.swagger.annotations.Api;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -28,7 +25,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.nio.file.Files;
 import java.util.Objects;
 
 
@@ -82,18 +78,6 @@ public class FolibClusterSyncController extends BaseController {
             return getBadRequestResponseEntity(e.getMessage(), "");
         }
         return ResponseEntity.ok("Sync storage ok");
-    }
-
-    @PostMapping("syncSecurityPolicyConfiguration")
-    public ResponseEntity syncSecurityPolicyConfiguration(@RequestBody MutableSecurityPolicyConfiguration mutableSecurityPolicyConfiguration) {
-        try {
-            configurationManagementService.saveOrUpdateSecurityPolicy(mutableSecurityPolicyConfiguration);
-            logger.info("Sync securityPolicyConfiguration success");
-        } catch (Exception e) {
-            logger.error("Sync securityPolicyConfiguration error {}", ExceptionUtils.getStackTrace(e));
-            return getBadRequestResponseEntity(e.getMessage(), "");
-        }
-        return ResponseEntity.ok("Sync securityPolicyConfiguration ok");
     }
 
     @PostMapping("syncMetadataConfiguration")

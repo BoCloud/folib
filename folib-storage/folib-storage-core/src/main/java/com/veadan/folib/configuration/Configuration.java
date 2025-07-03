@@ -61,11 +61,6 @@ public class Configuration {
     private final SmtpConfiguration smtpConfiguration;
 
     /**
-     * 安全策略配置
-     */
-    private final SecurityPolicyConfiguration securityPolicyConfiguration;
-
-    /**
      * 元数据配置
      */
     private final Map<String, MetadataConfiguration> metadataConfiguration;
@@ -104,7 +99,6 @@ public class Configuration {
         routingRules = immuteRoutingRules(delegate.getRoutingRules());
         corsConfiguration = immuteCorsConfiguration(delegate.getCorsConfiguration());
         smtpConfiguration = immuteSmtpConfiguration(delegate.getSmtpConfiguration());
-        securityPolicyConfiguration = immuteSecurityPolicyConfiguration(delegate.getSecurityPolicyConfiguration());
         metadataConfiguration = immuteMetadataConfiguration(delegate.getMetadataConfiguration());
         webhookConfiguration = immuteWebhookConfiguration(delegate.getWebhookConfiguration());
         advancedConfiguration = immuteAdvancedConfiguration(delegate.getAdvancedConfiguration());
@@ -137,10 +131,6 @@ public class Configuration {
 
     private SmtpConfiguration immuteSmtpConfiguration(final MutableSmtpConfiguration source) {
         return source != null ? new SmtpConfiguration(source) : null;
-    }
-
-    private SecurityPolicyConfiguration immuteSecurityPolicyConfiguration(final MutableSecurityPolicyConfiguration source) {
-        return source != null ? new SecurityPolicyConfiguration(source) : null;
     }
 
     private Map<String, WebhookConfiguration> immuteWebhookConfiguration(final Map<String, MutableWebhookConfiguration> source) {
@@ -313,10 +303,6 @@ public class Configuration {
 
     public SmtpConfiguration getSmtpConfiguration() {
         return smtpConfiguration;
-    }
-
-    public SecurityPolicyConfiguration getSecurityPolicyConfiguration() {
-        return securityPolicyConfiguration;
     }
 
     public Map<String, MetadataConfiguration> getMetadataConfiguration() {
