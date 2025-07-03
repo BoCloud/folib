@@ -18,11 +18,10 @@
             @updateHandleView="updateHandleView"
             @handheTableSearch='handheTableSearch'
             @createHandleView="createHandleView"
-            @showOverview="showOverview"
           />
         </a-col>
     </a-row>
-    <a-row :style="isChecked ? 'margin-top:0;' : 'margin-top:-120px;'" style="transition: all 0.5s ease;margin-bottom:-30px;" v-if="!isShowOverview" type="flex" :gutter="[24, 24]">
+    <a-row :style="isChecked ? 'margin-top:0;' : 'margin-top:-120px;'" style="transition: all 0.5s ease;margin-bottom:-30px;" type="flex" :gutter="[24, 24]">
       <a-col :span="24" :lg="6">
         <!-- Page Anchors -->
 <!--        <a-affix :offset-top="navbarFixed ? 100 : 10">-->
@@ -144,14 +143,6 @@
               <a-pagination @change="handlerPageNum" @showSizeChange="handlerPageSize" :total="queryParams.total" show-size-changer />
             </div>
           </a-tab-pane>
-          <a-tab-pane key="2" v-if="isLogin" :tab="$t('Storage.StorageOverview')">
-            <a-row type="flex" :gutter="24" style="height: calc(100vh - 224px);overflow:auto;margin-top:0px;padding-left:4px;margin-right: 4px;">
-              <a-col :span="24">
-                <Overview :storageId="currentStorage.id"/>
-                <StorageInfo class="mt-20" :storageId="currentStorage.id"/>
-              </a-col>
-            </a-row>
-          </a-tab-pane>
         </a-tabs>
         <!-- 存储空间模式下 直接展示仓库内容 -->
         <LibView
@@ -164,13 +155,6 @@
           :style="isChecked ? 'margin-top:-121px;' : ''" style="border:none;transition: all 0.5s ease;"
           :isChecked="isChecked"
         />
-      </a-col>
-    </a-row>
-    <!-- 存储空间模式下 切换到存储概览 -->
-    <a-row v-else style="margin-top:20px;">
-      <a-col :span="24">
-        <Overview :storageId="currentStorage.id"/>
-        <StorageInfo class="mt-20" :storageId="currentStorage.id"/>
       </a-col>
     </a-row>
 
@@ -1091,10 +1075,7 @@ import FolibKanbanTask from "@/components/Kanban/FolibKanbanTask"
 import storage from 'store'
 import store from '@/store'
 import { checkMachineCode } from "@/api/settings"
-import { hasRole, isAdmin, hasPermission, isLogin } from "@/utils/permission"
-import language from "@/store/modules/language";
-import Overview from "../StorageMonitoring/components/Overview"
-import StorageInfo from "../StorageMonitoring/components/StorageInfo"
+import { isAdmin, isLogin } from "@/utils/permission"
 import storageInfoCard from './Storage-components/storage-info-card.vue'
 import LibView from './LibView.vue'
 import CronTask from "@/views/Storage/components/Cron/index.vue";
@@ -1116,8 +1097,6 @@ export default {
     draggable,
     FolibKanbanBoard,
     FolibKanbanTask,
-    Overview,
-    StorageInfo,
     storageInfoCard, // 存储空间卡片信息组件
     LibView,
     selectType,
@@ -1327,7 +1306,6 @@ export default {
       },
       layoutType:'isFilter',
       isChecked: false,
-      isShowOverview: false,
      permissionForm: {
         allowAnonymous: true,
         scope: 1,
@@ -1495,11 +1473,6 @@ export default {
             username: ""
           }
       }
-    },
-    // 展示存储概览
-    showOverview(val){
-      this.isShowOverview = val == 2
-      if(!this.isShowOverview) this.$nextTick(() => { this.reloadTree() })
     },
     changeMoudles(){
       // this.isChecked = !this.isChecked

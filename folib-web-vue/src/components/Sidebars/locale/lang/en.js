@@ -30,9 +30,5 @@ export default {
     'CurrentlySupportsStyles': 'Currently supports 2 styles, other styles will be updated later',
     'Transparent': 'Transparent',
     'WhiteBackground': 'White background',
-    'NavigationLock': 'Navigation lock',
-    'StorageMonitoring': 'Storage Cockpits',
-    'StatisticalOverview':'Statistical Overview',
-    'AdvancementCockpits':'Advancement Cockpits',
-    'AdvancementCockpitsInfo':'Advancement Cockpits Info',
+    'NavigationLock': 'Navigation lock'
 }
