@@ -118,18 +118,6 @@
               </a-col>
             </a-row>
           </a-tab-pane>
-          <a-tab-pane :key="4" :tab="$t('Setting.BackupStrategy')">
-            <BackupStrategy/>
-          </a-tab-pane>
-          <a-tab-pane :key="5" :tab="$t('Setting.CachingStrategy')">
-            <a-card :bordered="false" class="header-solid">
-              <template #title>
-                <h6>{{ $t('Setting.CachingStrategy') }}</h6>
-                <p>{{ $t('Setting.setSSDCacheAccelerationStrategy') }}</p>
-              </template>
-              <ArtifactsCache/>
-            </a-card>
-          </a-tab-pane>
           <a-tab-pane :key="6" :tab="'DB' + $t('Setting.Information')">
             <a-tabs class="tabs-sliding" :default-active-key="1" @change="dbTabChange($event)">
               <a-tab-pane :key="1" tab="Schema">
@@ -272,8 +260,6 @@ import "prismjs/components/prism-javascript"
 import "prismjs/themes/prism-tomorrow.css"
 import DataMigration from "./components/DataMigration.vue"
 import ArtifactsBackup from "./components/ArtifactsBackup.vue";
-import BackupStrategy from "./components/BackupStrategy/index.vue";
-import ArtifactsCache from "./components/Cache/index.vue";
 import JfrogMigration from "./components/JfrogMigration.vue"
 import MigrateArtifact from "./components/MigrateArtifact.vue"
 import SystemConfig from "./components/SystemConfig.vue"
@@ -360,9 +346,7 @@ export default {
     PrismEditor,
     DataMigration,
     ArtifactsBackup,
-    ArtifactsCache,
     JfrogMigration,
-    BackupStrategy,
     MigrateArtifact,
     SystemConfig,
     SystemImportExport,
