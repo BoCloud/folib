@@ -104,13 +104,6 @@
                                     </div>
                                 </a-dropdown>
                             </div>
-                            <!--  <a-tooltip placement="topLeft">
-                                <template slot="title">
-                                    <span>{{ $t('Storage.s3Storage') }}</span>
-                                </template>
-                                <a-icon style="margin-left: 15px" v-if="currentStorage.storageProvider === 's3'" type="cloud"
-                                    theme="filled" class="text-gray-6 text-lg" />
-                            </a-tooltip>-->
                         </h4>
                         <p>
                             <span class="url-value">{{ baseUrl }}api/browse/{{ currentStorage.id }}</span>
@@ -126,10 +119,6 @@
                     </div>
                 </a-col>
                 <a-col v-if="layoutType === 'isFilter'" :span="16" style="display: flex;align-items: center;justify-content: flex-end">
-                    <a-tabs v-if="layoutType === 'isFilter'" class="tabs-sliding" style="margin-top:-2px;margin-right:10px;" default-active-key="1" @change="getTabKey">
-                        <a-tab-pane key="1" tab="仓库"></a-tab-pane>
-                        <a-tab-pane key="2" tab="概览"></a-tab-pane>
-                    </a-tabs>
                     <a-form layout="inline">
                         <a-form-item>
                             <a-input-search
@@ -220,14 +209,8 @@
 
 <script>
 import { isAdmin } from "@/utils/permission"
-import Overview from "../../StorageMonitoring/components/Overview"
-import StorageInfo from "../../StorageMonitoring/components/StorageInfo"
 import typeList from "./select-type";
 export default {
-    components:{
-        Overview,
-        StorageInfo
-    },
     props:['currentStorage','baseUrl','layoutType','storageData'],
     data() {
         return {
@@ -288,9 +271,6 @@ export default {
             }else{
                 this.$emit('handheTableSearch',this.queryParams)
             }
-        },
-        getTabKey(val){
-            this.$emit('showOverview',val)
         }
     }
 }
