@@ -407,11 +407,7 @@
                         :title="$t('Storage.BasicInformation')"/>
                 <a-step v-if="folibRepository.type === 'proxy'" :title="$t('Storage.RemoteConfiguration')"/>
                 <a-step v-if="folibRepository.type === 'group'" :title="$t('Storage.CombinationConfiguration')"/>
-                <a-step :title="$t('Storage.PermissionSetting')" :disabled="isRepoExist" />
                 <a-step :title="$t('Storage.TimingPolicy')" :disabled="isRepoExist" />
-<!--                <a-step :title="$t('Storage.FederatedRepository')"  :disabled="isRepoExist"/>-->
-                <a-step :title="$t('Storage.Scan')"  :disabled="isRepoExist" v-if="folibRepository.type !== 'group'"/>
-                <!-- <a-step title="定时策略" /> -->
             </a-steps>
           <!-- / Steps -->
 
@@ -869,118 +865,9 @@
               </a-col>
             </a-row>
           </a-card>
-<!--          <a-card v-else-if="step === 3" :bordered="false" class="header-solid">-->
-<!--            <h5 class="font-regular text-center">{{ $t('Storage.CustomizedStrategy') }}</h5>-->
-<!--            <p class="text-center">{{ $t('Storage.TimingStrategy') }}</p>-->
-<!--            <a-form :form="form" :hideRequiredMark="true">-->
-
-<!--              <div v-for="(i, index) in cronCanSetList" :key="index">-->
-<!--                <a-row type="flex" align="middle">-->
-<!--                  <a-col style="min-width: 40px;" class="text-center">-->
-<!--                    <a-icon type="clock-circle" class="text-gray-6" style="font-size: 18px;" />-->
-<!--                  </a-col>-->
-<!--                  <a-col class="pl-15">-->
-<!--                    <p class="mb-0">{{ i.name }}</p>-->
-<!--                    <small class="text-dark">{{ i.description }}</small>-->
-<!--                  </a-col>-->
-<!--                  <a-col :span="24" :md="12" class="ml-auto"-->
-<!--                    style="display: flex; align-items: center; justify-content: flex-end">-->
-<!--                    <a-tag v-if="i.isSetted && i.isSetted.uuid" color="success" class="ant-tag-success font-bold">{{ $t('Storage.HaveSet') }}-->
-<!--                    </a-tag>-->
-<!--                    <span class="ml-5">{{ i.scope }}</span>-->
-<!--                    <a-button @click="cronShowHandle(i, index)" type="link" class="btn-more ml-5">-->
-<!--                      {{ $t('Storage.ExpandSetting') }}-->
-<!--                      <a-icon :type="i.isShow ? 'arrow-down' : 'arrow-right'" />-->
-<!--                    </a-button>-->
-<!--                  </a-col>-->
-<!--                </a-row>-->
-<!--                <a-card v-if="i.isShow" :bordered="false" class="bg-gray-3 shadow-0 mb-24"-->
-<!--                  :bodyStyle="{ padding: '8px' }">-->
-<!--                  <a-row type="flex" align="middle">-->
-<!--                    <a-col>-->
-<!--                      <p class="font-semibold mb-0 ml-10">{{ i.isSetted.jobClass }}</p>-->
-<!--                    </a-col>-->
-<!--                    <a-col class="ml-auto">-->
-<!--                      <a-input v-model="i.isSetted.cronExpression" size="small" class="font-regular text-sm text-dark"-->
-<!--                        style="width: 100px;" />-->
-<!--                    </a-col>-->
-<!--                    <a-col class="ml-auto">-->
-<!--                      <span class="mr-15">{{ i.isSetted.oneTimeExecution ? $t('Storage.ExecuteOnce') : $t('Storage.LoopExecution') }}</span>-->
-<!--                      <a-switch v-model="i.isSetted.oneTimeExecution"-->
-<!--                        @change="oneTimeExecutionChange($event, i.isSetted)" />-->
-<!--                    </a-col>-->
-<!--                    <a-col class="ml-auto">-->
-<!--                      <span class="mr-15">{{ i.isSetted.immediateExecution ? $t('Storage.ImmediateExecution') : $t('Storage.NoImmediateExecution') }}</span>-->
-<!--                      <a-switch v-model="i.isSetted.immediateExecution"-->
-<!--                        @change="immediateExecutionChange($event, i.isSetted)" />-->
-<!--                    </a-col>-->
-<!--                  </a-row>-->
-<!--                  <hr v-if="i.fields.length > 2" class="gradient-line my-10">-->
-<!--                  <a-row type="flex" align="middle">-->
-<!--                    <a-col v-if="i.fields.length > 2" style="margin-right: 15px">-->
-<!--                      <p class="font-semibold mb-0 ml-10">{{ $t('Storage.OtherParameters') }}:</p>-->
-<!--                    </a-col>-->
-<!--                    <div v-if="i.fields.length > 2">-->
-<!--                      <div v-for="(f, index) in i.fields" :key="index">-->
-<!--                        <a-col v-if="f.name !== 'storageId' && f.name !== 'repositoryId'" class="ml-auto">-->
-<!--                          <span style="margin-left: 15px" class="mr-15">{{ f.name }}</span>-->
-<!--                          <a-input v-if="f.type === 'string'" v-model="f.value" size="small"-->
-<!--                            class="font-regular text-sm text-dark" style="width: 250px;" />-->
-<!--                          <a-input-number v-if="f.type === 'int' && f.name === 'numberToKeep'" v-model="f.value"-->
-<!--                            size="small" class="font-regular text-sm text-dark" style="width: 120px;" />-->
-<!--                          <a-input-number :min="1" v-if="f.type === 'int' && f.name === 'storageDay'" v-model="f.value"-->
-<!--                                          size="small" class="font-regular text-sm text-dark" style="width: 120px;" />-->
-<!--                          <a-date-picker v-if="f.type === 'int' && f.name === 'keepPeriod'" v-model="f.value"-->
-<!--                            size="small" class="font-regular text-sm text-dark" style="width: 120px;" />-->
-<!--                          <a-switch v-if="f.type === 'boolean'" v-model="f.value" @change="() => { $forceUpdate() }" />-->
-<!--                        </a-col>-->
-<!--                      </div>-->
-<!--                    </div>-->
-<!--                  </a-row>-->
-<!--                  <a-row :gutter="[24]">-->
-<!--                    <a-col :span="12">-->
-<!--                    </a-col>-->
-<!--                    <a-col :span="12" class="text-right">-->
-<!--                      <a-button @click="saveCronOneSetHandle(i)" type="primary" size="small" shape="circle"-->
-<!--                        icon="save" />-->
-<!--                      <a-button v-if="i.isSetted.uuid" @click="delCronOneSetHandle(i)" style="margin-left: 15px"-->
-<!--                        type="danger" size="small" shape="circle" icon="delete" />-->
-<!--                    </a-col>-->
-<!--                  </a-row>-->
-<!--                </a-card>-->
-<!--                <hr class="gradient-line my-10">-->
-<!--              </div>-->
-<!--              <hr class="gradient-line my-10">-->
-<!--              <a-row :gutter="[24]">-->
-<!--                <a-col :span="12">-->
-<!--                </a-col>-->
-<!--                <a-col :span="12" class="text-right">-->
-<!--                  <a-button type="primary" @click="andCronSetHandle" class="px-25">{{ $t('Storage.CompleteSetting') }}</a-button>-->
-<!--                </a-col>-->
-<!--              </a-row>-->
-<!--            </a-form>-->
-<!--          </a-card>-->
-
-           <a-card v-else-if="(step === 2 && folibRepository.type === 'hosted') ||
+            <a-card v-else-if="(step === 2 && folibRepository.type === 'hosted') ||
             (  folibRepository.type === 'proxy' && step === 3) ||
             (step === 3 && folibRepository.type === 'group')" :bordered="false" class="header-solid">
-               <a-row>
-                   <a-col :span="24">
-                       <Permission ref="permission" :isShow="isShow" :folibRepository="this.folibRepositoryData" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></Permission>
-                   </a-col>
-               </a-row>
-               <a-row>
-                   <a-col :span="12">
-                       <a-button @click="moveStep(-1)" class="px-25">{{ $t('Storage.Back') }}</a-button>
-                   </a-col>
-                   <a-col :span="12" style="text-align: right;">
-                       <a-button type="primary" @click="doPermission()" class="px-25">{{ $t('Storage.Next') }}</a-button>
-                   </a-col>
-               </a-row>
-           </a-card>
-            <a-card v-else-if="(step === 3 && folibRepository.type === 'hosted') ||
-            (  folibRepository.type === 'proxy' && step === 4) ||
-            (step === 4 && folibRepository.type === 'group')" :bordered="false" class="header-solid">
 
                 <a-row>
                     <a-col :span="24">
@@ -992,45 +879,7 @@
                         <a-button @click="moveStep(-1)" class="px-25">{{ $t('Storage.Back') }}</a-button>
                     </a-col>
                     <a-col :span="12" style="text-align: right;">
-                        <a-button v-if="folibRepository.type !== 'group'" type="primary" @click="moveStep(1)" class="px-25">{{ $t('Storage.Next') }}</a-button>
-                        <a-button v-if="folibRepository.type === 'group'" type="primary" @click="doDrawerStatus(false,true)" class="px-25"> {{ $t('Storage.Complete') }}{{ folibRepositoryEditDisabled ? $t('Storage.Edit') : $t('Storage.create') }}</a-button>
-                    </a-col>
-                </a-row>
-            </a-card>
-            <a-card v-else-if="(step === 4 && folibRepository.type === 'hosted') ||
-            (  folibRepository.type === 'proxy' && step === 5)" :bordered="false" class="header-solid">
-<!--                <a-row>-->
-<!--                    <a-col :span="24">-->
-<!--                        <UnionRepository ref="unionRepository" :isShow="isShow" :folibRepository="this.folibRepositoryData" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></UnionRepository>-->
-<!--                    </a-col>-->
-<!--                </a-row>-->
-<!--                <a-row>-->
-<!--                    <a-col :span="12">-->
-<!--                        <a-button @click="moveStep(-1)" class="px-25">{{ $t('Storage.Back') }}</a-button>-->
-<!--                    </a-col>-->
-<!--                    <a-col :span="12" style="text-align: right;">-->
-<!--                        <a-button type="primary" @click="doUnionRepository" class="px-25">{{ $t('Storage.Next') }}</a-button>-->
-<!--                    </a-col>-->
-<!--                </a-row>-->
-
-
-
-<!--            </a-card>-->
-<!--            <a-card v-else-if="(step === 5 && folibRepository.type === 'hosted') ||-->
-<!--            (  folibRepository.type === 'proxy' && step === 6) ||-->
-<!--            (step === 6 && folibRepository.type === 'group')" :bordered="false" class="header-solid">-->
-                <a-row>
-                    <a-col :span="24">
-                        <Scan ref="scan" :isShow="isShow" :folibRepository="this.folibRepositoryData" :settingVisible="settingVisible" @settingDrawerClose="settingDrawerClose"></Scan>
-                    </a-col>
-                </a-row>
-
-                <a-row>
-                    <a-col :span="12">
-                        <a-button @click="moveStep(-1)" class="px-25">{{ $t('Storage.Back') }}</a-button>
-                    </a-col>
-                    <a-col :span="12" style="text-align: right;">
-                        <a-button type="primary" @click="doScan()" class="px-25"> {{ $t('Storage.Complete') }}{{ folibRepositoryEditDisabled ? $t('Storage.Edit') : $t('Storage.create') }}</a-button>
+                        <a-button type="primary" @click="doDrawerStatus(false,true)" class="px-25"> {{ $t('Storage.Complete') }}{{ folibRepositoryEditDisabled ? $t('Storage.Edit') : $t('Storage.create') }}</a-button>
                     </a-col>
                 </a-row>
             </a-card>
@@ -1080,8 +929,6 @@ import storageInfoCard from './Storage-components/storage-info-card.vue'
 import LibView from './LibView.vue'
 import CronTask from "@/views/Storage/components/Cron/index.vue";
 import UnionRepository from "@/views/Storage/components/UnionRepository/index.vue";
-import Scan from "@/views/Storage/components/Scan/index.vue";
-import Permission from "@/views/Storage/components/Permission/index.vue";
 import selectType from './Storage-components/select-type.vue'
 import repositoryTree from './Storage-components/repository-tree.vue'
 import storageList from './Storage-components/storage-list.vue'
@@ -1089,8 +936,6 @@ import storageList from './Storage-components/storage-list.vue'
 export default {
   inject: ["reload"],
   components: {
-      Permission,
-      Scan,
       UnionRepository,
       CronTask,
     CardProjectFolib,
