@@ -4,11 +4,8 @@ import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.cluster.SyncAuthorizationEnum;
-import com.veadan.folib.cluster.SyncServerSettingsEnum;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.configuration.Configuration;
-import com.veadan.folib.controllers.cluster.dto.SyncAuthorizationDto;
-import com.veadan.folib.controllers.cluster.dto.SyncServerSettingsDto;
 import com.veadan.folib.controllers.support.BaseUrlEntityBody;
 import com.veadan.folib.controllers.support.InstanceNameEntityBody;
 import com.veadan.folib.controllers.support.PortEntityBody;
@@ -245,8 +242,6 @@ public class ServerConfigurationController
 
         }
         commonComponent.updateServerSettings(serverSettingsForm);
-        AuthorizationConfigDto authorizationConfigDto = authorizationConfigService.getDto();
-        SyncAuthorizationDto syncAuthorizationDto = new SyncAuthorizationDto(authorizationConfigDto, SyncAuthorizationEnum.UPDATE);
         return getSuccessfulResponseEntity(SUCCESSFUL_SAVE_SERVER_SETTINGS, acceptHeader);
     }
 

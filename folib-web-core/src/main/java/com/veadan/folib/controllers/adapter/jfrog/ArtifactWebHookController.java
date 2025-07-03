@@ -1,8 +1,6 @@
 package com.veadan.folib.controllers.adapter.jfrog;
 
 import com.alibaba.fastjson.JSONObject;
-import com.veadan.folib.components.webhook.WebhookEventsProvider;
-import com.veadan.folib.components.webhook.WebhookEventsProviderRegistry;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.constant.GlobalConstants;
@@ -59,9 +57,6 @@ public class ArtifactWebHookController {
 
     @Inject
     protected ArtifactResolutionService artifactResolutionService;
-
-    @Inject
-    protected WebhookEventsProviderRegistry webhookEventsProviderRegistry;
 
     @Resource
     private JfrogMigrateService jfrogMigrateService;
@@ -136,11 +131,6 @@ public class ArtifactWebHookController {
                 return ResponseEntity.ok("");
             }
             log.info("JFrog event repositoryPath [{}] [{}] [{}] digestAlgorithm [sha256] digest [{}] currentDigest [{}] not exists", storageId, repositoryId, artifactData.getPath(), artifactData.getSha256(), currentDigest);
-            WebhookEventsProvider webhookEventsProvider = webhookEventsProviderRegistry.getProvider(WebhookEventsTypeEnum.resolveType(repositoryPath.getRepository().getLayout()));
-            boolean result = webhookEventsProvider.handler(webhookDto, repositoryPath, dict, 1);
-            if (!result) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(String.format("Handle event error [%s]", data));
-            }
             return ResponseEntity.ok("");
         } catch (Exception ex) {
             log.error(ExceptionUtils.getStackTrace(ex));

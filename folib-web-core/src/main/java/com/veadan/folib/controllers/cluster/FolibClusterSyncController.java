@@ -118,54 +118,7 @@ public class FolibClusterSyncController extends BaseController {
         }
         return ResponseEntity.ok("Sync syncCronJob ok");
     }
-
-    /**
-     * 同步授权配置信息
-     *
-     * @param syncAuthorizationDto 授权配置dto
-     * @return 返回结果
-     */
-    @PostMapping("syncAuthorization")
-    public ResponseEntity syncAuthorization(@RequestBody SyncAuthorizationDto syncAuthorizationDto) {
-        try {
-            if (SyncAuthorizationEnum.UPDATE.getType().equals(syncAuthorizationDto.getSyncAuthorizationEnum().getType())) {
-                authorizationConfigService.setAuthorizationConfig(syncAuthorizationDto.getAuthorizationConfigDto());
-                logger.info("Sync update authorization success");
-            }
-        } catch (Exception e) {
-            logger.error("Sync authorization error {}", ExceptionUtils.getStackTrace(e));
-            return getBadRequestResponseEntity(e.getMessage(), "");
-        }
-        return ResponseEntity.ok("Sync authorization ok");
-    }
-
-    /**
-     * 同步webhook配置
-     *
-     * @param syncWebhookDto webhook配置
-     * @return 返回结果
-     */
-    @PostMapping("syncWebhook")
-    public ResponseEntity syncWebhook(@RequestBody SyncWebhookDto syncWebhookDto) {
-        try {
-            MutableWebhookConfiguration mutableWebhookConfiguration = MutableWebhookConfiguration.builder().build();
-            BeanUtils.copyProperties(syncWebhookDto.getWebhookConfigurationForm(), mutableWebhookConfiguration);
-            if (SyncWebhookEnum.ADD.getType().equals(syncWebhookDto.getSyncWebhookEnum().getType())) {
-                configurationManagementService.addWebhookConfiguration(mutableWebhookConfiguration);
-                logger.info("Sync add webhook success");
-            } else if (SyncWebhookEnum.UPDATE.getType().equals(syncWebhookDto.getSyncWebhookEnum().getType())) {
-                configurationManagementService.updateWebhookConfiguration(mutableWebhookConfiguration);
-                logger.info("Sync update webhook success");
-            } else if (SyncWebhookEnum.DELETE.getType().equals(syncWebhookDto.getSyncWebhookEnum().getType())) {
-                configurationManagementService.deleteWebhookConfiguration(syncWebhookDto.getWebhookConfigurationForm().getUuid());
-                logger.info("Sync delete webhook success");
-            }
-        } catch (Exception e) {
-            logger.error("Sync webhook error {}", ExceptionUtils.getStackTrace(e));
-            return getBadRequestResponseEntity(e.getMessage(), "");
-        }
-        return ResponseEntity.ok("Sync webhook ok");
-    }
+    
 
     /**
      * 同步联邦仓库配置
