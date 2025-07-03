@@ -15,7 +15,6 @@ export default {
     'SeniorOperations': '高级运维',
     'ProductAnalysis': '制品扫描',
     'OpenSourceGovernance': '制品分析',
-    'BOMAnalysis': 'BOM分析',
     'VulnerabilityDatabase': '漏洞库',
     'CertificateStore': '证书库',
     'StorageAnalysis': '存储分析',

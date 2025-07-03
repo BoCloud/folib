@@ -46,20 +46,16 @@
             <a-select v-model="jfrogMigrationForm.storageProvider" :placeholder="$t('Setting.selectTheStorageProvider')"
               :disabled="isExistingStorage">
               <a-select-option value="local">local</a-select-option>
-              <a-select-option value="s3">s3</a-select-option>
             </a-select>
           </a-form-model-item>
         </a-col>
         <a-col :span="7">
           <a-form-model-item :colon="false" prop="basedir">
             <template slot="label">
-              {{ jfrogMigrationForm.storageProvider === 's3' ? $t('Setting.BucketName') : $t('Setting.Basedir') }}
+              {{ $t('Setting.Basedir') }}
               <a-popover placement="topLeft">
                 <template slot="content">
-                  <p v-if="jfrogMigrationForm.storageProvider != 's3'" class="mb-0">{{
-                    $t('Setting.StorageProvideLocalInfo') }}</p>
-                  <p v-if="jfrogMigrationForm.storageProvider === 's3'" class="mb-0">{{
-                    $t('Setting.StorageProvideS3Info') }}</p>
+                  <p class="mb-0">{{ $t('Setting.StorageProvideLocalInfo') }}</p>
                 </template>
                 <a class="ml-5"><a-icon type="question-circle" theme="filled" /></a>
               </a-popover>
@@ -234,11 +230,7 @@ export default {
       this.$refs.formRef.validate((valid) => {
         if (valid) {
           const data = { ...this.jfrogMigrationForm };
-          if (data.storageProvider === 's3') {
-            data.basedir = '/' + data.storageId + '/' + data.basedir;
-          }
           this.loading = true;
-          // console.log('this.loading',this.loading);
           jfrogMigrate(data).then(res => {
             this.$message.success(this.$t('Setting.MigrateSuccess'))
           }).catch(err => {
@@ -266,9 +258,6 @@ export default {
       if (selectedStorage) {
         this.jfrogMigrationForm.storageProvider = selectedStorage.storageProvider || '';
         this.jfrogMigrationForm.basedir = selectedStorage.basedir || '';
-        if (this.jfrogMigrationForm.storageProvider === 's3') {
-          this.jfrogMigrationForm.basedir = selectedStorage.basedir.split('/')[2]
-        }
         this.isExistingStorage = true;
       } else {
         // 如果是手动输入的新值，清空 storageProvider 和 basedir

@@ -1,7 +1,6 @@
 export default {
     // Storages.vue
     'StorageList': 'Storage List',
-    's3Storage': 's3 storage',
     'CopyStorageSpacePath': 'Copy storage space path',
     'ModifyStorageSpace': 'Modify storage space',
     'createModal': 'create',
@@ -17,10 +16,8 @@ export default {
     'LocalStorage': 'Local storage',
     'Note': 'Note',
     'NFSStorage': 'The default storage is NFS local directory storage.',
-    'BucketNameDefinition': 'S3 Storage: The default bucket name is the storage space name. You can also customize the bucket name.',
-    'unmodifiableNote': 'Note: The storage space name, storage type, and S3 bucket path cannot be modified once created.',
+    'unmodifiableNote': 'Note: The storage space name, storage type cannot be modified once created.',
     'LocalPath': 'Local path',
-    'S3Path': 'S3 path',
     'BucketName': 'Bucket name',
     'ParentDirectory': 'Parent directory',
     'Custom': 'Custom',
@@ -33,7 +30,7 @@ export default {
     'Confirm': 'Confirm',
     'StorageSpaceOperation': 'Modify or delete storage space',
     'SpaceNameRemain': 'The storage space name cannot be modified.',
-    'BucketRemain': 'The storage type and S3 bucket cannot be changed.',
+    'BucketRemain': 'The storage type cannot be changed.',
     'ImportantNote': 'Note (Please exercise caution!!)',
     'HaveAccess': 'The administrator/member list you select will have access to the storage space.',
     'RegularCleaning': 'Delete: Only storage configurations are deleted. The storage configurations are deleted periodically at 00:00 every day.',

@@ -131,7 +131,6 @@ export default {
     'MetadataValues': '元数据值',
     'Operations': '操作',
     'DeletedProductSuccess': '删除制品元数据成功',
-    'BomInformation': 'Bom信息',
     'Restore':'还原',
     'RestoreConfirm':'您确定要将其恢复到仓库{targetRepositories}的{path}位置吗？',
     // UseDoc

@@ -15,7 +15,6 @@ export default {
     'SeniorOperations': 'Senior Operations',
     'ProductAnalysis': 'Artifact scan',
     'OpenSourceGovernance': 'Artifact analysis',
-    'BOMAnalysis': 'BOM analysis',
     'VulnerabilityDatabase': 'Vulnerability database',
     'CertificateStore': 'Certificate store',
     'StorageAnalysis': 'Storage analysis',

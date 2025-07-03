@@ -279,19 +279,10 @@
                     </a-form-item>
                   </a-col>
                 </a-row>
-                <a-row :gutter="[24]">
-                  <a-col :span="24" :lg="10">
-                    <a-form-item class="mb-10" :label="$t('Setting.GlobalS3Bucket')" :colon="false">
-                      <a-input v-model="serverSettings.advancedConfigurationForm.globalS3Bucket"
-                        :disabled="globalS3BucketDisabled" />
-                    </a-form-item>
-                  </a-col>
-                </a-row>
                 <p>{{ $t('Setting.Note') }}</p>
                 <ul class="pl-15 text-muted">
                   <li>{{ $t('Setting.OpenAllowsAnonymousAccess') }}</li>
                   <li>{{ $t('Setting.OpenDisplayVerificationFile') }}</li>
-                  <li>{{ $t('Setting.GlobalS3BucketTip') }}</li>
                 </ul>
               </a-form>
             </a-card>
@@ -880,7 +871,6 @@ export default {
         advancedConfigurationForm: {
           allowAnonymous: true,
           showChecksum: true,
-          globalS3Bucket: undefined,
         },
         corsConfigurationForm: { allowedOrigins: ['*'], corsAllowAll: false },
         smtpConfigurationForm: {
@@ -1258,7 +1248,6 @@ export default {
       ssoDialogShow: false,
       ssoObj: {},
       ssoList: [],
-      globalS3BucketDisabled: false,
       fileList: [],
       securityPolicyActiveKey: undefined,
       alarmConfigurationCron: {
@@ -1356,20 +1345,10 @@ export default {
     getServerSettings() {
       getServerSettings().then(res => {
         this.serverSettings = res
-        let allowedOrigins = this.serverSettings.corsConfigurationForm
-          .allowedOrigins
-        if (
-          allowedOrigins &&
-          allowedOrigins.length === 1 &&
-          allowedOrigins[0] === '*'
-        ) {
-          this.serverSettings.corsConfigurationForm.corsAllowAll = true
-        } else {
-          this.serverSettings.corsConfigurationForm.corsAllowAll = false
-        }
-        if (this.serverSettings.advancedConfigurationForm.globalS3Bucket) {
-          this.globalS3BucketDisabled = true
-        }
+        let allowedOrigins = this.serverSettings.corsConfigurationForm.allowedOrigins
+        this.serverSettings.corsConfigurationForm.corsAllowAll = allowedOrigins &&
+            allowedOrigins.length === 1 &&
+            allowedOrigins[0] === '*';
         if(this.serverSettings.alarmConfigurationForm){
             if(this.serverSettings.alarmConfigurationForm.storageThreshold && this.serverSettings.alarmConfigurationForm.storageThreshold > 0){
                 this.platformStorageThreshold = this.getStorageThreshold(this.serverSettings.alarmConfigurationForm.storageThreshold);
@@ -1380,9 +1359,6 @@ export default {
     saveServerSettings() {
         this.serverSettings.alarmConfigurationForm.storageThreshold =  this.setStorageThreshold(this.platformStorageThreshold);
       postServerSettings(this.serverSettings).then(res => {
-        if (this.serverSettings.advancedConfigurationForm.globalS3Bucket) {
-          this.globalS3BucketDisabled = true
-        }
         setTimeout(() => {
           this.$notification.success({
             message: this.$t('Setting.SavedSuccess')

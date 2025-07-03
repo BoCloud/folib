@@ -246,60 +246,6 @@ let routes = [
     },
     component: () => import("../views/ComponentAnalysis/Artifacts/index.vue"),
   },
-	{
-		path: "/projects",
-		name: "projects",
-		layout: "dashboard",
-		meta: {
-			title: 'router.BOMAnalysis',
-      sidebarMap: ['router.OpenSourceGovernance', 'router.BOMAnalysis'],
-      breadcrumbs: ['router.OpenSourceGovernance', 'router.BOMAnalysis'],
-		},
-		component: () => import("../views/ComponentAnalysis/Projects/index.vue"),
-	},
-	{
-		path: "/repositoryDetail/:id",
-		name: "repositoryDetail",
-		layout: "dashboard",
-		meta: {
-			title: 'router.RepositoryAnalysisDetail',
-			sidebarMap: ['router.OpenSourceGovernance', 'router.ProjectsAnalysis', 'router.RepositoryDetails'],
-			breadcrumbs: ['router.OpenSourceGovernance', 'router.ProjectsAnalysis', 'router.RepositoryDetails'],
-			permission: 'VIEW_PORTFOLIO',
-			activeMenu: "/projects"
-
-
-		},
-		component: () => import("../views/ComponentAnalysis/Projects/Detail.vue"),
-	},
-	{
-		path: "/projectsDetail/:id",
-		name: "projectsDetail",
-		layout: "dashboard",
-		meta: {
-			title: 'router.ProjectsAnalysisDetail',
-			sidebarMap: ['router.OpenSourceGovernance', 'router.ProjectsAnalysis', 'router.ProjectsDetails'],
-			breadcrumbs: ['router.OpenSourceGovernance', 'router.ProjectsAnalysis', 'router.ProjectsDetails'],
-			permission: 'VIEW_PORTFOLIO',
-			activeMenu: "/projects"
-
-
-		},
-		component: () => import("../views/ComponentAnalysis/Projects/Detail.vue"),
-	},
-	{
-		path: "/componentDetail/:id",
-		name: "componentDetail",
-		layout: "dashboard",
-		meta: {
-			title: 'router.ComponentDetails',
-			sidebarMap: ['router.OpenSourceGovernance', 'router.ProjectsAnalysis', 'router.ComponentDetails'],
-			breadcrumbs: ['router.OpenSourceGovernance', 'router.ProjectsAnalysis', 'router.ComponentDetails'],
-			permission: 'VIEW_PORTFOLIO',
-			activeMenu: "/projects"
-		},
-		component: () => import("../views/ComponentAnalysis/Projects/ComponentDetail.vue"),
-	},
   {
     path: "/artifacts/artifactsDetail",
     name: "artifactsDetail",

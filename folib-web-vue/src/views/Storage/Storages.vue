@@ -31,7 +31,7 @@
                 <a-col :span="24" :md="14" class="col-info" style="display: flex; align-items: center;">
                   <h6 class="font-semibold m-0">{{ isChecked ? $t('Storage.RepositoryList') : $t('Storage.StorageList')}}</h6>
                   <a style="margin-left: 15px;" class="text-center text-muted font-bold" v-if="!isChecked" :title="$t('Storage.CreateStorageSpace')">
-                    <h3 v-if="$store.state.user.roles.indexOf('ADMIN') > -1" class="font-semibold text-muted mb-0"  @click="createHandleView">
+                    <h3 v-if="$store.state.user.roles.indexOf('ADMIN') > -1 && storageData.length < 3" class="font-semibold text-muted mb-0"  @click="createHandleView">
                       +
                     </h3>
                   </a>
@@ -42,20 +42,6 @@
                   </a>
                 </a-col>
                 <a-col :span="24" :md="10" style="display: flex; align-items: center; justify-content: flex-end">
-                  <!-- <a-switch
-                    :disabled="switchDisabled"
-                    style="margin-right:10px;"
-                    v-model="isChecked"
-                    class="switch-position"
-                    @change="getDetailInfo"
-                  ></a-switch> -->
-                    <!-- <a class="text-center text-muted font-bold" v-if="isChecked" style="margin-right:8px;">
-                      <h5 class="font-semibold text-muted mb-0"
-                        @click="toggleTree">
-                          <a-icon v-if="!isTrashView" type="delete" />
-                          <a-icon v-else type="file-zip" />
-                      </h5>
-                    </a> -->
                     <div class="switch_mode">
                     <div @click="checkMode(false)" class="img-sty" :class="isChecked ? '' : 'isActive'">
                       <img src="./images/list.svg" width="20" alt="list">
@@ -103,6 +89,7 @@
           style="transition: all 0.5s ease;"
           :currentStorage="currentStorage"
           :baseUrl="baseUrl"
+          :storageData="storageData"
           @copy="copy"
           @updateHandleView="updateHandleView"
           :type="'noFilter'"
@@ -184,18 +171,14 @@
                 <a-radio value="local">
                   {{ $t('Storage.LocalStorage') }}
                 </a-radio>
-                <a-radio value="s3">
-                  {{ $t('Storage.s3Storage') }}
-                </a-radio>
               </a-radio-group>
             </a-form-model-item>
             <p>{{ $t('Storage.Note') }}：</p>
             <ul class="pl-15 text-muted">
               <li>{{ $t('Storage.NFSStorage') }}</li>
-              <li>{{ $t('Storage.BucketNameDefinition') }}</li>
               <li><strong>{{ $t('Storage.unmodifiableNote') }}</strong></li>
             </ul>
-            <a-form-model-item class="tags-field mb-10" :label="storageCreateData.storageProvider=='local'?$t('Storage.LocalPath'):$t('Storage.S3Path')"
+            <a-form-model-item class="tags-field mb-10" :label="$t('Storage.LocalPath')"
               :colon="false">
               <a-card :bordered="false" class="bg-gray-3 shadow-0 mb-24" :bodyStyle="{ padding: '8px' }">
                 <a-row type="flex" align="middle">
@@ -222,16 +205,6 @@
                 </a-select-option>
               </a-select>
             </a-form-model-item>
-<!--            <a-form-model-item class="tags-field mb-10"
-              v-if="hasStoragePermission()" :label="$t('Storage.user')"
-              show-search :colon="false">
-              <a-select v-model="storageCreateData.users" mode="multiple" :defaultValue="storageCreateData.users"
-                style="width: 100%" :placeholder="$t('Storage.selectUser')">
-                <a-select-option v-for="(tag, index) in userList" :key="index" :value="tag.username">
-                  {{ tag.username }}
-                </a-select-option>
-              </a-select>
-            </a-form-model-item>-->
             <a-form-model-item class="mb-10" :colon="false">
 
             </a-form-model-item>
@@ -272,9 +245,6 @@
                 <a-radio value="local">
                   {{ $t('Storage.LocalStorage') }}
                 </a-radio>
-                <a-radio value="s3">
-                  {{ $t('Storage.s3Storage') }}
-                </a-radio>
               </a-radio-group>
             </a-form-item>
             <p>Tip:</p>
@@ -282,7 +252,7 @@
               <li>{{ $t('Storage.SpaceNameRemain') }}</li>
               <li>{{ $t('Storage.BucketRemain') }}</li>
             </ul>
-            <a-form-item class="tags-field mb-10" :label="currentStorage.storageProvider=='local'?$t('Storage.LocalPath'):$t('Storage.S3Path')" :colon="false">
+            <a-form-item class="tags-field mb-10" :label="$t('Storage.LocalPath')" :colon="false">
               <a-card :bordered="false" class="bg-gray-3 shadow-0 mb-24" :bodyStyle="{ padding: '8px' }">
                 <a-row type="flex" align="middle">
                   <a-col>
@@ -758,14 +728,6 @@
                     </a-checkbox>
                   </a-form-item>
                 </a-col>
-<!--                <a-col :span="6">-->
-<!--                  <a-form-item class="mb-10" label="" :colon="false">-->
-<!--                    <a-checkbox v-model="folibRepository.syncEnabled">-->
-<!--                      {{ $t('Storage.On') }}{{ $t('Storage.SyncRepository') }}-->
-<!--                      &lt;!&ndash; {{ folibRepository.syncEnabled ?  $t('Storage.On') : $t('Storage.Off')  }} &ndash;&gt;-->
-<!--                    </a-checkbox>-->
-<!--                  </a-form-item>-->
-<!--                </a-col>-->
               </a-row>
 
               <a-row v-if="enableHostProxy" :gutter="[24]">
@@ -1616,11 +1578,7 @@ export default {
       this.$refs.storageCreate.validate(valid => {
         if (valid) {
           if (this.storageCreateData.id != null) {
-            if (this.storageCreateData.storageProvider === 's3') {
-              this.storageCreateData.basedir = this.storagePrefix ? '/' + this.storagePrefix + '/' + this.storageCreateData.id : '/' + this.storageCreateData.id
-            } else {
-              this.storageCreateData.basedir = this.storagePrefix ? '/' + this.storagePrefix + '/' + this.storageCreateData.id : null
-            }
+            this.storageCreateData.basedir = this.storagePrefix ? '/' + this.storagePrefix + '/' + this.storageCreateData.id : null
             createStorages(this.storageCreateData).then(response => {
               setTimeout(() => {
                 this.$notification.success({
@@ -1674,7 +1632,7 @@ export default {
     },
     async getStorages(callback) {
       await getStorages().then(response => {
-          this.storageData = response.storages;
+          this.storageData = response.storages
           this.cacheStorage()
           if (callback) callback()
         }).catch(() => {
@@ -2111,13 +2069,8 @@ export default {
     addOrUpdateRepositoryHandel(isNotSetCron,isClose) {
       this.folibRepository.id = this.folibRepositoryIds
       //构建basedir
-      if (this.currentStorage.storageProvider === 's3') {
-        this.folibRepository.basedir = this.currentStorage.basedir + '/' + this.folibRepository.id
-        this.folibRepository.storageProvider = 's3'
-      } else {
-        this.folibRepository.basedir = null
-        this.folibRepository.storageProvider = 'local'
-      }
+      this.folibRepository.basedir = null
+      this.folibRepository.storageProvider = 'local'
       //将选中的layout图标转换为接口识别的
       this.folibRepository.subLayout = this.layoutChecked === 'cocoapods' ? 'cocoaPods' : this.layoutChecked
       this.folibRepository.layout = genLayoutType(this.layoutChecked)

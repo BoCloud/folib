@@ -17,7 +17,7 @@ export default {
     'Note': '说明',
     'NFSStorage': '默认为本地存储即:NFS本地目录存储',
     'BucketNameDefinition': 'S3存储：默认以存储空间名称作为桶名,您也可以自定义桶名称',
-    'unmodifiableNote': '注意：存储空间名称、存储类型、S3存储桶路径，一旦创建不可修改',
+    'unmodifiableNote': '注意：存储空间名称、存储类型，一旦创建不可修改',
     'LocalPath': '本地路径',
     'S3Path': 'S3路径',
     'BucketName': '桶名称',

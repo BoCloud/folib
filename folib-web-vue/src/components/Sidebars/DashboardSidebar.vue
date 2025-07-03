@@ -47,14 +47,6 @@
              <span class="label">{{ $t('Sidebars.ProductAnalysis') }}</span>
            </router-link>
          </a-menu-item>
-         <a-menu-item v-if="(this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1) && foeyesEnable">
-           <router-link to="/projects">
-             <span class="icon">
-               <a-icon type="profile" theme="filled" class="m-0" />
-             </span>
-             <span class="label">{{ $t('Sidebars.BOMAnalysis') }}</span>
-           </router-link>
-         </a-menu-item>
          <a-menu-item v-if="this.userInfo.roles.indexOf('ADMIN') > -1 || this.userInfo.roles.indexOf('OPEN_SOURCE_MANAGE') > -1">
            <router-link to="/components">
              <span class="icon">
