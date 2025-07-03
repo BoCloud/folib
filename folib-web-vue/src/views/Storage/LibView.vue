@@ -143,7 +143,6 @@ import { quillEditor } from "vue-quill-editor";
 import Store from "./components/Store/index.vue";
 import Safe from "./components/Safe/index.vue";
 import SettingsDrawer from "./components/Repository/SettingsDrawer.vue";
-import EventPageDrawer from "./components/Repository/EventPageDrawer.vue";
 import { hasRole, isAdmin, hasPermission, isLogin } from "@/utils/permission";
 import VunlerabilityReport from '@/components/Vulnerabilities/VunlerabilityReport'
 
@@ -160,7 +159,6 @@ export default {
     Store,
     Safe,
     SettingsDrawer,
-    EventPageDrawer,
     VunlerabilityReport,
   },
   data() {

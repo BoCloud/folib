@@ -148,11 +148,6 @@
                     </small>
                   </a>
                   <a-icon type="line" style="transform: rotate(90deg);color: #e8e8e8;"/>
-                  <div v-if="(isAdmin() || (storageAdmin && storageAdmin === $store.state.user.name)) && folibRepository.type !== 'group'">
-                    <span class="mr-10 by-font-normal by-f-w-300" style="color: #7E84A3;">{{ $t('Store.Scan') }}</span>
-                    <a-switch default-checked :checked-children="$t('Store.Open')" :un-checked-children="$t('Store.Close')" v-model="scan.onScan" @change="scannerChange" />
-                  </div>
-
                   <a v-if="folibRepository.layout !== 'Raw'">
                     <small style="padding-left: 20px;position: relative;top: 4px;" @click="UsedHelperVisible">
                         <!--  {{ $t('Store.UseHelp') }}-->
@@ -1405,20 +1400,6 @@ export default {
       this.reload();
     },
     handleCheckboxChange(selectedData) { },
-    scannerChange() {
-      this.scan.id =
-        this.folibRepository.storageId + '-' + this.folibRepository.id
-      this.scan.repository = this.folibRepository.id
-      this.scan.storage = this.folibRepository.storageId
-      this.scan.layout = this.folibRepository.layout
-      insertOrUpdateRules(this.scan).then(res => {
-        setTimeout(() => {
-          this.$notification.success({
-            message: this.scan.onScan ? this.$t('Store.ScanOn') : this.$t('Store.ScanOff')
-          })
-        }, 100)
-      })
-    },
     goBack() {
       this.$router.push({ name: 'storagesHome' })
     },
