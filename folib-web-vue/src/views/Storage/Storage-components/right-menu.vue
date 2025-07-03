@@ -26,11 +26,6 @@
                     {{ $t('Store.Delete') }}
                     <!-- </a-popconfirm> -->
                 </a-menu-item>
-                <a-menu-item key="5" v-if="dispatchEnabled && !isTrashView">
-                    <a-icon type="retweet"/>
-                    {{ $t('Store.Distribute') }}
-                </a-menu-item>
-
                 <a-menu-item
                     key="6"
                     v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file'
@@ -129,7 +124,7 @@ export default {
                             : err.response.data
                     let temp = this.$t('Store.' + msg)
                     if (temp.indexOf('Store.') == -1) {
-                        msg = temp 
+                        msg = temp
                     }
                     if (!msg || msg.length === 0 || typeof msg === 'object') {
                         msg = this.$t('Store.DeletionFailed')

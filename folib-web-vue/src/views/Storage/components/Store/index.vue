@@ -327,10 +327,6 @@
                           <a-icon type="delete" />{{ $t('Store.Delete') }}
                         </a-popconfirm>
                       </a-menu-item>
-                      <a-menu-item key="5" v-if="dispatchEnabled&&!isTrashView" class="overlay-item">
-                        <a-icon type="retweet" />{{ $t('Store.Distribute') }}
-                      </a-menu-item>
-
                       <a-menu-item key="6" class="overlay-item"
                         v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact&&!isTrashView">
                         <a-icon type="download" />{{ $t('Store.DownLoad') }}
@@ -454,11 +450,6 @@
                           {{ $t('Store.Delete') }}
                         </a-popconfirm>
                       </a-menu-item>
-                      <a-menu-item key="5" v-if="dispatchEnabled&&!isTrashView" class="overlay-item">
-                        <a-icon type="retweet" />
-                        {{ $t('Store.Distribute') }}
-                      </a-menu-item>
-
                       <a-menu-item key="6" class="overlay-item"
                         v-if="folibRepository.layout !== 'Docker' && currentTreeNode && currentTreeNode.type === 'file' && currentFileDetial && currentFileDetial.artifact&&!isTrashView">
                         <a-icon type="download" />
