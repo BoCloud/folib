@@ -322,13 +322,7 @@ let routes = [
       breadcrumbs: ['router.OpenSourceGovernance', 'router.CertificateStore', 'router.CertificateDetails'],
     },
     component: () => import("../views/ComponentAnalysis/Licenses/Detail.vue"),
-  },
-	{
-		// will match sso
-		path: '/sso',
-		name: "sso",
-		component: () => import('../views/SSO/index.vue'),
-	},
+  }
 ]
 
 // Adding layout property from each route to the meta
