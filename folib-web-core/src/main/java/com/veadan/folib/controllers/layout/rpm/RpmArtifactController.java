@@ -1,12 +1,9 @@
 package com.veadan.folib.controllers.layout.rpm;
 
 
-import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.config.RepodataUtil;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.entity.Dict;
-import com.veadan.folib.enums.AuditEventNameEnum;
-import com.veadan.folib.metadata.indexer.RpmGroupRepoIndexer;
 import com.veadan.folib.metadata.indexer.RpmRepoIndexer;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.RpmLayoutProvider;
@@ -30,9 +27,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.inject.Inject;
-import javax.xml.stream.XMLStreamException;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 
@@ -101,7 +95,6 @@ public class RpmArtifactController extends BaseArtifactController {
         return ResponseEntity.ok("The artifact was deleted.");
     }
 
-    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT,target ="#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path + '/' +  #files[0].getOriginalFilename()")
     @ApiOperation(value = "Used to deploy an artifact")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
@@ -182,7 +175,6 @@ public class RpmArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#storageId + '/' + #repositoryId + '/' + #path")
     @GetMapping(value = {"{storageId}/{repositoryId}/{path:.+}"})
     public void download(@RepositoryMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,

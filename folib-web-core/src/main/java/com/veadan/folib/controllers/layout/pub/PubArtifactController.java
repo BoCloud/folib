@@ -4,7 +4,6 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.google.common.collect.Maps;
-import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.artifact.coordinates.PubArtifactCoordinates;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.constants.PubConstants;
@@ -15,7 +14,6 @@ import com.veadan.folib.domain.PubUpload;
 import com.veadan.folib.domain.Pubspec;
 import com.veadan.folib.domain.common.StandardError;
 import com.veadan.folib.domain.common.StandardResponse;
-import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.enums.PubIndexTypeEnum;
 import com.veadan.folib.indexer.PubMetadataExtractor;
 import com.veadan.folib.indexer.PubPackageMetadataIndexer;
@@ -123,7 +121,6 @@ public class PubArtifactController
     @RequestMapping(path = "{storageId}/{repositoryId}/packages/{packageName}/versions/{artifactName}",
             method = {RequestMethod.GET,
                     RequestMethod.HEAD})
-    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#storageId + '/' + #repositoryId + '/' + #packageName + '/' + #artifactName")
     public void download(@RepositoryMapping Repository repository,
                          @PathVariable(name = "storageId") String storageId,
                          @PathVariable(name = "repositoryId") String repositoryId,
@@ -156,7 +153,6 @@ public class PubArtifactController
         return ResponseEntity.ok(pubUpload);
     }
 
-    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT,target ="#storageId + '/' + #repositoryId + '/' + #file.getOriginalFilename()")
     @PostMapping(path = "{storageId}/{repositoryId}/deploy", consumes = MediaType.MULTIPART_FORM_DATA)
     @ApiOperation(value = "Performs deploy process by uploading the package.", nickname = "deploy")
     @ApiResponses({@ApiResponse(code = 204, message = "No Content"), @ApiResponse(code = 400, message = "Bad Request"), @ApiResponse(code = 500, message = "Internal server error")})
@@ -206,7 +202,6 @@ public class PubArtifactController
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(path = "{storageId}/{repositoryId}/{packageName}/{artifactName}")
-    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #packageName + '/' + #artifactName")
     public void download(@RepositoryMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,
                          @PathVariable String packageName,

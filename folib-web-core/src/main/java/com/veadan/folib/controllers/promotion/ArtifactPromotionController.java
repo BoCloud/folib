@@ -2,8 +2,6 @@ package com.veadan.folib.controllers.promotion;
 
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
-import com.alibaba.fastjson.JSONObject;
-import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.config.PermissionCheck;
 import com.veadan.folib.controllers.BaseArtifactController;
@@ -11,7 +9,6 @@ import com.veadan.folib.domain.ArtifactParse;
 import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.dto.ArtifactDto;
 import com.veadan.folib.entity.Dict;
-import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.model.request.ArtifactSliceDownloadInfoReq;
 import com.veadan.folib.model.request.ArtifactSliceUploadReq;
 import com.veadan.folib.model.request.ArtifactSliceUploadWebReq;
@@ -19,9 +16,7 @@ import com.veadan.folib.model.response.ArtifactSliceDownloadInfoRes;
 import com.veadan.folib.model.response.ArtifactSliceUploadInfoRes;
 import com.veadan.folib.model.response.Result;
 import com.veadan.folib.services.ArtifactPromotionService;
-import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.validation.RequestBodyValidationException;
-import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -106,7 +101,6 @@ public class ArtifactPromotionController extends BaseArtifactController {
     @PostMapping(value = "/upload-files")
     @ApiOperation(value = "文件上传(支持批量)", notes = "文件上传(支持批量)")
     @PermissionCheck(resourceKey = "ARTIFACTS_DEPLOY", storageKey = "storageId", repositoryKey = "repostoryId")
-    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT,target ="#storageId + '/' + #repositoryId+ '/' + #filePathMap + '/' + #files[0].getOriginalFilename()")
     public ResponseEntity upload(@RequestParam("files") MultipartFile[] files,
                                  @RequestParam("storageId") String storageId,
                                  @RequestParam("repostoryId") String repositoryId,
@@ -122,7 +116,6 @@ public class ArtifactPromotionController extends BaseArtifactController {
     }
 
     @PostMapping(value = "/upload")
-    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT,target ="#storageId + '/'+ #repositoryId+'/'+ #parseArtifact.replaceAll('.*\\\"filePath\\\":\\\"([^\\\"]*)', '$1').replaceAll('^.*/', '').replaceAll('\\\".*', '')" )
     @ApiOperation(value = "文件上传", notes = "文件上传")
     @PermissionCheck(resourceKey = "ARTIFACTS_DEPLOY", storageKey = "storageId", repositoryKey = "repositoryId")
     public ResponseEntity upload(
@@ -211,8 +204,6 @@ public class ArtifactPromotionController extends BaseArtifactController {
             return Result.error(e);
         }
     }
-
-    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT,target ="#storageId + '/' + #repositoryId+ '/' + #path ")
     @PostMapping(value = "/header/slice/upload", consumes = {"application/octet-stream"})
     @PermissionCheck(resourceKey = "ARTIFACTS_RESOLVE")
     public Result<Boolean> sliceUploadByHeader(
@@ -262,8 +253,6 @@ public class ArtifactPromotionController extends BaseArtifactController {
         return metadata;
     }
 
-
-    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT,target ="#storageId + '/' + #repositoryId+ '/' + #path + '/' + #fileName")
     @PostMapping(value = "/slice/upload-web",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PermissionCheck(resourceKey = "ARTIFACTS_DEPLOY", storageKey = "storageId", repositoryKey = "repositoryId", pathKey = "path")
     public ResponseEntity<?> sliceUploadWeb3(MultipartHttpServletRequest request,

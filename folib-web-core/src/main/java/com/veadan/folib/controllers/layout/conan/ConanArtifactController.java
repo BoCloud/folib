@@ -4,14 +4,12 @@ import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.artifact.coordinates.ConanArtifactCoordinates;
 import com.veadan.folib.artifact.coordinates.ConanArtifactIndex;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.ConanPackagesRevisions;
 import com.veadan.folib.domain.ConanRevisions;
-import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.LayoutFileSystemProvider;
 import com.veadan.folib.services.ArtifactIndexService;
@@ -21,7 +19,6 @@ import com.veadan.folib.users.security.JwtAuthenticationClaimsProvider;
 import com.veadan.folib.users.security.JwtClaimsProvider;
 import com.veadan.folib.users.security.SecurityTokenProvider;
 import com.veadan.folib.users.userdetails.SpringSecurityUser;
-import com.veadan.folib.utils.ArtifactControllerHelper;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.Api;
@@ -258,8 +255,6 @@ public class ConanArtifactController extends BaseArtifactController {
         });
         return new ResponseEntity<>(obj, HttpStatus.OK);
     }
-
-    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT, target = "#storageId + '/' + #repositoryId + '/' + #user + '/' + #name + '/' + #version + '/' + #channel + '/' + #revisionId  + '/' + #filePath")
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @RequestMapping(value = "{storageId}/{repositoryId}/v1/files/{user}/{name}/{version}/{channel}/{revisionId}/export/{filePath:.+}",
             method = {RequestMethod.PUT})
@@ -299,7 +294,6 @@ public class ConanArtifactController extends BaseArtifactController {
         }
     }
 
-    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT, target = "#storageId + '/' + #repositoryId + '/' + #user + '/' + #name + '/' + #version + '/' + #channel + '/' + #revisionId + '/' + #packageRevisionId + '/' + #filePath")
     @PreAuthorize("hasAuthority('ARTIFACTS_DEPLOY')")
     @RequestMapping(value = "{storageId}/{repositoryId}/v1/files/{user}/{name}/{version}/{channel}/{revisionId}/package/{packageId}/{packageRevisionId}/{filePath:.+}",
             method = {RequestMethod.PUT})
@@ -374,7 +368,6 @@ public class ConanArtifactController extends BaseArtifactController {
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @RequestMapping(value = "{storageId}/{repositoryId}/v1/files/{path:.+}",
             method = {RequestMethod.GET})
-    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#storageId + '/' + #repositoryId + '/' + #path")
     public void downloadFiles(@RepositoryMapping Repository repository,
                               @PathVariable("path") String path,
                               @RequestHeader HttpHeaders httpHeaders, HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -469,7 +462,6 @@ public class ConanArtifactController extends BaseArtifactController {
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#storageId + '/' + #repositoryId + '/' + #user + '/' + #name + '/' + #version + '/' + #channel + '/' + #revisionId + '/' + #filePath")
     @GetMapping(value = "{storageId}/{repositoryId}/v2/conans/{name}/{version}/{user}/{channel}/revisions/{revisionId}/files/{filePath:.+}")
     public void downloadRevisionsFiles(
             @RequestHeader HttpHeaders httpHeaders,
@@ -556,7 +548,6 @@ public class ConanArtifactController extends BaseArtifactController {
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#storageId + '/' + #repositoryId + '/' + #user + '/' + #name + '/' + #version + '/' + #channel + '/' + #revisionId + '/' + #packageId + '/' + #packageRevisionId + '/' + #filePath")
     @GetMapping(value = "{storageId}/{repositoryId}/v2/conans/{name}/{version}/{user}/{channel}/revisions/{revisionId}/packages/{packageId}/{revisions}/{packageRevisionId}/files/{filePath:.+}")
     public void downloadPackagesFiles(
             @RequestHeader HttpHeaders httpHeaders,
@@ -664,7 +655,6 @@ public class ConanArtifactController extends BaseArtifactController {
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#storageId + '/' + #repositoryId + '/' + #user + '/' + #name + '/' + #version + '/' + #channel + '/' + #revisionId + '/package/' + #packageId + '/index.json'")
     @GetMapping(value = "{storageId}/{repositoryId}/{user}/{name}/{version}/{channel}/{revisionId}/package/{packageId}/index.json")
     public void downloadPackageIndexJSON(
             @RepositoryMapping Repository repository,
@@ -686,7 +676,6 @@ public class ConanArtifactController extends BaseArtifactController {
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#storageId + '/' + #repositoryId + '/' + #user + '/' + #name + '/' + #version + '/' + #channel + '/index.json'")
     @GetMapping(value = "{storageId}/{repositoryId}/{user}/{name}/{version}/{channel}/index.json")
     public void downloadIndexJSON(
             @RepositoryMapping Repository repository,
@@ -706,7 +695,6 @@ public class ConanArtifactController extends BaseArtifactController {
     }
 
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#storageId + '/' + #repositoryId + '/' + #artifactPath")
     @RequestMapping(value = {"/{storageId}/{repositoryId}/download/{artifactPath:.+}"}, method = {RequestMethod.GET, RequestMethod.HEAD})
     public void download(@RepositoryMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,

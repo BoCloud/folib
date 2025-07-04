@@ -1,9 +1,6 @@
 package com.veadan.folib.controllers.configuration;
 
-import com.veadan.folib.annotation.AuditLog;
-import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
-import com.veadan.folib.cluster.SyncAuthorizationEnum;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.configuration.Configuration;
 import com.veadan.folib.controllers.support.BaseUrlEntityBody;
@@ -11,7 +8,6 @@ import com.veadan.folib.controllers.support.InstanceNameEntityBody;
 import com.veadan.folib.controllers.support.PortEntityBody;
 import com.veadan.folib.forms.configuration.*;
 import com.veadan.folib.job.cron.services.CronTaskConfigurationService;
-import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.services.ConfigurationManagementService;
 import com.veadan.folib.services.support.ConfigurationException;
 import com.veadan.folib.validation.RequestBodyValidationException;
@@ -222,7 +218,6 @@ public class ServerConfigurationController
     }
 
     @ApiOperation(value = "Set global server settings.")
-    @AuditLog(value = AuditEventNameEnum.BASE_SETTING,target ="#serverSettingsForm.instanceName" )
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_SAVE_SERVER_SETTINGS),
             @ApiResponse(code = 400, message = FAILED_SAVE_SERVER_SETTINGS)})
     @PreAuthorize("hasAnyAuthority('CONFIGURATION_SET_BASE_URL', 'CONFIGURATION_SET_PORT', 'GLOBAL_CONFIGURATION_MANAGE')")

@@ -3,12 +3,10 @@ package com.veadan.folib.controllers.layout.php;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.artifact.coordinates.PhpArtifactCoordinates;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.data.criteria.Paginator;
-import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.php.PhpSearchPackage;
 import com.veadan.folib.php.PhpSearchRequest;
 import com.veadan.folib.php.PhpSearchResult;
@@ -126,7 +124,6 @@ public class PhpArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = {"{storageId}/{repositoryId}/dists/{path:.+}"})
-    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
     public ResponseEntity<Object> distDownload(@RepositoryMapping Repository repository,
                                                @RequestHeader HttpHeaders httpHeaders,
                                                @PathVariable String path,
@@ -169,7 +166,6 @@ public class PhpArtifactController extends BaseArtifactController {
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
     @GetMapping(value = {"{storageId}/{repositoryId}/{path:.+}"})
-    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
     public ResponseEntity<Object> download(@RepositoryMapping Repository repository,
                                            @RequestHeader HttpHeaders httpHeaders,
                                            @PathVariable String path,

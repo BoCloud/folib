@@ -2,7 +2,6 @@ package com.veadan.folib.controllers;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
-import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.syncartifact.SyncArtifactProvider;
 import com.veadan.folib.components.syncartifact.SyncArtifactProviderRegistry;
@@ -16,9 +15,7 @@ import com.veadan.folib.domain.thirdparty.ArtifactInfo;
 import com.veadan.folib.domain.thirdparty.ArtifactQuery;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.enums.ArtifactSyncTypeEnum;
-import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.enums.ProductTypeEnum;
-import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.gremlin.entity.KeyValue;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
@@ -118,7 +115,6 @@ public class ArtifactController extends BaseController {
     }
 
     @ApiOperation(value = "全局设置添加或者更新元数据")
-    @AuditLog(value = AuditEventNameEnum.UPDATE_META, target = "#artifactMetadataForm.key")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_METADATA')")
     @PutMapping(value = "/globalSettingAddOrUpdateMetadata")
@@ -161,7 +157,6 @@ public class ArtifactController extends BaseController {
     }
 
     @ApiOperation(value = "新增制品元数据")
-    @AuditLog(value = AuditEventNameEnum.UPDATE_META, target = "#artifactMetadataForm.storageId + '-'+ #artifactMetadataForm.repositoryId+ '-'+ #artifactMetadataForm.key ")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ARTIFACTS_VIEW')")
     @PutMapping(value = "/artifactMetadata")
@@ -209,7 +204,6 @@ public class ArtifactController extends BaseController {
     }
 
     @ApiOperation(value = "构建图数据库索引")
-    @AuditLog(value = AuditEventNameEnum.BUILD_GRAPH_INDEX, target = "#storageId+'-'+#repositoryId")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(value = "/buildGraphIndex")
@@ -225,7 +219,6 @@ public class ArtifactController extends BaseController {
     }
 
     @ApiOperation(value = "构建图数据库索引")
-    @AuditLog(value = AuditEventNameEnum.BUILD_GRAPH_INDEX, target = "#storageId+'-'+#repositoryId")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(value = "/buildGraphIndexForce")
@@ -427,7 +420,6 @@ public class ArtifactController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
-    @AuditLog(value = AuditEventNameEnum.BUILD_GRAPH_INDEX, target = "#storageId+'-'+#repositoryId")
     @GetMapping(value = "/mavenIndexer/{storageId}/{repositoryId}")
     public ResponseEntity<String> mavenIndexer(@PathVariable String storageId,
                                                @PathVariable String repositoryId,

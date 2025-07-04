@@ -1,11 +1,9 @@
 package com.veadan.folib.controllers.layout.cocoapods;
 
 import cn.hutool.core.io.FileUtil;
-import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.artifact.coordinates.CocoapodsArtifactCoordinates;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.domain.ArtifactEntity;
-import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.service.CocoapodsIndexService;
@@ -21,11 +19,6 @@ import io.swagger.annotations.ApiResponses;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -68,7 +61,6 @@ public class CocoapodsArtifactController extends BaseArtifactController
         return super.checkRepositoryAccess();
     }
 
-    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT,target ="#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #artifactPath" )
     @ApiOperation(value = "Used to deploy an artifact")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
@@ -133,7 +125,6 @@ public class CocoapodsArtifactController extends BaseArtifactController
     @ApiResponses(value = { @ApiResponse(code = 200, message = ""),
             @ApiResponse(code = 400, message = "An error occurred.") })
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
     @GetMapping(value = { "{storageId}/{repositoryId}/{path:.+}" })
     public void download(@RepositoryMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,
@@ -153,7 +144,6 @@ public class CocoapodsArtifactController extends BaseArtifactController
     @ApiResponses(value = { @ApiResponse(code = 200, message = ""),
             @ApiResponse(code = 400, message = "An error occurred.") })
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
     @GetMapping(value = { "{storageId}/{repositoryId}/archive/refs/heads/{path:.+}" })
     public void downloadBranchZip(@RepositoryMapping Repository repository,
                                @RequestHeader HttpHeaders httpHeaders,

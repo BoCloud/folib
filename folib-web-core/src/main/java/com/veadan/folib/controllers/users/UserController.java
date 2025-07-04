@@ -1,6 +1,5 @@
 package com.veadan.folib.controllers.users;
 
-import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.controllers.BaseController;
 import com.veadan.folib.controllers.users.support.TokenEntityBody;
 import com.veadan.folib.controllers.users.support.UserOutput;
@@ -9,7 +8,6 @@ import com.veadan.folib.converts.UserConvert;
 import com.veadan.folib.domain.PageResultResponse;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.domain.UserPermissionForm;
-import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.forms.users.UserForm;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.services.StorageManagementService;
@@ -203,7 +201,6 @@ public class UserController
     }
 
     @ApiOperation(value = "Used to create a new user")
-    @AuditLog(value = AuditEventNameEnum.CREATE_USER, target = "#userForm.username")
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_CREATE_USER),
             @ApiResponse(code = 400, message = FAILED_CREATE_USER)})
     @PreAuthorize("hasAuthority('CREATE_USER')")
@@ -290,7 +287,6 @@ public class UserController
     }
 
     @ApiOperation(value = "Deletes a user from a repository.")
-    @AuditLog(value = AuditEventNameEnum.DELETE_USER, target = "#username")
     @ApiResponses(value = {@ApiResponse(code = 200, message = SUCCESSFUL_DELETE_USER),
             @ApiResponse(code = 400, message = FAILED_DELETE_USER),
             @ApiResponse(code = 403, message = USER_DELETE_FORBIDDEN),

@@ -1,15 +1,12 @@
 package com.veadan.folib.controllers.layout.helm;
 
-import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.config.HelmRepoUtil;
 import com.veadan.folib.controllers.BaseArtifactController;
-import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.indexer.HelmMetadataIndexer;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.repository.proxied.ProxyRepositoryArtifactResolver;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.RepositoryTypeEnum;
-import com.veadan.folib.util.HelmIndexUtil;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.*;
@@ -22,8 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import javax.ws.rs.HEAD;
-import javax.ws.rs.Path;
+
 import java.io.*;
 import java.nio.file.Files;
 import java.util.Objects;
@@ -56,7 +52,6 @@ public class HelmArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = ""),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
     @RequestMapping(value = {"/{storageId}/{repositoryId}/{path:.+}"}, method = {RequestMethod.GET, RequestMethod.HEAD})
     public void download(@RepositoryMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,
@@ -110,7 +105,6 @@ public class HelmArtifactController extends BaseArtifactController {
 
     }
 
-    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT,target ="#repository.getStorage().getId() + '/' + #repository.getId() +'/'+ #charts[0].getOriginalFilename()" )
     @ApiOperation(value = "Used to deploy an artifact")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
@@ -149,7 +143,6 @@ public class HelmArtifactController extends BaseArtifactController {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deployed successfully."),
             @ApiResponse(code = 400, message = "An error occurred.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/index.yaml'")
     @RequestMapping(value ="{storageId}/{repositoryId}/index.yaml", method = {RequestMethod.GET})
     public void downloadIndex(@RepositoryMapping Repository repository,
                               @RequestHeader HttpHeaders httpHeaders,

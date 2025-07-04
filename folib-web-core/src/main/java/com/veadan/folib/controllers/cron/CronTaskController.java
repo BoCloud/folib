@@ -1,10 +1,7 @@
 package com.veadan.folib.controllers.cron;
 
-import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.booters.PropertiesBooter;
-import com.veadan.folib.cluster.SyncCornJobEnum;
 import com.veadan.folib.controllers.BaseController;
-import com.veadan.folib.controllers.cluster.dto.SyncCronJobDto;
 import com.veadan.folib.job.cron.domain.CronTasksConfigurationDto;
 import com.veadan.folib.job.cron.domain.GroovyScriptNamesDto;
 import com.veadan.folib.job.cron.jobs.CronJobDefinition;
@@ -12,7 +9,6 @@ import com.veadan.folib.job.cron.jobs.CronJobsDefinitionsRegistry;
 import com.veadan.folib.job.cron.jobs.GroovyCronJob;
 import com.veadan.folib.job.cron.services.CronJobSchedulerService;
 import com.veadan.folib.job.cron.services.CronTaskConfigurationService;
-import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.forms.cron.CronTaskConfigurationForm;
 import com.veadan.folib.validation.RequestBodyValidationException;
 import io.swagger.annotations.Api;
@@ -21,7 +17,6 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -101,7 +96,6 @@ public class CronTaskController
 
 
     @ApiOperation(value = "Used to save a new cron task job")
-    @AuditLog(value = AuditEventNameEnum.CRON_REPOSITORY,target ="#cronTaskConfigurationForm.jobClass" )
     @ApiResponses(value = { @ApiResponse(code = 200, message = SUCCESSFUL_SAVE_CONFIGURATION),
                             @ApiResponse(code = 400, message = FAILED_SAVE_CONFIGURATION) })
     @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE,

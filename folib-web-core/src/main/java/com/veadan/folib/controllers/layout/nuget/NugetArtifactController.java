@@ -22,11 +22,9 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
 
-import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.artifact.coordinates.versioning.SemanticVersion;
 import com.veadan.folib.data.criteria.Paginator;
 import com.veadan.folib.data.criteria.Predicate;
-import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.services.ArtifactTagService;
 import com.veadan.folib.artifact.ArtifactTag;
@@ -457,7 +455,6 @@ public class NugetArtifactController
     @RequestMapping(path = "{storageId}/{repositoryId}/{commandName:(?:download|package)}/{packageId}/{packageVersion}",
                     method = {RequestMethod.GET, RequestMethod.HEAD},
                     produces = MediaType.APPLICATION_OCTET_STREAM)
-    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #packageId + '/' + #packageVersion")
     public void downloadPackage(@RepositoryMapping Repository repository,
                                 @ApiParam(value = "The packageId", required = true) @PathVariable(name = "packageId") String packageId,
                                 @ApiParam(value = "The packageVersion", required = true) @PathVariable(name = "packageVersion") String packageVersion,

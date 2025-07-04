@@ -6,7 +6,6 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Lists;
-import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.booters.PropertiesBooter;
 import com.veadan.folib.components.artifact.ArtifactComponent;
@@ -19,8 +18,6 @@ import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
 import com.veadan.folib.domain.bom.Bom;
 import com.veadan.folib.domain.bom.FoEyes;
-import com.veadan.folib.enums.AuditEventNameEnum;
-import com.veadan.folib.providers.io.LayoutFileSystem;
 import com.veadan.folib.providers.io.RepositoryFiles;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.layout.DockerLayoutProvider;
@@ -52,7 +49,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
@@ -64,8 +60,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
@@ -427,7 +421,6 @@ public class BrowseController
     }
 
     @ApiOperation(value = "Deletes a path from a repository.")
-    @AuditLog(value = AuditEventNameEnum.DELETE_ARTIfFACT, target = "#artifactPath")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The artifact was deleted."),
             @ApiResponse(code = 400, message = "Bad request."),
             @ApiResponse(code = 404, message = "The specified storageId/repositoryId/path does not exist!")})

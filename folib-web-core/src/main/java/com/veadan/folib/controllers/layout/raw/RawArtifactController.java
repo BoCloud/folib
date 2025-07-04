@@ -1,8 +1,5 @@
 package com.veadan.folib.controllers.layout.raw;
 
-import com.veadan.folib.annotation.AuditLog;
-import com.veadan.folib.enums.AuditEventNameEnum;
-import com.veadan.folib.exception.ExceptionHandlingOutputStream;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.controllers.BaseArtifactController;
 import com.veadan.folib.providers.layout.RawLayoutProvider;
@@ -25,10 +22,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.*;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.WritableByteChannel;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Comparator;
@@ -56,7 +49,6 @@ public class RawArtifactController
         return super.checkRepositoryAccess();
     }
 
-    @AuditLog(value = AuditEventNameEnum.UPLOAD_ARTIfFACT,target ="#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
     @ApiOperation(value = "Used to deploy an artifact")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "The artifact was deployed successfully."),
                             @ApiResponse(code = 400, message = "An error occurred.") })
@@ -87,7 +79,6 @@ public class RawArtifactController
     @ApiResponses(value = { @ApiResponse(code = 200, message = ""),
                             @ApiResponse(code = 400, message = "An error occurred.") })
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #path")
     @GetMapping(value = { "{storageId}/{repositoryId}/{path:.+}" })
     public void download(@RepositoryMapping Repository repository,
                          @RequestHeader HttpHeaders httpHeaders,

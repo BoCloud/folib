@@ -7,11 +7,8 @@ import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
-import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.annotation.LicenseAnnotation;
-import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
-import com.veadan.folib.cluster.SyncAuthorizationEnum;
 import com.veadan.folib.components.common.CommonComponent;
 import com.veadan.folib.components.repository.RepositoryComponent;
 import com.veadan.folib.configuration.ConfigurationUtils;
@@ -188,7 +185,6 @@ public class StoragesConfigurationController
     }
 
     @LicenseAnnotation
-    @AuditLog(value = AuditEventNameEnum.ADD_STORAGE, target = "#storageForm.id")
     @ApiOperation(value = "Adds a storage.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The storage was created successfully."),
             @ApiResponse(code = 500, message = "An error occurred.")})
@@ -682,7 +678,6 @@ public class StoragesConfigurationController
     }
 
     @ApiOperation(value = "Deletes a storage.")
-    @AuditLog(value = AuditEventNameEnum.DELETE_STORAGE, target = "#storageId")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The storage was removed successfully."),
             @ApiResponse(code = 404, message = "The storage ${storageId} was not found!"),
             @ApiResponse(code = 500, message = "Failed to remove storage ${storageId}!")})
@@ -741,7 +736,6 @@ public class StoragesConfigurationController
 
 
     @LicenseAnnotation
-    @AuditLog(value = AuditEventNameEnum.ADD_REPOSITORY, target = "#storageId + '-'+ #repositoryId")
     @ApiOperation(value = "Adds or updates a repository.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The repository was updated successfully."),
             @ApiResponse(code = 404, message = "The repository ${repositoryId} was not found!"),
@@ -1170,7 +1164,6 @@ public class StoragesConfigurationController
 
 
     @ApiOperation(value = "Deletes a repository.")
-    @AuditLog(value = AuditEventNameEnum.DELETE_REPOSITORY, target = "#storageId + '-'+ #repositoryId")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The repository was deleted successfully."),
             @ApiResponse(code = 404, message = "The repository ${storageId}:${repositoryId} was not found!"),
             @ApiResponse(code = 500, message = "Failed to remove the repository ${repositoryId}!")})
@@ -1212,7 +1205,6 @@ public class StoragesConfigurationController
 
 
     @ApiOperation(value = "set repository permissions.")
-    @AuditLog(value = AuditEventNameEnum.PERMIT_REPOSITORY, target = "#storageId + '-'+ #repositoryId")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "ok."),
             @ApiResponse(code = 404, message = "The repository ${storageId}:${repositoryId} was not found!")})
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_REPOSITORY')")
@@ -1441,7 +1433,6 @@ public class StoragesConfigurationController
 
 
     @ApiOperation(value = "set union repository.")
-    @AuditLog(value = AuditEventNameEnum.UNION_REPOSITORY, target = "#storageId + '-'+ #repositoryId")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The repository was updated successfully."),
             @ApiResponse(code = 404, message = "The repository ${repositoryId} was not found!")})
     @PreAuthorize("hasAuthority('CONFIGURATION_ADD_UPDATE_REPOSITORY')")

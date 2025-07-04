@@ -1,8 +1,6 @@
 package com.veadan.folib.controllers.artifactcache;
 
-import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.controllers.BaseController;
-import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.services.ArtifactCacheRecordService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -38,7 +36,6 @@ public class ArtifactCacheController extends BaseController {
     }
 
     @ApiOperation(value = "获取缓存目录已使用大小")
-    @AuditLog(value = AuditEventNameEnum.CACHE_STRATEGY,target ="#directoryPath" )
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK")})
     @GetMapping(value = "/artifactCacheDirectoryUseSize")
     public ResponseEntity<BigDecimal> artifactCacheDirectoryUseSize(@RequestParam String directoryPath, @RequestParam(required = false) String unit) throws Exception {

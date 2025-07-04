@@ -1,20 +1,14 @@
 package com.veadan.folib.controllers.layout.docker;
 
-import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.controllers.BaseArtifactController;
-import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.utils.DockerUtils;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.components.layout.DockerComponent;
-import com.veadan.folib.controllers.BaseArtifactController;
-import com.veadan.folib.providers.io.RepositoryPath;
-import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.web.LayoutRequestMapping;
 import com.veadan.folib.web.RepositoryMapping;
 import io.swagger.annotations.Api;
@@ -30,12 +24,8 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.lang3.StringUtils;
 
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.http.HttpHeaders;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -93,7 +83,6 @@ public class DockerStorageController extends BaseArtifactController {
             @ApiResponse(code = 500, message = "Server error."),
             @ApiResponse(code = 503, message = "Repository currently not in service.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + # repository.getId() + '/' + #artifactPath")
     @RequestMapping(value = {"/{storageId}/{repositoryId}/{artifactPath:.+}"}, method = {RequestMethod.GET, RequestMethod.HEAD})
     public void download(@RepositoryMapping Repository repository,
                          @PathVariable String artifactPath,
@@ -117,7 +106,6 @@ public class DockerStorageController extends BaseArtifactController {
             @ApiResponse(code = 500, message = "Server error."),
             @ApiResponse(code = 503, message = "Repository currently not in service.")})
     @PreAuthorize("hasAuthority('ARTIFACTS_RESOLVE')")
-    @AuditLog(value = AuditEventNameEnum.DOWNLOAD_EXCEPTION, target = "#repository.getStorage().getId() + '/' + #repository.getId() + '/' + #artifactPath")
     @RequestMapping(value = {"/{storageId}/{repositoryId}/download/{artifactPath:.+}"}, method = {RequestMethod.GET, RequestMethod.HEAD})
     public void downloadImage(@RepositoryMapping Repository repository,
                               @PathVariable String artifactPath,

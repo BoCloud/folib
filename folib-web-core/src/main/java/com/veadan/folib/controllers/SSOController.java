@@ -4,7 +4,6 @@ import cn.hutool.jwt.JWTUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.veadan.folib.annotation.AuditLog;
 import com.veadan.folib.authorization.domain.Client;
 import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.authorization.service.impl.AuthorizationConfigServiceImpl;
@@ -13,7 +12,6 @@ import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.login.LoginOutput;
 import com.veadan.folib.domain.User;
 import com.veadan.folib.dto.SSOSessionDto;
-import com.veadan.folib.enums.AuditEventNameEnum;
 import com.veadan.folib.security.authentication.JwtTokenFetcher;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
 import com.veadan.folib.users.domain.SystemRole;
@@ -131,8 +129,6 @@ public class SSOController {
      * @return token信息
      * @throws Exception 异常
      */
-
-    @AuditLog(value = AuditEventNameEnum.SSO_LOGIN,target ="#clientId" )
     @GetMapping(value = "/login/{clientId}")
     public RedirectView login(@RequestParam(name = "code") String code, @RequestParam(name = "state", required = false) String state, @PathVariable("clientId") String clientId) throws Exception {
         log.info("Params code [{}] state [{}] clientId [{}]", code, state, clientId);
@@ -186,7 +182,6 @@ public class SSOController {
     }
 
     @ApiOperation(value = "add sso clients.")
-    @AuditLog(value = AuditEventNameEnum.SSO_SETTING,target =" '新增clientId:'+#client.clientId" )
     @ApiResponses(value = {@ApiResponse(code = 200, message = "")})
     @PostMapping(value = "/addClient", produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
@@ -214,7 +209,6 @@ public class SSOController {
 
     @ApiOperation(value = "delete sso clients.")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "")})
-    @AuditLog(value = AuditEventNameEnum.SSO_SETTING,target ="'删除clientId:'+#clientId" )
     @GetMapping(value = "/deleteClient/{clientId}", produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     public ResponseEntity delClient(@PathVariable(name = "clientId") String clientId) throws Exception {
