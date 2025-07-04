@@ -42,32 +42,6 @@ let routes = [
 		name: 'Home',
 		redirect: '/storages/home',
 	},
-
-	{
-		path: '/dashboards/',
-		name: 'Dashboard',
-		layout: "dashboard",
-		// route level code-splitting
-		// this generates a separate chunk (about.[hash].js) for this route
-		// which is lazy-loaded when the route is visited.
-		meta: {
-			title: 'router.StorageAnalysis',
-			sidebarMap: ['dashboards'],
-			breadcrumbs: ['router.Homepage', 'router.StorageAnalysis'],
-		},
-		component: () => import(/* webpackChunkName: "dashboard" */ '../views/Dashboards/Default.vue'),
-	},
-	{
-		path: '/dashboards/crm',
-		name: 'DashboardsCRM',
-		layout: "dashboard",
-		meta: {
-			title: 'CRM',
-			sidebarMap: ['dashboards'],
-			breadcrumbs: ['Dashboards', 'CRM'],
-		},
-		component: () => import('../views/Dashboards/CRM.vue'),
-	},
 	{
 		path: '/storage/list',
 		name: 'storages',
