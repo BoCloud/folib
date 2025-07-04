@@ -76,7 +76,7 @@
                 size="small" class="font-regular text-sm text-dark mr-10" style="width: 120px;"/>
                 <a-input :min="1" v-if="f.name.includes(debianScopeKey)" v-model="f.architecture"
                 size="small" class="font-regular text-sm text-dark mr-10" style="width: 120px;"/>
-              
+
                 <a-button v-if="f.name.includes(debianScopeKey)" @click="deleteDebainScope(i.fields, index)" style="margin-left: 15px"
                 type="danger" size="small" shape="circle" icon="delete" />
 
@@ -86,7 +86,7 @@
                 <a-input-number :min="1" v-if="f.type === 'int' && f.name === 'numberToKeep'" v-model="f.value"
                   size="small" class="font-regular text-sm text-dark" style="width: 120px;" />
                 <a-input-number :min="1" v-if="f.type === 'int' && f.name === 'storageDay'" :formatter="value => `${ value ? `${value}`.split('.')[0] : ''}`" v-model="f.value"
-                                size="small" class="font-regular text-sm text-dark" style="width: 120px;" :placeholder="f.aliasName?$t('Cron.PleaseEnter') + f.aliasName: $t('Cron.EnterRetentionPeriod')"/>  
+                                size="small" class="font-regular text-sm text-dark" style="width: 120px;" :placeholder="f.aliasName?$t('Cron.PleaseEnter') + f.aliasName: $t('Cron.EnterRetentionPeriod')"/>
                 <a-input-number :min="1" v-if="f.type === 'int' && f.name === 'keepPeriod'" v-model="f.value"
                   size="small" class="font-regular text-sm text-dark" style="width: 120px;" />
                 <a-input-number :min="1" v-if="f.name === 'lastModifiedTime'" v-model="f.value"
@@ -153,11 +153,6 @@ export default {
       cronCanSetList: [],
       cronSettedList: [],
       storageConditions: [
-        {
-          label: "Tag",
-          i18nKey: 'Cron.Tag',
-          value: "tag"
-        },
         {
           label: '天数',
           i18nKey: 'Cron.Days',
@@ -245,7 +240,7 @@ export default {
                   if(key.includes(this.debianScopeKey)){
                     const value =s.properties[key]
                     value.split(',').map(part => part.split(':')).forEach(item=>{
-                      c.fields.push({name: key, codename: item[0], component: item[1],architecture:item[2],value:key})    
+                      c.fields.push({name: key, codename: item[0], component: item[1],architecture:item[2],value:key})
                     })
                   }
                 }
