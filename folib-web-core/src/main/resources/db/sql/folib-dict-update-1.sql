@@ -1,1 +1,0 @@
-CREATE INDEX idx_dict_type_dict_key ON dict (dict_type,dict_key);

@@ -1,11 +1,8 @@
 package com.veadan.folib.promotion;
 
-import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.json.JSONUtil;
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.veadan.folib.artifact.coordinates.DebianArtifactCoordinates;
@@ -15,23 +12,15 @@ import com.veadan.folib.components.layout.DockerComponent;
 import com.veadan.folib.components.security.SecurityComponent;
 import com.veadan.folib.config.PromotionConfig;
 import com.veadan.folib.configuration.ConfigurationManager;
-import com.veadan.folib.constant.ArtifactSyncRecordStatusEnum;
 import com.veadan.folib.constant.DebianConstant;
 import com.veadan.folib.domain.Artifact;
 import com.veadan.folib.domain.ArtifactEntity;
 import com.veadan.folib.domain.ArtifactPromotion;
 import com.veadan.folib.domain.DockerSubsidiary;
 import com.veadan.folib.domain.PromotionFileRelativePath;
-import com.veadan.folib.domain.RepositoryPathExistCheck;
 import com.veadan.folib.dto.TargetRepositoyDto;
-import com.veadan.folib.dto.configuration.ClusterDispatchNodeDto;
-import com.veadan.folib.entity.ArtifactSyncSlaveRecord;
-import com.veadan.folib.enums.ArtifactSyncRecordOpsTypeEnum;
-import com.veadan.folib.enums.ArtifactSyncRecordSyncModelEnum;
-import com.veadan.folib.enums.ArtifactoryRepositoryTypeEnum;
 import com.veadan.folib.enums.DeltaIndexEventType;
 import com.veadan.folib.enums.ProductTypeEnum;
-import com.veadan.folib.enums.PromotionStatusEnum;
 import com.veadan.folib.event.DebianIndexEvent;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
 import com.veadan.folib.indexer.DebianIncrementalIndexer;
@@ -65,44 +54,25 @@ import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.InputStreamBody;
 import org.apache.http.entity.mime.content.StringBody;
-import org.apache.http.impl.client.HttpClients;
-import org.glassfish.jersey.client.ClientProperties;
-import org.glassfish.jersey.media.multipart.Boundary;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
-import org.glassfish.jersey.media.multipart.internal.MultiPartWriter;
 import org.mockito.internal.util.collections.Sets;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.util.UriComponents;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.inject.Inject;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.Invocation;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -117,17 +87,12 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.FutureTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -942,80 +907,6 @@ public class PromotionUtil {
             return layerList;
         }
         return Collections.emptyList();
-    }
-
-
-    public ArtifactSliceUploadHttpEntityBuilder getArtifactSliceUploadHttpEntity( ArtifactSyncSlaveRecord artifactSyncSlaveRecord, String sourceStorageId, String sourceRepositoryId) {
-        try {
-            String url = artifactSyncSlaveRecord.getTargetPath();
-            URI uri = new URI(url);
-            String uriPath = uri.getPath();
-            uriPath = StringUtils.removeStart(uriPath, "/");
-            String query = uri.getQuery();
-            // 处理路径
-            String[] pathSegments = uriPath.split("/");
-            String storageId = pathSegments[0];
-            String repositoryId = pathSegments[1];
-            String filenameWithChunk = pathSegments[pathSegments.length - 1];
-            // 分离文件名和 chunk
-            String[] filenameAndChunk = filenameWithChunk.split("-chunk");
-            String chunk = filenameAndChunk[1];
-            // 处理查询参数
-            String[] queryParams = query.split("&");
-            long startLength = 0L;
-            long chunkSize = 0L;
-            String mergeId = "";
-            for (String param : queryParams) {
-                String[] keyValue = param.split("=");
-                if (keyValue.length == 2) {
-                    switch (keyValue[0]) {
-                        case "startLength":
-                            startLength = Long.parseLong(keyValue[1]);
-                            break;
-                        case "chunkSize":
-                            chunkSize = Long.parseLong(keyValue[1]);
-                            break;
-                        case "mergeId":
-                            mergeId = keyValue[1];
-                            break;
-                        default:
-                            break;
-                    }
-                }
-            }
-            long begin = System.currentTimeMillis();
-            RepositoryPath sourceRepositoryPath = repositoryPathResolver.resolve(sourceStorageId, sourceRepositoryId, artifactSyncSlaveRecord.getSourcePath());
-            final long fileLength = Files.size(sourceRepositoryPath);
-            log.info("Calculate the file [{}] [{}] [{}] file size [{}]", sourceStorageId, sourceRepositoryId, sourceRepositoryPath.getPath(), fileLength);
-            final int threadCount = BigDecimal.valueOf(fileLength).divide(BigDecimal.valueOf(chunkSize), 0, RoundingMode.CEILING).intValue();
-            LayoutFileSystemProvider provider = (LayoutFileSystemProvider) sourceRepositoryPath.getFileSystem().provider();
-            final RepositoryPath checksumPath = provider.getChecksumPath(sourceRepositoryPath, MessageDigestAlgorithms.MD5);
-            String md5 = "";
-            if (Objects.nonNull(checksumPath) && Files.exists(checksumPath)) {
-                md5 = Files.readString(checksumPath);
-            }
-            if (StringUtils.isBlank(md5)) {
-                md5 = MessageDigestUtils.calculateChecksum(sourceRepositoryPath, MessageDigestAlgorithms.MD5);
-                //md5 = FileUtils.getMD5(Files.newInputStream(sourceRepositoryPath));
-            }
-            Integer chunkIndex = Integer.parseInt(chunk);// getChunkIndex(chunk);
-            log.info("Calculate the file [{}] [{}] [{}] md5 is [{}] file size [{}] time consuming [{}] ms", storageId, repositoryId, sourceRepositoryPath.getPath(), md5, fileLength, System.currentTimeMillis() - begin);
-            return new ArtifactSliceUploadHttpEntityBuilder()
-                    .setStorageId(storageId)
-                    .setChunkArtifactRecordId(artifactSyncSlaveRecord.getId())
-                    .setRepositoryId(repositoryId)
-                    .setPath(artifactSyncSlaveRecord.getSourcePath())
-                    .setMergeId(mergeId)
-                    .setChunkIndex(chunkIndex)
-                    .setChunkIndexMax(threadCount)
-                    .setOriginFileMd5(md5)
-                    .setArtifactPath(sourceRepositoryPath)
-                    .setStartLength(startLength)
-                    .setChunkSize(chunkSize);
-        } catch (Exception e) {
-            log.error("构建文件切片请求集合失败", e);
-            throw new RuntimeException(e);
-        }
     }
 
     private Integer getChunkIndex(String chunk) {

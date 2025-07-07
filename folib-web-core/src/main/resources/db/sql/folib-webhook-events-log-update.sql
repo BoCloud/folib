@@ -1,2 +1,0 @@
-ALTER TABLE `webhook_events_log` ADD `source_artifact_path` varchar(1000) DEFAULT '' COMMENT '源路径' AFTER `artifact_path`;
-ALTER TABLE `webhook_events_log` ADD `target_artifact_path` varchar(1000) DEFAULT '' COMMENT '目标路径' AFTER `source_artifact_path`;

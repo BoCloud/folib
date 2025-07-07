@@ -1,1 +1,0 @@
-alter table resource modify id varchar(255);
