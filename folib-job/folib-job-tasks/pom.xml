@@ -6,7 +6,7 @@
 
  <parent>
         <groupId>com.veadan.folib</groupId>
-        <artifactId>folib-parent</artifactId>
+        <artifactId>folib-job</artifactId>
         <version>3.0-SNAPSHOT</version>
         <relativePath/>
     </parent>
