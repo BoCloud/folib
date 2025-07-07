@@ -46,7 +46,6 @@ import com.veadan.folib.entity.Dict;
 import com.veadan.folib.entity.RoleResourceRef;
 import com.veadan.folib.enums.*;
 import com.veadan.folib.event.artifact.ArtifactEventListenerRegistry;
-import com.veadan.folib.forms.dict.DictForm;
 import com.veadan.folib.forms.artifact.ArtifactMetadataForm;
 import com.veadan.folib.forms.scanner.*;
 import com.veadan.folib.gremlin.dsl.EntityTraversalUtils;
@@ -69,7 +68,7 @@ import com.veadan.folib.scanner.common.exception.BusinessException;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
 import com.veadan.folib.scanner.entity.ScanRules;
 import com.veadan.folib.scanner.mapper.ScanRulesMapper;
-import com.veadan.folib.scanner.service.ScanService;
+import com.veadan.folib.scanner.service.SbomScannerService;
 import com.veadan.folib.schema2.ContainerConfigurationManifest;
 import com.veadan.folib.schema2.ImageManifest;
 import com.veadan.folib.schema2.LayerManifest;
@@ -175,7 +174,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
 
     @Inject
     @Lazy
-    private ScanService scanService;
+    private SbomScannerService scanService;
 
     @Inject
     @Lazy

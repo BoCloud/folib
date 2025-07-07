@@ -5,7 +5,6 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.util.HexUtil;
 import com.google.common.collect.Sets;
-import com.veadan.folib.artifact.coordinates.DockerArtifactCoordinates;
 import com.veadan.folib.components.artifact.ArtifactComponent;
 import com.veadan.folib.components.layout.DockerComponent;
 import com.veadan.folib.domain.Artifact;
@@ -17,7 +16,7 @@ import com.veadan.folib.providers.io.RepositoryPath;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.providers.layout.DockerFileSystem;
 import com.veadan.folib.scanner.enums.Priority;
-import com.veadan.folib.scanner.service.ScanService;
+import com.veadan.folib.scanner.service.SbomScannerService;
 import com.veadan.folib.scanner.service.ScannerService;
 import com.veadan.folib.scanner.task.ScannerTask;
 import com.veadan.folib.schema2.LayerManifest;
@@ -30,7 +29,6 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.compress.utils.Lists;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
@@ -72,7 +70,7 @@ public class ArtifactEventScannerListener {
 
     @Inject
     @Lazy
-    private ScanService scanService;
+    private SbomScannerService scanService;
 
     @Value("${folib.temp}")
     private String tempPath;

@@ -3,16 +3,16 @@ package com.veadan.folib.job.tasks;
 import com.veadan.folib.job.cron.domain.CronTaskConfigurationDto;
 import com.veadan.folib.job.cron.jobs.CronJobDefinition;
 import com.veadan.folib.job.cron.jobs.JavaCronJob;
-import com.veadan.folib.scanner.service.ScanService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.veadan.folib.scanner.service.SbomScannerService;
+import jakarta.annotation.Resource;
 
 /**
  * @author veadan
  **/
 public class ArtifactScanCronJob extends JavaCronJob {
 
-    @Autowired
-    private ScanService scanService;
+    @Resource
+    private SbomScannerService scanService;
 
     @Override
     protected void executeTask(CronTaskConfigurationDto config) throws Throwable {

@@ -1,9 +1,11 @@
 package com.veadan.folib.scanner.config;
 
 
+import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+@Data
 @Component
 public class ScanConfig {
 
@@ -17,56 +19,20 @@ public class ScanConfig {
     private String dbPass;
     @Value("${scan.base-proxy}")
     private String scanPoxy;
-
+    //@Value("${scan.proxy-host}")
+    //private String poxyHost;
+    //@Value("${scan.proxy-port}")
+    //private int poxyPort;
+    //@Value("${scan.proxy-username}")
+    //private String proxyUsername;
+    //@Value("${scan.proxy-password}")
+    //private String proxyPassword;
+    //@Value("${scan.no-proxy}")
+    private String noProxy;
 
     @Value("${scan.storage-base}")
     private String watchMonitorPath;
 
-    public String getWatchMonitorPath() {
-        return watchMonitorPath;
-    }
 
-    public void setWatchMonitorPath(String watchMonitorPath) {
-        this.watchMonitorPath = watchMonitorPath;
-    }
 
-    public String getDbUrl() {
-        return dbUrl;
-    }
-
-    public void setDbUrl(String dbUrl) {
-        this.dbUrl = dbUrl;
-    }
-
-    public String getDbUser() {
-        return dbUser;
-    }
-
-    public void setDbUser(String dbUser) {
-        this.dbUser = dbUser;
-    }
-
-    public String getDbPass() {
-        return dbPass;
-    }
-
-    public void setDbPass(String dbPass) {
-        this.dbPass = dbPass;
-    }
-
-    public String getScanPoxy() {
-        return scanPoxy;
-    }
-
-    public void setScanPoxy(String scanPoxy) {
-        this.scanPoxy = scanPoxy;
-    }
-
-    public String getDriverClassName() {
-        return driverClassName;
-    }
-
-    public void setDriverClassName(String driverClassName) {
-        this.driverClassName = driverClassName;
-    }
 }

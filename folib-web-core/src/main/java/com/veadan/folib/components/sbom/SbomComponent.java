@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -24,7 +25,7 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.util.*;
 
 /**
- * @author veadan
+ * @author leipenghui
  * @date 2024/10/30
  **/
 @Slf4j
@@ -63,6 +64,42 @@ public class SbomComponent {
                 }
             }
             return jsonData;
+        } catch (Exception e) {
+            log.error("获取SBOM [{}] 错误 [{}]", fileName, ExceptionUtils.getStackTrace(e));
+        } finally {
+            if (StringUtils.isNotBlank(targetPath)) {
+                try {
+                    FileUtil.del(Path.of(targetPath).getParent());
+                } catch (Exception ex) {
+                    log.error("删除 [{}] 临时文件错误 [{}]", targetPath, ExceptionUtils.getStackTrace(ex));
+                }
+            }
+        }
+        return null;
+    }
+
+    public String getBom(Path path) {
+        String targetPath = "", binPath = "", fileName = FilenameUtils.getBaseName(path.getFileName().toString());
+        try {
+            long startTime = System.currentTimeMillis();
+            log.info("获取SBOM [{}] 开始", fileName);
+            binPath = getBinPath();
+            File binFile = new File(binPath);
+            targetPath = binFile.getParent() + File.separator + UUID.randomUUID().toString() + File.separator + fileName + ".json";
+            File targetFile = new File(targetPath);
+            String command = binFile.getAbsolutePath() + " " + path.toAbsolutePath().toString() + " -o cyclonedx-json=" + targetFile.getAbsolutePath();
+            log.info("Command [{}]", command);
+            Process process = Runtime.getRuntime().exec(command);
+            //等待命令执行完成
+            process.waitFor();
+            log.info("获取SBOM [{}] 结束 耗时约为 [{}] 毫秒", fileName, System.currentTimeMillis() - startTime);
+            if (targetFile.exists()) {
+                String data = Files.readString(Path.of(targetFile.getAbsolutePath()));
+                if (StringUtils.isNotBlank(data) && JSONUtil.isJson(data)) {
+                    return data;
+                }
+            }
+            return null;
         } catch (Exception e) {
             log.error("获取SBOM [{}] 错误 [{}]", fileName, ExceptionUtils.getStackTrace(e));
         } finally {

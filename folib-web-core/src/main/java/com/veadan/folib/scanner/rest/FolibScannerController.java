@@ -10,7 +10,7 @@ import com.veadan.folib.scanner.entity.FolibScanner;
 import com.veadan.folib.scanner.entity.FolibScannerDockerTableVO;
 import com.veadan.folib.scanner.entity.SeverityVO;
 import com.veadan.folib.scanner.mapper.FolibScannerMapper;
-import com.veadan.folib.scanner.service.ScanService;
+import com.veadan.folib.scanner.service.SbomScannerService;
 import com.veadan.folib.utils.UserUtils;
 import io.swagger.annotations.Api;
 import jakarta.annotation.Resource;
@@ -29,7 +29,7 @@ import java.util.Map;
 public class FolibScannerController  {
 
     @Autowired
-    private ScanService scanService;
+    private SbomScannerService scanService;
     @Resource
     private FolibScannerMapper folibScannerMapper;
     @Autowired

@@ -9,9 +9,11 @@ import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.UpgradeTaskStatusEnum;
 import com.veadan.folib.scanner.common.util.DateUtils;
 import com.veadan.folib.scanner.common.util.SpringContextUtil;
-import com.veadan.folib.scanner.service.ScanService;
+//import com.veadan.folib.scanner.service.ScanService;
+import com.veadan.folib.scanner.service.SbomScannerService;
 import com.veadan.folib.services.DictService;
 import com.veadan.folib.services.NodeService;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -36,15 +38,15 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author veadan
+ * @author leipenghui
  * @date 2023/3/24
  **/
 @Slf4j
 @Component
 public class FolibApplicationRunner implements ApplicationRunner, ApplicationListener<WebServerInitializedEvent> {
 
-    @Autowired
-    private ScanService scanService;
+    @Resource
+    private SbomScannerService scanService;
 
     @Autowired
     private NodeService nodeService;
@@ -136,6 +138,7 @@ public class FolibApplicationRunner implements ApplicationRunner, ApplicationLis
                             dictService.updateUnExecutedTask(dict);
                         }
                     } catch (Exception ex) {
+                        ex.printStackTrace();
                         dict.setComment(UpgradeTaskStatusEnum.EXECUTED_FAIL.getStatus());
                         dictService.updateUnExecutedTask(dict);
                         log.error("执行升级task错误 [{}] [{}]", dict.getDictValue(), ExceptionUtils.getStackTrace(ex));

@@ -1,7 +1,7 @@
 package com.veadan.folib.task;
 
 
-import com.veadan.folib.scanner.service.ScanService;
+import com.veadan.folib.scanner.service.SbomScannerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -18,13 +18,13 @@ import org.springframework.stereotype.Component;
 public class ScannerTask {
 
     @Autowired
-    private ScanService scanService;
+    private SbomScannerService sbomScannerService;
 
     /**
      * 每5分钟
      */
     @Scheduled(cron = "0 0/5 * * * ? ")
     public void run() {
-        scanService.artifactsScan();
+        sbomScannerService.artifactsScan();
     }
 }

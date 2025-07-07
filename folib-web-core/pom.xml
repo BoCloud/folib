@@ -835,6 +835,23 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
         </dependency>
+        <!-- sbom CycloneDX -->
+        <dependency>
+            <groupId>org.cyclonedx</groupId>
+            <artifactId>cyclonedx-core-java</artifactId>
+            <version>9.0.5</version>
+        </dependency>
+        <!-- sbom CPE -->
+        <dependency>
+            <groupId>us.springett</groupId>
+            <artifactId>cpe-parser</artifactId>
+            <version>2.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>us.springett</groupId>
+            <artifactId>cvss-calculator</artifactId>
+            <version>1.4.1</version>
+        </dependency>
     </dependencies>
 
     <profiles>

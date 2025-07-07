@@ -9,7 +9,6 @@ import com.veadan.folib.components.thirdparty.foeyes.reponse.ProjectInfo;
 import com.veadan.folib.components.thirdparty.foeyes.request.CreateProjectRequest;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.domain.Tree;
-import com.veadan.folib.scanner.biz.ScanRulesBiz;
 import com.veadan.folib.scanner.entity.ScanRules;
 import com.veadan.folib.scanner.mapper.ScanRulesMapper;
 import com.veadan.folib.scanner.service.ScanRulesService;
@@ -29,7 +28,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * @author veadan
+ * @author leipenghui
  * @date 2024/4/22
  **/
 @Service
