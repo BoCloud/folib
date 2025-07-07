@@ -1,6 +1,8 @@
 package com.veadan.folib.controllers.adapter.jfrog;
 
 import com.alibaba.fastjson.JSONObject;
+import com.veadan.folib.components.webhook.WebhookEventsProvider;
+import com.veadan.folib.components.webhook.WebhookEventsProviderRegistry;
 import com.veadan.folib.configuration.ConfigurationManager;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.constant.GlobalConstants;
@@ -19,6 +21,7 @@ import com.veadan.folib.services.ArtifactResolutionService;
 import com.veadan.folib.services.JfrogMigrateService;
 import com.veadan.folib.storage.Storage;
 import com.veadan.folib.users.security.SecurityTokenProvider;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.lang3.StringUtils;
@@ -32,7 +35,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import javax.inject.Inject;
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Objects;
@@ -57,6 +59,9 @@ public class ArtifactWebHookController {
 
     @Inject
     protected ArtifactResolutionService artifactResolutionService;
+
+    @Inject
+    protected WebhookEventsProviderRegistry webhookEventsProviderRegistry;
 
     @Resource
     private JfrogMigrateService jfrogMigrateService;
@@ -131,6 +136,11 @@ public class ArtifactWebHookController {
                 return ResponseEntity.ok("");
             }
             log.info("JFrog event repositoryPath [{}] [{}] [{}] digestAlgorithm [sha256] digest [{}] currentDigest [{}] not exists", storageId, repositoryId, artifactData.getPath(), artifactData.getSha256(), currentDigest);
+            WebhookEventsProvider webhookEventsProvider = webhookEventsProviderRegistry.getProvider(WebhookEventsTypeEnum.resolveType(repositoryPath.getRepository().getLayout()));
+            boolean result = webhookEventsProvider.handler(webhookDto, repositoryPath, dict, 1);
+            if (!result) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(String.format("Handle event error [%s]", data));
+            }
             return ResponseEntity.ok("");
         } catch (Exception ex) {
             log.error(ExceptionUtils.getStackTrace(ex));
