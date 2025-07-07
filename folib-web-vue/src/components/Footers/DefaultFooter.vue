@@ -53,12 +53,8 @@
 			</a-menu-item>
 		</a-menu>
 		<!-- / Footer Social Menu -->
-		
+
 		<!-- Copyright Notice -->
-		<p class="copyright">
-			Copyright © 2021 Muse
-			by <a href="http://folib.com">Creative Tim</a>.
-		</p>
 		<!-- / Copyright Notice -->
 
 	</a-layout-footer>
