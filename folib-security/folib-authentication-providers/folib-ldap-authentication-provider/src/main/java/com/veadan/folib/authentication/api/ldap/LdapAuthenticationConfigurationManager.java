@@ -57,6 +57,24 @@ public class LdapAuthenticationConfigurationManager
         return AUTHENTICATION_ITEM_LDAP;
     }
 
+    public LdapConfiguration getConfiguration()
+    {
+        LdapConfiguration ldapConfiguration = authenticationItemConfigurationManager.getCustomAuthenticationItem(this);
+
+        // TODO: This is a temporary solution to improve the user experience when enabling LDAP as a UserDetailsService.
+        AuthenticationItems authenticationItems = authenticationItemConfigurationManager.getAuthenticationItems();
+        List<AuthenticationItem> list = authenticationItems.getAuthenticationItemList();
+        for (int i=0; i < list.size(); i++)
+        {
+            AuthenticationItem item = list.get(i);
+            if(item.getName().equalsIgnoreCase("ldapUserDetailsService")) {
+                ldapConfiguration.setEnableProvider(item.getEnabled());
+            }
+        }
+
+        return ldapConfiguration;
+    }
+
     public void updateConfiguration(LdapConfiguration configuration)
         throws IOException
     {

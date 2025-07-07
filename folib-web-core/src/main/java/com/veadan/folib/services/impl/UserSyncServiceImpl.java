@@ -1,11 +1,8 @@
 package com.veadan.folib.services.impl;
 
-import com.veadan.folib.cluster.SyncRepositoryEnum;
-import com.veadan.folib.cluster.SyncStorageEnum;
-import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
+
 import com.veadan.folib.entity.*;
 import com.veadan.folib.event.repository.RepositoryEventListenerRegistry;
-import com.veadan.folib.licence.ActivateVo;
 import com.veadan.folib.providers.io.RepositoryPathResolver;
 import com.veadan.folib.services.*;
 import com.veadan.folib.storage.Storage;
@@ -17,8 +14,6 @@ import com.veadan.folib.users.service.*;
 import com.veadan.folib.users.service.impl.RelationalDatabaseUserService.RelationalDatabase;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,13 +55,11 @@ public class UserSyncServiceImpl implements UserSyncService
     protected RepositoryPathResolver repositoryPathResolver;
     @Autowired
     private RepositoryManagementService repositoryManagementService;
-    @Autowired
-    private CodeActivateService codeActivateService;
 
     @Override
     @Transactional
     public void syncUserAuth(UserAuthDTO date) {
-        isLicenseActive();
+
         //更新节点用户信息
         List<FolibUser> users = date.getUsers();
         if (CollectionUtils.isNotEmpty(users)) {
@@ -260,34 +253,6 @@ public class UserSyncServiceImpl implements UserSyncService
 
             }*/
         }
-    }
-
-    private void isLicenseActive() {
-        log.debug("[{}] 同步用户信息，License校验 ]", this.getClass().getSimpleName());
-        ActivateVo activateVo = null;
-        try {
-            activateVo = codeActivateService.isNotActivate();
-        } catch (Exception ex) {
-            log.error("[{}] 同步用户信息，获取License错误 [{}]", this.getClass().getSimpleName(), ExceptionUtils.getStackTrace(ex));
-            throw new RuntimeException("获取License错误");
-        }
-        if (Objects.isNull(activateVo)) {
-            log.warn("[{}] 同步用户信息，License不存在", this.getClass().getSimpleName());
-            throw new RuntimeException("请检查License是否存在");
-        }
-        if (StringUtils.isBlank(activateVo.getMac())) {
-            log.warn("[{}] 同步用户信息，获取mac错误", this.getClass().getSimpleName());
-            throw new RuntimeException("获取机器码错误");
-        }
-        if (activateVo.isHaveError()) {
-            log.warn("[{}] 同步用户信息，License不存在 mac [{}]", this.getClass().getSimpleName(), activateVo.getMac());
-            throw new RuntimeException("请检查License是否存在");
-        }
-        if (activateVo.isDalyOut()) {
-            log.warn("[{}] 同步用户信息，License已过期 mac [{}]", this.getClass().getSimpleName(), activateVo.getMac());
-            throw new RuntimeException("请续期后再添加同步制品存储空间、仓库及用户信息");
-        }
-        log.debug("[{}] 同步用户信息，License校验通过 mac [{}]", this.getClass().getSimpleName(), activateVo.getMac());
     }
 
 }

@@ -3,9 +3,6 @@ package com.veadan.folib.controllers;
 import com.hazelcast.core.HazelcastInstance;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.forms.dict.DictForm;
-import com.veadan.folib.licence.ActivateVo;
-import com.veadan.folib.licence.MacUtil;
-import com.veadan.folib.services.CodeActivateService;
 import com.veadan.folib.services.DictService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiResponse;
@@ -16,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.inject.Inject;
 import java.util.Date;
@@ -40,9 +36,6 @@ public class PingController
     private ConcurrentMap<String,String> retrieveMap() {
         return hazelcastInstance.getMap("map");
     }
-
-    @Inject
-    private CodeActivateService codeActivateService;
 
     @Inject
     private DictService dictService;
@@ -74,64 +67,6 @@ public class PingController
         return getSuccessfulResponseEntity("pong", accept);
     }
 
-    @ApiResponses(value = { @ApiResponse(code = 200, message = "Successful activated") })
-    @PreAuthorize("hasAuthority('AUTHENTICATED_USER')")
-    @GetMapping("/activate")
-    public ResponseEntity activate(@RequestParam("key") String key,@RequestParam("isPoc") boolean isPoc){
-        try {
-            return ResponseEntity.ok().body(codeActivateService.activate(key,isPoc));
-
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("获取机器码异常");
-//            throw new RuntimeException(e);
-        }
-    }
-
-    @ApiResponses(value = { @ApiResponse(code = 200, message = "Successful activated") })
-    @PreAuthorize("hasAuthority('AUTHENTICATED_USER')")
-    @PostMapping("/offlineActivate")
-    public ResponseEntity<String> offlineactivate(@RequestParam("file")MultipartFile licenseFile){
-        try {
-            return codeActivateService.offlineActivate(licenseFile);
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("激活异常");
-        }
-    }
-
-    @ApiResponses(value = { @ApiResponse(code = 200, message = "Successful machineCode") })
-    @PreAuthorize("hasAuthority('AUTHENTICATED_USER')")
-    @GetMapping("/machineCode")
-    public ResponseEntity machineCode(){
-
-        try {
-            String mac= MacUtil.getMachineCode();
-
-
-            return ResponseEntity.ok().body(mac);
-
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("获取机器码异常");
-//            throw new RuntimeException(e);
-        }
-
-    }
-
-    @ApiResponses(value = { @ApiResponse(code = 200, message = "Successful machineCode") })
-    @GetMapping("/checkMachineCode")
-    public ResponseEntity checkMachineCode(){
-
-        try {
-            ActivateVo activateVo = codeActivateService.isNotActivate();
-
-
-            return ResponseEntity.ok().body(activateVo);
-
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("获取机器信息异常");
-//            throw new RuntimeException(e);
-        }
-
-    }
 
 
     // 使用 @CachePut 更新缓存

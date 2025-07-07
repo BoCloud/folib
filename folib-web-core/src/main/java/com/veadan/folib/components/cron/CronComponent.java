@@ -1,7 +1,6 @@
 package com.veadan.folib.components.cron;
 
-import com.veadan.folib.cluster.SyncCornJobEnum;
-import com.veadan.folib.controllers.cluster.dto.SyncCronJobDto;
+
 import com.veadan.folib.job.cron.domain.CronTaskConfigurationDto;
 import com.veadan.folib.job.cron.services.CronTaskConfigurationService;
 import lombok.extern.slf4j.Slf4j;

@@ -16,7 +16,6 @@ import com.veadan.folib.components.syncartifact.SyncArtifactProviderRegistry;
 import com.veadan.folib.configuration.ConfigurationUtils;
 import com.veadan.folib.constant.GlobalConstants;
 import com.veadan.folib.controllers.BaseController;
-import com.veadan.folib.controllers.cluster.dto.SyncStorageDto;
 import com.veadan.folib.converters.migrate.JfrogMigrateConvert;
 import com.veadan.folib.domain.SecurityRole;
 import com.veadan.folib.domain.SecurityRoleEntity;
@@ -1070,8 +1069,6 @@ public class JfrogMigrateServiceImpl extends BaseController implements JfrogMigr
             }
             try {
                 storageManagementService.createStorage(storage);
-                // 向其他集群节点同步storage
-                SyncStorageDto syncStorageDto = new SyncStorageDto(storage, storageId, SyncStorageEnum.CREATE);
             } catch (Exception e) {
                 log.error("create storage failed{}", e.getMessage(), e);
                 return false;
