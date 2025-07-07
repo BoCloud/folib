@@ -7,11 +7,9 @@ import com.github.pagehelper.PageHelper;
 import com.google.common.collect.Maps;
 import com.hazelcast.core.HazelcastInstance;
 import com.veadan.folib.domain.license.LicenseBlackWhite;
-import com.veadan.folib.entity.AllowlistDenylistBlock;
 import com.veadan.folib.entity.License;
 import com.veadan.folib.enums.BlockDomainEnum;
 import com.veadan.folib.enums.CategoryEnum;
-import com.veadan.folib.enums.RuleEnum;
 import com.veadan.folib.forms.license.LicenseTableForm;
 import com.veadan.folib.mapper.LicenseMapper;
 import com.veadan.folib.scanner.common.msg.TableResultResponse;
@@ -28,7 +26,6 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.inject.Inject;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
@@ -218,11 +215,6 @@ public class LicenseServiceImpl implements LicenseService {
         }
         Page<Object> result = PageHelper.startPage(page, limit);
         List<License> licenseList = licenseMapper.selectLicense(searchKeyword, licenseId, blackWhiteType, null, null);
-
-        AllowlistDenylistBlock block = AllowlistDenylistBlock.builder()
-                .category(CategoryEnum.LICENSE.toString())
-                .domain(BlockDomainEnum.PLATFORM.toString())
-                .build();
 
         return new TableResultResponse<LicenseTableForm>(result.getTotal(), Optional.ofNullable(licenseList).orElse(Collections.emptyList()).stream().map(license -> {
             LicenseTableForm licenseTableForm = LicenseTableForm.builder().build();

@@ -24,7 +24,6 @@ import com.veadan.folib.domain.ArtifactIdGroup;
 import com.veadan.folib.domain.CacheSettings;
 import com.veadan.folib.domain.DirectoryListing;
 import com.veadan.folib.domain.FileContent;
-import com.veadan.folib.entity.ArtifactCacheRecord;
 import com.veadan.folib.entity.Dict;
 import com.veadan.folib.enums.DictTypeEnum;
 import com.veadan.folib.enums.FileUnitTypeEnum;
@@ -69,7 +68,6 @@ import com.veadan.folib.providers.layout.RpmLayoutProvider;
 import com.veadan.folib.repositories.ArtifactIdGroupRepository;
 import com.veadan.folib.repositories.ArtifactRepository;
 import com.veadan.folib.service.ProxyRepositoryConnectionPoolConfigurationService;
-import com.veadan.folib.services.ArtifactCacheRecordService;
 import com.veadan.folib.services.ArtifactMetadataService;
 import com.veadan.folib.services.ArtifactService;
 import com.veadan.folib.services.ConfigurationManagementService;
@@ -82,7 +80,6 @@ import com.veadan.folib.util.CommonUtils;
 import com.veadan.folib.util.FileSizeConvertUtils;
 import com.veadan.folib.util.LocalDateTimeInstance;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -103,7 +100,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.xml.sax.Attributes;
@@ -202,10 +198,6 @@ public class ArtifactComponent {
     @Inject
     @Lazy
     private ArtifactEventListenerRegistry artifactEventListenerRegistry;
-
-    @Inject
-    @Lazy
-    private ArtifactCacheRecordService artifactCacheRecordService;
 
     @Inject
     @Qualifier("browseRepositoryDirectoryListingService")
@@ -941,47 +933,6 @@ public class ArtifactComponent {
         return packageVersion;
     }
 
-    @Async("asyncThreadPoolTaskExecutor")
-    public void asyncHandlerArtifactCacheRecord(RepositoryPath repositoryPath, CacheSettings cacheSettings, Path targetPath) {
-        handlerArtifactCacheRecord(repositoryPath, cacheSettings, targetPath);
-    }
-
-    public void handlerArtifactCacheRecord(RepositoryPath repositoryPath, CacheSettings cacheSettings, Path targetPath) {
-        try {
-            if (Objects.isNull(repositoryPath)) {
-                return;
-            }
-            String artifactPath = "", md5, sha1, sha256;
-            Long size = 0L;
-            Artifact artifact = repositoryPath.getArtifactEntry();
-            String sourcePath = repositoryPath.toString();
-            String storageId = repositoryPath.getStorageId(), repositoryId = repositoryPath.getRepositoryId();
-            if (Objects.nonNull(artifact)) {
-                artifactPath = artifact.getArtifactPath();
-                size = artifact.getSizeInBytes();
-                md5 = artifact.getChecksums().getOrDefault(MessageDigestAlgorithms.MD5, "");
-                sha1 = artifact.getChecksums().getOrDefault(MessageDigestAlgorithms.SHA_1, "");
-                sha256 = artifact.getChecksums().getOrDefault(MessageDigestAlgorithms.SHA_256, "");
-            } else {
-                String prefix = String.format("/%s/%s/", storageId, repositoryId);
-                artifactPath = sourcePath.substring(sourcePath.indexOf(prefix) + prefix.length());
-                size = Files.size(repositoryPath);
-                md5 = getChecksum(repositoryPath, "md5");
-                sha1 = getChecksum(repositoryPath, "sha1");
-                sha256 = getChecksum(repositoryPath, "sha256");
-            }
-            ArtifactCacheRecord artifactCacheRecord = ArtifactCacheRecord.builder().storageId(storageId)
-                    .repositoryId(repositoryId).artifactPath(artifactPath).size(size).md5(md5).sha1(sha1).sha256(sha256)
-                    .cacheDirectoryPath(cacheSettings.getDirectoryPath()).cachePath(targetPath.toString()).build();
-            if (!Files.exists(repositoryPath)) {
-                artifactCacheRecordService.verifySourceRepositoryPath(repositoryPath);
-                return;
-            }
-            handlerArtifactCacheRecord(artifactCacheRecord);
-        } catch (Exception ex) {
-            log.warn("处理制品缓存记录失败：[{}]", ExceptionUtils.getStackTrace(ex));
-        }
-    }
 
     public String getChecksum(RepositoryPath repositoryPath, String checksumKey) {
         try {
@@ -1016,14 +967,6 @@ public class ArtifactComponent {
             }
         }
         return cacheSettings;
-    }
-
-    public void handlerArtifactCacheRecord(ArtifactCacheRecord artifactCacheRecord) {
-        artifactCacheRecordService.saveOrUpdateArtifactCacheRecord(artifactCacheRecord);
-    }
-
-    public List<ArtifactCacheRecord> getArtifactCacheRecord(ArtifactCacheRecord artifactCacheRecord, Integer limit) {
-        return artifactCacheRecordService.getArtifactCacheRecord(artifactCacheRecord, null, limit);
     }
 
     public RepositoryPath getRepositoryPath(String storageId, String repositoryId, String artifactPath) {

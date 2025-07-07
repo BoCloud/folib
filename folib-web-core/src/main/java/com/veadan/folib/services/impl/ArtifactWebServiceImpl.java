@@ -791,57 +791,7 @@ public class ArtifactWebServiceImpl implements ArtifactWebService {
         return resolvePath(storageId, repositoryId, artifactPath);
     }
 
-    @Override
-    @Async("asyncThreadPoolTaskExecutor")
-    public void buildGraphIndex(String username, String storageId, String repositoryId, String path, Boolean metadata, Integer batch) {
-        log.info("BuildGraphIndex is starting...");
-        Long dictId = 0L;
-        try {
-            Dict existsDict = dictService.selectLatestOneDict(Dict.builder().dictType(DictTypeEnum.BUILD_GRAPH_INDEX.getType()).build());
-            String comment = "构建中";
-            if (Objects.nonNull(existsDict) && comment.equals(existsDict.getComment())) {
-                return;
-            }
-            JSONObject data = new JSONObject();
-            data.put("storageId", storageId);
-            data.put("repositoryId", repositoryId);
-            data.put("path", path);
-            data.put("metadata", metadata);
-            data.put("batch", batch);
-            Dict dict = Dict.builder().dictType(DictTypeEnum.BUILD_GRAPH_INDEX.getType()).dictKey(username).dictValue(data.toJSONString()).createTime(new Date()).comment(comment).build();
-            dictService.saveDict(dict);
-            dictId = dict.getId();
-            if (StringUtils.isNotBlank(storageId) && StringUtils.isNotBlank(repositoryId)) {
-                handleRepository(storageId, repositoryId, path, metadata, batch);
-            } else if (StringUtils.isNotBlank(storageId)) {
-                path = "";
-                Map<String, ? extends Repository> repositoryMaps = configurationManagementService.getConfiguration().getStorage(storageId).getRepositories();
-                if (!repositoryMaps.isEmpty()) {
-                    for (String repository : repositoryMaps.keySet()) {
-                        handleRepository(storageId, repository, path, metadata, batch);
-                    }
-                }
-            } else if (StringUtils.isBlank(storageId) && StringUtils.isBlank(repositoryId)) {
-                path = "";
-                Map<String, Storage> storageMap = configurationManagementService.getConfiguration().getStorages();
-                if (!storageMap.isEmpty()) {
-                    for (Map.Entry<String, Storage> storageEntry : storageMap.entrySet()) {
-                        Map<String, ? extends Repository> repositoryMaps = configurationManagementService.getMutableConfigurationClone().getStorage(storageEntry.getKey()).getRepositories();
-                        if (!repositoryMaps.isEmpty()) {
-                            for (String repository : repositoryMaps.keySet()) {
-                                handleRepository(storageEntry.getKey(), repository, path, metadata, batch);
-                            }
-                        }
-                    }
-                }
-            }
-            dictService.updateDict(DictForm.builder().id(dictId).comment("构建完成").build());
-        } catch (Exception ex) {
-            log.error("BuildGraphIndex is error [{}]", ExceptionUtils.getStackTrace(ex));
-            dictService.updateDict(DictForm.builder().id(dictId).comment("构建错误").build());
-        }
-        log.info("BuildGraphIndex is finished");
-    }
+
 
     @Override
     @Async("asyncThreadPoolTaskExecutor")

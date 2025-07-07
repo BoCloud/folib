@@ -197,16 +197,6 @@ public class CommonComponent {
         anonymousAuthenticationFilter.getAuthorities().addAll(authorities);
     }
 
-    /**
-     * 更新Ldap配置
-     *
-     * @param ldapConfiguration Ldap配置
-     * @throws Exception 异常
-     */
-    public void updateLdap(LdapConfiguration ldapConfiguration) throws Exception {
-        ldapAuthenticationManager.updateConfiguration(ldapConfiguration);
-    }
-
     public void handleStorageProvider() throws IOException {
         for (Map.Entry<String, StorageDto> entry : configurationManagementService.getMutableConfigurationClone().getStorages().entrySet()) {
             StorageDto storage = entry.getValue();

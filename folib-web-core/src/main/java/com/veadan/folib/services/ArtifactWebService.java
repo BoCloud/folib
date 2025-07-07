@@ -157,17 +157,6 @@ public interface ArtifactWebService {
      */
     Artifact getArtifact(RepositoryPath repositoryPath) throws Exception;
 
-    /**
-     * 生成图数据库信息
-     *
-     * @param username     用户名
-     * @param storageId    存储空间
-     * @param repositoryId 仓库id
-     * @param path         path
-     * @param metadata     是否同步元数据 true 是 false 否
-     * @param batch        每批数量
-     */
-    void buildGraphIndex(String username, String storageId, String repositoryId, String path, Boolean metadata, Integer batch);
 
     /**
      * 强制生成图数据库信息，已存在图库中继续更新

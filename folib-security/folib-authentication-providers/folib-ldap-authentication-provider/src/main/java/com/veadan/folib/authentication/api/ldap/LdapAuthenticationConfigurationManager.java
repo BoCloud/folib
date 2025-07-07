@@ -57,24 +57,6 @@ public class LdapAuthenticationConfigurationManager
         return AUTHENTICATION_ITEM_LDAP;
     }
 
-    public LdapConfiguration getConfiguration()
-    {
-        LdapConfiguration ldapConfiguration = authenticationItemConfigurationManager.getCustomAuthenticationItem(this);
-
-        // TODO: This is a temporary solution to improve the user experience when enabling LDAP as a UserDetailsService.
-        AuthenticationItems authenticationItems = authenticationItemConfigurationManager.getAuthenticationItems();
-        List<AuthenticationItem> list = authenticationItems.getAuthenticationItemList();
-        for (int i=0; i < list.size(); i++)
-        {
-            AuthenticationItem item = list.get(i);
-            if(item.getName().equalsIgnoreCase("ldapUserDetailsService")) {
-                ldapConfiguration.setEnableProvider(item.getEnabled());
-            }
-        }
-
-        return ldapConfiguration;
-    }
-
     public void updateConfiguration(LdapConfiguration configuration)
         throws IOException
     {
@@ -99,24 +81,6 @@ public class LdapAuthenticationConfigurationManager
         }
 
         authenticationItemConfigurationManager.updateAuthenticationItems(authenticationItems);
-    }
-
-    public void testConfiguration(String username,
-                                  String password,
-                                  LdapConfiguration configuration)
-        throws IOException
-    {
-        authenticationItemConfigurationManager.testCustomAuthenticationItem(configuration, this, (c) -> {
-
-            LdapUserDetailsService luds = (LdapUserDetailsService) c.getBean("ldapUserDetailsService");
-            UserDetails user = luds.loadUserByUsername(username);
-            if (!passwordEncoder.matches(password, user.getPassword()))
-            {
-                throw new BadCredentialsException("Credentials don't match.");
-            }
-
-            return false;
-        });
     }
 
     public Map<String, Object> mapAuthorities(LdapAuthoritiesConfiguration source)
@@ -209,25 +173,6 @@ public class LdapAuthenticationConfigurationManager
                                                                                          .collect(Collectors.toList()));
 
         return result;
-    }
-
-    /**
-     * 初始化LDAP连接
-     *
-     * @return LdapTemplate
-     */
-    private LdapTemplate ldapTemplateInstance(LdapConfiguration ldap) {
-        LdapTemplate ldapTemplate = LdapTemplateFactory.createLdapInstance(ldap.getUrl(),
-                "", ldap.getManagerDn(), ldap.getManagerPassword());
-        return ldapTemplate;
-    }
-
-    /**
-     * 外部调用获取LdapTemplate
-     * @return LdapTemplate
-     */
-    public LdapTemplate getLdapTemplateInstance() {
-        return ldapTemplateInstance(getConfiguration());
     }
 
 }
