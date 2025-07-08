@@ -2,6 +2,7 @@ package com.veadan.folib.components.common;
 
 import com.google.common.collect.Lists;
 import com.veadan.folib.authentication.api.ldap.LdapAuthenticationConfigurationManager;
+import com.veadan.folib.authorization.dto.AuthorizationConfigDto;
 import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
 import com.veadan.folib.components.DistributedCacheComponent;
@@ -249,6 +250,9 @@ public class CommonComponent {
         return springSecurityUser.getUsername();
     }
 
+    public void handlerRole(String roleInfo) {
+        authorizationConfigService.handlerRole(roleInfo);
+    }
 
     public ThreadPoolTaskExecutor buildThreadPoolTaskExecutor(Integer corePoolSize, Integer maxPoolSize, Integer queueCapacity, Integer keepAliveSeconds, String threadNamePrefix, Integer awaitTerminationSeconds, RejectedExecutionHandler rejectedExecutionHandler) {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();

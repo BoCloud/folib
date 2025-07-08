@@ -157,9 +157,6 @@ export default {
 								localStorage.setItem("FOEYES_CONFIG", JSON.stringify(res))
 							})
 							sessionStorage.setItem("identityLevel",'basic')
-							checkMachineCode().then(res=>{
-								sessionStorage.setItem("identityLevel",res.level)
-							})
 						}
 						// 延迟显示欢迎信息
 						setTimeout(() => {

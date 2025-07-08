@@ -143,12 +143,6 @@ import {setLanguage} from "@/locale";
         sessionStorage.setItem("instanceName",res)
       })
 	  sessionStorage.setItem("identityLevel",this.level)
-      checkMachineCode().then(res=>{
-        this.haveError=res.haveError
-        this.dalyOut=res.dalyOut
-				this.level = res.level
-				sessionStorage.setItem("identityLevel",this.level)
-      })
     },
     methods: {
       changeLanguage(val) {

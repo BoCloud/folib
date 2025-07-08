@@ -80,32 +80,32 @@ public class PackageFeed implements XmlWritable
     @XmlElement(name = "link", namespace = ATOM_XML_NAMESPACE)
     private Link link = new Link("self", "Packages", "Packages");
 
-    /**
-     * Packet descriptions
-     */
-    @XmlElement(name = "entry", namespace = ATOM_XML_NAMESPACE)
-    private List<PackageEntry> entries;
-
-    /**
-     * @return pact description
-     */
-    public List<PackageEntry> getEntries()
-    {
-        if (entries == null)
-        {
-            entries = new ArrayList<>();
-        }
-        return entries;
-    }
+//    /**
+//     * Packet descriptions
+//     */
+//    @XmlElement(name = "entry", namespace = ATOM_XML_NAMESPACE)
+//    private List<PackageEntry> entries;
+//
+//    /**
+//     * @return pact description
+//     */
+//    public List<PackageEntry> getEntries()
+//    {
+//        if (entries == null)
+//        {
+//            entries = new ArrayList<>();
+//        }
+//        return entries;
+//    }
 
     /**
      * @param entries
      *            for pact descriptions
      */
-    public void setEntries(List<PackageEntry> entries)
-    {
-        this.entries = entries;
-    }
+//    public void setEntries(List<PackageEntry> entries)
+//    {
+//        this.entries = entries;
+//    }
 
     public String getId()
     {

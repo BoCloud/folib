@@ -9,17 +9,17 @@
 
     <mirrors>
         <mirror>
-            <id>folib-maven-group</id>
-            <name>folib-maven-group</name>
-            <url>https://public.folib.com/storages/folib/folib-maven-group</url>
+            <id>maven</id>
+            <name>maven</name>
+            <url>https://public.folib.com/storages/oss/maven</url>
             <mirrorOf>central</mirrorOf>
         </mirror>
 
         <mirror>
-            <id>folib-maven-local</id>
-            <name>folib-maven-local</name>
-            <url>https://public.folib.com/storages/folib/folib-maven-local</url>
-            <mirrorOf>folib-maven-local</mirrorOf>
+            <id>folib-oss-local</id>
+            <name>folib-oss-local</name>
+            <url>https://public.folib.com/storages/oss/folib-oss-local</url>
+            <mirrorOf>folib-oss-local</mirrorOf>
         </mirror>
 
     </mirrors>
@@ -27,7 +27,7 @@
 
 
         <server>
-            <id>folib-maven-local</id>
+            <id>folib-oss-local</id>
             <username>folib</username>
             <password>folib@v587</password>
         </server>
@@ -50,11 +50,11 @@
         </profile>
 
         <profile>
-            <id>folib-maven-local</id>
+            <id>folib-oss-local</id>
             <repositories>
                 <repository>
                     <id>central</id>
-                    <url>https://public.folib.com/storages/folib/folib-maven-local</url>
+                    <url>https://public.folib.com/storages/oss/folib-oss-local</url>
                     <snapshots>
                         <enabled>true</enabled>
                     </snapshots>
@@ -65,7 +65,7 @@
     </profiles>
 
     <activeProfiles>
-        <activeProfile>folib-maven-local</activeProfile>
+        <activeProfile>folib-oss-local</activeProfile>
         <activeProfile>jdk-11</activeProfile>
 
     </activeProfiles>
