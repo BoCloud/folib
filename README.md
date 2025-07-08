@@ -9,6 +9,7 @@
 <img src="https://img.shields.io/badge/release-v1.2.0-rgb(13,126,191)" alt="release">
 <img src="https://img.shields.io/badge/springboot-v3.2.12-rgb(13,126,191)?logo=springboot" alt="springboot">
 <img src="https://img.shields.io/badge/jdk-17-rgb(13,126,191)?logo=openjdk" alt="jdk">
+<img src="https://img.shields.io/badge/license-GPL3.0-white">
 <br>
 </p>
 <hr />
