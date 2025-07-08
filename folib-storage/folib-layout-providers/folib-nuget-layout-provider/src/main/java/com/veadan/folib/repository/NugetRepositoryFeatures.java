@@ -21,7 +21,7 @@ import com.veadan.folib.providers.repository.RepositorySearchRequest;
 import com.veadan.folib.repositories.ArtifactIdGroupRepository;
 import com.veadan.folib.services.ArtifactIdGroupService;
 import com.veadan.folib.storage.Storage;
-import com.veadan.folib.storage.metadata.nuget.rss.PackageEntry;
+//import com.veadan.folib.storage.metadata.nuget.rss.PackageEntry;
 import com.veadan.folib.storage.metadata.nuget.rss.PackageFeed;
 import com.veadan.folib.storage.repository.Repository;
 import com.veadan.folib.storage.repository.remote.RemoteRepository;
@@ -161,9 +161,9 @@ public class NugetRepositoryFeatures
                                                                                               .buildGet()
                                                                                               .invoke(PackageFeed.class);
 
-            logger.info("Downloaded remote feed for [{}], size [{}].",
-                         remoteRepository.getUrl(),
-                         Optional.of(packageFeed).map(f -> f.getEntries().size()).orElse(0));
+//            logger.info("Downloaded remote feed for [{}], size [{}].",
+//                         remoteRepository.getUrl(),
+//                         Optional.of(packageFeed).map(f -> f.getEntries().size()).orElse(0));
 
         }
         catch (Exception e)
@@ -176,10 +176,10 @@ public class NugetRepositoryFeatures
             restClient.close();
         }
 
-        if (packageFeed == null || packageFeed.getEntries() == null || packageFeed.getEntries().size() == 0)
-        {
-            return false;
-        }
+//        if (packageFeed == null || packageFeed.getEntries() == null || packageFeed.getEntries().size() == 0)
+//        {
+//            return false;
+//        }
 
         parseFeed(repository, packageFeed);
 
@@ -189,50 +189,50 @@ public class NugetRepositoryFeatures
     private void parseFeed(Repository repository,
                            PackageFeed packageFeed)
     {
-        String repositoryId = repository.getId();
-        String storageId = repository.getStorage().getId();
-
-        ArtifactTag lastVersionTag = artifactTagService.findOneOrCreate(ArtifactTagEntity.LAST_VERSION);
-
-        Set<Artifact> artifactToSaveSet = new HashSet<>();
-        for (PackageEntry packageEntry : packageFeed.getEntries())
-        {
-            String packageId = packageEntry.getProperties().getId();
-            packageId = packageId == null ? packageEntry.getTitle() : packageId;
-            String packageVersion = packageEntry.getProperties().getVersion().toString();
-
-            NugetArtifactCoordinates c = new NugetArtifactCoordinates(packageId, packageVersion, "nupkg");
-
-            LocalDateTime now = LocalDateTimeInstance.now();
-
-            Artifact artifact = artifactRepository.findOneArtifact(storageId, repositoryId, c.buildPath());
-            ArtifactEntity remoteArtifactEntry = null;
-            if (Objects.nonNull(artifact)) {
-                //已存在
-                remoteArtifactEntry = new ArtifactEntity(artifact.getNativeId(), storageId, repositoryId, artifact.getUuid(), c);
-            } else {
-                //不存在
-                remoteArtifactEntry = new ArtifactEntity(storageId, repositoryId, c);
-                remoteArtifactEntry.setStorageId(storageId);
-                remoteArtifactEntry.setRepositoryId(repositoryId);
-                remoteArtifactEntry.setArtifactCoordinates(c);
-                remoteArtifactEntry.setLastUsed(now);
-                remoteArtifactEntry.setLastUpdated(now);
-                remoteArtifactEntry.setDownloadCount(0);
-                remoteArtifactEntry.setArtifactFileExists(Boolean.FALSE);
-            }
-
-            remoteArtifactEntry.setSizeInBytes(packageEntry.getProperties().getPackageSize());
-
-            if (Boolean.TRUE.equals(packageEntry.getProperties().getIsLatestVersion()))
-            {
-                remoteArtifactEntry.getTagSet().add(lastVersionTag);
-            }
-
-            artifactToSaveSet.add(remoteArtifactEntry);
-        }
-        
-        artifactIdGroupService.saveArtifacts(repository, artifactToSaveSet);
+//        String repositoryId = repository.getId();
+//        String storageId = repository.getStorage().getId();
+//
+//        ArtifactTag lastVersionTag = artifactTagService.findOneOrCreate(ArtifactTagEntity.LAST_VERSION);
+//
+//        Set<Artifact> artifactToSaveSet = new HashSet<>();
+//        for (PackageEntry packageEntry : packageFeed.getEntries())
+//        {
+//            String packageId = packageEntry.getProperties().getId();
+//            packageId = packageId == null ? packageEntry.getTitle() : packageId;
+//            String packageVersion = packageEntry.getProperties().getVersion().toString();
+//
+//            NugetArtifactCoordinates c = new NugetArtifactCoordinates(packageId, packageVersion, "nupkg");
+//
+//            LocalDateTime now = LocalDateTimeInstance.now();
+//
+//            Artifact artifact = artifactRepository.findOneArtifact(storageId, repositoryId, c.buildPath());
+//            ArtifactEntity remoteArtifactEntry = null;
+//            if (Objects.nonNull(artifact)) {
+//                //已存在
+//                remoteArtifactEntry = new ArtifactEntity(artifact.getNativeId(), storageId, repositoryId, artifact.getUuid(), c);
+//            } else {
+//                //不存在
+//                remoteArtifactEntry = new ArtifactEntity(storageId, repositoryId, c);
+//                remoteArtifactEntry.setStorageId(storageId);
+//                remoteArtifactEntry.setRepositoryId(repositoryId);
+//                remoteArtifactEntry.setArtifactCoordinates(c);
+//                remoteArtifactEntry.setLastUsed(now);
+//                remoteArtifactEntry.setLastUpdated(now);
+//                remoteArtifactEntry.setDownloadCount(0);
+//                remoteArtifactEntry.setArtifactFileExists(Boolean.FALSE);
+//            }
+//
+//            remoteArtifactEntry.setSizeInBytes(packageEntry.getProperties().getPackageSize());
+//
+//            if (Boolean.TRUE.equals(packageEntry.getProperties().getIsLatestVersion()))
+//            {
+//                remoteArtifactEntry.getTagSet().add(lastVersionTag);
+//            }
+//
+//            artifactToSaveSet.add(remoteArtifactEntry);
+//        }
+//
+//        artifactIdGroupService.saveArtifacts(repository, artifactToSaveSet);
     }
 
 
@@ -308,9 +308,9 @@ public class NugetRepositoryFeatures
                                                                                                       .buildGet()
                                                                                                       .invoke(PackageFeed.class);
 
-                logger.info("Downloaded remote feed for [{}], size [{}].",
-                             remoteRepository.getUrl(),
-                             Optional.of(feed).map(f -> f.getEntries().size()).orElse(0));
+//                logger.info("Downloaded remote feed for [{}], size [{}].",
+//                             remoteRepository.getUrl(),
+//                             Optional.of(feed).map(f -> f.getEntries().size()).orElse(0));
 
             }
             catch (Exception e)

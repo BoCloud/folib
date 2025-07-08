@@ -9,7 +9,6 @@
         <groupId>com.veadan.folib</groupId>
         <artifactId>folib-authentication-providers</artifactId>
         <version>3.0-SNAPSHOT</version>
-        <relativePath/>
     </parent>
 
     <artifactId>folib-default-authentication-provider</artifactId>

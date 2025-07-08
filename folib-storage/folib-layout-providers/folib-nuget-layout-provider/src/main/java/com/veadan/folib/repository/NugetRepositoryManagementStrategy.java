@@ -2,7 +2,7 @@ package com.veadan.folib.repository;
 
 import com.veadan.folib.job.cron.domain.CronTaskConfigurationDto;
 import com.veadan.folib.job.cron.services.CronTaskDataService;
-import com.veadan.folib.job.tasks.DownloadRemoteFeedCronJob;
+//import com.veadan.folib.job.tasks.DownloadRemoteFeedCronJob;
 
 import javax.inject.Inject;
 
@@ -40,30 +40,30 @@ public class NugetRepositoryManagementStrategy
 //        }
 //    }
 
-    private void createRemoteFeedDownloaderCronTask(String storageId,
-                                                    String repositoryId)
-            throws RepositoryManagementStrategyException
-    {
-        String downloadRemoteFeedCronJobName = "Remote feed download for " + storageId + ":" + repositoryId;
-
-        CronTaskConfigurationDto configuration = new CronTaskConfigurationDto();
-        configuration.setName(downloadRemoteFeedCronJobName);
-        configuration.setJobClass(DownloadRemoteFeedCronJob.class.getName());
-        configuration.setCronExpression("0 0 0 * * ?"); // Execute once daily at 00:00:00
-        configuration.addProperty("storageId", storageId);
-        configuration.addProperty("repositoryId", repositoryId);
-        configuration.setImmediateExecution(true);
-
-        try
-        {
-            cronTaskDataService.save(configuration);
-        }
-        catch (Exception e)
-        {
-            logger.error(e.getMessage(), e);
-
-            throw new RepositoryManagementStrategyException(e.getMessage(), e);
-        }
-    }
+//    private void createRemoteFeedDownloaderCronTask(String storageId,
+//                                                    String repositoryId)
+//            throws RepositoryManagementStrategyException
+//    {
+//        String downloadRemoteFeedCronJobName = "Remote feed download for " + storageId + ":" + repositoryId;
+//
+//        CronTaskConfigurationDto configuration = new CronTaskConfigurationDto();
+//        configuration.setName(downloadRemoteFeedCronJobName);
+//        configuration.setJobClass(DownloadRemoteFeedCronJob.class.getName());
+//        configuration.setCronExpression("0 0 0 * * ?"); // Execute once daily at 00:00:00
+//        configuration.addProperty("storageId", storageId);
+//        configuration.addProperty("repositoryId", repositoryId);
+//        configuration.setImmediateExecution(true);
+//
+//        try
+//        {
+//            cronTaskDataService.save(configuration);
+//        }
+//        catch (Exception e)
+//        {
+//            logger.error(e.getMessage(), e);
+//
+//            throw new RepositoryManagementStrategyException(e.getMessage(), e);
+//        }
+//    }
 
 }

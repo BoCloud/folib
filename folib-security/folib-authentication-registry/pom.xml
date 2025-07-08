@@ -9,7 +9,6 @@
         <groupId>com.veadan.folib</groupId>
         <artifactId>folib-security</artifactId>
         <version>3.0-SNAPSHOT</version>
-        <relativePath/>
     </parent>
 
     <artifactId>folib-authentication-registry</artifactId>

@@ -299,7 +299,15 @@ swagger:
 thirdParty:
   foeyes:
     enable: ${folib.thirdParty.foeyes.enable:false}
-    baseUrl: ${folib.thirdParty.foeyes.baseUrl:http://10.10.28.61:9527}
+    baseUrl: ${folib.thirdParty.foeyes.baseUrl:http://127.0.0.1:9527}
     accessKey: ${folib.thirdParty.foeyes.accessKey:racdvMVzV9Wnqu8NAfQkyrsD0a2N0fNE}
     username: ""
     password: ""
+  qax:
+    enable: ${folib.thirdParty.qax.enable:false}
+    baseUrl: ${folib.thirdParty.qax.baseUrl:https://127.0.0.1:8443/zuul/scan-center/task/sbom/analysis}
+    privateToken: ${folib.thirdParty.qax.private_token:}
+    projectId: ${folib.thirdParty.qax.projectId:}
+    username: ${folib.thirdParty.qax.username:}
+    password: ${folib.thirdParty.qax.password:}
+    tags: ${folib.thirdParty.qax.tags:folib-sbom}

@@ -198,7 +198,7 @@ public class DictServiceImpl implements DictService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateUnExecutedTask(Dict dict) {
-        dictMapper.update(Dict.builder().createTime(new Date()).build(), Wrappers.<Dict>lambdaUpdate()
+        dictMapper.update(Dict.builder().comment(dict.getComment()).build(), Wrappers.<Dict>lambdaUpdate()
                 .eq(Dict::getDictType, dict.getDictType())
                 .eq(Dict::getDictKey, dict.getDictKey())
                 .eq(Dict::getDictValue, dict.getDictValue())
