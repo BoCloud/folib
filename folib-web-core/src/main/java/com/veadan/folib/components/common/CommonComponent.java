@@ -2,10 +2,8 @@ package com.veadan.folib.components.common;
 
 import com.google.common.collect.Lists;
 import com.veadan.folib.authentication.api.ldap.LdapAuthenticationConfigurationManager;
-import com.veadan.folib.authentication.api.ldap.LdapConfiguration;
 import com.veadan.folib.authorization.dto.Role;
 import com.veadan.folib.authorization.service.AuthorizationConfigService;
-import com.veadan.folib.cluster.FolibLockProperties;
 import com.veadan.folib.components.DistributedCacheComponent;
 import com.veadan.folib.config.CustomAuthenticationFeature;
 import com.veadan.folib.configuration.AdvancedConfiguration;
@@ -69,9 +67,6 @@ public class CommonComponent {
 
     @Inject
     private DistributedCacheComponent distributedCacheComponent;
-
-    @Inject
-    private FolibLockProperties folibLockProperties;
 
     @Inject
     private AuthoritiesProvider authoritiesProvider;
@@ -292,45 +287,6 @@ public class CommonComponent {
         return Runtime.getRuntime().availableProcessors();
     }
 
-    public void putWsNode(String targetHostName) {
-        String wsNodes = distributedCacheComponent.get(GlobalConstants.WS_NODE_KEY);
-        List<String> wsNodeList = Lists.newArrayList();
-        if (StringUtils.isNotBlank(wsNodes)) {
-            wsNodeList = Lists.newArrayList(wsNodes.split(","));
-        }
-        String lockIp = folibLockProperties.getFolibLockIp();
-        if (StringUtils.isNotBlank(lockIp)) {
-            int port = System.getProperty("folib.port") != null ?
-                    Integer.parseInt(System.getProperty("folib.port")) :
-                    38080;
-            String wsNode = String.format("%s_http://%s:%s", targetHostName, lockIp, port);
-            if (!wsNodeList.contains(wsNode)) {
-                wsNodeList.add(wsNode);
-            }
-            String value = String.join(",", wsNodeList);
-            distributedCacheComponent.put(GlobalConstants.WS_NODE_KEY, value);
-            log.info("Cache WS node [{}]", value);
-        }
-    }
-
-    public void removeWsNode(String targetHostName) {
-        String wsNodes = distributedCacheComponent.get(GlobalConstants.WS_NODE_KEY);
-        if (StringUtils.isBlank(wsNodes)) {
-            return;
-        }
-        List<String> wsNodeList = Lists.newArrayList(wsNodes.split(","));
-        String lockIp = folibLockProperties.getFolibLockIp();
-        if (StringUtils.isNotBlank(lockIp)) {
-            int port = System.getProperty("folib.port") != null ?
-                    Integer.parseInt(System.getProperty("folib.port")) :
-                    38080;
-            String wsNode = String.format("%s_http://%s:%s", targetHostName, lockIp, port);
-            wsNodeList.remove(wsNode);
-            String value = String.join(",", wsNodeList);
-            distributedCacheComponent.put(GlobalConstants.WS_NODE_KEY, value);
-            log.info("Cache WS node [{}]", value);
-        }
-    }
 
     public Integer getConnectTimeout() {
         int connectTimeout = GlobalConstants.DEFAULT_CONTENT_TIME;

@@ -1,7 +1,7 @@
 package com.veadan.folib.components;
 
 import com.veadan.folib.cluster.ClusterProperties;
-import com.veadan.folib.cluster.FolibLockProperties;
+
 import com.veadan.folib.components.cassandra.CassandraComponent;
 import com.veadan.folib.config.janusgraph.JanusGraphDbProfile;
 import com.veadan.folib.entity.Dict;
@@ -57,9 +57,6 @@ public class FolibApplicationRunner implements ApplicationRunner, ApplicationLis
     @Autowired
     @Lazy
     private DistributedCacheComponent distributedCacheComponent;
-
-    @Autowired
-    private FolibLockProperties ipProperties;
 
     @Autowired
     private ClusterProperties clusterProperties;
@@ -181,22 +178,6 @@ public class FolibApplicationRunner implements ApplicationRunner, ApplicationLis
                 }
             }
         });
-    }
-
-    private void saveClusterNodes() {
-        try {
-            if (!clusterProperties.getOpenFlag()) {
-                return;
-            }
-            String currentNode = ipProperties.getFolibLockIp();
-            log.info("Cluster mode is enabled, current node is [{}]", currentNode);
-            Dict dict = dictService.selectOneDict(Dict.builder().dictType(DictTypeEnum.CLUSTER_NODES.getType()).dictKey(currentNode).build());
-            if (Objects.isNull(dict)) {
-                dictService.saveOrUpdateDict(Dict.builder().dictType(DictTypeEnum.CLUSTER_NODES.getType()).dictKey(currentNode).build(), true);
-            }
-        } catch (Exception ex) {
-            log.error("Save cluster nodes error [{}]", ExceptionUtils.getStackTrace(ex));
-        }
     }
 
     @Override

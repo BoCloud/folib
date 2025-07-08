@@ -200,58 +200,6 @@ public class UserSyncServiceImpl implements UserSyncService
         if (CollectionUtils.isNotEmpty(removeResourceIds)) {
             resourceService.deleteByIds(removeResourceIds);
             roleResourceRefService.deleteByResourceIds(removeResourceIds);
-
-           /* String resourceId = removeResourceIds.get(0);
-            Resource resource = resourceService.queryById(resourceId);
-            if (resource != null) {
-                String repositoryId = resource.getRepositoryId();
-                String storageId = resource.getStorageId();
-                if (StringUtils.isNotEmpty(repositoryId)) {
-                    resourceService.deleteById(resourceId);
-
-                    //删除仓库并同步到集群
-                    try {
-                        List<Repository> repositoryList = configurationManagementService.getConfiguration().getGroupRepositoriesContaining(storageId, repositoryId);
-                        if (CollectionUtils.isNotEmpty(repositoryList)) {
-                            log.error(String.format("删除仓库失败，存在关联组合库，请先从组合库[%s]中移除 !", repositoryList.stream().map(item -> String.format("%s:%s", item.getStorage().getId(), item.getId())).collect(Collectors.joining(","))));
-                        }
-                        Repository repositoryInfo = configurationManagementService.getMutableConfigurationClone().getStorage(storageId).getRepository(repositoryId);
-                        final RepositoryPath repositoryPath = repositoryPathResolver.resolve(repositoryInfo);
-                        RepositoryDto repositoryDto = configurationManagementService.getMutableConfigurationClone().getStorage(storageId)
-                                .getRepository(repositoryId);
-                        if (Files.exists(repositoryPath)) {
-                            repositoryManagementService.removeRepository(storageId, repositoryId);
-                            repositoryEventListenerRegistry.dispatchRepoDelteToCronJobDeleteEvent(storageId, repositoryId);
-                        }
-
-                        configurationManagementService.removeRepository(storageId, repositoryId);
-                        SyncRepositoryDto syncRepositoryDto = new SyncRepositoryDto(repositoryDto, storageId, repositoryId, SyncRepositoryEnum.DELETE, true);
-                        clusterSyncService.syncRepository(syncRepositoryDto);
-                    } catch (IOException e) {
-                        log.error("删除仓库[{}]失败！", repositoryId, e);
-                    }
-
-                }else {
-                    List<Resource> resourcesList = resourceService.queryByStorageId(storageId);
-                    List<String> resourceIds = resourcesList.stream().map(Resource::getId).collect(Collectors.toList());
-                    resourceService.deleteByIds(resourceIds);
-
-                    //删除存储空间并同步到集群
-                    try {
-                        storageManagementService.removeStorage(resourceId);
-                        repositoryEventListenerRegistry.dispatchRepoDelteAllToCronJobDeleteEvent(resourceId, "");
-                        configurationManagementService.removeStorage(resourceId);
-
-                        log.info("Removed storage {}.", resourceId);
-                        StorageDto storageDto = configurationManagementService.getMutableConfigurationClone().getStorage(resourceId);
-                        SyncStorageDto syncStorageDto = new SyncStorageDto(storageDto, SyncStorageEnum.DELETE, resourceId, true);
-                        clusterSyncService.syncStorage(syncStorageDto);
-                    } catch (IOException e) {
-                        log.error("删除存储空间[{}]失败！", storageId, e);
-                    }
-                }
-
-            }*/
         }
     }
 

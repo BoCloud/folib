@@ -6,7 +6,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.veadan.folib.cluster.SyncWebhookEnum;
 import com.veadan.folib.configuration.MutableWebhookConfiguration;
 import com.veadan.folib.configuration.WebhookConfiguration;
 import com.veadan.folib.entity.WebhookLog;
