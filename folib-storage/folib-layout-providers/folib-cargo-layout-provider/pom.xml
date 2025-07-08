@@ -7,7 +7,6 @@
         <groupId>com.veadan.folib</groupId>
         <artifactId>folib-layout-providers</artifactId>
         <version>3.0-SNAPSHOT</version>
-        <relativePath/>
     </parent>
     <artifactId>folib-cargo-layout-provider</artifactId>
     <name>Folib: [cargo Layout Provider]</name>

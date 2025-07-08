@@ -7,7 +7,6 @@
         <groupId>com.veadan.folib</groupId>
         <artifactId>folib-commons</artifactId>
         <version>3.0-SNAPSHOT</version>
-        <relativePath/>
     </parent>
     <groupId>com.veadan.folib.commons</groupId>
     <artifactId>folib-commons-http</artifactId>
