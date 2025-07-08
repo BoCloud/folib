@@ -2,20 +2,6 @@
 <h3 align="center">一个为Ai研发而生的、全语言软件供应链服务平台</h3>
 <p align="center">
 
-[comment]: <> (  <a href="https://www.gnu.org/licenses/gpl-3.0.html"><img src="https://shields.io/github/license/metersphere/metersphere?color=%231890FF" alt="License: GPL v3"></a>)
-
-[comment]: <> (  <a href="https://www.codacy.com/gh/metersphere/metersphere/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=metersphere/metersphere&amp;utm_campaign=Badge_Grade"><img src="https://app.codacy.com/project/badge/Grade/da67574fd82b473992781d1386b937ef" alt="Codacy"></a>)
-
-[comment]: <> (  <a href="https://github.com/metersphere/metersphere/releases"><img src="https://img.shields.io/github/v/release/metersphere/metersphere" alt="GitHub release"></a>)
-
-[comment]: <> (  <a href="https://github.com/metersphere/metersphere"><img src="https://img.shields.io/github/stars/metersphere/metersphere?color=%231890FF&style=flat-square" alt="Stars"></a>)
-
-[comment]: <> (  <a href="https://hub.docker.com/r/metersphere/metersphere-ce-allinone"><img src="https://img.shields.io/docker/pulls/metersphere/metersphere-ce-allinone?label=downloads" alt="Download"></a>)
-
-[comment]: <> (  <a href="https://gitee.com/fit2cloud-feizhiyun/MeterSphere"><img src="https://gitee.com/fit2cloud-feizhiyun/MeterSphere/badge/star.svg?theme=gvp" alt="Gitee Stars"></a>)
-
-[comment]: <> (  <a href="https://gitcode.com/feizhiyun/MeterSphere"><img src="https://gitcode.com/feizhiyun/MeterSphere/star/badge.svg" alt="GitCode Stars"></a>)
-
 <img src="https://img.shields.io/github/stars/vuejs/vue" alt="GitCode Stars">
 <img src="https://img.shields.io/badge/dynamic/json?url=https://web-api.gitcode.com/api/v2/projects/Cangjie/Cangjie-Examples/simple&label=Stars&query=$.star_count&logo=gitpod&logoColor=red" alt="GitCode Stars">
 <img src="https://img.shields.io/badge/Stars-1.2k-white?logo=gitpod&logoColor=red" alt="GitCode Stars">
@@ -27,6 +13,7 @@
 </p>
 <hr />
 
+[English](./README_en.md) | 简体中文
 
 FOLib 是一个为Ai研发而生的、全语言软件供应链服务平台。
 
